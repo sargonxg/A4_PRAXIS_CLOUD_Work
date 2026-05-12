@@ -331,7 +331,7 @@ export function Phase8WowLanding() {
                 ))}
               </div>
               <Link
-                href="/app/assistant"
+                href="/app/dashboard"
                 prefetch={false}
                 onClick={trackSignup}
                 className="flex w-full items-center gap-4 rounded-[1.1rem] bg-[#111827] px-5 py-5 text-left text-white transition hover:bg-[#243244]"
@@ -353,15 +353,15 @@ export function Phase8WowLanding() {
                 onClick={runPreviewQuestion}
                 className="inline-flex items-center justify-center gap-2 rounded-md bg-[#111827] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#243244]"
               >
-                Open Ask workspace <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                Open PRAXIS <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
-                href="/app/dashboard"
+                href="/app/write"
                 prefetch={false}
                 onClick={trackSignup}
                 className="inline-flex items-center justify-center gap-2 rounded-md border border-[#4A90A4] bg-white px-5 py-3 text-sm font-semibold text-[#0B3B4A] transition hover:bg-[#EAF5F7]"
               >
-                Open dashboard <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                Write with PRAXIS <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
                 href="/pricing"
@@ -459,14 +459,14 @@ export function Phase8WowLanding() {
                     className="inline-flex items-center justify-center gap-2 rounded-md bg-[#8a5a00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#714900]"
                   >
                     <Play className="h-4 w-4" aria-hidden="true" />
-                    Ask this context
+                    Generate answer
                   </Link>
                   <Link
-                    href="/app/workbench"
+                    href="/app/write"
                     prefetch={false}
                     className="inline-flex items-center justify-center rounded-md border border-[#d7c89f] bg-white px-4 py-2.5 text-sm font-semibold text-[#111827] transition hover:bg-[#fffaf0]"
                   >
-                    Open workbench
+                    Continue in Write
                   </Link>
                 </div>
               </div>

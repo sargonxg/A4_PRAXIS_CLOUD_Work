@@ -4,6 +4,7 @@ import {
   BadgeCheck,
   BrainCircuit,
   Eye,
+  FileText,
   Languages,
   MessageSquareText,
   ShieldCheck,
@@ -90,6 +91,13 @@ export default function UserCorePage() {
               >
                 Attach to Ask PRAXIS
                 <MessageSquareText className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/app/write"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-gold-200 bg-white px-5 py-3 text-sm font-semibold text-gold-800 hover:bg-gold-50"
+              >
+                Attach to Write
+                <FileText className="h-4 w-4" />
               </Link>
             </div>
           </div>

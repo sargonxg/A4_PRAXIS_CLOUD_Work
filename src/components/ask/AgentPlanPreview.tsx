@@ -17,8 +17,8 @@ export function AgentPlanPreview({
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase text-navy-500">Plan preview</p>
-          <h2 className="mt-1 text-base font-semibold text-navy-900">{plan.intent} work in {plan.mode} mode</h2>
+          <p className="text-[11px] font-semibold uppercase text-navy-500">Proposed run</p>
+          <h2 className="mt-1 text-base font-semibold text-navy-900">{plan.intent} answer using attached context</h2>
         </div>
         <div className="flex flex-wrap gap-2">
           <PlanPill icon={Gauge} label={`Effort ${plan.effortLabel}`} />
@@ -63,7 +63,7 @@ export function AgentPlanPreview({
         </button>
         <button type="button" onClick={onConfirm} className="inline-flex items-center gap-2 rounded-md bg-navy-900 px-3 py-2 text-sm font-semibold text-white hover:bg-navy-800">
           <CheckCircle2 className="h-4 w-4" />
-          Confirm plan
+          Generate answer
         </button>
       </div>
     </section>

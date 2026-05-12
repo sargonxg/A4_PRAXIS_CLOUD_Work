@@ -30,7 +30,6 @@ const LEGACY_WORKBENCH_ROUTE_ALIASES: Record<string, string> = {
   '/app/library': 'library',
   '/app/documents': 'library',
   '/app/reports': 'draft',
-  '/app/draft': 'draft',
   '/app/source-scout': 'research',
   '/app/research': 'research',
   '/app/source-monitor': 'research',
@@ -79,6 +78,12 @@ const LEGACY_WORKBENCH_ROUTE_ALIASES: Record<string, string> = {
   '/app/timeline': 'graph',
   '/app/team': 'desk',
 };
+
+function redirectWithSearch(request: NextRequest, nonce: string, target: string): NextResponse {
+  const url = new URL(target, request.url);
+  request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+  return addSecurityHeaders(NextResponse.redirect(url), nonce);
+}
 
 /**
  * Edge-compatible session parser for routing decisions only.
@@ -147,10 +152,51 @@ export function proxy(request: NextRequest) {
     return addSecurityHeaders(NextResponse.redirect(new URL('/pricing', request.url)), nonce);
   }
 
+  if (pathname === '/app/syria-case') {
+    return redirectWithSearch(request, nonce, '/app/workbench/syria-2026');
+  }
+
+  if (pathname === '/contexts') {
+    return redirectWithSearch(request, nonce, '/app/contexts');
+  }
+  if (pathname.startsWith('/contexts/')) {
+    const slug = pathname.split('/').filter(Boolean).at(1) ?? 'syria-2026';
+    return redirectWithSearch(request, nonce, `/app/workbench/${slug}`);
+  }
+  if (pathname === '/methods') {
+    return redirectWithSearch(request, nonce, '/app/tools');
+  }
+  if (pathname.startsWith('/methods/')) {
+    const methodId = pathname.split('/').filter(Boolean).at(1);
+    const url = new URL('/app/tools', request.url);
+    if (methodId) url.searchParams.set('method', methodId);
+    request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+    return addSecurityHeaders(NextResponse.redirect(url), nonce);
+  }
+  if (pathname === '/ontologies') {
+    return redirectWithSearch(request, nonce, '/app/contexts');
+  }
+  if (pathname.startsWith('/ontologies/')) {
+    const ontologyId = pathname.split('/').filter(Boolean).at(1);
+    const url = new URL('/app/contexts', request.url);
+    if (ontologyId) url.searchParams.set('ontology', ontologyId);
+    request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+    return addSecurityHeaders(NextResponse.redirect(url), nonce);
+  }
+  if (pathname === '/users') {
+    return redirectWithSearch(request, nonce, '/app/cores/user');
+  }
+  if (pathname.startsWith('/users/')) {
+    const modelId = pathname.split('/').filter(Boolean).at(1);
+    const url = new URL('/app/cores/user', request.url);
+    if (modelId) url.searchParams.set('model', modelId);
+    request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+    return addSecurityHeaders(NextResponse.redirect(url), nonce);
+  }
+
   const legacyWorkbenchTab = LEGACY_WORKBENCH_ROUTE_ALIASES[pathname];
   const legacyWorkbenchPrefixTab =
     pathname.startsWith('/app/boardroom/') ? 'boardroom'
-    : pathname.startsWith('/app/draft/') ? 'draft'
     : pathname.startsWith('/app/library/') ? 'library'
     : null;
   const workbenchTab = legacyWorkbenchTab ?? legacyWorkbenchPrefixTab;
@@ -261,6 +307,10 @@ export const config = {
   matcher: [
     '/demo/:path*',
     '/app/:path*',
+    '/contexts/:path*',
+    '/methods/:path*',
+    '/ontologies/:path*',
+    '/users/:path*',
     '/onboarding/:path*',
     '/onboarding',
     '/login',

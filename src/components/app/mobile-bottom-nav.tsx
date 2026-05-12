@@ -2,27 +2,15 @@
 
 import type { ComponentType } from 'react';
 import Link from 'next/link';
-import { FileText, Home, Sparkles, FolderKanban, Wrench } from 'lucide-react';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { useSituationStore } from '@/stores/situation-store';
+import { FileText, FolderKanban, Settings, Sparkles, Wrench } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
+import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
 
-type MobileNavItem =
-  | { kind: 'query'; label: string; queryKey: 'tab' | 'openChapter'; queryValue: string; icon: ComponentType<{ className?: string }> }
-  | { kind: 'link'; label: string; href: string; icon: ComponentType<{ className?: string }> };
-
-const navItems: MobileNavItem[] = [
-  { kind: 'link', label: 'Cores', href: '/app/contexts', icon: FolderKanban },
-  { kind: 'query', label: 'Write', queryKey: 'openChapter', queryValue: 'draft', icon: FileText },
-  { kind: 'link', label: 'Tools', href: '/app/tools', icon: Wrench },
-];
+const ICONS = { Sparkles, FolderKanban, FileText, Wrench, Settings };
 
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const situations = useSituationStore((state) => state.situations);
-  const activeSituation = useSituationStore((state) => state.activeSituation);
-  const activeCaseId = activeSituation?.id ?? situations[0]?.id ?? 'syria-2026';
 
   return (
     <nav
@@ -31,24 +19,25 @@ export function MobileBottomNav() {
       data-testid="mobile-bottom-nav"
     >
       <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
-        <MobileLink href="/app/dashboard" label="Home" active={pathname === '/app/dashboard'} icon={Home} />
-        <button
-          type="button"
-          onClick={() => window.dispatchEvent(new CustomEvent('open-praxis-chat'))}
-          className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-md text-xs font-semibold text-gold-700 hover:bg-gold-50"
-        >
-          <Sparkles className="h-5 w-5" />
-          Ask
-        </button>
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          if (item.kind === 'link') {
-            return <MobileLink key={item.label} href={item.href} label={item.label} active={pathname.startsWith(item.href)} icon={Icon} />;
-          }
-          const href = `/app/workbench/${activeCaseId}?${item.queryKey}=${item.queryValue}`;
-          const active = searchParams.get(item.queryKey) === item.queryValue;
-          return <MobileLink key={item.label} href={href} label={item.label} active={active} icon={Icon} />;
-        })}
+        {PRIMARY_NAV.map((item) => item.id === 'ask' ? (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('open-praxis-chat'))}
+            className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-md text-xs font-semibold text-gold-700 hover:bg-gold-50"
+          >
+            <Sparkles className="h-5 w-5" />
+            {item.label}
+          </button>
+        ) : (
+          <MobileLink
+            key={item.id}
+            href={item.href}
+            label={item.label}
+            active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
+            icon={ICONS[item.icon]}
+          />
+        ))}
       </div>
     </nav>
   );

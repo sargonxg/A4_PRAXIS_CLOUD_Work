@@ -9,7 +9,7 @@ const shell = readFileSync(join(process.cwd(), 'src', 'components', 'app', 'app-
 const chatRoute = readFileSync(join(process.cwd(), 'src', 'app', 'api', 'ai', 'chat', 'route.ts'), 'utf8');
 const askContext = readFileSync(join(process.cwd(), 'src', 'lib', 'ai', 'ask-praxis-context.ts'), 'utf8');
 
-if (!dashboard.includes('<AskPraxisHome')) failures.push('dashboard does not render AskPraxisHome as a first-screen surface');
+if (!dashboard.includes('<AskPraxisHome') && !dashboard.includes('<PraxisWorkspaceShell')) failures.push('dashboard does not render an Ask PRAXIS first-screen surface');
 if (!askHome.includes('data-testid="ask-praxis-home"')) failures.push('AskPraxisHome is missing a stable test marker');
 if (!askHome.includes('open-praxis-chat')) failures.push('AskPraxisHome does not open the Ask PRAXIS command plane');
 if (!shell.includes('<FloatingPraxis />')) failures.push('app shell does not keep Ask PRAXIS globally available');

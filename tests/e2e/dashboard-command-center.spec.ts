@@ -31,7 +31,7 @@ test('dashboard is the real app command center for active case work', async ({ p
   await expect(page.getByText(/^Ask PRAXIS$/i).first()).toBeVisible();
   await expect(page.locator('a[href="/app/assistant"]').first()).toBeVisible();
   await expect(page.getByText(/^Core library$/i).first()).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Manage cores$/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Cores$/i })).toBeVisible();
   await expect(page.getByRole('link', { name: /^Tools$/i })).toBeVisible();
   await expect(page.getByRole('link', { name: /^Settings$/i })).toBeVisible();
   await expect(page.getByText(/^Drafting workbench$/i).first()).toBeVisible();

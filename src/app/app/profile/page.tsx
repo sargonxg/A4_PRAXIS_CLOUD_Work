@@ -214,7 +214,7 @@ export default function WorkingProfilePage() {
   if (error || !data) {
     return (
       <div className="mx-auto max-w-2xl rounded-xl border border-crimson/30 bg-crimson/5 p-6 text-sm text-navy-800">
-        <p className="font-semibold text-crimson">Could not load working profile</p>
+        <p className="font-semibold text-crimson">Could not load User Core</p>
         <p className="mt-2 text-navy-600">{error ?? 'Unknown error.'}</p>
       </div>
     );
@@ -232,11 +232,11 @@ export default function WorkingProfilePage() {
           <div className="mb-1 flex items-center gap-2">
             <Eye className="h-4 w-4 text-gold-600" />
             <p className="text-[11px] font-semibold uppercase tracking-wider text-gold-700">
-              Working profile
+              User Core
             </p>
           </div>
           <h1 className="text-2xl font-semibold text-navy-900">
-            What PRAXIS knows about you
+            What PRAXIS carries into your work
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-navy-500">
             This is the exact calibration payload the AI sees before every tool run. It is
@@ -250,7 +250,7 @@ export default function WorkingProfilePage() {
             className="inline-flex items-center gap-1.5 rounded-lg border border-navy-200 bg-white px-3 py-1.5 text-xs font-medium text-navy-700 shadow-sm transition-colors hover:border-gold-500/40 hover:bg-gold-500/5 hover:text-gold-700"
           >
             <Pencil className="h-3 w-3" />
-            Edit analyst profile
+            Edit User Core
             <ArrowRight className="h-3 w-3" />
           </PraxisLink>
           <div className="flex items-center gap-2 rounded-full border border-navy-200 bg-white px-3 py-1 text-[11px]">

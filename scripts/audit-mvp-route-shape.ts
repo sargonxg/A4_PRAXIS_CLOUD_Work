@@ -13,55 +13,71 @@ function read(rel: string): string {
   return readFileSync(full, 'utf8');
 }
 
-const redirectRoutes: Record<string, string[]> = {
-  'src/app/demo/page.tsx': ['redirect(', '/app/workbench/syria-2026'],
-  'src/app/demo/syria-2024/page.tsx': ['redirect(', '/app/workbench/syria-2026'],
-  'src/app/demo/[contextId]/page.tsx': ['redirect(', '/app/workbench/'],
-  'src/app/contexts/page.tsx': ['redirect(', '/app/cores/context'],
-  'src/app/contexts/[caseId]/page.tsx': ['redirect(', '/app/workbench/'],
-  'src/app/methods/page.tsx': ['redirect(', '/app/tools'],
-  'src/app/methods/[methodId]/page.tsx': ['redirect(', '/app/tools?method='],
-  'src/app/draft/page.tsx': ['redirect(', '/app/workbench?openChapter=memos'],
-  'src/app/draft/[draftId]/page.tsx': ['redirect(', 'openChapter=memos'],
-  'src/app/users/page.tsx': ['redirect(', '/app/cores/user'],
-  'src/app/users/[modelId]/page.tsx': ['redirect(', '/app/cores/user'],
-};
-
-for (const [rel, markers] of Object.entries(redirectRoutes)) {
-  const text = read(rel);
-  for (const marker of markers) {
-    if (!text.includes(marker)) failures.push(`${rel} missing redirect marker: ${marker}`);
-  }
-  for (const forbidden of ['MethodsMarketplace', 'DraftingShell', 'UserModelsLibrary', 'Context workspace', 'cached answers']) {
-    if (text.includes(forbidden)) failures.push(`${rel} still exposes obsolete public surface marker: ${forbidden}`);
-  }
+function expectMissing(rel: string): void {
+  if (existsSync(join(root, rel))) failures.push(`${rel} should be removed from the MVP route surface`);
 }
 
-const landing = [
-  read('src/app/(landing)/page.tsx'),
-  read('src/app/(landing)/layout.tsx'),
-  read('src/components/landing/phase8-wow-landing.tsx'),
-].join('\n');
-for (const forbidden of ['Live demo bar', 'Run cached answer', 'Open read-only context', 'Read-only public demo contexts']) {
-  if (landing.includes(forbidden)) failures.push(`landing still includes obsolete public-demo copy: ${forbidden}`);
+const primaryNav = read('src/lib/navigation/primary-nav.ts');
+for (const marker of [
+  "label: 'Ask'",
+  "label: 'Cores'",
+  "label: 'Write'",
+  "label: 'Tools'",
+  "label: 'Settings'",
+  "href: '/app/write'",
+]) {
+  if (!primaryNav.includes(marker)) failures.push(`PRIMARY_NAV missing canonical marker: ${marker}`);
 }
 
 const sidebar = read('src/components/app/app-sidebar.tsx');
-const allowedSidebarHrefs = [
-  'href="/dashboard#ask-praxis"',
-  'href="/situations/new"',
-  'href="/cores/context"',
-  'href="/cores/user"',
-  'href="/contexts"',
-  'href="/tools"',
-  'href="/settings"',
-  'href={`/workbench/${activeCaseId}?openChapter=memos`}',
-];
-for (const href of allowedSidebarHrefs) {
-  if (!sidebar.includes(href)) failures.push(`sidebar missing MVP route: ${href}`);
+const mobile = read('src/components/app/mobile-bottom-nav.tsx');
+for (const relText of [sidebar, mobile]) {
+  if (!relText.includes('PRIMARY_NAV')) failures.push('primary navigation consumer must import PRIMARY_NAV');
 }
-if ((sidebar.match(/<NavItem/g) ?? []).length > 14) {
-  failures.push('sidebar default navigation is too broad for the MVP route surface');
+for (const forbidden of ['Manage cores', 'Manage Cores', '/app/draft', '/app/methods']) {
+  if (sidebar.includes(forbidden) || mobile.includes(forbidden)) failures.push(`navigation still includes obsolete marker: ${forbidden}`);
+}
+
+const header = read('src/components/app/header.tsx');
+for (const marker of ['Ask PRAXIS or search', 'PRAXIS_CANONICAL_TOOLS', 'PRIMARY_NAV']) {
+  if (!header.includes(marker)) failures.push(`header missing unified command marker: ${marker}`);
+}
+if (header.includes('routeLabels')) failures.push('header still uses a hand-maintained route label map');
+
+const proxy = read('src/proxy.ts');
+for (const marker of [
+  "pathname === '/contexts'",
+  "pathname.startsWith('/contexts/')",
+  "pathname === '/methods'",
+  "pathname.startsWith('/methods/')",
+  "pathname === '/ontologies'",
+  "pathname.startsWith('/ontologies/')",
+  "pathname === '/users'",
+  "pathname.startsWith('/users/')",
+  "'/app/syria-case'",
+  "'/app/workbench/syria-2026'",
+]) {
+  if (!proxy.includes(marker)) failures.push(`proxy missing legacy redirect marker: ${marker}`);
+}
+if (proxy.includes("'/app/draft'") || proxy.includes("startsWith('/app/draft/'))")) {
+  failures.push('proxy still exposes the old /app/draft route');
+}
+
+for (const rel of [
+  'src/app/contexts',
+  'src/app/methods',
+  'src/app/ontologies',
+  'src/app/users',
+  'src/app/app/syria-case',
+  'src/components/app/situation-selector.tsx',
+]) {
+  expectMissing(rel);
+}
+
+const appShell = read('src/components/app/app-shell.tsx');
+if (appShell.includes('<DebugPanel')) failures.push('DebugPanel should not render from AppShell');
+if (!appShell.includes('GlobalSearch') || !appShell.includes('initialQuery')) {
+  failures.push('AppShell must own the shared command/search overlay state');
 }
 
 if (failures.length) {

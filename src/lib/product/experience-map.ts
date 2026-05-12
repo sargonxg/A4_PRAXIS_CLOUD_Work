@@ -37,8 +37,8 @@ export const PRODUCT_EXPERIENCE_AREAS: ProductExperienceArea[] = [
   },
   {
     id: 'situation',
-    label: 'Context Core',
-    shortLabel: 'Context',
+    label: 'Core Library',
+    shortLabel: 'Cores',
     summary: 'Build and maintain the policy situation: frame, actors, sources, graph, assumptions, and open questions.',
     mobilePriority: 'primary',
     defaultHref: '/app/cores/context',
@@ -53,11 +53,11 @@ export const PRODUCT_EXPERIENCE_AREAS: ProductExperienceArea[] = [
   },
   {
     id: 'outputs',
-    label: 'Outputs',
-    shortLabel: 'Outputs',
+    label: 'Write with PRAXIS',
+    shortLabel: 'Write',
     summary: 'Handovers, briefs, memos, drafts, and export-ready packages.',
     mobilePriority: 'primary',
-    defaultHref: '/app/workbench/syria-2026?openChapter=draft',
+    defaultHref: '/app/write',
   },
   {
     id: 'advanced',
@@ -72,7 +72,9 @@ export const PRODUCT_EXPERIENCE_AREAS: ProductExperienceArea[] = [
 export const PRODUCT_EXPERIENCE_ROUTES: ProductExperienceRoute[] = [
   { pattern: '/app', area: 'home', label: 'App redirect', mobilePriority: 'primary' },
   { pattern: '/app/dashboard', area: 'home', label: 'Home dashboard', mobilePriority: 'primary' },
+  { pattern: '/app/assistant', area: 'ask', label: 'Ask PRAXIS workspace', mobilePriority: 'primary' },
   { pattern: '/app/cases', area: 'home', label: 'Case library', mobilePriority: 'secondary' },
+  { pattern: '/app/contexts', area: 'situation', label: 'Core Library', mobilePriority: 'primary' },
   { pattern: '/app/situations', area: 'home', label: 'Situations', mobilePriority: 'secondary' },
   { pattern: '/app/situations/new', area: 'home', label: 'New Situation', mobilePriority: 'secondary' },
   { pattern: '/app/cores/context', area: 'situation', label: 'Context Core', mobilePriority: 'primary' },
@@ -86,6 +88,7 @@ export const PRODUCT_EXPERIENCE_ROUTES: ProductExperienceRoute[] = [
   { pattern: '/app/workbench/[caseId]/boardroom/new', area: 'advanced', label: 'New Boardroom', mobilePriority: 'advanced' },
   { pattern: '/app/workbench/[caseId]/boardroom/[deliberationId]', area: 'advanced', label: 'Boardroom room', mobilePriority: 'advanced' },
   { pattern: '/app/workbench/[caseId]/boardroom/[deliberationId]/synthesis', area: 'outputs', label: 'Boardroom synthesis', mobilePriority: 'secondary' },
+  { pattern: '/app/write', area: 'outputs', label: 'Write with PRAXIS', mobilePriority: 'primary' },
   { pattern: '/app/tools', area: 'advanced', label: 'Advanced tools', mobilePriority: 'advanced' },
   { pattern: '/app/tools/archive', area: 'advanced', label: 'Tool archive', mobilePriority: 'advanced' },
   { pattern: '/app/profile', area: 'advanced', label: 'Working profile', mobilePriority: 'advanced' },

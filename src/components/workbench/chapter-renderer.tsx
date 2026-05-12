@@ -19,13 +19,9 @@ const ResearchTab = dynamic(
   () => import('@/components/workbench/ResearchTab').then((module) => ({ default: module.ResearchTab })),
   { loading: () => <ChapterSkeleton title="Research" />, ssr: false },
 );
-const MemoStudio = dynamic(
-  () => import('@/components/memo/MemoStudio').then((module) => ({ default: module.MemoStudio })),
-  { loading: () => <ChapterSkeleton title="Memos" />, ssr: false },
-);
-const DraftTab = dynamic(
-  () => import('@/components/workbench/draft/DraftTab').then((module) => ({ default: module.DraftTab })),
-  { loading: () => <ChapterSkeleton title="Draft" />, ssr: false },
+const PraxisWriter = dynamic(
+  () => import('@/components/writer/PraxisWriter').then((module) => ({ default: module.PraxisWriter })),
+  { loading: () => <ChapterSkeleton title="Write" />, ssr: false },
 );
 const ACHIndex = dynamic(
   () => import('@/components/sats/ACHWorkbench').then((module) => ({ default: module.ACHIndex })),
@@ -129,12 +125,12 @@ function ChapterContent({ chapterId, caseId }: { chapterId: WorkbenchChapterId; 
   if (customChapter) return <div data-testid={`workbench-${chapterId}-surface`}>{stagedNotice}{customChapter()}</div>;
   if (chapterId === 'desk') return <>{stagedNotice}<DeskTab /></>;
   if (chapterId === 'research') return <>{stagedNotice}<ResearchTab /></>;
-  if (chapterId === 'memos') return <>{stagedNotice}<MemoStudio /></>;
+  if (chapterId === 'memos') return <>{stagedNotice}<PraxisWriter mode="memo" title="Policy memo" templateId="policy-memo" /></>;
   if (chapterId === 'draft') {
     return (
       <ToolGate>
         {stagedNotice}
-        <DraftTab />
+        <PraxisWriter mode="draft" title="Working draft" templateId="policy-memo" />
       </ToolGate>
     );
   }

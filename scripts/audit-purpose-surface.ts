@@ -34,9 +34,12 @@ const library = read('src/components/workbench/LibraryTab.tsx');
 if (library.includes('Save case-frame claim')) failures.push('Library still exposes duplicate save-case-frame-claim action');
 if (library.includes('Saved case-frame claim')) failures.push('Library still has duplicate saved-claim fallback copy');
 
-const draft = read('src/components/workbench/draft/DraftTab.tsx');
+const draft = read('src/components/writer/PraxisWriter.tsx');
 for (const marker of ['Redaction aware', 'Manifest embedded', 'DOCX/PDF/Markdown']) {
   if (draft.includes(marker)) failures.push(`Draft still exposes decorative badge ${marker}`);
+}
+for (const marker of ['PraxisWriter', 'CitationSidebar', 'useWriterAutosave', "onExport={(format) => void exportDocument(format)}"]) {
+  if (!draft.includes(marker)) failures.push(`PraxisWriter missing canonical writing marker ${marker}`);
 }
 
 const debugPanel = read('src/components/app/debug-panel.tsx');

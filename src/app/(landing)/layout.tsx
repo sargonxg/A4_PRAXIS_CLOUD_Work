@@ -9,7 +9,7 @@ const navLinks = [
   { label: "Ask", href: "#top" },
   { label: "Cores", href: "#core-stack" },
   { label: "Tools", href: "#methods" },
-  { label: "Drafts", href: "#drafting" },
+  { label: "Write", href: "#drafting" },
   { label: "App", href: "#real-app" },
   { label: "Pricing", href: "#pricing" },
 ];
@@ -100,7 +100,7 @@ export default function LandingLayout({
               prefetch={false}
               className="text-sm font-semibold text-gold-700 transition-colors hover:text-gold-800"
             >
-              Open Ask workspace
+              Open PRAXIS
             </Link>
           </div>
 
@@ -150,7 +150,7 @@ export default function LandingLayout({
               onClick={() => setMobileMenuOpen(false)}
               className="block py-3 text-sm font-semibold text-gold-700 transition-colors hover:text-gold-800"
             >
-              Open Ask workspace
+              Open PRAXIS
             </Link>
           </div>
         </div>

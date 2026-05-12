@@ -27,7 +27,7 @@ interface FlowStage {
 const STAGES: FlowStage[] = [
   {
     id: 'profile',
-    label: 'Analyst profile',
+    label: 'User Core',
     icon: Brain,
     caption: 'Role · seniority · mandate · lenses · red lines · audience',
     count: 'You',

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Loader2, RotateCcw, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
+import { attachedCoresFromSituation, recommendTools } from '@/lib/tools/recommend';
 import { useAppStore } from '@/stores/app-store';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { usePathname } from 'next/navigation';
@@ -475,6 +476,11 @@ export function FloatingPraxis() {
 
   const contextGreeting = getContextGreeting(pathname ?? '', activeSituation?.name);
   const quickActions = getQuickActions(pathname ?? '', activeSituation?.name);
+  const suggestedTools = recommendTools({
+    attached: attachedCoresFromSituation(activeSituation),
+    situationStage: activeSituation?.analysisPhase ?? activeSituation?.workflowPath ?? 'intake',
+    recentToolIds: [],
+  });
 
   return (
     <>
@@ -581,6 +587,18 @@ export function FloatingPraxis() {
                           className="rounded-full border border-navy-700 px-2.5 py-1 text-[11px] text-navy-300 hover:border-gold-600/40 hover:bg-navy-800 hover:text-gold-400 transition-colors"
                         >
                           {action.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-3 flex flex-wrap justify-center gap-1.5" aria-label="Suggested tools">
+                      {suggestedTools.map((tool) => (
+                        <button
+                          key={tool.id}
+                          type="button"
+                          onClick={() => sendWithText(`Use ${tool.name} for this Situation Core. Explain what you need attached before running it.`)}
+                          className="rounded-full border border-gold-700/40 px-2.5 py-1 text-[11px] text-gold-300 hover:bg-navy-800"
+                        >
+                          {tool.shortLabel}
                         </button>
                       ))}
                     </div>

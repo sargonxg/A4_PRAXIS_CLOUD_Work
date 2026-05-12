@@ -1,15 +1,15 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { usePraxisRoute } from '@/lib/utils/routes';
-import { Search, ChevronRight, User, Settings, LogOut, Sparkles, Coins, Menu, Eye } from 'lucide-react';
+import { Search, ChevronRight, User, Settings, LogOut, Menu } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { NotificationBell } from '@/components/shared/notifications';
-import { GlobalSearch } from '@/components/shared/global-search';
 import { TrustShield } from '@/components/app/trust-shield';
 import { useAuth } from '@/lib/auth/auth-context';
+import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
+import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,49 +19,36 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const routeLabels: Record<string, string> = {
-  app: 'Home',
-  dashboard: 'Dashboard',
-  reports: 'Report Studio',
-  new: 'New Report',
-  assistant: 'Ask PRAXIS',
-  'media-compass': 'Media Compass',
-  'conflict-graph': 'Conflict Graph',
-  'un-toolkit': 'Diplomatic Toolkit',
-  documents: 'Documents',
-  settings: 'Settings',
-  calendar: 'Calendar Monitor',
-  advisory: 'Advisory Council',
-  'talking-points': 'Talking Points',
-  'stakeholder-map': 'Stakeholder Map',
-  'early-warning': 'Early Warning',
-  sanctions: 'Sanctions Tracker',
-  scenarios: 'Scenario Planner',
-  cases: 'Case Library',
-  compare: 'Conflict Comparison',
-};
+function humanizeSegment(segment: string): string {
+  return segment
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
 
-export function Header({ isMobile }: { isMobile?: boolean }) {
+function breadcrumbLabel(segment: string, href: string): string {
+  if (segment === 'app') return 'PRAXIS';
+  const primary = PRIMARY_NAV.find((item) => item.href === href);
+  if (primary) return primary.label;
+  const parentPrimary = PRIMARY_NAV.find((item) => href.startsWith(`${item.href}/`));
+  if (parentPrimary && href.split('/').length <= 3) return parentPrimary.label;
+  const tool = PRAXIS_CANONICAL_TOOLS.find((item) => item.id === segment);
+  if (tool) return tool.shortLabel || tool.name;
+  return humanizeSegment(segment);
+}
+
+export function Header({
+  isMobile,
+  onOpenSearch,
+}: {
+  isMobile?: boolean;
+  onOpenSearch?: (query?: string) => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
-  const route = usePraxisRoute();
-  const { user, credits, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { toggleSidebar } = useAppStore();
-  const [searchOpen, setSearchOpen] = useState(false);
-
-  // Cmd+K / Ctrl+K global shortcut
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setSearchOpen((v) => !v);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
-
-  const closeSearch = useCallback(() => setSearchOpen(false), []);
+  const [command, setCommand] = useState('');
 
   const breadcrumbs = useMemo(() => {
     const segments = pathname.split('/').filter(Boolean);
@@ -70,7 +57,7 @@ export function Header({ isMobile }: { isMobile?: boolean }) {
 
     for (const segment of segments) {
       currentPath += `/${segment}`;
-      const label = routeLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
+      const label = breadcrumbLabel(segment, currentPath);
       crumbs.push({ label, href: currentPath });
     }
 
@@ -95,11 +82,29 @@ export function Header({ isMobile }: { isMobile?: boolean }) {
     }
   }
 
+  function runCommand() {
+    const value = command.trim();
+    if (!value) {
+      onOpenSearch?.();
+      return;
+    }
+    if (value.startsWith('?')) {
+      window.dispatchEvent(
+        new CustomEvent('open-praxis-chat', {
+          detail: { prompt: value.slice(1).trim() },
+        }),
+      );
+      setCommand('');
+      return;
+    }
+    onOpenSearch?.(value);
+    setCommand('');
+  }
+
   return (
-    <>
-      <header className="flex h-14 items-center justify-between border-b border-[var(--color-app-border)] bg-white/80 px-4 md:px-6 backdrop-blur-md">
+    <header className="flex h-14 items-center gap-3 border-b border-[var(--color-app-border)] bg-white/80 px-4 backdrop-blur-md md:px-6">
         {/* Mobile hamburger + Breadcrumbs */}
-        <nav className="flex items-center gap-1 text-sm">
+        <nav className="flex min-w-0 flex-1 items-center gap-1 text-sm">
           {isMobile && (
             <button
               onClick={toggleSidebar}
@@ -115,7 +120,7 @@ export function Header({ isMobile }: { isMobile?: boolean }) {
                 <ChevronRight className="h-3.5 w-3.5 text-navy-400" />
               )}
               {index === breadcrumbs.length - 1 ? (
-                <span className="font-medium text-navy-900">{crumb.label}</span>
+                <span className="truncate font-medium text-navy-900">{crumb.label}</span>
               ) : (
                 <Link
                   href={crumb.href}
@@ -128,30 +133,33 @@ export function Header({ isMobile }: { isMobile?: boolean }) {
           ))}
         </nav>
 
-        {/* Right section */}
-        <div className="flex items-center gap-2">
-          {/* AI Quick Ask — opens floating PRAXIS panel */}
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('open-praxis-chat'))}
-            className="flex items-center gap-2 rounded-lg border border-gold-500/20 bg-gold-500/5 px-3 py-1.5 text-sm text-gold-700 transition-all hover:border-gold-500/40 hover:bg-gold-500/10"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Ask PRAXIS</span>
-            <kbd className="ml-1 hidden rounded bg-gold-500/10 px-1.5 py-0.5 text-[10px] font-medium text-gold-600 sm:inline-block">
-              /
-            </kbd>
-          </button>
+        <form
+          className="hidden min-w-0 flex-[1.2] items-center gap-2 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-sm shadow-sm transition-colors focus-within:border-diplomatic-blue md:flex"
+          onSubmit={(event) => {
+            event.preventDefault();
+            runCommand();
+          }}
+        >
+          <Search className="h-3.5 w-3.5 shrink-0 text-navy-400" />
+          <input
+            value={command}
+            onChange={(event) => setCommand(event.target.value)}
+            placeholder="Ask PRAXIS or search..."
+            className="min-w-0 flex-1 bg-transparent text-sm text-navy-900 placeholder:text-navy-400 focus:outline-none"
+            aria-label="Ask PRAXIS or search"
+          />
+          <kbd className="rounded bg-[var(--color-app-surface-alt)] px-1.5 py-0.5 text-[10px] font-medium text-navy-400">
+            Cmd+K
+          </kbd>
+        </form>
 
-          {/* Search button */}
+        <div className="flex shrink-0 items-center gap-2">
           <button
-            onClick={() => setSearchOpen(true)}
-            className="flex items-center gap-2 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-sm text-navy-400 transition-colors hover:border-navy-300 hover:text-navy-600"
+            onClick={() => onOpenSearch?.()}
+            className="flex items-center gap-2 rounded-lg border border-[var(--color-app-border)] bg-white px-3 py-1.5 text-sm text-navy-500 transition-colors hover:border-navy-300 hover:text-navy-700 md:hidden"
+            aria-label="Ask PRAXIS or search"
           >
             <Search className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Search</span>
-            <kbd className="ml-2 hidden rounded bg-[var(--color-app-surface-alt)] px-1.5 py-0.5 text-[10px] font-medium text-navy-400 sm:inline-block">
-              Cmd+K
-            </kbd>
           </button>
 
           {/* Notifications */}
@@ -175,25 +183,11 @@ export function Header({ isMobile }: { isMobile?: boolean }) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <div className="mx-2 my-1.5 rounded-md border border-emerald-200/60 bg-emerald-50/50 px-3 py-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Coins className="h-3.5 w-3.5 text-emerald-600" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">Credits</span>
-                  </div>
-                  <span className="text-sm font-bold text-emerald-700">{user?.isDemo ? '∞' : credits}</span>
-                </div>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push(route('/profile'))}>
-                <Eye className="mr-2 h-4 w-4" />
-                Working profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push(route('/settings/profile'))}>
+              <DropdownMenuItem onClick={() => router.push('/app/cores/user')}>
                 <User className="mr-2 h-4 w-4" />
-                Analyst profile
+                User Core
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push(route('/settings'))}>
+              <DropdownMenuItem onClick={() => router.push('/app/settings')}>
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
@@ -206,10 +200,5 @@ export function Header({ isMobile }: { isMobile?: boolean }) {
           </DropdownMenu>
         </div>
       </header>
-
-      {/* Global Search */}
-      {searchOpen && <GlobalSearch onClose={closeSearch} />}
-
-    </>
   );
 }

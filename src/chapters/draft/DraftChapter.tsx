@@ -1,7 +1,7 @@
 'use client';
 
-import { DraftTab } from '@/components/workbench/draft/DraftTab';
+import { PraxisWriter } from '@/components/writer/PraxisWriter';
 
 export function DraftChapter() {
-  return <DraftTab />;
+  return <PraxisWriter mode="draft" title="Working draft" templateId="policy-memo" />;
 }

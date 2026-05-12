@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 
 export interface KeyboardShortcutActions {
   openSearch?: () => void;
-  newReport?: () => void;
-  openAssistant?: () => void;
-  openConflictGraph?: () => void;
-  openDashboard?: () => void;
+  openAsk?: () => void;
+  openHelp?: () => void;
+  goCores?: () => void;
+  goWrite?: () => void;
+  goTools?: () => void;
+  goSettings?: () => void;
   closeModal?: () => void;
 }
 
@@ -18,6 +20,17 @@ export interface KeyboardShortcutActions {
  * or contentEditable element — except for Escape, which always fires.
  */
 export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
+  const sequenceRef = useRef<string | null>(null);
+  const sequenceTimerRef = useRef<number | null>(null);
+
+  const clearSequence = useCallback(() => {
+    sequenceRef.current = null;
+    if (sequenceTimerRef.current !== null) {
+      window.clearTimeout(sequenceTimerRef.current);
+      sequenceTimerRef.current = null;
+    }
+  }, []);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -28,6 +41,7 @@ export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
 
       // Escape always works, even when typing
       if (e.key === 'Escape') {
+        clearSequence();
         actions.closeModal?.();
         return;
       }
@@ -43,31 +57,37 @@ export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
         return;
       }
 
-      if (mod && e.key === 'n') {
+      if (e.key === '/') {
         e.preventDefault();
-        actions.newReport?.();
+        actions.openAsk?.();
         return;
       }
 
-      if (mod && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+      if (e.key === '?') {
         e.preventDefault();
-        actions.openAssistant?.();
+        actions.openHelp?.();
         return;
       }
 
-      if (mod && e.shiftKey && (e.key === 'G' || e.key === 'g')) {
+      const key = e.key.toLowerCase();
+      if (sequenceRef.current === 'g') {
         e.preventDefault();
-        actions.openConflictGraph?.();
+        clearSequence();
+        if (key === 'c') actions.goCores?.();
+        if (key === 'w') actions.goWrite?.();
+        if (key === 't') actions.goTools?.();
+        if (key === 's') actions.goSettings?.();
         return;
       }
 
-      if (mod && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+      if (key === 'g') {
         e.preventDefault();
-        actions.openDashboard?.();
+        sequenceRef.current = 'g';
+        sequenceTimerRef.current = window.setTimeout(clearSequence, 1200);
         return;
       }
     },
-    [actions],
+    [actions, clearSequence],
   );
 
   useEffect(() => {

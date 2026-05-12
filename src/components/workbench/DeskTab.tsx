@@ -9,6 +9,7 @@ import { WhatChangedPanel } from '@/components/workbench/desk/WhatChangedPanel';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { useOrchestratorEvents } from '@/hooks/useOrchestratorEvents';
 import { buildWorkbenchCaseGraph } from '@/lib/graph/workbench-case-graph';
+import { recommendTools } from '@/lib/tools/recommend';
 import { toTimelineItems } from '@/lib/graph/timeline-adapter';
 import { buildWorkbenchSurfaceState } from '@/lib/workbench/surface-state';
 
@@ -18,6 +19,11 @@ export function DeskTab() {
   const surface = buildWorkbenchSurfaceState(caseModule, caseId);
   const graph = buildWorkbenchCaseGraph(caseModule);
   const timelineItems = toTimelineItems(graph).slice(0, 6);
+  const recommendedTools = recommendTools({
+    attached: { user: true, situation: true, time: timelineItems.length > 0, office: true, source: surface.sourceCount > 0, output: true },
+    situationStage: 'mapping',
+    recentToolIds: [],
+  });
 
   return (
     <div className="space-y-6" data-testid="workbench-desk-surface">
@@ -48,6 +54,18 @@ export function DeskTab() {
         />
         <OpenQuestionsPanel caseId={caseId} fallbackQuestions={surface.openQuestions} />
       </div>
+
+      <section className="grid gap-4 lg:grid-cols-3">
+        {recommendedTools.map((tool) => (
+          <DeskSignal
+            key={tool.id}
+            icon={Sparkles}
+            title={tool.shortLabel}
+            detail={`Recommended attachable tool. Needs ${tool.requires.join(', ')}; produces ${tool.produces.replace('_', ' ')}.`}
+            tone="good"
+          />
+        ))}
+      </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
         <StaleContextPanel staleSignals={surface.staleSignals} />

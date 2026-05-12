@@ -24,13 +24,13 @@ export function OnboardingBanner() {
   return (
     <div
       role="region"
-      aria-label="Analyst profile incomplete"
+      aria-label="User Core incomplete"
       className="sticky top-0 z-40 border-b border-yellow-500/30 bg-yellow-500/10 backdrop-blur supports-[backdrop-filter]:bg-yellow-500/10"
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-6 py-2 text-xs">
         <div className="flex items-center gap-2 text-slate-800">
           <Sparkles className="h-3.5 w-3.5 shrink-0 text-yellow-600" aria-hidden="true" />
-          <span>Complete your analyst profile — calibrates every PRAXIS tool to your work.</span>
+          <span>Complete your User Core — calibrates every PRAXIS tool to your work.</span>
         </div>
         <div className="flex items-center gap-3">
           <Link

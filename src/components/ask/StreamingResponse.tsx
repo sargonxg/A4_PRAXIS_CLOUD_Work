@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { AlertTriangle, CheckCircle2, FileText, ListChecks } from 'lucide-react';
+import Link from 'next/link';
+import { AlertTriangle, CheckCircle2, FileText, ListChecks, Target, Wrench } from 'lucide-react';
 import type { AskIntentPlan } from '@/lib/ai/ask/intent-classifier';
 
 export function StreamingResponse({ plan, contextName }: { plan: AskIntentPlan; contextName: string }) {
@@ -34,9 +35,10 @@ export function StreamingResponse({ plan, contextName }: { plan: AskIntentPlan; 
         ))}
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <ActionCard icon={ListChecks} title="Next action" body="Open the selected context and resolve missing source or actor gaps before deeper execution." />
-        <ActionCard icon={FileText} title="Draft path" body="Send reviewed findings to Drafting Studio once Phase 4E is available." />
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <ActionCard href="/app/contexts" icon={Target} title="Inspect cores" body="Review the attached User Core and Situation Core before deeper execution." />
+        <ActionCard href="/app/tools" icon={Wrench} title="Call policy tools" body="Run the specific research, graph, stakeholder, scenario, or memo tool this answer needs." />
+        <ActionCard href="/app/write" icon={FileText} title="Continue in Write" body="Move the long answer into the PRAXIS editor for revision, citations, and export." />
       </div>
     </section>
   );
@@ -69,12 +71,12 @@ function buildClaims(plan: AskIntentPlan, contextName: string) {
   ];
 }
 
-function ActionCard({ icon: Icon, title, body }: { icon: typeof ListChecks; title: string; body: string }) {
+function ActionCard({ href, icon: Icon, title, body }: { href: string; icon: typeof ListChecks; title: string; body: string }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+    <Link href={href} className="rounded-md border border-slate-200 bg-slate-50 p-3 transition hover:border-diplomatic-blue/30 hover:bg-white">
       <Icon className="h-4 w-4 text-navy-700" />
       <p className="mt-2 text-sm font-semibold text-navy-900">{title}</p>
       <p className="mt-1 text-xs leading-relaxed text-navy-600">{body}</p>
-    </div>
+    </Link>
   );
 }

@@ -1,21 +1,24 @@
 'use client';
 
-import type { ReactNode, ComponentType } from 'react';
+import type { ComponentType } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   ChevronsLeft,
   ChevronsRight,
-  MessageSquareText,
-  LogOut,
-  Plus,
-  Settings,
-  Store,
+  FileText,
   FolderKanban,
+  LogOut,
+  Settings,
+  Sparkles,
+  Wrench,
 } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useAppStore } from '@/stores/app-store';
+import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
+
+const ICONS = { Sparkles, FolderKanban, FileText, Wrench, Settings };
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -64,17 +67,18 @@ export function AppSidebar() {
         </button>
       </div>
 
-      <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto px-2 py-4">
-        <SectionLabel open={sidebarOpen}>Start</SectionLabel>
-        <NavItem open={sidebarOpen} href="/app/assistant" label="Ask PRAXIS" icon={MessageSquareText} active={pathname.startsWith('/app/assistant')} />
-        <NavItem open={sidebarOpen} href="/app/situations/new" label="New Context" icon={Plus} />
-
-        <SectionLabel open={sidebarOpen}>Core library</SectionLabel>
-        <NavItem open={sidebarOpen} href="/app/contexts" label="Manage cores" icon={FolderKanban} active={pathname.startsWith('/app/contexts')} />
-        <NavItem open={sidebarOpen} href="/app/tools" label="Tools" icon={Store} active={pathname === '/app/tools'} />
-
-        <SectionLabel open={sidebarOpen}>Account</SectionLabel>
-        <NavItem open={sidebarOpen} href="/app/settings" label="Settings" icon={Settings} active={pathname.startsWith('/app/settings')} />
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 py-4">
+        {PRIMARY_NAV.map((item) => (
+          <NavItem
+            key={item.id}
+            open={sidebarOpen}
+            href={item.href}
+            label={item.label}
+            icon={ICONS[item.icon]}
+            suffix={item.shortcut}
+            active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
+          />
+        ))}
       </nav>
 
       <div className="border-t border-[var(--color-app-border)] p-2">
@@ -105,11 +109,6 @@ export function AppSidebar() {
   );
 }
 
-function SectionLabel({ children, open }: { children: ReactNode; open: boolean }) {
-  if (!open) return <div className="mx-auto h-px w-8 bg-[var(--color-app-border)]" aria-hidden="true" />;
-  return <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-400">{children}</p>;
-}
-
 function NavItem({
   href,
   label,
@@ -117,7 +116,6 @@ function NavItem({
   active = false,
   open,
   suffix,
-  inset = false,
 }: {
   href: string;
   label: string;
@@ -125,7 +123,6 @@ function NavItem({
   active?: boolean;
   open: boolean;
   suffix?: string;
-  inset?: boolean;
 }) {
   return (
     <PraxisLink
@@ -134,7 +131,6 @@ function NavItem({
       className={cn(
         'flex items-center rounded-lg py-2 text-sm font-medium transition',
         open ? 'gap-3 px-3' : 'justify-center px-2',
-        inset && open && 'ml-3',
         active ? 'bg-[var(--color-app-surface-alt)] text-navy-950' : 'text-navy-500 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-800',
       )}
     >

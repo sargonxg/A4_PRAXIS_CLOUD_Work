@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { ArrowRight, FileText, GripVertical, Library, MessageSquareText, ShieldCheck, Sparkles, Target, UserCircle, Wrench } from 'lucide-react';
-import { CONSOLIDATED_TOOLS } from '@/lib/constants/consolidated-tools';
+import { PRIMARY_MOBILE_WORKFLOWS } from '@/lib/agentic-workflows/registry';
+import { attachedCoresFromSituation, recommendTools } from '@/lib/tools/recommend';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
@@ -55,6 +56,11 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
   const activeCaseId = activeCase?.id ?? 'syria-2026';
   const activeCaseName = activeCase?.name ?? 'No Situation selected';
   const coverage = buildContextCoverage(activeCase, marketplaceToolCount);
+  const recommendedTools = recommendTools({
+    attached: attachedCoresFromSituation(activeSituation),
+    situationStage: activeSituation?.analysisPhase ?? activeSituation?.workflowPath ?? 'intake',
+    recentToolIds: [],
+  });
 
   return (
     <section
@@ -75,10 +81,10 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
               </p>
             </div>
             <Link
-              href={`/app/workbench/${activeCaseId}`}
+              href="/app/write"
               className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-navy-200 px-3 py-2 text-sm font-semibold text-navy-800 hover:border-navy-300 hover:bg-slate-50"
             >
-              Open workbench
+              Write with PRAXIS
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -118,25 +124,25 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
               <ArrowRight className="h-5 w-5 shrink-0 text-navy-300" />
             </button>
             <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {CONSOLIDATED_TOOLS.slice(0, 3).map((tool) => (
+              {recommendedTools.map((tool) => (
                 <Link
                   key={tool.id}
-                  href={`/app/workbench/${activeCaseId}${tool.id === 'briefing-studio' ? '?openChapter=memos' : tool.id === 'research-sources' ? '?tab=library' : ''}`}
+                  href={tool.uiTarget === 'writer' ? '/app/write' : tool.id === 'ask-praxis' ? '/app/assistant' : `/app/workbench/${activeCaseId}`}
                   className="rounded-xl border border-white/80 bg-white/70 px-3 py-2 text-xs shadow-sm shadow-navy-950/5 hover:border-navy-200 hover:bg-white"
                 >
                   <span className="flex items-center gap-2 font-semibold text-navy-900">
                     <Wrench className="h-3.5 w-3.5 text-gold-700" />
                     {tool.shortLabel}
                   </span>
-                  <span className="mt-1 block leading-5 text-slate-600">{tool.primaryOutput}</span>
+                  <span className="mt-1 block leading-5 text-slate-600">{tool.produces.replace('_', ' ')}</span>
                 </Link>
               ))}
             </div>
           </div>
 
           <div className="mt-5 grid gap-3 md:grid-cols-3">
-            {simpleMoves.map((move) => (
-              <MoveButton key={move.label} move={move} activeCaseId={activeCaseId} />
+            {simpleMoves.slice(0, PRIMARY_MOBILE_WORKFLOWS.length).map((move) => (
+              <MoveButton key={move.label} move={move} />
             ))}
           </div>
         </div>
@@ -170,17 +176,15 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
 
 function MoveButton({
   move,
-  activeCaseId,
 }: {
   move: typeof simpleMoves[number];
-  activeCaseId: string;
 }) {
   const Icon = move.icon;
   const href = move.hrefMode === 'context'
-    ? `/app/workbench/${activeCaseId}?tab=context`
+    ? '/app/contexts'
     : move.hrefMode === 'memos'
-      ? `/app/workbench/${activeCaseId}?openChapter=memos`
-      : `/app/workbench/${activeCaseId}`;
+      ? '/app/write'
+      : '/app/assistant';
 
   return (
     <div className="group flex min-h-[118px] flex-col justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-navy-300 hover:bg-white">

@@ -5,6 +5,15 @@ import { DRAFTING_TEMPLATES, type DraftTemplateId } from '../src/lib/draft/api';
 const root = process.cwd();
 const failures: string[] = [];
 
+function read(rel: string): string {
+  const full = path.join(root, rel);
+  if (!existsSync(full)) {
+    failures.push(`${rel} is missing`);
+    return '';
+  }
+  return readFileSync(full, 'utf8');
+}
+
 const expectedIds: DraftTemplateId[] = [
   'un-1-pager',
   'country-card',
@@ -13,18 +22,29 @@ const expectedIds: DraftTemplateId[] = [
   'executive-summary',
 ];
 
-for (const route of ['src/app/draft/page.tsx', 'src/app/draft/[draftId]/page.tsx']) {
+for (const route of ['src/app/app/write/page.tsx', 'src/app/api/ai/writer/ask/route.ts']) {
   if (!existsSync(path.join(root, route))) failures.push(`${route} is missing`);
 }
 
 for (const component of [
-  'src/components/draft/DraftingShell.tsx',
-  'src/components/draft/ContextPanel.tsx',
-  'src/components/draft/BlockEditor.tsx',
-  'src/components/draft/SectionAIActions.tsx',
-  'src/components/draft/InlineCitation.tsx',
+  'src/components/writer/PraxisWriter.tsx',
+  'src/components/writer/ui/WriterToolbar.tsx',
+  'src/components/writer/ui/CitationSidebar.tsx',
+  'src/components/writer/extensions/slash-menu.ts',
+  'src/components/writer/hooks/use-writer-autosave.ts',
 ]) {
   if (!existsSync(path.join(root, component))) failures.push(`${component} is missing`);
+}
+
+for (const removed of [
+  'src/app/draft/page.tsx',
+  'src/app/draft/[draftId]/page.tsx',
+  'src/components/draft/DraftingShell.tsx',
+  'src/components/draft/BlockEditor.tsx',
+  'src/components/workbench/draft/DraftTab.tsx',
+  'src/components/memo/MemoStudio.tsx',
+]) {
+  if (existsSync(path.join(root, removed))) failures.push(`${removed} should be replaced by PraxisWriter`);
 }
 
 const ids = DRAFTING_TEMPLATES.map((template) => template.id);
@@ -42,16 +62,13 @@ for (const template of DRAFTING_TEMPLATES) {
   if (!template.sections.some((section) => section.citationPolicy === 'required')) failures.push(`${template.id} needs a required citation section`);
 }
 
-const shellText = [
-  readFileSync(path.join(root, 'src/components/draft/DraftingShell.tsx'), 'utf8'),
-  readFileSync(path.join(root, 'src/components/draft/AutoFillButton.tsx'), 'utf8'),
+const writerText = [
+  read('src/components/writer/PraxisWriter.tsx'),
+  read('src/components/writer/ui/WriterToolbar.tsx'),
+  read('src/components/writer/extensions/slash-menu.ts'),
 ].join('\n');
-for (const marker of ['Export controls are visible', 'Auto-fill from context']) {
-  if (!shellText.includes(marker)) failures.push(`Drafting shell must include honest ${marker} copy`);
-}
-
-for (const route of ['src/app/api/draft/[draftId]/refine/route.ts', 'src/app/api/draft/[draftId]/auto-fill/route.ts']) {
-  if (!existsSync(path.join(root, route))) failures.push(`${route} is missing`);
+for (const marker of ['/ask', '/cite', '/tighten', '/soften', '/steelman', '/gap', 'Markdown', 'DOCX', 'PDF']) {
+  if (!writerText.includes(marker)) failures.push(`PraxisWriter must include ${marker}`);
 }
 
 if (failures.length > 0) {
@@ -60,4 +77,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`audit:drafting-templates-present passed: ${DRAFTING_TEMPLATES.length} Phase 6 drafting templates registered.`);
+console.log(`audit:drafting-templates-present passed: ${DRAFTING_TEMPLATES.length} templates and canonical PraxisWriter surface verified.`);

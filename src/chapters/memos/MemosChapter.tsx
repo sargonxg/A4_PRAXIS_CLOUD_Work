@@ -1,7 +1,7 @@
 'use client';
 
-import { MemoStudio } from '@/components/memo/MemoStudio';
+import { PraxisWriter } from '@/components/writer/PraxisWriter';
 
 export function MemosChapter() {
-  return <MemoStudio />;
+  return <PraxisWriter mode="memo" title="Policy memo" templateId="policy-memo" />;
 }

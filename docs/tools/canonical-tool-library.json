@@ -1,0 +1,275 @@
+{
+  "generatedAt": "2026-05-12T15:13:35.137Z",
+  "summary": {
+    "totalTools": 12,
+    "visibleTools": 12,
+    "archiveTools": 0,
+    "routedTools": 12,
+    "generatedFrom": [
+      "src/lib/tools/contract.ts",
+      "src/lib/tools/canonical.ts"
+    ]
+  },
+  "entries": [
+    {
+      "id": "ask-praxis",
+      "name": "Ask PRAXIS",
+      "shortLabel": "Ask PRAXIS",
+      "surface": "hero",
+      "route": "/api/ai/ask-praxis",
+      "uiTarget": "inline",
+      "credits": 1,
+      "modelTier": "flash",
+      "requires": [
+        "user",
+        "situation"
+      ],
+      "produces": "text",
+      "methodology": "Ask PRAXIS answers from the attached User Core and Situation Core, then routes the next step to writing, research, graph repair, or a specialist policy tool. It should explain the basis for the answer, show gaps, and propose actions before writing into the workspace.",
+      "frameworks": [
+        "Professional editorial standards",
+        "Fisher-Ury principled negotiation",
+        "Context injection"
+      ],
+      "limits": "It is a command plane, not an automatic mutation engine. Tool runs and graph updates remain confirmation-gated."
+    },
+    {
+      "id": "context-builder",
+      "name": "Context Builder",
+      "shortLabel": "Context",
+      "surface": "hero",
+      "route": "/api/situations/classify-domain",
+      "uiTarget": "workbench",
+      "credits": 0,
+      "modelTier": "flash",
+      "requires": [
+        "situation"
+      ],
+      "produces": "structured",
+      "methodology": "Context Builder is the intake and repair gate. It checks whether the situation has enough scope, actors, sources, mission framing, assumptions, and graph structure before heavier AI work runs.",
+      "frameworks": [
+        "Situation context health",
+        "Policy workflow pathing",
+        "ACO Conflict Grammar"
+      ],
+      "limits": "It strengthens the case file but does not replace expert source judgment or full graph review."
+    },
+    {
+      "id": "grounded-research",
+      "name": "Grounded Research",
+      "shortLabel": "Research",
+      "surface": "hero",
+      "route": "/api/ai/source-scout",
+      "uiTarget": "workbench",
+      "credits": 3,
+      "modelTier": "pro",
+      "requires": [
+        "situation",
+        "source"
+      ],
+      "produces": "structured",
+      "methodology": "Grounded Research proposes defensible sources ranked by recency, diversity, and reliability. It checks the situation corpus first to avoid duplicates, then returns a search plan, source receipts, and gaps still missing from the Source Graph.",
+      "frameworks": [
+        "Source triangulation",
+        "Reliability tiers",
+        "OSINT source hierarchy"
+      ],
+      "limits": "Fresh web coverage depends on provider availability and the specificity of the situation frame."
+    },
+    {
+      "id": "stakeholder-map",
+      "name": "Stakeholder Map",
+      "shortLabel": "Stakeholders",
+      "surface": "hero",
+      "route": "/api/ai/stakeholder-map",
+      "uiTarget": "workbench",
+      "credits": 3,
+      "modelTier": "pro",
+      "requires": [
+        "situation"
+      ],
+      "produces": "structured",
+      "methodology": "Stakeholder Map visualizes alliances, adversarial dyads, third-party postures, power, legitimacy, urgency, leverage, and Track I/II/III positions so the analyst can see who matters and why.",
+      "frameworks": [
+        "Mitchell-Agle-Wood stakeholder theory",
+        "Barnett-Duvall power taxonomy",
+        "Lederach peacebuilding pyramid"
+      ],
+      "limits": "Actor salience is only as strong as the Situation Core and source coverage."
+    },
+    {
+      "id": "position-vs-interest",
+      "name": "Position vs Interest",
+      "shortLabel": "Positions",
+      "surface": "hero",
+      "route": "/api/ai/negotiation",
+      "uiTarget": "workbench",
+      "credits": 3,
+      "modelTier": "pro",
+      "requires": [
+        "situation"
+      ],
+      "produces": "structured",
+      "methodology": "Position vs Interest separates stated positions from underlying needs, constraints, red lines, BATNAs, and possible issue bundles. It helps PRAXIS move from actor description to negotiation strategy.",
+      "frameworks": [
+        "Fisher-Ury principled negotiation",
+        "Harvard PON BATNA analysis",
+        "Lax-Sebenius 3D negotiation"
+      ],
+      "limits": "It should be rerun when actor incentives or mandates change."
+    },
+    {
+      "id": "scenario-projector",
+      "name": "Scenario Projector",
+      "shortLabel": "Scenarios",
+      "surface": "hero",
+      "route": "/api/ai/scenario",
+      "uiTarget": "workbench",
+      "credits": 2,
+      "modelTier": "deep",
+      "requires": [
+        "situation",
+        "time"
+      ],
+      "produces": "structured",
+      "methodology": "Scenario Projector identifies uncertain high-impact drivers, projects best/likely/worst trajectories, and names indicators that would move probability. It keeps time horizon and warning signals explicit.",
+      "frameworks": [
+        "Glasl escalation model",
+        "Structured uncertainty matrix",
+        "Zartman ripeness theory"
+      ],
+      "limits": "Scenario probabilities are structured judgments, not forecasts with statistical certainty."
+    },
+    {
+      "id": "ach",
+      "name": "Analysis of Competing Hypotheses",
+      "shortLabel": "ACH",
+      "surface": "hero",
+      "route": "/api/sats/ach",
+      "uiTarget": "workbench",
+      "credits": 0,
+      "modelTier": "flash",
+      "requires": [
+        "situation",
+        "source"
+      ],
+      "produces": "structured",
+      "methodology": "ACH compares hypotheses against evidence, forcing disconfirming evidence and weak assumptions into view. It is the default PRAXIS method when a core judgment may be overfit to a single narrative.",
+      "frameworks": [
+        "Heuer ACH",
+        "Structured analytic techniques",
+        "Evidence diagnostics"
+      ],
+      "limits": "The matrix is only useful when hypotheses are meaningfully distinct and evidence is attached."
+    },
+    {
+      "id": "contradiction-finder",
+      "name": "Contradiction Finder",
+      "shortLabel": "Contradict",
+      "surface": "hero",
+      "route": "/api/ai/red-team-review",
+      "uiTarget": "workbench",
+      "credits": 3,
+      "modelTier": "pro",
+      "requires": [
+        "situation",
+        "source"
+      ],
+      "produces": "structured",
+      "methodology": "Contradiction Finder reviews a claim, memo, or tool output for unstated assumptions, source diversity issues, motivated reasoning, missing intelligence, and evidence that would change the conclusion.",
+      "frameworks": [
+        "Heuer SAT",
+        "Devil’s advocacy",
+        "ICD 203 probability language"
+      ],
+      "limits": "It critiques reasoning quality; it does not independently verify every cited source."
+    },
+    {
+      "id": "frame-narrative",
+      "name": "Frame Narrative",
+      "shortLabel": "Narrative",
+      "surface": "hero",
+      "route": "/api/ai/info-environment",
+      "uiTarget": "writer",
+      "credits": 3,
+      "modelTier": "pro",
+      "requires": [
+        "situation"
+      ],
+      "produces": "text",
+      "methodology": "Frame Narrative explains how actors describe the situation, which frames are gaining traction, where legitimacy claims diverge, and how a memo or briefing should avoid adopting an unexamined frame.",
+      "frameworks": [
+        "NATO STRATCOM taxonomy",
+        "4D influence framework",
+        "GDELT GCAM tone analysis"
+      ],
+      "limits": "Narrative reads need fresh media/source coverage and should be caveated by language and platform gaps."
+    },
+    {
+      "id": "coalition-detector",
+      "name": "Coalition Detector",
+      "shortLabel": "Coalitions",
+      "surface": "hero",
+      "route": "/api/ai/power-map",
+      "uiTarget": "workbench",
+      "credits": 3,
+      "modelTier": "pro",
+      "requires": [
+        "situation"
+      ],
+      "produces": "graph_delta",
+      "methodology": "Coalition Detector looks for clusters, brokers, dependencies, patrons, and likely alignment shifts. It turns the Situation Core into testable graph proposals rather than just prose about relationships.",
+      "frameworks": [
+        "Social network analysis",
+        "Power mapping",
+        "Brokerage and alignment analysis"
+      ],
+      "limits": "Coalition inferences should be reviewed before mutating the canonical graph."
+    },
+    {
+      "id": "commitment-tracker",
+      "name": "Commitment Tracker",
+      "shortLabel": "Commitments",
+      "surface": "hero",
+      "route": "/api/ai/commitment-scan",
+      "uiTarget": "workbench",
+      "credits": 2,
+      "modelTier": "pro",
+      "requires": [
+        "situation",
+        "time"
+      ],
+      "produces": "structured",
+      "methodology": "Commitment Tracker records obligations, deadlines, verification mechanisms, compliance posture, and violation type. It is the PRAXIS memory for promises that need follow-up.",
+      "frameworks": [
+        "UCDP Peace Agreement Dataset",
+        "Agreement compliance monitoring",
+        "Stedman implementation analysis"
+      ],
+      "limits": "It needs temporal anchors and source receipts; vague political statements should be marked as weak commitments."
+    },
+    {
+      "id": "memo-drafter",
+      "name": "Memo Drafter",
+      "shortLabel": "Memo",
+      "surface": "hero",
+      "route": "/api/ai/writer/ask",
+      "uiTarget": "writer",
+      "credits": 1,
+      "modelTier": "pro",
+      "requires": [
+        "user",
+        "situation",
+        "output"
+      ],
+      "produces": "work_product",
+      "methodology": "Memo Drafter turns the active User Core, Situation Core, sources, and selected tool outputs into a reviewable work product in PraxisWriter. It preserves provenance and keeps gaps visible before export.",
+      "frameworks": [
+        "Policy memo standards",
+        "Putnam two-level analysis",
+        "PRAXIS provenance model"
+      ],
+      "limits": "It drafts the work product; the analyst still owns source review, tone, and final judgment."
+    }
+  ]
+}

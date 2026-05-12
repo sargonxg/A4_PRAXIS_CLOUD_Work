@@ -71,7 +71,7 @@ const TOOL_SUGGESTIONS = [
   { label: 'Graph Review', href: '/app/workbench', detail: 'Check actors, claims, and relationships.' },
   { label: 'Stakeholder Map', href: '/app/tools', detail: 'Make leverage, audiences, and blockers explicit.' },
   { label: 'Scenario / ACH', href: '/app/tools', detail: 'Compare hypotheses and watch signposts.' },
-  { label: 'Memo Drafter', href: '/app/workbench?openChapter=draft', detail: 'Turn the selected cores into a draft.' },
+  { label: 'Write with PRAXIS', href: '/app/write', detail: 'Turn the selected cores and answer into a draft.' },
   { label: 'Brief Export', href: '/app/tools', detail: 'Export once the memo is evidence-tight.' },
   { label: 'Red Team', href: '/app/tools', detail: 'Stress-test assumptions before shipping.' },
 ];
@@ -155,7 +155,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
                 <div className="mt-3 flex flex-wrap gap-2">
                   <AttachChip href="/app/cores/user" label="User Core" detail={activeUserModel.identity} icon={Users} />
                   <AttachChip href="/app/cores/context" label="Situation Core" detail={activeContextName} icon={Target} />
-                  <AttachChip href={selectedCase ? `/app/workbench/${selectedCase.id}` : '/app/workbench'} label="Memo path" detail="Open workbench" icon={BookOpenText} />
+                  <AttachChip href="/app/write" label="Write path" detail="Continue in Write" icon={BookOpenText} />
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -265,8 +265,8 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
               <DocRow label="Writing mode" value="Policy memo / talking points / brief" />
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link href={selectedCase ? `/app/workbench/${selectedCase.id}?openChapter=draft` : '/app/workbench'} className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-sm font-semibold text-white hover:bg-navy-800">
-                Open drafting workbench
+              <Link href="/app/write" className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-sm font-semibold text-white hover:bg-navy-800">
+                Open Write with PRAXIS
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

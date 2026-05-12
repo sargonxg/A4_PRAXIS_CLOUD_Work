@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useAppStore } from '@/stores/app-store';
-import { usePraxisRoute } from '@/lib/utils/routes';
+import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
 import { AppSidebar } from '@/components/app/app-sidebar';
 import { Header } from '@/components/app/header';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -17,7 +17,6 @@ import { useNotificationStore } from '@/stores/notification-store';
 import { Loader2 } from 'lucide-react';
 import { FloatingPraxis } from '@/components/app/floating-praxis';
 import { MobileBottomNav } from '@/components/app/mobile-bottom-nav';
-import { DebugPanel } from '@/components/app/debug-panel';
 import { ActivityPanel } from '@/components/app/activity-panel';
 import { ErrorBoundary } from '@/components/shared/error-boundary';
 import { ToolErrorBoundary } from '@/components/praxis/tool-error-boundary';
@@ -31,9 +30,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const fetchSituations = useSituationStore((state) => state.fetchSituations);
   const router = useRouter();
   const pathname = usePathname();
-  const route = usePraxisRoute();
   const isDemoRoute = pathname.startsWith('/demo');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchInitialQuery, setSearchInitialQuery] = useState('');
+  const [helpOpen, setHelpOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   // Detect mobile viewport
@@ -83,16 +83,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (user) void fetchSituations();
   }, [fetchSituations, user]);
 
-  const openSearch = useCallback(() => setSearchOpen(true), []);
-  const closeSearch = useCallback(() => setSearchOpen(false), []);
+  const openSearch = useCallback((query?: string) => {
+    setSearchInitialQuery(query ?? '');
+    setSearchOpen(true);
+  }, []);
+  const closeSearch = useCallback(() => {
+    setSearchOpen(false);
+    setSearchInitialQuery('');
+  }, []);
+  const openAsk = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('open-praxis-chat'));
+  }, []);
+  const closeOverlay = useCallback(() => {
+    setSearchOpen(false);
+    setHelpOpen(false);
+  }, []);
 
   useKeyboardShortcuts({
-    openSearch,
-    newReport: () => router.push(route('/reports/new')),
-    openAssistant: () => router.push(route('/assistant')),
-    openConflictGraph: () => router.push(route('/conflict-graph')),
-    openDashboard: () => router.push(route('/dashboard')),
-    closeModal: () => setSearchOpen(false),
+    openSearch: () => openSearch(),
+    openAsk,
+    openHelp: () => setHelpOpen(true),
+    goCores: () => router.push('/app/contexts'),
+    goWrite: () => router.push('/app/write'),
+    goTools: () => router.push('/app/tools'),
+    goSettings: () => router.push('/app/settings'),
+    closeModal: closeOverlay,
   });
 
   // Show loading state while Firebase auth is initializing
@@ -143,7 +158,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex flex-1 flex-col overflow-hidden">
           <DemoModeBanner />
           {!user.isDemo && <SkipNudgeBanner />}
-          <Header isMobile={isMobile} />
+          <Header isMobile={isMobile} onOpenSearch={openSearch} />
           <CoreContextStrip />
           <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
             <div className="mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-6">
@@ -157,14 +172,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       {/* Global search overlay */}
-      {searchOpen && <GlobalSearch onClose={closeSearch} />}
+      {searchOpen && (
+        <GlobalSearch
+          key={searchInitialQuery || 'empty-command'}
+          onClose={closeSearch}
+          initialQuery={searchInitialQuery}
+        />
+      )}
+      {helpOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-navy-950/25 px-4 pt-20 backdrop-blur-sm" onClick={() => setHelpOpen(false)}>
+          <div
+            className="w-full max-w-md rounded-xl border border-[var(--color-app-border)] bg-white p-4 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-3">
+              <h2 className="text-sm font-semibold text-navy-900">Shortcuts</h2>
+              <p className="text-xs text-navy-500">Use PRAXIS from the keyboard.</p>
+            </div>
+            <div className="space-y-2">
+              <ShortcutRow keys="Cmd+K" label="Ask PRAXIS or search" />
+              {PRIMARY_NAV.map((item) => (
+                <ShortcutRow key={item.id} keys={item.shortcut} label={item.label} />
+              ))}
+              <ShortcutRow keys="Esc" label="Close overlay" />
+            </div>
+          </div>
+        </div>
+      )}
       {/* Onboarding: welcome modal + guided walkthrough */}
       <OnboardingWrapper />
       {/* Floating Ask PRAXIS button + chat panel */}
       <FloatingPraxis />
       <MobileBottomNav />
-      {/* Debug panel — Ctrl+Shift+D to toggle, bottom-left corner */}
-      <DebugPanel />
       {/* Activity panel — real-time operation tracking, bottom-right corner */}
       <ActivityPanel />
       {/* Cross-tool AI error toast — consumes the publish channel from
@@ -172,5 +211,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           a structured error and show a consistent retry-able toast here. */}
       <AiErrorToast />
     </TooltipProvider>
+  );
+}
+
+function ShortcutRow({ keys, label }: { keys: string; label: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg bg-[var(--color-app-surface-alt)] px-3 py-2">
+      <span className="text-sm text-navy-700">{label}</span>
+      <kbd className="rounded border border-[var(--color-app-border)] bg-white px-2 py-0.5 text-[11px] font-medium text-navy-500">
+        {keys}
+      </kbd>
+    </div>
   );
 }

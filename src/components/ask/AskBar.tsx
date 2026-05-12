@@ -11,18 +11,16 @@ import { StreamingResponse } from '@/components/ask/StreamingResponse';
 import { cn } from '@/lib/utils/cn';
 
 const MODES: Array<{ id: AskMode; label: string }> = [
-  { id: 'quick', label: 'Quick' },
-  { id: 'deep', label: 'Deep' },
+  { id: 'quick', label: 'Ask' },
   { id: 'research', label: 'Research' },
-  { id: 'memo', label: 'Memo' },
-  { id: 'scenario', label: 'Scenario' },
-  { id: 'auto', label: 'Auto' },
+  { id: 'memo', label: 'Draft' },
+  { id: 'deep', label: 'Stress-test' },
 ];
 
 const EXAMPLES = [
-  'What changed since the last update?',
-  '/research find the strongest sourced evidence',
-  '/memo turn this into a board-ready brief',
+  'What should I know first about this context?',
+  'Find the strongest sourced evidence and unresolved gaps.',
+  'Turn this into a board-ready brief.',
 ];
 
 export function AskBar({ activeContextName, hasContext }: { activeContextName: string; hasContext: boolean }) {
@@ -80,7 +78,7 @@ export function AskBar({ activeContextName, hasContext }: { activeContextName: s
           <div className="flex flex-wrap gap-2 text-xs text-navy-600">
             <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1">
               <Command className="h-3.5 w-3.5" />
-              /research /memo /brief /ach /scenarios
+              Ask, research, draft, or stress-test
             </span>
             <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1">
               <Paperclip className="h-3.5 w-3.5" />
@@ -92,7 +90,7 @@ export function AskBar({ activeContextName, hasContext }: { activeContextName: s
             onClick={previewPlan}
             className="inline-flex items-center gap-2 rounded-md bg-navy-900 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-800"
           >
-            Preview plan
+            Run answer
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>

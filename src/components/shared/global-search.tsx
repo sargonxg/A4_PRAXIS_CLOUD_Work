@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Search, ArrowRight, Clock, FileText, Users, Calendar, Shield, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useRoutePrefix } from '@/lib/utils/routes';
+import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
 
 interface SearchResult {
   id: string;
@@ -15,9 +16,13 @@ interface SearchResult {
 }
 
 const STATIC_RESULTS: SearchResult[] = [
-  { id: 'dashboard', label: 'Dashboard', description: 'Situation overview & AI daily brief', category: 'page', href: '/dashboard' },
-  { id: 'assistant', label: 'Ask PRAXIS', description: 'Situation-aware AI research chat', category: 'page', href: '/assistant' },
-  { id: 'reports', label: 'Report Studio', description: 'Draft intelligence reports', category: 'page', href: '/reports' },
+  ...PRIMARY_NAV.map((item) => ({
+    id: item.id,
+    label: item.label,
+    description: `${item.shortcut} shortcut`,
+    category: 'page' as const,
+    href: item.href.replace('/app', ''),
+  })),
   { id: 'early-warning', label: 'Early Warning System', description: 'Risk monitoring & alerts', category: 'page', href: '/early-warning' },
   { id: 'conflict-graph', label: 'Conflict Graph', description: 'Visual entity mapping', category: 'page', href: '/conflict-graph' },
   { id: 'stakeholder-map', label: 'Stakeholder Map', description: 'Actor network analysis', category: 'page', href: '/stakeholder-map' },
@@ -73,8 +78,14 @@ function addRecentSearch(query: string) {
   localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify([query, ...recent]));
 }
 
-export function GlobalSearch({ onClose }: { onClose: () => void }) {
-  const [query, setQuery] = useState('');
+export function GlobalSearch({
+  onClose,
+  initialQuery = '',
+}: {
+  onClose: () => void;
+  initialQuery?: string;
+}) {
+  const [query, setQuery] = useState(initialQuery);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [recentSearches, setRecentSearches] = useState<string[]>(getRecentSearches);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +119,15 @@ export function GlobalSearch({ onClose }: { onClose: () => void }) {
     onClose();
   }, [router, onClose, prefix]);
 
+  const askPraxis = useCallback((prompt: string) => {
+    window.dispatchEvent(
+      new CustomEvent('open-praxis-chat', {
+        detail: { prompt: prompt.replace(/^\?/, '').trim() },
+      }),
+    );
+    onClose();
+  }, [onClose]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -116,6 +136,10 @@ export function GlobalSearch({ onClose }: { onClose: () => void }) {
       e.preventDefault();
       setSelectedIdx((i) => Math.max(i - 1, 0));
     } else if (e.key === 'Enter') {
+      if (query.trim().startsWith('?')) {
+        askPraxis(query);
+        return;
+      }
       if (results[safeSelectedIdx]) navigate(results[safeSelectedIdx]);
     } else if (e.key === 'Escape') {
       onClose();
@@ -123,7 +147,7 @@ export function GlobalSearch({ onClose }: { onClose: () => void }) {
   };
 
   const displayItems = results.length > 0 ? results : [];
-  const showAskAssistant = query.length > 3 && results.length < 3;
+  const showAskAssistant = query.trim().length > 3 && results.length < 3;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4" onClick={onClose}>
@@ -140,7 +164,7 @@ export function GlobalSearch({ onClose }: { onClose: () => void }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search pages, conflicts, actors, events..."
+            placeholder="Ask PRAXIS with ? or search..."
             className="flex-1 bg-transparent text-sm text-navy-900 placeholder:text-navy-400 focus:outline-none"
           />
           {query && (
@@ -234,8 +258,7 @@ export function GlobalSearch({ onClose }: { onClose: () => void }) {
             <div className="border-t border-[var(--color-app-border-light)] px-4 py-3">
               <button
                 onClick={() => {
-                  router.push(`${prefix}/assistant`);
-                  onClose();
+                  askPraxis(query);
                 }}
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-gold-500/5"
               >

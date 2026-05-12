@@ -8,10 +8,11 @@ test.describe('PRAXIS core product flows', () => {
     const contextSelect = page.getByLabel('Situation Core');
     await expect(contextSelect).toBeVisible();
     await contextSelect.selectOption('ai-regulation-2026');
-    await expect(page.getByRole('heading', { name: /AI Regulation 2026 graph/i })).toBeVisible();
-    await expect(page.getByText(/Memo Drafter/i).first()).toBeVisible();
+    await expect(contextSelect).toHaveValue('ai-regulation-2026');
+    await expect(page.getByRole('heading', { name: /The answer is only useful if the graph behind it is legible\./i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Write with PRAXIS/i }).first()).toBeVisible();
     await expect(page.getByRole('heading', { name: /Policy context creation, research, and memo writing in one place\./i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /Open PRAXIS/i }).first()).toBeVisible();
     await expect(page.getByRole('heading', { name: /Attach the context that matters\. PRAXIS suggests the next move\./i })).toBeVisible();
     await expect(page.getByText(/Context stack/i)).toBeVisible();
 
@@ -22,6 +23,6 @@ test.describe('PRAXIS core product flows', () => {
     await expect(page.getByRole('link', { name: 'Build Context Core', exact: true }).first()).toBeVisible();
 
     await page.goto('/app/workbench/indo-pacific-2026?openChapter=memos');
-    await expect(page.getByText(/Memo|Draft|Briefing/i).first()).toBeVisible();
+    await expect(page.getByTestId('praxis-writer')).toBeVisible();
   });
 });

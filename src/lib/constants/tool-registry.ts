@@ -2,16 +2,14 @@ import type { ToolDefinition } from '@/types/situation';
 
 // ============================================================================
 // PRAXIS Tool Registry — v5.0
-// Single source of truth for all 55 platform tools.
+// Compatibility registry for all legacy/platform tools.
 // Used by: sidebar, tool cards, "About" panels, AI prompt context.
 //
 // Public surface policy:
 // - Phase 3 renders 8 product surfaces from src/lib/navigation/product-surfaces.ts:
 //   Desk, Context, Library, Research, Graph, Boardroom, Draft, Tools.
-// - The 12 hero tools below remain the default tool contract set inside those surfaces:
-//   dashboard, context-builder, situation-intelligence, source-scout,
-//   conflict-graph, graphops, brainstorming-table, briefing, policy-memo,
-//   scenarios, negotiation-prep, treaty-analyzer.
+// - The default attachable tool surface lives in src/lib/tools/canonical.ts.
+// - Hero markers below preserve legacy route compatibility, not the default UX.
 // - Archive tools remain routable and callable, but are hidden from default
 //   navigation and only shown in the tools workspace with show_archive=1.
 // ============================================================================
@@ -399,8 +397,8 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     surface: 'archive',
     visible: false,
     tier: 'calibrated-ai',
-    description: 'Situation-aware AI research chat with 21 specialist tools, grounded search, document retrieval, and professional diplomatic language standards. Handles research, drafting, analysis, and structured data extraction in a persistent multi-turn interface.',
-    shortDescription: 'Situation-aware research chat with 21 tools',
+    description: 'Situation-aware AI research chat with attachable tool extensions, grounded search, document retrieval, and professional diplomatic language standards. Handles research, drafting, analysis, and structured data extraction in a persistent multi-turn interface.',
+    shortDescription: 'Situation-aware research chat with attachable tools',
     credits: 1,
     icon: 'MessageSquare',
     aiRoute: '/api/ai/chat',
@@ -410,7 +408,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     frameworks: ['Professional Editorial Standards', 'Fisher-Ury Principled Negotiation', 'Glasl Escalation Model'],
     dataSources: ['GDELT', 'UCDP', 'Google Grounding'],
     relatedTools: ['report-studio', 'argus', 'deep-search-agent'],
-    methodology: 'Ask PRAXIS operates with a situation-enriched system prompt containing the full ACO conflict grammar context (25-line context block: risk level, Glasl stage, actor list, graph entities, document inventory). Tool calls are dispatched via AI SDK 6 tool-calling to 21 specialist functions: webSearch, analyzeDocument, queryConflictGraph, draftSection, editForDiplomaticTone, analyzeMediaSource, compareMediaCoverage, checkUNTerminology, draftResolutionLanguage, generateTalkingPoints, escalationAssessment, negotiationSpaceAnalysis, narrativeEcosystemMap, historicalParallelsAnalysis, generateTimeline, sanctionsCheck, humanitarianSnapshot, compareConflicts, canonicalNameLookup, deepSourceResearch, verifyAndStandardize. All output uses professional diplomatic editorial standards for spelling (British English), abbreviations, and diplomatic formulations.',
+    methodology: 'Ask PRAXIS operates with a situation-enriched system prompt containing the full ACO conflict grammar context (25-line context block: risk level, Glasl stage, actor list, graph entities, document inventory). Tool calls are routed through attachable extensions for writing, graph proposals, grounded fetches, and deep research directives, with specialist route compatibility preserved behind the canonical tool surface. All output uses professional diplomatic editorial standards for spelling (British English), abbreviations, and diplomatic formulations.',
   },
   {
     id: 'report-studio',

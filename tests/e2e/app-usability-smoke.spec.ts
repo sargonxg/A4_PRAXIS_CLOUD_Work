@@ -25,7 +25,7 @@ test('landing renders hero animation, static fallback, and 3D ontology graph', a
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Policy AI that starts with the right context\./i })).toBeVisible();
   await expect(page.getByText(/Ask PRAXIS about this policy context/i)).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Open Ask workspace$/i }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Open PRAXIS$/i }).first()).toBeVisible();
 
   const realApp = page.locator('#real-app');
   await realApp.scrollIntoViewIfNeeded();
@@ -35,7 +35,7 @@ test('landing renders hero animation, static fallback, and 3D ontology graph', a
 
   await page.goto('/?staticHero=1');
   await expect(page.getByRole('heading', { name: /Policy AI that starts with the right context\./i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Open Ask workspace$/i }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Open PRAXIS$/i }).first()).toBeVisible();
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });
@@ -159,6 +159,16 @@ test('workbench case picker uses readable copy contrast', async ({ page }) => {
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });
 
+test('Each case opens through the streamlined workspace entry', async ({ page }) => {
+  const consoleErrors = collectConsoleErrors(page);
+
+  await openExampleWorkbench(page, 'syria-2026');
+  await expect(page.getByTestId('praxis-workspace-shell')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Write with PRAXIS/i }).first()).toBeVisible();
+
+  expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
+});
+
 test('ask workspace exposes the full-page write surface and core attachers', async ({ page }) => {
   const consoleErrors = collectConsoleErrors(page);
 
@@ -171,7 +181,7 @@ test('ask workspace exposes the full-page write surface and core attachers', asy
   await expect(page.getByRole('link', { name: /^Tools library$/i })).toBeVisible();
   await expect(page.getByLabel(/User Core/i)).toBeVisible();
   await expect(page.getByLabel(/Situation Core/i)).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Open drafting workbench$/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Open Write with PRAXIS$/i })).toBeVisible();
   await expect(page.getByText(/Gemini now, provider picker later/i)).toBeVisible();
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
