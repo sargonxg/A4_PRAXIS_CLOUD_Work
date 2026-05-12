@@ -3,11 +3,9 @@
 import { useMemo, useState } from 'react';
 import {
   FileText,
-  GitBranch,
   Library,
   ListChecks,
   Lock,
-  PenLine,
   Quote,
   Route,
   ShieldCheck,
@@ -20,7 +18,7 @@ import type {
   DraftMemoOption,
 } from '@/lib/workbench/draft-assembly-state';
 
-type CompanionPanelId = 'outline' | 'spine' | 'evidence' | 'graph' | 'style' | 'audit';
+type CompanionPanelId = 'outline' | 'spine' | 'evidence' | 'audit';
 
 interface DraftCompanionProps {
   caseId: string;
@@ -34,18 +32,13 @@ const PANELS: Array<{ id: CompanionPanelId; label: string; icon: typeof ListChec
   { id: 'outline', label: 'Outline', icon: ListChecks },
   { id: 'spine', label: 'Spine', icon: Route },
   { id: 'evidence', label: 'Evidence', icon: Quote },
-  { id: 'graph', label: 'Graph', icon: GitBranch },
-  { id: 'style', label: 'Style', icon: PenLine },
   { id: 'audit', label: 'Audit', icon: ShieldCheck },
 ];
 
 const ACTIONS = [
-  'Tighten executive summary',
+  'Improve summary',
   'Add evidence',
-  'Find weak claims',
-  'Build talking points',
-  'Create public version',
-  'Prepare appendix',
+  'Export brief',
 ];
 
 export function DraftCompanion({
@@ -77,7 +70,7 @@ export function DraftCompanion({
           <div>
             <h3 className="text-base font-semibold text-navy-950">Drafter Companion</h3>
             <p className="mt-1 text-sm leading-5 text-slate-700">
-              A live right rail for the current package: structure, citations, graph context, style cues, and export receipts.
+              One simple rail for memo structure, context spine, evidence, and export readiness.
             </p>
           </div>
         </div>
@@ -89,7 +82,7 @@ export function DraftCompanion({
       </div>
 
       <div className="border-b border-slate-200 p-2">
-        <div className="grid grid-cols-3 gap-1 sm:grid-cols-6" role="tablist" aria-label="Drafter companion panels">
+        <div className="grid grid-cols-4 gap-1" role="tablist" aria-label="Drafter companion panels">
           {PANELS.map((panel) => {
             const Icon = panel.icon;
             const active = activePanel === panel.id;
@@ -119,8 +112,6 @@ export function DraftCompanion({
         {activePanel === 'outline' ? <OutlinePanel selectedMemos={selectedMemos} primaryMemoId={primaryMemo?.id ?? ''} /> : null}
         {activePanel === 'spine' ? <ReasoningSpinePanel summary={reasoningSpine} /> : null}
         {activePanel === 'evidence' ? <EvidencePanel evidence={companionState.evidence} /> : null}
-        {activePanel === 'graph' ? <GraphPanel state={companionState} /> : null}
-        {activePanel === 'style' ? <StylePanel primaryMemo={primaryMemo} selectedMemos={selectedMemos} /> : null}
         {activePanel === 'audit' ? (
           <AuditPanel
             settings={settings}
@@ -134,7 +125,7 @@ export function DraftCompanion({
       <div className="border-t border-slate-200 bg-slate-50/70 p-4">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-navy-800">
           <FileText className="h-3.5 w-3.5 text-gold-600" />
-          Suggested writer actions
+          Next best actions
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {ACTIONS.map((action) => (
@@ -259,54 +250,6 @@ function ReasoningSpinePanel({ summary }: { summary: ReasoningSpineSummary }) {
   );
 }
 
-function GraphPanel({ state }: { state: CompanionState }) {
-  return (
-    <div className="space-y-3">
-      <p className="text-sm leading-6 text-slate-700">
-        The selected package currently draws on {state.graphNodeCount} graph node references and {state.sourceReceiptCount} source receipts.
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        <Metric label="Graph refs" value={state.graphNodeCount} />
-        <Metric label="Receipts" value={state.sourceReceiptCount} />
-      </div>
-      <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-        <p className="text-xs font-semibold text-navy-950">Context buckets</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {state.contextBuckets.map((bucket) => (
-            <span key={bucket} className="rounded bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200">
-              {bucket}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StylePanel({ primaryMemo, selectedMemos }: { primaryMemo?: DraftMemoOption; selectedMemos: DraftMemoOption[] }) {
-  const exemplar = primaryMemo?.blocks.find((block) => block.content.length > 80)?.content
-    ?? selectedMemos.flatMap((memo) => memo.blocks).find((block) => block.content.length > 80)?.content;
-
-  return (
-    <div className="space-y-3">
-      <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-        <p className="text-xs font-semibold text-navy-950">Current voice</p>
-        <p className="mt-2 text-sm leading-6 text-slate-700">
-          {exemplar ? trimText(exemplar, 220) : 'Select a memo with generated prose to extract a style exemplar.'}
-        </p>
-      </div>
-      <div className="rounded-md border border-slate-200 bg-white p-3">
-        <p className="text-xs font-semibold text-navy-950">Writing constraints</p>
-        <ul className="mt-2 space-y-1 text-xs leading-5 text-slate-700">
-          <li>Lead with decision relevance.</li>
-          <li>Keep claims evidence-backed and source visible.</li>
-          <li>Separate public, internal, and restricted passages.</li>
-        </ul>
-      </div>
-    </div>
-  );
-}
-
 function AuditPanel({
   settings,
   selectedMemos,
@@ -408,16 +351,11 @@ function buildCompanionState(selectedMemos: DraftMemoOption[], selectedAppendice
   };
 }
 
-function trimText(value: string, maxLength: number) {
-  if (value.length <= maxLength) return value;
-  return `${value.slice(0, maxLength - 3).trim()}...`;
-}
-
 function buildActionNote(action: string, memoCount: number, citationCount: number) {
   if (memoCount === 0) return 'Select at least one memo before running a drafting action.';
+  if (action === 'Improve summary') return 'Start with the lead memo: sharpen BLUF, decision relevance, and confidence language.';
   if (action === 'Add evidence' && citationCount === 0) return 'The next move is to attach sources or graph receipts before expanding the draft.';
-  if (action === 'Find weak claims') return `Review ${memoCount} selected memo${memoCount === 1 ? '' : 's'} for claims without visible receipts.`;
-  if (action === 'Create public version') return 'Switch the audience to Public, then export to preview restricted-block redactions.';
-  if (action === 'Prepare appendix') return 'Use the appendix picker to attach graph, ontology, source, and manifest material before export.';
+  if (action === 'Add evidence') return `Review ${memoCount} selected memo${memoCount === 1 ? '' : 's'} for unsupported claims before export.`;
+  if (action === 'Export brief') return 'Confirm audience, appendices, audit manifest, and redactions; then export the package.';
   return `${action} is ready for the selected briefing package.`;
 }

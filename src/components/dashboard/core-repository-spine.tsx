@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Database,
   FileText,
-  GitBranch,
   GripVertical,
   Library,
   MessageSquareText,
@@ -55,19 +54,11 @@ const repositoryStages = [
     href: '/app/cores/context',
     icon: Target,
     accent: 'bg-gold-50 text-gold-800 border-gold-200',
-    prompt: 'Inspect this Context Core first. Tell me what is ready, what is thin, and which facts need source support.',
-  },
-  {
-    id: 'graph-core',
-    label: 'Graph + Sources',
-    href: '',
-    icon: GitBranch,
-    accent: 'bg-teal/10 text-teal border-teal/25',
-    prompt: 'Use graph and source posture. Identify actors, claims, evidence gaps, and the fastest way to strengthen the context.',
+    prompt: 'Inspect this Situation Core first. Include graph, sources, actors, claims, and which facts need source support.',
   },
   {
     id: 'tools',
-    label: 'Tools',
+    label: 'Suggested Tools',
     href: '/app/tools',
     icon: Wrench,
     accent: 'bg-indigo-50 text-indigo-800 border-indigo-200',
@@ -75,7 +66,7 @@ const repositoryStages = [
   },
   {
     id: 'memo',
-    label: 'Memo Output',
+    label: 'Memo Drafting',
     href: '',
     icon: FileText,
     accent: 'bg-rose-50 text-rose-800 border-rose-200',
@@ -98,14 +89,7 @@ const toolSuggestions = [
     label: 'Source Scout',
     hrefTab: 'library',
     detail: 'Find the missing receipts and unresolved evidence for the active Situation Core.',
-    needs: ['context-core', 'graph-core'],
-  },
-  {
-    id: 'graph-review',
-    label: 'Graph Review',
-    hrefTab: 'graph',
-    detail: 'Inspect actors, claims, commitments, and orphan evidence before the answer hardens.',
-    needs: ['graph-core'],
+    needs: ['context-core'],
   },
   {
     id: 'memo-drafter',
@@ -117,7 +101,7 @@ const toolSuggestions = [
 ] as const;
 
 export function CoreRepositorySpine({ activeCaseId, activeCaseName, marketplaceToolCount }: CoreRepositorySpineProps) {
-  const [selectedStageIds, setSelectedStageIds] = useState<string[]>(['user-core', 'context-core', 'graph-core']);
+  const [selectedStageIds, setSelectedStageIds] = useState<string[]>(['user-core', 'context-core', 'tools', 'memo']);
   const [stageOrder, setStageOrder] = useState<string[]>(repositoryStages.map((stage) => stage.id));
   const [draggingStageId, setDraggingStageId] = useState<string | null>(null);
   const [rustHealth, setRustHealth] = useState<RustSemanticaHealth | null>(null);
@@ -204,10 +188,10 @@ export function CoreRepositorySpine({ activeCaseId, activeCaseName, marketplaceT
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Repository Spine</p>
               <h2 className="mt-2 text-2xl font-semibold text-navy-950 sm:text-3xl">
-                Attach the context stack, then let PRAXIS suggest the next tools.
+                Attach two cores. PRAXIS suggests the tools and memo path.
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
-                Drag to set priority, click to attach or detach, then ask with the selected User Core, Situation Core, graph, tools, and memo path.
+                Keep the daily workflow focused: User Core, Situation Core, suggested tools, memo drafting. Drag only when the priority changes.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -230,7 +214,7 @@ export function CoreRepositorySpine({ activeCaseId, activeCaseName, marketplaceT
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 lg:grid-cols-5" aria-label="Selectable PRAXIS repository line">
+          <div className="mt-6 grid gap-3 lg:grid-cols-4" aria-label="Selectable PRAXIS repository line">
             {stages.map((stage, index) => {
               const Icon = stage.icon;
               return (
@@ -286,9 +270,9 @@ export function CoreRepositorySpine({ activeCaseId, activeCaseName, marketplaceT
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               {recommendedTools.map((tool) => (
-                <Link
-                  key={tool.id}
-                  href={`/app/workbench/${activeCaseId}?tab=${tool.hrefTab}`}
+                  <Link
+                    key={tool.id}
+                    href={`/app/workbench/${activeCaseId}${tool.hrefTab === 'memos' ? '?openChapter=memos' : `?tab=${tool.hrefTab}`}`}
                   className="group rounded-lg border border-white bg-white p-3 shadow-sm shadow-navy-950/5 transition hover:border-diplomatic-blue/30 hover:shadow-md"
                 >
                   <span className="text-xs font-semibold uppercase tracking-wide text-diplomatic-blue">Recommended</span>

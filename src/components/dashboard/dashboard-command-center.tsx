@@ -12,18 +12,15 @@ import {
   LayoutDashboard,
   Network,
   Plus,
-  Scale,
   Settings,
   ShieldCheck,
   Store,
-  Users,
   UsersRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
 import { AskPraxisHome } from '@/components/dashboard/ask-praxis-home';
-import { ActiveCoreStack } from '@/components/dashboard/active-core-stack';
 import { CoreRepositorySpine } from '@/components/dashboard/core-repository-spine';
 
 interface DashboardExampleCase {
@@ -42,12 +39,10 @@ interface DashboardCommandCenterProps {
 }
 
 const surfaceLinks = [
-  { label: 'Workbench', tab: 'chapters', icon: LayoutDashboard, detail: 'Open the case operating room.' },
+  { label: 'Situation', tab: 'context', icon: LayoutDashboard, detail: 'Check the case frame and gaps.' },
   { label: 'Graph', tab: 'graph', icon: GitBranch, detail: 'Inspect actors, claims, and provenance.' },
-  { label: 'Tools', tab: 'tools', icon: Store, detail: 'Run ontology-aware analysis.' },
-  { label: 'Memo Studio', tab: 'memos', icon: FileText, detail: 'Draft and export work products.' },
-  { label: 'Boardroom', path: 'boardroom', icon: Users, detail: 'Launch advisor deliberation.' },
-  { label: 'ACH', path: 'ach', icon: Scale, detail: 'Stress-test hypotheses.' },
+  { label: 'Suggested Tools', tab: 'tools', icon: Store, detail: 'Run only the tools that fit the context.' },
+  { label: 'Memo Drafting', tab: 'memos', icon: FileText, detail: 'Draft and export reviewable work products.' },
 ];
 
 const workQueue = [
@@ -92,7 +87,6 @@ export function DashboardCommandCenter({ exampleCases, marketplaceToolCount }: D
         activeCaseName={activeCaseName}
         marketplaceToolCount={marketplaceToolCount}
       />
-      <ActiveCoreStack activeCaseName={activeCaseName} />
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
         <div className="rounded-lg border border-[var(--color-app-border)] bg-white p-5 shadow-sm shadow-navy-950/5 sm:p-6">
@@ -100,11 +94,10 @@ export function DashboardCommandCenter({ exampleCases, marketplaceToolCount }: D
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase text-gold-700">PRAXIS Dashboard</p>
               <h1 className="mt-2 text-2xl font-semibold text-navy-950 sm:text-3xl">
-                Start from the case, then move through context, graph, tools, and memo.
+                Four moves: understand, inspect, run tools, draft.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
-                This is the real app entry point for analysts, mediators, and policy teams. It keeps the current case visible
-                while routing every action through the workbench contract.
+                The app keeps the specialist machinery underneath, but the daily path is simple: ask PRAXIS, improve the cores, run the suggested tool, and turn it into a memo.
               </p>
             </div>
             <Link
@@ -124,8 +117,8 @@ export function DashboardCommandCenter({ exampleCases, marketplaceToolCount }: D
 
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {surfaceLinks.map((surface) => {
-              const href = surface.path
-                ? `/app/workbench/${activeCaseId}/${surface.path}`
+              const href = surface.tab === 'memos'
+                ? `/app/workbench/${activeCaseId}?openChapter=memos`
                 : `/app/workbench/${activeCaseId}?tab=${surface.tab}`;
               const Icon = surface.icon;
               return (

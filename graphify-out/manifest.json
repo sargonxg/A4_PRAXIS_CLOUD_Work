@@ -3204,16 +3204,16 @@
     "hash": "372b3ece6bbe410500a7c7f34fe609b2"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\dashboard\\ask-praxis-home.tsx": {
-    "mtime": 1778519747.5706754,
-    "hash": "44fa04facb06b4a94f725f8f6cd72a3b"
+    "mtime": 1778549946.7142456,
+    "hash": "5d2c6ef2500ea5d1c86473a2117abea9"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\dashboard\\core-repository-spine.tsx": {
-    "mtime": 1778542758.85822,
-    "hash": "ddb2b6f3115d92a61f3853b8845c99df"
+    "mtime": 1778550047.72916,
+    "hash": "bf2e90b96f78061d35ded9196b227f9c"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\dashboard\\dashboard-command-center.tsx": {
-    "mtime": 1778532798.4402194,
-    "hash": "8e3af35e0cb43d3a978183881719ceb3"
+    "mtime": 1778550044.1301775,
+    "hash": "89503639a8b53f0994b2d2409dda8343"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\dashboard\\executive-intelligence-panel.tsx": {
     "mtime": 1778429929.9059482,
@@ -4180,8 +4180,8 @@
     "hash": "6e8b5a863fafd955d688fcad3bcec95c"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\workbench\\draft\\DraftCompanion.tsx": {
-    "mtime": 1778547144.979733,
-    "hash": "26c86c67c50cd8e835acc145e4643c31"
+    "mtime": 1778549904.3273833,
+    "hash": "63c2da00281f721d0d94f92fbe6f75d4"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\workbench\\draft\\DraftTab.tsx": {
     "mtime": 1778547149.4906259,
@@ -6036,8 +6036,8 @@
     "hash": "dc693f7bffe2aec6a365af86c3983b98"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\e2e\\dashboard-command-center.spec.ts": {
-    "mtime": 1778429930.601369,
-    "hash": "2a6f05d2d5dbd4fcff20f14e03807fe2"
+    "mtime": 1778549996.2517312,
+    "hash": "0d85bb7c1ddb212739b8125fa0a5cb3c"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\e2e\\golden-path.spec.ts": {
     "mtime": 1778429930.6029327,

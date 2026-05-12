@@ -27,16 +27,14 @@ test('dashboard is the real app command center for active case work', async ({ p
 
   await expect(page.getByTestId('praxis-dashboard-command-center')).toBeVisible();
   await expect(page.getByTestId('dashboard-graph-orbit')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Start from the case/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Four moves/i })).toBeVisible();
   await expect(page.getByRole('link', { name: /Graph Inspect actors/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Tools Run ontology-aware/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Memo Studio Draft and export/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Boardroom Launch advisor/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /ACH Stress-test/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Suggested Tools Run only/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Memo Drafting Draft and export/i })).toBeVisible();
   await expect(page.getByRole('link', { name: /Personas/i })).toBeVisible();
 
   await page.getByRole('link', { name: /Graph Inspect actors/i }).click();
-  await expect(page).toHaveURL(/\/app\/workbench\/syria-2026\?tab=graph/);
+  await expect(page).toHaveURL(/\/app\/workbench\/[^/]+\?tab=graph/);
   await expect(page.getByTestId('praxis-graph-canvas')).toBeVisible();
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);

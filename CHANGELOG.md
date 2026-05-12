@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- feat(app): simplify the Ask-first dashboard workflow.
+  The app dashboard now centers Ask PRAXIS, reduces the visible path to User
+  Core, Situation Core, suggested tools, and memo drafting, and trims the
+  Drafter Companion to the essential panels.
 - feat(reasoning): add the Pack 24 Reasoning Spine first slice.
   Drafter Companion now shows a simple context fingerprint, evidence posture,
   reasoning checkpoints, and honest queued status for live tracing/STORM work.

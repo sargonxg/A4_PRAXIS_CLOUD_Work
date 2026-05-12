@@ -2,9 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, FileText, GripVertical, Library, MessageSquareText, ShieldCheck, Sparkles, Target, UserCircle, Wrench } from 'lucide-react';
-import { AGENTIC_WORKFLOWS, PRIMARY_MOBILE_WORKFLOWS, type AgenticWorkflow } from '@/lib/agentic-workflows/registry';
 import { CONSOLIDATED_TOOLS } from '@/lib/constants/consolidated-tools';
-import { getWorkflowCountForArea } from '@/lib/product/experience-map';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
@@ -24,16 +22,30 @@ interface AskPraxisHomeProps {
   marketplaceToolCount: number;
 }
 
-const workflowIcon = {
-  'understand-situation': MessageSquareText,
-  'improve-context': Library,
-  'generate-handover': FileText,
-  'update-brief': FileText,
-};
-
 const attachedCores = [
   { label: 'User Core', href: '/app/cores/user', icon: UserCircle, detail: 'role, audience, style' },
-  { label: 'Context Core', href: '/app/cores/context', icon: Target, detail: 'frame, sources, graph' },
+  { label: 'Situation Core', href: '/app/cores/context', icon: Target, detail: 'frame, sources, graph' },
+];
+
+const simpleMoves = [
+  {
+    label: 'Understand the situation',
+    prompt: 'What should I know first about this Situation? Keep it concise and show what is uncertain.',
+    hrefMode: 'workbench',
+    icon: MessageSquareText,
+  },
+  {
+    label: 'Strengthen the context',
+    prompt: 'Inspect my User Core and Situation Core. What is missing before I run tools or draft?',
+    hrefMode: 'context',
+    icon: Library,
+  },
+  {
+    label: 'Draft the memo',
+    prompt: 'Turn the current context into a short policy memo outline with evidence gaps and suggested next tools.',
+    hrefMode: 'memos',
+    icon: FileText,
+  },
 ];
 
 export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisHomeProps) {
@@ -43,9 +55,6 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
   const activeCaseId = activeCase?.id ?? 'syria-2026';
   const activeCaseName = activeCase?.name ?? 'No Situation selected';
   const coverage = buildContextCoverage(activeCase, marketplaceToolCount);
-  const workflows = AGENTIC_WORKFLOWS.filter((workflow) =>
-    ['understand-situation', 'improve-context', 'generate-handover', 'update-brief'].includes(workflow.id),
-  );
 
   return (
     <section
@@ -59,10 +68,10 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Ask PRAXIS</p>
               <h1 className="mt-2 text-3xl font-semibold text-navy-950 sm:text-4xl">
-                Ask first. Attach User Core and Context Core. Let tools appear when needed.
+                Ask first. PRAXIS brings the context, tools, and memo path.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
-                {activeCaseName} is the current working context. Start with a question or choose a workflow; source and trust detail stays visible before anything is saved.
+                {activeCaseName} is the current Situation. Start with one question; PRAXIS reads the attached User Core and Situation Core, then suggests only the next tools that fit.
               </p>
             </div>
             <Link
@@ -103,7 +112,7 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
               <span className="min-w-0 flex-1">
                 <span className="block text-base font-semibold">Ask PRAXIS anything about this policy situation...</span>
                 <span className="mt-1 block text-xs leading-5 text-navy-200">
-                  It reads the attached cores, suggests tools, and drafts only after context and trust posture are visible.
+                  It checks the cores, suggests tools, and keeps memo drafting reviewable.
                 </span>
               </span>
               <ArrowRight className="h-5 w-5 shrink-0 text-navy-300" />
@@ -125,9 +134,9 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {workflows.map((workflow) => (
-              <WorkflowButton key={workflow.id} workflow={workflow} activeCaseId={activeCaseId} />
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            {simpleMoves.map((move) => (
+              <MoveButton key={move.label} move={move} activeCaseId={activeCaseId} />
             ))}
           </div>
         </div>
@@ -150,20 +159,8 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
               </div>
             ))}
           </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {PRIMARY_MOBILE_WORKFLOWS.map((workflow) => (
-              <button
-                key={workflow.id}
-                type="button"
-                onClick={() => openPraxisChat(workflow.prompt)}
-                className="rounded-full border border-navy-200 bg-white px-3 py-1.5 text-xs font-semibold text-navy-700 hover:border-navy-300 hover:bg-navy-50"
-              >
-                {workflow.shortLabel}
-              </button>
-            ))}
-          </div>
           <p className="mt-4 text-xs leading-5 text-slate-700">
-            {getWorkflowCountForArea('outputs')} output workflows are mapped to save locations; mutating workflows remain confirmation-gated.
+            Tool runs and saved outputs stay confirmation-gated. Ask PRAXIS should explain the next step before running it.
           </p>
         </aside>
       </div>
@@ -171,16 +168,22 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
   );
 }
 
-function WorkflowButton({ workflow, activeCaseId }: { workflow: AgenticWorkflow; activeCaseId: string }) {
-  const Icon = workflowIcon[workflow.id as keyof typeof workflowIcon] ?? MessageSquareText;
-  const href = workflow.primaryArea === 'sources'
-    ? `/app/workbench/${activeCaseId}?tab=library`
-    : workflow.primaryArea === 'outputs'
+function MoveButton({
+  move,
+  activeCaseId,
+}: {
+  move: typeof simpleMoves[number];
+  activeCaseId: string;
+}) {
+  const Icon = move.icon;
+  const href = move.hrefMode === 'context'
+    ? `/app/workbench/${activeCaseId}?tab=context`
+    : move.hrefMode === 'memos'
       ? `/app/workbench/${activeCaseId}?openChapter=memos`
       : `/app/workbench/${activeCaseId}`;
 
   return (
-    <div className="group flex min-h-[128px] flex-col justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-navy-300 hover:bg-white">
+    <div className="group flex min-h-[118px] flex-col justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-navy-300 hover:bg-white">
       <span className="flex items-start justify-between gap-3">
         <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-navy-700 ring-1 ring-slate-200 group-hover:text-diplomatic-blue">
           <Icon className="h-4 w-4" />
@@ -192,9 +195,9 @@ function WorkflowButton({ workflow, activeCaseId }: { workflow: AgenticWorkflow;
           Open
         </Link>
       </span>
-      <button type="button" onClick={() => openPraxisChat(workflow.prompt)} className="mt-4 text-left">
-        <span className="block text-sm font-semibold text-navy-950">{workflow.label}</span>
-        <span className="mt-1 block text-xs leading-5 text-slate-700">{workflow.intent}</span>
+      <button type="button" onClick={() => openPraxisChat(move.prompt)} className="mt-4 text-left">
+        <span className="block text-sm font-semibold text-navy-950">{move.label}</span>
+        <span className="mt-1 block text-xs leading-5 text-slate-700">{move.prompt}</span>
       </button>
     </div>
   );
@@ -211,11 +214,9 @@ function buildContextCoverage(activeCase: Situation | DashboardExampleCase | und
   return {
     posture: sourceCount + documentCount + graphEntities > 10 ? 'Ready for guided work' : 'Usable, with visible gaps',
     items: [
-      { label: 'Sources', value: String(sourceCount + documentCount) },
+      { label: 'Evidence', value: String(sourceCount + documentCount) },
       { label: 'Claims', value: claimSignal },
-      { label: 'Episodes', value: hasEpisode ? 'Scoped' : 'Thin' },
-      { label: 'Open threads', value: actorCount > 3 ? 'Mapped' : 'Thin' },
-      { label: 'Trust posture', value: marketplaceToolCount > 0 ? 'Review-gated' : 'Thin' },
+      { label: 'Tools', value: marketplaceToolCount > 0 && actorCount > 3 && hasEpisode ? 'Suggested' : 'Needs context' },
     ],
   };
 }
