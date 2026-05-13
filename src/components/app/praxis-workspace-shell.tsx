@@ -85,6 +85,13 @@ type ToolCard = {
   status?: WorkspaceNextMoveStatus;
 };
 
+type ContextAdvantage = {
+  label: string;
+  value: string;
+  detail: string;
+  state: 'ready' | 'partial' | 'missing';
+};
+
 export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseId, focusSection }: PraxisWorkspaceShellProps) {
   const [privateModels, setPrivateModels] = useState<UserModelRecord[]>([]);
   const [activeUserModelId, setActiveUserModelId] = useState('foreign-policy-analyst');
@@ -122,6 +129,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
   }, [activeSituation, selectedCaseId, workspaceCases]);
   const workspaceLens = useMemo(() => buildWorkspaceLens(activeUserModel, selectedCase, marketplaceToolCount), [activeUserModel, marketplaceToolCount, selectedCase]);
   const toolCards = useMemo(() => buildToolCards(selectedCase, activeUserModel), [activeUserModel, selectedCase]);
+  const contextAdvantage = useMemo(() => buildContextAdvantage(activeUserModel, selectedCase), [activeUserModel, selectedCase]);
   const displayedToolCards = savedNextMoves?.length ? savedNextMoves.map(nextMoveToToolCard) : toolCards;
 
   useEffect(() => {
@@ -291,12 +299,18 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
               <CoreChip label="Writing focus" detail={workspaceLens.writingLabel} href="#draft-workbench" tone="slate" />
             </div>
 
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {contextAdvantage.map((item) => (
+                <ContextAdvantageCard key={item.label} item={item} />
+              ))}
+            </div>
+
             <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">Selected cores</p>
-                    <h2 className="mt-1 text-base font-semibold text-navy-950">One page for Ask, context, tools, and writing.</h2>
+                    <h2 className="mt-1 text-base font-semibold text-navy-950">AI starts from maintained context, not a blank chat box.</h2>
                   </div>
                   <Sparkles className="mt-0.5 h-5 w-5 text-gold-700" />
                 </div>
@@ -324,7 +338,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">Ask first</p>
-                    <h2 className="mt-1 text-base font-semibold text-navy-950">Start with the question and keep the answer shaped by the cores.</h2>
+                    <h2 className="mt-1 text-base font-semibold text-navy-950">Ask the question; PRAXIS keeps sources, stakes, and inherited judgment visible.</h2>
                   </div>
                   <MessageSquareText className="mt-0.5 h-5 w-5 text-diplomatic-blue" />
                 </div>
@@ -349,12 +363,12 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
             <div className="mt-5 rounded-lg border border-white/10 bg-white/8 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase text-navy-200">Writing target</p>
-                  <h3 className="mt-1 text-base font-semibold text-white">{workspaceLens.writingLabel}</h3>
+                  <p className="text-xs font-semibold uppercase text-navy-200">Inherited work</p>
+                  <h3 className="mt-1 text-base font-semibold text-white">{workspaceLens.inheritanceTitle}</h3>
                 </div>
                 <BookOpenText className="h-5 w-5 text-gold-300" />
               </div>
-              <p className="mt-3 text-xs leading-5 text-navy-100">{workspaceLens.writingCopy}</p>
+              <p className="mt-3 text-xs leading-5 text-navy-100">{workspaceLens.inheritanceCopy}</p>
             </div>
           </aside>
         </div>
@@ -689,6 +703,14 @@ function buildWorkspaceLens(userModel: UserModelRecord, selectedCase: WorkspaceC
     ? `${writingLabel}: shape the output around ${selectedCase.name}, its actors, the source posture, and the recommendation path.`
     : `${writingLabel}: start from the user core, then attach a situation to draft against a concrete policy question.`;
 
+  const inheritanceTitle = selectedCase
+    ? `${selectedCase.name} can be handed over`
+    : 'Attach a context to inherit the work';
+
+  const inheritanceCopy = selectedCase
+    ? `PRAXIS keeps the role, case frame, source posture, stakeholders, open questions, and draft target together so the next analyst can understand why the memo says what it says.`
+    : 'Once a Situation Core is attached, PRAXIS can preserve the reasoning trail, source gaps, and next moves instead of leaving them in a chat transcript.';
+
   const writingChecklist = selectedCase
     ? [
         'Open with the answer, then list the actors and stakes that drive it.',
@@ -707,8 +729,9 @@ function buildWorkspaceLens(userModel: UserModelRecord, selectedCase: WorkspaceC
     pageCopy,
     sidebarTitle,
     sidebarCopy,
+    inheritanceTitle,
+    inheritanceCopy,
     writingLabel,
-    writingCopy: draftingFocus,
     mainDynamics,
     draftingFocus,
     openQuestions,
@@ -716,6 +739,39 @@ function buildWorkspaceLens(userModel: UserModelRecord, selectedCase: WorkspaceC
     memoShape,
     summaryStats,
   };
+}
+
+function buildContextAdvantage(userModel: UserModelRecord, selectedCase: WorkspaceCase | null): ContextAdvantage[] {
+  const evidenceCount = (selectedCase?.sourceCount ?? 0) + (selectedCase?.documentCount ?? 0);
+  const actorCount = selectedCase?.actorCount ?? 0;
+  const hasSituation = Boolean(selectedCase);
+
+  return [
+    {
+      label: 'Vetted context',
+      value: evidenceCount > 0 ? `${evidenceCount} evidence items` : 'Needs receipts',
+      detail: evidenceCount > 0 ? 'Sources and documents are visible before PRAXIS drafts.' : 'Add source receipts so answers do not rely on generic memory.',
+      state: evidenceCount >= 4 ? 'ready' : evidenceCount > 0 ? 'partial' : 'missing',
+    },
+    {
+      label: 'Stakeholder read',
+      value: actorCount > 0 ? `${actorCount} actors` : 'No actors yet',
+      detail: actorCount > 0 ? 'Policy judgment stays tied to who can move, block, or absorb the decision.' : 'Name actors before asking for strategy or a memo.',
+      state: actorCount >= 3 ? 'ready' : actorCount > 0 ? 'partial' : 'missing',
+    },
+    {
+      label: 'User judgment',
+      value: userModel.identity,
+      detail: `Answers inherit ${userModel.role}, voice, audience, and tolerance for uncertainty.`,
+      state: 'ready',
+    },
+    {
+      label: 'Handover value',
+      value: hasSituation ? 'Inheritable' : 'Waiting',
+      detail: hasSituation ? 'The next analyst can see context, gaps, next moves, and draft posture.' : 'Attach a Situation Core to turn the work into institutional memory.',
+      state: hasSituation ? 'ready' : 'missing',
+    },
+  ];
 }
 
 function buildToolCards(selectedCase: WorkspaceCase | null, userModel: UserModelRecord): ToolCard[] {
@@ -851,6 +907,33 @@ function buildDynamics(selectedCase: WorkspaceCase, userModel: UserModelRecord):
 function normalizeRisk(riskScore: number): number {
   if (!Number.isFinite(riskScore)) return 0;
   return riskScore <= 1 ? Math.round(riskScore * 10) : Math.round(riskScore);
+}
+
+function ContextAdvantageCard({ item }: { item: ContextAdvantage }) {
+  const stateClass = item.state === 'ready'
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+    : item.state === 'partial'
+      ? 'border-gold-200 bg-gold-50 text-gold-800'
+      : 'border-slate-200 bg-slate-50 text-slate-600';
+  const dotClass = item.state === 'ready'
+    ? 'bg-emerald-500'
+    : item.state === 'partial'
+      ? 'bg-gold-500'
+      : 'bg-slate-400';
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm shadow-navy-950/5">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
+        <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold', stateClass)}>
+          <span className={cn('h-1.5 w-1.5 rounded-full', dotClass)} />
+          {item.state === 'ready' ? 'ready' : item.state}
+        </span>
+      </div>
+      <p className="mt-2 truncate text-sm font-semibold text-navy-950">{item.value}</p>
+      <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
+    </div>
+  );
 }
 
 function CoreChip({ label, detail, href, tone }: { label: string; detail: string; href: string; tone: 'blue' | 'gold' | 'slate' }) {

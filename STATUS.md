@@ -1,6 +1,6 @@
 # PRAXIS — STATUS
 
-## 2026-05-11 — v5 MVP Queue Status
+## 2026-05-13 — v5 MVP Queue Status
 
 The v5 queue in `docs/build/PRAXIS_v5_ANTIGRAVITY_QUEUE_PROMPTS.md` is the
 active tracker. Queues `00` through `15` are complete and pushed. Queue `16`
@@ -24,6 +24,9 @@ Current local cleanup pass:
   `/api/workspace/next-moves`; users can mark moves done or dismiss them, and
   Ask PRAXIS responses can add generated follow-up moves directly. Public
   example situations remain local-only.
+- Dashboard first-screen copy now makes the standalone MVP moat explicit:
+  vetted context, stakeholder read, user judgment, and inheritable policy work
+  are visible before the user asks PRAXIS or drafts a memo.
 
 Current Phase 9 blockers:
 

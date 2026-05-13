@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- copy(app): surface the PRAXIS context moat inside the dashboard.
+  The app shell now shows a compact context-advantage strip for vetted
+  evidence, stakeholder read, user judgment, and inheritable handover value so
+  the standalone MVP feels less like chat and more like maintained policy
+  memory.
 - feat(dashboard): persist Ask-first recommended next moves.
   The dashboard now saves User Core + Situation Core suggested tool moves for
   authenticated user situations through an owner-scoped workspace API, exposes

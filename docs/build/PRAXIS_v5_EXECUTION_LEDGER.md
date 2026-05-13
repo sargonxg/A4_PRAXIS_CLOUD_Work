@@ -926,3 +926,29 @@ only the intended Phase 0 changes.
   - Persona CI 10-run streak still requires real GitHub Actions history.
   - Cognee remains disabled-first until a separate service deployment is approved.
   - Persisted next moves still need signed-user browser verification and a Playwright smoke before being treated as a full task workflow.
+
+### 2026-05-13 - Standalone MVP - Context Advantage Dashboard
+
+- Owner: Codex
+- Prompt source: Giulio asked to focus on PRAXIS as a standalone MVP, make the real app simpler and more exciting, and clarify whether the value is more than an LLM wrapper.
+- Scope completed:
+  - Added a first-screen context-advantage strip to the app dashboard for vetted context, stakeholder read, user judgment, and handover value.
+  - Reframed the selected-core and Ask panels around maintained context, inherited judgment, source posture, and policy handover rather than generic Ask/context/tools/writing language.
+  - Replaced the sidebar writing-target card with an inherited-work card explaining why the selected case can be handed over to the next analyst.
+- Files changed: `src/components/app/praxis-workspace-shell.tsx`, `CHANGELOG.md`, `STATUS.md`, `TODO.md`, `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`
+- Validation run:
+  - `npx eslint src\components\app\praxis-workspace-shell.tsx`
+  - `npx tsc --noEmit`
+  - `npm run build`
+  - `npm run audit:repo-shape`
+  - `npm run audit:mvp-route-shape`
+  - `npm run audit:architecture-reference`
+  - `graphify update .`
+  - `git diff --check`
+- Validation result: pass
+  - NOTE: production build still reports the existing Turbopack NFT tracing warning from `next.config.ts` via `src/lib/semantica/rust-runtime.ts`; no new build failure.
+- Commit: this checkpoint
+- Push: this checkpoint
+- Open blockers carried forward:
+  - Browser verification is still needed for the signed-user dashboard-to-Ask-to-Write MVP flow.
+  - DIALECTICA should remain a future adapter proof until the standalone MVP flow is smooth.
