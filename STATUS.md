@@ -92,6 +92,14 @@ Current Phase 9 blockers:
 
 Latest production deploy evidence:
 
+- Demo-core context workbench deploy:
+  - Commit `435ca95a` pushed to `main`.
+  - Cloud Build `dfc67dd4-1b85-4fc7-b439-c574ceb65d87` succeeded.
+  - Cloud Run frontend revision `praxis-frontend-00374-g8v` became ready with 100% traffic.
+  - `https://praxis.tacitus.me/` returned HTTP 200.
+  - `/api/health` returned HTTP 200 with Firestore, AI provider, cookie secret, and Vertex ADK healthy; Cognee memory and Polar remain explicitly unconfigured.
+  - `/app/dashboard`, `/app/assistant`, and `/app/canvas` returned expected unauthenticated HTTP 307 redirects.
+  - Production `npm run smoke:public` passed 4/4 specs against `https://praxis.tacitus.me`.
 - Context-first workbench deploy:
   - Command-palette simplicity checkpoint commit `e02245d3` pushed to `main`.
   - Cloud Build `cbebec7f-1800-452a-867e-c78e0e8a11f9` succeeded.
