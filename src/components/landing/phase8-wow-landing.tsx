@@ -149,9 +149,16 @@ const methods = [
 ] as const;
 
 const outcomeCards = [
-  ["Vetted context", "Answers start from sources, actors, deadlines, assumptions, and what the team already knows."],
-  ["Inherited work", "New analysts can pick up the reasoning trail instead of inheriting a folder of disconnected files."],
-  ["Fewer hallucinations", "PRAXIS shows what is sourced, what is inferred, and what still needs human judgment."],
+  ["Vetted context", "Sources, actors, deadlines, assumptions, and team judgment travel with the work."],
+  ["Inherited work", "A new analyst picks up the reasoning trail, not a folder of disconnected files."],
+  ["Traceable AI", "PRAXIS shows what is sourced, inferred, missing, and still human-owned."],
+] as const;
+
+const heroPipeline = [
+  { label: "Attach cores", detail: "user + situation + sources", tone: "bg-[#EAF5F7] text-[#0B3B4A] border-[#8CC7D3]" },
+  { label: "Read reality", detail: "stakeholders + deadlines + politics", tone: "bg-[#FFF7D6] text-[#6D4A00] border-[#E8B931]" },
+  { label: "Route tools", detail: "research + graph + memo", tone: "bg-[#E9F7F3] text-[#0B5C50] border-[#80CDBE]" },
+  { label: "Write memo", detail: "cited draft + handoff", tone: "bg-[#F1EEFF] text-[#4E3AA8] border-[#B8A7FF]" },
 ] as const;
 
 const trustItems = [
@@ -309,10 +316,10 @@ export function Phase8WowLanding() {
               Policy AI that starts with the right context.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-[#374151] sm:text-lg">
-              PRAXIS turns tacit expertise, vetted sources, stakeholder dynamics, deadlines, and office reality into reusable context. Then AI can reason from what your team actually knows, not from a blank chat box.
+              Attach a User Core, a Situation Core, source receipts, and the tacit context your team normally keeps in its head. PRAXIS turns that into analysis and memos with the reasoning trail still visible.
             </p>
             <p className="mt-3 text-sm font-semibold text-[#0B3B4A]">
-              Built for policy teams that need judgment, continuity, and defensible memos under real-world pressure.
+              Less blank chat. More vetted context, office reality, and reusable institutional memory.
             </p>
             <div className="mt-7 rounded-[1.5rem] border border-white/70 bg-white/70 p-3 shadow-2xl shadow-[#0B1B2B]/10 backdrop-blur">
               <div className="flex flex-wrap gap-2 pb-3">
@@ -340,7 +347,7 @@ export function Phase8WowLanding() {
                 <span className="min-w-0 flex-1">
                   <span className="block text-base font-semibold">See PRAXIS write the memo from this context.</span>
                   <span className="mt-1 block text-xs leading-5 text-[#D7E1EA]">
-                    Attach the evidence and tacit context, route the right tools, then open the sourced draft in Write.
+                    Watch context become a sourced draft your team can review, reuse, and hand over.
                   </span>
                 </span>
                 <ArrowRight className="h-5 w-5 shrink-0 text-[#D7E1EA]" aria-hidden="true" />
@@ -388,12 +395,38 @@ export function Phase8WowLanding() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8a5a00]">Context engine</p>
-                    <p className="mt-1 text-sm font-medium text-[#4b5563]">Policy work is not just sources. It is people, timing, incentives, institutional memory, and the quiet stuff nobody writes down.</p>
+                    <p className="mt-1 text-sm font-medium text-[#4b5563]">The app keeps people, timing, incentives, evidence, and the quiet stuff nobody writes down attached to the work.</p>
                   </div>
                   <span className="inline-flex items-center gap-2 rounded-full bg-[#eef7f1] px-3 py-1 text-xs font-semibold text-[#166534]">
                     <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
                     vetted
                   </span>
+                </div>
+              </div>
+
+              <div className="relative overflow-hidden border-b border-[#e5dcc2] bg-[#07131F] px-4 py-5 sm:px-5">
+                <div className="absolute left-8 right-8 top-1/2 hidden h-px bg-gradient-to-r from-[#8CC7D3] via-[#E8B931] to-[#B8A7FF] opacity-70 sm:block" aria-hidden="true" />
+                <div className="relative grid gap-3 sm:grid-cols-4">
+                  {heroPipeline.map((step, index) => (
+                    <div
+                      key={step.label}
+                      className={cn(
+                        "relative min-h-[126px] rounded-md border p-3 shadow-lg shadow-black/15 motion-safe:animate-[pulse_3.4s_ease-in-out_infinite]",
+                        step.tone,
+                      )}
+                      style={{ animationDelay: `${index * 240}ms` }}
+                    >
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-bold text-[#111827] ring-1 ring-black/10">
+                        {index + 1}
+                      </span>
+                      <p className="mt-4 text-sm font-semibold">{step.label}</p>
+                      <p className="mt-1 text-xs leading-5 opacity-80">{step.detail}</p>
+                      <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-white/90 shadow-[0_0_24px_rgba(232,185,49,0.8)] motion-safe:animate-ping" aria-hidden="true" />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 rounded-md border border-white/10 bg-white/8 p-3 text-xs leading-5 text-slate-200">
+                  Live advantage: PRAXIS knows the source posture, stakeholder read, deadline, audience, and office politics before it writes.
                 </div>
               </div>
 

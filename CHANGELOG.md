@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- copy(landing): streamline PRAXIS hero and context engine.
+  Simplified the hero around attached cores, vetted context, institutional
+  memory, and a context-to-memo pipeline animation.
 - test(smoke): align public smoke with the current PRAXIS landing hero.
   Production smoke now checks the context-first hero, memo CTA, User Core,
   Situation Core, and inherited-work copy.
