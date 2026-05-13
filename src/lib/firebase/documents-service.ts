@@ -20,6 +20,7 @@ import { getAdminDbOrThrow } from './admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { embed, embedMany } from 'ai';
 import { getEmbeddingModel, hasServerAiProvider } from '@/lib/ai/providers';
+import type { AutoStructuredDocument } from '@/lib/documents/auto-structure';
 
 export interface StoredDocument {
   id: string;
@@ -33,6 +34,15 @@ export interface StoredDocument {
   entityCount: number;
   chunkCount?: number;
   bucketUri?: string;
+  structured?: AutoStructuredDocument;
+  sourceCore?: {
+    id: string;
+    situationId: string;
+    documentId: string;
+    title: string;
+    sourceType: string;
+    linkedAt: string;
+  };
 }
 
 export interface DocumentChunk {

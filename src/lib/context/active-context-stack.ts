@@ -5,9 +5,22 @@ export interface ActiveContextStackState {
   sourceIds: string[];
   documentIds: string[];
   outputGoal: string | null;
+  evidenceGaps: ActiveEvidenceGap[];
   canvasLayout: Record<string, { x: number; y: number }>;
   updatedAt: string;
   schemaVersion: 1;
+}
+
+export interface ActiveEvidenceGap {
+  id: string;
+  situationId: string | null;
+  subjectId: string;
+  claimId: string;
+  claim: string;
+  status: 'weak' | 'unsupported' | 'needs_date_check';
+  sourceHints: string[];
+  savedAt: string;
+  resolvedAt: string | null;
 }
 
 export const DEFAULT_CONTEXT_STACK_ID = 'default';
@@ -20,6 +33,7 @@ export function defaultActiveContextStack(): ActiveContextStackState {
     sourceIds: [],
     documentIds: [],
     outputGoal: null,
+    evidenceGaps: [],
     canvasLayout: {},
     updatedAt: new Date(0).toISOString(),
     schemaVersion: 1,
@@ -38,10 +52,37 @@ export function sanitizeActiveContextStack(input: unknown): ActiveContextStackSt
     sourceIds: stringList(body.sourceIds).slice(0, 50),
     documentIds: stringList(body.documentIds).slice(0, 50),
     outputGoal: stringOrNull(body.outputGoal),
+    evidenceGaps: sanitizeEvidenceGaps(body.evidenceGaps),
     canvasLayout: sanitizeCanvasLayout(layout),
     updatedAt: new Date().toISOString(),
     schemaVersion: 1,
   };
+}
+
+function sanitizeEvidenceGaps(value: unknown): ActiveEvidenceGap[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 100).flatMap((item): ActiveEvidenceGap[] => {
+    if (!isRecord(item)) return [];
+    const id = stringOrNull(item.id);
+    const subjectId = stringOrNull(item.subjectId);
+    const claimId = stringOrNull(item.claimId);
+    const claim = stringOrNull(item.claim);
+    const status = item.status === 'weak' || item.status === 'unsupported' || item.status === 'needs_date_check'
+      ? item.status
+      : null;
+    if (!id || !subjectId || !claimId || !claim || !status) return [];
+    return [{
+      id,
+      situationId: stringOrNull(item.situationId),
+      subjectId,
+      claimId,
+      claim,
+      status,
+      sourceHints: stringList(item.sourceHints).slice(0, 8),
+      savedAt: stringOrNull(item.savedAt) ?? new Date().toISOString(),
+      resolvedAt: stringOrNull(item.resolvedAt),
+    }];
+  });
 }
 
 function sanitizeCanvasLayout(layout: Record<string, unknown>): ActiveContextStackState['canvasLayout'] {

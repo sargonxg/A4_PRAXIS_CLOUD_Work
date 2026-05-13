@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Archive, ExternalLink, FileText, Loader2, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
 import { WorkOnThisMenu } from '@/components/app/work-on-this-menu';
+import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { Badge } from '@/components/ui/badge';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
@@ -47,6 +48,7 @@ export function LibraryTab() {
   const { caseId, caseModule } = useWorkbenchScope();
   const isExampleCase = caseModule.kind === 'example';
   const setActiveSituation = useSituationStore((state) => state.setActiveSituation);
+  const { stack, saveStack } = useActiveContextStack();
   const features = useFeatureFlags();
   const cogneeEnabled = features.cognee.enabled;
   const [query, setQuery] = useState('');
@@ -127,6 +129,12 @@ export function LibraryTab() {
       const documentPayload = await documentResponse.json().catch(() => ({}));
       if (!documentResponse.ok) throw new Error(documentPayload?.error ?? 'document upload failed');
       const documentId = documentIdFromPayload(documentPayload);
+      if (documentId) {
+        void saveStack({
+          situationId: caseId,
+          documentIds: Array.from(new Set([...stack.documentIds, documentId])),
+        });
+      }
 
       const libraryFormData = new FormData();
       libraryFormData.append('file', file);
@@ -251,6 +259,7 @@ export function LibraryTab() {
               type="button"
               onClick={() => {
                 setActiveSituation(caseId);
+                void saveStack({ situationId: caseId });
                 setSourceNote('This Situation Core is now the active context for Ask PRAXIS and Memo Studio.');
               }}
               className="inline-flex items-center gap-2 rounded-md border border-gold-300 bg-gold-50 px-3 py-2 text-xs font-semibold text-gold-900"

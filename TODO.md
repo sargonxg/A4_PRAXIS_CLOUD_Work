@@ -11,12 +11,12 @@ Last updated: 2026-05-13.
 
 ## Immediate Next Steps
 
-1. Extend Active Context Stack persistence beyond the default stack to named stacks and saved Canvas layouts when the final multi-stack UX is approved.
-2. Promote Canvas from review-light structure nodes to a read/write layout surface if the team approves adding React Flow or using the current graph stack for draggable persisted layouts.
+1. Extend Active Context Stack persistence beyond the reliable default stack to named stacks when the final multi-stack UX is approved.
+2. Promote Canvas from draggable review-layout nodes to a richer read/write graph-editing surface if the team approves that scope; React Flow is not needed for the current MVP.
 3. Add a signed-in integration test for v5 demo copy against a Firebase emulator or test project; current validation covers the typed demo core objects and the UI copy affordance, not a live Firestore mutation.
 4. Add the first PRAXIS-to-DIALECTICA adapter proof only after the standalone MVP flow is smooth: one typed context query, one cited response, one reviewable graph delta.
 5. Complete Pack 24 backend Reasoning Spine: Rust BLAKE3 context-pack compiler, real trace ids, Langfuse or equivalent trace store, and live event streaming behind the current Spine panel.
-6. Complete Pack 23 backend Library Bucket: deeper source auto-structure after upload: persisted extracted key claims, actors, and timeline events for every PDF/DOCX/MD source receipt.
+6. Complete Pack 23 backend Library Bucket: production-grade source auto-structure after upload, including better PDF page provenance, source-span citations, entity normalization, and review queues beyond the current inline MVP extraction.
 7. Keep user-created Situation Cores primary inside `/app/contexts` and `/app/cores/context`; public `/contexts` is now only a redirect.
 8. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
 9. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.

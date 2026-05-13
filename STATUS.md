@@ -38,17 +38,18 @@ Current local cleanup pass:
   context health. Home has a drag/drop Active Context Stack; Ask and Home show
   only three next-best actions; Memo Studio uses a page-like TipTap canvas with
   outline/provenance rails; Canvas is live as a review-gated structure view.
-- Active User Core selection and active Situation Core selection persist through
-  the existing local/User Core helpers and Zustand Situation store. Full
-  owner-scoped Firestore persistence for arbitrary multi-core stacks and canvas
-  layouts remains a follow-up, not a claimed production sync feature.
+- Active User Core selection, active Situation Core selection, attached
+  document IDs, output goal, and Canvas node layout now hydrate through the
+  owner-scoped default Active Context Stack. Named multi-stack UX remains a
+  follow-up, not a claimed production feature.
 - Active Context Stack persistence is now implemented through
   `/api/workspace/context-stack`, stored at `users/{uid}/contextStacks/default`
   with owner-only Firestore rules. Demo sessions remain non-mutating.
 - The "Work on this" action menu is live on core cards, next actions, Canvas
-  nodes, and selected Library receipts. Memo Studio now exposes a deterministic
-  Evidence Gap Finder summary for supported, weak, unsupported, and date-check
-  sections using existing source receipts.
+  nodes, and selected Library receipts. Memo Studio now exposes deterministic
+  claim-level Evidence Gap Reports with `supported`, `weak`, `unsupported`, and
+  `needs_date_check` statuses plus find-source, cautious-rewrite, and
+  evidence-gap actions.
 - The simplicity design contract is now explicit in `DESIGN.md`: five visible
   primary surfaces, one dominant action per surface, persistent context,
   command-palette-first secondary actions, progressive disclosure, and
@@ -62,12 +63,15 @@ Current local cleanup pass:
   source receipts under the copied Situation, a default active context stack,
   and starter next moves. Syria copy remains on the older dedicated demo path.
 - Library source intake now has a visible drop zone backed by the existing
-  `/api/documents/upload` and library ingest path. It does not claim Cognee is
-  live when the feature flag is disabled.
+  `/api/documents/upload` and library ingest path. TXT/MD/HTML, PDF, and DOCX
+  uploads extract inline, chunk for retrieval, attach document IDs to the
+  active Situation Core, and persist structured title/date/source-type,
+  key-claim, actor, timeline, and provenance fields. It does not claim Cognee
+  is live when the feature flag is disabled.
 - Context Canvas now surfaces concrete structure nodes for actors, sources,
-  claims, and timeline events with contextual "Work on this" actions. It uses
-  the existing graph preview stack rather than introducing React Flow in this
-  pass.
+  claims, timeline events, and drafts with contextual "Work on this" actions
+  and draggable layout persisted in `canvasLayout`. It uses the existing graph
+  preview stack rather than introducing React Flow in this pass.
 - Focused validation for the simplified shell passed on 2026-05-13:
   `npm run typecheck`, `npm run build`, `npm run lint` with existing warnings,
   `npx playwright test tests/e2e/simplified-workbench-smoke.spec.ts`,

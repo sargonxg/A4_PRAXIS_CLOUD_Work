@@ -20,6 +20,36 @@ export interface SectionEvidenceReview {
   sectionQuestions: string[];
 }
 
+export type ClaimEvidenceStatus = 'supported' | 'weak' | 'unsupported' | 'needs_date_check';
+
+export interface ClaimEvidenceReview {
+  claimId: string;
+  sectionId: string;
+  claim: string;
+  status: ClaimEvidenceStatus;
+  suggestedSources: EvidenceSource[];
+  actions: Array<'find source' | 'rewrite cautiously' | 'add to evidence gaps'>;
+  rationale: string;
+}
+
+export interface EvidenceGapReport {
+  id: string;
+  generatedAt: string;
+  subjectId: string;
+  situationId?: string;
+  draftId?: string;
+  documentId?: string;
+  claims: ClaimEvidenceReview[];
+  summary: Record<ClaimEvidenceStatus, number>;
+  savedCount: number;
+  resolvedCount: number;
+}
+
+export interface SavedEvidenceGapState {
+  claimId: string;
+  resolvedAt?: string | null;
+}
+
 const STOP_WORDS = new Set([
   'and',
   'are',
@@ -40,7 +70,7 @@ const STOP_WORDS = new Set([
 
 export function normalizeEvidenceSources(sources: string[]): EvidenceSource[] {
   return sources
-    .map((source, index) => source.trim())
+    .map((source) => source.trim())
     .filter(Boolean)
     .map((source, index) => {
       const url = source.match(/https?:\/\/\S+/)?.[0];
@@ -91,6 +121,54 @@ export function summarizeEvidenceCoverage(reviews: SectionEvidenceReview[]) {
   };
 }
 
+export function buildClaimEvidenceReport(
+  subjectId: string,
+  sections: EvidenceSection[],
+  sources: string[],
+  options: {
+    situationId?: string | null;
+    draftId?: string | null;
+    documentId?: string | null;
+    savedGaps?: SavedEvidenceGapState[];
+  } = {},
+): EvidenceGapReport {
+  const normalizedSources = normalizeEvidenceSources(sources);
+  const savedGaps = options.savedGaps ?? [];
+  const claims = sections.flatMap((section) => extractClaims(section).map((claim, index) => {
+    const suggestedSources = selectSuggestedSources({ ...section, body: claim }, normalizedSources, index);
+    const hasSourceOverlap = normalizedSources.some((source) => overlapScore(tokenize(claim), tokenize(source.label)) > 0);
+    const hasDateRisk = /\b(today|yesterday|current|currently|latest|recent|as of|20\d{2}|19\d{2})\b/i.test(claim);
+    const status = getClaimEvidenceStatus(claim, suggestedSources.length, hasSourceOverlap, hasDateRisk);
+    return {
+      claimId: `${section.id}:claim-${index + 1}`,
+      sectionId: section.id,
+      claim,
+      status,
+      suggestedSources,
+      actions: actionsForStatus(status),
+      rationale: rationaleForStatus(status, suggestedSources.length),
+    };
+  }));
+
+  return {
+    id: `evidence-gap-report:${subjectId}`,
+    generatedAt: new Date().toISOString(),
+    subjectId,
+    ...(options.situationId ? { situationId: options.situationId } : {}),
+    ...(options.draftId ? { draftId: options.draftId } : {}),
+    ...(options.documentId ? { documentId: options.documentId } : {}),
+    claims,
+    summary: {
+      supported: claims.filter((claim) => claim.status === 'supported').length,
+      weak: claims.filter((claim) => claim.status === 'weak').length,
+      unsupported: claims.filter((claim) => claim.status === 'unsupported').length,
+      needs_date_check: claims.filter((claim) => claim.status === 'needs_date_check').length,
+    },
+    savedCount: savedGaps.filter((gap) => !gap.resolvedAt).length,
+    resolvedCount: savedGaps.filter((gap) => Boolean(gap.resolvedAt)).length,
+  };
+}
+
 function selectSuggestedSources(section: EvidenceSection, sources: EvidenceSource[], index: number): EvidenceSource[] {
   if (!sources.length) return [];
 
@@ -134,6 +212,35 @@ function buildSectionQuestions(section: EvidenceSection, coverageState: SectionE
   }
 
   return Array.from(new Set(questions)).slice(0, 5);
+}
+
+function extractClaims(section: EvidenceSection): string[] {
+  const sentences = section.body
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length >= 20);
+  return (sentences.length ? sentences : [section.body.trim()]).slice(0, 8);
+}
+
+function getClaimEvidenceStatus(claim: string, sourceCount: number, hasSourceOverlap: boolean, hasDateRisk: boolean): ClaimEvidenceStatus {
+  if (sourceCount === 0 || !hasSourceOverlap) return 'unsupported';
+  if (hasDateRisk && !/\b(?:as of|dated|published|on)\b/i.test(claim)) return 'needs_date_check';
+  if (sourceCount < 2 || countWords(claim) < 12) return 'weak';
+  return 'supported';
+}
+
+function actionsForStatus(status: ClaimEvidenceStatus): ClaimEvidenceReview['actions'] {
+  if (status === 'supported') return [];
+  if (status === 'weak') return ['find source', 'rewrite cautiously'];
+  if (status === 'needs_date_check') return ['find source', 'rewrite cautiously', 'add to evidence gaps'];
+  return ['find source', 'rewrite cautiously', 'add to evidence gaps'];
+}
+
+function rationaleForStatus(status: ClaimEvidenceStatus, sourceCount: number): string {
+  if (status === 'supported') return 'Claim has multiple matching source candidates.';
+  if (status === 'needs_date_check') return 'Claim contains temporal language or dates that need current-source verification.';
+  if (status === 'weak') return 'Claim has limited source overlap or is too short to defend without a tighter citation.';
+  return sourceCount === 0 ? 'No attached source overlaps this claim.' : 'Attached sources are insufficient for this claim.';
 }
 
 function getCoverageState(wordCount: number, sourceCount: number): SectionEvidenceReview['coverageState'] {

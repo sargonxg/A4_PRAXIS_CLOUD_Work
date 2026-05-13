@@ -337,14 +337,14 @@ export function Hero() {
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href="/app/demo/syria-2024"
+                href="/app/assistant"
                 prefetch={false}
                 className="inline-flex items-center justify-center rounded-md border border-diplomatic-blue/20 px-8 py-4 text-base font-semibold text-diplomatic-blue transition-all duration-200 hover:border-diplomatic-blue/40 hover:bg-diplomatic-blue/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40"
               >
-                Try the live example
+                Open Ask workspace
               </Link>
               <Link
-                href="/app/demo/syria-2024/write?guided=1"
+                href="/app/write"
                 prefetch={false}
                 className="inline-flex items-center justify-center rounded-md px-3 py-4 text-base font-semibold text-navy-600 underline-offset-4 transition hover:text-navy-900 hover:underline"
               >

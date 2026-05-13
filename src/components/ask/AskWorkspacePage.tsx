@@ -16,6 +16,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { AskBar } from '@/components/ask/AskBar';
+import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { buildContextHealthReport } from '@/lib/context/context-health';
 import { PUBLIC_USER_MODELS } from '@/lib/user-models/seeds';
 import type { UserModelRecord } from '@/lib/user-models/types';
@@ -74,6 +75,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
   const [privateModels, setPrivateModels] = useState<UserModelRecord[]>([]);
   const [activeUserModelId, setActiveUserModelId] = useState('foreign-policy-analyst');
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const { stack, hydrated: stackHydrated, saveStack } = useActiveContextStack();
 
   useEffect(() => {
     setPrivateModels(listPrivateUserModels(window.localStorage));
@@ -86,6 +88,10 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
 
   useEffect(() => {
     if (selectedCaseId) return;
+    if (stackHydrated && stack.situationId) {
+      setSelectedCaseId(stack.situationId);
+      return;
+    }
     if (activeSituation?.id) {
       setSelectedCaseId(activeSituation.id);
       return;
@@ -93,7 +99,20 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     if (workspaceCases[0]) {
       setSelectedCaseId(workspaceCases[0].id);
     }
-  }, [activeSituation?.id, selectedCaseId, workspaceCases]);
+  }, [activeSituation?.id, selectedCaseId, stack.situationId, stackHydrated, workspaceCases]);
+
+  useEffect(() => {
+    if (!stackHydrated) return;
+    if (stack.userModelId && availableModels.some((model) => model.modelId === stack.userModelId)) {
+      setActiveUserModel(window.localStorage, stack.userModelId);
+      setActiveUserModelId(stack.userModelId);
+    }
+    if (stack.situationId && workspaceCases.some((item) => item.id === stack.situationId)) {
+      const found = workspaceCases.find((item) => item.id === stack.situationId);
+      setSelectedCaseId(stack.situationId);
+      if (found?.kind === 'user') setActiveSituation(stack.situationId);
+    }
+  }, [availableModels, setActiveSituation, stack.situationId, stack.userModelId, stackHydrated, workspaceCases]);
 
   const selectedCase = useMemo(() => {
     if (selectedCaseId) return workspaceCases.find((item) => item.id === selectedCaseId) ?? null;
@@ -119,6 +138,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
   function handleUserModelChange(modelId: string) {
     setActiveUserModel(window.localStorage, modelId);
     setActiveUserModelId(modelId);
+    void saveStack({ userModelId: modelId });
   }
 
   function handleCaseChange(caseId: string) {
@@ -129,6 +149,12 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     } else {
       setActiveSituation(null);
     }
+    const foundCase = workspaceCases.find((item) => item.id === caseId);
+    void saveStack({
+      situationId: caseId,
+      sourceIds: foundCase?.kind === 'user' ? foundCase.situation.sourceUrls ?? [] : [],
+      documentIds: foundCase?.kind === 'user' ? foundCase.situation.initialDocumentIds ?? [] : [],
+    });
   }
 
   return (
@@ -159,7 +185,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
                   <AttachChip href="/app/cores/user" label="User Core" detail={activeUserModel.identity} icon={Users} />
                   <AttachChip href="/app/cores/context" label="Situation Core" detail={activeContextName} icon={Target} />
                   <AttachChip href="/app/dashboard" label="Health" detail={`${contextHealth.score}/100 - ${contextHealth.label}`} icon={Sparkles} />
-                  <AttachChip href="/app/write" label="Write path" detail="Continue in Write" icon={BookOpenText} />
+                  <AttachChip href="/app/write" label="Write path" detail={stack.outputGoal ?? 'Continue in Memo Studio'} icon={BookOpenText} />
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">

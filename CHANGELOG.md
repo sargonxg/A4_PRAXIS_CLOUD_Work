@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- feat(context): deepen the context-first MVP wiring.
+  Ask, Library, Memo Studio, and Canvas now hydrate from the owner-scoped
+  default Active Context Stack; Library uploads attach document IDs to the
+  active Situation Core; Canvas persists draggable node layout through
+  `canvasLayout`; PDF/DOCX/TXT uploads extract inline and persist structured
+  document fields; Memo Studio now shows deterministic claim-level Evidence
+  Gap Reports with supported, weak, unsupported, and date-check statuses.
 - feat(context): make v5 demo cores forkable workspace objects.
   Added typed User/Situation/Source/Document/Graph/Output Core models, code
   backed v5 demo core seed objects, owner-scoped Firestore rules for

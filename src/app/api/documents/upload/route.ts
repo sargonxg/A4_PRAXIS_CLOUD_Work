@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { PDFParse } from 'pdf-parse';
+import mammoth from 'mammoth';
 import { withAuth } from '@/lib/api/with-auth';
 import {
   saveDocument,
@@ -9,6 +11,7 @@ import {
   getDefaultBucketName,
   getAdminDbOrThrow,
 } from '@/lib/firebase/admin';
+import { autoStructureDocument } from '@/lib/documents/auto-structure';
 import { emitTelemetrySafe } from '@/lib/telemetry/emit';
 
 /**
@@ -197,15 +200,26 @@ export const POST = withAuth(async (request, user) => {
       );
     }
 
+    const arrayBuffer = await file.arrayBuffer();
+    const fileBuffer = Buffer.from(arrayBuffer);
     let text = '';
-    let extractionMode: 'inline-text' | 'docling-queued' = 'inline-text';
+    let parser: 'pdf-parse' | 'mammoth' | 'plain-text' = 'plain-text';
+    let extractionMode: 'inline-text' | 'inline-structured' = 'inline-text';
     if (fileType === 'txt' || fileType === 'md' || fileType === 'html') {
       text = await file.text();
     } else if (fileType === 'pdf') {
-      extractionMode = 'docling-queued';
+      const parserInstance = new PDFParse({ data: fileBuffer });
+      const result = await parserInstance.getText();
+      text = result.text.trim();
+      parser = 'pdf-parse';
+      extractionMode = 'inline-structured';
     } else if (fileType === 'docx') {
-      extractionMode = 'docling-queued';
+      const result = await mammoth.extractRawText({ buffer: fileBuffer });
+      text = result.value.trim();
+      parser = 'mammoth';
+      extractionMode = 'inline-structured';
     }
+    const structured = autoStructureDocument({ filename: file.name, fileType, text, parser });
 
     // Best-effort: also push the raw bytes to the GCS bucket so the document
     // dashboard can preview/download the original.
@@ -214,8 +228,7 @@ export const POST = withAuth(async (request, user) => {
       const bucketName = getDefaultBucketName();
       const bucket = getAdminStorage().bucket(bucketName);
       const objectPath = `users/${user.uid}/situations/${situationId}/uploads/${Date.now()}-${file.name}`;
-      const arrayBuffer = await file.arrayBuffer();
-      await bucket.file(objectPath).save(Buffer.from(arrayBuffer), {
+      await bucket.file(objectPath).save(fileBuffer, {
         contentType: file.type || 'application/octet-stream',
         resumable: false,
         metadata: {
@@ -237,11 +250,31 @@ export const POST = withAuth(async (request, user) => {
       fileType,
       size: file.size,
       text,
-      status: extractionMode === 'docling-queued' ? 'processing' : 'uploaded',
+      status: text.length > 0 ? 'extracted' : 'uploaded',
       uploadedAt: new Date().toISOString(),
-      entityCount: 0,
+      entityCount: structured.actors.length,
       bucketUri: bucketUri ?? undefined,
+      structured,
+      sourceCore: {
+        id: `source-core:${situationId}:${file.name}`.slice(0, 160),
+        situationId,
+        documentId: 'pending',
+        title: structured.title,
+        sourceType: structured.sourceType,
+        linkedAt: new Date().toISOString(),
+      },
     });
+    if (stored.sourceCore) {
+      stored.sourceCore.documentId = stored.id;
+      await getAdminDbOrThrow()
+        .collection('users')
+        .doc(user.uid)
+        .collection('situations')
+        .doc(situationId)
+        .collection('documents')
+        .doc(stored.id)
+        .set({ sourceCore: stored.sourceCore }, { merge: true });
+    }
 
     let chunkCount = 0;
     if (text.length > 0) {
@@ -273,13 +306,12 @@ export const POST = withAuth(async (request, user) => {
         size: stored.size,
         status: stored.status,
         uploadedAt: stored.uploadedAt,
-        entityCount: 0,
+        entityCount: structured.actors.length,
         chunkCount,
         bucketUri,
+        structured,
       },
-      message: extractionMode === 'docling-queued'
-        ? 'Document uploaded and queued for structured extraction.'
-        : chunkCount > 0
+      message: chunkCount > 0
         ? 'Document uploaded, chunked, and indexed for retrieval.'
         : 'Document uploaded and saved to your situation. Text extraction did not produce retrievable chunks.',
     });

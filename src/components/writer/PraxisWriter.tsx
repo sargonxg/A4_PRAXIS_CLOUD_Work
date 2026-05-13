@@ -10,6 +10,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import TaskItem from '@tiptap/extension-task-item';
 import TaskList from '@tiptap/extension-task-list';
 import { Brain, BookOpenCheck, FileText, Loader2, MessageSquareText, Target, Wrench } from 'lucide-react';
+import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { CitationMark } from '@/components/writer/extensions/citation-mark';
 import {
   insertWriterAskResult,
@@ -26,7 +27,7 @@ import { SlashMenu } from '@/components/writer/ui/SlashMenu';
 import { WriterToolbar } from '@/components/writer/ui/WriterToolbar';
 import { HERO_TOOLS } from '@/lib/constants/tool-registry';
 import { buildContextHealthReport } from '@/lib/context/context-health';
-import { buildEvidenceReviews, summarizeEvidenceCoverage } from '@/lib/documents/evidence-review';
+import { buildClaimEvidenceReport, type ClaimEvidenceReview } from '@/lib/documents/evidence-review';
 import { memoBlocksToMarkdown, memoBlocksToPlainText } from '@/lib/memo/export';
 import type { MemoBlock, MemoTemplateId } from '@/types/memo';
 
@@ -157,6 +158,7 @@ export function PraxisWriter({
   templateId = 'policy-memo',
 }: PraxisWriterProps) {
   const { activeUserCore, activeSituation, sources } = useWriterContext();
+  const { stack, saveStack } = useActiveContextStack();
   const [docTitle, setDocTitle] = useState(titleProp ?? 'Policy note');
   const [editorJson, setEditorJson] = useState<JSONContent | null>(null);
   const [editorHtml, setEditorHtml] = useState(STARTER_DOCUMENT);
@@ -171,14 +173,23 @@ export function PraxisWriter({
   const storageKey = `writer:${caseId}:${docId}`;
   const blocks = useMemo(() => blocksFromJson(editorJson), [editorJson]);
   const markdown = useMemo(() => memoBlocksToMarkdown(docTitle, blocks), [blocks, docTitle]);
-  const evidenceReviews = useMemo(() => buildEvidenceReviews(
+  const claimEvidenceReport = useMemo(() => buildClaimEvidenceReport(
+    storageKey,
     blocks
       .filter((block) => block.type !== 'heading' && block.content.trim().length > 0)
       .map((block) => ({ id: block.id, heading: block.title ?? block.type, body: block.content })),
     sources.map((source) => `${source.title} ${source.citation} ${source.excerpt}`),
-  ), [blocks, sources]);
-  const evidenceSummary = useMemo(() => summarizeEvidenceCoverage(evidenceReviews), [evidenceReviews]);
-  const dateCheckCount = useMemo(() => evidenceReviews.filter((review) => /\b(20\d{2}|19\d{2}|today|yesterday|current|latest)\b/i.test(review.heading)).length, [evidenceReviews]);
+    {
+      situationId: activeSituation?.id,
+      draftId: docId,
+      savedGaps: stack.evidenceGaps.filter((gap) => gap.subjectId === storageKey),
+    },
+  ), [activeSituation?.id, blocks, docId, sources, stack.evidenceGaps, storageKey]);
+  const openSavedGapIds = useMemo(
+    () => new Set(stack.evidenceGaps.filter((gap) => !gap.resolvedAt).map((gap) => gap.claimId)),
+    [stack.evidenceGaps],
+  );
+  const dateCheckCount = claimEvidenceReport.summary.needs_date_check;
   const evidenceGapCount = Math.max(0, Math.min(6, blocks.filter((block) => block.type !== 'heading' && (block.citations?.length ?? 0) === 0).length - sources.length));
   const contextHealth = useMemo(() => buildContextHealthReport({
     hasUserCore: Boolean(activeUserCore),
@@ -343,6 +354,29 @@ export function PraxisWriter({
     void command.run(editor);
   }
 
+  function saveEvidenceGap(review: ClaimEvidenceReview) {
+    if (review.status === 'supported') return;
+    const gapId = `gap:${storageKey}:${review.claimId}`;
+    const existing = stack.evidenceGaps.filter((gap) => gap.id !== gapId);
+    void saveStack({
+      situationId: activeSituation?.id ?? stack.situationId,
+      evidenceGaps: [
+        ...existing,
+        {
+          id: gapId,
+          situationId: activeSituation?.id ?? stack.situationId,
+          subjectId: storageKey,
+          claimId: review.claimId,
+          claim: review.claim,
+          status: review.status,
+          sourceHints: review.suggestedSources.map((source) => source.label),
+          savedAt: new Date().toISOString(),
+          resolvedAt: null,
+        },
+      ],
+    });
+  }
+
   async function exportDocument(format: 'md' | 'docx' | 'pdf') {
     const filenameRoot = `${caseId}-${templateId}`.replace(/[^a-z0-9._-]+/gi, '-');
     if (format === 'md') {
@@ -477,22 +511,30 @@ export function PraxisWriter({
           <section className="border-b border-slate-200 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Evidence Gap Finder</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <EvidenceStat label="Supported" value={evidenceSummary.ready} tone="ready" />
-              <EvidenceStat label="Weak" value={evidenceSummary.thin} tone="weak" />
-              <EvidenceStat label="Unsupported" value={evidenceSummary.missing} tone="missing" />
+              <EvidenceStat label="Supported" value={claimEvidenceReport.summary.supported} tone="ready" />
+              <EvidenceStat label="Weak" value={claimEvidenceReport.summary.weak} tone="weak" />
+              <EvidenceStat label="Unsupported" value={claimEvidenceReport.summary.unsupported} tone="missing" />
               <EvidenceStat label="Date check" value={dateCheckCount} tone="weak" />
             </div>
             <div className="mt-3 space-y-2">
-              {evidenceReviews.filter((review) => review.coverageState !== 'ready').slice(0, 3).map((review) => (
-                <div key={review.sectionId} className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                  <p className="text-xs font-semibold text-navy-900">{review.heading}</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-600">{review.sectionQuestions[0]}</p>
+              {claimEvidenceReport.claims.filter((review) => review.status !== 'supported').slice(0, 3).map((review) => (
+                <div key={review.claimId} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{review.status.replaceAll('_', ' ')}</p>
+                  <p className="mt-1 line-clamp-3 text-xs font-semibold text-navy-900">{review.claim}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">{review.rationale}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <Link href="/app/contexts" className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-navy-700">
+                    <Link href={activeSituation ? `/app/workbench/${activeSituation.id}?tab=library` : '/app/contexts'} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-navy-700">
                       Find source
                     </Link>
                     <button type="button" onClick={() => void runAsk('soften')} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-navy-700">
                       Rewrite cautiously
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => saveEvidenceGap(review)}
+                      className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-navy-700"
+                    >
+                      {openSavedGapIds.has(review.claimId) ? 'Saved gap' : 'Save gap'}
                     </button>
                   </div>
                 </div>
