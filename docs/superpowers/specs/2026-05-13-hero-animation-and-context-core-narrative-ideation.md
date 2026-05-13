@@ -368,8 +368,115 @@ time. Click a band = jump to that core's editor.
 
 ---
 
-## 10. Next Step
+## 10. Decisions Locked — 2026-05-13
 
-Wait for Giulio to react to: (a) recommended Concept A, (b) section order
-in §4, (c) copy in §5, (d) packaging vocabulary in §8.4. Then convert the
-agreed subset into an implementation plan via `writing-plans`.
+Giulio confirmed:
+
+1. **Agents in hero v1:** YES. Concept A Act 2 ships with the full ring of
+   three human + three agent silhouettes. Agents read as dotted halos,
+   humans as soft glow halos. The graph-patch approval beat (agent
+   proposes → human accepts → green ripple) is part of v1.
+2. **Loop:** YES. Hero animation runs on a continuous, seamless loop
+   (~9s cycle). Reset happens off-camera (storm motes re-spawn from
+   edges as Capsule pulses fade). No "freeze on last frame" — the
+   product feels alive on every visit.
+3. **Per-core tints:** YES. Each of the six core prisms gets its own
+   desaturated accent tint inside the prism body. Connecting filaments
+   and the Capsule shell stay mono-gold (`#E8B931`) so the system still
+   reads as one. Working palette:
+   - User Core — desaturated diplomatic-blue `#3A5A7A`
+   - Situation Core — desaturated emerald `#3F7A66`
+   - Source/Document Core — warm parchment `#C9A86A`
+   - Graph Core — cool slate-violet `#5B6B8C`
+   - Time Core — bronze `#A06A3C`
+   - Output Core — ivory-on-navy `#E6E2D6`
+   - **Memory Core (7th, app-only)** — soft burgundy `#7A3F4F`
+4. **Vocabulary lock:** YES. **Capsule** = the artefact (one core
+   stack, snapshotted). **Pack** = a shareable bundle (one or more
+   capsules ready to ship to a teammate, agent, or future workspace).
+   No further synonyms anywhere in marketing or product copy.
+5. **Cognee / Memory as 7th stratum:** YES. The Capsule X-ray view
+   *inside the authenticated app* reveals a seventh quiet stratum
+   labelled **Memory Core**. It does NOT appear in the public landing
+   hero animation — public hero stays at six. In the app, hovering the
+   Capsule rotates it 90° on its long axis to show the Memory stratum
+   running through all six other cores like a spine. Faint motes drift
+   along it carrying tacit-knowledge particles (past memos, prior
+   judgements, accepted graph patches).
+
+## 11. Design Bar Locked — "Complex Animation, Simple Everything Else"
+
+Giulio's directive: animation can be intricate, slow-cooked, layered.
+The surrounding app and page must feel **simple, beautiful, powerful**.
+This means:
+
+- **Landing page:** every scroll-stop reduces to one focal animation +
+  one short sentence (≤18 words) + one CTA. No dense feature grids, no
+  marketing soup. Whitespace generous. Broadsheet typography rhythm.
+  Maximum 7 scrolls (see §4); cut to 5 if any feel redundant during
+  build.
+- **App home:** kill clutter. The hero animation's Capsule shrinks to a
+  240px live miniature in the top-right of `ask-praxis-home`, replacing
+  the current text-only "Ask PRAXIS" sub-header block. The six (seven
+  in-app) cores under it remain as pills but breathe in sync with the
+  miniature. Everything else on the home stays as currently committed
+  in `7d509631`.
+- **App-wide:** new affordances (presence dots, inheritance trail,
+  capsule export modal) must be subtle. Nothing flashy, no neon. Motion
+  is informative, never decorative.
+- **Animation craft budget:** budget significant engineering time on
+  the hero (estimated 3–4 focused days for forge-mesh choreography,
+  per-core inner visuals, mote storm tuning, performance, and reduced-
+  motion fallback). Worth it: this is the product's signature.
+- **Asset rules:** SVG-first for every core inner visual. One WebGL
+  canvas for the mote storm. No video. No Lottie. Total animation JS
+  budget ≤ 250kb gz. Static SVG composed end-frame ships for the
+  `prefers-reduced-motion` branch.
+
+## 12. Review Note — Recent Main Commits
+
+Commit `7d509631 feat(praxis): clarify policy core surface` (2026-05-13,
+the commit immediately preceding this update) already aligned the app
+side to the inheritable-cores vocabulary:
+
+- `src/components/dashboard/ask-praxis-home.tsx` now declares all six
+  cores in `attachedCores` (was three), shows `readinessLabel` per
+  recommended tool, and the `Context coverage` aside surfaces five
+  tone-flagged readiness items (Context health, Temporal readiness,
+  Source coverage, Graph/actor readiness, Tool routing) plus a
+  `safeNext` sentence. Solid foundation for the animation overlay
+  proposed here. No conflict.
+- `src/app/app/tools/page.tsx` now leads with "Canonical tools stay
+  visible; specialist machinery stays routed." and surfaces
+  `readinessLabel` per attachable tool. Matches the §11 simplicity bar.
+- `src/app/(landing)/page.tsx` only changed JSON-LD strings; the
+  surface page still renders `<Phase8WowLanding />`, which is the
+  component this ideation will replace/animate.
+- All legacy landing components under `src/components/landing/` were
+  deleted in the same commit, leaving `phase8-wow-landing.tsx` as the
+  sole landing artefact. Clean canvas for Concept A implementation.
+
+Nothing in `7d509631` contradicts any decision above. Plan stays valid.
+
+## 13. Next Step
+
+Giulio to review this spec (specifically §10 locked decisions, §11
+design bar, §12 commit review). On approval, invoke `writing-plans` to
+produce the implementation plan covering:
+
+- Hero island component (`hero-capsule-forge.tsx` or similar) with
+  Framer Motion choreography + SVG per-core inner visuals + WebGL mote
+  storm.
+- Section re-architecture per §4 (7 scrolls).
+- Copy swap per §5.
+- App-home Capsule miniature + breathing core pills.
+- Inheritance trail + presence dots + capsule export modal (Pack flow).
+- Trust Strata mini-drill replacing the right-side Context coverage
+  list.
+- Memory Core (7th stratum) reveal on Capsule rotate (app-only).
+- Reduced-motion static fallback frame.
+- Telemetry events.
+
+The plan will sequence these so the landing hero ships first (highest
+visible impact), then the app-home miniature, then the secondary
+section animations.

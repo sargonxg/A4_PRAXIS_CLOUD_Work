@@ -10,6 +10,7 @@ import { withCalibration } from '@/lib/api/with-calibration';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { searchSituationCorpus } from '@/lib/intelligence/corpus-search';
+import { localKnowledgeAdapter } from '@/lib/knowledge/context-engine';
 import { messageContentSchema, situationContextSchema, aiSettingsSchema } from '@/lib/api/schemas';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { resolveTier } from '@/lib/api/tier';
@@ -44,12 +45,13 @@ export const POST = withCalibration('chat', 'ai_chat', {
       situation: situationContextSchema.optional(),
       currentToolId: z.string().optional(),
       currentPath: z.string().optional(),
+      contextPackageId: z.string().optional(),
       aiSettings: aiSettingsSchema,
     });
 
     const validation = validateAiRequest(body, requestSchema);
     if (!validation.success) return validation.response;
-    const { messages, conflictContext, situation, currentToolId, currentPath, aiSettings } = validation.data;
+    const { messages, conflictContext, situation, currentToolId, currentPath, contextPackageId, aiSettings } = validation.data;
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -195,7 +197,18 @@ You have access to the user's active situation data. When answering questions:
         const lastMessage = messages?.[messages.length - 1];
         const query = typeof lastMessage?.content === 'string' ? lastMessage.content : '';
         if (query) {
-          const corpus = await searchSituationCorpus({
+          const runtimeContext = contextPackageId
+            ? await localKnowledgeAdapter.buildContextPack({
+                uid: _user.uid,
+                contextPackageId,
+                situationId: situation.id,
+                query,
+              })
+            : null;
+          if (runtimeContext) {
+            systemPrompt += '\n\n' + runtimeContext.promptBlock;
+          }
+          const corpus = runtimeContext?.corpus ?? await searchSituationCorpus({
             uid: _user.uid,
             situationId: situation.id,
             query,

@@ -55,12 +55,18 @@ export interface CorpusSearchRequest {
   query: string;
   layers?: CorpusLayer[];
   limit?: number;
+  contextPackageId?: string;
+  coreIds?: string[];
+  checkFreshness?: boolean;
 }
 
 export interface CorpusSearchTrace {
   query: string;
   layersSearched: CorpusLayer[];
   ranking: string;
+  contextPackageId?: string;
+  contextHealthScore?: number;
+  freshnessChecked?: boolean;
   /** Per-layer item counts after retrieval, before final cut. */
   layerCounts: Partial<Record<CorpusLayer, number>>;
   /** Total candidates considered before the limit was applied. */

@@ -4,7 +4,6 @@ import mammoth from 'mammoth';
 import { withAuth } from '@/lib/api/with-auth';
 import {
   saveDocument,
-  chunkAndSaveDocument,
 } from '@/lib/firebase/documents-service';
 import {
   getAdminStorage,
@@ -13,6 +12,7 @@ import {
 } from '@/lib/firebase/admin';
 import { autoStructureDocument } from '@/lib/documents/auto-structure';
 import { emitTelemetrySafe } from '@/lib/telemetry/emit';
+import { localKnowledgeAdapter } from '@/lib/knowledge/context-engine';
 
 /**
  * Canonical document ingestion endpoint.
@@ -276,15 +276,16 @@ export const POST = withAuth(async (request, user) => {
         .set({ sourceCore: stored.sourceCore }, { merge: true });
     }
 
-    let chunkCount = 0;
-    if (text.length > 0) {
-      try {
-        chunkCount = await chunkAndSaveDocument(user.uid, situationId, stored.id, file.name, text);
-        console.log(`[documents] Chunked ${file.name}: ${chunkCount} chunks`);
-      } catch (err) {
-        console.error('[documents] Chunking failed:', err);
-      }
-    }
+    const ingestionRun = await localKnowledgeAdapter.ingestDocument({
+      uid: user.uid,
+      situationId,
+      documentId: stored.id,
+      title: file.name,
+      fileType,
+      text,
+      bucketUri,
+    });
+    const chunkCount = ingestionRun.chunkCount;
 
     await emitTelemetrySafe({
       eventName: 'document.upload-complete',
@@ -294,7 +295,15 @@ export const POST = withAuth(async (request, user) => {
       route: '/api/documents/upload',
       status: 'ok',
       latencyMs: Date.now() - startedAt,
-      details: { mode: 'multipart', fileType, extractionMode, chunkCount, documentId: stored.id },
+      details: {
+        mode: 'multipart',
+        fileType,
+        extractionMode,
+        chunkCount,
+        documentId: stored.id,
+        ingestionRunId: ingestionRun.id,
+        ingestionStatus: ingestionRun.status,
+      },
     });
     return NextResponse.json({
       success: true,
@@ -308,6 +317,8 @@ export const POST = withAuth(async (request, user) => {
         uploadedAt: stored.uploadedAt,
         entityCount: structured.actors.length,
         chunkCount,
+        ingestionRunId: ingestionRun.id,
+        ingestionStatus: ingestionRun.status,
         bucketUri,
         structured,
       },

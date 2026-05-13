@@ -47,6 +47,9 @@ export interface SearchSituationCorpusInput {
   query: string;
   layers?: CorpusLayer[];
   limit?: number;
+  contextPackageId?: string;
+  contextHealthScore?: number;
+  checkFreshness?: boolean;
 }
 
 export async function searchSituationCorpus(
@@ -93,6 +96,9 @@ export async function searchSituationCorpus(
     query: input.query,
     layersSearched: layers,
     ranking: 'keyword + recency now; vector search pilot next',
+    contextPackageId: input.contextPackageId,
+    contextHealthScore: input.contextHealthScore,
+    freshnessChecked: input.checkFreshness === true,
     layerCounts,
     totalCandidates: candidates.length,
     durationMs: Date.now() - start,

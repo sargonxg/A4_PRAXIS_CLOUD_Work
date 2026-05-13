@@ -20,6 +20,7 @@ import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { searchSituationCorpus } from '@/lib/intelligence/corpus-search';
+import { getContextPackage } from '@/lib/knowledge/context-engine';
 import {
   DEFAULT_CORPUS_LAYERS,
   DEFAULT_CORPUS_LIMIT,
@@ -34,6 +35,9 @@ const RequestSchema = z.object({
   query: z.string().max(2000).default(''),
   layers: z.array(LayerSchema).max(10).optional(),
   limit: z.number().int().positive().max(MAX_CORPUS_LIMIT).optional(),
+  contextPackageId: z.string().max(200).optional(),
+  coreIds: z.array(z.string()).max(20).optional(),
+  checkFreshness: z.boolean().optional(),
 });
 
 export const POST = withAuth(async (request, user) => {
@@ -45,6 +49,7 @@ export const POST = withAuth(async (request, user) => {
           query: '',
           layersSearched: [],
           ranking: 'demo session — corpus search disabled',
+          freshnessChecked: false,
           layerCounts: {},
           totalCandidates: 0,
           durationMs: 0,
@@ -61,15 +66,26 @@ export const POST = withAuth(async (request, user) => {
       );
     }
 
-    const layers: CorpusLayer[] = parsed.data.layers ?? [...DEFAULT_CORPUS_LAYERS];
-    const limit = parsed.data.limit ?? DEFAULT_CORPUS_LIMIT;
+    const contextPackage = parsed.data.contextPackageId
+      ? await getContextPackage(user.uid, parsed.data.contextPackageId)
+      : null;
+    if (parsed.data.contextPackageId && !contextPackage) {
+      return NextResponse.json({ error: 'Context package not found' }, { status: 404 });
+    }
+    const layers: CorpusLayer[] = parsed.data.layers
+      ?? contextPackage?.retrievalPolicy.layers
+      ?? [...DEFAULT_CORPUS_LAYERS];
+    const limit = parsed.data.limit ?? contextPackage?.retrievalPolicy.limit ?? DEFAULT_CORPUS_LIMIT;
 
     const result = await searchSituationCorpus({
       uid: user.uid,
-      situationId: parsed.data.situationId,
+      situationId: contextPackage?.coreRefs.situationCoreId ?? parsed.data.situationId,
       query: parsed.data.query,
       layers,
       limit,
+      contextPackageId: contextPackage?.id ?? parsed.data.contextPackageId,
+      contextHealthScore: contextPackage?.health.score,
+      checkFreshness: parsed.data.checkFreshness ?? contextPackage?.retrievalPolicy.checkFreshness,
     });
 
     return NextResponse.json(result);
