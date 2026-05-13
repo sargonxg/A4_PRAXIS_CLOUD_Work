@@ -73,6 +73,63 @@ product_contract:
     typography: 14-16px body text, compact toolbars, no viewport-scaled font sizes
     icons: lucide icons for actions where available
     memo_studio: page-like document canvas with outline and provenance sidebars
+  app_shell_rules:
+    navigation: sidebar and mobile nav expose only primary surfaces plus Advanced
+    header: command input opens the command palette and never becomes a second nav
+    context_bar: always visible below header on authenticated app screens
+    advanced: raw tools, traces, audits, providers, and debug surfaces only
+  navigation_rules:
+    primary_count: five user-facing surfaces plus Advanced
+    labels:
+      - Home
+      - Ask PRAXIS
+      - Library
+      - Memo Studio
+      - Canvas
+      - Advanced
+    prohibited_primary_labels:
+      - Tools
+      - Methods
+      - Credits
+      - Demo
+      - Draft
+  color_rules:
+    background: neutral app background, not dark marketing treatment
+    work_surfaces: white or off-white
+    primary_action: navy or burnished gold, one per screen
+    warning_and_gap: semantic colors only; never decorative accents
+  spacing_rules:
+    shell_padding: 16-24px
+    panel_padding: 12-20px
+    compact_rows: 40-48px high where possible
+    avoid: oversized hero spacing inside authenticated app
+  card_panel_rules:
+    cards: repeated items, modals, and framed tools only
+    page_sections: unframed or single-panel layouts
+    nested_cards: forbidden
+    shadows: restrained and secondary to borders
+  button_hierarchy:
+    primary: one visible dominant action per screen
+    secondary: two or three maximum before overflow
+    overflow: use Work on this, More, or command palette
+    destructive: isolated and never visually equal to primary work actions
+  command_palette_pattern:
+    shortcut: Ctrl/Cmd+K
+    library: cmdk
+    contents: primary surfaces, context actions, output actions
+    forbidden: long raw tool lists, provider names, credit costs
+  state_patterns:
+    empty: state the missing context and offer one next action
+    loading: compact inline spinner or skeleton, not full-page drama unless auth is loading
+    error: explain what failed, preserve current context, provide retry
+  mobile_behavior:
+    nav: bottom nav shows Home, Ask PRAXIS, Library, Memo Studio, Canvas
+    advanced: reachable through command palette or desktop sidebar, not bottom nav
+    context_bar: wraps into compact pills and remains above content
+  accessibility_requirements:
+    contrast: placeholders and secondary text must meet readable contrast on white surfaces
+    keyboard: command palette, menus, and primary actions must be keyboard reachable
+    focus: visible focus rings on command/menu/action controls
   forbidden_patterns:
     - nested cards inside cards
     - decorative gradient blobs, orbs, or bokeh

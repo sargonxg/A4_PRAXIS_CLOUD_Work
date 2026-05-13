@@ -144,12 +144,12 @@ export function Header({
           <input
             value={command}
             onChange={(event) => setCommand(event.target.value)}
-            placeholder="Ask PRAXIS, open a core, or find a source..."
+            placeholder="Command or ask PRAXIS..."
             className="min-w-0 flex-1 bg-transparent text-sm text-navy-950 placeholder:text-navy-600 focus:outline-none"
             aria-label="Ask PRAXIS or search"
           />
           <kbd className="rounded bg-[var(--color-app-surface-alt)] px-1.5 py-0.5 text-[10px] font-medium text-navy-400">
-            Cmd+K
+            Ctrl+K
           </kbd>
         </form>
 

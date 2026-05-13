@@ -11,17 +11,17 @@ Last updated: 2026-05-13.
 
 ## Immediate Next Steps
 
-1. Browser-verify the simplified workbench flow with a signed user session: Home persisted context stack, Ask PRAXIS with context health, Library source attach, Memo Studio evidence gap sidebar, and Canvas.
-2. Extend Active Context Stack persistence beyond the default stack to named stacks and saved Canvas layouts when the final multi-stack UX is approved.
-3. Add the first PRAXIS-to-DIALECTICA adapter proof only after the standalone MVP flow is smooth: one typed context query, one cited response, one reviewable graph delta.
-4. Complete Pack 24 backend Reasoning Spine: Rust BLAKE3 context-pack compiler, real trace ids, Langfuse or equivalent trace store, and live event streaming behind the current Spine panel.
-5. Complete Pack 23 backend Library Bucket: real DOCX/PDF/MD ingestion, source receipts, hybrid search, and provenance-ledger persistence behind the current Drafter Companion UI.
-6. Keep user-created Situation Cores primary inside `/app/contexts` and `/app/cores/context`; public `/contexts` is now only a redirect.
-7. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
-8. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
-9. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
-10. Review the 2026-05-13 GCP/Firebase cleanup candidates before any mutating cloud cleanup: retired provider secrets, Artifact Registry retention, and the two unclear projects `plasma-talon-lt3cf` / `google-mpf-mc7f341560lx`.
-11. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
+1. Extend Active Context Stack persistence beyond the default stack to named stacks and saved Canvas layouts when the final multi-stack UX is approved.
+2. Add the first PRAXIS-to-DIALECTICA adapter proof only after the standalone MVP flow is smooth: one typed context query, one cited response, one reviewable graph delta.
+3. Complete Pack 24 backend Reasoning Spine: Rust BLAKE3 context-pack compiler, real trace ids, Langfuse or equivalent trace store, and live event streaming behind the current Spine panel.
+4. Complete Pack 23 backend Library Bucket: real DOCX/PDF/MD ingestion, source receipts, hybrid search, and provenance-ledger persistence behind the current Drafter Companion UI.
+5. Keep user-created Situation Cores primary inside `/app/contexts` and `/app/cores/context`; public `/contexts` is now only a redirect.
+6. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
+7. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
+8. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
+9. Review the 2026-05-13 GCP/Firebase cleanup candidates before any mutating cloud cleanup: retired provider secrets, Artifact Registry retention, and the two unclear projects `plasma-talon-lt3cf` / `google-mpf-mc7f341560lx`.
+10. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
+11. Add production-browser coverage for the authenticated command palette once a stable production test user/session path is approved; local signed-session smoke now covers the simplified five-surface flow.
 
 ## Future Architecture Direction
 

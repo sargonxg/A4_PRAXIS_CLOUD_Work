@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(app): add the simplified workbench command palette.
+  Added `cmdk`, a global command palette for the five primary surfaces and
+  context actions, global `Ctrl/Cmd+K` handling from inputs, stricter UX rules
+  in `DESIGN.md`, and a focused Playwright smoke for the context bar,
+  command palette, and Home-to-Canvas-to-Ask-to-Library-to-Memo flow.
 - feat(workspace): persist active context stack and add universal item actions.
   Added owner-scoped `/api/workspace/context-stack`, Firestore rules for
   `users/{uid}/contextStacks/{stackId}`, a reusable "Work on this" menu,

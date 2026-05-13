@@ -45,7 +45,7 @@ for (const forbidden of ['Manage cores', 'Manage Cores', '/app/draft', '/app/met
 }
 
 const header = read('src/components/app/header.tsx');
-for (const marker of ['Ask PRAXIS, open a core, or find a source', 'PRAXIS_CANONICAL_TOOLS', 'PRIMARY_NAV']) {
+for (const marker of ['Command or ask PRAXIS', 'PRAXIS_CANONICAL_TOOLS', 'PRIMARY_NAV']) {
   if (!header.includes(marker)) failures.push(`header missing unified command marker: ${marker}`);
 }
 if (header.includes('routeLabels')) failures.push('header still uses a hand-maintained route label map');

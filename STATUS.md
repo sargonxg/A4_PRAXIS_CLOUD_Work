@@ -49,6 +49,16 @@ Current local cleanup pass:
   nodes, and selected Library receipts. Memo Studio now exposes a deterministic
   Evidence Gap Finder summary for supported, weak, unsupported, and date-check
   sections using existing source receipts.
+- The simplicity design contract is now explicit in `DESIGN.md`: five visible
+  primary surfaces, one dominant action per surface, persistent context,
+  command-palette-first secondary actions, progressive disclosure, and
+  workbench visual rules. The app shell includes a `cmdk` command palette for
+  Home, Ask PRAXIS, Library, Memo Studio, Canvas, and core context actions.
+- Focused validation for the simplified shell passed on 2026-05-13:
+  `npm run typecheck`, `npm run build`, `npm run lint` with existing warnings,
+  `npx playwright test tests/e2e/simplified-workbench-smoke.spec.ts`,
+  `npm run audit:mvp-route-shape`, and
+  `npm run audit:architecture-reference`.
 
 Current Phase 9 blockers:
 

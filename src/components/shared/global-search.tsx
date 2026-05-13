@@ -1,82 +1,47 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, ArrowRight, Clock, FileText, Users, Calendar, Shield, Sparkles, X } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
-import { useRoutePrefix } from '@/lib/utils/routes';
-import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
+import { Command } from 'cmdk';
+import {
+  BookOpenCheck,
+  FileText,
+  FolderKanban,
+  Home,
+  LibraryBig,
+  Network,
+  Plus,
+  Search,
+  ShieldAlert,
+  Sparkles,
+  Upload,
+  X,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-interface SearchResult {
+type PraxisCommand = {
   id: string;
   label: string;
-  description?: string;
-  category: 'page' | 'conflict' | 'actor' | 'document' | 'event';
-  href: string;
-}
+  description: string;
+  href?: string;
+  icon: LucideIcon;
+  group: 'Primary surfaces' | 'Context actions' | 'Output actions';
+  run?: (query: string) => void;
+};
 
-const STATIC_RESULTS: SearchResult[] = [
-  ...PRIMARY_NAV.map((item) => ({
-    id: item.id,
-    label: item.label,
-    description: `${item.shortcut} shortcut`,
-    category: 'page' as const,
-    href: item.href.replace('/app', ''),
-  })),
-  { id: 'early-warning', label: 'Early Warning System', description: 'Risk monitoring & alerts', category: 'page', href: '/early-warning' },
-  { id: 'conflict-graph', label: 'Conflict Graph', description: 'Visual entity mapping', category: 'page', href: '/conflict-graph' },
-  { id: 'stakeholder-map', label: 'Stakeholder Map', description: 'Actor network analysis', category: 'page', href: '/stakeholder-map' },
-  { id: 'media-compass', label: 'Media Compass', description: 'Source analysis & triangulation', category: 'page', href: '/media-compass' },
-  { id: 'sanctions', label: 'Sanctions Tracker', description: 'UNSC resolutions & sanctions', category: 'page', href: '/sanctions' },
-  { id: 'calendar', label: 'Calendar Monitor', description: 'UN/AU/EU sessions & events', category: 'page', href: '/calendar' },
-  { id: 'un-toolkit', label: 'UN Toolkit', description: 'Terminology, resolutions, diplomatic editor', category: 'page', href: '/un-toolkit' },
-  { id: 'talking-points', label: 'Talking Points', description: 'Generate delegation messages', category: 'page', href: '/talking-points' },
-  { id: 'documents', label: 'Documents', description: 'File library & entity extraction', category: 'page', href: '/documents' },
-  { id: 'advisory', label: 'Advisory Council', description: '10 AI expert advisors', category: 'page', href: '/advisory' },
-  { id: 'scenarios', label: 'Scenario Planner', description: 'What-if conflict analysis', category: 'page', href: '/scenarios' },
-  { id: 'cases', label: 'Case Library', description: 'Conflict case studies', category: 'page', href: '/cases' },
-  { id: 'compare', label: 'Conflict Comparison', description: 'Compare two conflicts side by side', category: 'page', href: '/compare' },
-  // Conflict entries
-  { id: 'nordalia', label: 'Nordalia Crisis', description: 'Active — East Africa', category: 'conflict', href: '/cases/nordalia' },
-  { id: 'sahel', label: 'Sahel Security Complex', description: 'Escalating — West Africa', category: 'conflict', href: '/cases/sahel' },
-  { id: 'scs', label: 'South China Sea Disputes', description: 'Frozen — Indo-Pacific', category: 'conflict', href: '/cases/scs' },
-  { id: 'colombia', label: 'Colombia Peace Process', description: 'Active — Latin America', category: 'conflict', href: '/cases/colombia' },
-  { id: 'cyprus', label: 'Cyprus Reunification', description: 'Frozen — Eastern Mediterranean', category: 'conflict', href: '/cases/cyprus' },
-  // Actors
-  { id: 'gov-nordalia', label: 'Government of Nordalia', description: 'State actor — Nordalia Crisis', category: 'actor', href: '/stakeholder-map' },
-  { id: 'drm', label: 'DRM (Democratic Reform Movement)', description: 'Non-state actor — Nordalia Crisis', category: 'actor', href: '/stakeholder-map' },
-  { id: 'unmn', label: 'UNMN (UN Mission in Nordalia)', description: 'International org — Nordalia Crisis', category: 'actor', href: '/stakeholder-map' },
+const COMMANDS: PraxisCommand[] = [
+  { id: 'open-home', label: 'Open Home', description: 'Assemble the active context stack.', href: '/app/dashboard', icon: Home, group: 'Primary surfaces' },
+  { id: 'ask-praxis', label: 'Ask PRAXIS', description: 'Ask with current context.', href: '/app/assistant', icon: Sparkles, group: 'Primary surfaces' },
+  { id: 'open-library', label: 'Open Library', description: 'Ground context in sources.', href: '/app/contexts', icon: LibraryBig, group: 'Primary surfaces' },
+  { id: 'open-memo', label: 'Open Memo Studio', description: 'Draft from context.', href: '/app/write', icon: FileText, group: 'Primary surfaces' },
+  { id: 'open-canvas', label: 'Open Canvas', description: 'Review context structure.', href: '/app/canvas', icon: Network, group: 'Primary surfaces' },
+  { id: 'attach-source', label: 'Attach source', description: 'Upload or attach a source to the active Situation Core.', href: '/app/contexts', icon: Upload, group: 'Context actions' },
+  { id: 'find-gaps', label: 'Find evidence gaps', description: 'Open Memo Studio evidence review.', href: '/app/write', icon: ShieldAlert, group: 'Context actions' },
+  { id: 'create-situation', label: 'Create Situation Core', description: 'Start a reusable case context.', href: '/app/situations/new', icon: Plus, group: 'Context actions' },
+  { id: 'create-user', label: 'Create User Core', description: 'Manage role, audience, writing style, and standards.', href: '/app/cores/user', icon: FolderKanban, group: 'Context actions' },
+  { id: 'fork-demo', label: 'Fork demo core', description: 'Copy a demo structure into your workspace.', href: '/app/contexts', icon: BookOpenCheck, group: 'Context actions' },
+  { id: 'export-memo', label: 'Export memo', description: 'Use Memo Studio export controls.', href: '/app/write', icon: FileText, group: 'Output actions' },
 ];
-
-const categoryIcons = {
-  page: ArrowRight,
-  conflict: Shield,
-  actor: Users,
-  document: FileText,
-  event: Calendar,
-};
-
-const categoryLabels = {
-  page: 'Page',
-  conflict: 'Conflict',
-  actor: 'Actor',
-  document: 'Document',
-  event: 'Event',
-};
-
-const RECENT_SEARCHES_KEY = 'praxis_recent_searches';
-
-function getRecentSearches(): string[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    return JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) ?? '[]');
-  } catch { return []; }
-}
-
-function addRecentSearch(query: string) {
-  const recent = getRecentSearches().filter((r) => r !== query).slice(0, 4);
-  localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify([query, ...recent]));
-}
 
 export function GlobalSearch({
   onClose,
@@ -86,207 +51,103 @@ export function GlobalSearch({
   initialQuery?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
-  const [selectedIdx, setSelectedIdx] = useState(0);
-  const [recentSearches, setRecentSearches] = useState<string[]>(getRecentSearches);
-  const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const prefix = useRoutePrefix();
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  const results = useMemo(() => {
-    if (!query.trim()) return [];
-    const q = query.toLowerCase();
-    return STATIC_RESULTS.filter(
-      (r) =>
-        r.label.toLowerCase().includes(q) ||
-        r.description?.toLowerCase().includes(q)
-    ).slice(0, 8);
-  }, [query]);
-
-  // Derive a safe selection index — clamp to valid range when results change,
-  // avoiding the need for a set-state-in-effect.
-  const safeSelectedIdx = results.length === 0
-    ? 0
-    : Math.min(selectedIdx, results.length - 1);
-
-  const navigate = useCallback((result: SearchResult) => {
-    addRecentSearch(result.label);
-    setRecentSearches(getRecentSearches());
-    router.push(`${prefix}${result.href}`);
-    onClose();
-  }, [router, onClose, prefix]);
 
   const askPraxis = useCallback((prompt: string) => {
-    window.dispatchEvent(
-      new CustomEvent('open-praxis-chat', {
-        detail: { prompt: prompt.replace(/^\?/, '').trim() },
-      }),
-    );
-    onClose();
-  }, [onClose]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIdx((i) => Math.min(i + 1, results.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIdx((i) => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter') {
-      if (query.trim().startsWith('?')) {
-        askPraxis(query);
-        return;
-      }
-      if (results[safeSelectedIdx]) navigate(results[safeSelectedIdx]);
-    } else if (e.key === 'Escape') {
-      onClose();
+    const cleaned = prompt.replace(/^\?/, '').trim();
+    if (cleaned.length > 0) {
+      window.dispatchEvent(new CustomEvent('open-praxis-chat', { detail: { prompt: cleaned } }));
+    } else {
+      router.push('/app/assistant');
     }
-  };
+    onClose();
+  }, [onClose, router]);
 
-  const displayItems = results.length > 0 ? results : [];
-  const showAskAssistant = query.trim().length > 3 && results.length < 3;
+  const commands = useMemo<PraxisCommand[]>(() => [
+    {
+      id: 'ask-query',
+      label: query.trim().length > 0 ? `Ask PRAXIS: ${query.replace(/^\?/, '').trim()}` : 'Ask PRAXIS with current context',
+      description: 'Send the prompt to PRAXIS without exposing the tool library.',
+      icon: Sparkles,
+      group: 'Primary surfaces',
+      run: askPraxis,
+    },
+    ...COMMANDS,
+  ], [askPraxis, query]);
+
+  function runCommand(command: PraxisCommand) {
+    if (command.run) {
+      command.run(query);
+      return;
+    }
+    if (command.href) router.push(command.href);
+    onClose();
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-16" onClick={onClose}>
       <div className="absolute inset-0 bg-navy-950/25 backdrop-blur-sm" />
-      <div
-        className="relative z-10 w-full max-w-2xl rounded-2xl border border-[var(--color-app-border)] bg-white shadow-2xl shadow-navy-950/12 overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+      <Command
+        data-testid="command-palette"
+        className="relative z-10 w-full max-w-2xl overflow-hidden rounded-lg border border-[var(--color-app-border)] bg-white shadow-xl shadow-navy-950/12"
+        onClick={(event) => event.stopPropagation()}
+        shouldFilter
       >
-        {/* Search input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--color-app-border)]">
-          <Search className="h-4 w-4 shrink-0 text-navy-400" />
-          <input
-            ref={inputRef}
+        <div className="flex items-center gap-3 border-b border-[var(--color-app-border)] px-4 py-3">
+          <Search className="h-4 w-4 shrink-0 text-navy-500" />
+          <Command.Input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask PRAXIS with ? or search..."
-            className="flex-1 bg-transparent text-sm text-navy-900 placeholder:text-navy-400 focus:outline-none"
+            onValueChange={setQuery}
+            autoFocus
+            placeholder="Command or ask PRAXIS..."
+            className="flex-1 bg-transparent text-sm text-navy-950 outline-none placeholder:text-navy-600"
           />
-          {query && (
-            <button onClick={() => setQuery('')} className="text-navy-400 hover:text-navy-600">
-              <X className="h-4 w-4" />
-            </button>
-          )}
-          <kbd className="rounded border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-2 py-0.5 text-[10px] text-navy-400">Esc</kbd>
+          <button type="button" onClick={onClose} className="rounded-md p-1 text-navy-500 hover:bg-slate-100">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close command palette</span>
+          </button>
+          <kbd className="rounded border border-[var(--color-app-border)] bg-[var(--color-app-surface-alt)] px-2 py-0.5 text-[10px] text-navy-500">Esc</kbd>
         </div>
 
-        {/* Results */}
-        <div className="max-h-[420px] overflow-y-auto">
-          {/* Recent searches (empty state) */}
-          {!query && recentSearches.length > 0 && (
-            <div className="px-4 py-3">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">Recent</p>
-              <div className="space-y-1">
-                {recentSearches.map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setQuery(r)}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-navy-600 hover:bg-[var(--color-app-surface-alt)] transition-colors"
-                  >
-                    <Clock className="h-3.5 w-3.5 text-navy-400" />
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* No query — show quick navigation */}
-          {!query && (
-            <div className="px-4 py-3 border-t border-[var(--color-app-border-light)]">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-400">Quick Navigation</p>
-              <div className="grid grid-cols-2 gap-1">
-                {STATIC_RESULTS.filter((r) => r.category === 'page').slice(0, 8).map((r) => {
-                  const Icon = categoryIcons[r.category];
-                  return (
-                    <button
-                      key={r.id}
-                      onClick={() => navigate(r)}
-                      className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-navy-600 hover:bg-[var(--color-app-surface-alt)] transition-colors"
-                    >
-                      <Icon className="h-3.5 w-3.5 shrink-0 text-navy-400" />
-                      <span className="truncate">{r.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Search results */}
-          {displayItems.length > 0 && (
-            <div className="py-2">
-              {displayItems.map((result, idx) => {
-                const Icon = categoryIcons[result.category];
+        <Command.List className="max-h-[460px] overflow-y-auto p-2">
+          <Command.Empty className="px-3 py-8 text-center text-sm text-navy-500">
+            No command found. Press enter after a question to ask PRAXIS.
+          </Command.Empty>
+          {(['Primary surfaces', 'Context actions', 'Output actions'] as const).map((group) => (
+            <Command.Group
+              key={group}
+              heading={group}
+              className="px-1 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-500 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-2"
+            >
+              {commands.filter((command) => command.group === group).map((command) => {
+                const Icon = command.icon;
                 return (
-                  <button
-                    key={result.id}
-                    onClick={() => navigate(result)}
-                    className={cn(
-                      'flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors',
-                      idx === selectedIdx
-                        ? 'bg-diplomatic-blue/5 text-diplomatic-blue'
-                        : 'text-navy-700 hover:bg-[var(--color-app-surface-alt)]'
-                    )}
+                  <Command.Item
+                    key={command.id}
+                    value={`${command.label} ${command.description}`}
+                    onSelect={() => runCommand(command)}
+                    className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-left text-navy-800 data-[selected=true]:bg-slate-100 data-[selected=true]:text-navy-950"
                   >
-                    <div className={cn(
-                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
-                      idx === selectedIdx ? 'bg-diplomatic-blue/10' : 'bg-[var(--color-app-surface-alt)]'
-                    )}>
-                      <Icon className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{result.label}</p>
-                      {result.description && (
-                        <p className="text-[11px] text-navy-400 truncate">{result.description}</p>
-                      )}
-                    </div>
-                    <span className="text-[10px] text-navy-400 shrink-0">{categoryLabels[result.category]}</span>
-                  </button>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white">
+                      <Icon className="h-4 w-4 text-diplomatic-blue" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold">{command.label}</span>
+                      <span className="block truncate text-xs text-navy-500">{command.description}</span>
+                    </span>
+                  </Command.Item>
                 );
               })}
-            </div>
-          )}
-
-          {/* Ask assistant option */}
-          {showAskAssistant && (
-            <div className="border-t border-[var(--color-app-border-light)] px-4 py-3">
-              <button
-                onClick={() => {
-                  askPraxis(query);
-                }}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-gold-500/5"
-              >
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold-500/10">
-                  <Sparkles className="h-3.5 w-3.5 text-gold-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-navy-900">Ask PRAXIS about &ldquo;{query}&rdquo;</p>
-                  <p className="text-[11px] text-navy-400">Get AI-powered analysis</p>
-                </div>
-              </button>
-            </div>
-          )}
-
-          {/* Empty results */}
-          {query && results.length === 0 && !showAskAssistant && (
-            <div className="px-4 py-8 text-center text-sm text-navy-400">
-              No results for &ldquo;{query}&rdquo;
-            </div>
-          )}
-        </div>
+            </Command.Group>
+          ))}
+        </Command.List>
 
         <div className="flex items-center gap-4 border-t border-[var(--color-app-border)] px-4 py-2">
-          <span className="text-[10px] text-navy-400">↑↓ navigate</span>
-          <span className="text-[10px] text-navy-400">↵ open</span>
-          <span className="text-[10px] text-navy-400">esc close</span>
+          <span className="text-[10px] text-navy-500">Up/down navigate</span>
+          <span className="text-[10px] text-navy-500">Enter run</span>
+          <span className="text-[10px] text-navy-500">Esc close</span>
         </div>
-      </div>
+      </Command>
     </div>
   );
 }
