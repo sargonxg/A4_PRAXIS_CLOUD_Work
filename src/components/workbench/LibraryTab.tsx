@@ -56,6 +56,7 @@ export function LibraryTab() {
   const [backendSources, setBackendSources] = useState<BackendSourceReceipt[]>([]);
   const [sourceNote, setSourceNote] = useState<string | null>(null);
   const [sourceBusy, setSourceBusy] = useState(false);
+  const [isDraggingSource, setIsDraggingSource] = useState(false);
   const backendArtifacts = useMemo(() => backendSources.map((source) => sourceReceiptToArtifact(source, cogneeEnabled)), [backendSources, cogneeEnabled]);
   const artifacts = useMemo(() => {
     const local = buildLibraryArtifacts(caseModule, caseId, savedClaims);
@@ -192,7 +193,26 @@ export function LibraryTab() {
 
   return (
     <div className="space-y-6" data-testid="workbench-library-surface">
-      <section className="rounded-lg border border-navy-200 bg-white p-5 shadow-sm shadow-navy-950/5">
+      <section
+        className={cn(
+          'rounded-lg border bg-white p-5 shadow-sm shadow-navy-950/5',
+          isDraggingSource ? 'border-diplomatic-blue bg-diplomatic-blue/5' : 'border-navy-200',
+        )}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setIsDraggingSource(true);
+        }}
+        onDragLeave={(event) => {
+          const related = event.relatedTarget;
+          if (related instanceof Node && event.currentTarget.contains(related)) return;
+          setIsDraggingSource(false);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          setIsDraggingSource(false);
+          void uploadSource(event.dataTransfer.files);
+        }}
+      >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -200,7 +220,7 @@ export function LibraryTab() {
               <h2 className="text-lg font-semibold text-navy-950">Library</h2>
             </div>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
-              Browse the case artifact record: sources, documents, saved claims, memo versions, and exports from one faceted view.
+              Browse the case artifact record: sources, documents, saved claims, memo versions, and exports from one faceted view. Drop PDFs, DOCX, notes, or source files here to structure them into the active Situation Core.
             </p>
           </div>
           <ContextHealthChip />
@@ -212,6 +232,12 @@ export function LibraryTab() {
             Upload source
             <input type="file" accept=".pdf,.docx,.txt,.md,.csv" className="hidden" onChange={(event) => void uploadSource(event.target.files)} />
           </label>
+          <div className={cn(
+            'rounded-md border border-dashed px-3 py-2 text-xs font-semibold',
+            isDraggingSource ? 'border-diplomatic-blue bg-white text-diplomatic-blue' : 'border-slate-300 bg-slate-50 text-slate-700',
+          )}>
+            Drop source on this panel
+          </div>
           <button
             type="button"
             onClick={() => void refreshBackendSources()}

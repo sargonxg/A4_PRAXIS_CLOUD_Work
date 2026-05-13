@@ -54,11 +54,30 @@ Current local cleanup pass:
   command-palette-first secondary actions, progressive disclosure, and
   workbench visual rules. The app shell includes a `cmdk` command palette for
   Home, Ask PRAXIS, Library, Memo Studio, Canvas, and core context actions.
+- Demo-to-real conversion now supports the three v5 demo Situation Cores:
+  Indo-Pacific Strategic Competition 2026, AI Regulation 2026 - US Federal
+  and State Landscape, and Food and Beverage Regulatory and Sustainability
+  Outlook 2026. The copy endpoint creates a user-owned Situation, structured
+  User/Situation/Source/Graph/Output Core records under `users/{uid}/cores`,
+  source receipts under the copied Situation, a default active context stack,
+  and starter next moves. Syria copy remains on the older dedicated demo path.
+- Library source intake now has a visible drop zone backed by the existing
+  `/api/documents/upload` and library ingest path. It does not claim Cognee is
+  live when the feature flag is disabled.
+- Context Canvas now surfaces concrete structure nodes for actors, sources,
+  claims, and timeline events with contextual "Work on this" actions. It uses
+  the existing graph preview stack rather than introducing React Flow in this
+  pass.
 - Focused validation for the simplified shell passed on 2026-05-13:
   `npm run typecheck`, `npm run build`, `npm run lint` with existing warnings,
   `npx playwright test tests/e2e/simplified-workbench-smoke.spec.ts`,
   `npm run audit:mvp-route-shape`, and
   `npm run audit:architecture-reference`.
+- Focused validation for the demo-core pass passed on 2026-05-13:
+  `npm run typecheck`, `npx vitest run src/__tests__/context-health.test.ts`,
+  `npx playwright test tests/e2e/simplified-workbench-smoke.spec.ts`,
+  `npm run build`, `npm run audit:mvp-route-shape`,
+  `npm run audit:architecture-reference`, and `graphify update .`.
 
 Current Phase 9 blockers:
 

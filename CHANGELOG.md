@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- feat(context): make v5 demo cores forkable workspace objects.
+  Added typed User/Situation/Source/Document/Graph/Output Core models, code
+  backed v5 demo core seed objects, owner-scoped Firestore rules for
+  `users/{uid}/cores`, v5 demo copy support that creates user-owned Situation
+  and core records, Library source dropzone affordance, and richer Canvas
+  structure nodes with contextual actions.
 - feat(app): add the simplified workbench command palette.
   Added `cmdk`, a global command palette for the five primary surfaces and
   context actions, global `Ctrl/Cmd+K` handling from inputs, stricter UX rules

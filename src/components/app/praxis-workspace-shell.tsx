@@ -504,6 +504,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
                     kind={item.kind}
                     href={item.kind === 'user' ? `/app/workbench/${item.id}` : `/app/workbench/${item.id}`}
                     onActivate={() => activateSituation(item.id)}
+                    copyHref={item.kind === 'example' ? `/api/situations/copy-from-demo?demoCaseId=${encodeURIComponent(item.id)}` : undefined}
                   />
                 ))}
               </div>
@@ -1185,6 +1186,7 @@ function SituationLibraryCard({
   kind,
   href,
   onActivate,
+  copyHref,
 }: {
   title: string;
   subtitle: string;
@@ -1193,6 +1195,7 @@ function SituationLibraryCard({
   kind: 'user' | 'example';
   href: string;
   onActivate: () => void;
+  copyHref?: string;
 }) {
   return (
     <div className={cn('rounded-lg border p-3', active ? 'border-gold-200 bg-white' : 'border-slate-200 bg-white')}>
@@ -1212,6 +1215,11 @@ function SituationLibraryCard({
         <Link href={href} className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-navy-700 hover:bg-slate-50">
           Open
         </Link>
+        {copyHref ? (
+          <Link href={copyHref} className="inline-flex items-center gap-1 rounded-md border border-gold-300 bg-gold-50 px-2.5 py-1.5 text-xs font-semibold text-gold-900 hover:bg-gold-100">
+            Copy to workspace
+          </Link>
+        ) : null}
         <WorkOnThisMenu itemLabel={title} contextHref="/app/dashboard" sourcesHref={href} draftHref="/app/write" />
       </div>
     </div>

@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { Brain, FileText, LibraryBig, Target } from 'lucide-react';
 import { WorkOnThisMenu } from '@/components/app/work-on-this-menu';
 import { ContextGraphPreview } from '@/components/graph/ContextGraphPreview';
+import { listExampleCases } from '@/lib/cases/registry';
 import { buildContextHealthReport } from '@/lib/context/context-health';
 import { PUBLIC_USER_MODELS } from '@/lib/user-models/seeds';
 import { getActiveUserModelId, listPrivateUserModels } from '@/lib/users/api';
@@ -13,6 +14,7 @@ import { useSituationStore } from '@/stores/situation-store';
 export function ContextCanvasPage() {
   const situations = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
+  const exampleCase = useMemo(() => listExampleCases()[0] ?? null, []);
 
   const activeUserCore = useMemo(() => {
     const privateModels = typeof window === 'undefined' ? [] : listPrivateUserModels(window.localStorage);
@@ -20,8 +22,23 @@ export function ContextCanvasPage() {
     return [...privateModels, ...PUBLIC_USER_MODELS].find((model) => model.modelId === activeId) ?? PUBLIC_USER_MODELS[0];
   }, []);
 
-  const situation = activeSituation ?? situations[0] ?? null;
-  const sourceCount = (situation?.sourceUrls?.length ?? 0) + (situation?.documentCount ?? 0);
+  const situation = activeSituation ?? situations[0] ?? exampleCase?.situation ?? null;
+  const sourceTitles = situation?.sourceUrls?.length
+    ? situation.sourceUrls
+    : exampleCase?.sources.slice(0, 8).map((source) => source.title ?? source.name ?? source.url ?? source.receiptId) ?? [];
+  const timelineNodes = situation?.keyDates?.length
+    ? situation.keyDates.map((item, index) => ({ id: `timeline:${index}`, title: item.label, detail: item.date }))
+    : exampleCase?.episodes?.filter((episode) => episode.strand === 'situation').slice(0, 6).map((episode) => ({
+        id: episode.id,
+        title: episode.title,
+        detail: episode.validFrom.slice(0, 10),
+      })) ?? [];
+  const claimNodes = exampleCase?.sources.slice(0, 4).map((source) => ({
+    id: `claim:${source.receiptId}`,
+    title: source.excerpt ?? source.title ?? source.receiptId,
+    detail: source.tier ?? 'source',
+  })) ?? [];
+  const sourceCount = sourceTitles.length + (situation?.documentCount ?? 0);
   const actorCount = situation?.actors?.length ?? situation?.actorCount ?? 0;
   const health = buildContextHealthReport({
     hasUserCore: Boolean(activeUserCore),
@@ -63,6 +80,15 @@ export function ContextCanvasPage() {
           <CanvasNode label="Situation Core" title={situation?.name ?? 'No situation selected'} href={situation ? `/app/workbench/${situation.id}` : '/app/contexts'} icon={Target} />
           <CanvasNode label="Sources" title={`${sourceCount} evidence items`} href={situation ? `/app/workbench/${situation.id}?tab=library` : '/app/contexts'} icon={LibraryBig} />
           <CanvasNode label="Memo" title="Draft from active context" href="/app/write" icon={FileText} />
+          <div className="rounded-lg border border-slate-200 bg-white p-4" data-testid="context-canvas-nodes">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Structure nodes</p>
+            <div className="mt-3 space-y-3">
+              <NodeGroup title="Actors" items={(situation?.actors ?? []).slice(0, 6).map((actor) => ({ id: `actor:${actor}`, title: actor, detail: 'stakeholder' }))} />
+              <NodeGroup title="Sources" items={sourceTitles.slice(0, 5).map((title, index) => ({ id: `source:${index}`, title, detail: 'source receipt' }))} />
+              <NodeGroup title="Claims" items={claimNodes} />
+              <NodeGroup title="Timeline" items={timelineNodes} />
+            </div>
+          </div>
           <div className="rounded-lg border border-slate-200 bg-white p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Work on this</p>
             <div className="mt-3 grid gap-2">
@@ -76,6 +102,31 @@ export function ContextCanvasPage() {
         </aside>
       </section>
     </main>
+  );
+}
+
+function NodeGroup({
+  title,
+  items,
+}: {
+  title: string;
+  items: Array<{ id: string; title: string; detail: string }>;
+}) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold text-navy-900">{title}</p>
+      <div className="mt-1 space-y-1">
+        {(items.length ? items : [{ id: `${title}:empty`, title: 'No nodes yet', detail: 'Add to active context' }]).map((item) => (
+          <div key={item.id} className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2">
+            <p className="truncate text-xs font-semibold text-navy-950">{item.title}</p>
+            <div className="mt-1 flex items-center justify-between gap-2">
+              <p className="truncate text-[11px] text-slate-600">{item.detail}</p>
+              <WorkOnThisMenu itemLabel={item.title} contextHref="/app/dashboard" draftHref="/app/write" sourcesHref="/app/contexts" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

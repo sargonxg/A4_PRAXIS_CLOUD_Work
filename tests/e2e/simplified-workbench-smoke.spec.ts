@@ -33,6 +33,7 @@ test('simplified app shell exposes context bar, command palette, and five-surfac
   await expect(page.getByText('Situation Core').first()).toBeVisible();
   await expect(page.getByText('Health').first()).toBeVisible();
   await expect(page.getByText('Active Context Stack')).toBeVisible();
+  await expect(page.getByText('Copy to workspace').first()).toBeVisible();
 
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
   await expect(page.getByTestId('command-palette')).toBeVisible();
@@ -44,6 +45,7 @@ test('simplified app shell exposes context bar, command palette, and five-surfac
   await page.getByText('Open Canvas', { exact: true }).click();
   await expect(page).toHaveURL(/\/app\/canvas$/);
   await expect(page.getByTestId('context-canvas-page')).toBeVisible();
+  await expect(page.getByTestId('context-canvas-nodes')).toBeVisible();
 
   await page.goto('/app/assistant');
   await expect(page.getByTestId('ask-workspace-page')).toBeVisible();
@@ -51,6 +53,9 @@ test('simplified app shell exposes context bar, command palette, and five-surfac
 
   await page.goto('/app/contexts');
   await expect(page.getByRole('heading', { name: /Core Library/i }).first()).toBeVisible();
+
+  await page.goto('/app/workbench/indo-pacific-2026?tab=library');
+  await expect(page.getByText('Drop source on this panel').first()).toBeVisible();
 
   await page.goto('/app/write');
   await expect(page.getByTestId('praxis-writer')).toBeVisible();

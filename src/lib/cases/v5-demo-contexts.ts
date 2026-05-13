@@ -13,7 +13,7 @@ type SourceSeed = {
   publishedDate?: string;
 };
 
-type DemoContextSeed = {
+export type DemoContextSeed = {
   id: string;
   name: string;
   region: string;
@@ -233,10 +233,16 @@ const DEMO_SEEDS: DemoContextSeed[] = [
   },
 ];
 
+export const V5_DEMO_CONTEXT_SEEDS: readonly DemoContextSeed[] = DEMO_SEEDS;
+
 export const V5_DEMO_CASE_MODULES: CaseModule[] = DEMO_SEEDS.map(toCaseModule);
 
 export function getV5DemoCaseModule(id: string): CaseModule | undefined {
   return V5_DEMO_CASE_MODULES.find((demo) => demo.id === id);
+}
+
+export function getV5DemoContextSeed(id: string): DemoContextSeed | undefined {
+  return DEMO_SEEDS.find((seed) => seed.id === id);
 }
 
 function toCaseModule(seed: DemoContextSeed): CaseModule {

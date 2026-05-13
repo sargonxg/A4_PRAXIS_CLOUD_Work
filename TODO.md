@@ -12,16 +12,18 @@ Last updated: 2026-05-13.
 ## Immediate Next Steps
 
 1. Extend Active Context Stack persistence beyond the default stack to named stacks and saved Canvas layouts when the final multi-stack UX is approved.
-2. Add the first PRAXIS-to-DIALECTICA adapter proof only after the standalone MVP flow is smooth: one typed context query, one cited response, one reviewable graph delta.
-3. Complete Pack 24 backend Reasoning Spine: Rust BLAKE3 context-pack compiler, real trace ids, Langfuse or equivalent trace store, and live event streaming behind the current Spine panel.
-4. Complete Pack 23 backend Library Bucket: real DOCX/PDF/MD ingestion, source receipts, hybrid search, and provenance-ledger persistence behind the current Drafter Companion UI.
-5. Keep user-created Situation Cores primary inside `/app/contexts` and `/app/cores/context`; public `/contexts` is now only a redirect.
-6. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
-7. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
-8. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
-9. Review the 2026-05-13 GCP/Firebase cleanup candidates before any mutating cloud cleanup: retired provider secrets, Artifact Registry retention, and the two unclear projects `plasma-talon-lt3cf` / `google-mpf-mc7f341560lx`.
-10. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
-11. Add production-browser coverage for the authenticated command palette once a stable production test user/session path is approved; local signed-session smoke now covers the simplified five-surface flow.
+2. Promote Canvas from review-light structure nodes to a read/write layout surface if the team approves adding React Flow or using the current graph stack for draggable persisted layouts.
+3. Add a signed-in integration test for v5 demo copy against a Firebase emulator or test project; current validation covers the typed demo core objects and the UI copy affordance, not a live Firestore mutation.
+4. Add the first PRAXIS-to-DIALECTICA adapter proof only after the standalone MVP flow is smooth: one typed context query, one cited response, one reviewable graph delta.
+5. Complete Pack 24 backend Reasoning Spine: Rust BLAKE3 context-pack compiler, real trace ids, Langfuse or equivalent trace store, and live event streaming behind the current Spine panel.
+6. Complete Pack 23 backend Library Bucket: deeper source auto-structure after upload: persisted extracted key claims, actors, and timeline events for every PDF/DOCX/MD source receipt.
+7. Keep user-created Situation Cores primary inside `/app/contexts` and `/app/cores/context`; public `/contexts` is now only a redirect.
+8. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
+9. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
+10. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
+11. Review the 2026-05-13 GCP/Firebase cleanup candidates before any mutating cloud cleanup: retired provider secrets, Artifact Registry retention, and the two unclear projects `plasma-talon-lt3cf` / `google-mpf-mc7f341560lx`.
+12. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
+13. Add production-browser coverage for the authenticated command palette once a stable production test user/session path is approved; local signed-session smoke now covers the simplified five-surface flow.
 
 ## Future Architecture Direction
 
