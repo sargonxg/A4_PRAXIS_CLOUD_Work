@@ -96,6 +96,9 @@ Latest production deploy evidence:
   - Commit `435ca95a` pushed to `main`.
   - Cloud Build `dfc67dd4-1b85-4fc7-b439-c574ceb65d87` succeeded.
   - Cloud Run frontend revision `praxis-frontend-00374-g8v` became ready with 100% traffic.
+  - Docs/status alignment commit `90871d59` was also pushed to `main`.
+  - Final Cloud Build `3c03bbeb-e055-4d89-befe-8107025c6c32` succeeded from latest `main`.
+  - Final Cloud Run frontend revision `praxis-frontend-00376-kqd` became ready with 100% traffic.
   - `https://praxis.tacitus.me/` returned HTTP 200.
   - `/api/health` returned HTTP 200 with Firestore, AI provider, cookie secret, and Vertex ADK healthy; Cognee memory and Polar remain explicitly unconfigured.
   - `/app/dashboard`, `/app/assistant`, and `/app/canvas` returned expected unauthenticated HTTP 307 redirects.
