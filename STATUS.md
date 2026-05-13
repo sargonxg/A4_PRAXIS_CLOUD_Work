@@ -42,6 +42,13 @@ Current local cleanup pass:
   the existing local/User Core helpers and Zustand Situation store. Full
   owner-scoped Firestore persistence for arbitrary multi-core stacks and canvas
   layouts remains a follow-up, not a claimed production sync feature.
+- Active Context Stack persistence is now implemented through
+  `/api/workspace/context-stack`, stored at `users/{uid}/contextStacks/default`
+  with owner-only Firestore rules. Demo sessions remain non-mutating.
+- The "Work on this" action menu is live on core cards, next actions, Canvas
+  nodes, and selected Library receipts. Memo Studio now exposes a deterministic
+  Evidence Gap Finder summary for supported, weak, unsupported, and date-check
+  sections using existing source receipts.
 
 Current Phase 9 blockers:
 
@@ -60,6 +67,9 @@ Latest production deploy evidence:
   - Commit `a0952e61` pushed to `main`.
   - Cloud Build `c6029035-4419-402e-8ded-4dda6a79809c` succeeded.
   - Cloud Run frontend revision `praxis-frontend-00364-7tc` became ready with 100% traffic.
+  - Docs-only follow-up commit `2a410ff4` was also deployed by Cloud Build
+    `9ebb37f4-dc28-438a-8603-f7a73d1d2878`; Cloud Run frontend revision
+    `praxis-frontend-00366-5vp` became ready with 100% traffic.
   - `https://praxis.tacitus.me/` and `/api/health` returned HTTP 200.
   - `/app/dashboard`, `/app/assistant`, `/app/write`, and `/app/canvas` returned expected unauthenticated HTTP 307 redirects.
   - Production `npm run smoke:public` passed 4/4 specs against `https://praxis.tacitus.me`.

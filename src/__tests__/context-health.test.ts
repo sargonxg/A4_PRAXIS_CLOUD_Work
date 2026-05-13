@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { sanitizeActiveContextStack } from '@/lib/context/active-context-stack';
 import { buildContextHealthReport } from '@/lib/context/context-health';
 
 describe('context health', () => {
@@ -39,5 +40,30 @@ describe('context health', () => {
       'attach-situation-core',
       'attach-sources',
     ]);
+  });
+});
+
+describe('active context stack', () => {
+  it('sanitizes persisted stack state for owner-scoped storage', () => {
+    const stack = sanitizeActiveContextStack({
+      stackId: 'default',
+      userModelId: 'policy-analyst',
+      situationId: 'ai-reg-2026',
+      sourceIds: ['source-1', '', 42, 'source-2'],
+      documentIds: ['doc-1'],
+      outputGoal: 'Board memo',
+      canvasLayout: {
+        actor: { x: 12.2, y: 48.8 },
+        broken: { x: 'nope' },
+      },
+    });
+
+    expect(stack.userModelId).toBe('policy-analyst');
+    expect(stack.situationId).toBe('ai-reg-2026');
+    expect(stack.sourceIds).toEqual(['source-1', 'source-2']);
+    expect(stack.documentIds).toEqual(['doc-1']);
+    expect(stack.outputGoal).toBe('Board memo');
+    expect(stack.canvasLayout.actor).toEqual({ x: 12, y: 49 });
+    expect(stack.canvasLayout.broken).toBeUndefined();
   });
 });

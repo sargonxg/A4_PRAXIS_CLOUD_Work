@@ -150,6 +150,12 @@ service cloud.firestore {
         allow read: if request.auth != null && request.auth.uid == uid;
         allow write: if false;
       }
+
+      // Active PRAXIS workspace context stacks: owner-only. Server API routes
+      // also write these through Admin SDK for auth/session consistency.
+      match /contextStacks/{stackId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
     }
 
     // Credit transactions: read own only, write denied (server-only via Admin SDK)

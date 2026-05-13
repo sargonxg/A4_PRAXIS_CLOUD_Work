@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Archive, ExternalLink, FileText, Loader2, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
+import { WorkOnThisMenu } from '@/components/app/work-on-this-menu';
 import { Badge } from '@/components/ui/badge';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { useFeatureFlags } from '@/lib/features/client';
 import { buildLibraryArtifacts, type LibraryArtifact, type LibraryArtifactType } from '@/lib/workbench/library-state';
 import { cn } from '@/lib/utils/cn';
+import { useSituationStore } from '@/stores/situation-store';
 import type { SavedClaim } from '@/types/saved-claims';
 
 const TYPE_LABELS: Record<LibraryArtifactType, string> = {
@@ -44,6 +46,7 @@ function documentIdFromPayload(payload: unknown): string | null {
 export function LibraryTab() {
   const { caseId, caseModule } = useWorkbenchScope();
   const isExampleCase = caseModule.kind === 'example';
+  const setActiveSituation = useSituationStore((state) => state.setActiveSituation);
   const features = useFeatureFlags();
   const cogneeEnabled = features.cognee.enabled;
   const [query, setQuery] = useState('');
@@ -217,6 +220,18 @@ export function LibraryTab() {
             <RefreshCw className="h-4 w-4" />
             Refresh receipts
           </button>
+          {!isExampleCase ? (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveSituation(caseId);
+                setSourceNote('This Situation Core is now the active context for Ask PRAXIS and Memo Studio.');
+              }}
+              className="inline-flex items-center gap-2 rounded-md border border-gold-300 bg-gold-50 px-3 py-2 text-xs font-semibold text-gold-900"
+            >
+              Attach to active context
+            </button>
+          ) : null}
           {sourceNote ? <p className="text-sm font-semibold text-navy-900">{sourceNote}</p> : null}
         </div>
 
@@ -300,6 +315,7 @@ export function LibraryTab() {
               ) : null}
               {selected.backendSourceId ? (
                 <div className="mt-4 flex flex-wrap gap-2">
+                  <WorkOnThisMenu itemLabel={selected.title} contextHref="/app/dashboard" draftHref="/app/write" sourcesHref={`/app/workbench/${caseId}?tab=library`} />
                   <button
                     type="button"
                     onClick={() => void reextractSelected()}

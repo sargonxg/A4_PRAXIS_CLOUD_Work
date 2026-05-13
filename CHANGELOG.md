@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- feat(workspace): persist active context stack and add universal item actions.
+  Added owner-scoped `/api/workspace/context-stack`, Firestore rules for
+  `users/{uid}/contextStacks/{stackId}`, a reusable "Work on this" menu,
+  Library active-context attachment, and Memo Studio evidence gap summaries.
 - feat(app): simplify PRAXIS into a context-first workbench.
   Added the UX design contract, five primary surfaces plus Advanced,
   deterministic context health and next-best-action logic, a drag/drop Active

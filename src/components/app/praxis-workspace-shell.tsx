@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { AskBar } from '@/components/ask/AskBar';
+import { WorkOnThisMenu } from '@/components/app/work-on-this-menu';
 import type { WorkspaceNextMove, WorkspaceNextMoveStatus } from '@/lib/dashboard/next-moves';
 import { buildContextHealthReport, type ContextHealthReport } from '@/lib/context/context-health';
 import { cn } from '@/lib/utils/cn';
@@ -102,6 +103,8 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
   const [savedNextMoves, setSavedNextMoves] = useState<WorkspaceNextMove[] | null>(null);
   const [nextMovesSavedAt, setNextMovesSavedAt] = useState<string | null>(null);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(caseId ?? null);
+  const [stackHydrated, setStackHydrated] = useState(false);
+  const [stackPersistedAt, setStackPersistedAt] = useState<string | null>(null);
 
   const situations = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
@@ -149,6 +152,35 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
   const displayedToolCards = (savedNextMoves?.length
     ? savedNextMoves.map(nextMoveToToolCard)
     : contextHealth.nextActions.map(nextActionToToolCard)).slice(0, 3);
+
+  useEffect(() => {
+    if (caseId || stackHydrated || allUserModels.length === 0 || workspaceCases.length === 0) return;
+    let cancelled = false;
+
+    fetch('/api/workspace/context-stack')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled || !payload?.stack) return;
+        const stack = payload.stack as { userModelId?: string | null; situationId?: string | null; updatedAt?: string };
+        if (stack.userModelId && allUserModels.some((model) => model.modelId === stack.userModelId)) {
+          setActiveUserModel(window.localStorage, stack.userModelId);
+          setActiveUserModelId(stack.userModelId);
+        }
+        if (stack.situationId && workspaceCases.some((item) => item.id === stack.situationId)) {
+          setSelectedCaseId(stack.situationId);
+          const found = workspaceCases.find((item) => item.id === stack.situationId);
+          if (found?.kind === 'user') setActiveSituation(stack.situationId);
+        }
+        setStackPersistedAt(payload.persisted ? stack.updatedAt ?? null : null);
+      })
+      .finally(() => {
+        if (!cancelled) setStackHydrated(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [allUserModels, caseId, setActiveSituation, stackHydrated, workspaceCases]);
 
   useEffect(() => {
     setDraftText(buildDraftSeed(activeUserModel, selectedCase));
@@ -217,6 +249,38 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
       setSelectedCaseId(activeSituation.id);
     }
   }, [activeSituation?.id, selectedCaseId]);
+
+  useEffect(() => {
+    if (!stackHydrated || caseId) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      fetch('/api/workspace/context-stack', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stackId: 'default',
+          userModelId: activeUserModel.modelId,
+          situationId: selectedCase?.id ?? null,
+          sourceIds: selectedCase?.kind === 'user' ? selectedCase.situation.sourceUrls ?? [] : [],
+          documentIds: selectedCase?.kind === 'user' ? selectedCase.situation.initialDocumentIds ?? [] : [],
+          outputGoal: workspaceLens.writingLabel,
+        }),
+        signal: controller.signal,
+      })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((payload) => {
+          if (payload?.persisted && payload?.stack?.updatedAt) setStackPersistedAt(payload.stack.updatedAt);
+        })
+        .catch((error) => {
+          if (error instanceof DOMException && error.name === 'AbortError') return;
+        });
+    }, 450);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [activeUserModel.modelId, caseId, selectedCase, stackHydrated, workspaceLens.writingLabel]);
 
   useEffect(() => {
     const target = focusSection ?? null;
@@ -338,6 +402,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
                   activeUserModel={activeUserModel}
                   selectedCase={selectedCase}
                   contextHealth={contextHealth}
+                  stackPersistedAt={stackPersistedAt}
                 />
               </DndContext>
 
@@ -620,10 +685,12 @@ function ActiveContextStackPanel({
   activeUserModel,
   selectedCase,
   contextHealth,
+  stackPersistedAt,
 }: {
   activeUserModel: UserModelRecord;
   selectedCase: WorkspaceCase | null;
   contextHealth: ContextHealthReport;
+  stackPersistedAt: string | null;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: 'active-context-stack' });
   const evidenceCount = (selectedCase?.sourceCount ?? 0) + (selectedCase?.documentCount ?? 0);
@@ -641,7 +708,7 @@ function ActiveContextStackPanel({
         <div className="rounded-md border border-navy-200 bg-white px-3 py-2 text-right">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Context</p>
           <p className="text-lg font-semibold text-navy-950">{contextHealth.score}/100</p>
-          <p className="text-[11px] text-slate-600">{contextHealth.label}</p>
+          <p className="text-[11px] text-slate-600">{stackPersistedAt ? 'Saved to workspace' : contextHealth.label}</p>
         </div>
       </div>
 
@@ -1101,6 +1168,7 @@ function CoreLibraryCard({
             Fork
           </button>
         ) : null}
+        <WorkOnThisMenu itemLabel={title} contextHref="/app/dashboard" draftHref="/app/write" />
         <Link href={manageHref} className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-navy-700 hover:bg-slate-50">
           Manage
         </Link>
@@ -1144,6 +1212,7 @@ function SituationLibraryCard({
         <Link href={href} className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-navy-700 hover:bg-slate-50">
           Open
         </Link>
+        <WorkOnThisMenu itemLabel={title} contextHref="/app/dashboard" sourcesHref={href} draftHref="/app/write" />
       </div>
     </div>
   );
@@ -1186,6 +1255,7 @@ function ToolCardView({
         <Link href={tool.href} className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-navy-700 hover:bg-slate-50">
           Open
         </Link>
+        <WorkOnThisMenu itemLabel={tool.label} contextHref="/app/dashboard" draftHref="/app/write" sourcesHref={tool.href} risksHref={tool.href} />
         {onStatusChange && tool.status !== 'done' ? (
           <button type="button" onClick={() => onStatusChange(tool.id, 'done')} className="rounded-md bg-navy-950 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-navy-800">
             Done

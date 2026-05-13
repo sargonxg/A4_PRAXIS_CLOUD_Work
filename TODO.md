@@ -11,8 +11,8 @@ Last updated: 2026-05-13.
 
 ## Immediate Next Steps
 
-1. Browser-verify the simplified workbench flow: Home context stack, Ask PRAXIS with context health, Library/workbench source link, Memo Studio page editor, and Canvas.
-2. Move Active Context Stack and Canvas layout from current local/store-backed MVP state into owner-scoped Firestore documents when the final collection contract is approved.
+1. Browser-verify the simplified workbench flow with a signed user session: Home persisted context stack, Ask PRAXIS with context health, Library source attach, Memo Studio evidence gap sidebar, and Canvas.
+2. Extend Active Context Stack persistence beyond the default stack to named stacks and saved Canvas layouts when the final multi-stack UX is approved.
 3. Add the first PRAXIS-to-DIALECTICA adapter proof only after the standalone MVP flow is smooth: one typed context query, one cited response, one reviewable graph delta.
 4. Complete Pack 24 backend Reasoning Spine: Rust BLAKE3 context-pack compiler, real trace ids, Langfuse or equivalent trace store, and live event streaming behind the current Spine panel.
 5. Complete Pack 23 backend Library Bucket: real DOCX/PDF/MD ingestion, source receipts, hybrid search, and provenance-ledger persistence behind the current Drafter Companion UI.

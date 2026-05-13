@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { Brain, FileText, LibraryBig, Target } from 'lucide-react';
+import { WorkOnThisMenu } from '@/components/app/work-on-this-menu';
 import { ContextGraphPreview } from '@/components/graph/ContextGraphPreview';
 import { buildContextHealthReport } from '@/lib/context/context-health';
 import { PUBLIC_USER_MODELS } from '@/lib/user-models/seeds';
@@ -106,6 +107,7 @@ function CanvasNode({
         <Link href="/app/write" className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-navy-800 hover:bg-white">
           Add to memo
         </Link>
+        <WorkOnThisMenu itemLabel={title} contextHref="/app/dashboard" sourcesHref={href} />
       </div>
     </div>
   );
