@@ -61,12 +61,6 @@ steps:
 
   - name: 'node:20'
     entrypoint: bash
-    args: ['-c', 'npx tsx scripts/audit-spine.ts']
-    id: 'audit-spine'
-    waitFor: ['install-node-deps']
-
-  - name: 'node:20'
-    entrypoint: bash
     args: ['-c', 'echo "smoke:public is run locally and post-deploy; skipping predeploy Cloud Build browser smoke."']
     id: 'smoke-public'
     waitFor: ['typecheck']
@@ -75,7 +69,7 @@ steps:
     entrypoint: bash
     args: ['-c', 'npm run build']
     id: 'build-app-gate'
-    waitFor: ['lint', 'typecheck', 'audit-routes', 'audit-spine']
+    waitFor: ['lint', 'typecheck', 'audit-routes']
 
   # ── Firestore rules deploy — NOT automated via Cloud Build right now because
   # the Cloud Build service account lacks serviceusage.services.get permission.

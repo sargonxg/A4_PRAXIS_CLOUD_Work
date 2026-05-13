@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- fix(deploy): remove stale Cloud Build spine audit reference.
+  The production Cloud Build deploy gate now matches the active repo audit
+  contract instead of calling the archived `scripts/audit-spine.ts`.
 - docs(cloud): record refreshed GCP/Firebase authorization and cleanup audit.
   Documented the working `gcloud`, ADC, and Firebase CLI auth posture, the
   passing `audit:gcp` gate, live PRAXIS runtime resources, and cloud cleanup
