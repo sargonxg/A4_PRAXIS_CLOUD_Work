@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- docs(cloud): record refreshed GCP/Firebase authorization and cleanup audit.
+  Documented the working `gcloud`, ADC, and Firebase CLI auth posture, the
+  passing `audit:gcp` gate, live PRAXIS runtime resources, and cloud cleanup
+  candidates that still need explicit approval before mutation.
 - copy(app): surface the PRAXIS context moat inside the dashboard.
   The app shell now shows a compact context-advantage strip for vetted
   evidence, stakeholder read, user judgment, and inheritable handover value so

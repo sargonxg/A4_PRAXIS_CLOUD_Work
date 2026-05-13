@@ -20,7 +20,8 @@ Last updated: 2026-05-13.
 7. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
 8. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
 9. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
-10. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
+10. Review the 2026-05-13 GCP/Firebase cleanup candidates before any mutating cloud cleanup: retired provider secrets, Artifact Registry retention, and the two unclear projects `plasma-talon-lt3cf` / `google-mpf-mc7f341560lx`.
+11. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
 
 ## Future Architecture Direction
 

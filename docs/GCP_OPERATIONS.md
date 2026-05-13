@@ -8,6 +8,11 @@ can. Every command is scoped to project `praxisbytacitus` and region
 > **Authentication assumed.** Run `gcloud auth login` and `firebase login`
 > once before working through this file.
 
+Current auth checkpoint (2026-05-13): `gcloud`, Application Default
+Credentials, and Firebase CLI auth all worked for `giulio@tacitus.me`.
+`npm run audit:gcp` passed with 0 hard failures and 0 soft warnings. The dated
+evidence ledger is `docs/audits/2026-05-13-gcp-firebase-auth-cleanup.md`.
+
 ---
 
 ## 1. Activate paid / freemium data sources

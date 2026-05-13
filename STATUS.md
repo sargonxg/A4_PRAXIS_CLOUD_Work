@@ -11,6 +11,11 @@ completed. Queue `17` is complete for this session and live on
 
 Current local cleanup pass:
 
+- Google Cloud and Firebase auth were refreshed on 2026-05-13. `gcloud`,
+  Application Default Credentials, and Firebase CLI all work for
+  `giulio@tacitus.me`; `npm run audit:gcp` passed with 0 hard failures and 0
+  soft warnings. Live findings and cleanup candidates are recorded in
+  `docs/audits/2026-05-13-gcp-firebase-auth-cleanup.md`.
 - Landing page is being consolidated around Ask PRAXIS, User Core, Situation
   Core, suggested tools, and memo output. The previous "Live demo bar",
   cached-answer CTA, and read-only context CTA are removed from active landing

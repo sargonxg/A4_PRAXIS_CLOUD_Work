@@ -6356,8 +6356,8 @@
     "hash": "373d6e49b2a14fd39b4152249eb5a4df"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\CHANGELOG.md": {
-    "mtime": 1778646159.890116,
-    "hash": "a6259273b03249ae2531dafa98c5aaf3"
+    "mtime": 1778648261.0192702,
+    "hash": "4f33bfd71702a693ded691be72d3ae61"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\CLAUDE.md": {
     "mtime": 1778513850.8080926,
@@ -6396,16 +6396,16 @@
     "hash": "9d191f88ea525ad6591ca8a252f7a109"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\STATUS.md": {
-    "mtime": 1778646159.8931034,
-    "hash": "dad5193d653c9206deba09d2188d20f2"
+    "mtime": 1778648261.0080495,
+    "hash": "e821ce5858ba1c0804b3183608c394f0"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\TESTING.md": {
     "mtime": 1778429928.5607307,
     "hash": "4480eec3f1c2e0555ad88d1b65411d4e"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\TODO.md": {
-    "mtime": 1778646159.8953407,
-    "hash": "2e21a86f483d705eb9a61f1a3d471a9f"
+    "mtime": 1778648261.0120468,
+    "hash": "84c315003d2161d5f4e6754c08bcd691"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\agents\\README.md": {
     "mtime": 1778429928.5706878,
@@ -6624,8 +6624,8 @@
     "hash": "6013d5465b2d393cbbf3cc1efadae4ac"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\GCP_OPERATIONS.md": {
-    "mtime": 1778429928.8040912,
-    "hash": "60b5d1941bbea8e2ed29c8826e729d17"
+    "mtime": 1778648261.0046408,
+    "hash": "0a288e8a41f92c50076e4b79ffb89942"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\OPERATIONAL_SPINE.md": {
     "mtime": 1778429928.8056107,
@@ -6898,6 +6898,10 @@
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-12-DEEP_PRESHIP_CHECKLIST.md": {
     "mtime": 1778622064.3650017,
     "hash": "a84d221b6daab947342f5ed21ef90404"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-13-gcp-firebase-auth-cleanup.md": {
+    "mtime": 1778648261.000461,
+    "hash": "26ce9d52f4066acb6800a10bc864c3d3"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\persona-green-streak.md": {
     "mtime": 1778479386.5888562,
