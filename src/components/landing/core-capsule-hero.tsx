@@ -221,13 +221,21 @@ export function CoreCapsuleHero({ staticMode = false, className }: CoreCapsuleHe
   // ---- timeline derived state ----
   const stormFade = 1 - phaseProgress(t, 0.30, 0.50);
   const forgeReveal = phaseProgress(t, 0.06, 0.32);
+  const ribbonFlow = phaseProgress(t, 0.04, 0.48);
+  const eyeScan = phaseProgress(t, 0.12, 0.34);
   const coreCrystal = phaseProgress(t, 0.30, 0.52);
   const filamentDraw = phaseProgress(t, 0.50, 0.64);
   const capsuleSettle = phaseProgress(t, 0.55, 0.68);
+  const groundingBeam = phaseProgress(t, 0.62, 0.78);
   const ringReveal = phaseProgress(t, 0.60, 0.78);
   const factPulse = phaseProgress(t, 0.74, 0.86);
   const patchPulse = phaseProgress(t, 0.84, 0.96);
   const heartbeat = phaseProgress(t, 0.93, 1.0);
+
+  // The laminate strata accumulate over the whole cycle and only reset
+  // at the heartbeat — visually communicating that knowledge keeps
+  // layering up as work moves through the capsule.
+  const laminateFill = easeInOut(clamp01((t < 0.96 ? t / 0.96 : 1) - 0.05));
 
   // overall capsule scale: zooms out slightly after filaments form
   const capsuleScale = 0.92 + 0.06 * easeInOut(capsuleSettle) - 0.02 * heartbeat;
@@ -297,6 +305,30 @@ export function CoreCapsuleHero({ staticMode = false, className }: CoreCapsuleHe
             <stop offset="0%" stopColor={NAVY_DEEP} stopOpacity="0.9" />
             <stop offset="100%" stopColor={NAVY_DEEP} stopOpacity="0" />
           </linearGradient>
+          {/* Data ribbon — gold ink flowing inward */}
+          <linearGradient id="ribbon-flow" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={GOLD} stopOpacity="0" />
+            <stop offset="40%" stopColor={GOLD_SOFT} stopOpacity="0.95" />
+            <stop offset="100%" stopColor={GOLD} stopOpacity="0" />
+          </linearGradient>
+          {/* Expert-eye scan line gradient */}
+          <linearGradient id="scan-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={GOLD} stopOpacity="0" />
+            <stop offset="50%" stopColor={GOLD_SOFT} stopOpacity="0.85" />
+            <stop offset="100%" stopColor={GOLD} stopOpacity="0" />
+          </linearGradient>
+          {/* Grounding beam — vertical column of light */}
+          <linearGradient id="grounding-beam" x1="50%" y1="0%" x2="50%" y2="100%">
+            <stop offset="0%" stopColor={GOLD_SOFT} stopOpacity="0" />
+            <stop offset="60%" stopColor={GOLD_SOFT} stopOpacity="0.55" />
+            <stop offset="100%" stopColor={GOLD} stopOpacity="0.9" />
+          </linearGradient>
+          {/* Iris glow for the organic chamber */}
+          <radialGradient id="iris-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={GOLD_SOFT} stopOpacity="0.05" />
+            <stop offset="70%" stopColor={GOLD} stopOpacity="0.02" />
+            <stop offset="100%" stopColor={GOLD} stopOpacity="0" />
+          </radialGradient>
         </defs>
 
         {/* Background */}
@@ -346,15 +378,36 @@ export function CoreCapsuleHero({ staticMode = false, className }: CoreCapsuleHe
           opacity={0.4 + 0.6 * capsuleSettle - 0.2 * heartbeat}
         />
 
-        {/* Forge chamber — hexagonal */}
-        <Hex
+        {/* Forge chamber — organic rounded 12-point outline (squircle feel) */}
+        <OrganicChamber
           cx={CENTER_X}
           cy={CENTER_Y}
-          r={210}
+          r={216}
           stroke="url(#hex-stroke)"
-          strokeWidth={1.2}
-          opacity={0.7 * forgeReveal * (1 - 0.4 * capsuleSettle)}
+          strokeWidth={1.4}
+          opacity={0.78 * forgeReveal * (1 - 0.35 * capsuleSettle)}
+          t={t}
         />
+        {/* Inner iris glow */}
+        <circle
+          cx={CENTER_X}
+          cy={CENTER_Y}
+          r={180}
+          fill="url(#iris-glow)"
+          opacity={0.7 * forgeReveal}
+        />
+
+        {/* Data ribbons — elegant gold ink streams flowing inward */}
+        <DataRibbons t={t} flow={ribbonFlow} />
+
+        {/* Expert-eye scan — horizontal sweep highlighting what's coming in */}
+        <ExpertEyeScan progress={eyeScan} />
+
+        {/* Knowledge laminate — sediment strata at the left edge, growing
+            over the cycle. The bottom band is the bedrock of tacit
+            judgement; each band above is a successive layer of structured
+            context this capsule has captured. */}
+        <KnowledgeLaminate fill={laminateFill} t={t} />
 
         {/* Mote storm */}
         <g opacity={stormFade}>
@@ -451,6 +504,10 @@ export function CoreCapsuleHero({ staticMode = false, className }: CoreCapsuleHe
           <SourcePulseGlow active={factPulse} sourcePos={corePositions[2]} />
           {/* Graph patch overlay (anchored at graph prism) */}
           <GraphPatchGlow patch={patchPulse} graphPos={corePositions[3]} />
+          {/* Grounding beam — a single claim descends and anchors to a
+              cited receipt at the bottom of the capsule. This is the
+              "PRAXIS grounds answers in receipts" beat. */}
+          <GroundingBeam progress={groundingBeam} />
         </g>
 
         {/* Hybrid team ring — humans + agents */}
@@ -545,6 +602,270 @@ export function CoreCapsuleHero({ staticMode = false, className }: CoreCapsuleHe
 // =========================================================================
 // Sub-components
 // =========================================================================
+
+function OrganicChamber({
+  cx,
+  cy,
+  r,
+  t,
+  ...rest
+}: { cx: number; cy: number; r: number; t: number } & React.SVGProps<SVGPathElement>) {
+  // 24-point soft-rounded shape — petal-like, breathing slightly with t.
+  const points: Array<[number, number]> = [];
+  const segs = 24;
+  for (let i = 0; i < segs; i += 1) {
+    const a = (i / segs) * Math.PI * 2 - Math.PI / 2;
+    const wobble = 1 + 0.022 * Math.sin(t * Math.PI * 2 * 0.6 + i * 0.4);
+    const rr = r * wobble;
+    points.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]);
+  }
+  // Catmull–Rom to bezier conversion for super-smooth closed path.
+  let d = `M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)}`;
+  for (let i = 0; i < segs; i += 1) {
+    const p0 = points[(i - 1 + segs) % segs];
+    const p1 = points[i];
+    const p2 = points[(i + 1) % segs];
+    const p3 = points[(i + 2) % segs];
+    const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2[0].toFixed(2)} ${p2[1].toFixed(2)}`;
+  }
+  d += " Z";
+  return <path d={d} fill="none" {...rest} />;
+}
+
+function DataRibbons({ t, flow }: { t: number; flow: number }) {
+  // Five elegant ribbons flowing in from cardinal directions. Each is
+  // a stretched cubic Bezier that animates its strokeDashoffset to
+  // simulate ink running toward the centre.
+  if (flow <= 0) return null;
+  const ribbons = [
+    { sx: 60, sy: 110, c1x: 230, c1y: 120, c2x: 260, c2y: 320, label: "GDELT · 04-22" },
+    { sx: VIEW_W - 60, sy: 130, c1x: 580, c1y: 160, c2x: 520, c2y: 300, label: "UCDP · CY-2026" },
+    { sx: 80, sy: VIEW_H - 110, c1x: 220, c1y: VIEW_H - 100, c2x: 280, c2y: 420, label: "tacit · red lines" },
+    { sx: VIEW_W - 80, sy: VIEW_H - 130, c1x: 600, c1y: VIEW_H - 110, c2x: 520, c2y: 420, label: "ICG · 2026" },
+    { sx: VIEW_W / 2, sy: 60, c1x: VIEW_W / 2 - 80, c1y: 220, c2x: VIEW_W / 2 + 40, c2y: 280, label: "cable · 03" },
+  ];
+  return (
+    <g opacity={Math.min(1, flow * 1.2)}>
+      {ribbons.map((r, i) => {
+        // Stagger each ribbon
+        const local = clamp01((flow - i * 0.06) * 1.4);
+        if (local <= 0) return null;
+        const len = 480;
+        const dash = len * local;
+        const labelOpacity = local > 0.5 ? (1 - local) * 2 : local * 2;
+        // Find midpoint of bezier for label
+        const tm = 0.45;
+        const mx =
+          (1 - tm) ** 3 * r.sx +
+          3 * (1 - tm) ** 2 * tm * r.c1x +
+          3 * (1 - tm) * tm ** 2 * r.c2x +
+          tm ** 3 * CENTER_X;
+        const my =
+          (1 - tm) ** 3 * r.sy +
+          3 * (1 - tm) ** 2 * tm * r.c1y +
+          3 * (1 - tm) * tm ** 2 * r.c2y +
+          tm ** 3 * CENTER_Y;
+        return (
+          <g key={i}>
+            <path
+              d={`M ${r.sx} ${r.sy} C ${r.c1x} ${r.c1y}, ${r.c2x} ${r.c2y}, ${CENTER_X} ${CENTER_Y}`}
+              fill="none"
+              stroke="url(#ribbon-flow)"
+              strokeWidth={1.4}
+              strokeDasharray={`${dash} ${len}`}
+              strokeLinecap="round"
+              opacity={0.85 - 0.3 * Math.sin(t * Math.PI * 4 + i)}
+            />
+            {labelOpacity > 0.15 && (
+              <text
+                x={mx}
+                y={my - 6}
+                fontSize={7}
+                fontFamily="ui-monospace, monospace"
+                fill={CREAM}
+                fillOpacity={0.7 * labelOpacity}
+                letterSpacing="0.1em"
+                textAnchor="middle"
+              >
+                {r.label}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+function ExpertEyeScan({ progress }: { progress: number }) {
+  if (progress <= 0 || progress >= 1) return null;
+  const e = easeInOut(progress);
+  const x = 40 + e * (VIEW_W - 80);
+  const op = Math.sin(progress * Math.PI);
+  return (
+    <g opacity={op * 0.9}>
+      {/* Vertical sweeping beam */}
+      <rect x={x - 1.5} y={40} width={3} height={VIEW_H - 80} fill="url(#scan-gradient)" />
+      <rect x={x - 24} y={40} width={48} height={VIEW_H - 80} fill="url(#scan-gradient)" opacity={0.15} />
+      {/* Eye glyph at the head of the scan */}
+      <g transform={`translate(${x}, ${52})`} opacity={0.95}>
+        <ellipse cx={0} cy={0} rx={10} ry={5.5} fill="none" stroke={GOLD_SOFT} strokeWidth={1} />
+        <circle cx={0} cy={0} r={2.6} fill={GOLD_SOFT} />
+        <line x1={-12} y1={0} x2={-15} y2={0} stroke={GOLD_SOFT} strokeWidth={0.8} />
+        <line x1={12} y1={0} x2={15} y2={0} stroke={GOLD_SOFT} strokeWidth={0.8} />
+      </g>
+      {/* "EXPERT EYES" stamp following the beam */}
+      <text
+        x={x}
+        y={VIEW_H - 50}
+        fontSize={7}
+        fontFamily="ui-monospace, monospace"
+        fill={CREAM}
+        fillOpacity={0.65}
+        letterSpacing="0.32em"
+        textAnchor="middle"
+      >
+        EXPERT EYES
+      </text>
+    </g>
+  );
+}
+
+function KnowledgeLaminate({ fill, t }: { fill: number; t: number }) {
+  // Vertical stack at the left edge — 6 strata representing accumulated
+  // layers of knowledge. Each stratum reveals progressively over the
+  // cycle.
+  const baseX = 28;
+  const baseY = VIEW_H / 2 - 100;
+  const w = 38;
+  const stratumH = 22;
+  const labels = ["TACIT", "SOURCES", "GRAPH", "TIME", "PERSONA", "OUTPUT"];
+  const tints = ["#7A3F4F", "#C9A86A", "#5B6B8C", "#A06A3C", "#3A5A7A", "#E6E2D6"];
+  return (
+    <g>
+      {/* Outer frame */}
+      <rect
+        x={baseX - 6}
+        y={baseY - 10}
+        width={w + 18}
+        height={stratumH * 6 + 20}
+        rx={4}
+        fill={NAVY_DEEP}
+        fillOpacity={0.45}
+        stroke={GOLD}
+        strokeOpacity={0.22}
+        strokeWidth={0.7}
+      />
+      {/* Header label */}
+      <text
+        x={baseX - 6 + (w + 18) / 2}
+        y={baseY - 16}
+        fontSize={7}
+        fontFamily="ui-monospace, monospace"
+        fill={CREAM}
+        fillOpacity={0.55}
+        letterSpacing="0.22em"
+        textAnchor="middle"
+      >
+        LAMINATE
+      </text>
+      {labels.map((lbl, i) => {
+        const stratumProgress = clamp01((fill - i * 0.12) * 1.6);
+        const fillH = stratumH * stratumProgress;
+        const y = baseY + i * stratumH;
+        const pulse = 0.85 + 0.15 * Math.sin(t * Math.PI * 4 + i);
+        return (
+          <g key={lbl}>
+            <rect
+              x={baseX}
+              y={y}
+              width={w}
+              height={stratumH - 2}
+              rx={2}
+              fill={NAVY}
+              stroke={tints[i]}
+              strokeOpacity={0.4}
+              strokeWidth={0.6}
+            />
+            <rect
+              x={baseX}
+              y={y + (stratumH - 2 - fillH)}
+              width={w}
+              height={fillH}
+              rx={2}
+              fill={tints[i]}
+              fillOpacity={0.65 * pulse}
+            />
+            {/* receipt ticks */}
+            <line
+              x1={baseX + 4}
+              y1={y + (stratumH - 2) / 2}
+              x2={baseX + w - 4}
+              y2={y + (stratumH - 2) / 2}
+              stroke={CREAM}
+              strokeOpacity={0.12}
+              strokeWidth={0.4}
+            />
+            <text
+              x={baseX + w + 6}
+              y={y + 14}
+              fontSize={6.5}
+              fontFamily="ui-monospace, monospace"
+              fill={CREAM}
+              fillOpacity={0.55}
+              letterSpacing="0.16em"
+            >
+              {lbl}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+function GroundingBeam({ progress }: { progress: number }) {
+  if (progress <= 0 || progress >= 1) return null;
+  const e = easeInOut(progress);
+  // Beam descends from capsule top to a citation slip at the bottom.
+  const topY = CENTER_Y - 110;
+  const bottomY = CENTER_Y + 120;
+  const x = CENTER_X + 38;
+  const beamY = topY + (bottomY - topY) * e;
+  const beamH = Math.max(8, beamY - topY);
+  const op = Math.sin(progress * Math.PI);
+  return (
+    <g opacity={op}>
+      {/* Beam column */}
+      <rect x={x - 4} y={topY} width={8} height={beamH} fill="url(#grounding-beam)" opacity={0.85} />
+      <rect x={x - 12} y={topY} width={24} height={beamH} fill="url(#grounding-beam)" opacity={0.25} />
+      {/* Anchor receipt at base when beam fully descended */}
+      {progress > 0.55 && (
+        <g transform={`translate(${x}, ${bottomY})`}>
+          <rect x={-38} y={-10} width={76} height={20} rx={3} fill={NAVY_DEEP} stroke={GOLD_SOFT} strokeWidth={0.9} />
+          <text
+            x={0}
+            y={3}
+            textAnchor="middle"
+            fontSize={7}
+            fontFamily="ui-monospace, monospace"
+            fill={GOLD_SOFT}
+            letterSpacing="0.12em"
+          >
+            CLAIM · [§4, p.12]
+          </text>
+          <circle cx={-44} cy={0} r={2} fill={GOLD} />
+        </g>
+      )}
+      {/* Tracer dot at beam head */}
+      <circle cx={x} cy={beamY} r={3.4} fill={GOLD_SOFT} />
+    </g>
+  );
+}
 
 function CornerBrackets() {
   const pad = 18;

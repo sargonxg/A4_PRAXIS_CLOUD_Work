@@ -11,12 +11,13 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { CoreCapsuleHero } from "./core-capsule-hero";
+import { RotatingHeadline } from "./rotating-headline";
 
 const workflow = [
-  ["Inherit the cores", "Select the User, Situation, Source/Document, Graph, Time, and Output posture that should travel with the work."],
-  ["Ask PRAXIS", "Ask one grounded question with the active core stack already attached."],
-  ["Review structure", "Check temporal, causal, actor, source, and domain gaps before they become memo language."],
-  ["Hand over output", "Revise the answer into a reviewable memo with receipts, gaps, and analyst handover state visible."],
+  ["Capture the context", "Build the User, Situation, Source, Graph, Time, and Output cores once. PRAXIS stores them as a reusable capsule, not a prompt."],
+  ["See reality through expert eyes", "Temporal, causal, actor, source, and domain checks layer expert structure over every claim before reasoning runs."],
+  ["Ground every answer", "Receipts, page-spans, time horizons, and graph proposals stay in view while PRAXIS drafts or stress-tests."],
+  ["Hand over the capsule", "Ship the memo and its context together. A teammate or an agent inherits the same posture, not a screenshot."],
 ] as const;
 
 const proofPanels = [
@@ -24,22 +25,22 @@ const proofPanels = [
     label: "Library",
     href: "/app/workbench/indo-pacific-2026?tab=library",
     icon: LibraryBig,
-    title: "Attach and structure sources.",
-    detail: "Upload PDFs, DOCX, notes, or source files. PRAXIS extracts claims, actors, dates, and source-span provenance where available.",
+    title: "Capture sources, documents, tacit notes.",
+    detail: "Upload PDFs, DOCX, cables, briefings, or voice notes. PRAXIS extracts claims, actors, dates, and page-span receipts so tacit institutional memory becomes structured context.",
   },
   {
     label: "Situation Intelligence",
     href: "/app/workbench/indo-pacific-2026?tab=graph",
     icon: Network,
-    title: "Make reasoning structure visible.",
-    detail: "Temporal, causal, domain, actor, and graph posture checks reduce unsupported reasoning before PRAXIS recommends tools or drafts.",
+    title: "Layer expert structure over reality.",
+    detail: "Temporal, causal, domain, actor, and graph readiness checks expose unsupported reasoning before PRAXIS recommends tools or drafts. The substrate stays inspectable.",
   },
   {
     label: "Memo Studio",
     href: "/app/write",
     icon: FileText,
-    title: "Revise with gaps in view.",
-    detail: "Unsupported and date-check claims sit beside the memo with Find source, Rewrite cautiously, and Save gap actions.",
+    title: "Draft grounded, ship the capsule.",
+    detail: "Unsupported and date-check claims sit beside the memo with Find source, Rewrite cautiously, and Save gap actions. Ship the memo and the capsule together.",
   },
 ] as const;
 
@@ -58,9 +59,7 @@ export function Phase8WowLanding() {
         <div className="relative mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(440px,1.05fr)] lg:px-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8A5A00]">PRAXIS by TACITUS</p>
-            <h1 className="mt-4 max-w-4xl font-serif text-5xl font-semibold leading-[1.03] text-[#111827] sm:text-6xl lg:text-7xl">
-              PRAXIS builds inheritable policy cores.
-            </h1>
+            <RotatingHeadline className="mt-4" />
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:text-lg">
               Six structured cores — User, Situation, Source, Graph, Time, Output — package the tacit knowledge that makes your judgement work. Hand them to a teammate, an agent, or your future self.
             </p>
@@ -110,8 +109,11 @@ export function Phase8WowLanding() {
       <section id="methods" className="border-b border-slate-200 bg-[#F6F8FB] px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">One simple loop</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Inherit context, ask, review structure, hand over the memo.</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">How PRAXIS builds policy knowledge</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Capture, structure, ground, hand over. Layer by layer.</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+              Policy teams do not need another chatbot. They need to build inheritable knowledge — context that travels with the work, structure that reflects expert judgement, and receipts that survive the next reviewer.
+            </p>
           </div>
           <div className="mt-7 grid gap-4 lg:grid-cols-4">
             {workflow.map(([label, detail]) => (
