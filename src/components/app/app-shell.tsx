@@ -193,7 +193,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className="space-y-2">
               <ShortcutRow keys="Cmd+K" label="Ask PRAXIS or search" />
-              {PRIMARY_NAV.map((item) => (
+              {PRIMARY_NAV.filter((item): item is typeof item & { shortcut: string } => Boolean(item.shortcut)).map((item) => (
                 <ShortcutRow key={item.id} keys={item.shortcut} label={item.label} />
               ))}
               <ShortcutRow keys="Esc" label="Close overlay" />
