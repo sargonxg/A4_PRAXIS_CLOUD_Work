@@ -7,7 +7,7 @@ import { ArrowRight, Archive, CheckCircle2, Loader2, Paperclip, Sparkles, Target
 import { OnboardingRequiredState } from '@/components/praxis/onboarding-required-state';
 import { TOOL_REGISTRY } from '@/lib/constants/tool-registry';
 import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
-import { coreLabel } from '@/lib/tools/contract';
+import { coreLabel, readinessLabel } from '@/lib/tools/contract';
 import type { AttachableTool, CoreKind } from '@/lib/tools/contract';
 import { attachedCoresFromSituation, recommendTools } from '@/lib/tools/recommend';
 import { hrefForTool } from '@/lib/tools/tool-navigation';
@@ -45,9 +45,9 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Attachable tools</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-navy-950">PRAXIS recommends the right three tools.</h1>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-navy-950">Canonical tools stay visible; specialist machinery stays routed.</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-700">
-              The default surface is twelve canonical tools. Each declares the cores it needs, where output appears, and what artifact it produces.
+              The default surface is twelve canonical capabilities. Ask PRAXIS recommends the next three from the active cores, while specialist tools remain available through Advanced/archive when a task needs them.
             </p>
           </div>
           <div className="grid grid-cols-3 gap-2 text-right">
@@ -65,7 +65,7 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
               <Sparkles className="h-4 w-4 text-diplomatic-blue" />
               <h2 className="text-lg font-semibold text-navy-950">Suggested for this Situation</h2>
             </div>
-            <p className="mt-1 text-sm text-slate-600">Scored from attached cores, stage, and recent tool posture.</p>
+            <p className="mt-1 text-sm text-slate-600">Scored from inherited cores, stage, readiness posture, and recent workspace state.</p>
           </div>
           <Link href="/app/contexts" className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-700 hover:bg-slate-50">
             Cores
@@ -84,7 +84,7 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
             <h2 className="text-lg font-semibold text-navy-950">Archive tools</h2>
           </div>
           <p className="mt-1 text-sm text-slate-600">
-            Specialist and legacy routes stay available for compatibility, but they do not appear in the default tool workflow.
+            Specialist and legacy routes stay available for compatibility, but Ask PRAXIS should route users to them only when the core stack justifies it.
           </p>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {archivedTools.map((tool) => <ArchiveToolCard key={tool.id} tool={tool} />)}
@@ -106,7 +106,7 @@ function ToolsWorkspace({ situation }: { situation: Situation | null }) {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-navy-950">Need a specialist tool?</h2>
-                <p className="mt-1 text-sm text-slate-700">Open the archive only when the canonical set is too broad for the task.</p>
+                <p className="mt-1 text-sm text-slate-700">Ask PRAXIS should route most work. Open the archive only when a specialist artifact is already justified by the active core stack.</p>
               </div>
               <Link href="/app/tools?show_archive=1" className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-sm font-semibold text-white hover:bg-navy-800">
                 Review archived tools
@@ -147,6 +147,9 @@ function AttachableToolCard({
           {suggested ? <span className="rounded-full bg-diplomatic-blue px-2 py-1 text-[10px] font-semibold text-white">Suggested</span> : null}
         </div>
         <p className="mt-3 text-sm leading-6 text-slate-700">{tool.methodology}</p>
+        <p className="mt-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-700">
+          <span className="font-semibold text-navy-900">{readinessLabel(tool.readiness)}:</span> {tool.readinessDetail}
+        </p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {tool.requires.map((core) => (
             <span
@@ -179,6 +182,7 @@ function ArchiveToolCard({ tool }: { tool: ToolDefinition }) {
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{tool.category}</p>
       <h3 className="mt-1 text-sm font-semibold text-navy-950">{tool.name}</h3>
       <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-600">{tool.shortDescription}</p>
+      <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Specialist hidden</p>
       <Link href={hrefForTool(tool.id)} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-diplomatic-blue">
         Open specialist route
         <ArrowRight className="h-3 w-3" />

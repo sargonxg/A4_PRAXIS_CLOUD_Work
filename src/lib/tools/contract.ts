@@ -1,5 +1,6 @@
 export type CoreKind = 'user' | 'situation' | 'time' | 'office' | 'source' | 'output';
 export type ToolOutput = 'text' | 'structured' | 'graph_delta' | 'work_product';
+export type ToolReadinessStatus = 'live' | 'routed' | 'staged' | 'specialist-hidden';
 
 export interface AttachableTool {
   id: string;
@@ -15,6 +16,8 @@ export interface AttachableTool {
   methodology: string;
   frameworks: string[];
   limits: string;
+  readiness: ToolReadinessStatus;
+  readinessDetail: string;
 }
 
 export function coreLabel(core: CoreKind): string {
@@ -23,7 +26,16 @@ export function coreLabel(core: CoreKind): string {
     situation: 'Situation Core',
     time: 'Time Core',
     office: 'Office Core',
-    source: 'Source Graph',
+    source: 'Source/Document Core',
     output: 'Output Core',
   }[core];
+}
+
+export function readinessLabel(status: ToolReadinessStatus): string {
+  return {
+    live: 'Live',
+    routed: 'Routed',
+    staged: 'Staged',
+    'specialist-hidden': 'Specialist hidden',
+  }[status];
 }

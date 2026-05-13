@@ -5,20 +5,22 @@ import {
   ArrowRight,
   BookOpenCheck,
   CheckCircle2,
+  Clock3,
   FileText,
   GitBranch,
   LibraryBig,
   MessageSquareText,
+  Network,
   ShieldCheck,
   Target,
   Users,
 } from "lucide-react";
 
 const workflow = [
-  ["Attach context", "Select the User Core, Situation Core, and source receipts that should travel with the work."],
-  ["Ask PRAXIS", "Ask one grounded question with the active context already attached."],
-  ["Review evidence gaps", "See unsupported, weak, and date-sensitive claims before they become memo language."],
-  ["Draft memo", "Revise the answer into a reviewable memo with sources and handoff state visible."],
+  ["Inherit the cores", "Select the User, Situation, Source/Document, Graph, Time, and Output posture that should travel with the work."],
+  ["Ask PRAXIS", "Ask one grounded question with the active core stack already attached."],
+  ["Review structure", "Check temporal, causal, actor, source, and domain gaps before they become memo language."],
+  ["Hand over output", "Revise the answer into a reviewable memo with receipts, gaps, and analyst handover state visible."],
 ] as const;
 
 const proofPanels = [
@@ -30,40 +32,43 @@ const proofPanels = [
     detail: "Upload PDFs, DOCX, notes, or source files. PRAXIS extracts claims, actors, dates, and source-span provenance where available.",
   },
   {
+    label: "Situation Intelligence",
+    href: "/app/workbench/indo-pacific-2026?tab=graph",
+    icon: Network,
+    title: "Make reasoning structure visible.",
+    detail: "Temporal, causal, domain, actor, and graph posture checks reduce unsupported reasoning before PRAXIS recommends tools or drafts.",
+  },
+  {
     label: "Memo Studio",
     href: "/app/write",
     icon: FileText,
     title: "Revise with gaps in view.",
     detail: "Unsupported and date-check claims sit beside the memo with Find source, Rewrite cautiously, and Save gap actions.",
   },
-  {
-    label: "Canvas",
-    href: "/app/canvas",
-    icon: GitBranch,
-    title: "Review the structure of the case.",
-    detail: "User Core, Situation Core, sources, actors, claims, timeline, draft, and saved gaps stay visible for handoff.",
-  },
 ] as const;
 
 const trustItems = [
+  ["Inheritable cores", "User, Situation, Source/Document, Graph, Time, and Output posture travel across questions, tools, drafts, and handovers."],
+  ["Temporal readiness", "Date-sensitive claims and scenario work stay gated by explicit time posture instead of hidden assumptions."],
   ["Source receipts", "PRAXIS keeps source posture and open gaps visible instead of hiding them inside a chat answer."],
-  ["Human review", "Drafts are working products for analysts to accept, revise, reject, and hand over."],
-  ["Cognee honesty", "The memory layer stays disabled in normal copy unless it is configured for the environment."],
-  ["Cloud stack", "The production path is Google Cloud, Firebase, Firestore, Cloud SQL Postgres, and Secret Manager."],
+  ["Human review", "Drafts, graph proposals, and handover notes remain working products for analysts to accept, revise, or reject."],
 ] as const;
 
 export function Phase8WowLanding() {
   return (
     <main className="bg-[#F6F8FB] text-[#111827]">
-      <section className="border-b border-slate-200 bg-white">
+      <section id="core-stack" className="border-b border-slate-200 bg-white">
         <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)] lg:px-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8A5A00]">PRAXIS by TACITUS</p>
             <h1 className="mt-4 max-w-4xl font-serif text-5xl font-semibold leading-[1.03] text-[#111827] sm:text-6xl lg:text-7xl">
-              Policy AI that starts with the right context.
+              PRAXIS builds inheritable policy cores.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:text-lg">
-              Attach a User Core, a Situation Core, and the sources your team trusts. PRAXIS turns that context into grounded answers, visible evidence gaps, and memos ready for review.
+              Attach the User Core, Situation Core, source receipts, graph posture, time horizon, and output intent your team trusts. PRAXIS adds temporal, causal, and domain-specific structure so answers and memos inherit context instead of improvising from a blank chat box.
+            </p>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+              Built from practitioner experience in multilateral diplomacy, it keeps judgment, source posture, and handover state visible.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
@@ -86,8 +91,10 @@ export function Phase8WowLanding() {
             <div className="grid gap-3 sm:grid-cols-2">
               <ContextCard icon={Users} label="User Core" value="Foreign policy analyst" />
               <ContextCard icon={Target} label="Situation Core" value="Indo-Pacific 2026" />
-              <ContextCard icon={BookOpenCheck} label="Sources" value="Receipts, uploads, notes" />
-              <ContextCard icon={FileText} label="Memo output" value="Cited draft + handoff" />
+              <ContextCard icon={BookOpenCheck} label="Source Core" value="Receipts, uploads, notes" />
+              <ContextCard icon={GitBranch} label="Graph Core" value="Actors, claims, relationships" />
+              <ContextCard icon={Clock3} label="Time Core" value="Horizon + temporal posture" />
+              <ContextCard icon={FileText} label="Output Core" value="Cited draft + handoff" />
             </div>
             <div className="mt-4 rounded-md border border-slate-200 bg-white p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">First workflow</p>
@@ -109,11 +116,11 @@ export function Phase8WowLanding() {
         </div>
       </section>
 
-      <section className="border-b border-slate-200 bg-[#F6F8FB] px-4 py-14 sm:px-6 lg:px-8">
+      <section id="methods" className="border-b border-slate-200 bg-[#F6F8FB] px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">One simple loop</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Attach context, ask, review gaps, draft the memo.</h2>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Inherit context, ask, review structure, hand over the memo.</h2>
           </div>
           <div className="mt-7 grid gap-4 lg:grid-cols-4">
             {workflow.map(([label, detail]) => (
@@ -127,7 +134,7 @@ export function Phase8WowLanding() {
         </div>
       </section>
 
-      <section className="border-b border-slate-200 bg-white px-4 py-14 sm:px-6 lg:px-8">
+      <section id="drafting" className="border-b border-slate-200 bg-white px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-3">
           {proofPanels.map((panel) => (
             <Link key={panel.label} href={panel.href} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-[#8A5A00]/40 hover:shadow-md">
@@ -140,13 +147,13 @@ export function Phase8WowLanding() {
         </div>
       </section>
 
-      <section className="border-b border-slate-200 bg-[#101827] px-4 py-12 text-white sm:px-6 lg:px-8">
+      <section id="real-app" className="border-b border-slate-200 bg-[#101827] px-4 py-12 text-white sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[0.7fr_1.3fr]">
           <div>
             <ShieldCheck className="h-6 w-6 text-[#E8B931]" />
-            <h2 className="mt-3 text-2xl font-semibold">Trust is visible in the workflow.</h2>
+            <h2 className="mt-3 text-2xl font-semibold">Trust is visible before PRAXIS reasons.</h2>
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              PRAXIS does not present generic certainty. It keeps source receipts, human review, disabled-memory honesty, and the deployed cloud stack explicit.
+              PRAXIS does not present generic certainty. It keeps inherited cores, temporal readiness, source receipts, graph proposals, and analyst review explicit.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -160,11 +167,11 @@ export function Phase8WowLanding() {
         </div>
       </section>
 
-      <section className="bg-white px-4 py-12 sm:px-6 lg:px-8">
+      <section id="pricing" className="bg-white px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 rounded-lg border border-slate-200 bg-[#F9FBFC] p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8A5A00]">Start with context</p>
-            <h2 className="mt-1 text-2xl font-semibold text-slate-950">Open Ask PRAXIS and attach the right core.</h2>
+            <h2 className="mt-1 text-2xl font-semibold text-slate-950">Open Ask PRAXIS and work from the active core stack.</h2>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/app/assistant" className="inline-flex items-center gap-2 rounded-md bg-[#111827] px-5 py-3 text-sm font-semibold text-white">

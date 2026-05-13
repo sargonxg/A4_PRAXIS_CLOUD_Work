@@ -23,19 +23,18 @@ test('landing renders hero animation, static fallback, and 3D ontology graph', a
   const consoleErrors = collectConsoleErrors(page);
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Policy AI that starts with the right context\./i })).toBeVisible();
-  await expect(page.getByText(/Ask PRAXIS about this policy context/i)).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Open PRAXIS$/i }).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: /PRAXIS builds inheritable policy cores\./i })).toBeVisible();
+  await expect(page.getByText(/Open Ask PRAXIS and work from the active core stack/i)).toBeVisible();
+  await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toBeVisible();
 
   const realApp = page.locator('#real-app');
   await realApp.scrollIntoViewIfNeeded();
-  await expect(realApp.getByText(/Inside the real app/i)).toBeVisible();
-  await expect(realApp.getByText(/Policy context creation, research, and memo writing in one place\./i)).toBeVisible();
-  await expect(realApp.getByText(/dashboard, workbench, graph, memo studio, research, and context creation/i)).toBeVisible();
+  await expect(realApp.getByText(/Trust is visible before PRAXIS reasons/i)).toBeVisible();
+  await expect(realApp.getByText(/inherited cores, temporal readiness, source receipts, graph proposals, and analyst review/i)).toBeVisible();
 
   await page.goto('/?staticHero=1');
-  await expect(page.getByRole('heading', { name: /Policy AI that starts with the right context\./i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Open PRAXIS$/i }).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: /PRAXIS builds inheritable policy cores\./i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toBeVisible();
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowRight, FileText, GripVertical, Library, MessageSquareText, ShieldCheck, Sparkles, Target, UserCircle, Wrench } from 'lucide-react';
 import { PRIMARY_MOBILE_WORKFLOWS } from '@/lib/agentic-workflows/registry';
 import { attachedCoresFromSituation, recommendTools } from '@/lib/tools/recommend';
+import { readinessLabel } from '@/lib/tools/contract';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
@@ -25,7 +26,11 @@ interface AskPraxisHomeProps {
 
 const attachedCores = [
   { label: 'User Core', href: '/app/cores/user', icon: UserCircle, detail: 'role, audience, style' },
-  { label: 'Situation Core', href: '/app/cores/context', icon: Target, detail: 'frame, sources, graph' },
+  { label: 'Situation Core', href: '/app/cores/context', icon: Target, detail: 'frame, domain, actors' },
+  { label: 'Source/Document Core', href: '/app/workbench?tab=library', icon: Library, detail: 'receipts, uploads, gaps' },
+  { label: 'Graph Core', href: '/app/workbench?tab=graph', icon: GripVertical, detail: 'actors, claims, relations' },
+  { label: 'Time Core', href: '/app/workbench', icon: ShieldCheck, detail: 'horizon, freshness, sequence' },
+  { label: 'Output Core', href: '/app/write', icon: FileText, detail: 'memo, brief, handover' },
 ];
 
 const simpleMoves = [
@@ -74,10 +79,10 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Ask PRAXIS</p>
               <h1 className="mt-2 text-3xl font-semibold text-navy-950 sm:text-4xl">
-                Ask first. PRAXIS brings the context, tools, and memo path.
+                Ask, research, stress-test, draft, and hand over from the active core stack.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
-                {activeCaseName} is the current Situation. Start with one question; PRAXIS reads the attached User Core and Situation Core, then suggests only the next tools that fit.
+                {activeCaseName} is the current Situation. PRAXIS reads the inherited User, Situation, Source/Document, Graph, Time, and Output cores, then recommends the safest next move instead of exposing a raw tool marketplace.
               </p>
             </div>
             <Link
@@ -102,7 +107,7 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
                     <GripVertical className="h-3.5 w-3.5 text-slate-400" />
                     <Icon className="h-3.5 w-3.5 text-diplomatic-blue" />
                     {core.label}
-                    <span className="hidden text-slate-500 sm:inline">{core.detail}</span>
+                    <span className="hidden text-slate-500 lg:inline">{core.detail}</span>
                   </Link>
                 );
               })}
@@ -118,7 +123,7 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
               <span className="min-w-0 flex-1">
                 <span className="block text-base font-semibold">Ask PRAXIS about this policy situation.</span>
                 <span className="mt-1 block text-xs leading-5 text-navy-200">
-                  It checks the cores, suggests tools, and keeps memo drafting reviewable.
+                  It checks core health, temporal posture, source coverage, and graph readiness before proposing work.
                 </span>
               </span>
               <ArrowRight className="h-5 w-5 shrink-0 text-navy-300" />
@@ -134,7 +139,7 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
                     <Wrench className="h-3.5 w-3.5 text-gold-700" />
                     {tool.shortLabel}
                   </span>
-                  <span className="mt-1 block leading-5 text-slate-600">{tool.produces.replace('_', ' ')}</span>
+                  <span className="mt-1 block leading-5 text-slate-600">{readinessLabel(tool.readiness)}: {tool.readinessDetail}</span>
                 </Link>
               ))}
             </div>
@@ -159,14 +164,14 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
             {coverage.items.map((item) => (
               <div key={item.label} className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2">
                 <span className="text-xs font-semibold text-slate-700">{item.label}</span>
-                <span className={cn('text-sm font-semibold', item.value === 'Thin' ? 'text-amber-800' : 'text-navy-950')}>
+                <span className={cn('text-sm font-semibold', item.tone === 'gap' ? 'text-amber-800' : 'text-navy-950')}>
                   {item.value}
                 </span>
               </div>
             ))}
           </div>
           <p className="mt-4 text-xs leading-5 text-slate-700">
-            Tool runs and saved outputs stay confirmation-gated. Ask PRAXIS should explain the next step before running it.
+            What PRAXIS can safely do next: {coverage.safeNext}. Tool runs, graph proposals, and saved outputs stay confirmation-gated.
           </p>
         </aside>
       </div>
@@ -213,15 +218,31 @@ function buildContextCoverage(activeCase: Situation | DashboardExampleCase | und
   const actorCount = activeCase && 'actors' in activeCase ? activeCase.actors.length : activeCase?.tags.length ?? 0;
   const graphEntities = activeCase && 'graphEntities' in activeCase ? activeCase.graphEntities : Math.max(6, actorCount + 4);
   const hasEpisode = Boolean(activeCase && 'latestEventDate' in activeCase && activeCase.latestEventDate);
-  const claimSignal = graphEntities > 8 ? 'Ready' : graphEntities > 4 ? 'Partial' : 'Thin';
+  const evidenceCount = sourceCount + documentCount;
+  const contextReady = Boolean(activeCase?.id) && actorCount >= 2;
+  const sourceReady = evidenceCount > 0;
+  const graphReady = graphEntities > 8 ? 'Ready' : graphEntities > 4 ? 'Partial' : 'Thin';
+  const temporalReady = hasEpisode ? 'Ready' : 'Needs date';
+  const safeNext = !contextReady
+    ? 'assemble the Situation Core'
+    : !sourceReady
+      ? 'repair source coverage'
+      : !hasEpisode
+        ? 'set temporal posture'
+        : graphReady === 'Thin'
+          ? 'review graph and actor coverage'
+          : 'answer, stress-test, or draft with receipts in view';
 
   return {
-    posture: sourceCount + documentCount + graphEntities > 10 ? 'Ready for guided work' : 'Usable, with visible gaps',
+    posture: sourceReady && graphEntities > 8 && hasEpisode ? 'Ready for guided work' : 'Usable, with visible gaps',
     items: [
-      { label: 'Evidence', value: String(sourceCount + documentCount) },
-      { label: 'Claims', value: claimSignal },
-      { label: 'Tools', value: marketplaceToolCount > 0 && actorCount > 3 && hasEpisode ? 'Suggested' : 'Needs context' },
+      { label: 'Context health', value: contextReady ? 'Attached' : 'Thin', tone: contextReady ? 'ready' : 'gap' },
+      { label: 'Temporal readiness', value: temporalReady, tone: hasEpisode ? 'ready' : 'gap' },
+      { label: 'Source coverage', value: sourceReady ? `${evidenceCount} receipt${evidenceCount === 1 ? '' : 's'}` : 'Missing', tone: sourceReady ? 'ready' : 'gap' },
+      { label: 'Graph/actor readiness', value: graphReady, tone: graphReady === 'Thin' ? 'gap' : 'ready' },
+      { label: 'Tool routing', value: marketplaceToolCount > 0 && contextReady ? 'Available' : 'Needs context', tone: marketplaceToolCount > 0 && contextReady ? 'ready' : 'gap' },
     ],
+    safeNext,
   };
 }
 

@@ -15,6 +15,8 @@ export const PRAXIS_CANONICAL_TOOLS: AttachableTool[] = [
     frameworks: ['Professional editorial standards', 'Fisher-Ury principled negotiation', 'Context injection'],
     methodology: 'Ask PRAXIS answers from the attached User Core and Situation Core, then routes the next step to writing, research, graph repair, or a specialist policy tool. It should explain the basis for the answer, show gaps, and propose actions before writing into the workspace.',
     limits: 'It is a command plane, not an automatic mutation engine. Tool runs and graph updates remain confirmation-gated.',
+    readiness: 'live',
+    readinessDetail: 'Command surface for asking, researching, stress-testing, drafting, and handover from the active core stack.',
   },
   {
     id: 'context-builder',
@@ -30,6 +32,8 @@ export const PRAXIS_CANONICAL_TOOLS: AttachableTool[] = [
     frameworks: ['Situation context health', 'Policy workflow pathing', 'ACO Conflict Grammar'],
     methodology: 'Context Builder is the intake and repair gate. It checks whether the situation has enough scope, actors, sources, mission framing, assumptions, and graph structure before heavier AI work runs.',
     limits: 'It strengthens the case file but does not replace expert source judgment or full graph review.',
+    readiness: 'live',
+    readinessDetail: 'Deterministic context-health checks and repair prompts before heavier reasoning runs.',
   },
   {
     id: 'grounded-research',
@@ -45,6 +49,8 @@ export const PRAXIS_CANONICAL_TOOLS: AttachableTool[] = [
     frameworks: ['Source triangulation', 'Reliability tiers', 'OSINT source hierarchy'],
     methodology: 'Grounded Research proposes defensible sources ranked by recency, diversity, and reliability. It checks the situation corpus first to avoid duplicates, then returns a search plan, source receipts, and gaps still missing from the Source Graph.',
     limits: 'Fresh web coverage depends on provider availability and the specificity of the situation frame.',
+    readiness: 'routed',
+    readinessDetail: 'Routed from Ask PRAXIS and Source Core gaps when the case needs better receipts or current coverage.',
   },
   {
     id: 'stakeholder-map',
@@ -60,6 +66,8 @@ export const PRAXIS_CANONICAL_TOOLS: AttachableTool[] = [
     frameworks: ['Mitchell-Agle-Wood stakeholder theory', 'Barnett-Duvall power taxonomy', 'Lederach peacebuilding pyramid'],
     methodology: 'Stakeholder Map visualizes alliances, adversarial dyads, third-party postures, power, legitimacy, urgency, leverage, and Track I/II/III positions so the analyst can see who matters and why.',
     limits: 'Actor salience is only as strong as the Situation Core and source coverage.',
+    readiness: 'live',
+    readinessDetail: 'Live actor and relationship mapping when the Situation Core has enough named actors.',
   },
   {
     id: 'position-vs-interest',
@@ -75,6 +83,8 @@ export const PRAXIS_CANONICAL_TOOLS: AttachableTool[] = [
     frameworks: ['Fisher-Ury principled negotiation', 'Harvard PON BATNA analysis', 'Lax-Sebenius 3D negotiation'],
     methodology: 'Position vs Interest separates stated positions from underlying needs, constraints, red lines, BATNAs, and possible issue bundles. It helps PRAXIS move from actor description to negotiation strategy.',
     limits: 'It should be rerun when actor incentives or mandates change.',
+    readiness: 'routed',
+    readinessDetail: 'Routed when Ask PRAXIS detects negotiation posture, red lines, mandates, or possible issue bundles.',
   },
   {
     id: 'scenario-projector',
@@ -90,6 +100,8 @@ export const PRAXIS_CANONICAL_TOOLS: AttachableTool[] = [
     frameworks: ['Glasl escalation model', 'Structured uncertainty matrix', 'Zartman ripeness theory'],
     methodology: 'Scenario Projector identifies uncertain high-impact drivers, projects best/likely/worst trajectories, and names indicators that would move probability. It keeps time horizon and warning signals explicit.',
     limits: 'Scenario probabilities are structured judgments, not forecasts with statistical certainty.',
+    readiness: 'staged',
+    readinessDetail: 'Staged behind temporal readiness because useful scenarios require dates, indicators, and a defined horizon.',
   },
   {
     id: 'ach',
@@ -105,6 +117,8 @@ export const PRAXIS_CANONICAL_TOOLS: AttachableTool[] = [
     frameworks: ['Heuer ACH', 'Structured analytic techniques', 'Evidence diagnostics'],
     methodology: 'ACH compares hypotheses against evidence, forcing disconfirming evidence and weak assumptions into view. It is the default PRAXIS method when a core judgment may be overfit to a single narrative.',
     limits: 'The matrix is only useful when hypotheses are meaningfully distinct and evidence is attached.',
+    readiness: 'live',
+    readinessDetail: 'Live structured reasoning check for competing explanations when source evidence is attached.',
   },
   {
     id: 'contradiction-finder',
@@ -120,6 +134,8 @@ export const PRAXIS_CANONICAL_TOOLS: AttachableTool[] = [
     frameworks: ['Heuer SAT', 'Devil’s advocacy', 'ICD 203 probability language'],
     methodology: 'Contradiction Finder reviews a claim, memo, or tool output for unstated assumptions, source diversity issues, motivated reasoning, missing intelligence, and evidence that would change the conclusion.',
     limits: 'It critiques reasoning quality; it does not independently verify every cited source.',
+    readiness: 'routed',
+    readinessDetail: 'Routed from Ask answers, claims, and drafts when unsupported reasoning needs review.',
   },
   {
     id: 'frame-narrative',
@@ -135,6 +151,8 @@ export const PRAXIS_CANONICAL_TOOLS: AttachableTool[] = [
     frameworks: ['NATO STRATCOM taxonomy', '4D influence framework', 'GDELT GCAM tone analysis'],
     methodology: 'Frame Narrative explains how actors describe the situation, which frames are gaining traction, where legitimacy claims diverge, and how a memo or briefing should avoid adopting an unexamined frame.',
     limits: 'Narrative reads need fresh media/source coverage and should be caveated by language and platform gaps.',
+    readiness: 'staged',
+    readinessDetail: 'Staged until source coverage and domain posture are strong enough to avoid thin narrative reads.',
   },
   {
     id: 'coalition-detector',
@@ -150,6 +168,8 @@ export const PRAXIS_CANONICAL_TOOLS: AttachableTool[] = [
     frameworks: ['Social network analysis', 'Power mapping', 'Brokerage and alignment analysis'],
     methodology: 'Coalition Detector looks for clusters, brokers, dependencies, patrons, and likely alignment shifts. It turns the Situation Core into testable graph proposals rather than just prose about relationships.',
     limits: 'Coalition inferences should be reviewed before mutating the canonical graph.',
+    readiness: 'routed',
+    readinessDetail: 'Routed into graph proposal review; relationship claims stay review-gated before canonical mutation.',
   },
   {
     id: 'commitment-tracker',
@@ -165,6 +185,8 @@ export const PRAXIS_CANONICAL_TOOLS: AttachableTool[] = [
     frameworks: ['UCDP Peace Agreement Dataset', 'Agreement compliance monitoring', 'Stedman implementation analysis'],
     methodology: 'Commitment Tracker records obligations, deadlines, verification mechanisms, compliance posture, and violation type. It is the PRAXIS memory for promises that need follow-up.',
     limits: 'It needs temporal anchors and source receipts; vague political statements should be marked as weak commitments.',
+    readiness: 'staged',
+    readinessDetail: 'Staged behind temporal/source readiness because obligations need dates, actors, and receipts.',
   },
   {
     id: 'memo-drafter',
@@ -180,6 +202,8 @@ export const PRAXIS_CANONICAL_TOOLS: AttachableTool[] = [
     frameworks: ['Policy memo standards', 'Putnam two-level analysis', 'PRAXIS provenance model'],
     methodology: 'Memo Drafter turns the active User Core, Situation Core, sources, and selected tool outputs into a reviewable work product in PraxisWriter. It preserves provenance and keeps gaps visible before export.',
     limits: 'It drafts the work product; the analyst still owns source review, tone, and final judgment.',
+    readiness: 'live',
+    readinessDetail: 'Live drafting surface for inherited cores, selected outputs, citations, and handover state.',
   },
 ] as const;
 

@@ -49,10 +49,10 @@ const softwareJsonLd = {
     url: "https://tacitus.me",
   },
   featureList: [
-    "Policy AI that starts with structured context instead of a blank chat box",
+    "Inheritable policy cores for user posture, situation frame, source receipts, graph state, time horizon, and output intent",
     "Persona-aware answers for policy, diplomacy, and strategic analysis work",
-    "User Core, Situation Core, source graph, tacit institutional memory, and memo workflows for policy teams",
-    "Suggested actions for research, source intake, graph review, stakeholder mapping, scenarios, memo drafting, brief export, and red team review",
+    "Deterministic temporal, causal, actor, source, domain, and graph readiness checks underneath AI answers",
+    "Suggested actions for research, source-gap repair, graph proposal review, stakeholder mapping, scenarios, memo drafting, brief export, and red team review",
     "Review-first drafting with source posture and visible gaps",
     "Google Cloud, Firebase, Firestore, Cloud SQL Postgres, and Secret Manager production path",
   ],

@@ -7,6 +7,7 @@ import {
   consolidatedToolForLegacyId,
   getSpecializedToolDevelopmentGroups,
 } from '@/lib/constants/consolidated-tools';
+import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 import { getToolById } from '@/lib/constants/tool-registry';
 import { getToolContextBlueprint } from '@/lib/tools/tool-context-blueprints';
 import { hrefForTool } from '@/lib/tools/tool-navigation';
@@ -74,6 +75,17 @@ describe('consolidated PRAXIS tool model', () => {
       for (const toolId of group.toolIds) {
         expect(getToolById(toolId), `${group.id}:${toolId}`).toBeDefined();
       }
+    }
+  });
+
+  it('classifies canonical tools by product readiness without exposing internals', () => {
+    expect(PRAXIS_CANONICAL_TOOLS).toHaveLength(12);
+    const statuses = new Set(PRAXIS_CANONICAL_TOOLS.map((tool) => tool.readiness));
+    expect(statuses).toEqual(new Set(['live', 'routed', 'staged']));
+
+    for (const tool of PRAXIS_CANONICAL_TOOLS) {
+      expect(tool.readinessDetail.length, tool.id).toBeGreaterThan(40);
+      expect(tool.readinessDetail, tool.id).not.toMatch(/credit|provider|model/i);
     }
   });
 });

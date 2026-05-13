@@ -4,17 +4,13 @@ test.describe('PRAXIS core product flows', () => {
   test('landing Ask preview, core builders, and memo workbench route stay wired', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByText(/PRAXIS by TACITUS/i).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /PRAXIS builds inheritable policy cores\./i })).toBeVisible();
 
-    const contextSelect = page.getByLabel('Situation Core');
-    await expect(contextSelect).toBeVisible();
-    await contextSelect.selectOption('ai-regulation-2026');
-    await expect(contextSelect).toHaveValue('ai-regulation-2026');
-    await expect(page.getByRole('heading', { name: /The answer is only useful if the graph behind it is legible\./i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /See PRAXIS write a memo/i }).first()).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Policy context creation, research, and memo writing in one place\./i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Open PRAXIS/i }).first()).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Attach the context that matters\. PRAXIS suggests the next move\./i })).toBeVisible();
-    await expect(page.getByText(/Context stack/i)).toBeVisible();
+    await expect(page.getByText(/User Core/i).first()).toBeVisible();
+    await expect(page.getByText(/Situation Core/i).first()).toBeVisible();
+    await expect(page.getByText(/Graph Core/i).first()).toBeVisible();
+    await expect(page.getByText(/Open Ask PRAXIS and work from the active core stack/i)).toBeVisible();
+    await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toHaveAttribute('href', '/app/assistant');
 
     await page.request.post('/api/auth/session', { data: { demo: true } });
 

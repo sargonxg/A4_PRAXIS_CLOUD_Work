@@ -16,6 +16,22 @@ product_contract:
     Context is always visible, tools are mostly invisible, and the next
     action is obvious. PRAXIS should feel like a fast policy workbench,
     not a tool marketplace or a marketing page.
+  product_pillars:
+    - name: Inheritable Policy Cores
+      rule: >-
+        PRAXIS starts from reusable User, Situation, Source/Document, Graph,
+        Time, and Output cores so expertise can travel between questions,
+        tools, drafts, and handovers without being re-explained.
+    - name: Deterministic Situation Intelligence
+      rule: >-
+        Temporal, causal, actor, source, domain, and graph-readiness checks
+        provide the trust layer underneath AI answers before heavier reasoning
+        or drafting runs.
+    - name: Reviewable Policy Output
+      rule: >-
+        Answers and drafts must preserve source posture, unsupported-claim
+        gaps, graph proposals, and analyst handover state so work product can
+        be reviewed instead of accepted as generic AI certainty.
   primary_surfaces:
     - Home: assemble context
     - Ask PRAXIS: reason with selected context

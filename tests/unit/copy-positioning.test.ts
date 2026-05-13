@@ -3,9 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const PRODUCT_COPY_FILES = [
-  'src/components/landing/hero.tsx',
-  'src/components/landing/footer.tsx',
-  'src/components/landing/problem-section.tsx',
+  'src/components/landing/phase8-wow-landing.tsx',
   'src/components/assistant/suggested-prompts.tsx',
   'src/components/app/floating-praxis.tsx',
   'src/components/app/header.tsx',
