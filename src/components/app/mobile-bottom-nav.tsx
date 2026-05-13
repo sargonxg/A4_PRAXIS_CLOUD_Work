@@ -2,12 +2,12 @@
 
 import type { ComponentType } from 'react';
 import Link from 'next/link';
-import { FileText, FolderKanban, Settings, Sparkles, Wrench } from 'lucide-react';
+import { FileText, FolderKanban, Home, LibraryBig, Network, Sparkles, Wrench } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
 
-const ICONS = { Sparkles, FolderKanban, FileText, Wrench, Settings };
+const ICONS = { Home, Sparkles, FolderKanban, LibraryBig, FileText, Network, Wrench };
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -19,7 +19,7 @@ export function MobileBottomNav() {
       data-testid="mobile-bottom-nav"
     >
       <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
-        {PRIMARY_NAV.map((item) => item.id === 'ask' ? (
+        {PRIMARY_NAV.filter((item) => item.id !== 'advanced').map((item) => item.id === 'ask' ? (
           <button
             key={item.id}
             type="button"

@@ -1,14 +1,14 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronsLeft, ChevronsRight, FileText, FolderKanban, LogOut, Settings, Sparkles, Wrench } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, FileText, FolderKanban, Home, LibraryBig, LogOut, Network, Settings, Sparkles, Wrench } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
 import { useAppStore } from '@/stores/app-store';
 
-const ICONS = { Sparkles, FolderKanban, FileText, Wrench, Settings };
+const ICONS = { Home, Sparkles, FolderKanban, LibraryBig, FileText, Network, Wrench, Settings };
 
 export function AppSidebar() {
   const pathname = usePathname();

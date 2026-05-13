@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { DndContext, useDraggable, useDroppable, type DragEndEvent } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import {
   ArrowRight,
   BookOpenText,
@@ -20,6 +22,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { AskBar } from '@/components/ask/AskBar';
 import type { WorkspaceNextMove, WorkspaceNextMoveStatus } from '@/lib/dashboard/next-moves';
+import { buildContextHealthReport, type ContextHealthReport } from '@/lib/context/context-health';
 import { cn } from '@/lib/utils/cn';
 import { PUBLIC_USER_MODELS } from '@/lib/user-models/seeds';
 import type { UserModelRecord } from '@/lib/user-models/types';
@@ -130,7 +133,22 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
   const workspaceLens = useMemo(() => buildWorkspaceLens(activeUserModel, selectedCase, marketplaceToolCount), [activeUserModel, marketplaceToolCount, selectedCase]);
   const toolCards = useMemo(() => buildToolCards(selectedCase, activeUserModel), [activeUserModel, selectedCase]);
   const contextAdvantage = useMemo(() => buildContextAdvantage(activeUserModel, selectedCase), [activeUserModel, selectedCase]);
-  const displayedToolCards = savedNextMoves?.length ? savedNextMoves.map(nextMoveToToolCard) : toolCards;
+  const contextHealth = useMemo(() => buildContextHealthReport({
+    hasUserCore: Boolean(activeUserModel),
+    hasSituationCore: Boolean(selectedCase),
+    sourceCount: selectedCase?.sourceCount ?? 0,
+    documentCount: selectedCase?.documentCount ?? 0,
+    actorCount: selectedCase?.actorCount ?? 0,
+    hasTimeline: selectedCase?.kind === 'user'
+      ? Boolean(selectedCase.situation.keyDates?.length || selectedCase.situation.latestEventDate || selectedCase.situation.conflictOnsetDate)
+      : Boolean(selectedCase),
+    evidenceGapCount: selectedCase ? Math.max(0, 3 - ((selectedCase.sourceCount ?? 0) + (selectedCase.documentCount ?? 0))) : 4,
+    hasDraft: draftText.trim().length > 40,
+    situationHref: selectedCase ? `/app/workbench/${selectedCase.id}` : '/app/contexts',
+  }), [activeUserModel, draftText, selectedCase]);
+  const displayedToolCards = (savedNextMoves?.length
+    ? savedNextMoves.map(nextMoveToToolCard)
+    : contextHealth.nextActions.map(nextActionToToolCard)).slice(0, 3);
 
   useEffect(() => {
     setDraftText(buildDraftSeed(activeUserModel, selectedCase));
@@ -253,6 +271,15 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
       });
   }
 
+  function handleContextDrop(event: DragEndEvent) {
+    if (!event.over || event.over.id !== 'active-context-stack') return;
+    const id = String(event.active.id);
+    if (id.startsWith('user:')) activateUserModel(id.replace('user:', ''));
+    if (id.startsWith('situation:')) activateSituation(id.replace('situation:', ''));
+    if (id === 'source-stack' && selectedCase) window.location.href = `/app/workbench/${selectedCase.id}?tab=library`;
+    if (id === 'output-stack') window.location.href = '/app/write';
+  }
+
   const userLibrary = [...privateModels, ...PUBLIC_USER_MODELS];
 
   return (
@@ -306,33 +333,13 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
             </div>
 
             <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">Selected cores</p>
-                    <h2 className="mt-1 text-base font-semibold text-navy-950">AI starts from maintained context, not a blank chat box.</h2>
-                  </div>
-                  <Sparkles className="mt-0.5 h-5 w-5 text-gold-700" />
-                </div>
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
-                  <SelectedCoreCard
-                    label="User Core"
-                    title={activeUserModel.identity}
-                    detail={`${activeUserModel.role} · ${activeUserModel.communicationStyle}`}
-                    active
-                    actionHref="/app/cores/user"
-                    actionLabel="Manage"
-                  />
-                  <SelectedCoreCard
-                    label="Situation Core"
-                    title={selectedCase?.name ?? 'Select a situation'}
-                    detail={selectedCase ? `${selectedCase.region} · ${selectedCase.actorCount} actors` : 'Pick a case to shape the workspace'}
-                    active={Boolean(selectedCase)}
-                    actionHref={selectedCase ? `/app/workbench/${selectedCase.id}` : '/app/workbench'}
-                    actionLabel={selectedCase ? 'Open' : 'Browse'}
-                  />
-                </div>
-              </div>
+              <DndContext onDragEnd={handleContextDrop}>
+                <ActiveContextStackPanel
+                  activeUserModel={activeUserModel}
+                  selectedCase={selectedCase}
+                  contextHealth={contextHealth}
+                />
+              </DndContext>
 
               <div className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -475,8 +482,8 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
         <div className="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm shadow-navy-950/5 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">Suggested tools</p>
-              <h2 className="mt-1 text-xl font-semibold text-navy-950">Research, source intake, graph review, stakeholder map, ACH, memo drafting, export, red team.</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">Next best actions</p>
+              <h2 className="mt-1 text-xl font-semibold text-navy-950">Three suggestions from the active context, with the tool stack kept behind the workflow.</h2>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {nextMovesSavedAt ? (
@@ -609,6 +616,101 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
   );
 }
 
+function ActiveContextStackPanel({
+  activeUserModel,
+  selectedCase,
+  contextHealth,
+}: {
+  activeUserModel: UserModelRecord;
+  selectedCase: WorkspaceCase | null;
+  contextHealth: ContextHealthReport;
+}) {
+  const { isOver, setNodeRef } = useDroppable({ id: 'active-context-stack' });
+  const evidenceCount = (selectedCase?.sourceCount ?? 0) + (selectedCase?.documentCount ?? 0);
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">Active Context Stack</p>
+          <h2 className="mt-1 text-base font-semibold text-navy-950">Drag cores, sources, and an output goal into the working stack.</h2>
+          <p className="mt-1 text-xs leading-5 text-slate-600">
+            PRAXIS will ask, search, and draft as this user, on this situation, with this evidence posture.
+          </p>
+        </div>
+        <div className="rounded-md border border-navy-200 bg-white px-3 py-2 text-right">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Context</p>
+          <p className="text-lg font-semibold text-navy-950">{contextHealth.score}/100</p>
+          <p className="text-[11px] text-slate-600">{contextHealth.label}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <div className="space-y-2">
+          <DraggableStackItem id={`user:${activeUserModel.modelId}`} label="User Core" title={activeUserModel.identity} />
+          {selectedCase ? <DraggableStackItem id={`situation:${selectedCase.id}`} label="Situation Core" title={selectedCase.name} /> : null}
+          <DraggableStackItem id="source-stack" label="Sources" title={`${evidenceCount} receipts/docs`} />
+          <DraggableStackItem id="output-stack" label="Output Goal" title="Options memo" />
+        </div>
+
+        <div
+          ref={setNodeRef}
+          className={cn(
+            'min-h-[210px] rounded-lg border border-dashed p-3 transition',
+            isOver ? 'border-gold-500 bg-gold-50' : 'border-slate-300 bg-white',
+          )}
+        >
+          <div className="grid gap-2 sm:grid-cols-2">
+            <StackSlot label="Working as" value={activeUserModel.identity} detail={activeUserModel.role} />
+            <StackSlot label="Working on" value={selectedCase?.name ?? 'No Situation Core selected'} detail={selectedCase?.region ?? 'Select or fork a situation'} muted={!selectedCase} />
+            <StackSlot label="Using" value={`${evidenceCount} evidence items`} detail={`${selectedCase?.actorCount ?? 0} actors, ${contextHealth.signals.find((item) => item.id === 'timeline')?.status ?? 'partial'} timeline`} muted={evidenceCount === 0} />
+            <StackSlot label="Best next move" value={contextHealth.nextActions[0]?.label ?? 'Ask PRAXIS'} detail={contextHealth.nextActions[0]?.detail ?? 'Reason with the current stack'} />
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {contextHealth.nextActions.map((action) => (
+              <Link key={action.id} href={action.href} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-navy-800 hover:border-diplomatic-blue/40 hover:bg-white">
+                {action.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DraggableStackItem({ id, label, title }: { id: string; label: string; title: string }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
+  const style = { transform: CSS.Translate.toString(transform) };
+
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      style={style}
+      className={cn(
+        'w-full cursor-grab rounded-md border border-slate-200 bg-white p-3 text-left shadow-sm transition active:cursor-grabbing',
+        isDragging ? 'opacity-70 shadow-lg' : 'hover:border-gold-300',
+      )}
+      {...listeners}
+      {...attributes}
+    >
+      <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</span>
+      <span className="mt-1 block truncate text-sm font-semibold text-navy-950">{title}</span>
+    </button>
+  );
+}
+
+function StackSlot({ label, value, detail, muted = false }: { label: string; value: string; detail: string; muted?: boolean }) {
+  return (
+    <div className={cn('rounded-md border p-3', muted ? 'border-slate-200 bg-slate-50' : 'border-navy-100 bg-white')}>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className={cn('mt-1 truncate text-sm font-semibold', muted ? 'text-slate-600' : 'text-navy-950')}>{value}</p>
+      <p className="mt-1 text-xs leading-5 text-slate-600">{detail}</p>
+    </div>
+  );
+}
+
 function nextMoveToToolCard(move: WorkspaceNextMove): ToolCard {
   return {
     id: move.id,
@@ -617,6 +719,16 @@ function nextMoveToToolCard(move: WorkspaceNextMove): ToolCard {
     href: move.href,
     emphasis: move.emphasis,
     status: move.status,
+  };
+}
+
+function nextActionToToolCard(action: ContextHealthReport['nextActions'][number]): ToolCard {
+  return {
+    id: action.id,
+    label: action.label,
+    detail: action.detail,
+    href: action.href,
+    emphasis: action.priority === 'primary' ? 'primary' : action.priority === 'secondary' ? 'secondary' : 'subtle',
   };
 }
 
@@ -948,37 +1060,6 @@ function CoreChip({ label, detail, href, tone }: { label: string; detail: string
       <span className="uppercase tracking-[0.16em]">{label}</span>
       <span className="max-w-[18rem] truncate font-normal normal-case tracking-normal">{detail}</span>
     </Link>
-  );
-}
-
-function SelectedCoreCard({
-  label,
-  title,
-  detail,
-  active,
-  actionHref,
-  actionLabel,
-}: {
-  label: string;
-  title: string;
-  detail: string;
-  active: boolean;
-  actionHref: string;
-  actionLabel: string;
-}) {
-  return (
-    <div className={cn('rounded-xl border p-4', active ? 'border-navy-200 bg-white' : 'border-slate-200 bg-slate-50')}>
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <h3 className="mt-2 text-sm font-semibold text-navy-950">{title}</h3>
-      <p className="mt-1 text-xs leading-5 text-slate-700">{detail}</p>
-      <div className="mt-3 flex items-center gap-2">
-        {active ? <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-800">Selected</span> : null}
-        <Link href={actionHref} className="inline-flex items-center gap-1 text-xs font-semibold text-diplomatic-blue">
-          {actionLabel}
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
-    </div>
   );
 }
 

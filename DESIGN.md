@@ -11,6 +11,75 @@ description: >-
   and source IDs are in JetBrains Mono. The system reads like a
   modern foreign-affairs publication that happens to be a software
   product — quiet, dense, citable.
+product_contract:
+  principle: >-
+    Context is always visible, tools are mostly invisible, and the next
+    action is obvious. PRAXIS should feel like a fast policy workbench,
+    not a tool marketplace or a marketing page.
+  primary_surfaces:
+    - Home: assemble context
+    - Ask PRAXIS: reason with selected context
+    - Library: ground context in sources
+    - Memo Studio: produce full-page work product
+    - Canvas: understand structure
+    - Advanced: inspect machinery, traces, audits, and raw tools only
+  visible_context_bar:
+    required: true
+    fields:
+      - active User Core
+      - active Situation Core
+      - attached source/document count
+      - current output or draft posture
+      - context health score
+      - quick action to change context
+  screen_actions:
+    rule: one dominant action per screen
+    home: Assemble context
+    ask: Ask with current context
+    library: Attach sources
+    memo_studio: Draft from context
+    canvas: Review structure
+    advanced: Inspect machinery
+  interaction_patterns:
+    work_on_this_menu:
+      appears_on:
+        - core
+        - source
+        - Ask answer
+        - draft
+        - graph node
+        - next move
+      actions:
+        - ask PRAXIS about it
+        - add to active context
+        - draft from it
+        - find sources
+        - review risks
+        - create handover note
+    next_best_action:
+      max_visible: 3
+      source: deterministic context-health rules first, AI explanation later
+    progressive_disclosure:
+      default: compact summaries
+      expand_for:
+        - exact unsupported claims
+        - source receipts
+        - evidence gaps
+        - raw tool traces
+  visual_rules:
+    layout: dense but breathable, with neutral app background and white work surfaces
+    radius: max 8px for app panels and controls unless a legacy component requires otherwise
+    borders: subtle 1px borders over heavy shadows
+    typography: 14-16px body text, compact toolbars, no viewport-scaled font sizes
+    icons: lucide icons for actions where available
+    memo_studio: page-like document canvas with outline and provenance sidebars
+  forbidden_patterns:
+    - nested cards inside cards
+    - decorative gradient blobs, orbs, or bokeh
+    - huge marketing hero sections inside the authenticated app
+    - exposing internal provider names or credit costs in normal user UI
+    - showing more than three equal-priority suggested actions
+    - making Advanced or the raw tool library the default user path
 colors:
   # ─── Institutional dark surfaces (operations room) ──────────────
   navy-950: "#050A18"

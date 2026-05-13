@@ -71,7 +71,7 @@ export function AskBar({ activeContextName, hasContext }: { activeContextName: s
             }}
             rows={5}
             placeholder={placeholder}
-            className="w-full resize-none rounded-md border border-slate-200 px-3 py-3 text-sm leading-relaxed outline-none focus:border-navy-400"
+            className="w-full resize-none rounded-md border border-slate-300 px-3 py-3 text-sm leading-relaxed text-navy-950 outline-none placeholder:text-navy-600 focus:border-navy-500"
           />
         </label>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">

@@ -16,6 +16,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { AskBar } from '@/components/ask/AskBar';
+import { buildContextHealthReport } from '@/lib/context/context-health';
 import { PUBLIC_USER_MODELS } from '@/lib/user-models/seeds';
 import type { UserModelRecord } from '@/lib/user-models/types';
 import { getActiveUserModelId, listPrivateUserModels, setActiveUserModel } from '@/lib/users/api';
@@ -65,17 +66,6 @@ type WorkspaceCase =
       situation: ExampleCase;
     };
 
-const TOOL_SUGGESTIONS = [
-  { label: 'Research', href: '/app/tools', detail: 'Pull fresh evidence and keep source trails visible.' },
-  { label: 'Source Intake', href: '/app/cores/context', detail: 'Review uploads, receipts, and provenance.' },
-  { label: 'Graph Review', href: '/app/workbench', detail: 'Check actors, claims, and relationships.' },
-  { label: 'Stakeholder Map', href: '/app/tools', detail: 'Make leverage, audiences, and blockers explicit.' },
-  { label: 'Scenario / ACH', href: '/app/tools', detail: 'Compare hypotheses and watch signposts.' },
-  { label: 'Write with PRAXIS', href: '/app/write', detail: 'Turn the selected cores and answer into a draft.' },
-  { label: 'Brief Export', href: '/app/tools', detail: 'Export once the memo is evidence-tight.' },
-  { label: 'Red Team', href: '/app/tools', detail: 'Stress-test assumptions before shipping.' },
-];
-
 export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWorkspacePageProps) {
   const situations = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
@@ -112,6 +102,19 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
 
   const policyPosture = buildPolicyPosture(selectedCase, marketplaceToolCount, activeUserModel);
   const activeContextName = selectedCase?.name ?? 'No situation selected';
+  const contextHealth = buildContextHealthReport({
+    hasUserCore: Boolean(activeUserModel),
+    hasSituationCore: Boolean(selectedCase),
+    sourceCount: selectedCase?.sourceCount ?? 0,
+    documentCount: selectedCase?.documentCount ?? 0,
+    actorCount: selectedCase?.actorCount ?? 0,
+    hasTimeline: selectedCase?.kind === 'user'
+      ? Boolean(selectedCase.situation.keyDates?.length || selectedCase.situation.latestEventDate || selectedCase.situation.conflictOnsetDate)
+      : Boolean(selectedCase),
+    evidenceGapCount: selectedCase ? Math.max(0, 3 - ((selectedCase.sourceCount ?? 0) + (selectedCase.documentCount ?? 0))) : 4,
+    hasDraft: false,
+    situationHref: selectedCase ? `/app/workbench/${selectedCase.id}` : '/app/contexts',
+  });
 
   function handleUserModelChange(modelId: string) {
     setActiveUserModel(window.localStorage, modelId);
@@ -155,6 +158,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
                 <div className="mt-3 flex flex-wrap gap-2">
                   <AttachChip href="/app/cores/user" label="User Core" detail={activeUserModel.identity} icon={Users} />
                   <AttachChip href="/app/cores/context" label="Situation Core" detail={activeContextName} icon={Target} />
+                  <AttachChip href="/app/dashboard" label="Health" detail={`${contextHealth.score}/100 - ${contextHealth.label}`} icon={Sparkles} />
                   <AttachChip href="/app/write" label="Write path" detail="Continue in Write" icon={BookOpenText} />
                 </div>
               </div>
@@ -163,7 +167,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
                   Dashboard
                 </Link>
                 <Link href="/app/tools" className="inline-flex items-center gap-2 rounded-md border border-diplomatic-blue/20 bg-diplomatic-blue/5 px-3 py-2 text-sm font-semibold text-diplomatic-blue hover:bg-diplomatic-blue/10">
-                  Tools library
+                  Advanced
                 </Link>
               </div>
             </div>
@@ -237,12 +241,12 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
           <section className="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm shadow-navy-950/5 backdrop-blur">
             <div className="flex items-center gap-2">
               <Wrench className="h-4 w-4 text-diplomatic-blue" />
-              <h2 className="text-base font-semibold text-navy-950">Suggested tools</h2>
+              <h2 className="text-base font-semibold text-navy-950">Next best actions</h2>
             </div>
             <div className="mt-4 space-y-2">
-              {TOOL_SUGGESTIONS.map((tool) => (
+              {contextHealth.nextActions.map((tool) => (
                 <Link
-                  key={tool.label}
+                  key={tool.id}
                   href={tool.href}
                   className="block rounded-xl border border-slate-200 bg-slate-50 p-3 hover:border-diplomatic-blue/30 hover:bg-white"
                 >

@@ -32,6 +32,16 @@ Current local cleanup pass:
 - Dashboard first-screen copy now makes the standalone MVP moat explicit:
   vetted context, stakeholder read, user judgment, and inheritable policy work
   are visible before the user asks PRAXIS or drafts a memo.
+- The authenticated app shell now follows the simplified workbench contract:
+  Home, Ask PRAXIS, Library, Memo Studio, Canvas, and Advanced. The persistent
+  context bar shows User Core, Situation Core, source count, and deterministic
+  context health. Home has a drag/drop Active Context Stack; Ask and Home show
+  only three next-best actions; Memo Studio uses a page-like TipTap canvas with
+  outline/provenance rails; Canvas is live as a review-gated structure view.
+- Active User Core selection and active Situation Core selection persist through
+  the existing local/User Core helpers and Zustand Situation store. Full
+  owner-scoped Firestore persistence for arbitrary multi-core stacks and canvas
+  layouts remains a follow-up, not a claimed production sync feature.
 
 Current Phase 9 blockers:
 
@@ -46,6 +56,9 @@ Current Phase 9 blockers:
 
 Latest production deploy evidence:
 
+- Landing simplification deploy:
+  - Commit `0cd7973f` pushed to `main`.
+  - Cloud Build `26b39fd7-1603-47b9-9fe4-d3e87b87dee0` succeeded.
 - Context/core-flow improvement deploy:
   - Commit `781b6728` pushed to `main`.
   - Cloud Build `93061520-328b-416e-8bcf-8f970bc21e3e` succeeded.

@@ -19,12 +19,18 @@ function expectMissing(rel: string): void {
 
 const primaryNav = read('src/lib/navigation/primary-nav.ts');
 for (const marker of [
-  "label: 'Ask'",
-  "label: 'Cores'",
-  "label: 'Write'",
-  "label: 'Tools'",
-  "label: 'Settings'",
+  "label: 'Home'",
+  "label: 'Ask PRAXIS'",
+  "label: 'Library'",
+  "label: 'Memo Studio'",
+  "label: 'Canvas'",
+  "label: 'Advanced'",
+  "href: '/app/dashboard'",
+  "href: '/app/assistant'",
+  "href: '/app/contexts'",
   "href: '/app/write'",
+  "href: '/app/canvas'",
+  "href: '/app/tools'",
 ]) {
   if (!primaryNav.includes(marker)) failures.push(`PRIMARY_NAV missing canonical marker: ${marker}`);
 }
@@ -39,7 +45,7 @@ for (const forbidden of ['Manage cores', 'Manage Cores', '/app/draft', '/app/met
 }
 
 const header = read('src/components/app/header.tsx');
-for (const marker of ['Ask PRAXIS or search', 'PRAXIS_CANONICAL_TOOLS', 'PRIMARY_NAV']) {
+for (const marker of ['Ask PRAXIS, open a core, or find a source', 'PRAXIS_CANONICAL_TOOLS', 'PRIMARY_NAV']) {
   if (!header.includes(marker)) failures.push(`header missing unified command marker: ${marker}`);
 }
 if (header.includes('routeLabels')) failures.push('header still uses a hand-maintained route label map');

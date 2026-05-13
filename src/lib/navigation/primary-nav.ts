@@ -1,9 +1,10 @@
 export const PRIMARY_NAV = [
-  { id: 'ask', label: 'Ask', icon: 'Sparkles', href: '/app/assistant', shortcut: '/' },
-  { id: 'cores', label: 'Cores', icon: 'FolderKanban', href: '/app/contexts', shortcut: 'g c' },
-  { id: 'write', label: 'Write', icon: 'FileText', href: '/app/write', shortcut: 'g w' },
-  { id: 'tools', label: 'Tools', icon: 'Wrench', href: '/app/tools', shortcut: 'g t' },
-  { id: 'settings', label: 'Settings', icon: 'Settings', href: '/app/settings', shortcut: 'g s' },
+  { id: 'home', label: 'Home', icon: 'Home', href: '/app/dashboard', shortcut: 'g h' },
+  { id: 'ask', label: 'Ask PRAXIS', icon: 'Sparkles', href: '/app/assistant', shortcut: '/' },
+  { id: 'library', label: 'Library', icon: 'LibraryBig', href: '/app/contexts', shortcut: 'g l' },
+  { id: 'write', label: 'Memo Studio', icon: 'FileText', href: '/app/write', shortcut: 'g m' },
+  { id: 'canvas', label: 'Canvas', icon: 'Network', href: '/app/canvas', shortcut: 'g v' },
+  { id: 'advanced', label: 'Advanced', icon: 'Wrench', href: '/app/tools', shortcut: 'g a' },
 ] as const;
 
 export type PrimaryNavItem = (typeof PRIMARY_NAV)[number];

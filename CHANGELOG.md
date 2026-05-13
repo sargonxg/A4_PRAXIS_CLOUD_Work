@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(app): simplify PRAXIS into a context-first workbench.
+  Added the UX design contract, five primary surfaces plus Advanced,
+  deterministic context health and next-best-action logic, a drag/drop Active
+  Context Stack on Home, clearer Ask PRAXIS context posture, a page-like Memo
+  Studio, and a review-gated Context Canvas route.
 - copy(landing): streamline PRAXIS hero and context engine.
   Simplified the hero around attached cores, vetted context, institutional
   memory, and a context-to-memo pipeline animation.

@@ -9,7 +9,7 @@ import LinkExtension from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import TaskItem from '@tiptap/extension-task-item';
 import TaskList from '@tiptap/extension-task-list';
-import { Brain, BookOpenCheck, Loader2, MessageSquareText, Target, Wrench } from 'lucide-react';
+import { Brain, BookOpenCheck, FileText, Loader2, MessageSquareText, Target, Wrench } from 'lucide-react';
 import { CitationMark } from '@/components/writer/extensions/citation-mark';
 import {
   insertWriterAskResult,
@@ -25,6 +25,7 @@ import { ProvenanceChip } from '@/components/writer/ui/ProvenanceChip';
 import { SlashMenu } from '@/components/writer/ui/SlashMenu';
 import { WriterToolbar } from '@/components/writer/ui/WriterToolbar';
 import { HERO_TOOLS } from '@/lib/constants/tool-registry';
+import { buildContextHealthReport } from '@/lib/context/context-health';
 import { memoBlocksToMarkdown, memoBlocksToPlainText } from '@/lib/memo/export';
 import type { MemoBlock, MemoTemplateId } from '@/types/memo';
 
@@ -169,6 +170,18 @@ export function PraxisWriter({
   const storageKey = `writer:${caseId}:${docId}`;
   const blocks = useMemo(() => blocksFromJson(editorJson), [editorJson]);
   const markdown = useMemo(() => memoBlocksToMarkdown(docTitle, blocks), [blocks, docTitle]);
+  const evidenceGapCount = Math.max(0, Math.min(6, blocks.filter((block) => block.type !== 'heading' && (block.citations?.length ?? 0) === 0).length - sources.length));
+  const contextHealth = useMemo(() => buildContextHealthReport({
+    hasUserCore: Boolean(activeUserCore),
+    hasSituationCore: Boolean(activeSituation),
+    sourceCount: activeSituation?.sourceUrls?.length ?? sources.length,
+    documentCount: activeSituation?.documentCount ?? 0,
+    actorCount: activeSituation?.actors?.length ?? activeSituation?.actorCount ?? 0,
+    hasTimeline: Boolean(activeSituation?.keyDates?.length || activeSituation?.latestEventDate || activeSituation?.conflictOnsetDate),
+    evidenceGapCount,
+    hasDraft: blocks.length > 3,
+    situationHref: activeSituation ? `/app/workbench/${activeSituation.id}` : '/app/contexts',
+  }), [activeSituation, activeUserCore, blocks.length, evidenceGapCount, sources.length]);
   const autosave = useWriterAutosave({
     key: storageKey,
     title: docTitle,
@@ -387,8 +400,22 @@ export function PraxisWriter({
         </div>
       </header>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl shadow-navy-950/5">
+      <section className="grid gap-5 xl:grid-cols-[220px_minmax(0,1fr)_360px]">
+        <aside className="hidden min-h-[720px] rounded-lg border border-slate-200 bg-white p-4 xl:block">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-diplomatic-blue" />
+            <h2 className="text-sm font-semibold text-navy-950">Memo outline</h2>
+          </div>
+          <div className="mt-3 space-y-2">
+            {['Executive summary', 'Situation background', 'Analysis', 'Options', 'Risks', 'Recommendations', 'Sources', 'Handover notes'].map((section) => (
+              <button key={section} type="button" className="block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs font-semibold text-navy-800 hover:bg-white">
+                {section}
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-slate-100 shadow-xl shadow-navy-950/5">
           <WriterToolbar
             editor={editor}
             saveLabel={saveLabel(autosave.state, autosave.lastSavedAt)}
@@ -402,7 +429,17 @@ export function PraxisWriter({
               Asking PRAXIS
             </div>
           ) : null}
-          <EditorContent editor={editor} />
+          <div className="px-3 py-6 sm:px-6">
+            <div className="mx-auto min-h-[860px] max-w-[820px] bg-white shadow-lg shadow-navy-950/10 ring-1 ring-slate-200">
+              <div className="border-b border-slate-100 px-8 py-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">PRAXIS memo studio</p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Inherits {activeUserCore.identity} + {activeSituation?.name ?? 'no Situation Core'} + {sources.length} source receipts.
+                </p>
+              </div>
+              <EditorContent editor={editor} />
+            </div>
+          </div>
           <div className="flex flex-wrap gap-2 border-t border-slate-100 px-6 py-3">
             <ProvenanceChip core="user-core" tool="writer" confidence="draft" />
             <ProvenanceChip core="situation-core" tool="ask-praxis" confidence={citations.length > 0 ? 'cited' : 'open'} />
@@ -410,6 +447,24 @@ export function PraxisWriter({
         </div>
 
         <div className="min-h-[720px] overflow-hidden rounded-lg border border-slate-200 bg-white">
+          <section className="border-b border-slate-200 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Context health</p>
+                <h2 className="text-sm font-semibold text-navy-950">{contextHealth.score}/100 - {contextHealth.label}</h2>
+              </div>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700">
+                {evidenceGapCount} gaps
+              </span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {contextHealth.nextActions.map((action) => (
+                <Link key={action.id} href={action.href} className="block rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-navy-800 hover:bg-white">
+                  {action.label}
+                </Link>
+              ))}
+            </div>
+          </section>
           <CitationSidebar
             citations={citations}
             sources={sources}

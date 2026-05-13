@@ -144,8 +144,8 @@ export function Header({
           <input
             value={command}
             onChange={(event) => setCommand(event.target.value)}
-            placeholder="Ask PRAXIS or search..."
-            className="min-w-0 flex-1 bg-transparent text-sm text-navy-900 placeholder:text-navy-400 focus:outline-none"
+            placeholder="Ask PRAXIS, open a core, or find a source..."
+            className="min-w-0 flex-1 bg-transparent text-sm text-navy-950 placeholder:text-navy-600 focus:outline-none"
             aria-label="Ask PRAXIS or search"
           />
           <kbd className="rounded bg-[var(--color-app-surface-alt)] px-1.5 py-0.5 text-[10px] font-medium text-navy-400">
@@ -169,10 +169,11 @@ export function Header({
           {/* User dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-[var(--color-app-surface-alt)]">
+              <button className="flex items-center gap-2 rounded-md border border-[var(--color-app-border)] bg-white px-2 py-1.5 text-sm font-semibold text-navy-800 transition-colors hover:border-navy-300 hover:bg-[var(--color-app-surface-alt)]">
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-diplomatic-blue text-xs font-bold text-white">
                   {initials}
                 </div>
+                <span className="hidden max-w-28 truncate md:inline">{user?.name ?? 'Account'}</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">

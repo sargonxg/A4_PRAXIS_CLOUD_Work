@@ -4,9 +4,10 @@ import Link from 'next/link';
 import type { ComponentType } from 'react';
 import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { Brain, ChevronRight, Target } from 'lucide-react';
+import { Brain, ChevronRight, Gauge, LibraryBig, Target } from 'lucide-react';
 import { listExampleCases } from '@/lib/cases/registry';
 import { useAuth } from '@/lib/auth/auth-context';
+import { buildContextHealthReport } from '@/lib/context/context-health';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
@@ -44,6 +45,20 @@ export function CoreContextStrip() {
   const org = analystProfile?.identity.team || analystProfile?.identity.org || user?.orgName || 'Policy team';
   const audience = labelize(analystProfile?.perspective.audience ?? 'team');
   const lenses = analystProfile?.perspective.lenses?.map(labelize).slice(0, 2).join(' + ') || 'diplomatic lens';
+  const selectedSituation = context?.id ? situations.find((situation) => situation.id === context.id) : activeSituation;
+  const sourceCount = selectedSituation?.sourceUrls?.length ?? selectedSituation?.documentCount ?? 0;
+  const actorCount = selectedSituation?.actors?.length ?? selectedSituation?.actorCount ?? 0;
+  const health = buildContextHealthReport({
+    hasUserCore: true,
+    hasSituationCore: Boolean(context),
+    sourceCount,
+    documentCount: selectedSituation?.documentCount ?? 0,
+    actorCount,
+    hasTimeline: Boolean(selectedSituation?.keyDates?.length || selectedSituation?.latestEventDate || selectedSituation?.conflictOnsetDate),
+    evidenceGapCount: selectedSituation ? (sourceCount < 3 ? 3 - sourceCount : 0) : 4,
+    hasDraft: false,
+    situationHref: context?.href,
+  });
 
   return (
     <div className="border-b border-[var(--color-app-border)] bg-white/65 px-4 py-2 backdrop-blur-md md:px-6">
@@ -62,6 +77,22 @@ export function CoreContextStrip() {
           title={context?.name ?? 'No context selected'}
           detail={context?.meta ?? 'Create or open a context to ground Ask PRAXIS'}
           muted={!context}
+        />
+        <CorePill
+          href="/app/contexts"
+          icon={LibraryBig}
+          label="Sources"
+          title={`${sourceCount} attached`}
+          detail={sourceCount > 0 ? 'Receipts travel with the active context' : 'Attach sources before final drafting'}
+          muted={sourceCount === 0}
+        />
+        <CorePill
+          href="/app/dashboard"
+          icon={Gauge}
+          label="Health"
+          title={`${health.score}/100 - ${health.label}`}
+          detail={health.nextActions[0]?.label ?? 'Ready for next action'}
+          muted={health.score < 55}
         />
         <Link
           href="/app/dashboard#ask-praxis"
