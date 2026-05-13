@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- test(smoke): align public smoke with the current PRAXIS landing hero.
+  Production smoke now checks the context-first hero, memo CTA, User Core,
+  Situation Core, and inherited-work copy.
 - fix(deploy): remove stale Cloud Build spine audit reference.
   The production Cloud Build deploy gate now matches the active repo audit
   contract instead of calling the archived `scripts/audit-spine.ts`.

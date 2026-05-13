@@ -16,11 +16,16 @@ const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 test.describe('public surface smoke', () => {
   test('landing page renders the current landing pitch', async ({ page }) => {
     await page.goto(`${BASE}/`);
-    await expect(page.getByRole('heading', { name: /Where policy analysts write/i })).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole('link', { name: /Try the Syria case/i }).first()).toHaveAttribute('href', /\/login\?demo=1/);
-    await expect(page.getByRole('heading', { name: /From source intake to inherited institutional memory/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /DIALECTICA/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /The Syria case, end to end/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Policy AI that starts with the right context\./i })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByRole('link', { name: /See PRAXIS write a memo/i }).first()).toHaveAttribute(
+      'href',
+      /\/app\/demo\/syria-2024\/write\?guided=1/,
+    );
+    await expect(page.getByText(/User Core/i).first()).toBeVisible();
+    await expect(page.getByText(/Situation Core/i).first()).toBeVisible();
+    await expect(page.getByText(/Inherited work/i).first()).toBeVisible();
   });
 
   test('capabilities route requires auth (401)', async ({ request }) => {
