@@ -3,18 +3,14 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  BookOpenCheck,
   CheckCircle2,
-  Clock3,
   FileText,
-  GitBranch,
   LibraryBig,
   MessageSquareText,
   Network,
   ShieldCheck,
-  Target,
-  Users,
 } from "lucide-react";
+import { CoreCapsuleHero } from "./core-capsule-hero";
 
 const workflow = [
   ["Inherit the cores", "Select the User, Situation, Source/Document, Graph, Time, and Output posture that should travel with the work."],
@@ -57,18 +53,19 @@ const trustItems = [
 export function Phase8WowLanding() {
   return (
     <main className="bg-[#F6F8FB] text-[#111827]">
-      <section id="core-stack" className="border-b border-slate-200 bg-white">
-        <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)] lg:px-8">
+      <section id="core-stack" className="relative overflow-hidden border-b border-slate-200 bg-white">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(232,185,49,0.07),transparent_60%),radial-gradient(ellipse_at_bottom_left,rgba(15,23,42,0.04),transparent_55%)]" />
+        <div className="relative mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(440px,1.05fr)] lg:px-8">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8A5A00]">PRAXIS by TACITUS</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8A5A00]">PRAXIS by TACITUS</p>
             <h1 className="mt-4 max-w-4xl font-serif text-5xl font-semibold leading-[1.03] text-[#111827] sm:text-6xl lg:text-7xl">
               PRAXIS builds inheritable policy cores.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:text-lg">
-              Attach the User Core, Situation Core, source receipts, graph posture, time horizon, and output intent your team trusts. PRAXIS adds temporal, causal, and domain-specific structure so answers and memos inherit context instead of improvising from a blank chat box.
+              Six structured cores — User, Situation, Source, Graph, Time, Output — package the tacit knowledge that makes your judgement work. Hand them to a teammate, an agent, or your future self.
             </p>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Built from practitioner experience in multilateral diplomacy, it keeps judgment, source posture, and handover state visible.
+              Built from practitioner experience in multilateral diplomacy: hybrid teams need shared posture, not shared prompts. PRAXIS keeps the substrate visible — source receipts, temporal readiness, graph proposals, and analyst handover all stay reviewable.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
@@ -85,33 +82,27 @@ export function Phase8WowLanding() {
                 Compare plans
               </Link>
             </div>
+            <dl className="mt-9 grid max-w-xl grid-cols-3 gap-4 border-t border-slate-200 pt-6 text-[11px] uppercase tracking-[0.18em] text-slate-500">
+              <div>
+                <dt className="font-semibold text-[#8A5A00]">Six cores</dt>
+                <dd className="mt-1 normal-case tracking-normal text-slate-700">One capsule, ready to ship.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-[#8A5A00]">Hybrid teams</dt>
+                <dd className="mt-1 normal-case tracking-normal text-slate-700">Humans and agents subscribed.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-[#8A5A00]">Trust strata</dt>
+                <dd className="mt-1 normal-case tracking-normal text-slate-700">Receipts, time, graph in view.</dd>
+              </div>
+            </dl>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-[#F9FBFC] p-4 shadow-xl shadow-slate-950/10">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <ContextCard icon={Users} label="User Core" value="Foreign policy analyst" />
-              <ContextCard icon={Target} label="Situation Core" value="Indo-Pacific 2026" />
-              <ContextCard icon={BookOpenCheck} label="Source Core" value="Receipts, uploads, notes" />
-              <ContextCard icon={GitBranch} label="Graph Core" value="Actors, claims, relationships" />
-              <ContextCard icon={Clock3} label="Time Core" value="Horizon + temporal posture" />
-              <ContextCard icon={FileText} label="Output Core" value="Cited draft + handoff" />
-            </div>
-            <div className="mt-4 rounded-md border border-slate-200 bg-white p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">First workflow</p>
-              <div className="mt-3 space-y-3">
-                {workflow.map(([label, detail], index) => (
-                  <div key={label} className="flex gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#111827] text-xs font-semibold text-white">
-                      {index + 1}
-                    </span>
-                    <span>
-                      <span className="block text-sm font-semibold text-slate-950">{label}</span>
-                      <span className="mt-0.5 block text-xs leading-5 text-slate-600">{detail}</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="relative">
+            <CoreCapsuleHero />
+            <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-slate-500">
+              Live composite — context capsule for <span className="font-semibold text-slate-700">Indo-Pacific 2026</span>, shared across a hybrid team.
+            </p>
           </div>
         </div>
       </section>
@@ -188,22 +179,3 @@ export function Phase8WowLanding() {
   );
 }
 
-function ContextCard({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Users;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-md border border-slate-200 bg-white p-3">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-        <Icon className="h-4 w-4 text-[#0B3B4A]" />
-        {label}
-      </div>
-      <p className="mt-2 truncate text-sm font-semibold text-slate-950">{value}</p>
-    </div>
-  );
-}
