@@ -56,6 +56,13 @@ Current Phase 9 blockers:
 
 Latest production deploy evidence:
 
+- Context-first workbench deploy:
+  - Commit `a0952e61` pushed to `main`.
+  - Cloud Build `c6029035-4419-402e-8ded-4dda6a79809c` succeeded.
+  - Cloud Run frontend revision `praxis-frontend-00364-7tc` became ready with 100% traffic.
+  - `https://praxis.tacitus.me/` and `/api/health` returned HTTP 200.
+  - `/app/dashboard`, `/app/assistant`, `/app/write`, and `/app/canvas` returned expected unauthenticated HTTP 307 redirects.
+  - Production `npm run smoke:public` passed 4/4 specs against `https://praxis.tacitus.me`.
 - Landing simplification deploy:
   - Commit `0cd7973f` pushed to `main`.
   - Cloud Build `26b39fd7-1603-47b9-9fe4-d3e87b87dee0` succeeded.
