@@ -2,15 +2,25 @@
 
 import type { ComponentType } from 'react';
 import Link from 'next/link';
-import { FileText, FolderKanban, Home, LibraryBig, Network, Sparkles, Wrench } from 'lucide-react';
+import { Boxes, FileText, LibraryBig, Sparkles } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
-import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
+import { NAV_GROUPS, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
 
-const ICONS = { Home, Sparkles, FolderKanban, LibraryBig, FileText, Network, Wrench };
+// Mobile only ever surfaces the Workspace group + the Ask PRAXIS quick
+// trigger. Everything else lives behind the desktop sidebar so the
+// mobile surface stays tiny.
+const ICONS: Partial<Record<PrimaryNavIcon, ComponentType<{ className?: string }>>> = {
+  Sparkles,
+  Boxes,
+  LibraryBig,
+  FileText,
+};
 
 export function MobileBottomNav() {
   const pathname = usePathname();
+  const workspace = NAV_GROUPS.find((g) => g.id === 'workspace');
+  const items = workspace?.items ?? [];
 
   return (
     <nav
@@ -18,26 +28,33 @@ export function MobileBottomNav() {
       aria-label="Primary mobile navigation"
       data-testid="mobile-bottom-nav"
     >
-      <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
-        {PRIMARY_NAV.filter((item) => item.id !== 'advanced').map((item) => item.id === 'ask' ? (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent('open-praxis-chat'))}
-            className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-md text-xs font-semibold text-gold-700 hover:bg-gold-50"
-          >
-            <Sparkles className="h-5 w-5" />
-            {item.label}
-          </button>
-        ) : (
-          <MobileLink
-            key={item.id}
-            href={item.href}
-            label={item.label}
-            active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
-            icon={ICONS[item.icon]}
-          />
-        ))}
+      <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
+        {items.map((item) => {
+          const Icon = ICONS[item.icon] ?? Sparkles;
+          if (item.id === 'ask') {
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('open-praxis-chat'))}
+                className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-md text-xs font-semibold text-gold-700 hover:bg-gold-50"
+              >
+                <Icon className="h-5 w-5" />
+                {item.label}
+              </button>
+            );
+          }
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          return (
+            <MobileLink
+              key={item.id}
+              href={item.href}
+              label={item.label}
+              active={active}
+              icon={Icon}
+            />
+          );
+        })}
       </div>
     </nav>
   );
