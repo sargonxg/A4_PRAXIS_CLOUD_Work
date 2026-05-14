@@ -51,6 +51,7 @@ import {
 } from 'lucide-react';
 import { ReceiptCard } from '@/components/shared/receipt-card';
 import { SourceMentionMenu } from '@/components/memo/source-mention-menu';
+import { GapFillerRail } from '@/components/memo/GapFillerRail';
 import { useSituationStore } from '@/stores/situation-store';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
@@ -221,13 +222,43 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
         return;
       }
       if (id === 'grounded') {
+        // CC-7: post the current selection as a topic to /api/memos/grounded-paragraph.
+        // Codex CX-3 ships the route; until then, fall back to a stub.
+        const topic = (slashQuery.trim() || 'next analytical claim').slice(0, 200);
         editor
           .chain()
           .focus()
           .insertContent(
-            '<p><em>Grounded paragraph drafted from attached receipts. PRAXIS will reconcile this with the Source Core on the next pass.</em></p>',
+            '<p data-praxis-pending="true"><em>Drafting grounded paragraph…</em></p>',
           )
           .run();
+        void fetch('/api/memos/grounded-paragraph', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ topic, situationId: activeSituation?.id ?? null }),
+        })
+          .then(async (res) => {
+            if (!res.ok) throw new Error(`status ${res.status}`);
+            return (await res.json()) as { paragraph?: string; receipts?: Array<{ chunkId: string; sourceId: string }> };
+          })
+          .then((body) => {
+            if (!editor || !body.paragraph) return;
+            const receipts = (body.receipts ?? [])
+              .map(
+                (r) =>
+                  `<sup data-receipt-inline="true" data-chunk-id="${escapeAttr(r.chunkId)}" data-source-id="${escapeAttr(r.sourceId)}" class="receipt-inline">[^${escapeAttr(r.chunkId)}]</sup>`,
+              )
+              .join('');
+            editor
+              .chain()
+              .focus()
+              .insertContent(`<p>${escapeAttr(body.paragraph)}${receipts}</p>`)
+              .run();
+          })
+          .catch(() => {
+            // Backend not yet shipped — keep the stub in place.
+          });
         return;
       }
       if (id === 'rewrite-cautiously') {
@@ -737,6 +768,12 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
             <MessageSquare className="h-4 w-4" />
           </button>
         )}
+        {/* CC-7: Gap filler rail (desktop only) */}
+        <GapFillerRail
+          editor={editor}
+          situationId={activeSituation?.id ?? null}
+          className="hidden lg:block"
+        />
       </div>
 
       {/* Mobile floating Library · Ask toggle (hidden at md+) */}
