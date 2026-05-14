@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import Link from 'next/link';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Loader2, RotateCcw, Sparkles, Eye } from 'lucide-react';
+import { X, Send, Loader2, RotateCcw, Sparkles, Eye, BookOpenText, LibraryBig, Network, Target, Users } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import { attachedCoresFromSituation, recommendTools } from '@/lib/tools/recommend';
 import { useAppStore } from '@/stores/app-store';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { usePathname } from 'next/navigation';
+import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -251,6 +253,7 @@ export function FloatingPraxis() {
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const demoMode = useAppStore((s) => s.demoMode);
   const currentToolId = getCurrentToolId(pathname);
+  const { stack } = useActiveContextStack();
 
   // Per-situation storage key
   const storageKey = activeSituation
@@ -263,6 +266,31 @@ export function FloatingPraxis() {
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const contextPills = useMemo(
+    () => [
+      {
+        label: 'User',
+        value: stack.userModelId ? 'attached' : 'default',
+        icon: Users,
+      },
+      {
+        label: 'Situation',
+        value: activeSituation?.name ?? (stack.situationId ? 'selected' : 'open'),
+        icon: Target,
+      },
+      {
+        label: 'Sources',
+        value: String(stack.sourceIds.length || activeSituation?.sourceUrls?.length || 0),
+        icon: LibraryBig,
+      },
+      {
+        label: 'Docs',
+        value: String(stack.documentIds.length || activeSituation?.documentCount || 0),
+        icon: BookOpenText,
+      },
+    ],
+    [activeSituation?.documentCount, activeSituation?.name, activeSituation?.sourceUrls?.length, stack.documentIds.length, stack.situationId, stack.sourceIds.length, stack.userModelId]
+  );
 
   // Don't show on the full assistant page
   const isAssistantPage = pathname?.includes('/assistant');
@@ -375,6 +403,11 @@ export function FloatingPraxis() {
               : activeSituation?.name || undefined,
             currentToolId,
             currentPath: pathname,
+            activeContextStack: stack,
+            sourceIds: stack.sourceIds,
+            documentIds: stack.documentIds,
+            outputGoal: stack.outputGoal,
+            evidenceGaps: stack.evidenceGaps.slice(0, 5),
           }),
         });
 
@@ -464,7 +497,7 @@ export function FloatingPraxis() {
         )
       );
     },
-    [isStreaming, messages, activeSituation, demoMode, currentToolId, pathname]
+    [isStreaming, messages, activeSituation, demoMode, currentToolId, pathname, stack]
   );
 
   const sendMessage = useCallback(() => {
@@ -599,8 +632,41 @@ export function FloatingPraxis() {
                         {activeSituation
                           ? `Ask anything about "${activeSituation.name}" — research, analysis, reports, risk assessment, or platform guidance.`
                           : 'Ask about conflict analysis, TACITUS tools, diplomatic reporting, or get help navigating the platform.'}
-                      </p>
+                        </p>
                     )}
+                    <div className="mt-4 w-full rounded-xl border border-navy-700 bg-navy-950/40 p-3 text-left">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Network className="h-3.5 w-3.5 text-gold-400" />
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-navy-300">Active context</p>
+                        </div>
+                        <Link href="/app/assistant" className="text-[11px] font-semibold text-gold-300 hover:text-gold-200">
+                          Full page
+                        </Link>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        {contextPills.map((pill) => (
+                          <div key={pill.label} className="rounded-lg border border-navy-700 bg-navy-900 px-2.5 py-2">
+                            <div className="flex items-center gap-1.5 text-navy-400">
+                              <pill.icon className="h-3 w-3" />
+                              <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">{pill.label}</span>
+                            </div>
+                            <p className="mt-1 truncate text-[11px] font-semibold text-navy-100">{pill.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+                        <Link href="/app/contexts" className="rounded-full border border-navy-700 px-2.5 py-1 text-[11px] text-navy-300 hover:border-gold-600/40 hover:text-gold-300">
+                          Library
+                        </Link>
+                        <Link href="/app/write" className="rounded-full border border-navy-700 px-2.5 py-1 text-[11px] text-navy-300 hover:border-gold-600/40 hover:text-gold-300">
+                          Memo Studio
+                        </Link>
+                        <Link href="/app/canvas" className="rounded-full border border-navy-700 px-2.5 py-1 text-[11px] text-navy-300 hover:border-gold-600/40 hover:text-gold-300">
+                          Canvas
+                        </Link>
+                      </div>
+                    </div>
                     {/* Quick action pills */}
                     <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
                       {quickActions.map((action) => (
