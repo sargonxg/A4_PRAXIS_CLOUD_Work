@@ -172,6 +172,7 @@ export interface CoreCapsuleHeroProps {
 export function CoreCapsuleHero({ staticMode = false, className }: CoreCapsuleHeroProps) {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [forcedStatic, setForcedStatic] = useState(false);
+  const [isSmall, setIsSmall] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -179,13 +180,20 @@ export function CoreCapsuleHero({ staticMode = false, className }: CoreCapsuleHe
     setReducedMotion(mq.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mq.addEventListener("change", handler);
+    const smallMq = window.matchMedia("(max-width: 768px)");
+    setIsSmall(smallMq.matches);
+    const smallHandler = (e: MediaQueryListEvent) => setIsSmall(e.matches);
+    smallMq.addEventListener("change", smallHandler);
     try {
       const params = new URLSearchParams(window.location.search);
       if (params.get("staticHero") === "1") setForcedStatic(true);
     } catch {
       // ignore
     }
-    return () => mq.removeEventListener("change", handler);
+    return () => {
+      mq.removeEventListener("change", handler);
+      smallMq.removeEventListener("change", smallHandler);
+    };
   }, []);
 
   const isStatic = staticMode || reducedMotion || forcedStatic;
@@ -251,7 +259,7 @@ export function CoreCapsuleHero({ staticMode = false, className }: CoreCapsuleHe
       role="img"
     >
       <svg
-        viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+        viewBox={isSmall ? `100 60 600 560` : `0 0 ${VIEW_W} ${VIEW_H}`}
         className="absolute inset-0 h-full w-full"
         preserveAspectRatio="xMidYMid slice"
       >
@@ -411,7 +419,7 @@ export function CoreCapsuleHero({ staticMode = false, className }: CoreCapsuleHe
 
         {/* Mote storm */}
         <g opacity={stormFade}>
-          {motes.map((m) => {
+          {(isSmall ? motes.slice(0, 10) : motes).map((m) => {
             const local = phaseProgress(t, m.delay, m.delay + m.duration);
             if (local <= 0 || local >= 1) return null;
             const e = easeInOut(local);
