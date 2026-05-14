@@ -34,6 +34,7 @@ import {
 import { useSituationStore } from '@/stores/situation-store';
 import { InterruptCard, type InterruptRequest } from '@/components/ask/InterruptCard';
 import { cn } from '@/lib/utils/cn';
+import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 const SPRING = { type: 'spring' as const, stiffness: 240, damping: 28 };
 
@@ -78,20 +79,25 @@ export function AskStreamPanel({ capsuleId, className }: AskStreamPanelProps) {
       abortRef.current = controller;
 
       try {
+        const requestBody = {
+          messages: [{ role: 'user' as const, content: text }],
+          ...(activeSituation?.name ? { situation: activeSituation } : {}),
+          ...(capsuleId ? { capsuleId, threadId: `ask-${capsuleId}` } : {}),
+          aiSettings: { analysisDepth: 'standard' as const },
+        };
+
         const res = await fetch('/api/ai/ask-praxis', {
           method: 'POST',
           credentials: 'include',
-          headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
-          body: JSON.stringify({ prompt: text, capsuleId, situationId: activeSituation?.id ?? null }),
+          headers: { 'content-type': 'application/json', accept: 'text/event-stream, text/plain' },
+          body: JSON.stringify(requestBody),
           signal: controller.signal,
         });
         if (!res.ok || !res.body) {
-          // No streaming endpoint yet — show a graceful placeholder card.
           setEvents([
             {
               stage: 'synthesis',
-              answer:
-                'Ask PRAXIS streaming endpoint is not yet wired (Codex CX-5). The card UI is ready and will populate once /api/ai/ask-praxis emits SSE events.',
+              answer: `Ask PRAXIS could not start the stream (${res.status} ${res.statusText}).`,
             },
           ]);
           setThinking(false);
@@ -99,32 +105,78 @@ export function AskStreamPanel({ capsuleId, className }: AskStreamPanelProps) {
         }
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
-        let buffer = '';
+        let sseBuffer = '';
+        let dataLineBuffer = '';
+
+        const appendSynthesisToken = (token: string) => {
+          if (!token) return;
+          setEvents((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.stage === 'synthesis') {
+              return [
+                ...prev.slice(0, -1),
+                { ...last, answer: `${last.answer}${token}` },
+              ];
+            }
+            return [...prev, { stage: 'synthesis', answer: token }];
+          });
+        };
+
+        const consumeStreamEvent = (json: string) => {
+          if (!json || json === '[DONE]') return;
+          try {
+            const evt = JSON.parse(json) as StreamEvent;
+            if (evt.stage === 'interrupt') {
+              setInterrupt((evt as { request: InterruptRequest }).request);
+            } else if (evt.stage) {
+              setEvents((prev) => [...prev, evt as StreamStage]);
+            }
+          } catch {
+            /* ignore unparseable SSE payloads */
+          }
+        };
+
+        const consumeSseBlock = (block: string) => {
+          const dataLine = block
+            .split('\n')
+            .find((l) => l.startsWith('data:'));
+          if (dataLine) consumeStreamEvent(dataLine.slice(5).trim());
+        };
+
+        const consumeDataStreamLine = (line: string) => {
+          if (line.startsWith('0:')) {
+            appendSynthesisToken(parseDataStreamChunk(`${line}\n`));
+          } else if (line.startsWith('3:')) {
+            try {
+              const message = JSON.parse(line.slice(2));
+              appendSynthesisToken(`\n\n[stream error] ${String(message)}`);
+            } catch {
+              appendSynthesisToken('\n\n[stream error] Ask PRAXIS stream failed.');
+            }
+          }
+        };
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const parts = buffer.split('\n\n');
-          buffer = parts.pop() ?? '';
-          for (const part of parts) {
-            const dataLine = part
-              .split('\n')
-              .find((l) => l.startsWith('data:'));
-            if (!dataLine) continue;
-            const json = dataLine.slice(5).trim();
-            if (!json || json === '[DONE]') continue;
-            try {
-              const evt = JSON.parse(json) as StreamEvent;
-              if (evt.stage === 'interrupt') {
-                setInterrupt((evt as { request: InterruptRequest }).request);
-              } else if (evt.stage) {
-                setEvents((prev) => [...prev, evt as StreamStage]);
-              }
-            } catch {
-              /* ignore unparseable */
-            }
+          const chunk = decoder.decode(value, { stream: true });
+
+          sseBuffer += chunk;
+          const sseParts = sseBuffer.split('\n\n');
+          sseBuffer = sseParts.pop() ?? '';
+          for (const part of sseParts) {
+            consumeSseBlock(part);
+          }
+
+          dataLineBuffer += chunk;
+          const lines = dataLineBuffer.split('\n');
+          dataLineBuffer = lines.pop() ?? '';
+          for (const line of lines) {
+            consumeDataStreamLine(line.trimEnd());
           }
         }
+        if (sseBuffer.trim()) consumeSseBlock(sseBuffer);
+        if (dataLineBuffer.trim()) consumeDataStreamLine(dataLineBuffer.trimEnd());
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
           console.warn('[AskStreamPanel] stream error', err);

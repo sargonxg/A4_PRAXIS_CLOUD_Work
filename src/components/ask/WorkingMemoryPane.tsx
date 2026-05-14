@@ -134,12 +134,16 @@ export function WorkingMemoryPane({ capsuleId, className, defaultOpen = true }: 
     const url = factId
       ? `/api/memory/working/${encodeURIComponent(factId)}`
       : `/api/memory/working`;
+    const payload =
+      method === 'POST' && !factId && capsuleId && body && typeof body === 'object'
+        ? { ...(body as Record<string, unknown>), capsuleId }
+        : body;
     try {
       await fetch(url, {
         method,
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
-        body: body ? JSON.stringify(body) : undefined,
+        body: payload ? JSON.stringify(payload) : undefined,
       });
     } catch {
       /* fallback path: optimistic only */
