@@ -120,6 +120,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   const [turns, setTurns] = useState<AskTurn[]>([]);
   const [askInput, setAskInput] = useState('');
   const [askPending, setAskPending] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const storageKey = `${STORAGE_PREFIX}${documentId}`;
 
@@ -328,11 +329,8 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
     editor.chain().focus().insertContent(html).run();
   }
 
-  function exportMarkdown() {
-    if (!editor) return;
-    const html = editor.getHTML();
-    // Minimal HTML -> Markdown for v1; full export pipeline lives in lib/memo/export.ts.
-    const md = html
+  function htmlToMarkdown(html: string): string {
+    return html
       .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n')
       .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
       .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n')
@@ -345,13 +343,73 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
       .replace(/<[^>]+>/g, '')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
-    const blob = new Blob([`# ${title}\n\n${md}`], { type: 'text/markdown;charset=utf-8' });
+  }
+
+  function downloadBlob(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${title.replace(/[^a-z0-9._-]+/gi, '-').toLowerCase()}.md`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  function safeFilename(): string {
+    return title.replace(/[^a-z0-9._-]+/gi, '-').toLowerCase() || 'memo';
+  }
+
+  function exportMarkdown() {
+    if (!editor) return;
+    const md = htmlToMarkdown(editor.getHTML());
+    downloadBlob(
+      new Blob([`# ${title}\n\n${md}`], { type: 'text/markdown;charset=utf-8' }),
+      `${safeFilename()}.md`,
+    );
+  }
+
+  async function exportDocx() {
+    if (!editor) return;
+    const { Document, Packer, Paragraph, HeadingLevel } = await import('docx');
+    const md = htmlToMarkdown(editor.getHTML());
+    const lines = `# ${title}\n\n${md}`.split('\n');
+    const children = lines.map((line) => {
+      if (line.startsWith('# ')) return new Paragraph({ text: line.slice(2), heading: HeadingLevel.HEADING_1 });
+      if (line.startsWith('## ')) return new Paragraph({ text: line.slice(3), heading: HeadingLevel.HEADING_2 });
+      if (line.startsWith('### ')) return new Paragraph({ text: line.slice(4), heading: HeadingLevel.HEADING_3 });
+      if (line.startsWith('> ')) return new Paragraph({ text: line.slice(2), style: 'IntenseQuote' });
+      if (line.startsWith('- ')) return new Paragraph({ text: line.slice(2), bullet: { level: 0 } });
+      return new Paragraph({ text: line });
+    });
+    const doc = new Document({ sections: [{ properties: {}, children }] });
+    const blob = await Packer.toBlob(doc);
+    downloadBlob(blob, `${safeFilename()}.docx`);
+  }
+
+  async function exportPdf() {
+    if (!editor) return;
+    const { jsPDF } = await import('jspdf');
+    const md = htmlToMarkdown(editor.getHTML());
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const margin = 56;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let y = margin;
+    doc.setFont('Times', 'bold');
+    doc.setFontSize(18);
+    doc.text(title, margin, y);
+    y += 28;
+    doc.setFont('Times', 'normal');
+    doc.setFontSize(11);
+    const lines = doc.splitTextToSize(md, pageWidth - margin * 2) as string[];
+    for (const line of lines) {
+      if (y > pageHeight - margin) {
+        doc.addPage();
+        y = margin;
+      }
+      doc.text(line, margin, y);
+      y += 16;
+    }
+    doc.save(`${safeFilename()}.pdf`);
   }
 
   return (
@@ -385,14 +443,50 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
         >
           <PanelRight className="h-4 w-4" />
         </button>
-        <button
-          type="button"
-          onClick={exportMarkdown}
-          className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400 hover:bg-slate-50"
-        >
-          <Download className="h-3.5 w-3.5" />
-          Export
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setExportOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={exportOpen}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400 hover:bg-slate-50"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export
+          </button>
+          {exportOpen ? (
+            <div
+              role="menu"
+              className="absolute right-0 z-20 mt-1 w-40 rounded-md border border-slate-200 bg-white py-1 shadow-lg"
+              onMouseLeave={() => setExportOpen(false)}
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => { exportMarkdown(); setExportOpen(false); }}
+                className="block w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Markdown (.md)
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => { void exportDocx(); setExportOpen(false); }}
+                className="block w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Word (.docx)
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => { void exportPdf(); setExportOpen(false); }}
+                className="block w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                PDF (.pdf)
+              </button>
+            </div>
+          ) : null}
+        </div>
       </header>
 
       {/* Body */}
