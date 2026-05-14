@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Search, ChevronRight, User, Settings, LogOut, Menu } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { NotificationBell } from '@/components/shared/notifications';
-import { TrustShield } from '@/components/app/trust-shield';
+import { TrustPostureChip } from '@/components/app/trust-posture-chip';
 import { useAuth } from '@/lib/auth/auth-context';
 import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
 import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
@@ -173,8 +173,8 @@ export function Header({
             <Search className="h-3.5 w-3.5" />
           </button>
 
-          {/* Notifications */}
-          <TrustShield />
+          {/* Trust posture + notifications */}
+          <TrustPostureChip />
           <NotificationBell />
 
           {/* User dropdown */}
