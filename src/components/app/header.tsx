@@ -114,23 +114,34 @@ export function Header({
               <Menu className="h-5 w-5" />
             </button>
           )}
-          {breadcrumbs.map((crumb, index) => (
-            <span key={crumb.href} className="flex items-center gap-1">
-              {index > 0 && (
-                <ChevronRight className="h-3.5 w-3.5 text-navy-400" />
-              )}
-              {index === breadcrumbs.length - 1 ? (
-                <span className="truncate font-medium text-navy-900">{crumb.label}</span>
-              ) : (
-                <Link
-                  href={crumb.href}
-                  className="text-navy-400 transition-colors hover:text-navy-600"
-                >
-                  {crumb.label}
-                </Link>
-              )}
-            </span>
-          ))}
+          {/* On mobile, render only the current page label (last
+              breadcrumb) so the header never overflows when nav titles
+              are long. Full breadcrumb chain appears at md+. */}
+          {isMobile ? (
+            breadcrumbs.length > 0 && (
+              <span className="truncate font-medium text-navy-900">
+                {breadcrumbs[breadcrumbs.length - 1].label}
+              </span>
+            )
+          ) : (
+            breadcrumbs.map((crumb, index) => (
+              <span key={crumb.href} className="flex items-center gap-1">
+                {index > 0 && (
+                  <ChevronRight className="h-3.5 w-3.5 text-navy-400" />
+                )}
+                {index === breadcrumbs.length - 1 ? (
+                  <span className="truncate font-medium text-navy-900">{crumb.label}</span>
+                ) : (
+                  <Link
+                    href={crumb.href}
+                    className="text-navy-400 transition-colors hover:text-navy-600"
+                  >
+                    {crumb.label}
+                  </Link>
+                )}
+              </span>
+            ))
+          )}
         </nav>
 
         <form

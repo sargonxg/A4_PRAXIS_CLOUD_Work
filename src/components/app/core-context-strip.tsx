@@ -62,7 +62,7 @@ export function CoreContextStrip() {
 
   return (
     <div className="border-b border-[var(--color-app-border)] bg-white/65 px-4 py-2 backdrop-blur-md md:px-6">
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
+      <div className="-mx-1 flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:-mx-0 md:flex-wrap md:overflow-visible md:px-0" style={{ scrollSnapType: 'x mandatory' }}>
         <CorePill
           href="/app/cores/user"
           icon={Brain}
@@ -125,7 +125,7 @@ function CorePill({
     <Link
       href={href}
       className={cn(
-        'group flex min-w-0 max-w-full items-center gap-2 rounded-full border px-3 py-1.5 shadow-sm transition sm:max-w-[22rem]',
+        'group flex min-w-0 max-w-full shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 shadow-sm transition snap-start sm:max-w-[22rem] sm:shrink',
         muted
           ? 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
           : 'border-navy-200/80 bg-white/85 text-navy-900 hover:border-gold-300 hover:bg-gold-50/40',
