@@ -32,7 +32,7 @@ describe('conversation context tokens', () => {
   it('prefers signed tokens and ignores unsigned production headers by default', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('PRAXIS_CONTEXT_TOKEN_SECRET', 'secret');
-    const token = signConversationContext(conversation, 'secret', Date.parse('2026-05-06T00:00:00.000Z'));
+    const token = signConversationContext(conversation, 'secret', Date.now());
 
     const signed = await withContextAware({
       req: new Request('https://praxis.test/tool', { headers: { 'X-Praxis-Conversation-Token': token } }),
