@@ -20,6 +20,7 @@ import { writeReadAuditEvents } from '@/lib/audit/read-ledger';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
 import {
   buildAskPraxisAnswerPolicyBlock,
+  buildAskPraxisPathFrameworkBlock,
   buildAskPraxisSituationSourcePosture,
   formatAskPraxisCorpusBlock,
   summarizeAskPraxisGraphSnapshot,
@@ -61,6 +62,10 @@ export const POST = withCalibration('chat', 'ai_chat', {
     const sitId = (situation as Situation | undefined)?.id;
     let capsuleContext: AskCapsuleContext | null = null;
     const toolInvocations: AskToolInvocationReceipt[] = [];
+    const frameworkSteps = buildAskFrameworkStepReceipts(
+      _user.calibration.path,
+      lastUserPrompt(messages),
+    );
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -96,6 +101,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
       outputConstraints: _user.calibration.outputConstraints,
       capsule: capsuleContext?.capsule ?? null,
     });
+    systemPrompt += '\n\n' + buildAskPraxisPathFrameworkBlock(_user.calibration.path);
 
     // Add super-agent instructions with deep platform knowledge and guardrails
     systemPrompt += `\n\n## PRAXIS Super-Agent Mode
@@ -327,6 +333,9 @@ You have access to the user's active situation data. When answering questions:
             prompt: lastUserPrompt(messages),
             capsule: capsuleContext?.capsule ?? null,
             runtime: runtime.receipt,
+            pathId: _user.calibration.path?.id ?? null,
+            pathVersion: _user.calibration.path?.version ?? null,
+            frameworkSteps,
             toolInvocations,
             output: text,
           }).catch((err) => console.warn('[chat] persistAskTurn failed:', err));
@@ -336,6 +345,8 @@ You have access to the user's active situation data. When answering questions:
             threadId,
             capsule: capsuleContext?.capsule ?? null,
             runtime: runtime.receipt,
+            pathId: _user.calibration.path?.id ?? null,
+            frameworkSteps,
             toolInvocations,
             askLatencyMs: Date.now() - askStartedAt,
           }).catch((err) => console.warn('[chat] audit ledger write failed:', err));
@@ -370,6 +381,17 @@ interface AskToolInvocationReceipt {
   inputPreview: string;
   outputPreview?: string;
   error?: string;
+}
+
+interface AskFrameworkStepReceipt {
+  event: 'framework_step';
+  pathId: string;
+  pathVersion: number;
+  stepIndex: number;
+  frameworkId: string;
+  status: 'planned';
+  questionPreview: string;
+  createdAt: string;
 }
 
 function buildAskPrompt(input: {
@@ -469,6 +491,9 @@ async function persistAskTurn(input: {
   prompt: string;
   capsule: PraxisCapsule | null;
   runtime: AskRuntimeReceipt;
+  pathId: string | null;
+  pathVersion: number | null;
+  frameworkSteps: AskFrameworkStepReceipt[];
   toolInvocations: AskToolInvocationReceipt[];
   output: string;
 }) {
@@ -485,6 +510,9 @@ async function persistAskTurn(input: {
     capsuleId: input.capsule?.capsuleId ?? null,
     capsuleVersion: input.capsule?.version ?? null,
     runtime: input.runtime,
+    pathId: input.pathId,
+    pathVersion: input.pathVersion,
+    frameworkSteps: input.frameworkSteps,
     toolInvocations: input.toolInvocations,
     output: input.output,
     ts: new Date().toISOString(),
@@ -497,6 +525,8 @@ async function persistAskReadLedger(input: {
   threadId?: string;
   capsule: PraxisCapsule | null;
   runtime: AskRuntimeReceipt;
+  pathId: string | null;
+  frameworkSteps: AskFrameworkStepReceipt[];
   toolInvocations: AskToolInvocationReceipt[];
   askLatencyMs: number;
 }) {
@@ -515,6 +545,18 @@ async function persistAskReadLedger(input: {
       status: 'ok',
       costClass,
     },
+    ...input.frameworkSteps.map((step) => ({
+      uid: input.uid,
+      situationId: input.situationId,
+      capsuleId: input.capsule?.capsuleId ?? null,
+      threadId: input.threadId ?? null,
+      toolId: `ask-praxis:${step.frameworkId}`,
+      sourceIds: [step.pathId],
+      model,
+      latencyMs: null,
+      status: 'ok' as const,
+      costClass: `framework-step:${input.pathId ?? 'baseline'}`,
+    })),
     ...input.toolInvocations.map((tool) => ({
       uid: input.uid,
       situationId: input.situationId,
@@ -528,6 +570,24 @@ async function persistAskReadLedger(input: {
       costClass,
     })),
   ]);
+}
+
+function buildAskFrameworkStepReceipts(
+  path: { id: string; version: number; frameworkPath: string[] } | null | undefined,
+  question: string,
+): AskFrameworkStepReceipt[] {
+  if (!path?.frameworkPath?.length) return [];
+  const createdAt = new Date().toISOString();
+  return path.frameworkPath.map((frameworkId, index) => ({
+    event: 'framework_step',
+    pathId: path.id,
+    pathVersion: path.version,
+    stepIndex: index + 1,
+    frameworkId,
+    status: 'planned',
+    questionPreview: question.slice(0, 800),
+    createdAt,
+  }));
 }
 
 function lastUserPrompt(messages: Array<{ role: string; content: unknown }>): string {
