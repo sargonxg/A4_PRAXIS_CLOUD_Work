@@ -4,6 +4,7 @@ import { listExampleCases } from '@/lib/cases/registry';
 import { PUBLIC_USER_MODELS } from '@/lib/user-models/seeds';
 import { CONTEXT_CORES } from '@/lib/product/context-core-map';
 import { CONSOLIDATED_TOOLS } from '@/lib/constants/consolidated-tools';
+import { CapsuleBoard } from '@/components/cores/capsule-board';
 
 export const metadata = { title: 'Core Library | PRAXIS' };
 
@@ -36,6 +37,8 @@ export default function AppContextsPage() {
           </div>
         </div>
       </section>
+
+      <CapsuleBoard />
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <div className="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm shadow-navy-950/5 backdrop-blur">
