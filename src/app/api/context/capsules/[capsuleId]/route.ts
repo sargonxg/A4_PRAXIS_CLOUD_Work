@@ -9,6 +9,7 @@ import {
   bumpCapsuleVersion,
   forkCapsule,
   getCapsule,
+  setCapsuleCoreLock,
 } from '@/lib/context/capsule-service';
 
 export const dynamic = 'force-dynamic';
@@ -43,6 +44,10 @@ const PatchSchema = z.object({
 
 const ActionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('activate'), situationId: z.string().min(1).optional() }),
+  z.object({
+    action: z.enum(['lock', 'unlock']),
+    coreKind: z.enum(['user', 'situation', 'path', 'source', 'document', 'graph', 'time', 'output', 'tool', 'objective', 'product', 'memory']),
+  }),
   z.object({
     action: z.literal('fork'),
     forkCapsuleId: z.string().min(1).max(120).optional(),
@@ -148,7 +153,18 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
       if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
       return NextResponse.json({ capsule });
     }
+    if (parsed.data.action === 'lock' || parsed.data.action === 'unlock') {
+      const capsule = await setCapsuleCoreLock(user.uid, capsuleId, {
+        kind: parsed.data.coreKind,
+        locked: parsed.data.action === 'lock',
+      });
+      if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return NextResponse.json({ capsule });
+    }
 
+    if (parsed.data.action !== 'fork') {
+      return NextResponse.json({ error: 'Invalid capsule action' }, { status: 400 });
+    }
     const capsule = await forkCapsule(user.uid, capsuleId, {
       capsuleId: parsed.data.forkCapsuleId,
       label: parsed.data.label,

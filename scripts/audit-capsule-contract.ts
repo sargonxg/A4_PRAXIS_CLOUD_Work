@@ -50,6 +50,9 @@ if (!contextInjection.includes('resolveInjectableContext')) {
 if (!contextInjection.includes('<praxis-context-capsule>')) {
   failures.push('context injection resolver must render a praxis-context-capsule prompt block');
 }
+if (!contextInjection.includes('locked_cores')) {
+  failures.push('context injection resolver must include locked core state');
+}
 
 const chatRoute = read('src/app/api/ai/chat/route.ts');
 if (!chatRoute.includes('resolveInjectableContext')) {
@@ -64,6 +67,14 @@ for (const token of ["kind: 'tool'", "kind: 'objective'", "kind: 'product'"]) {
 const swapRoute = read('src/app/api/context/capsules/[capsuleId]/swap/route.ts');
 for (const token of ['toolCoreIds', 'objectiveCoreIds', 'productCoreIds', 'memoryCoreId']) {
   if (!swapRoute.includes(token)) failures.push(`capsule swap route must persist ${token}`);
+}
+if (!swapRoute.includes('lockedCoreKinds')) {
+  failures.push('capsule swap route must reject swaps against locked core kinds');
+}
+
+const capsuleService = read('src/lib/context/capsule-service.ts');
+for (const token of ['setCapsuleCoreLock', "collection('versions')", 'lockedCoreKinds']) {
+  if (!capsuleService.includes(token)) failures.push(`capsule service must include ${token}`);
 }
 
 if (failures.length > 0) {

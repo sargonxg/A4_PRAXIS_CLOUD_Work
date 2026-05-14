@@ -32,18 +32,21 @@ function emptyBoard(): CapsuleSlotData[] {
 function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
   if (!capsule) return emptyBoard();
   const refs = capsule.coreRefs;
+  const isLocked = (kind: CoreSpecimenKind) => capsule.lockedCoreKinds.includes(kind);
   return [
     {
       slotId: refs.userCoreId ? `user:${refs.userCoreId}` : 'user',
       kind: 'user',
       title: refs.userCoreId ?? '',
       coreId: refs.userCoreId,
+      locked: isLocked('user'),
     },
     {
       slotId: refs.situationCoreId ? `situation:${refs.situationCoreId}` : 'situation',
       kind: 'situation',
       title: refs.situationCoreId ?? '',
       coreId: refs.situationCoreId,
+      locked: isLocked('situation'),
     },
     {
       slotId: refs.pathCoreId ? `path:${refs.pathCoreId}` : 'path',
@@ -51,6 +54,7 @@ function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
       title: refs.pathCoreId ?? '',
       essence: refs.pathCoreId ? undefined : '+ pick path — operator profile sets tools, frameworks, voice.',
       coreId: refs.pathCoreId,
+      locked: isLocked('path'),
     },
     {
       slotId: refs.sourceCoreIds[0] ? `source:${refs.sourceCoreIds[0]}` : 'source',
@@ -58,12 +62,14 @@ function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
       title: refs.sourceCoreIds[0] ?? '',
       essence: refs.sourceCoreIds.length > 1 ? `+${refs.sourceCoreIds.length - 1} more` : undefined,
       coreId: refs.sourceCoreIds[0] ?? null,
+      locked: isLocked('source'),
     },
     {
       slotId: refs.graphCoreId ? `graph:${refs.graphCoreId}` : 'graph',
       kind: 'graph',
       title: refs.graphCoreId ?? '',
       coreId: refs.graphCoreId,
+      locked: isLocked('graph'),
     },
     {
       slotId: refs.timeCoreId ? `time:${refs.timeCoreId}` : 'time',
@@ -71,6 +77,7 @@ function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
       title: refs.timeCoreId ?? '',
       essence: refs.timeCoreId ? undefined : 'Set the validity and freshness horizon.',
       coreId: refs.timeCoreId ?? null,
+      locked: isLocked('time'),
     },
     {
       slotId: refs.toolCoreIds?.[0] ? `tool:${refs.toolCoreIds[0]}` : 'tool',
@@ -78,6 +85,7 @@ function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
       title: refs.toolCoreIds?.[0] ?? '',
       essence: refs.toolCoreIds && refs.toolCoreIds.length > 1 ? `+${refs.toolCoreIds.length - 1} more` : 'Attach specialist tool routing.',
       coreId: refs.toolCoreIds?.[0] ?? null,
+      locked: isLocked('tool'),
     },
     {
       slotId: refs.objectiveCoreIds?.[0] ? `objective:${refs.objectiveCoreIds[0]}` : 'objective',
@@ -85,6 +93,7 @@ function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
       title: refs.objectiveCoreIds?.[0] ?? '',
       essence: refs.objectiveCoreIds && refs.objectiveCoreIds.length > 1 ? `+${refs.objectiveCoreIds.length - 1} more` : 'Set the task Ask PRAXIS should optimize for.',
       coreId: refs.objectiveCoreIds?.[0] ?? null,
+      locked: isLocked('objective'),
     },
     {
       slotId: refs.productCoreIds?.[0] ? `product:${refs.productCoreIds[0]}` : 'product',
@@ -92,6 +101,7 @@ function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
       title: refs.productCoreIds?.[0] ?? '',
       essence: refs.productCoreIds && refs.productCoreIds.length > 1 ? `+${refs.productCoreIds.length - 1} more` : 'Pick the final work product shape.',
       coreId: refs.productCoreIds?.[0] ?? null,
+      locked: isLocked('product'),
     },
     {
       slotId: refs.outputCoreIds[0] ? `output:${refs.outputCoreIds[0]}` : 'output',
@@ -99,6 +109,7 @@ function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
       title: refs.outputCoreIds[0] ?? '',
       essence: refs.outputCoreIds.length > 1 ? `+${refs.outputCoreIds.length - 1} more` : undefined,
       coreId: refs.outputCoreIds[0] ?? null,
+      locked: isLocked('output'),
     },
     {
       slotId: refs.memoryCoreId ? `memory:${refs.memoryCoreId}` : 'memory',
@@ -106,6 +117,7 @@ function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
       title: refs.memoryCoreId ?? '',
       essence: refs.memoryCoreId ? undefined : 'Attach pinned working memory.',
       coreId: refs.memoryCoreId ?? null,
+      locked: isLocked('memory'),
     },
   ];
 }
@@ -160,6 +172,10 @@ export function CapsuleBoard({ situationId }: CapsuleBoardProps) {
       const slotId = overId.slice('slot:'.length);
       const slot = slots.find((s) => s.slotId === slotId);
       if (!slot) return;
+      if (slot.locked) {
+        setError(`${slot.kind} core is locked. Unlock it before swapping.`);
+        return;
+      }
       // Optimistic: stamp the new core into the slot. CoreSwapDrawer will
       // also fire when opened directly; this branch handles drag-only.
       setSlots((prev) =>
@@ -194,7 +210,36 @@ export function CapsuleBoard({ situationId }: CapsuleBoardProps) {
   const handleSwap = (slotId: string) => {
     const slot = slots.find((s) => s.slotId === slotId);
     if (!slot) return;
+    if (slot.locked) {
+      setError(`${slot.kind} core is locked. Unlock it before swapping.`);
+      return;
+    }
     setSwapTarget({ kind: slot.kind, slotId });
+  };
+
+  const handleToggleLock = async (slotId: string) => {
+    if (!capsule) return;
+    const slot = slots.find((s) => s.slotId === slotId);
+    if (!slot) return;
+    const nextLocked = !slot.locked;
+    setError(null);
+    setSlots((prev) => prev.map((s) => (s.kind === slot.kind ? { ...s, locked: nextLocked } : s)));
+    try {
+      const res = await fetch(`/api/context/capsules/${encodeURIComponent(capsule.capsuleId)}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: nextLocked ? 'lock' : 'unlock', coreKind: slot.kind }),
+      });
+      if (!res.ok) throw new Error(`Lock update failed: ${res.status}`);
+      const body = (await res.json()) as { capsule: PraxisCapsule };
+      setCapsule(body.capsule);
+      setSlots(capsuleToSlots(body.capsule));
+      window.dispatchEvent(new CustomEvent('capsule-mutated', { detail: { capsuleId: body.capsule.capsuleId } }));
+    } catch (err) {
+      setSlots(capsuleToSlots(capsule));
+      setError(err instanceof Error ? err.message : String(err));
+    }
   };
 
   const handleSave = async () => {
@@ -265,7 +310,12 @@ export function CapsuleBoard({ situationId }: CapsuleBoardProps) {
             <SortableContext items={slotIds} strategy={rectSortingStrategy}>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {slots.map((slot) => (
-                  <CapsuleSlot key={slot.slotId} slot={slot} onSwap={handleSwap} />
+                  <CapsuleSlot
+                    key={slot.slotId}
+                    slot={slot}
+                    onSwap={handleSwap}
+                    onToggleLock={handleToggleLock}
+                  />
                 ))}
               </div>
             </SortableContext>

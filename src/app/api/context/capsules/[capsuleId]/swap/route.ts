@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { bumpCapsuleVersion, type CapsuleCoreRefs } from '@/lib/context/capsule-service';
+import { bumpCapsuleVersion, getCapsule, type CapsuleCoreRefs } from '@/lib/context/capsule-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +20,11 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
     const parsed = SwapSchema.safeParse(await request.json().catch(() => ({})));
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid capsule swap', details: parsed.error.flatten() }, { status: 400 });
+    }
+    const current = await getCapsule(user.uid, capsuleId);
+    if (!current) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+    if (current.lockedCoreKinds.includes(parsed.data.slotKind)) {
+      return NextResponse.json({ error: 'Core slot is locked', slotKind: parsed.data.slotKind }, { status: 409 });
     }
     const capsule = await bumpCapsuleVersion(user.uid, capsuleId, {
       coreRefs: patchForSwap(parsed.data.slotKind, parsed.data.coreId),

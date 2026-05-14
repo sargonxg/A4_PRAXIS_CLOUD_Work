@@ -10,6 +10,19 @@ import type { ContextHealth, ContextRetrievalPolicy } from '@/types/context-engi
 import { DEFAULT_CORPUS_LAYERS, DEFAULT_CORPUS_LIMIT } from '@/types/corpus';
 
 export type CapsuleScope = 'user' | 'situation' | 'team';
+export type CapsuleLockKind =
+  | 'user'
+  | 'situation'
+  | 'path'
+  | 'source'
+  | 'document'
+  | 'graph'
+  | 'time'
+  | 'output'
+  | 'tool'
+  | 'objective'
+  | 'product'
+  | 'memory';
 
 export interface CapsuleCoreRefs {
   userCoreId: string | null;
@@ -45,6 +58,7 @@ export interface PraxisCapsule {
   retrievalPolicy: ContextRetrievalPolicy;
   health: ContextHealth;
   activeForSituationIds: string[];
+  lockedCoreKinds: CapsuleLockKind[];
   provenance: CapsuleProvenance;
   createdAt: string;
   updatedAt: string;
@@ -110,6 +124,7 @@ export async function createCapsule(
     retrievalPolicy: normalizeRetrievalPolicy(input.retrievalPolicy),
     health: computeCapsuleHealth(input.coreRefs),
     activeForSituationIds: cleanStringArray(input.activeForSituationIds),
+    lockedCoreKinds: [],
     provenance: {
       source: input.provenance?.source ?? 'created',
       createdBy: input.provenance?.createdBy ?? uid,
@@ -222,7 +237,38 @@ export async function bumpCapsuleVersion(
     version: capsule.version + 1,
     updatedAt: nowIso(deps),
   });
-  await capsulesCollection(uid, deps).doc(capsule.capsuleId).set(updated, { merge: true });
+  const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
+  const batch = dbOf(deps).batch();
+  batch.set(ref.collection('versions').doc(`v${capsule.version}`), capsule, { merge: true });
+  batch.set(ref.collection('versions').doc(`v${updated.version}`), updated, { merge: true });
+  batch.set(ref, updated, { merge: true });
+  await batch.commit();
+  return updated;
+}
+
+export async function setCapsuleCoreLock(
+  uid: string,
+  capsuleId: string,
+  input: { kind: CapsuleLockKind; locked: boolean },
+  deps?: CapsuleServiceDeps,
+): Promise<PraxisCapsule | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  const nextLocks = input.locked
+    ? uniqueLockKinds([...capsule.lockedCoreKinds, input.kind])
+    : capsule.lockedCoreKinds.filter((kind) => kind !== input.kind);
+  const updated = sanitizeCapsule({
+    ...capsule,
+    lockedCoreKinds: nextLocks,
+    version: capsule.version + 1,
+    updatedAt: nowIso(deps),
+  });
+  const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
+  const batch = dbOf(deps).batch();
+  batch.set(ref.collection('versions').doc(`v${capsule.version}`), capsule, { merge: true });
+  batch.set(ref.collection('versions').doc(`v${updated.version}`), updated, { merge: true });
+  batch.set(ref, updated, { merge: true });
+  await batch.commit();
   return updated;
 }
 
@@ -313,6 +359,7 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     retrievalPolicy: normalizeRetrievalPolicy(isRecord(body.retrievalPolicy) ? body.retrievalPolicy : {}),
     health: isContextHealth(body.health) ? body.health : computeCapsuleHealth(coreRefs),
     activeForSituationIds: cleanStringArray(body.activeForSituationIds).slice(0, 50),
+    lockedCoreKinds: uniqueLockKinds(cleanStringArray(body.lockedCoreKinds)),
     provenance: {
       source: provenanceBody.source === 'context-stack-migration' || provenanceBody.source === 'fork' || provenanceBody.source === 'api' || provenanceBody.source === 'created'
         ? provenanceBody.source
@@ -417,6 +464,24 @@ function cleanId(value: string, fallback: string): string {
 
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values.filter((item) => item.length > 0))).slice(0, 50);
+}
+
+function uniqueLockKinds(values: string[]): CapsuleLockKind[] {
+  const allowed = new Set<CapsuleLockKind>([
+    'user',
+    'situation',
+    'path',
+    'source',
+    'document',
+    'graph',
+    'time',
+    'output',
+    'tool',
+    'objective',
+    'product',
+    'memory',
+  ]);
+  return Array.from(new Set(values.filter((item): item is CapsuleLockKind => allowed.has(item as CapsuleLockKind)))).slice(0, 20);
 }
 
 function cleanStringArray(value: unknown): string[] {

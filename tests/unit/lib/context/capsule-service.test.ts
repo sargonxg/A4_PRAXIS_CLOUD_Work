@@ -7,6 +7,7 @@ import {
   getCapsule,
   getOrMigrateDefaultCapsule,
   saveContextStackCompat,
+  setCapsuleCoreLock,
 } from '@/lib/context/capsule-service';
 import { buildCapsuleInjectionKey, resolveInjectableContext } from '@/lib/context/context-injection';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
@@ -75,6 +76,8 @@ describe('capsule service', () => {
     expect(bumped?.coreRefs.sourceCoreIds).toEqual(['src-2']);
     expect(activated?.activeForSituationIds).toEqual(['sit-1']);
     expect(old?.activeForSituationIds).toEqual([]);
+    expect(db.data.has('users/u1/capsules/cap-2/versions/v1')).toBe(true);
+    expect(db.data.has('users/u1/capsules/cap-2/versions/v2')).toBe(true);
   });
 
   it('keeps the context-stack compatibility adapter capsule-backed', async () => {
@@ -143,6 +146,21 @@ describe('capsule service', () => {
     expect(resolved.promptBlock).toContain('objective_cores: obj-decision-options');
     expect(resolved.promptBlock).toContain('product_cores: prd-options-memo');
   });
+
+  it('locks capsule core kinds and includes the lock in injected context', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: 'cap-lock', coreRefs: { situationCoreId: 'sit-1' } }, deps(db));
+
+    const locked = await setCapsuleCoreLock('u1', 'cap-lock', { kind: 'situation', locked: true }, deps(db));
+    const resolved = await resolveInjectableContext({ uid: 'u1', capsuleId: 'cap-lock' }, deps(db));
+    const unlocked = await setCapsuleCoreLock('u1', 'cap-lock', { kind: 'situation', locked: false }, deps(db));
+
+    expect(locked?.lockedCoreKinds).toEqual(['situation']);
+    expect(resolved.promptBlock).toContain('locked_cores: situation');
+    expect(unlocked?.lockedCoreKinds).toEqual([]);
+    expect(db.data.has('users/u1/capsules/cap-lock/versions/v1')).toBe(true);
+    expect(db.data.has('users/u1/capsules/cap-lock/versions/v2')).toBe(true);
+  });
 });
 
 function deps(db: FakeFirestore) {
@@ -180,6 +198,10 @@ class FakeCollection {
   }
 
   limit() {
+    return this;
+  }
+
+  orderBy() {
     return this;
   }
 

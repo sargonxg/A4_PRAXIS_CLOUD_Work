@@ -90,6 +90,7 @@ function readyCapsule(): PraxisCapsule {
       warnings: [],
     },
     activeForSituationIds: ['sit-1'],
+    lockedCoreKinds: [],
     provenance: {
       source: 'created',
       createdBy: 'u1',

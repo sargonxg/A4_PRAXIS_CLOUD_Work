@@ -38,6 +38,7 @@ function fakeCapsule(refs: CapsuleCoreRefs): PraxisCapsule {
     retrievalPolicy: { layers: [], limit: 10, checkFreshness: false, freshnessWindowDays: 90 },
     health: { score: 80, label: 'ready', dimensions: [] } as unknown as PraxisCapsule['health'],
     activeForSituationIds: ['s1'],
+    lockedCoreKinds: [],
     provenance: {
       source: 'created',
       createdBy: 'u',
