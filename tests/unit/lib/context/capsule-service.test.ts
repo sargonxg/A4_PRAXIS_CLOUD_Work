@@ -118,6 +118,31 @@ describe('capsule service', () => {
     expect(resolved.promptBlock).toContain('document_cores: doc-1');
     expect(resolved.sharePath).toBe('/app/contexts?capsuleId=default');
   });
+
+  it('stores tool, objective, product, time, and memory cores on the capsule', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: 'cap-rich', coreRefs: { situationCoreId: 'sit-1' } }, deps(db));
+
+    const updated = await bumpCapsuleVersion('u1', 'cap-rich', {
+      coreRefs: {
+        toolCoreIds: ['ask-praxis'],
+        objectiveCoreIds: ['obj-decision-options'],
+        productCoreIds: ['prd-options-memo'],
+        timeCoreId: 'tim-quarterly-policy',
+        memoryCoreId: 'mem-working-assumptions',
+      },
+    }, deps(db));
+    const resolved = await resolveInjectableContext({ uid: 'u1', capsuleId: 'cap-rich' }, deps(db));
+
+    expect(updated?.coreRefs.toolCoreIds).toEqual(['ask-praxis']);
+    expect(updated?.coreRefs.objectiveCoreIds).toEqual(['obj-decision-options']);
+    expect(updated?.coreRefs.productCoreIds).toEqual(['prd-options-memo']);
+    expect(updated?.coreRefs.timeCoreId).toBe('tim-quarterly-policy');
+    expect(updated?.coreRefs.memoryCoreId).toBe('mem-working-assumptions');
+    expect(resolved.promptBlock).toContain('tool_cores: ask-praxis');
+    expect(resolved.promptBlock).toContain('objective_cores: obj-decision-options');
+    expect(resolved.promptBlock).toContain('product_cores: prd-options-memo');
+  });
 });
 
 function deps(db: FakeFirestore) {

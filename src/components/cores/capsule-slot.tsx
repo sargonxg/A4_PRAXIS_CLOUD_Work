@@ -34,6 +34,9 @@ const EMPTY_TITLE: Record<CoreSpecimenKind, string> = {
   graph: 'Open graph',
   time: 'Set horizon',
   output: 'Open memo',
+  tool: 'Attach tool',
+  objective: 'Set objective',
+  product: 'Pick product',
   memory: 'Wire memory',
 };
 

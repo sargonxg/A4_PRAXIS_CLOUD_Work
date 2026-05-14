@@ -12,6 +12,11 @@ const DEFAULT_CORE_ORDER: ContextCoreId[] = [
   'source-core',
   'document-core',
   'graph-core',
+  'time-core',
+  'tool-core',
+  'objective-core',
+  'product-core',
+  'memory-core',
   'output-core',
   'praxis-core',
   'team-core',
@@ -26,6 +31,11 @@ const CORE_ACCENTS: Record<ContextCoreId, string> = {
   'source-core': 'border-teal/25 bg-teal/10 text-navy-950',
   'document-core': 'border-sage/25 bg-sage/10 text-navy-950',
   'graph-core': 'border-indigo-200 bg-indigo-50 text-navy-950',
+  'time-core': 'border-orange-200 bg-orange-50 text-navy-950',
+  'tool-core': 'border-blue-200 bg-blue-50 text-navy-950',
+  'objective-core': 'border-emerald-200 bg-emerald-50 text-navy-950',
+  'product-core': 'border-cyan-200 bg-cyan-50 text-navy-950',
+  'memory-core': 'border-fuchsia-200 bg-fuchsia-50 text-navy-950',
   'output-core': 'border-rose-200 bg-rose-50 text-navy-950',
 };
 

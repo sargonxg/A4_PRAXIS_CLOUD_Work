@@ -8,12 +8,15 @@ import { CapsuleBoard } from '@/components/cores/capsule-board';
 import { DomainPicker } from '@/components/cores/domain-picker';
 import { PathPicker } from '@/components/cores/PathPicker';
 import { CapsuleToolbar } from '@/components/cores/CapsuleToolbar';
+import { CoreLibraryWorkbench } from '@/components/cores/CoreLibraryWorkbench';
+import { listCoreLibrary } from '@/lib/cores/core-library';
 
 export const metadata = { title: 'Core Library | PRAXIS' };
 
 export default function AppContextsPage() {
   const examples = listExampleCases().slice(0, 4);
   const liveCores = CONTEXT_CORES.filter((core) => core.currentPosture !== 'staged');
+  const libraryCores = listCoreLibrary({ limit: 120 });
 
   return (
     <main className="mx-auto flex max-w-7xl flex-col gap-6 pb-16">
@@ -25,7 +28,7 @@ export default function AppContextsPage() {
               Pick the user, situation, sources, graph, tools, and draft context before AI runs.
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-700">
-              Cores are reusable context. Tools can attach to the same cores, Ask PRAXIS can reason over them, and Write with PRAXIS can turn them into a document.
+              Cores are reusable context objects. Swap the user, situation, sources, graph, tools, objectives, product template, and memory before Ask PRAXIS runs.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -46,6 +49,8 @@ export default function AppContextsPage() {
       <CapsuleBoard />
 
       <CapsuleToolbar />
+
+      <CoreLibraryWorkbench cores={libraryCores} />
 
       <DomainPicker />
 

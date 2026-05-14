@@ -16,7 +16,12 @@ export type ContextCoreId =
   | 'source-core'
   | 'document-core'
   | 'graph-core'
-  | 'output-core';
+  | 'time-core'
+  | 'output-core'
+  | 'tool-core'
+  | 'objective-core'
+  | 'product-core'
+  | 'memory-core';
 
 export type ContextCoreOwnerScope = 'platform' | 'user' | 'team' | 'situation' | 'artifact';
 
@@ -124,6 +129,16 @@ export const CONTEXT_CORES: ContextCoreDefinition[] = [
     currentPosture: 'live-with-optional-cognee',
   },
   {
+    id: 'time-core',
+    label: 'Time Core',
+    ownerScope: 'situation',
+    memoryLayer: 'temporal-window',
+    summary: 'The validity window, freshness horizon, and temporal posture for analysis and drafting.',
+    backedBy: ['timeline', 'source freshness', 'active capsule retrieval policy'],
+    multiUserBehavior: 'Time windows inherit situation access and prevent stale context from being treated as current.',
+    currentPosture: 'live',
+  },
+  {
     id: 'output-core',
     label: 'Output Core',
     ownerScope: 'artifact',
@@ -131,6 +146,46 @@ export const CONTEXT_CORES: ContextCoreDefinition[] = [
     summary: 'Briefs, memos, drafts, handovers, exports, and decision packages produced from shared context.',
     backedBy: ['memo studio', 'draft chapter', 'briefing/export tools', 'saved workspace outputs'],
     multiUserBehavior: 'Outputs inherit situation or team access and preserve provenance for review.',
+    currentPosture: 'live',
+  },
+  {
+    id: 'tool-core',
+    label: 'Tool Core',
+    ownerScope: 'platform',
+    memoryLayer: 'tool-registry',
+    summary: 'The selected specialist tool bundle Ask PRAXIS can route into from the active capsule.',
+    backedBy: ['consolidated tool registry', 'tool contracts', 'path-tool coverage audit'],
+    multiUserBehavior: 'Tool cores are shared platform definitions; execution still reads owner-scoped context only.',
+    currentPosture: 'live',
+  },
+  {
+    id: 'objective-core',
+    label: 'Objective Core',
+    ownerScope: 'situation',
+    memoryLayer: 'task-objective',
+    summary: 'The task intent: decision support, drafting, red-team, negotiation prep, source repair, or handoff.',
+    backedBy: ['Ask PRAXIS intent', 'memo objective', 'next-moves planner'],
+    multiUserBehavior: 'Objectives travel with the capsule and make team handoff explicit without leaking private notes.',
+    currentPosture: 'live',
+  },
+  {
+    id: 'product-core',
+    label: 'Product Core',
+    ownerScope: 'artifact',
+    memoryLayer: 'product-template',
+    summary: 'Reusable product templates such as options memos, board notes, talking points, and handover packets.',
+    backedBy: ['memo studio', 'export routes', 'handover package route'],
+    multiUserBehavior: 'Products inherit capsule provenance and preserve source receipts for review.',
+    currentPosture: 'live',
+  },
+  {
+    id: 'memory-core',
+    label: 'Memory Core',
+    ownerScope: 'user',
+    memoryLayer: 'working-memory',
+    summary: 'Pinned facts, adopted preferences, recurring caveats, and remembered context for the active capsule.',
+    backedBy: ['working memory API', 'Ask turn ledger', 'future Vertex Memory Bank'],
+    multiUserBehavior: 'Memory is private by default and can only be shared through explicit capsule clone/handoff.',
     currentPosture: 'live',
   },
 ] as const;

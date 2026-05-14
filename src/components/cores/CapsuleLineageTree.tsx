@@ -5,7 +5,7 @@
  *
  * Brief: Claude Code CC-8.
  *
- * Reads /api/capsules/{id}/lineage (Codex CX-7). Falls back to a
+ * Reads /api/context/capsules/{id}/history. Falls back to a
  * single-node tree when the endpoint isn't shipped so the UI is
  * inspectable. Each node is clickable to open that capsule.
  *
@@ -49,10 +49,11 @@ export function CapsuleLineageTree({ capsuleId, className }: CapsuleLineageTreeP
     }
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/capsules/${encodeURIComponent(capsuleId)}/lineage`, { credentials: 'include' })
+    fetch(`/api/context/capsules/${encodeURIComponent(capsuleId)}/history`, { credentials: 'include' })
       .then(async (r) => {
         if (!r.ok) throw new Error(`status ${r.status}`);
-        return (await r.json()) as { nodes?: LineageNode[] };
+        const body = (await r.json()) as { versions?: LineageNode[]; nodes?: LineageNode[] };
+        return { nodes: body.nodes ?? body.versions ?? [] };
       })
       .then((body) => {
         if (cancelled) return;
@@ -209,15 +210,16 @@ export function ForkButton({
     if (!capsuleId) return;
     setPending(true);
     try {
-      const res = await fetch(`/api/capsules/${encodeURIComponent(capsuleId)}/fork`, {
+      const res = await fetch(`/api/context/capsules/${encodeURIComponent(capsuleId)}?action=fork`, {
         method: 'POST',
         credentials: 'include',
       });
       if (res.ok) {
-        const body = (await res.json()) as { capsuleId?: string };
-        if (body.capsuleId) {
-          onForked?.(body.capsuleId);
-          window.location.href = `/app/contexts?capsuleId=${encodeURIComponent(body.capsuleId)}`;
+        const body = (await res.json()) as { capsule?: { capsuleId?: string }; capsuleId?: string };
+        const newCapsuleId = body.capsule?.capsuleId ?? body.capsuleId;
+        if (newCapsuleId) {
+          onForked?.(newCapsuleId);
+          window.location.href = `/app/contexts?capsuleId=${encodeURIComponent(newCapsuleId)}`;
           return;
         }
       }

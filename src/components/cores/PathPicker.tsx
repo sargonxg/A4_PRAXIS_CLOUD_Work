@@ -11,7 +11,7 @@
  * panel: radial lens chart over 9 axes, framework chain, sample
  * snippet derived from the path's prompt voice.
  *
- * Selecting a path POSTs to /api/capsules/{capsuleId}/swap with
+ * Selecting a path POSTs to /api/context/capsules/{capsuleId}/swap with
  * slotKind: 'path' so the active capsule's path slot updates.
  *
  * Mobile: tap toggles preview (no hover).
@@ -101,7 +101,7 @@ export function PathPicker({ capsuleId, onSelect, currentPathId }: PathPickerPro
     if (!capsuleId) return;
     setSubmitting(path.id);
     try {
-      await fetch(`/api/capsules/${encodeURIComponent(capsuleId)}/swap`, {
+      await fetch(`/api/context/capsules/${encodeURIComponent(capsuleId)}/swap`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },

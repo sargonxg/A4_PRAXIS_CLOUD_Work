@@ -8,7 +8,10 @@ const REQUIRED_FILES = [
   'src/app/api/ai/ask-praxis/route.ts',
   'src/app/api/memos/from-ask/route.ts',
   'src/app/api/context/trust-posture/route.ts',
+  'src/app/api/cores/library/route.ts',
+  'src/app/api/context/capsules/[capsuleId]/swap/route.ts',
   'src/lib/context/context-injection.ts',
+  'src/lib/cores/core-library.ts',
   'src/lib/assistant/next-moves.ts',
 ];
 
@@ -51,6 +54,16 @@ if (!contextInjection.includes('<praxis-context-capsule>')) {
 const chatRoute = read('src/app/api/ai/chat/route.ts');
 if (!chatRoute.includes('resolveInjectableContext')) {
   failures.push('Ask PRAXIS chat route must resolve the injectable capsule context before answering');
+}
+
+const coreLibrary = read('src/lib/cores/core-library.ts');
+for (const token of ["kind: 'tool'", "kind: 'objective'", "kind: 'product'"]) {
+  if (!coreLibrary.includes(token)) failures.push(`core library must include ${token}`);
+}
+
+const swapRoute = read('src/app/api/context/capsules/[capsuleId]/swap/route.ts');
+for (const token of ['toolCoreIds', 'objectiveCoreIds', 'productCoreIds', 'memoryCoreId']) {
+  if (!swapRoute.includes(token)) failures.push(`capsule swap route must persist ${token}`);
 }
 
 if (failures.length > 0) {

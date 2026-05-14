@@ -19,7 +19,12 @@ const RequestSchema = z.object({
     sourceCoreIds: z.array(z.string()).optional(),
     documentCoreIds: z.array(z.string()).optional(),
     graphCoreId: z.string().optional(),
+    timeCoreId: z.string().optional(),
     outputCoreIds: z.array(z.string()).optional(),
+    toolCoreIds: z.array(z.string()).optional(),
+    objectiveCoreIds: z.array(z.string()).optional(),
+    productCoreIds: z.array(z.string()).optional(),
+    memoryCoreId: z.string().optional(),
   }).optional(),
 });
 

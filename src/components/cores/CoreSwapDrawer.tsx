@@ -98,15 +98,13 @@ export function CoreSwapDrawer({
     setError(null);
     onSwap?.(coreId); // optimistic
     try {
-      const res = await fetch(`/api/capsules/${encodeURIComponent(capsuleId)}/swap`, {
+      const res = await fetch(`/api/context/capsules/${encodeURIComponent(capsuleId)}/swap`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ slotKind, coreId }),
       });
-      if (!res.ok && res.status !== 404) {
-        // 404 = endpoint not yet shipped by Codex; treat as silent success
-        // so the optimistic UI sticks during the transition window.
+      if (!res.ok) {
         throw new Error(`swap failed: ${res.status}`);
       }
       window.dispatchEvent(new CustomEvent('capsule-mutated', { detail: { capsuleId } }));

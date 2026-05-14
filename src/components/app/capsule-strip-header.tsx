@@ -6,7 +6,7 @@ import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
 import { cn } from '@/lib/utils/cn';
 
-const KIND_ORDER: CoreSpecimenKind[] = ['user', 'situation', 'path', 'source', 'graph', 'time', 'output'];
+const KIND_ORDER: CoreSpecimenKind[] = ['user', 'situation', 'path', 'source', 'graph', 'time', 'tool', 'objective', 'product', 'output', 'memory'];
 
 const KIND_LABEL: Record<CoreSpecimenKind, string> = {
   user: 'User',
@@ -15,6 +15,9 @@ const KIND_LABEL: Record<CoreSpecimenKind, string> = {
   source: 'Source',
   graph: 'Graph',
   time: 'Time',
+  tool: 'Tool',
+  objective: 'Objective',
+  product: 'Product',
   output: 'Output',
   memory: 'Memory',
 };
@@ -26,6 +29,9 @@ const KIND_DOT_FILLED: Record<CoreSpecimenKind, string> = {
   source: 'bg-[#C9A86A]',
   graph: 'bg-[#5B6B8C]',
   time: 'bg-[#A06A3C]',
+  tool: 'bg-[#1B3A5C]',
+  objective: 'bg-[#3F7A66]',
+  product: 'bg-[#2F4858]',
   output: 'bg-slate-500',
   memory: 'bg-[#7A3F4F]',
 };
@@ -46,7 +52,15 @@ function dotFilled(refs: PraxisCapsule['coreRefs'] | null, kind: CoreSpecimenKin
     case 'output':
       return refs.outputCoreIds.length > 0;
     case 'time':
-      return false;
+      return Boolean(refs.timeCoreId);
+    case 'tool':
+      return Boolean(refs.toolCoreIds?.length);
+    case 'objective':
+      return Boolean(refs.objectiveCoreIds?.length);
+    case 'product':
+      return Boolean(refs.productCoreIds?.length);
+    case 'memory':
+      return Boolean(refs.memoryCoreId);
     default:
       return false;
   }

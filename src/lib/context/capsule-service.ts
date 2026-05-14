@@ -19,7 +19,12 @@ export interface CapsuleCoreRefs {
   sourceCoreIds: string[];
   documentCoreIds: string[];
   graphCoreId: string | null;
+  timeCoreId?: string | null;
   outputCoreIds: string[];
+  toolCoreIds?: string[];
+  objectiveCoreIds?: string[];
+  productCoreIds?: string[];
+  memoryCoreId?: string | null;
 }
 
 export interface CapsuleProvenance {
@@ -335,7 +340,12 @@ function normalizeCoreRefs(input: Partial<CapsuleCoreRefs> | unknown): CapsuleCo
     sourceCoreIds: cleanStringArray(body.sourceCoreIds).slice(0, 50),
     documentCoreIds: cleanStringArray(body.documentCoreIds).slice(0, 50),
     graphCoreId: stringOrNull(body.graphCoreId),
+    timeCoreId: stringOrNull(body.timeCoreId),
     outputCoreIds: cleanStringArray(body.outputCoreIds).slice(0, 20),
+    toolCoreIds: cleanStringArray(body.toolCoreIds).slice(0, 20),
+    objectiveCoreIds: cleanStringArray(body.objectiveCoreIds).slice(0, 20),
+    productCoreIds: cleanStringArray(body.productCoreIds).slice(0, 20),
+    memoryCoreId: stringOrNull(body.memoryCoreId),
   };
 }
 
@@ -368,7 +378,11 @@ function computeCapsuleHealth(input: Partial<CapsuleCoreRefs> | unknown): Contex
     signal('source-core', refs.sourceCoreIds.length ? 'ready' : 'thin', refs.sourceCoreIds.length ? 75 : 35, refs.sourceCoreIds.length ? `${refs.sourceCoreIds.length} Source Core reference(s).` : 'No Source Core references.'),
     signal('document-core', refs.documentCoreIds.length ? 'ready' : 'thin', refs.documentCoreIds.length ? 75 : 35, refs.documentCoreIds.length ? `${refs.documentCoreIds.length} Document Core reference(s).` : 'No Document Core references.'),
     signal('graph-core', refs.graphCoreId ? 'ready' : 'thin', refs.graphCoreId ? 70 : 35, refs.graphCoreId ? 'Graph Core selected.' : 'Graph Core not selected.'),
+    signal('time-core', refs.timeCoreId ? 'ready' : 'thin', refs.timeCoreId ? 70 : 35, refs.timeCoreId ? 'Time Core selected.' : 'Time Core not selected.'),
     signal('output-core', refs.outputCoreIds.length ? 'ready' : 'thin', refs.outputCoreIds.length ? 70 : 45, refs.outputCoreIds.length ? 'Output Core selected.' : 'No Output Core selected.'),
+    signal('tool-core', refs.toolCoreIds?.length ? 'ready' : 'thin', refs.toolCoreIds?.length ? 70 : 40, refs.toolCoreIds?.length ? `${refs.toolCoreIds.length} Tool Core reference(s).` : 'No Tool Core references.'),
+    signal('objective-core', refs.objectiveCoreIds?.length ? 'ready' : 'thin', refs.objectiveCoreIds?.length ? 75 : 40, refs.objectiveCoreIds?.length ? 'Objective Core selected.' : 'No Objective Core selected.'),
+    signal('product-core', refs.productCoreIds?.length ? 'ready' : 'thin', refs.productCoreIds?.length ? 70 : 40, refs.productCoreIds?.length ? 'Product Core selected.' : 'No Product Core selected.'),
     signal('team-core', refs.teamCoreId ? 'staged' : 'staged', refs.teamCoreId ? 45 : 20, 'Team Core is staged.'),
   ];
   const score = Math.round(signals.reduce((sum, item) => sum + item.score, 0) / signals.length);

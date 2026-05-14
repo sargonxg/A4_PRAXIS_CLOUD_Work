@@ -18,7 +18,12 @@ const CoreRefsSchema = z.object({
   sourceCoreIds: z.array(z.string()).optional(),
   documentCoreIds: z.array(z.string()).optional(),
   graphCoreId: z.string().nullable().optional(),
+  timeCoreId: z.string().nullable().optional(),
   outputCoreIds: z.array(z.string()).optional(),
+  toolCoreIds: z.array(z.string()).optional(),
+  objectiveCoreIds: z.array(z.string()).optional(),
+  productCoreIds: z.array(z.string()).optional(),
+  memoryCoreId: z.string().nullable().optional(),
 }).optional();
 
 const RetrievalPolicySchema = z.object({

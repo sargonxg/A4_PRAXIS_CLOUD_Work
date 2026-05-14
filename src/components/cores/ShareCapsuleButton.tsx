@@ -3,7 +3,7 @@
 /**
  * ShareCapsuleButton — opens a modal with a signed URL + expiry.
  *
- * Brief: Claude Code CC-8. Calls /api/capsules/{id}/share (Codex
+ * Brief: Claude Code CC-8. Calls /api/context/capsules/{id}?action=share (Codex
  * CX-7) to mint a one-time share token and renders the resulting URL
  * with a copy-to-clipboard button.
  */
@@ -25,17 +25,17 @@ export function ShareCapsuleButton({ capsuleId }: { capsuleId: string | null }) 
     setPending(true);
     setError(null);
     try {
-      const res = await fetch(`/api/capsules/${encodeURIComponent(capsuleId)}/share`, {
+      const res = await fetch(`/api/context/capsules/${encodeURIComponent(capsuleId)}?action=share`, {
         method: 'POST',
         credentials: 'include',
       });
       if (!res.ok) throw new Error(`status ${res.status}`);
-      const body = (await res.json()) as { url?: string; expiresAt?: string };
-      if (body.url) {
-        setShareUrl(body.url);
+      const body = (await res.json()) as { token?: string; expiresAt?: string };
+      if (body.token) {
+        setShareUrl(`${window.location.origin}/app/contexts/import/${encodeURIComponent(body.token)}`);
         setExpiresAt(body.expiresAt ?? null);
       } else {
-        throw new Error('no url returned');
+        throw new Error('no token returned');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'share failed');

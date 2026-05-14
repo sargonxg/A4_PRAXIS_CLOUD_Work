@@ -23,7 +23,7 @@ interface CapsuleBoardProps {
   situationId?: string;
 }
 
-const SLOT_ORDER: CoreSpecimenKind[] = ['user', 'situation', 'path', 'source', 'graph', 'time', 'output'];
+const SLOT_ORDER: CoreSpecimenKind[] = ['user', 'situation', 'path', 'source', 'graph', 'time', 'tool', 'objective', 'product', 'output', 'memory'];
 
 function emptyBoard(): CapsuleSlotData[] {
   return SLOT_ORDER.map((kind) => ({ slotId: kind, kind, title: '', coreId: null }));
@@ -66,11 +66,32 @@ function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
       coreId: refs.graphCoreId,
     },
     {
-      slotId: 'time',
+      slotId: refs.timeCoreId ? `time:${refs.timeCoreId}` : 'time',
       kind: 'time',
-      title: '',
-      essence: 'Time Core slot — not yet persisted on capsule.',
-      coreId: null,
+      title: refs.timeCoreId ?? '',
+      essence: refs.timeCoreId ? undefined : 'Set the validity and freshness horizon.',
+      coreId: refs.timeCoreId ?? null,
+    },
+    {
+      slotId: refs.toolCoreIds?.[0] ? `tool:${refs.toolCoreIds[0]}` : 'tool',
+      kind: 'tool',
+      title: refs.toolCoreIds?.[0] ?? '',
+      essence: refs.toolCoreIds && refs.toolCoreIds.length > 1 ? `+${refs.toolCoreIds.length - 1} more` : 'Attach specialist tool routing.',
+      coreId: refs.toolCoreIds?.[0] ?? null,
+    },
+    {
+      slotId: refs.objectiveCoreIds?.[0] ? `objective:${refs.objectiveCoreIds[0]}` : 'objective',
+      kind: 'objective',
+      title: refs.objectiveCoreIds?.[0] ?? '',
+      essence: refs.objectiveCoreIds && refs.objectiveCoreIds.length > 1 ? `+${refs.objectiveCoreIds.length - 1} more` : 'Set the task Ask PRAXIS should optimize for.',
+      coreId: refs.objectiveCoreIds?.[0] ?? null,
+    },
+    {
+      slotId: refs.productCoreIds?.[0] ? `product:${refs.productCoreIds[0]}` : 'product',
+      kind: 'product',
+      title: refs.productCoreIds?.[0] ?? '',
+      essence: refs.productCoreIds && refs.productCoreIds.length > 1 ? `+${refs.productCoreIds.length - 1} more` : 'Pick the final work product shape.',
+      coreId: refs.productCoreIds?.[0] ?? null,
     },
     {
       slotId: refs.outputCoreIds[0] ? `output:${refs.outputCoreIds[0]}` : 'output',
@@ -78,6 +99,13 @@ function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
       title: refs.outputCoreIds[0] ?? '',
       essence: refs.outputCoreIds.length > 1 ? `+${refs.outputCoreIds.length - 1} more` : undefined,
       coreId: refs.outputCoreIds[0] ?? null,
+    },
+    {
+      slotId: refs.memoryCoreId ? `memory:${refs.memoryCoreId}` : 'memory',
+      kind: 'memory',
+      title: refs.memoryCoreId ?? '',
+      essence: refs.memoryCoreId ? undefined : 'Attach pinned working memory.',
+      coreId: refs.memoryCoreId ?? null,
     },
   ];
 }
@@ -139,7 +167,7 @@ export function CapsuleBoard({ situationId }: CapsuleBoardProps) {
       );
       // POST swap (best-effort; 404 ignored until Codex CX-7 ships)
       if (capsule) {
-        void fetch(`/api/capsules/${encodeURIComponent(capsule.capsuleId)}/swap`, {
+        void fetch(`/api/context/capsules/${encodeURIComponent(capsule.capsuleId)}/swap`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'content-type': 'application/json' },

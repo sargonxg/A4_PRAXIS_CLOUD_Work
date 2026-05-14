@@ -30,6 +30,9 @@ export type CoreSpecimenKind =
   | 'graph'
   | 'time'
   | 'output'
+  | 'tool'
+  | 'objective'
+  | 'product'
   | 'memory';
 
 const KIND_SERIAL: Record<CoreSpecimenKind, string> = {
@@ -40,6 +43,9 @@ const KIND_SERIAL: Record<CoreSpecimenKind, string> = {
   graph: 'GRF',
   time: 'TIM',
   output: 'OUT',
+  tool: 'TLS',
+  objective: 'OBJ',
+  product: 'PRD',
   memory: 'MEM',
 };
 
@@ -51,6 +57,9 @@ const KIND_TINT: Record<CoreSpecimenKind, string> = {
   graph: 'border-[#5B6B8C]/45',
   time: 'border-[#A06A3C]/45',
   output: 'border-slate-300/80',
+  tool: 'border-[#1B3A5C]/50',
+  objective: 'border-[#3F7A66]/55',
+  product: 'border-[#2F4858]/45',
   memory: 'border-[#7A3F4F]/45',
 };
 
@@ -62,6 +71,9 @@ const KIND_LABEL: Record<CoreSpecimenKind, string> = {
   graph: 'GRAPH CORE',
   time: 'TIME CORE',
   output: 'OUTPUT CORE',
+  tool: 'TOOL CORE',
+  objective: 'OBJECTIVE CORE',
+  product: 'PRODUCT CORE',
   memory: 'MEMORY CORE',
 };
 

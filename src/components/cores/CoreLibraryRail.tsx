@@ -28,11 +28,15 @@ const RAIL_KINDS: CoreSpecimenKind[] = [
   'source',
   'graph',
   'time',
+  'tool',
+  'objective',
+  'product',
   'output',
+  'memory',
 ];
 
 export function CoreLibraryRail() {
-  const [openKinds, setOpenKinds] = useState<Set<CoreSpecimenKind>>(new Set(['path', 'source']));
+  const [openKinds, setOpenKinds] = useState<Set<CoreSpecimenKind>>(new Set(['situation', 'path', 'tool', 'objective', 'product']));
   const [byKind, setByKind] = useState<Partial<Record<CoreSpecimenKind, LibraryCore[]>>>({});
 
   useEffect(() => {
