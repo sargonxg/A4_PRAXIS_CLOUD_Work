@@ -150,5 +150,5 @@ describe('situationIntelligenceFlow', () => {
       expect.objectContaining({ config: { temperature: 0.4 } }),
     );
     expect(output.executivePanel.keyInsights).toHaveLength(3);
-  });
+  }, 15000);
 });

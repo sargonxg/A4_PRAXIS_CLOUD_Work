@@ -3,6 +3,7 @@ import { enableGoogleCloudTelemetry } from '@genkit-ai/google-cloud';
 import { genkit } from 'genkit';
 import { loadEnvConfig } from '@next/env';
 import modelMatrix from '@/lib/ai/MODEL_MATRIX.json';
+import { GenkitClassifyPathOutputSchema } from '@/lib/genkit/schemas/classify-path';
 import { GenkitSituationIntelligenceSchema } from '@/lib/genkit/schemas/situation-intelligence';
 
 type ModelTaskKind = keyof typeof modelMatrix.taskKinds;
@@ -41,3 +42,4 @@ export const gemini25Flash = googleAI.model(modelIdForTask('balanced'));
 export const gemini25Pro = googleAI.model(modelIdForTask('complex_reasoning'));
 
 ai.defineSchema('SituationIntelligenceSchema', GenkitSituationIntelligenceSchema);
+ai.defineSchema('ClassifyPathOutputSchema', GenkitClassifyPathOutputSchema);

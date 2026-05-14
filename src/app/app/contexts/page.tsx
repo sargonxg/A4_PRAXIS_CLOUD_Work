@@ -7,6 +7,7 @@ import { CONSOLIDATED_TOOLS } from '@/lib/constants/consolidated-tools';
 import { CapsuleBoard } from '@/components/cores/capsule-board';
 import { DomainPicker } from '@/components/cores/domain-picker';
 import { PathPicker } from '@/components/cores/PathPicker';
+import { CapsuleToolbar } from '@/components/cores/CapsuleToolbar';
 
 export const metadata = { title: 'Core Library | PRAXIS' };
 
@@ -43,6 +44,8 @@ export default function AppContextsPage() {
       <PathPicker />
 
       <CapsuleBoard />
+
+      <CapsuleToolbar />
 
       <DomainPicker />
 

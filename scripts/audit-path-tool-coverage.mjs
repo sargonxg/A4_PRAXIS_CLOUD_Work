@@ -6,8 +6,10 @@ require('tsx/cjs');
 
 const { PATH_IDS } = require('../src/lib/path/types.ts');
 const { PATH_SEEDS } = require('../src/lib/path/seeds.ts');
+const { PRAXIS_GENKIT_PATH_TOOL_IDS } = require('../src/lib/genkit/tools/registry.ts');
 
 const failures = [];
+const registeredPathToolIds = new Set(PRAXIS_GENKIT_PATH_TOOL_IDS);
 
 for (const pathId of PATH_IDS) {
   const path = PATH_SEEDS[pathId];
@@ -16,6 +18,11 @@ for (const pathId of PATH_IDS) {
     continue;
   }
   if (!path.toolBundle?.length) failures.push(`${pathId}: missing toolBundle`);
+  for (const toolId of path.toolBundle ?? []) {
+    if (!registeredPathToolIds.has(toolId)) {
+      failures.push(`${pathId}: ${toolId} is not registered in src/lib/genkit/tools/registry.ts`);
+    }
+  }
   if (!path.frameworkPath?.length) failures.push(`${pathId}: missing frameworkPath`);
   if (!path.sourceMix?.length) failures.push(`${pathId}: missing sourceMix`);
   if (!path.contextRecipe?.includes('path')) failures.push(`${pathId}: contextRecipe must include Path Core`);

@@ -1,0 +1,35 @@
+---
+config:
+  temperature: 0
+input:
+  schema:
+    domainId?: string
+    seedText: string
+    pathCatalogue: string
+output:
+  schema:
+    pathId: string
+    confidence: number
+    rationale: string
+    alternates(array):
+      id: string
+      confidence: number
+---
+{{role "system"}}
+You are PRAXIS Path Core classifier. Pick the single best operator path for the situation.
+
+Rules:
+- Return one of the exact path ids from the catalogue.
+- Use domainId as a strong hint, but let clear situation text override it.
+- Confidence is 0.0-1.0. Use 0.85+ only when the path is obvious.
+- Include up to 3 alternates sorted by confidence.
+- Do not invent path ids, domains, or tools.
+
+PATH CATALOGUE
+{{{pathCatalogue}}}
+
+{{role "user"}}
+Domain hint: {{#if domainId}}{{domainId}}{{else}}none{{/if}}
+
+Situation seed:
+{{{seedText}}}
