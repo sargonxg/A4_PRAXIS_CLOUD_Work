@@ -10,9 +10,11 @@ import {
   Network,
   ShieldCheck,
 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { CoreCapsuleHero } from "./core-capsule-hero";
 import { PolicyTicker } from "./policy-ticker";
 import { RotatingHeadline } from "./rotating-headline";
+import { PathOperatorOrbit } from "./path-operator-orbit";
 import { SpecimenCard, SpecimenGrid, type CoreSpecimenKind } from "@/components/cores/specimen-card";
 
 const SPECIMENS: ReadonlyArray<{
@@ -23,11 +25,42 @@ const SPECIMENS: ReadonlyArray<{
 }> = [
   { kind: 'user', serial: 'PRX-CORE-USR-202604', title: 'Senior policy analyst', essence: 'Indo-Pacific desk · mandates: deterrence, alliance posture · red lines: cite-or-cut.' },
   { kind: 'situation', serial: 'PRX-CORE-SIT-202604', title: 'Indo-Pacific 2026', essence: 'Eight state actors · four non-state · two open ceasefires · domain locked.' },
+  { kind: 'path', serial: 'PRX-CORE-PTH-202604', title: 'Diplomacy & Negotiation', essence: 'Operator path · ZOPA + BATNA + ripeness · principal audience · treaty-aware voice.' },
   { kind: 'source', serial: 'PRX-CORE-SRC-202604', title: '42 receipts attached', essence: 'ICG, UCDP, GDELT, FCDO briefings · page-spans verified · 2 gaps flagged.' },
   { kind: 'graph', serial: 'PRX-CORE-GRF-202604', title: 'Actor–claim lattice v3', essence: '128 nodes · 311 edges · two patches proposed by agent, pending review.' },
   { kind: 'time', serial: 'PRX-CORE-TIM-202604', title: 'Horizon: 2026-2028', essence: 'Valid-time window set · bitemporal posture · freshness gate active.' },
   { kind: 'output', serial: 'PRX-CORE-OUT-202604', title: 'Cited options memo', essence: 'Audience: principals · tone: cautious · footnoted receipts · DOCX/PDF ready.' },
 ];
+
+const PRICING_TIERS = [
+  {
+    name: 'Free',
+    price: '$0',
+    cadence: 'forever',
+    line: 'Solo researcher · capped flows.',
+    features: ['1 capsule', '5 paths', '50 flows / mo', 'Community support'],
+    cta: { label: 'Start free', href: '/login' },
+    accent: false,
+  },
+  {
+    name: 'Practitioner',
+    price: '$49',
+    cadence: '/ analyst / month',
+    line: 'Working analyst · all paths, full readiness.',
+    features: ['Unlimited capsules', '10 operator paths', '500 flows / mo', 'Memory Bank', 'Capsule fork + share'],
+    cta: { label: 'Upgrade', href: '/app/billing/upgrade' },
+    accent: true,
+  },
+  {
+    name: 'Team',
+    price: '$199',
+    cadence: '/ seat / month',
+    line: 'Hybrid teams · governance + audit.',
+    features: ['Everything in Practitioner', 'Shared capsule library', 'Audit ledger export', 'SAML SSO', 'SLA support'],
+    cta: { label: 'Talk to sales', href: '/pricing' },
+    accent: false,
+  },
+] as const;
 
 const workflow = [
   ["Capture the context", "Build the User, Situation, Source, Graph, Time, and Output cores once. PRAXIS stores them as a reusable capsule, not a prompt."],
@@ -66,6 +99,35 @@ const trustItems = [
   ["Source receipts", "PRAXIS keeps source posture and open gaps visible instead of hiding them inside a chat answer."],
   ["Human review", "Drafts, graph proposals, and handover notes remain working products for analysts to accept, revise, or reject."],
 ] as const;
+
+function StaggerSpecimens() {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.div
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.2 }}
+      variants={{
+        hidden: {},
+        visible: { transition: { staggerChildren: reduceMotion ? 0 : 0.08 } },
+      }}
+    >
+      <SpecimenGrid className="mt-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {SPECIMENS.map((s) => (
+          <motion.div
+            key={s.kind}
+            variants={{
+              hidden: reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 },
+              visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 240, damping: 28 } },
+            }}
+          >
+            <SpecimenCard kind={s.kind} serial={s.serial} title={s.title} essence={s.essence} />
+          </motion.div>
+        ))}
+      </SpecimenGrid>
+    </motion.div>
+  );
+}
 
 export function Phase8WowLanding() {
   return (
@@ -119,9 +181,15 @@ export function Phase8WowLanding() {
 
           <div className="relative">
             <CoreCapsuleHero />
-            <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-slate-500">
-              Live composite — context capsule for <span className="font-semibold text-slate-700">Indo-Pacific 2026</span>, shared across a hybrid team.
-            </p>
+            <div className="mt-6 flex flex-col items-center gap-4 lg:flex-row lg:items-start lg:gap-6">
+              <PathOperatorOrbit />
+              <p className="max-w-xs text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                Live composite — context capsule for{' '}
+                <span className="font-semibold text-slate-700">Indo-Pacific 2026</span>, shared
+                across a hybrid team. Six cores orbit a 7th — the operator{' '}
+                <span className="font-semibold text-[#8A5A00]">Path</span>.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -158,11 +226,7 @@ export function Phase8WowLanding() {
               A capsule is the durable artefact PRAXIS hands between desks. Each core inside it is inspectable: a serial number, a posture, and the receipts it carries. This is what a senior analyst's working capsule looks like on a live Indo-Pacific desk.
             </p>
           </div>
-          <SpecimenGrid className="mt-8 sm:grid-cols-2 lg:grid-cols-3">
-            {SPECIMENS.map((s) => (
-              <SpecimenCard key={s.kind} kind={s.kind} serial={s.serial} title={s.title} essence={s.essence} />
-            ))}
-          </SpecimenGrid>
+          <StaggerSpecimens />
         </div>
       </section>
 
@@ -176,6 +240,68 @@ export function Phase8WowLanding() {
               <p className="mt-3 text-sm leading-6 text-slate-600">{panel.detail}</p>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section id="plans" className="border-b border-slate-200 bg-[#FAF8F2] px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">Subscriptions</p>
+            <h2 className="mt-2 font-serif text-3xl tracking-tight text-slate-950 sm:text-4xl">
+              Three plans. One capsule contract.
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+              Free to start. Upgrade when capsules ship to teammates and Memory Bank lights up.
+              No per-token credit math — just monthly flow quotas tied to the capsule contract.
+            </p>
+          </div>
+          <div className="mt-7 grid gap-4 lg:grid-cols-3">
+            {PRICING_TIERS.map((tier) => (
+              <article
+                key={tier.name}
+                className={[
+                  'flex flex-col gap-3 rounded-xl border bg-white p-5 shadow-sm transition',
+                  tier.accent
+                    ? 'border-[#8A5A00] ring-2 ring-[#E8B931]/30'
+                    : 'border-slate-200',
+                ].join(' ')}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <h3 className="text-lg font-bold text-slate-950">{tier.name}</h3>
+                  {tier.accent ? (
+                    <span className="rounded-full bg-[#8A5A00] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+                      most chosen
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="font-serif text-3xl font-semibold text-slate-950">{tier.price}</span>
+                  <span className="text-xs text-slate-500">{tier.cadence}</span>
+                </div>
+                <p className="text-sm leading-snug text-slate-700">{tier.line}</p>
+                <ul className="mt-1 space-y-1 text-sm text-slate-700">
+                  {tier.features.map((f) => (
+                    <li key={f} className="flex items-start gap-1.5">
+                      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={tier.cta.href}
+                  className={[
+                    'mt-auto inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition',
+                    tier.accent
+                      ? 'bg-[#111827] text-white hover:bg-[#243244]'
+                      : 'border border-slate-300 bg-white text-slate-900 hover:border-slate-400',
+                  ].join(' ')}
+                >
+                  {tier.cta.label}
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 

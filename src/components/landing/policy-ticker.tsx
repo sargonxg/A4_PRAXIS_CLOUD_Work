@@ -56,17 +56,31 @@ export function PolicyTicker({ className }: { className?: string }) {
             : { animation: 'praxis-ticker 50s linear infinite' }
         }
       >
-        {items.map((label, i) => (
-          <span key={`${label}-${i}`} className="flex items-center gap-3">
-            <span aria-hidden className="text-[#E8B931]">◇</span>
-            <span>{label}</span>
-          </span>
-        ))}
+        {items.map((label, i) => {
+          // Pulse every 4th row to mimic "freshness < 30s" gold flash.
+          const fresh = i % 4 === 0;
+          return (
+            <span
+              key={`${label}-${i}`}
+              className={['flex items-center gap-3', fresh && !reduced ? 'praxis-ticker-fresh' : ''].join(' ')}
+            >
+              <span aria-hidden className="text-[#E8B931]">◇</span>
+              <span>{label}</span>
+            </span>
+          );
+        })}
       </div>
       <style jsx>{`
         @keyframes praxis-ticker {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
+        }
+        @keyframes praxis-ticker-fresh-pulse {
+          0%, 100% { color: rgba(244, 236, 216, 0.85); text-shadow: none; }
+          50% { color: #E8B931; text-shadow: 0 0 6px rgba(232,185,49,0.6); }
+        }
+        .praxis-ticker-fresh {
+          animation: praxis-ticker-fresh-pulse 4s ease-in-out infinite;
         }
       `}</style>
     </div>
