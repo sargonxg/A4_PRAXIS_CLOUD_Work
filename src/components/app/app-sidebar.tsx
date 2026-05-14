@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Boxes,
@@ -54,7 +54,10 @@ export function AppSidebar() {
       .join('') || 'DA';
   const isAdmin = user?.role === 'admin';
 
-  const visibleGroups = NAV_GROUPS.filter((g) => (g.adminOnly ? isAdmin : true));
+  const visibleGroups = useMemo(
+    () => NAV_GROUPS.filter((g) => (g.adminOnly ? isAdmin : true)),
+    [isAdmin],
+  );
 
   // Persist collapse state per group locally so it survives navigation.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {

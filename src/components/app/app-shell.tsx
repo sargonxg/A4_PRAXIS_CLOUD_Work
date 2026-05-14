@@ -107,6 +107,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     openHelp: () => setHelpOpen(true),
     goHome: () => router.push('/app/dashboard'),
     goCores: () => router.push('/app/contexts'),
+    goLibrary: () => router.push('/app/workbench'),
     goWrite: () => router.push('/app/write'),
     goCanvas: () => router.push('/app/canvas'),
     goTools: () => router.push('/app/tools'),

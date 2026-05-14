@@ -8,6 +8,7 @@ export interface KeyboardShortcutActions {
   openHelp?: () => void;
   goHome?: () => void;
   goCores?: () => void;
+  goLibrary?: () => void;
   goCanvas?: () => void;
   goWrite?: () => void;
   goTools?: () => void;
@@ -78,7 +79,7 @@ export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
         clearSequence();
         if (key === 'h') actions.goHome?.();
         if (key === 'c') actions.goCores?.();
-        if (key === 'l') actions.goCores?.();
+        if (key === 'l') actions.goLibrary?.();
         if (key === 'w') actions.goWrite?.();
         if (key === 'm') actions.goWrite?.();
         if (key === 'v') actions.goCanvas?.();
