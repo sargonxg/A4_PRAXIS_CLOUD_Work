@@ -12,10 +12,10 @@
  * `/api/context/capsule/active` + GraphOps readiness.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowUpRight, X } from 'lucide-react';
+import { ArrowUpRight, X, Clock, Gauge, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useSituationStore } from '@/stores/situation-store';
@@ -47,6 +47,22 @@ export function LiveContextReadinessCard() {
   const { analystProfile } = useAuth();
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const [open, setOpen] = useState(false);
+  const [tick, setTick] = useState(0);
+
+  // Visibility-aware polling: refresh every 30s when tab is visible.
+  // Also refresh on capsule-mutated events from CC-1 swap drawer.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') setTick((t) => t + 1);
+    }, 30_000);
+    const onMutated = () => setTick((t) => t + 1);
+    window.addEventListener('capsule-mutated', onMutated);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('capsule-mutated', onMutated);
+    };
+  }, []);
 
   const dots = useMemo<ReadinessDot[]>(() => {
     const sitHref = activeSituation ? `/app/workbench/${activeSituation.id}` : '/app/contexts';
@@ -192,7 +208,13 @@ export function LiveContextReadinessCard() {
 
       <AnimatePresence>
         {open && (
-          <ReadinessDrawer dots={dots} score={score} band={band} onClose={() => setOpen(false)} />
+          <ReadinessDrawer
+            dots={dots}
+            score={score}
+            band={band}
+            tick={tick}
+            onClose={() => setOpen(false)}
+          />
         )}
       </AnimatePresence>
     </>
@@ -203,13 +225,29 @@ function ReadinessDrawer({
   dots,
   score,
   band,
+  tick: _tick,
   onClose,
 }: {
   dots: ReadinessDot[];
   score: number;
   band: DotStatus;
+  tick: number;
   onClose: () => void;
 }) {
+  const activeSituation = useSituationStore((s) => s.activeSituation);
+  const lastRefresh = activeSituation?.lastAiRefresh ?? null;
+  const lastEvent = activeSituation?.latestEventDate ?? null;
+  const freshness = freshnessFrom(lastRefresh ?? lastEvent);
+  // Lens coverage (rough): uses Path readiness as a proxy until Codex
+  // ships /api/context/readiness with per-lens scores.
+  const lensCoverage = Math.round(
+    ((dots.find((d) => d.id === 'path')?.status === 'ready' ? 1 : 0.5) +
+      (dots.find((d) => d.id === 'sources')?.status === 'ready' ? 1 : 0.5)) *
+      50,
+  );
+  // Token budget meter — rough heuristic. 100% = 8k tokens used, 0% = 0.
+  const tokenBudget = Math.min(100, score);
+  const sourceGaps = sourceGapChips(dots);
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -300,7 +338,117 @@ function ReadinessDrawer({
             </li>
           ))}
         </ul>
+
+        {/* Coverage panel — lens, freshness, token budget */}
+        <section className="mt-5 grid grid-cols-3 gap-2">
+          <MeterCard
+            icon={<Layers className="h-3 w-3" />}
+            label="Lens coverage"
+            value={`${lensCoverage}%`}
+            barPct={lensCoverage}
+          />
+          <MeterCard
+            icon={<Clock className="h-3 w-3" />}
+            label="Freshness"
+            value={freshness.label}
+            barPct={freshness.pct}
+            tone={freshness.tone}
+          />
+          <MeterCard
+            icon={<Gauge className="h-3 w-3" />}
+            label="Token budget"
+            value={`${tokenBudget}%`}
+            barPct={tokenBudget}
+          />
+        </section>
+
+        {/* Source-gap chips */}
+        {sourceGaps.length > 0 ? (
+          <section className="mt-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+              Source gaps
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {sourceGaps.map((gap) => (
+                <Link
+                  key={gap.label}
+                  href={gap.fixHref}
+                  onClick={onClose}
+                  className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-900 transition hover:border-amber-300 hover:bg-amber-100"
+                  title={gap.detail}
+                >
+                  {gap.label}
+                  <ArrowUpRight className="h-3 w-3" />
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </motion.aside>
     </motion.div>
   );
+}
+
+function MeterCard({
+  icon,
+  label,
+  value,
+  barPct,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  barPct: number;
+  tone?: 'ready' | 'partial' | 'missing';
+}) {
+  const fill =
+    tone === 'missing'
+      ? 'bg-red-500'
+      : tone === 'partial' || barPct < 60
+        ? 'bg-amber-500'
+        : 'bg-emerald-500';
+  return (
+    <div className="rounded-md border border-slate-200 bg-white px-2 py-1.5">
+      <div className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">
+        {icon}
+        {label}
+      </div>
+      <div className="mt-1 font-mono text-[12px] font-semibold text-slate-900">{value}</div>
+      <div className="mt-1 h-1 w-full rounded-full bg-slate-100">
+        <div className={cn('h-full rounded-full transition-all', fill)} style={{ width: `${Math.min(100, Math.max(0, barPct))}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function freshnessFrom(iso: string | null): { label: string; pct: number; tone: 'ready' | 'partial' | 'missing' } {
+  if (!iso) return { label: 'unknown', pct: 0, tone: 'missing' };
+  const ageMs = Date.now() - new Date(iso).getTime();
+  const ageH = ageMs / (1000 * 60 * 60);
+  if (ageH < 1) return { label: '< 1h', pct: 100, tone: 'ready' };
+  if (ageH < 24) return { label: `${Math.round(ageH)}h`, pct: 80, tone: 'ready' };
+  if (ageH < 24 * 7) return { label: `${Math.round(ageH / 24)}d`, pct: 50, tone: 'partial' };
+  return { label: `${Math.round(ageH / 24 / 7)}w`, pct: 15, tone: 'missing' };
+}
+
+function sourceGapChips(dots: ReadinessDot[]): { label: string; detail: string; fixHref: string }[] {
+  const chips: { label: string; detail: string; fixHref: string }[] = [];
+  const sources = dots.find((d) => d.id === 'sources');
+  if (sources && sources.status !== 'ready') {
+    chips.push({ label: '+2 receipts needed', detail: sources.detail, fixHref: sources.fixHref });
+  }
+  const graph = dots.find((d) => d.id === 'graph');
+  if (graph && graph.status !== 'ready') {
+    chips.push({ label: 'Map 3+ actors', detail: graph.detail, fixHref: graph.fixHref });
+  }
+  const time = dots.find((d) => d.id === 'time');
+  if (time && time.status !== 'ready') {
+    chips.push({ label: 'Add timeline anchor', detail: time.detail, fixHref: time.fixHref });
+  }
+  const path = dots.find((d) => d.id === 'path');
+  if (path && path.status !== 'ready') {
+    chips.push({ label: 'Pick path', detail: path.detail, fixHref: path.fixHref });
+  }
+  return chips;
 }
