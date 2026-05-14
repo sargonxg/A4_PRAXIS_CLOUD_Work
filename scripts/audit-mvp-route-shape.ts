@@ -37,8 +37,10 @@ for (const marker of [
 
 const sidebar = read('src/components/app/app-sidebar.tsx');
 const mobile = read('src/components/app/mobile-bottom-nav.tsx');
-for (const relText of [sidebar, mobile]) {
-  if (!relText.includes('PRIMARY_NAV')) failures.push('primary navigation consumer must import PRIMARY_NAV');
+if (!sidebar.includes('NAV_GROUPS')) failures.push('sidebar must consume grouped primary navigation from NAV_GROUPS');
+if (!mobile.includes('NAV_GROUPS')) failures.push('mobile navigation must consume the Workspace group from NAV_GROUPS');
+if (!primaryNav.includes('export const PRIMARY_NAV') || !primaryNav.includes('NAV_GROUPS.flatMap')) {
+  failures.push('PRIMARY_NAV must stay derived from NAV_GROUPS for shortcuts and path matching');
 }
 for (const forbidden of ['Manage cores', 'Manage Cores', '/app/draft', '/app/methods']) {
   if (sidebar.includes(forbidden) || mobile.includes(forbidden)) failures.push(`navigation still includes obsolete marker: ${forbidden}`);
