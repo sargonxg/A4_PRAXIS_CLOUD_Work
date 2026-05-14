@@ -41,17 +41,28 @@ export function CapsuleSlot({ slot, onSwap, trailing, className }: CapsuleSlotPr
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: slot.slotId,
   });
+  // Accept drops from CoreLibraryRail (draggables with id "library:<coreId>").
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: `slot:${slot.slotId}`,
+    data: { kind: slot.kind, slotId: slot.slotId },
+  });
 
   const filled = Boolean(slot.coreId);
   const displayTitle = filled && slot.title ? slot.title : EMPTY_TITLE[slot.kind];
 
+  const composedRef = (node: HTMLDivElement | null) => {
+    setNodeRef(node);
+    setDropRef(node);
+  };
+
   return (
     <div
-      ref={setNodeRef}
+      ref={composedRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
         'relative',
         isDragging && 'opacity-60 z-10',
+        isOver && 'ring-2 ring-diplomatic-blue ring-offset-2 rounded-sm',
         className,
       )}
     >

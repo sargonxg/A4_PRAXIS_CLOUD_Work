@@ -15,6 +15,8 @@ import { Loader2, Save } from 'lucide-react';
 import { CapsuleSlot, type CapsuleSlotData } from './capsule-slot';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
+import { CoreSwapDrawer } from '@/components/cores/CoreSwapDrawer';
+import { CoreLibraryRail } from '@/components/cores/CoreLibraryRail';
 
 interface CapsuleBoardProps {
   situationId?: string;
@@ -118,19 +120,52 @@ export function CapsuleBoard({ situationId }: CapsuleBoardProps) {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    // Drag from CoreLibraryRail (id "library:<coreId>") onto a slot
+    // (droppable id "slot:<slotId>") → trigger swap.
+    if (activeId.startsWith('library:') && overId.startsWith('slot:')) {
+      const coreId = activeId.slice('library:'.length);
+      const slotId = overId.slice('slot:'.length);
+      const slot = slots.find((s) => s.slotId === slotId);
+      if (!slot) return;
+      // Optimistic: stamp the new core into the slot. CoreSwapDrawer will
+      // also fire when opened directly; this branch handles drag-only.
+      setSlots((prev) =>
+        prev.map((s) => (s.slotId === slotId ? { ...s, coreId, title: coreId, slotId: `${s.kind}:${coreId}` } : s)),
+      );
+      // POST swap (best-effort; 404 ignored until Codex CX-7 ships)
+      if (capsule) {
+        void fetch(`/api/capsules/${encodeURIComponent(capsule.capsuleId)}/swap`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ slotKind: slot.kind, coreId }),
+        }).catch(() => undefined);
+      }
+      return;
+    }
+
+    // Sortable reorder within the board
+    if (activeId === overId) return;
     setSlots((prev) => {
-      const oldIndex = prev.findIndex((s) => s.slotId === active.id);
-      const newIndex = prev.findIndex((s) => s.slotId === over.id);
+      const oldIndex = prev.findIndex((s) => s.slotId === activeId);
+      const newIndex = prev.findIndex((s) => s.slotId === overId);
       if (oldIndex < 0 || newIndex < 0) return prev;
       return arrayMove(prev, oldIndex, newIndex);
     });
   };
 
+  const [swapTarget, setSwapTarget] = useState<{ kind: CoreSpecimenKind; slotId: string } | null>(
+    null,
+  );
+
   const handleSwap = (slotId: string) => {
-    // TODO: open core picker popover. For now log so the action is observable
-    // until the popover lister lands.
-    console.info('[CapsuleBoard] swap requested for slot', slotId);
+    const slot = slots.find((s) => s.slotId === slotId);
+    if (!slot) return;
+    setSwapTarget({ kind: slot.kind, slotId });
   };
 
   const handleSave = async () => {
@@ -185,14 +220,39 @@ export function CapsuleBoard({ situationId }: CapsuleBoardProps) {
       ) : null}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={slotIds} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {slots.map((slot) => (
-              <CapsuleSlot key={slot.slotId} slot={slot} onSwap={handleSwap} />
-            ))}
+        <div className="flex gap-4">
+          <CoreLibraryRail />
+          <div className="min-w-0 flex-1">
+            <SortableContext items={slotIds} strategy={rectSortingStrategy}>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {slots.map((slot) => (
+                  <CapsuleSlot key={slot.slotId} slot={slot} onSwap={handleSwap} />
+                ))}
+              </div>
+            </SortableContext>
           </div>
-        </SortableContext>
+        </div>
       </DndContext>
+
+      <CoreSwapDrawer
+        open={swapTarget !== null}
+        capsuleId={capsule?.capsuleId ?? null}
+        slotKind={swapTarget?.kind ?? null}
+        currentCoreId={
+          swapTarget ? slots.find((s) => s.slotId === swapTarget.slotId)?.coreId ?? null : null
+        }
+        onClose={() => setSwapTarget(null)}
+        onSwap={(coreId) => {
+          if (!swapTarget) return;
+          setSlots((prev) =>
+            prev.map((s) =>
+              s.slotId === swapTarget.slotId
+                ? { ...s, coreId, title: coreId, slotId: `${s.kind}:${coreId}` }
+                : s,
+            ),
+          );
+        }}
+      />
     </section>
   );
 }
