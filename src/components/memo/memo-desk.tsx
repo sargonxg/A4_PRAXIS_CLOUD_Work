@@ -50,6 +50,7 @@ import {
   Wand2,
 } from 'lucide-react';
 import { ReceiptCard } from '@/components/shared/receipt-card';
+import { SourceMentionMenu } from '@/components/memo/source-mention-menu';
 import { useSituationStore } from '@/stores/situation-store';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
@@ -586,6 +587,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
               A4 · 1/1
             </span>
             <EditorContent editor={editor} />
+            <SourceMentionMenu editor={editor} situationId={activeSituation?.id ?? null} />
             {slashAt && (
               <div
                 role="menu"
