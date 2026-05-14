@@ -1263,6 +1263,10 @@
     "mtime": 1778732832.1179578,
     "hash": "7787edbab579d5c15f795db460d8d02e"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-single-h1.mjs": {
+    "mtime": 1778776746.909706,
+    "hash": "d7c56735a6c7aa6d3764a75ef2743934"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-tool-contracts.ts": {
     "mtime": 1778429929.229887,
     "hash": "d4be69a10da2a8f45ad015ddb2a6b65b"
@@ -2903,6 +2907,10 @@
     "mtime": 1778555836.5878015,
     "hash": "6ce47260ee8b87033063242112af73fc"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\ask\\AskStreamPanel.tsx": {
+    "mtime": 1778777022.635905,
+    "hash": "f24c323eb5ffa0caeeaab5b74f693d74"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\ask\\AskWorkspacePage.tsx": {
     "mtime": 1778766618.3832293,
     "hash": "4bfeb8ff82afbd202015a518712de012"
@@ -3732,8 +3740,8 @@
     "hash": "334c10c0203a266230620d0a1cbdb198"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\workbench\\case-picker.tsx": {
-    "mtime": 1778551277.6321652,
-    "hash": "e2ad8d6d43b8e8d941244fbae105a666"
+    "mtime": 1778776702.952574,
+    "hash": "53587fd292ade48d08ca6353f0d6f22c"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\workbench\\chapter-renderer.tsx": {
     "mtime": 1778597161.6020107,
@@ -3780,8 +3788,8 @@
     "hash": "18b3b4c9e1bb251d58346cfa9c460a77"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\workbench\\workbench-active-case.tsx": {
-    "mtime": 1778559948.247288,
-    "hash": "d5b3efb9caf02c602dfa7fae5bd3db5d"
+    "mtime": 1778776651.9562318,
+    "hash": "446bc2771dc9a94a20c36c89c9283aa9"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\workbench\\workbench-graph-panel.tsx": {
     "mtime": 1778429930.094185,
