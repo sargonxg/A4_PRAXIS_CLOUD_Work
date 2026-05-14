@@ -14,6 +14,8 @@ import { localKnowledgeAdapter } from '@/lib/knowledge/context-engine';
 import { messageContentSchema, situationContextSchema, aiSettingsSchema } from '@/lib/api/schemas';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { resolveTier } from '@/lib/api/tier';
+import { getAdminDbOrThrow } from '@/lib/firebase/admin';
+import { getCapsule, getOrMigrateDefaultCapsule, type PraxisCapsule } from '@/lib/context/capsule-service';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
 import {
   buildAskPraxisAnswerPolicyBlock,
@@ -27,6 +29,8 @@ import { inferResponseActionKinds } from '@/lib/assistant/response-action-kinds'
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
+
+type AiSettings = z.infer<typeof aiSettingsSchema>;
 
 export const POST = withCalibration('chat', 'ai_chat', {
   retrievalQuery: (_req, body) => {
@@ -46,12 +50,16 @@ export const POST = withCalibration('chat', 'ai_chat', {
       currentToolId: z.string().optional(),
       currentPath: z.string().optional(),
       contextPackageId: z.string().optional(),
+      threadId: z.string().optional(),
       aiSettings: aiSettingsSchema,
     });
 
     const validation = validateAiRequest(body, requestSchema);
     if (!validation.success) return validation.response;
-    const { messages, conflictContext, situation, currentToolId, currentPath, contextPackageId, aiSettings } = validation.data;
+    const { messages, conflictContext, situation, currentToolId, currentPath, contextPackageId, threadId, aiSettings } = validation.data;
+    const sitId = (situation as Situation | undefined)?.id;
+    let capsuleContext: AskCapsuleContext | null = null;
+    const toolInvocations: AskToolInvocationReceipt[] = [];
 
     // --- Demo mode ---
     if (isServerDemoMode()) {
@@ -78,17 +86,15 @@ export const POST = withCalibration('chat', 'ai_chat', {
 
     // --- Live mode ---
     // Credits + profile gate already handled by withCalibration above.
+    capsuleContext = await resolveCapsuleContext(_user.uid, contextPackageId);
 
     // Build situation-aware system prompt with super-agent capabilities.
     // Prepend the calibrated analyst-profile/situation-frame/output-constraints block.
-    const { systemPromptBlock, outputConstraints } = _user.calibration;
-    const langDirective = outputConstraints.language !== 'en'
-      ? `\n\nRESPOND IN: ${outputConstraints.language.toUpperCase()} (analyst's working language).`
-      : '';
-    const redLineDirective = outputConstraints.redLineClauses.length
-      ? `\n\nRED LINES — DO NOT:\n${outputConstraints.redLineClauses.map(r => `  - ${r}`).join('\n')}`
-      : '';
-    let systemPrompt = `${systemPromptBlock}\n\n${DIPLOMATIC_SYSTEM_PROMPT}${langDirective}${redLineDirective}`;
+    let systemPrompt = buildAskPrompt({
+      systemPromptBlock: _user.calibration.systemPromptBlock,
+      outputConstraints: _user.calibration.outputConstraints,
+      capsule: capsuleContext?.capsule ?? null,
+    });
 
     // Add super-agent instructions with deep platform knowledge and guardrails
     systemPrompt += `\n\n## PRAXIS Super-Agent Mode
@@ -280,7 +286,7 @@ You have access to the user's active situation data. When answering questions:
       tier,
       isDemo: _user.isDemo === true,
     });
-    const tools = { ...baseTools, ...askPraxisExt };
+    const tools = runAskTools({ ...baseTools, ...askPraxisExt }, toolInvocations);
     const depthDirective = aiSettings?.analysisDepth === 'deep'
       ? '\n\nANALYSIS DEPTH: Provide a more detailed answer with explicit assumptions, alternative interpretations, source/corpus gaps, and practical next actions. Keep it concise enough for an analyst to use.'
       : '\n\nANALYSIS DEPTH: Provide a concise operational answer with the most relevant assumptions and next action.';
@@ -289,9 +295,9 @@ You have access to the user's active situation data. When answering questions:
     // Select model based on user preferences.
     // Default: gemini-3-flash for fast conversational chat. Users can override
     // to Pro or Claude via aiSettings. Analytical tools use getProModel() instead.
-    const model = aiSettings ? getModelForUser(aiSettings) : getModel();
+    const runtime = selectAskRuntime(aiSettings);
+    const model = runtime.model;
 
-    const sitId = (situation as Situation | undefined)?.id;
     const { provenance } = _user.calibration;
     const result = streamText({
       model,
@@ -312,6 +318,16 @@ You have access to the user's active situation data. When answering questions:
               at: new Date().toISOString(),
             },
           }).catch((err) => console.warn('[chat] saveToolOutput failed:', err));
+          await persistAskTurn({
+            uid: _user.uid,
+            situationId: sitId,
+            threadId,
+            prompt: lastUserPrompt(messages),
+            capsule: capsuleContext?.capsule ?? null,
+            runtime: runtime.receipt,
+            toolInvocations,
+            output: text,
+          }).catch((err) => console.warn('[chat] persistAskTurn failed:', err));
         }
       },
     });
@@ -321,3 +337,164 @@ You have access to the user's active situation data. When answering questions:
     return handleRouteError(err, 'chat');
   }
 });
+
+interface AskCapsuleContext {
+  capsule: PraxisCapsule;
+}
+
+interface AskRuntimeReceipt {
+  provider?: string;
+  model?: string;
+  analysisDepth?: string;
+  selectedAt: string;
+}
+
+interface AskToolInvocationReceipt {
+  event: 'tool_invocation';
+  toolId: string;
+  status: 'ok' | 'error';
+  latencyMs: number;
+  startedAt: string;
+  finishedAt: string;
+  inputPreview: string;
+  outputPreview?: string;
+  error?: string;
+}
+
+function buildAskPrompt(input: {
+  systemPromptBlock: string;
+  outputConstraints: {
+    language: string;
+    redLineClauses: string[];
+  };
+  capsule: PraxisCapsule | null;
+}) {
+  const langDirective = input.outputConstraints.language !== 'en'
+    ? `\n\nRESPOND IN: ${input.outputConstraints.language.toUpperCase()} (analyst's working language).`
+    : '';
+  const redLineDirective = input.outputConstraints.redLineClauses.length
+    ? `\n\nRED LINES — DO NOT:\n${input.outputConstraints.redLineClauses.map((r) => `  - ${r}`).join('\n')}`
+    : '';
+  const capsuleDirective = input.capsule
+    ? `\n\nACTIVE CAPSULE: ${input.capsule.capsuleId} v${input.capsule.version}; health ${input.capsule.health.score}; scope ${input.capsule.scope}.`
+    : '';
+  return `${input.systemPromptBlock}\n\n${DIPLOMATIC_SYSTEM_PROMPT}${langDirective}${redLineDirective}${capsuleDirective}`;
+}
+
+async function resolveCapsuleContext(uid: string | undefined, contextPackageId?: string): Promise<AskCapsuleContext | null> {
+  if (!uid) return null;
+  const capsule = contextPackageId
+    ? await getCapsule(uid, contextPackageId)
+    : (await getOrMigrateDefaultCapsule(uid)).capsule;
+  return capsule ? { capsule } : null;
+}
+
+function selectAskRuntime(aiSettings: AiSettings) {
+  return {
+    model: aiSettings ? getModelForUser(aiSettings) : getModel(),
+    receipt: {
+      provider: aiSettings?.provider,
+      model: aiSettings?.model,
+      analysisDepth: aiSettings?.analysisDepth ?? 'standard',
+      selectedAt: new Date().toISOString(),
+    } satisfies AskRuntimeReceipt,
+  };
+}
+
+function runAskTools<TTools extends Record<string, unknown>>(
+  tools: TTools,
+  receipts: AskToolInvocationReceipt[],
+): TTools {
+  return Object.fromEntries(
+    Object.entries(tools).map(([toolId, toolDef]) => {
+      if (!toolDef || typeof toolDef !== 'object' || !('execute' in toolDef)) {
+        return [toolId, toolDef];
+      }
+      const executable = toolDef as { execute?: (input: unknown, options?: unknown) => Promise<unknown> | unknown };
+      if (typeof executable.execute !== 'function') return [toolId, toolDef];
+      const originalExecute = executable.execute;
+      return [toolId, {
+        ...toolDef,
+        execute: async (input: unknown, options?: unknown) => {
+          const startedAt = new Date();
+          try {
+            const output = await originalExecute(input, options);
+            const finishedAt = new Date();
+            receipts.push({
+              event: 'tool_invocation',
+              toolId,
+              status: 'ok',
+              latencyMs: finishedAt.getTime() - startedAt.getTime(),
+              startedAt: startedAt.toISOString(),
+              finishedAt: finishedAt.toISOString(),
+              inputPreview: previewJson(input),
+              outputPreview: previewJson(output),
+            });
+            return output;
+          } catch (err) {
+            const finishedAt = new Date();
+            receipts.push({
+              event: 'tool_invocation',
+              toolId,
+              status: 'error',
+              latencyMs: finishedAt.getTime() - startedAt.getTime(),
+              startedAt: startedAt.toISOString(),
+              finishedAt: finishedAt.toISOString(),
+              inputPreview: previewJson(input),
+              error: err instanceof Error ? err.message : String(err),
+            });
+            throw err;
+          }
+        },
+      }];
+    }),
+  ) as TTools;
+}
+
+async function persistAskTurn(input: {
+  uid: string;
+  situationId: string;
+  threadId?: string;
+  prompt: string;
+  capsule: PraxisCapsule | null;
+  runtime: AskRuntimeReceipt;
+  toolInvocations: AskToolInvocationReceipt[];
+  output: string;
+}) {
+  const db = getAdminDbOrThrow();
+  const safeThreadId = cleanDocId(input.threadId, 'default');
+  const turnRef = db
+    .collection('users').doc(input.uid)
+    .collection('situations').doc(cleanDocId(input.situationId, 'workspace'))
+    .collection('threads').doc(safeThreadId)
+    .collection('turns').doc(`turn-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
+
+  await turnRef.set({
+    prompt: input.prompt,
+    capsuleId: input.capsule?.capsuleId ?? null,
+    capsuleVersion: input.capsule?.version ?? null,
+    runtime: input.runtime,
+    toolInvocations: input.toolInvocations,
+    output: input.output,
+    ts: new Date().toISOString(),
+  });
+}
+
+function lastUserPrompt(messages: Array<{ role: string; content: unknown }>): string {
+  const lastUser = [...messages].reverse().find((message) => message.role === 'user');
+  if (!lastUser) return '';
+  return typeof lastUser.content === 'string' ? lastUser.content : previewJson(lastUser.content);
+}
+
+function cleanDocId(value: string | undefined, fallback: string): string {
+  const cleaned = value?.trim().replace(/[/?#[\]]/g, '-');
+  return cleaned || fallback;
+}
+
+function previewJson(value: unknown): string {
+  try {
+    return JSON.stringify(value).slice(0, 1200);
+  } catch {
+    return String(value).slice(0, 1200);
+  }
+}

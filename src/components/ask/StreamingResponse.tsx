@@ -5,7 +5,21 @@ import Link from 'next/link';
 import { AlertTriangle, CheckCircle2, FileText, ListChecks, Target, Wrench } from 'lucide-react';
 import type { AskIntentPlan } from '@/lib/ai/ask/intent-classifier';
 
-export function StreamingResponse({ plan, contextName }: { plan: AskIntentPlan; contextName: string }) {
+export interface AskToolInvocationChip {
+  toolId: string;
+  status: 'ok' | 'error';
+  latencyMs?: number;
+}
+
+export function StreamingResponse({
+  plan,
+  contextName,
+  toolInvocations = [],
+}: {
+  plan: AskIntentPlan;
+  contextName: string;
+  toolInvocations?: AskToolInvocationChip[];
+}) {
   const claims = useMemo(() => buildClaims(plan, contextName), [contextName, plan]);
 
   return (
@@ -21,6 +35,22 @@ export function StreamingResponse({ plan, contextName }: { plan: AskIntentPlan; 
       </div>
 
       <div className="mt-4 space-y-3">
+        {toolInvocations.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {toolInvocations.map((tool) => (
+              <span
+                key={`${tool.toolId}-${tool.latencyMs ?? 0}`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-navy-700"
+              >
+                <Wrench className="h-3 w-3 text-gold-700" />
+                {labelTool(tool.toolId)}
+                <span className={tool.status === 'ok' ? 'text-emerald-700' : 'text-red-700'}>
+                  {tool.status === 'ok' ? 'done' : 'failed'}
+                </span>
+              </span>
+            ))}
+          </div>
+        )}
         {claims.map((claim) => (
           <div key={claim.title} className="rounded-md border border-slate-200 bg-slate-50 p-3">
             <div className="flex gap-2">
@@ -42,6 +72,15 @@ export function StreamingResponse({ plan, contextName }: { plan: AskIntentPlan; 
       </div>
     </section>
   );
+}
+
+function labelTool(toolId: string) {
+  return toolId
+    .split(/[-_.]/g)
+    .filter(Boolean)
+    .slice(0, 3)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }
 
 function buildClaims(plan: AskIntentPlan, contextName: string) {
