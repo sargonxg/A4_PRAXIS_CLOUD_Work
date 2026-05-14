@@ -8,6 +8,7 @@ import {
   getOrMigrateDefaultCapsule,
   saveContextStackCompat,
 } from '@/lib/context/capsule-service';
+import { buildCapsuleInjectionKey, resolveInjectableContext } from '@/lib/context/context-injection';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
 
 describe('capsule service', () => {
@@ -89,6 +90,33 @@ describe('capsule service', () => {
     expect(result.capsule.coreRefs.userCoreId).toBe('policy-director');
     expect(result.capsule.coreRefs.situationCoreId).toBe('sit-2');
     expect(result.capsule.version).toBe(2);
+  });
+
+  it('resolves an injectable prompt block from the active stack and persists it as a capsule', async () => {
+    const db = new FakeFirestore();
+
+    const resolved = await resolveInjectableContext({
+      uid: 'u1',
+      activeContextStack: {
+        stackId: 'default',
+        userModelId: 'policy-analyst',
+        situationId: 'indo-pacific-2026',
+        sourceIds: ['src-1', 'src-2'],
+        documentIds: ['doc-1'],
+        outputGoal: 'options-memo',
+      },
+      situationId: 'indo-pacific-2026',
+    }, deps(db));
+
+    expect(resolved.capsule.capsuleId).toBe('default');
+    expect(resolved.stack.situationId).toBe('indo-pacific-2026');
+    expect(resolved.injectionKey).toBe(buildCapsuleInjectionKey(resolved.capsule));
+    expect(resolved.promptBlock).toContain('<praxis-context-capsule>');
+    expect(resolved.promptBlock).toContain('user_core: policy-analyst');
+    expect(resolved.promptBlock).toContain('situation_core: indo-pacific-2026');
+    expect(resolved.promptBlock).toContain('source_cores: src-1, src-2');
+    expect(resolved.promptBlock).toContain('document_cores: doc-1');
+    expect(resolved.sharePath).toBe('/app/contexts?capsuleId=default');
   });
 });
 

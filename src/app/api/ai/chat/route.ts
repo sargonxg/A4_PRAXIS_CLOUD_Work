@@ -15,7 +15,9 @@ import { messageContentSchema, situationContextSchema, aiSettingsSchema } from '
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { resolveTier } from '@/lib/api/tier';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
-import { getCapsule, getOrMigrateDefaultCapsule, type PraxisCapsule } from '@/lib/context/capsule-service';
+import { resolveInjectableContext, type InjectableContext } from '@/lib/context/context-injection';
+import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
+import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import { writeReadAuditEvents } from '@/lib/audit/read-ledger';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
 import {
@@ -52,15 +54,17 @@ export const POST = withCalibration('chat', 'ai_chat', {
       currentToolId: z.string().optional(),
       currentPath: z.string().optional(),
       contextPackageId: z.string().optional(),
+      capsuleId: z.string().optional(),
+      activeContextStack: z.unknown().optional(),
       threadId: z.string().optional(),
       aiSettings: aiSettingsSchema,
     });
 
     const validation = validateAiRequest(body, requestSchema);
     if (!validation.success) return validation.response;
-    const { messages, conflictContext, situation, currentToolId, currentPath, contextPackageId, threadId, aiSettings } = validation.data;
+    const { messages, conflictContext, situation, currentToolId, currentPath, contextPackageId, capsuleId, activeContextStack, threadId, aiSettings } = validation.data;
     const sitId = (situation as Situation | undefined)?.id;
-    let capsuleContext: AskCapsuleContext | null = null;
+    let capsuleContext: InjectableContext | null = null;
     const toolInvocations: AskToolInvocationReceipt[] = [];
     const frameworkSteps = buildAskFrameworkStepReceipts(
       _user.calibration.path,
@@ -92,7 +96,15 @@ export const POST = withCalibration('chat', 'ai_chat', {
 
     // --- Live mode ---
     // Credits + profile gate already handled by withCalibration above.
-    capsuleContext = await resolveCapsuleContext(_user.uid, contextPackageId);
+    capsuleContext = _user.uid
+      ? await resolveInjectableContext({
+          uid: _user.uid,
+          capsuleId,
+          contextPackageId,
+          activeContextStack: isRecord(activeContextStack) ? activeContextStack as Partial<ActiveContextStackState> : null,
+          situationId: sitId,
+        })
+      : null;
 
     // Build situation-aware system prompt with super-agent capabilities.
     // Prepend the calibrated analyst-profile/situation-frame/output-constraints block.
@@ -100,6 +112,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
       systemPromptBlock: _user.calibration.systemPromptBlock,
       outputConstraints: _user.calibration.outputConstraints,
       capsule: capsuleContext?.capsule ?? null,
+      injectableContext: capsuleContext,
     });
     systemPrompt += '\n\n' + buildAskPraxisPathFrameworkBlock(_user.calibration.path);
 
@@ -360,10 +373,6 @@ You have access to the user's active situation data. When answering questions:
   }
 });
 
-interface AskCapsuleContext {
-  capsule: PraxisCapsule;
-}
-
 interface AskRuntimeReceipt {
   provider?: string;
   model?: string;
@@ -401,6 +410,7 @@ function buildAskPrompt(input: {
     redLineClauses: string[];
   };
   capsule: PraxisCapsule | null;
+  injectableContext: InjectableContext | null;
 }) {
   const langDirective = input.outputConstraints.language !== 'en'
     ? `\n\nRESPOND IN: ${input.outputConstraints.language.toUpperCase()} (analyst's working language).`
@@ -408,18 +418,12 @@ function buildAskPrompt(input: {
   const redLineDirective = input.outputConstraints.redLineClauses.length
     ? `\n\nRED LINES — DO NOT:\n${input.outputConstraints.redLineClauses.map((r) => `  - ${r}`).join('\n')}`
     : '';
-  const capsuleDirective = input.capsule
-    ? `\n\nACTIVE CAPSULE: ${input.capsule.capsuleId} v${input.capsule.version}; health ${input.capsule.health.score}; scope ${input.capsule.scope}.`
-    : '';
+  const capsuleDirective = input.injectableContext
+    ? `\n\n${input.injectableContext.promptBlock}`
+    : input.capsule
+      ? `\n\nACTIVE CAPSULE: ${input.capsule.capsuleId} v${input.capsule.version}; health ${input.capsule.health.score}; scope ${input.capsule.scope}.`
+      : '';
   return `${input.systemPromptBlock}\n\n${DIPLOMATIC_SYSTEM_PROMPT}${langDirective}${redLineDirective}${capsuleDirective}`;
-}
-
-async function resolveCapsuleContext(uid: string | undefined, contextPackageId?: string): Promise<AskCapsuleContext | null> {
-  if (!uid) return null;
-  const capsule = contextPackageId
-    ? await getCapsule(uid, contextPackageId)
-    : (await getOrMigrateDefaultCapsule(uid)).capsule;
-  return capsule ? { capsule } : null;
 }
 
 function selectAskRuntime(aiSettings: AiSettings) {
@@ -607,4 +611,8 @@ function previewJson(value: unknown): string {
   } catch {
     return String(value).slice(0, 1200);
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

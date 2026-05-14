@@ -8,6 +8,7 @@ const REQUIRED_FILES = [
   'src/app/api/ai/ask-praxis/route.ts',
   'src/app/api/memos/from-ask/route.ts',
   'src/app/api/context/trust-posture/route.ts',
+  'src/lib/context/context-injection.ts',
   'src/lib/assistant/next-moves.ts',
 ];
 
@@ -37,6 +38,19 @@ if (!sharedRoute.includes('createCapsule(')) {
 const nextMoves = read('src/lib/assistant/next-moves.ts');
 if (!nextMoves.includes('domainHint: DomainId')) {
   failures.push('NextMove must carry domainHint: DomainId');
+}
+
+const contextInjection = read('src/lib/context/context-injection.ts');
+if (!contextInjection.includes('resolveInjectableContext')) {
+  failures.push('context injection resolver must export resolveInjectableContext');
+}
+if (!contextInjection.includes('<praxis-context-capsule>')) {
+  failures.push('context injection resolver must render a praxis-context-capsule prompt block');
+}
+
+const chatRoute = read('src/app/api/ai/chat/route.ts');
+if (!chatRoute.includes('resolveInjectableContext')) {
+  failures.push('Ask PRAXIS chat route must resolve the injectable capsule context before answering');
 }
 
 if (failures.length > 0) {

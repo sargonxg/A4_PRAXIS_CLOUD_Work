@@ -403,6 +403,7 @@ export function FloatingPraxis() {
               : activeSituation?.name || undefined,
             currentToolId,
             currentPath: pathname,
+            capsuleId: stack.stackId,
             activeContextStack: stack,
             sourceIds: stack.sourceIds,
             documentIds: stack.documentIds,
