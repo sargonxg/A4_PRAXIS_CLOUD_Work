@@ -32,12 +32,12 @@ jobs:
 
       - name: Build app
         env:
-          COOKIE_SIGNING_SECRET: persona-smoke-cookie-secret
+          COOKIE_SIGNING_SECRET: praxis-dev-cookie-signing-secret
         run: npm run build
 
       - name: Start app
         env:
-          COOKIE_SIGNING_SECRET: persona-smoke-cookie-secret
+          COOKIE_SIGNING_SECRET: praxis-dev-cookie-signing-secret
         run: |
           npm run start -- -p 3000 > persona-smoke.log 2>&1 &
           for i in {1..60}; do
