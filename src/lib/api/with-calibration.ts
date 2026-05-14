@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { withAuth, type AuthenticatedUser } from './with-auth';
 import { checkAndDeductCreditsForUid } from './with-credits';
+import { checkCapsuleForTool } from './capsule-gate';
 import { buildCalibratedContext, type ContextBlock } from '@/lib/context/profile-context';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 import { isOnboardingComplete } from '@/lib/auth/onboarding-status';
+import { listCapsules } from '@/lib/context/capsule-service';
 import {
   buildIdempotencyKey,
   startToolRun,
@@ -165,6 +167,54 @@ export function withCalibration(
             message: 'Complete your analyst profile before using PRAXIS tools.',
             redirectTo: '/onboarding',
           }, { status: 403 });
+        }
+      }
+
+      // Capsule contract gate (non-demo, situation-scoped): refuse 412 when
+      // the active capsule is missing cores the tool declares as required.
+      // Client renders FixThisFirstPanel from the response payload.
+      if (!user.isDemo && situationId) {
+        try {
+          const capsules = await listCapsules(user.uid, { situationId });
+          const activeCapsule =
+            capsules.find((capsule) => capsule.activeForSituationIds.includes(situationId)) ?? null;
+          const gate = checkCapsuleForTool(activeCapsule, toolId);
+          if (gate.missingCores.length > 0 || gate.staleCores.length > 0) {
+            await emitTelemetrySafe({
+              eventName: 'calibration.refusal',
+              uid: user.uid,
+              orgId: orgIdOf(user),
+              caseId: situationId,
+              route: routePath,
+              toolId,
+              status: 'blocked',
+              latencyMs: Date.now() - requestStartedAt,
+              details: {
+                reason: 'capsule-missing-cores',
+                missingCores: gate.missingCores,
+                staleCores: gate.staleCores,
+                capsuleId: activeCapsule?.capsuleId ?? null,
+              },
+            });
+            return NextResponse.json(
+              {
+                error: 'capsule_missing_cores',
+                message:
+                  'The active capsule is missing one or more cores this tool requires. Repair the capsule, then re-run.',
+                missingCores: gate.missingCores,
+                staleCores: gate.staleCores,
+                capsuleId: activeCapsule?.capsuleId ?? null,
+              },
+              {
+                status: 412,
+                headers: { 'X-Praxis-Safeguard': 'capsule_missing_cores' },
+              },
+            );
+          }
+        } catch (err) {
+          // Capsule lookup failure is non-fatal — fall through to the
+          // existing context-thin gate which will catch most real cases.
+          console.warn('[withCalibration] capsule gate skipped:', err);
         }
       }
 

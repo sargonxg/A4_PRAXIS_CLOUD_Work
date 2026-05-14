@@ -2,11 +2,19 @@
 
 import { Component, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { FixThisFirstPanel } from '@/components/praxis/fix-this-first-panel';
+import type { CapsuleGateError } from '@/lib/api/capsule-gate-client';
 
 interface Props {
   children: ReactNode;
   toolName?: string;
   onRetry?: () => void;
+  /**
+   * When set, the boundary renders FixThisFirstPanel instead of the
+   * generic error state. Caller passes this after parsing a 412 from a
+   * tool route via parseCapsuleGateResponse / readCapsuleGateError.
+   */
+  capsuleGate?: CapsuleGateError | null;
 }
 
 interface State {
@@ -34,6 +42,15 @@ export class ToolErrorBoundary extends Component<Props, State> {
   };
 
   render() {
+    if (this.props.capsuleGate) {
+      return (
+        <FixThisFirstPanel
+          missing={this.props.capsuleGate.missingCores}
+          stale={this.props.capsuleGate.staleCores}
+          toolHint={this.props.toolName ? `${this.props.toolName} needs more context.` : undefined}
+        />
+      );
+    }
     if (this.state.hasError) {
       const isAiError = this.state.error?.message?.includes('AI') ||
                          this.state.error?.message?.includes('generation') ||
