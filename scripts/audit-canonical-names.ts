@@ -21,6 +21,22 @@ const { TOOL_REGISTRY } =
   require('../src/lib/constants/tool-registry.ts') as typeof import('../src/lib/constants/tool-registry');
 const { PRAXIS_CANONICAL_TOOLS } =
   require('../src/lib/tools/canonical.ts') as typeof import('../src/lib/tools/canonical');
+const { DOMAIN_IDS } =
+  require('../src/types/domain.ts') as typeof import('../src/types/domain');
+
+const EXPECTED_DOMAIN_IDS = [
+  'generic',
+  'armed-conflict-security',
+  'diplomacy-negotiation',
+  'humanitarian',
+  'human-rights',
+  'governance-rule-of-law',
+  'economic-sanctions',
+  'development-stabilization',
+  'climate-environmental-security',
+  'information-cyber',
+  'transnational-threats',
+] as const;
 
 interface NameMismatch {
   id: string;
@@ -110,6 +126,15 @@ function audit(): { errors: string[]; warnings: string[] } {
         reason: 'shortLabel is neither prefix, single word from name, nor acronym',
       });
     }
+  }
+
+  const actualDomainIds: readonly string[] = DOMAIN_IDS;
+  const missingDomains = EXPECTED_DOMAIN_IDS.filter((id) => !actualDomainIds.includes(id));
+  const extraDomains = actualDomainIds.filter((id) => !EXPECTED_DOMAIN_IDS.includes(id as typeof EXPECTED_DOMAIN_IDS[number]));
+  if (missingDomains.length > 0 || extraDomains.length > 0) {
+    errors.push(`Domain id contract drift: expected exactly ${EXPECTED_DOMAIN_IDS.length} ids.`);
+    if (missingDomains.length > 0) errors.push(`  - missing: ${missingDomains.join(', ')}`);
+    if (extraDomains.length > 0) errors.push(`  - extra: ${extraDomains.join(', ')}`);
   }
 
   if (mismatches.length > 0) {
