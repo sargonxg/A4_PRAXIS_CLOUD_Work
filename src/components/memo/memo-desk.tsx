@@ -72,6 +72,15 @@ const SLASH_COMMANDS = [
 
 const DEFAULT_TITLE = 'Untitled policy memo';
 
+function escapeAttr(value: string): string {
+  return value.replace(/[&<>"']/g, (ch) =>
+    ch === '&' ? '&amp;'
+    : ch === '<' ? '&lt;'
+    : ch === '>' ? '&gt;'
+    : ch === '"' ? '&quot;'
+    : '&#39;');
+}
+
 const STARTER_HTML = `
   <h1>Untitled policy memo</h1>
   <p data-praxis-bottom-line><strong>Bottom line.</strong> State the working judgement here in one sentence. Keep confidence and source gaps visible.</p>
@@ -281,9 +290,42 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
     }
   }
 
-  function insertAskReply(text: string) {
+  async function insertAskReply(turn: AskTurn) {
     if (!editor) return;
-    editor.chain().focus().insertContent(`<p>${text}</p>`).run();
+    // Persist the handoff first so the inserted paragraph carries a
+    // memo-source receipt (capsule version + citation list + tool
+    // invocations). The editor insertion remains the source of truth
+    // for what the analyst sees; the API record is the audit trail.
+    let memoId: string | null = null;
+    try {
+      const capsuleRes = await fetch('/api/context/capsules', { credentials: 'include' });
+      const capsuleBody = capsuleRes.ok
+        ? ((await capsuleRes.json()) as { capsules: Array<{ capsuleId: string; version: number }> })
+        : { capsules: [] };
+      const active = capsuleBody.capsules[0] ?? null;
+      const res = await fetch('/api/memos/from-ask', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          capsuleId: active?.capsuleId ?? 'default',
+          capsuleVersion: active?.version ?? 1,
+          situationId: activeSituation?.id ?? null,
+          askTurnId: turn.id,
+          sourceReceipts: turn.citations ?? [],
+        }),
+      });
+      if (res.ok) {
+        const body = (await res.json()) as { memoId?: string };
+        memoId = body.memoId ?? null;
+      }
+    } catch (err) {
+      console.warn('[memo-desk] from-ask handoff failed (non-fatal):', err);
+    }
+    const html = memoId
+      ? `<p data-memo-source-id="${escapeAttr(memoId)}">${turn.text}</p>`
+      : `<p>${turn.text}</p>`;
+    editor.chain().focus().insertContent(html).run();
   }
 
   function exportMarkdown() {
@@ -523,7 +565,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                     {turn.role === 'praxis' && (
                       <button
                         type="button"
-                        onClick={() => insertAskReply(turn.text)}
+                        onClick={() => { void insertAskReply(turn); }}
                         className="mt-2 inline-flex items-center gap-1 rounded-md border border-slate-300 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-slate-400 hover:bg-slate-50"
                       >
                         <FileDown className="h-3 w-3" />
