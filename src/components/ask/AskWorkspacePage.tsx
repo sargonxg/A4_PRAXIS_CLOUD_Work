@@ -18,6 +18,7 @@ import {
 import { AskBar } from '@/components/ask/AskBar';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { buildContextHealthReport } from '@/lib/context/context-health';
+import { getNextMoves } from '@/lib/assistant/next-moves';
 import { PUBLIC_USER_MODELS } from '@/lib/user-models/seeds';
 import type { UserModelRecord } from '@/lib/user-models/types';
 import { getActiveUserModelId, listPrivateUserModels, setActiveUserModel } from '@/lib/users/api';
@@ -133,6 +134,10 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     evidenceGapCount: selectedCase ? Math.max(0, 3 - ((selectedCase.sourceCount ?? 0) + (selectedCase.documentCount ?? 0))) : 4,
     hasDraft: false,
     situationHref: selectedCase ? `/app/workbench/${selectedCase.id}` : '/app/contexts',
+  });
+  const nextMoves = getNextMoves({
+    situation: selectedCase?.kind === 'user' ? selectedCase.situation : null,
+    situationStage: selectedCase?.tags.join(' ') ?? 'intake',
   });
 
   function handleUserModelChange(modelId: string) {
@@ -270,14 +275,14 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
               <h2 className="text-base font-semibold text-navy-950">Next best actions</h2>
             </div>
             <div className="mt-4 space-y-2">
-              {contextHealth.nextActions.map((tool) => (
+              {nextMoves.map((move) => (
                 <Link
-                  key={tool.id}
-                  href={tool.href}
+                  key={move.id}
+                  href={move.href}
                   className="block rounded-xl border border-slate-200 bg-slate-50 p-3 hover:border-diplomatic-blue/30 hover:bg-white"
                 >
-                  <p className="text-sm font-semibold text-navy-950">{tool.label}</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-600">{tool.detail}</p>
+                  <p className="text-sm font-semibold text-navy-950">{move.label}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">{move.detail}</p>
                 </Link>
               ))}
             </div>

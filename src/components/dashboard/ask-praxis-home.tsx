@@ -1,10 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, FileText, GripVertical, Library, MessageSquareText, ShieldCheck, Sparkles, Target, UserCircle, Wrench } from 'lucide-react';
-import { PRIMARY_MOBILE_WORKFLOWS } from '@/lib/agentic-workflows/registry';
-import { attachedCoresFromSituation, recommendTools } from '@/lib/tools/recommend';
-import { readinessLabel } from '@/lib/tools/contract';
+import { ArrowRight, FileText, GripVertical, Library, ShieldCheck, Sparkles, Target, UserCircle } from 'lucide-react';
+import { getNextMoves } from '@/lib/assistant/next-moves';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
@@ -33,38 +31,15 @@ const attachedCores = [
   { label: 'Output Core', href: '/app/write', icon: FileText, detail: 'memo, brief, handover' },
 ];
 
-const simpleMoves = [
-  {
-    label: 'Understand the situation',
-    prompt: 'What should I know first about this Situation? Keep it concise and show what is uncertain.',
-    hrefMode: 'workbench',
-    icon: MessageSquareText,
-  },
-  {
-    label: 'Strengthen the context',
-    prompt: 'Inspect my User Core and Situation Core. What is missing before I run tools or draft?',
-    hrefMode: 'context',
-    icon: Library,
-  },
-  {
-    label: 'Draft the memo',
-    prompt: 'Turn the current context into a short policy memo outline with evidence gaps and suggested next tools.',
-    hrefMode: 'memos',
-    icon: FileText,
-  },
-];
-
 export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisHomeProps) {
   const userCases = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
   const activeCase = activeSituation ?? userCases[0] ?? exampleCases[0];
-  const activeCaseId = activeCase?.id ?? 'syria-2026';
   const activeCaseName = activeCase?.name ?? 'No Situation selected';
   const coverage = buildContextCoverage(activeCase, marketplaceToolCount);
-  const recommendedTools = recommendTools({
-    attached: attachedCoresFromSituation(activeSituation),
+  const nextMoves = getNextMoves({
+    situation: activeSituation,
     situationStage: activeSituation?.analysisPhase ?? activeSituation?.workflowPath ?? 'intake',
-    recentToolIds: [],
   });
 
   return (
@@ -129,26 +104,17 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
               <ArrowRight className="h-5 w-5 shrink-0 text-navy-300" />
             </button>
             <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {recommendedTools.map((tool) => (
+              {nextMoves.map((move) => (
                 <Link
-                  key={tool.id}
-                  href={tool.uiTarget === 'writer' ? '/app/write' : tool.id === 'ask-praxis' ? '/app/assistant' : `/app/workbench/${activeCaseId}`}
+                  key={move.id}
+                  href={move.href}
                   className="rounded-xl border border-white/80 bg-white/70 px-3 py-2 text-xs shadow-sm shadow-navy-950/5 hover:border-navy-200 hover:bg-white"
                 >
-                  <span className="flex items-center gap-2 font-semibold text-navy-900">
-                    <Wrench className="h-3.5 w-3.5 text-gold-700" />
-                    {tool.shortLabel}
-                  </span>
-                  <span className="mt-1 block leading-5 text-slate-600">{readinessLabel(tool.readiness)}: {tool.readinessDetail}</span>
+                  <span className="font-semibold text-navy-900">{move.label}</span>
+                  <span className="mt-1 block leading-5 text-slate-600">{move.detail}</span>
                 </Link>
               ))}
             </div>
-          </div>
-
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
-            {simpleMoves.slice(0, PRIMARY_MOBILE_WORKFLOWS.length).map((move) => (
-              <MoveButton key={move.label} move={move} />
-            ))}
           </div>
         </div>
 
@@ -176,39 +142,6 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
         </aside>
       </div>
     </section>
-  );
-}
-
-function MoveButton({
-  move,
-}: {
-  move: typeof simpleMoves[number];
-}) {
-  const Icon = move.icon;
-  const href = move.hrefMode === 'context'
-    ? '/app/contexts'
-    : move.hrefMode === 'memos'
-      ? '/app/write'
-      : '/app/assistant';
-
-  return (
-    <div className="group flex min-h-[118px] flex-col justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-navy-300 hover:bg-white">
-      <span className="flex items-start justify-between gap-3">
-        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-navy-700 ring-1 ring-slate-200 group-hover:text-diplomatic-blue">
-          <Icon className="h-4 w-4" />
-        </span>
-        <Link
-          href={href}
-          className="rounded-md px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 hover:text-navy-900"
-        >
-          Open
-        </Link>
-      </span>
-      <button type="button" onClick={() => openPraxisChat(move.prompt)} className="mt-4 text-left">
-        <span className="block text-sm font-semibold text-navy-950">{move.label}</span>
-        <span className="mt-1 block text-xs leading-5 text-slate-700">{move.prompt}</span>
-      </button>
-    </div>
   );
 }
 
