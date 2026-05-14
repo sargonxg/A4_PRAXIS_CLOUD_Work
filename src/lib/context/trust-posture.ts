@@ -1,4 +1,5 @@
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
+import type { SourceFreshnessGate } from '@/lib/sources/freshness-gate';
 import type { Situation } from '@/types/situation';
 
 export type TrustPostureBand = 'thin' | 'usable' | 'ready';
@@ -23,10 +24,14 @@ export interface TrustPosture {
   contributors: TrustContributor[];
 }
 
-export function computeTrustPosture(capsule: PraxisCapsule, situation?: Partial<Situation> | null): TrustPosture {
+export function computeTrustPosture(
+  capsule: PraxisCapsule,
+  situation?: Partial<Situation> | null,
+  opts: { sourceFreshness?: SourceFreshnessGate[] } = {},
+): TrustPosture {
   const contributors: TrustContributor[] = [
     evidenceCoverage(capsule, situation),
-    sourceFreshness(capsule, situation),
+    sourceFreshness(capsule, situation, opts.sourceFreshness),
     graphReadiness(capsule, situation),
     claimSupport(capsule, situation),
     missingGaps(capsule, situation),
@@ -66,8 +71,26 @@ function evidenceCoverage(capsule: PraxisCapsule, situation?: Partial<Situation>
   };
 }
 
-function sourceFreshness(capsule: PraxisCapsule, situation?: Partial<Situation> | null): TrustContributor {
+function sourceFreshness(capsule: PraxisCapsule, situation?: Partial<Situation> | null, liveFreshness: SourceFreshnessGate[] = []): TrustContributor {
   const freshnessWindowDays = capsule.retrievalPolicy.freshnessWindowDays ?? 90;
+  if (liveFreshness.length > 0) {
+    const stale = liveFreshness.filter((feed) => feed.suggestedAction !== 'ok');
+    const worstStaleSeconds = Math.max(0, ...liveFreshness.map((feed) => feed.staleSeconds ?? freshnessWindowDays * 86_400));
+    const score = clamp(100 - (worstStaleSeconds / (freshnessWindowDays * 86_400)) * 100);
+    return {
+      id: 'source-freshness',
+      signal: 'source freshness',
+      score: stale.length === 0 ? Math.max(75, score) : score,
+      weight: 0.15,
+      detail: stale.length === 0
+        ? `${liveFreshness.length} configured feed(s) report fresh source posture.`
+        : `${stale.length}/${liveFreshness.length} feed(s) need action: ${stale.slice(0, 3).map((feed) => `${feed.feedId}:${feed.suggestedAction}`).join(', ')}.`,
+      clickTarget: {
+        href: situation?.id ? `/app/workbench/${situation.id}?tab=research` : '/app/contexts',
+        label: 'Check sources',
+      },
+    };
+  }
   const latest = newestDate([
     situation?.latestEventDate,
     situation?.lastAiRefresh,

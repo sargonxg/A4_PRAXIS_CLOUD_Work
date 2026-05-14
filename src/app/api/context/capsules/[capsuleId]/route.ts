@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { randomBytes } from 'node:crypto';
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
+import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import {
   activateCapsule,
   bumpCapsuleVersion,
@@ -44,6 +46,11 @@ const ActionSchema = z.discriminatedUnion('action', [
   }),
 ]);
 
+const ShareSchema = z.object({
+  scope: z.enum(['read', 'clone']).default('read'),
+  expiresAt: z.string().datetime().optional(),
+});
+
 export const GET = withAuth<RouteContext>(async (_request, user, context) => {
   try {
     const { capsuleId } = await context.params;
@@ -80,7 +87,54 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
     if (user.isDemo) {
       return NextResponse.json({ error: 'Demo mode cannot mutate private capsules' }, { status: 403 });
     }
-    const parsed = ActionSchema.safeParse(await request.json().catch(() => ({})));
+    const url = new URL(request.url);
+    const queryAction = url.searchParams.get('action');
+    const raw = await request.json().catch(() => ({}));
+
+    if (queryAction === 'fork') {
+      const parsedFork = z.object({
+        forkCapsuleId: z.string().min(1).max(120).optional(),
+        label: z.string().min(1).max(160).optional(),
+        scope: z.enum(['user', 'situation', 'team']).optional(),
+      }).safeParse(raw);
+      if (!parsedFork.success) {
+        return NextResponse.json({ error: 'Invalid capsule fork', details: parsedFork.error.flatten() }, { status: 400 });
+      }
+      const capsule = await forkCapsule(user.uid, capsuleId, {
+        capsuleId: parsedFork.data.forkCapsuleId,
+        label: parsedFork.data.label,
+        scope: parsedFork.data.scope,
+      });
+      if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return NextResponse.json({ capsule }, { status: 201 });
+    }
+
+    if (queryAction === 'share') {
+      const parsedShare = ShareSchema.safeParse(raw);
+      if (!parsedShare.success) {
+        return NextResponse.json({ error: 'Invalid capsule share', details: parsedShare.error.flatten() }, { status: 400 });
+      }
+      const capsule = await getCapsule(user.uid, capsuleId);
+      if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      const token = randomBytes(18).toString('base64url');
+      const expiresAt = parsedShare.data.expiresAt ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      await getAdminDbOrThrow()
+        .collection('users')
+        .doc(user.uid)
+        .collection('capsule_shares')
+        .doc(token)
+        .set({
+          token,
+          capsuleId: capsule.capsuleId,
+          ownerUid: user.uid,
+          scope: parsedShare.data.scope,
+          expiresAt,
+          createdAt: new Date().toISOString(),
+        });
+      return NextResponse.json({ token, capsuleId: capsule.capsuleId, scope: parsedShare.data.scope, expiresAt }, { status: 201 });
+    }
+
+    const parsed = ActionSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid capsule action', details: parsed.error.flatten() }, { status: 400 });
     }

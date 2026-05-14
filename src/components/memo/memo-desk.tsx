@@ -122,6 +122,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   const [askInput, setAskInput] = useState('');
   const [askPending, setAskPending] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [mobilePane, setMobilePane] = useState<'library' | 'ask' | null>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const storageKey = `${STORAGE_PREFIX}${documentId}`;
 
@@ -494,7 +495,14 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Library rail */}
         {libraryOpen && (
-          <aside className="hidden h-full w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white/60 px-3 py-4 lg:block">
+          <aside
+            className={cn(
+              'h-full w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white/60 px-3 py-4 lg:block',
+              mobilePane === 'library'
+                ? 'fixed inset-y-0 left-0 z-40 w-[85vw] max-w-sm shadow-2xl lg:static lg:w-64 lg:shadow-none'
+                : 'hidden',
+            )}
+          >
             <div className="flex items-center justify-between">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8A5A00]">Library</p>
               <button
@@ -625,7 +633,14 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
 
         {/* Ask PRAXIS rail */}
         {askOpen && (
-          <aside className="hidden h-full w-[360px] shrink-0 flex-col overflow-hidden border-l border-slate-200 bg-white md:flex">
+          <aside
+            className={cn(
+              'h-full w-[360px] shrink-0 flex-col overflow-hidden border-l border-slate-200 bg-white md:flex',
+              mobilePane === 'ask'
+                ? 'fixed inset-y-0 right-0 z-40 flex w-[90vw] max-w-sm shadow-2xl md:static md:w-[360px] md:shadow-none'
+                : 'hidden',
+            )}
+          >
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2.5">
               <span className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-[#8A5A00]" />
@@ -723,6 +738,44 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
           </button>
         )}
       </div>
+
+      {/* Mobile floating Library · Ask toggle (hidden at md+) */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-3 z-50 flex justify-center md:hidden">
+        <div className="pointer-events-auto inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-1 py-1 shadow-lg">
+          <button
+            type="button"
+            onClick={() => setMobilePane((p) => (p === 'library' ? null : 'library'))}
+            aria-pressed={mobilePane === 'library'}
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold',
+              mobilePane === 'library' ? 'bg-navy-950 text-white' : 'text-slate-700 hover:bg-slate-100',
+            )}
+          >
+            <Library className="h-3 w-3" />
+            Library
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobilePane((p) => (p === 'ask' ? null : 'ask'))}
+            aria-pressed={mobilePane === 'ask'}
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold',
+              mobilePane === 'ask' ? 'bg-navy-950 text-white' : 'text-slate-700 hover:bg-slate-100',
+            )}
+          >
+            <MessageSquare className="h-3 w-3" />
+            Ask
+          </button>
+        </div>
+      </div>
+      {mobilePane ? (
+        <button
+          type="button"
+          aria-label="Close panel"
+          onClick={() => setMobilePane(null)}
+          className="fixed inset-0 z-30 bg-black/30 md:hidden"
+        />
+      ) : null}
 
       {/* Editor typography — A4 feel */}
       <style jsx global>{`

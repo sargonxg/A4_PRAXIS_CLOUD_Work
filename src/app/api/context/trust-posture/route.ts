@@ -3,6 +3,7 @@ import { withAuth } from '@/lib/api/with-auth';
 import { getCapsule, getOrMigrateDefaultCapsule, listCapsules } from '@/lib/context/capsule-service';
 import { computeTrustPosture } from '@/lib/context/trust-posture';
 import { getSituationAdmin } from '@/lib/firebase/situations';
+import { getSourceFreshnessGate } from '@/lib/sources/freshness-gate';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,9 +12,10 @@ export function GET(req: NextRequest) {
     const url = new URL(request.url);
     const situationId = cleanParam(url.searchParams.get('situationId'));
     const capsuleId = cleanParam(url.searchParams.get('capsuleId'));
-    const [capsule, situation] = await Promise.all([
+    const [capsule, situation, sourceFreshness] = await Promise.all([
       resolveCapsule(user.uid, capsuleId, situationId),
       situationId ? getSituationAdmin(user.uid, situationId) : Promise.resolve(null),
+      getSourceFreshnessGate().catch(() => []),
     ]);
 
     if (!capsule) {
@@ -23,9 +25,10 @@ export function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Situation not found' }, { status: 404 });
     }
 
-    const trustPosture = computeTrustPosture(capsule, situation);
+    const trustPosture = computeTrustPosture(capsule, situation, { sourceFreshness });
     return NextResponse.json({
       trustPosture,
+      sourceFreshness,
       capsule: {
         capsuleId: capsule.capsuleId,
         version: capsule.version,

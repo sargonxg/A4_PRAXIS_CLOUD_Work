@@ -1,6 +1,6 @@
 import type { AnalystProfile, Audience, Language, AnalyticalStyle } from '@/types/analyst-profile';
 import type { Situation } from '@/types/situation';
-import type { MergedDomainConfig } from '@/types/domain';
+import type { DomainId, MergedDomainConfig } from '@/types/domain';
 import type { Episode } from '@/types/episode';
 import type { UserPreferences } from '@/types/preferences';
 import type { InteractionFrame } from '@/types/interaction';
@@ -38,6 +38,7 @@ export function renderSystemPromptBlock(opts: {
   situation: Situation | null;
   retrievedChunks: RetrievedChunk[];
   domain?: MergedDomainConfig | null;
+  domainPosture?: DomainId[];
   toolId?: string;
   episodes?: Episode[];
   preferences?: UserPreferences;
@@ -46,7 +47,7 @@ export function renderSystemPromptBlock(opts: {
 }): string {
   const parts: string[] = [];
 
-  parts.push(renderProfileBlock(opts.profile));
+  parts.push(renderProfileBlock(opts.profile, domainPostureFor(opts.domainPosture, opts.domain)));
   parts.push(renderSituationBlock(opts.situation));
   if (opts.domain && opts.domain.id !== 'generic') {
     parts.push(renderDomainBlock(opts.domain, opts.toolId));
@@ -68,11 +69,13 @@ export function renderSystemPromptBlock(opts: {
   return parts.join('\n\n');
 }
 
-function renderProfileBlock(p: AnalystProfile | null): string {
+function renderProfileBlock(p: AnalystProfile | null, domainPosture: DomainId[]): string {
   if (!p) {
     return [
       '<analyst-profile version="0">',
       '  No profile set — respond in neutral analytical register, English.',
+      `  domainPosture: ${domainPosture.join(', ') || 'generic'}`,
+      '  redLines: []',
       '</analyst-profile>',
     ].join('\n');
   }
@@ -89,12 +92,19 @@ function renderProfileBlock(p: AnalystProfile | null): string {
     `  Audience: ${p.perspective.audience}`,
     `  Output language: ${p.workingStyle.language}`,
     `  Preferred style: ${p.workingStyle.analyticalStyle}`,
+    `  domainPosture: ${domainPosture.join(', ') || 'generic'}`,
+    `  redLines: ${JSON.stringify(p.workingStyle.redLines.filter(Boolean))}`,
     `  Red lines:`,
     ...(p.workingStyle.redLines.length
       ? p.workingStyle.redLines.map(r => `    - ${escapeTag(r)}`)
       : ['    (none specified)']),
     `</analyst-profile>`,
   ].join('\n');
+}
+
+function domainPostureFor(input: DomainId[] | undefined, domain?: MergedDomainConfig | null): DomainId[] {
+  const values: DomainId[] = input?.length ? input : domain?.id ? [domain.id] : ['generic'];
+  return Array.from(new Set(values));
 }
 
 function renderSituationBlock(s: Situation | null): string {

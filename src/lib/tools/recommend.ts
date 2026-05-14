@@ -1,5 +1,7 @@
 import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 import type { AttachableTool, CoreKind } from '@/lib/tools/contract';
+import { DOMAIN_SEEDS } from '@/lib/domain/seeds';
+import type { DomainId } from '@/types/domain';
 
 const STAGE_BOOSTS: Record<string, string[]> = {
   intake: ['context-builder', 'grounded-research', 'ask-praxis'],
@@ -13,10 +15,14 @@ export function recommendTools(args: {
   attached: Record<CoreKind, boolean>;
   situationStage?: string | null;
   recentToolIds?: string[];
+  domainId?: DomainId | null;
 }): AttachableTool[] {
   const stage = String(args.situationStage ?? '').toLowerCase();
   const recent = new Set(args.recentToolIds ?? []);
   const stageBoosts = new Set(Object.entries(STAGE_BOOSTS).find(([key]) => stage.includes(key))?.[1] ?? []);
+  const domain = args.domainId ? DOMAIN_SEEDS[args.domainId] : null;
+  const domainFrameworks = new Set(domain?.frameworks ?? []);
+  const domainFeeds = new Set(domain?.preferredFeeds ?? []);
 
   return [...PRAXIS_CANONICAL_TOOLS]
     .map((tool) => {
@@ -24,7 +30,12 @@ export function recommendTools(args: {
       const adjacentScore = tool.requires.some((core) => args.attached[core]) ? 1 : 0;
       const recentScore = recent.has(tool.id) ? -1 : tool.requires.some((core) => [...recent].some((id) => id.includes(core))) ? 1 : 0;
       const stageScore = stageBoosts.has(tool.id) ? 2 : 0;
-      return { tool, score: requiredScore + adjacentScore + recentScore + stageScore };
+      const text = `${tool.id} ${tool.name} ${tool.methodology} ${tool.readinessDetail}`.toLowerCase();
+      const domainScore =
+        [...domainFrameworks].some((framework) => text.includes(framework.toLowerCase())) ? 2 : 0;
+      const feedScore =
+        [...domainFeeds].some((feed) => text.includes(feed.toLowerCase())) ? 2 : 0;
+      return { tool, score: requiredScore + adjacentScore + recentScore + stageScore + domainScore + feedScore };
     })
     .sort((a, b) => b.score - a.score || a.tool.name.localeCompare(b.tool.name))
     .slice(0, 3)

@@ -22,6 +22,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { AskBar } from '@/components/ask/AskBar';
 import { WorkOnThisMenu } from '@/components/app/work-on-this-menu';
+import { getNextMoves } from '@/lib/assistant/next-moves';
 import type { WorkspaceNextMove, WorkspaceNextMoveStatus } from '@/lib/dashboard/next-moves';
 import { buildContextHealthReport, type ContextHealthReport } from '@/lib/context/context-health';
 import { cn } from '@/lib/utils/cn';
@@ -134,7 +135,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
     return workspaceCases[0] ?? null;
   }, [activeSituation, selectedCaseId, workspaceCases]);
   const workspaceLens = useMemo(() => buildWorkspaceLens(activeUserModel, selectedCase, marketplaceToolCount), [activeUserModel, marketplaceToolCount, selectedCase]);
-  const toolCards = useMemo(() => buildToolCards(selectedCase, activeUserModel), [activeUserModel, selectedCase]);
+  const toolCards = useMemo(() => buildToolCards(selectedCase), [selectedCase]);
   const contextAdvantage = useMemo(() => buildContextAdvantage(activeUserModel, selectedCase), [activeUserModel, selectedCase]);
   const contextHealth = useMemo(() => buildContextHealthReport({
     hasUserCore: Boolean(activeUserModel),
@@ -954,86 +955,17 @@ function buildContextAdvantage(userModel: UserModelRecord, selectedCase: Workspa
   ];
 }
 
-function buildToolCards(selectedCase: WorkspaceCase | null, userModel: UserModelRecord): ToolCard[] {
-  const caseBias = selectedCase?.risk ?? 0;
-  const actorBias = selectedCase?.actorCount ?? 0;
-  const isCorporate = userModel.workOntologyId === 'corporate-strategic-analysis';
-  const isDomestic = userModel.workOntologyId === 'domestic-policy-analysis';
-
-  const cards: ToolCard[] = [
-    {
-      id: 'research',
-      label: 'Research',
-      detail: selectedCase ? 'Pull in fresh evidence and keep the source trail visible.' : 'Start the evidence trail before drafting.',
-      href: '/app/tools',
-      emphasis: 'primary',
-    },
-    {
-      id: 'source-intake',
-      label: 'Source Intake',
-      detail: 'Review receipts, uploads, and the evidence posture.',
-      href: selectedCase ? `/app/workbench/${selectedCase.id}?tab=library` : '/app/cores/context',
-      emphasis: 'primary',
-    },
-    {
-      id: 'graph-review',
-      label: 'Graph Review',
-      detail: 'Inspect actors, claims, and provenance before the memo hardens.',
-      href: selectedCase ? `/app/workbench/${selectedCase.id}?tab=graph` : '/app/cores/context',
-      emphasis: 'secondary',
-    },
-    {
-      id: 'stakeholder-map',
-      label: 'Stakeholder Map',
-      detail: 'Make the actors, audiences, and leverage explicit.',
-      href: '/app/tools',
-      emphasis: 'secondary',
-    },
-    {
-      id: 'scenario-ach',
-      label: 'Scenario / ACH',
-      detail: 'Test competing explanations and watch for signposts.',
-      href: '/app/tools',
-      emphasis: caseBias > 6 || actorBias > 4 ? 'primary' : 'subtle',
-    },
-    {
-      id: 'memo-drafter',
-      label: 'Memo Drafter',
-      detail: 'Turn the selected cores into a reviewable draft.',
-      href: selectedCase ? `/app/workbench/${selectedCase.id}?openChapter=memos` : '/app/workbench',
-      emphasis: 'primary',
-    },
-    {
-      id: 'brief-export',
-      label: 'Brief Export',
-      detail: 'Export the memo when the evidence is tight enough.',
-      href: '/app/tools',
-      emphasis: isCorporate ? 'primary' : 'secondary',
-    },
-    {
-      id: 'red-team',
-      label: 'Red Team',
-      detail: isDomestic ? 'Stress-test assumptions and policy consequences.' : 'Challenge the memo before it ships.',
-      href: '/app/tools',
-      emphasis: 'subtle',
-    },
-  ];
-
-  return cards.sort((a, b) => scoreTool(b, selectedCase, userModel) - scoreTool(a, selectedCase, userModel));
-}
-
-function scoreTool(tool: ToolCard, selectedCase: WorkspaceCase | null, userModel: UserModelRecord): number {
-  let score = 0;
-  if (tool.emphasis === 'primary') score += 2;
-  if (tool.id === 'research' && (selectedCase?.sourceCount ?? 0) < 3) score += 2;
-  if (tool.id === 'source-intake' && (selectedCase?.documentCount ?? 0) > 0) score += 1;
-  if (tool.id === 'graph-review' && (selectedCase?.actorCount ?? 0) >= 3) score += 1;
-  if (tool.id === 'stakeholder-map' && userModel.toolAffinities.some((item) => item.includes('stakeholder'))) score += 2;
-  if (tool.id === 'scenario-ach' && (selectedCase?.risk ?? 0) >= 7) score += 2;
-  if (tool.id === 'memo-drafter') score += 3;
-  if (tool.id === 'brief-export' && userModel.outputPreferences.briefVsLong !== 'brief') score += 1;
-  if (tool.id === 'red-team' && userModel.confidenceTolerance === 'high') score += 1;
-  return score;
+function buildToolCards(selectedCase: WorkspaceCase | null): ToolCard[] {
+  return getNextMoves({
+    situation: selectedCase?.kind === 'user' ? selectedCase.situation : null,
+    situationStage: selectedCase?.tags.join(' ') ?? 'intake',
+  }).map((move, index) => ({
+    id: move.id,
+    label: move.label,
+    detail: move.detail,
+    href: move.href,
+    emphasis: index === 0 ? 'primary' : index === 1 ? 'secondary' : 'subtle',
+  }));
 }
 
 function buildActorStakeholderSummary(selectedCase: WorkspaceCase, userModel: UserModelRecord): string {

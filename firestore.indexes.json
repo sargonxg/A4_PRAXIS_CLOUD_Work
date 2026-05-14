@@ -182,6 +182,22 @@
       ]
     },
     {
+      "collectionGroup": "memos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "capsuleVersion", "order": "ASCENDING" },
+        { "fieldPath": "ts", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "memos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "capsuleVersion", "order": "ASCENDING" },
+        { "fieldPath": "ts", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "saved_queries",
       "queryScope": "COLLECTION_GROUP",
       "fields": [

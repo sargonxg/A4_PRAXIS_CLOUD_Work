@@ -35,8 +35,8 @@ describe('getNextMoves', () => {
     expect(moves.map((move) => move.label)).toMatchInlineSnapshot(`
       [
         "Draft memo",
-        "Check sources",
         "Map situation",
+        "Check sources",
       ]
     `);
   });

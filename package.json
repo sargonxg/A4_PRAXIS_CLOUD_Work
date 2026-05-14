@@ -33,6 +33,7 @@
     "audit:no-normal-user-archive": "tsx scripts/audit-no-normal-user-archive.ts",
     "audit:admin-only-internals": "tsx scripts/audit-admin-only-internals.ts",
     "audit:next-moves": "tsx scripts/audit-next-moves.ts",
+    "audit:capsule-contract": "tsx scripts/audit-capsule-contract.ts",
     "audit:names": "tsx scripts/audit-canonical-names.ts",
     "audit:simplification": "npm run audit:route-consolidation && npm run audit:no-normal-user-archive && npm run audit:admin-only-internals && npm run audit:next-moves && npm run audit:names",
     "audit:gcp": "node scripts/audit-gcp.mjs",

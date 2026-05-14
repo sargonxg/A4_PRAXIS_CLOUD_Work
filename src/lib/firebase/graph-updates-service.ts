@@ -122,6 +122,8 @@ export async function rejectProposal(
       status: 'rejected',
       decidedAt: new Date().toISOString(),
       decidedBy: uid,
+      reviewedAt: new Date().toISOString(),
+      reviewerUid: uid,
       decisionNote: decisionNote ?? null,
     });
     return true;
@@ -144,6 +146,8 @@ export async function approveProposal(
         status: options.editedPayload ? 'edited' : 'approved',
         decidedAt: new Date().toISOString(),
         decidedBy: uid,
+        reviewedAt: new Date().toISOString(),
+        reviewerUid: uid,
         decisionNote: options.decisionNote ?? null,
         editedPayload: options.editedPayload ?? null,
         approvedAt: FieldValue.serverTimestamp(),
@@ -299,6 +303,8 @@ export async function applyApprovedProposal(
       status: proposal.editedPayload ? 'edited' : 'approved',
       decidedAt: now,
       decidedBy: uid,
+      reviewedAt: now,
+      reviewerUid: uid,
       decisionNote: proposal.decisionNote ?? null,
       editedPayload: proposal.editedPayload ?? null,
       approvedAt: FieldValue.serverTimestamp(),

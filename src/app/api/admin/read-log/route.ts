@@ -31,7 +31,13 @@ export const GET = withAuth(async (request, user) => {
     .filter((event) => matches(event, filters))
     .slice(0, limit);
 
-  return NextResponse.json({ events, filters, limit });
+  const includeRollups = url.searchParams.get('rollups') === '1' || url.searchParams.get('aggregate') === '1';
+  return NextResponse.json({
+    events,
+    filters,
+    limit,
+    ...(includeRollups ? { rollups: buildRollups(events) } : {}),
+  });
 });
 
 function matches(event: ReadAuditEvent, filters: {
@@ -52,4 +58,67 @@ function matches(event: ReadAuditEvent, filters: {
 function clean(value: string | null): string | undefined {
   const trimmed = value?.trim();
   return trimmed || undefined;
+}
+
+function buildRollups(events: ReadAuditEvent[]) {
+  return {
+    costByUid: groupCost(events, (event) => event.uid),
+    costByTool: groupCost(events, (event) => event.toolId),
+    costBySituation: groupCost(events, (event) => event.situationId ?? 'none'),
+    modelMix: countBy(events, (event) => event.model ?? 'unknown'),
+    latencyByTool: groupLatency(events),
+  };
+}
+
+function groupCost(events: ReadAuditEvent[], keyOf: (event: ReadAuditEvent) => string) {
+  const out: Record<string, { total: number; costClass: Record<string, number> }> = {};
+  for (const event of events) {
+    const key = keyOf(event);
+    out[key] ??= { total: 0, costClass: {} };
+    out[key].total += 1;
+    const costClass = normalizeCostClass(event.costClass);
+    out[key].costClass[costClass] = (out[key].costClass[costClass] ?? 0) + 1;
+  }
+  return out;
+}
+
+function countBy(events: ReadAuditEvent[], keyOf: (event: ReadAuditEvent) => string) {
+  const out: Record<string, number> = {};
+  for (const event of events) {
+    const key = keyOf(event);
+    out[key] = (out[key] ?? 0) + 1;
+  }
+  return out;
+}
+
+function groupLatency(events: ReadAuditEvent[]) {
+  const byTool = new Map<string, number[]>();
+  for (const event of events) {
+    if (typeof event.latencyMs !== 'number') continue;
+    const list = byTool.get(event.toolId) ?? [];
+    list.push(event.latencyMs);
+    byTool.set(event.toolId, list);
+  }
+  const out: Record<string, { count: number; p50LatencyMs: number | null; p95LatencyMs: number | null }> = {};
+  for (const [toolId, values] of byTool.entries()) {
+    values.sort((a, b) => a - b);
+    out[toolId] = {
+      count: values.length,
+      p50LatencyMs: percentile(values, 0.5),
+      p95LatencyMs: percentile(values, 0.95),
+    };
+  }
+  return out;
+}
+
+function percentile(values: number[], p: number): number | null {
+  if (values.length === 0) return null;
+  const index = Math.min(values.length - 1, Math.max(0, Math.ceil(values.length * p) - 1));
+  return values[index];
+}
+
+function normalizeCostClass(value: string | null): 'lo' | 'mid' | 'hi' {
+  if (value === 'hi' || value === 'expensive' || value === 'high') return 'hi';
+  if (value === 'mid' || value === 'medium' || value === 'standard') return 'mid';
+  return 'lo';
 }
