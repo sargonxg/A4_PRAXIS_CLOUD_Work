@@ -31,6 +31,7 @@
     "audit:cognee": "tsx scripts/audit-cognee-isolation.ts",
     "audit:route-consolidation": "tsx scripts/audit-route-consolidation.ts",
     "audit:genkit-coverage": "node scripts/audit-genkit-coverage.mjs",
+    "audit:genkit-runtime": "tsx scripts/audit-genkit-runtime.ts",
     "audit:no-normal-user-archive": "tsx scripts/audit-no-normal-user-archive.ts",
     "audit:admin-only-internals": "tsx scripts/audit-admin-only-internals.ts",
     "audit:next-moves": "tsx scripts/audit-next-moves.ts",

@@ -1,10 +1,11 @@
-import { googleAI } from '@genkit-ai/google-genai';
+import { googleAI, vertexAI } from '@genkit-ai/google-genai';
 import { enableGoogleCloudTelemetry } from '@genkit-ai/google-cloud';
 import { genkit } from 'genkit';
 import { loadEnvConfig } from '@next/env';
 import modelMatrix from '@/lib/ai/MODEL_MATRIX.json';
 import { GenkitClassifyPathOutputSchema } from '@/lib/genkit/schemas/classify-path';
 import { GenkitSituationIntelligenceSchema } from '@/lib/genkit/schemas/situation-intelligence';
+import { resolveGenkitGoogleProvider } from '@/lib/genkit/provider';
 
 type ModelTaskKind = keyof typeof modelMatrix.taskKinds;
 
@@ -27,19 +28,22 @@ export function modelIdForTask(kind: ModelTaskKind): string {
   return modelMatrix.taskKinds[kind].model;
 }
 
+export const genkitGoogleProvider = resolveGenkitGoogleProvider();
+const genkitGooglePlugin =
+  genkitGoogleProvider.kind === 'vertex'
+    ? vertexAI({ location: genkitGoogleProvider.location })
+    : googleAI({ apiKey: genkitGoogleProvider.apiKey });
+const genkitModelProvider = genkitGoogleProvider.kind === 'vertex' ? vertexAI : googleAI;
+
 export const ai = genkit({
   name: 'praxis-js',
-  plugins: [
-    googleAI({
-      apiKey: process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY ?? process.env.GOOGLE_AI_API_KEY,
-    }),
-  ],
+  plugins: [genkitGooglePlugin],
   promptDir: 'prompts',
-  model: googleAI.model(modelIdForTask('balanced')),
+  model: genkitModelProvider.model(modelIdForTask('balanced')),
 });
 
-export const gemini25Flash = googleAI.model(modelIdForTask('balanced'));
-export const gemini25Pro = googleAI.model(modelIdForTask('complex_reasoning'));
+export const gemini25Flash = genkitModelProvider.model(modelIdForTask('balanced'));
+export const gemini25Pro = genkitModelProvider.model(modelIdForTask('complex_reasoning'));
 
 ai.defineSchema('SituationIntelligenceSchema', GenkitSituationIntelligenceSchema);
 ai.defineSchema('ClassifyPathOutputSchema', GenkitClassifyPathOutputSchema);

@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { actionForGoSequenceKey } from '@/hooks/use-keyboard-shortcuts';
 import { PRIMARY_NAV, primaryNavForPath } from '@/lib/navigation/primary-nav';
 
 const repoRoot = path.resolve(__dirname, '../..');
@@ -31,5 +32,14 @@ describe('primary sidebar navigation contract', () => {
     expect(primaryNavForPath('/app/workbench/case-1')?.label).toBe('Library');
     expect(primaryNavForPath('/app/write/draft-1')?.label).toBe('Memo Studio');
     expect(primaryNavForPath('/app/tools/archive')?.label).toBe('Tools');
+  });
+
+  it('keeps displayed g-key shortcuts mapped to the matching destination actions', () => {
+    expect(actionForGoSequenceKey('h')).toBe('goHome');
+    expect(actionForGoSequenceKey('c')).toBe('goCores');
+    expect(actionForGoSequenceKey('l')).toBe('goLibrary');
+    expect(actionForGoSequenceKey('m')).toBe('goWrite');
+    expect(actionForGoSequenceKey('v')).toBe('goCanvas');
+    expect(actionForGoSequenceKey('a')).toBe('goTools');
   });
 });

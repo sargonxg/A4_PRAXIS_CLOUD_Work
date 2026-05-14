@@ -16,6 +16,38 @@ export interface KeyboardShortcutActions {
   closeModal?: () => void;
 }
 
+type GoSequenceAction =
+  | 'goHome'
+  | 'goCores'
+  | 'goLibrary'
+  | 'goWrite'
+  | 'goCanvas'
+  | 'goTools'
+  | 'goSettings';
+
+export function actionForGoSequenceKey(key: string): GoSequenceAction | null {
+  switch (key.toLowerCase()) {
+    case 'h':
+      return 'goHome';
+    case 'c':
+      return 'goCores';
+    case 'l':
+      return 'goLibrary';
+    case 'w':
+    case 'm':
+      return 'goWrite';
+    case 'v':
+      return 'goCanvas';
+    case 't':
+    case 'a':
+      return 'goTools';
+    case 's':
+      return 'goSettings';
+    default:
+      return null;
+  }
+}
+
 /**
  * Registers global keyboard shortcuts for power-user navigation.
  *
@@ -77,15 +109,8 @@ export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
       if (sequenceRef.current === 'g') {
         e.preventDefault();
         clearSequence();
-        if (key === 'h') actions.goHome?.();
-        if (key === 'c') actions.goCores?.();
-        if (key === 'l') actions.goLibrary?.();
-        if (key === 'w') actions.goWrite?.();
-        if (key === 'm') actions.goWrite?.();
-        if (key === 'v') actions.goCanvas?.();
-        if (key === 't') actions.goTools?.();
-        if (key === 'a') actions.goTools?.();
-        if (key === 's') actions.goSettings?.();
+        const action = actionForGoSequenceKey(key);
+        if (action) actions[action]?.();
         return;
       }
 

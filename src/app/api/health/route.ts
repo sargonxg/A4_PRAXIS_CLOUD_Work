@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { AI_REQUEST_LIMITS } from '@/lib/api/ai-request-limits';
+import { resolveGenkitGoogleProvider } from '@/lib/genkit/provider';
 
 /**
  * GET /api/health
@@ -25,6 +26,7 @@ export async function GET() {
   // --- AI Provider ---
   const hasGoogle = !!process.env.GOOGLE_AI_API_KEY;
   const hasVertex = !!process.env.GOOGLE_VERTEX_PROJECT;
+  const genkitProvider = resolveGenkitGoogleProvider();
   if (hasGoogle || hasVertex) {
     checks.ai_provider = 'ok';
   } else {
@@ -54,6 +56,8 @@ export async function GET() {
         aiRequestLimits: AI_REQUEST_LIMITS,
         highCostAiRoutesRequireAuth: true,
         calibratedAiRoutesStartToolRuns: true,
+        genkitProvider: genkitProvider.kind,
+        genkitLocation: genkitProvider.location,
         cogneeMemoryEnabled: process.env.COGNEE_ENABLED === 'true',
         cogneeMode: process.env.COGNEE_MODE || 'disabled',
       },
