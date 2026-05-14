@@ -12,7 +12,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
-import { classifyDomain } from '@/lib/domain/classifier';
+import { classifyDomainAndPath } from '@/lib/domain/classifier';
 import { classifyCaseTypeSignals } from '@/lib/ontology/case-types';
 import { classifyOntologySignals } from '@/lib/ontology/classifier';
 
@@ -55,7 +55,7 @@ export const POST = withAuth(async (req, user) => {
     /* ignore — classifier handles missing profile */
   }
 
-  const result = await classifyDomain({
+  const result = await classifyDomainAndPath({
     name: parsed.data.name,
     description: parsed.data.description,
     sourceUrls: parsed.data.sourceUrls,
@@ -76,6 +76,10 @@ export const POST = withAuth(async (req, user) => {
 
   return NextResponse.json({
     ...result,
+    pathId: result.pathId,
+    pathConfidence: result.pathConfidence,
+    pathRationale: result.pathRationale,
+    pathAlternatives: result.pathAlternatives,
     ontologyId: ontology.ontologyId,
     ontologyIds: ontology.ontologyIds,
     primaryOntologyId: ontology.primaryOntologyId,

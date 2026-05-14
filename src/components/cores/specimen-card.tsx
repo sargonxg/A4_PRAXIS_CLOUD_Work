@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils/cn';
 export type CoreSpecimenKind =
   | 'user'
   | 'situation'
+  | 'path'
   | 'source'
   | 'graph'
   | 'time'
@@ -34,6 +35,7 @@ export type CoreSpecimenKind =
 const KIND_SERIAL: Record<CoreSpecimenKind, string> = {
   user: 'USR',
   situation: 'SIT',
+  path: 'PTH',
   source: 'SRC',
   graph: 'GRF',
   time: 'TIM',
@@ -44,6 +46,7 @@ const KIND_SERIAL: Record<CoreSpecimenKind, string> = {
 const KIND_TINT: Record<CoreSpecimenKind, string> = {
   user: 'border-[#3A5A7A]/40',
   situation: 'border-[#3F7A66]/40',
+  path: 'border-[#8A5A00]/55',
   source: 'border-[#C9A86A]/55',
   graph: 'border-[#5B6B8C]/45',
   time: 'border-[#A06A3C]/45',
@@ -54,6 +57,7 @@ const KIND_TINT: Record<CoreSpecimenKind, string> = {
 const KIND_LABEL: Record<CoreSpecimenKind, string> = {
   user: 'USER CORE',
   situation: 'SITUATION CORE',
+  path: 'PATH CORE',
   source: 'SOURCE CORE',
   graph: 'GRAPH CORE',
   time: 'TIME CORE',

@@ -41,9 +41,9 @@ interface TrustResponse {
 }
 
 const BAND_CLASS: Record<TrustPosture['band'], string> = {
-  thin: 'border-amber-500/30 bg-amber-50 text-amber-800',
-  usable: 'border-slate-300 bg-slate-50 text-slate-700',
-  ready: 'border-emerald-500/30 bg-emerald-50 text-emerald-800',
+  thin: 'border-amber-500 bg-amber-100 text-amber-900 ring-1 ring-amber-500/40',
+  usable: 'border-slate-400 bg-white text-slate-800 ring-1 ring-slate-400/40',
+  ready: 'border-emerald-500 bg-emerald-100 text-emerald-900 ring-1 ring-emerald-500/40',
 };
 
 const BAND_DOT: Record<TrustPosture['band'], string> = {
@@ -96,17 +96,18 @@ export function TrustPostureChip() {
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          'flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition',
+          'flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-bold shadow-sm transition',
           BAND_CLASS[band],
-          'hover:brightness-95',
+          'hover:brightness-95 hover:shadow',
         )}
         aria-label="Open trust posture"
         title={error ? `Trust posture: ${error}` : `Trust ${band}`}
       >
-        <span aria-hidden className={cn('inline-block h-1.5 w-1.5 rounded-full', BAND_DOT[band])} />
-        <ShieldCheck className="h-3.5 w-3.5" />
-        <span className="font-mono">{label}</span>
-        <span className="hidden uppercase tracking-[0.14em] lg:inline">{band}</span>
+        <span aria-hidden className={cn('inline-block h-2 w-2 rounded-full', BAND_DOT[band])} />
+        <ShieldCheck className="h-4 w-4" />
+        <span className="hidden text-[10px] font-semibold uppercase tracking-[0.14em] sm:inline">trust</span>
+        <span className="font-mono text-sm">{label}</span>
+        <span className="hidden text-[10px] uppercase tracking-[0.14em] md:inline">{band}</span>
       </button>
       {open && (
         <TrustPostureDrawer
@@ -129,20 +130,20 @@ function TrustPostureDrawer({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Trust posture">
+    <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label="Trust posture">
       <button
         type="button"
-        className="absolute inset-0 bg-[#0F172A]/40"
+        className="absolute inset-0 bg-[#0F172A]/60 backdrop-blur-sm"
         onClick={onClose}
         aria-label="Close trust drawer backdrop"
       />
-      <aside className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-slate-200 bg-white p-5 shadow-2xl">
+      <aside className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-slate-300 bg-white p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">
-              <span className="font-mono text-slate-400">posture</span>
-              <span aria-hidden className="h-px w-4 bg-slate-300" />
-              <span>trust strata</span>
+            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">
+              <span className="font-mono text-slate-500">posture</span>
+              <span aria-hidden className="h-px w-4 bg-slate-400" />
+              <span className="text-[#8A5A00]">trust strata</span>
             </p>
             <h2 className="mt-2 font-serif text-2xl text-slate-950">
               {situationName ?? 'Current capsule'}

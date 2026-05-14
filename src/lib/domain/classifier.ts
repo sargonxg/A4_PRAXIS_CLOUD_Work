@@ -16,6 +16,8 @@ import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
 import { DOMAIN_IDS, type DomainId, isDomainId } from '@/types/domain';
 import { DOMAIN_SEEDS } from './seeds';
+import { PATH_DOMAIN_MAP, type PathId, pathIdForDomain } from '@/lib/path/types';
+import { PATH_SEEDS } from '@/lib/path/seeds';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -34,6 +36,13 @@ export interface ClassifyResult {
   confidence: number;
   rationale: string;
   alternatives: Array<{ domainId: DomainId; confidence: number }>;
+}
+
+export interface ClassifyPathResult {
+  pathId: PathId | null;
+  confidence: number;
+  rationale: string;
+  alternatives: Array<{ pathId: PathId; confidence: number }>;
 }
 
 const CONFIDENCE_FLOOR = 0.55;
@@ -143,4 +152,70 @@ ${input.sourceUrls?.length ? `Sources:\n${input.sourceUrls.slice(0, 8).map((u) =
     console.warn('[classifier] generateText failed:', err);
     return fallback;
   }
+}
+
+export function classifyPath(input: ClassifyInput & { domainId?: string; domainConfidence?: number }): ClassifyPathResult {
+  const domainPath = pathIdForDomain(input.domainId);
+  const text = `${input.name} ${input.description} ${(input.sourceUrls ?? []).join(' ')}`.toLowerCase();
+  const scores = Object.keys(PATH_DOMAIN_MAP).map((pathId) => {
+    const seed = PATH_SEEDS[pathId as PathId];
+    const terms = [
+      seed.name,
+      seed.description,
+      ...seed.toolBundle,
+      ...seed.lensTop3,
+      ...seed.frameworkPath,
+      seed.audienceDefault,
+      ...seed.sourceMix.map((item) => item.feed),
+    ].join(' ').toLowerCase().split(/[^a-z0-9-]+/).filter((term) => term.length > 3);
+    const uniqueTerms = Array.from(new Set(terms));
+    const lexical = uniqueTerms.reduce((sum, term) => sum + (text.includes(term) ? 1 : 0), 0);
+    const domainBoost = domainPath === pathId ? 6 : 0;
+    return { pathId: pathId as PathId, score: lexical + domainBoost };
+  }).sort((a, b) => b.score - a.score);
+
+  const top = scores[0];
+  if (!top || top.score <= 0) {
+    return {
+      pathId: null,
+      confidence: 0,
+      rationale: 'No path signal was strong enough; keep generic analyst baseline.',
+      alternatives: [],
+    };
+  }
+
+  const pathId = top.pathId;
+  const confidence = Math.max(0.45, Math.min(0.95, (input.domainConfidence ?? 0.55) * 0.75 + Math.min(top.score, 10) / 40));
+  const alternatives = scores
+    .filter((item) => item.pathId !== pathId && item.score > 0)
+    .slice(0, 2)
+    .map((item) => ({ pathId: item.pathId, confidence: Math.max(0.35, Math.min(0.75, item.score / Math.max(top.score + 2, 4))) }));
+
+  return {
+    pathId,
+    confidence,
+    rationale: `Path selected from ${input.domainId ?? 'domain'} plus situation keyword overlap with ${PATH_SEEDS[pathId].name}.`,
+    alternatives,
+  };
+}
+
+export async function classifyDomainAndPath(input: ClassifyInput): Promise<ClassifyResult & {
+  pathId: PathId | null;
+  pathConfidence: number;
+  pathRationale: string;
+  pathAlternatives: Array<{ pathId: PathId; confidence: number }>;
+}> {
+  const domain = await classifyDomain(input);
+  const path = classifyPath({
+    ...input,
+    domainId: domain.domainId,
+    domainConfidence: domain.confidence,
+  });
+  return {
+    ...domain,
+    pathId: path.pathId,
+    pathConfidence: path.confidence,
+    pathRationale: path.rationale,
+    pathAlternatives: path.alternatives,
+  };
 }

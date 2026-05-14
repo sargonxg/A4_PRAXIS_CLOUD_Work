@@ -1,12 +1,19 @@
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 import { SituationKnowledgeCore } from './situation-knowledge-core';
 import type { RetrievedChunk } from '@/lib/context/system-prompt-block';
+import {
+  getSourcePostureMap,
+  normalizeSourceId,
+  sourcePostureMultiplier,
+  type SourceMixWeight,
+} from '@/lib/sources/posture';
 
 export async function retrieveForProfile(opts: {
   uid: string;
   situationId?: string;
   query: string;
   topK: number;
+  sourceMix?: SourceMixWeight[];
 }): Promise<RetrievedChunk[]> {
   try {
     const profile = await getAnalystProfile(opts.uid).catch(() => null);
@@ -16,10 +23,16 @@ export async function retrieveForProfile(opts: {
     const skc = new SituationKnowledgeCore(opts.uid, situationId);
     const base = await skc.retrieve(opts.query, opts.topK * 2);
 
-    // No profile embedding → return base order
+    const postureMap = await getSourcePostureMap(base.map((chunk) => chunk.source));
+
+    // No profile embedding → return source-posture/path-reranked base order
     const profileVec = profile?.embedding?.vector;
     if (!profileVec || profileVec.length === 0) {
-      return base.slice(0, opts.topK).map(mapChunk);
+      return base
+        .map((chunk) => scoreWithSourcePosture(chunk, postureMap, opts.sourceMix))
+        .sort((a, b) => (b._profileScore ?? 0) - (a._profileScore ?? 0))
+        .slice(0, opts.topK)
+        .map(mapChunk);
     }
 
     // Rerank by a blend of (original retrieval score) + (profile cosine-sim).
@@ -32,7 +45,8 @@ export async function retrieveForProfile(opts: {
         const profileScore = obj.vector ? cosine(obj.vector, profileVec) : 0;
         const baseScore = obj.score ?? 0;
         const blended = obj.vector ? 0.5 * baseScore + 0.5 * profileScore : baseScore;
-        return { ...c, _profileScore: blended };
+        const posture = postureMap[normalizeSourceId(String((c as { source?: string }).source ?? 'unknown'))];
+        return { ...c, _profileScore: blended * sourcePostureMultiplier(posture, opts.sourceMix) };
       })
       .sort((a, b) => (b._profileScore ?? 0) - (a._profileScore ?? 0))
       .slice(0, opts.topK);
@@ -45,12 +59,24 @@ export async function retrieveForProfile(opts: {
 }
 
 function mapChunk(c: unknown): RetrievedChunk {
-  const obj = c as { id?: string; text?: string; source?: string; score?: number };
+  const obj = c as { id?: string; text?: string; source?: string; score?: number; _profileScore?: number };
   return {
     id: obj.id ?? 'unknown',
     text: obj.text ?? '',
     source: obj.source ?? 'unknown',
-    score: obj.score,
+    score: obj._profileScore ?? obj.score,
+  };
+}
+
+function scoreWithSourcePosture<T extends { source: string; score?: number }>(
+  chunk: T,
+  postureMap: Record<string, Awaited<ReturnType<typeof getSourcePostureMap>>[string]>,
+  sourceMix: SourceMixWeight[] | undefined,
+): T & { _profileScore: number } {
+  const posture = postureMap[normalizeSourceId(chunk.source)];
+  return {
+    ...chunk,
+    _profileScore: (chunk.score ?? 0) * sourcePostureMultiplier(posture, sourceMix),
   };
 }
 

@@ -1,6 +1,7 @@
 import type { AnalystProfile, Audience, Language, AnalyticalStyle } from '@/types/analyst-profile';
 import type { Situation } from '@/types/situation';
 import type { DomainId, MergedDomainConfig } from '@/types/domain';
+import type { MergedPathConfig } from '@/lib/path/types';
 import type { Episode } from '@/types/episode';
 import type { UserPreferences } from '@/types/preferences';
 import type { InteractionFrame } from '@/types/interaction';
@@ -38,6 +39,7 @@ export function renderSystemPromptBlock(opts: {
   situation: Situation | null;
   retrievedChunks: RetrievedChunk[];
   domain?: MergedDomainConfig | null;
+  path?: MergedPathConfig | null;
   domainPosture?: DomainId[];
   toolId?: string;
   episodes?: Episode[];
@@ -51,6 +53,9 @@ export function renderSystemPromptBlock(opts: {
   parts.push(renderSituationBlock(opts.situation));
   if (opts.domain && opts.domain.id !== 'generic') {
     parts.push(renderDomainBlock(opts.domain, opts.toolId));
+  }
+  if (opts.path) {
+    parts.push(renderPathBlock(opts.path, opts.toolId));
   }
   const episodesBlock = renderEpisodesBlock(opts.episodes);
   if (episodesBlock) parts.push(episodesBlock);
@@ -153,6 +158,27 @@ function renderDomainBlock(domain: MergedDomainConfig, toolId?: string): string 
     '</domain-frame>',
   ]
     .filter((l) => l.length > 0)
+    .join('\n');
+}
+
+function renderPathBlock(path: MergedPathConfig, toolId?: string): string {
+  const overridePrompt = toolId ? path.promptOverrides?.[toolId] : undefined;
+  return [
+    `<path-frame id="${escapeTag(path.id)}" domain="${escapeTag(path.domainId)}" version="${path.version}">`,
+    `  Path: ${escapeTag(path.name)}`,
+    `  Time horizon: ${escapeTag(path.timeHorizonDefault)}`,
+    `  Tool bundle: ${path.toolBundle.map(escapeTag).join(', ')}`,
+    `  Lens top 3: ${path.lensTop3.map(escapeTag).join(', ')}`,
+    `  Framework path: ${path.frameworkPath.map(escapeTag).join(' -> ')}`,
+    `  Audience default: ${escapeTag(path.audienceDefault)}`,
+    `  Source mix: ${path.sourceMix.map((item) => `${escapeTag(item.feed)}:${item.weight}`).join(', ')}`,
+    `  Prompt voice: tone=${escapeTag(path.promptVoice.tone)}; hedging=${escapeTag(path.promptVoice.hedging)}; citations=${escapeTag(path.promptVoice.citationStyle)}; jargon=${escapeTag(path.promptVoice.jargonLevel)}`,
+    `  Output defaults: format=${escapeTag(path.outputDefaults.format)}; length=${escapeTag(path.outputDefaults.length)}; footnotes=${escapeTag(path.outputDefaults.footnoteStyle)}`,
+    `  Mandatory context cores: ${path.contextRecipe.map(escapeTag).join(', ')}`,
+    overridePrompt ? `  Path-specific guidance:\n    ${escapeTag(overridePrompt)}` : '',
+    '</path-frame>',
+  ]
+    .filter((line) => line.length > 0)
     .join('\n');
 }
 

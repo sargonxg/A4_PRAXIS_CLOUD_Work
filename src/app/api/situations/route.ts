@@ -4,9 +4,10 @@ import {
   createSituationAdmin,
   listSituations,
 } from '@/lib/firebase/situations';
-import { classifyDomain } from '@/lib/domain/classifier';
+import { classifyDomainAndPath } from '@/lib/domain/classifier';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 import { isDomainId } from '@/types/domain';
+import { isPathId, pathIdForDomain } from '@/lib/path/types';
 import type { EscalationTrend } from '@/types/situation';
 import { classifyCaseTypeSignals, isCaseTypeId } from '@/lib/ontology/case-types';
 import { classifyOntologySignals } from '@/lib/ontology/classifier';
@@ -202,6 +203,8 @@ export const POST = withAuth(async (req, user) => {
       caseTypeLocked,
       domain: clientDomain,
       domainOverriddenByUser,
+      pathId: clientPathId,
+      pathOverriddenByUser,
       riskScore,
       glaslStage,
       escalationTrend,
@@ -247,11 +250,22 @@ export const POST = withAuth(async (req, user) => {
     let domain = 'generic';
     let domainConfidence = 0;
     let overridden = false;
+    let pathId: string | undefined;
+    let pathConfidence = 0;
+    let pathOverridden = false;
 
     if (typeof clientDomain === 'string' && isDomainId(clientDomain)) {
       domain = clientDomain;
       domainConfidence = 1;
       overridden = domainOverriddenByUser === true;
+      if (typeof clientPathId === 'string' && isPathId(clientPathId)) {
+        pathId = clientPathId;
+        pathConfidence = 1;
+        pathOverridden = pathOverriddenByUser === true;
+      } else {
+        pathId = pathIdForDomain(domain) ?? undefined;
+        pathConfidence = pathId ? 0.75 : 0;
+      }
     } else {
       let userPrimaryDomain: string | undefined;
       try {
@@ -260,7 +274,7 @@ export const POST = withAuth(async (req, user) => {
       } catch {
         /* ignore */
       }
-      const classification = await classifyDomain({
+      const classification = await classifyDomainAndPath({
         name,
         description: description ?? '',
         sourceUrls: filteredUrls,
@@ -268,6 +282,8 @@ export const POST = withAuth(async (req, user) => {
       });
       domain = classification.domainId;
       domainConfidence = classification.confidence;
+      pathId = classification.pathId ?? undefined;
+      pathConfidence = classification.pathConfidence;
     }
 
     const requestedOntologyIds = Array.isArray(clientOntologyIds)
@@ -353,6 +369,7 @@ export const POST = withAuth(async (req, user) => {
       domain,
       domainConfidence,
       domainOverriddenByUser: overridden,
+      ...(pathId ? { pathId, pathConfidence, pathOverriddenByUser: pathOverridden } : {}),
     });
     await emitTelemetrySafe({
       eventName: 'case.create',
@@ -364,6 +381,7 @@ export const POST = withAuth(async (req, user) => {
       latencyMs: Date.now() - startedAt,
       details: {
         domain,
+        pathId: pathId ?? null,
         primaryOntologyId,
         caseType,
         sourceUrlCount: filteredUrls.length,

@@ -6,11 +6,12 @@ import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
 import { cn } from '@/lib/utils/cn';
 
-const KIND_ORDER: CoreSpecimenKind[] = ['user', 'situation', 'source', 'graph', 'time', 'output'];
+const KIND_ORDER: CoreSpecimenKind[] = ['user', 'situation', 'path', 'source', 'graph', 'time', 'output'];
 
 const KIND_LABEL: Record<CoreSpecimenKind, string> = {
   user: 'User',
   situation: 'Situation',
+  path: 'Path',
   source: 'Source',
   graph: 'Graph',
   time: 'Time',
@@ -21,6 +22,7 @@ const KIND_LABEL: Record<CoreSpecimenKind, string> = {
 const KIND_DOT_FILLED: Record<CoreSpecimenKind, string> = {
   user: 'bg-[#3A5A7A]',
   situation: 'bg-[#3F7A66]',
+  path: 'bg-[#8A5A00]',
   source: 'bg-[#C9A86A]',
   graph: 'bg-[#5B6B8C]',
   time: 'bg-[#A06A3C]',
@@ -35,6 +37,8 @@ function dotFilled(refs: PraxisCapsule['coreRefs'] | null, kind: CoreSpecimenKin
       return Boolean(refs.userCoreId);
     case 'situation':
       return Boolean(refs.situationCoreId);
+    case 'path':
+      return Boolean(refs.pathCoreId);
     case 'source':
       return refs.sourceCoreIds.length > 0 || refs.documentCoreIds.length > 0;
     case 'graph':

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Loader2, RotateCcw, Sparkles } from 'lucide-react';
+import { X, Send, Loader2, RotateCcw, Sparkles, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import { attachedCoresFromSituation, recommendTools } from '@/lib/tools/recommend';
@@ -496,18 +496,21 @@ export function FloatingPraxis() {
 
   return (
     <>
-      {/* Floating Action Button */}
+      {/* Floating Action Button — always visible bottom-right pill.
+          On mobile sits above the bottom nav (bottom-24); on desktop bottom-6. */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
+            initial={{ scale: 0.85, opacity: 0, y: 8 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.85, opacity: 0, y: 8 }}
+            transition={{ type: 'spring', stiffness: 240, damping: 28 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-50 hidden h-14 w-14 items-center justify-center rounded-full bg-diplomatic-blue text-white shadow-lg shadow-diplomatic-blue/25 transition-transform hover:scale-105 hover:shadow-xl active:scale-95 md:flex"
+            className="fixed bottom-24 right-4 z-[60] flex items-center gap-2 rounded-full bg-diplomatic-blue px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-diplomatic-blue/40 ring-2 ring-gold-400/30 transition-transform hover:scale-105 hover:shadow-2xl hover:ring-gold-400/60 active:scale-95 md:bottom-6 md:right-6"
             aria-label="Ask PRAXIS"
           >
-            <Sparkles className="h-5 w-5 text-gold-400" />
+            <Sparkles className="h-4 w-4 text-gold-300" />
+            <span className="tracking-wide">Ask PRAXIS</span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -551,6 +554,14 @@ export function FloatingPraxis() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-calibration-modal'))}
+                    className="rounded-lg p-1.5 text-navy-400 hover:bg-navy-800 hover:text-gold-400"
+                    title="Inspect what's about to run"
+                    aria-label="Inspect calibration"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                  </button>
                   {messages.length > 0 && (
                     <button
                       onClick={clearChat}

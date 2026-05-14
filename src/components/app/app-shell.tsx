@@ -22,6 +22,8 @@ import { ErrorBoundary } from '@/components/shared/error-boundary';
 import { ToolErrorBoundary } from '@/components/praxis/tool-error-boundary';
 import { AiErrorToast } from '@/components/praxis/ai-error-toast';
 import { CoreContextStrip } from '@/components/app/core-context-strip';
+import { LiveContextReadinessCard } from '@/components/app/live-context-readiness-card';
+import { CalibrationTransparencyModal } from '@/components/app/calibration-transparency-modal';
 import { useSituationStore } from '@/stores/situation-store';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -206,6 +208,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
       {/* Onboarding: welcome modal + guided walkthrough */}
       <OnboardingWrapper />
+      {/* Live Context Readiness — pinned top-right on cores, write, ask. */}
+      {(pathname === '/app/contexts' ||
+        pathname.startsWith('/app/write') ||
+        pathname.startsWith('/app/assistant')) && <LiveContextReadinessCard />}
+      {/* Calibration transparency modal — what's about to run */}
+      <CalibrationTransparencyModal />
       {/* Floating Ask PRAXIS button + chat panel */}
       <FloatingPraxis />
       <MobileBottomNav />

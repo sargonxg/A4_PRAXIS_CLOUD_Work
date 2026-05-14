@@ -22,13 +22,16 @@ import {
   resolveDomain,
   mergeUserAndSituationDomains,
 } from '@/lib/domain/resolve';
+import { resolvePath } from '@/lib/path/resolve';
 import type { AnalystProfile } from '@/types/analyst-profile';
 import type { Situation } from '@/types/situation';
 import type { MergedDomainConfig } from '@/types/domain';
+import type { MergedPathConfig } from '@/lib/path/types';
 import type { Episode } from '@/types/episode';
 import { DEFAULT_USER_PREFERENCES, type UserPreferences } from '@/types/preferences';
 import type { InteractionFrame } from '@/types/interaction';
 import type { AdvisorFrame } from '@/types/advisor';
+import { computeContextReadiness, type ContextReadiness } from '@/lib/context/readiness';
 
 export interface ContextBlock {
   systemPromptBlock: string;
@@ -61,6 +64,7 @@ export interface ContextBlock {
    * context is thin.
    */
   contextHealth: SituationContextHealthReport;
+  readiness: ContextReadiness;
   /**
    * Effective merged domain: user.primary + user.secondaries + situation.domain.
    * Always populated — never null. Falls back to the `generic` seed if every
@@ -68,11 +72,19 @@ export interface ContextBlock {
    * and `domain.promptOverrides[toolId]` directly.
    */
   domain: MergedDomainConfig;
+  /**
+   * Effective Path Core overlay: user/situation/domain choose the baseline,
+   * then the path adds ordered tools, framework path, source mix, prompt voice,
+   * output defaults, and credit multiplier.
+   */
+  path: MergedPathConfig | null;
   provenance: {
     profileVersion: number;
     situationVersion: number | null;
     domainId: string;
     domainVersion: number;
+    pathId: string | null;
+    pathVersion: number | null;
     generatedAt: string;
   };
 }
@@ -108,6 +120,7 @@ export async function buildCalibratedContext(opts: {
    * advisor) thread. Unknown advisor ids are ignored silently.
    */
   advisorId?: string;
+  pathId?: string;
 }): Promise<ContextBlock> {
   let profile: AnalystProfile | null = null;
   let situation: Situation | null = null;
@@ -116,6 +129,7 @@ export async function buildCalibratedContext(opts: {
   let preferences: UserPreferences = DEFAULT_USER_PREFERENCES;
   let interaction: InteractionFrame | null = null;
   let advisor: AdvisorFrame | null = null;
+  let path: MergedPathConfig | null = null;
 
   // Each read wrapped individually — no single failure should abort the build
   try {
@@ -169,27 +183,6 @@ export async function buildCalibratedContext(opts: {
     }
   }
 
-  const defaultRetrievalQuery = buildDefaultRetrievalQuery({
-    situation,
-    profile,
-    toolId: opts.toolId,
-  });
-  const retrievalQuery = opts.retrievalQuery ?? defaultRetrievalQuery;
-
-  if (retrievalQuery) {
-    try {
-      const hits = await retrieveForProfile({
-        uid: opts.uid,
-        situationId: opts.situationId,
-        query: retrievalQuery,
-        topK: opts.retrievalTopK ?? 5,
-      });
-      retrievedChunks = Array.isArray(hits) ? hits : [];
-    } catch (err) {
-      console.warn('[profile-context] retrieveForProfile failed:', err);
-    }
-  }
-
   // Resolve effective domain: user primary+secondaries, then merge situation.
   let domain: MergedDomainConfig;
   try {
@@ -207,11 +200,41 @@ export async function buildCalibratedContext(opts: {
     domain = await resolveDomain('generic');
   }
 
+  try {
+    path = await resolvePath(opts.pathId ?? situation?.pathId ?? null, domain.id);
+  } catch (err) {
+    console.warn('[profile-context] path resolution failed:', err);
+    path = null;
+  }
+
+  const defaultRetrievalQuery = buildDefaultRetrievalQuery({
+    situation,
+    profile,
+    toolId: opts.toolId,
+  });
+  const retrievalQuery = opts.retrievalQuery ?? defaultRetrievalQuery;
+
+  if (retrievalQuery) {
+    try {
+      const hits = await retrieveForProfile({
+        uid: opts.uid,
+        situationId: opts.situationId,
+        query: retrievalQuery,
+        topK: opts.retrievalTopK ?? 5,
+        sourceMix: path?.sourceMix,
+      });
+      retrievedChunks = Array.isArray(hits) ? hits : [];
+    } catch (err) {
+      console.warn('[profile-context] retrieveForProfile failed:', err);
+    }
+  }
+
   const baseSystemPromptBlock = renderSystemPromptBlock({
     profile,
     situation,
     retrievedChunks,
     domain,
+    path,
     toolId: opts.toolId,
     episodes,
     preferences,
@@ -225,9 +248,11 @@ export async function buildCalibratedContext(opts: {
     retrievalCount: retrievedChunks.length,
     episodeCount: episodes.length,
   });
+  const readiness = computeContextReadiness({ profile, situation, path, retrievedChunks, episodes });
   const systemPromptBlock = [
     baseSystemPromptBlock,
     buildSituationContextHealthPrompt(contextHealth),
+    `<context-readiness score="${readiness.score}" freshness="${readiness.freshnessScore}" lensCoveragePct="${readiness.lensCoveragePct}">\n  gaps: ${readiness.sourceGapFlags.join(', ') || 'none'}\n</context-readiness>`,
   ].join('\n\n');
   const outputConstraints = profile ? renderOutputConstraints(profile) : NEUTRAL_CONSTRAINTS;
 
@@ -239,12 +264,16 @@ export async function buildCalibratedContext(opts: {
     interaction,
     advisor,
     contextHealth,
+    readiness,
     domain,
+    path,
     provenance: {
       profileVersion: profile?.meta?.version ?? 0,
       situationVersion: situation ? Date.parse(situation.updatedAt ?? '') || null : null,
       domainId: domain.id,
       domainVersion: domain.version,
+      pathId: path?.id ?? null,
+      pathVersion: path?.version ?? null,
       generatedAt: new Date().toISOString(),
     },
   };
@@ -263,6 +292,7 @@ function buildDefaultRetrievalQuery(input: {
     situation.name,
     situation.region,
     situation.domain,
+    situation.pathId,
     situation.workflowPathLabel,
     situation.description,
     ...(situation.actors ?? []).slice(0, 8),

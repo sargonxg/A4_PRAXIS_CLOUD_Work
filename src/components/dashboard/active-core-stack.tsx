@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils/cn';
 const DEFAULT_CORE_ORDER: ContextCoreId[] = [
   'user-core',
   'situation-core',
+  'path-core',
   'source-core',
   'document-core',
   'graph-core',
@@ -21,6 +22,7 @@ const CORE_ACCENTS: Record<ContextCoreId, string> = {
   'user-core': 'border-diplomatic-blue/30 bg-diplomatic-blue/10 text-navy-950',
   'team-core': 'border-slate-200 bg-slate-50 text-slate-700',
   'situation-core': 'border-gold-200 bg-gold-50 text-navy-950',
+  'path-core': 'border-emerald-200 bg-emerald-50 text-navy-950',
   'source-core': 'border-teal/25 bg-teal/10 text-navy-950',
   'document-core': 'border-sage/25 bg-sage/10 text-navy-950',
   'graph-core': 'border-indigo-200 bg-indigo-50 text-navy-950',

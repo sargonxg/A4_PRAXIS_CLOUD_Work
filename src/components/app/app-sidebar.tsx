@@ -184,10 +184,10 @@ function NavGroup({
               href={item.href}
               title={item.label}
               className={cn(
-                'flex items-center justify-center rounded-lg px-2 py-2 text-sm font-medium transition',
+                'flex cursor-pointer items-center justify-center rounded-lg px-2 py-2 text-sm font-medium transition',
                 active
-                  ? 'bg-[var(--color-app-surface-alt)] text-navy-950'
-                  : 'text-navy-500 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-800',
+                  ? 'bg-diplomatic-blue/10 text-diplomatic-blue ring-1 ring-diplomatic-blue/30'
+                  : 'text-navy-700 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-950',
               )}
             >
               <Icon className="h-[18px] w-[18px] shrink-0" />
@@ -231,10 +231,10 @@ function NavGroup({
                 key={item.id}
                 href={item.href}
                 className={cn(
-                  'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition',
+                  'group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition',
                   active
-                    ? 'bg-[var(--color-app-surface-alt)] text-navy-950'
-                    : 'text-navy-500 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-800',
+                    ? 'bg-diplomatic-blue/10 text-diplomatic-blue ring-1 ring-diplomatic-blue/30'
+                    : 'text-navy-700 hover:bg-[var(--color-app-surface-alt)] hover:text-navy-950',
                 )}
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" />

@@ -3,6 +3,7 @@ import { withAuth } from '@/lib/api/with-auth';
 import { isAdminPrincipal } from '@/lib/auth/admin-gate';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import type { ReadAuditEvent } from '@/lib/audit/read-ledger';
+import { getSourcePostureMap } from '@/lib/sources/posture';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,8 +33,10 @@ export const GET = withAuth(async (request, user) => {
     .slice(0, limit);
 
   const includeRollups = url.searchParams.get('rollups') === '1' || url.searchParams.get('aggregate') === '1';
+  const sourcePostures = await getSourcePostureMap(events.flatMap((event) => event.sourceIds ?? []));
   return NextResponse.json({
     events,
+    sourcePostures,
     filters,
     limit,
     ...(includeRollups ? { rollups: buildRollups(events) } : {}),

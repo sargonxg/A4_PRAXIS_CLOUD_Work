@@ -28,6 +28,7 @@ export interface CapsuleSlotProps {
 const EMPTY_TITLE: Record<CoreSpecimenKind, string> = {
   user: 'Set posture',
   situation: 'Attach situation',
+  path: '+ Pick path',
   source: 'Add receipts',
   graph: 'Open graph',
   time: 'Set horizon',

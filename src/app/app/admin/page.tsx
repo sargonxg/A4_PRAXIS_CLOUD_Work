@@ -1,9 +1,10 @@
-import { Activity, Brain, CheckCircle2, CreditCard, Database, FileText, KeyRound, ShieldCheck, Users } from 'lucide-react';
+import { Activity, Brain, CheckCircle2, CreditCard, Database, FileText, KeyRound, Route, ShieldCheck, Users } from 'lucide-react';
 import AdvisorFeedPage from '@/app/app/admin/advisor-feed/page';
 import AdvisorsPage from '@/app/app/admin/advisors/page';
 import DiagnosticsPage from '@/app/app/admin/diagnostics/page';
 import DomainsPage from '@/app/app/admin/domains/page';
 import OperatorConsolePage from '@/app/app/admin/operator-console/page';
+import PathsPage from '@/app/app/admin/paths/page';
 import UsersPage from '@/app/app/admin/users/page';
 import { getAdminGateStatus } from '@/lib/auth/admin-gate';
 import { getAdminSession } from '@/lib/auth/admin-session';
@@ -64,9 +65,16 @@ const adminTools = [
     description: 'Tune lens weights, source preferences, frameworks, and prompt overrides.',
     icon: Database,
   },
+  {
+    id: 'paths',
+    href: '/app/admin?tab=paths',
+    title: 'Path Core',
+    description: 'Tune path overlays for tools, source mix, prompt voice, time horizon, and credit multipliers.',
+    icon: Route,
+  },
 ];
 
-type AdminTab = 'overview' | 'operator' | 'diagnostics' | 'users' | 'advisors' | 'advisor-feed' | 'domains';
+type AdminTab = 'overview' | 'operator' | 'diagnostics' | 'users' | 'advisors' | 'advisor-feed' | 'domains' | 'paths';
 
 const canonicalTabs: Array<{ id: AdminTab; label: string; href: string }> = [
   { id: 'overview', label: 'Overview', href: '/app/admin' },
@@ -76,6 +84,7 @@ const canonicalTabs: Array<{ id: AdminTab; label: string; href: string }> = [
   { id: 'advisors', label: 'Advisors', href: '/app/admin?tab=advisors' },
   { id: 'advisor-feed', label: 'Advisor Feed', href: '/app/admin?tab=advisor-feed' },
   { id: 'domains', label: 'Domains', href: '/app/admin?tab=domains' },
+  { id: 'paths', label: 'Paths', href: '/app/admin?tab=paths' },
 ];
 
 function normalizeAdminTab(tab: string | string[] | undefined): AdminTab {
@@ -91,6 +100,7 @@ function AdminTabContent({ tab }: { tab: AdminTab }) {
   if (tab === 'advisors') return <AdvisorsPage />;
   if (tab === 'advisor-feed') return <AdvisorFeedPage />;
   if (tab === 'domains') return <DomainsPage />;
+  if (tab === 'paths') return <PathsPage />;
   return (
     <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {adminTools.map((tool) => {

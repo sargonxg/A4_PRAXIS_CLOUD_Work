@@ -1,6 +1,7 @@
 import type { CorpusSearchResponse } from '@/types/corpus';
 import type { Situation } from '@/types/situation';
 import type { ConflictGraphSnapshot } from '@/lib/ai/tools';
+import type { PathConfig } from '@/lib/path/types';
 
 const MAX_GRAPH_EXAMPLES = 10;
 
@@ -20,6 +21,50 @@ For substantial answers, use this shape:
 - Next step: recommend the smallest useful action, source repair, workflow, or output.
 
 Do not overclaim. If the saved context is thin, say so and explain exactly what evidence would improve the answer.`;
+}
+
+const FRAMEWORK_LABELS: Record<string, string> = {
+  glasl_escalation: 'Glasl escalation gauge',
+  stedman_spoilers: 'Stedman spoiler read',
+  fearon_rationalist: 'Fearon bargaining scan',
+  fisher_ury: 'Fisher-Ury interests/options pass',
+  putnam_two_level: 'Putnam two-level constraints pass',
+  zartman_ripeness: 'Zartman ripeness scan',
+  ocha_humanitarian: 'OCHA access and needs pass',
+  ipc_food_security: 'IPC severity screen',
+  lederach_pyramid: 'Lederach relationship/system layer',
+  galtung_triangle: 'Galtung violence triangle',
+  ihl: 'IHL protection screen',
+  burton_needs: 'Burton human-needs read',
+  mitchell_agle_wood: 'Stakeholder salience pass',
+  barnett_duvall_power: 'Barnett-Duvall power scan',
+  inform_risk: 'INFORM risk cascade',
+  galtung_cultural: 'Galtung cultural violence screen',
+  galtung_structural: 'Galtung structural violence screen',
+};
+
+export function buildAskPraxisPathFrameworkBlock(path: PathConfig | null | undefined): string {
+  if (!path) {
+    return `## Ask PRAXIS Path Orchestration
+No specialist path is active. Use the generic policy analyst baseline and make domain assumptions explicit.`;
+  }
+
+  const steps = path.frameworkPath.map((frameworkId, index) => {
+    const label = FRAMEWORK_LABELS[frameworkId] ?? frameworkId.replace(/[_-]/g, ' ');
+    return `${index + 1}. ${label} (${frameworkId})`;
+  });
+
+  return `## Ask PRAXIS Path Orchestration
+Active path: ${path.name} (${path.id}) v${path.version}
+Time horizon: ${path.timeHorizonDefault}
+Audience: ${path.audienceDefault}
+Lens boosts: ${path.lensTop3.join(', ')}
+Prompt voice: tone=${path.promptVoice.tone}; hedging=${path.promptVoice.hedging}; citation=${path.promptVoice.citationStyle}; jargon=${path.promptVoice.jargonLevel}
+
+Ordered reasoning steps:
+${steps.join('\n')}
+
+For substantial answers, stream a compact "Framework pass" before the synthesis. Keep each step short, cite saved corpus or graph evidence when available, and mark unsupported steps as gaps instead of filling them with generic analysis. The final answer should integrate the steps rather than listing frameworks for their own sake.`;
 }
 
 export function buildAskPraxisSituationSourcePosture(situation: Situation): string {

@@ -134,13 +134,15 @@ async function deductCreditsAdmin(
   uid: string,
   operationType: string,
   description: string,
+  costMultiplier = 1,
 ): Promise<{ success: boolean; remainingCredits: number; reason?: 'insufficient' | 'unmapped' }> {
   const adminDb = getAdminDbOrThrow();
-  const cost = AI_CREDIT_COSTS[operationType];
-  if (cost === undefined) {
+  const baseCost = AI_CREDIT_COSTS[operationType];
+  if (baseCost === undefined) {
     console.error(`[credits] Unmapped operation type: "${operationType}" — refusing to default`);
     return { success: false, remainingCredits: 0, reason: 'unmapped' };
   }
+  const cost = Math.max(1, Math.ceil(baseCost * Math.max(0.25, Math.min(costMultiplier, 3))));
   const userRef = adminDb.collection('users').doc(uid);
 
   const result: { success: boolean; remainingCredits: number; reason?: 'insufficient' | 'unmapped' } =
@@ -321,13 +323,14 @@ export async function checkAndDeductCreditsForUid(
   operationType: string,
   description: string,
   situationId?: string,
+  opts: { costMultiplier?: number } = {},
 ): Promise<{ allowed: true } | { allowed: false; response: Response }> {
-  const cost = AI_CREDIT_COSTS[operationType] ?? 1;
+  const cost = Math.max(1, Math.ceil((AI_CREDIT_COSTS[operationType] ?? 1) * Math.max(0.25, Math.min(opts.costMultiplier ?? 1, 3))));
   try {
     const capGate = await checkAndRecordSituationCostCap(uid, situationId, cost);
     if (!capGate.allowed) return capGate;
 
-    const result = await deductCreditsAdmin(uid, operationType, description);
+    const result = await deductCreditsAdmin(uid, operationType, description, opts.costMultiplier ?? 1);
     if (!result.success) {
       console.warn(
         `[credits] Soft-metering ${operationType}; uid=${uid} reason=${result.reason ?? 'unknown'} has ${result.remainingCredits}, needs ${cost}`

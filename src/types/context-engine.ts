@@ -7,6 +7,7 @@ export interface ContextPackageCoreRefs {
   userCoreId?: string;
   teamCoreId?: string;
   situationCoreId: string;
+  pathCoreId?: string;
   sourceCoreIds: string[];
   documentCoreIds: string[];
   graphCoreId?: string;

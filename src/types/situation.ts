@@ -162,6 +162,16 @@ export interface Situation {
   domainOverriddenByUser?: boolean;
   domainVersion?: number;
   domainClassifiedAt?: string | null;
+  /**
+   * Path Core overlay selected for this situation. The path is a domain-specific
+   * operator profile: ordered tool bundle, framework path, source mix, time
+   * horizon, prompt voice, and output defaults.
+   */
+  pathId?: string;
+  pathConfidence?: number;
+  pathOverriddenByUser?: boolean;
+  pathVersion?: number;
+  pathClassifiedAt?: string | null;
   // Per-situation preferences — all optional, default gracefully when absent.
   // See: src/app/app/situations/[id]/settings/page.tsx (Preferences tab).
   languageOverride?: string;
@@ -233,6 +243,9 @@ export interface CreateSituationInput {
   domain?: string;
   domainConfidence?: number;
   domainOverriddenByUser?: boolean;
+  pathId?: string;
+  pathConfidence?: number;
+  pathOverriddenByUser?: boolean;
   riskScore?: number;
   glaslStage?: number | null;
   escalationTrend?: EscalationTrend;

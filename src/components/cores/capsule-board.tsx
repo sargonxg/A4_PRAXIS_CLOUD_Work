@@ -20,7 +20,7 @@ interface CapsuleBoardProps {
   situationId?: string;
 }
 
-const SLOT_ORDER: CoreSpecimenKind[] = ['user', 'situation', 'source', 'graph', 'time', 'output'];
+const SLOT_ORDER: CoreSpecimenKind[] = ['user', 'situation', 'path', 'source', 'graph', 'time', 'output'];
 
 function emptyBoard(): CapsuleSlotData[] {
   return SLOT_ORDER.map((kind) => ({ slotId: kind, kind, title: '', coreId: null }));
@@ -41,6 +41,13 @@ function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
       kind: 'situation',
       title: refs.situationCoreId ?? '',
       coreId: refs.situationCoreId,
+    },
+    {
+      slotId: refs.pathCoreId ? `path:${refs.pathCoreId}` : 'path',
+      kind: 'path',
+      title: refs.pathCoreId ?? '',
+      essence: refs.pathCoreId ? undefined : '+ pick path — operator profile sets tools, frameworks, voice.',
+      coreId: refs.pathCoreId,
     },
     {
       slotId: refs.sourceCoreIds[0] ? `source:${refs.sourceCoreIds[0]}` : 'source',

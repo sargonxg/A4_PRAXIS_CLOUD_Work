@@ -119,15 +119,15 @@ export function ActivityPanel() {
 
   return (
     <>
-      {/* Floating trigger button — sits ABOVE the FloatingPraxis dome (which is
-          fixed bottom-6 right-6 h-14) so the two never overlap. The pill at
-          bottom-24 right-6 lands ~96px up from the corner with a small gap. */}
+      {/* Floating trigger button — sits to the LEFT of the Ask PRAXIS pill so
+          neither overlaps. Ask PRAXIS owns bottom-right (bottom-24 mobile /
+          bottom-6 desktop). Activity sits at bottom-6 left-6. */}
       <button
         onClick={toggle}
         title="Activity Panel (running tools + recent failures)"
         aria-label="Open activity panel"
         className={cn(
-          'fixed bottom-24 right-6 z-50 flex h-8 w-8 items-center justify-center rounded-full shadow-lg transition-all',
+          'fixed bottom-6 left-6 z-50 flex h-8 w-8 items-center justify-center rounded-full shadow-lg transition-all',
           activeCount > 0
             ? 'bg-blue-600 text-white ring-2 ring-blue-400/40'
             : errorCount > 0
@@ -160,7 +160,7 @@ export function ActivityPanel() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="fixed bottom-36 right-6 z-50 flex w-[420px] flex-col overflow-hidden rounded-xl border border-navy-700 bg-navy-950 shadow-2xl"
+            className="fixed bottom-16 left-6 z-50 flex w-[420px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-xl border border-navy-700 bg-navy-950 shadow-2xl"
             style={{ maxHeight: '60vh' }}
           >
             {/* Header */}

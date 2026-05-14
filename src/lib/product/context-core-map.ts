@@ -12,6 +12,7 @@ export type ContextCoreId =
   | 'user-core'
   | 'team-core'
   | 'situation-core'
+  | 'path-core'
   | 'source-core'
   | 'document-core'
   | 'graph-core'
@@ -83,6 +84,16 @@ export const CONTEXT_CORES: ContextCoreDefinition[] = [
     currentPosture: 'live',
   },
   {
+    id: 'path-core',
+    label: 'Path Core',
+    ownerScope: 'situation',
+    memoryLayer: 'path-config',
+    summary: 'The selected domain operator overlay: tool bundle, framework path, time horizon, source mix, prompt voice, and output defaults.',
+    backedBy: ['paths/{pathId}', 'situation pathId', 'calibration path-frame'],
+    multiUserBehavior: 'Path selection is situation-scoped and can be changed through admin-governed versioned path config.',
+    currentPosture: 'live',
+  },
+  {
     id: 'source-core',
     label: 'Source Core',
     ownerScope: 'situation',
@@ -125,15 +136,15 @@ export const CONTEXT_CORES: ContextCoreDefinition[] = [
 ] as const;
 
 export const CONSOLIDATED_TOOL_CONTEXT_CORES: Record<string, ContextCoreId[]> = {
-  'situation-dashboard': ['praxis-core', 'user-core', 'situation-core', 'source-core', 'graph-core', 'output-core'],
-  'context-builder': ['praxis-core', 'user-core', 'team-core', 'situation-core'],
-  'ask-praxis': ['praxis-core', 'user-core', 'team-core', 'situation-core', 'source-core', 'document-core', 'graph-core', 'output-core'],
+  'situation-dashboard': ['praxis-core', 'user-core', 'situation-core', 'path-core', 'source-core', 'graph-core', 'output-core'],
+  'context-builder': ['praxis-core', 'user-core', 'team-core', 'situation-core', 'path-core'],
+  'ask-praxis': ['praxis-core', 'user-core', 'team-core', 'situation-core', 'path-core', 'source-core', 'document-core', 'graph-core', 'output-core'],
   'research-sources': ['praxis-core', 'situation-core', 'source-core', 'document-core'],
   documents: ['user-core', 'situation-core', 'source-core', 'document-core'],
   graphops: ['praxis-core', 'situation-core', 'source-core', 'document-core', 'graph-core'],
   timeline: ['situation-core', 'source-core', 'graph-core'],
   'actors-stakeholders': ['situation-core', 'source-core', 'graph-core', 'output-core'],
-  'briefing-studio': ['praxis-core', 'user-core', 'team-core', 'situation-core', 'source-core', 'document-core', 'graph-core', 'output-core'],
+  'briefing-studio': ['praxis-core', 'user-core', 'team-core', 'situation-core', 'path-core', 'source-core', 'document-core', 'graph-core', 'output-core'],
 };
 
 const TOOL_TO_AREA: Record<string, ProductExperienceAreaId> = {

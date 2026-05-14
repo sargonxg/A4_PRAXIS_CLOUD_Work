@@ -83,10 +83,12 @@ function checkAiRequestLimits(body: Record<string, unknown>): Response | null {
 
 export function enrichCalibrationWithToolBackbone(calibration: ContextBlock, toolId: string): ContextBlock {
   const canonical = canonicalToolId(toolId);
+  const pathOverride = calibration.path?.promptOverrides?.[canonical] ?? calibration.path?.promptOverrides?.[toolId];
   const toolBackbone = [
     buildToolPromptContract(canonical),
     buildToolContextBlueprintPrompt(canonical),
-  ].join('\n\n');
+    pathOverride ? `<path-tool-override path="${calibration.path?.id}" tool="${canonical}">\n${pathOverride}\n</path-tool-override>` : '',
+  ].filter(Boolean).join('\n\n');
   return {
     ...calibration,
     systemPromptBlock: `${calibration.systemPromptBlock}\n\n${toolBackbone}`,
@@ -126,6 +128,7 @@ export function withCalibration(
       const routePath = new URL(req.url).pathname;
       let body: Record<string, unknown> = {};
       let situationId: string | undefined;
+      let pathId: string | undefined;
       let providedSituation: Partial<Situation> | null = null;
       try {
         const raw = await req.clone().text();
@@ -150,10 +153,14 @@ export function withCalibration(
         const limitResponse = checkAiRequestLimits(body);
         if (limitResponse) return limitResponse;
         if (typeof body.situationId === 'string') situationId = body.situationId;
+        if (typeof body.pathId === 'string') pathId = body.pathId;
         if (!situationId && body.situation && typeof body.situation === 'object') {
           const situation = body.situation as { id?: unknown };
           providedSituation = body.situation as Partial<Situation>;
           if (typeof situation.id === 'string') situationId = situation.id;
+          if (!pathId && typeof (situation as { pathId?: unknown }).pathId === 'string') {
+            pathId = (situation as { pathId: string }).pathId;
+          }
         }
       } catch { /* non-JSON body OK */ }
       situationId = opts.situationId?.(req, body) ?? situationId;
@@ -269,12 +276,6 @@ export function withCalibration(
         return response;
       }
 
-      // Credit gate (non-demo)
-      if (!user.isDemo) {
-        const gate = await checkAndDeductCreditsForUid(user.uid, creditOpType, `tool:${toolId}`, situationId);
-        if (!gate.allowed) return gate.response;
-      }
-
       // Build calibration context (analyst profile + situation + SKC retrieval)
       const retrievalQuery = opts.retrievalQuery?.(req, body);
       const calibration = await buildCalibratedContext({
@@ -282,7 +283,16 @@ export function withCalibration(
         situationId,
         toolId,
         retrievalQuery,
+        pathId,
       });
+      // Credit gate (non-demo). Path Core may apply a multiplier for heavier
+      // prompt voice, drafting posture, or source mix requirements.
+      if (!user.isDemo) {
+        const gate = await checkAndDeductCreditsForUid(user.uid, creditOpType, `tool:${toolId}`, situationId, {
+          costMultiplier: calibration.path?.creditMultiplier ?? 1,
+        });
+        if (!gate.allowed) return gate.response;
+      }
       const enrichedCalibration = enrichCalibrationWithToolBackbone(calibration, toolId);
       const calibratedWithPromptHealth = {
         ...enrichedCalibration,
@@ -299,6 +309,9 @@ export function withCalibration(
         latencyMs: Date.now() - requestStartedAt,
         details: {
           profileVersion: calibratedWithPromptHealth.provenance.profileVersion ?? null,
+          pathId: calibratedWithPromptHealth.provenance.pathId ?? null,
+          pathVersion: calibratedWithPromptHealth.provenance.pathVersion ?? null,
+          pathCreditMultiplier: calibratedWithPromptHealth.path?.creditMultiplier ?? 1,
           promptHealthState: promptHealth.state,
           promptHealthScore: promptHealth.score,
           forceRun: body.forceRun === true,
@@ -498,6 +511,11 @@ export function withCalibration(
 
       contextAware.headers.forEach((value, key) => response.headers.set(key, value));
       response.headers.set('X-Praxis-Context-Health-State', promptHealth.state);
+      if (calibratedWithPromptHealth.path) {
+        response.headers.set('X-Praxis-Path-Id', calibratedWithPromptHealth.path.id);
+        response.headers.set('X-Praxis-Path-Version', String(calibratedWithPromptHealth.path.version));
+        response.headers.set('X-Praxis-Credit-Multiplier', String(calibratedWithPromptHealth.path.creditMultiplier ?? 1));
+      }
 
       return withFirewall({
         req,

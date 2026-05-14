@@ -15,6 +15,7 @@ export interface CapsuleCoreRefs {
   userCoreId: string | null;
   teamCoreId: string | null;
   situationCoreId: string | null;
+  pathCoreId?: string | null;
   sourceCoreIds: string[];
   documentCoreIds: string[];
   graphCoreId: string | null;
@@ -330,6 +331,7 @@ function normalizeCoreRefs(input: Partial<CapsuleCoreRefs> | unknown): CapsuleCo
     userCoreId: stringOrNull(body.userCoreId),
     teamCoreId: stringOrNull(body.teamCoreId),
     situationCoreId: stringOrNull(body.situationCoreId),
+    pathCoreId: stringOrNull(body.pathCoreId),
     sourceCoreIds: cleanStringArray(body.sourceCoreIds).slice(0, 50),
     documentCoreIds: cleanStringArray(body.documentCoreIds).slice(0, 50),
     graphCoreId: stringOrNull(body.graphCoreId),
@@ -362,6 +364,7 @@ function computeCapsuleHealth(input: Partial<CapsuleCoreRefs> | unknown): Contex
   const signals: ContextHealth['signals'] = [
     signal('user-core', refs.userCoreId ? 'ready' : 'thin', refs.userCoreId ? 85 : 45, refs.userCoreId ? 'User Core selected.' : 'User Core is inferred or unset.'),
     signal('situation-core', refs.situationCoreId ? 'ready' : 'missing', refs.situationCoreId ? 85 : 0, refs.situationCoreId ? 'Situation Core selected.' : 'No Situation Core selected.'),
+    signal('path-core', refs.pathCoreId ? 'ready' : 'missing', refs.pathCoreId ? 85 : 0, refs.pathCoreId ? 'Path Core selected.' : 'No Path Core selected.'),
     signal('source-core', refs.sourceCoreIds.length ? 'ready' : 'thin', refs.sourceCoreIds.length ? 75 : 35, refs.sourceCoreIds.length ? `${refs.sourceCoreIds.length} Source Core reference(s).` : 'No Source Core references.'),
     signal('document-core', refs.documentCoreIds.length ? 'ready' : 'thin', refs.documentCoreIds.length ? 75 : 35, refs.documentCoreIds.length ? `${refs.documentCoreIds.length} Document Core reference(s).` : 'No Document Core references.'),
     signal('graph-core', refs.graphCoreId ? 'ready' : 'thin', refs.graphCoreId ? 70 : 35, refs.graphCoreId ? 'Graph Core selected.' : 'Graph Core not selected.'),
