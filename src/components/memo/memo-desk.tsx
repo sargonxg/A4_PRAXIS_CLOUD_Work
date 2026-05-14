@@ -44,6 +44,7 @@ import {
   PanelLeft,
   PanelRight,
   Quote,
+  Save,
   Send,
   ShieldCheck,
   Sparkles,
@@ -55,6 +56,7 @@ import { GapFillerRail } from '@/components/memo/GapFillerRail';
 import { useSituationStore } from '@/stores/situation-store';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
+import type { MemoBlock } from '@/types/memo';
 
 interface AskTurn {
   id: string;
@@ -62,6 +64,33 @@ interface AskTurn {
   text: string;
   citations?: Array<{ id: string; source: string; span?: string }>;
   ts: number;
+}
+
+interface CapsuleSummary {
+  capsuleId: string;
+  label?: string;
+  version: number;
+  health?: { score?: number; missingCores?: string[]; warnings?: string[] };
+  activeForSituationIds?: string[];
+}
+
+interface TrustPostureSummary {
+  trustPosture?: {
+    score: number;
+    band: 'thin' | 'usable' | 'ready';
+    contributors: Array<{
+      id: string;
+      signal: string;
+      score: number;
+      detail: string;
+      clickTarget?: { href: string; label: string };
+    }>;
+  };
+  capsule?: {
+    capsuleId: string;
+    version: number;
+    healthScore: number;
+  };
 }
 
 const SLASH_COMMANDS = [
@@ -122,10 +151,42 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   const [turns, setTurns] = useState<AskTurn[]>([]);
   const [askInput, setAskInput] = useState('');
   const [askPending, setAskPending] = useState(false);
+  const [capsules, setCapsules] = useState<CapsuleSummary[]>([]);
+  const [trustPosture, setTrustPosture] = useState<TrustPostureSummary | null>(null);
+  const [contextLoading, setContextLoading] = useState(false);
+  const [serverSaveState, setServerSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [exportOpen, setExportOpen] = useState(false);
   const [mobilePane, setMobilePane] = useState<'library' | 'ask' | null>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const storageKey = `${STORAGE_PREFIX}${documentId}`;
+  const activeCapsule = useMemo(() => {
+    if (!activeSituation?.id) return capsules[0] ?? null;
+    return capsules.find((capsule) => capsule.activeForSituationIds?.includes(activeSituation.id)) ?? capsules[0] ?? null;
+  }, [activeSituation?.id, capsules]);
+  const trustScore =
+    trustPosture?.trustPosture?.score ??
+    trustPosture?.capsule?.healthScore ??
+    activeCapsule?.health?.score ??
+    null;
+  const trustBand = trustPosture?.trustPosture?.band ?? (trustScore === null ? 'thin' : trustScore >= 75 ? 'ready' : trustScore >= 45 ? 'usable' : 'thin');
+  const contextChecklist = useMemo(() => {
+    const contributors = trustPosture?.trustPosture?.contributors ?? [];
+    if (contributors.length > 0) return contributors.slice(0, 5);
+    return [
+      {
+        id: 'situation',
+        signal: 'situation context',
+        score: activeSituation?.id ? 70 : 15,
+        detail: activeSituation?.name ? `${activeSituation.name} is attached to this memo.` : 'Attach a Situation Core before drafting decisions.',
+      },
+      {
+        id: 'sources',
+        signal: 'source coverage',
+        score: sources.length > 0 ? 65 : 10,
+        detail: sources.length > 0 ? `${sources.length} source URL(s) are available for citations.` : 'Add sources so claims can carry receipts.',
+      },
+    ];
+  }, [activeSituation?.id, activeSituation?.name, sources.length, trustPosture]);
 
   const editor = useEditor({
     extensions: [
@@ -193,6 +254,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
           JSON.stringify({ title, html: editor.getHTML(), ts: Date.now() }),
         );
         setSavedAt(new Date().toISOString());
+        setServerSaveState((state) => (state === 'saved' ? 'idle' : state));
       } catch {
         /* ignore quota */
       }
@@ -202,6 +264,45 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
       editor.off('update', handler);
     };
   }, [editor, storageKey, title]);
+
+  useEffect(() => {
+    let alive = true;
+    async function loadContext() {
+      setContextLoading(true);
+      try {
+        const query = activeSituation?.id ? `?situationId=${encodeURIComponent(activeSituation.id)}` : '';
+        const capsuleRes = await fetch(`/api/context/capsules${query}`, { credentials: 'include' });
+        const capsuleBody = capsuleRes.ok
+          ? ((await capsuleRes.json()) as { capsules?: CapsuleSummary[] })
+          : { capsules: [] };
+        if (!alive) return;
+        const nextCapsules = capsuleBody.capsules ?? [];
+        setCapsules(nextCapsules);
+
+        const capsule = activeSituation?.id
+          ? nextCapsules.find((item) => item.activeForSituationIds?.includes(activeSituation.id)) ?? nextCapsules[0]
+          : nextCapsules[0];
+        if (capsule || activeSituation?.id) {
+          const params = new URLSearchParams();
+          if (activeSituation?.id) params.set('situationId', activeSituation.id);
+          if (capsule?.capsuleId) params.set('capsuleId', capsule.capsuleId);
+          const trustRes = await fetch(`/api/context/trust-posture?${params.toString()}`, { credentials: 'include' });
+          if (trustRes.ok && alive) {
+            setTrustPosture((await trustRes.json()) as TrustPostureSummary);
+          }
+        }
+      } catch (err) {
+        console.warn('[memo-desk] context posture load failed:', err);
+        if (alive) setTrustPosture(null);
+      } finally {
+        if (alive) setContextLoading(false);
+      }
+    }
+    void loadContext();
+    return () => {
+      alive = false;
+    };
+  }, [activeSituation?.id]);
 
   const runSlashCommand = useCallback(
     (id: typeof SLASH_COMMANDS[number]['id']) => {
@@ -300,6 +401,11 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
           message: trimmed,
           situationId: activeSituation?.id,
           surface: 'memo-desk',
+          capsuleId: activeCapsule?.capsuleId,
+          capsuleVersion: activeCapsule?.version,
+          memoTitle: title,
+          memoDraft: editor?.getText().slice(0, 6000),
+          sourceUrls: sources,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { reply?: string; text?: string; output?: string };
@@ -332,18 +438,13 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
     // for what the analyst sees; the API record is the audit trail.
     let memoId: string | null = null;
     try {
-      const capsuleRes = await fetch('/api/context/capsules', { credentials: 'include' });
-      const capsuleBody = capsuleRes.ok
-        ? ((await capsuleRes.json()) as { capsules: Array<{ capsuleId: string; version: number }> })
-        : { capsules: [] };
-      const active = capsuleBody.capsules[0] ?? null;
       const res = await fetch('/api/memos/from-ask', {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          capsuleId: active?.capsuleId ?? 'default',
-          capsuleVersion: active?.version ?? 1,
+          capsuleId: activeCapsule?.capsuleId ?? 'default',
+          capsuleVersion: activeCapsule?.version ?? 1,
           situationId: activeSituation?.id ?? null,
           askTurnId: turn.id,
           sourceReceipts: turn.citations ?? [],
@@ -360,6 +461,49 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
       ? `<p data-memo-source-id="${escapeAttr(memoId)}">${turn.text}</p>`
       : `<p>${turn.text}</p>`;
     editor.chain().focus().insertContent(html).run();
+  }
+
+  function insertSourceCitation(url: string, index: number) {
+    if (!editor) return;
+    const label = hostnameOf(url);
+    editor
+      .chain()
+      .focus()
+      .insertContent(
+        ` <a href="${escapeAttr(url)}" data-source-url="${escapeAttr(url)}">[${index + 1}] ${escapeAttr(label)}</a>`,
+      )
+      .run();
+  }
+
+  async function saveDraftToServer() {
+    if (!editor) return;
+    setServerSaveState('saving');
+    try {
+      const html = editor.getHTML();
+      const blocks = memoHtmlToBlocks(html);
+      const res = await fetch('/api/memos', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          caseId: activeSituation?.id ?? 'memo-studio',
+          templateId: 'policy-memo',
+          title,
+          blocks,
+          graphSnapshotId: activeCapsule
+            ? `${activeCapsule.capsuleId}-v${activeCapsule.version}`
+            : `memo-studio-${Date.now().toString(36)}`,
+          status: 'draft',
+          changeNote: 'Saved from Memo Studio with active context capsule.',
+        }),
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      setServerSaveState('saved');
+      setSavedAt(new Date().toISOString());
+    } catch (err) {
+      console.warn('[memo-desk] server save failed:', err);
+      setServerSaveState('error');
+    }
   }
 
   function htmlToMarkdown(html: string): string {
@@ -462,6 +606,25 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
         </span>
         <button
           type="button"
+          onClick={() => { void saveDraftToServer(); }}
+          disabled={serverSaveState === 'saving'}
+          aria-label="Save draft"
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-semibold transition sm:px-3',
+            serverSaveState === 'saved'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              : serverSaveState === 'error'
+                ? 'border-crimson/20 bg-crimson/5 text-crimson'
+                : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50',
+          )}
+        >
+          <Save className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">
+            {serverSaveState === 'saving' ? 'Saving' : serverSaveState === 'saved' ? 'Saved' : serverSaveState === 'error' ? 'Retry save' : 'Save draft'}
+          </span>
+        </button>
+        <button
+          type="button"
           onClick={() => setLibraryOpen((v) => !v)}
           aria-label="Toggle library"
           className="hidden h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 lg:inline-flex"
@@ -560,6 +723,53 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                 href="/app/workbench"
               />
             </div>
+            <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Active capsule</p>
+                  <p className="mt-1 truncate text-sm font-semibold text-slate-950">
+                    {activeCapsule?.label ?? activeCapsule?.capsuleId ?? 'No capsule attached'}
+                  </p>
+                </div>
+                <span
+                  className={cn(
+                    'rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]',
+                    trustBand === 'ready'
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : trustBand === 'usable'
+                        ? 'bg-amber-50 text-amber-700'
+                        : 'bg-slate-100 text-slate-600',
+                  )}
+                >
+                  {contextLoading ? 'checking' : trustBand}
+                </span>
+              </div>
+              <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-md bg-slate-50 px-2 py-1.5">
+                  <dt className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400">Score</dt>
+                  <dd className="mt-0.5 text-sm font-semibold text-slate-900">{trustScore ?? '--'}</dd>
+                </div>
+                <div className="rounded-md bg-slate-50 px-2 py-1.5">
+                  <dt className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400">Version</dt>
+                  <dd className="mt-0.5 text-sm font-semibold text-slate-900">v{activeCapsule?.version ?? 1}</dd>
+                </div>
+                <div className="rounded-md bg-slate-50 px-2 py-1.5">
+                  <dt className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400">Sources</dt>
+                  <dd className="mt-0.5 text-sm font-semibold text-slate-900">{sources.length}</dd>
+                </div>
+              </dl>
+              <div className="mt-3 space-y-1.5">
+                {contextChecklist.slice(0, 3).map((item) => (
+                  <div key={item.id} className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-[11px] font-semibold capitalize text-slate-700">{item.signal}</span>
+                      <span className="font-mono text-[10px] text-slate-500">{Math.round(item.score)}</span>
+                    </div>
+                    <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-slate-500">{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
             <div className="mt-4 border-t border-slate-200 pt-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Attached sources</p>
               <div className="mt-2 space-y-1.5">
@@ -569,16 +779,29 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                   </p>
                 ) : (
                   sources.map((url, i) => (
-                    <a
+                    <div
                       key={url}
-                      href={url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="block truncate rounded-md border border-slate-200 bg-white px-2 py-1.5 font-mono text-[10px] text-slate-700 hover:border-slate-300"
-                      title={url}
+                      className="rounded-md border border-slate-200 bg-white px-2 py-1.5 hover:border-slate-300"
                     >
-                      <span className="text-[#8A5A00]">[{i + 1}]</span> {hostnameOf(url)}
-                    </a>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="min-w-0 flex-1 truncate font-mono text-[10px] text-slate-700"
+                          title={url}
+                        >
+                          <span className="text-[#8A5A00]">[{i + 1}]</span> {hostnameOf(url)}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => insertSourceCitation(url, i)}
+                          className="shrink-0 rounded border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:border-[#8A5A00]/40 hover:text-[#8A5A00]"
+                        >
+                          Cite
+                        </button>
+                      </div>
+                    </div>
                   ))
                 )}
               </div>
@@ -625,6 +848,20 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
             <span aria-hidden className="pointer-events-none absolute right-3 top-3 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-300">
               A4 · 1/1
             </span>
+            <div className="mb-6 rounded-lg border border-[#E8B931]/30 bg-[#FAF8F2] px-4 py-3">
+              <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                <span className="text-[#8A5A00]">Writing from context</span>
+                <span aria-hidden className="h-1 w-1 rounded-full bg-slate-300" />
+                <span>{activeSituation?.name ?? 'No situation core'}</span>
+                <span aria-hidden className="h-1 w-1 rounded-full bg-slate-300" />
+                <span>{activeCapsule ? `${activeCapsule.capsuleId} v${activeCapsule.version}` : 'No capsule'}</span>
+              </div>
+              <div className="mt-2 grid gap-2 text-[11px] leading-4 text-slate-600 sm:grid-cols-3">
+                <p><strong className="text-slate-800">User.</strong> {user?.name ?? user?.email ?? 'Analyst posture not loaded.'}</p>
+                <p><strong className="text-slate-800">Evidence.</strong> {sources.length ? `${sources.length} attached source${sources.length === 1 ? '' : 's'} available for citation.` : 'No source receipts attached yet.'}</p>
+                <p><strong className="text-slate-800">Trust.</strong> {trustScore === null ? 'Context posture pending.' : `${trustBand} posture, score ${trustScore}.`}</p>
+              </div>
+            </div>
             <EditorContent editor={editor} />
             <SourceMentionMenu editor={editor} situationId={activeSituation?.id ?? null} />
             {slashAt && (
@@ -904,4 +1141,79 @@ function hostnameOf(url: string): string {
   } catch {
     return url.slice(0, 40);
   }
+}
+
+function memoHtmlToBlocks(html: string): MemoBlock[] {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const blocks: MemoBlock[] = Array.from(doc.body.children).flatMap((node, index): MemoBlock[] => {
+    const text = normalizeText(node.textContent ?? '');
+    if (!text) return [];
+    const id = `${node.tagName.toLowerCase()}-${index}-${Date.now().toString(36)}`;
+    const citations = sourceReceiptIdsFromNode(node);
+    if (node.tagName === 'H1' || node.tagName === 'H2' || node.tagName === 'H3') {
+      return [{
+        id,
+        type: 'heading' as const,
+        content: text,
+        citations,
+        metadata: { level: headingLevel(node.tagName) },
+      }];
+    }
+    if (node.tagName === 'BLOCKQUOTE') {
+      return [{
+        id,
+        type: 'quote' as const,
+        content: text,
+        citations,
+        metadata: {},
+      }];
+    }
+    if (node.tagName === 'UL' || node.tagName === 'OL') {
+      const items = Array.from(node.querySelectorAll('li')).map((item) => normalizeText(item.textContent ?? '')).filter(Boolean);
+      return [{
+        id,
+        type: 'bullets' as const,
+        content: '',
+        items,
+        citations,
+        metadata: { ordered: node.tagName === 'OL' },
+      }];
+    }
+    return [{
+      id,
+      type: 'paragraph' as const,
+      content: text,
+      citations,
+      metadata: {},
+    }];
+  });
+
+  return blocks.length > 0
+    ? blocks
+    : [{
+      id: `paragraph-${Date.now().toString(36)}`,
+      type: 'paragraph' as const,
+      content: 'Draft memo',
+      citations: [],
+      metadata: {},
+    }];
+}
+
+function sourceReceiptIdsFromNode(node: Element) {
+  const sourceReceiptIds = Array.from(node.querySelectorAll('[data-source-url], a[href]'))
+    .map((element) => element.getAttribute('data-source-url') ?? element.getAttribute('href'))
+    .filter((value): value is string => Boolean(value));
+  return sourceReceiptIds.length > 0
+    ? [{ nodeIds: [] as string[], sourceReceiptIds: Array.from(new Set(sourceReceiptIds)), surface: 'footnote' as const }]
+    : [];
+}
+
+function headingLevel(tagName: string): number {
+  const level = Number(tagName.replace(/\D/g, ''));
+  return Number.isFinite(level) && level > 0 ? level : 2;
+}
+
+function normalizeText(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
 }
