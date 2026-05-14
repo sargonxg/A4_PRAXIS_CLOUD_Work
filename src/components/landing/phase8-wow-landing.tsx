@@ -12,6 +12,21 @@ import {
 } from "lucide-react";
 import { CoreCapsuleHero } from "./core-capsule-hero";
 import { RotatingHeadline } from "./rotating-headline";
+import { SpecimenCard, SpecimenGrid, type CoreSpecimenKind } from "@/components/cores/specimen-card";
+
+const SPECIMENS: ReadonlyArray<{
+  kind: CoreSpecimenKind;
+  serial: string;
+  title: string;
+  essence: string;
+}> = [
+  { kind: 'user', serial: 'PRX-CORE-USR-202604', title: 'Senior policy analyst', essence: 'Indo-Pacific desk · mandates: deterrence, alliance posture · red lines: cite-or-cut.' },
+  { kind: 'situation', serial: 'PRX-CORE-SIT-202604', title: 'Indo-Pacific 2026', essence: 'Eight state actors · four non-state · two open ceasefires · domain locked.' },
+  { kind: 'source', serial: 'PRX-CORE-SRC-202604', title: '42 receipts attached', essence: 'ICG, UCDP, GDELT, FCDO briefings · page-spans verified · 2 gaps flagged.' },
+  { kind: 'graph', serial: 'PRX-CORE-GRF-202604', title: 'Actor–claim lattice v3', essence: '128 nodes · 311 edges · two patches proposed by agent, pending review.' },
+  { kind: 'time', serial: 'PRX-CORE-TIM-202604', title: 'Horizon: 2026-2028', essence: 'Valid-time window set · bitemporal posture · freshness gate active.' },
+  { kind: 'output', serial: 'PRX-CORE-OUT-202604', title: 'Cited options memo', essence: 'Audience: principals · tone: cautious · footnoted receipts · DOCX/PDF ready.' },
+];
 
 const workflow = [
   ["Capture the context", "Build the User, Situation, Source, Graph, Time, and Output cores once. PRAXIS stores them as a reusable capsule, not a prompt."],
@@ -124,6 +139,23 @@ export function Phase8WowLanding() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section id="specimens" className="border-b border-slate-200 bg-[#FAF8F2] px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">Six cores, packaged as one capsule</p>
+            <h2 className="mt-2 font-serif text-3xl tracking-tight text-slate-950 sm:text-4xl">Specimens from a working capsule.</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+              A capsule is the durable artefact PRAXIS hands between desks. Each core inside it is inspectable: a serial number, a posture, and the receipts it carries. This is what a senior analyst's working capsule looks like on a live Indo-Pacific desk.
+            </p>
+          </div>
+          <SpecimenGrid className="mt-8 sm:grid-cols-2 lg:grid-cols-3">
+            {SPECIMENS.map((s) => (
+              <SpecimenCard key={s.kind} kind={s.kind} serial={s.serial} title={s.title} essence={s.essence} />
+            ))}
+          </SpecimenGrid>
         </div>
       </section>
 
