@@ -6,6 +6,7 @@ import { CONTEXT_CORES } from '@/lib/product/context-core-map';
 import { CONSOLIDATED_TOOLS } from '@/lib/constants/consolidated-tools';
 import { CapsuleBoard } from '@/components/cores/capsule-board';
 import { DomainPicker } from '@/components/cores/domain-picker';
+import { PathPicker } from '@/components/cores/PathPicker';
 
 export const metadata = { title: 'Core Library | PRAXIS' };
 
@@ -38,6 +39,8 @@ export default function AppContextsPage() {
           </div>
         </div>
       </section>
+
+      <PathPicker />
 
       <CapsuleBoard />
 
