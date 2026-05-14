@@ -146,11 +146,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           />
         )}
 
-        {/* Sidebar — fixed drawer on mobile, inline on desktop */}
+        {/* Sidebar — fixed drawer on mobile, inline on desktop. The mobile
+            wrapper carries its own solid background + shadow so the drawer
+            always reads as opaque even before the AppSidebar surface var
+            resolves. */}
         <div
           className={
             isMobile
-              ? `fixed inset-y-0 left-0 z-50 transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+              ? `fixed inset-y-0 left-0 z-50 bg-white shadow-2xl shadow-navy-950/20 transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
               : ''
           }
         >
