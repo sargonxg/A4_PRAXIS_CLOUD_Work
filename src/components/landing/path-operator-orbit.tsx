@@ -55,7 +55,9 @@ export function PathOperatorOrbit() {
     () =>
       ORBIT_NODES.map((n) => {
         const a = (n.angleDeg * Math.PI) / 180;
-        return { ...n, x: CENTER + Math.cos(a) * RADIUS, y: CENTER + Math.sin(a) * RADIUS };
+        const x = CENTER + Math.cos(a) * RADIUS;
+        const y = CENTER + Math.sin(a) * RADIUS;
+        return { ...n, xPct: (x / SIZE) * 100, yPct: (y / SIZE) * 100 };
       }),
     [],
   );
@@ -63,8 +65,7 @@ export function PathOperatorOrbit() {
   return (
     <figure
       aria-label="Six cores orbit a Path operator capsule"
-      className="relative mx-auto"
-      style={{ width: SIZE, maxWidth: '100%' }}
+      className="relative mx-auto w-full max-w-[360px]"
     >
       {/* Caption — stays visible even with reduced motion */}
       <figcaption className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8A5A00]">
@@ -73,13 +74,13 @@ export function PathOperatorOrbit() {
         <span aria-hidden className="h-px w-4 bg-[#8A5A00]/50" />
       </figcaption>
 
-      <div className="relative" style={{ width: SIZE, height: SIZE }}>
+      <div className="relative aspect-square w-full">
         {/* Orbit ring — slowly rotating wrapper around the six core capsules.
             The Path capsule sits in a non-rotating layer so it stays
             anchored at the center. */}
         <motion.div
           className="absolute inset-0"
-          style={{ transformOrigin: `${CENTER}px ${CENTER}px` }}
+          style={{ transformOrigin: '50% 50%' }}
           animate={reduceMotion ? undefined : { rotate: 360 }}
           transition={{ repeat: Infinity, duration: 24, ease: 'linear' }}
         >
@@ -105,13 +106,13 @@ export function PathOperatorOrbit() {
   );
 }
 
-function OrbitCapsule({ node, reduceMotion }: { node: OrbitNode & { x: number; y: number }; reduceMotion: boolean }) {
+function OrbitCapsule({ node, reduceMotion }: { node: OrbitNode & { xPct: number; yPct: number }; reduceMotion: boolean }) {
   // The capsule itself counter-rotates so the text stays upright while the
   // wrapping orbit ring spins.
   return (
     <motion.div
       className="group absolute flex w-24 -translate-x-1/2 -translate-y-1/2 flex-col items-center"
-      style={{ left: node.x, top: node.y }}
+      style={{ left: `${node.xPct}%`, top: `${node.yPct}%` }}
       animate={reduceMotion ? undefined : { rotate: -360 }}
       transition={{ repeat: Infinity, duration: 24, ease: 'linear' }}
     >
@@ -142,7 +143,7 @@ function PathCapsule({ reduceMotion }: { reduceMotion: boolean }) {
   return (
     <div
       className="group absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
-      style={{ left: CENTER, top: CENTER }}
+      style={{ left: '50%', top: '50%' }}
     >
       <motion.div
         whileHover={reduceMotion ? undefined : { y: -6, scale: 1.08 }}

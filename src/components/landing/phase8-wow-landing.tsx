@@ -5,9 +5,12 @@ import {
   ArrowRight,
   CheckCircle2,
   FileText,
+  GitFork,
   LibraryBig,
   MessageSquareText,
   Network,
+  Plus,
+  Repeat2,
   ShieldCheck,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
@@ -22,14 +25,15 @@ const SPECIMENS: ReadonlyArray<{
   serial: string;
   title: string;
   essence: string;
+  state: string;
 }> = [
-  { kind: 'user', serial: 'PRX-CORE-USR-202604', title: 'Senior policy analyst', essence: 'Indo-Pacific desk · mandates: deterrence, alliance posture · red lines: cite-or-cut.' },
-  { kind: 'situation', serial: 'PRX-CORE-SIT-202604', title: 'Indo-Pacific 2026', essence: 'Eight state actors · four non-state · two open ceasefires · domain locked.' },
-  { kind: 'path', serial: 'PRX-CORE-PTH-202604', title: 'Diplomacy & Negotiation', essence: 'Operator path · ZOPA + BATNA + ripeness · principal audience · treaty-aware voice.' },
-  { kind: 'source', serial: 'PRX-CORE-SRC-202604', title: '42 receipts attached', essence: 'ICG, UCDP, GDELT, FCDO briefings · page-spans verified · 2 gaps flagged.' },
-  { kind: 'graph', serial: 'PRX-CORE-GRF-202604', title: 'Actor–claim lattice v3', essence: '128 nodes · 311 edges · two patches proposed by agent, pending review.' },
-  { kind: 'time', serial: 'PRX-CORE-TIM-202604', title: 'Horizon: 2026-2028', essence: 'Valid-time window set · bitemporal posture · freshness gate active.' },
-  { kind: 'output', serial: 'PRX-CORE-OUT-202604', title: 'Cited options memo', essence: 'Audience: principals · tone: cautious · footnoted receipts · DOCX/PDF ready.' },
+  { kind: 'user', serial: 'PRX-CORE-USR-202604', title: 'Senior policy analyst', essence: 'Role, mandate, audience, red lines, language, preferred evidentiary standard.', state: 'inherited' },
+  { kind: 'situation', serial: 'PRX-CORE-SIT-202604', title: 'Indo-Pacific 2026', essence: 'Actors, geography, live tensions, institutional constraints, domain lock.', state: 'active' },
+  { kind: 'path', serial: 'PRX-CORE-PTH-202604', title: 'Diplomacy & Negotiation', essence: 'The working method: ZOPA, BATNA, ripeness, sequencing, treaty-aware voice.', state: 'swappable' },
+  { kind: 'source', serial: 'PRX-CORE-SRC-202604', title: '42 receipts attached', essence: 'Briefings, datasets, cables, page spans, source posture, and open gaps.', state: 'grounded' },
+  { kind: 'graph', serial: 'PRX-CORE-GRF-202604', title: 'Actor-claim lattice v3', essence: 'Claims, commitments, actors, evidence links, proposed patches awaiting review.', state: 'review' },
+  { kind: 'time', serial: 'PRX-CORE-TIM-202604', title: 'Horizon: 2026-2028', essence: 'Valid-time window, freshness gates, scenario horizon, bitemporal posture.', state: 'gated' },
+  { kind: 'output', serial: 'PRX-CORE-OUT-202604', title: 'Cited options memo', essence: 'Audience, format, tone, review posture, export rules, handover package.', state: 'ready' },
 ];
 
 const PRICING_TIERS = [
@@ -100,6 +104,13 @@ const trustItems = [
   ["Human review", "Drafts, graph proposals, and handover notes remain working products for analysts to accept, revise, or reject."],
 ] as const;
 
+const assemblySteps = [
+  { icon: Plus, label: 'Add', detail: 'Attach a new source set, case file, note, or operator path without rebuilding the whole workspace.' },
+  { icon: Repeat2, label: 'Swap', detail: 'Change the Path Core from diplomacy to humanitarian, legal, media, or risk work while keeping the same facts.' },
+  { icon: GitFork, label: 'Inherit', detail: 'Fork a capsule for a teammate, another desk, or an AI agent with the same context and receipts intact.' },
+  { icon: FileText, label: 'Ship', detail: 'Turn the active capsule into a memo, briefing, or handover package that carries its context forward.' },
+] as const;
+
 function StaggerSpecimens() {
   const reduceMotion = useReducedMotion();
   return (
@@ -121,7 +132,17 @@ function StaggerSpecimens() {
               visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 240, damping: 28 } },
             }}
           >
-            <SpecimenCard kind={s.kind} serial={s.serial} title={s.title} essence={s.essence} />
+            <SpecimenCard
+              kind={s.kind}
+              serial={s.serial}
+              title={s.title}
+              essence={s.essence}
+              trailing={
+                <span className="rounded-full border border-slate-200 bg-white/70 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  {s.state}
+                </span>
+              }
+            />
           </motion.div>
         ))}
       </SpecimenGrid>
@@ -219,12 +240,34 @@ export function Phase8WowLanding() {
 
       <section id="specimens" className="border-b border-slate-200 bg-[#FAF8F2] px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">Six cores, packaged as one capsule</p>
-            <h2 className="mt-2 font-serif text-3xl tracking-tight text-slate-950 sm:text-4xl">Specimens from a working capsule.</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              A capsule is the durable artefact PRAXIS hands between desks. Each core inside it is inspectable: a serial number, a posture, and the receipts it carries. This is what a senior analyst's working capsule looks like on a live Indo-Pacific desk.
-            </p>
+          <div className="grid gap-8 lg:grid-cols-[0.84fr_1.16fr] lg:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">Six cores, packaged as one capsule</p>
+              <h2 className="mt-2 max-w-3xl font-serif text-3xl tracking-tight text-slate-950 sm:text-4xl">
+                Context is built brick by brick, then inherited.
+              </h2>
+              <div className="mt-4 max-w-3xl space-y-3 text-sm leading-6 text-slate-700">
+                <p>
+                  PRAXIS treats context as infrastructure, not as a longer prompt. A capsule is the durable policy artefact that travels between desks, tools, agents, and drafts. Inside it, each core is an inspectable brick: who the user is, what situation they are working on, which method they are applying, what evidence is attached, what graph of claims exists, what time horizon governs the work, and what product must be produced.
+                </p>
+                <p>
+                  That matters in AI and policy because judgement is never context-free. Statecraft, diplomacy, conflict analysis, sanctions work, humanitarian planning, and negotiation all depend on mandate, audience, sources, time, and institutional memory. PRAXIS lets those details be added, swapped, reviewed, forked, and inherited so a discussion does not restart from zero every time a new question, memo, or analyst enters the room.
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {assemblySteps.map((step) => (
+                <div key={step.label} className="rounded-lg border border-[#D8C38A]/60 bg-white/70 p-4 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[#111827] text-white">
+                      <step.icon className="h-4 w-4" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-slate-950">{step.label}</h3>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{step.detail}</p>
+                </div>
+              ))}
+            </div>
           </div>
           <StaggerSpecimens />
         </div>
