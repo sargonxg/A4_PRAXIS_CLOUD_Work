@@ -1,19 +1,17 @@
-import { WriteWithPraxisPage } from '@/components/write/WriteWithPraxisPage';
-import { HERO_TOOLS } from '@/lib/constants/tool-registry';
-import { listExampleCases } from '@/lib/cases/registry';
+import { MemoDesk } from '@/components/memo/memo-desk';
 
 export const metadata = {
-  title: 'Write with PRAXIS | PRAXIS',
-  description: 'Draft, revise, and export policy work from attached PRAXIS cores.',
+  title: 'Memo Studio | PRAXIS',
+  description: 'Draft grounded policy memos with Ask PRAXIS, sources, and citations on every page.',
 };
 
+/**
+ * /app/write — Memo Studio.
+ *
+ * The MemoDesk renders its own three-panel layout (Library · Editor ·
+ * Ask PRAXIS) and breaks out of the AppShell padding so the surface
+ * reads as a standalone document workspace.
+ */
 export default function WritePage() {
-  const exampleCases = listExampleCases().slice(0, 4).map((item) => ({
-    id: item.id,
-    name: item.manifest.name,
-    region: item.manifest.region,
-    summary: item.manifest.summary,
-  }));
-
-  return <WriteWithPraxisPage exampleCases={exampleCases} suggestedTools={HERO_TOOLS.slice(0, 8)} />;
+  return <MemoDesk />;
 }

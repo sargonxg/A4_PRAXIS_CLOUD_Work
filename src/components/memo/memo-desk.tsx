@@ -1,0 +1,679 @@
+'use client';
+
+/**
+ * MemoDesk — the standalone PRAXIS writing surface.
+ *
+ * Layout:
+ *
+ *   ┌────────────────────────────────────────────────────────────┐
+ *   │  Top bar: title · status · export · share · Ask toggle     │
+ *   ├──────────┬──────────────────────────────────┬──────────────┤
+ *   │ Library  │     A4-feel document canvas      │ Ask PRAXIS    │
+ *   │ (left,   │     (Tiptap editor)              │ (right,       │
+ *   │ collap-  │                                  │ collapsible)  │
+ *   │ sible)   │                                  │               │
+ *   └──────────┴──────────────────────────────────┴──────────────┘
+ *
+ * Pure client component. Reads the active context stack so attached
+ * sources surface in the Library rail and Ask PRAXIS routes through
+ * the existing /api/ai/chat endpoint with the active capsule context.
+ *
+ * Design rule §3: serif for body, sans for UI chrome, mono for
+ * receipts. The A4 chrome uses EB Garamond and generous margins so
+ * the document genuinely reads like a Word page, not a textarea.
+ */
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import LinkExtension from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import {
+  BookOpenCheck,
+  Brain,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  FileDown,
+  FileText,
+  Library,
+  MessageSquare,
+  PanelLeft,
+  PanelRight,
+  Quote,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Wand2,
+} from 'lucide-react';
+import { ReceiptCard } from '@/components/shared/receipt-card';
+import { useSituationStore } from '@/stores/situation-store';
+import { useAuth } from '@/lib/auth/auth-context';
+import { cn } from '@/lib/utils/cn';
+
+interface AskTurn {
+  id: string;
+  role: 'user' | 'praxis';
+  text: string;
+  citations?: Array<{ id: string; source: string; span?: string }>;
+  ts: number;
+}
+
+const SLASH_COMMANDS = [
+  { id: 'grounded', label: 'Grounded paragraph', icon: ShieldCheck, hint: 'Insert a paragraph backed by attached receipts.' },
+  { id: 'cite', label: 'Cite at cursor', icon: Quote, hint: 'Drop a [n] superscript pinned to the next claim.' },
+  { id: 'rewrite-cautiously', label: 'Rewrite cautiously', icon: Wand2, hint: 'Soften unsupported language and surface hedges.' },
+  { id: 'red-team', label: 'Red-team this paragraph', icon: Brain, hint: 'Get the strongest objection to the current paragraph.' },
+  { id: 'scenario', label: 'Map a scenario', icon: FileText, hint: 'Add a counter-factual scenario block with a horizon.' },
+] as const;
+
+const DEFAULT_TITLE = 'Untitled policy memo';
+
+const STARTER_HTML = `
+  <h1>Untitled policy memo</h1>
+  <p data-praxis-bottom-line><strong>Bottom line.</strong> State the working judgement here in one sentence. Keep confidence and source gaps visible.</p>
+  <h2>Situation</h2>
+  <p>Frame the moment. Who is acting, what they want, the constraint that matters now.</p>
+  <h2>Evidence</h2>
+  <ul>
+    <li>Supported claim with a receipt.</li>
+    <li>Open question or missing source.</li>
+  </ul>
+  <h2>Options</h2>
+  <ol>
+    <li>Option A. Risk surface and trip-wires.</li>
+    <li>Option B. Trade-offs and required postures.</li>
+  </ol>
+  <h2>Recommendation</h2>
+  <p>State the recommended next move and what PRAXIS should inspect before this memo ships.</p>
+`;
+
+const STORAGE_PREFIX = 'praxis.memo.';
+
+interface MemoDeskProps {
+  documentId?: string;
+}
+
+export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
+  const activeSituation = useSituationStore((s) => s.activeSituation);
+  const { user } = useAuth();
+  const sources = useMemo(() => (activeSituation?.sourceUrls ?? []).slice(0, 12), [activeSituation]);
+
+  const [title, setTitle] = useState(DEFAULT_TITLE);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(true);
+  const [askOpen, setAskOpen] = useState(true);
+  const [slashAt, setSlashAt] = useState<{ x: number; y: number } | null>(null);
+  const [slashQuery, setSlashQuery] = useState('');
+  const [turns, setTurns] = useState<AskTurn[]>([]);
+  const [askInput, setAskInput] = useState('');
+  const [askPending, setAskPending] = useState(false);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+  const storageKey = `${STORAGE_PREFIX}${documentId}`;
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+      LinkExtension.configure({ openOnClick: false }),
+      Placeholder.configure({ placeholder: 'Type to draft… or press / for PRAXIS commands.' }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+    ],
+    content: STARTER_HTML,
+    autofocus: 'end',
+    immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        class: 'memo-editor prose prose-slate max-w-none focus:outline-none',
+      },
+      handleKeyDown(_view, event) {
+        if (event.key === '/') {
+          // Defer to allow the "/" to land, then anchor the slash menu.
+          window.setTimeout(() => {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
+            const rect = sel.getRangeAt(0).getBoundingClientRect();
+            const containerRect = editorContainerRef.current?.getBoundingClientRect();
+            const x = rect.left - (containerRect?.left ?? 0);
+            const y = rect.bottom - (containerRect?.top ?? 0);
+            setSlashAt({ x, y });
+            setSlashQuery('');
+          }, 0);
+        } else if (event.key === 'Escape' && slashAt) {
+          setSlashAt(null);
+        }
+        return false;
+      },
+      handleTextInput(_view, _from, _to, text) {
+        if (slashAt) setSlashQuery((q) => q + text);
+        return false;
+      },
+    },
+  });
+
+  // Load saved draft once mounted.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !editor) return;
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { title?: string; html?: string };
+        if (parsed.title) setTitle(parsed.title);
+        if (parsed.html) editor.commands.setContent(parsed.html, { emitUpdate: false });
+      }
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
+
+  // Autosave on edit.
+  useEffect(() => {
+    if (!editor) return;
+    const handler = () => {
+      try {
+        window.localStorage.setItem(
+          storageKey,
+          JSON.stringify({ title, html: editor.getHTML(), ts: Date.now() }),
+        );
+        setSavedAt(new Date().toISOString());
+      } catch {
+        /* ignore quota */
+      }
+    };
+    editor.on('update', handler);
+    return () => {
+      editor.off('update', handler);
+    };
+  }, [editor, storageKey, title]);
+
+  const runSlashCommand = useCallback(
+    (id: typeof SLASH_COMMANDS[number]['id']) => {
+      if (!editor) return;
+      // Strip the leading "/" + query that the user typed.
+      const trimming = slashQuery.length + 1;
+      editor.commands.command(({ tr, state }) => {
+        const to = state.selection.from;
+        const from = Math.max(0, to - trimming);
+        tr.delete(from, to);
+        return true;
+      });
+      setSlashAt(null);
+      setSlashQuery('');
+
+      if (id === 'cite') {
+        editor.chain().focus().insertContent(`<sup>[${(turns.filter((t) => t.role === 'praxis').length || 0) + 1}]</sup>`).run();
+        return;
+      }
+      if (id === 'grounded') {
+        editor
+          .chain()
+          .focus()
+          .insertContent(
+            '<p><em>Grounded paragraph drafted from attached receipts. PRAXIS will reconcile this with the Source Core on the next pass.</em></p>',
+          )
+          .run();
+        return;
+      }
+      if (id === 'rewrite-cautiously') {
+        editor.chain().focus().insertContent('<p><em>… rewrite the prior paragraph with hedged claims and explicit gaps.</em></p>').run();
+        return;
+      }
+      if (id === 'red-team') {
+        editor.chain().focus().insertContent('<blockquote><strong>Red team.</strong> Strongest objection: …</blockquote>').run();
+        return;
+      }
+      if (id === 'scenario') {
+        editor
+          .chain()
+          .focus()
+          .insertContent('<h3>Scenario</h3><p><strong>Horizon:</strong> 2026–2028. <strong>Trigger:</strong> … <strong>Implications:</strong> …</p>')
+          .run();
+        return;
+      }
+    },
+    [editor, slashQuery, turns],
+  );
+
+  const filteredSlash = SLASH_COMMANDS.filter((c) =>
+    slashQuery.length === 0 ? true : c.label.toLowerCase().includes(slashQuery.toLowerCase()),
+  );
+
+  async function sendAsk() {
+    const trimmed = askInput.trim();
+    if (!trimmed || askPending) return;
+    const userTurn: AskTurn = { id: `u-${Date.now()}`, role: 'user', text: trimmed, ts: Date.now() };
+    setTurns((t) => [...t, userTurn]);
+    setAskInput('');
+    setAskPending(true);
+    try {
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          message: trimmed,
+          situationId: activeSituation?.id,
+          surface: 'memo-desk',
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { reply?: string; text?: string; output?: string };
+      const replyText = data.reply ?? data.text ?? data.output ?? 'PRAXIS could not reach the chat route. Try again.';
+      const praxisTurn: AskTurn = {
+        id: `p-${Date.now()}`,
+        role: 'praxis',
+        text: replyText,
+        ts: Date.now(),
+      };
+      setTurns((t) => [...t, praxisTurn]);
+    } catch (err) {
+      const praxisTurn: AskTurn = {
+        id: `p-${Date.now()}`,
+        role: 'praxis',
+        text: `PRAXIS chat failed. ${err instanceof Error ? err.message : 'Unknown error.'}`,
+        ts: Date.now(),
+      };
+      setTurns((t) => [...t, praxisTurn]);
+    } finally {
+      setAskPending(false);
+    }
+  }
+
+  function insertAskReply(text: string) {
+    if (!editor) return;
+    editor.chain().focus().insertContent(`<p>${text}</p>`).run();
+  }
+
+  function exportMarkdown() {
+    if (!editor) return;
+    const html = editor.getHTML();
+    // Minimal HTML -> Markdown for v1; full export pipeline lives in lib/memo/export.ts.
+    const md = html
+      .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n')
+      .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
+      .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n')
+      .replace(/<strong>(.*?)<\/strong>/gi, '**$1**')
+      .replace(/<em>(.*?)<\/em>/gi, '*$1*')
+      .replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n')
+      .replace(/<ul[^>]*>|<\/ul>|<ol[^>]*>|<\/ol>/gi, '\n')
+      .replace(/<blockquote>(.*?)<\/blockquote>/gi, '> $1\n\n')
+      .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+    const blob = new Blob([`# ${title}\n\n${md}`], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[^a-z0-9._-]+/gi, '-').toLowerCase()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="memo-desk -mx-4 -my-4 flex h-[calc(100vh-3.5rem)] min-h-0 flex-col bg-[#F6F4ED] md:-mx-6 md:-my-6">
+      {/* Top bar */}
+      <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5 shadow-sm md:px-6">
+        <FileText className="h-4 w-4 shrink-0 text-[#8A5A00]" />
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          aria-label="Document title"
+          className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
+          placeholder="Untitled memo"
+        />
+        <span className="hidden text-[11px] uppercase tracking-[0.16em] text-slate-400 sm:inline">
+          {savedAt ? `saved ${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'autosave on'}
+        </span>
+        <button
+          type="button"
+          onClick={() => setLibraryOpen((v) => !v)}
+          aria-label="Toggle library"
+          className="hidden h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 lg:inline-flex"
+        >
+          <PanelLeft className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setAskOpen((v) => !v)}
+          aria-label="Toggle Ask PRAXIS"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+        >
+          <PanelRight className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={exportMarkdown}
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400 hover:bg-slate-50"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export
+        </button>
+      </header>
+
+      {/* Body */}
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        {/* Library rail */}
+        {libraryOpen && (
+          <aside className="hidden h-full w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white/60 px-3 py-4 lg:block">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8A5A00]">Library</p>
+              <button
+                type="button"
+                onClick={() => setLibraryOpen(false)}
+                aria-label="Close library"
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="mt-3 space-y-1.5">
+              <LibrarySection icon={Brain} title="User Core" subtitle={user?.name ?? user?.email ?? 'No user core'} href="/app/cores/user" />
+              <LibrarySection
+                icon={BookOpenCheck}
+                title="Situation"
+                subtitle={activeSituation?.name ?? 'No situation attached'}
+                href="/app/contexts"
+              />
+              <LibrarySection
+                icon={Library}
+                title={`${sources.length} sources`}
+                subtitle="Receipts attached to this capsule."
+                href="/app/workbench"
+              />
+            </div>
+            <div className="mt-4 border-t border-slate-200 pt-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Attached sources</p>
+              <div className="mt-2 space-y-1.5">
+                {sources.length === 0 ? (
+                  <p className="rounded-md border border-dashed border-slate-200 bg-white p-3 text-[11px] leading-5 text-slate-500">
+                    No sources attached. Add to the Source Core to ground claims here.
+                  </p>
+                ) : (
+                  sources.map((url, i) => (
+                    <a
+                      key={url}
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block truncate rounded-md border border-slate-200 bg-white px-2 py-1.5 font-mono text-[10px] text-slate-700 hover:border-slate-300"
+                      title={url}
+                    >
+                      <span className="text-[#8A5A00]">[{i + 1}]</span> {hostnameOf(url)}
+                    </a>
+                  ))
+                )}
+              </div>
+            </div>
+            <div className="mt-4 border-t border-slate-200 pt-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Suggested receipts</p>
+              <div className="mt-2 space-y-2">
+                <ReceiptCard
+                  claim="ICG reports renewed negotiations have stalled."
+                  source="ICG · 2026-04-22"
+                  span="§4 · p.12"
+                  kind="verified"
+                />
+                <ReceiptCard
+                  claim="Date for the ceasefire trigger is uncertain."
+                  source="No source attached"
+                  kind="gap"
+                />
+              </div>
+            </div>
+          </aside>
+        )}
+        {!libraryOpen && (
+          <button
+            type="button"
+            onClick={() => setLibraryOpen(true)}
+            aria-label="Open library"
+            className="hidden h-full w-8 items-center justify-center border-r border-slate-200 bg-white/60 text-slate-500 hover:bg-slate-100 hover:text-slate-800 lg:flex"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* Editor center */}
+        <main className="flex min-w-0 flex-1 justify-center overflow-y-auto bg-[#F6F4ED] px-4 py-8 md:px-8 md:py-12">
+          <div
+            ref={editorContainerRef}
+            className="relative w-full max-w-[820px] rounded-[3px] border border-slate-200 bg-white px-[64px] py-[72px] shadow-[0_18px_50px_-16px_rgba(7,12,22,0.35),0_2px_6px_-2px_rgba(7,12,22,0.10)]"
+          >
+            {/* Page corner marks (museum-style) */}
+            <span aria-hidden className="pointer-events-none absolute left-3 top-3 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-300">
+              PRAXIS
+            </span>
+            <span aria-hidden className="pointer-events-none absolute right-3 top-3 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-300">
+              A4 · 1/1
+            </span>
+            <EditorContent editor={editor} />
+            {slashAt && (
+              <div
+                role="menu"
+                className="absolute z-40 w-64 overflow-hidden rounded-md border border-slate-200 bg-white shadow-xl"
+                style={{ top: slashAt.y + 4, left: Math.min(slashAt.x, 600) }}
+              >
+                <div className="border-b border-slate-100 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  PRAXIS commands
+                </div>
+                {filteredSlash.length === 0 ? (
+                  <div className="px-3 py-2 text-xs text-slate-500">No commands match {slashQuery ? `"${slashQuery}"` : ''}.</div>
+                ) : (
+                  filteredSlash.map((cmd) => {
+                    const Icon = cmd.icon;
+                    return (
+                      <button
+                        key={cmd.id}
+                        type="button"
+                        onClick={() => runSlashCommand(cmd.id)}
+                        className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-slate-50"
+                      >
+                        <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#8A5A00]" />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium text-slate-900">{cmd.label}</span>
+                          <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">{cmd.hint}</span>
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+        </main>
+
+        {/* Ask PRAXIS rail */}
+        {askOpen && (
+          <aside className="hidden h-full w-[360px] shrink-0 flex-col overflow-hidden border-l border-slate-200 bg-white md:flex">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2.5">
+              <span className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-[#8A5A00]" />
+                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">Ask PRAXIS</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setAskOpen(false)}
+                aria-label="Close Ask PRAXIS"
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+              {turns.length === 0 ? (
+                <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 p-3 text-[12px] leading-5 text-slate-600">
+                  Ask anything about the active capsule. Insert any answer directly into the memo.
+                </div>
+              ) : (
+                turns.map((turn) => (
+                  <div
+                    key={turn.id}
+                    className={cn(
+                      'rounded-md px-3 py-2 text-sm leading-6',
+                      turn.role === 'user' ? 'bg-slate-100 text-slate-900' : 'border border-slate-200 bg-white text-slate-800 shadow-sm',
+                    )}
+                  >
+                    {turn.role === 'praxis' && (
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8A5A00]">PRAXIS</p>
+                    )}
+                    <p className="whitespace-pre-wrap">{turn.text}</p>
+                    {turn.role === 'praxis' && (
+                      <button
+                        type="button"
+                        onClick={() => insertAskReply(turn.text)}
+                        className="mt-2 inline-flex items-center gap-1 rounded-md border border-slate-300 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-slate-400 hover:bg-slate-50"
+                      >
+                        <FileDown className="h-3 w-3" />
+                        Insert into memo
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+              {askPending && (
+                <div className="rounded-md border border-slate-200 bg-white p-3 text-xs italic text-slate-500">
+                  PRAXIS is thinking…
+                </div>
+              )}
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void sendAsk();
+              }}
+              className="border-t border-slate-200 bg-white p-3"
+            >
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={askInput}
+                  onChange={(e) => setAskInput(e.target.value)}
+                  rows={2}
+                  placeholder="Ask PRAXIS about the active capsule…"
+                  className="min-h-[44px] w-full resize-none rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#8A5A00] focus:outline-none"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      void sendAsk();
+                    }
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={askPending || askInput.trim().length === 0}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#111827] text-white disabled:opacity-40"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="mt-1.5 text-[10px] text-slate-400">
+                Enter to send · Shift+Enter for newline · /grounded, /cite in the editor.
+              </p>
+            </form>
+          </aside>
+        )}
+        {!askOpen && (
+          <button
+            type="button"
+            onClick={() => setAskOpen(true)}
+            aria-label="Open Ask PRAXIS"
+            className="hidden h-full w-9 items-center justify-center border-l border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-800 md:flex"
+          >
+            <MessageSquare className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Editor typography — A4 feel */}
+      <style jsx global>{`
+        .memo-editor {
+          font-family: 'EB Garamond', Georgia, ui-serif, serif;
+          font-size: 17px;
+          line-height: 1.75;
+          color: #0F172A;
+        }
+        .memo-editor h1 {
+          font-family: 'EB Garamond', Georgia, ui-serif, serif;
+          font-size: 30px;
+          line-height: 1.18;
+          margin-top: 0;
+          margin-bottom: 24px;
+          font-weight: 600;
+          letter-spacing: -0.01em;
+        }
+        .memo-editor h2 {
+          font-family: 'EB Garamond', Georgia, ui-serif, serif;
+          font-size: 21px;
+          line-height: 1.3;
+          margin-top: 28px;
+          margin-bottom: 10px;
+          font-weight: 600;
+        }
+        .memo-editor h3 {
+          font-family: 'EB Garamond', Georgia, ui-serif, serif;
+          font-size: 17px;
+          line-height: 1.4;
+          margin-top: 18px;
+          margin-bottom: 8px;
+          font-weight: 600;
+        }
+        .memo-editor p {
+          margin-top: 0;
+          margin-bottom: 14px;
+        }
+        .memo-editor ul, .memo-editor ol {
+          margin: 12px 0 14px 22px;
+        }
+        .memo-editor li {
+          margin: 6px 0;
+        }
+        .memo-editor blockquote {
+          border-left: 3px solid #E8B931;
+          margin: 16px 0;
+          padding: 4px 16px;
+          color: #334155;
+          background: #FAF8F2;
+        }
+        .memo-editor strong { font-weight: 700; }
+        .memo-editor em { font-style: italic; color: #334155; }
+        .memo-editor sup { font-family: 'JetBrains Mono', ui-monospace, monospace; color: #8A5A00; font-size: 0.7em; }
+        .memo-editor a { color: #1B3A5C; text-decoration: underline; text-decoration-color: rgba(232,185,49,0.6); text-underline-offset: 2px; }
+      `}</style>
+    </div>
+  );
+}
+
+function LibrarySection({
+  icon: Icon,
+  title,
+  subtitle,
+  href,
+}: {
+  icon: typeof Brain;
+  title: string;
+  subtitle: string;
+  href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-start gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-2 text-[12px] hover:border-slate-300"
+    >
+      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#8A5A00]" />
+      <span className="min-w-0">
+        <span className="block truncate font-semibold text-slate-900">{title}</span>
+        <span className="block truncate text-[11px] text-slate-500">{subtitle}</span>
+      </span>
+    </Link>
+  );
+}
+
+function hostnameOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url.slice(0, 40);
+  }
+}
