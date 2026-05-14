@@ -48,7 +48,7 @@ const builderSteps = [
   },
   {
     label: 'Inspect prompt impact',
-    href: '/app/profile',
+    href: '/app/settings/profile',
     icon: Eye,
     detail: 'Review what PRAXIS will carry into Ask, tools, and drafting.',
     cta: 'Inspect core',

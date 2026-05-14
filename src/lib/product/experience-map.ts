@@ -73,10 +73,12 @@ export const PRODUCT_EXPERIENCE_ROUTES: ProductExperienceRoute[] = [
   { pattern: '/app', area: 'home', label: 'App redirect', mobilePriority: 'primary' },
   { pattern: '/app/dashboard', area: 'home', label: 'Home dashboard', mobilePriority: 'primary' },
   { pattern: '/app/assistant', area: 'ask', label: 'Ask PRAXIS workspace', mobilePriority: 'primary' },
-  { pattern: '/app/cases', area: 'home', label: 'Case library', mobilePriority: 'secondary' },
-  { pattern: '/app/contexts', area: 'situation', label: 'Core Library', mobilePriority: 'primary' },
-  { pattern: '/app/situations', area: 'home', label: 'Situations', mobilePriority: 'secondary' },
-  { pattern: '/app/situations/new', area: 'home', label: 'New Situation', mobilePriority: 'secondary' },
+  // /app/cases is folded into /app/workbench via server redirect.
+  { pattern: '/app/cases', area: 'home', label: 'Workbench (legacy redirect)', mobilePriority: 'secondary' },
+  { pattern: '/app/contexts', area: 'situation', label: 'Cores', mobilePriority: 'primary' },
+  // /app/situations folds into /app/contexts; /app/situations/new stays live during v6 transition.
+  { pattern: '/app/situations', area: 'home', label: 'Cores (legacy redirect)', mobilePriority: 'secondary' },
+  { pattern: '/app/situations/new', area: 'home', label: 'New Situation wizard', mobilePriority: 'secondary' },
   { pattern: '/app/cores/context', area: 'situation', label: 'Context Core', mobilePriority: 'primary' },
   { pattern: '/app/cores/user', area: 'ask', label: 'User Core', mobilePriority: 'primary' },
   { pattern: '/app/syria-case', area: 'situation', label: 'Syria showcase', mobilePriority: 'secondary' },
@@ -91,7 +93,8 @@ export const PRODUCT_EXPERIENCE_ROUTES: ProductExperienceRoute[] = [
   { pattern: '/app/write', area: 'outputs', label: 'Write with PRAXIS', mobilePriority: 'primary' },
   { pattern: '/app/tools', area: 'advanced', label: 'Advanced tools', mobilePriority: 'advanced' },
   { pattern: '/app/tools/archive', area: 'advanced', label: 'Tool archive', mobilePriority: 'advanced' },
-  { pattern: '/app/profile', area: 'advanced', label: 'Working profile', mobilePriority: 'advanced' },
+  // /app/profile is folded into /app/settings/profile via server redirect.
+  { pattern: '/app/profile', area: 'advanced', label: 'Settings · profile (legacy redirect)', mobilePriority: 'advanced' },
   { pattern: '/app/settings', area: 'advanced', label: 'Settings', mobilePriority: 'advanced' },
   { pattern: '/app/settings/api-keys', area: 'advanced', label: 'API keys', mobilePriority: 'advanced' },
   { pattern: '/app/settings/graph-backend', area: 'advanced', label: 'Graph backend settings', mobilePriority: 'advanced' },
