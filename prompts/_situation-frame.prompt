@@ -1,0 +1,8 @@
+SITUATION CONTEXT
+{{{toolContext}}}
+
+LIVE SOURCE CONTEXT
+{{{webContext}}}
+
+PRIOR SAVED ANALYSES
+{{#if crossToolContext}}{{{crossToolContext}}}{{else}}No prior saved analyses found for this situation.{{/if}}

@@ -1,17 +1,15 @@
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
-import { Output } from 'ai';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { saveToolData } from '@/lib/firebase/tool-data-service';
-import { callProModel } from '@/lib/ai/providers';
 import { buildCrossToolContext, buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import {
-  SituationIntelligenceSchema,
   splitSourceFragments,
   validateSituationIntelligence,
   type SituationIntelligence,
 } from '@/lib/ai/schemas/situation-intelligence';
+import { situationIntelligenceFlow } from '@/lib/genkit/flows/situation-intelligence';
 import type { Situation } from '@/types/situation';
 
 const TOOL_ID = 'situation-intelligence';
@@ -87,39 +85,13 @@ export const POST = withCalibration(TOOL_ID, 'ai_situation_intelligence', {
 
   let parsed: SituationIntelligence;
   try {
-    const result = await callProModel({
-      output: Output.object({ schema: SituationIntelligenceSchema }),
-      system: `${ctx.calibration.systemPromptBlock}
-
-You are PRAXIS, a senior intelligence system. Produce only live, situation-specific analysis derived from the supplied situation, source fragments, calibration context, and prior tool outputs. Do not invent source documents. Do not use placeholder names. Do not give generic management advice.
-
-Required reasoning rules:
-- Executive panel: one-line diagnosis, exactly 3 key insights, biggest risk, and best action.
-- strategicInsight must be non-obvious and must explicitly combine at least 2 actors plus 1 constraint.
-- Timeline items must be cause -> effect relationships extracted or inferred from real input.
-- Actor dossiers must cover goals, leverage, and vulnerabilities for each material actor.
-- Scenarios must be best, likely, and worst. Probabilities are estimates derived from tensions, constraints, actor leverage, and warning signals; never random.
-- Risk score must be 0-100 and explained by named drivers.
-- Actions must be concrete, situation-specific, and include expected outcomes.
-- Live graph must be built from extracted primitives only: Actor -> Claim -> Interest -> Constraint -> Event. Every edge needs evidence.
-- Provenance must reference the provided source fragment ids whenever possible. If the input is weak, say so in confidence.inputWeaknesses and confidence.note.
-- Keep outputs concise enough for an executive dashboard but specific enough to act on.`,
-      prompt: `SITUATION CONTEXT
-${toolContext}
-
-LIVE SOURCE CONTEXT
-${webContext}
-
-PRIOR SAVED ANALYSES
-${crossToolContext || 'No prior saved analyses found for this situation.'}
-
-SOURCE FRAGMENTS
-${sourceBlock}
-
-Generate the complete PRAXIS situation intelligence object now.`,
-    });
-
-    parsed = validateSituationIntelligence(result.output);
+    parsed = validateSituationIntelligence(await situationIntelligenceFlow({
+      systemPromptBlock: ctx.calibration.systemPromptBlock,
+      toolContext,
+      webContext,
+      crossToolContext,
+      sourceBlock,
+    }));
   } catch (err) {
     const isSchemaError = err instanceof ZodError;
     console.warn('[situation-intelligence] generation failed:', err);

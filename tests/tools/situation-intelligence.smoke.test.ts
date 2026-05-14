@@ -3,7 +3,7 @@ import type { SituationIntelligence } from '@/lib/ai/schemas/situation-intellige
 
 const mocks = vi.hoisted(() => ({
   withCalibration: vi.fn(),
-  callProModel: vi.fn(),
+  situationIntelligenceFlow: vi.fn(),
   saveToolData: vi.fn(),
   saveToolOutput: vi.fn(),
 }));
@@ -12,8 +12,8 @@ vi.mock('@/lib/api/with-calibration', () => ({
   withCalibration: mocks.withCalibration,
 }));
 
-vi.mock('@/lib/ai/providers', () => ({
-  callProModel: mocks.callProModel,
+vi.mock('@/lib/genkit/flows/situation-intelligence', () => ({
+  situationIntelligenceFlow: mocks.situationIntelligenceFlow,
 }));
 
 vi.mock('@/lib/firebase/tool-data-service', () => ({
@@ -28,10 +28,6 @@ vi.mock('@/lib/ai/situation-context', () => ({
   buildToolContext: () => 'minimal situation context',
   buildCrossToolContext: vi.fn(async () => 'prior saved analysis context'),
   buildWebGroundedContext: vi.fn(async () => 'web-grounded situation context'),
-}));
-
-vi.mock('ai', () => ({
-  Output: { object: (input: unknown) => input },
 }));
 
 function fixture(): SituationIntelligence {
@@ -196,7 +192,7 @@ describe('situation-intelligence route', () => {
         provenance: { profileVersion: 3 },
       },
     }));
-    mocks.callProModel.mockResolvedValue({ output: fixture() });
+    mocks.situationIntelligenceFlow.mockResolvedValue(fixture());
     mocks.saveToolData.mockResolvedValue({ generatedAt: '2026-04-29T00:00:00Z', version: 1 });
     mocks.saveToolOutput.mockResolvedValue(undefined);
   });
@@ -254,11 +250,11 @@ describe('situation-intelligence route', () => {
     }));
 
     expect(res.status).toBe(422);
-    expect(mocks.callProModel).not.toHaveBeenCalled();
+    expect(mocks.situationIntelligenceFlow).not.toHaveBeenCalled();
   });
 
   it('returns a controlled 502 when the model output violates schema', async () => {
-    mocks.callProModel.mockResolvedValueOnce({ output: { executivePanel: { diagnosis: 'too thin' } } });
+    mocks.situationIntelligenceFlow.mockResolvedValueOnce({ executivePanel: { diagnosis: 'too thin' } });
     const { POST } = await import('@/app/api/ai/situation-intelligence/route');
     const res = await POST(new Request('http://localhost/api/ai/situation-intelligence', {
       method: 'POST',
