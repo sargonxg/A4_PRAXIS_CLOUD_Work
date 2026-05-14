@@ -2,6 +2,7 @@
 
 import { type ReactNode } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
 import { SpecimenCard, type CoreSpecimenKind } from '@/components/cores/specimen-card';
