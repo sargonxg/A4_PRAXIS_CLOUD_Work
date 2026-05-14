@@ -22,7 +22,7 @@ export function WorkbenchCasePicker() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-gold-700">Context repository</p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-navy-950">Open the context PRAXIS should use.</h1>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-navy-950">Open the context PRAXIS should use.</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-650">
               Contexts hold the actors, sources, ontology, graph, drafts, and methods that make Ask PRAXIS useful for a policy team.
             </p>

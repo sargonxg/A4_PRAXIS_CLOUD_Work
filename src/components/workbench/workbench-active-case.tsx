@@ -95,7 +95,7 @@ function WorkbenchLegacySurface({ activeTab }: { activeTab: WorkspaceTabId | nul
                   {caseModule.manifest.domain}
                 </span>
               </div>
-              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-navy-950">{situation.name}</h1>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-navy-950">{situation.name}</h2>
               <p className="mt-1 max-w-4xl text-sm leading-6 text-slate-650">{caseModule.manifest.summary}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
