@@ -11,6 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { CoreCapsuleHero } from "./core-capsule-hero";
+import { PolicyTicker } from "./policy-ticker";
 import { RotatingHeadline } from "./rotating-headline";
 import { SpecimenCard, SpecimenGrid, type CoreSpecimenKind } from "@/components/cores/specimen-card";
 
@@ -73,7 +74,11 @@ export function Phase8WowLanding() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(232,185,49,0.07),transparent_60%),radial-gradient(ellipse_at_bottom_left,rgba(15,23,42,0.04),transparent_55%)]" />
         <div className="relative mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(440px,1.05fr)] lg:px-8">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8A5A00]">PRAXIS by TACITUS</p>
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#8A5A00]">
+              <span className="font-mono text-[10px] tracking-[0.2em] text-slate-400">vol. VI · No. 1</span>
+              <span aria-hidden className="h-px w-6 bg-slate-300" />
+              <span>PRAXIS by TACITUS</span>
+            </p>
             <RotatingHeadline className="mt-4" />
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:text-lg">
               Six structured cores — User, Situation, Source, Graph, Time, Output — package the tacit knowledge that makes your judgement work. Hand them to a teammate, an agent, or your future self.
@@ -141,6 +146,8 @@ export function Phase8WowLanding() {
           </div>
         </div>
       </section>
+
+      <PolicyTicker />
 
       <section id="specimens" className="border-b border-slate-200 bg-[#FAF8F2] px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
