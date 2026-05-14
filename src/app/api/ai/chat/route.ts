@@ -16,6 +16,7 @@ import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { resolveTier } from '@/lib/api/tier';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { getCapsule, getOrMigrateDefaultCapsule, type PraxisCapsule } from '@/lib/context/capsule-service';
+import { writeReadAuditEvents } from '@/lib/audit/read-ledger';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
 import {
   buildAskPraxisAnswerPolicyBlock,
@@ -297,6 +298,7 @@ You have access to the user's active situation data. When answering questions:
     // to Pro or Claude via aiSettings. Analytical tools use getProModel() instead.
     const runtime = selectAskRuntime(aiSettings);
     const model = runtime.model;
+    const askStartedAt = Date.now();
 
     const { provenance } = _user.calibration;
     const result = streamText({
@@ -328,6 +330,15 @@ You have access to the user's active situation data. When answering questions:
             toolInvocations,
             output: text,
           }).catch((err) => console.warn('[chat] persistAskTurn failed:', err));
+          await persistAskReadLedger({
+            uid: _user.uid,
+            situationId: sitId,
+            threadId,
+            capsule: capsuleContext?.capsule ?? null,
+            runtime: runtime.receipt,
+            toolInvocations,
+            askLatencyMs: Date.now() - askStartedAt,
+          }).catch((err) => console.warn('[chat] audit ledger write failed:', err));
         }
       },
     });
@@ -478,6 +489,45 @@ async function persistAskTurn(input: {
     output: input.output,
     ts: new Date().toISOString(),
   });
+}
+
+async function persistAskReadLedger(input: {
+  uid: string;
+  situationId: string;
+  threadId?: string;
+  capsule: PraxisCapsule | null;
+  runtime: AskRuntimeReceipt;
+  toolInvocations: AskToolInvocationReceipt[];
+  askLatencyMs: number;
+}) {
+  const model = input.runtime.model ?? input.runtime.provider ?? 'default';
+  const costClass = input.runtime.analysisDepth ?? 'standard';
+  await writeReadAuditEvents([
+    {
+      uid: input.uid,
+      situationId: input.situationId,
+      capsuleId: input.capsule?.capsuleId ?? null,
+      threadId: input.threadId ?? null,
+      toolId: 'ask-praxis',
+      sourceIds: [],
+      model,
+      latencyMs: input.askLatencyMs,
+      status: 'ok',
+      costClass,
+    },
+    ...input.toolInvocations.map((tool) => ({
+      uid: input.uid,
+      situationId: input.situationId,
+      capsuleId: input.capsule?.capsuleId ?? null,
+      threadId: input.threadId ?? null,
+      toolId: tool.toolId,
+      sourceIds: [],
+      model,
+      latencyMs: tool.latencyMs,
+      status: tool.status,
+      costClass,
+    })),
+  ]);
 }
 
 function lastUserPrompt(messages: Array<{ role: string; content: unknown }>): string {
