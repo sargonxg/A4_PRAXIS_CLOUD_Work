@@ -19,6 +19,9 @@ Status: first implementation ledger for the Tasklet-style PRAXIS cleanup and fou
   references still resolve.
 - Folded `/tour` back to `/` with a noindex redirect so the public entry stays
   the Tasklet-style PRAXIS workbench.
+- Folded the old long homepage landing stack out of
+  `src/components/landing/phase8-wow-landing.tsx`; `/` now renders only the
+  Tasklet-style PRAXIS cockpit.
 - Kept `/demo/*` as redirect/sample-session compatibility for now because copy
   to workspace, demo sessions, and smoke tests still reference those routes.
 

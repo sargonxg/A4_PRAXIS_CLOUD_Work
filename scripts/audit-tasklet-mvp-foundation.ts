@@ -24,6 +24,13 @@ function expectIncludes(rel: string, markers: string[]): void {
   }
 }
 
+function expectExcludes(rel: string, markers: string[]): void {
+  const src = read(rel);
+  for (const marker of markers) {
+    if (src.includes(marker)) failures.push(`${rel} should not include legacy marker: ${marker}`);
+  }
+}
+
 for (const rel of [
   'src/app/learn/page.tsx',
   'src/app/tacitus/page.tsx',
@@ -36,10 +43,15 @@ for (const rel of [
 
 expectIncludes('src/app/(landing)/layout.tsx', ['Learn', 'TACITUS', 'Pricing', 'Release notes', 'New capsule']);
 expectIncludes('src/components/landing/phase8-wow-landing.tsx', [
+  'TaskletPraxisWorkbench',
+  'mode="public"',
+  'Middle East policy analysis',
+]);
+expectExcludes('src/components/landing/phase8-wow-landing.tsx', [
   'Build ContextCapsule',
   'No agent run before login',
-  'PENDING_CONTEXT_CAPSULE_PROMPT_KEY',
   'ContextCapsulePreview',
+  'CAPSULE_COMBINATION_RECIPES',
 ]);
 expectIncludes('src/components/cores/ContextBuilderRoom.tsx', [
   'Capsule composition',
