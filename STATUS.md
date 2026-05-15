@@ -1,5 +1,22 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — Tasklet-Style Login And Welcome Handoff
+
+Current entry checkpoint:
+
+- Public Tasklet-style prompts now store both the prompt and selected
+  `policyAgentId`, then route through `/login?mode=signup&redirect=/app/dashboard`.
+- The login page now displays the queued PRAXIS policy-agent run and uses
+  ContextCapsule agent-workspace language instead of an unrelated platform
+  frame.
+- Normal sign-in, onboarding skip, and onboarding completion now land on
+  `/app/dashboard`, so users see the Tasklet-style Home before deeper Library
+  surfaces.
+- Authenticated Home reads the saved public prompt and selected policy agent
+  from local storage, then clears them once a run is created.
+- The welcome modal now teaches the simple visible loop: choose capsule, run
+  agent, open output.
+
 ## 2026-05-15 — Tasklet-Style Policy Workbench And Research Memo Agent
 
 Current product/runtime checkpoint:

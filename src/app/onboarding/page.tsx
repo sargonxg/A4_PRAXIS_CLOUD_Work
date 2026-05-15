@@ -90,7 +90,7 @@ function OnboardingWizard() {
 
   const skipForLater = useCallback(async () => {
     await fetch('/api/onboarding/skip', { method: 'POST' });
-    router.push('/app/workbench');
+    router.push('/app/dashboard');
   }, [router]);
 
   const complete = useCallback(async (createFirstSituation: boolean) => {

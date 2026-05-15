@@ -17,5 +17,5 @@ export function resolvePostLoginRedirect(
 
   if (explicit && explicit.startsWith('/app/')) return explicit;
 
-  return '/app/workbench';
+  return '/app/dashboard';
 }

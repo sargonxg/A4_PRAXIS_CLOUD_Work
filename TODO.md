@@ -25,7 +25,10 @@ from the active ledger above.
    authenticated Home: left sidebar, big prompt, active ContextCapsule, recent
    runs, policy-agent cards, and run-to-output posture. The marketplace now
    presents policy agents instead of a raw tool catalog, and the Research Memo
-   Agent worker creates a Memo Studio draft with source/gap receipts.
+   Agent worker creates a Memo Studio draft with source/gap receipts. Login,
+   signup, onboarding skip/complete, and the welcome modal now steer users back
+   to the Tasklet-style Home, preserving the pending prompt and selected policy
+   agent from the public surface.
 0. First Tasklet-style MVP foundation pass is now in place: public pages
    `/learn`, `/tacitus`, `/pricing`, and `/release-notes`; homepage nav aligned
    to those pages; `/app/contexts` has a capsule composition panel for

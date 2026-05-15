@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
   BookOpenText,
@@ -19,6 +19,9 @@ import {
 } from 'lucide-react';
 import {
   destinationHref,
+  PENDING_POLICY_AGENT_ID_KEY,
+  PENDING_TASKLET_PROMPT_KEY,
+  policyAgentLoginHref,
   PRAXIS_POLICY_AGENTS,
   type PolicyAgentDefinition,
 } from '@/lib/product/policy-agents';
@@ -62,12 +65,29 @@ export function TaskletPraxisWorkbench({
   }, [activeTab]);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
 
+  useEffect(() => {
+    if (mode !== 'app') return;
+    try {
+      const pendingPrompt = window.localStorage.getItem(PENDING_TASKLET_PROMPT_KEY);
+      const pendingAgentId = window.localStorage.getItem(PENDING_POLICY_AGENT_ID_KEY);
+      if (pendingPrompt?.trim()) {
+        setPrompt(pendingPrompt.trim());
+        setRunState({ status: 'idle', message: 'Your saved public prompt is ready in the PRAXIS workspace.' });
+      }
+      if (pendingAgentId && PRAXIS_POLICY_AGENTS.some((agent) => agent.id === pendingAgentId)) {
+        setSelectedAgentId(pendingAgentId);
+      }
+    } catch {
+      // localStorage is a convenience handoff, not required for the app.
+    }
+  }, [mode]);
+
   async function launchRun(agent: PolicyAgentDefinition = selectedAgent) {
     const cleanPrompt = prompt.trim() || `Run ${agent.label} from ${activeCapsuleName}.`;
     if (mode === 'public') {
-      window.localStorage.setItem('praxis.pending.taskletPrompt', cleanPrompt);
-      window.localStorage.setItem('praxis.pending.policyAgentId', agent.id);
-      window.location.href = '/login';
+      window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, cleanPrompt);
+      window.localStorage.setItem(PENDING_POLICY_AGENT_ID_KEY, agent.id);
+      window.location.href = policyAgentLoginHref(agent.id, cleanPrompt);
       return;
     }
 
@@ -108,6 +128,12 @@ export function TaskletPraxisWorkbench({
       message: `${agent.label} ${body.status ?? 'queued'} as ${body.runId ?? 'new run'}.`,
       href: body.outputHref ?? destinationHref(agent.outputDestination),
     });
+    try {
+      window.localStorage.removeItem(PENDING_TASKLET_PROMPT_KEY);
+      window.localStorage.removeItem(PENDING_POLICY_AGENT_ID_KEY);
+    } catch {
+      // ignore handoff cleanup failures
+    }
   }
 
   return (

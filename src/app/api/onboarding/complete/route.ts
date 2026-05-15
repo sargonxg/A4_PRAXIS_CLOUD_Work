@@ -53,7 +53,7 @@ export const POST = withAuth(async (req, user) => {
 
   const redirectTo = createFirstSituation
     ? '/app/situations/new?fromOnboarding=1'
-    : '/app/workbench';
+    : '/app/dashboard';
 
   return NextResponse.json({ versionId, redirectTo });
 });

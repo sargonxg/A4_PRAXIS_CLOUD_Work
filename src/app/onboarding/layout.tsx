@@ -10,7 +10,7 @@ export default function OnboardingLayout({ children }: { children: ReactNode }) 
         <header className="border-b border-[var(--color-app-border)] bg-white">
           <div className="mx-auto max-w-6xl px-6 py-4">
             <div className="flex items-center justify-between gap-4">
-              <Link href="/app/workbench" className="flex items-center gap-2">
+              <Link href="/app/dashboard" className="flex items-center gap-2">
                 <span className="flex h-8 w-8 items-center justify-center rounded-md bg-diplomatic-blue text-white">
                   <ShieldCheck className="h-4 w-4" />
                 </span>
@@ -25,8 +25,8 @@ export default function OnboardingLayout({ children }: { children: ReactNode }) 
                 <Link href="/app/settings/profile" className="hover:text-navy-900">
                   Profile settings
                 </Link>
-                <Link href="/app/workbench" className="hover:text-navy-900">
-                  Dashboard
+                <Link href="/app/dashboard" className="hover:text-navy-900">
+                  Home
                 </Link>
               </nav>
             </div>

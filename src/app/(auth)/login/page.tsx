@@ -8,6 +8,11 @@ import { Shield, ArrowRight, Loader2, Mail, Chrome } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import {
+  getPolicyAgent,
+  PENDING_POLICY_AGENT_ID_KEY,
+  PENDING_TASKLET_PROMPT_KEY,
+} from '@/lib/product/policy-agents';
+import {
   CONTEXT_CAPSULE_TEMPLATES,
   PENDING_CONTEXT_CAPSULE_OUTPUT_KEY,
   PENDING_CONTEXT_CAPSULE_PATH_KEY,
@@ -41,6 +46,7 @@ function LoginForm() {
   const capsuleTemplateParam = searchParams.get('capsuleTemplate');
   const capsulePathParam = searchParams.get('capsulePath');
   const capsuleOutputParam = searchParams.get('capsuleOutput');
+  const policyAgentParam = searchParams.get('policyAgentId');
   const appRedirect = planParam
     ? `/app/settings?upgrade=${planParam}` // Send to settings with upgrade prompt
     : resolvePostLoginRedirect(searchParams, false);
@@ -94,6 +100,7 @@ function LoginForm() {
   const [pendingCapsuleTemplateId, setPendingCapsuleTemplateId] = useState('');
   const [pendingCapsulePathId, setPendingCapsulePathId] = useState('');
   const [pendingCapsuleOutput, setPendingCapsuleOutput] = useState('');
+  const [pendingPolicyAgentId, setPendingPolicyAgentId] = useState('');
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
   const pendingCapsuleTemplateLabel = useMemo(
     () => CONTEXT_CAPSULE_TEMPLATES.find((t) => t.id === pendingCapsuleTemplateId)?.label ?? '',
@@ -103,14 +110,23 @@ function LoginForm() {
     () => POLICY_PATH_PROFILES.find((path) => path.id === pendingCapsulePathId)?.label ?? '',
     [pendingCapsulePathId],
   );
+  const pendingPolicyAgent = useMemo(
+    () => getPolicyAgent(pendingPolicyAgentId),
+    [pendingPolicyAgentId],
+  );
 
   useEffect(() => {
     const prompt = capsulePromptParam?.trim();
     if (prompt) {
       window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY, prompt);
+      window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, prompt);
       setPendingCapsulePrompt(prompt);
     } else {
-      setPendingCapsulePrompt(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY) ?? '');
+      setPendingCapsulePrompt(
+        window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY)
+          ?? window.localStorage.getItem(PENDING_TASKLET_PROMPT_KEY)
+          ?? '',
+      );
     }
     if (capsuleTemplateParam) {
       window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY, capsuleTemplateParam);
@@ -130,7 +146,13 @@ function LoginForm() {
     } else {
       setPendingCapsuleOutput(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_OUTPUT_KEY) ?? '');
     }
-  }, [capsulePromptParam, capsuleTemplateParam, capsulePathParam, capsuleOutputParam]);
+    if (policyAgentParam) {
+      window.localStorage.setItem(PENDING_POLICY_AGENT_ID_KEY, policyAgentParam);
+      setPendingPolicyAgentId(policyAgentParam);
+    } else {
+      setPendingPolicyAgentId(window.localStorage.getItem(PENDING_POLICY_AGENT_ID_KEY) ?? '');
+    }
+  }, [capsulePromptParam, capsuleTemplateParam, capsulePathParam, capsuleOutputParam, policyAgentParam]);
 
   useEffect(() => {
     if (authError) {
@@ -282,14 +304,14 @@ function LoginForm() {
               <Shield className="h-7 w-7 text-gold-500" />
             </div>
             <h1 className="font-serif text-3xl tracking-wide text-gold-500">
-              TACITUS
+              PRAXIS
             </h1>
             <p className="mt-1.5 text-sm tracking-widest text-navy-400 uppercase">
-              Diplomatic Intelligence Platform
+              ContextCapsule agent workspace
             </p>
           </motion.div>
 
-          {pendingCapsulePrompt ? (
+          {pendingCapsulePrompt || pendingPolicyAgent ? (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -297,11 +319,13 @@ function LoginForm() {
               className="mb-5 rounded-xl border border-gold-500/25 bg-gold-500/10 p-4"
             >
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-300">
-                ContextCapsule queued{pendingCapsuleTemplateLabel ? ` · ${pendingCapsuleTemplateLabel}` : ''}
+                PRAXIS run queued{pendingPolicyAgent ? ` · ${pendingPolicyAgent.label}` : pendingCapsuleTemplateLabel ? ` · ${pendingCapsuleTemplateLabel}` : ''}
               </p>
-              <p className="mt-2 line-clamp-3 text-sm leading-5 text-navy-100">
-                {pendingCapsulePrompt}
-              </p>
+              {pendingCapsulePrompt ? (
+                <p className="mt-2 line-clamp-3 text-sm leading-5 text-navy-100">
+                  {pendingCapsulePrompt}
+                </p>
+              ) : null}
               {pendingCapsulePathLabel || pendingCapsuleOutput ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {pendingCapsulePathLabel ? (
@@ -317,7 +341,7 @@ function LoginForm() {
                 </div>
               ) : null}
               <p className="mt-2 text-xs leading-5 text-navy-400">
-                Create an account to open the full sidebar, capsule-aware Ask PRAXIS, and the tools for sources, temporality, power dynamics, writing, and handover.
+                Sign in to open the Tasklet-style PRAXIS workspace: active capsule, policy agents, source receipts, Memo Studio, Canvas, Library, and handover.
               </p>
             </motion.div>
           ) : null}
@@ -522,7 +546,7 @@ function LoginForm() {
               ) : (
                 <>
                   <Mail className="h-4 w-4" />
-                  {mode === 'signup' ? 'Create Account' : mode === 'reset' ? 'Send Reset Link' : 'Sign In'}
+                  {mode === 'signup' ? 'Create PRAXIS workspace' : mode === 'reset' ? 'Send Reset Link' : 'Open PRAXIS'}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </>
               )}
@@ -622,7 +646,7 @@ function LoginForm() {
             className="mt-5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3"
           >
             <p className="text-center text-xs text-emerald-400">
-              <span className="font-semibold">Free Plan</span> includes the full PRAXIS workspace, AI analysis, source receipts, and briefing tools.
+              <span className="font-semibold">Free Plan</span> opens the Tasklet-style PRAXIS workspace: capsule, policy agents, source receipts, and memo tools.
             </p>
           </motion.div>
         </div>

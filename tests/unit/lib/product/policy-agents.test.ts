@@ -3,6 +3,7 @@ import {
   destinationHref,
   FORBIDDEN_MVP_INTEGRATION_CLAIMS,
   PRAXIS_POLICY_AGENTS,
+  policyAgentLoginHref,
 } from '@/lib/product/policy-agents';
 
 describe('PRAXIS policy agent registry', () => {
@@ -33,5 +34,16 @@ describe('PRAXIS policy agent registry', () => {
     for (const claim of FORBIDDEN_MVP_INTEGRATION_CLAIMS) {
       expect(liveText).not.toContain(claim);
     }
+  });
+
+  it('preserves the selected policy agent through signup into the Tasklet-style Home', () => {
+    const href = policyAgentLoginHref('research-memo', 'Draft a sourced options memo.');
+    const url = new URL(href, 'https://praxis.local');
+
+    expect(url.pathname).toBe('/login');
+    expect(url.searchParams.get('mode')).toBe('signup');
+    expect(url.searchParams.get('redirect')).toBe('/app/dashboard');
+    expect(url.searchParams.get('policyAgentId')).toBe('research-memo');
+    expect(url.searchParams.get('capsulePrompt')).toBe('Draft a sourced options memo.');
   });
 });

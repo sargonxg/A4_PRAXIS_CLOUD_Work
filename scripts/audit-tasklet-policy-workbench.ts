@@ -11,6 +11,7 @@ const requiredFiles = [
   'src/components/praxis/tasklet-praxis-workbench.tsx',
   'src/components/dashboard/ask-praxis-home.tsx',
   'src/components/tools/ToolMarketplace.tsx',
+  'src/components/onboarding/welcome-modal.tsx',
   'src/lib/product/policy-agents.ts',
   'src/lib/agent-runtime/worker.ts',
 ] as const;
@@ -21,8 +22,21 @@ for (const file of requiredFiles) {
 }
 
 const workbenchText = readFileSync(resolve(root, 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
-for (const marker of ['New capsule', 'Search capsules', 'Recent runs', 'Describe the policy task', 'Policy sources, documents, grounded search']) {
+for (const marker of ['New capsule', 'Search capsules', 'Recent runs', 'Describe the policy task', 'Policy sources, documents, grounded search', 'policyAgentLoginHref']) {
   assert(workbenchText.includes(marker), `Tasklet workbench is missing marker: ${marker}`);
+}
+
+const redirectText = readFileSync(resolve(root, 'src/lib/auth/post-login-redirect.ts'), 'utf8');
+assert(redirectText.includes("return '/app/dashboard'"), 'Normal login should land on the Tasklet-style Home dashboard');
+
+const loginText = readFileSync(resolve(root, 'src/app/(auth)/login/page.tsx'), 'utf8');
+for (const marker of ['PRAXIS run queued', 'ContextCapsule agent workspace', 'PENDING_POLICY_AGENT_ID_KEY']) {
+  assert(loginText.includes(marker), `Login handoff is missing marker: ${marker}`);
+}
+
+const welcomeText = readFileSync(resolve(root, 'src/components/onboarding/welcome-modal.tsx'), 'utf8');
+for (const marker of ['Open PRAXIS Home', 'Choose capsule', 'Run agent', 'Open output']) {
+  assert(welcomeText.includes(marker), `Welcome modal is missing Tasklet-style marker: ${marker}`);
 }
 
 for (const agent of PRAXIS_POLICY_AGENTS) {

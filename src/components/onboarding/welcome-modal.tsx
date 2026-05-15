@@ -24,12 +24,12 @@ interface WelcomeModalProps {
 }
 
 const REAL_FEATURES = [
-  { icon: MessageSquare, label: 'Ask PRAXIS', description: 'Write the question and keep the context attached.' },
-  { icon: Users, label: 'User and Situation cores', description: 'Keep role, audience, actors, and office context visible.' },
-  { icon: Search, label: 'Research and receipts', description: 'Pull sources, snippets, and provenance into the same record.' },
-  { icon: FileText, label: 'Memo drafting', description: 'Move from analysis to a reviewable brief or memo.' },
-  { icon: GitBranch, label: 'Graph review', description: 'Inspect claims, relationships, and evidence before export.' },
-  { icon: Wrench, label: 'Suggested tools', description: 'PRAXIS recommends the few tools that fit the case.' },
+  { icon: MessageSquare, label: 'Big prompt', description: 'Describe the policy task from the active ContextCapsule.' },
+  { icon: Users, label: 'Capsule cores', description: 'Keep user, situation, sources, tools, and output visible.' },
+  { icon: Wrench, label: 'Policy agents', description: 'Run memo, review, monitoring, or handover work from one surface.' },
+  { icon: Search, label: 'Source receipts', description: 'Keep evidence and gaps attached to the output.' },
+  { icon: FileText, label: 'Memo Studio', description: 'Open the draft where the run finishes.' },
+  { icon: GitBranch, label: 'Canvas', description: 'Inspect actors, claims, and graph proposals when needed.' },
 ];
 
 const DEMO_FEATURES = [
@@ -47,9 +47,9 @@ const SYRIA_DEMO_FEATURES = [
 ];
 
 const WORKFLOW_STEPS = [
-  { title: 'Attach cores', description: 'Pick the User Core and Situation Core that frame the work.' },
-  { title: 'Ask PRAXIS', description: 'Write the question, surface the next move, and keep provenance visible.' },
-  { title: 'Draft the memo', description: 'Research, review, and export from the same workspace.' },
+  { title: 'Choose capsule', description: 'Start with the active context: user, situation, sources, and output.' },
+  { title: 'Run agent', description: 'Use the big prompt or a suggested policy agent card.' },
+  { title: 'Open output', description: 'Review the result in Memo Studio, Canvas, Library, or handover.' },
 ] as const;
 
 export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) {
@@ -103,13 +103,13 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
                 )
               ) : (
                 <>
-                  PRAXIS is a policy context workspace. Attach a User Core and Situation Core, ask one question, then research and draft with provenance and temporality visible.
+                  PRAXIS works like a simple agent dashboard: choose a ContextCapsule, describe the policy task, run a policy agent, then review the output.
                 </>
               )}
             </p>
             {!isDemo && (
               <p className="mt-3 text-xs font-medium text-navy-500">
-                LLM-agnostic path: Gemini now, provider choice later.
+                Advanced tools stay behind approval gates; the main workspace stays simple.
               </p>
             )}
           </div>
@@ -156,7 +156,7 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
                 'shadow-md shadow-diplomatic-blue/20'
               )}
             >
-              {isDemo ? 'Start guided tour' : 'Open guided tour'}
+              {isDemo ? 'Start guided tour' : 'Open PRAXIS Home'}
             </button>
 
             <button
@@ -166,7 +166,7 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
                 'transition-all duration-150 hover:bg-gray-50 active:scale-[0.98]'
               )}
             >
-              {isDemo ? 'Explore sample workspace' : 'Explore freely'}
+              {isDemo ? 'Explore sample workspace' : 'Skip welcome'}
             </button>
 
             <p className="text-center text-[11px] text-navy-400 mt-1">

@@ -6,6 +6,9 @@ export type PolicyAgentApprovalLevel = 'none' | 'confirm' | 'approval_required' 
 
 export type PolicyAgentOutputDestination = 'memo_studio' | 'canvas' | 'library' | 'handover';
 
+export const PENDING_TASKLET_PROMPT_KEY = 'praxis.pending.taskletPrompt';
+export const PENDING_POLICY_AGENT_ID_KEY = 'praxis.pending.policyAgentId';
+
 export interface PolicyAgentDefinition {
   id: string;
   label: string;
@@ -106,6 +109,16 @@ export const FORBIDDEN_MVP_INTEGRATION_CLAIMS = [
 
 export function getPolicyAgent(id: string | null | undefined): PolicyAgentDefinition | null {
   return PRAXIS_POLICY_AGENTS.find((agent) => agent.id === id) ?? null;
+}
+
+export function policyAgentLoginHref(agentId: string, prompt: string): string {
+  const params = new URLSearchParams({
+    mode: 'signup',
+    redirect: '/app/dashboard',
+    policyAgentId: agentId,
+  });
+  if (prompt.trim()) params.set('capsulePrompt', prompt.trim());
+  return `/login?${params.toString()}`;
 }
 
 export function destinationHref(destination: PolicyAgentOutputDestination): string {

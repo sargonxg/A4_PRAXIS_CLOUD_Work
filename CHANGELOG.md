@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(auth): preserve Tasklet-style PRAXIS handoff through login.
+  Public policy-agent prompts now carry the selected agent into signup/login,
+  login shows the queued PRAXIS run, normal post-login and onboarding exits land
+  on the Tasklet-style Home, and the welcome modal now explains the simple
+  capsule -> agent -> output loop.
 - feat(app): make PRAXIS Tasklet-style from the first viewport.
   Added a shared Tasklet-like PRAXIS workbench for the public homepage and
   authenticated Home, introduced the policy-agent registry, reframed the
