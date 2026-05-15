@@ -211,6 +211,11 @@ The safe next implementation is a bridge layer, not a broad route rewrite.
      and later `appendAgentToolCall` / approval writes.
    - Requirement: every ADK/Genkit material event becomes a PRAXIS ledger
      event.
+   - Current checkpoint: `src/lib/agent-runtime/mirror.ts` now provides
+     `mirrorWorkerEvent`, `mirrorGenkitFlowEvent`, `mirrorAdkAgentEvent`, and
+     `buildCapsuleWorkerContext`. The no-op worker uses it for
+     capsule-context resolution and bridge-ready completion events. Real
+     Genkit and ADK execution remain follow-up work.
 
 2. Move the first real queued worker onto Genkit.
    - Candidate: Research Memo Agent.

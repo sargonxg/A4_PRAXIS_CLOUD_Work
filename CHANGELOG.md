@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- feat(agent-runtime): add PRAXIS-owned Genkit/ADK ledger mirror hooks.
+  Added the runtime mirror module for worker, Genkit flow, and ADK event
+  normalization, wired the no-op worker to emit capsule-context and bridge-ready
+  step events, added focused mirror tests, and expanded the prompt pack with
+  two Codex prompts plus one Claude Code prompt for the next AI-bar/runtime
+  waves.
 - docs(ai): map ADK and Genkit into the PRAXIS runtime.
   Added the ADK + Genkit integration plan, documenting current ADK/Vertex Agent
   Engine and Genkit flow/tool state, route coverage, PRAXIS-owned state

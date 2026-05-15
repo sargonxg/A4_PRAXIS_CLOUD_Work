@@ -45,9 +45,10 @@ from the active ledger above.
 4. Implement the Research Memo Agent first, then Daily Brief, Watchlist, and
    Source Monitor. Every run must resolve the active ContextCapsule before
    calling tools.
-5. Before adding real model/tool execution, add the ADK/Genkit run-ledger
-   mirror adapter from
-   `docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md`: ADK/Genkit may execute
+5. The first ADK/Genkit run-ledger mirror adapter now exists in
+   `src/lib/agent-runtime/mirror.ts`. Next, use the new Codex prompts in
+   `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` to wire a real Genkit
+   worker bridge and queued ADK Deep Research path. ADK/Genkit may execute
    worker steps, but PRAXIS must persist every material event/tool call to the
    Cloud SQL run ledger.
 6. Add approval gates before any external send, graph fact promotion,

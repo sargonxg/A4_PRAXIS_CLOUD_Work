@@ -1,5 +1,24 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — Agent Runtime Mirror For Genkit + ADK
+
+Current runtime bridge checkpoint:
+
+- Added `src/lib/agent-runtime/mirror.ts` as the PRAXIS-owned bridge for
+  recording worker, Genkit flow, and ADK agent events into the Cloud SQL run
+  ledger.
+- The no-op worker now emits explicit capsule-context resolution and no-op
+  step completion events before terminal success. This proves the worker can
+  carry run id, capsule id, selected cores, context package, and trace id into
+  future Genkit/ADK execution.
+- Added focused mirror tests covering capsule worker context extraction,
+  Genkit flow event normalization, ADK event normalization, and text preview
+  bounding.
+- The implementation is bridge-ready only. Research Memo Agent, live Genkit
+  worker execution, and queued ADK Deep Search are still follow-up waves.
+- Added two Codex prompts and one Claude Code prompt to the runtime prompt pack
+  for Genkit bridge, queued ADK Deep Research, and AI-bar/tools/capsule UX.
+
 ## 2026-05-15 — ADK + Genkit Runtime Integration Map
 
 Current architecture checkpoint:
