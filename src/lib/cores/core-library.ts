@@ -6,6 +6,7 @@ import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { listCapsules, type PraxisCapsule } from '@/lib/context/capsule-service';
 import type { ContextHealth } from '@/types/context-engine';
 import type { Firestore } from 'firebase-admin/firestore';
+import type { SourceImportReceipt } from '@/lib/workbench/library-state';
 
 export interface LibraryCore {
   id: string;
@@ -32,6 +33,7 @@ export interface LibraryCore {
   embeddingStatus?: 'embedded' | 'queued' | 'unavailable' | 'failed';
   extractionStatus?: string;
   graphDeltaReviewCount?: number;
+  receipt?: SourceImportReceipt;
 }
 
 export interface CoreLibraryFilters {
@@ -450,6 +452,7 @@ async function readSourceCores(uid: string, db: Firestore, situationIds: string[
         sourceReceiptId: stringField(data, 'sourceReceiptId') ?? doc.id,
         capsuleIds: capsules.filter((capsule) => capsule.coreRefs.sourceCoreIds.includes(sourceCoreId)).map((capsule) => capsule.capsuleId),
         status: extracted ? 'ready' : 'queued',
+        receipt: parseSourceImportReceipt(data.receipt),
       }));
     }
   }

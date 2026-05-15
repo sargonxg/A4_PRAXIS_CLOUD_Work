@@ -3,6 +3,18 @@ import type { SavedClaim } from '@/types/saved-claims';
 
 export type LibraryArtifactType = 'source' | 'document' | 'claim' | 'memo' | 'export';
 
+export interface SourceImportReceipt {
+  sourceType: string;
+  claims: string[];
+  dates: string[];
+  actors: string[];
+  confidence: number;
+  attachedCore: string;
+  documentId?: string;
+  chunkCount?: number;
+  extractedAt?: string;
+}
+
 export interface LibraryArtifact {
   id: string;
   type: LibraryArtifactType;
@@ -16,6 +28,7 @@ export interface LibraryArtifact {
   coreKind?: 'source' | 'document';
   ingestionRunId?: string;
   graphDeltaReviewCount?: number;
+  receipt?: SourceImportReceipt;
   meta: Record<string, string>;
 }
 
