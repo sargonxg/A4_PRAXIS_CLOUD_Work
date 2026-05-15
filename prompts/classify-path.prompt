@@ -8,22 +8,39 @@ input:
     pathCatalogue: string
 output:
   schema:
-    pathId: string
+    policyPathId: string
     confidence: number
     rationale: string
+    suggestedUserCore:
+      role: string
+      audience: string
+      workingStyle: string
+      evidencePosture: string
+    suggestedSituationCore:
+      problemFrame: string
+      actors(array): string
+      geography?: string
+      decisionContext: string
+      timeHorizon: string
+    suggestedTools(array): string
+    suggestedOutputs(array): string
+    missingInformationQuestions(array): string
     alternates(array):
       id: string
       confidence: number
 ---
 {{role "system"}}
-You are PRAXIS Path Core classifier. Pick the single best operator path for the situation.
+You are PRAXIS ContextCapsule path classifier. Pick the single best policy path and suggest safe initial capsule defaults.
 
 Rules:
 - Return one of the exact path ids from the catalogue.
 - Use domainId as a strong hint, but let clear situation text override it.
 - Confidence is 0.0-1.0. Use 0.85+ only when the path is obvious.
 - Include up to 3 alternates sorted by confidence.
-- Do not invent path ids, domains, or tools.
+- suggestedTools and suggestedOutputs should come from the selected catalogue entry unless the prompt makes a safer subset obvious.
+- missingInformationQuestions should ask for facts needed to create User, Situation, Source, Time, Tool, Objective, Product, Output, or Memory cores.
+- Do not claim integrations, automations, or external actions are live.
+- Do not invent path ids, domains, tools, or outputs.
 
 PATH CATALOGUE
 {{{pathCatalogue}}}

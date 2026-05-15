@@ -51,16 +51,20 @@ from the active ledger above.
    worker bridge and queued ADK Deep Research path. ADK/Genkit may execute
    worker steps, but PRAXIS must persist every material event/tool call to the
    Cloud SQL run ledger.
-6. Add approval gates before any external send, graph fact promotion,
+6. Use the Genkit ContextCapsule path classifier as the first safe homepage
+   prompt-to-capsule bridge: classify into `POLICY_PATH_PROFILES`, show
+   suggested cores/tools/outputs/questions, then create user-owned capsule
+   state only through the existing authenticated capsule creation flow.
+7. Add approval gates before any external send, graph fact promotion,
    unsupported-claim resolution, credentialed browser automation, or high-risk
    tool action.
-7. Keep MCP private/read-first until the run ledger and approval model are
+8. Keep MCP private/read-first until the run ledger and approval model are
    reliable. Browser/code sandbox work is explicitly GKE-later unless a real
    workload proves Cloud Run cannot handle it.
-8. When browser automation becomes necessary, start with `browser-use` plus
+9. When browser automation becomes necessary, start with `browser-use` plus
    Steel.dev managed sessions, allowlisted/read-only behavior, hard run caps,
    idempotency, trace ids, and approval gates before credentialed actions.
-9. Use `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md` and
+10. Use `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md` and
    `src/lib/product/context-capsules.ts` when adding new personas, paths,
    output products, connectors, or capsule-combination flows.
 

@@ -24,9 +24,25 @@ describe('/api/paths/classify', () => {
       isDemo: false,
     }));
     mocks.classifyPathFlow.mockResolvedValue({
-      pathId: 'conflict-path',
+      policyPathId: 'crisis-management',
       confidence: 0.82,
-      rationale: 'Escalation and security terms dominate.',
+      rationale: 'Escalation and crisis terms dominate.',
+      suggestedUserCore: {
+        role: 'Crisis manager',
+        audience: 'Crisis team',
+        workingStyle: 'Track deadlines and source gaps.',
+        evidencePosture: 'Preserve uncertainty.',
+      },
+      suggestedSituationCore: {
+        problemFrame: 'Escalation watch',
+        actors: [],
+        geography: null,
+        decisionContext: 'Prepare an executive update.',
+        timeHorizon: 'Current decision window',
+      },
+      suggestedTools: ['Timeline Events', 'Risk Indicators'],
+      suggestedOutputs: ['Situation brief'],
+      missingInformationQuestions: ['What changed most recently?'],
       alternates: [],
     });
   });
@@ -43,7 +59,7 @@ describe('/api/paths/classify', () => {
     }));
 
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toMatchObject({ pathId: 'conflict-path', confidence: 0.82 });
+    await expect(res.json()).resolves.toMatchObject({ policyPathId: 'crisis-management', confidence: 0.82 });
     expect(mocks.classifyPathFlow).toHaveBeenCalledWith(expect.objectContaining({
       domainId: 'armed-conflict-security',
       description: expect.stringContaining('Monitor actors'),

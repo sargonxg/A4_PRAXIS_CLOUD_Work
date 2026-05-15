@@ -1,5 +1,21 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — Genkit ContextCapsule Path Classifier
+
+Current Genkit checkpoint:
+
+- `classifyPathFlow` now maps homepage/user prompt text into the canonical
+  `POLICY_PATH_PROFILES` registry instead of the older route/path taxonomy.
+- The flow returns typed capsule defaults: `policyPathId`, confidence,
+  suggested User Core, suggested Situation Core, suggested tools, suggested
+  outputs, missing-information questions, and alternates.
+- The deterministic fallback remains in place for unavailable Genkit/provider
+  execution and covers foreign policy, HR policy, legal/compliance, crisis, and
+  unclear generic prompts.
+- `POST /api/paths/classify` stays authenticated and read-only. It classifies
+  prompts only; it does not create capsules, call tools, or claim integrations
+  are live.
+
 ## 2026-05-15 — Agent Runtime Mirror For Genkit + ADK
 
 Current runtime bridge checkpoint:

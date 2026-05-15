@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(genkit): classify prompts into ContextCapsule paths.
+  Moved the classify-path flow onto `POLICY_PATH_PROFILES`, added typed capsule
+  default output for User/Situation cores, tools, outputs, and missing
+  questions, preserved deterministic fallback behavior, and covered foreign
+  policy, HR, compliance, crisis, generic, and API validation cases.
 - feat(agent-runtime): add PRAXIS-owned Genkit/ADK ledger mirror hooks.
   Added the runtime mirror module for worker, Genkit flow, and ADK event
   normalization, wired the no-op worker to emit capsule-context and bridge-ready

@@ -17,9 +17,25 @@ const BodySchema = z.object({
 export const POST = withAuth(async (request, user) => {
   if (user.isDemo) {
     return NextResponse.json({
-      pathId: null,
+      policyPathId: 'generic-policy',
       confidence: 0,
-      rationale: 'Demo users do not classify persistent Path Cores.',
+      rationale: 'Demo users do not classify persistent ContextCapsule paths.',
+      suggestedUserCore: {
+        role: 'Generic policy worker',
+        audience: 'Policy team',
+        workingStyle: 'Use demo context only; copy a capsule before saving persistent defaults.',
+        evidencePosture: 'Do not treat demo material as user-owned evidence.',
+      },
+      suggestedSituationCore: {
+        problemFrame: 'Demo mode does not create a persistent situation core.',
+        actors: [],
+        geography: null,
+        decisionContext: 'Copy or create a user-owned capsule before using path defaults.',
+        timeHorizon: 'Demo session',
+      },
+      suggestedTools: [],
+      suggestedOutputs: [],
+      missingInformationQuestions: ['What user-owned policy problem should PRAXIS classify after sign-in?'],
       alternates: [],
     });
   }
