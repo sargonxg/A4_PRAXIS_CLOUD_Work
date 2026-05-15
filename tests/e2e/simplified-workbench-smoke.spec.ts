@@ -49,7 +49,9 @@ test('simplified app shell exposes context bar, command palette, and five-surfac
 
   await page.goto('/app/assistant');
   await expect(page.getByTestId('ask-workspace-page')).toBeVisible();
-  await expect(page.getByText(/Next best actions/i).first()).toBeVisible();
+  await expect(page.getByText(/Context Composer/i).first()).toBeVisible();
+  await expect(page.getByText(/Suggested actions/i).first()).toBeVisible();
+  await expect(page.getByRole('toolbar', { name: /Active capsule/i })).toBeVisible();
 
   await page.goto('/app/contexts');
   await expect(page.getByRole('heading', { name: /Core Library/i }).first()).toBeVisible();

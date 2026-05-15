@@ -175,13 +175,14 @@ test('ask workspace exposes the full-page write surface and core attachers', asy
   await page.goto('/app/assistant');
 
   await expect(page.getByTestId('ask-workspace-page')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Write, attach context, and route the work from one page\./i })).toBeVisible();
-  await expect(page.getByText(/^Ask PRAXIS$/i).first()).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Tools library$/i })).toBeVisible();
-  await expect(page.getByLabel(/User Core/i)).toBeVisible();
-  await expect(page.getByLabel(/Situation Core/i)).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Open Write with PRAXIS$/i })).toBeVisible();
-  await expect(page.getByText(/Gemini now, provider picker later/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Ask PRAXIS$/i }).first()).toBeVisible();
+  await expect(page.getByText(/Question \+ active capsule \+ selected tools \+ output goal/i)).toBeVisible();
+  await expect(page.getByRole('toolbar', { name: /Active capsule/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Active capsule/i })).toBeVisible();
+  await expect(page.getByText(/Source\/Document Core/i).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Find sources/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Send to Memo Studio/i }).first()).toBeVisible();
+  await expect(page.getByPlaceholder(/@source, @core, \/draft/i)).toBeVisible();
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });

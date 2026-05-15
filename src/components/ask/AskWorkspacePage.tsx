@@ -12,19 +12,18 @@ import {
   History,
   Layers3,
   LibraryBig,
-  Lock,
   Network,
   Plus,
   Save,
   Search,
   ShieldCheck,
-  Sparkles,
   Target,
   Users,
 } from 'lucide-react';
 import { AskStreamPanel } from '@/components/ask/AskStreamPanel';
 import { AppPageHeader } from '@/components/app/app-page-header';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
+import { getNextMoves } from '@/lib/assistant/next-moves';
 import { buildContextHealthReport } from '@/lib/context/context-health';
 import { PUBLIC_USER_MODELS } from '@/lib/user-models/seeds';
 import type { UserModelRecord } from '@/lib/user-models/types';
@@ -167,6 +166,10 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     healthScore: contextHealth.score,
   });
   const missingBricks = bricks.filter((brick) => !brick.ready);
+  const nextMoves = getNextMoves({
+    situation: selectedCase?.kind === 'user' ? selectedCase.situation : null,
+    situationStage: selectedCase?.tags.join(' ') ?? 'intake',
+  }).slice(0, 3);
   const headerLine = `${activeUserModel.identity} / ${activeContextName} / ${evidenceCount} sources and documents / ${stack.outputGoal ?? 'Memo goal'} / ${contextHealth.score}/100 health`;
 
   function handleUserModelChange(modelId: string) {
@@ -235,6 +238,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
             contextHealthScore={contextHealth.score}
             missingBricks={missingBricks}
             marketplaceToolCount={marketplaceToolCount}
+            nextMoves={nextMoves}
             selectedCase={selectedCase}
             selectedCaseId={selectedCase?.id ?? ''}
             workspaceCases={workspaceCases}
@@ -255,6 +259,7 @@ function ContextComposer({
   contextHealthScore,
   marketplaceToolCount,
   missingBricks,
+  nextMoves,
   selectedCase,
   selectedCaseId,
   workspaceCases,
@@ -268,6 +273,7 @@ function ContextComposer({
   contextHealthScore: number;
   marketplaceToolCount: number;
   missingBricks: CoreBrick[];
+  nextMoves: Array<{ id: string; label: string; detail: string; href: string }>;
   selectedCase: WorkspaceCase | null;
   selectedCaseId: string;
   workspaceCases: WorkspaceCase[];
@@ -362,6 +368,20 @@ function ContextComposer({
             <p>Core stack is ready for a grounded answer.</p>
           )}
         </div>
+      </div>
+
+      <div className="mt-5 space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Suggested actions</p>
+        {nextMoves.map((move) => (
+          <Link
+            key={move.id}
+            href={move.href}
+            className="block rounded-md border border-slate-200 bg-slate-50 p-3 transition hover:border-diplomatic-blue/30 hover:bg-white"
+          >
+            <span className="block text-sm font-semibold text-navy-950">{move.label}</span>
+            <span className="mt-0.5 block text-xs leading-5 text-slate-600">{move.detail}</span>
+          </Link>
+        ))}
       </div>
 
       <div className="mt-5 grid gap-2">
