@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { sanitizeActiveContextStack } from '@/lib/context/active-context-stack';
-import { buildContextHealthReport } from '@/lib/context/context-health';
+import { buildContextHealthReport, MAX_CONTEXT_HEALTH_NEXT_ACTIONS } from '@/lib/context/context-health';
 import { autoStructureDocument } from '@/lib/documents/auto-structure';
 import { buildClaimEvidenceReport } from '@/lib/documents/evidence-review';
 import {
@@ -64,7 +64,7 @@ describe('context health', () => {
       situationHref: '/app/workbench/context-1?tab=library',
     });
 
-    expect(report.nextActions).toHaveLength(3);
+    expect(report.nextActions).toHaveLength(MAX_CONTEXT_HEALTH_NEXT_ACTIONS);
     expect(report.nextActions.map((action) => action.id)).toEqual([
       'attach-sources',
       'map-actors',

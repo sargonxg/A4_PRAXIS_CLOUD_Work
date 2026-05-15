@@ -34,6 +34,8 @@ export interface ContextHealthReport {
   nextActions: NextBestAction[];
 }
 
+export const MAX_CONTEXT_HEALTH_NEXT_ACTIONS = 3;
+
 export function buildContextHealthReport(input: ContextHealthInput): ContextHealthReport {
   const evidenceCount = input.sourceCount + (input.documentCount ?? 0);
   const signals: ContextHealthSignal[] = [
@@ -95,7 +97,7 @@ export function buildContextHealthReport(input: ContextHealthInput): ContextHeal
     score,
     label: score >= 80 ? 'Ready to draft' : score >= 55 ? 'Needs grounding' : 'Context incomplete',
     signals,
-    nextActions: buildNextActions(input, evidenceCount).slice(0, 3),
+    nextActions: buildNextActions(input, evidenceCount).slice(0, MAX_CONTEXT_HEALTH_NEXT_ACTIONS),
   };
 }
 
