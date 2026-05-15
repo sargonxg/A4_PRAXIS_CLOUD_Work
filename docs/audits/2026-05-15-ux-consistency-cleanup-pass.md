@@ -19,7 +19,7 @@ Applied the current design contract without adding primary surfaces. The visible
 | --- | --- | --- |
 | Shared header | `src/components/app/app-page-header.tsx` | Added one compact title/subtitle/action pattern for app pages. |
 | Context bar | `src/components/app/core-context-strip.tsx` | Reworked into calm cells for User Core, Situation Core, sources/documents, output posture, health, and one change-context action. |
-| Ask PRAXIS | `src/components/ask/AskWorkspacePage.tsx` | Replaced hero-like header and runtime stats with a compact Ask header. |
+| Ask PRAXIS | `src/components/ask/AskWorkspacePage.tsx`, `src/components/ask/AskStreamPanel.tsx` | Rebuilt the working surface around one large chat panel, six active core chips, compact policy tool commands, Send to Memo Studio, and an inline Context Composer rail. Removed the old dashboard-style knowledge stack, capability runway, policy posture, and duplicated context explanation panels from the Ask page. |
 | Library | `src/components/workbench/LibraryTab.tsx` | Shortened intake copy and replaced generic empty/detail states with useful missing-state copy. |
 | Canvas | `src/components/canvas/ContextCanvasPage.tsx` | Replaced long header with compact review header and tightened empty gap copy. |
 | Advanced | `src/app/app/tools/page.tsx` | Reframed the page as contained machinery, not a tool marketplace. |
@@ -31,6 +31,7 @@ Applied the current design contract without adding primary surfaces. The visible
 Commands run:
 
 - `npx tsc --noEmit`: passed after adding explicit `withAuth` route types in two existing API routes.
+- `npx tsc --noEmit`: passed again after the Ask PRAXIS cockpit rewrite.
 - `npm run audit:simplification`: passed with existing canonical-name warnings for duplicated display names.
 - `npm run audit:mvp-route-shape`: initially failed because the script still requires a literal `/app/contexts` marker in `PRIMARY_NAV`; kept `/app/contexts` as a compatibility marker comment while preserving the six visible nav labels.
 - `npx knip --no-exit-code --reporter compact`: produced a large candidate list, not safe for automatic deletion.

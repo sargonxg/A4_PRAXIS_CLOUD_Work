@@ -1,41 +1,38 @@
 'use client';
 
 /**
- * AskStreamPanel — SSE consumer for /api/ai/ask-praxis (Codex CX-5).
+ * AskStreamPanel — SSE consumer for /api/ai/ask-praxis.
  *
- * Brief: Claude Code CC-4.
- *
- * Renders the Genkit ask-praxis stream as stacked cards:
- *   - retrieve  → compact chip row showing claim/actor/event counts
- *   - framework → full card colored by framework hex
- *   - tool_call → collapsed inline pill, expandable
- *   - interrupt → InterruptCard (CC-5) — focus-trapped, Approve/Modify/Cancel
- *   - synthesis → final answer panel with receipt strip
- *
- * Pinned capsule indicator bar above the input shows the active
- * cores (User · Situation · Path · N Sources · M Tools); clicking
- * any cell opens the swap drawer via window event hook.
- *
- * Cancel via AbortController. Reduced motion respects user setting.
+ * The surface is intentionally chat-first: active capsule chips, answer stream,
+ * compact policy tool picker, and a large prompt box.
  */
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
+  FileText,
+  History,
+  LibraryBig,
   Loader2,
+  Lock,
+  Network,
   Search as SearchIcon,
   Send,
+  ShieldCheck,
   Square,
+  Unlock,
   Wrench,
-  CheckCircle2,
+  X,
 } from 'lucide-react';
-import { useSituationStore } from '@/stores/situation-store';
 import { InterruptCard, type InterruptRequest } from '@/components/ask/InterruptCard';
 import { buildContextHealthReport } from '@/lib/context/context-health';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
+import { useSituationStore } from '@/stores/situation-store';
 
 const SPRING = { type: 'spring' as const, stiffness: 240, damping: 28 };
 
@@ -50,22 +47,43 @@ interface StreamEvent extends Record<string, unknown> {
   stage?: StreamStage['stage'];
 }
 
+export interface AskCoreBrick {
+  id: string;
+  label: string;
+  value: string;
+  detail: string;
+  href: string;
+  version: string;
+  ready: boolean;
+  locked: boolean;
+  optional?: boolean;
+}
+
 export interface AskStreamPanelProps {
   capsuleId?: string | null;
   userLabel?: string;
   outputGoal?: string;
   healthScore?: number;
-  coreBricks?: Array<{ id: string; label?: string; title?: string; status?: string }>;
+  coreBricks?: AskCoreBrick[];
   onOpenComposer?: () => void;
   className?: string;
 }
 
+const TOOL_COMMANDS = [
+  { label: 'Find sources', command: '/find-sources ', icon: SearchIcon },
+  { label: 'Draft', command: '/draft ', icon: FileText },
+  { label: 'Red-team', command: '/red-team ', icon: ShieldCheck },
+  { label: 'Scenario', command: '/scenario ', icon: Network },
+  { label: 'Source check', command: '@source ', icon: LibraryBig },
+  { label: 'Memo', command: '/memo ', icon: History },
+] as const;
+
 export function AskStreamPanel({
   capsuleId,
-  userLabel,
-  outputGoal,
+  userLabel = 'User Core',
+  outputGoal = 'Memo goal',
   healthScore,
-  coreBricks = [],
+  coreBricks,
   onOpenComposer,
   className,
 }: AskStreamPanelProps) {
@@ -87,7 +105,7 @@ export function AskStreamPanel({
     hasDraft: false,
     situationHref: activeSituation ? `/app/workbench/${activeSituation.id}` : '/app/contexts',
   }), [activeSituation]);
-  const missingCore = contextHealth.score < 55 ? contextHealth.nextActions[0] : null;
+  const activeHealthScore = healthScore ?? contextHealth.score;
 
   const cancel = useCallback(() => {
     abortRef.current?.abort();
@@ -139,10 +157,7 @@ export function AskStreamPanel({
           setEvents((prev) => {
             const last = prev[prev.length - 1];
             if (last?.stage === 'synthesis') {
-              return [
-                ...prev.slice(0, -1),
-                { ...last, answer: `${last.answer}${token}` },
-              ];
+              return [...prev.slice(0, -1), { ...last, answer: `${last.answer}${token}` }];
             }
             return [...prev, { stage: 'synthesis', answer: token }];
           });
@@ -163,9 +178,7 @@ export function AskStreamPanel({
         };
 
         const consumeSseBlock = (block: string) => {
-          const dataLine = block
-            .split('\n')
-            .find((l) => l.startsWith('data:'));
+          const dataLine = block.split('\n').find((line) => line.startsWith('data:'));
           if (dataLine) consumeStreamEvent(dataLine.slice(5).trim());
         };
 
@@ -190,16 +203,12 @@ export function AskStreamPanel({
           sseBuffer += chunk;
           const sseParts = sseBuffer.split('\n\n');
           sseBuffer = sseParts.pop() ?? '';
-          for (const part of sseParts) {
-            consumeSseBlock(part);
-          }
+          for (const part of sseParts) consumeSseBlock(part);
 
           dataLineBuffer += chunk;
           const lines = dataLineBuffer.split('\n');
           dataLineBuffer = lines.pop() ?? '';
-          for (const line of lines) {
-            consumeDataStreamLine(line.trimEnd());
-          }
+          for (const line of lines) consumeDataStreamLine(line.trimEnd());
         }
         if (sseBuffer.trim()) consumeSseBlock(sseBuffer);
         if (dataLineBuffer.trim()) consumeDataStreamLine(dataLineBuffer.trimEnd());
@@ -219,164 +228,264 @@ export function AskStreamPanel({
 
   return (
     <section className={cn('flex flex-col gap-3', className)}>
-      <CapsuleIndicatorBar capsuleId={capsuleId} />
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-navy-950">Using:</span>
-          <span>{userLabel ? `User Core (${userLabel})` : 'User Core'}</span>
-          <span className="text-slate-300">/</span>
-          <span>{activeSituation?.name ?? 'No Situation Core'}</span>
-          <span className="text-slate-300">/</span>
-          <span>{(activeSituation?.sourceUrls?.length ?? 0) + (activeSituation?.documentCount ?? 0)} Documents & sources</span>
-          <span className="text-slate-300">/</span>
-          <span>{outputGoal ?? 'Memo Goal'}</span>
-          {typeof healthScore === 'number' ? (
-            <>
-              <span className="text-slate-300">/</span>
-              <span>{healthScore}/100</span>
-            </>
+      <div className="flex min-h-0 flex-1 flex-col rounded-lg bg-[#FCFBF7]">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-3 py-2">
+          <CapsuleIndicatorBar
+            capsuleId={capsuleId}
+            coreBricks={coreBricks}
+            healthScore={activeHealthScore}
+            onOpenComposer={onOpenComposer}
+            outputGoal={outputGoal}
+            userLabel={userLabel}
+          />
+          <Link
+            href="/app/write"
+            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-navy-900 hover:bg-slate-50"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Send to Memo Studio
+          </Link>
+        </div>
+
+        <div className="min-h-[22rem] flex-1 space-y-3 overflow-y-auto p-3">
+          {events.length === 0 && !thinking ? (
+            <div className="flex h-full min-h-[20rem] items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/70 px-6 text-center">
+              <div className="max-w-md">
+                <p className="font-serif text-2xl font-semibold text-navy-950">Ask from the active capsule.</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Use a normal question, @source, @core, or a slash command. PRAXIS will keep citations, tool receipts, and memo handoff visible.
+                </p>
+              </div>
+            </div>
           ) : null}
-          {onOpenComposer ? (
-            <button
-              type="button"
-              onClick={onOpenComposer}
-              className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:border-gold-500 hover:text-gold-700"
-            >
-              Edit cores
-            </button>
+
+          <AnimatePresence>
+            {events.map((evt, idx) => (
+              <motion.div
+                key={`${evt.stage}-${idx}`}
+                initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+                transition={reduceMotion ? { duration: 0 } : { ...SPRING, delay: idx * 0.05 }}
+              >
+                <StageCard event={evt} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {interrupt ? (
+            <InterruptCard
+              request={interrupt}
+              onApprove={async (modifiedInputs) => {
+                await fetch(
+                  `/api/ai/ask-praxis/resume?turnId=${encodeURIComponent(interrupt.turnId)}&interruptId=${encodeURIComponent(interrupt.interruptId)}`,
+                  {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ inputs: modifiedInputs }),
+                  },
+                ).catch(() => undefined);
+                setInterrupt(null);
+              }}
+              onCancel={() => {
+                setInterrupt(null);
+                cancel();
+              }}
+            />
+          ) : null}
+
+          {thinking ? (
+            <div className="sticky bottom-0 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Thinking...
+              <button
+                type="button"
+                onClick={cancel}
+                className="ml-1 inline-flex items-center gap-1 rounded-md border border-slate-300 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-700 hover:bg-slate-50"
+              >
+                <Square className="h-2.5 w-2.5" />
+                Stop
+              </button>
+            </div>
           ) : null}
         </div>
-        {coreBricks.length > 0 ? (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {coreBricks.slice(0, 6).map((brick) => (
-              <span key={brick.id} className="rounded bg-white px-2 py-1 text-[11px] font-semibold text-slate-700">
-                {brick.label ?? brick.title ?? brick.id}
-              </span>
+
+        <div className="border-t border-slate-200 bg-white px-3 py-2">
+          <div className="mb-2 flex flex-wrap items-center gap-1.5">
+            {TOOL_COMMANDS.map((tool) => (
+              <button
+                key={tool.label}
+                type="button"
+                onClick={() => setPrompt((current) => current.trim() ? `${current} ${tool.command}` : tool.command)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-diplomatic-blue/30 hover:bg-white"
+              >
+                <tool.icon className="h-3 w-3" />
+                {tool.label}
+              </button>
             ))}
           </div>
-        ) : null}
-        {missingCore ? (
-          <p className="mt-1 text-gold-800">
-            Improve first: <span className="font-semibold">{missingCore.label}</span>.
-          </p>
-        ) : null}
-      </div>
-
-      <div className="min-h-[160px] space-y-2">
-        <AnimatePresence>
-          {events.map((evt, idx) => (
-            <motion.div
-              key={`${evt.stage}-${idx}`}
-              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
-              transition={reduceMotion ? { duration: 0 } : { ...SPRING, delay: idx * 0.05 }}
-            >
-              <StageCard event={evt} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-
-        {interrupt ? (
-          <InterruptCard
-            request={interrupt}
-            onApprove={async (modifiedInputs) => {
-              await fetch(
-                `/api/ai/ask-praxis/resume?turnId=${encodeURIComponent(interrupt.turnId)}&interruptId=${encodeURIComponent(interrupt.interruptId)}`,
-                {
-                  method: 'POST',
-                  credentials: 'include',
-                  headers: { 'content-type': 'application/json' },
-                  body: JSON.stringify({ inputs: modifiedInputs }),
-                },
-              ).catch(() => undefined);
-              setInterrupt(null);
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void send(prompt);
+              setPrompt('');
             }}
-            onCancel={() => {
-              setInterrupt(null);
-              cancel();
-            }}
-          />
-        ) : null}
-
-        {thinking ? (
-          <div className="sticky bottom-0 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            Thinking…
+            className="flex items-end gap-2 rounded-xl border border-slate-300 bg-white px-3 py-3 shadow-sm focus-within:border-diplomatic-blue"
+          >
+            <textarea
+              value={prompt}
+              onChange={(event) => setPrompt(event.target.value)}
+              placeholder="Ask PRAXIS. Try @source, @core, /draft, /find-sources, /red-team, /memo, or /scenario."
+              rows={2}
+              className="max-h-40 min-h-12 flex-1 resize-none bg-transparent text-sm leading-6 text-slate-900 placeholder:text-slate-500 focus:outline-none"
+            />
             <button
-              type="button"
-              onClick={cancel}
-              className="ml-1 inline-flex items-center gap-1 rounded-md border border-slate-300 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-700 hover:bg-slate-50"
+              type="submit"
+              disabled={!prompt.trim() || thinking}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-diplomatic-blue text-white shadow-sm transition disabled:opacity-50"
+              aria-label="Send"
             >
-              <Square className="h-2.5 w-2.5" />
-              Stop
+              <Send className="h-4 w-4" />
             </button>
-          </div>
-        ) : null}
+          </form>
+        </div>
       </div>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void send(prompt);
-          setPrompt('');
-        }}
-        className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 shadow-sm"
-      >
-        <input
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Ask PRAXIS — uses the active capsule and path…"
-          className="flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none"
-        />
-        <button
-          type="submit"
-          disabled={!prompt.trim() || thinking}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-diplomatic-blue text-white shadow-sm transition disabled:opacity-50"
-          aria-label="Send"
-        >
-          <Send className="h-3.5 w-3.5" />
-        </button>
-      </form>
     </section>
   );
 }
 
-function CapsuleIndicatorBar({ capsuleId }: { capsuleId?: string | null }) {
+function CapsuleIndicatorBar({
+  capsuleId,
+  coreBricks,
+  healthScore,
+  onOpenComposer,
+  outputGoal,
+  userLabel,
+}: {
+  capsuleId?: string | null;
+  coreBricks?: AskCoreBrick[];
+  healthScore: number;
+  onOpenComposer?: () => void;
+  outputGoal: string;
+  userLabel: string;
+}) {
   const activeSituation = useSituationStore((s) => s.activeSituation);
-  const cells = useMemo(
-    () => [
-      { label: 'User', value: 'me', kind: 'user' as const },
-      { label: 'Situation', value: activeSituation?.name?.slice(0, 16) ?? 'none', kind: 'situation' as const },
-      { label: 'Path', value: activeSituation?.workflowPathLabel ?? activeSituation?.pathId ?? 'generic', kind: 'path' as const },
-      { label: 'Sources', value: String((activeSituation?.sourceUrls?.length ?? 0) + (activeSituation?.documentCount ?? 0)), kind: 'source' as const },
-      { label: 'Tools', value: 'all', kind: 'output' as const },
+  const [locked, setLocked] = useState<Record<string, boolean>>({});
+  const cells = useMemo<AskCoreBrick[]>(
+    () => coreBricks ?? [
+      {
+        id: 'user',
+        label: 'User Core',
+        value: userLabel,
+        detail: 'Role and preferences',
+        href: '/app/cores/user',
+        version: 'v1',
+        ready: true,
+        locked: true,
+      },
+      {
+        id: 'situation',
+        label: 'Situation Core',
+        value: activeSituation?.name ?? 'none',
+        detail: 'Policy situation',
+        href: '/app/cores/context',
+        version: 'v1',
+        ready: Boolean(activeSituation),
+        locked: true,
+      },
+      {
+        id: 'source-document',
+        label: 'Source/Document Core',
+        value: String((activeSituation?.sourceUrls?.length ?? 0) + (activeSituation?.documentCount ?? 0)),
+        detail: 'Receipts and uploads',
+        href: '/app/contexts',
+        version: 'v1',
+        ready: Boolean((activeSituation?.sourceUrls?.length ?? 0) + (activeSituation?.documentCount ?? 0)),
+        locked: false,
+        optional: true,
+      },
+      {
+        id: 'graph',
+        label: 'Graph Core',
+        value: `${activeSituation?.actors?.length ?? activeSituation?.actorCount ?? 0} actors`,
+        detail: 'Actors and claims',
+        href: '/app/canvas',
+        version: 'v1',
+        ready: Boolean(activeSituation?.actors?.length || activeSituation?.actorCount),
+        locked: false,
+        optional: true,
+      },
+      {
+        id: 'time',
+        label: 'Time Core',
+        value: activeSituation?.latestEventDate ?? 'horizon',
+        detail: 'Freshness and forecast window',
+        href: activeSituation ? `/app/workbench/${activeSituation.id}` : '/app/contexts',
+        version: 'v1',
+        ready: Boolean(activeSituation),
+        locked: false,
+        optional: true,
+      },
+      {
+        id: 'output',
+        label: 'Output Core',
+        value: outputGoal,
+        detail: 'Memo format',
+        href: '/app/write',
+        version: healthScore >= 70 ? 'v2' : 'v1',
+        ready: true,
+        locked: false,
+        optional: true,
+      },
     ],
-    [activeSituation],
+    [activeSituation, coreBricks, healthScore, outputGoal, userLabel],
   );
 
   function open(kind: string) {
+    onOpenComposer?.();
     window.dispatchEvent(new CustomEvent('open-capsule-swap', { detail: { kind, capsuleId } }));
   }
 
   return (
-    <div
-      role="toolbar"
-      aria-label="Active capsule"
-      className="flex flex-wrap items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 text-[11px]"
-    >
-      {cells.map((c, i) => (
-        <button
-          key={c.label}
-          type="button"
-          onClick={() => open(c.kind)}
-          className="group inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold text-slate-700 transition hover:bg-slate-100"
-        >
-          <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">{c.label}</span>
-          <span className="font-mono text-slate-900">{c.value}</span>
-          {i < cells.length - 1 ? <span className="ml-1 text-slate-300">·</span> : null}
-        </button>
-      ))}
+    <div role="toolbar" aria-label="Active capsule" className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-[11px]">
+      {cells.map((cell) => {
+        const isLocked = locked[cell.id] ?? cell.locked;
+        return (
+          <div
+            key={cell.id}
+            className={cn(
+              'group inline-flex max-w-[15rem] items-center gap-1 rounded-md border bg-white px-2 py-1 shadow-sm',
+              cell.ready ? 'border-slate-200 text-slate-700' : 'border-gold-200 bg-gold-50 text-gold-950',
+            )}
+          >
+            <button type="button" onClick={() => open(cell.id)} className="min-w-0 text-left" title={`${cell.label}: ${cell.detail}`}>
+              <span className="block truncate text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">{cell.label}</span>
+              <span className="block truncate font-mono text-slate-900">{cell.value} / {cell.version}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setLocked((current) => ({ ...current, [cell.id]: !isLocked }))}
+              className="ml-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded hover:bg-slate-100"
+              aria-label={`${isLocked ? 'Unlock' : 'Lock'} ${cell.label}`}
+              title={`${isLocked ? 'Unlock' : 'Lock'} ${cell.label}`}
+            >
+              {isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+            </button>
+            {cell.optional ? (
+              <button
+                type="button"
+                onClick={() => open(cell.id)}
+                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                aria-label={`Swap or remove ${cell.label}`}
+                title={`Swap or remove ${cell.label}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -387,7 +496,7 @@ function StageCard({ event }: { event: StreamStage }) {
       <div className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-700 shadow-sm">
         <SearchIcon className="h-3 w-3 text-slate-500" />
         <span className="font-mono">
-          {event.counts.claims ?? 0} claims · {event.counts.actors ?? 0} actors · {event.counts.events ?? 0} events
+          {event.counts.claims ?? 0} claims / {event.counts.actors ?? 0} actors / {event.counts.events ?? 0} events
         </span>
       </div>
     );
@@ -395,37 +504,37 @@ function StageCard({ event }: { event: StreamStage }) {
   if (event.stage === 'framework') {
     const color = event.colorHex ?? '#1B3A5C';
     return (
-      <article
-        className="rounded-lg border-l-4 bg-white p-3 shadow-sm"
-        style={{ borderLeftColor: color }}
-      >
+      <article className="rounded-lg border-l-4 bg-white p-3 shadow-sm" style={{ borderLeftColor: color }}>
         <p className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color }}>
           {event.framework.replace(/_/g, ' ')}
         </p>
         <p className="mt-1 text-sm leading-snug text-slate-800">{event.finding}</p>
         {event.citations && event.citations.length > 0 ? (
           <p className="mt-1 font-mono text-[10px] text-slate-500">
-            {event.citations.map((c) => `[${c}]`).join(' ')}
+            {event.citations.map((citation) => `[${citation}]`).join(' ')}
           </p>
         ) : null}
       </article>
     );
   }
-  if (event.stage === 'tool_call') {
-    return <ToolCallCard event={event} />;
-  }
+  if (event.stage === 'tool_call') return <ToolCallCard event={event} />;
   if (event.stage === 'synthesis') {
     return (
       <article className="rounded-lg border border-emerald-300 bg-emerald-50 p-3">
-        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-800">
-          Synthesis
-        </p>
-        <p className="mt-1 text-sm leading-snug text-slate-900">{event.answer}</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-800">Synthesis</p>
+        <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-900">{event.answer}</p>
         {event.receipts && event.receipts.length > 0 ? (
-          <p className="mt-1 font-mono text-[10px] text-slate-600">
-            receipts: {event.receipts.join(' · ')}
-          </p>
+          <p className="mt-2 font-mono text-[10px] text-slate-600">receipts: {event.receipts.join(' / ')}</p>
         ) : null}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link href="/app/write" className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-800">
+            <FileText className="h-3.5 w-3.5" />
+            Send to Memo Studio
+          </Link>
+          <Link href="/app/contexts" className="inline-flex items-center gap-2 rounded-md border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-50">
+            Review context
+          </Link>
+        </div>
       </article>
     );
   }
@@ -438,19 +547,17 @@ function ToolCallCard({ event }: { event: Extract<StreamStage, { stage: 'tool_ca
     <article className="rounded-md border border-slate-200 bg-white p-2 shadow-sm">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen((value) => !value)}
         className="flex w-full items-center gap-2 text-left text-[11px] font-semibold text-slate-800"
       >
         {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <Wrench className="h-3 w-3 text-slate-500" />
         <span className="font-mono">{event.toolName}</span>
-        <span className="text-slate-600">→ {event.summary}</span>
+        <span className="text-slate-600">/ {event.summary}</span>
         <CheckCircle2 className="ml-auto h-3 w-3 text-emerald-600" />
       </button>
       {open && event.output ? (
-        <pre className="mt-2 overflow-auto rounded bg-slate-50 p-2 font-mono text-[10px] text-slate-800">
-          {event.output}
-        </pre>
+        <pre className="mt-2 overflow-auto rounded bg-slate-50 p-2 font-mono text-[10px] text-slate-800">{event.output}</pre>
       ) : null}
     </article>
   );
