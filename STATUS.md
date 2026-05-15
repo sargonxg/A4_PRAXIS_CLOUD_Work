@@ -1,5 +1,36 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — ADK Research Memo Bridge Contract
+
+Current backend/runtime checkpoint:
+
+- Added `src/lib/agent-runtime/adk-bridge.ts` as the PRAXIS-owned boundary for
+  capsule-aware ADK agent execution.
+- The bridge defines ADK agent kinds for deep research, research memo, daily
+  brief, and watchlist runs, validates capsule id/risk constraints, and builds
+  a ContextCapsule prompt from user, situation, source, output, and memory
+  context.
+- ADK text, status, source, error, done, and tool-call events can now be mapped
+  into durable PRAXIS run-ledger events without replacing the Cloud SQL ledger
+  with ADK sessions.
+- The first pass is contract-only. It does not call live Agent Engine, execute
+  tools, send external messages, promote graph facts, or expose internal
+  estimated cost/spend fields.
+
+## 2026-05-15 — Visible AI-Bar Sourceability Wave
+
+Current product checkpoint:
+
+- Public homepage now shows the AI-bar run plan: understand the request, attach
+  the active capsule, run capsule-aware tools, and ship to Memo Studio or
+  handover.
+- Ask PRAXIS now exposes first-click presets for Sourceability Check, Tool
+  Plan, and Memo Handoff so the tool layer is visible from the bar.
+- The tools repository now includes Sourceability in research and review
+  filters, instead of hiding it only in the full canonical list.
+- The ADK bridge contract now has a typed prompt/event mapper for capsule-owned
+  runs, with approval checks before high-risk ADK actions.
+
 ## 2026-05-15 — Sourceability Canonical Tool Wiring
 
 Current tools checkpoint:

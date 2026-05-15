@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+- feat(agent-runtime): add ADK bridge contract.
+  Added the PRAXIS-owned ADK bridge for capsule-aware research memo execution,
+  including ADK agent kinds, capsule prompt construction, risk/approval
+  validation, ADK-to-run-ledger event mapping, and focused tests without live
+  Agent Engine calls.
+- feat(app): make the Sourceability AI-bar wave visible.
+  Added a public homepage AI-bar run plan, exposed Sourceability/Tool
+  Plan/Memo Handoff presets inside Ask PRAXIS, and included Sourceability in
+  the research and review tool filters.
+- feat(agent-runtime): add ADK bridge contract.
+  Added a capsule-owned ADK prompt/event bridge with approval-aware risk
+  checks and focused tests for mapping ADK events into the PRAXIS run ledger.
 - feat(tools): register Sourceability Check as a canonical capsule tool.
   Promoted the Genkit-backed sourceability route into the canonical attachable
   tool registry, boosted it for research/reporting recommendations, and added

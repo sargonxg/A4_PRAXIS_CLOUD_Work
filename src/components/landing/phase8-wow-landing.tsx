@@ -66,6 +66,13 @@ const ACTIVE_BAR_PREVIEW = [
   'Handover',
 ] as const;
 
+const AI_BAR_RUN_PLAN = [
+  ['Understand', 'Classify the question into research, review, drafting, or handover.'],
+  ['Attach', 'Pull User, Situation, Source, Time, Power, Tool, and Output cores into one capsule.'],
+  ['Run tools', 'Recommend Sourceability Check, temporal review, power map, or memo drafting from the same bar.'],
+  ['Ship', 'Send the answer, gaps, and receipts to Memo Studio or a handover package.'],
+] as const;
+
 const PRICING_TIERS = [
   {
     name: 'Free',
@@ -302,6 +309,14 @@ export function Phase8WowLanding() {
                   >
                     {item}
                   </span>
+                ))}
+              </div>
+              <div className="mt-3 grid gap-2 border-t border-slate-200 pt-3 sm:grid-cols-2">
+                {AI_BAR_RUN_PLAN.map(([label, detail]) => (
+                  <div key={label} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                    <p className="text-xs font-semibold text-slate-950">{label}</p>
+                    <p className="mt-1 text-[11px] leading-4 text-slate-600">{detail}</p>
+                  </div>
                 ))}
               </div>
             </div>

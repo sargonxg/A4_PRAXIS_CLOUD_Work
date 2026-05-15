@@ -235,6 +235,10 @@ Bridge notes:
   as bridge-ready ledger events.
 - `mirrorGenkitFlowEvent` and `mirrorAdkAgentEvent` are the PRAXIS-owned path
   for reflecting Genkit flows and ADK stream events into `agent_run_events`.
+- `src/lib/agent-runtime/adk-bridge.ts` is the Research Memo ADK contract
+  boundary: it builds capsule-aware ADK prompts, validates capsule/risk
+  constraints, and maps ADK events into PRAXIS run events without calling live
+  Agent Engine.
 - ADK/Genkit traces remain substrate evidence only; PRAXIS run events remain
   the user-facing durable receipt.
 
@@ -258,7 +262,8 @@ Validation:
 ### 6. Research Memo Agent
 
 Owner: paired backend/frontend session  
-Status: next after dispatch; requires Genkit run-ledger bridge completion
+Status: next after ADK bridge dry-run wiring; requires real worker execution
+behind the existing Cloud Tasks boundary
 
 Goal:
 
@@ -271,6 +276,8 @@ Tasks:
 - Use the AI bar as the plain-English start surface and recommend tools from
   capsule gaps before exposing raw tool selection.
 - Mirror every material Genkit flow event into the PRAXIS run ledger.
+- Mirror every material ADK event/tool call through the PRAXIS run ledger when
+  the worker uses an ADK-backed research memo agent.
 - Use existing PRAXIS source/corpus/memo/red-team capabilities.
 - Persist plan steps, tool calls, source receipts, and gaps.
 - Write output to Memo Studio.

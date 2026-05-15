@@ -329,7 +329,7 @@ function RepositoryToolCard({
 function toolMatchesCategory(tool: AttachableTool, category: ToolCategory): boolean {
   if (category === 'all') return true;
   if (category === 'ask-write') return tool.id === 'ask-praxis' || tool.uiTarget === 'writer' || tool.produces === 'work_product' || tool.produces === 'text';
-  if (category === 'research') return ['grounded-research', 'context-builder', 'commitment-tracker'].includes(tool.id);
+  if (category === 'research') return ['grounded-research', 'context-builder', 'commitment-tracker', 'sourceability'].includes(tool.id);
   if (category === 'graph') return tool.produces === 'graph_delta' || ['stakeholder-map', 'coalition-detector'].includes(tool.id);
-  return ['ach', 'contradiction-finder', 'position-vs-interest'].includes(tool.id);
+  return ['ach', 'contradiction-finder', 'position-vs-interest', 'sourceability'].includes(tool.id);
 }

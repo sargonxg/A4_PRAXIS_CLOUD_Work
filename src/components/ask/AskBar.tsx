@@ -23,6 +23,24 @@ const EXAMPLES = [
   'Turn this into a board-ready brief.',
 ];
 
+const TOOL_PRESETS: Array<{ label: string; mode: AskMode; prompt: string }> = [
+  {
+    label: 'Sourceability Check',
+    mode: 'research',
+    prompt: 'Check the strongest claim in this capsule against the attached sources. Return supported, weak, unsupported, and needs-date-check items with cautious rewrites.',
+  },
+  {
+    label: 'Tool Plan',
+    mode: 'deep',
+    prompt: 'Read the active capsule and choose the next three PRAXIS tools to run. Explain which core each tool needs and where the output should land.',
+  },
+  {
+    label: 'Memo Handoff',
+    mode: 'memo',
+    prompt: 'Turn the current answer path into a Memo Studio handoff with receipts, open gaps, and human review actions.',
+  },
+];
+
 export function AskBar({ activeContextName, hasContext }: { activeContextName: string; hasContext: boolean }) {
   const [prompt, setPrompt] = useState('');
   const [mode, setMode] = useState<AskMode>('quick');
@@ -57,6 +75,23 @@ export function AskBar({ activeContextName, hasContext }: { activeContextName: s
               )}
             >
               {item.label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          {TOOL_PRESETS.map((preset) => (
+            <button
+              key={preset.label}
+              type="button"
+              onClick={() => {
+                setMode(preset.mode);
+                setPrompt(preset.prompt);
+                setPlan(null);
+                setResponsePlan(null);
+              }}
+              className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs font-semibold text-navy-800 transition hover:border-gold-300 hover:bg-white"
+            >
+              {preset.label}
             </button>
           ))}
         </div>

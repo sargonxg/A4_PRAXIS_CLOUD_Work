@@ -46,20 +46,20 @@ from the active ledger above.
    Source Monitor. Every run must resolve the active ContextCapsule before
    calling tools.
 5. The first ADK/Genkit run-ledger mirror adapter now exists in
-   `src/lib/agent-runtime/mirror.ts`. Next, use the new Codex prompts in
-   `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` to wire a real Genkit
-   worker bridge and queued ADK Deep Research path. ADK/Genkit may execute
-   worker steps, but PRAXIS must persist every material event/tool call to the
-   Cloud SQL run ledger.
+   `src/lib/agent-runtime/mirror.ts`, and the ADK Research Memo bridge contract
+   now exists in `src/lib/agent-runtime/adk-bridge.ts`. Next, wire the no-op
+   worker to call the bridge for a queued Research Memo dry run, still without
+   live Agent Engine execution, then promote Cloud Tasks dispatch into the real
+   Research Memo Agent worker.
 6. Use the Genkit ContextCapsule path classifier as the first safe homepage
    prompt-to-capsule bridge: classify into `POLICY_PATH_PROFILES`, show
    suggested cores/tools/outputs/questions, then create user-owned capsule
    state only through the existing authenticated capsule creation flow.
-7. Sourceability is now a canonical attachable tool. Next, wire it into Memo
-   Studio and Ask PRAXIS response actions so users can check a selected claim
-   against attached snippets without leaving the AI bar or writing surface. It
-   should only evaluate provided snippets; web/source retrieval remains a
-   separate explicit tool step.
+7. Sourceability is now a canonical attachable tool and visible from the AI
+   bar/tool filters. Next, wire selected-claim Sourceability actions directly
+   into Memo Studio so a user can check a paragraph against attached snippets
+   without leaving the writing surface. It should only evaluate provided
+   snippets; web/source retrieval remains a separate explicit tool step.
 8. Add approval gates before any external send, graph fact promotion,
    unsupported-claim resolution, credentialed browser automation, or high-risk
    tool action.
