@@ -15,11 +15,12 @@ import { messageContentSchema, situationContextSchema, aiSettingsSchema } from '
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { resolveTier } from '@/lib/api/tier';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
-import { resolveInjectableContext, type InjectableContext } from '@/lib/context/context-injection';
+import type { InjectableContext } from '@/lib/context/context-injection';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import { writeReadAuditEvents } from '@/lib/audit/read-ledger';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
+import { buildTurnCapsule, suggestNextActions, type TurnCapsule } from '@/lib/ai/context-kernel';
 import {
   buildAskPraxisAnswerPolicyBlock,
   buildAskPraxisPathFrameworkBlock,
@@ -65,6 +66,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
     const { messages, conflictContext, situation, currentToolId, currentPath, contextPackageId, capsuleId, activeContextStack, threadId, aiSettings } = validation.data;
     const sitId = (situation as Situation | undefined)?.id;
     let capsuleContext: InjectableContext | null = null;
+    let turnCapsule: TurnCapsule | null = null;
     const toolInvocations: AskToolInvocationReceipt[] = [];
     const frameworkSteps = buildAskFrameworkStepReceipts(
       _user.calibration.path,
@@ -96,15 +98,17 @@ export const POST = withCalibration('chat', 'ai_chat', {
 
     // --- Live mode ---
     // Credits + profile gate already handled by withCalibration above.
-    capsuleContext = _user.uid
-      ? await resolveInjectableContext({
+    turnCapsule = _user.uid
+      ? await buildTurnCapsule({
           uid: _user.uid,
           capsuleId,
           contextPackageId,
           activeContextStack: isRecord(activeContextStack) ? activeContextStack as Partial<ActiveContextStackState> : null,
           situationId: sitId,
+          query: lastUserPrompt(messages),
         })
       : null;
+    capsuleContext = turnCapsule?.injectableContext ?? null;
 
     // Build situation-aware system prompt with super-agent capabilities.
     // Prepend the calibrated analyst-profile/situation-frame/output-constraints block.
@@ -336,6 +340,7 @@ You have access to the user's active situation data. When answering questions:
             output: {
               lastMessage: text.slice(0, 4000),
               availableActions: inferResponseActionKinds(text),
+              suggestedNextActions: turnCapsule ? suggestNextActions(turnCapsule, 'ask') : [],
               at: new Date().toISOString(),
             },
           }).catch((err) => console.warn('[chat] saveToolOutput failed:', err));

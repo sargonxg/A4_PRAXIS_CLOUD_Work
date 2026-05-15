@@ -1,0 +1,163 @@
+import {
+  getCapability,
+  type CapabilityDefinition,
+  type CapabilityId,
+} from '@/lib/ai/capability-registry';
+import {
+  resolveInjectableContext,
+  type InjectableContext,
+  type InjectableContextInput,
+} from '@/lib/context/context-injection';
+import type { CapsuleServiceDeps } from '@/lib/context/capsule-service';
+
+export type MemoryType = 'semantic' | 'episodic' | 'procedural';
+
+export interface KernelMemoryItem {
+  id: string;
+  text: string;
+  type: MemoryType;
+  capsuleId?: string;
+  deletedAt?: string | null;
+  updatedAt?: string;
+}
+
+export interface TurnCapsule {
+  traceId: string;
+  userCore: string | null;
+  situationCore: string | null;
+  sourceDocumentCore: string[];
+  graphCore: string | null;
+  memoryCore: string | null;
+  outputCore: string[];
+  retrievedEvidence: Array<{ id: string; title: string; citation?: string; excerpt?: string }>;
+  activeGaps: string[];
+  recentToolOutputs: string[];
+  tokenBudgetReport: { maxInputTokens: number; reservedOutputTokens: number; estimatedContextChars: number };
+  injectableContext: InjectableContext;
+  memory: Record<MemoryType, KernelMemoryItem[]>;
+}
+
+export interface TurnCapsuleInput extends InjectableContextInput {
+  query?: string;
+  traceId?: string;
+  retrievedEvidence?: TurnCapsule['retrievedEvidence'];
+  activeGaps?: string[];
+  recentToolOutputs?: string[];
+  memoryItems?: KernelMemoryItem[];
+}
+
+export interface RunCapabilityInput {
+  capabilityId: CapabilityId;
+  capsule: TurnCapsule;
+  payload?: Record<string, unknown>;
+}
+
+export interface CapabilityRunPlan {
+  capability: CapabilityDefinition;
+  routeFamily: CapabilityDefinition['routeFamily'];
+  canonicalPath: CapabilityDefinition['canonicalPath'];
+  requiredCores: CapabilityDefinition['requiredCores'];
+  persistenceTarget: CapabilityDefinition['persistenceTarget'];
+  payload: Record<string, unknown>;
+  traceId: string;
+}
+
+export interface SemanticNextAction {
+  id: 'find_sources' | 'map_stakeholders' | 'draft_memo' | 'review_claim';
+  label: 'Find sources' | 'Map situation' | 'Draft memo' | 'Stress-test claim';
+  detail: string;
+  href: string;
+  prompt: string;
+  priority: number;
+}
+
+const DEFAULT_MAX_INPUT_TOKENS = 24_000;
+const DEFAULT_RESERVED_OUTPUT_TOKENS = 4_000;
+
+export async function buildTurnCapsule(
+  input: TurnCapsuleInput,
+  deps?: CapsuleServiceDeps,
+): Promise<TurnCapsule> {
+  const injectableContext = await resolveInjectableContext(input, deps);
+  const refs = injectableContext.capsule.coreRefs;
+  const memory = groupVisibleMemory(input.memoryItems ?? [], injectableContext.capsule.capsuleId);
+  const estimatedContextChars = [
+    injectableContext.promptBlock,
+    input.query ?? '',
+    ...Object.values(memory).flat().map((item) => item.text),
+    ...(input.activeGaps ?? []),
+    ...(input.recentToolOutputs ?? []),
+  ].join('\n').length;
+
+  return {
+    traceId: input.traceId ?? `turn_${Date.now().toString(36)}`,
+    userCore: refs.userCoreId ?? null,
+    situationCore: refs.situationCoreId ?? null,
+    sourceDocumentCore: [...refs.sourceCoreIds, ...refs.documentCoreIds],
+    graphCore: refs.graphCoreId ?? null,
+    memoryCore: refs.memoryCoreId ?? null,
+    outputCore: refs.outputCoreIds,
+    retrievedEvidence: input.retrievedEvidence ?? [],
+    activeGaps: input.activeGaps ?? injectableContext.capsule.health.warnings,
+    recentToolOutputs: input.recentToolOutputs ?? [],
+    tokenBudgetReport: {
+      maxInputTokens: DEFAULT_MAX_INPUT_TOKENS,
+      reservedOutputTokens: DEFAULT_RESERVED_OUTPUT_TOKENS,
+      estimatedContextChars,
+    },
+    injectableContext,
+    memory,
+  };
+}
+
+export function suggestNextActions(capsule: TurnCapsule, surface: 'ask' | 'drafting' = 'ask'): SemanticNextAction[] {
+  const missingSources = capsule.sourceDocumentCore.length === 0;
+  const hasGaps = capsule.activeGaps.length > 0;
+  const base = [
+    action('find_sources', missingSources ? 95 : hasGaps ? 82 : 45, 'Find sources', 'Fill the most important source gaps before relying on this answer.', '/app/workbench?tab=library', 'Find sources for the weakest claims in the active Context Capsule.'),
+    action('map_stakeholders', capsule.graphCore ? 62 : 78, 'Map situation', 'Turn actors, commitments, claims, and events into reviewable graph proposals.', '/app/canvas', 'Map stakeholders, commitments, and evidence gaps from the active capsule.'),
+    action('draft_memo', surface === 'drafting' ? 90 : 68, 'Draft memo', 'Move the answer into an Output Core with citations and explicit gaps.', '/app/write', 'Draft a concise options memo from this capsule and mark weak evidence.'),
+    action('review_claim', hasGaps ? 88 : 58, 'Stress-test claim', 'Check weak evidence, contradictions, and stale context.', '/app/assistant', 'Review this claim for weak evidence and unresolved contradictions.'),
+  ].sort((a, b) => b.priority - a.priority);
+
+  return base.slice(0, 3);
+}
+
+export function runCapability(input: RunCapabilityInput): CapabilityRunPlan {
+  const capability = getCapability(input.capabilityId);
+  return {
+    capability,
+    routeFamily: capability.routeFamily,
+    canonicalPath: capability.canonicalPath,
+    requiredCores: capability.requiredCores,
+    persistenceTarget: capability.persistenceTarget,
+    payload: {
+      ...(input.payload ?? {}),
+      capsuleId: input.capsule.injectableContext.capsule.capsuleId,
+      capsuleVersion: input.capsule.injectableContext.capsule.version,
+      traceId: input.capsule.traceId,
+    },
+    traceId: input.capsule.traceId,
+  };
+}
+
+function groupVisibleMemory(items: KernelMemoryItem[], capsuleId: string): TurnCapsule['memory'] {
+  const grouped: TurnCapsule['memory'] = { semantic: [], episodic: [], procedural: [] };
+  for (const item of items) {
+    if (item.deletedAt) continue;
+    if (item.capsuleId && item.capsuleId !== capsuleId && item.capsuleId !== '__global__') continue;
+    grouped[item.type].push(item);
+  }
+  return grouped;
+}
+
+function action(
+  id: SemanticNextAction['id'],
+  priority: number,
+  label: SemanticNextAction['label'],
+  detail: string,
+  href: string,
+  prompt: string,
+): SemanticNextAction {
+  return { id, priority, label, detail, href, prompt };
+}

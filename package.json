@@ -20,7 +20,7 @@
     "generate:canonical-tool-library": "tsx scripts/generate-canonical-tool-library.ts",
     "generate:canonical-tool-docs": "tsx scripts/generate-canonical-tool-docs.ts",
     "generate:marketplace-skills": "tsx scripts/generate-marketplace-skills.ts",
-    "audit:routes": "node scripts/audit-ai-routes.mjs",
+    "audit:routes": "node scripts/audit-ai-routes.mjs && tsx scripts/audit-capability-registry.ts",
     "audit:architecture-chain": "tsx scripts/audit-architecture-chain.ts",
     "audit:repo-shape": "tsx scripts/audit-repo-shape.ts",
     "audit:architecture-reference": "tsx scripts/audit-architecture-reference.ts",

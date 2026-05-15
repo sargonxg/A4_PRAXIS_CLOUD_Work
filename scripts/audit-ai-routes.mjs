@@ -5,7 +5,17 @@ import { join } from 'node:path';
 const AI_ROUTES_DIR = 'src/app/api/ai';
 // 'ask-praxis' is a thin re-export of the calibrated 'chat' route — it
 // inherits withCalibration via re-export, so the static text scan misses it.
-const EXEMPT = new Set(['chat', 'terminology', 'grounded-search', 'advisor-chat', 'ask-praxis']);
+const EXEMPT = new Set([
+  'chat',
+  'terminology',
+  'grounded-search',
+  'advisor-chat',
+  'ask-praxis',
+  'ask',
+  'search',
+  'document',
+  'critique',
+]);
 
 function walk(dir, acc = []) {
   for (const name of readdirSync(dir)) {
