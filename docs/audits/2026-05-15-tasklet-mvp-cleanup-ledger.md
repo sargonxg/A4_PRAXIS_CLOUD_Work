@@ -3,6 +3,18 @@
 Date: 2026-05-15  
 Status: first implementation ledger for the Tasklet-style PRAXIS cleanup and foundation pass
 
+## 2026-05-15 Update
+
+- The first viewport now has a Tasklet-style PRAXIS workbench instead of a
+  generic landing hero.
+- The authenticated Home surface reuses the same workbench shell.
+- The marketplace is now policy-agent first; the raw canonical tool archive can
+  remain behind specialist/advanced access until deletion evidence is complete.
+- Research Memo Agent is wired as the first non-noop worker branch and creates
+  a Memo Studio draft with source/gap receipts.
+- Added `audit:tasklet-policy-workbench` to prevent regressions in the new
+  surface, policy-agent destinations, and deferred integration claims.
+
 ## Purpose
 
 This ledger keeps the cleanup tied to the product target:
@@ -70,4 +82,3 @@ Current high-confidence cleanup class:
 - Add a focused route inventory for `/demo/*`, Syria-only components, and old
   tour components before removing them.
 - Keep `graphify update .` as the post-code-change graph refresh gate.
-

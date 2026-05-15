@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(app): make PRAXIS Tasklet-style from the first viewport.
+  Added a shared Tasklet-like PRAXIS workbench for the public homepage and
+  authenticated Home, introduced the policy-agent registry, reframed the
+  marketplace as capsule-attached agents, and wired Research Memo Agent
+  execution to create a Memo Studio draft with source/gap receipts.
 - feat(app): add Tasklet-style MVP foundation pages and cleanup guard.
   Added Learn, TACITUS, and Release notes public pages; aligned public nav to
   Learn/TACITUS/Pricing/Release notes; updated the sitemap; added capsule

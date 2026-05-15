@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { verifyAgentWorkerRequest } from '@/lib/agent-runtime/worker-auth';
-import { AgentWorkerError, executeNoopAgentRun } from '@/lib/agent-runtime/worker';
+import { AgentWorkerError, executeAgentRun } from '@/lib/agent-runtime/worker';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    return NextResponse.json(await executeNoopAgentRun(parsed.data));
+    return NextResponse.json(await executeAgentRun(parsed.data));
   } catch (err) {
     if (err instanceof AgentWorkerError) {
       return NextResponse.json({ error: err.message }, { status: err.status });

@@ -67,6 +67,10 @@ describe('agent run API validation schema', () => {
       status: 'queued',
       capsuleId: 'cap-1',
       createdAt: '2026-05-15T12:00:00.000Z',
+      policyAgentId: null,
+      policyAgentLabel: null,
+      outputDestination: null,
+      outputHref: null,
     });
     expect(AgentRunOutputSchema.safeParse(dto).success).toBe(true);
     expect('internalSpendCents' in dto).toBe(false);

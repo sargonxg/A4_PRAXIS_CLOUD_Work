@@ -1,5 +1,26 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — Tasklet-Style Policy Workbench And Research Memo Agent
+
+Current product/runtime checkpoint:
+
+- The homepage first viewport now uses a Tasklet-style PRAXIS workbench:
+  left sidebar, big prompt, active ContextCapsule, recent runs, suggested
+  policy agents, and approval-gated advanced posture.
+- Authenticated Home uses the same shared surface, so the public preview and
+  live app no longer diverge.
+- The raw tool marketplace is reframed as PRAXIS policy agents with concrete
+  destinations: Memo Studio, Canvas, Library, or Handover.
+- Added `src/lib/product/policy-agents.ts` as the canonical agent registry for
+  Research Memo, Daily Brief, Conflict Monitor, Sourceability Reviewer,
+  Red-Team Analyst, and Handover Builder.
+- The worker boundary now routes `policyAgentId=research-memo` runs into a
+  Research Memo Agent step that creates a Memo Studio draft with source and gap
+  receipts instead of only completing as a no-op.
+- Added `npm run audit:tasklet-policy-workbench` to guard the Tasklet surface,
+  concrete output destinations, deferred integration claims, and memo-worker
+  wiring.
+
 ## 2026-05-15 — Tasklet-Style MVP Foundation And Cleanup Ledger
 
 Current foundation checkpoint:

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { AgentRun } from '@/lib/agent-runtime/types';
+import { destinationHref, getPolicyAgent } from '@/lib/product/policy-agents';
 
 export const AgentTriggerTypeSchema = z.enum([
   'manual',
@@ -57,6 +58,10 @@ export const AgentRunOutputSchema = z.object({
   status: z.enum(['queued', 'running', 'waiting_approval', 'succeeded', 'failed', 'cancelled', 'expired']),
   capsuleId: z.string(),
   createdAt: z.string(),
+  policyAgentId: z.string().nullable().optional(),
+  policyAgentLabel: z.string().nullable().optional(),
+  outputDestination: z.enum(['memo_studio', 'canvas', 'library', 'handover']).nullable().optional(),
+  outputHref: z.string().nullable().optional(),
 });
 
 export type CreateManualAgentRunRequest = z.infer<typeof CreateManualAgentRunRequestSchema>;
@@ -65,10 +70,17 @@ export type ListAgentRunsQuery = z.infer<typeof ListAgentRunsQuerySchema>;
 export type AgentRunOutput = z.infer<typeof AgentRunOutputSchema>;
 
 export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
+  const policyAgentId = typeof run.metadata?.policyAgentId === 'string' ? run.metadata.policyAgentId : null;
+  const policyAgent = getPolicyAgent(policyAgentId);
+  const outputDestination = policyAgent?.outputDestination ?? null;
   return AgentRunOutputSchema.parse({
     runId: run.id,
     status: run.status,
     capsuleId: run.capsuleId,
     createdAt: run.createdAt,
+    policyAgentId,
+    policyAgentLabel: policyAgent?.label ?? null,
+    outputDestination,
+    outputHref: outputDestination ? destinationHref(outputDestination) : null,
   });
 }

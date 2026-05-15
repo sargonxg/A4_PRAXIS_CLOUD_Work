@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { executeNoopAgentRun, type ExecuteAgentRunPayload } from '@/lib/agent-runtime/worker';
+import { executeAgentRun, executeNoopAgentRun, type ExecuteAgentRunPayload } from '@/lib/agent-runtime/worker';
 import type { AgentRun } from '@/lib/agent-runtime/types';
 
 const payload: ExecuteAgentRunPayload = {
@@ -12,7 +12,7 @@ const payload: ExecuteAgentRunPayload = {
   requestedAt: '2026-05-15T12:00:00.000Z',
 };
 
-function makeRun(status: AgentRun['status']): AgentRun {
+function makeRun(status: AgentRun['status'], metadata: Record<string, unknown> = {}): AgentRun {
   return {
     id: payload.runId,
     agentSpecId: null,
@@ -45,7 +45,7 @@ function makeRun(status: AgentRun['status']): AgentRun {
     maxSessionMinutes: 30,
     internalEstimatedCostCents: null,
     internalSpendCents: 0,
-    metadata: {},
+    metadata,
     createdAt: '2026-05-15T12:00:00.000Z',
     updatedAt: '2026-05-15T12:00:00.000Z',
     queuedAt: '2026-05-15T12:00:00.000Z',
@@ -102,5 +102,32 @@ describe('agent runtime no-op worker', () => {
     })).rejects.toThrow('Agent run execution failed');
 
     expect(transitions).toEqual(['running', 'failed']);
+  });
+
+  it('routes research-memo runs into a memo draft with receipts', async () => {
+    const transitions: AgentRun['status'][] = [];
+    const mirrored: string[] = [];
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', { policyAgentId: 'research-memo' }),
+      updateStatus: async (input) => {
+        transitions.push(input.toStatus);
+        return makeRun(input.toStatus, { policyAgentId: 'research-memo' });
+      },
+      appendEvent: async (event) => {
+        mirrored.push(String(event.data.phase ?? event.eventType));
+        return event;
+      },
+      saveMemoDraft: async (_uid, input) => {
+        expect(input.templateId).toBe('policy-memo');
+        expect(input.blocks.some((block) => block.id === 'source-receipt')).toBe(true);
+        expect(input.blocks.some((block) => block.id === 'gap-receipt')).toBe(true);
+        return { memo: { id: 'memo-1' } };
+      },
+    });
+
+    expect(transitions).toEqual(['running', 'succeeded']);
+    expect(result).toMatchObject({ status: 'succeeded', executionMode: 'research-memo', memoId: 'memo-1', outputHref: '/app/write' });
+    expect(mirrored).toContain('context_resolved');
+    expect(mirrored).toContain('memo_draft_created');
   });
 });

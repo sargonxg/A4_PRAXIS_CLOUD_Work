@@ -21,6 +21,11 @@ from the active ledger above.
 
 ### Canonical Tasklet-Style Runtime Build
 
+0. Tasklet-style first viewport is now implemented for public Home and
+   authenticated Home: left sidebar, big prompt, active ContextCapsule, recent
+   runs, policy-agent cards, and run-to-output posture. The marketplace now
+   presents policy agents instead of a raw tool catalog, and the Research Memo
+   Agent worker creates a Memo Studio draft with source/gap receipts.
 0. First Tasklet-style MVP foundation pass is now in place: public pages
    `/learn`, `/tacitus`, `/pricing`, and `/release-notes`; homepage nav aligned
    to those pages; `/app/contexts` has a capsule composition panel for
@@ -54,9 +59,11 @@ from the active ledger above.
    execution is idempotent and worker-step failures mark the run failed.
    Remaining Queue 5 hardening is production queue/IAM/env verification for
    `agent-runs`.
-4. Implement the Research Memo Agent first, then Daily Brief, Watchlist, and
-   Source Monitor. Every run must resolve the active ContextCapsule before
-   calling tools.
+4. Research Memo Agent is the first real worker slice. Next, replace its
+   deterministic memo scaffold with live capsule-aware source retrieval and
+   model drafting behind the existing calibration/approval boundary, then add
+   Daily Brief, Watchlist, and Source Monitor. Every run must resolve the
+   active ContextCapsule before calling tools.
 5. The first ADK/Genkit run-ledger mirror adapter now exists in
    `src/lib/agent-runtime/mirror.ts`, and the ADK Research Memo bridge contract
    now exists in `src/lib/agent-runtime/adk-bridge.ts`. Next, wire the no-op

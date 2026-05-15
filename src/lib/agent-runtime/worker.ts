@@ -1,5 +1,7 @@
 import type { AgentRun } from '@/lib/agent-runtime/types';
 import { getAgentRun, updateAgentRunStatus } from '@/lib/agent-runtime/postgres';
+import { saveMemoDraft, type SaveMemoDraftInput } from '@/lib/firebase/memo-service';
+import { getPolicyAgent } from '@/lib/product/policy-agents';
 import {
   buildCapsuleWorkerContext,
   mirrorWorkerEvent,
@@ -19,16 +21,35 @@ export type ExecuteAgentRunPayload = {
 export type ExecuteAgentRunResult = {
   runId: string;
   status: AgentRun['status'];
-  executionMode: 'noop';
+  executionMode: 'noop' | 'research-memo';
   traceId: string;
   idempotent?: boolean;
+  outputHref?: string;
+  memoId?: string;
 };
 
 type WorkerDeps = {
   getRun?: typeof getAgentRun;
   updateStatus?: typeof updateAgentRunStatus;
   runNoopStep?: (run: AgentRun, payload: ExecuteAgentRunPayload) => Promise<void>;
+  saveMemoDraft?: (uid: string, input: SaveMemoDraftInput) => Promise<{ memo: { id: string } }>;
 } & AgentRuntimeMirrorDeps;
+
+export async function executeAgentRun(
+  payload: ExecuteAgentRunPayload,
+  deps: WorkerDeps = {},
+): Promise<ExecuteAgentRunResult> {
+  const getRun = deps.getRun ?? getAgentRun;
+  const run = await getRun(payload.ownerUid, payload.runId);
+  if (!run) {
+    throw new AgentWorkerError('Agent run not found', 404);
+  }
+  const policyAgentId = typeof run.metadata?.policyAgentId === 'string' ? run.metadata.policyAgentId : null;
+  if (getPolicyAgent(policyAgentId)?.id === 'research-memo') {
+    return executeResearchMemoAgentRun(payload, { ...deps, getRun: async () => run });
+  }
+  return executeNoopAgentRun(payload, { ...deps, getRun: async () => run });
+}
 
 export async function executeNoopAgentRun(
   payload: ExecuteAgentRunPayload,
@@ -125,6 +146,186 @@ export async function executeNoopAgentRun(
       runId: running.id,
       toStatus: 'failed',
       message: 'No-op agent worker failed before completion.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        error: err instanceof Error ? err.message : String(err),
+      },
+    }).catch(() => null);
+    throw new AgentWorkerError('Agent run execution failed', 500);
+  }
+}
+
+async function executeResearchMemoAgentRun(
+  payload: ExecuteAgentRunPayload,
+  deps: WorkerDeps = {},
+): Promise<ExecuteAgentRunResult> {
+  const getRun = deps.getRun ?? getAgentRun;
+  const updateStatus = deps.updateStatus ?? updateAgentRunStatus;
+  const persistMemo = deps.saveMemoDraft ?? saveMemoDraft;
+  const run = await getRun(payload.ownerUid, payload.runId);
+  if (!run) {
+    throw new AgentWorkerError('Agent run not found', 404);
+  }
+  if (run.traceId !== payload.traceId || run.capsuleId !== payload.capsuleId) {
+    throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
+  }
+  if (run.status === 'succeeded') {
+    return {
+      runId: run.id,
+      status: run.status,
+      executionMode: 'research-memo',
+      traceId: run.traceId,
+      outputHref: '/app/write',
+      idempotent: true,
+    };
+  }
+  if (run.status !== 'queued' && run.status !== 'running') {
+    throw new AgentWorkerError(`Agent run cannot be executed from ${run.status}`, 409);
+  }
+
+  let running = run;
+  try {
+    if (run.status !== 'running') {
+      const next = await updateStatus({
+        ownerUid: run.ownerUid,
+        runId: run.id,
+        toStatus: 'running',
+        message: 'Research Memo Agent accepted the queued capsule run.',
+        data: {
+          dispatchId: payload.dispatchId,
+          attempt: payload.attempt,
+          requestedAt: payload.requestedAt,
+        },
+      });
+      if (!next) throw new AgentWorkerError('Agent run disappeared before execution', 404);
+      running = next;
+    }
+
+    const workerContext = buildCapsuleWorkerContext(running);
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'context_resolved',
+      message: 'Research Memo Agent resolved the active ContextCapsule.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        workerContext,
+        executionMode: 'research-memo',
+      },
+    }, deps);
+
+    const sourceCount = running.selectedCoreIds.sourceCoreIds.length + running.selectedCoreIds.documentCoreIds.length;
+    const gapItems = [
+      sourceCount === 0 ? 'Attach source receipts or documents before treating recommendations as settled.' : null,
+      running.selectedCoreIds.graphCoreId ? null : 'Review actor and relationship coverage before final export.',
+      running.selectedCoreIds.timeCoreId ? null : 'Set the relevant time horizon and freshness posture.',
+    ].filter((item): item is string => Boolean(item));
+    const caseId = running.selectedCoreIds.situationCoreId ?? running.capsuleId;
+    const title = `Research memo - ${running.objective.slice(0, 80)}`;
+    const memoRecord = await persistMemo(running.ownerUid, {
+      caseId,
+      templateId: 'policy-memo',
+      title,
+      graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:graph-gap`,
+      changeNote: `Created by Research Memo Agent run ${running.id}.`,
+      blocks: [
+        {
+          id: 'bluf',
+          type: 'heading',
+          title: 'BLUF',
+          content: 'Capsule-grounded research memo draft',
+          citations: [],
+          metadata: { runId: running.id, policyAgentId: 'research-memo' },
+        },
+        {
+          id: 'question',
+          type: 'paragraph',
+          title: 'Task',
+          content: running.objective,
+          citations: [],
+          metadata: { capsuleId: running.capsuleId },
+        },
+        {
+          id: 'source-receipt',
+          type: 'bullets',
+          title: 'Source receipt',
+          content: '',
+          items: sourceCount > 0
+            ? [
+                `${running.selectedCoreIds.sourceCoreIds.length} source core(s) attached.`,
+                `${running.selectedCoreIds.documentCoreIds.length} document core(s) attached.`,
+              ]
+            : ['No source or document cores were attached to this run. Treat this draft as a scaffold.'],
+          citations: [],
+          metadata: { sourceCoreIds: running.selectedCoreIds.sourceCoreIds, documentCoreIds: running.selectedCoreIds.documentCoreIds },
+        },
+        {
+          id: 'gap-receipt',
+          type: 'bullets',
+          title: 'Gap receipt',
+          content: '',
+          items: gapItems.length ? gapItems : ['No blocking capsule gaps were detected for this first memo pass.'],
+          citations: [],
+          metadata: { gapCount: gapItems.length },
+        },
+        {
+          id: 'next-moves',
+          type: 'bullets',
+          title: 'Review actions',
+          content: '',
+          items: [
+            'Open Memo Studio and revise the draft against the evidence receipt.',
+            'Run Sourceability Reviewer before final export.',
+            'Promote graph changes only after human approval.',
+          ],
+          citations: [],
+          metadata: { outputDestination: 'memo_studio' },
+        },
+      ],
+    });
+
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'memo_draft_created',
+      message: 'Research Memo Agent created a Memo Studio draft with source and gap receipts.',
+      data: {
+        memoId: memoRecord.memo.id,
+        outputHref: '/app/write',
+        sourceCount,
+        gapCount: gapItems.length,
+      },
+    }, deps);
+
+    const succeeded = await updateStatus({
+      ownerUid: running.ownerUid,
+      runId: running.id,
+      toStatus: 'succeeded',
+      message: 'Research Memo Agent completed the capsule-aware memo draft.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        executionMode: 'research-memo',
+        memoId: memoRecord.memo.id,
+        outputHref: '/app/write',
+      },
+    });
+
+    return {
+      runId: succeeded?.id ?? running.id,
+      status: succeeded?.status ?? 'succeeded',
+      executionMode: 'research-memo',
+      traceId: running.traceId,
+      outputHref: '/app/write',
+      memoId: memoRecord.memo.id,
+    };
+  } catch (err) {
+    if (err instanceof AgentWorkerError) throw err;
+    await updateStatus({
+      ownerUid: running.ownerUid,
+      runId: running.id,
+      toStatus: 'failed',
+      message: 'Research Memo Agent failed before creating a memo draft.',
       data: {
         dispatchId: payload.dispatchId,
         attempt: payload.attempt,

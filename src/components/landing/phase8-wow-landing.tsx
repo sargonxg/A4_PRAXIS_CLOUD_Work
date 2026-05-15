@@ -19,6 +19,7 @@ import {
 import { motion, useReducedMotion } from "framer-motion";
 import { CoreCapsuleHero } from "./core-capsule-hero";
 import { ContextCapsulePreview } from "@/components/context/context-capsule-preview";
+import { TaskletPraxisWorkbench } from "@/components/praxis/tasklet-praxis-workbench";
 import { PolicyTicker } from "./policy-ticker";
 import { SpecimenCard, SpecimenGrid, type CoreSpecimenKind } from "@/components/cores/specimen-card";
 import {
@@ -338,6 +339,7 @@ export function Phase8WowLanding() {
 
   return (
     <main className="bg-[#F6F8FB] text-[#111827]">
+      <TaskletPraxisWorkbench mode="public" activeCapsuleName="Middle East policy analysis" />
       <section id="core-stack" className="relative overflow-hidden border-b border-slate-200 bg-white">
         <div className="relative mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(440px,1.05fr)] lg:px-8">
           <div>
@@ -346,9 +348,9 @@ export function Phase8WowLanding() {
               <span aria-hidden className="h-px w-6 bg-slate-300" />
               <span>PRAXIS by TACITUS</span>
             </p>
-            <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+            <h2 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
               Build a ContextCapsule for the policy work in front of you.
-            </h1>
+            </h2>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:text-lg">
               PRAXIS turns sources, timelines, stakeholders, rules, drafts, and decisions into shareable working context that humans and AI agents can safely inherit.
             </p>
