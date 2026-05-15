@@ -203,7 +203,7 @@ Validation:
 ### 5. Cloud Tasks Dispatch
 
 Owner: Codex backend session  
-Status: no-op dispatch boundary implemented; production Cloud Tasks/IAM wiring verification remains
+Status: no-op dispatch boundary implemented with ledger mirror hooks; production Cloud Tasks/IAM wiring verification remains
 
 Goal:
 
@@ -221,11 +221,22 @@ Tasks:
 Shipped in this wave:
 
 - `src/lib/agent-runtime/cloud-tasks.ts`
+- `src/lib/agent-runtime/mirror.ts`
 - `src/lib/agent-runtime/worker.ts`
 - `src/lib/agent-runtime/worker-auth.ts`
 - `src/app/api/agents/runs/[runId]/dispatch/route.ts`
 - `src/app/api/agents/runs/[runId]/execute/route.ts`
 - focused Cloud Tasks payload tests under `tests/unit/lib/agent-runtime`
+- focused worker/Genkit/ADK mirror tests under `tests/unit/lib/agent-runtime`
+
+Bridge notes:
+
+- The worker now records capsule-context resolution and no-op step completion
+  as bridge-ready ledger events.
+- `mirrorGenkitFlowEvent` and `mirrorAdkAgentEvent` are the PRAXIS-owned path
+  for reflecting Genkit flows and ADK stream events into `agent_run_events`.
+- ADK/Genkit traces remain substrate evidence only; PRAXIS run events remain
+  the user-facing durable receipt.
 
 Runtime configuration required before production dispatch:
 
@@ -247,7 +258,7 @@ Validation:
 ### 6. Research Memo Agent
 
 Owner: paired backend/frontend session  
-Status: after dispatch
+Status: next after dispatch; requires Genkit run-ledger bridge completion
 
 Goal:
 
@@ -257,6 +268,9 @@ Tasks:
 
 - Start from Ask PRAXIS or Home.
 - Resolve active capsule.
+- Use the AI bar as the plain-English start surface and recommend tools from
+  capsule gaps before exposing raw tool selection.
+- Mirror every material Genkit flow event into the PRAXIS run ledger.
 - Use existing PRAXIS source/corpus/memo/red-team capabilities.
 - Persist plan steps, tool calls, source receipts, and gaps.
 - Write output to Memo Studio.
