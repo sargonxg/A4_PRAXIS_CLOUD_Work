@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(context): add experimental Grafeo Context Core Lite graph capture.
+  Added a deterministic policy/conflict context graph builder, optional
+  `grafeo_experimental` mirror backend, authenticated experimental graph route,
+  standard query pack for gaps/conflicts/source coverage, and architecture/audit
+  docs that keep full context creation assigned to DIALECTICA by TACITUS.
 - feat(context): add the Wow MVP context-first surface layer.
   Added a four-signal Context Quality Meter, one-click domain-specific
   Situation Core starter builder, reusable Context Capsule Preview, upload

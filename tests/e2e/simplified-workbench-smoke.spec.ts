@@ -54,16 +54,16 @@ test('simplified app shell exposes context bar, command palette, and five-surfac
   await expect(page.getByRole('toolbar', { name: /Active capsule/i })).toBeVisible();
 
   await page.goto('/app/contexts');
-  await expect(page.getByRole('heading', { name: /Core Library/i }).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Choose the knowledge cores PRAXIS should use/i }).first()).toBeVisible();
 
   await page.goto('/app/workbench/indo-pacific-2026?tab=library');
   await expect(page.getByText('Drop source on this panel').first()).toBeVisible();
 
   await page.goto('/app/write');
-  await expect(page.getByTestId('praxis-writer')).toBeVisible();
-  await expect(page.getByText('Evidence Gap Finder')).toBeVisible();
-  await page.getByRole('button', { name: 'Save gap' }).first().click();
-  await expect(page.getByRole('button', { name: 'Saved gap' }).first()).toBeVisible();
+  await expect(page.getByTestId('memo-desk')).toBeVisible();
+  await expect(page.getByLabel('Document title')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Draft from cores' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Check claims' })).toBeVisible();
 
   await page.goto('/app/canvas');
   await expect(page.getByTestId('context-canvas-page')).toBeVisible();

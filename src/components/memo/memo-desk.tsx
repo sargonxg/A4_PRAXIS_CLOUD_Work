@@ -695,7 +695,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   }
 
   return (
-    <div className="memo-desk -mx-4 -my-4 flex h-[calc(100vh-3.5rem)] min-h-0 flex-col bg-[#F6F4ED] md:-mx-6 md:-my-6">
+    <div className="memo-desk -mx-4 -my-4 flex h-[calc(100vh-3.5rem)] min-h-0 flex-col bg-[#F6F4ED] md:-mx-6 md:-my-6" data-testid="memo-desk">
       {/* Top bar */}
       <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5 shadow-sm md:px-6">
         <FileText className="h-4 w-4 shrink-0 text-[#8A5A00]" />

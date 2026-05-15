@@ -11,6 +11,10 @@ Last updated: 2026-05-13.
 
 ## Immediate Next Steps
 
+0. Verify the experimental Grafeo Context Core Lite graph in a signed-in browser
+   flow and Cloud Run build before making `grafeo_experimental` anything other
+   than an opt-in backend. Keep Firestore capsules/context packages as the MVP
+   source of truth.
 1. Extend Active Context Stack persistence beyond the reliable default stack to named stacks when the final multi-stack UX is approved.
 2. Promote Canvas from draggable review-layout nodes to a richer read/write graph-editing surface if the team approves that scope; React Flow is not needed for the current MVP.
 3. Add a signed-in integration test for v5 demo copy against a Firebase emulator or test project; current validation covers the typed demo core objects and the UI copy affordance, not a live Firestore mutation.
