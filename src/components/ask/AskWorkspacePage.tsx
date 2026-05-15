@@ -31,8 +31,11 @@ import type { UserModelRecord } from '@/lib/user-models/types';
 import { getActiveUserModelId, listPrivateUserModels, setActiveUserModel } from '@/lib/users/api';
 import {
   CONTEXT_CAPSULE_TEMPLATES,
+  PENDING_CONTEXT_CAPSULE_OUTPUT_KEY,
+  PENDING_CONTEXT_CAPSULE_PATH_KEY,
   PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
   PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY,
+  POLICY_PATH_PROFILES,
 } from '@/lib/product/context-capsules';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
@@ -105,6 +108,8 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
   const [composerOpen, setComposerOpen] = useState(true);
   const [pendingCapsulePrompt, setPendingCapsulePrompt] = useState('');
   const [pendingCapsuleTemplateId, setPendingCapsuleTemplateId] = useState('');
+  const [pendingCapsulePathId, setPendingCapsulePathId] = useState('');
+  const [pendingCapsuleOutput, setPendingCapsuleOutput] = useState('');
   const { stack, hydrated: stackHydrated, saveStack } = useActiveContextStack();
 
   useEffect(() => {
@@ -112,11 +117,17 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     setActiveUserModelId(getActiveUserModelId(window.localStorage));
     setPendingCapsulePrompt(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY) ?? '');
     setPendingCapsuleTemplateId(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY) ?? '');
+    setPendingCapsulePathId(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PATH_KEY) ?? '');
+    setPendingCapsuleOutput(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_OUTPUT_KEY) ?? '');
   }, []);
 
   const pendingCapsuleTemplateLabel = useMemo(
     () => CONTEXT_CAPSULE_TEMPLATES.find((t) => t.id === pendingCapsuleTemplateId)?.label ?? '',
     [pendingCapsuleTemplateId],
+  );
+  const pendingCapsulePathLabel = useMemo(
+    () => POLICY_PATH_PROFILES.find((path) => path.id === pendingCapsulePathId)?.label ?? '',
+    [pendingCapsulePathId],
   );
 
   const availableModels = useMemo(() => [...privateModels, ...PUBLIC_USER_MODELS], [privateModels]);
@@ -213,8 +224,12 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     window.dispatchEvent(new CustomEvent('open-praxis-chat', { detail: { prompt: pendingCapsulePrompt } }));
     window.localStorage.removeItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY);
     window.localStorage.removeItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY);
+    window.localStorage.removeItem(PENDING_CONTEXT_CAPSULE_PATH_KEY);
+    window.localStorage.removeItem(PENDING_CONTEXT_CAPSULE_OUTPUT_KEY);
     setPendingCapsulePrompt('');
     setPendingCapsuleTemplateId('');
+    setPendingCapsulePathId('');
+    setPendingCapsuleOutput('');
   }
 
   return (
@@ -234,6 +249,20 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
                 ContextCapsule scaffold from landing{pendingCapsuleTemplateLabel ? ` · ${pendingCapsuleTemplateLabel}` : ''}
               </p>
               <p className="mt-2 text-sm leading-6 text-navy-900">{pendingCapsulePrompt}</p>
+              {pendingCapsulePathLabel || pendingCapsuleOutput ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {pendingCapsulePathLabel ? (
+                    <span className="rounded-full border border-gold-200 bg-white px-2 py-1 text-[11px] font-semibold text-gold-800">
+                      Path: {pendingCapsulePathLabel}
+                    </span>
+                  ) : null}
+                  {pendingCapsuleOutput ? (
+                    <span className="rounded-full border border-gold-200 bg-white px-2 py-1 text-[11px] font-semibold text-gold-800">
+                      Output: {pendingCapsuleOutput}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
               <p className="mt-1 text-xs leading-5 text-navy-600">
                 Start thin, then add sources, episodes, power dynamics, rules, tools, and an output target in the sidebar.
               </p>

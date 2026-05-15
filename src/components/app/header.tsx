@@ -1,24 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Search, ChevronRight, User, Settings, LogOut, Menu } from 'lucide-react';
+import { Search, ChevronRight, Menu } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { NotificationBell } from '@/components/shared/notifications';
 import { TrustPostureChip } from '@/components/app/trust-posture-chip';
 import { CapsuleStripHeader } from '@/components/app/capsule-strip-header';
-import { useAuth } from '@/lib/auth/auth-context';
 import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
 import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 function humanizeSegment(segment: string): string {
   return segment
@@ -46,8 +37,6 @@ export function Header({
   onOpenSearch?: (query?: string) => void;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, logout } = useAuth();
   const { toggleSidebar } = useAppStore();
   const [command, setCommand] = useState('');
 
@@ -64,24 +53,6 @@ export function Header({
 
     return crumbs;
   }, [pathname]);
-
-  const initials = user?.name
-    ? user.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-    : '??';
-
-  async function handleLogout() {
-    try {
-      await logout();
-      router.push('/login');
-    } catch {
-      router.push('/login');
-    }
-  }
 
   function runCommand() {
     const value = command.trim();
@@ -178,40 +149,6 @@ export function Header({
           <CapsuleStripHeader />
           <TrustPostureChip />
           <NotificationBell />
-
-          {/* User dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-md border border-[var(--color-app-border)] bg-white px-2 py-1.5 text-sm font-semibold text-navy-800 transition-colors hover:border-navy-300 hover:bg-[var(--color-app-surface-alt)]">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-diplomatic-blue text-xs font-bold text-white">
-                  {initials}
-                </div>
-                <span className="hidden max-w-28 truncate md:inline">{user?.name ?? 'Account'}</span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium text-navy-900">{user?.name}</p>
-                  <p className="text-xs text-navy-500">{user?.email}</p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push('/app/cores/user')}>
-                <User className="mr-2 h-4 w-4" />
-                User Core
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/app/settings')}>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-crimson focus:text-crimson">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </header>
   );

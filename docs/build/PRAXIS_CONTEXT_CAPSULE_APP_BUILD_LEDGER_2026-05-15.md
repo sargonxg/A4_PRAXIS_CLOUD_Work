@@ -23,9 +23,9 @@ Homepage prompt -> signup/login -> app sidebar -> active ContextCapsule bar
 
 Already established:
 
-- Public landing has the ContextCapsule prompt bar, signup/login continuation,
-  active bar glimpse, policy path previews, combination examples, output
-  products, and connector posture.
+- Public landing has the ContextCapsule prompt bar, path-aware capsule
+  preview, signup/login continuation, active bar glimpse, policy path previews,
+  combination examples, output products, and connector posture.
 - Authenticated app spine remains `Home`, `Ask PRAXIS`, `Library`,
   `Memo Studio`, `Canvas`, `Advanced`.
 - Active capsule/core concepts exist across Ask PRAXIS, Contexts, Library,
@@ -74,7 +74,7 @@ Checklist:
 ### 1. Public-To-App Usability
 
 Owner: frontend/docs session  
-Status: partly implemented, keep improving with browser evidence
+Status: path-aware toolbar shipped; keep improving with browser evidence
 
 Goal:
 
@@ -84,12 +84,23 @@ obvious context.
 Tasks:
 
 - Keep the homepage active bar glimpse visible on desktop and mobile.
-- Make signup/login preserve the pending capsule prompt/template.
+- Make signup/login preserve the pending capsule prompt/template/path/output
+  goal.
 - Ensure `/app` or Home shows the sidebar and the active ContextCapsule strip.
 - Show a small current capsule summary on Home.
 - Keep Ask PRAXIS copy explicit: it asks the active capsule, not a blank model.
 - Add or update Playwright smoke for the public prompt-to-login path and
   authenticated shell when a stable test session is available.
+
+Shipped in this wave:
+
+- Homepage toolbar previews a suggested path from `POLICY_PATH_PROFILES`, with
+  authenticated classifier-route use when available and deterministic registry
+  fallback for public visitors.
+- Output goal selection updates the ContextCapsule preview alongside User Core,
+  Situation Core, Path, Sources pending, suggested tools, and selected output.
+- Login and Ask handoff storage now preserve prompt, template, path, and output
+  goal while stating that no agent run happens before authentication.
 
 Validation:
 
@@ -100,7 +111,7 @@ Validation:
 ### 2. Capsule Registry And Onboarding
 
 Owner: frontend/product session  
-Status: registry exists, creation flow needs deeper wiring
+Status: registry drives homepage preview; creation flow needs deeper wiring
 
 Goal:
 
@@ -111,6 +122,7 @@ Tasks:
 
 - Use `POLICY_PATH_PROFILES` for onboarding path suggestions.
 - Let users start generic, then choose or infer a path.
+- Preserve selected path and output goal through the login handoff.
 - Add custom User Core creation for user personas.
 - Attach suggested tools and outputs from the chosen path.
 - Keep user-owned cores separate from demo cores.

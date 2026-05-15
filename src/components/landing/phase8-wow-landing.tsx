@@ -2,7 +2,7 @@
 
 import type { FormEvent } from "react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -27,11 +27,15 @@ import {
   CAPSULE_CONNECTOR_IDEAS,
   CAPSULE_OUTPUT_PRODUCTS,
   CONTEXT_CAPSULE_TEMPLATES,
+  PENDING_CONTEXT_CAPSULE_OUTPUT_KEY,
+  PENDING_CONTEXT_CAPSULE_PATH_KEY,
   PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
   PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY,
   POLICY_PATH_PROFILES,
   contextCapsuleLoginHref,
   type ContextCapsuleTemplate,
+  type PolicyPathId,
+  type PolicyPathProfile,
 } from "@/lib/product/context-capsules";
 
 const SPECIMENS: ReadonlyArray<{
@@ -54,6 +58,8 @@ const HERO_TEMPLATES = CONTEXT_CAPSULE_TEMPLATES.slice(0, 8);
 const FEATURED_PROMPTS = CONTEXT_CAPSULE_TEMPLATES.slice(0, 6);
 const POLICY_PATH_PREVIEW = POLICY_PATH_PROFILES.slice(0, 8);
 const COMBINATION_PREVIEW = CAPSULE_COMBINATION_RECIPES.slice(0, 4);
+const DEFAULT_POLICY_PATH = POLICY_PATH_PROFILES[0]!;
+const DEFAULT_OUTPUT_GOAL = CAPSULE_OUTPUT_PRODUCTS[0]?.label ?? 'Options memo';
 
 const ACTIVE_BAR_PREVIEW = [
   'User Core',
@@ -148,20 +154,97 @@ const assemblySteps = [
   { icon: FileText, label: 'Hand over', detail: 'Send a director, teammate, or AI agent the working context, allowed actions, and review gates.' },
 ] as const;
 
-function persistCapsulePrompt(prompt: string, templateId?: string) {
+type ToolbarPathPreview = {
+  path: PolicyPathProfile;
+  confidence: number;
+  source: 'registry' | 'route';
+};
+
+function persistCapsulePrompt(prompt: string, templateId?: string, pathId?: string, outputGoal?: string) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY, prompt);
   if (templateId) window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY, templateId);
+  if (pathId) window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_PATH_KEY, pathId);
+  if (outputGoal?.trim()) window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_OUTPUT_KEY, outputGoal.trim());
+}
+
+function classifyPromptFromRegistry(prompt: string): ToolbarPathPreview {
+  const words = prompt.toLowerCase().match(/[a-z0-9]+/g) ?? [];
+  const uniqueWords = Array.from(new Set(words.filter((word) => word.length > 2)));
+  let best = DEFAULT_POLICY_PATH;
+  let bestScore = 0;
+
+  for (const path of POLICY_PATH_PROFILES) {
+    const profileText = [
+      path.id,
+      path.label,
+      path.userFrame,
+      ...path.suggestedTools,
+      ...path.suggestedOutputs,
+      ...path.defaultTemplates,
+    ].join(' ').toLowerCase();
+    const score = uniqueWords.reduce((total, word) => total + (profileText.includes(word) ? 1 : 0), 0);
+    if (score > bestScore) {
+      best = path;
+      bestScore = score;
+    }
+  }
+
+  return {
+    path: best ?? DEFAULT_POLICY_PATH,
+    confidence: bestScore ? Math.min(0.88, 0.52 + bestScore * 0.09) : 0.42,
+    source: 'registry',
+  };
 }
 
 function useCapsuleLaunch() {
   const [prompt, setPrompt] = useState('Prepare a director briefing on a regulatory change.');
+  const [selectedPathId, setSelectedPathId] = useState<PolicyPathId>(DEFAULT_POLICY_PATH.id);
+  const [outputGoal, setOutputGoal] = useState(DEFAULT_OUTPUT_GOAL);
+  const [routePathPreview, setRoutePathPreview] = useState<ToolbarPathPreview | null>(null);
+
+  const registryPathPreview = useMemo(() => classifyPromptFromRegistry(prompt), [prompt]);
+  const pathPreview = routePathPreview?.path.id === registryPathPreview.path.id ? routePathPreview : registryPathPreview;
+  const selectedPath = POLICY_PATH_PROFILES.find((path) => path.id === selectedPathId) ?? pathPreview.path;
+
+  useEffect(() => {
+    if (!prompt.trim()) return;
+    const preview = classifyPromptFromRegistry(prompt);
+    setSelectedPathId((current) => (current === DEFAULT_POLICY_PATH.id ? preview.path.id : current));
+  }, [prompt]);
+
+  useEffect(() => {
+    if (!prompt.trim() || prompt.trim().length < 18) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      fetch('/api/paths/classify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seedText: prompt }),
+        signal: controller.signal,
+      })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((result: { policyPathId?: PolicyPathId; confidence?: number } | null) => {
+          const path = POLICY_PATH_PROFILES.find((item) => item.id === result?.policyPathId);
+          if (!path) return;
+          setRoutePathPreview({ path, confidence: result?.confidence ?? 0.5, source: 'route' });
+          setSelectedPathId((current) => (current === registryPathPreview.path.id ? path.id : current));
+        })
+        .catch(() => {
+          // Public visitors normally cannot call the authenticated route; keep the registry preview.
+        });
+    }, 650);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [prompt, registryPathPreview.path.id]);
 
   function launch(nextPrompt = prompt, templateId?: string) {
     const clean = nextPrompt.trim();
     if (!clean) return;
-    persistCapsulePrompt(clean, templateId);
-    window.location.href = contextCapsuleLoginHref(clean, templateId);
+    persistCapsulePrompt(clean, templateId, selectedPath.id, outputGoal);
+    window.location.href = contextCapsuleLoginHref(clean, templateId, selectedPath.id, outputGoal);
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -171,10 +254,26 @@ function useCapsuleLaunch() {
 
   function selectTemplate(template: ContextCapsuleTemplate) {
     setPrompt(template.prompt);
-    persistCapsulePrompt(template.prompt, template.id);
+    const nextPath = classifyPromptFromRegistry(template.prompt).path;
+    const nextOutput = template.output || nextPath.suggestedOutputs[0] || outputGoal;
+    setSelectedPathId(nextPath.id);
+    setOutputGoal(nextOutput);
+    persistCapsulePrompt(template.prompt, template.id, nextPath.id, nextOutput);
   }
 
-  return { prompt, setPrompt, submit, launch, selectTemplate };
+  return {
+    prompt,
+    setPrompt,
+    submit,
+    launch,
+    selectTemplate,
+    pathPreview,
+    selectedPath,
+    selectedPathId,
+    setSelectedPathId,
+    outputGoal,
+    setOutputGoal,
+  };
 }
 
 function StaggerSpecimens() {
@@ -217,7 +316,24 @@ function StaggerSpecimens() {
 }
 
 export function Phase8WowLanding() {
-  const { prompt, setPrompt, submit, launch, selectTemplate } = useCapsuleLaunch();
+  const {
+    prompt,
+    setPrompt,
+    submit,
+    launch,
+    selectTemplate,
+    pathPreview,
+    selectedPath,
+    selectedPathId,
+    setSelectedPathId,
+    outputGoal,
+    setOutputGoal,
+  } = useCapsuleLaunch();
+  const outputOptions = useMemo(
+    () => Array.from(new Set([outputGoal, ...selectedPath.suggestedOutputs, ...CAPSULE_OUTPUT_PRODUCTS.map((product) => product.label)])).slice(0, 8),
+    [outputGoal, selectedPath.suggestedOutputs],
+  );
+  const suggestedTools = selectedPath.suggestedTools.slice(0, 3);
 
   return (
     <main className="bg-[#F6F8FB] text-[#111827]">
@@ -274,6 +390,48 @@ export function Phase8WowLanding() {
                   </button>
                 ))}
               </div>
+              <div className="mt-3 grid gap-3 border-t border-slate-200 px-1 pt-3 sm:grid-cols-[minmax(0,1fr)_220px]">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Suggested path
+                    </p>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                      {pathPreview.source === 'route' ? 'classified' : 'registry preview'} · {Math.round(pathPreview.confidence * 100)}%
+                    </span>
+                  </div>
+                  <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                    {POLICY_PATH_PROFILES.slice(0, 7).map((path) => (
+                      <button
+                        key={path.id}
+                        type="button"
+                        onClick={() => setSelectedPathId(path.id)}
+                        className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                          selectedPathId === path.id
+                            ? 'border-[#8A5A00] bg-[#FFF8E6] text-[#6B4400]'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-[#8A5A00]/50'
+                        }`}
+                      >
+                        {path.label.replace(' analyst', '').replace(' practitioner', '')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <label className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Output goal
+                  <select
+                    value={outputGoal}
+                    onChange={(event) => setOutputGoal(event.target.value)}
+                    className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold normal-case tracking-normal text-slate-900 outline-none focus:border-[#8A5A00]"
+                  >
+                    {outputOptions.map((output) => (
+                      <option key={output} value={output}>
+                        {output}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
             </form>
             <div className="mt-4 flex flex-wrap gap-3">
               <button
@@ -281,7 +439,7 @@ export function Phase8WowLanding() {
                 onClick={() => launch()}
                 className="inline-flex items-center gap-2 rounded-md bg-[#111827] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#243244]"
               >
-                Start with initial runs
+                Save preview after signup
                 <ArrowRight className="h-4 w-4" />
               </button>
               <Link
@@ -312,12 +470,18 @@ export function Phase8WowLanding() {
                 ))}
               </div>
               <div className="mt-3 grid gap-2 border-t border-slate-200 pt-3 sm:grid-cols-2">
-                {AI_BAR_RUN_PLAN.map(([label, detail]) => (
+                {AI_BAR_RUN_PLAN.slice(0, 2).map(([label, detail]) => (
                   <div key={label} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                     <p className="text-xs font-semibold text-slate-950">{label}</p>
                     <p className="mt-1 text-[11px] leading-4 text-slate-600">{detail}</p>
                   </div>
                 ))}
+              </div>
+              <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <p className="text-xs font-semibold text-slate-950">No agent run before login</p>
+                <p className="mt-1 text-[11px] leading-4 text-slate-600">
+                  This only preserves the prompt, path, and output goal so the authenticated app can build the capsule.
+                </p>
               </div>
             </div>
             <dl className="mt-9 grid max-w-xl grid-cols-3 gap-4 border-t border-slate-200 pt-6 text-[11px] uppercase tracking-[0.18em] text-slate-500">
@@ -339,14 +503,17 @@ export function Phase8WowLanding() {
           <div className="relative">
             <CoreCapsuleHero />
             <ContextCapsulePreview
-              userLabel="Senior policy analyst"
-              situationLabel="Indo-Pacific 2026"
-              sourceCount={42}
-              documentCount={8}
-              graphState="Power map + actor-claim lattice"
-              timeHorizon="2026-2028"
-              outputGoal="Cited options memo"
-              healthScore={86}
+              userLabel={selectedPath.label}
+              situationLabel={prompt.trim() || 'New policy situation'}
+              pathLabel={selectedPath.label}
+              sourceCount={0}
+              documentCount={0}
+              sourcesLabel="Sources pending"
+              graphState={selectedPath.userFrame}
+              toolsLabel={suggestedTools.join(', ')}
+              timeHorizon="Set after signup"
+              outputGoal={outputGoal}
+              healthScore={44}
               href="/app/assistant"
               className="mt-4"
             />

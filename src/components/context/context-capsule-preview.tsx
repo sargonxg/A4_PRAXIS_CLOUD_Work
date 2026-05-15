@@ -5,9 +5,12 @@ import { cn } from '@/lib/utils/cn';
 export interface ContextCapsulePreviewProps {
   userLabel: string;
   situationLabel: string;
+  pathLabel?: string;
   sourceCount: number;
   documentCount: number;
+  sourcesLabel?: string;
   graphState: string;
+  toolsLabel?: string;
   timeHorizon: string;
   outputGoal: string;
   healthScore?: number;
@@ -19,9 +22,12 @@ export interface ContextCapsulePreviewProps {
 export function ContextCapsulePreview({
   userLabel,
   situationLabel,
+  pathLabel,
   sourceCount,
   documentCount,
+  sourcesLabel,
   graphState,
+  toolsLabel,
   timeHorizon,
   outputGoal,
   healthScore,
@@ -45,8 +51,9 @@ export function ContextCapsulePreview({
       <div className={cn('mt-4 grid gap-2', compact ? 'grid-cols-2' : 'sm:grid-cols-2')}>
         <CapsuleFact icon={Users} label="User" value={userLabel} />
         <CapsuleFact icon={Target} label="Situation" value={situationLabel} />
-        <CapsuleFact icon={BookOpenText} label="Sources" value={`${sourceCount} sources · ${documentCount} docs`} />
-        <CapsuleFact icon={Network} label="Graph" value={graphState} />
+        {pathLabel ? <CapsuleFact icon={Network} label="Path" value={pathLabel} /> : null}
+        <CapsuleFact icon={BookOpenText} label="Sources" value={sourcesLabel ?? `${sourceCount} sources · ${documentCount} docs`} />
+        <CapsuleFact icon={Network} label={toolsLabel ? 'Tools' : 'Graph'} value={toolsLabel ?? graphState} />
         <CapsuleFact icon={Clock3} label="Time" value={timeHorizon} />
         <CapsuleFact icon={FileText} label="Output" value={outputGoal} />
       </div>

@@ -9,8 +9,11 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import {
   CONTEXT_CAPSULE_TEMPLATES,
+  PENDING_CONTEXT_CAPSULE_OUTPUT_KEY,
+  PENDING_CONTEXT_CAPSULE_PATH_KEY,
   PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
   PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY,
+  POLICY_PATH_PROFILES,
 } from '@/lib/product/context-capsules';
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
@@ -36,6 +39,8 @@ function LoginForm() {
   const planParam = searchParams.get('plan'); // e.g. ?plan=analyst from pricing page
   const capsulePromptParam = searchParams.get('capsulePrompt');
   const capsuleTemplateParam = searchParams.get('capsuleTemplate');
+  const capsulePathParam = searchParams.get('capsulePath');
+  const capsuleOutputParam = searchParams.get('capsuleOutput');
   const appRedirect = planParam
     ? `/app/settings?upgrade=${planParam}` // Send to settings with upgrade prompt
     : resolvePostLoginRedirect(searchParams, false);
@@ -87,10 +92,16 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [pendingCapsulePrompt, setPendingCapsulePrompt] = useState('');
   const [pendingCapsuleTemplateId, setPendingCapsuleTemplateId] = useState('');
+  const [pendingCapsulePathId, setPendingCapsulePathId] = useState('');
+  const [pendingCapsuleOutput, setPendingCapsuleOutput] = useState('');
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
   const pendingCapsuleTemplateLabel = useMemo(
     () => CONTEXT_CAPSULE_TEMPLATES.find((t) => t.id === pendingCapsuleTemplateId)?.label ?? '',
     [pendingCapsuleTemplateId],
+  );
+  const pendingCapsulePathLabel = useMemo(
+    () => POLICY_PATH_PROFILES.find((path) => path.id === pendingCapsulePathId)?.label ?? '',
+    [pendingCapsulePathId],
   );
 
   useEffect(() => {
@@ -107,7 +118,19 @@ function LoginForm() {
     } else {
       setPendingCapsuleTemplateId(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY) ?? '');
     }
-  }, [capsulePromptParam, capsuleTemplateParam]);
+    if (capsulePathParam) {
+      window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_PATH_KEY, capsulePathParam);
+      setPendingCapsulePathId(capsulePathParam);
+    } else {
+      setPendingCapsulePathId(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PATH_KEY) ?? '');
+    }
+    if (capsuleOutputParam) {
+      window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_OUTPUT_KEY, capsuleOutputParam);
+      setPendingCapsuleOutput(capsuleOutputParam);
+    } else {
+      setPendingCapsuleOutput(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_OUTPUT_KEY) ?? '');
+    }
+  }, [capsulePromptParam, capsuleTemplateParam, capsulePathParam, capsuleOutputParam]);
 
   useEffect(() => {
     if (authError) {
@@ -279,8 +302,22 @@ function LoginForm() {
               <p className="mt-2 line-clamp-3 text-sm leading-5 text-navy-100">
                 {pendingCapsulePrompt}
               </p>
+              {pendingCapsulePathLabel || pendingCapsuleOutput ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {pendingCapsulePathLabel ? (
+                    <span className="rounded-full border border-gold-300/30 bg-navy-950/40 px-2 py-1 text-[11px] font-semibold text-gold-100">
+                      Path: {pendingCapsulePathLabel}
+                    </span>
+                  ) : null}
+                  {pendingCapsuleOutput ? (
+                    <span className="rounded-full border border-gold-300/30 bg-navy-950/40 px-2 py-1 text-[11px] font-semibold text-gold-100">
+                      Output: {pendingCapsuleOutput}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
               <p className="mt-2 text-xs leading-5 text-navy-400">
-                Create an account to open the full sidebar, initial runs, Gemini-backed Ask PRAXIS, and the capsule tools for sources, temporality, power dynamics, writing, and handover.
+                Create an account to open the full sidebar, capsule-aware Ask PRAXIS, and the tools for sources, temporality, power dynamics, writing, and handover.
               </p>
             </motion.div>
           ) : null}

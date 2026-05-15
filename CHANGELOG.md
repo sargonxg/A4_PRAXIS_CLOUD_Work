@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- feat(app): simplify the real app shell around the AI bar.
+  Removed the duplicate header account menu, made the sidebar user block the
+  single Profile/User Core entry point, and moved the ContextCapsule library
+  directly under the Home AI bar before the deeper capsule builder panel.
+- feat(landing): make ContextCapsule toolbar path-aware.
+  Added homepage path preview from the canonical policy path registry, output
+  goal selection, dynamic ContextCapsule preview fields, and login/Ask handoff
+  persistence for prompt, path, and output without claiming pre-login execution.
 - feat(agent-runtime): add ADK bridge contract.
   Added the PRAXIS-owned ADK bridge for capsule-aware research memo execution,
   including ADK agent kinds, capsule prompt construction, risk/approval
@@ -11,9 +19,6 @@
   Added a public homepage AI-bar run plan, exposed Sourceability/Tool
   Plan/Memo Handoff presets inside Ask PRAXIS, and included Sourceability in
   the research and review tool filters.
-- feat(agent-runtime): add ADK bridge contract.
-  Added a capsule-owned ADK prompt/event bridge with approval-aware risk
-  checks and focused tests for mapping ADK events into the PRAXIS run ledger.
 - feat(tools): register Sourceability Check as a canonical capsule tool.
   Promoted the Genkit-backed sourceability route into the canonical attachable
   tool registry, boosted it for research/reporting recommendations, and added

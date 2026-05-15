@@ -2,6 +2,8 @@ import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
 
 export const PENDING_CONTEXT_CAPSULE_PROMPT_KEY = 'praxis.pendingContextCapsulePrompt';
 export const PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY = 'praxis.pendingContextCapsuleTemplate';
+export const PENDING_CONTEXT_CAPSULE_PATH_KEY = 'praxis.pendingContextCapsulePath';
+export const PENDING_CONTEXT_CAPSULE_OUTPUT_KEY = 'praxis.pendingContextCapsuleOutput';
 
 export type ContextCapsuleTemplateId =
   | 'conflict-analysis'
@@ -445,12 +447,19 @@ export const CAPSULE_CAPABILITY_AREAS = [
   },
 ];
 
-export function contextCapsuleLoginHref(prompt: string, templateId?: string): string {
+export function contextCapsuleLoginHref(
+  prompt: string,
+  templateId?: string,
+  pathId?: string,
+  outputGoal?: string,
+): string {
   const params = new URLSearchParams({
     mode: 'signup',
     redirect: '/app/assistant',
   });
   if (prompt.trim()) params.set('capsulePrompt', prompt.trim());
   if (templateId) params.set('capsuleTemplate', templateId);
+  if (pathId) params.set('capsulePath', pathId);
+  if (outputGoal?.trim()) params.set('capsuleOutput', outputGoal.trim());
   return `/login?${params.toString()}`;
 }

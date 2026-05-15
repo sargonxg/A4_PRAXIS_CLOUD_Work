@@ -1,5 +1,32 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — Real App Shell Coherence Pass
+
+Current app-surface checkpoint:
+
+- The authenticated app keeps the canonical visible navigation: Home, Ask
+  PRAXIS, Library, Memo Studio, Canvas, and Advanced.
+- The header now stays focused on breadcrumbs, the command/Ask bar, active
+  capsule posture, trust posture, and notifications.
+- The sidebar is the single account/profile surface. Its user block now opens
+  the Profile/User Core area, while sign out remains in the sidebar footer.
+- Home now places the ContextCapsule library directly below the AI bar, then
+  follows with the one-click builder and live capsule preview.
+
+## 2026-05-15 — Path-Aware Homepage ContextCapsule Toolbar
+
+Current product checkpoint:
+
+- The homepage AI toolbar now previews a policy path from the shared
+  `POLICY_PATH_PROFILES` registry while attempting the authenticated
+  classifier route when it is available.
+- Visitors can choose the suggested path and output goal before signup, and
+  the ContextCapsule preview updates with User Core, Situation Core, Path,
+  Sources pending, suggested tools, and selected output.
+- Signup/login now preserves the prompt, selected path, and output goal in the
+  existing pending-capsule handoff flow. The page stays explicit that no agent
+  run or tool execution happens before login.
+
 ## 2026-05-15 — ADK Research Memo Bridge Contract
 
 Current backend/runtime checkpoint:

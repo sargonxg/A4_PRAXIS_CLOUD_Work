@@ -6,6 +6,7 @@ import {
   CAPSULE_OUTPUT_PRODUCTS,
   CONTEXT_CAPSULE_TEMPLATES,
   POLICY_PATH_PROFILES,
+  contextCapsuleLoginHref,
 } from '@/lib/product/context-capsules';
 
 describe('context capsule product contract', () => {
@@ -65,5 +66,21 @@ describe('context capsule product contract', () => {
         expect(templateIds.has(templateId), `${recipe.id} references missing template ${templateId}`).toBe(true);
       }
     }
+  });
+
+  it('preserves prompt, template, path, and output in the login handoff URL', () => {
+    const href = contextCapsuleLoginHref(
+      'Review a sanctions compliance memo.',
+      'sanctions-compliance',
+      'legal-compliance',
+      'Compliance note',
+    );
+    const url = new URL(href, 'https://praxis.local');
+
+    expect(url.pathname).toBe('/login');
+    expect(url.searchParams.get('capsulePrompt')).toBe('Review a sanctions compliance memo.');
+    expect(url.searchParams.get('capsuleTemplate')).toBe('sanctions-compliance');
+    expect(url.searchParams.get('capsulePath')).toBe('legal-compliance');
+    expect(url.searchParams.get('capsuleOutput')).toBe('Compliance note');
   });
 });

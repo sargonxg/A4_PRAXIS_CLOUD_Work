@@ -22,9 +22,12 @@ from the active ledger above.
 ### Canonical Tasklet-Style Runtime Build
 
 0. Keep the public-to-authenticated path usable before adding deeper runtime
-   scope: homepage prompt bar, active capsule glimpse, login/signup
-   continuation, app sidebar, active capsule strip, Home capsule summary, and
-   Ask/Library/Memo/Canvas surfaces reading from the active capsule.
+   scope: homepage prompt bar, path-aware capsule preview, active capsule
+   glimpse, login/signup continuation, app sidebar, active capsule strip, Home
+   capsule summary, ContextCapsule library below the AI bar, and
+   Ask/Library/Memo/Canvas surfaces reading from the active capsule. The
+   duplicate header account menu is removed; the sidebar is the single
+   Profile/User Core entry point.
 1. Use `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` to start the next
    Codex and Claude Code sessions with clear file ownership, validation, and
    commit/push expectations.
@@ -52,9 +55,11 @@ from the active ledger above.
    live Agent Engine execution, then promote Cloud Tasks dispatch into the real
    Research Memo Agent worker.
 6. Use the Genkit ContextCapsule path classifier as the first safe homepage
-   prompt-to-capsule bridge: classify into `POLICY_PATH_PROFILES`, show
-   suggested cores/tools/outputs/questions, then create user-owned capsule
-   state only through the existing authenticated capsule creation flow.
+   prompt-to-capsule bridge. The public homepage now previews path/tools/output
+   from `POLICY_PATH_PROFILES` and preserves the selected path/output through
+   login. Next, after authentication, create user-owned capsule state only
+   through the existing capsule creation flow and reuse the typed classifier
+   output for richer missing-information questions.
 7. Sourceability is now a canonical attachable tool and visible from the AI
    bar/tool filters. Next, wire selected-claim Sourceability actions directly
    into Memo Studio so a user can check a paragraph against attached snippets

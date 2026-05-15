@@ -14,8 +14,8 @@ test.describe('PRAXIS MVP core surfaces', () => {
     await expect(page.getByRole('link', { name: /Create context/i }).first()).toBeVisible();
 
     await page.goto('/app/contexts');
-    await expect(page.getByRole('heading', { name: /Choose the knowledge cores PRAXIS should use/i })).toBeVisible();
-    await expect(page.getByText(/Manage stack/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Build the capsule once, then use it everywhere/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Manage stack/i })).toBeVisible();
     await expect(page.getByText(/Advanced details/i)).toBeVisible();
 
     await page.goto('/app/cores/context');

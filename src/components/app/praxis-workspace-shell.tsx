@@ -462,27 +462,12 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <OneClickContextBuilder />
-        <ContextCapsulePreview
-          userLabel={activeUserModel.identity}
-          situationLabel={selectedCase?.name ?? 'No Situation Core selected'}
-          sourceCount={selectedCase?.sourceCount ?? 0}
-          documentCount={selectedCase?.documentCount ?? 0}
-          graphState={`${selectedCase?.actorCount ?? 0} actors · ${contextHealth.signals.find((item) => item.id === 'timeline')?.status ?? 'partial'} timeline`}
-          timeHorizon={capsuleTimeHorizon}
-          outputGoal={workspaceLens.writingLabel}
-          healthScore={contextHealth.score}
-          href="/app/contexts"
-        />
-      </section>
-
       <section id="core-library" data-testid="core-library-panel" className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
         <div className="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm shadow-navy-950/5 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">Core library</p>
-              <h2 className="mt-1 text-xl font-semibold text-navy-950">Maintain the cores behind the active context.</h2>
+              <h2 className="mt-1 text-xl font-semibold text-navy-950">ContextCapsule library.</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               <Link href="/app/cores/user" className="inline-flex items-center gap-2 rounded-md border border-diplomatic-blue/25 bg-white px-3 py-2 text-sm font-semibold text-diplomatic-blue hover:bg-diplomatic-blue/5">
@@ -573,6 +558,21 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
             />
           </div>
         </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <OneClickContextBuilder />
+        <ContextCapsulePreview
+          userLabel={activeUserModel.identity}
+          situationLabel={selectedCase?.name ?? 'No Situation Core selected'}
+          sourceCount={selectedCase?.sourceCount ?? 0}
+          documentCount={selectedCase?.documentCount ?? 0}
+          graphState={`${selectedCase?.actorCount ?? 0} actors · ${contextHealth.signals.find((item) => item.id === 'timeline')?.status ?? 'partial'} timeline`}
+          timeHorizon={capsuleTimeHorizon}
+          outputGoal={workspaceLens.writingLabel}
+          healthScore={contextHealth.score}
+          href="/app/contexts"
+        />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">

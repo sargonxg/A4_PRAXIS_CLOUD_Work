@@ -133,7 +133,11 @@ export function AppSidebar() {
       </nav>
 
       <div className="border-t border-[var(--color-app-border)] p-2">
-        <div className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2">
+        <PraxisLink
+          href="/app/settings/profile"
+          className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-[var(--color-app-surface-alt)]"
+          title="Open user profile"
+        >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-diplomatic-blue text-xs font-bold text-white">
             {initials}
           </span>
@@ -143,9 +147,12 @@ export function AppSidebar() {
               <span className="block truncate text-xs text-navy-400">
                 {user?.isDemo ? 'Example session' : user?.email}
               </span>
+              <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-gold-700">
+                Profile / User Core
+              </span>
             </span>
           ) : null}
-        </div>
+        </PraxisLink>
         <button
           type="button"
           onClick={handleLogout}
