@@ -300,6 +300,69 @@ Do not run `firebase deploy --only dataconnect` until this repo contains
 
 ---
 
+## 2b. Agent Run Cloud Tasks Dispatch
+
+The Queue 5 dispatch boundary uses Cloud Tasks to call the private no-op agent
+worker route:
+
+```text
+POST /api/agents/runs/[runId]/dispatch
+  -> Cloud Tasks queue
+  -> POST /api/agents/runs/[runId]/execute
+```
+
+Default queue target:
+
+```text
+projects/praxisbytacitus/locations/us-central1/queues/agent-runs
+```
+
+Required production environment:
+
+```text
+AGENT_RUNTIME_DATABASE_URL or PRAXIS_DATABASE_URL or DATABASE_URL
+AGENT_RUN_WORKER_BASE_URL=https://praxis.tacitus.me
+AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL=<cloud-tasks-invoker-service-account>
+AGENT_RUN_WORKER_OIDC_AUDIENCE=<execute-route-audience>
+```
+
+Only set these when overriding defaults:
+
+```text
+AGENT_RUN_TASKS_PROJECT=praxisbytacitus
+AGENT_RUN_TASKS_LOCATION=us-central1
+AGENT_RUN_TASKS_QUEUE=agent-runs
+```
+
+Local smoke can use `AGENT_RUN_WORKER_SHARED_SECRET`, but production should use
+Cloud Tasks OIDC and a trusted service account.
+
+Create or verify the queue:
+
+```bash
+gcloud services enable cloudtasks.googleapis.com --project=praxisbytacitus
+
+gcloud tasks queues describe agent-runs \
+  --location=us-central1 \
+  --project=praxisbytacitus
+
+# If missing:
+gcloud tasks queues create agent-runs \
+  --location=us-central1 \
+  --project=praxisbytacitus \
+  --max-dispatches-per-second=5 \
+  --max-concurrent-dispatches=10 \
+  --max-attempts=3
+```
+
+The initial worker does not run models or tools. It only persists:
+
+```text
+queued -> running -> succeeded
+```
+
+---
+
 ## 3. Rollback
 
 If the latest deploy is broken:

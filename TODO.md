@@ -28,31 +28,29 @@ from the active ledger above.
 1. Use `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` to start the next
    Codex and Claude Code sessions with clear file ownership, validation, and
    commit/push expectations.
-2. Build Wave 1 of the canonical Tasklet-style PRAXIS runtime:
-   Cloud SQL Agent Run Ledger. Add typed agent/runtime tables and helpers for
-   agents, runs, run events, tool calls, approvals, triggers, document/chunk
-   links, and capsule pointers. Keep Firestore as the active capsule/app state
-   store.
-3. Add the API control-plane surface for manual agent runs:
-   `POST /api/agents/runs`, `GET /api/agents/runs/[runId]`, and list by active
-   capsule. The first pass should persist queued runs only; no AI execution
-   until the ledger is stable.
-4. Add Cloud Tasks dispatch after the ledger: one task per run, private
-   `praxis-agent-worker` route, OIDC-authenticated execution, and
-   `queued -> running -> succeeded/failed` events.
-5. Implement the Research Memo Agent first, then Daily Brief, Watchlist, and
+2. Queue 4 first pass is implemented: typed agent runtime contracts, pure
+   transition/event/idempotency helpers, a narrow Cloud SQL Postgres adapter,
+   and queued-only API routes for creating and inspecting capsule-owned runs.
+   Remaining Queue 4 hardening is production Cloud SQL env wiring/migration
+   verification and adding tool-call/approval table writes when later waves
+   need them.
+3. Queue 5 first pass is implemented: Cloud Tasks payload/task construction,
+   dispatch route, OIDC/shared-secret worker boundary, and no-op
+   `queued -> running -> succeeded` execution events. Remaining Queue 5
+   hardening is production queue/IAM/env verification for `agent-runs`.
+4. Implement the Research Memo Agent first, then Daily Brief, Watchlist, and
    Source Monitor. Every run must resolve the active ContextCapsule before
    calling tools.
-6. Add approval gates before any external send, graph fact promotion,
+5. Add approval gates before any external send, graph fact promotion,
    unsupported-claim resolution, credentialed browser automation, or high-risk
    tool action.
-7. Keep MCP private/read-first until the run ledger and approval model are
+6. Keep MCP private/read-first until the run ledger and approval model are
    reliable. Browser/code sandbox work is explicitly GKE-later unless a real
    workload proves Cloud Run cannot handle it.
-8. When browser automation becomes necessary, start with `browser-use` plus
+7. When browser automation becomes necessary, start with `browser-use` plus
    Steel.dev managed sessions, allowlisted/read-only behavior, hard run caps,
    idempotency, trace ids, and approval gates before credentialed actions.
-9. Use `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md` and
+8. Use `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md` and
    `src/lib/product/context-capsules.ts` when adding new personas, paths,
    output products, connectors, or capsule-combination flows.
 

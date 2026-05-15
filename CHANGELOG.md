@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- feat(agent-runtime): add Cloud Tasks dispatch boundary.
+  Added the `agent-runs` Cloud Tasks helper, dispatch API route, private worker
+  execute route with OIDC/shared-secret verification, and no-op
+  `queued -> running -> succeeded` execution flow with focused runtime tests.
+- feat(agent-runtime): add Cloud SQL queued run ledger.
+  Added typed agent run contracts, pure transition/event/idempotency helpers,
+  a narrow Cloud SQL Postgres adapter, queued-run create/list/get API routes,
+  and focused runtime tests for the first agent ledger foundation.
 - feat(landing): make the ContextCapsule app path visible before signup.
   The public homepage now shows the active capsule bar glimpse, login/signup
   continuation, policy path previews, capsule-combination examples, output

@@ -1,0 +1,283 @@
+import { randomUUID } from 'crypto';
+import { Pool, type QueryResultRow } from 'pg';
+import {
+  type AgentRun,
+  type AgentRunEvent,
+  type AgentRunStatus,
+  type CreateAgentRunInput,
+} from '@/lib/agent-runtime/types';
+import {
+  assertAgentRunTransition,
+  makeAgentRunEvent,
+  normalizeCreateAgentRunInput,
+} from '@/lib/agent-runtime/state';
+
+let pool: Pool | null = null;
+let schemaReady: Promise<void> | null = null;
+
+function getDatabaseUrl(): string | null {
+  return process.env.AGENT_RUNTIME_DATABASE_URL
+    || process.env.PRAXIS_DATABASE_URL
+    || process.env.DATABASE_URL
+    || null;
+}
+
+function getPool(): Pool {
+  const connectionString = getDatabaseUrl();
+  if (!connectionString) {
+    throw new Error('Agent run ledger is not configured: set AGENT_RUNTIME_DATABASE_URL, PRAXIS_DATABASE_URL, or DATABASE_URL for Cloud SQL Postgres.');
+  }
+  if (!pool) {
+    pool = new Pool({
+      connectionString,
+      max: Number(process.env.AGENT_RUNTIME_PG_POOL_MAX ?? 5),
+      ssl: process.env.AGENT_RUNTIME_PG_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
+    });
+  }
+  return pool;
+}
+
+async function ensureSchema(): Promise<void> {
+  if (!schemaReady) {
+    schemaReady = getPool().query(`
+      CREATE TABLE IF NOT EXISTS agent_runs (
+        id TEXT PRIMARY KEY,
+        agent_spec_id TEXT,
+        owner_uid TEXT NOT NULL,
+        capsule_id TEXT NOT NULL,
+        context_stack_id TEXT,
+        context_package_id TEXT,
+        selected_core_ids JSONB NOT NULL DEFAULT '{}'::jsonb,
+        status TEXT NOT NULL,
+        trigger_type TEXT NOT NULL,
+        objective TEXT NOT NULL,
+        trace_id TEXT NOT NULL,
+        parent_run_id TEXT,
+        idempotency_key TEXT NOT NULL,
+        max_step INTEGER NOT NULL,
+        max_session_minutes INTEGER NOT NULL,
+        internal_estimated_cost_cents INTEGER,
+        internal_spend_cents INTEGER,
+        metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL,
+        queued_at TIMESTAMPTZ NOT NULL,
+        started_at TIMESTAMPTZ,
+        completed_at TIMESTAMPTZ,
+        expires_at TIMESTAMPTZ,
+        UNIQUE (owner_uid, idempotency_key)
+      );
+      CREATE INDEX IF NOT EXISTS agent_runs_owner_capsule_created_idx
+        ON agent_runs (owner_uid, capsule_id, created_at DESC);
+      CREATE TABLE IF NOT EXISTS agent_run_events (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE,
+        owner_uid TEXT NOT NULL,
+        capsule_id TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        from_status TEXT,
+        to_status TEXT,
+        message TEXT,
+        data JSONB NOT NULL DEFAULT '{}'::jsonb,
+        trace_id TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS agent_run_events_run_created_idx
+        ON agent_run_events (run_id, created_at ASC);
+    `).then(() => undefined);
+  }
+  return schemaReady;
+}
+
+export async function createAgentRun(input: CreateAgentRunInput): Promise<AgentRun> {
+  await ensureSchema();
+  const normalized = normalizeCreateAgentRunInput(input);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + normalized.maxSessionMinutes * 60_000);
+  const runId = randomUUID();
+  const result = await getPool().query(
+    `
+      INSERT INTO agent_runs (
+        id, agent_spec_id, owner_uid, capsule_id, context_stack_id, context_package_id,
+        selected_core_ids, status, trigger_type, objective, trace_id, parent_run_id,
+        idempotency_key, max_step, max_session_minutes, internal_estimated_cost_cents,
+        internal_spend_cents, metadata, created_at, updated_at, queued_at, expires_at
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,'queued',$8,$9,$10,$11,$12,$13,$14,$15,0,$16,$17,$17,$17,$18)
+      ON CONFLICT (owner_uid, idempotency_key) DO UPDATE SET updated_at = agent_runs.updated_at
+      RETURNING *
+    `,
+    [
+      runId,
+      normalized.agentSpecId ?? null,
+      normalized.ownerUid,
+      normalized.capsuleId,
+      normalized.contextStackId,
+      normalized.contextPackageId,
+      JSON.stringify(normalized.selectedCoreIds),
+      normalized.triggerType,
+      normalized.objective,
+      normalized.traceId,
+      normalized.parentRunId,
+      normalized.idempotencyKey,
+      normalized.maxStep,
+      normalized.maxSessionMinutes,
+      normalized.internalEstimatedCostCents,
+      JSON.stringify(normalized.metadata),
+      now,
+      expiresAt,
+    ],
+  );
+  const run = rowToAgentRun(result.rows[0]);
+  await appendAgentRunEvent(makeAgentRunEvent({
+    runId: run.id,
+    ownerUid: run.ownerUid,
+    capsuleId: run.capsuleId,
+    eventType: 'run_queued',
+    toStatus: 'queued',
+    message: 'Agent run queued for later dispatch.',
+    traceId: run.traceId,
+  }));
+  return run;
+}
+
+export async function getAgentRun(ownerUid: string, runId: string): Promise<AgentRun | null> {
+  await ensureSchema();
+  const result = await getPool().query(
+    'SELECT * FROM agent_runs WHERE owner_uid = $1 AND id = $2 LIMIT 1',
+    [ownerUid, runId],
+  );
+  return result.rows[0] ? rowToAgentRun(result.rows[0]) : null;
+}
+
+export async function listAgentRunsForCapsule(ownerUid: string, capsuleId: string, limit = 25): Promise<AgentRun[]> {
+  await ensureSchema();
+  const result = await getPool().query(
+    `
+      SELECT * FROM agent_runs
+      WHERE owner_uid = $1 AND capsule_id = $2
+      ORDER BY created_at DESC
+      LIMIT $3
+    `,
+    [ownerUid, capsuleId, Math.max(1, Math.min(100, Math.floor(limit)))],
+  );
+  return result.rows.map(rowToAgentRun);
+}
+
+export async function appendAgentRunEvent(input: AgentRunEvent): Promise<AgentRunEvent> {
+  await ensureSchema();
+  const result = await getPool().query(
+    `
+      INSERT INTO agent_run_events (
+        id, run_id, owner_uid, capsule_id, event_type, from_status, to_status,
+        message, data, trace_id, created_at
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      RETURNING *
+    `,
+    [
+      input.id,
+      input.runId,
+      input.ownerUid,
+      input.capsuleId,
+      input.eventType,
+      input.fromStatus,
+      input.toStatus,
+      input.message,
+      JSON.stringify(input.data),
+      input.traceId,
+      input.createdAt,
+    ],
+  );
+  return rowToAgentRunEvent(result.rows[0]);
+}
+
+export async function updateAgentRunStatus(input: {
+  ownerUid: string;
+  runId: string;
+  toStatus: AgentRunStatus;
+  message?: string | null;
+  data?: Record<string, unknown>;
+}): Promise<AgentRun | null> {
+  await ensureSchema();
+  const current = await getAgentRun(input.ownerUid, input.runId);
+  if (!current) return null;
+  assertAgentRunTransition(current.status, input.toStatus);
+  const now = new Date();
+  const completedAt = ['succeeded', 'failed', 'cancelled', 'expired'].includes(input.toStatus) ? now : current.completedAt;
+  const startedAt = input.toStatus === 'running' && !current.startedAt ? now : current.startedAt;
+  const result = await getPool().query(
+    `
+      UPDATE agent_runs
+      SET status = $1, updated_at = $2, started_at = $3, completed_at = $4
+      WHERE owner_uid = $5 AND id = $6
+      RETURNING *
+    `,
+    [input.toStatus, now, startedAt, completedAt, input.ownerUid, input.runId],
+  );
+  const run = result.rows[0] ? rowToAgentRun(result.rows[0]) : null;
+  if (run) {
+    await appendAgentRunEvent(makeAgentRunEvent({
+      runId: run.id,
+      ownerUid: run.ownerUid,
+      capsuleId: run.capsuleId,
+      eventType: 'status_transition',
+      fromStatus: current.status,
+      toStatus: run.status,
+      message: input.message ?? null,
+      data: input.data ?? {},
+      traceId: run.traceId,
+    }));
+  }
+  return run;
+}
+
+function rowToAgentRun(row: QueryResultRow): AgentRun {
+  return {
+    id: String(row.id),
+    agentSpecId: row.agent_spec_id ?? null,
+    ownerUid: String(row.owner_uid),
+    capsuleId: String(row.capsule_id),
+    contextStackId: row.context_stack_id ?? null,
+    contextPackageId: row.context_package_id ?? null,
+    selectedCoreIds: row.selected_core_ids,
+    status: row.status,
+    triggerType: row.trigger_type,
+    objective: String(row.objective),
+    traceId: String(row.trace_id),
+    parentRunId: row.parent_run_id ?? null,
+    idempotencyKey: String(row.idempotency_key),
+    maxStep: Number(row.max_step),
+    maxSessionMinutes: Number(row.max_session_minutes),
+    internalEstimatedCostCents: row.internal_estimated_cost_cents === null ? null : Number(row.internal_estimated_cost_cents),
+    internalSpendCents: row.internal_spend_cents === null ? null : Number(row.internal_spend_cents),
+    metadata: row.metadata ?? {},
+    createdAt: dateIso(row.created_at),
+    updatedAt: dateIso(row.updated_at),
+    queuedAt: dateIso(row.queued_at),
+    startedAt: row.started_at ? dateIso(row.started_at) : null,
+    completedAt: row.completed_at ? dateIso(row.completed_at) : null,
+    expiresAt: row.expires_at ? dateIso(row.expires_at) : null,
+  };
+}
+
+function rowToAgentRunEvent(row: QueryResultRow): AgentRunEvent {
+  return {
+    id: String(row.id),
+    runId: String(row.run_id),
+    ownerUid: String(row.owner_uid),
+    capsuleId: String(row.capsule_id),
+    eventType: String(row.event_type),
+    fromStatus: row.from_status ?? null,
+    toStatus: row.to_status ?? null,
+    message: row.message ?? null,
+    data: row.data ?? {},
+    traceId: String(row.trace_id),
+    createdAt: dateIso(row.created_at),
+  };
+}
+
+function dateIso(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
+  return new Date(String(value)).toISOString();
+}

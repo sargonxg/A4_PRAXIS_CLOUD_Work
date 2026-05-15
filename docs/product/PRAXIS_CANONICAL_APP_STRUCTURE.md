@@ -362,6 +362,17 @@ Ship:
 - `queued -> running -> succeeded/failed`;
 - no risky tool actions yet.
 
+Current implementation checkpoint:
+
+- `POST /api/agents/runs/[runId]/dispatch` enqueues a Cloud Tasks HTTP target
+  for the run's execute route.
+- `POST /api/agents/runs/[runId]/execute` is the private worker boundary. The
+  first worker pass is intentionally no-op and only records
+  `queued -> running -> succeeded`.
+- Production dispatch requires the Cloud Tasks queue, worker base URL, and
+  trusted worker service account environment variables described in
+  `docs/GCP_OPERATIONS.md`.
+
 ### Wave 3: Research Memo Agent
 
 Ship:

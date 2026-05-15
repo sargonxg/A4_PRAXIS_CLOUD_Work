@@ -1,5 +1,25 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — Agent Runtime Queues 4-5
+
+Current backend runtime checkpoint:
+
+- Queue 4 adds the first capsule-aware agent run ledger contract in
+  `src/lib/agent-runtime/`: typed runs/events/tool calls/approvals/triggers,
+  selected core ids, trace ids, parent run ids, idempotency keys, hard run caps,
+  and internal cost/spend fields.
+- The queued-run control plane now includes `POST /api/agents/runs`,
+  `GET /api/agents/runs?capsuleId=...`, and
+  `GET /api/agents/runs/[runId]`. It creates queued runs only; no model or
+  tool execution happens in Queue 4.
+- Queue 5 adds the Cloud Tasks dispatch boundary:
+  `POST /api/agents/runs/[runId]/dispatch` enqueues an `agent-runs` task, and
+  `POST /api/agents/runs/[runId]/execute` is the private worker route.
+- The first worker pass is intentionally no-op. It verifies Cloud Tasks OIDC or
+  a local shared secret, then records `queued -> running -> succeeded`.
+- Production runtime verification still needs Cloud SQL, Cloud Tasks queue,
+  worker base URL, and worker service-account env wiring.
+
 ## 2026-05-15 — Canonical ContextCapsule Agent Runtime Direction
 
 Current product/runtime direction:

@@ -8,6 +8,7 @@ import { Shield, ArrowRight, Loader2, Mail, Chrome } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import {
+  CONTEXT_CAPSULE_TEMPLATES,
   PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
   PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY,
 } from '@/lib/product/context-capsules';
@@ -85,7 +86,12 @@ function LoginForm() {
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [pendingCapsulePrompt, setPendingCapsulePrompt] = useState('');
+  const [pendingCapsuleTemplateId, setPendingCapsuleTemplateId] = useState('');
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
+  const pendingCapsuleTemplateLabel = useMemo(
+    () => CONTEXT_CAPSULE_TEMPLATES.find((t) => t.id === pendingCapsuleTemplateId)?.label ?? '',
+    [pendingCapsuleTemplateId],
+  );
 
   useEffect(() => {
     const prompt = capsulePromptParam?.trim();
@@ -97,6 +103,9 @@ function LoginForm() {
     }
     if (capsuleTemplateParam) {
       window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY, capsuleTemplateParam);
+      setPendingCapsuleTemplateId(capsuleTemplateParam);
+    } else {
+      setPendingCapsuleTemplateId(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY) ?? '');
     }
   }, [capsulePromptParam, capsuleTemplateParam]);
 
@@ -265,7 +274,7 @@ function LoginForm() {
               className="mb-5 rounded-xl border border-gold-500/25 bg-gold-500/10 p-4"
             >
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-300">
-                ContextCapsule queued
+                ContextCapsule queued{pendingCapsuleTemplateLabel ? ` · ${pendingCapsuleTemplateLabel}` : ''}
               </p>
               <p className="mt-2 line-clamp-3 text-sm leading-5 text-navy-100">
                 {pendingCapsulePrompt}

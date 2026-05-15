@@ -149,7 +149,7 @@ Validation:
 ### 4. Cloud SQL Agent Run Ledger
 
 Owner: Codex backend session  
-Status: next backend implementation wave
+Status: first queued-run contract implemented; production Cloud SQL wiring verification remains
 
 Goal:
 
@@ -158,12 +158,29 @@ Create the durable ledger for Tasklet-style PRAXIS runs.
 Tasks:
 
 - Add typed run, event, tool-call, approval, trigger, and artifact contracts.
-- Include `traceId`, `parentRunId`, `idempotencyKey`, `maxSteps`,
+- Include `traceId`, `parentRunId`, `idempotencyKey`, `maxStep`,
   `maxSessionMinutes`, and internal cost/spend fields.
 - Add capsule/core pointers to every run.
 - Add pure state-transition helpers and tests.
-- Add `POST /api/agents/runs` and `GET /api/agents/runs/[runId]`.
+- Add `POST /api/agents/runs`, `GET /api/agents/runs/[runId]`, and list by
+  capsule.
 - First pass creates queued runs only. No model execution yet.
+
+Shipped in this wave:
+
+- `src/lib/agent-runtime/types.ts`
+- `src/lib/agent-runtime/state.ts`
+- `src/lib/agent-runtime/postgres.ts`
+- `src/app/api/agents/runs/route.ts`
+- `src/app/api/agents/runs/[runId]/route.ts`
+- focused unit tests under `tests/unit/lib/agent-runtime`
+
+Remaining blockers:
+
+- Production Cloud SQL env wiring must provide `AGENT_RUNTIME_DATABASE_URL`,
+  `PRAXIS_DATABASE_URL`, or `DATABASE_URL`.
+- Tool-call, approval, trigger, and agent spec table writes are typed but not
+  executed until later runtime waves need them.
 
 Validation:
 
@@ -177,7 +194,7 @@ Validation:
 ### 5. Cloud Tasks Dispatch
 
 Owner: Codex backend session  
-Status: after ledger
+Status: no-op dispatch boundary implemented; production Cloud Tasks/IAM wiring verification remains
 
 Goal:
 
@@ -190,6 +207,26 @@ Tasks:
 - Implement no-op execution first: `queued -> running -> succeeded`.
 - Persist run events for every transition.
 - Keep idempotency and retries explicit.
+
+Shipped in this wave:
+
+- `src/lib/agent-runtime/cloud-tasks.ts`
+- `src/lib/agent-runtime/worker-auth.ts`
+- `src/app/api/agents/runs/[runId]/dispatch/route.ts`
+- `src/app/api/agents/runs/[runId]/execute/route.ts`
+- focused Cloud Tasks payload tests under `tests/unit/lib/agent-runtime`
+
+Runtime configuration required before production dispatch:
+
+- `AGENT_RUN_WORKER_BASE_URL` or `APP_URL` for the worker route target.
+- `AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL` for Cloud Tasks OIDC.
+- `AGENT_RUN_WORKER_OIDC_AUDIENCE` when the audience should differ from the
+  exact execute URL.
+- `AGENT_RUN_TASKS_PROJECT`, `AGENT_RUN_TASKS_LOCATION`, and
+  `AGENT_RUN_TASKS_QUEUE` only when overriding the default
+  `praxisbytacitus/us-central1/agent-runs` queue.
+- Optional `AGENT_RUN_WORKER_SHARED_SECRET` for local/non-production smoke only;
+  production should use Cloud Tasks OIDC.
 
 Validation:
 

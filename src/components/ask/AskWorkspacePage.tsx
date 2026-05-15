@@ -29,7 +29,11 @@ import { buildContextHealthReport } from '@/lib/context/context-health';
 import { PUBLIC_USER_MODELS } from '@/lib/user-models/seeds';
 import type { UserModelRecord } from '@/lib/user-models/types';
 import { getActiveUserModelId, listPrivateUserModels, setActiveUserModel } from '@/lib/users/api';
-import { PENDING_CONTEXT_CAPSULE_PROMPT_KEY } from '@/lib/product/context-capsules';
+import {
+  CONTEXT_CAPSULE_TEMPLATES,
+  PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
+  PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY,
+} from '@/lib/product/context-capsules';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
@@ -100,13 +104,20 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(true);
   const [pendingCapsulePrompt, setPendingCapsulePrompt] = useState('');
+  const [pendingCapsuleTemplateId, setPendingCapsuleTemplateId] = useState('');
   const { stack, hydrated: stackHydrated, saveStack } = useActiveContextStack();
 
   useEffect(() => {
     setPrivateModels(listPrivateUserModels(window.localStorage));
     setActiveUserModelId(getActiveUserModelId(window.localStorage));
     setPendingCapsulePrompt(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY) ?? '');
+    setPendingCapsuleTemplateId(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY) ?? '');
   }, []);
+
+  const pendingCapsuleTemplateLabel = useMemo(
+    () => CONTEXT_CAPSULE_TEMPLATES.find((t) => t.id === pendingCapsuleTemplateId)?.label ?? '',
+    [pendingCapsuleTemplateId],
+  );
 
   const availableModels = useMemo(() => [...privateModels, ...PUBLIC_USER_MODELS], [privateModels]);
   const activeUserModel = availableModels.find((model) => model.modelId === activeUserModelId) ?? PUBLIC_USER_MODELS[0];
@@ -201,7 +212,9 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     if (!pendingCapsulePrompt.trim()) return;
     window.dispatchEvent(new CustomEvent('open-praxis-chat', { detail: { prompt: pendingCapsulePrompt } }));
     window.localStorage.removeItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY);
+    window.localStorage.removeItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY);
     setPendingCapsulePrompt('');
+    setPendingCapsuleTemplateId('');
   }
 
   return (
@@ -217,7 +230,9 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
         <section className="rounded-lg border border-gold-200 bg-gold-50 p-4 shadow-sm shadow-navy-950/5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="max-w-3xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-800">ContextCapsule scaffold from landing</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-800">
+                ContextCapsule scaffold from landing{pendingCapsuleTemplateLabel ? ` · ${pendingCapsuleTemplateLabel}` : ''}
+              </p>
               <p className="mt-2 text-sm leading-6 text-navy-900">{pendingCapsulePrompt}</p>
               <p className="mt-1 text-xs leading-5 text-navy-600">
                 Start thin, then add sources, episodes, power dynamics, rules, tools, and an output target in the sidebar.
