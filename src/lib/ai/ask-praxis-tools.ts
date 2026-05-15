@@ -144,13 +144,15 @@ export function makeRunDeepResearch(b: AskPraxisToolBindings) {
           depth,
         };
       }
-      // For paid users, surface a clear pointer to the deep-search-agent route.
-      // Calling that route from within a tool would double-charge credits, so
-      // we return a structured directive the UI can act on (deep-link).
+      // For paid users, surface a route-safe internal directive. The older
+      // deep-search page is now consolidated behind Ask/Library tooling, and
+      // calling another AI route here would double-charge credits.
       return {
         ok: true,
-        directive: 'open_tool',
-        toolPath: '/app/deep-search-agent',
+        directive: 'suggest_internal_tool',
+        toolId: 'grounded-research',
+        toolPath: '/app/tools',
+        message: 'Deep research is routed through the internal Grounded Research capability; keep the user in Ask PRAXIS or the tool repository.',
         prefill: { question, depth },
         _generatedAt: new Date().toISOString(),
       };

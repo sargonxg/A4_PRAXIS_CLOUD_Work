@@ -1,5 +1,24 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — Cleanup + Ask Wiring Pass
+
+Current cleanup checkpoint:
+
+- Ask PRAXIS now describes the current 12 canonical capabilities from
+  `PRAXIS_CANONICAL_TOOLS` instead of stale hard-coded tool counts or removed
+  pages.
+- Heavy strategic questions stay inside the simple app spine: Memo Studio,
+  Canvas, Ask PRAXIS, Library, and Advanced. Legacy redirects still preserve
+  older links, but Ask no longer presents removed pages as live surfaces.
+- Deep research is marked as a routed internal Grounded Research capability
+  rather than a fake-live `/app/deep-search-agent` page.
+- Active context-source copy was cleaned so UCDP/GDELT/ReliefWeb/HDX/UN News
+  remain the documented event/source posture. ACLED remains documented only as
+  withdrawn/compliance history.
+- Context Core Lite remains the available PRAXIS MVP path; DIALECTICA by
+  TACITUS remains future/full context creation through the typed adapter
+  contract.
+
 ## 2026-05-13 — v5 MVP Queue Status
 
 The v5 queue in `docs/build/PRAXIS_v5_ANTIGRAVITY_QUEUE_PROMPTS.md` is the

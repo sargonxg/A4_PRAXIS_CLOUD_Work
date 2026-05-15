@@ -167,7 +167,7 @@ export function Phase8WowLanding() {
               Upload knowledge, form six cores, and ask PRAXIS from the context your work actually needs.
             </p>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              The visible workflow stays simple: choose a context, attach sources, then draft or review grounded work.
+              The visible workflow stays simple: choose a context, attach sources, then draft or review grounded work, shaped by practitioner experience in multilateral diplomacy.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link

@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+- fix(ask): route Ask PRAXIS through current canonical capabilities.
+  Ask PRAXIS now builds its capability posture from the 12-tool canonical
+  registry, keeps heavy strategic work inside Memo Studio/Canvas/Advanced, and
+  marks deep research as a routed internal Grounded Research capability instead
+  of presenting removed pages as live surfaces.
+- docs(context): clean active source posture around UCDP/GDELT.
+  Updated the active context-injection contract and source core label so ACLED
+  remains only withdrawn/compliance-history material while current source
+  posture references UCDP, GDELT, ReliefWeb, HDX, UN News, and World Bank.
 - feat(context): separate PRAXIS Context Core Lite from future DIALECTICA Core Builder.
   Added an explicit `praxis_lite` / `dialectica_future` context creation mode
   contract, a user-facing switch in the one-click context builder, typed

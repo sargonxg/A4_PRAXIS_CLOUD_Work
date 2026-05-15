@@ -1,6 +1,6 @@
 # PRAXIS TODO
 
-Last updated: 2026-05-13.
+Last updated: 2026-05-15.
 
 ## Current Build Queue
 
@@ -15,24 +15,27 @@ Last updated: 2026-05-13.
    PRAXIS mode must create a Situation Core, Capsule, Context Package, active
    stack, and health/gaps summary; DIALECTICA mode must remain clearly disabled
    as "Coming soon" while pointing to the typed adapter contract.
-1. Verify the experimental Grafeo Context Core Lite graph in a signed-in browser
+1. Keep Ask PRAXIS capability routing on the canonical tool registry. New
+   internal tools must declare live/routed/staged readiness and must not be
+   exposed as fake-live app pages.
+2. Verify the experimental Grafeo Context Core Lite graph in a signed-in browser
    flow and Cloud Run build before making `grafeo_experimental` anything other
    than an opt-in backend. Keep Firestore capsules/context packages as the MVP
    source of truth.
-2. Extend Active Context Stack persistence beyond the reliable default stack to named stacks when the final multi-stack UX is approved.
-3. Promote Canvas from draggable review-layout nodes to a richer read/write graph-editing surface if the team approves that scope; React Flow is not needed for the current MVP.
-4. Add a signed-in integration test for v5 demo copy against a Firebase emulator or test project; current validation covers the typed demo core objects and the UI copy affordance, not a live Firestore mutation.
-5. Add the first PRAXIS-to-DIALECTICA adapter proof only after the standalone MVP flow is smooth: one typed context query, one cited response, one reviewable graph delta.
-6. Complete Pack 24 backend Reasoning Spine: Rust BLAKE3 context-pack compiler, real trace ids, Langfuse or equivalent trace store, and live event streaming behind the current Spine panel.
-7. Complete Pack 23 backend Library Bucket: production-grade source auto-structure after upload, including better PDF page provenance, source-span citations, entity normalization, and review queues beyond the current inline MVP extraction.
-8. Keep user-created Situation Cores primary inside `/app/contexts` and `/app/cores/context`; public `/contexts` is now only a redirect.
-9. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
-10. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
-11. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
-12. Review the 2026-05-13 GCP/Firebase cleanup candidates before any mutating cloud cleanup: retired provider secrets, Artifact Registry retention, and the two unclear projects `plasma-talon-lt3cf` / `google-mpf-mc7f341560lx`.
-13. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
-14. Add production-browser coverage for the authenticated command palette once a stable production test user/session path is approved; local signed-session smoke now covers the simplified five-surface flow.
-15. After the current capsule/core composer lands, use `docs/superpowers/specs/2026-05-15-next-20-simplification-ai-context-writing-search.md` as the next improvement queue for simplification, stronger AI, context creation/combination, drafting, writing, and search.
+3. Extend Active Context Stack persistence beyond the reliable default stack to named stacks when the final multi-stack UX is approved.
+4. Promote Canvas from draggable review-layout nodes to a richer read/write graph-editing surface if the team approves that scope; React Flow is not needed for the current MVP.
+5. Add a signed-in integration test for v5 demo copy against a Firebase emulator or test project; current validation covers the typed demo core objects and the UI copy affordance, not a live Firestore mutation.
+6. Add the first PRAXIS-to-DIALECTICA adapter proof only after the standalone MVP flow is smooth: one typed context query, one cited response, one reviewable graph delta.
+7. Complete Pack 24 backend Reasoning Spine: Rust BLAKE3 context-pack compiler, real trace ids, Langfuse or equivalent trace store, and live event streaming behind the current Spine panel.
+8. Complete Pack 23 backend Library Bucket: production-grade source auto-structure after upload, including better PDF page provenance, source-span citations, entity normalization, and review queues beyond the current inline MVP extraction.
+9. Keep user-created Situation Cores primary inside `/app/contexts` and `/app/cores/context`; public `/contexts` is now only a redirect.
+10. Reconcile checkout/pricing with the current Polar billing implementation and any approved Stripe requirement.
+11. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
+12. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
+13. Review the 2026-05-13 GCP/Firebase cleanup candidates before any mutating cloud cleanup: retired provider secrets, Artifact Registry retention, and the two unclear projects `plasma-talon-lt3cf` / `google-mpf-mc7f341560lx`.
+14. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
+15. Add production-browser coverage for the authenticated command palette once a stable production test user/session path is approved; local signed-session smoke now covers the simplified five-surface flow.
+16. After the current capsule/core composer lands, use `docs/superpowers/specs/2026-05-15-next-20-simplification-ai-context-writing-search.md` as the next improvement queue for simplification, stronger AI, context creation/combination, drafting, writing, and search.
 
 ## Future Architecture Direction
 
