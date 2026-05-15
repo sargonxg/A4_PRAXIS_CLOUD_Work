@@ -1,5 +1,25 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — ADK + Genkit Runtime Integration Map
+
+Current architecture checkpoint:
+
+- Added `docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md` to map the
+  current ADK and Genkit code into the ContextCapsule runtime.
+- ADK is documented as the substrate for long-running, multi-step,
+  multi-agent workers, currently represented by the Vertex Agent Engine deep
+  research deployment and `/api/ai/deep-search-agent`.
+- Genkit is documented as the substrate for typed flows, tools, structured
+  outputs, and evals, currently represented by `classifyPathFlow`,
+  `situationIntelligenceFlow`, provider resolution, tool registry, and runtime
+  audits.
+- The boundary is explicit: ContextCapsules remain canonical context,
+  Firestore remains capsule/app state, Cloud SQL remains the agent run ledger,
+  and every ADK/Genkit event or tool call must be mirrored into PRAXIS-owned
+  run records.
+- Safe next build is the worker mirror adapter plus the first queued Genkit or
+  ADK worker behind the existing Cloud Tasks dispatch boundary.
+
 ## 2026-05-15 — Agent Runtime Queues 4-5
 
 Current backend runtime checkpoint:
@@ -23,6 +43,9 @@ Current backend runtime checkpoint:
   `POST /api/agents/runs/[runId]/execute` is the private worker route.
 - The first worker pass is intentionally no-op. It verifies Cloud Tasks OIDC or
   a local shared secret, then records `queued -> running -> succeeded`.
+- The no-op worker path is retry-safe for already succeeded runs and now marks
+  runs `failed` with a persisted failure transition if the worker step throws
+  before terminal success.
 - Production runtime verification still needs Cloud SQL, Cloud Tasks queue,
   worker base URL, and worker service-account env wiring.
 

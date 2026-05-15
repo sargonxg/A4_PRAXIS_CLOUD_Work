@@ -216,10 +216,12 @@ Tasks:
 - Implement no-op execution first: `queued -> running -> succeeded`.
 - Persist run events for every transition.
 - Keep idempotency and retries explicit.
+- Mark no-op worker failures as `failed` with a persisted transition event.
 
 Shipped in this wave:
 
 - `src/lib/agent-runtime/cloud-tasks.ts`
+- `src/lib/agent-runtime/worker.ts`
 - `src/lib/agent-runtime/worker-auth.ts`
 - `src/app/api/agents/runs/[runId]/dispatch/route.ts`
 - `src/app/api/agents/runs/[runId]/execute/route.ts`

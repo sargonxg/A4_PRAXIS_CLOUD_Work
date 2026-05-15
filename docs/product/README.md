@@ -26,6 +26,11 @@ Status: canonical index for the current app structure
 6. [`PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md)
    - Senior-engineering coherence check across app structure, docs, substrate,
      and build order.
+7. [`PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md`](./PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md)
+   - Repo-grounded map for using ADK as the long-running worker substrate and
+     Genkit as the typed flow/tool/eval substrate while keeping
+     ContextCapsules, Firestore app state, and the Cloud SQL run ledger
+     PRAXIS-owned.
 
 ## Build Queue
 
@@ -101,6 +106,10 @@ Use Google Cloud as the main runtime:
 - Pub/Sub for events.
 - Cloud Scheduler for daily briefs and watchlists.
 - Vertex AI/Gemini as default model runtime.
+- ADK for long-running/multi-step/multi-agent workers, with every material
+  event mirrored into the PRAXIS run ledger.
+- Genkit for typed flows, tools, structured outputs, and evals; Genkit traces
+  are not canonical product state.
 - Claude-on-Vertex only through the provider abstraction if evaluated.
 - Browser automation later via `browser-use` plus Steel.dev managed first,
   self-hosted on GKE only when the workload proves it.

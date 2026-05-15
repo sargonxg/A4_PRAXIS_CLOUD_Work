@@ -38,21 +38,28 @@ from the active ledger above.
    need them.
 3. Queue 5 first pass is implemented: Cloud Tasks payload/task construction,
    dispatch route, OIDC/shared-secret worker boundary, and no-op
-   `queued -> running -> succeeded` execution events. Remaining Queue 5
-   hardening is production queue/IAM/env verification for `agent-runs`.
+   `queued -> running -> succeeded` execution events. Repeated terminal
+   execution is idempotent and worker-step failures mark the run failed.
+   Remaining Queue 5 hardening is production queue/IAM/env verification for
+   `agent-runs`.
 4. Implement the Research Memo Agent first, then Daily Brief, Watchlist, and
    Source Monitor. Every run must resolve the active ContextCapsule before
    calling tools.
-5. Add approval gates before any external send, graph fact promotion,
+5. Before adding real model/tool execution, add the ADK/Genkit run-ledger
+   mirror adapter from
+   `docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md`: ADK/Genkit may execute
+   worker steps, but PRAXIS must persist every material event/tool call to the
+   Cloud SQL run ledger.
+6. Add approval gates before any external send, graph fact promotion,
    unsupported-claim resolution, credentialed browser automation, or high-risk
    tool action.
-6. Keep MCP private/read-first until the run ledger and approval model are
+7. Keep MCP private/read-first until the run ledger and approval model are
    reliable. Browser/code sandbox work is explicitly GKE-later unless a real
    workload proves Cloud Run cannot handle it.
-7. When browser automation becomes necessary, start with `browser-use` plus
+8. When browser automation becomes necessary, start with `browser-use` plus
    Steel.dev managed sessions, allowlisted/read-only behavior, hard run caps,
    idempotency, trace ids, and approval gates before credentialed actions.
-8. Use `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md` and
+9. Use `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md` and
    `src/lib/product/context-capsules.ts` when adding new personas, paths,
    output products, connectors, or capsule-combination flows.
 

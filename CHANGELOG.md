@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- docs(ai): map ADK and Genkit into the PRAXIS runtime.
+  Added the ADK + Genkit integration plan, documenting current ADK/Vertex Agent
+  Engine and Genkit flow/tool state, route coverage, PRAXIS-owned state
+  boundaries, ledger mirroring requirements, and the safe next worker bridge.
 - feat(agent-runtime): harden the queued run API boundary.
   Added library-owned Zod schemas for create/list/get/output, switched the run
   routes to those schemas, constrained normal run DTOs to UI-safe fields, and
@@ -10,6 +14,8 @@
   Added the `agent-runs` Cloud Tasks helper, dispatch API route, private worker
   execute route with OIDC/shared-secret verification, and no-op
   `queued -> running -> succeeded` execution flow with focused runtime tests.
+  The no-op worker now treats repeated terminal execution as idempotent and
+  marks runs failed when the worker step errors before completion.
 - feat(agent-runtime): add Cloud SQL queued run ledger.
   Added typed agent run contracts, pure transition/event/idempotency helpers,
   a narrow Cloud SQL Postgres adapter, queued-run create/list/get API routes,

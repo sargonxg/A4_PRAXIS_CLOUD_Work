@@ -39,9 +39,10 @@ Read before editing:
 9. `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`
 10. `docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md`
 11. `docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`
-12. `STATUS.md`
-13. `TODO.md`
-14. `CHANGELOG.md` `[Unreleased]`
+12. `docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md`
+13. `STATUS.md`
+14. `TODO.md`
+15. `CHANGELOG.md` `[Unreleased]`
 
 Hard product boundaries:
 
@@ -459,4 +460,277 @@ Validation:
 - npm run build
 - npm run audit:gate unless too broad for the checkpoint
 - graphify update .
+```
+
+## Codex Prompt: Wave 3A Genkit Run-Ledger Bridge
+
+Paste this into a new Codex session after Queue 4/5 are green.
+
+```text
+You are working in:
+C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work
+
+Goal:
+Implement the first production-shaped Genkit bridge for PRAXIS agent runs. The
+surface must stay Tasklet-simple: AI bar -> active ContextCapsule -> recommended
+tools -> generated memo/brief receipt. Under the hood, every Genkit material
+event must be mirrored into the PRAXIS Cloud SQL run ledger.
+
+Read first:
+- AGENTS.md
+- CLAUDE.md
+- ARCHITECTURE.md
+- docs/product/README.md
+- docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md
+- docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md
+- docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md
+- docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md
+- src/lib/agent-runtime/types.ts
+- src/lib/agent-runtime/state.ts
+- src/lib/agent-runtime/postgres.ts
+- src/lib/agent-runtime/worker.ts
+- src/lib/agent-runtime/mirror.ts
+- src/lib/genkit/index.ts
+- src/lib/genkit/flows/situation-intelligence.ts
+- src/lib/genkit/tools/registry.ts
+- src/app/api/ai/policy-memo/route.ts
+- STATUS.md
+- TODO.md
+- CHANGELOG.md
+
+Own these files:
+- src/lib/agent-runtime/**
+- src/lib/genkit/flows/**
+- src/lib/genkit/schemas/**
+- tests/unit/lib/agent-runtime/**
+- tests/unit/lib/genkit/**
+- docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md
+- docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md
+- STATUS.md / TODO.md / CHANGELOG.md
+
+Do not edit the app shell or landing UI in this Codex session.
+
+Implementation tasks:
+1. Add a Genkit worker bridge module, for example
+   `src/lib/agent-runtime/genkit-worker.ts`.
+2. The module should accept an `AgentRun`, a resolved capsule worker context,
+   and a narrow flow choice such as `research_memo_draft`.
+3. Start with a mocked/deterministic execution path if live model calls would
+   make tests brittle, but keep the API shaped for real Genkit flows.
+4. Persist ledger events through `mirrorGenkitFlowEvent`:
+   - flow.planned
+   - flow.started
+   - flow.tool_call when a PRAXIS tool is selected
+   - flow.succeeded or flow.failed
+5. Return a typed worker result with:
+   - runId
+   - capsuleId
+   - traceId
+   - outputTarget: memo_studio | canvas | library | advanced
+   - draftTitle or artifactRef when available
+   - sourceGapCount
+   - approvalRequired boolean
+6. Add tests proving no Genkit event is emitted without capsule/run/trace
+   pointers.
+7. Update the no-op worker only enough to expose the bridge-ready path; do not
+   turn on live Research Memo execution unless all route and output contracts
+   are complete.
+8. Update docs/status so the repo says what is live, what is bridge-ready, and
+   what remains deferred.
+
+Validation:
+- npx vitest run tests/unit/lib/agent-runtime
+- npx vitest run src/__tests__/genkit-provider.test.ts
+- npx tsc --noEmit
+- npm run build
+- npm run audit:genkit-runtime
+- npm run audit:genkit-coverage
+- npm run audit:architecture-reference
+- graphify update .
+
+Finish:
+- Report exact files changed and validation results.
+- Commit and push only after checks pass:
+  git add -A
+  git commit -m "feat(agent-runtime): add Genkit run ledger bridge"
+  git pull --rebase origin main
+  git push origin main
+```
+
+## Codex Prompt: Wave 3B ADK Deep Research Queue
+
+Paste this into a separate Codex session after the Genkit bridge lands, or run
+it independently if the session owns only ADK files.
+
+```text
+You are working in:
+C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work
+
+Goal:
+Wrap the existing Vertex AI ADK Deep Search capability behind the PRAXIS queued
+agent-run ledger. The existing streamed route may remain, but the new path must
+look like Tasklet for the user: ask from the AI bar, run continues in the cloud,
+and Advanced/Memo Studio can inspect a durable run receipt.
+
+Read first:
+- AGENTS.md
+- CLAUDE.md
+- ARCHITECTURE.md
+- docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md
+- docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md
+- docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md
+- src/lib/ai/vertex-agent.ts
+- src/app/api/ai/deep-search-agent/route.ts
+- src/lib/agent-runtime/types.ts
+- src/lib/agent-runtime/postgres.ts
+- src/lib/agent-runtime/worker.ts
+- src/lib/agent-runtime/mirror.ts
+- tests/unit/lib/agent-runtime/**
+- STATUS.md
+- TODO.md
+- CHANGELOG.md
+
+Own these files:
+- src/lib/agent-runtime/adk-worker.ts
+- src/lib/agent-runtime/mirror.ts if a narrow adapter addition is needed
+- src/lib/ai/vertex-agent.ts only for typed event export/helpers
+- src/app/api/agents/runs/[runId]/execute/route.ts only if routing is needed
+- tests/unit/lib/agent-runtime/**
+- docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md
+- STATUS.md / TODO.md / CHANGELOG.md
+
+Do not rewrite `/api/ai/deep-search-agent` in this pass. Do not make ADK
+session state canonical.
+
+Implementation tasks:
+1. Add `src/lib/agent-runtime/adk-worker.ts`.
+2. Accept an `AgentRun`, capsule worker context, user message/objective, and
+   optional ADK session id.
+3. Use `parseAgentEvent` and related helpers from `src/lib/ai/vertex-agent.ts`
+   to normalize ADK stream events.
+4. Mirror ADK lifecycle events through `mirrorAdkAgentEvent`:
+   - session.created or session.reused
+   - turn.started
+   - text/research_step/source/status events
+   - turn.done or turn.failed
+5. Persist only previews and structured metadata in run events; do not store
+   full raw streams as product state.
+6. Return a typed result with runId, traceId, sessionId, eventCount,
+   textPreview, and completion status.
+7. Add mocked tests for SSE event parsing -> ledger event mirroring.
+8. Keep approval gates explicit: no graph promotion, external sending, or
+   credentialed browser action in this wave.
+
+Validation:
+- npx vitest run tests/unit/lib/agent-runtime
+- npx tsc --noEmit
+- npm run build
+- npm run audit:ai-provider-isolation
+- npm run audit:ai-provider-vertex-default
+- npm run audit:architecture-reference
+- graphify update .
+
+Finish:
+- Report exact files changed and validation results.
+- Commit and push only after checks pass:
+  git add -A
+  git commit -m "feat(agent-runtime): queue ADK deep research events"
+  git pull --rebase origin main
+  git push origin main
+```
+
+## Claude Code Prompt: AI Bar, Tools, And Context Capsule UX
+
+Paste this into Claude Code when the backend/runtime session owns the worker
+files and Claude owns the interface/docs.
+
+```text
+You are working in:
+C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work
+
+Goal:
+Make PRAXIS feel more like a Tasklet-class product at the surface while staying
+domain-specific: one strong AI bar, active ContextCapsule always visible,
+recommended tools, durable runs, and output destinations. Do not add a generic
+automation dashboard or new primary nav.
+
+Read first:
+- AGENTS.md
+- CLAUDE.md
+- ARCHITECTURE.md
+- docs/product/README.md
+- docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md
+- docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md
+- docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md
+- docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md
+- docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md
+- src/components/ask/AskWorkspacePage.tsx
+- src/components/ask/AskStreamPanel.tsx
+- src/components/ask/AskBar.tsx
+- src/components/app/capsule-strip-header.tsx
+- src/components/app/core-context-strip.tsx
+- src/components/tools/ToolMarketplace.tsx
+- src/lib/product/context-capsules.ts
+- src/lib/tools/canonical.ts
+- STATUS.md
+- TODO.md
+- CHANGELOG.md
+
+Own these files:
+- src/components/ask/**
+- src/components/app/capsule-strip-header.tsx
+- src/components/app/core-context-strip.tsx
+- src/components/tools/**
+- src/components/landing/phase8-wow-landing.tsx only if landing copy needs a
+  matching adjustment
+- tests/e2e/** only for focused smoke updates
+- docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md
+- STATUS.md / TODO.md / CHANGELOG.md
+
+Hard boundaries:
+- Keep primary nav exactly Home, Ask PRAXIS, Library, Memo Studio, Canvas,
+  Advanced.
+- Do not expose internal credit costs, provider names, or unsupported live
+  claims.
+- Browser automation, email triggers, broad SaaS integrations, and code
+  sandboxing must remain deferred unless backend proof exists.
+- Do not edit `src/lib/agent-runtime/**` unless coordinating with Codex.
+
+Implementation tasks:
+1. Make the Ask PRAXIS AI bar the obvious center of the full Ask page:
+   - active capsule chips directly above or inside the composer;
+   - selected/recommended tools visible without a raw marketplace feel;
+   - output target choices: Memo Studio, Canvas, Library, Handover;
+   - copy should say the run inherits the active capsule.
+2. Add a small recent/queued run affordance only if it can read existing API
+   state or remain honestly empty. No fake-live run history.
+3. Improve tool recommendation copy:
+   - recommendations come from source gaps, timeline gaps, power-map gaps,
+     output goal, and review posture;
+   - raw Tools stays secondary.
+4. Keep ContextCapsule completeness visible:
+   - User Core, Situation Core, Sources, Time, Tools, Output, Memory.
+   - Show gaps as next actions, not as alarming errors.
+5. Update focused smoke coverage if DOM/test selectors change.
+6. Update STATUS/TODO/CHANGELOG and the build ledger with what is now UX-live
+   versus backend-ready.
+
+Validation:
+- npx tsc --noEmit
+- npm run build
+- npm run lint
+- npm run audit:ux-polish
+- npm run audit:context-vs-tools
+- npm run audit:architecture-reference
+- npm run smoke:core-flows if touched surfaces affect the core flow
+- focused Playwright smoke for Ask PRAXIS when feasible
+- graphify update . if code files changed
+
+Finish:
+- Report exact files changed and validation results.
+- Commit and push only after checks pass:
+  git add -A
+  git commit -m "feat(ask): focus AI bar on capsule-aware tools"
+  git pull --rebase origin main
+  git push origin main
 ```

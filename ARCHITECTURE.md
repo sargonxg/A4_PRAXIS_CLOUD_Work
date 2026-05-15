@@ -16,6 +16,7 @@ Last updated: 2026-05-15.
 - [`docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`](./docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md) — implementation plan for persistent capsule-aware agents, Cloud SQL run ledger, Cloud Tasks dispatch, approvals, MCP, and browser/sandbox deferral.
 - [`docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md) — what was incorporated from the external Tasklet-class browser-agent research and what was rejected/deferred.
 - [`docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md) — current coherence check across product docs, substrate, and build order.
+- [`docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md`](./docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md) — ADK + Genkit integration map: ADK owns long-running/multi-step workers, Genkit owns typed flows/tools/structured outputs/evals, and PRAXIS owns ContextCapsules, Firestore app state, Cloud SQL run ledger, approvals, and receipts.
 - [`docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`](./docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md) — active implementation ledger and queue for the public-to-app, capsule workbench, run ledger, dispatch, and agent waves.
 - [`docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`](./docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md) — copy-paste Codex and Claude Code prompts for parallel implementation sessions.
 
@@ -45,6 +46,9 @@ PRAXIS is a dual-service GCP application:
 - Cloud Storage for blobs and exports.
 - Vertex AI as the managed model runtime, aligned with Gemini Enterprise as the
   enterprise agent/work platform.
+- ADK and Genkit as runtime substrates only: ADK for long-running/multi-step
+  workers, Genkit for typed flows/tools/structured outputs/evals. Neither ADK
+  sessions nor Genkit traces are canonical product state.
 
 The next canonical runtime target is Cloud Run first, GKE later:
 

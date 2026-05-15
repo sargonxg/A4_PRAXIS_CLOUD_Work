@@ -369,6 +369,8 @@ Current implementation checkpoint:
 - `POST /api/agents/runs/[runId]/execute` is the private worker boundary. The
   first worker pass is intentionally no-op and only records
   `queued -> running -> succeeded`.
+- Repeated execution of a terminal succeeded run is treated as idempotent. If
+  the no-op worker step fails before success, the run is marked `failed`.
 - Production dispatch requires the Cloud Tasks queue, worker base URL, and
   trusted worker service account environment variables described in
   `docs/GCP_OPERATIONS.md`.

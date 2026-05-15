@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getAgentRun, updateAgentRunStatus } from '@/lib/agent-runtime/postgres';
 import { verifyAgentWorkerRequest } from '@/lib/agent-runtime/worker-auth';
+import { AgentWorkerError, executeNoopAgentRun } from '@/lib/agent-runtime/worker';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,53 +33,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: 'Payload runId does not match route runId' }, { status: 400 });
   }
 
-  const run = await getAgentRun(parsed.data.ownerUid, runId);
-  if (!run) {
-    return NextResponse.json({ error: 'Agent run not found' }, { status: 404 });
+  try {
+    return NextResponse.json(await executeNoopAgentRun(parsed.data));
+  } catch (err) {
+    if (err instanceof AgentWorkerError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    return NextResponse.json({ error: 'Agent run execution failed' }, { status: 500 });
   }
-  if (run.traceId !== parsed.data.traceId || run.capsuleId !== parsed.data.capsuleId) {
-    return NextResponse.json({ error: 'Agent run execute payload does not match ledger pointers' }, { status: 409 });
-  }
-  if (run.status === 'succeeded') {
-    return NextResponse.json({ runId: run.id, status: run.status, idempotent: true });
-  }
-  if (run.status !== 'queued' && run.status !== 'running') {
-    return NextResponse.json({ error: `Agent run cannot be executed from ${run.status}` }, { status: 409 });
-  }
-
-  const running = run.status === 'running'
-    ? run
-    : await updateAgentRunStatus({
-      ownerUid: run.ownerUid,
-      runId: run.id,
-      toStatus: 'running',
-      message: 'No-op agent worker accepted the queued dispatch.',
-      data: {
-        dispatchId: parsed.data.dispatchId,
-        attempt: parsed.data.attempt,
-        requestedAt: parsed.data.requestedAt,
-      },
-    });
-  if (!running) {
-    return NextResponse.json({ error: 'Agent run disappeared before execution' }, { status: 404 });
-  }
-
-  const succeeded = await updateAgentRunStatus({
-    ownerUid: running.ownerUid,
-    runId: running.id,
-    toStatus: 'succeeded',
-    message: 'No-op agent worker completed without model or tool execution.',
-    data: {
-      dispatchId: parsed.data.dispatchId,
-      attempt: parsed.data.attempt,
-      executionMode: 'noop',
-    },
-  });
-
-  return NextResponse.json({
-    runId: succeeded?.id ?? running.id,
-    status: succeeded?.status ?? 'succeeded',
-    executionMode: 'noop',
-    traceId: running.traceId,
-  });
 }
