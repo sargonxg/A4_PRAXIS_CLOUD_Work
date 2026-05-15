@@ -33,13 +33,15 @@ Read before editing:
 3. `ARCHITECTURE.md`
 4. `docs/product/README.md`
 5. `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md`
-6. `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`
-7. `docs/product/CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md`
-8. `docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md`
-9. `docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`
-10. `STATUS.md`
-11. `TODO.md`
-12. `CHANGELOG.md` `[Unreleased]`
+6. `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`
+7. `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`
+8. `docs/product/CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md`
+9. `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`
+10. `docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md`
+11. `docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`
+12. `STATUS.md`
+13. `TODO.md`
+14. `CHANGELOG.md` `[Unreleased]`
 
 Hard product boundaries:
 
@@ -67,6 +69,10 @@ Every session should improve something real:
 - docs that future agents actually read;
 - validation/audit coverage;
 - cleanup of proven stale paths or stale claims.
+
+Every session should pick one queue item from
+`docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md` and record
+progress there or in `STATUS.md` before finishing.
 
 Every session should end with:
 
@@ -131,8 +137,8 @@ You are working in:
 C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work
 
 Goal:
-Implement Wave 1 of the canonical Tasklet-style PRAXIS runtime: the Cloud SQL
-Agent Run Ledger. This is the backend/control-plane foundation for
+Implement Queue 4 / Wave 1 of the canonical Tasklet-style PRAXIS runtime: the
+Cloud SQL Agent Run Ledger. This is the backend/control-plane foundation for
 praxis.tacitus.me becoming a ContextCapsule-native agent workbench.
 
 Read first:
@@ -141,7 +147,9 @@ Read first:
 - ARCHITECTURE.md
 - docs/product/README.md
 - docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md
+- docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md
 - docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md
+- docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md
 - src/lib/product/tasklet-style-runtime.ts
 - docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md
 - docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md
@@ -267,6 +275,8 @@ Validation:
 
 Finish:
 - Report files changed and exact validation results.
+- Update `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`
+  if any queue status or blocker changed.
 - If all checks pass and credentials are available, commit a coherent checkpoint
   and push to main:
   `git add -A`
@@ -285,8 +295,9 @@ C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work
 
 Goal:
 Make the current app and docs clearly express the canonical Tasklet-style
-ContextCapsule runtime without widening the visible product surface. This is the
-UX/docs companion to the backend Cloud SQL Agent Run Ledger work.
+ContextCapsule runtime without widening the visible product surface. Prioritize
+Queue 1 public-to-app usability or Queue 3 active capsule workbench from the
+build ledger.
 
 Read first:
 - AGENTS.md
@@ -294,8 +305,10 @@ Read first:
 - ARCHITECTURE.md
 - docs/product/README.md
 - docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md
+- docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md
 - docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md
 - docs/product/CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md
+- docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md
 - src/lib/product/context-capsules.ts
 - src/lib/product/tasklet-style-runtime.ts
 - src/components/ask/AskWorkspacePage.tsx
@@ -372,6 +385,8 @@ Validation:
 
 Finish:
 - Report files changed and exact validation results.
+- Update `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`
+  if any queue status or blocker changed.
 - If checks pass and credentials are available, commit a coherent checkpoint and
   push to main:
   `git add -A`

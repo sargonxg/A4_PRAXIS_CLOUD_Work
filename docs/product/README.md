@@ -16,12 +16,27 @@ Status: canonical index for the current app structure
 3. [`CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md`](./CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md)
    - Product narrative and UX plan for ContextCapsules, landing, app shell,
      tool marketplace, handover, and capsule combination.
-4. [`TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./TASKLET_RESEARCH_INTAKE_2026-05-15.md)
+4. [`CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`](./CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md)
+   - Canonical guide for building policy/statecraft ContextCapsules.
+   - Defines core anatomy, generic versus path-bound users, personas,
+     combination rules, tools, connectors, outputs, and usable app shape.
+5. [`TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./TASKLET_RESEARCH_INTAKE_2026-05-15.md)
    - Intake note for the external Tasklet-class browser-agent research.
    - Records what PRAXIS adopted, deferred, or rejected.
-5. [`PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md)
+6. [`PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md)
    - Senior-engineering coherence check across app structure, docs, substrate,
      and build order.
+
+## Build Queue
+
+Use [`../build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`](../build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md)
+as the current implementation ledger. It converts this product structure into
+queue items for public-to-app usability, capsule onboarding, `/app/contexts`,
+Cloud SQL run ledger, Cloud Tasks dispatch, Research Memo Agent, daily brief,
+approvals, MCP/connectors, and the deferred browser/sandbox lane.
+
+Use [`../build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`](../build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md)
+for paste-ready Codex and Claude Code prompts.
 
 ## Current Canonical Direction
 
@@ -48,6 +63,9 @@ But the PRAXIS version is domain-specific:
 - sourceable memos;
 - review-gated graph changes;
 - inheritable handover capsules.
+- generic users who can start from one prompt;
+- path-bound users with policy, statecraft, legal, HR, crisis, strategy, and
+  research-direction defaults.
 
 ## App Spine
 

@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+- feat(landing): make the ContextCapsule app path visible before signup.
+  The public homepage now shows the active capsule bar glimpse, login/signup
+  continuation, policy path previews, capsule-combination examples, output
+  products, and connector posture backed by the shared context-capsule product
+  contract.
+- docs(product): add the ContextCapsule policy research guide.
+  Added canonical guidance for policy/statecraft capsule anatomy, generic and
+  path-bound users, custom personas, combination rules, tools/connectors,
+  output products, and the usable homepage-to-app shell.
+- docs(build): add the active ContextCapsule app build ledger.
+  Added a queue-of-record for the next Codex and Claude Code sessions covering
+  public-to-app usability, capsule onboarding, active workbench, Cloud SQL run
+  ledger, Cloud Tasks dispatch, Research Memo Agent, daily brief, approvals,
+  MCP/connectors, and deferred browser/sandbox work.
 - docs(product): make the Tasklet-style ContextCapsule runtime canonical.
   Added the canonical app structure for `praxis.tacitus.me`, documenting the
   Cloud Run first / GKE later Google Cloud architecture, Cloud SQL agent run

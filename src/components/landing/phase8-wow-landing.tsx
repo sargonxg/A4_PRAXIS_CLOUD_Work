@@ -23,9 +23,13 @@ import { PolicyTicker } from "./policy-ticker";
 import { SpecimenCard, SpecimenGrid, type CoreSpecimenKind } from "@/components/cores/specimen-card";
 import {
   CAPSULE_CAPABILITY_AREAS,
+  CAPSULE_COMBINATION_RECIPES,
+  CAPSULE_CONNECTOR_IDEAS,
+  CAPSULE_OUTPUT_PRODUCTS,
   CONTEXT_CAPSULE_TEMPLATES,
   PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
   PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY,
+  POLICY_PATH_PROFILES,
   contextCapsuleLoginHref,
   type ContextCapsuleTemplate,
 } from "@/lib/product/context-capsules";
@@ -48,6 +52,19 @@ const SPECIMENS: ReadonlyArray<{
 
 const HERO_TEMPLATES = CONTEXT_CAPSULE_TEMPLATES.slice(0, 8);
 const FEATURED_PROMPTS = CONTEXT_CAPSULE_TEMPLATES.slice(0, 6);
+const POLICY_PATH_PREVIEW = POLICY_PATH_PROFILES.slice(0, 8);
+const COMBINATION_PREVIEW = CAPSULE_COMBINATION_RECIPES.slice(0, 4);
+
+const ACTIVE_BAR_PREVIEW = [
+  'User Core',
+  'Situation',
+  'Sources',
+  'Time',
+  'Power',
+  'Tools',
+  'Output',
+  'Handover',
+] as const;
 
 const PRICING_TIERS = [
   {
@@ -268,6 +285,26 @@ export function Phase8WowLanding() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
+            <div className="mt-4 rounded-xl border border-slate-200 bg-white/80 p-3 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  After signup, this becomes the active bar
+                </p>
+                <Link href="/login?mode=signup&redirect=%2Fapp" className="text-xs font-semibold text-[#8A5A00]">
+                  Log in or sign up
+                </Link>
+              </div>
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                {ACTIVE_BAR_PREVIEW.map((item) => (
+                  <span
+                    key={item}
+                    className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
             <dl className="mt-9 grid max-w-xl grid-cols-3 gap-4 border-t border-slate-200 pt-6 text-[11px] uppercase tracking-[0.18em] text-slate-500">
               <div>
                 <dt className="font-semibold text-[#8A5A00]">Context</dt>
@@ -350,6 +387,51 @@ export function Phase8WowLanding() {
         </div>
       </section>
 
+      <section id="policy-paths" className="border-b border-slate-200 bg-white px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">Generic first, path-specific when ready</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
+                A user can start generally, then bind the capsule to a policy path.
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                PRAXIS should work for an undecided user with one problem and a deadline. As the capsule gets clearer, it can inherit path suggestions for tools, outputs, source posture, and review gates.
+              </p>
+              <div className="mt-5 rounded-lg border border-slate-200 bg-[#F9FBFC] p-4">
+                <p className="text-sm font-semibold text-slate-950">{POLICY_PATH_PROFILES[0]?.label}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{POLICY_PATH_PROFILES[0]?.userFrame}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {POLICY_PATH_PROFILES[0]?.suggestedOutputs.map((output) => (
+                    <span key={output} className="rounded-full bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
+                      {output}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {POLICY_PATH_PREVIEW.slice(1).map((path) => (
+                <article key={path.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                  <h3 className="text-sm font-semibold text-slate-950">{path.label}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{path.userFrame}</p>
+                  <div className="mt-3 grid gap-2 text-[11px] text-slate-600">
+                    <div>
+                      <span className="font-semibold uppercase tracking-[0.12em] text-slate-500">Tools</span>
+                      <p className="mt-1">{path.suggestedTools.slice(0, 3).join(', ')}</p>
+                    </div>
+                    <div>
+                      <span className="font-semibold uppercase tracking-[0.12em] text-slate-500">Outputs</span>
+                      <p className="mt-1">{path.suggestedOutputs.slice(0, 2).join(', ')}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="methods" className="border-b border-slate-200 bg-[#F6F8FB] px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
@@ -405,6 +487,42 @@ export function Phase8WowLanding() {
         </div>
       </section>
 
+      <section id="combine-capsules" className="border-b border-slate-200 bg-white px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">Combine without losing provenance</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
+                Larger policy work is built by combining capsules, not flattening them.
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                The merge keeps receipts, graph conflicts, timelines, source freshness, caveats, and approval rules visible so a stronger brief does not erase uncertainty.
+              </p>
+            </div>
+            <Link href="/app/contexts" className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900">
+              Open capsule workbench
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="mt-7 grid gap-4 lg:grid-cols-4">
+            {COMBINATION_PREVIEW.map((recipe) => (
+              <article key={recipe.id} className="rounded-lg border border-slate-200 bg-[#F9FBFC] p-4">
+                <GitFork className="h-5 w-5 text-[#0B3B4A]" />
+                <h3 className="mt-3 text-sm font-semibold text-slate-950">{recipe.label}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{recipe.output}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {recipe.mergeRules.slice(0, 2).map((rule) => (
+                    <span key={rule} className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600">
+                      {rule}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="drafting" className="border-b border-slate-200 bg-white px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-3">
           {proofPanels.map((panel) => (
@@ -437,6 +555,35 @@ export function Phase8WowLanding() {
                   <p className="mt-2 text-sm leading-6 text-slate-600">{area.detail}</p>
                 </div>
               ))}
+            </div>
+          </div>
+          <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_1fr]">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-sm font-semibold text-slate-950">Outputs the capsule can produce</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {CAPSULE_OUTPUT_PRODUCTS.map((product) => (
+                  <div key={product.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs font-semibold text-slate-950">{product.label}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-600">{product.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-sm font-semibold text-slate-950">Connectors staged by trust posture</p>
+              <div className="mt-3 grid gap-2">
+                {CAPSULE_CONNECTOR_IDEAS.map((connector) => (
+                  <div key={connector.id} className="flex items-start justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-950">{connector.label}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-600">{connector.description}</p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 ring-1 ring-slate-200">
+                      {connector.posture}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

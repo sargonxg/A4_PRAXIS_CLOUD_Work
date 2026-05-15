@@ -12,9 +12,11 @@ Last updated: 2026-05-15.
 - [`docs/architecture/PRAXIS_DIALECTICA_KNOWLEDGE_LAYER_ALIGNMENT.md`](./docs/architecture/PRAXIS_DIALECTICA_KNOWLEDGE_LAYER_ALIGNMENT.md) — future product boundary: PRAXIS as the user-facing policy workbench, DIALECTICA as the ingestion/knowledge layer, with KAIROS and AGON feeding structured evidence upstream.
 - [`docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md`](./docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md) — current product model (Home, Ask PRAXIS, Sources, Situation Model, Outputs, Advanced; eight context cores).
 - [`docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md`](./docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md) — current canonical product/app structure for the Tasklet-style ContextCapsule runtime on Google Cloud.
+- [`docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`](./docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md) — canonical guide for policy/statecraft capsule anatomy, generic and path-bound users, personas, combination, tools, connectors, and output products.
 - [`docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`](./docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md) — implementation plan for persistent capsule-aware agents, Cloud SQL run ledger, Cloud Tasks dispatch, approvals, MCP, and browser/sandbox deferral.
 - [`docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md) — what was incorporated from the external Tasklet-class browser-agent research and what was rejected/deferred.
 - [`docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md) — current coherence check across product docs, substrate, and build order.
+- [`docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`](./docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md) — active implementation ledger and queue for the public-to-app, capsule workbench, run ledger, dispatch, and agent waves.
 - [`docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`](./docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md) — copy-paste Codex and Claude Code prompts for parallel implementation sessions.
 
 ## Active MVP Build (v5)

@@ -4,6 +4,18 @@
 
 Current product/runtime direction:
 
+- The public landing now makes the usable app path more explicit: the capsule
+  prompt bar shows an active-bar glimpse, sign-up/login continuation, policy
+  path previews, capsule combination examples, output products, and connector
+  posture.
+- The policy/statecraft capsule guide is saved in
+  `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`.
+- The active implementation ledger is saved in
+  `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`, and the
+  parallel Codex/Claude prompt pack now points agents to that queue first.
+- `src/lib/product/context-capsules.ts` now carries the code-backed registry
+  for policy paths, outputs, connector ideas, and combination recipes, with
+  focused unit tests enforcing internal references.
 - PRAXIS is now documented as a ContextCapsule-native, Tasklet-style agent
   workbench for `praxis.tacitus.me`, not a generic automation clone.
 - Canonical app structure is saved in

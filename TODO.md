@@ -4,15 +4,27 @@ Last updated: 2026-05-15.
 
 ## Current Build Queue
 
+- Current active ledger:
+  `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`.
+- Current prompt pack:
+  `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`.
 - v5 MVP control file: `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`.
 - v5 operating guide: `docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md`.
 - Backend phase prompts: `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md`.
 - Frontend/ship prompts: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`.
 
+The v5 files remain historical/build evidence unless an active task explicitly
+references them. New Tasklet-style ContextCapsule runtime work should start
+from the active ledger above.
+
 ## Immediate Next Steps
 
 ### Canonical Tasklet-Style Runtime Build
 
+0. Keep the public-to-authenticated path usable before adding deeper runtime
+   scope: homepage prompt bar, active capsule glimpse, login/signup
+   continuation, app sidebar, active capsule strip, Home capsule summary, and
+   Ask/Library/Memo/Canvas surfaces reading from the active capsule.
 1. Use `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` to start the next
    Codex and Claude Code sessions with clear file ownership, validation, and
    commit/push expectations.
@@ -40,6 +52,9 @@ Last updated: 2026-05-15.
 8. When browser automation becomes necessary, start with `browser-use` plus
    Steel.dev managed sessions, allowlisted/read-only behavior, hard run caps,
    idempotency, trace ids, and approval gates before credentialed actions.
+9. Use `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md` and
+   `src/lib/product/context-capsules.ts` when adding new personas, paths,
+   output products, connectors, or capsule-combination flows.
 
 ### Existing MVP Follow-Ups
 

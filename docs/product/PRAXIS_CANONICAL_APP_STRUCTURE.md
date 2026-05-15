@@ -25,6 +25,10 @@ Build ContextCapsule
   -> Schedule monitoring or share the capsule
 ```
 
+The public homepage should make this loop visible before signup: a prompt bar,
+an active capsule bar glimpse, a short set of policy path examples, examples of
+capsules being combined, and clear login/signup entry into the same app shell.
+
 ## Product Spine
 
 Do not add a new top-level "agent app" or generic automation dashboard. The
@@ -49,6 +53,37 @@ The surfaces mean:
 | Memo Studio | Drafts, briefs, handover packets, review receipts |
 | Canvas | Timeline, actors, graph proposals, power map, source gaps |
 | Advanced | Tool registry, run logs, triggers, audits, provider/runtime diagnostics |
+
+The authenticated shell should always make the active capsule visible near the
+top of the workspace. Users should not need to find a separate manager before
+they understand which User Core, Situation Core, sources, time horizon, tools,
+and output goal are active.
+
+## ContextCapsule Product Contract
+
+The code-backed product contract for public examples and future onboarding is:
+
+```text
+src/lib/product/context-capsules.ts
+```
+
+It defines:
+
+- starting templates;
+- policy path profiles;
+- output products;
+- connector posture;
+- capsule combination recipes;
+- capability areas.
+
+Users may start in generic mode, then bind a capsule to a path such as foreign
+policy, conflict resolution, defence capture, public affairs, HR policy, legal
+compliance, crisis management, strategy operations, program delivery, or
+research direction. Path binding should suggest tools, output products, and
+review gates without locking the user out of custom personas or mixed work.
+
+Policy capsule design details live in
+`docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`.
 
 ## App Layers
 

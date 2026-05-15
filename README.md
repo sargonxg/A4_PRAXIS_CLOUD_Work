@@ -31,6 +31,18 @@ layer, the shared context model, the tool registry, and the deploy pipeline.
 If you are here to continue implementation, read `CLAUDE.md`, `AGENTS.md`,
 and `ARCHITECTURE.md` first.
 
+Current build control files:
+
+- `docs/product/README.md` - product documentation index.
+- `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md` - canonical app/runtime
+  structure.
+- `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md` - policy capsule
+  anatomy, personas, paths, connectors, outputs, and combination rules.
+- `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md` - active
+  implementation ledger and queue.
+- `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` - paste-ready Codex and
+  Claude Code prompts for the next sessions.
+
 ---
 
 ## What PRAXIS Is For
@@ -124,7 +136,8 @@ graphify-out/        Repo knowledge graph output and audit report
 ```
 
 If you want a deeper system view, start with `ARCHITECTURE.md` and the
-documents under `docs/architecture/`.
+documents indexed under `docs/product/README.md`. Older v4/v5/v7 files remain
+historical references unless the active ledger explicitly assigns them.
 
 ---
 

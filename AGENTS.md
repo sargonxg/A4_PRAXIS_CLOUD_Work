@@ -26,19 +26,22 @@ work unless Giulio explicitly asks.
 4. [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 5. [`docs/product/README.md`](./docs/product/README.md)
 6. [`docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md`](./docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md)
-7. [`docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`](./docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md)
-8. [`docs/product/CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md`](./docs/product/CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md)
-9. [`docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md)
-10. [`docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md)
-11. [`docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`](./docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md)
-12. [`docs/architecture/PRAXIS_ARCHITECTURE.md`](./docs/architecture/PRAXIS_ARCHITECTURE.md)
-13. [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md)
-14. [`docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`](./docs/build/PRAXIS_v5_EXECUTION_LEDGER.md)
-15. [`docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md`](./docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md)
-16. The assigned v5 phase prompt in [`docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md`](./docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md) or [`docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`](./docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md)
-17. [`STATUS.md`](./STATUS.md)
-18. [`TODO.md`](./TODO.md)
-19. [`CHANGELOG.md`](./CHANGELOG.md) — `[Unreleased]` section only
+7. [`docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`](./docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md)
+8. [`docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`](./docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md)
+9. [`docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`](./docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md)
+10. [`docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`](./docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md)
+11. [`docs/product/CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md`](./docs/product/CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md)
+12. [`docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md)
+13. [`docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md)
+14. [`docs/architecture/PRAXIS_ARCHITECTURE.md`](./docs/architecture/PRAXIS_ARCHITECTURE.md)
+15. [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md)
+16. [`STATUS.md`](./STATUS.md)
+17. [`TODO.md`](./TODO.md)
+18. [`CHANGELOG.md`](./CHANGELOG.md) — `[Unreleased]` section only
+
+Historical v5 phase prompts remain useful evidence. Consult
+[`docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`](./docs/build/PRAXIS_v5_EXECUTION_LEDGER.md)
+and related v5 files only when a task explicitly touches older v5 work.
 
 ## Operational references (consult when relevant)
 
