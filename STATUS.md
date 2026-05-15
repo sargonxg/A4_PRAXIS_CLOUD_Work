@@ -4,6 +4,12 @@
 
 Current backend runtime checkpoint:
 
+- Queue 4 API boundary is now library-owned instead of route-local: Zod
+  schemas for create/list/get/output live in
+  `src/lib/agent-runtime/schema.ts`, and API routes consume those schemas.
+- Normal run DTOs expose only `runId`, `status`, `capsuleId`, and
+  `createdAt`; internal estimated cost/spend fields remain ledger-only.
+- Queued run creation now records a normalized `run.queued` event.
 - Queue 4 adds the first capsule-aware agent run ledger contract in
   `src/lib/agent-runtime/`: typed runs/events/tool calls/approvals/triggers,
   selected core ids, trace ids, parent run ids, idempotency keys, hard run caps,

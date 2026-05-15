@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- feat(agent-runtime): harden the queued run API boundary.
+  Added library-owned Zod schemas for create/list/get/output, switched the run
+  routes to those schemas, constrained normal run DTOs to UI-safe fields, and
+  normalized queued-run events as `run.queued`.
 - feat(agent-runtime): add Cloud Tasks dispatch boundary.
   Added the `agent-runs` Cloud Tasks helper, dispatch API route, private worker
   execute route with OIDC/shared-secret verification, and no-op

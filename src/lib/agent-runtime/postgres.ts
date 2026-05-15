@@ -133,7 +133,7 @@ export async function createAgentRun(input: CreateAgentRunInput): Promise<AgentR
     runId: run.id,
     ownerUid: run.ownerUid,
     capsuleId: run.capsuleId,
-    eventType: 'run_queued',
+    eventType: 'run.queued',
     toStatus: 'queued',
     message: 'Agent run queued for later dispatch.',
     traceId: run.traceId,

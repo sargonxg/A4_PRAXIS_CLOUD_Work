@@ -1,57 +1,21 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { createAgentRun, listAgentRunsForCapsule } from '@/lib/agent-runtime/postgres';
-import { normalizePointer, summarizeRunForCapsule } from '@/lib/agent-runtime/state';
+import { normalizePointer } from '@/lib/agent-runtime/state';
+import {
+  CreateManualAgentRunRequestSchema,
+  ListAgentRunsQuerySchema,
+  toAgentRunOutput,
+} from '@/lib/agent-runtime/schema';
 import { getCapsule, getOrMigrateDefaultCapsule } from '@/lib/context/capsule-service';
 import type { SelectedCoreIds } from '@/lib/agent-runtime/types';
 
 export const dynamic = 'force-dynamic';
 
-const TriggerSchema = z.enum(['manual', 'schedule', 'webhook', 'email_event', 'source_update', 'capsule_change']);
-
-const SelectedCoreIdsSchema = z.object({
-  userCoreId: z.string().nullable().optional(),
-  teamCoreId: z.string().nullable().optional(),
-  situationCoreId: z.string().nullable().optional(),
-  pathCoreId: z.string().nullable().optional(),
-  sourceCoreIds: z.array(z.string()).optional(),
-  documentCoreIds: z.array(z.string()).optional(),
-  graphCoreId: z.string().nullable().optional(),
-  timeCoreId: z.string().nullable().optional(),
-  outputCoreIds: z.array(z.string()).optional(),
-  toolCoreIds: z.array(z.string()).optional(),
-  objectiveCoreIds: z.array(z.string()).optional(),
-  productCoreIds: z.array(z.string()).optional(),
-  memoryCoreId: z.string().nullable().optional(),
-}).optional();
-
-export const CreateAgentRunRequestSchema = z.object({
-  capsuleId: z.string().min(1).max(240).optional(),
-  contextStackId: z.string().min(1).max(240).nullable().optional(),
-  contextPackageId: z.string().min(1).max(240).nullable().optional(),
-  selectedCoreIds: SelectedCoreIdsSchema,
-  agentSpecId: z.string().min(1).max(240).nullable().optional(),
-  triggerType: TriggerSchema.default('manual'),
-  objective: z.string().min(1).max(2000),
-  traceId: z.string().min(1).max(240).optional(),
-  parentRunId: z.string().min(1).max(240).nullable().optional(),
-  idempotencyKey: z.string().min(8).max(240).optional(),
-  maxStep: z.number().int().positive().max(100).optional(),
-  maxSessionMinutes: z.number().int().positive().max(24 * 60).optional(),
-  internalEstimatedCostCents: z.number().int().nonnegative().nullable().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
-
-const ListQuerySchema = z.object({
-  capsuleId: z.string().min(1).max(240),
-  limit: z.coerce.number().int().positive().max(100).default(25),
-});
-
 export const GET = withAuth(async (request, user) => {
   if (user.isDemo) return NextResponse.json({ runs: [], persisted: false });
   const url = new URL(request.url);
-  const parsed = ListQuerySchema.safeParse({
+  const parsed = ListAgentRunsQuerySchema.safeParse({
     capsuleId: url.searchParams.get('capsuleId') ?? undefined,
     limit: url.searchParams.get('limit') ?? undefined,
   });
@@ -66,7 +30,7 @@ export const GET = withAuth(async (request, user) => {
 
   try {
     const runs = await listAgentRunsForCapsule(user.uid, capsule.capsuleId, parsed.data.limit);
-    return NextResponse.json({ runs: runs.map(summarizeRunForCapsule), persisted: true });
+    return NextResponse.json({ runs: runs.map(toAgentRunOutput), persisted: true });
   } catch (err) {
     return ledgerError(err);
   }
@@ -78,7 +42,7 @@ export const POST = withAuth(async (request, user) => {
   }
 
   const raw = await request.json().catch(() => ({}));
-  const parsed = CreateAgentRunRequestSchema.safeParse(raw);
+  const parsed = CreateManualAgentRunRequestSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid agent run request', details: parsed.error.flatten() }, { status: 400 });
   }
@@ -112,13 +76,7 @@ export const POST = withAuth(async (request, user) => {
         executionMode: 'queued-only',
       },
     });
-    return NextResponse.json({
-      runId: run.id,
-      status: run.status,
-      capsuleId: run.capsuleId,
-      createdAt: run.createdAt,
-      traceId: run.traceId,
-    }, { status: 201 });
+    return NextResponse.json(toAgentRunOutput(run), { status: 201 });
   } catch (err) {
     return ledgerError(err);
   }

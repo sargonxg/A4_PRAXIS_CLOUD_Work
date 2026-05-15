@@ -149,7 +149,7 @@ Validation:
 ### 4. Cloud SQL Agent Run Ledger
 
 Owner: Codex backend session  
-Status: first queued-run contract implemented; production Cloud SQL wiring verification remains
+Status: queued-run API boundary implemented and schema-hardened; production Cloud SQL wiring verification remains
 
 Goal:
 
@@ -170,10 +170,19 @@ Shipped in this wave:
 
 - `src/lib/agent-runtime/types.ts`
 - `src/lib/agent-runtime/state.ts`
+- `src/lib/agent-runtime/schema.ts`
 - `src/lib/agent-runtime/postgres.ts`
 - `src/app/api/agents/runs/route.ts`
 - `src/app/api/agents/runs/[runId]/route.ts`
 - focused unit tests under `tests/unit/lib/agent-runtime`
+
+API boundary notes:
+
+- Create/list/get/output validation lives in `src/lib/agent-runtime/schema.ts`.
+- Normal API DTOs expose `runId`, `status`, `capsuleId`, and `createdAt` only.
+- Internal estimated cost/spend fields stay in the ledger and are not returned
+  to normal UI routes.
+- Queued run creation appends a `run.queued` event.
 
 Remaining blockers:
 

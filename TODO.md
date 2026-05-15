@@ -28,9 +28,11 @@ from the active ledger above.
 1. Use `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` to start the next
    Codex and Claude Code sessions with clear file ownership, validation, and
    commit/push expectations.
-2. Queue 4 first pass is implemented: typed agent runtime contracts, pure
-   transition/event/idempotency helpers, a narrow Cloud SQL Postgres adapter,
-   and queued-only API routes for creating and inspecting capsule-owned runs.
+2. Queue 4 first pass is implemented and the API boundary is hardened: typed
+   agent runtime contracts, pure transition/event/idempotency helpers, a
+   narrow Cloud SQL Postgres adapter, library-owned Zod schemas, UI-safe output
+   DTOs, and queued-only API routes for creating and inspecting capsule-owned
+   runs.
    Remaining Queue 4 hardening is production Cloud SQL env wiring/migration
    verification and adding tool-call/approval table writes when later waves
    need them.

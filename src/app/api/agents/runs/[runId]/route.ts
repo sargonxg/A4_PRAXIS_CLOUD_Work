@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
 import { getAgentRun } from '@/lib/agent-runtime/postgres';
-import { summarizeRunForCapsule } from '@/lib/agent-runtime/state';
+import { GetAgentRunParamsSchema, toAgentRunOutput } from '@/lib/agent-runtime/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,15 +9,15 @@ type RouteContext = { params: Promise<{ runId: string }> };
 
 export const GET = withAuth<RouteContext>(async (_request, user, context) => {
   if (user.isDemo) return NextResponse.json({ error: 'Demo mode has no private agent runs' }, { status: 403 });
-  const { runId } = await context.params;
-  if (!runId?.trim()) {
-    return NextResponse.json({ error: 'runId is required' }, { status: 400 });
+  const parsed = GetAgentRunParamsSchema.safeParse(await context.params);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid agent run params', details: parsed.error.flatten() }, { status: 400 });
   }
 
   try {
-    const run = await getAgentRun(user.uid, runId.trim());
+    const run = await getAgentRun(user.uid, parsed.data.runId);
     if (!run) return NextResponse.json({ error: 'Agent run not found' }, { status: 404 });
-    return NextResponse.json({ run: summarizeRunForCapsule(run), persisted: true });
+    return NextResponse.json({ run: toAgentRunOutput(run), persisted: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (message.includes('Agent run ledger is not configured')) {
