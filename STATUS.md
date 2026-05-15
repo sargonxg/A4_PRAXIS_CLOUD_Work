@@ -1,5 +1,17 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — Sourceability Canonical Tool Wiring
+
+Current tools checkpoint:
+
+- Promoted Sourceability Check into `PRAXIS_CANONICAL_TOOLS` so the AI bar,
+  tool library, capsule gates, and recommendation logic can treat the new
+  Genkit claim-review route as a first-class capsule-aware tool.
+- Sourceability is now boosted for research and reporting stages, where weak
+  claims and memo paragraphs most need citation repair before export.
+- Capsule-gate coverage now requires source or document evidence before the
+  sourceability tool is considered ready.
+
 ## 2026-05-15 — Genkit Sourceability Flow
 
 Current Genkit/sourceability checkpoint:

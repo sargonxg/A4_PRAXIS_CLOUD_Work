@@ -734,3 +734,183 @@ Finish:
   git pull --rebase origin main
   git push origin main
 ```
+
+## Codex Prompt: Sourceability To Memo Studio Bridge
+
+Paste this into a new Codex session after the sourceability route and canonical
+tool registration are on `main`.
+
+```text
+You are working in:
+C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work
+
+Goal:
+Turn Sourceability Check into the first practical claim-review primitive inside
+the PRAXIS ContextCapsule workflow. The route already exists at
+`/api/ai/sourceability`; this wave should connect it to saved work products and
+run receipts without making unsupported claims look resolved.
+
+Read first:
+- AGENTS.md
+- CLAUDE.md
+- ARCHITECTURE.md
+- docs/product/README.md
+- docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md
+- docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md
+- docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md
+- docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md
+- src/app/api/ai/sourceability/route.ts
+- src/lib/genkit/flows/sourceability.ts
+- src/lib/genkit/schemas/sourceability.ts
+- src/lib/tools/canonical.ts
+- src/lib/api/capsule-gate.ts
+- src/app/api/memos/from-ask/route.ts
+- src/app/api/memos/[id]/handover-package/route.ts
+- src/components/writer/PraxisWriter.tsx
+- STATUS.md
+- TODO.md
+- CHANGELOG.md
+
+Own these files:
+- src/app/api/ai/sourceability/**
+- src/lib/genkit/flows/sourceability.ts
+- src/lib/genkit/schemas/sourceability.ts
+- src/lib/tools/canonical.ts only for small contract fixes
+- src/lib/memos/** or existing memo/work-product helpers if present
+- tests/genkit/sourceability-flow.test.ts
+- tests/unit/lib/api/**
+- tests/unit/lib/memos/** if adding memo helpers
+- STATUS.md / TODO.md / CHANGELOG.md
+
+Do not edit the app shell or broad Ask UI in this Codex session. Leave visible
+UX wiring to Claude Code unless a small API response field is required.
+
+Implementation tasks:
+1. Add a reusable sourceability result shape for work products if none exists.
+   It must preserve:
+   - claim text;
+   - status: supported, weak, unsupported, needs_date_check;
+   - supporting source ids;
+   - missing evidence;
+   - suggested rewrite;
+   - citation warnings;
+   - capsule id, situation id, and trace/tool run id when available.
+2. Add a narrow server helper that can attach a sourceability result to a memo,
+   draft, or Ask-saved memo without overwriting the memo body.
+3. Ensure unsupported and date-check statuses stay review material. They must
+   not promote graph facts, mark gaps resolved, or silently rewrite the memo.
+4. Add tests for supported, weak, unsupported, and needs-date-check persistence
+   semantics.
+5. Keep source retrieval separate. If no snippets are supplied, return a clear
+   gap state and suggested next action to run Grounded Research first.
+6. Update STATUS/TODO/CHANGELOG with what is API-live versus UI-wired.
+
+Validation:
+- npx vitest run tests/genkit/sourceability-flow.test.ts
+- npx vitest run tests/unit/lib/api/with-calibration-gate.test.ts
+- npx tsc --noEmit
+- npm run build
+- npm run audit:genkit-runtime
+- npm run audit:architecture-reference
+- node scripts/audit-ai-routes.mjs
+- graphify update .
+
+Finish:
+- Report exact files changed and validation results.
+- Commit and push only after checks pass:
+  git add -A
+  git commit -m "feat(sourceability): attach claim review receipts to memos"
+  git pull --rebase origin main
+  git push origin main
+```
+
+## Claude Code Prompt: Sourceability In The AI Bar
+
+Paste this into Claude Code after the Sourceability Check canonical tool is on
+`main`.
+
+```text
+You are working in:
+C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work
+
+Goal:
+Expose Sourceability Check in the simple PRAXIS experience: Ask PRAXIS and Memo
+Studio should let a user check a selected claim against attached sources without
+opening a raw tool marketplace. Keep the surface focused on the AI bar, active
+ContextCapsule, recommended tools, and memo output.
+
+Read first:
+- AGENTS.md
+- CLAUDE.md
+- ARCHITECTURE.md
+- docs/product/README.md
+- docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md
+- docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md
+- docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md
+- src/lib/tools/canonical.ts
+- src/lib/tools/recommend.ts
+- src/app/api/ai/sourceability/route.ts
+- src/components/ask/AskStreamPanel.tsx
+- src/components/ask/AskWorkspacePage.tsx
+- src/components/assistant/response-actions.tsx
+- src/components/writer/PraxisWriter.tsx
+- src/components/tools/ToolMarketplace.tsx
+- tests/e2e/app-usability-smoke.spec.ts
+- STATUS.md
+- TODO.md
+- CHANGELOG.md
+
+Own these files:
+- src/components/ask/**
+- src/components/assistant/response-actions.tsx
+- src/components/writer/PraxisWriter.tsx
+- src/components/tools/**
+- tests/e2e/** only for focused smoke coverage
+- STATUS.md / TODO.md / CHANGELOG.md
+
+Hard boundaries:
+- Keep primary nav exactly Home, Ask PRAXIS, Library, Memo Studio, Canvas,
+  Advanced.
+- Do not expose provider internals or internal credit costs.
+- Do not claim Sourceability browses the web. It checks provided snippets and
+  attached context only.
+- Unsupported claims remain gaps; never render them as fixed facts.
+- Do not edit `src/lib/agent-runtime/**` in this UI session.
+
+Implementation tasks:
+1. Add Sourceability Check as a recommended action for Ask PRAXIS answers and
+   Memo Studio selected text when sources/documents are attached.
+2. Show statuses with plain labels:
+   - Supported
+   - Weak support
+   - Unsupported
+   - Needs date check
+3. For weak/unsupported/date-check, show the suggested rewrite and missing
+   evidence as next actions. Do not auto-apply the rewrite.
+4. If no source snippets are available, route the user to Grounded Research or
+   Library attachment instead of calling the route with empty evidence.
+5. Keep the UI compact and AI-bar centered. This is a tool action, not a new
+   page.
+6. Add focused smoke or component tests if stable selectors already exist.
+7. Update STATUS/TODO/CHANGELOG with what is UX-live and what remains backend
+   or worker follow-up.
+
+Validation:
+- npx tsc --noEmit
+- npm run build
+- npm run lint
+- npm run audit:ux-polish
+- npm run audit:context-vs-tools
+- npm run audit:architecture-reference
+- npm run smoke:core-flows if touched surfaces affect the core flow
+- focused Playwright smoke for Ask/Memo when feasible
+- graphify update . if code files changed
+
+Finish:
+- Report exact files changed and validation results.
+- Commit and push only after checks pass:
+  git add -A
+  git commit -m "feat(ask): surface sourceability claim checks"
+  git pull --rebase origin main
+  git push origin main
+```

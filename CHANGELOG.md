@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- feat(tools): register Sourceability Check as a canonical capsule tool.
+  Promoted the Genkit-backed sourceability route into the canonical attachable
+  tool registry, boosted it for research/reporting recommendations, and added
+  capsule-gate coverage requiring source evidence before claim review.
 - feat(genkit): add sourceability evidence flow.
   Added a typed Genkit sourceability flow, no-web deterministic fallback,
   calibrated `/api/ai/sourceability` route, sourceability credit mapping, and

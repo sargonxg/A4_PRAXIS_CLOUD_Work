@@ -4,11 +4,11 @@ import { DOMAIN_SEEDS } from '@/lib/domain/seeds';
 import type { DomainId } from '@/types/domain';
 
 const STAGE_BOOSTS: Record<string, string[]> = {
-  intake: ['context-builder', 'grounded-research', 'ask-praxis'],
-  research: ['grounded-research', 'ach', 'contradiction-finder'],
+  intake: ['context-builder', 'grounded-research', 'sourceability', 'ask-praxis'],
+  research: ['grounded-research', 'sourceability', 'ach', 'contradiction-finder'],
   mapping: ['stakeholder-map', 'coalition-detector', 'position-vs-interest'],
   monitoring: ['commitment-tracker', 'scenario-projector', 'ask-praxis'],
-  reporting: ['memo-drafter', 'frame-narrative', 'ask-praxis'],
+  reporting: ['memo-drafter', 'sourceability', 'frame-narrative', 'ask-praxis'],
 };
 
 export function recommendTools(args: {

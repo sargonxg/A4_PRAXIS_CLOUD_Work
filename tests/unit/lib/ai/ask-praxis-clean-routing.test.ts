@@ -17,7 +17,8 @@ describe('Ask PRAXIS clean routing contract', () => {
   });
 
   it('uses the canonical tool registry instead of stale hard-coded tool counts', () => {
-    expect(PRAXIS_CANONICAL_TOOLS).toHaveLength(12);
+    expect(PRAXIS_CANONICAL_TOOLS.length).toBeGreaterThanOrEqual(12);
+    expect(PRAXIS_CANONICAL_TOOLS.some((tool) => tool.id === 'sourceability')).toBe(true);
     expect(chatRouteSource).toContain('PRAXIS_CANONICAL_TOOLS.length');
     expect(chatRouteSource).toContain('buildAskPraxisToolCatalogPrompt');
     expect(chatRouteSource).not.toContain('10 consolidated primary tools');

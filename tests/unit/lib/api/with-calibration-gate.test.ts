@@ -113,6 +113,12 @@ describe('checkCapsuleForTool', () => {
     expect(missingCores).toEqual([]);
   });
 
+  it('requires source evidence before running sourceability', () => {
+    const refs: CapsuleCoreRefs = { ...emptyRefs, userCoreId: 'u', situationCoreId: 's' };
+    expect(checkCapsuleForTool(fakeCapsule(refs), 'sourceability').missingCores).toEqual(['source']);
+    expect(checkCapsuleForTool(fakeCapsule({ ...refs, sourceCoreIds: ['src1'] }), 'sourceability').missingCores).toEqual([]);
+  });
+
   it('returns missing cores for null capsule', () => {
     const { missingCores } = checkCapsuleForTool(null, 'ask-praxis');
     expect(missingCores.length).toBeGreaterThan(0);
