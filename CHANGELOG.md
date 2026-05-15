@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(context): separate PRAXIS Context Core Lite from future DIALECTICA Core Builder.
+  Added an explicit `praxis_lite` / `dialectica_future` context creation mode
+  contract, a user-facing switch in the one-click context builder, typed
+  Context Core Lite summaries, and a tested DIALECTICA export adapter that keeps
+  unsupported gaps and conflicting claims out of fact slots.
 - feat(context): add experimental Grafeo Context Core Lite graph capture.
   Added a deterministic policy/conflict context graph builder, optional
   `grafeo_experimental` mirror backend, authenticated experimental graph route,

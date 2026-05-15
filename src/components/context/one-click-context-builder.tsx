@@ -1,8 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, Plus, Wand2 } from 'lucide-react';
+import { DatabaseZap, Loader2, Plus, Wand2 } from 'lucide-react';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
+import {
+  CONTEXT_CREATION_MODES,
+  canCreateWithMode,
+  createLightweightContextCoreLite,
+  type ContextCreationMode,
+  type LightweightContextCoreLite,
+} from '@/lib/context/context-core-lite';
 import {
   STARTER_CONTEXT_DOMAINS,
   getStarterContextDomain,
@@ -13,31 +20,15 @@ import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
 import { cn } from '@/lib/utils/cn';
 
-interface ContextCoreLiteSummary {
-  title: string;
-  domain: string;
-  situationCoreId: string;
-  capsuleId: string;
-  capsuleVersion: number;
-  contextPackageId: string;
-  sourceRefs: string[];
-  documentRefs: string[];
-  healthScore: number;
-  missingCores: string[];
-  assumptions: string[];
-  gaps: string[];
-  status: 'draft' | 'review_ready' | 'locked';
-  askResolvable: boolean;
-}
-
 export function OneClickContextBuilder({ className }: { className?: string }) {
   const addSituation = useSituationStore((state) => state.addSituation);
   const setActiveSituation = useSituationStore((state) => state.setActiveSituation);
   const { saveStack } = useActiveContextStack();
+  const [mode, setMode] = useState<ContextCreationMode>('praxis_lite');
   const [selected, setSelected] = useState<StarterContextDomainId>('policy');
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
-  const [coreLite, setCoreLite] = useState<ContextCoreLiteSummary | null>(null);
+  const [coreLite, setCoreLite] = useState<LightweightContextCoreLite | null>(null);
   const domain = getStarterContextDomain(selected);
 
   async function createStarterContext() {
@@ -166,7 +157,8 @@ export function OneClickContextBuilder({ className }: { className?: string }) {
         ...(capsulePayload.capsule.health?.warnings ?? []),
         ...(packagePayload.package.health?.warnings ?? []),
       ];
-      setCoreLite({
+      setCoreLite(createLightweightContextCoreLite({
+        id: packagePayload.package.id,
         title: `${domain.label} Context Core Lite`,
         domain: domain.domainId,
         situationCoreId: payload.situation.id,
@@ -185,7 +177,7 @@ export function OneClickContextBuilder({ className }: { className?: string }) {
         gaps: warnings.length > 0 ? warnings.slice(0, 3) : ['Attach source receipts.', 'Upload documents.', 'Review graph candidates.'],
         status: missingCores.length === 0 ? 'review_ready' : 'draft',
         askResolvable: resolved,
-      });
+      }));
       setNote(`${domain.label} Context Core Lite created. Ask PRAXIS can ${resolved ? 'resolve' : 'not yet resolve'} this package.`);
     } catch (error) {
       setNote(error instanceof Error ? error.message : 'Could not create context.');
@@ -200,9 +192,56 @@ export function OneClickContextBuilder({ className }: { className?: string }) {
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-700">One-click context builder</p>
           <h2 className="mt-1 text-base font-semibold text-navy-950">Start from a domain, not a blank chat.</h2>
+          <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-600">
+            Use Context Core Lite now. Build full cores with DIALECTICA by TACITUS later.
+          </p>
         </div>
         <Wand2 className="h-5 w-5 text-diplomatic-blue" />
       </div>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {CONTEXT_CREATION_MODES.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setMode(item.id)}
+            aria-pressed={mode === item.id}
+            className={cn(
+              'min-h-[6.5rem] rounded-lg border p-3 text-left transition',
+              mode === item.id
+                ? 'border-navy-900 bg-navy-950 text-white'
+                : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-diplomatic-blue/40 hover:bg-white',
+            )}
+          >
+            <span className="flex items-center justify-between gap-2">
+              <span className="text-sm font-semibold">{item.label}</span>
+              <span className={cn(
+                'rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em]',
+                mode === item.id ? 'bg-white/15 text-white' : 'bg-white text-slate-600',
+              )}>
+                {item.statusLabel}
+              </span>
+            </span>
+            <span className={cn('mt-2 block text-xs leading-5', mode === item.id ? 'text-white/75' : 'text-slate-600')}>
+              {item.summary}
+            </span>
+          </button>
+        ))}
+      </div>
+      {mode === 'dialectica_future' ? (
+        <div className="mt-4 rounded-lg border border-diplomatic-blue/20 bg-diplomatic-blue/5 p-3">
+          <div className="flex items-start gap-3">
+            <DatabaseZap className="mt-0.5 h-4 w-4 text-diplomatic-blue" />
+            <div>
+              <p className="text-sm font-semibold text-navy-950">DIALECTICA Core Builder is future/adapter-ready.</p>
+              <p className="mt-1 text-xs leading-5 text-slate-700">
+                DIALECTICA by TACITUS will handle deeper extraction, graph construction, provenance, versioning,
+                ontology alignment, and advanced context packages. PRAXIS will consume exported cores through
+                the documented adapter contract.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="mt-4 flex flex-wrap gap-2">
         {STARTER_CONTEXT_DOMAINS.map((item) => (
           <button
@@ -229,11 +268,11 @@ export function OneClickContextBuilder({ className }: { className?: string }) {
         <button
           type="button"
           onClick={() => void createStarterContext()}
-          disabled={busy}
+          disabled={busy || !canCreateWithMode(mode)}
           className="inline-flex items-center gap-2 rounded-md bg-diplomatic-blue px-3 py-2 text-sm font-semibold text-white hover:bg-diplomatic-blue/90 disabled:opacity-60"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-          Create context
+          {mode === 'praxis_lite' ? 'Create Context Core Lite' : 'Coming soon'}
         </button>
         <p className="text-xs leading-5 text-slate-600">{note ?? `Time horizon: ${domain.timeHorizon}`}</p>
       </div>

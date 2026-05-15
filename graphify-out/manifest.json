@@ -3116,8 +3116,8 @@
     "hash": "71f9984623d24100003103beaf35ed38"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\context\\one-click-context-builder.tsx": {
-    "mtime": 1778824747.5596268,
-    "hash": "1c0449432fa3f966fadefa710809b5b0"
+    "mtime": 1778825247.102136,
+    "hash": "94cfe1d7ae0a43d6a7f6e9197d0611d3"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\contexts\\context-panel-data.ts": {
     "mtime": 1778467808.3565316,
@@ -4719,6 +4719,10 @@
     "mtime": 1778429930.2706835,
     "hash": "84bbc0af50a077a37d2fc40b37008a22"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\context\\context-core-lite.ts": {
+    "mtime": 1778825195.2347345,
+    "hash": "10bca20395a4b2dc201144f4c2a99a27"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\context\\context-health-gate.ts": {
     "mtime": 1778429930.271421,
     "hash": "e46b9fabb2dbb0c20c240292b5bc237a"
@@ -4742,6 +4746,10 @@
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\context\\demo-core-objects.ts": {
     "mtime": 1778664700.5619018,
     "hash": "77026da1bc0ec5e926829b766a103c9f"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\context\\dialectica-context-contract.ts": {
+    "mtime": 1778825217.1217556,
+    "hash": "17897e1373451107c49c12b2d26139a5"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\context\\experimental-grafeo-context-graph.ts": {
     "mtime": 1778823609.1760628,
@@ -6559,6 +6567,14 @@
     "mtime": 1778429930.7065394,
     "hash": "817800a012c996f509ccf44e07dff857"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\context\\context-core-lite.test.ts": {
+    "mtime": 1778825261.6872268,
+    "hash": "fa5b388ca0885b9390b0e3e1639b753b"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\context\\dialectica-context-contract.test.ts": {
+    "mtime": 1778825281.698935,
+    "hash": "ea5712f48cdf28dda9dbab966dbbe396"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\context\\experimental-grafeo-context-graph.test.ts": {
     "mtime": 1778823612.265656,
     "hash": "fea630e3f6e7e7bcff024d612b9e702a"
@@ -6852,8 +6868,8 @@
     "hash": "373d6e49b2a14fd39b4152249eb5a4df"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\CHANGELOG.md": {
-    "mtime": 1778823652.3425615,
-    "hash": "ee0a7887108a4f8b7745a9698cf61adb"
+    "mtime": 1778825303.1565654,
+    "hash": "3c79ffdd87bf40c56ba466bc78edd40e"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\CLAUDE.md": {
     "mtime": 1778513850.8080926,
@@ -6892,16 +6908,16 @@
     "hash": "9d191f88ea525ad6591ca8a252f7a109"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\STATUS.md": {
-    "mtime": 1778823658.019786,
-    "hash": "a410668f0f620e06d38b2b45b9d77829"
+    "mtime": 1778825308.2922556,
+    "hash": "2473180eb736962c6662c31ebe119196"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\TESTING.md": {
     "mtime": 1778429928.5607307,
     "hash": "4480eec3f1c2e0555ad88d1b65411d4e"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\TODO.md": {
-    "mtime": 1778822501.5208306,
-    "hash": "89c83c8748b0137b66c2736a5715f479"
+    "mtime": 1778825332.141958,
+    "hash": "6ab3a5a634ae9e6a93751b2d29c10601"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\agents\\README.md": {
     "mtime": 1778429928.5706878,
@@ -7270,6 +7286,10 @@
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\architecture\\DEEP_RESEARCH.md": {
     "mtime": 1778429928.8258982,
     "hash": "6bcf38c611e5f755044433247cdaceb3"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\architecture\\DIALECTICA_PRAXIS_CONTEXT_CONTRACT.md": {
+    "mtime": 1778825298.2600167,
+    "hash": "792de19e089517846546fa9aaa1d39e2"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\architecture\\GRAFEO_CONTEXT_GRAPH_EXPERIMENT.md": {
     "mtime": 1778823638.007948,

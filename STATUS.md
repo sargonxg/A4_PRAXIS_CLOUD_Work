@@ -11,6 +11,12 @@ completed. Queue `17` is complete for this session and live on
 
 Current local cleanup pass:
 
+- Context creation now has an explicit mode boundary. `Context Core Lite` is
+  the available PRAXIS MVP path; `DIALECTICA Core Builder` is shown as coming
+  soon and adapter-ready. The contract is documented in
+  `docs/architecture/DIALECTICA_PRAXIS_CONTEXT_CONTRACT.md`, with typed guards
+  ensuring unsupported gaps and conflicting claims remain review material
+  instead of becoming facts.
 - Experimental Grafeo Context Core Lite graph capture is now implemented behind
   `PRAXIS_CONTEXT_GRAPH_BACKEND=grafeo_experimental`. The default MVP spine
   remains Firestore capsules/context packages; Grafeo currently provides an
