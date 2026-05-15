@@ -14,9 +14,10 @@ Current local cleanup pass:
 - Experimental Grafeo Context Core Lite graph capture is now implemented behind
   `PRAXIS_CONTEXT_GRAPH_BACKEND=grafeo_experimental`. The default MVP spine
   remains Firestore capsules/context packages; Grafeo currently provides an
-  opt-in deterministic graph mirror and standard query pack for policy/conflict
-  context review. Full context creation still belongs to future DIALECTICA by
-  TACITUS work.
+  opt-in deterministic graph mirror, material ingestion path, ontology presets
+  for policy/conflict/procurement/humanitarian-access review, visualization
+  payloads, and context-core evolution actions. Full context creation still
+  belongs to future DIALECTICA by TACITUS work.
 - Google Cloud and Firebase auth were refreshed on 2026-05-13. `gcloud`,
   Application Default Credentials, and Firebase CLI all work for
   `giulio@tacitus.me`; `npm run audit:gcp` passed with 0 hard failures and 0

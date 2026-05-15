@@ -8,8 +8,21 @@ export const DEFAULT_CONTEXT_GRAPH_BACKEND = 'firestore_lite';
 export const ContextGraphBackendSchema = z.enum(['firestore_lite', 'grafeo_experimental']);
 export type ContextGraphBackend = z.infer<typeof ContextGraphBackendSchema>;
 
-export const ContextGraphPipelineSchema = z.enum(['policy_analysis', 'conflict_analysis']);
+export const ContextGraphPipelineSchema = z.enum([
+  'policy_analysis',
+  'conflict_analysis',
+  'procurement_compliance',
+  'humanitarian_access',
+]);
 export type ContextGraphPipeline = z.infer<typeof ContextGraphPipelineSchema>;
+
+export const ContextGraphOntologySchema = z.enum([
+  'policy_core',
+  'conflict_ontology',
+  'procurement_compliance',
+  'humanitarian_access',
+]);
+export type ContextGraphOntology = z.infer<typeof ContextGraphOntologySchema>;
 
 export const ContextGraphClaimKindSchema = z.enum([
   'sourced_fact',
@@ -50,6 +63,7 @@ export const ExperimentalContextGraphInputSchema = z.object({
   title: z.string().min(1),
   domain: z.string().min(1).default('policy'),
   pipeline: ContextGraphPipelineSchema.default('policy_analysis'),
+  ontology: ContextGraphOntologySchema.optional(),
   summary: z.string().default(''),
   rawText: z.string().default(''),
   actors: z.array(z.string()).default([]),
@@ -66,6 +80,28 @@ type CapturedLiteStructuredText = Pick<
   ParsedExperimentalContextGraphInput,
   'actors' | 'claims' | 'events' | 'constraints' | 'assumptions' | 'evidenceGaps' | 'sourceReceipts'
 >;
+
+export const ContextGraphMaterialSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  text: z.string().min(1),
+  sourceType: z.enum(['document', 'note', 'url', 'manual', 'dialectica_export']).default('document'),
+  url: z.string().url().optional(),
+  citation: z.string().optional(),
+});
+export type ContextGraphMaterial = z.input<typeof ContextGraphMaterialSchema>;
+
+export const ExperimentalContextGraphIngestionSchema = z.object({
+  contextCoreId: z.string().min(1),
+  title: z.string().min(1),
+  domain: z.string().min(1).default('policy'),
+  ontology: ContextGraphOntologySchema.default('policy_core'),
+  pipeline: ContextGraphPipelineSchema.optional(),
+  summary: z.string().default(''),
+  userIntent: z.string().default(''),
+  materials: z.array(ContextGraphMaterialSchema).min(1).max(25),
+});
+export type ExperimentalContextGraphIngestion = z.input<typeof ExperimentalContextGraphIngestionSchema>;
 
 export type ExperimentalContextGraphNodeKind =
   | 'context_core'
@@ -113,6 +149,33 @@ export interface ContextGraphQueryResult {
   findings: string[];
 }
 
+export interface ContextGraphVisualization {
+  layout: 'force-directed-lite';
+  nodes: Array<{
+    id: string;
+    label: string;
+    group: ExperimentalContextGraphNodeKind;
+    title: string;
+    properties: Record<string, unknown>;
+  }>;
+  links: Array<{
+    source: string;
+    target: string;
+    label: ExperimentalContextGraphEdge['type'];
+    value: number;
+  }>;
+}
+
+export interface ContextCoreEvolution {
+  contextCoreId: string;
+  status: 'draft' | 'review_ready';
+  readinessScore: number;
+  recommendedOntology: ContextGraphOntology;
+  nextActions: string[];
+  canEmbed: boolean;
+  embedLabel: string;
+}
+
 export interface ExperimentalContextGraph {
   schemaVersion: typeof CONTEXT_GRAPH_SCHEMA_VERSION;
   backend: ContextGraphBackend;
@@ -123,8 +186,19 @@ export interface ExperimentalContextGraph {
   nodes: ExperimentalContextGraphNode[];
   edges: ExperimentalContextGraphEdge[];
   queryResults: ContextGraphQueryResult[];
+  visualization: ContextGraphVisualization;
+  evolution: ContextCoreEvolution;
   promptBlock: string;
   createdAt: string;
+}
+
+export interface ContextGraphOntologyPreset {
+  id: ContextGraphOntology;
+  label: string;
+  recommendedPipeline: ContextGraphPipeline;
+  nodeKinds: ExperimentalContextGraphNodeKind[];
+  requiredFields: string[];
+  standardQuestions: string[];
 }
 
 export interface GrafeoMirrorResult {
@@ -148,6 +222,109 @@ type GrafeoDb = {
 export function resolveContextGraphBackend(value = process.env.PRAXIS_CONTEXT_GRAPH_BACKEND): ContextGraphBackend {
   const parsed = ContextGraphBackendSchema.safeParse(value);
   return parsed.success ? parsed.data : DEFAULT_CONTEXT_GRAPH_BACKEND;
+}
+
+export const CONTEXT_GRAPH_ONTOLOGY_PRESETS: ContextGraphOntologyPreset[] = [
+  {
+    id: 'conflict_ontology',
+    label: 'Conflict ontology',
+    recommendedPipeline: 'conflict_analysis',
+    nodeKinds: ['actor', 'event', 'claim', 'constraint', 'assumption', 'evidence_gap', 'source_receipt'],
+    requiredFields: ['actors', 'events', 'claims', 'constraints', 'assumptions', 'evidenceGaps', 'sourceReceipts'],
+    standardQuestions: [
+      'Which actors are tied to claims or events?',
+      'Which claims conflict or lack source receipts?',
+      'Which constraints block a confident conflict read?',
+    ],
+  },
+  {
+    id: 'policy_core',
+    label: 'Policy analysis core',
+    recommendedPipeline: 'policy_analysis',
+    nodeKinds: ['actor', 'event', 'claim', 'constraint', 'assumption', 'evidence_gap', 'source_receipt'],
+    requiredFields: ['stakeholders', 'policyClaims', 'constraints', 'implementationRisks', 'sourceReceipts'],
+    standardQuestions: [
+      'What policy claims are sourced?',
+      'Which constraints must shape a recommendation?',
+      'What evidence is missing before a memo can be review-ready?',
+    ],
+  },
+  {
+    id: 'procurement_compliance',
+    label: 'Procurement and compliance core',
+    recommendedPipeline: 'procurement_compliance',
+    nodeKinds: ['actor', 'event', 'claim', 'constraint', 'assumption', 'evidence_gap', 'source_receipt'],
+    requiredFields: ['vendors', 'requirements', 'constraints', 'deliveryEvents', 'sourceReceipts'],
+    standardQuestions: [
+      'Which requirements are unsupported?',
+      'Which compliance constraints are explicit?',
+      'Which delivery or vendor claims need receipts?',
+    ],
+  },
+  {
+    id: 'humanitarian_access',
+    label: 'Humanitarian access core',
+    recommendedPipeline: 'humanitarian_access',
+    nodeKinds: ['actor', 'event', 'claim', 'constraint', 'assumption', 'evidence_gap', 'source_receipt'],
+    requiredFields: ['actors', 'accessEvents', 'constraints', 'needsClaims', 'protectionGaps', 'sourceReceipts'],
+    standardQuestions: [
+      'Which access constraints are evidenced?',
+      'Which needs claims are unsupported?',
+      'Which events change the current access posture?',
+    ],
+  },
+];
+
+export function suggestContextGraphOntologies(input: { domain?: string; userIntent?: string; text?: string }): ContextGraphOntologyPreset[] {
+  const haystack = `${input.domain ?? ''} ${input.userIntent ?? ''} ${input.text ?? ''}`.toLowerCase();
+  const scored = CONTEXT_GRAPH_ONTOLOGY_PRESETS.map((preset) => ({
+    preset,
+    score:
+      (haystack.includes('conflict') || haystack.includes('ceasefire') || haystack.includes('actor') ? Number(preset.id === 'conflict_ontology') * 4 : 0) +
+      (haystack.includes('procurement') || haystack.includes('vendor') || haystack.includes('compliance') ? Number(preset.id === 'procurement_compliance') * 4 : 0) +
+      (haystack.includes('humanitarian') || haystack.includes('access') || haystack.includes('protection') ? Number(preset.id === 'humanitarian_access') * 4 : 0) +
+      (haystack.includes('policy') || haystack.includes('memo') || haystack.includes('regulation') ? Number(preset.id === 'policy_core') * 3 : 0),
+  }));
+  return scored.sort((a, b) => b.score - a.score).map((item) => item.preset);
+}
+
+export function ingestMaterialsToExperimentalContextGraph(
+  input: ExperimentalContextGraphIngestion,
+  options: { backend?: ContextGraphBackend; now?: () => Date } = {},
+): ExperimentalContextGraph {
+  const parsed = ExperimentalContextGraphIngestionSchema.parse(input);
+  const preset = CONTEXT_GRAPH_ONTOLOGY_PRESETS.find((item) => item.id === parsed.ontology) ?? CONTEXT_GRAPH_ONTOLOGY_PRESETS[0];
+  const captured = parsed.materials.map(captureMaterial).reduce<CapturedLiteStructuredText>(
+    (acc, item) => ({
+      actors: uniqueStrings([...acc.actors, ...item.actors]),
+      claims: [...acc.claims, ...item.claims],
+      events: [...acc.events, ...item.events],
+      constraints: uniqueStrings([...acc.constraints, ...item.constraints]),
+      assumptions: uniqueStrings([...acc.assumptions, ...item.assumptions]),
+      evidenceGaps: uniqueStrings([...acc.evidenceGaps, ...item.evidenceGaps]),
+      sourceReceipts: mergeSourceReceipts([...acc.sourceReceipts, ...item.sourceReceipts]),
+    }),
+    { actors: [], claims: [], events: [], constraints: [], assumptions: [], evidenceGaps: [], sourceReceipts: [] },
+  );
+
+  return buildExperimentalContextGraph(
+    {
+      contextCoreId: parsed.contextCoreId,
+      title: parsed.title,
+      domain: parsed.domain,
+      pipeline: parsed.pipeline ?? preset.recommendedPipeline,
+      ontology: parsed.ontology,
+      summary: parsed.summary || summarizeMaterials(parsed.materials),
+      actors: captured.actors,
+      claims: captured.claims,
+      events: captured.events,
+      constraints: captured.constraints,
+      assumptions: captured.assumptions,
+      evidenceGaps: captured.evidenceGaps,
+      sourceReceipts: captured.sourceReceipts,
+    },
+    options,
+  );
 }
 
 export function buildExperimentalContextGraph(
@@ -180,6 +357,7 @@ export function buildExperimentalContextGraph(
       contextCoreId: merged.contextCoreId,
       domain: merged.domain,
       pipeline: merged.pipeline,
+      ontology: merged.ontology ?? ontologyForPipeline(merged.pipeline),
       summary: merged.summary,
       createdAt,
       source: 'praxis_context_core_lite',
@@ -286,9 +464,21 @@ export function buildExperimentalContextGraph(
     nodes,
     edges,
     queryResults,
+    visualization: { layout: 'force-directed-lite', nodes: [], links: [] },
+    evolution: {
+      contextCoreId: merged.contextCoreId,
+      status: 'draft',
+      readinessScore: 0,
+      recommendedOntology: merged.ontology ?? ontologyForPipeline(merged.pipeline),
+      nextActions: [],
+      canEmbed: false,
+      embedLabel: 'Not ready to embed',
+    },
     promptBlock: '',
     createdAt,
   };
+  graph.visualization = buildContextGraphVisualization(graph);
+  graph.evolution = evolveContextCoreFromGraph(graph, merged.ontology ?? ontologyForPipeline(merged.pipeline));
   graph.promptBlock = renderExperimentalContextGraphPromptBlock(graph);
   return graph;
 }
@@ -379,12 +569,76 @@ pipeline=${graph.pipeline}
 domain=${graph.domain}
 nodes=${graph.nodes.length}
 edges=${graph.edges.length}
+readiness=${graph.evolution.readinessScore}
+embed=${graph.evolution.canEmbed ? 'ready' : 'not-ready'}
 counts=${Object.entries(counts).map(([kind, count]) => `${kind}=${count}`).join(', ')}
 
 Standard graph queries:
 ${findings || '- No findings.'}
 
+Next context-core actions:
+${graph.evolution.nextActions.map((action) => `- ${action}`).join('\n') || '- No deterministic next action.'}
+
 Use this as a review aid only. Treat unsupported gaps and conflicting claims as gaps, not facts.`;
+}
+
+export function buildContextGraphVisualization(graph: ExperimentalContextGraph): ContextGraphVisualization {
+  return {
+    layout: 'force-directed-lite',
+    nodes: graph.nodes.map((node) => ({
+      id: node.id,
+      label: node.label,
+      group: node.kind,
+      title: `${node.kind}: ${node.label}`,
+      properties: node.properties,
+    })),
+    links: graph.edges.map((edgeItem) => ({
+      source: edgeItem.source,
+      target: edgeItem.target,
+      label: edgeItem.type,
+      value: edgeItem.type === 'CONFLICTS_WITH' ? 3 : edgeItem.type === 'SUPPORTED_BY' ? 2 : 1,
+    })),
+  };
+}
+
+export function evolveContextCoreFromGraph(graph: ExperimentalContextGraph, ontology: ContextGraphOntology): ContextCoreEvolution {
+  const counts = countKinds(graph.nodes);
+  const unsupported = graph.queryResults.find((item) => item.id === 'claims_without_sources')?.count ?? 0;
+  const conflicts = graph.queryResults.find((item) => item.id === 'conflicting_claims')?.count ?? 0;
+  const gaps = graph.queryResults.find((item) => item.id === 'evidence_gaps')?.count ?? 0;
+  const hasSource = (counts.source_receipt ?? 0) > 0;
+  const hasClaims = (counts.claim ?? 0) > 0;
+  const hasConstraints = (counts.constraint ?? 0) > 0;
+  const hasEvents = (counts.event ?? 0) > 0;
+  const readinessScore = Math.max(
+    0,
+    Math.min(
+      100,
+      (hasSource ? 25 : 0) +
+        (hasClaims ? 20 : 0) +
+        (hasConstraints ? 15 : 0) +
+        (hasEvents ? 15 : 0) +
+        Math.max(0, 25 - unsupported * 5 - conflicts * 8 - gaps * 3),
+    ),
+  );
+  const nextActions = [
+    !hasSource ? 'Attach at least one source receipt before treating claims as grounded.' : null,
+    unsupported > 0 ? `Find receipts or rewrite ${unsupported} unsupported claim(s) as gaps.` : null,
+    conflicts > 0 ? `Review ${conflicts} conflicting claim pair(s) before memo synthesis.` : null,
+    gaps > 0 ? `Resolve or accept ${gaps} evidence gap(s) before locking this context core.` : null,
+    !hasConstraints ? 'Add explicit legal, policy, implementation, or access constraints.' : null,
+    !hasEvents ? 'Add dated events so KAIROS-style temporal review can run later.' : null,
+  ].filter((item): item is string => Boolean(item));
+
+  return {
+    contextCoreId: graph.contextCoreId,
+    status: readinessScore >= 70 && conflicts === 0 ? 'review_ready' : 'draft',
+    readinessScore,
+    recommendedOntology: ontology,
+    nextActions: nextActions.length ? nextActions : ['Context core is review-ready for Ask PRAXIS and memo handover.'],
+    canEmbed: readinessScore >= 60 && hasSource,
+    embedLabel: readinessScore >= 60 && hasSource ? 'Embeddable Context Core Lite graph' : 'Needs receipts before embedding',
+  };
 }
 
 function runStandardContextGraphQueries(input: {
@@ -480,6 +734,66 @@ function captureLiteStructuredText(rawText: string): CapturedLiteStructuredText 
   return result;
 }
 
+function captureMaterial(material: z.infer<typeof ContextGraphMaterialSchema>): CapturedLiteStructuredText {
+  const structured = captureLiteStructuredText(material.text);
+  const sourceReceipt: ContextGraphSourceReceipt = {
+    id: material.id,
+    title: material.title,
+    url: material.url,
+    citation: material.citation ?? `${material.sourceType}:${material.id}`,
+    excerpt: firstSentence(material.text),
+  };
+  const claims = [...structured.claims];
+  const constraints = [...structured.constraints];
+  const assumptions = [...structured.assumptions];
+  const evidenceGaps = [...structured.evidenceGaps];
+  const events = [...structured.events];
+
+  for (const sentence of splitSentences(material.text)) {
+    const lower = sentence.toLowerCase();
+    if (/^(actor|claim|event|constraint|assumption|gap|source)\s*:/i.test(sentence)) continue;
+    if (/\b(must|shall|required|constraint|legal review|compliance|rule|policy requires)\b/.test(lower)) {
+      constraints.push(sentence);
+      continue;
+    }
+    if (/\b(assume|assuming|likely|estimate|unclear)\b/.test(lower)) {
+      assumptions.push(sentence);
+      continue;
+    }
+    if (/\b(missing|gap|unknown|unverified|unsupported|no source)\b/.test(lower)) {
+      evidenceGaps.push(sentence);
+      continue;
+    }
+    if (extractDate(sentence)) {
+      events.push({ label: sentence, date: extractDate(sentence), actorIds: [], sourceIds: [material.id] });
+    }
+    if (sentence.length > 24) {
+      claims.push({
+        id: stableId('claim', `${material.id}:${sentence}`),
+        text: sentence,
+        kind: 'sourced_fact',
+        sourceIds: [material.id],
+        actorIds: [],
+      });
+    }
+  }
+
+  return {
+    actors: structured.actors,
+    claims,
+    events,
+    constraints: uniqueStrings(constraints),
+    assumptions: uniqueStrings(assumptions),
+    evidenceGaps: uniqueStrings(evidenceGaps),
+    sourceReceipts: mergeSourceReceipts([sourceReceipt, ...structured.sourceReceipts]),
+  };
+}
+
+function summarizeMaterials(materials: Array<z.infer<typeof ContextGraphMaterialSchema>>): string {
+  const titles = materials.map((item) => item.title).slice(0, 3).join(', ');
+  return `Context graph built from ${materials.length} material(s)${titles ? `: ${titles}` : ''}.`;
+}
+
 function inferClaimKind(value: string): ContextGraphClaimKind {
   const text = value.toLowerCase();
   if (text.includes('unsupported') || text.includes('unknown')) return 'unsupported_gap';
@@ -517,7 +831,20 @@ function standardsForPipeline(pipeline: ContextGraphPipeline): string[] {
   if (pipeline === 'conflict_analysis') {
     return [...shared, 'actor commitment map', 'conflicting claim review', 'constraint and risk posture'];
   }
+  if (pipeline === 'procurement_compliance') {
+    return [...shared, 'requirements traceability', 'vendor and delivery posture', 'compliance constraint review'];
+  }
+  if (pipeline === 'humanitarian_access') {
+    return [...shared, 'access constraint map', 'protection gap review', 'needs claim support'];
+  }
   return [...shared, 'policy constraint readiness', 'stakeholder impact map', 'implementation risk posture'];
+}
+
+function ontologyForPipeline(pipeline: ContextGraphPipeline): ContextGraphOntology {
+  if (pipeline === 'conflict_analysis') return 'conflict_ontology';
+  if (pipeline === 'procurement_compliance') return 'procurement_compliance';
+  if (pipeline === 'humanitarian_access') return 'humanitarian_access';
+  return 'policy_core';
 }
 
 function edge(
@@ -556,6 +883,18 @@ function resolveActorRefs(values: string[], actorIds: Map<string, string>): stri
 
 function extractDate(value: string): string | undefined {
   return /\b\d{4}-\d{2}-\d{2}\b/.exec(value)?.[0] ?? /\b\d{4}\b/.exec(value)?.[0];
+}
+
+function splitSentences(value: string): string[] {
+  return value
+    .split(/(?<=[.!?])\s+|\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 80);
+}
+
+function firstSentence(value: string): string | undefined {
+  return splitSentences(value)[0]?.slice(0, 500);
 }
 
 function inferGapSeverity(value: string): 'high' | 'medium' | 'low' {

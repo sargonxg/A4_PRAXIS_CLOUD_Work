@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildExperimentalContextGraph,
+  ingestMaterialsToExperimentalContextGraph,
   mirrorContextGraphToGrafeo,
   renderExperimentalContextGraphPromptBlock,
+  suggestContextGraphOntologies,
 } from '@/lib/context/experimental-grafeo-context-graph';
 
 const baseInput = {
@@ -65,6 +67,8 @@ describe('experimental Grafeo context graph', () => {
     expect(graph.edges.some((edge) => edge.type === 'SUPPORTED_BY')).toBe(true);
     expect(graph.queryResults.find((query) => query.id === 'claims_without_sources')?.count).toBe(1);
     expect(graph.queryResults.find((query) => query.id === 'policy_constraint_readiness')?.count).toBe(1);
+    expect(graph.visualization.nodes.length).toBe(graph.nodes.length);
+    expect(graph.evolution.canEmbed).toBe(true);
     expect(graph.promptBlock).toContain('Experimental PRAXIS Context Graph');
   });
 
@@ -100,6 +104,44 @@ describe('experimental Grafeo context graph', () => {
     expect(graph.edges.some((edge) => edge.type === 'CONFLICTS_WITH')).toBe(true);
     expect(graph.queryResults.find((query) => query.id === 'conflicting_claims')?.count).toBe(1);
     expect(renderExperimentalContextGraphPromptBlock(graph)).toContain('conflict_analysis');
+  });
+
+  it('ingests source materials into a conflict ontology graph and evolves the core', () => {
+    const suggestions = suggestContextGraphOntologies({
+      domain: 'conflict analysis',
+      userIntent: 'build a ceasefire actor and claim graph',
+    });
+    expect(suggestions[0].id).toBe('conflict_ontology');
+
+    const graph = ingestMaterialsToExperimentalContextGraph({
+      contextCoreId: 'conflict-material-core',
+      title: 'Corridor Access Conflict Core',
+      domain: 'conflict_analysis',
+      ontology: 'conflict_ontology',
+      materials: [
+        {
+          id: 'field-report-1',
+          title: 'Field report 1',
+          sourceType: 'document',
+          text: [
+            'Actor: Monitoring Cell',
+            'Actor: Armed Group A',
+            'Armed Group A confirms corridor access on 2026-05-14.',
+            'Legal review required before public attribution.',
+            'Missing independent checkpoint source.',
+          ].join('\n'),
+        },
+      ],
+    });
+
+    expect(graph.pipeline).toBe('conflict_analysis');
+    expect(graph.nodes.some((node) => node.kind === 'source_receipt' && node.label === 'Field report 1')).toBe(true);
+    expect(graph.nodes.some((node) => node.kind === 'claim')).toBe(true);
+    expect(graph.nodes.some((node) => node.kind === 'constraint')).toBe(true);
+    expect(graph.nodes.some((node) => node.kind === 'evidence_gap')).toBe(true);
+    expect(graph.visualization.links.length).toBe(graph.edges.length);
+    expect(graph.evolution.recommendedOntology).toBe('conflict_ontology');
+    expect(graph.evolution.nextActions.join(' ')).toContain('Resolve or accept');
   });
 
   it('keeps Grafeo mirroring optional when the backend flag is off', async () => {

@@ -14,9 +14,14 @@
 ## What Works Now
 
 - PRAXIS can build a deterministic Context Core Lite graph from explicit arrays
-  or simple structured text lines.
+  simple structured text lines, or source material ingestion payloads.
 - The graph captures actors, events, claims, constraints, assumptions, evidence
   gaps, source receipts, support edges, conflict edges, and analysis standards.
+- The graph route returns ontology presets, suggested ontology choices, a
+  visualization payload, and a context-core evolution payload with readiness,
+  embed eligibility, and next actions.
+- The current lite ontologies cover conflict analysis, policy analysis,
+  procurement/compliance, and humanitarian access.
 - The standard query pack reports unsupported claims, conflicting claims,
   assumption load, evidence gaps, temporal coverage, and policy/conflict
   constraint readiness.

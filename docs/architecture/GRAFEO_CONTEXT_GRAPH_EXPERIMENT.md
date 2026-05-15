@@ -19,14 +19,18 @@ graph capture layer that can mirror Context Core Lite material into Grafeo when
 
 ## Current Pipeline
 
-The experimental builder creates a graph from explicit or lite structured input:
+The experimental builder creates a graph from explicit fields, lite structured
+input, or a small material-ingestion payload:
 
 ```text
-Context Core Lite input
+Context Core Lite input or source material
+-> ontology preset selection
 -> Actor / Event / Claim / Constraint / Assumption / Gap / SourceReceipt nodes
 -> deterministic support and conflict edges
 -> standard query pack
 -> optional Grafeo mirror
+-> visualization payload
+-> context-core evolution actions
 -> prompt block for Ask PRAXIS review
 ```
 
@@ -42,6 +46,43 @@ Gap: Missing customs authority source receipt.
 Source: Port access circular
 ```
 
+The material ingestion API also accepts one or more material records:
+
+```json
+{
+  "ingestion": {
+    "contextCoreId": "conflict-core-1",
+    "title": "Corridor Access Conflict Core",
+    "domain": "conflict_analysis",
+    "ontology": "conflict_ontology",
+    "materials": [
+      {
+        "id": "field-report-1",
+        "title": "Field report 1",
+        "sourceType": "document",
+        "text": "Actor: Monitoring Cell\nClaim: Armed Group A confirms corridor access."
+      }
+    ]
+  }
+}
+```
+
+## Ontology Presets
+
+The current lite presets are:
+
+- `conflict_ontology`: actors, claims, events, commitments/friction signals,
+  constraints, assumptions, gaps, and source receipts.
+- `policy_core`: stakeholders, policy claims, constraints, implementation
+  risks, assumptions, gaps, and source receipts.
+- `procurement_compliance`: vendors, requirements, compliance constraints,
+  delivery events, gaps, and source receipts.
+- `humanitarian_access`: actors, access events, protection or needs claims,
+  constraints, gaps, and source receipts.
+
+`GET /api/context/graph/experimental` returns the presets and the top suggested
+presets for a domain, intent, or text sample.
+
 ## Standard Queries
 
 The current standard query pack checks:
@@ -52,6 +93,10 @@ The current standard query pack checks:
 - evidence gaps
 - dated event coverage
 - policy or conflict constraint readiness
+
+The response also includes a `visualization` object with graph nodes and links
+for a force-directed view, plus an `evolution` object with readiness, embed
+eligibility, and next actions for developing the Context Core Lite.
 
 These are deterministic review queries. They are not a replacement for full
 DIALECTICA context creation.
