@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { Brain, FileText, LibraryBig, Target, ShieldAlert } from 'lucide-react';
+import { Brain, Eye, FileText, LibraryBig, Link2, Route, ShieldAlert, Target } from 'lucide-react';
 import { AppPageHeader } from '@/components/app/app-page-header';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { WorkOnThisMenu } from '@/components/app/work-on-this-menu';
@@ -78,6 +78,28 @@ export function ContextCanvasPage() {
     { id: 'timeline', label: 'Timeline', title: `${timelineNodes.length} events`, x: 596, y: 28, href: '/app/canvas' },
     { id: 'draft', label: 'Draft', title: 'Memo Studio working product', x: 310, y: 392, href: '/app/write' },
   ];
+  const embeddedContextFacts = [
+    {
+      label: 'What PRAXIS knows',
+      value: `${activeUserCore.identity} + ${situation?.name ?? 'no situation'} + ${sourceCount} evidence items`,
+      detail: 'This is the context stack that should travel into Ask, Memo Studio, and handover.',
+    },
+    {
+      label: 'What is embedded',
+      value: `${canvasNodes.length} core nodes`,
+      detail: 'User, Situation, Sources, Actors, Claims, Timeline, Gaps, and Draft are kept together.',
+    },
+    {
+      label: 'What is weak',
+      value: health.nextActions[0]?.label ?? 'Ready to draft',
+      detail: health.nextActions[0]?.detail ?? 'The context is strong enough to move into writing.',
+    },
+  ];
+  const contextJourney = [
+    { icon: Target, label: 'Create context', detail: 'Pick or build the Situation Core.' },
+    { icon: Link2, label: 'Attach knowledge', detail: 'Add sources, documents, actors, and claims.' },
+    { icon: Route, label: 'Use it everywhere', detail: 'Ask, write, review, and hand over from the same stack.' },
+  ];
 
   function saveNodePosition(id: string, position: { x: number; y: number }) {
     const next = { ...layout, [id]: position };
@@ -97,30 +119,75 @@ export function ContextCanvasPage() {
     <main className="mx-auto flex max-w-[1400px] flex-col gap-5 pb-16" data-testid="context-canvas-page">
       <AppPageHeader
         eyebrow="Canvas"
-        title="Review the active structure."
-        subtitle="Inspect user, situation, sources, actors, claims, timeline, and draft posture before PRAXIS writes."
+        title="See the context PRAXIS will use."
+        subtitle="The canvas shows the embedded knowledge stack behind Ask PRAXIS and Memo Studio: who you are, what situation you are working on, which sources support it, what claims are weak, and what output you are drafting."
         primaryAction={{ label: 'Open Memo Studio', href: '/app/write', icon: FileText }}
         secondaryAction={{ label: 'Change context', href: '/app/contexts', icon: Target }}
       />
 
+      <section className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-navy-950 text-white">
+              <Eye className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gold-700">Embedded context</p>
+              <h2 className="mt-1 text-base font-semibold text-navy-950">One working memory, visible before the AI uses it.</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-650">
+                PRAXIS should not draft from a blank prompt. This page makes the active knowledge stack visible so you can check the user posture, situation frame, source base, graph shape, evidence gaps, and output goal before asking for analysis or writing.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-2 md:grid-cols-3">
+            {embeddedContextFacts.map((fact) => (
+              <div key={fact.label} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{fact.label}</p>
+                <p className="mt-1 truncate text-sm font-semibold text-navy-950">{fact.value}</p>
+                <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600">{fact.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-[#FAF8F2] p-4 shadow-sm shadow-navy-950/5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gold-800">Simple path</p>
+          <div className="mt-3 space-y-3">
+            {contextJourney.map((step, index) => {
+              const Icon = step.icon;
+              return (
+                <div key={step.label} className="flex items-start gap-3">
+                  <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-gold-200 bg-white text-gold-800">
+                    <Icon className="h-3.5 w-3.5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-navy-950">{index + 1}. {step.label}</p>
+                    <p className="mt-0.5 text-xs leading-5 text-slate-650">{step.detail}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-5">
-        <ContextGraphPreview
-          title={situation?.name ?? 'Active context structure'}
-          summary={`Working as ${activeUserCore.identity}. ${sourceCount} source/document items, ${actorCount} actors, context health ${health.score}/100.`}
-          stats={[
-            { label: 'User Core', value: '1' },
-            { label: 'Situation Core', value: situation ? '1' : '0' },
-            { label: 'Sources', value: String(sourceCount) },
-            { label: 'Actors', value: String(actorCount) },
-            { label: 'Drafts', value: '1' },
-          ]}
-        />
+          <ContextGraphPreview
+            title={situation?.name ?? 'Active context structure'}
+            summary={`Working as ${activeUserCore.identity}. ${sourceCount} source/document items, ${actorCount} actors, context health ${health.score}/100.`}
+            stats={[
+              { label: 'User Core', value: '1' },
+              { label: 'Situation Core', value: situation ? '1' : '0' },
+              { label: 'Sources', value: String(sourceCount) },
+              { label: 'Actors', value: String(actorCount) },
+              { label: 'Drafts', value: '1' },
+            ]}
+          />
         <section className="relative min-h-[560px] overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm" data-testid="context-canvas-layout">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Saved layout</p>
-              <h2 className="text-sm font-semibold text-navy-950">Drag nodes into a review shape.</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Context map</p>
+              <h2 className="text-sm font-semibold text-navy-950">Drag nodes to arrange how this context should be reviewed.</h2>
             </div>
             <p className="text-xs text-slate-600">{stackHydrated && Object.keys(layout).length ? 'Layout saved in active stack' : 'Default layout'}</p>
           </div>
