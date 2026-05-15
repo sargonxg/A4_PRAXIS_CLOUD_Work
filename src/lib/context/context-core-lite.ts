@@ -37,14 +37,14 @@ export const CONTEXT_CREATION_MODES: ContextCreationModeDefinition[] = [
     label: 'Context Core Lite',
     statusLabel: 'Available now',
     available: true,
-    summary: 'Fast PRAXIS MVP context from Situation Core, User Core, capsule, sources, documents, and Context Package.',
+    summary: 'Fast PRAXIS MVP context for policy, planning, compliance, crisis analysis, institutional memory, and handover.',
   },
   {
     id: 'dialectica_future',
     label: 'DIALECTICA Core Builder',
     statusLabel: 'Coming soon',
     available: false,
-    summary: 'Future full context creation by DIALECTICA by TACITUS for extraction, graph, provenance, versioning, and advanced packages.',
+    summary: 'Future full context creation by DIALECTICA by TACITUS for extraction, graph, provenance, ontology, versioning, and advanced packages.',
   },
 ];
 

@@ -10,6 +10,9 @@ describe('Context Core Lite mode contract', () => {
     expect(CONTEXT_CREATION_MODES.map((mode) => mode.id)).toEqual(['praxis_lite', 'dialectica_future']);
     expect(CONTEXT_CREATION_MODES.find((mode) => mode.id === 'praxis_lite')?.statusLabel).toBe('Available now');
     expect(CONTEXT_CREATION_MODES.find((mode) => mode.id === 'dialectica_future')?.statusLabel).toBe('Coming soon');
+    expect(CONTEXT_CREATION_MODES.find((mode) => mode.id === 'praxis_lite')?.summary).toContain('policy');
+    expect(CONTEXT_CREATION_MODES.find((mode) => mode.id === 'praxis_lite')?.summary).toContain('institutional memory');
+    expect(CONTEXT_CREATION_MODES.find((mode) => mode.id === 'dialectica_future')?.summary).toContain('ontology');
     expect(canCreateWithMode('praxis_lite')).toBe(true);
     expect(canCreateWithMode('dialectica_future')).toBe(false);
   });
