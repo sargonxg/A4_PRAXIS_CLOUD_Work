@@ -15,6 +15,7 @@ const EXEMPT = new Set([
   'search',
   'document',
   'critique',
+  'brief',
 ]);
 
 function walk(dir, acc = []) {

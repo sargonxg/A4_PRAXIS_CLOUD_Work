@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTurnCapsule, runCapability, suggestNextActions } from '@/lib/ai/context-kernel';
+import { buildTurnCapsule, persistSuggestedActionReceipt, runCapability, suggestNextActions } from '@/lib/ai/context-kernel';
 
 describe('context kernel', () => {
   it('builds a turn capsule and excludes deleted memory from the next capsule', async () => {
@@ -23,6 +23,9 @@ describe('context kernel', () => {
     }, deps(db));
 
     expect(capsule.traceId).toBe('trace-1');
+    expect(capsule.capsuleId).toBe('default');
+    expect(capsule.capsuleVersion).toBe(2);
+    expect(capsule.stack.label).toBe('Default capsule');
     expect(capsule.userCore).toBe('user-core-1');
     expect(capsule.situationCore).toBe('situation-core-1');
     expect(capsule.sourceDocumentCore).toEqual(['source-1', 'doc-1']);
@@ -58,6 +61,16 @@ describe('context kernel', () => {
       capsuleId: 'default',
       capsuleVersion: 2,
       traceId: 'trace-2',
+      capabilityId: 'evidence-critique',
+      actionLabel: 'evidence-critique',
+    });
+    expect(plan.receipt).toMatchObject({
+      capabilityId: 'evidence-critique',
+      capsuleId: 'default',
+      capsuleVersion: 2,
+      routeFamily: 'critique',
+      traceId: 'trace-2',
+      status: 'planned',
     });
   });
 
@@ -72,7 +85,23 @@ describe('context kernel', () => {
     const actions = suggestNextActions(capsule);
     expect(actions).toHaveLength(3);
     expect(actions.map((action) => action.label)).toContain('Find sources');
+    expect(actions.every((action) => action.capabilityId)).toBe(true);
     expect(actions.map((action) => action.label).join(' ')).not.toContain('/api/ai/search');
+  });
+
+  it('persists suggested action receipts under the owner scope', async () => {
+    const db = new FakeFirestore();
+    const capsule = await buildTurnCapsule({
+      uid: 'u1',
+      traceId: 'trace-4',
+      activeContextStack: { stackId: 'default', situationId: 'sit-4' },
+    }, deps(db));
+    const plan = runCapability({ capabilityId: 'source-search', capsule, actionLabel: 'Find sources' });
+
+    await persistSuggestedActionReceipt('u1', plan.receipt, deps(db));
+
+    expect(db.data.has(`users/u1/capability_action_receipts/${plan.receipt.actionId}`)).toBe(true);
+    expect(db.data.has(`users/u2/capability_action_receipts/${plan.receipt.actionId}`)).toBe(false);
   });
 });
 

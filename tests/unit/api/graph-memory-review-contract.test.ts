@@ -13,12 +13,15 @@ describe('graph proposal and memory review contract', () => {
     expect(reject).toContain('withAuth');
   });
 
-  it('keeps working memory deletable through the owner-scoped route', () => {
+  it('keeps working memory deletable through the owner-scoped route without reusing deleted facts', () => {
     const route = read('src/app/api/memory/working/[factId]/route.ts');
+    const list = read('src/app/api/memory/working/route.ts');
 
     expect(route).toContain('collection(\'working-memory\')');
     expect(route).toContain('export const DELETE');
-    expect(route).toContain('await ref.delete()');
+    expect(route).toContain('deletedAt');
+    expect(route).not.toContain('await ref.delete()');
+    expect(list).toContain('deletedAt');
   });
 });
 

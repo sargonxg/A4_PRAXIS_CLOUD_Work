@@ -55,8 +55,8 @@ if (!contextInjection.includes('locked_cores')) {
 }
 
 const chatRoute = read('src/app/api/ai/chat/route.ts');
-if (!chatRoute.includes('resolveInjectableContext')) {
-  failures.push('Ask PRAXIS chat route must resolve the injectable capsule context before answering');
+if (!chatRoute.includes('buildTurnCapsule')) {
+  failures.push('Ask PRAXIS chat route must build the turn capsule before answering');
 }
 
 const coreLibrary = read('src/lib/cores/core-library.ts');

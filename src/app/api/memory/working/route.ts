@@ -47,6 +47,7 @@ export const GET = withAuth(async (request, user) => {
     const snap = await collectionRef(user.uid).orderBy('updatedAt', 'desc').limit(100).get();
     const facts = snap.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }) as WorkingMemoryFact)
+      .filter((fact) => !(fact as WorkingMemoryFact & { deletedAt?: string | null }).deletedAt)
       .filter((fact) => !capsuleId || !fact.capsuleId || fact.capsuleId === capsuleId || fact.capsuleId === '__global__')
       .sort((a, b) => Number(b.pinned) - Number(a.pinned));
 

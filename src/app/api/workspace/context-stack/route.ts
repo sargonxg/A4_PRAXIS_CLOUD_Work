@@ -7,8 +7,12 @@ import {
 } from '@/lib/context/active-context-stack';
 import {
   capsuleToStack,
+  createCapsule,
+  getCapsule,
   getOrMigrateDefaultCapsule,
+  bumpCapsuleVersion,
   saveContextStackCompat,
+  stackToCoreRefs,
 } from '@/lib/context/capsule-service';
 
 export const GET = withAuth(async (req, user) => {
@@ -19,7 +23,16 @@ export const GET = withAuth(async (req, user) => {
   const url = new URL(req.url);
   const stackId = url.searchParams.get('stackId') ?? DEFAULT_CONTEXT_STACK_ID;
   if (stackId !== DEFAULT_CONTEXT_STACK_ID) {
-    return NextResponse.json({ error: 'Only the default context stack is capsule-backed' }, { status: 400 });
+    const capsule = await getCapsule(user.uid, stackId);
+    if (!capsule || capsule.archivedAt) {
+      return NextResponse.json({ error: 'Context stack not found' }, { status: 404 });
+    }
+    return NextResponse.json({
+      stack: capsuleToStack(capsule),
+      capsule,
+      migrated: false,
+      persisted: true,
+    });
   }
   const result = await getOrMigrateDefaultCapsule(user.uid);
   return NextResponse.json({
@@ -38,8 +51,40 @@ export const PUT = withAuth(async (req, user) => {
   const body = await req.json().catch(() => null);
   const incoming = body && typeof body === 'object' && !Array.isArray(body) ? body as Partial<ActiveContextStackState> : {};
   if (incoming.stackId && incoming.stackId !== DEFAULT_CONTEXT_STACK_ID) {
-    return NextResponse.json({ error: 'Only the default context stack is capsule-backed' }, { status: 400 });
+    const stack = sanitizeNamedStack(incoming);
+    const existing = await getCapsule(user.uid, stack.stackId);
+    const capsule = existing
+      ? await bumpCapsuleVersion(user.uid, stack.stackId, {
+          coreRefs: stackToCoreRefs(stack),
+          activeForSituationIds: stack.situationId ? [stack.situationId] : ['workspace'],
+        })
+      : await createCapsule(user.uid, {
+          capsuleId: stack.stackId,
+          label: `Capsule: ${stack.stackId}`,
+          scope: stack.situationId ? 'situation' : 'user',
+          coreRefs: stackToCoreRefs(stack),
+          activeForSituationIds: stack.situationId ? [stack.situationId] : ['workspace'],
+          provenance: { source: 'api', createdBy: user.uid },
+        });
+    return NextResponse.json({ stack, capsule, persisted: true });
   }
   const result = await saveContextStackCompat(user.uid, incoming);
   return NextResponse.json(result);
 });
+
+function sanitizeNamedStack(input: Partial<ActiveContextStackState>): ActiveContextStackState {
+  return {
+    stackId: typeof input.stackId === 'string' && input.stackId.trim()
+      ? input.stackId.trim().replace(/[^\w:.-]/g, '-').slice(0, 120)
+      : DEFAULT_CONTEXT_STACK_ID,
+    userModelId: input.userModelId ?? null,
+    situationId: input.situationId ?? null,
+    sourceIds: Array.isArray(input.sourceIds) ? input.sourceIds : [],
+    documentIds: Array.isArray(input.documentIds) ? input.documentIds : [],
+    outputGoal: input.outputGoal ?? null,
+    evidenceGaps: Array.isArray(input.evidenceGaps) ? input.evidenceGaps : [],
+    canvasLayout: input.canvasLayout ?? {},
+    updatedAt: new Date().toISOString(),
+    schemaVersion: 1,
+  };
+}

@@ -67,7 +67,11 @@ export const DELETE = withAuth<RouteContext>(async (_request, user, context) => 
       return NextResponse.json({ error: 'Working memory fact not found' }, { status: 404 });
     }
 
-    await ref.delete();
+    await ref.set({
+      deletedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedBy: user.uid,
+    }, { merge: true });
     return NextResponse.json({ deleted: true, persisted: true });
   } catch (err) {
     return handleRouteError(err, 'memory/working/delete');

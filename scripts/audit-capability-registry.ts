@@ -54,7 +54,7 @@ for (const routeName of routeNames) {
   }
 }
 
-const firstWave = ['ask', 'search', 'extract', 'document', 'critique'];
+const firstWave = ['ask', 'search', 'extract', 'document', 'critique', 'brief', 'graph-propose'];
 for (const family of firstWave) {
   const routePath = join(aiRoutesDir, family, 'route.ts');
   try {

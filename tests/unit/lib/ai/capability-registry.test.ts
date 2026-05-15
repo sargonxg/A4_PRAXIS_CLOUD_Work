@@ -24,7 +24,7 @@ describe('capability registry', () => {
   });
 
   it('has first-wave canonical route wrappers', () => {
-    for (const family of ['ask', 'search', 'extract', 'document', 'critique']) {
+    for (const family of ['ask', 'search', 'extract', 'document', 'critique', 'brief', 'graph-propose']) {
       expect(existsSync(join(process.cwd(), 'src', 'app', 'api', 'ai', family, 'route.ts'))).toBe(true);
     }
   });

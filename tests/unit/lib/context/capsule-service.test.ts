@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   activateCapsule,
+  archiveCapsule,
+  attachCapsuleRefs,
   bumpCapsuleVersion,
   createCapsule,
   forkCapsule,
   getCapsule,
   getOrMigrateDefaultCapsule,
+  listCapsules,
   saveContextStackCompat,
   setCapsuleCoreLock,
 } from '@/lib/context/capsule-service';
@@ -160,6 +163,38 @@ describe('capsule service', () => {
     expect(unlocked?.lockedCoreKinds).toEqual([]);
     expect(db.data.has('users/u1/capsules/cap-lock/versions/v1')).toBe(true);
     expect(db.data.has('users/u1/capsules/cap-lock/versions/v2')).toBe(true);
+  });
+
+  it('archives capsules without deleting lineage and omits them from normal lists', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: 'cap-archive', coreRefs: { situationCoreId: 'sit-1' }, activeForSituationIds: ['sit-1'] }, deps(db));
+
+    const archived = await archiveCapsule('u1', 'cap-archive', deps(db));
+    const visible = await listCapsules('u1', {}, deps(db));
+    const withArchived = await listCapsules('u1', { includeArchived: true }, deps(db));
+
+    expect(archived?.archivedAt).toBe('2026-05-14T00:00:00.000Z');
+    expect(archived?.activeForSituationIds).toEqual([]);
+    expect(visible.map((capsule) => capsule.capsuleId)).not.toContain('cap-archive');
+    expect(withArchived.map((capsule) => capsule.capsuleId)).toContain('cap-archive');
+    expect(db.data.has('users/u1/capsules/cap-archive/versions/v2')).toBe(true);
+  });
+
+  it('attaches source and document receipts into capsule slots', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', {
+      capsuleId: 'cap-attach',
+      coreRefs: { sourceCoreIds: ['src-1'], documentCoreIds: ['doc-1'] },
+    }, deps(db));
+
+    const updated = await attachCapsuleRefs('u1', 'cap-attach', {
+      sourceIds: ['src-1', 'src-2'],
+      documentIds: ['doc-2'],
+    }, deps(db));
+
+    expect(updated?.coreRefs.sourceCoreIds).toEqual(['src-1', 'src-2']);
+    expect(updated?.coreRefs.documentCoreIds).toEqual(['doc-1', 'doc-2']);
+    expect(updated?.version).toBe(2);
   });
 });
 
