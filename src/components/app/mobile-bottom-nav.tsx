@@ -2,19 +2,19 @@
 
 import type { ComponentType } from 'react';
 import Link from 'next/link';
-import { Boxes, FileText, LibraryBig, Sparkles } from 'lucide-react';
+import { FileText, Home, LibraryBig, Network, Sparkles, Wrench } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 import { NAV_GROUPS, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
 
-// Mobile only ever surfaces the Workspace group + the Ask PRAXIS quick
-// trigger. Everything else lives behind the desktop sidebar so the
-// mobile surface stays tiny.
+// Mobile mirrors the six-room product contract while keeping labels short.
 const ICONS: Partial<Record<PrimaryNavIcon, ComponentType<{ className?: string }>>> = {
+  Home,
   Sparkles,
-  Boxes,
   LibraryBig,
   FileText,
+  Network,
+  Wrench,
 };
 
 export function MobileBottomNav() {
@@ -28,7 +28,7 @@ export function MobileBottomNav() {
       aria-label="Primary mobile navigation"
       data-testid="mobile-bottom-nav"
     >
-      <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
+      <div className="mx-auto grid max-w-lg grid-cols-6 gap-1">
         {items.map((item) => {
           const Icon = ICONS[item.icon] ?? Sparkles;
           if (item.id === 'ask') {

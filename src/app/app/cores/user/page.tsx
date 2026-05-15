@@ -1,190 +1,96 @@
 import Link from 'next/link';
-import {
-  ArrowRight,
-  BadgeCheck,
-  BrainCircuit,
-  Eye,
-  FileText,
-  Languages,
-  MessageSquareText,
-  ShieldCheck,
-  SlidersHorizontal,
-  UserCircle,
-} from 'lucide-react';
+import { CheckCircle2, MessageSquareText, PenLine, ShieldCheck, UserRound } from 'lucide-react';
+import { AdvancedExplanationPanel } from '@/components/app/advanced-explanation-panel';
 
-export const metadata = {
-  title: 'User Core | PRAXIS',
-  description: 'Build and maintain the analyst model PRAXIS uses for policy analysis.',
-};
-
-const readiness = [
-  { label: 'Role and institution', state: 'ready', detail: 'Who is asking, from what seat, and for what institutional purpose.' },
-  { label: 'Audience and output style', state: 'ready', detail: 'How briefings, memos, and recommendations should sound.' },
-  { label: 'Analytic lenses', state: 'partial', detail: 'Preferred frameworks, red lines, and confidence posture.' },
-  { label: 'Source and language posture', state: 'partial', detail: 'What to prefer, translate, avoid, or treat as sensitive.' },
-] as const;
-
-const builderSteps = [
-  {
-    label: 'Define the analyst',
-    href: '/app/settings/profile',
-    icon: UserCircle,
-    detail: 'Role, organization, seniority, region, and policy domains.',
-    cta: 'Edit profile',
-  },
-  {
-    label: 'Set working preferences',
-    href: '/app/settings/preferences',
-    icon: SlidersHorizontal,
-    detail: 'Recommendation depth, default formats, rhythm, and app behavior.',
-    cta: 'Tune preferences',
-  },
-  {
-    label: 'Set language and model posture',
-    href: '/app/settings/model-preferences',
-    icon: Languages,
-    detail: 'Preferred tone, translation needs, and model posture without provider clutter.',
-    cta: 'Set language',
-  },
-  {
-    label: 'Inspect prompt impact',
-    href: '/app/settings/profile',
-    icon: Eye,
-    detail: 'Review what PRAXIS will carry into Ask, tools, and drafting.',
-    cta: 'Inspect core',
-  },
-] as const;
-
-const promptCards = [
-  'Answer as a foreign policy analyst preparing a concise options note.',
-  'Keep confidence, assumptions, and evidence gaps visible before recommendations.',
-  'Use my preferred memo style and audience constraints before drafting.',
-] as const;
+const userSignals = [
+  { label: 'Identity', value: 'Analyst profile', status: 'ready' },
+  { label: 'Voice', value: 'Policy memo style', status: 'ready' },
+  { label: 'Preferences', value: 'Review before graph changes', status: 'ready' },
+];
 
 export default function UserCorePage() {
-  const readyCount = readiness.filter((item) => item.state === 'ready').length;
-  const readinessScore = Math.round((readyCount / readiness.length) * 100);
-
   return (
-    <main className="mx-auto flex max-w-7xl flex-col gap-6 pb-16">
-      <section className="overflow-hidden rounded-2xl border border-white/70 bg-white/85 shadow-xl shadow-navy-950/5 backdrop-blur">
-        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="p-6 sm:p-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">User Core Builder</p>
-            <h1 className="mt-3 max-w-4xl text-3xl font-semibold text-navy-950 sm:text-4xl">
-              Build the analyst model PRAXIS carries into every answer.
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-5 pb-16">
+      <section className="rounded-2xl border border-white/70 bg-white/90 p-5 shadow-sm shadow-navy-950/5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">User Core</p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-navy-950">
+              Set the analyst posture PRAXIS should use.
             </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-700">
-              User Core turns role, audience, lenses, writing style, source posture, and red lines into reusable context. Ask PRAXIS should not guess who you are or how your team works.
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              Choose the knowledge cores PRAXIS should use. Keep this page for direct edits to role, audience, tone, and review preferences.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/app/settings/profile"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-navy-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-navy-950/15 hover:bg-navy-800"
-              >
-                Maintain User Core
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/app/dashboard#ask-praxis"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-diplomatic-blue/30 bg-white px-5 py-3 text-sm font-semibold text-diplomatic-blue hover:bg-diplomatic-blue/5"
-              >
-                Attach to Ask PRAXIS
-                <MessageSquareText className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/app/write"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-gold-200 bg-white px-5 py-3 text-sm font-semibold text-gold-800 hover:bg-gold-50"
-              >
-                Attach to Write
-                <FileText className="h-4 w-4" />
-              </Link>
-            </div>
           </div>
-
-          <aside className="border-t border-navy-100 bg-navy-950 p-6 text-white lg:border-l lg:border-t-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-300">Readiness</p>
-            <div className="mt-4 flex items-end gap-3">
-              <span className="text-5xl font-semibold">{readinessScore}</span>
-              <span className="pb-2 text-sm text-navy-200">/ 100</span>
-            </div>
-            <p className="mt-3 text-sm leading-6 text-navy-100">
-              Strong enough for Ask PRAXIS. Improve lenses and source posture before sensitive drafting.
-            </p>
-            <div className="mt-5 space-y-2">
-              {readiness.map((item) => (
-                <div key={item.label} className="rounded-lg border border-white/10 bg-white/8 px-3 py-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-semibold">{item.label}</span>
-                    <span className={item.state === 'ready' ? 'text-xs font-semibold text-gold-300' : 'text-xs font-semibold text-amber-200'}>
-                      {item.state}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs leading-5 text-navy-200">{item.detail}</p>
-                </div>
-              ))}
-            </div>
-          </aside>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/app/settings/profile" className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-sm font-semibold text-white hover:bg-navy-800">
+              <PenLine className="h-4 w-4" />
+              Edit profile
+            </Link>
+            <Link href="/app/assistant" className="inline-flex items-center gap-2 rounded-md border border-gold-200 bg-gold-50 px-3 py-2 text-sm font-semibold text-gold-900 hover:bg-gold-100">
+              <MessageSquareText className="h-4 w-4" />
+              Open Ask
+            </Link>
+          </div>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {builderSteps.map((section, index) => {
-          const Icon = section.icon;
-          return (
-            <Link
-              key={section.href}
-              href={section.href}
-              className="group rounded-2xl border border-white/70 bg-white/75 p-5 shadow-sm shadow-navy-950/5 backdrop-blur transition hover:-translate-y-0.5 hover:border-navy-200 hover:bg-white"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-navy-950 text-white">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                  Step {index + 1}
-                </span>
-              </div>
-              <h2 className="mt-4 text-lg font-semibold text-navy-950">{section.label}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-700">{section.detail}</p>
-              <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-diplomatic-blue">
-                {section.cta}
-                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-              </span>
-            </Link>
-          );
-        })}
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,0.7fr)]">
-        <div className="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm shadow-navy-950/5 backdrop-blur">
+      <section className="grid gap-4 md:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="rounded-2xl border border-white/70 bg-white/90 p-5 shadow-sm shadow-navy-950/5">
           <div className="flex items-center gap-3">
-            <BrainCircuit className="h-5 w-5 text-gold-700" />
+            <UserRound className="h-5 w-5 text-diplomatic-blue" />
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-700">Prompt effects</p>
-              <h2 className="text-lg font-semibold text-navy-950">What this changes inside AI work</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">Active posture</p>
+              <h2 className="text-lg font-semibold text-navy-950">Senior policy analyst</h2>
             </div>
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            {promptCards.map((card) => (
-              <div key={card} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <BadgeCheck className="h-4 w-4 text-diplomatic-blue" />
-                <p className="mt-3 text-sm leading-6 text-slate-700">{card}</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {userSignals.map((signal) => (
+              <div key={signal.label} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{signal.label}</p>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                </div>
+                <p className="mt-2 text-sm font-semibold text-navy-950">{signal.value}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-gold-200 bg-gold-50 p-5 shadow-sm shadow-navy-950/5">
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="h-5 w-5 text-gold-800" />
-            <h2 className="text-lg font-semibold text-navy-950">Guardrail</h2>
-          </div>
-          <p className="mt-3 text-sm leading-6 text-slate-800">
-            User Core improves relevance, but it does not replace source review, case evidence, or owner scoping. Sensitive outputs should still run through the Situation Core and graph checks before export.
+        <aside className="rounded-2xl border border-gold-200 bg-gold-50 p-5 shadow-sm shadow-navy-950/5">
+          <ShieldCheck className="h-5 w-5 text-gold-900" />
+          <h2 className="mt-3 text-lg font-semibold text-navy-950">Ready for Ask</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-700">
+            The User Core is attached to the active stack and can be changed before drafting.
           </p>
-        </div>
+          <Link href="/app/contexts" className="mt-4 inline-flex rounded-md bg-white px-3 py-2 text-sm font-semibold text-navy-900 hover:bg-slate-50">
+            Manage stack
+          </Link>
+        </aside>
       </section>
+
+      <AdvancedExplanationPanel
+        items={[
+          {
+            title: 'What it stores',
+            body: 'Role, audience, writing style, uncertainty tolerance, and review preferences are kept as a user-owned core.',
+          },
+          {
+            title: 'How Ask uses it',
+            body: 'Ask PRAXIS includes this posture in turn capsules so answers inherit the right professional frame before tools run.',
+          },
+          {
+            title: 'Trust posture',
+            body: 'The User Core can require citation, uncertainty, and graph-review behavior without exposing route names in the UI.',
+          },
+          {
+            title: 'Maintenance',
+            body: 'Advanced settings keep persona, model, notification, and API preferences available without crowding the main workflow.',
+          },
+        ]}
+        actionHref="/app/settings/personas"
+        actionLabel="Open persona settings"
+      />
     </main>
   );
 }

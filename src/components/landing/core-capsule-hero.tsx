@@ -122,16 +122,17 @@ interface Mote {
 }
 
 const MOTE_LABELS = [
-  "UCDP", "GDELT", "ICG 2026", "FCDO brief",
-  "Cable 2024-08", "tacit · red lines", "UNHCR snapshot",
-  "intervention notes", "speech · 04-22", "tacit · audience",
-  "memo · Q2", "interview · Tunis", "OSINT · raw",
-  "Reuters", "ECFR brief", "tacit · lens",
+  "Sources",
+  "Documents",
+  "Notes",
+  "Receipts",
+  "Actors",
+  "Claims",
 ];
 
 function buildMotes(): Mote[] {
   const m: Mote[] = [];
-  for (let i = 0; i < 24; i += 1) {
+  for (let i = 0; i < 14; i += 1) {
     const side = i % 4; // 0 left, 1 right, 2 top, 3 bottom
     let startX = 0;
     let startY = 0;
@@ -255,7 +256,7 @@ export function CoreCapsuleHero({ staticMode = false, className }: CoreCapsuleHe
         "shadow-[0_20px_80px_-30px_rgba(7,12,22,0.55),0_4px_24px_-12px_rgba(7,12,22,0.35)]",
         className ?? "",
       ].join(" ")}
-      aria-label="Animated illustration: raw policy inputs crystallise into six context cores, fuse into one capsule, and synchronise across a hybrid team of humans and agents."
+      aria-label="Animated illustration: uploaded knowledge becomes six context cores, then Ask PRAXIS answers from the active capsule."
       role="img"
     >
       <svg

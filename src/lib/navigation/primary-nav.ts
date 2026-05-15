@@ -1,12 +1,10 @@
 /**
  * PRAXIS navigation map.
  *
- * The sidebar is grouped so a normal user sees a tiny "Workspace"
- * surface — the cores, Ask PRAXIS, the library, and the memo studio —
- * and everything heavier lives behind two collapsible sections at the
- * bottom: "Advanced" (canvas, all tools, dashboard) and
- * "Administration" (admin pages, settings). The backend keeps doing
- * the crazy work; the surface stays Apple-simple.
+ * The sidebar keeps the visible product contract small:
+ * Home, Ask PRAXIS, Library, Memo Studio, Canvas, and Advanced.
+ * Core builders, diagnostics, ACH, Boardroom, and specialist tools stay
+ * reachable through those surfaces instead of becoming competing nav areas.
  */
 
 export type PrimaryNavIcon =
@@ -47,20 +45,12 @@ export const NAV_GROUPS: readonly PrimaryNavGroup[] = [
     label: 'Workspace',
     defaultOpen: true,
     items: [
+      { id: 'home', label: 'Home', icon: 'Home', href: '/app/dashboard', shortcut: 'g h', hint: 'Choose or create context, then ask' },
       { id: 'ask', label: 'Ask PRAXIS', icon: 'Sparkles', href: '/app/assistant', shortcut: '/', hint: 'Reason from the active capsule' },
-      { id: 'cores', label: 'Cores', icon: 'Boxes', href: '/app/contexts', shortcut: 'g c', hint: 'User, Situation, Source, Graph, Time, Output' },
-      { id: 'library', label: 'Library', icon: 'LibraryBig', href: '/app/workbench', shortcut: 'g l', hint: 'Sources, documents, tacit notes' },
-      { id: 'write', label: 'Memo Studio', icon: 'FileText', href: '/app/write', shortcut: 'g m', hint: 'Draft grounded memos and ship capsules' },
-    ],
-  },
-  {
-    id: 'advanced',
-    label: 'Advanced',
-    defaultOpen: false,
-    items: [
-      { id: 'home', label: 'Home', icon: 'Home', href: '/app/dashboard', shortcut: 'g h', hint: 'Overview dashboard' },
-      { id: 'canvas', label: 'Canvas', icon: 'Network', href: '/app/canvas', shortcut: 'g v', hint: 'Spatial graph + claim view' },
-      { id: 'tools', label: 'Tools', icon: 'Wrench', href: '/app/tools', shortcut: 'g a', hint: 'Canonical and specialist tool surfaces' },
+      { id: 'library', label: 'Library', icon: 'LibraryBig', href: '/app/workbench', shortcut: 'g l', hint: 'Upload sources and documents into knowledge cores' },
+      { id: 'write', label: 'Memo Studio', icon: 'FileText', href: '/app/write', shortcut: 'g m', hint: 'Draft from the active context' },
+      { id: 'canvas', label: 'Canvas', icon: 'Network', href: '/app/canvas', shortcut: 'g v', hint: 'Inspect or arrange context when needed' },
+      { id: 'advanced', label: 'Advanced', icon: 'Wrench', href: '/app/tools', shortcut: 'g a', hint: 'Detailed tools, diagnostics, graph, ACH, and settings' },
     ],
   },
   {

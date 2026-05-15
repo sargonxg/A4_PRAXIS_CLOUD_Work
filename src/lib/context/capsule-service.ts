@@ -41,7 +41,7 @@ export interface CapsuleCoreRefs {
 }
 
 export interface CapsuleProvenance {
-  source: 'created' | 'context-stack-migration' | 'fork' | 'api';
+  source: 'created' | 'context-stack-migration' | 'fork' | 'combine' | 'api';
   createdBy: string;
   parentCapsuleId: string | null;
   forkedFromVersion: number | null;
@@ -76,6 +76,26 @@ export interface CreateCapsuleInput {
   retrievalPolicy?: Partial<ContextRetrievalPolicy>;
   activeForSituationIds?: string[];
   provenance?: Partial<CapsuleProvenance>;
+}
+
+export interface CapsuleCombineConflict {
+  slot: keyof CapsuleCoreRefs;
+  kept: string;
+  alternatives: string[];
+}
+
+export interface CombineCapsulesInput {
+  capsuleIds: string[];
+  capsuleId?: string;
+  label?: string;
+  scope?: CapsuleScope;
+  activateForSituationIds?: string[];
+}
+
+export interface CombineCapsulesResult {
+  capsule: PraxisCapsule;
+  parentCapsuleIds: string[];
+  conflicts: CapsuleCombineConflict[];
 }
 
 export interface CapsuleServiceDeps {
@@ -315,6 +335,44 @@ export async function forkCapsule(
   }, deps);
 }
 
+export async function combineCapsules(
+  uid: string,
+  input: CombineCapsulesInput,
+  deps?: CapsuleServiceDeps,
+): Promise<CombineCapsulesResult | null> {
+  const parentIds = uniqueStrings(cleanStringArray(input.capsuleIds)).slice(0, 10);
+  if (parentIds.length < 2) return null;
+  const parents = (await Promise.all(parentIds.map((capsuleId) => getCapsule(uid, capsuleId, deps))))
+    .filter((capsule): capsule is PraxisCapsule => Boolean(capsule));
+  if (parents.length !== parentIds.length) return null;
+
+  const { coreRefs, conflicts } = mergeCapsuleCoreRefs(parents.map((capsule) => capsule.coreRefs));
+  const activeForSituationIds = cleanStringArray(input.activateForSituationIds);
+  const capsule = await createCapsule(uid, {
+    capsuleId: input.capsuleId,
+    label: input.label ?? `Combined: ${parents.map((parent) => parent.label).slice(0, 2).join(' + ')}`,
+    scope: input.scope ?? inferScope(coreRefs),
+    coreRefs,
+    retrievalPolicy: mergeRetrievalPolicies(parents.map((parent) => parent.retrievalPolicy)),
+    activeForSituationIds: activeForSituationIds.length
+      ? activeForSituationIds
+      : uniqueStrings(parents.flatMap((parent) => parent.activeForSituationIds)),
+    provenance: {
+      source: 'combine',
+      createdBy: uid,
+      parentCapsuleId: parents[0]?.capsuleId ?? null,
+      forkedFromVersion: parents[0]?.version ?? null,
+      notes: `Combined from ${parents.map((parent) => `${parent.capsuleId}@v${parent.version}`).join(', ')}.`,
+    },
+  }, deps);
+
+  return {
+    capsule,
+    parentCapsuleIds: parents.map((parent) => parent.capsuleId),
+    conflicts,
+  };
+}
+
 export async function bumpCapsuleVersion(
   uid: string,
   capsuleId: string,
@@ -458,7 +516,7 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     activeForSituationIds: cleanStringArray(body.activeForSituationIds).slice(0, 50),
     lockedCoreKinds: uniqueLockKinds(cleanStringArray(body.lockedCoreKinds)),
     provenance: {
-      source: provenanceBody.source === 'context-stack-migration' || provenanceBody.source === 'fork' || provenanceBody.source === 'api' || provenanceBody.source === 'created'
+      source: provenanceBody.source === 'context-stack-migration' || provenanceBody.source === 'fork' || provenanceBody.source === 'combine' || provenanceBody.source === 'api' || provenanceBody.source === 'created'
         ? provenanceBody.source
         : 'created',
       createdBy: stringOrNull(provenanceBody.createdBy) ?? ownerUid,
@@ -511,6 +569,51 @@ function normalizeRetrievalPolicy(input: Partial<ContextRetrievalPolicy> | unkno
     freshnessWindowDays: typeof body.freshnessWindowDays === 'number'
       ? Math.max(1, Math.min(3650, Math.floor(body.freshnessWindowDays)))
       : DEFAULT_RETRIEVAL_POLICY.freshnessWindowDays,
+  };
+}
+
+function mergeRetrievalPolicies(policies: ContextRetrievalPolicy[]): ContextRetrievalPolicy {
+  const layers = uniqueStrings(policies.flatMap((policy) => policy.layers)) as ContextRetrievalPolicy['layers'];
+  const limit = Math.max(...policies.map((policy) => policy.limit), DEFAULT_RETRIEVAL_POLICY.limit);
+  const freshnessWindows = policies
+    .map((policy) => policy.freshnessWindowDays)
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+  const freshnessWindowDays = Math.min(
+    ...freshnessWindows,
+    DEFAULT_RETRIEVAL_POLICY.freshnessWindowDays,
+  );
+  return normalizeRetrievalPolicy({
+    layers,
+    limit,
+    checkFreshness: policies.some((policy) => policy.checkFreshness),
+    freshnessWindowDays,
+  });
+}
+
+function mergeCapsuleCoreRefs(refs: CapsuleCoreRefs[]): { coreRefs: CapsuleCoreRefs; conflicts: CapsuleCombineConflict[] } {
+  const conflicts: CapsuleCombineConflict[] = [];
+  const pickSingle = (slot: keyof CapsuleCoreRefs): string | null => {
+    const values = uniqueStrings(refs.map((item) => item[slot]).filter((value): value is string => typeof value === 'string' && value.length > 0));
+    if (values.length > 1) conflicts.push({ slot, kept: values[0] ?? '', alternatives: values.slice(1) });
+    return values[0] ?? null;
+  };
+  return {
+    coreRefs: normalizeCoreRefs({
+      userCoreId: pickSingle('userCoreId'),
+      teamCoreId: pickSingle('teamCoreId'),
+      situationCoreId: pickSingle('situationCoreId'),
+      pathCoreId: pickSingle('pathCoreId'),
+      sourceCoreIds: uniqueStrings(refs.flatMap((item) => item.sourceCoreIds)),
+      documentCoreIds: uniqueStrings(refs.flatMap((item) => item.documentCoreIds)),
+      graphCoreId: pickSingle('graphCoreId'),
+      timeCoreId: pickSingle('timeCoreId'),
+      outputCoreIds: uniqueStrings(refs.flatMap((item) => item.outputCoreIds)),
+      toolCoreIds: uniqueStrings(refs.flatMap((item) => item.toolCoreIds ?? [])),
+      objectiveCoreIds: uniqueStrings(refs.flatMap((item) => item.objectiveCoreIds ?? [])),
+      productCoreIds: uniqueStrings(refs.flatMap((item) => item.productCoreIds ?? [])),
+      memoryCoreId: pickSingle('memoryCoreId'),
+    }),
+    conflicts,
   };
 }
 

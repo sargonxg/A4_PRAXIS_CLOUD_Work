@@ -23,8 +23,8 @@ test('landing renders hero animation, static fallback, and 3D ontology graph', a
   const consoleErrors = collectConsoleErrors(page);
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /PRAXIS builds inheritable policy cores\./i })).toBeVisible();
-  await expect(page.getByText(/Open Ask PRAXIS and work from the active core stack/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Build the right context for policy AI\./i })).toBeVisible();
+  await expect(page.getByText(/Build the cores\. Ask from them\. Ship grounded work\./i)).toBeVisible();
   await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toBeVisible();
 
   const realApp = page.locator('#real-app');
@@ -33,7 +33,7 @@ test('landing renders hero animation, static fallback, and 3D ontology graph', a
   await expect(realApp.getByText(/inherited cores, temporal readiness, source receipts, graph proposals, and analyst review/i)).toBeVisible();
 
   await page.goto('/?staticHero=1');
-  await expect(page.getByRole('heading', { name: /PRAXIS builds inheritable policy cores\./i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Build the right context for policy AI\./i })).toBeVisible();
   await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toBeVisible();
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
@@ -140,7 +140,7 @@ test('workbench case picker uses readable copy contrast', async ({ page }) => {
   await openExampleWorkbench(page, 'syria-2026');
   await page.goto('/app/workbench');
   await expect(page).toHaveURL(/\/app\/dashboard$/);
-  const intro = page.getByText(/Ask PRAXIS starts from (?:the selected user core and situation core|[^.]+ and [^.]+)\./i);
+  const intro = page.getByText(/Active context:|Create or choose a context/i).first();
   await expect(intro).toBeVisible();
 
   const color = await intro.evaluate((element) => getComputedStyle(element).color);

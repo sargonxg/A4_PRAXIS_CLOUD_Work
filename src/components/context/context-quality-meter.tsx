@@ -12,11 +12,14 @@ interface ContextQualityMeterProps {
 
 export function ContextQualityMeter({ report, className }: ContextQualityMeterProps) {
   const visibleSignals = SIGNAL_IDS.map((id) => report.signals.find((signal) => signal.id === id)).filter(Boolean) as ContextHealthSignal[];
-  const action = report.nextActions[0] ?? {
+  const actions = (report.nextActions.length ? report.nextActions : [{
+    id: 'ask-context',
     label: 'Ask PRAXIS',
     detail: 'Reason with the active context.',
     href: '/app/assistant',
-  };
+    priority: 'optional' as const,
+  }]).slice(0, 3);
+  const primaryAction = actions[0];
 
   return (
     <section className={cn('rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5', className)}>
@@ -28,7 +31,7 @@ export function ContextQualityMeter({ report, className }: ContextQualityMeterPr
             <p className="text-sm font-semibold text-slate-700">/100 · {report.label}</p>
           </div>
         </div>
-        <Link href={action.href} className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-xs font-semibold text-white hover:bg-navy-800">
+        <Link href={primaryAction.href} className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-xs font-semibold text-white hover:bg-navy-800">
           Improve context
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
@@ -54,7 +57,24 @@ export function ContextQualityMeter({ report, className }: ContextQualityMeterPr
           </div>
         ))}
       </div>
-      <p className="mt-3 text-xs leading-5 text-slate-600">{action.detail}</p>
+      <div className="mt-3 space-y-2">
+        {actions.map((action, index) => (
+          <Link
+            key={action.id}
+            href={action.href}
+            className={cn(
+              'flex items-start gap-2 rounded-md border px-3 py-2 text-xs leading-5 transition',
+              index === 0 ? 'border-gold-200 bg-gold-50 text-navy-950 hover:bg-gold-100' : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-white',
+            )}
+          >
+            <span className="mt-0.5 font-semibold tabular-nums text-gold-800">{index + 1}</span>
+            <span>
+              <span className="block font-semibold">{action.label}</span>
+              <span className="block text-slate-600">{action.detail}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
     </section>
   );
 }

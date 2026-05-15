@@ -8,8 +8,8 @@ test.describe('authenticated core stack', () => {
 
     await expect(page.getByTestId('praxis-workspace-shell')).toBeVisible();
     await expect(page.getByTestId('core-library-panel')).toBeVisible();
-    await expect(page.getByText(/User Cores/i).first()).toBeVisible();
-    await expect(page.getByText(/Situation Cores/i).first()).toBeVisible();
+    await expect(page.getByText(/Choose context\. Ask PRAXIS\./i).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /Create context/i }).first()).toBeVisible();
     await expect(page.getByText(/Drafting workbench/i).first()).toBeVisible();
   });
 });

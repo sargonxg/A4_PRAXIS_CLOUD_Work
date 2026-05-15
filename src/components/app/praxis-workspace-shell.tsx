@@ -16,7 +16,6 @@ import {
   Plus,
   Sparkles,
   Star,
-  Target,
   Wrench,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -360,7 +359,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
           <div className="p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="max-w-4xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Ask PRAXIS</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Home</p>
                 <h1 className="mt-2 text-3xl font-semibold tracking-tight text-navy-950 sm:text-4xl">
                   {workspaceLens.pageTitle}
                 </h1>
@@ -370,18 +369,25 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Link
-                  href="/app/cores/user"
-                  className="inline-flex items-center gap-2 rounded-md border border-diplomatic-blue/25 bg-white px-3 py-2 text-sm font-semibold text-diplomatic-blue hover:bg-diplomatic-blue/5"
+                  href="/app/assistant"
+                  className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-sm font-semibold text-white hover:bg-navy-800"
                 >
-                  <Target className="h-4 w-4" />
-                  User Cores
+                  <MessageSquareText className="h-4 w-4" />
+                  Ask from context
                 </Link>
                 <Link
-                  href="/app/cores/context"
+                  href="/app/situations/new"
                   className="inline-flex items-center gap-2 rounded-md border border-gold-200 bg-white px-3 py-2 text-sm font-semibold text-gold-800 hover:bg-gold-50"
                 >
                   <FolderKanban className="h-4 w-4" />
-                  Situation Cores
+                  Create context
+                </Link>
+                <Link
+                  href="/app/workbench?tab=library"
+                  className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-navy-800 hover:bg-slate-50"
+                >
+                  <LibraryBig className="h-4 w-4" />
+                  Add sources
                 </Link>
               </div>
             </div>
@@ -432,7 +438,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
           </div>
 
           <aside className="border-t border-navy-100 bg-navy-950 p-5 text-white xl:border-l xl:border-t-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-300">Workspace posture</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-300">Active context</p>
             <h2 className="mt-2 text-xl font-semibold">{workspaceLens.sidebarTitle}</h2>
             <p className="mt-3 text-sm leading-6 text-navy-100">{workspaceLens.sidebarCopy}</p>
 
@@ -445,7 +451,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
             <div className="mt-5 rounded-lg border border-white/10 bg-white/8 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase text-navy-200">Inherited work</p>
+              <p className="text-xs font-semibold uppercase text-navy-200">Advanced handover</p>
                   <h3 className="mt-1 text-base font-semibold text-white">{workspaceLens.inheritanceTitle}</h3>
                 </div>
                 <BookOpenText className="h-5 w-5 text-gold-300" />
@@ -476,7 +482,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">Core library</p>
-              <h2 className="mt-1 text-xl font-semibold text-navy-950">Select, fork, and manage User Cores and Situation Cores.</h2>
+              <h2 className="mt-1 text-xl font-semibold text-navy-950">Maintain the cores behind the active context.</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               <Link href="/app/cores/user" className="inline-flex items-center gap-2 rounded-md border border-diplomatic-blue/25 bg-white px-3 py-2 text-sm font-semibold text-diplomatic-blue hover:bg-diplomatic-blue/5">
@@ -493,7 +499,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold text-navy-950">User Cores</h3>
+                <h3 className="text-sm font-semibold text-navy-950">User posture</h3>
                 <span className="text-xs text-slate-500">{userLibrary.length} available</span>
               </div>
               <div className="mt-3 space-y-2">
@@ -515,7 +521,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold text-navy-950">Situation Cores</h3>
+                <h3 className="text-sm font-semibold text-navy-950">Specific contexts</h3>
                 <span className="text-xs text-slate-500">{workspaceCases.length} available</span>
               </div>
               <div className="mt-3 space-y-2">
@@ -872,13 +878,11 @@ function buildWorkspaceLens(userModel: UserModelRecord, selectedCase: WorkspaceC
       ? 'Lead with the question, map the policy tradeoffs, and keep the recommendation tight enough for a staffer or principal.'
       : 'Lead with the situation, actors, sources, and policy options. Keep caveats visible and evidence first.';
 
-  const pageTitle = selectedCase
-    ? `${selectedCase.name} workbench`
-    : 'PRAXIS workbench';
+  const pageTitle = 'Choose context. Ask PRAXIS.';
 
   const pageCopy = selectedCase
-    ? `Ask PRAXIS starts from ${userModel.identity} and ${selectedCase.name}. The page keeps the user core, situation core, summary, source library, and drafting workbench together so the analysis stays in one place.`
-    : `Ask PRAXIS starts from the selected user core and situation core. The page keeps the summary, source library, and drafting workbench together so the analysis stays in one place.`;
+    ? `Active context: ${selectedCase.name}. PRAXIS will answer as ${userModel.identity} with the attached sources, graph posture, and memo target.`
+    : `Create or choose a context, attach sources, then ask from the active core stack.`;
 
   const sidebarTitle = selectedCase
     ? `${selectedCase.region} · ${selectedCase.risk} risk`

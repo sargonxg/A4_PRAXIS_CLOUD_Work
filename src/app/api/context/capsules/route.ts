@@ -4,6 +4,7 @@ import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
 import {
   activateCapsule,
+  combineCapsules,
   createCapsule,
   forkCapsule,
   listCapsules,
@@ -57,6 +58,15 @@ const ActivateSchema = z.object({
   situationId: z.string().min(1).optional(),
 });
 
+const CombineSchema = z.object({
+  action: z.literal('combine'),
+  capsuleIds: z.array(z.string().min(1)).min(2).max(10),
+  combinedCapsuleId: z.string().min(1).max(120).optional(),
+  label: z.string().min(1).max(160).optional(),
+  scope: z.enum(['user', 'situation', 'team']).optional(),
+  activateForSituationIds: z.array(z.string().min(1)).optional(),
+});
+
 export const GET = withAuth(async (request, user) => {
   try {
     if (user.isDemo) return NextResponse.json({ capsules: [], persisted: false });
@@ -96,6 +106,19 @@ export const POST = withAuth(async (request, user) => {
       });
       if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
       return NextResponse.json({ capsule }, { status: 201 });
+    }
+
+    const combineParsed = CombineSchema.safeParse(raw);
+    if (combineParsed.success) {
+      const result = await combineCapsules(user.uid, {
+        capsuleIds: combineParsed.data.capsuleIds,
+        capsuleId: combineParsed.data.combinedCapsuleId,
+        label: combineParsed.data.label,
+        scope: combineParsed.data.scope,
+        activateForSituationIds: combineParsed.data.activateForSituationIds,
+      });
+      if (!result) return NextResponse.json({ error: 'Capsules not found or not enough capsules to combine' }, { status: 404 });
+      return NextResponse.json(result, { status: 201 });
     }
 
     const parsed = CreateSchema.safeParse(raw);

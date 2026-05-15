@@ -4,6 +4,7 @@ import {
   archiveCapsule,
   attachCapsuleRefs,
   bumpCapsuleVersion,
+  combineCapsules,
   createCapsule,
   detachCapsuleRefs,
   forkCapsule,
@@ -61,6 +62,51 @@ describe('capsule service', () => {
     expect(fork?.forkedFromVersion).toBe(parent.version);
     expect(fork?.provenance.source).toBe('fork');
     expect(fork?.activeForSituationIds).toEqual([]);
+  });
+
+  it('combines capsules by deduping refs and recording single-slot conflicts', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', {
+      capsuleId: 'cap-a',
+      label: 'Policy frame',
+      coreRefs: {
+        userCoreId: 'user-1',
+        situationCoreId: 'sit-1',
+        sourceCoreIds: ['src-1', 'src-2'],
+        documentCoreIds: ['doc-1'],
+        outputCoreIds: ['memo'],
+      },
+      activeForSituationIds: ['sit-1'],
+    }, deps(db));
+    await createCapsule('u1', {
+      capsuleId: 'cap-b',
+      label: 'Legal frame',
+      coreRefs: {
+        userCoreId: 'user-2',
+        situationCoreId: 'sit-1',
+        sourceCoreIds: ['src-2', 'src-3'],
+        documentCoreIds: ['doc-2'],
+        graphCoreId: 'graph-1',
+        outputCoreIds: ['brief'],
+      },
+      activeForSituationIds: ['sit-1'],
+    }, deps(db));
+
+    const result = await combineCapsules('u1', {
+      capsuleIds: ['cap-a', 'cap-b'],
+      capsuleId: 'cap-combined',
+      label: 'Working combined capsule',
+    }, deps(db));
+
+    expect(result?.capsule.capsuleId).toBe('cap-combined');
+    expect(result?.parentCapsuleIds).toEqual(['cap-a', 'cap-b']);
+    expect(result?.capsule.provenance.source).toBe('combine');
+    expect(result?.capsule.provenance.notes).toContain('cap-a@v1, cap-b@v1');
+    expect(result?.capsule.coreRefs.sourceCoreIds).toEqual(['src-1', 'src-2', 'src-3']);
+    expect(result?.capsule.coreRefs.documentCoreIds).toEqual(['doc-1', 'doc-2']);
+    expect(result?.capsule.coreRefs.outputCoreIds).toEqual(['memo', 'brief']);
+    expect(result?.capsule.coreRefs.graphCoreId).toBe('graph-1');
+    expect(result?.conflicts).toEqual([{ slot: 'userCoreId', kept: 'user-1', alternatives: ['user-2'] }]);
   });
 
   it('bumps versions and can activate one capsule per situation', async () => {

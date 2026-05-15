@@ -59,9 +59,9 @@ export function AskHomepage({
           <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-navy-900">Work links</h2>
             <div className="mt-3 grid gap-2">
-              <UtilityLink icon={Search} href="/app/tools" label="Suggested Tools" />
-              <UtilityLink icon={Layers3} href="/app/cores/context" label="Manage Situation Cores" />
-              <UtilityLink icon={UserRound} href="/app/cores/user" label="Manage User Cores" />
+              <UtilityLink icon={Search} href="/app/tools" label="Advanced actions" />
+              <UtilityLink icon={Layers3} href="/app/contexts" label="Manage stack" />
+              <UtilityLink icon={UserRound} href="/app/cores/user" label="Edit user core" />
               <UtilityLink icon={FileText} href="/app/workbench?openChapter=memos" label="Memo Output" />
               <UtilityLink icon={BookOpen} href="/app/dashboard" label="Dashboard" />
             </div>

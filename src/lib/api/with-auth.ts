@@ -67,7 +67,13 @@ async function checkRateLimit(uid: string): Promise<boolean> {
   }
 }
 
-export function withAuth<TContext = unknown>(
+export function withAuth(
+  handler: (req: Request, user: AuthenticatedUser) => Promise<Response>
+): (req: Request) => Promise<Response>;
+export function withAuth<TContext>(
+  handler: (req: Request, user: AuthenticatedUser, context: TContext) => Promise<Response>
+): (req: Request, context: TContext) => Promise<Response>;
+export function withAuth<TContext>(
   handler: (req: Request, user: AuthenticatedUser, context: TContext) => Promise<Response>
 ) {
   return async (req: Request, context?: TContext) => {

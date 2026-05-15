@@ -51,6 +51,27 @@ describe('context health', () => {
       'attach-sources',
     ]);
   });
+
+  it('keeps next actions to the three smallest deterministic fixes', () => {
+    const report = buildContextHealthReport({
+      hasUserCore: true,
+      hasSituationCore: true,
+      sourceCount: 0,
+      actorCount: 0,
+      hasTimeline: false,
+      evidenceGapCount: 5,
+      hasDraft: false,
+      situationHref: '/app/workbench/context-1?tab=library',
+    });
+
+    expect(report.nextActions).toHaveLength(3);
+    expect(report.nextActions.map((action) => action.id)).toEqual([
+      'attach-sources',
+      'map-actors',
+      'repair-timeline',
+    ]);
+    expect(report.nextActions.every((action) => action.href !== '/app/tools' || action.id === 'map-actors')).toBe(true);
+  });
 });
 
 describe('active context stack', () => {

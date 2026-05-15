@@ -17,8 +17,6 @@ import { motion, useReducedMotion } from "framer-motion";
 import { CoreCapsuleHero } from "./core-capsule-hero";
 import { ContextCapsulePreview } from "@/components/context/context-capsule-preview";
 import { PolicyTicker } from "./policy-ticker";
-import { RotatingHeadline } from "./rotating-headline";
-import { PathOperatorOrbit } from "./path-operator-orbit";
 import { SpecimenCard, SpecimenGrid, type CoreSpecimenKind } from "@/components/cores/specimen-card";
 
 const SPECIMENS: ReadonlyArray<{
@@ -155,7 +153,6 @@ export function Phase8WowLanding() {
   return (
     <main className="bg-[#F6F8FB] text-[#111827]">
       <section id="core-stack" className="relative overflow-hidden border-b border-slate-200 bg-white">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(232,185,49,0.07),transparent_60%),radial-gradient(ellipse_at_bottom_left,rgba(15,23,42,0.04),transparent_55%)]" />
         <div className="relative mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(440px,1.05fr)] lg:px-8">
           <div>
             <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#8A5A00]">
@@ -163,12 +160,14 @@ export function Phase8WowLanding() {
               <span aria-hidden className="h-px w-6 bg-slate-300" />
               <span>PRAXIS by TACITUS</span>
             </p>
-            <RotatingHeadline className="mt-4" />
+            <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+              Build the right context for policy AI.
+            </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:text-lg">
-              Six structured cores — User, Situation, Source, Graph, Time, Output — package the tacit knowledge that makes your judgement work. Hand them to a teammate, an agent, or your future self.
+              Upload knowledge, form six cores, and ask PRAXIS from the context your work actually needs.
             </p>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Built from practitioner experience in multilateral diplomacy: hybrid teams need shared posture, not shared prompts. PRAXIS keeps the substrate visible — source receipts, temporal readiness, graph proposals, and analyst handover all stay reviewable.
+              The visible workflow stays simple: choose a context, attach sources, then draft or review grounded work.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
@@ -178,25 +177,19 @@ export function Phase8WowLanding() {
                 Open Ask workspace
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link
-                href="/pricing"
-                className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-500"
-              >
-                Compare plans
-              </Link>
             </div>
             <dl className="mt-9 grid max-w-xl grid-cols-3 gap-4 border-t border-slate-200 pt-6 text-[11px] uppercase tracking-[0.18em] text-slate-500">
               <div>
-                <dt className="font-semibold text-[#8A5A00]">Six cores</dt>
-                <dd className="mt-1 normal-case tracking-normal text-slate-700">One capsule, ready to ship.</dd>
+                <dt className="font-semibold text-[#8A5A00]">Upload</dt>
+                <dd className="mt-1 normal-case tracking-normal text-slate-700">Documents and sources once.</dd>
               </div>
               <div>
-                <dt className="font-semibold text-[#8A5A00]">Hybrid teams</dt>
-                <dd className="mt-1 normal-case tracking-normal text-slate-700">Humans and agents subscribed.</dd>
+                <dt className="font-semibold text-[#8A5A00]">Form cores</dt>
+                <dd className="mt-1 normal-case tracking-normal text-slate-700">User, situation, source, graph, time, output.</dd>
               </div>
               <div>
-                <dt className="font-semibold text-[#8A5A00]">Trust strata</dt>
-                <dd className="mt-1 normal-case tracking-normal text-slate-700">Receipts, time, graph in view.</dd>
+                <dt className="font-semibold text-[#8A5A00]">Ask</dt>
+                <dd className="mt-1 normal-case tracking-normal text-slate-700">Answers inherit the stack.</dd>
               </div>
             </dl>
           </div>
@@ -215,15 +208,6 @@ export function Phase8WowLanding() {
               href="/app/assistant"
               className="mt-4"
             />
-            <div className="mt-6 flex flex-col items-center gap-4 lg:flex-row lg:items-start lg:gap-6">
-              <PathOperatorOrbit />
-              <p className="max-w-xs text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                Live composite — context capsule for{' '}
-                <span className="font-semibold text-slate-700">Indo-Pacific 2026</span>, shared
-                across a hybrid team. Six cores orbit a 7th — the operator{' '}
-                <span className="font-semibold text-[#8A5A00]">Path</span>.
-              </p>
-            </div>
           </div>
         </div>
       </section>
@@ -231,10 +215,10 @@ export function Phase8WowLanding() {
       <section id="methods" className="border-b border-slate-200 bg-[#F6F8FB] px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">How PRAXIS builds policy knowledge</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Capture, structure, ground, hand over. Layer by layer.</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">How it works</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Build the cores. Ask from them. Ship grounded work.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Policy teams do not need another chatbot. They need to build inheritable knowledge — context that travels with the work, structure that reflects expert judgement, and receipts that survive the next reviewer.
+              PRAXIS keeps the first workflow short and pushes the deeper graph, review, and tool controls into Advanced.
             </p>
           </div>
           <div className="mt-7 grid gap-4 lg:grid-cols-4">
@@ -261,10 +245,7 @@ export function Phase8WowLanding() {
               </h2>
               <div className="mt-4 max-w-3xl space-y-3 text-sm leading-6 text-slate-700">
                 <p>
-                  PRAXIS treats context as infrastructure, not as a longer prompt. A capsule is the durable policy artefact that travels between desks, tools, agents, and drafts. Inside it, each core is an inspectable brick: who the user is, what situation they are working on, which method they are applying, what evidence is attached, what graph of claims exists, what time horizon governs the work, and what product must be produced.
-                </p>
-                <p>
-                  That matters in AI and policy because judgement is never context-free. Statecraft, diplomacy, conflict analysis, sanctions work, humanitarian planning, and negotiation all depend on mandate, audience, sources, time, and institutional memory. PRAXIS lets those details be added, swapped, reviewed, forked, and inherited so a discussion does not restart from zero every time a new question, memo, or analyst enters the room.
+                  A capsule is the durable policy artifact: who is asking, what situation they mean, which evidence is attached, what graph is under review, what time horizon applies, and what output should be produced.
                 </p>
               </div>
             </div>
@@ -385,7 +366,7 @@ export function Phase8WowLanding() {
         <div className="mx-auto flex max-w-7xl flex-col gap-4 rounded-lg border border-slate-200 bg-[#F9FBFC] p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8A5A00]">Start with context</p>
-            <h2 className="mt-1 text-2xl font-semibold text-slate-950">Open Ask PRAXIS and work from the active core stack.</h2>
+            <h2 className="mt-1 text-2xl font-semibold text-slate-950">Ask PRAXIS from the active context.</h2>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/app/assistant" className="inline-flex items-center gap-2 rounded-md bg-[#111827] px-5 py-3 text-sm font-semibold text-white">

@@ -16,7 +16,7 @@ const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 test.describe('public surface smoke', () => {
   test('landing page renders the current landing pitch', async ({ page }) => {
     await page.goto(`${BASE}/`);
-    await expect(page.getByRole('heading', { name: /PRAXIS builds inheritable policy cores\./i })).toBeVisible({
+    await expect(page.getByRole('heading', { name: /Build the right context for policy AI\./i })).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toHaveAttribute('href', '/app/assistant');
