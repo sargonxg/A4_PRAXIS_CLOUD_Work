@@ -103,9 +103,9 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
   await page.getByRole('button', { name: /^Tools$/i }).click();
   await expect(page.getByTestId('workbench-tools-surface')).toBeVisible();
   await expect(page.getByTestId('tool-marketplace')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Recipe library$/i })).toBeVisible();
-  await expect(page.getByText(/Recommended for this case/i)).toBeVisible();
-  await expect(page.getByTestId('tool-marketplace').getByText(/DIALECTICA recipes/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /The right tools for this Situation Core/i })).toBeVisible();
+  await expect(page.getByText(/Suggested now/i)).toBeVisible();
+  await expect(page.getByTestId('tool-marketplace').getByText(/Canonical tool library/i)).toBeVisible();
 
   const memosSurface = page.getByTestId('workbench-memos-surface');
   if (!(await memosSurface.isVisible().catch(() => false))) {
@@ -117,19 +117,17 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
   await expect(memosSurface.getByRole('link', { name: /Policy memo/i })).toBeVisible();
 
   await page.getByRole('button', { name: /^Draft$/i }).click();
-  await expect(page.getByTestId('workbench-draft-surface')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Briefing Assembly$/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Memos Selection$/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Cover Page$/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Appendices$/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Redaction Settings$/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Export Controls$/i })).toBeVisible();
+  const draftSurface = page.getByTestId('workbench-draft-surface');
+  await expect(draftSurface).toBeVisible();
+  await expect(draftSurface.getByLabel(/Document title/i)).toHaveValue(/Working draft/i);
+  await expect(draftSurface.getByRole('heading', { name: /^Memo outline$/i })).toBeVisible();
+  await expect(draftSurface.locator('p').filter({ hasText: /^Context health$/ })).toBeVisible();
+  await expect(draftSurface.getByText(/Evidence Gap Finder/i)).toBeVisible();
   const download = await Promise.all([
     page.waitForEvent('download'),
-    page.getByRole('button', { name: /^Export package$/i }).click(),
+    draftSurface.getByRole('button', { name: /^Markdown$/i }).click(),
   ]).then(([file]) => file);
-  expect(download.suggestedFilename()).toContain('briefing-package');
-  await expect(page.getByText(/Export manifest persisted|Demo export manifest generated|Download prepared locally/i)).toBeVisible();
+  expect(download.suggestedFilename()).toContain('policy-memo');
 
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });

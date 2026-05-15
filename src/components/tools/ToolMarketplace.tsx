@@ -28,7 +28,7 @@ export function ToolMarketplace() {
   });
 
   return (
-    <section className="space-y-5" data-testid="canonical-workbench-tools">
+    <section className="space-y-5" data-testid="tool-marketplace">
       <header className="rounded-lg border border-diplomatic-blue/20 bg-white p-5 shadow-sm shadow-navy-950/5">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Attachable tools</p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">

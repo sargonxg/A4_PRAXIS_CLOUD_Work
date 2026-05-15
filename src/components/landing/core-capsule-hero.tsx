@@ -44,6 +44,8 @@ const CREAM = "#F4ECD8";
 const AMBER = "#D6863A";
 const APPROVED = "#5FB082";
 
+const svgNumber = (value: number) => Number(value.toFixed(3));
+
 type CoreId = "user" | "situation" | "source" | "graph" | "time" | "output";
 
 interface CoreSlot {
@@ -1042,10 +1044,10 @@ function TimeInner({ tint, t }: { tint: string; t: number }) {
         return (
           <line
             key={i}
-            x1={Math.cos(a) * 32}
-            y1={Math.sin(a) * 32}
-            x2={Math.cos(a) * 36}
-            y2={Math.sin(a) * 36}
+            x1={svgNumber(Math.cos(a) * 32)}
+            y1={svgNumber(Math.sin(a) * 32)}
+            x2={svgNumber(Math.cos(a) * 36)}
+            y2={svgNumber(Math.sin(a) * 36)}
             stroke={tint}
             strokeOpacity={0.7}
             strokeWidth={0.6}
@@ -1055,8 +1057,8 @@ function TimeInner({ tint, t }: { tint: string; t: number }) {
       <line
         x1={0}
         y1={0}
-        x2={Math.cos((angle1 - 90) * Math.PI / 180) * 30}
-        y2={Math.sin((angle1 - 90) * Math.PI / 180) * 30}
+        x2={svgNumber(Math.cos((angle1 - 90) * Math.PI / 180) * 30)}
+        y2={svgNumber(Math.sin((angle1 - 90) * Math.PI / 180) * 30)}
         stroke={GOLD_SOFT}
         strokeWidth={1.4}
         strokeLinecap="round"
@@ -1064,8 +1066,8 @@ function TimeInner({ tint, t }: { tint: string; t: number }) {
       <line
         x1={0}
         y1={0}
-        x2={Math.cos((angle2 - 90) * Math.PI / 180) * 20}
-        y2={Math.sin((angle2 - 90) * Math.PI / 180) * 20}
+        x2={svgNumber(Math.cos((angle2 - 90) * Math.PI / 180) * 20)}
+        y2={svgNumber(Math.sin((angle2 - 90) * Math.PI / 180) * 20)}
         stroke={tint}
         strokeWidth={1}
         strokeLinecap="round"

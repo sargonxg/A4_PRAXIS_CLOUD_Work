@@ -36,7 +36,6 @@ const BoardroomIndex = dynamic(
   { loading: () => <ChapterSkeleton title="Boardroom" />, ssr: false },
 );
 
-const DEFAULT_OPEN_CHAPTERS: WorkbenchChapterId[] = ['research', 'memos'];
 const VALID_CHAPTER_IDS = new Set<WorkbenchChapterId>(WORKBENCH_CHAPTER_FLOW.map((chapter) => chapter.id));
 const STAGED_HERO_TOOLS_BY_CHAPTER: Partial<Record<WorkbenchChapterId, MarketplaceHeroToolId[]>> = {
   desk: ['dashboard', 'situation-intelligence', 'conflict-graph'],
@@ -45,25 +44,24 @@ const STAGED_HERO_TOOLS_BY_CHAPTER: Partial<Record<WorkbenchChapterId, Marketpla
   boardroom: ['brainstorming-table', 'scenarios', 'negotiation-prep'],
 };
 
-export function WorkbenchChapterRenderer() {
+export function WorkbenchChapterRenderer({ initialOpenChapter }: { initialOpenChapter?: string | null }) {
   const { caseId } = useWorkbenchScope();
-  const [openSet, setOpenSet] = useState<Set<WorkbenchChapterId>>(() => new Set(DEFAULT_OPEN_CHAPTERS));
+  const [openChapter, setOpenChapter] = useState<WorkbenchChapterId | null>(() => {
+    return initialOpenChapter && initialOpenChapter !== 'desk' && VALID_CHAPTER_IDS.has(initialOpenChapter as WorkbenchChapterId)
+      ? initialOpenChapter as WorkbenchChapterId
+      : null;
+  });
 
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get('openChapter') as WorkbenchChapterId | null;
     if (!requested || requested === 'desk' || !VALID_CHAPTER_IDS.has(requested)) return;
-    const frame = window.requestAnimationFrame(() => setOpenSet((prev) => new Set(prev).add(requested)));
+    const frame = window.requestAnimationFrame(() => setOpenChapter(requested));
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
   const toggleChapter = useCallback((id: WorkbenchChapterId) => {
     if (id === 'desk') return;
-    setOpenSet((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    setOpenChapter((current) => (current === id ? null : id));
   }, []);
 
   return (
@@ -71,10 +69,10 @@ export function WorkbenchChapterRenderer() {
       <section className="rounded-lg border border-navy-200 bg-white p-4 shadow-sm shadow-navy-950/5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-navy-500">Chapter desk</p>
-            <h2 className="mt-1 text-lg font-semibold text-navy-950">Seven work chapters for case work</h2>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-navy-500">Case desk</p>
+            <h2 className="mt-1 text-lg font-semibold text-navy-950">Open the one workspace panel you need.</h2>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-700">
-              Desk is always on. Toggle the other chapters as panes without leaving this case workspace.
+              Desk stays visible. Research, Memo, Draft, ACH, Tools, and Boardroom open one at a time so the case page stays readable.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -85,11 +83,11 @@ export function WorkbenchChapterRenderer() {
                 onClick={() => toggleChapter(chapter.id)}
                 className={cn(
                   'rounded-md border px-3 py-2 text-xs font-semibold transition',
-                  openSet.has(chapter.id)
+                  openChapter === chapter.id
                     ? 'border-navy-800 bg-navy-950 text-white'
                     : 'border-slate-300 bg-white text-slate-800 hover:border-navy-300',
                 )}
-                aria-pressed={openSet.has(chapter.id)}
+                aria-pressed={openChapter === chapter.id}
               >
                 {chapter.navLabel}
               </button>
@@ -99,7 +97,7 @@ export function WorkbenchChapterRenderer() {
       </section>
 
       {WORKBENCH_CHAPTER_FLOW.map((chapter) => {
-        const active = chapter.alwaysOn || openSet.has(chapter.id);
+        const active = chapter.alwaysOn || openChapter === chapter.id;
         return (
           <WorkbenchChapterShell
             key={chapter.id}
@@ -125,13 +123,22 @@ function ChapterContent({ chapterId, caseId }: { chapterId: WorkbenchChapterId; 
   if (customChapter) return <div data-testid={`workbench-${chapterId}-surface`}>{stagedNotice}{customChapter()}</div>;
   if (chapterId === 'desk') return <>{stagedNotice}<DeskTab /></>;
   if (chapterId === 'research') return <>{stagedNotice}<ResearchTab /></>;
-  if (chapterId === 'memos') return <>{stagedNotice}<PraxisWriter mode="memo" title="Policy memo" templateId="policy-memo" /></>;
+  if (chapterId === 'memos') {
+    return (
+      <div data-testid="workbench-memos-surface">
+        {stagedNotice}
+        <PraxisWriter mode="memo" title="Policy memo" templateId="policy-memo" />
+      </div>
+    );
+  }
   if (chapterId === 'draft') {
     return (
-      <ToolGate>
-        {stagedNotice}
-        <PraxisWriter mode="draft" title="Working draft" templateId="policy-memo" />
-      </ToolGate>
+      <div data-testid="workbench-draft-surface">
+        <ToolGate>
+          {stagedNotice}
+          <PraxisWriter mode="draft" title="Working draft" templateId="policy-memo" />
+        </ToolGate>
+      </div>
     );
   }
   if (chapterId === 'ach') return <>{stagedNotice}<ACHIndex caseId={caseId} /></>;
