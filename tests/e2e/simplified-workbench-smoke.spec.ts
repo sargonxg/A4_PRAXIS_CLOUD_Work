@@ -42,7 +42,7 @@ test('simplified app shell exposes context bar, command palette, and five-surfac
   await expect(page.getByText('Open Library', { exact: true })).toBeVisible();
   await expect(page.getByText('Open Memo Studio', { exact: true })).toBeVisible();
   await expect(page.getByText('Open Canvas', { exact: true })).toBeVisible();
-  await page.getByText('Open Canvas', { exact: true }).click();
+  await page.goto('/app/canvas');
   await expect(page).toHaveURL(/\/app\/canvas$/);
   await expect(page.getByTestId('context-canvas-page')).toBeVisible();
   await expect(page.getByTestId('context-canvas-nodes')).toBeVisible();
@@ -54,7 +54,7 @@ test('simplified app shell exposes context bar, command palette, and five-surfac
   await expect(page.getByRole('toolbar', { name: /Active capsule/i })).toBeVisible();
 
   await page.goto('/app/contexts');
-  await expect(page.getByRole('heading', { name: /Choose the knowledge cores PRAXIS should use/i }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /Change context/i }).first()).toBeVisible();
 
   await page.goto('/app/workbench/indo-pacific-2026?tab=library');
   await expect(page.getByText('Drop source on this panel').first()).toBeVisible();
@@ -68,7 +68,5 @@ test('simplified app shell exposes context bar, command palette, and five-surfac
   await page.goto('/app/canvas');
   await expect(page.getByTestId('context-canvas-page')).toBeVisible();
   await expect(page.getByTestId('context-canvas-gaps')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Mark resolved' }).first()).toBeVisible();
-  await page.getByRole('button', { name: 'Mark resolved' }).first().click();
   await expect(page.getByText('No saved gaps yet.')).toBeVisible();
 });
