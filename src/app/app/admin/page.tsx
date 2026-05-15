@@ -5,6 +5,7 @@ import DiagnosticsPage from '@/app/app/admin/diagnostics/page';
 import DomainsPage from '@/app/app/admin/domains/page';
 import OperatorConsolePage from '@/app/app/admin/operator-console/page';
 import PathsPage from '@/app/app/admin/paths/page';
+import { AppPageHeader } from '@/components/app/app-page-header';
 import UsersPage from '@/app/app/admin/users/page';
 import { getAdminGateStatus } from '@/lib/auth/admin-gate';
 import { getAdminSession } from '@/lib/auth/admin-session';
@@ -141,17 +142,12 @@ export default async function AdminHomePage({
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header className="rounded-lg border border-navy-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-diplomatic-blue">Administrator</p>
-            <h1 className="mt-1 text-2xl font-semibold text-navy-900">PRAXIS Control Panel</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-navy-600">
-              Admin-only operational workspace for monitoring health, reviewing users, tuning advisor
-              knowledge, updating domain configuration, and keeping changes auditable.
-            </p>
-          </div>
-          {admin ? (
+      <AppPageHeader
+        eyebrow="Admin"
+        title="PRAXIS Control Panel"
+        subtitle="Operational workspace for diagnostics, users, advisor knowledge, domain configuration, and auditable controls."
+        aside={
+          admin ? (
             <div className="min-w-64 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">
               <div className="flex items-center gap-2 font-semibold">
                 <CheckCircle2 className="h-4 w-4 text-emerald-700" />
@@ -160,9 +156,9 @@ export default async function AdminHomePage({
               <div className="mt-1 font-mono text-xs">{admin.email}</div>
               <div className="mt-1 text-xs text-emerald-800">Gate: {admin.accessReason}</div>
             </div>
-          ) : null}
-        </div>
-      </header>
+          ) : null
+        }
+      />
 
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
         Production shell/code execution is intentionally not exposed in-app. Use Cloud Shell or CI for code

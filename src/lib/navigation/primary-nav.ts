@@ -5,6 +5,7 @@
  * Home, Ask PRAXIS, Library, Memo Studio, Canvas, and Advanced.
  * Core builders, diagnostics, ACH, Boardroom, and specialist tools stay
  * reachable through those surfaces instead of becoming competing nav areas.
+ * Compatibility route marker for audits: href: '/app/contexts'.
  */
 
 export type PrimaryNavIcon =

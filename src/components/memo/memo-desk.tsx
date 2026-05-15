@@ -25,7 +25,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import LinkExtension from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -39,7 +39,12 @@ import {
   Download,
   FileDown,
   FileText,
+  Heading1,
+  Heading2,
+  Italic,
   Library,
+  List,
+  ListOrdered,
   MessageSquare,
   PanelLeft,
   PanelRight,
@@ -48,6 +53,8 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
+  Type,
+  Upload,
   Wand2,
 } from 'lucide-react';
 import { ReceiptCard } from '@/components/shared/receipt-card';
@@ -103,6 +110,31 @@ const SLASH_COMMANDS = [
 ] as const;
 
 const DEFAULT_TITLE = 'Untitled policy memo';
+const CORE_LAYERS = [
+  { id: 'user-core', label: 'User', detail: 'Role, audience, tone' },
+  { id: 'situation-core', label: 'Situation', detail: 'Case frame and actors' },
+  { id: 'source-core', label: 'Sources', detail: 'Receipts and documents' },
+  { id: 'graph-core', label: 'Graph', detail: 'Relationships and timeline' },
+  { id: 'objective-core', label: 'Objective', detail: 'Task and decision need' },
+  { id: 'output-core', label: 'Output', detail: 'Memo shape and audience' },
+] as const;
+
+const OBJECTIVE_CORES = [
+  'Frame decision options',
+  'Brief a senior principal',
+  'Prepare mediation language',
+  'Check claims and caveats',
+  'Build handover note',
+] as const;
+
+const OUTPUT_CORES = [
+  'Policy memo',
+  'Talking points',
+  'Decision brief',
+  'Legal-risk note',
+  'Humanitarian update',
+  'Handover note',
+] as const;
 
 function escapeAttr(value: string): string {
   return value.replace(/[&<>"']/g, (ch) =>
@@ -153,6 +185,10 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   const [askInput, setAskInput] = useState('');
   const [askPending, setAskPending] = useState(false);
   const [capsules, setCapsules] = useState<CapsuleSummary[]>([]);
+  const [selectedCapsuleId, setSelectedCapsuleId] = useState<string | null>(null);
+  const [selectedCoreIds, setSelectedCoreIds] = useState<string[]>(() => CORE_LAYERS.map((core) => core.id));
+  const [objectiveCore, setObjectiveCore] = useState<typeof OBJECTIVE_CORES[number]>('Frame decision options');
+  const [outputCore, setOutputCore] = useState<typeof OUTPUT_CORES[number]>('Policy memo');
   const [trustPosture, setTrustPosture] = useState<TrustPostureSummary | null>(null);
   const [contextLoading, setContextLoading] = useState(false);
   const [serverSaveState, setServerSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -161,9 +197,17 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const storageKey = `${STORAGE_PREFIX}${documentId}`;
   const activeCapsule = useMemo(() => {
+    if (selectedCapsuleId) {
+      const selected = capsules.find((capsule) => capsule.capsuleId === selectedCapsuleId);
+      if (selected) return selected;
+    }
     if (!activeSituation?.id) return capsules[0] ?? null;
     return capsules.find((capsule) => capsule.activeForSituationIds?.includes(activeSituation.id)) ?? capsules[0] ?? null;
-  }, [activeSituation?.id, capsules]);
+  }, [activeSituation?.id, capsules, selectedCapsuleId]);
+  const selectedCoreLabels = useMemo(
+    () => CORE_LAYERS.filter((core) => selectedCoreIds.includes(core.id)).map((core) => core.label),
+    [selectedCoreIds],
+  );
   const trustScore =
     trustPosture?.trustPosture?.score ??
     trustPosture?.capsule?.healthScore ??
@@ -188,6 +232,18 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
       },
     ];
   }, [activeSituation?.id, activeSituation?.name, sources.length, trustPosture]);
+  const usingRow = useMemo(() => {
+    const hasUserCore = Boolean(user?.name ?? user?.email);
+    const items = [
+      hasUserCore ? 'User Core' : null,
+      activeSituation?.name ?? 'No Situation Core',
+      activeCapsule ? `${activeCapsule.capsuleId} v${activeCapsule.version}` : 'No capsule',
+      `${sources.length} source${sources.length === 1 ? '' : 's'}`,
+      objectiveCore,
+      outputCore,
+    ].filter(Boolean);
+    return items.join('  ·  ');
+  }, [activeCapsule, activeSituation?.name, objectiveCore, outputCore, sources.length, user?.email, user?.name]);
 
   const editor = useEditor({
     extensions: [
@@ -283,6 +339,9 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
         const capsule = activeSituation?.id
           ? nextCapsules.find((item) => item.activeForSituationIds?.includes(activeSituation.id)) ?? nextCapsules[0]
           : nextCapsules[0];
+        if (capsule?.capsuleId) {
+          setSelectedCapsuleId((current) => current ?? capsule.capsuleId);
+        }
         if (capsule || activeSituation?.id) {
           const params = new URLSearchParams();
           if (activeSituation?.id) params.set('situationId', activeSituation.id);
@@ -305,6 +364,88 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
     };
   }, [activeSituation?.id]);
 
+  const runWriterPrompt = useCallback(async ({
+    prompt,
+    mode = 'ask',
+    insert = false,
+  }: {
+    prompt: string;
+    mode?: 'ask' | 'tighten' | 'soften' | 'steelman';
+    insert?: boolean;
+  }) => {
+    if (!editor) throw new Error('Editor is not ready.');
+    const instruction = buildWriterInstruction({
+      prompt,
+      title,
+      usingRow,
+      selectedCoreLabels,
+      objectiveCore,
+      outputCore,
+      activeCapsule,
+      trustBand,
+      trustScore,
+      sources,
+    });
+    const userTurn: AskTurn = { id: `u-${Date.now()}`, role: 'user', text: prompt, ts: Date.now() };
+    setTurns((items) => [...items, userTurn]);
+    setAskPending(true);
+    try {
+      const selectionText = selectedEditorText(editor) || editor.getText().slice(0, 6000);
+      const res = await fetch('/api/ai/writer/ask', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          situationId: activeSituation?.id,
+          situation: activeSituation,
+          selectionText,
+          prompt: instruction,
+          mode,
+        }),
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const data = (await res.json()) as {
+        text?: string;
+        citations?: Array<{ id?: string; title?: string; layer?: string; excerpt?: string }>;
+      };
+      const text = data.text?.trim() || 'PRAXIS returned no draft text.';
+      const praxisTurn: AskTurn = {
+        id: `p-${Date.now()}`,
+        role: 'praxis',
+        text,
+        citations: (data.citations ?? []).map((citation, index) => ({
+          id: citation.id ?? `citation-${index + 1}`,
+          source: citation.title ?? citation.layer ?? 'PRAXIS source',
+          span: citation.excerpt,
+        })),
+        ts: Date.now(),
+      };
+      setTurns((items) => [...items, praxisTurn]);
+      if (insert) {
+        editor.chain().focus().insertContent(renderAiInsertHtml(text)).run();
+      }
+      return text;
+    } catch (err) {
+      const text = `PRAXIS writing request failed. ${err instanceof Error ? err.message : 'Unknown error.'}`;
+      setTurns((items) => [...items, { id: `p-${Date.now()}`, role: 'praxis', text, ts: Date.now() }]);
+      throw err;
+    } finally {
+      setAskPending(false);
+    }
+  }, [
+    activeCapsule,
+    activeSituation,
+    editor,
+    objectiveCore,
+    outputCore,
+    selectedCoreLabels,
+    sources,
+    title,
+    trustBand,
+    trustScore,
+    usingRow,
+  ]);
+
   const runSlashCommand = useCallback(
     (id: typeof SLASH_COMMANDS[number]['id']) => {
       if (!editor) return;
@@ -324,8 +465,6 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
         return;
       }
       if (id === 'grounded') {
-        // CC-7: post the current selection as a topic to /api/memos/grounded-paragraph.
-        // Codex CX-3 ships the route; until then, fall back to a stub.
         const topic = (slashQuery.trim() || 'next analytical claim').slice(0, 200);
         editor
           .chain()
@@ -334,53 +473,51 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
             '<p data-praxis-pending="true"><em>Drafting grounded paragraph…</em></p>',
           )
           .run();
-        void fetch('/api/memos/grounded-paragraph', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ topic, situationId: activeSituation?.id ?? null }),
-        })
-          .then(async (res) => {
-            if (!res.ok) throw new Error(`status ${res.status}`);
-            return (await res.json()) as { paragraph?: string; receipts?: Array<{ chunkId: string; sourceId: string }> };
-          })
-          .then((body) => {
-            if (!editor || !body.paragraph) return;
-            const receipts = (body.receipts ?? [])
-              .map(
-                (r) =>
-                  `<sup data-receipt-inline="true" data-chunk-id="${escapeAttr(r.chunkId)}" data-source-id="${escapeAttr(r.sourceId)}" class="receipt-inline">[^${escapeAttr(r.chunkId)}]</sup>`,
-              )
-              .join('');
-            editor
-              .chain()
-              .focus()
-              .insertContent(`<p>${escapeAttr(body.paragraph)}${receipts}</p>`)
-              .run();
-          })
-          .catch(() => {
-            // Backend not yet shipped — keep the stub in place.
-          });
+        void runWriterPrompt({
+          prompt: `Draft one grounded paragraph for this memo on: ${topic}. Use the selected cores, cite available sources inline, and mark any unsupported claim as an assumption.`,
+          mode: 'ask',
+          insert: true,
+        }).catch(() => {
+          editor.chain().focus().insertContent('<p><em>Grounded paragraph could not be generated. Check Ask PRAXIS and attached sources.</em></p>').run();
+        });
         return;
       }
       if (id === 'rewrite-cautiously') {
-        editor.chain().focus().insertContent('<p><em>… rewrite the prior paragraph with hedged claims and explicit gaps.</em></p>').run();
+        void runWriterPrompt({
+          prompt: 'Rewrite the current or preceding paragraph cautiously. Preserve citations, soften unsupported certainty, and identify any assumption.',
+          mode: 'soften',
+          insert: true,
+        }).catch(() => {
+          editor.chain().focus().insertContent('<p><em>… rewrite the prior paragraph with hedged claims and explicit gaps.</em></p>').run();
+        });
         return;
       }
       if (id === 'red-team') {
-        editor.chain().focus().insertContent('<blockquote><strong>Red team.</strong> Strongest objection: …</blockquote>').run();
+        void runWriterPrompt({
+          prompt: 'Red-team the current paragraph. Give the strongest objection, what evidence would change the judgement, and a safer revision path.',
+          mode: 'steelman',
+          insert: true,
+        }).catch(() => {
+          editor.chain().focus().insertContent('<blockquote><strong>Red team.</strong> Strongest objection: …</blockquote>').run();
+        });
         return;
       }
       if (id === 'scenario') {
-        editor
-          .chain()
-          .focus()
-          .insertContent('<h3>Scenario</h3><p><strong>Horizon:</strong> 2026–2028. <strong>Trigger:</strong> … <strong>Implications:</strong> …</p>')
-          .run();
+        void runWriterPrompt({
+          prompt: 'Draft a concise scenario block with horizon, trigger, actor moves, implications, and evidence gaps.',
+          mode: 'ask',
+          insert: true,
+        }).catch(() => {
+          editor
+            .chain()
+            .focus()
+            .insertContent('<h3>Scenario</h3><p><strong>Horizon:</strong> 2026-2028. <strong>Trigger:</strong> ... <strong>Implications:</strong> ...</p>')
+            .run();
+        });
         return;
       }
     },
-    [editor, slashQuery, turns],
+    [editor, runWriterPrompt, slashQuery, turns],
   );
 
   const filteredSlash = SLASH_COMMANDS.filter((c) =>
@@ -390,44 +527,11 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   async function sendAsk() {
     const trimmed = askInput.trim();
     if (!trimmed || askPending) return;
-    const userTurn: AskTurn = { id: `u-${Date.now()}`, role: 'user', text: trimmed, ts: Date.now() };
-    setTurns((t) => [...t, userTurn]);
     setAskInput('');
-    setAskPending(true);
     try {
-      const res = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          message: trimmed,
-          situationId: activeSituation?.id,
-          surface: 'memo-desk',
-          capsuleId: activeCapsule?.capsuleId,
-          capsuleVersion: activeCapsule?.version,
-          memoTitle: title,
-          memoDraft: editor?.getText().slice(0, 6000),
-          sourceUrls: sources,
-        }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { reply?: string; text?: string; output?: string };
-      const replyText = data.reply ?? data.text ?? data.output ?? 'PRAXIS could not reach the chat route. Try again.';
-      const praxisTurn: AskTurn = {
-        id: `p-${Date.now()}`,
-        role: 'praxis',
-        text: replyText,
-        ts: Date.now(),
-      };
-      setTurns((t) => [...t, praxisTurn]);
-    } catch (err) {
-      const praxisTurn: AskTurn = {
-        id: `p-${Date.now()}`,
-        role: 'praxis',
-        text: `PRAXIS chat failed. ${err instanceof Error ? err.message : 'Unknown error.'}`,
-        ts: Date.now(),
-      };
-      setTurns((t) => [...t, praxisTurn]);
-    } finally {
-      setAskPending(false);
+      await runWriterPrompt({ prompt: trimmed, mode: 'ask' });
+    } catch {
+      // runWriterPrompt already appends the visible failure turn.
     }
   }
 
@@ -686,6 +790,89 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
         </div>
       </header>
 
+      <div className="flex shrink-0 items-center gap-1 overflow-x-auto border-b border-slate-200 bg-[#FBFAF6] px-3 py-1.5 md:px-6">
+        <ToolbarButton
+          label="Paragraph"
+          icon={Type}
+          onClick={() => editor?.chain().focus().setParagraph().run()}
+          active={editor?.isActive('paragraph') ?? false}
+        />
+        <ToolbarButton
+          label="Heading 1"
+          icon={Heading1}
+          onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
+          active={editor?.isActive('heading', { level: 1 }) ?? false}
+        />
+        <ToolbarButton
+          label="Heading 2"
+          icon={Heading2}
+          onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+          active={editor?.isActive('heading', { level: 2 }) ?? false}
+        />
+        <span className="mx-1 h-5 w-px bg-slate-200" aria-hidden />
+        <ToolbarButton
+          label="Bold"
+          icon={Type}
+          onClick={() => editor?.chain().focus().toggleBold().run()}
+          active={editor?.isActive('bold') ?? false}
+          strong
+        />
+        <ToolbarButton
+          label="Italic"
+          icon={Italic}
+          onClick={() => editor?.chain().focus().toggleItalic().run()}
+          active={editor?.isActive('italic') ?? false}
+        />
+        <ToolbarButton
+          label="Bullets"
+          icon={List}
+          onClick={() => editor?.chain().focus().toggleBulletList().run()}
+          active={editor?.isActive('bulletList') ?? false}
+        />
+        <ToolbarButton
+          label="Numbered list"
+          icon={ListOrdered}
+          onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+          active={editor?.isActive('orderedList') ?? false}
+        />
+        <ToolbarButton
+          label="Quote"
+          icon={Quote}
+          onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+          active={editor?.isActive('blockquote') ?? false}
+        />
+        <span className="mx-1 h-5 w-px bg-slate-200" aria-hidden />
+        <button
+          type="button"
+          onClick={() => {
+            void runWriterPrompt({
+              prompt: `Draft a ${outputCore.toLowerCase()} from the selected cores for this objective: ${objectiveCore}. Use the active memo structure and return text ready to insert.`,
+              mode: 'ask',
+              insert: true,
+            }).catch(() => undefined);
+          }}
+          disabled={askPending || !editor}
+          className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-navy-950 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-navy-800 disabled:opacity-40"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          Draft from cores
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            void runWriterPrompt({
+              prompt: 'Find citation opportunities and evidence gaps in the selected text. Return concise edits and source needs.',
+              mode: 'ask',
+            }).catch(() => undefined);
+          }}
+          disabled={askPending || !editor}
+          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+        >
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Check claims
+        </button>
+      </div>
+
       {/* Body */}
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Library rail */}
@@ -735,7 +922,90 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                 subtitle="Receipts attached to this capsule."
                 href="/app/workbench"
               />
+              <LibrarySection
+                icon={Upload}
+                title="Import documents"
+                subtitle="Add receipts before drafting."
+                href={activeSituation?.id ? `/app/workbench/${activeSituation.id}?tab=library` : '/app/contexts'}
+              />
             </div>
+            <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Use these cores</p>
+              <div className="mt-2 grid grid-cols-2 gap-1.5">
+                {CORE_LAYERS.map((core) => {
+                  const active = selectedCoreIds.includes(core.id);
+                  return (
+                    <button
+                      key={core.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCoreIds((current) =>
+                          active
+                            ? current.filter((id) => id !== core.id)
+                            : [...current, core.id],
+                        );
+                      }}
+                      aria-pressed={active}
+                      className={cn(
+                        'rounded-md border px-2 py-1.5 text-left transition',
+                        active
+                          ? 'border-[#8A5A00]/40 bg-[#FAF8F2] text-slate-900'
+                          : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300',
+                      )}
+                    >
+                      <span className="block text-[11px] font-semibold">{core.label}</span>
+                      <span className="block truncate text-[10px]">{core.detail}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <label className="mt-3 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500" htmlFor="memo-objective-core">
+                Objective Core
+              </label>
+              <select
+                id="memo-objective-core"
+                value={objectiveCore}
+                onChange={(event) => setObjectiveCore(event.target.value as typeof OBJECTIVE_CORES[number])}
+                className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-800 focus:border-[#8A5A00] focus:outline-none"
+              >
+                {OBJECTIVE_CORES.map((objective) => <option key={objective}>{objective}</option>)}
+              </select>
+              <label className="mt-3 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500" htmlFor="memo-output-core">
+                Output Core
+              </label>
+              <select
+                id="memo-output-core"
+                value={outputCore}
+                onChange={(event) => setOutputCore(event.target.value as typeof OUTPUT_CORES[number])}
+                className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-800 focus:border-[#8A5A00] focus:outline-none"
+              >
+                {OUTPUT_CORES.map((output) => <option key={output}>{output}</option>)}
+              </select>
+            </div>
+            {capsules.length > 1 ? (
+              <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Capsule</p>
+                <div className="mt-2 space-y-1.5">
+                  {capsules.slice(0, 4).map((capsule) => (
+                    <button
+                      key={capsule.capsuleId}
+                      type="button"
+                      onClick={() => setSelectedCapsuleId(capsule.capsuleId)}
+                      aria-pressed={activeCapsule?.capsuleId === capsule.capsuleId}
+                      className={cn(
+                        'w-full rounded-md border px-2 py-1.5 text-left text-[11px] transition',
+                        activeCapsule?.capsuleId === capsule.capsuleId
+                          ? 'border-[#8A5A00]/40 bg-[#FAF8F2] text-slate-900'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300',
+                      )}
+                    >
+                      <span className="block truncate font-semibold">{capsule.label ?? capsule.capsuleId}</span>
+                      <span className="block font-mono text-[10px] text-slate-400">v{capsule.version} · score {capsule.health?.score ?? '--'}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -935,6 +1205,30 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
               >
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>
+            </div>
+            <div className="border-b border-slate-200 bg-[#FAF8F2] px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8A5A00]">Using</p>
+              <p className="mt-1 text-[11px] leading-4 text-slate-700">{usingRow}</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {[
+                  { label: 'Draft', prompt: `Draft a ${outputCore.toLowerCase()} from the selected cores for ${objectiveCore}.`, insert: true },
+                  { label: 'Cite', prompt: 'Find citation points in the current selection and suggest source-backed footnotes.', insert: false },
+                  { label: 'Rewrite', prompt: 'Rewrite the selected text in a more careful policy register with caveats preserved.', insert: true },
+                  { label: 'Gaps', prompt: 'List unsupported claims, assumptions, and the next sources to import before export.', insert: false },
+                ].map((action) => (
+                  <button
+                    key={action.label}
+                    type="button"
+                    onClick={() => {
+                      void runWriterPrompt({ prompt: action.prompt, mode: action.label === 'Rewrite' ? 'soften' : 'ask', insert: action.insert }).catch(() => undefined);
+                    }}
+                    disabled={askPending || !editor}
+                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-[#8A5A00]/40 hover:text-[#8A5A00] disabled:opacity-40"
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
               {turns.length === 0 ? (
@@ -1148,12 +1442,102 @@ function LibrarySection({
   );
 }
 
+function ToolbarButton({
+  label,
+  icon: Icon,
+  onClick,
+  active,
+  strong = false,
+}: {
+  label: string;
+  icon: typeof Brain;
+  onClick: () => void;
+  active: boolean;
+  strong?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={active}
+      title={label}
+      className={cn(
+        'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border text-slate-600 transition',
+        active
+          ? 'border-[#8A5A00]/40 bg-[#FAF8F2] text-[#8A5A00]'
+          : 'border-transparent hover:border-slate-200 hover:bg-white hover:text-slate-900',
+      )}
+    >
+      <Icon className={cn('h-4 w-4', strong ? 'stroke-[3]' : '')} />
+    </button>
+  );
+}
+
 function hostnameOf(url: string): string {
   try {
     return new URL(url).hostname.replace(/^www\./, '');
   } catch {
     return url.slice(0, 40);
   }
+}
+
+function selectedEditorText(editor: Editor): string {
+  const { from, to } = editor.state.selection;
+  if (from === to) return '';
+  return editor.state.doc.textBetween(from, to, '\n').trim();
+}
+
+function buildWriterInstruction(input: {
+  prompt: string;
+  title: string;
+  usingRow: string;
+  selectedCoreLabels: string[];
+  objectiveCore: string;
+  outputCore: string;
+  activeCapsule: CapsuleSummary | null;
+  trustBand: string;
+  trustScore: number | null;
+  sources: string[];
+}): string {
+  return [
+    input.prompt,
+    '',
+    'Write for Memo Studio as an editable document, not a chat reply.',
+    `Document title: ${input.title}`,
+    `Using: ${input.usingRow}`,
+    `Selected cores: ${input.selectedCoreLabels.join(', ') || 'none selected'}`,
+    `Objective Core: ${input.objectiveCore}`,
+    `Output Core: ${input.outputCore}`,
+    `Capsule: ${input.activeCapsule ? `${input.activeCapsule.capsuleId} v${input.activeCapsule.version}` : 'none'}`,
+    `Context trust: ${input.trustBand}${input.trustScore === null ? '' : ` (${input.trustScore}/100)`}`,
+    `Available source URLs: ${input.sources.length ? input.sources.join(' | ') : 'none attached'}`,
+    '',
+    'Return concise memo-ready prose. Use inline [#] citations when evidence is available. Mark unsupported claims as assumptions or gaps.',
+  ].join('\n');
+}
+
+function renderAiInsertHtml(text: string): string {
+  const blocks = text
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+  if (blocks.length === 0) return '<p></p>';
+  return blocks.map((block) => {
+    if (block.startsWith('# ')) return `<h1>${escapeAttr(block.slice(2))}</h1>`;
+    if (block.startsWith('## ')) return `<h2>${escapeAttr(block.slice(3))}</h2>`;
+    if (block.startsWith('### ')) return `<h3>${escapeAttr(block.slice(4))}</h3>`;
+    if (block.startsWith('- ')) {
+      const items = block
+        .split('\n')
+        .map((line) => line.replace(/^- /, '').trim())
+        .filter(Boolean)
+        .map((line) => `<li>${escapeAttr(line)}</li>`)
+        .join('');
+      return `<ul>${items}</ul>`;
+    }
+    return `<p>${escapeAttr(block).replace(/\n/g, '<br />')}</p>`;
+  }).join('');
 }
 
 function memoHtmlToBlocks(html: string): MemoBlock[] {

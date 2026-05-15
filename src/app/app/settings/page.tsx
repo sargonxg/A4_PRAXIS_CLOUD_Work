@@ -25,6 +25,7 @@ import {
   Activity,
 } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
+import { AppPageHeader } from '@/components/app/app-page-header';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils/cn';
@@ -376,13 +377,12 @@ export default function SettingsPage() {
         <PaymentBanner />
       </Suspense>
 
-      {/* Page title */}
-      <div>
-        <h1 className="text-2xl font-semibold text-navy-900">Settings</h1>
-        <p className="mt-1 text-sm text-navy-500">
-          Manage your account preferences, AI providers, and deployment configuration.
-        </p>
-      </div>
+      <AppPageHeader
+        eyebrow="Settings"
+        title="Account and platform preferences."
+        subtitle="Keep profile, notifications, provider keys, graph backend, and system health controls in one advanced settings room."
+        primaryAction={{ label: 'Open system health', href: '/app/settings/system-health', icon: Activity }}
+      />
 
       {/* ── Profile ──────────────────────────────────────────────── */}
       <SettingsSection
@@ -813,7 +813,7 @@ export default function SettingsPage() {
             onClick={() => {
               localStorage.removeItem('praxis-tour-seen');
               localStorage.removeItem('praxis-visited-pages');
-              window.location.href = '/dashboard';
+              window.location.href = '/app/dashboard';
             }}
             className="flex items-center gap-2 rounded-lg border border-navy-200 bg-white px-4 py-2 text-sm font-medium text-navy-700 transition-colors hover:border-diplomatic-blue/30 hover:text-diplomatic-blue"
           >
@@ -834,7 +834,7 @@ export default function SettingsPage() {
             Choose which source, research, memo, budget, and workspace events interrupt you immediately and which ones wait for a digest.
           </p>
           <PraxisLink
-            href="/settings/notifications"
+            href="/app/settings/notifications"
             className="inline-flex items-center gap-2 px-4 py-2 bg-diplomatic-blue hover:bg-diplomatic-blue/90 text-white rounded-md text-sm font-medium transition-colors"
           >
             <Mail className="h-3.5 w-3.5" />
@@ -857,14 +857,14 @@ export default function SettingsPage() {
           </p>
           <div className="flex gap-3">
             <PraxisLink
-              href="/settings/api-keys"
+              href="/app/settings/api-keys"
               className="inline-flex items-center gap-2 px-4 py-2 bg-diplomatic-blue hover:bg-diplomatic-blue/90 text-white rounded-md text-sm font-medium transition-colors"
             >
               <Key className="h-3.5 w-3.5" />
               Manage API Keys
             </PraxisLink>
             <PraxisLink
-              href="/settings/model-preferences"
+              href="/app/settings/model-preferences"
               className="inline-flex items-center gap-2 px-4 py-2 border border-navy-200 hover:border-navy-400 text-navy-700 rounded-md text-sm font-medium transition-colors"
             >
               <Cpu className="h-3.5 w-3.5" />
@@ -886,7 +886,7 @@ export default function SettingsPage() {
             data feed health, and the Situation Knowledge Core (SKC) layers.
           </p>
           <PraxisLink
-            href="/settings/system-health"
+            href="/app/settings/system-health"
             className="inline-flex items-center gap-2 px-4 py-2 bg-diplomatic-blue hover:bg-diplomatic-blue/90 text-white rounded-md text-sm font-medium transition-colors"
           >
             <Activity className="h-3.5 w-3.5" />
@@ -909,7 +909,7 @@ export default function SettingsPage() {
             Dialectica is tracked separately as the premium graph-reasoning adapter target.
           </p>
           <PraxisLink
-            href="/settings/graph-backend"
+            href="/app/settings/graph-backend"
             className="inline-flex items-center gap-2 px-4 py-2 bg-diplomatic-blue hover:bg-diplomatic-blue/90 text-white rounded-md text-sm font-medium transition-colors"
           >
             <Server className="h-3.5 w-3.5" />

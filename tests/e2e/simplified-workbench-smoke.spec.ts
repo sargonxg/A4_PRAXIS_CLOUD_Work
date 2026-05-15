@@ -68,5 +68,5 @@ test('simplified app shell exposes context bar, command palette, and five-surfac
   await expect(page.getByTestId('context-canvas-gaps')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Mark resolved' }).first()).toBeVisible();
   await page.getByRole('button', { name: 'Mark resolved' }).first().click();
-  await expect(page.getByText('No saved gaps yet. Save unsupported claims from Memo Studio.')).toBeVisible();
+  await expect(page.getByText('No saved gaps yet.')).toBeVisible();
 });

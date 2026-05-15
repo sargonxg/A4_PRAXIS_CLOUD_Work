@@ -70,8 +70,8 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
   await expect(librarySurface.getByRole('heading', { name: /^Library$/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Saved claims$/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Memo versions$/i })).toBeVisible();
-  await expect(page.getByText(/Select an artifact/i)).toBeVisible();
-  await expect(page.getByText(/Details, provenance fields, and source\/export actions appear here/i)).toBeVisible();
+  await expect(page.getByText(/Select one receipt/i)).toBeVisible();
+  await expect(page.getByText(/Status, provenance, and context actions appear here/i)).toBeVisible();
   await expect(page.getByText(/^Upload source$/i)).toBeVisible();
   await expect(page.getByRole('button', { name: /^Refresh receipts$/i })).toBeVisible();
   await closeWorkspaceTab();

@@ -4,9 +4,10 @@ import Link from 'next/link';
 import type { ComponentType } from 'react';
 import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { Brain, ChevronRight, Gauge, LibraryBig, Target } from 'lucide-react';
+import { Brain, FileText, Gauge, LibraryBig, Target } from 'lucide-react';
 import { listExampleCases } from '@/lib/cases/registry';
 import { useAuth } from '@/lib/auth/auth-context';
+import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { buildContextHealthReport } from '@/lib/context/context-health';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
@@ -15,6 +16,7 @@ import type { Situation } from '@/types/situation';
 export function CoreContextStrip() {
   const pathname = usePathname();
   const { user, analystProfile } = useAuth();
+  const { stack } = useActiveContextStack();
   const situations = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
   const routeCaseId = useMemo(() => {
@@ -47,12 +49,14 @@ export function CoreContextStrip() {
   const lenses = analystProfile?.perspective.lenses?.map(labelize).slice(0, 2).join(' + ') || 'diplomatic lens';
   const selectedSituation = context?.id ? situations.find((situation) => situation.id === context.id) : activeSituation;
   const sourceCount = selectedSituation?.sourceUrls?.length ?? selectedSituation?.documentCount ?? 0;
+  const documentCount = selectedSituation?.documentCount ?? stack.documentIds.length;
+  const attachedCount = sourceCount + documentCount;
   const actorCount = selectedSituation?.actors?.length ?? selectedSituation?.actorCount ?? 0;
   const health = buildContextHealthReport({
     hasUserCore: true,
     hasSituationCore: Boolean(context),
     sourceCount,
-    documentCount: selectedSituation?.documentCount ?? 0,
+    documentCount,
     actorCount,
     hasTimeline: Boolean(selectedSituation?.keyDates?.length || selectedSituation?.latestEventDate || selectedSituation?.conflictOnsetDate),
     evidenceGapCount: selectedSituation ? (sourceCount < 3 ? 3 - sourceCount : 0) : 4,
@@ -61,16 +65,16 @@ export function CoreContextStrip() {
   });
 
   return (
-    <div className="border-b border-[var(--color-app-border)] bg-white/65 px-4 py-2 backdrop-blur-md md:px-6">
-      <div className="-mx-1 flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:-mx-0 md:flex-wrap md:overflow-visible md:px-0" style={{ scrollSnapType: 'x mandatory' }}>
-        <CorePill
+    <div className="border-b border-[var(--color-app-border)] bg-white/80 px-4 py-2 backdrop-blur-md md:px-6">
+      <div className="-mx-1 flex min-w-0 flex-nowrap items-stretch gap-2 overflow-x-auto px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden xl:-mx-0 xl:overflow-visible xl:px-0">
+        <ContextCell
           href="/app/cores/user"
           icon={Brain}
           label="User Core"
           title={`${role} - ${audience}`}
           detail={`${org} - ${lenses}`}
         />
-        <CorePill
+        <ContextCell
           href={context?.href ?? '/app/workbench'}
           icon={Target}
           label="Situation Core"
@@ -78,15 +82,23 @@ export function CoreContextStrip() {
           detail={context?.meta ?? 'Create or open a context to ground Ask PRAXIS'}
           muted={!context}
         />
-        <CorePill
-          href="/app/contexts"
+        <ContextCell
+          href={context?.href ? `${context.href}?tab=library` : '/app/workbench'}
           icon={LibraryBig}
           label="Sources"
-          title={`${sourceCount} attached`}
-          detail={sourceCount > 0 ? 'Receipts travel with the active context' : 'Attach sources before final drafting'}
-          muted={sourceCount === 0}
+          title={`${attachedCount} attached`}
+          detail={attachedCount > 0 ? 'Receipts and documents travel with context' : 'Attach sources before final drafting'}
+          muted={attachedCount === 0}
         />
-        <CorePill
+        <ContextCell
+          href="/app/write"
+          icon={FileText}
+          label="Output"
+          title={stack.outputGoal ?? 'Memo posture'}
+          detail={stack.outputGoal ? 'Draft target saved in stack' : 'Set the output in Memo Studio'}
+          muted={!stack.outputGoal}
+        />
+        <ContextCell
           href="/app/dashboard"
           icon={Gauge}
           label="Health"
@@ -95,18 +107,17 @@ export function CoreContextStrip() {
           muted={health.score < 55}
         />
         <Link
-          href="/app/dashboard#ask-praxis"
-          className="ml-auto hidden items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold text-gold-700 transition hover:bg-gold-50 lg:inline-flex"
+          href="/app/contexts"
+          className="ml-auto flex shrink-0 items-center rounded-md border border-gold-200 bg-gold-50 px-3 py-2 text-xs font-semibold text-gold-900 transition hover:bg-gold-100"
         >
-          Open Ask
-          <ChevronRight className="h-3.5 w-3.5" />
+          Change context
         </Link>
       </div>
     </div>
   );
 }
 
-function CorePill({
+function ContextCell({
   href,
   icon: Icon,
   label,
@@ -125,10 +136,10 @@ function CorePill({
     <Link
       href={href}
       className={cn(
-        'group flex min-w-0 max-w-full shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 shadow-sm transition snap-start sm:max-w-[22rem] sm:shrink',
+        'group flex min-w-[11.5rem] max-w-[18rem] shrink-0 items-center gap-2 rounded-md border px-3 py-2 transition xl:min-w-0 xl:flex-1',
         muted
           ? 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-          : 'border-navy-200/80 bg-white/85 text-navy-900 hover:border-gold-300 hover:bg-gold-50/40',
+          : 'border-navy-200/80 bg-white text-navy-900 hover:border-gold-300',
       )}
       draggable
       onDragStart={(event) => {
@@ -136,7 +147,7 @@ function CorePill({
         event.dataTransfer.effectAllowed = 'copy';
       }}
     >
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy-950 text-white group-hover:bg-gold-700">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-navy-950 text-white group-hover:bg-gold-700">
         <Icon className="h-3.5 w-3.5" />
       </span>
       <span className="min-w-0">

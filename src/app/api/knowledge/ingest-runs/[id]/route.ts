@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { withAuth } from '@/lib/api/with-auth';
+import { withAuth, type AuthenticatedUser } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
 import {
   getIngestionRun,
@@ -14,7 +14,7 @@ const RetrySchema = z.object({
   retry: z.literal(true),
 });
 
-export const GET = withAuth(async (request, user, context: { params: Promise<{ id: string }> | { id: string } }) => {
+export const GET = withAuth(async (request: Request, user: AuthenticatedUser, context: { params: Promise<{ id: string }> | { id: string } }) => {
   try {
     if (user.isDemo) return NextResponse.json({ error: 'Demo mode has no private ingestion runs' }, { status: 403 });
     const params = await context.params;
@@ -31,7 +31,7 @@ export const GET = withAuth(async (request, user, context: { params: Promise<{ i
   }
 });
 
-export const POST = withAuth(async (request, user, context: { params: Promise<{ id: string }> | { id: string } }) => {
+export const POST = withAuth(async (request: Request, user: AuthenticatedUser, context: { params: Promise<{ id: string }> | { id: string } }) => {
   try {
     if (user.isDemo) return NextResponse.json({ error: 'Demo mode cannot retry ingestion runs' }, { status: 403 });
     const params = await context.params;

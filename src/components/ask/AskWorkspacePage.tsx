@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { AskBar } from '@/components/ask/AskBar';
 import { AskStreamPanel } from '@/components/ask/AskStreamPanel';
+import { AppPageHeader } from '@/components/app/app-page-header';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { ContextCapsulePreview } from '@/components/context/context-capsule-preview';
 import { ContextQualityMeter } from '@/components/context/context-quality-meter';
@@ -181,21 +182,13 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
 
   return (
     <main className="flex flex-col gap-6" data-testid="ask-workspace-page">
-      <header className="grid gap-4 border-b border-slate-200 pb-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold-700">Ask PRAXIS</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-navy-950 sm:text-4xl">
-            Build the context, ask the question, move the work.
-          </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-700">
-            Ask PRAXIS is the policy workbench: user details, situation facts, source receipts, library documents, graph structure, and memo goals are assembled into a portable context stack before the assistant answers.
-          </p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-          <SmallStat label="Model runtime" value="Gemini now, provider picker later" icon={Bot} />
-          <SmallStat label="Visible tools" value={`${marketplaceToolCount} mapped tools`} icon={Wrench} />
-        </div>
-      </header>
+      <AppPageHeader
+        eyebrow="Ask PRAXIS"
+        title="Ask from the active context."
+        subtitle="PRAXIS uses the selected User Core, Situation Core, sources, graph posture, and output target before it answers."
+        primaryAction={{ label: 'Change context', href: '/app/contexts', icon: FolderKanban }}
+        secondaryAction={{ label: 'Open Memo Studio', href: '/app/write', icon: FileText }}
+      />
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-5">
@@ -554,18 +547,6 @@ function buildPolicyPosture(selectedCase: WorkspaceCase | null, marketplaceToolC
 function normalizeRisk(riskScore: number): number {
   if (!Number.isFinite(riskScore)) return 0;
   return riskScore <= 1 ? Math.round(riskScore * 10) : Math.round(riskScore);
-}
-
-function SmallStat({ label, value, icon: Icon }: { label: string; value: string; icon: ComponentType<{ className?: string }> }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
-      <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4 text-diplomatic-blue" />
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      </div>
-      <p className="mt-2 text-sm font-semibold text-navy-950">{value}</p>
-    </div>
-  );
 }
 
 function KnowledgeStackMap({

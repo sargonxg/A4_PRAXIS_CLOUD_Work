@@ -12,5 +12,5 @@ test('library renders Pack 27 faceted artifact browser', async ({ page }) => {
 
   await page.getByPlaceholder(/Search titles/i).fill('ceasefire');
   await expect(page.getByText(/shown/i).first()).toBeVisible();
-  await expect(page.getByText(/Select an artifact/i)).toBeVisible();
+  await expect(page.getByText(/Select one receipt/i)).toBeVisible();
 });

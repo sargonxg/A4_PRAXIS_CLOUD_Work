@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Archive, ExternalLink, FileText, Link2, Loader2, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
 import { WorkOnThisMenu } from '@/components/app/work-on-this-menu';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
+import { EmptyState } from '@/components/shared/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
@@ -309,10 +310,10 @@ export function LibraryTab() {
           <div>
             <div className="flex items-center gap-2">
               <Archive className="h-5 w-5 text-gold-700" />
-              <h2 className="text-lg font-semibold text-navy-950">Library</h2>
+              <h2 className="font-serif text-2xl font-semibold text-navy-950">Library</h2>
             </div>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
-              Browse the case artifact record: sources, documents, saved claims, memo versions, and exports from one faceted view. Drop PDFs, DOCX, notes, or source files here to structure them into the active Situation Core.
+              Upload documents and sources, then attach them to the active context.
             </p>
           </div>
           <ContextHealthChip />
@@ -390,7 +391,7 @@ export function LibraryTab() {
             <p className="text-xs font-semibold text-slate-700">{filtered.length} shown</p>
           </div>
           <div className="divide-y divide-slate-200">
-            {filtered.map((artifact) => (
+            {filtered.length ? filtered.map((artifact) => (
               <button
                 key={artifact.id}
                 type="button"
@@ -409,7 +410,14 @@ export function LibraryTab() {
                 </span>
                 <span className="text-xs font-semibold text-slate-700">{formatDate(artifact.date)}</span>
               </button>
-            ))}
+            )) : (
+              <EmptyState
+                icon={FileText}
+                title="No receipts attached."
+                description="Upload a source or widen the filters."
+                className="py-12"
+              />
+            )}
           </div>
         </section>
 
@@ -496,10 +504,12 @@ export function LibraryTab() {
               ) : null}
             </div>
           ) : (
-            <div>
-              <p className="text-sm font-semibold text-navy-950">Select an artifact</p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">Details, provenance fields, and source/export actions appear here.</p>
-            </div>
+            <EmptyState
+              icon={Archive}
+              title="Select one receipt."
+              description="Status, provenance, and context actions appear here."
+              className="py-10"
+            />
           )}
         </aside>
       </div>

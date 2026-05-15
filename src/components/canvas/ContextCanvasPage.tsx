@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Brain, FileText, LibraryBig, Target, ShieldAlert } from 'lucide-react';
+import { AppPageHeader } from '@/components/app/app-page-header';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { WorkOnThisMenu } from '@/components/app/work-on-this-menu';
 import { ContextCapsulePreview } from '@/components/context/context-capsule-preview';
@@ -94,13 +95,13 @@ export function ContextCanvasPage() {
 
   return (
     <main className="mx-auto flex max-w-[1400px] flex-col gap-5 pb-16" data-testid="context-canvas-page">
-      <header className="rounded-lg border border-white/70 bg-white/90 p-5 shadow-sm shadow-navy-950/5">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Context Canvas</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-navy-950">Understand the structure before PRAXIS writes.</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-700">
-          The canvas keeps User Core, Situation Core, sources, actors, claims, timeline posture, and drafts in one inspectable map. It is a review surface today; graph writes remain gated.
-        </p>
-      </header>
+      <AppPageHeader
+        eyebrow="Canvas"
+        title="Review the active structure."
+        subtitle="Inspect user, situation, sources, actors, claims, timeline, and draft posture before PRAXIS writes."
+        primaryAction={{ label: 'Open Memo Studio', href: '/app/write', icon: FileText }}
+        secondaryAction={{ label: 'Change context', href: '/app/contexts', icon: Target }}
+      />
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-5">
@@ -158,9 +159,9 @@ export function ContextCanvasPage() {
             <div className="mt-3 space-y-2">
               {(savedGaps.length ? savedGaps : [{
                 id: 'empty-gap',
-                claim: 'No saved gaps yet. Save unsupported claims from Memo Studio.',
+                claim: 'No saved gaps yet.',
                 status: 'weak' as const,
-                sourceHints: [],
+                sourceHints: ['Save unsupported claims from Memo Studio.'],
               }]).map((gap) => (
                 <div key={gap.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-crimson">{gap.status.replaceAll('_', ' ')}</p>

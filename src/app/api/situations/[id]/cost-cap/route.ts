@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
-import { withAuth } from '@/lib/api/with-auth';
+import { withAuth, type AuthenticatedUser } from '@/lib/api/with-auth';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 
-export const GET = withAuth(async (_req: Request, _user, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = withAuth(async (_req: Request, _user: AuthenticatedUser, { params }: { params: Promise<{ id: string }> }) => {
   const { uid } = _user;
   const { id } = await params;
   const snap = await getAdminDbOrThrow()
@@ -21,7 +21,7 @@ export const GET = withAuth(async (_req: Request, _user, { params }: { params: P
   });
 });
 
-export const PATCH = withAuth(async (req: Request, _user, { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = withAuth(async (req: Request, _user: AuthenticatedUser, { params }: { params: Promise<{ id: string }> }) => {
   const { uid } = _user;
   const { id } = await params;
   const body = (await req.json().catch(() => ({}))) as { monthlyCreditCap?: number };
