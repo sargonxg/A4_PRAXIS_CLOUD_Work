@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2, Filter, Paperclip, Sparkles, Wrench } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Filter, GitFork, LockKeyhole, Paperclip, Repeat2, Sparkles, Wrench } from 'lucide-react';
 import { AdvancedExplanationPanel } from '@/components/app/advanced-explanation-panel';
 import { OneClickContextBuilder } from '@/components/context/one-click-context-builder';
 import { CoreLibraryRail } from '@/components/cores/CoreLibraryRail';
@@ -11,6 +11,7 @@ import { CapsuleReadinessRail } from '@/components/cores/CapsuleReadinessRail';
 import { CapsuleListPicker } from '@/components/cores/CapsuleListPicker';
 import { CapsuleManagerMenu } from '@/components/cores/CapsuleManagerMenu';
 import { CapsuleLineageTree } from '@/components/cores/CapsuleLineageTree';
+import { CAPSULE_COMBINATION_RECIPES, CONTEXT_CAPSULE_TEMPLATES } from '@/lib/product/context-capsules';
 import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 import { coreLabel, type AttachableTool } from '@/lib/tools/contract';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
@@ -166,7 +167,10 @@ export function ContextBuilderRoom({ situationId, initialMode = 'repository' }: 
       </section>
 
       {mode === 'repository' ? (
-        <OneClickContextBuilder />
+        <>
+          <OneClickContextBuilder />
+          <CapsuleCompositionPanel activeCapsule={activeCapsule} />
+        </>
       ) : null}
 
       {mode === 'tools' || mode === 'repository' ? (
@@ -257,6 +261,89 @@ export function ContextBuilderRoom({ situationId, initialMode = 'repository' }: 
         actionHref="/app/contexts"
       />
     </main>
+  );
+}
+
+function CapsuleCompositionPanel({ activeCapsule }: { activeCapsule: PraxisCapsule | null }) {
+  const recipes = CAPSULE_COMBINATION_RECIPES.slice(0, 4).map((recipe) => ({
+    ...recipe,
+    labels: recipe.inputs.map((id) => CONTEXT_CAPSULE_TEMPLATES.find((template) => template.id === id)?.label ?? id),
+  }));
+
+  return (
+    <section className="rounded-2xl border border-white/70 bg-white/90 p-4 shadow-sm shadow-navy-950/5 backdrop-blur" data-testid="capsule-composition-panel">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-700">Capsule composition</p>
+          <h2 className="mt-1 text-lg font-semibold text-navy-950">Pick, fork, combine, then lock the context.</h2>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-700">
+            The MVP flow keeps composition review-based: combine capsules as proposals, preserve source receipts and timelines, and only lock a version when it is ready for Ask PRAXIS, Memo Studio, Canvas, or handover.
+          </p>
+        </div>
+        <Link href="/app/assistant" className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-sm font-semibold text-white hover:bg-navy-800">
+          Ask active capsule
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        <CompositionStep icon={Paperclip} label="Pick" detail={activeCapsule ? `Active: ${activeCapsule.label}` : 'Select or create a capsule before running tools.'} />
+        <CompositionStep icon={GitFork} label="Fork" detail="Copy demo or team context into a user-owned working capsule before editing." />
+        <CompositionStep icon={LockKeyhole} label="Lock" detail="Freeze a reviewed version with open questions, allowed actions, and export rules." />
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        {recipes.map((recipe) => (
+          <article key={recipe.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Combination recipe</p>
+                <h3 className="mt-1 text-sm font-semibold text-navy-950">{recipe.label}</h3>
+              </div>
+              <Repeat2 className="h-4 w-4 shrink-0 text-gold-700" />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {recipe.labels.map((label) => (
+                <span key={label} className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700">
+                  {label}
+                </span>
+              ))}
+            </div>
+            <p className="mt-3 text-xs leading-5 text-slate-600">{recipe.output}</p>
+            <ul className="mt-3 space-y-1.5">
+              {recipe.mergeRules.slice(0, 2).map((rule) => (
+                <li key={rule} className="flex gap-2 text-[11px] leading-4 text-slate-600">
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                  {rule}
+                </li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CompositionStep({
+  icon: Icon,
+  label,
+  detail,
+}: {
+  icon: typeof Paperclip;
+  label: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <div className="flex items-center gap-2">
+        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white text-gold-700">
+          <Icon className="h-4 w-4" />
+        </span>
+        <p className="text-sm font-semibold text-navy-950">{label}</p>
+      </div>
+      <p className="mt-2 text-xs leading-5 text-slate-600">{detail}</p>
+    </div>
   );
 }
 

@@ -1,5 +1,24 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — Tasklet-Style MVP Foundation And Cleanup Ledger
+
+Current foundation checkpoint:
+
+- Public navigation now centers the requested product pages: Learn, TACITUS,
+  Pricing, and Release notes, with the homepage still acting as the
+  prompt-first ContextCapsule entry point.
+- Added `/learn`, `/tacitus`, and `/release-notes` so the public site supports
+  the Tasklet-style PRAXIS model without sending users into old demo-first
+  pages.
+- `/app/contexts` now includes a capsule composition panel for pick/fork/lock
+  and combination-recipe review, keeping complex context assembly inside the
+  capsule manager rather than creating another top-level product.
+- Pricing copy now describes ContextCapsule workspaces and user/capsule/tool
+  value instead of demo-era walkthrough packaging.
+- Added `docs/audits/2026-05-15-tasklet-mvp-cleanup-ledger.md` and
+  `npm run audit:tasklet-mvp-foundation` to keep cleanup evidence-based before
+  route/component deletion.
+
 ## 2026-05-15 — Ask PRAXIS Capsule AI Readiness Panel
 
 Current Ask PRAXIS checkpoint:

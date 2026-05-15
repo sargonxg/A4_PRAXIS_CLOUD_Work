@@ -26,8 +26,8 @@ export default function PricingPage() {
         <div className="text-center">
           <h1 className="font-serif text-4xl font-semibold text-navy-900">PRAXIS Plans</h1>
           <p className="mt-3 text-lg text-navy-500 max-w-2xl mx-auto">
-            Monthly workspaces for policy, diplomacy, and political analysis. Choose by situation volume,
-            collaboration needs, and premium integration requirements.
+            Monthly ContextCapsule workspaces for policy, conflict analysis, statecraft, and handover. Choose by capsule volume,
+            collaboration needs, and governance requirements.
           </p>
         </div>
 

@@ -215,6 +215,7 @@ function useCapsuleLaunch() {
 
   useEffect(() => {
     if (!prompt.trim() || prompt.trim().length < 18) return;
+    if (!document.cookie.includes('tacitus-auth-session=')) return;
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       fetch('/api/paths/classify', {

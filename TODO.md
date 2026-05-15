@@ -21,6 +21,14 @@ from the active ledger above.
 
 ### Canonical Tasklet-Style Runtime Build
 
+0. First Tasklet-style MVP foundation pass is now in place: public pages
+   `/learn`, `/tacitus`, `/pricing`, and `/release-notes`; homepage nav aligned
+   to those pages; `/app/contexts` has a capsule composition panel for
+   pick/fork/lock/combination review; and
+   `docs/audits/2026-05-15-tasklet-mvp-cleanup-ledger.md` plus
+   `npm run audit:tasklet-mvp-foundation` guard the cleanup direction. Next
+   deletion work must extend the route consolidation audit before removing
+   demo/Syria/tour/specialist surfaces.
 0. Keep the public-to-authenticated path usable before adding deeper runtime
    scope: homepage prompt bar, path-aware capsule preview, active capsule
    glimpse, login/signup continuation, app sidebar, active capsule strip, Home
@@ -107,6 +115,10 @@ from the active ledger above.
 14. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
 15. Add production-browser coverage for the authenticated command palette once a stable production test user/session path is approved; local signed-session smoke now covers the simplified five-surface flow.
 16. After the current capsule/core composer lands, use `docs/superpowers/specs/2026-05-15-next-20-simplification-ai-context-writing-search.md` as the next improvement queue for simplification, stronger AI, context creation/combination, drafting, writing, and search.
+17. Run the next evidence-based cleanup pass against `/demo/*`, Syria-only
+    components, old tour components, and duplicate specialist surfaces. Archive
+    useful evidence and delete only after `rg`, route audits, imports, tests,
+    and graph references prove the target is safe.
 
 ## Future Architecture Direction
 

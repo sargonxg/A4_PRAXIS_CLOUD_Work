@@ -27,6 +27,7 @@
     "audit:mvp-route-shape": "tsx scripts/audit-mvp-route-shape.ts",
     "audit:tool-contracts": "tsx scripts/audit-tool-contracts.ts",
     "audit:purpose-surface": "tsx scripts/audit-purpose-surface.ts",
+    "audit:tasklet-mvp-foundation": "tsx scripts/audit-tasklet-mvp-foundation.ts",
     "audit:deep-preship": "tsx scripts/audit-deep-preship.ts",
     "audit:cognee": "tsx scripts/audit-cognee-isolation.ts",
     "audit:route-consolidation": "tsx scripts/audit-route-consolidation.ts",

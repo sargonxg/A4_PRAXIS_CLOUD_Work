@@ -23,6 +23,14 @@ Homepage prompt -> signup/login -> app sidebar -> active ContextCapsule bar
 
 Already established:
 
+- Public product pages now include `/learn`, `/tacitus`, `/pricing`, and
+  `/release-notes`, and public navigation points to those pages rather than
+  older demo-first language.
+- `/app/contexts` now includes a capsule composition panel for pick/fork/lock
+  and combination-recipe review.
+- Evidence-based cleanup for the Tasklet-style MVP direction is tracked in
+  `docs/audits/2026-05-15-tasklet-mvp-cleanup-ledger.md` and guarded by
+  `npm run audit:tasklet-mvp-foundation`.
 - Public landing has the ContextCapsule prompt bar, path-aware capsule
   preview, signup/login continuation, active bar glimpse, policy path previews,
   combination examples, output products, and connector posture.

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- feat(app): add Tasklet-style MVP foundation pages and cleanup guard.
+  Added Learn, TACITUS, and Release notes public pages; aligned public nav to
+  Learn/TACITUS/Pricing/Release notes; updated the sitemap; added capsule
+  composition guidance inside `/app/contexts`; refreshed ContextCapsule pricing
+  copy; and added an evidence-based cleanup ledger plus
+  `audit:tasklet-mvp-foundation`.
 - feat(ask): show capsule AI readiness.
   Added a compact Ask PRAXIS readiness panel for active capsule state, User and
   Situation cores, source/document coverage, output goal, available Genkit

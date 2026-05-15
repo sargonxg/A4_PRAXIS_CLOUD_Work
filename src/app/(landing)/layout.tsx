@@ -6,12 +6,10 @@ import { cn } from "@/lib/utils/cn";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
-  { label: "Ask", href: "#top" },
-  { label: "Cores", href: "#core-stack" },
-  { label: "Tools", href: "#methods" },
-  { label: "Write", href: "#drafting" },
-  { label: "App", href: "#real-app" },
-  { label: "Pricing", href: "#pricing" },
+  { label: "Learn", href: "/learn" },
+  { label: "TACITUS", href: "/tacitus" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "Release notes", href: "/release-notes" },
 ];
 
 export default function LandingLayout({
@@ -40,8 +38,8 @@ export default function LandingLayout({
     <div id="top" className="landing-light paper-texture relative min-h-screen">
       {/* Preview banner — normal flow, scrolls away naturally */}
       <div className="relative z-[60] bg-diplomatic-blue px-4 py-2 text-center text-xs text-white/90">
-        <span className="font-semibold tracking-wide uppercase text-gold-400">Preview</span>
-        {" "}— PRAXIS is consolidating around Ask, attached cores, research, and memo writing.{" "}
+        <span className="font-semibold tracking-wide uppercase text-gold-400">MVP</span>
+        {" "}— PRAXIS is becoming a ContextCapsule-native policy agent workspace.{" "}
         <a href="mailto:hello@tacitus.me" className="underline underline-offset-2 hover:text-white transition-colors">
           Write us at hello@tacitus.me
         </a>
@@ -66,10 +64,10 @@ export default function LandingLayout({
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3">
             <span className="font-serif text-2xl font-semibold tracking-wide text-diplomatic-blue">
-              TACITUS
+              PRAXIS
             </span>
             <span className="rounded-full bg-gold-600/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-gold-700">
-              PRAXIS
+              by TACITUS
             </span>
           </Link>
 
@@ -100,7 +98,7 @@ export default function LandingLayout({
               prefetch={false}
               className="text-sm font-semibold text-gold-700 transition-colors hover:text-gold-800"
             >
-              Open PRAXIS
+              New capsule
             </Link>
           </div>
 
@@ -150,7 +148,7 @@ export default function LandingLayout({
               onClick={() => setMobileMenuOpen(false)}
               className="block py-3 text-sm font-semibold text-gold-700 transition-colors hover:text-gold-800"
             >
-              Open PRAXIS
+              New capsule
             </Link>
           </div>
         </div>
