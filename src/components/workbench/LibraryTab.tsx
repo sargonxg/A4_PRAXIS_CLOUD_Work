@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ContextHealthChip } from '@/components/workbench/context-health-chip';
 import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { useFeatureFlags } from '@/lib/features/client';
-import { buildLibraryArtifacts, type LibraryArtifact, type LibraryArtifactType } from '@/lib/workbench/library-state';
+import { buildLibraryArtifacts, type LibraryArtifact, type LibraryArtifactType, type SourceImportReceipt } from '@/lib/workbench/library-state';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import type { SavedClaim } from '@/types/saved-claims';
@@ -419,6 +419,7 @@ export function LibraryTab() {
               <Badge variant="default" className="bg-gold-100 text-navy-950">{TYPE_LABELS[selected.type]}</Badge>
               <h3 className="mt-3 text-base font-semibold text-navy-950">{selected.title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-700">{selected.summary}</p>
+              {selected.receipt ? <SourceReceiptCard receipt={selected.receipt} /> : null}
               <dl className="mt-4 space-y-2">
                 {Object.entries(selected.meta).map(([key, value]) => (
                   <div key={key} className="flex items-start justify-between gap-3 rounded-md bg-slate-50 px-3 py-2">

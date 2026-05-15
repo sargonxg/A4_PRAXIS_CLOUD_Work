@@ -558,6 +558,7 @@ function sourceCore(input: {
   sourceReceiptId?: string;
   capsuleIds: string[];
   status: NonNullable<LibraryCore['status']>;
+  receipt?: SourceImportReceipt;
 }): LibraryCore {
   return {
     id: input.id,
@@ -577,7 +578,27 @@ function sourceCore(input: {
     documentId: input.documentId,
     sourceReceiptId: input.sourceReceiptId,
     capsuleIds: input.capsuleIds,
+    receipt: input.receipt,
     provenance: { kind: 'firestore', refPath: `users/${input.uid}/situations/${input.situationId}/sources/${input.sourceReceiptId ?? input.id}` },
+  };
+}
+
+function parseSourceImportReceipt(value: unknown): SourceImportReceipt | undefined {
+  const data = asRecord(value);
+  const sourceType = stringField(data, 'sourceType');
+  const attachedCore = stringField(data, 'attachedCore');
+  const confidence = numberField(data, 'confidence');
+  if (!sourceType || !attachedCore || confidence === undefined) return undefined;
+  return {
+    sourceType,
+    attachedCore,
+    confidence,
+    claims: stringArrayField(data, 'claims').slice(0, 4),
+    dates: stringArrayField(data, 'dates').slice(0, 4),
+    actors: stringArrayField(data, 'actors').slice(0, 6),
+    documentId: stringField(data, 'documentId'),
+    chunkCount: numberField(data, 'chunkCount'),
+    extractedAt: stringField(data, 'extractedAt'),
   };
 }
 
@@ -600,4 +621,10 @@ function stringField(value: Record<string, unknown>, key: string): string | unde
 function numberField(value: Record<string, unknown>, key: string): number | undefined {
   const item = value[key];
   return typeof item === 'number' && Number.isFinite(item) ? item : undefined;
+}
+
+function stringArrayField(value: Record<string, unknown>, key: string): string[] {
+  const item = value[key];
+  if (!Array.isArray(item)) return [];
+  return item.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0);
 }
