@@ -137,6 +137,9 @@ export function OneClickContextBuilder({ className }: { className?: string }) {
       }
 
       await saveStack({
+        stackId: capsulePayload.capsule.capsuleId,
+        capsuleId: capsulePayload.capsule.capsuleId,
+        contextPackageId: packagePayload.package.id,
         situationId: payload.situation.id,
         sourceIds: [],
         documentIds: [],

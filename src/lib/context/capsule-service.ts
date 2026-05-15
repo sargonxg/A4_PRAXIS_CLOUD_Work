@@ -478,6 +478,7 @@ export async function saveContextStackCompat(
 export function capsuleToStack(capsule: PraxisCapsule): ActiveContextStackState {
   return sanitizeActiveContextStack({
     stackId: capsule.capsuleId || DEFAULT_CONTEXT_STACK_ID,
+    capsuleId: capsule.capsuleId || DEFAULT_CONTEXT_STACK_ID,
     userModelId: capsule.coreRefs.userCoreId,
     situationId: capsule.coreRefs.situationCoreId,
     sourceIds: capsule.coreRefs.sourceCoreIds,

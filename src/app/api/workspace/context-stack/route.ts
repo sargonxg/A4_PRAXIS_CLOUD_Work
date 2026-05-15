@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
+import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import {
   DEFAULT_CONTEXT_STACK_ID,
   defaultActiveContextStack,
@@ -34,6 +35,22 @@ export const GET = withAuth(async (req, user) => {
       persisted: true,
     });
   }
+  const activeSnap = await getActiveStackPointer(user.uid);
+  if (activeSnap && activeSnap.stackId !== DEFAULT_CONTEXT_STACK_ID) {
+    const capsule = await getCapsule(user.uid, activeSnap.capsuleId ?? activeSnap.stackId);
+    if (capsule && !capsule.archivedAt) {
+      return NextResponse.json({
+        stack: {
+          ...capsuleToStack(capsule),
+          ...activeSnap,
+          capsuleId: capsule.capsuleId,
+        },
+        capsule,
+        migrated: false,
+        persisted: true,
+      });
+    }
+  }
   const result = await getOrMigrateDefaultCapsule(user.uid);
   return NextResponse.json({
     stack: capsuleToStack(result.capsule),
@@ -57,7 +74,7 @@ export const PUT = withAuth(async (req, user) => {
       ? await bumpCapsuleVersion(user.uid, stack.stackId, {
           coreRefs: stackToCoreRefs(stack),
           activeForSituationIds: stack.situationId ? [stack.situationId] : ['workspace'],
-        })
+        }) ?? existing
       : await createCapsule(user.uid, {
           capsuleId: stack.stackId,
           label: `Capsule: ${stack.stackId}`,
@@ -66,7 +83,13 @@ export const PUT = withAuth(async (req, user) => {
           activeForSituationIds: stack.situationId ? [stack.situationId] : ['workspace'],
           provenance: { source: 'api', createdBy: user.uid },
         });
-    return NextResponse.json({ stack, capsule, persisted: true });
+    const activeStack = {
+      ...stack,
+      capsuleId: capsule.capsuleId,
+      stackId: capsule.capsuleId,
+    };
+    await saveActiveStackPointer(user.uid, activeStack);
+    return NextResponse.json({ stack: activeStack, capsule, persisted: true });
   }
   const result = await saveContextStackCompat(user.uid, incoming);
   return NextResponse.json(result);
@@ -77,6 +100,8 @@ function sanitizeNamedStack(input: Partial<ActiveContextStackState>): ActiveCont
     stackId: typeof input.stackId === 'string' && input.stackId.trim()
       ? input.stackId.trim().replace(/[^\w:.-]/g, '-').slice(0, 120)
       : DEFAULT_CONTEXT_STACK_ID,
+    capsuleId: input.capsuleId ?? null,
+    contextPackageId: input.contextPackageId ?? null,
     userModelId: input.userModelId ?? null,
     situationId: input.situationId ?? null,
     sourceIds: Array.isArray(input.sourceIds) ? input.sourceIds : [],
@@ -87,4 +112,22 @@ function sanitizeNamedStack(input: Partial<ActiveContextStackState>): ActiveCont
     updatedAt: new Date().toISOString(),
     schemaVersion: 1,
   };
+}
+
+async function getActiveStackPointer(uid: string): Promise<ActiveContextStackState | null> {
+  const snap = await getActiveStackRef(uid).get();
+  if (!snap.exists) return null;
+  return sanitizeNamedStack(snap.data() as Partial<ActiveContextStackState>);
+}
+
+async function saveActiveStackPointer(uid: string, stack: ActiveContextStackState): Promise<void> {
+  await getActiveStackRef(uid).set(stack, { merge: true });
+}
+
+function getActiveStackRef(uid: string) {
+  return getActiveStackDb().collection('users').doc(uid).collection('contextStacks').doc(DEFAULT_CONTEXT_STACK_ID);
+}
+
+function getActiveStackDb() {
+  return getAdminDbOrThrow();
 }

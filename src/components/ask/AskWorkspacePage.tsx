@@ -219,7 +219,9 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
             </button>
           </div>
           <AskStreamPanel
-            capsuleId={stack.stackId}
+            capsuleId={stack.capsuleId ?? stack.stackId}
+            contextPackageId={stack.contextPackageId}
+            activeContextStack={stack}
             userLabel={activeUserModel.identity}
             outputGoal={stack.outputGoal ?? 'Memo goal'}
             healthScore={contextHealth.score}

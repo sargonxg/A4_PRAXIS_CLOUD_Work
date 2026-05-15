@@ -1,5 +1,7 @@
 export interface ActiveContextStackState {
   stackId: string;
+  capsuleId: string | null;
+  contextPackageId: string | null;
   userModelId: string | null;
   situationId: string | null;
   sourceIds: string[];
@@ -28,6 +30,8 @@ export const DEFAULT_CONTEXT_STACK_ID = 'default';
 export function defaultActiveContextStack(): ActiveContextStackState {
   return {
     stackId: DEFAULT_CONTEXT_STACK_ID,
+    capsuleId: null,
+    contextPackageId: null,
     userModelId: null,
     situationId: null,
     sourceIds: [],
@@ -47,6 +51,8 @@ export function sanitizeActiveContextStack(input: unknown): ActiveContextStackSt
 
   return {
     stackId: stackId.slice(0, 80),
+    capsuleId: stringOrNull(body.capsuleId),
+    contextPackageId: stringOrNull(body.contextPackageId),
     userModelId: stringOrNull(body.userModelId),
     situationId: stringOrNull(body.situationId),
     sourceIds: stringList(body.sourceIds).slice(0, 50),

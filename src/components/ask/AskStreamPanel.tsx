@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { InterruptCard, type InterruptRequest } from '@/components/ask/InterruptCard';
 import { buildContextHealthReport } from '@/lib/context/context-health';
+import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { useSituationStore } from '@/stores/situation-store';
@@ -61,6 +62,8 @@ export interface AskCoreBrick {
 
 export interface AskStreamPanelProps {
   capsuleId?: string | null;
+  contextPackageId?: string | null;
+  activeContextStack?: ActiveContextStackState | null;
   userLabel?: string;
   outputGoal?: string;
   healthScore?: number;
@@ -80,6 +83,8 @@ const TOOL_COMMANDS = [
 
 export function AskStreamPanel({
   capsuleId,
+  contextPackageId,
+  activeContextStack,
   userLabel = 'User Core',
   outputGoal = 'Memo goal',
   healthScore,
@@ -127,6 +132,8 @@ export function AskStreamPanel({
           messages: [{ role: 'user' as const, content: text }],
           ...(activeSituation?.name ? { situation: activeSituation } : {}),
           ...(capsuleId ? { capsuleId, threadId: `ask-${capsuleId}` } : {}),
+          ...(contextPackageId ? { contextPackageId } : {}),
+          ...(activeContextStack ? { activeContextStack } : {}),
           aiSettings: { analysisDepth: 'standard' as const },
         };
 
@@ -221,7 +228,7 @@ export function AskStreamPanel({
         abortRef.current = null;
       }
     },
-    [thinking, capsuleId, activeSituation],
+    [thinking, capsuleId, contextPackageId, activeContextStack, activeSituation],
   );
 
   useEffect(() => () => abortRef.current?.abort(), []);
