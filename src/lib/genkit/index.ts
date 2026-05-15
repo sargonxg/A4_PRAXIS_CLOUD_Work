@@ -4,6 +4,7 @@ import { genkit } from 'genkit';
 import { loadEnvConfig } from '@next/env';
 import modelMatrix from '@/lib/ai/MODEL_MATRIX.json';
 import { GenkitClassifyPathOutputSchema } from '@/lib/genkit/schemas/classify-path';
+import { GenkitSourceabilityOutputSchema } from '@/lib/genkit/schemas/sourceability';
 import { GenkitSituationIntelligenceSchema } from '@/lib/genkit/schemas/situation-intelligence';
 import { resolveGenkitGoogleProvider } from '@/lib/genkit/provider';
 
@@ -47,3 +48,4 @@ export const gemini25Pro = genkitModelProvider.model(modelIdForTask('complex_rea
 
 ai.defineSchema('SituationIntelligenceSchema', GenkitSituationIntelligenceSchema);
 ai.defineSchema('ClassifyPathOutputSchema', GenkitClassifyPathOutputSchema);
+ai.defineSchema('SourceabilityOutputSchema', GenkitSourceabilityOutputSchema);

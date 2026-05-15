@@ -1,5 +1,20 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — Genkit Sourceability Flow
+
+Current Genkit/sourceability checkpoint:
+
+- Added a typed Genkit `sourceabilityFlow` that checks one claim against only
+  provided source snippets and returns `supported`, `weak`, `unsupported`, or
+  `needs_date_check`.
+- The output now includes an explanation, supporting source ids, missing
+  evidence, a cautious suggested rewrite, and citation warnings for Memo Studio
+  and future capsule-aware agent workers.
+- The flow has a deterministic fallback for provider outages and never browses
+  the web, mutates graph state, or treats unsupported facts as true.
+- Added calibrated `POST /api/ai/sourceability` with `ai_sourceability` credit
+  mapping for API use without exposing provider internals.
+
 ## 2026-05-15 — Genkit ContextCapsule Path Classifier
 
 Current Genkit checkpoint:

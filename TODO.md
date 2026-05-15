@@ -55,16 +55,19 @@ from the active ledger above.
    prompt-to-capsule bridge: classify into `POLICY_PATH_PROFILES`, show
    suggested cores/tools/outputs/questions, then create user-owned capsule
    state only through the existing authenticated capsule creation flow.
-7. Add approval gates before any external send, graph fact promotion,
+7. Use `sourceabilityFlow` as the shared claim-check primitive for Memo Studio,
+   Ask PRAXIS, and queued agent workers. It should only evaluate provided
+   snippets; web/source retrieval remains a separate explicit tool step.
+8. Add approval gates before any external send, graph fact promotion,
    unsupported-claim resolution, credentialed browser automation, or high-risk
    tool action.
-8. Keep MCP private/read-first until the run ledger and approval model are
+9. Keep MCP private/read-first until the run ledger and approval model are
    reliable. Browser/code sandbox work is explicitly GKE-later unless a real
    workload proves Cloud Run cannot handle it.
-9. When browser automation becomes necessary, start with `browser-use` plus
+10. When browser automation becomes necessary, start with `browser-use` plus
    Steel.dev managed sessions, allowlisted/read-only behavior, hard run caps,
    idempotency, trace ids, and approval gates before credentialed actions.
-10. Use `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md` and
+11. Use `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md` and
    `src/lib/product/context-capsules.ts` when adding new personas, paths,
    output products, connectors, or capsule-combination flows.
 

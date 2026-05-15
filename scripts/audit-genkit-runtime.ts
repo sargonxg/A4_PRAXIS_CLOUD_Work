@@ -47,6 +47,12 @@ const expectedFlows = [
     promptFile: 'prompts/classify-path.prompt',
     routeFile: 'src/app/api/paths/classify/route.ts',
   },
+  {
+    name: 'sourceability',
+    flowFile: 'src/lib/genkit/flows/sourceability.ts',
+    promptFile: 'prompts/sourceability.prompt',
+    routeFile: 'src/app/api/ai/sourceability/route.ts',
+  },
 ];
 
 for (const flow of expectedFlows) {

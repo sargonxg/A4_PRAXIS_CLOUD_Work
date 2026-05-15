@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(genkit): add sourceability evidence flow.
+  Added a typed Genkit sourceability flow, no-web deterministic fallback,
+  calibrated `/api/ai/sourceability` route, sourceability credit mapping, and
+  focused tests for supported, weak, unsupported, date-check, and prompt
+  normalization behavior.
 - feat(genkit): classify prompts into ContextCapsule paths.
   Moved the classify-path flow onto `POLICY_PATH_PROFILES`, added typed capsule
   default output for User/Situation cores, tools, outputs, and missing
