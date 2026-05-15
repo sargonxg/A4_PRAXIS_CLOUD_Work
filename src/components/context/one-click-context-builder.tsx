@@ -13,6 +13,23 @@ import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
 import { cn } from '@/lib/utils/cn';
 
+interface ContextCoreLiteSummary {
+  title: string;
+  domain: string;
+  situationCoreId: string;
+  capsuleId: string;
+  capsuleVersion: number;
+  contextPackageId: string;
+  sourceRefs: string[];
+  documentRefs: string[];
+  healthScore: number;
+  missingCores: string[];
+  assumptions: string[];
+  gaps: string[];
+  status: 'draft' | 'review_ready' | 'locked';
+  askResolvable: boolean;
+}
+
 export function OneClickContextBuilder({ className }: { className?: string }) {
   const addSituation = useSituationStore((state) => state.addSituation);
   const setActiveSituation = useSituationStore((state) => state.setActiveSituation);
@@ -20,6 +37,7 @@ export function OneClickContextBuilder({ className }: { className?: string }) {
   const [selected, setSelected] = useState<StarterContextDomainId>('policy');
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [coreLite, setCoreLite] = useState<ContextCoreLiteSummary | null>(null);
   const domain = getStarterContextDomain(selected);
 
   async function createStarterContext() {
@@ -53,13 +71,119 @@ export function OneClickContextBuilder({ className }: { className?: string }) {
       if (!response.ok || !payload.situation) throw new Error(payload.error ?? 'context creation failed');
       addSituation(payload.situation);
       setActiveSituation(payload.situation.id);
+      setNote('Creating capsule and Context Package...');
+      const capsuleResponse = await fetch('/api/context/capsules', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          label: `${domain.label} Capsule`,
+          scope: 'situation',
+          coreRefs: {
+            situationCoreId: payload.situation.id,
+            sourceCoreIds: [],
+            documentCoreIds: [],
+            graphCoreId: `${payload.situation.id}:graph-lite`,
+            outputCoreIds: domain.outputFormats.slice(0, 2).map((format) => `output:${format.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`),
+            objectiveCoreIds: [`objective:${domain.id}`],
+          },
+          retrievalPolicy: {
+            layers: ['sources', 'documents', 'graph', 'tool-output'],
+            limit: 12,
+            checkFreshness: true,
+            freshnessWindowDays: 180,
+          },
+          activeForSituationIds: [payload.situation.id],
+        }),
+      });
+      const capsulePayload = (await capsuleResponse.json().catch(() => ({}))) as {
+        capsule?: { capsuleId: string; version: number; health?: { score?: number; missingCores?: string[]; warnings?: string[] } };
+        error?: string;
+      };
+      if (!capsuleResponse.ok || !capsulePayload.capsule) {
+        throw new Error(capsulePayload.error ?? 'capsule creation failed');
+      }
+
+      const packageResponse = await fetch('/api/context/packages', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          label: `${domain.label} Context Package`,
+          ownerScope: 'situation',
+          coreRefs: {
+            situationCoreId: payload.situation.id,
+            sourceCoreIds: [],
+            documentCoreIds: [],
+            graphCoreId: `${payload.situation.id}:graph-lite`,
+            outputCoreIds: domain.outputFormats.slice(0, 2).map((format) => `output:${format.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`),
+          },
+          retrievalPolicy: {
+            layers: ['sources', 'documents', 'graph', 'tool-output'],
+            limit: 12,
+            checkFreshness: true,
+            freshnessWindowDays: 180,
+          },
+          active: true,
+        }),
+      });
+      const packagePayload = (await packageResponse.json().catch(() => ({}))) as {
+        package?: { id: string; health?: { score?: number; missingCores?: string[]; warnings?: string[] } };
+        error?: string;
+      };
+      if (!packageResponse.ok || !packagePayload.package) {
+        throw new Error(packagePayload.error ?? 'context package creation failed');
+      }
+
       await saveStack({
         situationId: payload.situation.id,
         sourceIds: [],
         documentIds: [],
         outputGoal: domain.outputFormats[0] ?? 'memo',
       });
-      setNote(`${domain.label} Situation Core created. Add a document or ask PRAXIS from this context.`);
+
+      const resolveResponse = await fetch('/api/context/resolve', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          situationId: payload.situation.id,
+          capsuleId: capsulePayload.capsule.capsuleId,
+          contextPackageId: packagePayload.package.id,
+          query: `Prepare ${domain.outputFormats[0] ?? 'memo'} from ${domain.label} context.`,
+        }),
+      });
+      const resolved = resolveResponse.ok;
+      const missingCores = Array.from(new Set([
+        ...(capsulePayload.capsule.health?.missingCores ?? []),
+        ...(packagePayload.package.health?.missingCores ?? []),
+      ])).slice(0, 4);
+      const warnings = [
+        ...(capsulePayload.capsule.health?.warnings ?? []),
+        ...(packagePayload.package.health?.warnings ?? []),
+      ];
+      setCoreLite({
+        title: `${domain.label} Context Core Lite`,
+        domain: domain.domainId,
+        situationCoreId: payload.situation.id,
+        capsuleId: capsulePayload.capsule.capsuleId,
+        capsuleVersion: capsulePayload.capsule.version,
+        contextPackageId: packagePayload.package.id,
+        sourceRefs: [],
+        documentRefs: [],
+        healthScore: packagePayload.package.health?.score ?? capsulePayload.capsule.health?.score ?? 0,
+        missingCores,
+        assumptions: [
+          `${domain.label} domain defaults are starter assumptions until sources are attached.`,
+          `Time horizon: ${domain.timeHorizon}.`,
+          `Initial actor set: ${domain.starterActors.slice(0, 3).join(', ')}.`,
+        ],
+        gaps: warnings.length > 0 ? warnings.slice(0, 3) : ['Attach source receipts.', 'Upload documents.', 'Review graph candidates.'],
+        status: missingCores.length === 0 ? 'review_ready' : 'draft',
+        askResolvable: resolved,
+      });
+      setNote(`${domain.label} Context Core Lite created. Ask PRAXIS can ${resolved ? 'resolve' : 'not yet resolve'} this package.`);
     } catch (error) {
       setNote(error instanceof Error ? error.message : 'Could not create context.');
     } finally {
@@ -110,6 +234,29 @@ export function OneClickContextBuilder({ className }: { className?: string }) {
         </button>
         <p className="text-xs leading-5 text-slate-600">{note ?? `Time horizon: ${domain.timeHorizon}`}</p>
       </div>
+      {coreLite ? (
+        <div className="mt-4 rounded-lg border border-gold-200 bg-gold-50/40 p-3">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gold-800">Context Core Lite</p>
+              <h3 className="mt-1 text-sm font-semibold text-navy-950">{coreLite.title}</h3>
+            </div>
+            <span className="rounded-full bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-navy-800">
+              {coreLite.status.replace('_', ' ')}
+            </span>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-4">
+            <BuilderFact label="Capsule" value={`${coreLite.capsuleId} v${coreLite.capsuleVersion}`} />
+            <BuilderFact label="Package" value={coreLite.contextPackageId} />
+            <BuilderFact label="Health" value={`${coreLite.healthScore}/100`} />
+            <BuilderFact label="Ask" value={coreLite.askResolvable ? 'Resolvable' : 'Needs review'} />
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <LiteList title="Assumptions" items={coreLite.assumptions} />
+            <LiteList title="Gaps" items={coreLite.gaps} />
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -119,6 +266,17 @@ function BuilderFact({ label, value }: { label: string; value: string }) {
     <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
       <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-navy-950">{value}</p>
+    </div>
+  );
+}
+
+function LiteList({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div className="rounded-md border border-white/70 bg-white px-3 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{title}</p>
+      <ul className="mt-1 space-y-1 text-xs leading-5 text-slate-700">
+        {items.slice(0, 3).map((item) => <li key={item}>{item}</li>)}
+      </ul>
     </div>
   );
 }

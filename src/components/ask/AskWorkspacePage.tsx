@@ -2,37 +2,34 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import type { ComponentType } from 'react';
 import {
-  ArrowRight,
   BookOpenText,
-  Bot,
   CheckCircle2,
+  Clock,
   FileText,
   FolderKanban,
   GitBranch,
+  History,
+  Layers3,
   LibraryBig,
-  MessageSquareText,
+  Lock,
   Network,
+  Plus,
+  Save,
   Search,
-  Share2,
   ShieldCheck,
   Sparkles,
   Target,
   Users,
-  Wrench,
 } from 'lucide-react';
-import { AskBar } from '@/components/ask/AskBar';
 import { AskStreamPanel } from '@/components/ask/AskStreamPanel';
 import { AppPageHeader } from '@/components/app/app-page-header';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
-import { ContextCapsulePreview } from '@/components/context/context-capsule-preview';
-import { ContextQualityMeter } from '@/components/context/context-quality-meter';
 import { buildContextHealthReport } from '@/lib/context/context-health';
-import { getNextMoves } from '@/lib/assistant/next-moves';
 import { PUBLIC_USER_MODELS } from '@/lib/user-models/seeds';
 import type { UserModelRecord } from '@/lib/user-models/types';
 import { getActiveUserModelId, listPrivateUserModels, setActiveUserModel } from '@/lib/users/api';
+import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
 
@@ -79,6 +76,19 @@ type WorkspaceCase =
       situation: ExampleCase;
     };
 
+type CoreBrick = {
+  id: string;
+  label: string;
+  value: string;
+  detail: string;
+  href: string;
+  version: string;
+  ready: boolean;
+  locked: boolean;
+  optional?: boolean;
+  icon: typeof Users;
+};
+
 export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWorkspacePageProps) {
   const situations = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
@@ -87,6 +97,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
   const [privateModels, setPrivateModels] = useState<UserModelRecord[]>([]);
   const [activeUserModelId, setActiveUserModelId] = useState('foreign-policy-analyst');
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [composerOpen, setComposerOpen] = useState(true);
   const { stack, hydrated: stackHydrated, saveStack } = useActiveContextStack();
 
   useEffect(() => {
@@ -108,9 +119,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
       setSelectedCaseId(activeSituation.id);
       return;
     }
-    if (workspaceCases[0]) {
-      setSelectedCaseId(workspaceCases[0].id);
-    }
+    if (workspaceCases[0]) setSelectedCaseId(workspaceCases[0].id);
   }, [activeSituation?.id, selectedCaseId, stack.situationId, stackHydrated, workspaceCases]);
 
   useEffect(() => {
@@ -131,8 +140,10 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     return activeSituation ? workspaceCases.find((item) => item.id === activeSituation.id) ?? null : workspaceCases[0] ?? null;
   }, [activeSituation, selectedCaseId, workspaceCases]);
 
-  const policyPosture = buildPolicyPosture(selectedCase, marketplaceToolCount, activeUserModel);
-  const activeContextName = selectedCase?.name ?? 'No situation selected';
+  const evidenceCount = (selectedCase?.sourceCount ?? 0) + (selectedCase?.documentCount ?? 0);
+  const capsuleTimeHorizon = selectedCase?.kind === 'user'
+    ? selectedCase.situation.latestEventDate ?? selectedCase.situation.conflictOnsetDate ?? 'Set horizon'
+    : 'Set horizon';
   const contextHealth = buildContextHealthReport({
     hasUserCore: Boolean(activeUserModel),
     hasSituationCore: Boolean(selectedCase),
@@ -142,21 +153,21 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     hasTimeline: selectedCase?.kind === 'user'
       ? Boolean(selectedCase.situation.keyDates?.length || selectedCase.situation.latestEventDate || selectedCase.situation.conflictOnsetDate)
       : Boolean(selectedCase),
-    evidenceGapCount: selectedCase ? Math.max(0, 3 - ((selectedCase.sourceCount ?? 0) + (selectedCase.documentCount ?? 0))) : 4,
-    hasDraft: false,
+    evidenceGapCount: selectedCase ? Math.max(0, 3 - evidenceCount) : 4,
+    hasDraft: Boolean(stack.outputGoal),
     situationHref: selectedCase ? `/app/workbench/${selectedCase.id}` : '/app/contexts',
   });
-  const nextMoves = getNextMoves({
-    situation: selectedCase?.kind === 'user' ? selectedCase.situation : null,
-    situationStage: selectedCase?.tags.join(' ') ?? 'intake',
+  const activeContextName = selectedCase?.name ?? 'No Situation Core';
+  const bricks = buildCoreBricks({
+    activeUserModel,
+    selectedCase,
+    evidenceCount,
+    stack,
+    capsuleTimeHorizon,
+    healthScore: contextHealth.score,
   });
-  const knowledgeNodes = buildKnowledgeNodes(selectedCase, activeUserModel, stack);
-  const capabilityRunway = buildCapabilityRunway(selectedCase, contextHealth.score, marketplaceToolCount);
-  const evidenceCount = (selectedCase?.sourceCount ?? 0) + (selectedCase?.documentCount ?? 0);
-  const askMissingCore = contextHealth.score < 55 ? contextHealth.nextActions[0] : null;
-  const capsuleTimeHorizon = selectedCase?.kind === 'user'
-    ? selectedCase.situation.latestEventDate ?? selectedCase.situation.conflictOnsetDate ?? 'Set in Situation Core'
-    : 'Set in Situation Core';
+  const missingBricks = bricks.filter((brick) => !brick.ready);
+  const headerLine = `${activeUserModel.identity} / ${activeContextName} / ${evidenceCount} sources and documents / ${stack.outputGoal ?? 'Memo goal'} / ${contextHealth.score}/100 health`;
 
   function handleUserModelChange(modelId: string) {
     setActiveUserModel(window.localStorage, modelId);
@@ -172,307 +183,311 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     } else {
       setActiveSituation(null);
     }
-    const foundCase = workspaceCases.find((item) => item.id === caseId);
     void saveStack({
       situationId: caseId,
-      sourceIds: foundCase?.kind === 'user' ? foundCase.situation.sourceUrls ?? [] : [],
-      documentIds: foundCase?.kind === 'user' ? foundCase.situation.initialDocumentIds ?? [] : [],
+      sourceIds: found?.kind === 'user' ? found.situation.sourceUrls ?? [] : [],
+      documentIds: found?.kind === 'user' ? found.situation.initialDocumentIds ?? [] : [],
     });
   }
 
   return (
-    <main className="flex flex-col gap-6" data-testid="ask-workspace-page">
+    <main className="flex min-h-[calc(100vh-9rem)] flex-col gap-4" data-testid="ask-workspace-page">
       <AppPageHeader
         eyebrow="Ask PRAXIS"
-        title="Ask from the active context."
-        subtitle="PRAXIS uses the selected User Core, Situation Core, sources, graph posture, and output target before it answers."
-        primaryAction={{ label: 'Change context', href: '/app/contexts', icon: FolderKanban }}
-        secondaryAction={{ label: 'Open Memo Studio', href: '/app/write', icon: FileText }}
+        title="Ask PRAXIS"
+        subtitle={headerLine}
+        primaryAction={{ label: 'Manage context', href: '/app/contexts', icon: FolderKanban }}
       />
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="space-y-5">
-          <section className="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm shadow-navy-950/5 backdrop-blur">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">Attached context</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <AttachChip href="/app/cores/user" label="User Core" detail={activeUserModel.identity} icon={Users} />
-                  <AttachChip href="/app/cores/context" label="Situation Core" detail={activeContextName} icon={Target} />
-                  <AttachChip href="/app/dashboard" label="Health" detail={`${contextHealth.score}/100 - ${contextHealth.label}`} icon={Sparkles} />
-                  <AttachChip href="/app/write" label="Write path" detail={stack.outputGoal ?? 'Continue in Memo Studio'} icon={BookOpenText} />
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Link href="/app/dashboard" className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-navy-800 hover:bg-slate-50">
-                  Dashboard
-                </Link>
-                <Link href="/app/tools" className="inline-flex items-center gap-2 rounded-md border border-diplomatic-blue/20 bg-diplomatic-blue/5 px-3 py-2 text-sm font-semibold text-diplomatic-blue hover:bg-diplomatic-blue/10">
-                  Advanced
-                </Link>
-              </div>
+      <section className={cn('grid min-h-[42rem] gap-4', composerOpen ? 'xl:grid-cols-[minmax(0,1fr)_360px]' : 'xl:grid-cols-1')}>
+        <div className="flex min-w-0 flex-col rounded-lg border border-slate-200 bg-white shadow-sm shadow-navy-950/5">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-navy-950">Question + active capsule + selected tools + output goal</p>
+              <p className="mt-1 truncate text-xs text-slate-600">{activeContextName}</p>
             </div>
-
-            <div className="mt-5 rounded-2xl border border-navy-200 bg-white p-3 shadow-sm">
-              <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
-                <span className="font-semibold text-navy-950">Using:</span>
-                <span>{activeUserModel.identity}</span>
-                <span className="text-slate-300">/</span>
-                <span>{activeContextName}</span>
-                <span className="text-slate-300">/</span>
-                <span>{evidenceCount} Documents & sources</span>
-                <span className="text-slate-300">/</span>
-                <span>{stack.outputGoal ?? 'Memo Goal'}</span>
-              </div>
-              {askMissingCore ? (
-                <div className="mb-3 rounded-lg border border-gold-200 bg-gold-50 px-3 py-2 text-xs leading-5 text-gold-900">
-                  Add one missing core first: <span className="font-semibold">{askMissingCore.label}</span>. PRAXIS can still answer, but it will keep confidence lower until this context improves.
-                </div>
-              ) : null}
-              <AskBar activeContextName={activeContextName} hasContext={Boolean(selectedCase)} />
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm shadow-navy-950/5 backdrop-blur">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Network className="h-4 w-4 text-diplomatic-blue" />
-                  <h2 className="text-base font-semibold text-navy-950">Context knowledge stack</h2>
-                </div>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
-                  Every answer should know who is asking, what situation is live, what evidence is attached, where the gaps are, and which output is being built.
-                </p>
-              </div>
-              <Link href="/app/contexts" className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-navy-800 hover:bg-slate-50">
-                Open Library
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-            <KnowledgeStackMap nodes={knowledgeNodes} />
-          </section>
-
-          <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="rounded-2xl border border-diplomatic-blue/20 bg-white p-5 shadow-sm shadow-navy-950/5">
-              <div className="flex items-center gap-2">
-                <GitBranch className="h-4 w-4 text-diplomatic-blue" />
-                <h2 className="text-base font-semibold text-navy-950">What Ask can do with this context</h2>
-              </div>
-              <CapabilityRunway items={capabilityRunway} />
-            </div>
-            <AskStreamPanel capsuleId={stack.stackId} className="min-h-[26rem]" />
-          </section>
-
-          <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-            <div className="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm shadow-navy-950/5 backdrop-blur">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-gold-700" />
-                <h2 className="text-base font-semibold text-navy-950">Policy posture</h2>
-              </div>
-              <p className="mt-2 text-sm leading-6 text-slate-700">{policyPosture.summary}</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                {policyPosture.items.map((item) => (
-                  <div key={item.label} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
-                    <p className="mt-1 text-sm font-semibold text-navy-950">{item.value}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm shadow-navy-950/5 backdrop-blur">
-              <div className="flex items-center gap-2">
-                <FolderKanban className="h-4 w-4 text-diplomatic-blue" />
-                <h2 className="text-base font-semibold text-navy-950">Core selection</h2>
-              </div>
-              <div className="mt-4 space-y-3">
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">User Core</span>
-                  <select
-                    value={activeUserModelId}
-                    onChange={(event) => handleUserModelChange(event.target.value)}
-                    className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-navy-800 outline-none focus:border-diplomatic-blue"
-                  >
-                    {availableModels.map((model) => (
-                      <option key={model.modelId} value={model.modelId}>
-                        {model.identity}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Situation Core</span>
-                  <select
-                    value={selectedCase?.id ?? ''}
-                    onChange={(event) => handleCaseChange(event.target.value)}
-                    className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-navy-800 outline-none focus:border-diplomatic-blue"
-                  >
-                    {workspaceCases.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700">
-                Keep the context small. If a section is not useful, hide it or collapse it rather than spreading the workflow across multiple pages.
-              </div>
-            </div>
-          </section>
+            <button
+              type="button"
+              onClick={() => setComposerOpen((value) => !value)}
+              className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-navy-900 hover:bg-slate-50"
+            >
+              <Layers3 className="h-4 w-4" />
+              {composerOpen ? 'Hide composer' : 'Context composer'}
+            </button>
+          </div>
+          <AskStreamPanel
+            capsuleId={stack.stackId}
+            userLabel={activeUserModel.identity}
+            outputGoal={stack.outputGoal ?? 'Memo goal'}
+            healthScore={contextHealth.score}
+            coreBricks={bricks}
+            onOpenComposer={() => setComposerOpen(true)}
+            className="min-h-0 flex-1 p-4"
+          />
         </div>
 
-        <aside className="space-y-5">
-          <ContextQualityMeter report={contextHealth} />
-          <ContextCapsulePreview
-            userLabel={activeUserModel.identity}
-            situationLabel={activeContextName}
-            sourceCount={selectedCase?.sourceCount ?? 0}
-            documentCount={selectedCase?.documentCount ?? 0}
-            graphState={`${selectedCase?.actorCount ?? 0} actors`}
-            timeHorizon={capsuleTimeHorizon}
-            outputGoal={stack.outputGoal ?? 'Memo Goal'}
-            healthScore={contextHealth.score}
-            href="/app/contexts"
+        {composerOpen ? (
+          <ContextComposer
+            activeUserModelId={activeUserModelId}
+            activeContextName={activeContextName}
+            availableModels={availableModels}
+            bricks={bricks}
+            contextHealthScore={contextHealth.score}
+            missingBricks={missingBricks}
+            marketplaceToolCount={marketplaceToolCount}
+            selectedCase={selectedCase}
+            selectedCaseId={selectedCase?.id ?? ''}
+            workspaceCases={workspaceCases}
+            onCaseChange={handleCaseChange}
+            onUserModelChange={handleUserModelChange}
           />
-          <section className="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm shadow-navy-950/5 backdrop-blur">
-            <div className="flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-diplomatic-blue" />
-              <h2 className="text-base font-semibold text-navy-950">Next best actions</h2>
-            </div>
-            <div className="mt-4 space-y-2">
-              {nextMoves.map((move) => (
-                <Link
-                  key={move.id}
-                  href={move.href}
-                  className="block rounded-xl border border-slate-200 bg-slate-50 p-3 hover:border-diplomatic-blue/30 hover:bg-white"
-                >
-                  <p className="text-sm font-semibold text-navy-950">{move.label}</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-600">{move.detail}</p>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-gold-200 bg-gold-50 p-5 shadow-sm shadow-navy-950/5">
-            <div className="flex items-center gap-2">
-              <MessageSquareText className="h-4 w-4 text-gold-800" />
-              <h2 className="text-base font-semibold text-navy-950">Shareable capsule</h2>
-            </div>
-            <div className="mt-4 space-y-2 text-sm text-slate-800">
-              <DocRow label="Executive summary" value={selectedCase ? `1 case, ${selectedCase.actorCount} actors` : 'Attach a Situation Core'} />
-              <DocRow label="Source posture" value={`${selectedCase?.sourceCount ?? 0} receipts`} />
-              <DocRow label="Document posture" value={`${selectedCase?.documentCount ?? 0} docs`} />
-              <DocRow label="Writing mode" value="Policy memo / talking points / brief" />
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link href="/app/write" className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-sm font-semibold text-white hover:bg-navy-800">
-                Open Memo Studio
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link href="/app/canvas" className="inline-flex items-center gap-2 rounded-md border border-gold-300 bg-white px-3 py-2 text-sm font-semibold text-navy-900 hover:bg-gold-100">
-                Canvas
-              </Link>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm shadow-navy-950/5 backdrop-blur">
-            <div className="flex items-center gap-2">
-              <Share2 className="h-4 w-4 text-diplomatic-blue" />
-              <h2 className="text-base font-semibold text-navy-950">Context inheritance</h2>
-            </div>
-            <p className="mt-2 text-sm leading-6 text-slate-700">
-              The stack can travel into Library, Canvas, Memo Studio, and handoff flows. That lets teams reuse the same policy context instead of rebuilding assumptions for every answer.
-            </p>
-          </section>
-        </aside>
+        ) : null}
       </section>
     </main>
   );
 }
 
-function buildKnowledgeNodes(selectedCase: WorkspaceCase | null, userModel: UserModelRecord, stack: ReturnType<typeof useActiveContextStack>['stack']) {
+function ContextComposer({
+  activeUserModelId,
+  activeContextName,
+  availableModels,
+  bricks,
+  contextHealthScore,
+  marketplaceToolCount,
+  missingBricks,
+  selectedCase,
+  selectedCaseId,
+  workspaceCases,
+  onCaseChange,
+  onUserModelChange,
+}: {
+  activeUserModelId: string;
+  activeContextName: string;
+  availableModels: UserModelRecord[];
+  bricks: CoreBrick[];
+  contextHealthScore: number;
+  marketplaceToolCount: number;
+  missingBricks: CoreBrick[];
+  selectedCase: WorkspaceCase | null;
+  selectedCaseId: string;
+  workspaceCases: WorkspaceCase[];
+  onCaseChange: (caseId: string) => void;
+  onUserModelChange: (modelId: string) => void;
+}) {
+  return (
+    <aside className="min-w-0 rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-navy-950/5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold-700">Context Composer</p>
+          <h2 className="mt-1 font-serif text-2xl font-semibold text-navy-950">Active capsule</h2>
+          <p className="mt-1 text-sm leading-5 text-slate-600">{activeContextName}</p>
+        </div>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[11px] text-slate-700">
+          {contextHealthScore}/100
+        </span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <ComposerAction href="/app/contexts" icon={Save} label="Save as capsule" />
+        <ComposerAction href="/app/contexts" icon={GitBranch} label="Fork capsule" />
+        <ComposerAction href="/app/canvas" icon={Network} label="Compare" />
+        <ComposerAction href="/app/contexts" icon={History} label="History" />
+      </div>
+
+      <div className="mt-5 space-y-3">
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">User Core</span>
+          <select
+            value={activeUserModelId}
+            onChange={(event) => onUserModelChange(event.target.value)}
+            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-navy-900 outline-none focus:border-diplomatic-blue"
+          >
+            {availableModels.map((model) => (
+              <option key={model.modelId} value={model.modelId}>
+                {model.identity}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Situation Core</span>
+          <select
+            value={selectedCaseId}
+            onChange={(event) => onCaseChange(event.target.value)}
+            className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-navy-900 outline-none focus:border-diplomatic-blue"
+          >
+            {workspaceCases.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="mt-5 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Attached cores</p>
+          <Link href="/app/contexts" className="text-xs font-semibold text-diplomatic-blue hover:underline">
+            Workshop
+          </Link>
+        </div>
+        {bricks.map((brick) => (
+          <Link
+            key={brick.id}
+            href={brick.href}
+            className="flex items-start gap-3 rounded-md border border-slate-200 bg-slate-50 p-3 transition hover:border-diplomatic-blue/30 hover:bg-white"
+          >
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white text-diplomatic-blue ring-1 ring-slate-200">
+              <brick.icon className="h-4 w-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2 text-sm font-semibold text-navy-950">
+                {brick.label}
+                <span className="rounded bg-white px-1.5 py-0.5 font-mono text-[10px] text-slate-500">{brick.version}</span>
+              </span>
+              <span className="mt-0.5 block truncate text-xs text-slate-600">{brick.value}</span>
+            </span>
+            {brick.ready ? <CheckCircle2 className="mt-1 h-4 w-4 text-emerald-600" /> : <Search className="mt-1 h-4 w-4 text-gold-700" />}
+          </Link>
+        ))}
+      </div>
+
+      <div className="mt-5 rounded-md border border-gold-200 bg-gold-50 p-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gold-900">Missing context</p>
+        <div className="mt-2 space-y-1 text-sm text-gold-950">
+          {missingBricks.length > 0 ? (
+            missingBricks.map((brick) => <p key={brick.id}>{brick.label}: {brick.detail}</p>)
+          ) : (
+            <p>Core stack is ready for a grounded answer.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-2">
+        <ComposerAction href={selectedCase ? `/app/workbench/${selectedCase.id}?tab=library` : '/app/contexts'} icon={Plus} label="Attach sources or documents" wide />
+        <ComposerAction href="/app/write" icon={BookOpenText} label="Send answer to Memo Studio" wide />
+        <ComposerAction href="/app/tools" icon={ShieldCheck} label={`${marketplaceToolCount} tools contained in Advanced`} wide muted />
+      </div>
+    </aside>
+  );
+}
+
+function ComposerAction({
+  href,
+  icon: Icon,
+  label,
+  muted = false,
+  wide = false,
+}: {
+  href: string;
+  icon: typeof Save;
+  label: string;
+  muted?: boolean;
+  wide?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold transition',
+        wide ? 'w-full' : '',
+        muted
+          ? 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-white'
+          : 'border-slate-300 bg-white text-navy-900 hover:border-diplomatic-blue/30 hover:bg-slate-50',
+      )}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </Link>
+  );
+}
+
+function buildCoreBricks({
+  activeUserModel,
+  selectedCase,
+  evidenceCount,
+  stack,
+  capsuleTimeHorizon,
+  healthScore,
+}: {
+  activeUserModel: UserModelRecord;
+  selectedCase: WorkspaceCase | null;
+  evidenceCount: number;
+  stack: ReturnType<typeof useActiveContextStack>['stack'];
+  capsuleTimeHorizon: string;
+  healthScore: number;
+}): CoreBrick[] {
   return [
     {
       id: 'user',
       label: 'User Core',
-      value: userModel.identity,
-      detail: userModel.workOntologyId ? 'Role, tone, mandate, methods' : 'Select or create a working profile',
+      value: activeUserModel.identity,
+      detail: 'Role, tone, mandate, preferences',
       href: '/app/cores/user',
+      version: 'v1',
+      ready: Boolean(activeUserModel),
+      locked: true,
       icon: Users,
-      ready: Boolean(userModel),
     },
     {
       id: 'situation',
       label: 'Situation Core',
       value: selectedCase?.name ?? 'No situation attached',
-      detail: selectedCase ? `${selectedCase.actorCount} actors, ${selectedCase.region}` : 'Attach a policy or conflict case',
+      detail: selectedCase ? `${selectedCase.actorCount} actors / ${selectedCase.region}` : 'Attach a policy, conflict, or regulatory situation',
       href: '/app/cores/context',
-      icon: Target,
+      version: 'v1',
       ready: Boolean(selectedCase),
+      locked: true,
+      icon: Target,
     },
     {
-      id: 'sources',
-      label: 'Source Receipts',
-      value: `${selectedCase?.sourceCount ?? 0} linked`,
-      detail: stack.sourceIds.length ? `${stack.sourceIds.length} active stack sources` : 'Add grounded evidence from Library',
-      href: '/app/contexts',
+      id: 'source-document',
+      label: 'Source/Document Core',
+      value: `${evidenceCount} attached`,
+      detail: evidenceCount > 0 ? 'Receipts and uploaded documents are available' : 'Attach sources before high-confidence answers',
+      href: selectedCase ? `/app/workbench/${selectedCase.id}?tab=library` : '/app/contexts',
+      version: 'v1',
+      ready: evidenceCount > 0,
+      locked: false,
+      optional: true,
       icon: LibraryBig,
-      ready: Boolean((selectedCase?.sourceCount ?? 0) + stack.sourceIds.length),
     },
     {
       id: 'graph',
-      label: 'Graph Context',
-      value: `${selectedCase?.actorCount ?? 0} actor nodes`,
-      detail: 'Claims, actors, dates, edges, and gaps become inspectable',
-      href: selectedCase ? `/app/workbench/${selectedCase.id}` : '/app/canvas',
-      icon: Network,
+      label: 'Graph Core',
+      value: `${selectedCase?.actorCount ?? 0} actors`,
+      detail: 'Actors, claims, events, relationships',
+      href: '/app/canvas',
+      version: 'v1',
       ready: Boolean(selectedCase?.actorCount),
+      locked: false,
+      optional: true,
+      icon: Network,
+    },
+    {
+      id: 'time',
+      label: 'Time Core',
+      value: capsuleTimeHorizon,
+      detail: 'Current period, history window, forecast horizon',
+      href: selectedCase ? `/app/workbench/${selectedCase.id}` : '/app/contexts',
+      version: 'v1',
+      ready: capsuleTimeHorizon !== 'Set horizon',
+      locked: false,
+      optional: true,
+      icon: Clock,
     },
     {
       id: 'output',
-      label: 'Output Goal',
-      value: stack.outputGoal ?? 'Memo ready',
-      detail: stack.documentIds.length ? `${stack.documentIds.length} library documents attached` : 'Draft, brief, talking points, or handoff',
+      label: 'Output Core',
+      value: stack.outputGoal ?? 'Memo goal',
+      detail: 'Audience, format, citation rules',
       href: '/app/write',
-      icon: FileText,
+      version: healthScore >= 70 ? 'v2' : 'v1',
       ready: Boolean(stack.outputGoal || selectedCase),
-    },
-  ];
-}
-
-function buildCapabilityRunway(selectedCase: WorkspaceCase | null, healthScore: number, marketplaceToolCount: number) {
-  return [
-    {
-      label: 'Ask',
-      detail: selectedCase ? `Question is scoped to ${selectedCase.name}.` : 'Attach a situation before asking.',
-      icon: Bot,
-      tone: 'blue',
-    },
-    {
-      label: 'Ground',
-      detail: healthScore >= 65 ? 'Context health is strong enough for source-aware answers.' : 'Needs more sources or documents before high-stakes use.',
-      icon: ShieldCheck,
-      tone: healthScore >= 65 ? 'green' : 'gold',
-    },
-    {
-      label: 'Visualize',
-      detail: 'Use Canvas and graph views to inspect actors, claims, timelines, and gaps.',
-      icon: GitBranch,
-      tone: 'blue',
-    },
-    {
-      label: 'Route',
-      detail: `${marketplaceToolCount} mapped tools can extend the answer when the problem needs specialist logic.`,
-      icon: Wrench,
-      tone: 'slate',
-    },
-    {
-      label: 'Write',
-      detail: 'Move the same context into Memo Studio for a cited policy product.',
-      icon: BookOpenText,
-      tone: 'blue',
+      locked: false,
+      optional: true,
+      icon: FileText,
     },
   ];
 }
@@ -508,150 +523,7 @@ function buildWorkspaceCases(situations: Situation[], exampleCases: ExampleCase[
   ];
 }
 
-function buildPolicyPosture(selectedCase: WorkspaceCase | null, marketplaceToolCount: number, userModel: UserModelRecord) {
-  const actorCount = selectedCase?.actorCount ?? 0;
-  const sourceCount = selectedCase?.sourceCount ?? 0;
-  const documentCount = selectedCase?.documentCount ?? 0;
-  const risk = selectedCase?.risk ?? 0;
-  const summary = selectedCase
-    ? `This workspace is tuned for ${selectedCase.name}. Keep the answer anchored in the user core, the situation core, and the smallest tool chain that can strengthen the memo.`
-    : 'Pick a Situation Core and keep the workflow centered on evidence, structure, and writing.';
-
-  return {
-    summary,
-    items: [
-      {
-        label: 'Actors',
-        value: String(actorCount),
-        detail: actorCount > 4 ? 'Enough structure for stakeholder mapping' : 'Needs a tighter actor set',
-      },
-      {
-        label: 'Evidence',
-        value: String(sourceCount + documentCount),
-        detail: sourceCount + documentCount > 5 ? 'Strong enough for a memo pass' : 'Needs more source intake',
-      },
-      {
-        label: 'Tools',
-        value: `${marketplaceToolCount}`,
-        detail: userModel.workOntologyId ? 'Attach the next tool to the policy task' : 'Select a user model first',
-      },
-      {
-        label: 'Risk',
-        value: risk > 0 ? String(risk) : 'Open',
-        detail: risk >= 7 ? 'Use scenario and red team early' : 'Keep the path compact',
-      },
-    ],
-  };
-}
-
 function normalizeRisk(riskScore: number): number {
   if (!Number.isFinite(riskScore)) return 0;
   return riskScore <= 1 ? Math.round(riskScore * 10) : Math.round(riskScore);
-}
-
-function KnowledgeStackMap({
-  nodes,
-}: {
-  nodes: Array<{
-    id: string;
-    label: string;
-    value: string;
-    detail: string;
-    href: string;
-    icon: ComponentType<{ className?: string }>;
-    ready: boolean;
-  }>;
-}) {
-  return (
-    <div className="mt-5 grid gap-3 md:grid-cols-5">
-      {nodes.map((node, index) => (
-        <Link
-          key={node.id}
-          href={node.href}
-          className="group relative min-h-[10rem] rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-diplomatic-blue/40 hover:bg-white"
-        >
-          {index < nodes.length - 1 ? (
-            <span className="pointer-events-none absolute right-[-1.1rem] top-1/2 z-10 hidden h-px w-5 bg-slate-300 md:block" />
-          ) : null}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-diplomatic-blue shadow-sm ring-1 ring-slate-200">
-              <node.icon className="h-4 w-4" />
-            </div>
-            {node.ready ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Search className="h-4 w-4 text-gold-700" />}
-          </div>
-          <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{node.label}</p>
-          <p className="mt-1 line-clamp-2 text-sm font-semibold leading-5 text-navy-950">{node.value}</p>
-          <p className="mt-2 text-xs leading-5 text-slate-600">{node.detail}</p>
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-function CapabilityRunway({
-  items,
-}: {
-  items: Array<{
-    label: string;
-    detail: string;
-    icon: ComponentType<{ className?: string }>;
-    tone: string;
-  }>;
-}) {
-  return (
-    <div className="mt-4 space-y-3">
-      {items.map((item, index) => (
-        <div key={item.label} className="flex gap-3">
-          <div className="flex flex-col items-center">
-            <div
-              className={[
-                'flex h-9 w-9 items-center justify-center rounded-full border',
-                item.tone === 'green'
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                  : item.tone === 'gold'
-                    ? 'border-gold-200 bg-gold-50 text-gold-800'
-                    : 'border-diplomatic-blue/20 bg-diplomatic-blue/5 text-diplomatic-blue',
-              ].join(' ')}
-            >
-              <item.icon className="h-4 w-4" />
-            </div>
-            {index < items.length - 1 ? <span className="h-8 w-px bg-slate-200" /> : null}
-          </div>
-          <div className="min-w-0 pb-2">
-            <p className="text-sm font-semibold text-navy-950">{item.label}</p>
-            <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function AttachChip({
-  href,
-  label,
-  detail,
-  icon: Icon,
-}: {
-  href: string;
-  label: string;
-  detail: string;
-  icon: ComponentType<{ className?: string }>;
-}) {
-  return (
-    <Link href={href} className="inline-flex max-w-full items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-navy-800 hover:border-diplomatic-blue/30 hover:bg-white">
-      <Icon className="h-3.5 w-3.5 shrink-0 text-diplomatic-blue" />
-      <span className="uppercase tracking-[0.16em]">{label}</span>
-      <span className="max-w-[18rem] truncate font-normal normal-case tracking-normal text-slate-600">{detail}</span>
-    </Link>
-  );
-}
-
-function DocRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-gold-200 bg-white px-3 py-2">
-      <span className="text-xs font-semibold text-navy-900">{label}</span>
-      <span className="text-xs text-slate-700">{value}</span>
-    </div>
-  );
 }

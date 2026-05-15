@@ -52,10 +52,23 @@ interface StreamEvent extends Record<string, unknown> {
 
 export interface AskStreamPanelProps {
   capsuleId?: string | null;
+  userLabel?: string;
+  outputGoal?: string;
+  healthScore?: number;
+  coreBricks?: Array<{ id: string; label?: string; title?: string; status?: string }>;
+  onOpenComposer?: () => void;
   className?: string;
 }
 
-export function AskStreamPanel({ capsuleId, className }: AskStreamPanelProps) {
+export function AskStreamPanel({
+  capsuleId,
+  userLabel,
+  outputGoal,
+  healthScore,
+  coreBricks = [],
+  onOpenComposer,
+  className,
+}: AskStreamPanelProps) {
   const reduceMotion = useReducedMotion();
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const [prompt, setPrompt] = useState('');
@@ -210,14 +223,38 @@ export function AskStreamPanel({ capsuleId, className }: AskStreamPanelProps) {
       <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-semibold text-navy-950">Using:</span>
-          <span>User Core</span>
+          <span>{userLabel ? `User Core (${userLabel})` : 'User Core'}</span>
           <span className="text-slate-300">/</span>
           <span>{activeSituation?.name ?? 'No Situation Core'}</span>
           <span className="text-slate-300">/</span>
           <span>{(activeSituation?.sourceUrls?.length ?? 0) + (activeSituation?.documentCount ?? 0)} Documents & sources</span>
           <span className="text-slate-300">/</span>
-          <span>Memo Goal</span>
+          <span>{outputGoal ?? 'Memo Goal'}</span>
+          {typeof healthScore === 'number' ? (
+            <>
+              <span className="text-slate-300">/</span>
+              <span>{healthScore}/100</span>
+            </>
+          ) : null}
+          {onOpenComposer ? (
+            <button
+              type="button"
+              onClick={onOpenComposer}
+              className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:border-gold-500 hover:text-gold-700"
+            >
+              Edit cores
+            </button>
+          ) : null}
         </div>
+        {coreBricks.length > 0 ? (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {coreBricks.slice(0, 6).map((brick) => (
+              <span key={brick.id} className="rounded bg-white px-2 py-1 text-[11px] font-semibold text-slate-700">
+                {brick.label ?? brick.title ?? brick.id}
+              </span>
+            ))}
+          </div>
+        ) : null}
         {missingCore ? (
           <p className="mt-1 text-gold-800">
             Improve first: <span className="font-semibold">{missingCore.label}</span>.
