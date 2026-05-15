@@ -1,4 +1,16 @@
-export type CoreKind = 'user' | 'situation' | 'source' | 'document' | 'graph' | 'output';
+export type CoreKind =
+  | 'user'
+  | 'situation'
+  | 'path'
+  | 'source'
+  | 'document'
+  | 'graph'
+  | 'time'
+  | 'tool'
+  | 'objective'
+  | 'product'
+  | 'output'
+  | 'memory';
 export type CoreStatus = 'demo' | 'active' | 'draft' | 'archived';
 
 export interface CoreProvenance {
@@ -70,6 +82,43 @@ export interface GraphCore extends BaseCore {
   layout: Record<string, { x: number; y: number }>;
 }
 
+export interface PathCore extends BaseCore {
+  kind: 'path';
+  workflowPathId: string;
+  operatorProfile: string;
+  defaultToolCoreIds: string[];
+  defaultObjectiveCoreIds: string[];
+}
+
+export interface TimeCore extends BaseCore {
+  kind: 'time';
+  horizonLabel: string;
+  freshnessWindowDays: number;
+  validFrom?: string | null;
+  validTo?: string | null;
+}
+
+export interface ToolCore extends BaseCore {
+  kind: 'tool';
+  toolId: string;
+  readiness: 'live' | 'routed' | 'staged' | 'specialist-hidden';
+  requiredCoreKinds: CoreKind[];
+}
+
+export interface ObjectiveCore extends BaseCore {
+  kind: 'objective';
+  objectiveType: string;
+  successCriteria: string[];
+  outputCoreIds: string[];
+}
+
+export interface ProductCore extends BaseCore {
+  kind: 'product';
+  productType: string;
+  templateId?: string;
+  sections: string[];
+}
+
 export interface OutputCore extends BaseCore {
   kind: 'output';
   outputType: 'memo' | 'brief' | 'handover' | 'answer' | 'export';
@@ -77,6 +126,12 @@ export interface OutputCore extends BaseCore {
   userCoreId?: string;
   sourceCoreIds: string[];
   draftSections: string[];
+}
+
+export interface MemoryCore extends BaseCore {
+  kind: 'memory';
+  factCount: number;
+  visibleFactIds: string[];
 }
 
 export interface SituationCore extends BaseCore {
@@ -104,10 +159,16 @@ export interface SituationCore extends BaseCore {
 export type PraxisCoreObject =
   | UserCore
   | SituationCore
+  | PathCore
   | SourceCore
   | DocumentCore
   | GraphCore
-  | OutputCore;
+  | TimeCore
+  | ToolCore
+  | ObjectiveCore
+  | ProductCore
+  | OutputCore
+  | MemoryCore;
 
 export interface ContextStack {
   id: string;
@@ -118,7 +179,12 @@ export interface ContextStack {
   sourceCoreIds: string[];
   documentCoreIds: string[];
   graphCoreId: string | null;
-  outputCoreId: string | null;
+  timeCoreId: string | null;
+  toolCoreIds: string[];
+  objectiveCoreIds: string[];
+  productCoreIds: string[];
+  outputCoreIds: string[];
+  memoryCoreId: string | null;
   healthScore: number;
   updatedAt: string;
   schemaVersion: 1;

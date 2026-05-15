@@ -54,9 +54,15 @@ export function attachedCoresFromSituation(input?: {
   return {
     user: true,
     situation: Boolean(input?.id),
+    path: Boolean(input?.workflowPath),
     time: Boolean(input?.latestEventDate),
-    office: true,
     source: Boolean((input?.sourceUrls?.length ?? 0) + (input?.customSources?.length ?? 0) + (input?.documentCount ?? 0)),
+    document: Boolean(input?.documentCount),
+    graph: Boolean(input?.actors?.length),
+    tool: true,
+    objective: true,
+    product: true,
     output: true,
+    memory: false,
   };
 }

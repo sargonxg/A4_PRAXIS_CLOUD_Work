@@ -5,7 +5,7 @@ import { getSituationAdmin, updateSituationAdmin } from '@/lib/firebase/situatio
 
 type RouteContext = { params: Promise<{ id: string; kind: string }> };
 
-const CoreKindSchema = z.enum(['user', 'situation', 'time', 'office', 'source', 'output']);
+const CoreKindSchema = z.enum(['user', 'situation', 'path', 'source', 'document', 'graph', 'time', 'tool', 'objective', 'product', 'output', 'memory']);
 const BodySchema = z.object({
   content: z.string().min(3).max(5000),
   source: z.string().max(80).default('ask-praxis'),

@@ -24,6 +24,18 @@ export type CapsuleLockKind =
   | 'product'
   | 'memory';
 
+export type CapsuleSwapKind = CapsuleLockKind;
+export type CapsuleSwapMode = 'replace' | 'add' | 'remove';
+
+export const MULTI_CORE_SWAP_KINDS = new Set<CapsuleSwapKind>([
+  'source',
+  'document',
+  'tool',
+  'objective',
+  'product',
+  'output',
+]);
+
 export interface CapsuleCoreRefs {
   userCoreId: string | null;
   teamCoreId: string | null;
@@ -307,6 +319,7 @@ export async function activateCapsule(
   });
   batch.set(capsulesCollection(uid, deps).doc(capsule.capsuleId), updated, { merge: true });
   await batch.commit();
+  await mirrorActiveContextStack(uid, updated, deps);
   return updated;
 }
 
@@ -398,7 +411,21 @@ export async function bumpCapsuleVersion(
   batch.set(ref.collection('versions').doc(`v${updated.version}`), updated, { merge: true });
   batch.set(ref, updated, { merge: true });
   await batch.commit();
+  await mirrorActiveContextStack(uid, updated, deps);
   return updated;
+}
+
+export async function swapCapsuleCore(
+  uid: string,
+  capsuleId: string,
+  input: { slotKind: CapsuleSwapKind; coreId: string | null; mode?: CapsuleSwapMode },
+  deps?: CapsuleServiceDeps,
+): Promise<PraxisCapsule | null> {
+  const current = await getCapsule(uid, capsuleId, deps);
+  if (!current) return null;
+  const mode = input.mode ?? 'replace';
+  const patch = patchForCoreSwap(current.coreRefs, input.slotKind, input.coreId, mode);
+  return bumpCapsuleVersion(uid, capsuleId, { coreRefs: patch }, deps);
 }
 
 export async function setCapsuleCoreLock(
@@ -424,6 +451,7 @@ export async function setCapsuleCoreLock(
   batch.set(ref.collection('versions').doc(`v${updated.version}`), updated, { merge: true });
   batch.set(ref, updated, { merge: true });
   await batch.commit();
+  await mirrorActiveContextStack(uid, updated, deps);
   return updated;
 }
 
@@ -571,6 +599,61 @@ function normalizeRetrievalPolicy(input: Partial<ContextRetrievalPolicy> | unkno
       ? Math.max(1, Math.min(3650, Math.floor(body.freshnessWindowDays)))
       : DEFAULT_RETRIEVAL_POLICY.freshnessWindowDays,
   };
+}
+
+function patchForCoreSwap(
+  refs: CapsuleCoreRefs,
+  slotKind: CapsuleSwapKind,
+  coreId: string | null,
+  mode: CapsuleSwapMode,
+): Partial<CapsuleCoreRefs> {
+  const nextSingle = coreId ?? null;
+  const updateMany = (current: string[]): string[] => {
+    if (mode === 'remove') return coreId ? current.filter((id) => id !== coreId) : [];
+    if (mode === 'add') return coreId ? uniqueStrings([...current, coreId]) : current;
+    return coreId ? [coreId] : [];
+  };
+  switch (slotKind) {
+    case 'user':
+      return { userCoreId: mode === 'remove' ? null : nextSingle };
+    case 'situation':
+      return { situationCoreId: mode === 'remove' ? null : nextSingle };
+    case 'path':
+      return { pathCoreId: mode === 'remove' ? null : nextSingle };
+    case 'source':
+      return { sourceCoreIds: updateMany(refs.sourceCoreIds) };
+    case 'document':
+      return { documentCoreIds: updateMany(refs.documentCoreIds) };
+    case 'graph':
+      return { graphCoreId: mode === 'remove' ? null : nextSingle };
+    case 'time':
+      return { timeCoreId: mode === 'remove' ? null : nextSingle };
+    case 'output':
+      return { outputCoreIds: updateMany(refs.outputCoreIds) };
+    case 'tool':
+      return { toolCoreIds: updateMany(refs.toolCoreIds ?? []) };
+    case 'objective':
+      return { objectiveCoreIds: updateMany(refs.objectiveCoreIds ?? []) };
+    case 'product':
+      return { productCoreIds: updateMany(refs.productCoreIds ?? []) };
+    case 'memory':
+      return { memoryCoreId: mode === 'remove' ? null : nextSingle };
+  }
+}
+
+async function mirrorActiveContextStack(uid: string, capsule: PraxisCapsule, deps?: CapsuleServiceDeps): Promise<void> {
+  const ref = stackDoc(uid, DEFAULT_CONTEXT_STACK_ID, deps);
+  const snap = await ref.get().catch(() => null);
+  const current = snap?.exists ? sanitizeActiveContextStack(snap.data()) : defaultActiveContextStack();
+  const matchesActivePointer = current.stackId === capsule.capsuleId || current.capsuleId === capsule.capsuleId;
+  if (capsule.capsuleId !== DEFAULT_CONTEXT_STACK_ID && !matchesActivePointer) return;
+  await ref.set({
+    ...current,
+    ...capsuleToStack(capsule),
+    contextPackageId: current.contextPackageId,
+    evidenceGaps: current.evidenceGaps,
+    canvasLayout: current.canvasLayout,
+  }, { merge: true });
 }
 
 function mergeRetrievalPolicies(policies: ContextRetrievalPolicy[]): ContextRetrievalPolicy {

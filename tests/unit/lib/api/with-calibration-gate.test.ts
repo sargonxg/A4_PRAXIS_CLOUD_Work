@@ -83,15 +83,15 @@ describe('checkCapsuleAgainstRequiredCores', () => {
     expect(missingCores).toEqual(['source']);
   });
 
-  it('skips office (no UI affordance on FixThisFirstPanel)', () => {
+  it('skips expanded non-hard-gate slots', () => {
     const refs: CapsuleCoreRefs = { ...emptyRefs };
-    const { missingCores } = checkCapsuleAgainstRequiredCores(refs, ['office']);
+    const { missingCores } = checkCapsuleAgainstRequiredCores(refs, ['path', 'document', 'tool', 'objective', 'product', 'memory']);
     expect(missingCores).toEqual([]);
   });
 
-  it('passes time core (capsule has no time slot — always present)', () => {
+  it('flags missing time core when required', () => {
     const { missingCores } = checkCapsuleAgainstRequiredCores(emptyRefs, ['time']);
-    expect(missingCores).toEqual([]);
+    expect(missingCores).toEqual(['time']);
   });
 });
 

@@ -233,8 +233,10 @@ export function CapsuleBoard({
           method: 'POST',
           credentials: 'include',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ slotKind: slot.kind, coreId }),
-        }).catch(() => undefined);
+          body: JSON.stringify({ slotKind: slot.kind, coreId, mode: isMultiSlot(slot.kind) ? 'add' : 'replace' }),
+        })
+          .then(() => window.dispatchEvent(new CustomEvent('capsule-mutated', { detail: { capsuleId: capsule.capsuleId } })))
+          .catch(() => undefined);
       }
       return;
     }
@@ -379,12 +381,14 @@ export function CapsuleBoard({
           swapTarget ? slots.find((s) => s.slotId === swapTarget.slotId)?.coreId ?? null : null
         }
         onClose={() => setSwapTarget(null)}
-        onSwap={(coreId) => {
+        onSwap={(coreId, mode) => {
           if (!swapTarget) return;
           setSlots((prev) =>
             prev.map((s) =>
               s.slotId === swapTarget.slotId
-                ? { ...s, coreId, title: coreId, slotId: `${s.kind}:${coreId}` }
+                ? mode === 'remove'
+                  ? { ...s, coreId: null, title: '', slotId: s.kind }
+                  : { ...s, coreId, title: coreId, slotId: `${s.kind}:${coreId}` }
                 : s,
             ),
           );
@@ -392,4 +396,8 @@ export function CapsuleBoard({
       />
     </section>
   );
+}
+
+function isMultiSlot(kind: CoreSpecimenKind): boolean {
+  return kind === 'source' || kind === 'document' || kind === 'tool' || kind === 'objective' || kind === 'product' || kind === 'output';
 }

@@ -69,7 +69,7 @@ function WorkbenchCaseSurface({ activeTab, openChapter }: { activeTab: Workspace
           </Link>
           <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h1 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Ask PRAXIS</h1>
+              <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Ask PRAXIS</h2>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-gold-200 bg-gold-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-gold-700">
                   {isExampleCase ? 'Example case' : 'User case'}
@@ -78,7 +78,7 @@ function WorkbenchCaseSurface({ activeTab, openChapter }: { activeTab: Workspace
                   {caseModule.manifest.domain}
                 </span>
               </div>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-navy-950">{situation.name}</h2>
+              <h3 className="mt-2 text-2xl font-semibold tracking-tight text-navy-950">{situation.name}</h3>
               <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-650">{caseModule.manifest.summary}</p>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">

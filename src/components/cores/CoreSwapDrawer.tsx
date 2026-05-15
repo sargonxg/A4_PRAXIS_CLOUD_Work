@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * CoreSwapDrawer — slide-over picker for swapping a single capsule slot.
+ * CoreSwapDrawer — slide-over picker for managing one active capsule slot.
  *
  * Brief: Claude Code CC-1 (docs/build/PRAXIS_GENKIT_SPRINT_CLAUDE_CODE_BRIEF_2026-05-14.md).
  *
@@ -15,7 +15,7 @@
  * Keyboard a11y: Esc closes, Arrow keys nav, Enter confirms.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight, X, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { fetchCoresLibrary, type LibraryCore } from '@/lib/mocks/cores-library';
@@ -32,7 +32,7 @@ export interface CoreSwapDrawerProps {
   currentCoreId?: string | null;
   onClose: () => void;
   /** Optional: notify parent so it can optimistically update its state. */
-  onSwap?: (coreId: string) => void;
+  onSwap?: (coreId: string, mode: 'replace' | 'add' | 'remove') => void;
 }
 
 export function CoreSwapDrawer({
@@ -50,6 +50,7 @@ export function CoreSwapDrawer({
   const [submitting, setSubmitting] = useState<string | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const reduceMotion = useReducedMotion();
+  const multiSlot = slotKind === 'source' || slotKind === 'document' || slotKind === 'tool' || slotKind === 'objective' || slotKind === 'product' || slotKind === 'output';
 
   useEffect(() => {
     if (!open || !slotKind) return;
@@ -71,6 +72,32 @@ export function CoreSwapDrawer({
     };
   }, [open, slotKind]);
 
+  const confirmSwap = useCallback(async (coreId: string, mode: 'replace' | 'add' | 'remove' = 'replace') => {
+    if (!capsuleId || !slotKind) return;
+    setSubmitting(coreId);
+    setError(null);
+    onSwap?.(coreId, mode); // optimistic
+    try {
+      const res = await fetch(`/api/context/capsules/${encodeURIComponent(capsuleId)}/swap`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ slotKind, coreId, mode }),
+      });
+      if (!res.ok) {
+        throw new Error(`swap failed: ${res.status}`);
+      }
+      window.dispatchEvent(new CustomEvent('capsule-mutated', { detail: { capsuleId } }));
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      // rollback signal — parent can re-fetch by listening to capsule-mutation-failed
+      window.dispatchEvent(new CustomEvent('capsule-mutation-failed', { detail: { capsuleId, slotKind } }));
+    } finally {
+      setSubmitting(null);
+    }
+  }, [capsuleId, onClose, onSwap, slotKind]);
+
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -85,38 +112,12 @@ export function CoreSwapDrawer({
         setActiveIdx((i) => Math.max(i - 1, 0));
       } else if (e.key === 'Enter') {
         const target = cores[activeIdx];
-        if (target) void confirmSwap(target.id);
+        if (target) void confirmSwap(target.id, target.id === currentCoreId && multiSlot ? 'remove' : multiSlot ? 'add' : 'replace');
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [open, cores, activeIdx, onClose]);
-
-  async function confirmSwap(coreId: string) {
-    if (!capsuleId || !slotKind) return;
-    setSubmitting(coreId);
-    setError(null);
-    onSwap?.(coreId); // optimistic
-    try {
-      const res = await fetch(`/api/context/capsules/${encodeURIComponent(capsuleId)}/swap`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ slotKind, coreId }),
-      });
-      if (!res.ok) {
-        throw new Error(`swap failed: ${res.status}`);
-      }
-      window.dispatchEvent(new CustomEvent('capsule-mutated', { detail: { capsuleId } }));
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      // rollback signal — parent can re-fetch by listening to capsule-mutation-failed
-      window.dispatchEvent(new CustomEvent('capsule-mutation-failed', { detail: { capsuleId, slotKind } }));
-    } finally {
-      setSubmitting(null);
-    }
-  }
+  }, [open, cores, activeIdx, onClose, confirmSwap, currentCoreId, multiSlot]);
 
   return (
     <AnimatePresence>
@@ -154,7 +155,7 @@ export function CoreSwapDrawer({
                   Pick a {slotKind} core
                 </h2>
                 <p className="mt-1 text-xs text-slate-600">
-                  Ranked by projected readiness lift for the active capsule.
+                  {multiSlot ? 'Add or remove cores without losing the rest of the slot.' : 'Replace the selected core for the active capsule.'}
                 </p>
               </div>
               <button
@@ -188,7 +189,7 @@ export function CoreSwapDrawer({
                           role="option"
                           aria-selected={isActive}
                           onMouseEnter={() => setActiveIdx(idx)}
-                          onClick={() => void confirmSwap(core.id)}
+                          onClick={() => void confirmSwap(core.id, isCurrent && multiSlot ? 'remove' : multiSlot ? 'add' : 'replace')}
                           disabled={submitting !== null}
                           className={cn(
                             'group flex w-full items-start gap-3 rounded-lg border bg-white p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-60',
@@ -212,16 +213,18 @@ export function CoreSwapDrawer({
                               <p className="mt-1 text-xs leading-snug text-slate-600">{core.essence}</p>
                             ) : null}
                             <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-[#1B3A5C]">
-                              Projected readiness{' '}
-                              <span
-                                className={cn(
-                                  'font-mono',
-                                  core.projectedReadinessDelta >= 0 ? 'text-emerald-700' : 'text-amber-700',
-                                )}
-                              >
-                                {core.projectedReadinessDelta >= 0 ? '+' : ''}
-                                {core.projectedReadinessDelta}
-                              </span>
+                              {multiSlot && isCurrent ? 'Remove from capsule' : multiSlot ? 'Add to capsule' : 'Projected readiness'}{' '}
+                              {multiSlot && isCurrent ? null : (
+                                <span
+                                  className={cn(
+                                    'font-mono',
+                                    core.projectedReadinessDelta >= 0 ? 'text-emerald-700' : 'text-amber-700',
+                                  )}
+                                >
+                                  {core.projectedReadinessDelta >= 0 ? '+' : ''}
+                                  {core.projectedReadinessDelta}
+                                </span>
+                              )}
                               <ArrowUpRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
                             </p>
                           </div>

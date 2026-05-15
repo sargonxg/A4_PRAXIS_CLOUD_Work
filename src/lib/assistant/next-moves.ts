@@ -137,10 +137,16 @@ function attachedFromContext(ctx: NextMovesContext): Record<CoreKind, boolean> {
   return {
     user: Boolean(refs.userCoreId) || fromSituation.user,
     situation: Boolean(refs.situationCoreId) || fromSituation.situation,
+    path: Boolean(refs.pathCoreId) || fromSituation.path,
     source: refs.sourceCoreIds.length > 0 || refs.documentCoreIds.length > 0 || fromSituation.source,
+    document: refs.documentCoreIds.length > 0 || fromSituation.document,
+    graph: Boolean(refs.graphCoreId) || fromSituation.graph,
     time: fromSituation.time,
-    office: true,
+    tool: Boolean(refs.toolCoreIds?.length) || fromSituation.tool,
+    objective: Boolean(refs.objectiveCoreIds?.length) || fromSituation.objective,
+    product: Boolean(refs.productCoreIds?.length) || fromSituation.product,
     output: refs.outputCoreIds.length > 0 || fromSituation.output,
+    memory: Boolean(refs.memoryCoreId) || fromSituation.memory,
   };
 }
 

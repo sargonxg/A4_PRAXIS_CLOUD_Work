@@ -29,6 +29,8 @@ import {
   X,
 } from 'lucide-react';
 import { InterruptCard, type InterruptRequest } from '@/components/ask/InterruptCard';
+import { CoreSwapDrawer } from '@/components/cores/CoreSwapDrawer';
+import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
 import { buildContextHealthReport } from '@/lib/context/context-health';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
 import { cn } from '@/lib/utils/cn';
@@ -98,6 +100,7 @@ export function AskStreamPanel({
   const [events, setEvents] = useState<StreamStage[]>([]);
   const [thinking, setThinking] = useState(false);
   const [interrupt, setInterrupt] = useState<InterruptRequest | null>(null);
+  const [swapTarget, setSwapTarget] = useState<CoreSpecimenKind | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const contextHealth = useMemo(() => buildContextHealthReport({
     hasUserCore: true,
@@ -233,6 +236,17 @@ export function AskStreamPanel({
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ kind?: string; capsuleId?: string | null }>).detail;
+      if (detail?.capsuleId && capsuleId && detail.capsuleId !== capsuleId) return;
+      const kind = normalizeSwapKind(detail?.kind);
+      if (kind) setSwapTarget(kind);
+    };
+    window.addEventListener('open-capsule-swap', handler);
+    return () => window.removeEventListener('open-capsule-swap', handler);
+  }, [capsuleId]);
+
   return (
     <section className={cn('flex flex-col gap-3', className)}>
       <div className="flex min-h-0 flex-1 flex-col rounded-lg bg-[#FCFBF7]">
@@ -358,6 +372,13 @@ export function AskStreamPanel({
           </form>
         </div>
       </div>
+      <CoreSwapDrawer
+        open={swapTarget !== null}
+        capsuleId={capsuleId ?? null}
+        slotKind={swapTarget}
+        currentCoreId={null}
+        onClose={() => setSwapTarget(null)}
+      />
     </section>
   );
 }
@@ -449,9 +470,26 @@ function CapsuleIndicatorBar({
     [activeSituation, coreBricks, healthScore, outputGoal, userLabel],
   );
 
+  async function toggleLock(cell: AskCoreBrick, locked: boolean) {
+    setLocked((current) => ({ ...current, [cell.id]: !locked }));
+    const coreKind = normalizeSwapKind(cell.id);
+    if (!capsuleId || !coreKind) return;
+    const res = await fetch(`/api/context/capsules/${encodeURIComponent(capsuleId)}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: locked ? 'unlock' : 'lock', coreKind }),
+    }).catch(() => null);
+    if (!res?.ok) {
+      setLocked((current) => ({ ...current, [cell.id]: locked }));
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('capsule-mutated', { detail: { capsuleId } }));
+  }
+
   function open(kind: string) {
     onOpenComposer?.();
-    window.dispatchEvent(new CustomEvent('open-capsule-swap', { detail: { kind, capsuleId } }));
+    window.dispatchEvent(new CustomEvent('open-capsule-swap', { detail: { kind: normalizeSwapKind(kind), capsuleId } }));
   }
 
   return (
@@ -472,7 +510,7 @@ function CapsuleIndicatorBar({
             </button>
             <button
               type="button"
-              onClick={() => setLocked((current) => ({ ...current, [cell.id]: !isLocked }))}
+              onClick={() => void toggleLock(cell, isLocked)}
               className="ml-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded hover:bg-slate-100"
               aria-label={`${isLocked ? 'Unlock' : 'Lock'} ${cell.label}`}
               title={`${isLocked ? 'Unlock' : 'Lock'} ${cell.label}`}
@@ -495,6 +533,13 @@ function CapsuleIndicatorBar({
       })}
     </div>
   );
+}
+
+function normalizeSwapKind(kind: string | undefined | null): CoreSpecimenKind | null {
+  if (!kind) return null;
+  if (kind === 'source-document') return 'source';
+  const allowed: CoreSpecimenKind[] = ['user', 'situation', 'path', 'source', 'document', 'graph', 'time', 'tool', 'objective', 'product', 'output', 'memory'];
+  return allowed.includes(kind as CoreSpecimenKind) ? kind as CoreSpecimenKind : null;
 }
 
 function StageCard({ event }: { event: StreamStage }) {

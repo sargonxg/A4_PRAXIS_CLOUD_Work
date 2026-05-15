@@ -20,7 +20,20 @@ export function DeskTab() {
   const graph = buildWorkbenchCaseGraph(caseModule);
   const timelineItems = toTimelineItems(graph).slice(0, 6);
   const recommendedTools = recommendTools({
-    attached: { user: true, situation: true, time: timelineItems.length > 0, office: true, source: surface.sourceCount > 0, output: true },
+    attached: {
+      user: true,
+      situation: true,
+      path: true,
+      source: surface.sourceCount > 0,
+      document: surface.sourceCount > 0,
+      graph: true,
+      time: timelineItems.length > 0,
+      tool: true,
+      objective: true,
+      product: true,
+      output: true,
+      memory: false,
+    },
     situationStage: 'mapping',
     recentToolIds: [],
   });

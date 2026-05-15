@@ -13,6 +13,7 @@ import {
   listCapsules,
   saveContextStackCompat,
   setCapsuleCoreLock,
+  swapCapsuleCore,
 } from '@/lib/context/capsule-service';
 import { buildCapsuleInjectionKey, resolveInjectableContext } from '@/lib/context/context-injection';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
@@ -242,6 +243,55 @@ describe('capsule service', () => {
     expect(updated?.coreRefs.sourceCoreIds).toEqual(['src-1', 'src-2']);
     expect(updated?.coreRefs.documentCoreIds).toEqual(['doc-1', 'doc-2']);
     expect(updated?.version).toBe(2);
+  });
+
+  it('swaps single slots and adds or removes multi-core slots without clobbering peers', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', {
+      capsuleId: 'cap-swap',
+      coreRefs: {
+        userCoreId: 'user-a',
+        sourceCoreIds: ['src-1'],
+        outputCoreIds: ['out-1'],
+      },
+    }, deps(db));
+
+    const replaced = await swapCapsuleCore('u1', 'cap-swap', {
+      slotKind: 'user',
+      coreId: 'user-b',
+    }, deps(db));
+    const added = await swapCapsuleCore('u1', 'cap-swap', {
+      slotKind: 'source',
+      coreId: 'src-2',
+      mode: 'add',
+    }, deps(db));
+    const removed = await swapCapsuleCore('u1', 'cap-swap', {
+      slotKind: 'output',
+      coreId: 'out-1',
+      mode: 'remove',
+    }, deps(db));
+
+    expect(replaced?.coreRefs.userCoreId).toBe('user-b');
+    expect(added?.coreRefs.sourceCoreIds).toEqual(['src-1', 'src-2']);
+    expect(removed?.coreRefs.outputCoreIds).toEqual([]);
+  });
+
+  it('mirrors default capsule swaps into contextStacks/default', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', {
+      capsuleId: 'default',
+      coreRefs: { situationCoreId: 'sit-1', sourceCoreIds: ['src-1'] },
+    }, deps(db));
+
+    await swapCapsuleCore('u1', 'default', {
+      slotKind: 'source',
+      coreId: 'src-2',
+      mode: 'add',
+    }, deps(db));
+
+    const stack = await db.collection('users').doc('u1').collection('contextStacks').doc('default').get();
+    expect(stack.data().sourceIds).toEqual(['src-1', 'src-2']);
+    expect(stack.data().capsuleId).toBe('default');
   });
 
   it('detaches selected source and document receipts without losing the remaining refs', async () => {

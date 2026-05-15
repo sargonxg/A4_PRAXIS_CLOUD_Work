@@ -11,10 +11,16 @@ function attachedWorkbenchCores(): Record<CoreKind, boolean> {
   return {
     user: true,
     situation: true,
-    time: true,
-    office: true,
+    path: true,
     source: true,
+    document: true,
+    graph: true,
+    time: true,
+    tool: true,
+    objective: true,
+    product: true,
     output: true,
+    memory: false,
   };
 }
 

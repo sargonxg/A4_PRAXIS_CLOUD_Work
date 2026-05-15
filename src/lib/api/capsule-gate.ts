@@ -72,9 +72,7 @@ function isCorePresent(refs: CapsuleCoreRefs, kind: GateCoreKind): boolean {
     case 'output':
       return refs.outputCoreIds.length > 0;
     case 'time':
-      // PraxisCapsule does not currently track a Time Core. Treat as present
-      // so we never block on a slot the capsule schema cannot satisfy.
-      return true;
+      return Boolean(refs.timeCoreId);
   }
 }
 
@@ -86,12 +84,17 @@ function mapToGateKind(kind: CoreKind): GateCoreKind | null {
     case 'output':
     case 'time':
       return kind;
-    case 'office':
-      // Office Core is currently represented as teamCoreId on the capsule
-      // but FixThisFirstPanel has no 'office' affordance yet. Skip the
-      // check rather than render a missing slot the user cannot repair.
+    case 'path':
+    case 'document':
+    case 'tool':
+    case 'objective':
+    case 'product':
+    case 'memory':
+      // These expanded capsule slots are visible in the capsule manager, but
+      // FixThisFirstPanel still renders the smaller hard-gate set.
       return null;
   }
+  return null;
 }
 
 function dedupe<T>(xs: T[]): T[] {
