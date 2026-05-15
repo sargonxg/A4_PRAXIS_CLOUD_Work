@@ -580,7 +580,7 @@ function mergeRetrievalPolicies(policies: ContextRetrievalPolicy[]): ContextRetr
     .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
   const freshnessWindowDays = Math.min(
     ...freshnessWindows,
-    DEFAULT_RETRIEVAL_POLICY.freshnessWindowDays,
+    DEFAULT_RETRIEVAL_POLICY.freshnessWindowDays ?? 90,
   );
   return normalizeRetrievalPolicy({
     layers,

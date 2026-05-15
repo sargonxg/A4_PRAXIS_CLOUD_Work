@@ -6,6 +6,7 @@ import { createSituationBoundTools, type SituationToolContext, type ConflictGrap
 import { getConflictGraphAdmin } from '@/lib/firebase/situations';
 import { buildSituationContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
+import { withAuth } from '@/lib/api/with-auth';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
@@ -31,11 +32,40 @@ import {
 import { toLegacyDataStreamResponse } from '@/lib/ai/legacy-data-stream';
 import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
 import { inferResponseActionKinds } from '@/lib/assistant/response-action-kinds';
+import { listAskThreadTurns, persistAskThreadTurn } from '@/lib/firebase/ask-thread-service';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
 
 type AiSettings = z.infer<typeof aiSettingsSchema>;
+
+export const GET = withAuth(async (request: Request, user) => {
+  try {
+    const url = new URL(request.url);
+    const capsuleId = url.searchParams.get('capsuleId');
+    const threadId = url.searchParams.get('threadId');
+    const limitParam = url.searchParams.get('limit');
+    const limit = limitParam ? Number.parseInt(limitParam, 10) : undefined;
+
+    if (!capsuleId || !threadId) {
+      return Response.json(
+        { error: 'capsuleId and threadId are required to resume an Ask PRAXIS thread.' },
+        { status: 400 },
+      );
+    }
+
+    const history = await listAskThreadTurns({
+      uid: user.uid,
+      capsuleId,
+      threadId,
+      limit: Number.isFinite(limit) ? limit : undefined,
+    });
+
+    return Response.json(history);
+  } catch (err) {
+    return handleRouteError(err, 'chat.history');
+  }
+});
 
 export const POST = withCalibration('chat', 'ai_chat', {
   retrievalQuery: (_req, body) => {
@@ -357,6 +387,20 @@ You have access to the user's active situation data. When answering questions:
             toolInvocations,
             output: text,
           }).catch((err) => console.warn('[chat] persistAskTurn failed:', err));
+          await persistAskThreadTurn({
+            uid: _user.uid,
+            situationId: sitId,
+            capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
+            threadId,
+            prompt: lastUserPrompt(messages),
+            capsuleVersion: capsuleContext?.capsule?.version ?? null,
+            runtime: runtime.receipt,
+            pathId: _user.calibration.path?.id ?? null,
+            pathVersion: _user.calibration.path?.version ?? null,
+            frameworkSteps,
+            toolInvocations,
+            output: text,
+          }).catch((err) => console.warn('[chat] persistAskThreadTurn failed:', err));
           await persistAskReadLedger({
             uid: _user.uid,
             situationId: sitId,

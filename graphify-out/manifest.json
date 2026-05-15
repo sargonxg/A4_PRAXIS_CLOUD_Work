@@ -1620,8 +1620,8 @@
     "hash": "05c85916bd5ea29938435da8be1bcd95"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\api\\ai\\chat\\route.ts": {
-    "mtime": 1778814248.3637872,
-    "hash": "af5c3cb3b9d8aac907e8fa52eeda318f"
+    "mtime": 1778820571.6996999,
+    "hash": "68d9697c91fc0705138d4c3c686b0354"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\api\\ai\\commitment-scan\\route.ts": {
     "mtime": 1778429929.419908,
@@ -4348,8 +4348,8 @@
     "hash": "f38dc84ea48f37258005c8b80d91f0ae"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\api\\with-auth.ts": {
-    "mtime": 1778429930.1786242,
-    "hash": "c1935cf74a53059b64eabd9c82ee03e1"
+    "mtime": 1778820526.581398,
+    "hash": "1d01cf6e973a634c586cc3612e90d7f7"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\api\\with-calibration.ts": {
     "mtime": 1778770469.4299324,
@@ -4696,8 +4696,8 @@
     "hash": "eae93b4fb47ab0a42fbef85e0a3e4104"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\context\\capsule-service.ts": {
-    "mtime": 1778820127.3683615,
-    "hash": "8340f6ba19506694b58715f95c55071d"
+    "mtime": 1778820321.78496,
+    "hash": "4745f5036d193ff03e92d09b113fdca0"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\context\\context-aware.ts": {
     "mtime": 1778448944.183081,
@@ -4962,6 +4962,10 @@
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\firebase\\analyst-profile-service.ts": {
     "mtime": 1778429930.334831,
     "hash": "c82e90ddc697cdb6834460a0c22843ab"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\firebase\\ask-thread-service.ts": {
+    "mtime": 1778820641.7733705,
+    "hash": "9a8711eb86efc98523ffd5f85ab9fb9d"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\firebase\\chat-service.ts": {
     "mtime": 1778429930.3353667,
@@ -6594,6 +6598,10 @@
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\firebase\\analyst-profile-admin.test.ts": {
     "mtime": 1778429930.7208438,
     "hash": "c17ea11f7eaf9be4c2d43bcb4d26eb87"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\firebase\\ask-thread-service.test.ts": {
+    "mtime": 1778820647.6336997,
+    "hash": "0654f3fdd29cce7e6a9dda4ec43e643c"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\firebase\\claims-service.test.ts": {
     "mtime": 1778429930.7212436,
