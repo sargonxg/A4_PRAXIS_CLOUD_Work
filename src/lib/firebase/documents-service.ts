@@ -42,6 +42,8 @@ export interface StoredDocument {
     title: string;
     sourceType: string;
     linkedAt: string;
+    sourceReceiptId?: string;
+    ingestionRunId?: string;
   };
 }
 

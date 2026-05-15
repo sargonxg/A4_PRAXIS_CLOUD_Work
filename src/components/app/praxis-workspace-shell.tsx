@@ -22,6 +22,9 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { AskBar } from '@/components/ask/AskBar';
 import { WorkOnThisMenu } from '@/components/app/work-on-this-menu';
+import { ContextCapsulePreview } from '@/components/context/context-capsule-preview';
+import { ContextQualityMeter } from '@/components/context/context-quality-meter';
+import { OneClickContextBuilder } from '@/components/context/one-click-context-builder';
 import { getNextMoves } from '@/lib/assistant/next-moves';
 import type { WorkspaceNextMove, WorkspaceNextMoveStatus } from '@/lib/dashboard/next-moves';
 import { buildContextHealthReport, type ContextHealthReport } from '@/lib/context/context-health';
@@ -153,6 +156,9 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
   const displayedToolCards = (savedNextMoves?.length
     ? savedNextMoves.map(nextMoveToToolCard)
     : contextHealth.nextActions.map(nextActionToToolCard)).slice(0, 3);
+  const capsuleTimeHorizon = selectedCase?.kind === 'user'
+    ? selectedCase.situation.latestEventDate ?? selectedCase.situation.conflictOnsetDate ?? 'Set in Situation Core'
+    : 'Set in Situation Core';
 
   useEffect(() => {
     if (caseId || stackHydrated || allUserModels.length === 0 || workspaceCases.length === 0) return;
@@ -407,6 +413,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
                 />
               </DndContext>
 
+              <div className="space-y-4">
               <div className="rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -418,6 +425,8 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
                 <div className="mt-4">
                   <AskBar activeContextName={selectedCase?.name ?? 'No situation selected'} hasContext={Boolean(selectedCase)} />
                 </div>
+              </div>
+              <ContextQualityMeter report={contextHealth} />
               </div>
             </div>
           </div>
@@ -445,6 +454,21 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
             </div>
           </aside>
         </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <OneClickContextBuilder />
+        <ContextCapsulePreview
+          userLabel={activeUserModel.identity}
+          situationLabel={selectedCase?.name ?? 'No Situation Core selected'}
+          sourceCount={selectedCase?.sourceCount ?? 0}
+          documentCount={selectedCase?.documentCount ?? 0}
+          graphState={`${selectedCase?.actorCount ?? 0} actors · ${contextHealth.signals.find((item) => item.id === 'timeline')?.status ?? 'partial'} timeline`}
+          timeHorizon={capsuleTimeHorizon}
+          outputGoal={workspaceLens.writingLabel}
+          healthScore={contextHealth.score}
+          href="/app/contexts"
+        />
       </section>
 
       <section id="core-library" data-testid="core-library-panel" className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">

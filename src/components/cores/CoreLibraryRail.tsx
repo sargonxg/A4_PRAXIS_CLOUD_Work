@@ -26,6 +26,7 @@ const RAIL_KINDS: CoreSpecimenKind[] = [
   'situation',
   'path',
   'source',
+  'document',
   'graph',
   'time',
   'tool',

@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 type RouteContext = { params: Promise<{ capsuleId: string }> };
 
 const SwapSchema = z.object({
-  slotKind: z.enum(['user', 'situation', 'path', 'source', 'graph', 'time', 'output', 'tool', 'objective', 'product', 'memory']),
+  slotKind: z.enum(['user', 'situation', 'path', 'source', 'document', 'graph', 'time', 'output', 'tool', 'objective', 'product', 'memory']),
   coreId: z.string().min(1).max(240).nullable(),
 });
 
@@ -48,6 +48,8 @@ function patchForSwap(slotKind: z.infer<typeof SwapSchema>['slotKind'], coreId: 
       return { pathCoreId: single };
     case 'source':
       return { sourceCoreIds: many };
+    case 'document':
+      return { documentCoreIds: many };
     case 'graph':
       return { graphCoreId: single };
     case 'time':

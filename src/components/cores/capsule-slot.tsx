@@ -35,6 +35,7 @@ const EMPTY_TITLE: Record<CoreSpecimenKind, string> = {
   situation: 'Attach situation',
   path: '+ Pick path',
   source: 'Add receipts',
+  document: 'Add documents',
   graph: 'Open graph',
   time: 'Set horizon',
   output: 'Open memo',

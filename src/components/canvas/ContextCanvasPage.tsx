@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Brain, FileText, LibraryBig, Target, ShieldAlert } from 'lucide-react';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { WorkOnThisMenu } from '@/components/app/work-on-this-menu';
+import { ContextCapsulePreview } from '@/components/context/context-capsule-preview';
 import { ContextGraphPreview } from '@/components/graph/ContextGraphPreview';
 import { listExampleCases } from '@/lib/cases/registry';
 import { buildContextHealthReport } from '@/lib/context/context-health';
@@ -136,6 +137,18 @@ export function ContextCanvasPage() {
         </div>
 
         <aside className="space-y-4">
+          <ContextCapsulePreview
+            userLabel={activeUserCore.identity}
+            situationLabel={situation?.name ?? 'No Situation Core'}
+            sourceCount={situation?.sourceUrls?.length ?? 0}
+            documentCount={situation?.documentCount ?? 0}
+            graphState={`${actorCount} actors · ${timelineNodes.length} events`}
+            timeHorizon={situation?.latestEventDate ?? situation?.conflictOnsetDate ?? 'Set in Situation Core'}
+            outputGoal={stack.outputGoal ?? 'Memo Goal'}
+            healthScore={health.score}
+            href="/app/contexts"
+            compact
+          />
           <CanvasNode label="User Core" title={activeUserCore.identity} href="/app/cores/user" icon={Brain} />
           <CanvasNode label="Situation Core" title={situation?.name ?? 'No situation selected'} href={situation ? `/app/workbench/${situation.id}` : '/app/contexts'} icon={Target} />
           <CanvasNode label="Sources" title={`${sourceCount} evidence items`} href={situation ? `/app/workbench/${situation.id}?tab=library` : '/app/contexts'} icon={LibraryBig} />

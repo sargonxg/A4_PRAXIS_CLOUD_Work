@@ -5,6 +5,7 @@ import { withAuth } from '@/lib/api/with-auth';
 import {
   saveDocument,
 } from '@/lib/firebase/documents-service';
+import { saveSource } from '@/lib/firebase/sources-service';
 import {
   getAdminStorage,
   getDefaultBucketName,
@@ -13,6 +14,7 @@ import {
 import { autoStructureDocument } from '@/lib/documents/auto-structure';
 import { emitTelemetrySafe } from '@/lib/telemetry/emit';
 import { localKnowledgeAdapter } from '@/lib/knowledge/context-engine';
+import { attachCapsuleRefs, getOrMigrateDefaultCapsule } from '@/lib/context/capsule-service';
 
 /**
  * Canonical document ingestion endpoint.
@@ -286,6 +288,68 @@ export const POST = withAuth(async (request, user) => {
       bucketUri,
     });
     const chunkCount = ingestionRun.chunkCount;
+    const sourceCoreId = stored.sourceCore?.id ?? `source-core:${situationId}:${stored.id}`;
+    const receiptConfidence = computeReceiptConfidence({
+      hasText: text.trim().length > 0,
+      chunkCount,
+      claimCount: structured.keyClaims.length,
+      actorCount: structured.actors.length,
+      dateCount: structured.timelineCandidates.length + (structured.date ? 1 : 0),
+      ingestionFailed: ingestionRun.status === 'failed',
+    });
+    const sourceReceiptSummary = {
+      sourceType: structured.sourceType,
+      claims: structured.keyClaims.slice(0, 4),
+      dates: Array.from(new Set([
+        ...(structured.date ? [structured.date] : []),
+        ...structured.timelineCandidates.map((candidate) => candidate.date),
+      ])).slice(0, 4),
+      actors: structured.actors.slice(0, 6),
+      confidence: receiptConfidence,
+      attachedCore: sourceCoreId,
+      documentId: stored.id,
+      chunkCount,
+      extractedAt: new Date().toISOString(),
+    };
+    const sourcePayload = {
+      name: structured.title || file.name,
+      sourceType: sourceTypeForFile(fileType),
+      sizeBytes: file.size,
+      uploadedAt: new Date().toISOString(),
+      taggedAs: ['library-upload', 'document-core', structured.sourceType],
+      extracted: ingestionRun.status !== 'failed',
+      documentId: stored.id,
+      sourceCoreId,
+      ingestionRunId: ingestionRun.id,
+      receipt: sourceReceiptSummary,
+      ...(file.type ? { mimeType: file.type } : {}),
+      ...(bucketUri ? { originalUrl: bucketUri } : {}),
+    };
+    const sourceReceipt = await saveSource(user.uid, situationId, sourcePayload);
+    await getAdminDbOrThrow()
+      .collection('users')
+      .doc(user.uid)
+      .collection('situations')
+      .doc(situationId)
+      .collection('documents')
+      .doc(stored.id)
+      .set({
+        ingestionRunId: ingestionRun.id,
+        ingestionStatus: ingestionRun.status,
+        sourceCore: {
+          ...(stored.sourceCore ?? {}),
+          id: sourceCoreId,
+          documentId: stored.id,
+          sourceReceiptId: sourceReceipt.id,
+          ingestionRunId: ingestionRun.id,
+          linkedAt: stored.sourceCore?.linkedAt ?? new Date().toISOString(),
+        },
+      }, { merge: true });
+    const { capsule } = await getOrMigrateDefaultCapsule(user.uid);
+    await attachCapsuleRefs(user.uid, capsule.capsuleId, {
+      sourceIds: [sourceCoreId],
+      documentIds: [stored.id],
+    });
 
     await emitTelemetrySafe({
       eventName: 'document.upload-complete',
@@ -301,6 +365,8 @@ export const POST = withAuth(async (request, user) => {
         extractionMode,
         chunkCount,
         documentId: stored.id,
+        sourceCoreId,
+        sourceReceiptId: sourceReceipt.id,
         ingestionRunId: ingestionRun.id,
         ingestionStatus: ingestionRun.status,
       },
@@ -319,8 +385,17 @@ export const POST = withAuth(async (request, user) => {
         chunkCount,
         ingestionRunId: ingestionRun.id,
         ingestionStatus: ingestionRun.status,
+        sourceCoreId,
+        sourceReceiptId: sourceReceipt.id,
         bucketUri,
         structured,
+        receipt: sourceReceiptSummary,
+      },
+      coreRefs: {
+        sourceCoreIds: [sourceCoreId],
+        documentCoreIds: [stored.id],
+        capsuleId: capsule.capsuleId,
+        capsuleVersion: capsule.version + 1,
       },
       message: chunkCount > 0
         ? 'Document uploaded, chunked, and indexed for retrieval.'
@@ -343,4 +418,27 @@ export const POST = withAuth(async (request, user) => {
 
 function orgIdOf(user: unknown): string | null {
   return (user as { orgId?: string }).orgId ?? null;
+}
+
+function sourceTypeForFile(fileType: string): 'pdf' | 'docx' | 'text' {
+  if (fileType === 'pdf') return 'pdf';
+  if (fileType === 'docx') return 'docx';
+  return 'text';
+}
+
+function computeReceiptConfidence(input: {
+  hasText: boolean;
+  chunkCount: number;
+  claimCount: number;
+  actorCount: number;
+  dateCount: number;
+  ingestionFailed: boolean;
+}): number {
+  if (input.ingestionFailed) return 0.35;
+  let score = input.hasText ? 0.48 : 0.22;
+  score += Math.min(input.chunkCount, 8) * 0.035;
+  score += Math.min(input.claimCount, 4) * 0.045;
+  score += Math.min(input.actorCount, 6) * 0.025;
+  score += Math.min(input.dateCount, 3) * 0.025;
+  return Math.max(0.25, Math.min(0.94, Number(score.toFixed(2))));
 }

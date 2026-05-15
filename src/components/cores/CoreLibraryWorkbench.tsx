@@ -13,6 +13,7 @@ const FILTERS: Array<{ id: CoreSpecimenKind | 'all'; label: string }> = [
   { id: 'objective', label: 'Objectives' },
   { id: 'product', label: 'Products' },
   { id: 'source', label: 'Sources' },
+  { id: 'document', label: 'Documents' },
   { id: 'graph', label: 'Graphs' },
   { id: 'time', label: 'Time' },
   { id: 'output', label: 'Outputs' },

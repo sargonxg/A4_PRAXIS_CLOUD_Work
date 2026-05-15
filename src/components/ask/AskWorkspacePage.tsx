@@ -25,6 +25,8 @@ import {
 import { AskBar } from '@/components/ask/AskBar';
 import { AskStreamPanel } from '@/components/ask/AskStreamPanel';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
+import { ContextCapsulePreview } from '@/components/context/context-capsule-preview';
+import { ContextQualityMeter } from '@/components/context/context-quality-meter';
 import { buildContextHealthReport } from '@/lib/context/context-health';
 import { getNextMoves } from '@/lib/assistant/next-moves';
 import { PUBLIC_USER_MODELS } from '@/lib/user-models/seeds';
@@ -149,6 +151,11 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
   });
   const knowledgeNodes = buildKnowledgeNodes(selectedCase, activeUserModel, stack);
   const capabilityRunway = buildCapabilityRunway(selectedCase, contextHealth.score, marketplaceToolCount);
+  const evidenceCount = (selectedCase?.sourceCount ?? 0) + (selectedCase?.documentCount ?? 0);
+  const askMissingCore = contextHealth.score < 55 ? contextHealth.nextActions[0] : null;
+  const capsuleTimeHorizon = selectedCase?.kind === 'user'
+    ? selectedCase.situation.latestEventDate ?? selectedCase.situation.conflictOnsetDate ?? 'Set in Situation Core'
+    : 'Set in Situation Core';
 
   function handleUserModelChange(modelId: string) {
     setActiveUserModel(window.localStorage, modelId);
@@ -214,6 +221,21 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
             </div>
 
             <div className="mt-5 rounded-2xl border border-navy-200 bg-white p-3 shadow-sm">
+              <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                <span className="font-semibold text-navy-950">Using:</span>
+                <span>{activeUserModel.identity}</span>
+                <span className="text-slate-300">/</span>
+                <span>{activeContextName}</span>
+                <span className="text-slate-300">/</span>
+                <span>{evidenceCount} Documents & sources</span>
+                <span className="text-slate-300">/</span>
+                <span>{stack.outputGoal ?? 'Memo Goal'}</span>
+              </div>
+              {askMissingCore ? (
+                <div className="mb-3 rounded-lg border border-gold-200 bg-gold-50 px-3 py-2 text-xs leading-5 text-gold-900">
+                  Add one missing core first: <span className="font-semibold">{askMissingCore.label}</span>. PRAXIS can still answer, but it will keep confidence lower until this context improves.
+                </div>
+              ) : null}
               <AskBar activeContextName={activeContextName} hasContext={Boolean(selectedCase)} />
             </div>
           </section>
@@ -309,6 +331,18 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
         </div>
 
         <aside className="space-y-5">
+          <ContextQualityMeter report={contextHealth} />
+          <ContextCapsulePreview
+            userLabel={activeUserModel.identity}
+            situationLabel={activeContextName}
+            sourceCount={selectedCase?.sourceCount ?? 0}
+            documentCount={selectedCase?.documentCount ?? 0}
+            graphState={`${selectedCase?.actorCount ?? 0} actors`}
+            timeHorizon={capsuleTimeHorizon}
+            outputGoal={stack.outputGoal ?? 'Memo Goal'}
+            healthScore={contextHealth.score}
+            href="/app/contexts"
+          />
           <section className="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm shadow-navy-950/5 backdrop-blur">
             <div className="flex items-center gap-2">
               <Wrench className="h-4 w-4 text-diplomatic-blue" />

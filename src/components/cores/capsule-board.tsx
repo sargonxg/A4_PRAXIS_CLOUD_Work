@@ -28,7 +28,7 @@ interface CapsuleBoardProps {
   onActiveCapsuleChange?: (capsule: PraxisCapsule | null) => void;
 }
 
-const SLOT_ORDER: CoreSpecimenKind[] = ['user', 'situation', 'path', 'source', 'graph', 'time', 'tool', 'objective', 'product', 'output', 'memory'];
+const SLOT_ORDER: CoreSpecimenKind[] = ['user', 'situation', 'path', 'source', 'document', 'graph', 'time', 'tool', 'objective', 'product', 'output', 'memory'];
 
 function emptyBoard(): CapsuleSlotData[] {
   return SLOT_ORDER.map((kind) => ({ slotId: kind, kind, title: '', coreId: null }));
@@ -68,6 +68,14 @@ function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
       essence: refs.sourceCoreIds.length > 1 ? `+${refs.sourceCoreIds.length - 1} more` : undefined,
       coreId: refs.sourceCoreIds[0] ?? null,
       locked: isLocked('source'),
+    },
+    {
+      slotId: refs.documentCoreIds[0] ? `document:${refs.documentCoreIds[0]}` : 'document',
+      kind: 'document',
+      title: refs.documentCoreIds[0] ?? '',
+      essence: refs.documentCoreIds.length > 1 ? `+${refs.documentCoreIds.length - 1} more` : undefined,
+      coreId: refs.documentCoreIds[0] ?? null,
+      locked: isLocked('document'),
     },
     {
       slotId: refs.graphCoreId ? `graph:${refs.graphCoreId}` : 'graph',

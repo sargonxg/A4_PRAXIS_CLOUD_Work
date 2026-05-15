@@ -16,6 +16,21 @@ export interface WorkspaceSource {
   region?: string;
   language?: string;
   extracted: boolean;
+  documentId?: string;
+  sourceCoreId?: string;
+  sourceReceiptId?: string;
+  ingestionRunId?: string;
+  receipt?: {
+    sourceType: string;
+    claims: string[];
+    dates: string[];
+    actors: string[];
+    confidence: number;
+    attachedCore: string;
+    documentId?: string;
+    chunkCount?: number;
+    extractedAt: string;
+  };
 }
 
 function sourcesCollection(uid: string, situationId: string) {

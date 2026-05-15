@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { CoreCapsuleHero } from "./core-capsule-hero";
+import { ContextCapsulePreview } from "@/components/context/context-capsule-preview";
 import { PolicyTicker } from "./policy-ticker";
 import { RotatingHeadline } from "./rotating-headline";
 import { PathOperatorOrbit } from "./path-operator-orbit";
@@ -202,6 +203,18 @@ export function Phase8WowLanding() {
 
           <div className="relative">
             <CoreCapsuleHero />
+            <ContextCapsulePreview
+              userLabel="Senior policy analyst"
+              situationLabel="Indo-Pacific 2026"
+              sourceCount={42}
+              documentCount={8}
+              graphState="Actor-claim lattice v3"
+              timeHorizon="2026-2028"
+              outputGoal="Cited options memo"
+              healthScore={86}
+              href="/app/assistant"
+              className="mt-4"
+            />
             <div className="mt-6 flex flex-col items-center gap-4 lg:flex-row lg:items-start lg:gap-6">
               <PathOperatorOrbit />
               <p className="max-w-xs text-[11px] uppercase tracking-[0.18em] text-slate-500">

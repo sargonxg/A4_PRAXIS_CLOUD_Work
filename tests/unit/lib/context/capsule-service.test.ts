@@ -5,6 +5,7 @@ import {
   attachCapsuleRefs,
   bumpCapsuleVersion,
   createCapsule,
+  detachCapsuleRefs,
   forkCapsule,
   getCapsule,
   getOrMigrateDefaultCapsule,
@@ -194,6 +195,23 @@ describe('capsule service', () => {
 
     expect(updated?.coreRefs.sourceCoreIds).toEqual(['src-1', 'src-2']);
     expect(updated?.coreRefs.documentCoreIds).toEqual(['doc-1', 'doc-2']);
+    expect(updated?.version).toBe(2);
+  });
+
+  it('detaches selected source and document receipts without losing the remaining refs', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', {
+      capsuleId: 'cap-detach',
+      coreRefs: { sourceCoreIds: ['src-1', 'src-2'], documentCoreIds: ['doc-1', 'doc-2'] },
+    }, deps(db));
+
+    const updated = await detachCapsuleRefs('u1', 'cap-detach', {
+      sourceIds: ['src-1'],
+      documentIds: ['doc-2'],
+    }, deps(db));
+
+    expect(updated?.coreRefs.sourceCoreIds).toEqual(['src-2']);
+    expect(updated?.coreRefs.documentCoreIds).toEqual(['doc-1']);
     expect(updated?.version).toBe(2);
   });
 });

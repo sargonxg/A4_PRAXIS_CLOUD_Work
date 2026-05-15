@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Archive, ExternalLink, FileText, Loader2, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
+import { Archive, ExternalLink, FileText, Link2, Loader2, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
 import { WorkOnThisMenu } from '@/components/app/work-on-this-menu';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import { buildLibraryArtifacts, type LibraryArtifact, type LibraryArtifactType }
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import type { SavedClaim } from '@/types/saved-claims';
+import type { LibraryCore } from '@/lib/cores/core-library';
 
 const TYPE_LABELS: Record<LibraryArtifactType, string> = {
   source: 'Sources',
@@ -44,6 +45,15 @@ function documentIdFromPayload(payload: unknown): string | null {
   return null;
 }
 
+function coreRefsFromPayload(payload: unknown): { sourceCoreIds: string[]; documentCoreIds: string[] } {
+  if (!payload || typeof payload !== 'object') return { sourceCoreIds: [], documentCoreIds: [] };
+  const refs = (payload as { coreRefs?: { sourceCoreIds?: unknown; documentCoreIds?: unknown } }).coreRefs;
+  return {
+    sourceCoreIds: Array.isArray(refs?.sourceCoreIds) ? refs.sourceCoreIds.filter((item): item is string => typeof item === 'string') : [],
+    documentCoreIds: Array.isArray(refs?.documentCoreIds) ? refs.documentCoreIds.filter((item): item is string => typeof item === 'string') : [],
+  };
+}
+
 export function LibraryTab() {
   const { caseId, caseModule } = useWorkbenchScope();
   const isExampleCase = caseModule.kind === 'example';
@@ -56,15 +66,18 @@ export function LibraryTab() {
   const [selected, setSelected] = useState<LibraryArtifact | null>(null);
   const [savedClaims, setSavedClaims] = useState<SavedClaim[]>([]);
   const [backendSources, setBackendSources] = useState<BackendSourceReceipt[]>([]);
+  const [coreLibrary, setCoreLibrary] = useState<LibraryCore[]>([]);
   const [sourceNote, setSourceNote] = useState<string | null>(null);
   const [sourceBusy, setSourceBusy] = useState(false);
   const [isDraggingSource, setIsDraggingSource] = useState(false);
+  const [uploadSteps, setUploadSteps] = useState<string[]>([]);
   const backendArtifacts = useMemo(() => backendSources.map((source) => sourceReceiptToArtifact(source, cogneeEnabled)), [backendSources, cogneeEnabled]);
+  const coreArtifacts = useMemo(() => coreLibrary.map(coreToArtifact), [coreLibrary]);
   const artifacts = useMemo(() => {
     const local = buildLibraryArtifacts(caseModule, caseId, savedClaims);
-    const backendIds = new Set(backendArtifacts.map((artifact) => artifact.id));
-    return [...backendArtifacts, ...local.filter((artifact) => !backendIds.has(artifact.id))];
-  }, [backendArtifacts, caseId, caseModule, savedClaims]);
+    const richIds = new Set([...coreArtifacts, ...backendArtifacts].map((artifact) => artifact.id));
+    return [...coreArtifacts, ...backendArtifacts.filter((artifact) => !richIds.has(artifact.id)), ...local.filter((artifact) => !richIds.has(artifact.id))];
+  }, [backendArtifacts, coreArtifacts, caseId, caseModule, savedClaims]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return artifacts.filter((artifact) => {
@@ -105,10 +118,15 @@ export function LibraryTab() {
 
   const refreshBackendSources = useCallback(async () => {
     if (isExampleCase) return;
-    const response = await fetch(`/api/backend/tabs/library?case_id=${encodeURIComponent(caseId)}`).catch(() => null);
-    const payload = await response?.json().catch(() => ({}));
-    if (response?.ok && Array.isArray(payload.sources)) {
-      setBackendSources(payload.sources);
+    const [receiptResponse, coreResponse] = await Promise.all([
+      fetch(`/api/backend/tabs/library?case_id=${encodeURIComponent(caseId)}`).catch(() => null),
+      fetch(`/api/cores/library?situationId=${encodeURIComponent(caseId)}&kind=all&limit=120`).catch(() => null),
+    ]);
+    const receiptPayload = await receiptResponse?.json().catch(() => ({}));
+    if (receiptResponse?.ok && Array.isArray(receiptPayload.sources)) setBackendSources(receiptPayload.sources);
+    const corePayload = await coreResponse?.json().catch(() => ({}));
+    if (coreResponse?.ok && Array.isArray(corePayload.cores)) {
+      setCoreLibrary(corePayload.cores.filter((core: LibraryCore) => core.kind === 'source' || core.kind === 'document'));
     }
   }, [caseId, isExampleCase]);
 
@@ -121,6 +139,7 @@ export function LibraryTab() {
     if (!file) return;
     setSourceBusy(true);
     setSourceNote(`Uploading ${file.name} to Library...`);
+    setUploadSteps(['Document uploaded']);
     try {
       const documentFormData = new FormData();
       documentFormData.append('file', file);
@@ -129,10 +148,13 @@ export function LibraryTab() {
       const documentPayload = await documentResponse.json().catch(() => ({}));
       if (!documentResponse.ok) throw new Error(documentPayload?.error ?? 'document upload failed');
       const documentId = documentIdFromPayload(documentPayload);
+      const coreRefs = coreRefsFromPayload(documentPayload);
+      setUploadSteps(['Document uploaded', 'Source Core created']);
       if (documentId) {
         void saveStack({
           situationId: caseId,
-          documentIds: Array.from(new Set([...stack.documentIds, documentId])),
+          sourceIds: Array.from(new Set([...stack.sourceIds, ...coreRefs.sourceCoreIds])),
+          documentIds: Array.from(new Set([...stack.documentIds, documentId, ...coreRefs.documentCoreIds])),
         });
       }
 
@@ -142,6 +164,7 @@ export function LibraryTab() {
       const response = await fetch(`/api/backend/tabs/library/ingest?case_id=${encodeURIComponent(caseId)}`, { method: 'POST', body: libraryFormData });
       const payload = await response.json().catch(() => ({}));
       if (response.ok) {
+        setUploadSteps(['Document uploaded', 'Source Core created', 'Graph candidates found', 'Ask ready']);
         setSourceNote(
           cogneeEnabled
             ? payload.status === 'ingested'
@@ -150,12 +173,14 @@ export function LibraryTab() {
             : `${file.name} uploaded. Document embedded for retrieval. Source receipt saved.`,
         );
       } else {
+        setUploadSteps(['Document uploaded', 'Source Core created', 'Graph candidates found']);
         setSourceNote(`${file.name} uploaded. Document embedded for retrieval. Source receipt deferred.`);
       }
       await refreshBackendSources();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'unknown error';
       setSourceNote(`Upload failed: ${message}`);
+      setUploadSteps([]);
     } finally {
       setSourceBusy(false);
     }
@@ -196,6 +221,65 @@ export function LibraryTab() {
       setSourceNote('Source receipt could not be removed.');
     } finally {
       setSourceBusy(false);
+    }
+  }
+
+  async function attachSelectedToContext() {
+    if (!selected?.coreId || !selected.coreKind) return;
+    setSourceBusy(true);
+    setSourceNote(`Attaching ${selected.title} to the active capsule...`);
+    try {
+      const body = selected.coreKind === 'document'
+        ? { documentIds: [selected.coreId] }
+        : { sourceIds: [selected.coreId] };
+      const response = await fetch('/api/context/capsules/default/attach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error ?? 'attach failed');
+      if (selected.coreKind === 'document') {
+        void saveStack({ situationId: caseId, documentIds: Array.from(new Set([...stack.documentIds, selected.coreId])) });
+      } else {
+        void saveStack({ situationId: caseId, sourceIds: Array.from(new Set([...stack.sourceIds, selected.coreId])) });
+      }
+      setSourceNote(`${selected.title} is attached to Ask PRAXIS, Memo Studio, and Canvas context.`);
+      await refreshBackendSources();
+    } catch {
+      setSourceNote('Core could not be attached to the active capsule.');
+    } finally {
+      setSourceBusy(false);
+    }
+  }
+
+  async function retrySelectedIngestion() {
+    if (!selected?.ingestionRunId) return;
+    setSourceBusy(true);
+    try {
+      const response = await fetch(`/api/knowledge/ingest-runs/${encodeURIComponent(selected.ingestionRunId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ situationId: caseId, retry: true }),
+      });
+      if (!response.ok) throw new Error('retry failed');
+      setSourceNote('Ingestion retry requested. The core remains queued until extraction completes.');
+      await refreshBackendSources();
+    } catch {
+      setSourceNote('Ingestion retry could not be requested.');
+    } finally {
+      setSourceBusy(false);
+    }
+  }
+
+  async function viewSelectedTrace() {
+    if (!selected?.ingestionRunId) return;
+    const response = await fetch(`/api/knowledge/ingest-runs/${encodeURIComponent(selected.ingestionRunId)}?situationId=${encodeURIComponent(caseId)}`).catch(() => null);
+    const payload = await response?.json().catch(() => ({}));
+    if (response?.ok && payload.run) {
+      setSourceNote(`Trace ${payload.run.traceId ?? selected.ingestionRunId}: ${payload.run.status}, ${payload.run.chunkCount ?? 0} chunks, ${payload.run.graphDeltaCount ?? 0} review item(s).`);
+    } else {
+      setSourceNote('Trace is not available for this core yet.');
     }
   }
 
@@ -269,6 +353,7 @@ export function LibraryTab() {
           ) : null}
           {sourceNote ? <p className="text-sm font-semibold text-navy-900">{sourceNote}</p> : null}
         </div>
+        {uploadSteps.length ? <UploadSequence steps={uploadSteps} /> : null}
 
         <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
           <label className="relative block">
@@ -348,25 +433,64 @@ export function LibraryTab() {
                   <ExternalLink className="h-4 w-4" />
                 </a>
               ) : null}
-              {selected.backendSourceId ? (
+              {(selected.coreId || selected.backendSourceId) ? (
                 <div className="mt-4 flex flex-wrap gap-2">
                   <WorkOnThisMenu itemLabel={selected.title} contextHref="/app/dashboard" draftHref="/app/write" sourcesHref={`/app/workbench/${caseId}?tab=library`} />
-                  <button
-                    type="button"
-                    onClick={() => void reextractSelected()}
-                    className="inline-flex items-center gap-2 rounded-md border border-navy-300 px-3 py-2 text-xs font-semibold text-navy-900"
-                  >
-                    {sourceBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                    Re-extract
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void deleteSelected()}
-                    className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-xs font-semibold text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Remove receipt
-                  </button>
+                  {selected.coreId ? (
+                    <button
+                      type="button"
+                      onClick={() => void attachSelectedToContext()}
+                      className="inline-flex items-center gap-2 rounded-md border border-gold-300 bg-gold-50 px-3 py-2 text-xs font-semibold text-gold-900"
+                    >
+                      <Link2 className="h-4 w-4" />
+                      Add to context
+                    </button>
+                  ) : null}
+                  {selected.ingestionRunId ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void viewSelectedTrace()}
+                        className="inline-flex items-center gap-2 rounded-md border border-navy-300 px-3 py-2 text-xs font-semibold text-navy-900"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        View trace
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void retrySelectedIngestion()}
+                        className="inline-flex items-center gap-2 rounded-md border border-navy-300 px-3 py-2 text-xs font-semibold text-navy-900"
+                      >
+                        {sourceBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                        Retry ingestion
+                      </button>
+                    </>
+                  ) : null}
+                  {(selected.graphDeltaReviewCount ?? 0) > 0 ? (
+                    <a href={`/app/workbench/${caseId}?tab=graph`} className="inline-flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+                      Review for Graph Core
+                    </a>
+                  ) : null}
+                  {selected.backendSourceId ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void reextractSelected()}
+                        className="inline-flex items-center gap-2 rounded-md border border-navy-300 px-3 py-2 text-xs font-semibold text-navy-900"
+                      >
+                        {sourceBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                        Re-extract
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void deleteSelected()}
+                        className="inline-flex items-center gap-2 rounded-md border border-red-200 px-3 py-2 text-xs font-semibold text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Remove receipt
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -378,6 +502,28 @@ export function LibraryTab() {
           )}
         </aside>
       </div>
+    </div>
+  );
+}
+
+function UploadSequence({ steps }: { steps: string[] }) {
+  const labels = ['Document uploaded', 'Source Core created', 'Graph candidates found', 'Ask ready'];
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      {labels.map((label, index) => {
+        const active = steps.includes(label);
+        return (
+          <div key={label} className="flex items-center gap-2">
+            <span className={cn(
+              'rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]',
+              active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-400',
+            )}>
+              {label}
+            </span>
+            {index < labels.length - 1 ? <span className="text-slate-300">→</span> : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -404,6 +550,34 @@ function sourceReceiptToArtifact(source: BackendSourceReceipt, cogneeEnabled: bo
       Embeddings: String(source.embeddings_count ?? 0),
       Nodes: String(source.nodes_extracted ?? 0),
       'Ontology valid': source.ontology_valid_pct === null || source.ontology_valid_pct === undefined ? 'not scored' : `${Math.round(Number(source.ontology_valid_pct) * 100)}%`,
+    },
+  };
+}
+
+function coreToArtifact(core: LibraryCore): LibraryArtifact {
+  const type = core.kind === 'document' ? 'document' : 'source';
+  const graphDeltaReviewCount = core.graphDeltaReviewCount ?? 0;
+  return {
+    id: `${type}:${core.id}`,
+    type,
+    title: core.name,
+    summary: core.essence ?? (type === 'document' ? 'Document Core attached to the workspace library.' : 'Source Core attached to the workspace library.'),
+    date: core.updatedAt,
+    badge: core.status ?? 'ready',
+    coreId: core.id,
+    coreKind: type,
+    ingestionRunId: core.ingestionRunId,
+    graphDeltaReviewCount,
+    meta: {
+      Status: core.status ?? 'ready',
+      Scope: core.ownerScope,
+      Capsule: core.capsuleIds?.length ? core.capsuleIds.join(', ') : 'not attached',
+      Situation: core.boundSituationIds?.length ? core.boundSituationIds.join(', ') : 'none',
+      ...(core.chunkCount !== undefined ? { Chunks: String(core.chunkCount) } : {}),
+      ...(core.embeddingStatus ? { Embeddings: core.embeddingStatus } : {}),
+      ...(core.ingestionRunId ? { Trace: core.ingestionRunId } : {}),
+      'Graph review': graphDeltaReviewCount > 0 ? `${graphDeltaReviewCount} candidate(s)` : 'none pending',
+      Provenance: core.provenance?.kind ?? 'library',
     },
   };
 }

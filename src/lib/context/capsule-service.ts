@@ -242,6 +242,24 @@ export async function attachCapsuleRefs(
   }, deps);
 }
 
+export async function detachCapsuleRefs(
+  uid: string,
+  capsuleId: string,
+  input: { sourceIds?: string[]; documentIds?: string[] },
+  deps?: CapsuleServiceDeps,
+): Promise<PraxisCapsule | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  const removeSources = new Set(cleanStringArray(input.sourceIds));
+  const removeDocuments = new Set(cleanStringArray(input.documentIds));
+  return bumpCapsuleVersion(uid, capsuleId, {
+    coreRefs: {
+      sourceCoreIds: capsule.coreRefs.sourceCoreIds.filter((id) => !removeSources.has(id)),
+      documentCoreIds: capsule.coreRefs.documentCoreIds.filter((id) => !removeDocuments.has(id)),
+    },
+  }, deps);
+}
+
 export async function activateCapsule(
   uid: string,
   capsuleId: string,

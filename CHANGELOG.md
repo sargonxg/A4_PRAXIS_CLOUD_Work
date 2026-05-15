@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(context): add the Wow MVP context-first surface layer.
+  Added a four-signal Context Quality Meter, one-click domain-specific
+  Situation Core starter builder, reusable Context Capsule Preview, upload
+  progress sequence, and visible Ask PRAXIS context-awareness row across Home,
+  Ask, Library, Memo Studio, Canvas, and the landing hero.
 - feat(context): deepen the context-first MVP wiring.
   Ask, Library, Memo Studio, and Canvas now hydrate from the owner-scoped
   default Active Context Stack; Library uploads attach document IDs to the

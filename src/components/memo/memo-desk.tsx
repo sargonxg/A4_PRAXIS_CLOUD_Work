@@ -51,6 +51,7 @@ import {
   Wand2,
 } from 'lucide-react';
 import { ReceiptCard } from '@/components/shared/receipt-card';
+import { ContextCapsulePreview } from '@/components/context/context-capsule-preview';
 import { SourceMentionMenu } from '@/components/memo/source-mention-menu';
 import { GapFillerRail } from '@/components/memo/GapFillerRail';
 import { useSituationStore } from '@/stores/situation-store';
@@ -709,6 +710,18 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
               </button>
             </div>
             <div className="mt-3 space-y-1.5">
+              <ContextCapsulePreview
+                userLabel={user?.name ?? user?.email ?? 'Analyst'}
+                situationLabel={activeSituation?.name ?? 'No Situation Core'}
+                sourceCount={sources.length}
+                documentCount={activeSituation?.documentCount ?? 0}
+                graphState={`${activeSituation?.actors?.length ?? activeSituation?.actorCount ?? 0} actors`}
+                timeHorizon={activeSituation?.latestEventDate ?? activeSituation?.conflictOnsetDate ?? 'Set in Situation Core'}
+                outputGoal={title}
+                healthScore={trustScore ?? undefined}
+                href="/app/contexts"
+                compact
+              />
               <LibrarySection icon={Brain} title="User Core" subtitle={user?.name ?? user?.email ?? 'No user core'} href="/app/cores/user" />
               <LibrarySection
                 icon={BookOpenCheck}

@@ -12,6 +12,10 @@ export interface LibraryArtifact {
   badge: string;
   href?: string;
   backendSourceId?: string;
+  coreId?: string;
+  coreKind?: 'source' | 'document';
+  ingestionRunId?: string;
+  graphDeltaReviewCount?: number;
   meta: Record<string, string>;
 }
 

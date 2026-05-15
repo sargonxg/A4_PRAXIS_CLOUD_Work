@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { useSituationStore } from '@/stores/situation-store';
 import { InterruptCard, type InterruptRequest } from '@/components/ask/InterruptCard';
+import { buildContextHealthReport } from '@/lib/context/context-health';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 
@@ -62,6 +63,18 @@ export function AskStreamPanel({ capsuleId, className }: AskStreamPanelProps) {
   const [thinking, setThinking] = useState(false);
   const [interrupt, setInterrupt] = useState<InterruptRequest | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const contextHealth = useMemo(() => buildContextHealthReport({
+    hasUserCore: true,
+    hasSituationCore: Boolean(activeSituation),
+    sourceCount: activeSituation?.sourceUrls?.length ?? 0,
+    documentCount: activeSituation?.documentCount ?? 0,
+    actorCount: activeSituation?.actors?.length ?? activeSituation?.actorCount ?? 0,
+    hasTimeline: Boolean(activeSituation?.keyDates?.length || activeSituation?.latestEventDate || activeSituation?.conflictOnsetDate),
+    evidenceGapCount: activeSituation ? Math.max(0, 3 - ((activeSituation.sourceUrls?.length ?? 0) + (activeSituation.documentCount ?? 0))) : 4,
+    hasDraft: false,
+    situationHref: activeSituation ? `/app/workbench/${activeSituation.id}` : '/app/contexts',
+  }), [activeSituation]);
+  const missingCore = contextHealth.score < 55 ? contextHealth.nextActions[0] : null;
 
   const cancel = useCallback(() => {
     abortRef.current?.abort();
@@ -194,6 +207,23 @@ export function AskStreamPanel({ capsuleId, className }: AskStreamPanelProps) {
   return (
     <section className={cn('flex flex-col gap-3', className)}>
       <CapsuleIndicatorBar capsuleId={capsuleId} />
+      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-semibold text-navy-950">Using:</span>
+          <span>User Core</span>
+          <span className="text-slate-300">/</span>
+          <span>{activeSituation?.name ?? 'No Situation Core'}</span>
+          <span className="text-slate-300">/</span>
+          <span>{(activeSituation?.sourceUrls?.length ?? 0) + (activeSituation?.documentCount ?? 0)} Documents & sources</span>
+          <span className="text-slate-300">/</span>
+          <span>Memo Goal</span>
+        </div>
+        {missingCore ? (
+          <p className="mt-1 text-gold-800">
+            Improve first: <span className="font-semibold">{missingCore.label}</span>.
+          </p>
+        ) : null}
+      </div>
 
       <div className="min-h-[160px] space-y-2">
         <AnimatePresence>

@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { attachCapsuleRefs } from '@/lib/context/capsule-service';
+import { attachCapsuleRefs, detachCapsuleRefs } from '@/lib/context/capsule-service';
 
 export const dynamic = 'force-dynamic';
 
 type RouteContext = { params: Promise<{ capsuleId: string }> };
 
 const AttachSchema = z.object({
+  action: z.enum(['attach', 'detach']).default('attach'),
   sourceIds: z.array(z.string().min(1).max(240)).optional(),
   documentIds: z.array(z.string().min(1).max(240)).optional(),
 }).refine((value) => (value.sourceIds?.length ?? 0) > 0 || (value.documentIds?.length ?? 0) > 0, {
@@ -23,11 +24,13 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid capsule attach request', details: parsed.error.flatten() }, { status: 400 });
     }
-    const capsule = await attachCapsuleRefs(user.uid, capsuleId, parsed.data);
+    const capsule = parsed.data.action === 'detach'
+      ? await detachCapsuleRefs(user.uid, capsuleId, parsed.data)
+      : await attachCapsuleRefs(user.uid, capsuleId, parsed.data);
     if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
     return NextResponse.json({
       capsule,
-      attached: {
+      [parsed.data.action === 'detach' ? 'detached' : 'attached']: {
         sourceIds: parsed.data.sourceIds ?? [],
         documentIds: parsed.data.documentIds ?? [],
       },

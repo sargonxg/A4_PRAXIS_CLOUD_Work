@@ -27,6 +27,7 @@ export type CoreSpecimenKind =
   | 'situation'
   | 'path'
   | 'source'
+  | 'document'
   | 'graph'
   | 'time'
   | 'output'
@@ -40,6 +41,7 @@ const KIND_SERIAL: Record<CoreSpecimenKind, string> = {
   situation: 'SIT',
   path: 'PTH',
   source: 'SRC',
+  document: 'DOC',
   graph: 'GRF',
   time: 'TIM',
   output: 'OUT',
@@ -54,6 +56,7 @@ const KIND_TINT: Record<CoreSpecimenKind, string> = {
   situation: 'border-[#3F7A66]/40',
   path: 'border-[#8A5A00]/55',
   source: 'border-[#C9A86A]/55',
+  document: 'border-[#7A6A3F]/50',
   graph: 'border-[#5B6B8C]/45',
   time: 'border-[#A06A3C]/45',
   output: 'border-slate-300/80',
@@ -68,6 +71,7 @@ const KIND_LABEL: Record<CoreSpecimenKind, string> = {
   situation: 'SITUATION CORE',
   path: 'PATH CORE',
   source: 'SOURCE CORE',
+  document: 'DOCUMENT CORE',
   graph: 'GRAPH CORE',
   time: 'TIME CORE',
   output: 'OUTPUT CORE',
