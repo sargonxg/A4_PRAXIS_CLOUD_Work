@@ -14,6 +14,13 @@ Status: first implementation ledger for the Tasklet-style PRAXIS cleanup and fou
   a Memo Studio draft with source/gap receipts.
 - Added `audit:tasklet-policy-workbench` to prevent regressions in the new
   surface, policy-agent destinations, and deferred integration claims.
+- Archived bulky historical v5 build prompts and May 14 Genkit sprint briefs
+  under `docs/_archive/build/`, leaving short stubs in `docs/build/` so older
+  references still resolve.
+- Folded `/tour` back to `/` with a noindex redirect so the public entry stays
+  the Tasklet-style PRAXIS workbench.
+- Kept `/demo/*` as redirect/sample-session compatibility for now because copy
+  to workspace, demo sessions, and smoke tests still reference those routes.
 
 ## Purpose
 

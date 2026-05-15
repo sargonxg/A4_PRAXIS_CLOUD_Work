@@ -29,6 +29,9 @@ from the active ledger above.
    signup, onboarding skip/complete, and the welcome modal now steer users back
    to the Tasklet-style Home, preserving the pending prompt and selected policy
    agent from the public surface.
+0. Historical v5 and May 14 Genkit sprint prompt packs are now archived under
+   `docs/_archive/build/`, with pointer stubs left in `docs/build/`. `/tour`
+   redirects to `/`; keep all public entry work on the Tasklet-style Home.
 0. First Tasklet-style MVP foundation pass is now in place: public pages
    `/learn`, `/tacitus`, `/pricing`, and `/release-notes`; homepage nav aligned
    to those pages; `/app/contexts` has a capsule composition panel for

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- chore(cleanup): archive historical build prompt packs.
+  Moved full v5 and May 14 Genkit sprint prompt packs under
+  `docs/_archive/build/`, kept active pointer stubs, and redirected `/tour`
+  back to the Tasklet-style homepage.
 - feat(auth): preserve Tasklet-style PRAXIS handoff through login.
   Public policy-agent prompts now carry the selected agent into signup/login,
   login shows the queued PRAXIS run, normal post-login and onboarding exits land

@@ -28,6 +28,7 @@ for (const rel of [
   'src/app/learn/page.tsx',
   'src/app/tacitus/page.tsx',
   'src/app/release-notes/page.tsx',
+  'src/app/tour/page.tsx',
   'docs/audits/2026-05-15-tasklet-mvp-cleanup-ledger.md',
 ]) {
   expectFile(rel);
@@ -55,6 +56,9 @@ expectIncludes('src/lib/navigation/primary-nav.ts', [
   "label: 'Advanced'",
 ]);
 expectIncludes('src/app/sitemap.ts', ['/learn', '/tacitus', '/release-notes']);
+expectIncludes('src/app/tour/page.tsx', ["redirect('/')", 'noindex, nofollow']);
+expectIncludes('docs/build/PRAXIS_v5_EXECUTION_LEDGER.md', ['Archived v5 Execution Ledger', 'docs/_archive/build/v5/PRAXIS_v5_EXECUTION_LEDGER.md']);
+expectIncludes('docs/build/PRAXIS_GENKIT_SPRINT_CODEX_BRIEF_2026-05-14.md', ['Archived Genkit Sprint Codex Brief', 'docs/_archive/build/genkit-sprint-2026-05-14']);
 
 const cleanupLedger = read('docs/audits/2026-05-15-tasklet-mvp-cleanup-ledger.md');
 for (const marker of ['## Keep', '## Fold Or Archive', '## Remove Only With Evidence', '## Next Deletion Pass']) {
@@ -68,4 +72,3 @@ if (failures.length) {
 }
 
 console.log('[audit:tasklet-mvp-foundation] ok');
-

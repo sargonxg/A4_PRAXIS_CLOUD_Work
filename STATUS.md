@@ -1,5 +1,18 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — Aggressive Tasklet Cleanup Checkpoint
+
+Current cleanup checkpoint:
+
+- Full v5 build prompt packs and May 14 Genkit sprint briefs are archived under
+  `docs/_archive/build/`.
+- Active `docs/build/` keeps short pointer stubs for older references plus the
+  current Tasklet runtime docs.
+- `/tour` now redirects to `/`, keeping the public product entry on the
+  Tasklet-style PRAXIS workbench.
+- `/demo/*` remains as redirect/sample-session compatibility until the remaining
+  demo-copy and smoke-test references are removed.
+
 ## 2026-05-15 — Tasklet-Style Login And Welcome Handoff
 
 Current entry checkpoint:
