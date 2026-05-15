@@ -2,7 +2,7 @@
 
 import { type ReactNode } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
-import { useDroppable } from '@dnd-kit/core';
+import { useDroppable, useDndContext } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Lock, Unlock } from 'lucide-react';
 import { SpecimenCard, type CoreSpecimenKind } from '@/components/cores/specimen-card';
@@ -18,6 +18,8 @@ export interface CapsuleSlotData {
   /** Underlying core id this slot points at, if any. */
   coreId?: string | null;
   locked?: boolean;
+  /** ISO timestamp of when the underlying core was last refreshed. */
+  staleAt?: string | null;
 }
 
 export interface CapsuleSlotProps {
@@ -46,15 +48,27 @@ export function CapsuleSlot({ slot, onSwap, onToggleLock, trailing, className }:
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: slot.slotId,
   });
-  // Accept drops from CoreLibraryRail (draggables with id "library:<coreId>").
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `slot:${slot.slotId}`,
     data: { kind: slot.kind, slotId: slot.slotId },
   });
+  const { active } = useDndContext();
 
   const filled = Boolean(slot.coreId);
   const locked = Boolean(slot.locked);
   const displayTitle = filled && slot.title ? slot.title : EMPTY_TITLE[slot.kind];
+
+  const draggedKind = active?.data?.current?.kind as CoreSpecimenKind | undefined;
+  const isLibraryDrag = typeof active?.id === 'string' && active.id.startsWith('library:');
+  const compatible = !draggedKind || draggedKind === slot.kind;
+  const stale = !locked && filled && Boolean(slot.staleAt) && isStale(slot.staleAt);
+
+  let dropState: 'idle' | 'compatible' | 'incompatible' | 'locked' = 'idle';
+  if (isOver && isLibraryDrag) {
+    if (locked) dropState = 'locked';
+    else if (!compatible) dropState = 'incompatible';
+    else dropState = 'compatible';
+  }
 
   const composedRef = (node: HTMLDivElement | null) => {
     setNodeRef(node);
@@ -66,12 +80,18 @@ export function CapsuleSlot({ slot, onSwap, onToggleLock, trailing, className }:
       ref={composedRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        'relative',
+        'relative rounded-sm transition-all',
         isDragging && 'opacity-60 z-10',
-        isOver && 'ring-2 ring-diplomatic-blue ring-offset-2 rounded-sm',
-        locked && 'rounded-sm ring-2 ring-[#8A5A00]/40 ring-offset-2',
+        dropState === 'compatible' && 'ring-2 ring-emerald-500 ring-offset-2 scale-[1.01]',
+        dropState === 'incompatible' && 'ring-2 ring-rose-500 ring-offset-2 opacity-70',
+        dropState === 'locked' && 'ring-2 ring-rose-500 ring-offset-2 animate-pulse',
+        dropState === 'idle' && isOver && 'ring-2 ring-diplomatic-blue ring-offset-2',
+        locked && dropState === 'idle' && 'ring-2 ring-[#8A5A00]/40 ring-offset-2',
+        stale && dropState === 'idle' && 'ring-2 ring-amber-400/60 ring-offset-2',
         className,
       )}
+      data-drop-state={dropState}
+      data-stale={stale ? 'true' : undefined}
     >
       <SpecimenCard
         kind={slot.kind}
@@ -117,6 +137,28 @@ export function CapsuleSlot({ slot, onSwap, onToggleLock, trailing, className }:
           tabIndex={-1}
         />
       ) : null}
+      {dropState === 'locked' ? (
+        <span className="pointer-events-none absolute -top-2 left-2 z-30 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow">
+          locked
+        </span>
+      ) : null}
+      {dropState === 'incompatible' ? (
+        <span className="pointer-events-none absolute -top-2 left-2 z-30 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow">
+          wrong kind
+        </span>
+      ) : null}
+      {stale && dropState === 'idle' ? (
+        <span className="pointer-events-none absolute -top-2 left-2 z-30 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow">
+          stale
+        </span>
+      ) : null}
     </div>
   );
+}
+
+function isStale(timestamp: string | null | undefined): boolean {
+  if (!timestamp) return false;
+  const t = Date.parse(timestamp);
+  if (!Number.isFinite(t)) return false;
+  return Date.now() - t > 14 * 24 * 60 * 60 * 1000;
 }

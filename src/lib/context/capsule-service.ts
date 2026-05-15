@@ -62,6 +62,7 @@ export interface PraxisCapsule {
   provenance: CapsuleProvenance;
   createdAt: string;
   updatedAt: string;
+  archivedAt?: string | null;
   schemaVersion: 1;
   version: number;
   label: string;
@@ -134,6 +135,7 @@ export async function createCapsule(
     },
     createdAt: timestamp,
     updatedAt: timestamp,
+    archivedAt: null,
     schemaVersion: 1,
     version: 1,
     label: input.label ?? defaultCapsuleLabel(input.coreRefs),
@@ -150,17 +152,94 @@ export async function getCapsule(uid: string, capsuleId: string, deps?: CapsuleS
 
 export async function listCapsules(
   uid: string,
-  input: { situationId?: string } = {},
+  input: { situationId?: string; includeArchived?: boolean } = {},
   deps?: CapsuleServiceDeps,
 ): Promise<PraxisCapsule[]> {
   const snap = await capsulesCollection(uid, deps).limit(100).get();
-  const capsules = snap.docs.map((doc) => sanitizeCapsule({ ...doc.data(), capsuleId: doc.id }));
+  const capsules = snap.docs
+    .map((doc) => sanitizeCapsule({ ...doc.data(), capsuleId: doc.id }))
+    .filter((capsule) => input.includeArchived || !capsule.archivedAt);
   if (!input.situationId) return capsules;
   const situationId = input.situationId;
   return capsules.filter((capsule) =>
     capsule.coreRefs.situationCoreId === situationId ||
     capsule.activeForSituationIds.includes(situationId),
   );
+}
+
+export async function renameCapsule(
+  uid: string,
+  capsuleId: string,
+  label: string,
+  deps?: CapsuleServiceDeps,
+): Promise<PraxisCapsule | null> {
+  const trimmed = label.trim().slice(0, 160);
+  if (!trimmed) return null;
+  return bumpCapsuleVersion(uid, capsuleId, { label: trimmed }, deps);
+}
+
+export async function deleteCapsule(
+  uid: string,
+  capsuleId: string,
+  deps?: CapsuleServiceDeps,
+): Promise<{ deleted: boolean }> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return { deleted: false };
+  const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
+  const versionsSnap = await ref.collection('versions').get();
+  const batch = dbOf(deps).batch();
+  versionsSnap.docs.forEach((doc) => batch.delete(doc.ref));
+  batch.delete(ref);
+  await batch.commit();
+  return { deleted: true };
+}
+
+export async function archiveCapsule(
+  uid: string,
+  capsuleId: string,
+  deps?: CapsuleServiceDeps,
+): Promise<PraxisCapsule | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  const timestamp = nowIso(deps);
+  const updated = sanitizeCapsule({
+    ...capsule,
+    activeForSituationIds: [],
+    archivedAt: timestamp,
+    version: capsule.version + 1,
+    updatedAt: timestamp,
+  });
+  const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
+  const batch = dbOf(deps).batch();
+  batch.set(ref.collection('versions').doc(`v${capsule.version}`), capsule, { merge: true });
+  batch.set(ref.collection('versions').doc(`v${updated.version}`), updated, { merge: true });
+  batch.set(ref, updated, { merge: true });
+  await batch.commit();
+  return updated;
+}
+
+export async function attachCapsuleRefs(
+  uid: string,
+  capsuleId: string,
+  input: { sourceIds?: string[]; documentIds?: string[] },
+  deps?: CapsuleServiceDeps,
+): Promise<PraxisCapsule | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  const sourceIds = uniqueStrings([
+    ...capsule.coreRefs.sourceCoreIds,
+    ...cleanStringArray(input.sourceIds),
+  ]);
+  const documentIds = uniqueStrings([
+    ...capsule.coreRefs.documentCoreIds,
+    ...cleanStringArray(input.documentIds),
+  ]);
+  return bumpCapsuleVersion(uid, capsuleId, {
+    coreRefs: {
+      sourceCoreIds: sourceIds,
+      documentCoreIds: documentIds,
+    },
+  }, deps);
 }
 
 export async function activateCapsule(
@@ -371,6 +450,7 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     },
     createdAt,
     updatedAt: stringOrNull(body.updatedAt) ?? createdAt,
+    archivedAt: stringOrNull(body.archivedAt),
     schemaVersion: 1,
     version,
     label: stringOrNull(body.label) ?? defaultCapsuleLabel(coreRefs),

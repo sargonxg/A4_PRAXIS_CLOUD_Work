@@ -6,9 +6,12 @@ import { handleRouteError } from '@/lib/api/standard-error';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import {
   activateCapsule,
+  archiveCapsule,
   bumpCapsuleVersion,
+  deleteCapsule,
   forkCapsule,
   getCapsule,
+  renameCapsule,
   setCapsuleCoreLock,
 } from '@/lib/context/capsule-service';
 
@@ -54,6 +57,9 @@ const ActionSchema = z.discriminatedUnion('action', [
     label: z.string().min(1).max(160).optional(),
     scope: z.enum(['user', 'situation', 'team']).optional(),
   }),
+  z.object({ action: z.literal('rename'), label: z.string().min(1).max(160) }),
+  z.object({ action: z.literal('archive') }),
+  z.object({ action: z.literal('delete') }),
 ]);
 
 const ShareSchema = z.object({
@@ -162,6 +168,21 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
       return NextResponse.json({ capsule });
     }
 
+    if (parsed.data.action === 'rename') {
+      const capsule = await renameCapsule(user.uid, capsuleId, parsed.data.label);
+      if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return NextResponse.json({ capsule });
+    }
+    if (parsed.data.action === 'archive') {
+      const capsule = await archiveCapsule(user.uid, capsuleId);
+      if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return NextResponse.json({ archived: true, capsule });
+    }
+    if (parsed.data.action === 'delete') {
+      const result = await deleteCapsule(user.uid, capsuleId);
+      if (!result.deleted) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return NextResponse.json({ deleted: true });
+    }
     if (parsed.data.action !== 'fork') {
       return NextResponse.json({ error: 'Invalid capsule action' }, { status: 400 });
     }
@@ -174,5 +195,26 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
     return NextResponse.json({ capsule }, { status: 201 });
   } catch (err) {
     return handleRouteError(err, 'context/capsules/action');
+  }
+});
+
+export const DELETE = withAuth<RouteContext>(async (request, user, context) => {
+  try {
+    const { capsuleId } = await context.params;
+    if (user.isDemo) {
+      return NextResponse.json({ error: 'Demo mode cannot mutate private capsules' }, { status: 403 });
+    }
+    const url = new URL(request.url);
+    const mode = url.searchParams.get('mode') === 'delete' ? 'delete' : 'archive';
+    if (mode === 'delete') {
+      const result = await deleteCapsule(user.uid, capsuleId);
+      if (!result.deleted) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return NextResponse.json({ deleted: true });
+    }
+    const capsule = await archiveCapsule(user.uid, capsuleId);
+    if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+    return NextResponse.json({ archived: true, capsule });
+  } catch (err) {
+    return handleRouteError(err, 'context/capsules/archive');
   }
 });

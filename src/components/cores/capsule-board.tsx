@@ -18,9 +18,14 @@ import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
 import { CoreSwapDrawer } from '@/components/cores/CoreSwapDrawer';
 import { CoreLibraryRail } from '@/components/cores/CoreLibraryRail';
 import { CapsuleRadar } from '@/components/cores/CapsuleRadar';
+import { cn } from '@/lib/utils/cn';
 
 interface CapsuleBoardProps {
   situationId?: string;
+  hideLibraryRail?: boolean;
+  hideHeader?: boolean;
+  capsuleIdOverride?: string | null;
+  onActiveCapsuleChange?: (capsule: PraxisCapsule | null) => void;
 }
 
 const SLOT_ORDER: CoreSpecimenKind[] = ['user', 'situation', 'path', 'source', 'graph', 'time', 'tool', 'objective', 'product', 'output', 'memory'];
@@ -122,7 +127,13 @@ function capsuleToSlots(capsule: PraxisCapsule | null): CapsuleSlotData[] {
   ];
 }
 
-export function CapsuleBoard({ situationId }: CapsuleBoardProps) {
+export function CapsuleBoard({
+  situationId,
+  hideLibraryRail = false,
+  hideHeader = false,
+  capsuleIdOverride,
+  onActiveCapsuleChange,
+}: CapsuleBoardProps) {
   const [capsule, setCapsule] = useState<PraxisCapsule | null>(null);
   const [slots, setSlots] = useState<CapsuleSlotData[]>(emptyBoard);
   const [loading, setLoading] = useState(true);
@@ -141,12 +152,16 @@ export function CapsuleBoard({ situationId }: CapsuleBoardProps) {
       })
       .then((body) => {
         if (cancelled) return;
+        const explicit = capsuleIdOverride
+          ? body.capsules.find((c) => c.capsuleId === capsuleIdOverride)
+          : undefined;
         const activeForSituation = situationId
           ? body.capsules.find((c) => c.activeForSituationIds.includes(situationId))
           : undefined;
-        const active: PraxisCapsule | null = activeForSituation ?? body.capsules[0] ?? null;
+        const active: PraxisCapsule | null = explicit ?? activeForSituation ?? body.capsules[0] ?? null;
         setCapsule(active);
         setSlots(capsuleToSlots(active));
+        onActiveCapsuleChange?.(active);
       })
       .catch((err) => {
         if (!cancelled) setError(err instanceof Error ? err.message : String(err));
@@ -157,7 +172,27 @@ export function CapsuleBoard({ situationId }: CapsuleBoardProps) {
     return () => {
       cancelled = true;
     };
-  }, [situationId]);
+  }, [situationId, capsuleIdOverride, onActiveCapsuleChange]);
+
+  useEffect(() => {
+    const handler = () => {
+      const url = situationId ? `/api/context/capsules?situationId=${encodeURIComponent(situationId)}` : '/api/context/capsules';
+      fetch(url, { credentials: 'include' })
+        .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+        .then((body: { capsules: PraxisCapsule[] }) => {
+          const next = capsuleIdOverride
+            ? body.capsules.find((c) => c.capsuleId === capsuleIdOverride)
+            : body.capsules.find((c) => c.capsuleId === capsule?.capsuleId) ?? body.capsules[0];
+          if (!next) return;
+          setCapsule(next);
+          setSlots(capsuleToSlots(next));
+          onActiveCapsuleChange?.(next);
+        })
+        .catch(() => undefined);
+    };
+    window.addEventListener('capsule-mutated', handler);
+    return () => window.removeEventListener('capsule-mutated', handler);
+  }, [situationId, capsuleIdOverride, capsule?.capsuleId, onActiveCapsuleChange]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -165,8 +200,6 @@ export function CapsuleBoard({ situationId }: CapsuleBoardProps) {
     const activeId = String(active.id);
     const overId = String(over.id);
 
-    // Drag from CoreLibraryRail (id "library:<coreId>") onto a slot
-    // (droppable id "slot:<slotId>") → trigger swap.
     if (activeId.startsWith('library:') && overId.startsWith('slot:')) {
       const coreId = activeId.slice('library:'.length);
       const slotId = overId.slice('slot:'.length);
@@ -174,6 +207,11 @@ export function CapsuleBoard({ situationId }: CapsuleBoardProps) {
       if (!slot) return;
       if (slot.locked) {
         setError(`${slot.kind} core is locked. Unlock it before swapping.`);
+        return;
+      }
+      const draggedKind = active.data?.current?.kind as CoreSpecimenKind | undefined;
+      if (draggedKind && draggedKind !== slot.kind) {
+        setError(`Cannot drop ${draggedKind} core into ${slot.kind} slot.`);
         return;
       }
       // Optimistic: stamp the new core into the slot. CoreSwapDrawer will
@@ -270,34 +308,36 @@ export function CapsuleBoard({ situationId }: CapsuleBoardProps) {
   const slotIds = useMemo(() => slots.map((s) => s.slotId), [slots]);
 
   return (
-    <section className="rounded-2xl border border-white/70 bg-white/85 p-6 shadow-xl shadow-navy-950/5 backdrop-blur">
-      <header className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Active capsule</p>
-          <h2 className="mt-1 text-xl font-semibold text-navy-950">
-            {capsule?.label ?? (loading ? 'Loading…' : 'No capsule yet')}
-          </h2>
-        </div>
-        <div className="flex items-start gap-3">
-          <CapsuleRadar
-            size="compact"
-            capsuleId={capsule?.capsuleId ?? null}
-            onAxisActivate={(axis) => {
-              const slot = slots.find((s) => s.kind === axis);
-              if (slot) handleSwap(slot.slotId);
-            }}
-          />
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!capsule || saving}
-            className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-xs font-semibold text-white hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-            Save as new
-          </button>
-        </div>
-      </header>
+    <section className={cn('rounded-2xl border border-white/70 bg-white/85 shadow-xl shadow-navy-950/5 backdrop-blur', hideHeader ? 'p-4' : 'p-6')}>
+      {hideHeader ? null : (
+        <header className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Active capsule</p>
+            <h2 className="mt-1 text-xl font-semibold text-navy-950">
+              {capsule?.label ?? (loading ? 'Loading…' : 'No capsule yet')}
+            </h2>
+          </div>
+          <div className="flex items-start gap-3">
+            <CapsuleRadar
+              size="compact"
+              capsuleId={capsule?.capsuleId ?? null}
+              onAxisActivate={(axis) => {
+                const slot = slots.find((s) => s.kind === axis);
+                if (slot) handleSwap(slot.slotId);
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!capsule || saving}
+              className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-xs font-semibold text-white hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+              Save as new
+            </button>
+          </div>
+        </header>
+      )}
 
       {error ? (
         <p className="mb-3 rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">{error}</p>
@@ -305,7 +345,7 @@ export function CapsuleBoard({ situationId }: CapsuleBoardProps) {
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <div className="flex gap-4">
-          <CoreLibraryRail />
+          {hideLibraryRail ? null : <CoreLibraryRail />}
           <div className="min-w-0 flex-1">
             <SortableContext items={slotIds} strategy={rectSortingStrategy}>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
