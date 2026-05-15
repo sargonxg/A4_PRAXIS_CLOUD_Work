@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+- docs(product): make the Tasklet-style ContextCapsule runtime canonical.
+  Added the canonical app structure for `praxis.tacitus.me`, documenting the
+  Cloud Run first / GKE later Google Cloud architecture, Cloud SQL agent run
+  ledger, Firestore capsule/app-state boundary, Cloud Tasks dispatch,
+  Pub/Sub/Scheduler events, Vertex model runtime, MCP gateway sequence, approval
+  gates, and first agent build waves. Updated the typed runtime blueprint and
+  tests to enforce this direction.
+- docs(agents): add parallel Codex and Claude Code runtime prompts.
+  Added a copy-paste implementation prompt pack with shared startup rules,
+  backend/runtime ownership for Codex, frontend/docs ownership for Claude Code,
+  follow-on prompts for Cloud Tasks and Research Memo Agent waves, validation
+  gates, and commit/push discipline for main.
+- docs(product): incorporate external Tasklet browser-agent research.
+  Added a research intake and foundation coherence check that fold in
+  browser-use plus Steel.dev as the deferred browser lane, SSE-first run
+  streaming, step timelines, pause/cancel/approval UX, hard run caps,
+  idempotency keys, parent-run retries, audit logs, and trace hooks while
+  rejecting greenfield-only changes that conflict with the current Firebase,
+  Cloud Run, Cloud SQL, and Vertex foundation.
 - fix(ask): route Ask PRAXIS through current canonical capabilities.
   Ask PRAXIS now builds its capability posture from the 12-tool canonical
   registry, keeps heavy strategic work inside Memo Studio/Canvas/Advanced, and

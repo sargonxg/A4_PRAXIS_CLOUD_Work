@@ -4,7 +4,7 @@ import Link from 'next/link';
 import type { ComponentType } from 'react';
 import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { Brain, FileText, Gauge, LibraryBig, Target } from 'lucide-react';
+import { Brain, Clock3, FileText, Gauge, LibraryBig, Network, ShieldCheck, Target, Wrench } from 'lucide-react';
 import { listExampleCases } from '@/lib/cases/registry';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
@@ -70,14 +70,14 @@ export function CoreContextStrip() {
         <ContextCell
           href="/app/cores/user"
           icon={Brain}
-          label="User Core"
+          label="User"
           title={`${role} - ${audience}`}
           detail={`${org} - ${lenses}`}
         />
         <ContextCell
           href={context?.href ?? '/app/workbench'}
           icon={Target}
-          label="Situation Core"
+          label="Situation"
           title={context?.name ?? 'No context selected'}
           detail={context?.meta ?? 'Create or open a context to ground Ask PRAXIS'}
           muted={!context}
@@ -85,10 +85,33 @@ export function CoreContextStrip() {
         <ContextCell
           href={context?.href ? `${context.href}?tab=library` : '/app/workbench'}
           icon={LibraryBig}
-          label="Sources"
+          label="Sourceability"
           title={`${attachedCount} attached`}
           detail={attachedCount > 0 ? 'Receipts and documents travel with context' : 'Attach sources before final drafting'}
           muted={attachedCount === 0}
+        />
+        <ContextCell
+          href={context?.href ?? '/app/workbench'}
+          icon={Clock3}
+          label="Temporality"
+          title={health.signals.find((item) => item.id === 'timeline')?.status === 'ready' ? 'Episodes ready' : 'Needs episodes'}
+          detail={selectedSituation?.latestEventDate ?? selectedSituation?.conflictOnsetDate ?? 'Set dates and what changed'}
+          muted={!selectedSituation?.keyDates?.length && !selectedSituation?.latestEventDate && !selectedSituation?.conflictOnsetDate}
+        />
+        <ContextCell
+          href="/app/canvas"
+          icon={Network}
+          label="Power"
+          title={actorCount > 0 ? `${actorCount} actor${actorCount === 1 ? '' : 's'}` : 'Actor map thin'}
+          detail={actorCount > 0 ? 'Approvers, blockers, claims, relationships' : 'Map who decides, blocks, checks, and is affected'}
+          muted={actorCount === 0}
+        />
+        <ContextCell
+          href="/app/tools"
+          icon={Wrench}
+          label="Tools"
+          title="Capsule-aware"
+          detail="Source, time, power, analysis, writing, governance"
         />
         <ContextCell
           href="/app/write"
@@ -99,9 +122,17 @@ export function CoreContextStrip() {
           muted={!stack.outputGoal}
         />
         <ContextCell
+          href="/app/contexts"
+          icon={ShieldCheck}
+          label="Handover"
+          title={health.score >= 80 ? 'Ready to share' : 'Review gates open'}
+          detail={health.score >= 80 ? 'Fork, lock, or brief an agent' : 'Resolve gaps before final export'}
+          muted={health.score < 80}
+        />
+        <ContextCell
           href="/app/dashboard"
           icon={Gauge}
-          label="Health"
+          label="Readiness"
           title={`${health.score}/100 - ${health.label}`}
           detail={health.nextActions[0]?.label ?? 'Ready for next action'}
           muted={health.score < 55}

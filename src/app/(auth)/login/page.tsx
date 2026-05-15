@@ -7,6 +7,10 @@ import { cn } from '@/lib/utils/cn';
 import { Shield, ArrowRight, Loader2, Mail, Chrome } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
+import {
+  PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
+  PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY,
+} from '@/lib/product/context-capsules';
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   if (!password) return { score: 0, label: '', color: '' };
@@ -29,6 +33,8 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const queryMode = searchParams.get('mode');
   const planParam = searchParams.get('plan'); // e.g. ?plan=analyst from pricing page
+  const capsulePromptParam = searchParams.get('capsulePrompt');
+  const capsuleTemplateParam = searchParams.get('capsuleTemplate');
   const appRedirect = planParam
     ? `/app/settings?upgrade=${planParam}` // Send to settings with upgrade prompt
     : resolvePostLoginRedirect(searchParams, false);
@@ -78,7 +84,21 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingCapsulePrompt, setPendingCapsulePrompt] = useState('');
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
+
+  useEffect(() => {
+    const prompt = capsulePromptParam?.trim();
+    if (prompt) {
+      window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY, prompt);
+      setPendingCapsulePrompt(prompt);
+    } else {
+      setPendingCapsulePrompt(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY) ?? '');
+    }
+    if (capsuleTemplateParam) {
+      window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY, capsuleTemplateParam);
+    }
+  }, [capsulePromptParam, capsuleTemplateParam]);
 
   useEffect(() => {
     if (authError) {
@@ -236,6 +256,25 @@ function LoginForm() {
               Diplomatic Intelligence Platform
             </p>
           </motion.div>
+
+          {pendingCapsulePrompt ? (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="mb-5 rounded-xl border border-gold-500/25 bg-gold-500/10 p-4"
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-300">
+                ContextCapsule queued
+              </p>
+              <p className="mt-2 line-clamp-3 text-sm leading-5 text-navy-100">
+                {pendingCapsulePrompt}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-navy-400">
+                Create an account to open the full sidebar, initial runs, Gemini-backed Ask PRAXIS, and the capsule tools for sources, temporality, power dynamics, writing, and handover.
+              </p>
+            </motion.div>
+          ) : null}
 
           {/* Google Sign In */}
           <motion.div

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, FileText, GripVertical, Library, ShieldCheck, Sparkles, Target, UserCircle } from 'lucide-react';
+import { ArrowRight, Clock3, FileText, GripVertical, Library, Network, Scale, ShieldCheck, Sparkles, Target, UserCircle, Wrench } from 'lucide-react';
 import { getNextMoves } from '@/lib/assistant/next-moves';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
@@ -23,12 +23,14 @@ interface AskPraxisHomeProps {
 }
 
 const attachedCores = [
-  { label: 'User Core', href: '/app/cores/user', icon: UserCircle, detail: 'role, audience, style' },
-  { label: 'Situation Core', href: '/app/cores/context', icon: Target, detail: 'frame, domain, actors' },
-  { label: 'Source/Document Core', href: '/app/workbench?tab=library', icon: Library, detail: 'receipts, uploads, gaps' },
-  { label: 'Graph Core', href: '/app/workbench?tab=graph', icon: GripVertical, detail: 'actors, claims, relations' },
-  { label: 'Time Core', href: '/app/workbench', icon: ShieldCheck, detail: 'horizon, freshness, sequence' },
-  { label: 'Output Core', href: '/app/write', icon: FileText, detail: 'memo, brief, handover' },
+  { label: 'User', href: '/app/cores/user', icon: UserCircle, detail: 'role, audience, style' },
+  { label: 'Situation', href: '/app/cores/context', icon: Target, detail: 'frame, domain, actors' },
+  { label: 'Sources', href: '/app/workbench?tab=library', icon: Library, detail: 'receipts, uploads, gaps' },
+  { label: 'Temporality', href: '/app/workbench', icon: Clock3, detail: 'episodes, freshness' },
+  { label: 'Power', href: '/app/canvas', icon: Network, detail: 'approvers, blockers' },
+  { label: 'Rules / Specs', href: '/app/workbench?tab=context', icon: Scale, detail: 'standards, gates' },
+  { label: 'Tools', href: '/app/tools', icon: Wrench, detail: 'capsule capabilities' },
+  { label: 'Output', href: '/app/write', icon: FileText, detail: 'memo, brief, handover' },
 ];
 
 export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisHomeProps) {
@@ -52,12 +54,12 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
         <div className="p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Ask PRAXIS</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Your ContextCapsules</p>
               <h1 className="mt-2 text-3xl font-semibold text-navy-950 sm:text-4xl">
-                Ask, research, stress-test, draft, and hand over from the active core stack.
+                Ask, research, check, draft, and hand over from the active ContextCapsule.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700">
-                {activeCaseName} is the current Situation. PRAXIS reads the inherited User, Situation, Source/Document, Graph, Time, and Output cores, then recommends the safest next move instead of exposing a raw tool marketplace.
+                {activeCaseName} is the current Situation. PRAXIS reads the capsule anatomy, then recommends the safest tools and next moves for serious policy work without forcing you into a raw marketplace.
               </p>
             </div>
             <Link
@@ -96,9 +98,9 @@ export function AskPraxisHome({ exampleCases, marketplaceToolCount }: AskPraxisH
               <Sparkles className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-base font-semibold">Ask PRAXIS about this policy situation.</span>
+                <span className="block text-base font-semibold">Ask the active ContextCapsule.</span>
                 <span className="mt-1 block text-xs leading-5 text-navy-200">
-                  It checks core health, temporal posture, source coverage, and graph readiness before proposing work.
+                  It checks context, sourceability, temporality, power dynamics, and output posture before proposing work.
                 </span>
               </span>
               <ArrowRight className="h-5 w-5 shrink-0 text-navy-300" />

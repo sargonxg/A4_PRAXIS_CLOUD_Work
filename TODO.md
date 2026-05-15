@@ -11,6 +11,38 @@ Last updated: 2026-05-15.
 
 ## Immediate Next Steps
 
+### Canonical Tasklet-Style Runtime Build
+
+1. Use `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` to start the next
+   Codex and Claude Code sessions with clear file ownership, validation, and
+   commit/push expectations.
+2. Build Wave 1 of the canonical Tasklet-style PRAXIS runtime:
+   Cloud SQL Agent Run Ledger. Add typed agent/runtime tables and helpers for
+   agents, runs, run events, tool calls, approvals, triggers, document/chunk
+   links, and capsule pointers. Keep Firestore as the active capsule/app state
+   store.
+3. Add the API control-plane surface for manual agent runs:
+   `POST /api/agents/runs`, `GET /api/agents/runs/[runId]`, and list by active
+   capsule. The first pass should persist queued runs only; no AI execution
+   until the ledger is stable.
+4. Add Cloud Tasks dispatch after the ledger: one task per run, private
+   `praxis-agent-worker` route, OIDC-authenticated execution, and
+   `queued -> running -> succeeded/failed` events.
+5. Implement the Research Memo Agent first, then Daily Brief, Watchlist, and
+   Source Monitor. Every run must resolve the active ContextCapsule before
+   calling tools.
+6. Add approval gates before any external send, graph fact promotion,
+   unsupported-claim resolution, credentialed browser automation, or high-risk
+   tool action.
+7. Keep MCP private/read-first until the run ledger and approval model are
+   reliable. Browser/code sandbox work is explicitly GKE-later unless a real
+   workload proves Cloud Run cannot handle it.
+8. When browser automation becomes necessary, start with `browser-use` plus
+   Steel.dev managed sessions, allowlisted/read-only behavior, hard run caps,
+   idempotency, trace ids, and approval gates before credentialed actions.
+
+### Existing MVP Follow-Ups
+
 0. Verify the Context Core Lite mode switch in a signed-in browser flow:
    PRAXIS mode must create a Situation Core, Capsule, Context Package, active
    stack, and health/gaps summary; DIALECTICA mode must remain clearly disabled

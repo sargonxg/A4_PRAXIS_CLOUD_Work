@@ -1,0 +1,112 @@
+# PRAXIS Product Documentation Index
+
+Date: 2026-05-15  
+Status: canonical index for the current app structure
+
+## Read These First
+
+1. [`PRAXIS_CANONICAL_APP_STRUCTURE.md`](./PRAXIS_CANONICAL_APP_STRUCTURE.md)
+   - Main source of truth for what `praxis.tacitus.me` is becoming.
+   - Defines the ContextCapsule-native app spine, Google Cloud runtime,
+     Firestore/Cloud SQL state boundary, first agents, governance, and build
+     waves.
+2. [`TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`](./TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md)
+   - Implementation plan for the Tasklet-style PRAXIS runtime.
+   - Explains what to copy from Tasklet's product class and what not to copy.
+3. [`CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md`](./CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md)
+   - Product narrative and UX plan for ContextCapsules, landing, app shell,
+     tool marketplace, handover, and capsule combination.
+4. [`TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./TASKLET_RESEARCH_INTAKE_2026-05-15.md)
+   - Intake note for the external Tasklet-class browser-agent research.
+   - Records what PRAXIS adopted, deferred, or rejected.
+5. [`PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md)
+   - Senior-engineering coherence check across app structure, docs, substrate,
+     and build order.
+
+## Current Canonical Direction
+
+PRAXIS is a ContextCapsule-native agent workbench for serious policy work.
+
+The product is not a generic Tasklet clone. It should become a full working app
+with the same class of runtime capability:
+
+- prompt-first creation;
+- persistent agent runs;
+- triggers and schedules;
+- tool calls;
+- integrations/MCP;
+- browser/code sandbox later;
+- audit logs;
+- human approvals;
+- generated work products.
+
+But the PRAXIS version is domain-specific:
+
+- policy analysis;
+- conflict and statecraft;
+- public-sector and institutional work;
+- sourceable memos;
+- review-gated graph changes;
+- inheritable handover capsules.
+
+## App Spine
+
+Keep the visible app simple:
+
+```text
+Home
+Ask PRAXIS
+Library
+Memo Studio
+Canvas
+Advanced
+```
+
+Do not add a new primary navigation item for agents. Agent runs appear inside
+the existing surfaces:
+
+- Home: recent runs, scheduled briefs, next work.
+- Ask PRAXIS: run a capsule-aware agent from the active capsule.
+- Library: sources/documents/specs and source-triggered runs.
+- Memo Studio: outputs and review receipts.
+- Canvas: graph/timeline/source-gap outputs.
+- Advanced: run logs, triggers, MCP, provider/runtime diagnostics.
+
+## Runtime Spine
+
+Use Google Cloud as the main runtime:
+
+- Cloud Run first.
+- Cloud SQL Postgres for the durable agent run ledger.
+- Firestore for capsules, active context stacks, and owner-scoped app state.
+- Cloud Tasks for per-run execution.
+- Pub/Sub for events.
+- Cloud Scheduler for daily briefs and watchlists.
+- Vertex AI/Gemini as default model runtime.
+- Claude-on-Vertex only through the provider abstraction if evaluated.
+- Browser automation later via `browser-use` plus Steel.dev managed first,
+  self-hosted on GKE only when the workload proves it.
+- Cloud Storage for artifacts.
+- Secret Manager/KMS for secrets and user token encryption.
+- GKE later only for heavy browser/code sandbox pools.
+
+## Older Documentation Policy
+
+Older v4/v5/v7 docs remain useful evidence and historical context. They should
+not override the current canonical app structure.
+
+Use older docs this way:
+
+- `docs/architecture/*`: architecture invariants, source-of-truth constraints,
+  provider/security boundaries.
+- `docs/build/PRAXIS_v5_*`: prior build ledger and completed phase evidence.
+- `docs/v7/*`: design-led simplification references, not the main build queue
+  unless a slice is explicitly reactivated.
+- `docs/_archive/*`: historical prompt packs and audits only.
+
+When a new wave changes the canonical structure, update this index,
+`PRAXIS_CANONICAL_APP_STRUCTURE.md`, `ARCHITECTURE.md`, `STATUS.md`,
+`TODO.md`, and `CHANGELOG.md` together.
+
+Do not delete old docs just because they are old. Archive or mark them
+subsumed only after checking references and current imports/links.

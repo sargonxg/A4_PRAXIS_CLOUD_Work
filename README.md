@@ -1,9 +1,10 @@
 # PRAXIS by TACITUS
 
-PRAXIS is a policy-analysis workspace for teams that need AI to work from
-real context, not a blank chat box. It combines Ask PRAXIS, a managed core
-library, source-grounded research, memo drafting, and a policy graph so
-analysts can move from question to evidence to write-up in one place.
+PRAXIS is a ContextCapsule-native policy workspace for teams that need AI
+agents to work from real context, not a blank chat box. It combines Ask PRAXIS,
+a managed capsule/core library, source-grounded research, memo drafting,
+review-gated graph work, and persistent agent runs so analysts can move from
+question to evidence to write-up to handover in one place.
 
 Live app:
 
@@ -15,11 +16,15 @@ Current product direction:
 
 - One shared workspace shell for dashboard and workbench
 - Ask PRAXIS first
-- User Cores and Situation Cores as the main context model
+- ContextCapsules, User Cores, Situation Cores, sources, time, graph, tools,
+  output, and memory as the main context model
 - Research, source intake, graph review, stakeholder mapping, scenario / ACH,
   memo drafting, brief export, and red-team review as the core tool set
 - Tools stay attachable to context and are surfaced by recommendation, not
   by tool-marketplace sprawl
+- Tasklet-style persistent agents are built on the existing GCP stack: Cloud
+  Run, Cloud SQL Postgres, Firestore, Cloud Tasks, Pub/Sub, Cloud Scheduler,
+  Vertex AI, Cloud Storage, Secret Manager, and Cloud Monitoring.
 
 This repository is the working source of truth for the frontend, the app API
 layer, the shared context model, the tool registry, and the deploy pipeline.
@@ -63,9 +68,11 @@ PRAXIS is organized around a small set of durable concepts.
 | Layer | Purpose |
 |---|---|
 | **Ask PRAXIS** | Start with the question and let the app pull in the right context. |
+| **ContextCapsule** | The inheritable working object: user, situation, sources, time, graph, tools, output, memory, and handover rules. |
 | **User Core** | The analyst, team, institution, tone, method, and constraints. |
 | **Situation Core** | The case, actors, sources, timeline, risks, and open questions. |
 | **Core Library** | Create, select, fork, inspect, and manage cores. |
+| **Agent Runs** | Durable capsule-aware work: plans, tool calls, approvals, outputs, retries, and audit events. |
 | **Policy Graph** | Structured entities, relationships, provenance, and changes over time. |
 | **Tools** | Research, source intake, graph review, stakeholder map, ACH, memo drafting, export, red team. |
 | **Docs Library** | The writing surface where evidence becomes a brief, memo, or talking points. |
@@ -211,6 +218,11 @@ https://praxis.tacitus.me
 - `CLAUDE.md` - canonical agent guidance for this repo
 - `AGENTS.md` - startup rules, validation gate, and deploy notes
 - `ARCHITECTURE.md` - architecture entrypoint
+- `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md` - canonical app/product/runtime structure
+- `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md` - Tasklet-style PRAXIS agent runtime plan
+- `docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md` - external browser-agent research intake and decisions
+- `docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md` - foundation coherence check and build order
+- `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` - copy-paste prompts for Codex and Claude Code sessions
 - `docs/architecture/PRAXIS_ARCHITECTURE.md` - canonical architecture bible
 - `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` - shipped vs target-state notes
 - `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md` - current execution ledger

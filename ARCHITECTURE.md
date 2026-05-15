@@ -1,6 +1,6 @@
 # PRAXIS Architecture
 
-Last updated: 2026-05-10.
+Last updated: 2026-05-15.
 
 ## Canonical references
 
@@ -11,6 +11,11 @@ Last updated: 2026-05-10.
 - [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md) — shipped, partial, gated, and drift state.
 - [`docs/architecture/PRAXIS_DIALECTICA_KNOWLEDGE_LAYER_ALIGNMENT.md`](./docs/architecture/PRAXIS_DIALECTICA_KNOWLEDGE_LAYER_ALIGNMENT.md) — future product boundary: PRAXIS as the user-facing policy workbench, DIALECTICA as the ingestion/knowledge layer, with KAIROS and AGON feeding structured evidence upstream.
 - [`docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md`](./docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md) — current product model (Home, Ask PRAXIS, Sources, Situation Model, Outputs, Advanced; eight context cores).
+- [`docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md`](./docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md) — current canonical product/app structure for the Tasklet-style ContextCapsule runtime on Google Cloud.
+- [`docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`](./docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md) — implementation plan for persistent capsule-aware agents, Cloud SQL run ledger, Cloud Tasks dispatch, approvals, MCP, and browser/sandbox deferral.
+- [`docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md) — what was incorporated from the external Tasklet-class browser-agent research and what was rejected/deferred.
+- [`docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md) — current coherence check across product docs, substrate, and build order.
+- [`docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`](./docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md) — copy-paste Codex and Claude Code prompts for parallel implementation sessions.
 
 ## Active MVP Build (v5)
 
@@ -38,6 +43,24 @@ PRAXIS is a dual-service GCP application:
 - Cloud Storage for blobs and exports.
 - Vertex AI as the managed model runtime, aligned with Gemini Enterprise as the
   enterprise agent/work platform.
+
+The next canonical runtime target is Cloud Run first, GKE later:
+
+- `praxis-frontend` remains the public Cloud Run service for the Next.js app
+  and control-plane API routes.
+- `praxis-agent-worker` becomes the private Cloud Run worker for queued
+  capsule-aware agent runs.
+- Cloud SQL Postgres becomes the canonical agent run ledger for runs, tool
+  calls, approvals, document chunks, and operational joins.
+- Firestore remains the owner-scoped source of truth for capsules,
+  context stacks, cores, and user-facing app state.
+- Cloud Tasks dispatches durable per-run work; Pub/Sub broadcasts events;
+  Cloud Scheduler triggers daily briefs/watchlists and maintenance.
+- MCP and browser/code sandbox workers are phased after run ledger and approval
+  gates are stable.
+- When browser automation becomes necessary, the preferred deferred lane is
+  `browser-use` plus Steel.dev managed first, self-hosted on GKE only when
+  economics or concurrency require it.
 
 ## Active Enforcement
 

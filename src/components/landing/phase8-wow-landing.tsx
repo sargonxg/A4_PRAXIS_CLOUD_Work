@@ -1,6 +1,8 @@
 "use client";
 
+import type { FormEvent } from "react";
 import Link from "next/link";
+import { useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -12,12 +14,21 @@ import {
   Plus,
   Repeat2,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { CoreCapsuleHero } from "./core-capsule-hero";
 import { ContextCapsulePreview } from "@/components/context/context-capsule-preview";
 import { PolicyTicker } from "./policy-ticker";
 import { SpecimenCard, SpecimenGrid, type CoreSpecimenKind } from "@/components/cores/specimen-card";
+import {
+  CAPSULE_CAPABILITY_AREAS,
+  CONTEXT_CAPSULE_TEMPLATES,
+  PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
+  PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY,
+  contextCapsuleLoginHref,
+  type ContextCapsuleTemplate,
+} from "@/lib/product/context-capsules";
 
 const SPECIMENS: ReadonlyArray<{
   kind: CoreSpecimenKind;
@@ -34,6 +45,9 @@ const SPECIMENS: ReadonlyArray<{
   { kind: 'time', serial: 'PRX-CORE-TIM-202604', title: 'Horizon: 2026-2028', essence: 'Valid-time window, freshness gates, scenario horizon, bitemporal posture.', state: 'gated' },
   { kind: 'output', serial: 'PRX-CORE-OUT-202604', title: 'Cited options memo', essence: 'Audience, format, tone, review posture, export rules, handover package.', state: 'ready' },
 ];
+
+const HERO_TEMPLATES = CONTEXT_CAPSULE_TEMPLATES.slice(0, 8);
+const FEATURED_PROMPTS = CONTEXT_CAPSULE_TEMPLATES.slice(0, 6);
 
 const PRICING_TIERS = [
   {
@@ -66,10 +80,10 @@ const PRICING_TIERS = [
 ] as const;
 
 const workflow = [
-  ["Capture the context", "Build the User, Situation, Source, Graph, Time, and Output cores once. PRAXIS stores them as a reusable capsule, not a prompt."],
-  ["See reality through expert eyes", "Temporal, causal, actor, source, and domain checks layer expert structure over every claim before reasoning runs."],
-  ["Ground every answer", "Receipts, page-spans, time horizons, and graph proposals stay in view while PRAXIS drafts or stress-tests."],
-  ["Hand over the capsule", "Ship the memo and its context together. A teammate or an agent inherits the same posture, not a screenshot."],
+  ["Build the capsule", "Start with a name and a few details, then let PRAXIS scaffold the User, Situation, Source, Time, Power, Tool, and Output cores."],
+  ["Make context explicit", "DIALECTICA, KAIROS, and AGON stay behind the scenes to structure source knowledge, episodes, power dynamics, and tacit relations."],
+  ["Ask and use tools", "The AI bar reasons from the active capsule and recommends capsule-aware tools instead of dropping the user into a raw marketplace."],
+  ["Share the handover", "Fork, lock, combine, or hand the capsule to a teammate, director, or AI agent with sources and review gates intact."],
 ] as const;
 
 const proofPanels = [
@@ -77,38 +91,67 @@ const proofPanels = [
     label: "Library",
     href: "/app/workbench/indo-pacific-2026?tab=library",
     icon: LibraryBig,
-    title: "Capture sources, documents, tacit notes.",
-    detail: "Upload PDFs, DOCX, cables, briefings, or voice notes. PRAXIS extracts claims, actors, dates, and page-span receipts so tacit institutional memory becomes structured context.",
+    title: "Sourceability for serious work.",
+    detail: "Upload PDFs, DOCX, links, notes, and source sets. PRAXIS keeps receipts, weak claims, contradictions, and gaps visible before AI writes.",
   },
   {
-    label: "Situation Intelligence",
+    label: "Temporality + Power",
     href: "/app/workbench/indo-pacific-2026?tab=graph",
     icon: Network,
-    title: "Layer expert structure over reality.",
-    detail: "Temporal, causal, domain, actor, and graph readiness checks expose unsupported reasoning before PRAXIS recommends tools or drafts. The substrate stays inspectable.",
+    title: "Show what changed and who matters.",
+    detail: "KAIROS-style episodes and AGON-style power maps help PRAXIS model deadlines, stale assumptions, approvers, blockers, incentives, and conflict dynamics.",
   },
   {
     label: "Memo Studio",
     href: "/app/write",
     icon: FileText,
-    title: "Draft grounded, ship the capsule.",
-    detail: "Unsupported and date-check claims sit beside the memo with Find source, Rewrite cautiously, and Save gap actions. Ship the memo and the capsule together.",
+    title: "Write from the capsule.",
+    detail: "Draft memos, briefs, talking points, board notes, and handover packs from a managed capsule instead of a blank prompt or scattered transcript.",
   },
 ] as const;
 
 const trustItems = [
-  ["Inheritable cores", "User, Situation, Source/Document, Graph, Time, and Output posture travel across questions, tools, drafts, and handovers."],
-  ["Temporal readiness", "Date-sensitive claims and scenario work stay gated by explicit time posture instead of hidden assumptions."],
-  ["Source receipts", "PRAXIS keeps source posture and open gaps visible instead of hiding them inside a chat answer."],
-  ["Human review", "Drafts, graph proposals, and handover notes remain working products for analysts to accept, revise, or reject."],
+  ["Inheritable capsules", "User, Situation, Sources, Temporality, Power, Tools, Output, and Handover travel together."],
+  ["Temporal readiness", "Date-sensitive claims, episodes, and scenario windows stay explicit instead of hidden in prose."],
+  ["Sourceability", "Every serious claim points to a receipt, a gap, a contradiction, or a human review action."],
+  ["Human gates", "Graph changes, external actions, exports, and agent handovers stay approval-aware."],
 ] as const;
 
 const assemblySteps = [
-  { icon: Plus, label: 'Add', detail: 'Attach a new source set, case file, note, or operator path without rebuilding the whole workspace.' },
-  { icon: Repeat2, label: 'Swap', detail: 'Change the Path Core from diplomacy to humanitarian, legal, media, or risk work while keeping the same facts.' },
-  { icon: GitFork, label: 'Inherit', detail: 'Fork a capsule for a teammate, another desk, or an AI agent with the same context and receipts intact.' },
-  { icon: FileText, label: 'Ship', detail: 'Turn the active capsule into a memo, briefing, or handover package that carries its context forward.' },
+  { icon: Plus, label: 'Scaffold', detail: 'Create a capsule from a bar prompt, even if you only know the name, user, situation, and output goal.' },
+  { icon: Repeat2, label: 'Deepen', detail: 'Add documents, links, episodes, rules, tacit notes, tools, and inferred relationships over time.' },
+  { icon: GitFork, label: 'Combine', detail: 'Merge capsules for bigger policy work while preserving sources, timelines, graph conflicts, and provenance.' },
+  { icon: FileText, label: 'Hand over', detail: 'Send a director, teammate, or AI agent the working context, allowed actions, and review gates.' },
 ] as const;
+
+function persistCapsulePrompt(prompt: string, templateId?: string) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY, prompt);
+  if (templateId) window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY, templateId);
+}
+
+function useCapsuleLaunch() {
+  const [prompt, setPrompt] = useState('Prepare a director briefing on a regulatory change.');
+
+  function launch(nextPrompt = prompt, templateId?: string) {
+    const clean = nextPrompt.trim();
+    if (!clean) return;
+    persistCapsulePrompt(clean, templateId);
+    window.location.href = contextCapsuleLoginHref(clean, templateId);
+  }
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    launch();
+  }
+
+  function selectTemplate(template: ContextCapsuleTemplate) {
+    setPrompt(template.prompt);
+    persistCapsulePrompt(template.prompt, template.id);
+  }
+
+  return { prompt, setPrompt, submit, launch, selectTemplate };
+}
 
 function StaggerSpecimens() {
   const reduceMotion = useReducedMotion();
@@ -150,6 +193,8 @@ function StaggerSpecimens() {
 }
 
 export function Phase8WowLanding() {
+  const { prompt, setPrompt, submit, launch, selectTemplate } = useCapsuleLaunch();
+
   return (
     <main className="bg-[#F6F8FB] text-[#111827]">
       <section id="core-stack" className="relative overflow-hidden border-b border-slate-200 bg-white">
@@ -161,18 +206,63 @@ export function Phase8WowLanding() {
               <span>PRAXIS by TACITUS</span>
             </p>
             <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Build the right context for policy AI.
+              Build a ContextCapsule for the policy work in front of you.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:text-lg">
-              Upload knowledge, form six cores, and ask PRAXIS from the context your work actually needs.
+              PRAXIS turns sources, timelines, stakeholders, rules, drafts, and decisions into shareable working context that humans and AI agents can safely inherit.
             </p>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              The visible workflow stays simple: choose a context, attach sources, then draft or review grounded work, shaped by practitioner experience in multilateral diplomacy.
+              The bar is the center: describe the serious work, scaffold the capsule, then deepen it with documents, links, KAIROS temporality, AGON power dynamics, policy tools, and human review gates.
             </p>
-            <div className="mt-7 flex flex-wrap gap-3">
+            <form onSubmit={submit} className="mt-7 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-navy-950/10">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <label className="sr-only" htmlFor="context-capsule-prompt">
+                  What issue, decision, or analysis are you working on?
+                </label>
+                <div className="flex min-h-14 flex-1 items-center gap-3 rounded-xl bg-slate-50 px-4">
+                  <Sparkles className="h-5 w-5 shrink-0 text-[#8A5A00]" />
+                  <textarea
+                    id="context-capsule-prompt"
+                    value={prompt}
+                    onChange={(event) => setPrompt(event.target.value)}
+                    rows={2}
+                    className="min-h-12 flex-1 resize-none bg-transparent py-3 text-sm leading-5 text-slate-950 outline-none placeholder:text-slate-500"
+                    placeholder="What issue, decision, or analysis are you working on?"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#111827] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#243244]"
+                >
+                  Build ContextCapsule
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 px-1 pb-1">
+                {HERO_TEMPLATES.map((template) => (
+                  <button
+                    key={template.id}
+                    type="button"
+                    onClick={() => selectTemplate(template)}
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-[#8A5A00]/50 hover:text-[#8A5A00]"
+                  >
+                    {template.label}
+                  </button>
+                ))}
+              </div>
+            </form>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => launch()}
+                className="inline-flex items-center gap-2 rounded-md bg-[#111827] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#243244]"
+              >
+                Start with initial runs
+                <ArrowRight className="h-4 w-4" />
+              </button>
               <Link
                 href="/app/assistant"
-                className="inline-flex items-center gap-2 rounded-md bg-[#111827] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#243244]"
+                className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-400"
               >
                 Open Ask workspace
                 <ArrowRight className="h-4 w-4" />
@@ -180,16 +270,16 @@ export function Phase8WowLanding() {
             </div>
             <dl className="mt-9 grid max-w-xl grid-cols-3 gap-4 border-t border-slate-200 pt-6 text-[11px] uppercase tracking-[0.18em] text-slate-500">
               <div>
-                <dt className="font-semibold text-[#8A5A00]">Upload</dt>
-                <dd className="mt-1 normal-case tracking-normal text-slate-700">Documents and sources once.</dd>
+                <dt className="font-semibold text-[#8A5A00]">Context</dt>
+                <dd className="mt-1 normal-case tracking-normal text-slate-700">User, situation, output, tacit knowledge.</dd>
               </div>
               <div>
-                <dt className="font-semibold text-[#8A5A00]">Form cores</dt>
-                <dd className="mt-1 normal-case tracking-normal text-slate-700">User, situation, source, graph, time, output.</dd>
+                <dt className="font-semibold text-[#8A5A00]">Time + power</dt>
+                <dd className="mt-1 normal-case tracking-normal text-slate-700">Episodes, actors, approvers, blockers.</dd>
               </div>
               <div>
-                <dt className="font-semibold text-[#8A5A00]">Ask</dt>
-                <dd className="mt-1 normal-case tracking-normal text-slate-700">Answers inherit the stack.</dd>
+                <dt className="font-semibold text-[#8A5A00]">Sourceability</dt>
+                <dd className="mt-1 normal-case tracking-normal text-slate-700">Receipts, gaps, review gates.</dd>
               </div>
             </dl>
           </div>
@@ -201,7 +291,7 @@ export function Phase8WowLanding() {
               situationLabel="Indo-Pacific 2026"
               sourceCount={42}
               documentCount={8}
-              graphState="Actor-claim lattice v3"
+              graphState="Power map + actor-claim lattice"
               timeHorizon="2026-2028"
               outputGoal="Cited options memo"
               healthScore={86}
@@ -212,13 +302,61 @@ export function Phase8WowLanding() {
         </div>
       </section>
 
+      <section id="capsule-examples" className="border-b border-slate-200 bg-[#F6F8FB] px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">Start from a policy responsibility</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+                One click scaffolds a capsule the user can deepen after signup.
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                A new capsule can start thin: a name, user, situation, and output goal. It becomes serious as sources, rules, episodes, power maps, and tools are attached.
+              </p>
+            </div>
+            <Link href="/login?mode=signup&redirect=%2Fapp%2Fassistant" className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900">
+              Sign up for initial runs
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {FEATURED_PROMPTS.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                onClick={() => launch(template.prompt, template.id)}
+                className="group min-h-[12rem] rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-[#8A5A00]/50 hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{template.audience}</p>
+                    <h3 className="mt-1 text-lg font-semibold text-slate-950">{template.label}</h3>
+                  </div>
+                  <span className="rounded-full bg-[#111827] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white">
+                    Try it
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{template.prompt}</p>
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {template.contextCores.slice(0, 5).map((core) => (
+                    <span key={core} className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold capitalize text-slate-600">
+                      {core}
+                    </span>
+                  ))}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="methods" className="border-b border-slate-200 bg-[#F6F8FB] px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">How it works</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Build the cores. Ask from them. Ship grounded work.</h2>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Build the capsule. Ask from it. Hand it over.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              PRAXIS keeps the first workflow short and pushes the deeper graph, review, and tool controls into Advanced.
+              PRAXIS keeps the first workflow short and pushes deeper graph, review, model, and tool controls into Advanced.
             </p>
           </div>
           <div className="mt-7 grid gap-4 lg:grid-cols-4">
@@ -277,6 +415,30 @@ export function Phase8WowLanding() {
               <p className="mt-3 text-sm leading-6 text-slate-600">{panel.detail}</p>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section id="capabilities" className="border-b border-slate-200 bg-[#F6F8FB] px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8A5A00]">Capsule-aware tools</p>
+              <h2 className="mt-2 font-serif text-3xl tracking-tight text-slate-950 sm:text-4xl">
+                The marketplace stays, but the capsule chooses what matters.
+              </h2>
+              <p className="mt-4 text-sm leading-6 text-slate-700">
+                PRAXIS keeps the tool library available, then recommends the few capabilities that fit the active capsule: weak sources, missing timeline, thin power map, output goal, or handover risk.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {CAPSULE_CAPABILITY_AREAS.map((area) => (
+                <div key={area.label} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="text-sm font-semibold text-slate-950">{area.label}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{area.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

@@ -1,0 +1,447 @@
+# PRAXIS Tasklet-Style Runtime Agent Prompts
+
+Date: 2026-05-15  
+Repo: `C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work`  
+Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`  
+Canonical domain: `https://praxis.tacitus.me`
+
+Use this file to start parallel coding sessions without losing coherence.
+
+## Shared Rules For Every Session
+
+Every Codex or Claude Code session starts here:
+
+```powershell
+cd C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work
+git pull origin main
+git status
+git log --oneline -5
+npm install
+```
+
+If the tree is dirty:
+
+- inspect before editing;
+- do not overwrite uncommitted work;
+- coordinate file ownership with the other session;
+- keep the change coherent and small enough to validate.
+
+Read before editing:
+
+1. `AGENTS.md`
+2. `CLAUDE.md`
+3. `ARCHITECTURE.md`
+4. `docs/product/README.md`
+5. `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md`
+6. `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`
+7. `docs/product/CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md`
+8. `docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md`
+9. `docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`
+10. `STATUS.md`
+11. `TODO.md`
+12. `CHANGELOG.md` `[Unreleased]`
+
+Hard product boundaries:
+
+- Keep visible primary navigation as `Home`, `Ask PRAXIS`, `Library`,
+  `Memo Studio`, `Canvas`, `Advanced`.
+- Build PRAXIS as a ContextCapsule-native agent workbench, not a generic
+  Tasklet clone.
+- Use Cloud Run first, GKE later only for heavy browser/code sandbox pools.
+- Use Cloud SQL Postgres for the canonical agent run ledger.
+- Keep Firestore for capsules, active context stacks, cores, and app state.
+- Use Cloud Tasks for per-run dispatch.
+- Keep MCP private/read-first until approval gates are reliable.
+- Defer browser automation until after run ledger, dispatch, outputs, and
+  approval gates. When it starts, default to `browser-use` plus Steel.dev.
+- Do not add Supabase, Inngest, Trigger.dev, Prisma, or a new primary database.
+- Do not hardcode model names in route files.
+- Do not bypass `withCalibration` for user-facing AI work.
+- Do not expose internal costs, provider internals, or unsupported live claims
+  in normal UI.
+
+Every session should improve something real:
+
+- code behavior;
+- tests;
+- docs that future agents actually read;
+- validation/audit coverage;
+- cleanup of proven stale paths or stale claims.
+
+Every session should end with:
+
+```powershell
+npx tsc --noEmit
+npm run build
+npm run audit:repo-shape
+npm run audit:architecture-reference
+node scripts/audit-ai-routes.mjs
+npx vitest run <focused tests>
+```
+
+If code files changed:
+
+```powershell
+graphify update .
+```
+
+Before pushing:
+
+```powershell
+git status
+git diff --stat
+git add -A
+git commit -m "<coherent message>"
+git pull --rebase origin main
+git push origin main
+```
+
+Only deploy when explicitly asked or when the session scope requires a deploy
+checkpoint and credentials are available.
+
+## Parallel Ownership
+
+Recommended split:
+
+- Codex session: backend/runtime, schemas, APIs, tests, audits.
+- Claude Code session: frontend/app shell, UX wiring, docs/readme cleanup,
+  Playwright smoke.
+
+Avoid editing the same files in both sessions. If both must touch a shared file,
+make one session own the edit and the other only read it.
+
+Shared files requiring coordination:
+
+- `ARCHITECTURE.md`
+- `README.md`
+- `STATUS.md`
+- `TODO.md`
+- `CHANGELOG.md`
+- `src/components/app/*`
+- `src/components/ask/*`
+- `src/lib/product/*`
+- `docs/product/*`
+
+## Codex Prompt: Wave 1 Backend Runtime
+
+Paste this into a new Codex session.
+
+```text
+You are working in:
+C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work
+
+Goal:
+Implement Wave 1 of the canonical Tasklet-style PRAXIS runtime: the Cloud SQL
+Agent Run Ledger. This is the backend/control-plane foundation for
+praxis.tacitus.me becoming a ContextCapsule-native agent workbench.
+
+Read first:
+- AGENTS.md
+- CLAUDE.md
+- ARCHITECTURE.md
+- docs/product/README.md
+- docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md
+- docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md
+- src/lib/product/tasklet-style-runtime.ts
+- docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md
+- docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md
+- src/lib/context/capsule-service.ts
+- src/lib/context/core-objects.ts
+- src/lib/agents/run-agent.ts
+- src/lib/ai/providers.ts
+- STATUS.md
+- TODO.md
+
+Non-negotiable decisions:
+- Cloud SQL Postgres is the canonical durable agent run ledger.
+- Firestore remains the app/capsule/core/context-stack state store.
+- Do not add Supabase, Inngest, Trigger.dev, Prisma, or a new primary database.
+- Do not execute AI in Wave 1; just persist and inspect queued runs.
+- Do not add new primary navigation.
+- Preserve all existing uncommitted work unless Giulio explicitly says to reset.
+
+Own these files/modules:
+- src/lib/agent-runtime/**
+- src/app/api/agents/runs/**
+- tests/unit/lib/agent-runtime/**
+- docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md only if a contract detail changes
+- TODO.md / STATUS.md / CHANGELOG.md for final documentation updates
+
+Do not edit frontend app-shell files in this session unless needed for a tiny
+smoke entry. Leave UI wiring to the Claude Code session.
+
+Implementation tasks:
+1. Add `src/lib/agent-runtime/types.ts`.
+   Define:
+   - AgentRunStatus: queued, running, waiting_approval, succeeded, failed, cancelled, expired
+   - AgentTriggerType: manual, schedule, webhook, email_event, source_update, capsule_change
+   - AgentToolRisk: low, medium, high
+   - AgentSpec
+   - AgentRun
+   - AgentRunEvent
+   - AgentToolCall
+   - AgentApproval
+   - AgentTrigger
+   Include control fields:
+   - traceId
+   - parentRunId
+   - idempotencyKey
+   - maxSteps
+   - maxSessionMinutes
+   - internal estimated cost/spend fields
+   Include capsule pointers:
+   - ownerUid
+   - capsuleId
+   - contextStackId
+   - contextPackageId
+   - userCoreId
+   - situationCoreId
+   - sourceCoreIds
+   - documentCoreIds
+   - graphCoreId
+   - timeCoreId
+   - toolCoreIds
+   - objectiveCoreIds
+   - productCoreIds
+   - outputCoreIds
+   - memoryCoreId
+
+2. Add `src/lib/agent-runtime/state.ts`.
+   Provide pure helpers:
+   - canTransitionAgentRun(from, to)
+   - assertAgentRunTransition(from, to)
+   - makeAgentRunEvent(...)
+   - summarizeRunForCapsule(...)
+   - makeIdempotencyKey(...)
+   Tests should cover valid and invalid transitions.
+
+3. Add a Cloud SQL boundary module.
+   Use existing repo database conventions if present. If no suitable helper is
+   available, create a narrow adapter interface first instead of wiring a new
+   dependency.
+   Target file:
+   - `src/lib/agent-runtime/postgres.ts`
+   Functions:
+   - createAgentRun(input)
+   - getAgentRun(ownerUid, runId)
+   - listAgentRunsForCapsule(ownerUid, capsuleId, limit)
+   - appendAgentRunEvent(input)
+   - updateAgentRunStatus(input)
+   The first implementation may be a typed adapter/stub if Cloud SQL client
+   wiring is not centralized yet, but the API contract must be real and tested.
+
+4. Add API routes:
+   - `POST /api/agents/runs`
+   - `GET /api/agents/runs/[runId]`
+   - optional `GET /api/agents/runs?capsuleId=...`
+   Routes must:
+   - authenticate using existing auth helpers;
+   - validate with Zod;
+   - resolve or require active capsule id;
+   - create queued run only;
+   - return run id, status, capsule id, and created timestamp;
+   - avoid AI/model calls in Wave 1.
+
+5. Add focused unit tests:
+   - state transition tests;
+   - event creation tests;
+   - schema/pointer normalization tests;
+   - route validation tests if current test harness supports it.
+
+6. Documentation updates:
+   - STATUS.md: record what was implemented and what remains.
+   - TODO.md: move completed Wave 1 tasks down and promote Wave 2 Cloud Tasks dispatch.
+   - CHANGELOG.md: add an `[Unreleased]` entry.
+   - If the implementation changes the canonical contract, update
+     docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md.
+
+Validation:
+- npx vitest run tests/unit/lib/agent-runtime
+- npx vitest run tests/unit/lib/product/tasklet-style-runtime.test.ts
+- npx tsc --noEmit
+- npm run build
+- npm run audit:repo-shape
+- npm run audit:architecture-reference
+- node scripts/audit-ai-routes.mjs
+- graphify update .
+
+Finish:
+- Report files changed and exact validation results.
+- If all checks pass and credentials are available, commit a coherent checkpoint
+  and push to main:
+  `git add -A`
+  `git commit -m "feat(agent-runtime): add Cloud SQL run ledger contract"`
+  `git pull --rebase origin main`
+  `git push origin main`
+```
+
+## Claude Code Prompt: Frontend And Documentation Wiring
+
+Paste this into a new Claude Code session.
+
+```text
+You are working in:
+C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work
+
+Goal:
+Make the current app and docs clearly express the canonical Tasklet-style
+ContextCapsule runtime without widening the visible product surface. This is the
+UX/docs companion to the backend Cloud SQL Agent Run Ledger work.
+
+Read first:
+- AGENTS.md
+- CLAUDE.md
+- ARCHITECTURE.md
+- docs/product/README.md
+- docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md
+- docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md
+- docs/product/CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md
+- src/lib/product/context-capsules.ts
+- src/lib/product/tasklet-style-runtime.ts
+- src/components/ask/AskWorkspacePage.tsx
+- src/components/app/core-context-strip.tsx
+- src/components/dashboard/ask-praxis-home.tsx
+- src/components/tools/ToolMarketplace.tsx
+- STATUS.md
+- TODO.md
+
+Non-negotiable decisions:
+- Keep primary nav exactly: Home, Ask PRAXIS, Library, Memo Studio, Canvas, Advanced.
+- Do not add a new Agents nav item.
+- Do not show provider internals or internal credit costs in normal UI.
+- Do not claim browser automation, code sandboxing, broad SaaS integrations, or
+  external sending are live.
+- Make the UX say "agent runs inherit the active ContextCapsule" in product
+  language, not infrastructure language.
+- Preserve all existing uncommitted work unless Giulio explicitly says to reset.
+
+Own these areas:
+- docs/product/**
+- docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md
+- README.md / ARCHITECTURE.md / STATUS.md / TODO.md / CHANGELOG.md
+- frontend copy in:
+  - src/components/ask/AskWorkspacePage.tsx
+  - src/components/dashboard/ask-praxis-home.tsx
+  - src/components/app/core-context-strip.tsx
+  - src/components/tools/ToolMarketplace.tsx
+  - src/components/landing/phase8-wow-landing.tsx
+
+Avoid backend runtime files unless the Codex session asks for a shared type.
+
+Implementation tasks:
+1. Verify the landing/app copy presents the new structure:
+   - PRAXIS builds ContextCapsules.
+   - Ask PRAXIS asks the active capsule.
+   - Agents/runs are framed as capsule-aware work, not generic automation.
+   - Outputs land in Memo Studio, Canvas, Library, and handover.
+
+2. Add a small "Agent runs" or "Scheduled work" affordance only inside existing
+   surfaces if it improves clarity:
+   - Home can show "Recent runs" or "Next scheduled brief" placeholder/state.
+   - Ask PRAXIS can show "Run from active capsule" as a command.
+   - Advanced can mention runtime logs/triggers if already appropriate.
+   Do not add fake-live controls. If backend route is not implemented yet, label
+   the affordance as planned/queued or hide it behind an inactive state.
+
+3. Clean documentation structure:
+   - Ensure docs/product/README.md is the product docs entry point.
+   - Ensure ARCHITECTURE.md points to the canonical product/runtime docs.
+   - Ensure README.md points implementers to the canonical docs.
+   - Ensure TODO.md separates the new runtime queue from older MVP follow-ups.
+   - Mark older v7/v5 docs as historical/subsumed in references, not deleted.
+
+4. Add or update Playwright smoke only if UI behavior changes:
+   - landing prompt to login/signup;
+   - Ask PRAXIS loads active capsule language;
+   - Home keeps the six-surface shell.
+
+5. Documentation cleanup:
+   - Do not delete old docs without checking references.
+   - Prefer adding a short "superseded by" note or index pointer.
+   - Remove stale user-facing claims only when you can verify they are stale.
+
+Validation:
+- npx tsc --noEmit
+- npm run build
+- npm run lint
+- npm run audit:repo-shape
+- npm run audit:architecture-reference
+- npm run smoke:core-flows if landing/app flow changes
+- relevant Playwright smoke for touched UI
+- graphify update . if code files changed
+
+Finish:
+- Report files changed and exact validation results.
+- If checks pass and credentials are available, commit a coherent checkpoint and
+  push to main:
+  `git add -A`
+  `git commit -m "docs(product): align PRAXIS runtime structure and app copy"`
+  `git pull --rebase origin main`
+  `git push origin main`
+```
+
+## Follow-On Prompt: Wave 2 Cloud Tasks Dispatch
+
+Use after Wave 1 is merged.
+
+```text
+Goal:
+Implement Wave 2 of the canonical PRAXIS runtime: Cloud Tasks dispatch and the
+private agent worker execution boundary.
+
+Read:
+- docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md
+- docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md
+- src/lib/agent-runtime/**
+- scripts/audit-gcp.mjs
+- docs/GCP_OPERATIONS.md
+
+Scope:
+1. Add Cloud Tasks queue helper for `agent-runs`.
+2. Add private worker route/service boundary for executing queued runs.
+3. Verify OIDC/service-account expectations are documented.
+4. Implement only a no-op execution step:
+   queued -> running -> succeeded
+   with run events written for each transition.
+5. Do not add model/tool execution yet.
+6. Add tests for queue payload shape, transition handling, retry-safe idempotency.
+7. Update STATUS, TODO, CHANGELOG.
+
+Validation:
+- focused agent-runtime tests
+- npx tsc --noEmit
+- npm run build
+- npm run audit:repo-shape
+- npm run audit:architecture-reference
+- npm run audit:gcp if credentials are available
+- graphify update .
+```
+
+## Follow-On Prompt: Wave 3 Research Memo Agent
+
+Use after Wave 2 is merged.
+
+```text
+Goal:
+Implement the first real capsule-aware agent: Research Memo Agent.
+
+Behavior:
+- User starts from Ask PRAXIS or Home with an active ContextCapsule.
+- System creates an agent run.
+- Worker resolves capsule context.
+- Worker calls existing PRAXIS capabilities:
+  context resolve, corpus search, source scout, research extract, policy memo,
+  red-team review.
+- System writes tool calls and run events.
+- Output appears as a Memo Studio draft with source/gap receipt.
+- High-risk mutations are not allowed in this wave.
+
+Validation:
+- unit tests for plan shape and tool-call persistence
+- integration test with mocked model/tool calls
+- Playwright smoke from Ask to run result/Memo Studio if feasible
+- npx tsc --noEmit
+- npm run build
+- npm run audit:gate unless too broad for the checkpoint
+- graphify update .
+```

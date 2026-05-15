@@ -156,7 +156,7 @@ export function Header({
           <input
             value={command}
             onChange={(event) => setCommand(event.target.value)}
-            placeholder="Command or ask PRAXIS..."
+            placeholder="Command or ask PRAXIS from the active ContextCapsule..."
             className="min-w-0 flex-1 bg-transparent text-sm text-navy-950 placeholder:text-navy-600 focus:outline-none"
             aria-label="Ask PRAXIS or search"
           />

@@ -18,6 +18,7 @@ import {
   Settings,
   ShieldCheck,
   Sparkles,
+  Target,
   Wrench,
 } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
@@ -116,6 +117,8 @@ export function AppSidebar() {
         </button>
       </div>
 
+      {sidebarOpen ? <ContextCapsulePanel /> : null}
+
       <nav className="min-h-0 flex-1 space-y-3 overflow-y-auto px-2 py-4">
         {visibleGroups.map((group) => (
           <NavGroup
@@ -156,6 +159,50 @@ export function AppSidebar() {
         </button>
       </div>
     </aside>
+  );
+}
+
+function ContextCapsulePanel() {
+  const anatomy = [
+    ['User', 'who is working'],
+    ['Situation', 'what is happening'],
+    ['Sources', 'what supports it'],
+    ['Time', 'what changed'],
+    ['Power', 'who matters'],
+    ['Tools', 'what to run'],
+    ['Output', 'what to produce'],
+    ['Handover', 'who inherits'],
+  ] as const;
+
+  return (
+    <div className="border-b border-[var(--color-app-border)] px-3 py-3">
+      <PraxisLink
+        href="/app/contexts"
+        className="block rounded-lg border border-gold-200 bg-gold-50/70 p-3 text-navy-900 transition hover:border-gold-300 hover:bg-gold-50"
+      >
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-navy-950 text-white">
+            <Target className="h-4 w-4" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-gold-800">
+              Active ContextCapsule
+            </span>
+            <span className="mt-0.5 block truncate text-sm font-semibold text-navy-950">
+              Manage context cores
+            </span>
+          </span>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-1.5">
+          {anatomy.map(([label, detail]) => (
+            <span key={label} className="rounded-md border border-white/80 bg-white/75 px-2 py-1">
+              <span className="block text-[11px] font-semibold text-navy-900">{label}</span>
+              <span className="block truncate text-[10px] text-navy-500">{detail}</span>
+            </span>
+          ))}
+        </div>
+      </PraxisLink>
+    </div>
   );
 }
 

@@ -6,6 +6,7 @@ import { useWorkbenchScope } from '@/components/workbench/workbench-scope';
 import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 import { coreLabel, type AttachableTool, type CoreKind } from '@/lib/tools/contract';
 import { recommendTools } from '@/lib/tools/recommend';
+import { CAPSULE_CAPABILITY_AREAS } from '@/lib/product/context-capsules';
 
 function attachedWorkbenchCores(): Record<CoreKind, boolean> {
   return {
@@ -36,18 +37,26 @@ export function ToolMarketplace() {
   return (
     <section className="space-y-5" data-testid="tool-marketplace">
       <header className="rounded-lg border border-diplomatic-blue/20 bg-white p-5 shadow-sm shadow-navy-950/5">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Attachable tools</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Capsule capabilities</p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-navy-950">The right tools for this Situation Core.</h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-navy-950">The right tools for this ContextCapsule.</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
-              The workbench now exposes the canonical twelve. Specialist tools stay behind archive routes and direct deep links.
+              PRAXIS keeps the marketplace, but recommends tools from capsule gaps: weak sources, missing episodes, thin power maps, unclear rules, output goals, or handover risk.
             </p>
           </div>
           <Link href="/app/tools?show_archive=1" className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-navy-700 hover:bg-slate-50">
             Specialist archive
             <ArrowRight className="h-4 w-4" />
           </Link>
+        </div>
+        <div className="mt-4 grid gap-2 md:grid-cols-3">
+          {CAPSULE_CAPABILITY_AREAS.map((area) => (
+            <div key={area.label} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+              <p className="text-xs font-semibold text-navy-950">{area.label}</p>
+              <p className="mt-1 text-[11px] leading-4 text-slate-600">{area.detail}</p>
+            </div>
+          ))}
         </div>
       </header>
 

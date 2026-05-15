@@ -1,5 +1,37 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — Canonical ContextCapsule Agent Runtime Direction
+
+Current product/runtime direction:
+
+- PRAXIS is now documented as a ContextCapsule-native, Tasklet-style agent
+  workbench for `praxis.tacitus.me`, not a generic automation clone.
+- Canonical app structure is saved in
+  `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md`.
+- The implementation blueprint is saved in
+  `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md` and enforced by
+  `src/lib/product/tasklet-style-runtime.ts` plus focused unit tests.
+- Parallel Codex and Claude Code startup prompts are saved in
+  `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`.
+- The external Tasklet-class browser-agent research was reviewed and folded
+  into `docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md` and
+  `docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`.
+- Relevant additions: browser-use plus Steel.dev as the deferred browser lane,
+  SSE-first run streaming, run step timeline, pause/cancel/approval UX, hard
+  max-step/session/cost caps, idempotency keys, parent-run retries, mandatory
+  audit logs, and Langfuse-style tracing as a later observability layer.
+- The visible app spine remains Home, Ask PRAXIS, Library, Memo Studio, Canvas,
+  and Advanced.
+- The production runtime target is Google Cloud native: Cloud Run first, Cloud
+  SQL Postgres for the durable agent run ledger, Firestore for capsules and
+  active app state, Cloud Tasks for per-run dispatch, Pub/Sub for event fan-out,
+  Cloud Scheduler for recurring briefs/watchlists, Vertex AI for model calls,
+  Cloud Storage for artifacts, Secret Manager/KMS for secrets, and GKE only
+  later for heavy browser/code sandbox pools.
+- Next implementation wave is the Cloud SQL Agent Run Ledger: `agents`,
+  `agent_runs`, `agent_run_events`, `tool_calls`, `approvals`,
+  `agent_triggers`, and document/chunk links back to active capsules.
+
 ## 2026-05-15 — Cleanup + Ask Wiring Pass
 
 Current cleanup checkpoint:
