@@ -9,6 +9,8 @@ import {
   resolveContextGraphBackend,
 } from '@/lib/context/experimental-grafeo-context-graph';
 
+export const runtime = 'nodejs';
+
 const RequestSchema = z.object({
   graph: ExperimentalContextGraphInputSchema,
   backend: z.enum(['firestore_lite', 'grafeo_experimental']).optional(),

@@ -47,6 +47,7 @@ const nextConfig: NextConfig = {
     '@opentelemetry/sdk-node',
     '@opentelemetry/auto-instrumentations-node',
     'winston',
+    '@grafeo-db/js',
   ],
   experimental: {
     serverActions: {
