@@ -197,6 +197,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     situationStage: selectedCase?.tags.join(' ') ?? 'intake',
   }).slice(0, 3);
   const headerLine = `${activeUserModel.identity} / ${activeContextName} / ${evidenceCount} sources and documents / ${stack.outputGoal ?? 'Memo goal'} / ${contextHealth.score}/100 health`;
+  const outputGoal = stack.outputGoal ?? pendingCapsuleOutput ?? 'Memo goal';
 
   function handleUserModelChange(modelId: string) {
     setActiveUserModel(window.localStorage, modelId);
@@ -315,9 +316,11 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
             availableModels={availableModels}
             bricks={bricks}
             contextHealthScore={contextHealth.score}
+            evidenceCount={evidenceCount}
             missingBricks={missingBricks}
             marketplaceToolCount={marketplaceToolCount}
             nextMoves={nextMoves}
+            outputGoal={outputGoal}
             selectedCase={selectedCase}
             selectedCaseId={selectedCase?.id ?? ''}
             workspaceCases={workspaceCases}
@@ -336,9 +339,11 @@ function ContextComposer({
   availableModels,
   bricks,
   contextHealthScore,
+  evidenceCount,
   marketplaceToolCount,
   missingBricks,
   nextMoves,
+  outputGoal,
   selectedCase,
   selectedCaseId,
   workspaceCases,
@@ -350,9 +355,11 @@ function ContextComposer({
   availableModels: UserModelRecord[];
   bricks: CoreBrick[];
   contextHealthScore: number;
+  evidenceCount: number;
   marketplaceToolCount: number;
   missingBricks: CoreBrick[];
   nextMoves: Array<{ id: string; label: string; detail: string; href: string }>;
+  outputGoal: string;
   selectedCase: WorkspaceCase | null;
   selectedCaseId: string;
   workspaceCases: WorkspaceCase[];
@@ -371,6 +378,16 @@ function ContextComposer({
           {contextHealthScore}/100
         </span>
       </div>
+
+      <AskRunReadinessPanel
+        activeContextName={activeContextName}
+        contextHealthScore={contextHealthScore}
+        evidenceCount={evidenceCount}
+        marketplaceToolCount={marketplaceToolCount}
+        outputGoal={outputGoal}
+        selectedCase={selectedCase}
+        userCoreLabel={availableModels.find((model) => model.modelId === activeUserModelId)?.identity ?? 'User Core'}
+      />
 
       <div className="mt-4 grid grid-cols-2 gap-2">
         <ComposerAction href="/app/contexts" icon={Save} label="Save as capsule" />
@@ -469,6 +486,101 @@ function ContextComposer({
         <ComposerAction href="/app/tools" icon={ShieldCheck} label={`${marketplaceToolCount} tools contained in Advanced`} wide muted />
       </div>
     </aside>
+  );
+}
+
+function AskRunReadinessPanel({
+  activeContextName,
+  contextHealthScore,
+  evidenceCount,
+  marketplaceToolCount,
+  outputGoal,
+  selectedCase,
+  userCoreLabel,
+}: {
+  activeContextName: string;
+  contextHealthScore: number;
+  evidenceCount: number;
+  marketplaceToolCount: number;
+  outputGoal: string;
+  selectedCase: WorkspaceCase | null;
+  userCoreLabel: string;
+}) {
+  const capsuleState = selectedCase?.kind === 'user'
+    ? 'User-owned active capsule'
+    : selectedCase
+      ? 'Example capsule attached'
+      : 'No active capsule';
+  const situationLabel = selectedCase?.name ?? 'Attach a Situation Core';
+  const sourceStatus = evidenceCount > 0
+    ? `${evidenceCount} source/document receipt${evidenceCount === 1 ? '' : 's'}`
+    : 'Sources and documents pending';
+  const adkStatus = selectedCase
+    ? 'Planned through queued run ledger'
+    : 'Planned after capsule selection';
+
+  return (
+    <section className="mt-5 rounded-lg border border-navy-200 bg-navy-950 p-3 text-white shadow-sm shadow-navy-950/10">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-200">Ask run readiness</p>
+          <h3 className="mt-1 truncate text-sm font-semibold">{activeContextName}</h3>
+          <p className="mt-1 text-[11px] leading-4 text-navy-200">
+            {capsuleState} / {contextHealthScore}/100 context health
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full border border-white/15 bg-white/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-navy-100">
+          No live agent run
+        </span>
+      </div>
+
+      <div className="mt-3 grid gap-2 text-xs">
+        <ReadinessRow label="User Core" value={userCoreLabel} state="ready" />
+        <ReadinessRow label="Situation Core" value={situationLabel} state={selectedCase ? 'ready' : 'gap'} />
+        <ReadinessRow label="Sources/Documents" value={sourceStatus} state={evidenceCount > 0 ? 'ready' : 'gap'} />
+        <ReadinessRow label="Output goal" value={outputGoal} state={outputGoal === 'Memo goal' ? 'gap' : 'ready'} />
+      </div>
+
+      <div className="mt-3 grid gap-2 border-t border-white/10 pt-3 text-xs">
+        <ReadinessRow label="Genkit checks" value="Path classifier + Sourceability available" state="available" />
+        <ReadinessRow
+          label="Capsule tools"
+          value={marketplaceToolCount > 0 ? `${marketplaceToolCount} tools routable from Advanced` : 'Tool registry unavailable'}
+          state={marketplaceToolCount > 0 ? 'available' : 'gap'}
+        />
+        <ReadinessRow label="ADK agents" value={adkStatus} state="planned" />
+      </div>
+      <p className="mt-3 text-[11px] leading-4 text-navy-200">
+        Ask PRAXIS can answer from this capsule now. Durable ADK Research Memo runs remain planned until worker execution is wired.
+      </p>
+    </section>
+  );
+}
+
+function ReadinessRow({
+  label,
+  value,
+  state,
+}: {
+  label: string;
+  value: string;
+  state: 'ready' | 'available' | 'planned' | 'gap';
+}) {
+  const tone = {
+    ready: 'bg-emerald-400/15 text-emerald-100 ring-emerald-300/20',
+    available: 'bg-sky-400/15 text-sky-100 ring-sky-300/20',
+    planned: 'bg-gold-300/15 text-gold-100 ring-gold-200/20',
+    gap: 'bg-white/10 text-navy-100 ring-white/10',
+  }[state];
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-2.5 py-2 ring-1 ring-white/10">
+      <span className="shrink-0 font-semibold text-navy-200">{label}</span>
+      <span className="min-w-0 truncate text-right font-semibold text-white">{value}</span>
+      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ring-1 ${tone}`}>
+        {state}
+      </span>
+    </div>
   );
 }
 

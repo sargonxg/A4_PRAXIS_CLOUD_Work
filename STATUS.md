@@ -1,5 +1,17 @@
 # PRAXIS — STATUS
 
+## 2026-05-15 — Ask PRAXIS Capsule AI Readiness Panel
+
+Current Ask PRAXIS checkpoint:
+
+- Ask PRAXIS now shows a compact run-readiness panel beside the composer so
+  users can see the active capsule, User Core, Situation Core,
+  Sources/Documents state, and Output goal before asking.
+- The panel marks Genkit path classification and Sourceability as available
+  checks and keeps capsule tool routing visible without adding new run buttons.
+- ADK Research Memo agents are labeled as planned behind the queued run ledger;
+  the UI does not imply live ADK execution or external tool action.
+
 ## 2026-05-15 — Real App Shell Coherence Pass
 
 Current app-surface checkpoint:

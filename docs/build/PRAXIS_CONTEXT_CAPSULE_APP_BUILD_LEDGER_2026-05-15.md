@@ -30,6 +30,9 @@ Already established:
   `Memo Studio`, `Canvas`, `Advanced`.
 - Active capsule/core concepts exist across Ask PRAXIS, Contexts, Library,
   Memo Studio, and Canvas.
+- Ask PRAXIS now surfaces capsule AI readiness near the composer: active
+  capsule state, User/Situation cores, source/document coverage, output goal,
+  available Genkit checks, capsule tool routing, and planned ADK agents.
 - Product contract lives in `src/lib/product/context-capsules.ts`.
 - Policy capsule guide lives in
   `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`.
@@ -74,7 +77,8 @@ Checklist:
 ### 1. Public-To-App Usability
 
 Owner: frontend/docs session  
-Status: path-aware toolbar shipped; keep improving with browser evidence
+Status: path-aware toolbar and Ask readiness panel shipped; keep improving with
+browser evidence
 
 Goal:
 
@@ -89,6 +93,8 @@ Tasks:
 - Ensure `/app` or Home shows the sidebar and the active ContextCapsule strip.
 - Show a small current capsule summary on Home.
 - Keep Ask PRAXIS copy explicit: it asks the active capsule, not a blank model.
+- Keep Ask PRAXIS readiness explicit: Genkit checks can be available, but ADK
+  worker execution stays planned until the backend worker is live.
 - Add or update Playwright smoke for the public prompt-to-login path and
   authenticated shell when a stable test session is available.
 
@@ -101,6 +107,9 @@ Shipped in this wave:
   Situation Core, Path, Sources pending, suggested tools, and selected output.
 - Login and Ask handoff storage now preserve prompt, template, path, and output
   goal while stating that no agent run happens before authentication.
+- Ask PRAXIS now has a compact capsule AI readiness panel near the composer for
+  active capsule state, User/Situation cores, source/document status, output
+  goal, Genkit checks, capsule tool routing, and planned ADK agents.
 
 Validation:
 

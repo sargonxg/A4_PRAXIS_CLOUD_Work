@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(ask): show capsule AI readiness.
+  Added a compact Ask PRAXIS readiness panel for active capsule state, User and
+  Situation cores, source/document coverage, output goal, available Genkit
+  checks, capsule tool routing, and planned ADK Research Memo runs without
+  adding fake-live execution controls.
 - feat(app): simplify the real app shell around the AI bar.
   Removed the duplicate header account menu, made the sidebar user block the
   single Profile/User Core entry point, and moved the ContextCapsule library

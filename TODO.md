@@ -25,9 +25,10 @@ from the active ledger above.
    scope: homepage prompt bar, path-aware capsule preview, active capsule
    glimpse, login/signup continuation, app sidebar, active capsule strip, Home
    capsule summary, ContextCapsule library below the AI bar, and
-   Ask/Library/Memo/Canvas surfaces reading from the active capsule. The
-   duplicate header account menu is removed; the sidebar is the single
-   Profile/User Core entry point.
+   Ask/Library/Memo/Canvas surfaces reading from the active capsule. Ask now
+   shows a compact capsule AI readiness panel near the composer. The duplicate
+   header account menu is removed; the sidebar is the single Profile/User Core
+   entry point.
 1. Use `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` to start the next
    Codex and Claude Code sessions with clear file ownership, validation, and
    commit/push expectations.
@@ -53,7 +54,8 @@ from the active ledger above.
    now exists in `src/lib/agent-runtime/adk-bridge.ts`. Next, wire the no-op
    worker to call the bridge for a queued Research Memo dry run, still without
    live Agent Engine execution, then promote Cloud Tasks dispatch into the real
-   Research Memo Agent worker.
+   Research Memo Agent worker. Keep Ask PRAXIS labeling ADK agents as planned
+   until worker execution is live.
 6. Use the Genkit ContextCapsule path classifier as the first safe homepage
    prompt-to-capsule bridge. The public homepage now previews path/tools/output
    from `POLICY_PATH_PROFILES` and preserves the selected path/output through
