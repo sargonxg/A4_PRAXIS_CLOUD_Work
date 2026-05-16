@@ -9,10 +9,14 @@ import {
   archiveCapsule,
   bumpCapsuleVersion,
   deleteCapsule,
+  exportCapsuleCorePackage,
   forkCapsule,
   getCapsule,
+  rateCapsule,
   renameCapsule,
+  setCapsuleAccessPolicy,
   setCapsuleCoreLock,
+  setCapsuleFavorite,
 } from '@/lib/context/capsule-service';
 
 export const dynamic = 'force-dynamic';
@@ -43,6 +47,20 @@ const PatchSchema = z.object({
     freshnessWindowDays: z.number().int().positive().max(3650).optional(),
   }).optional(),
   activeForSituationIds: z.array(z.string()).optional(),
+  access: z.object({
+    visibility: z.enum(['private', 'organization', 'shared', 'public', 'unlisted']).optional(),
+    sharedWithUserIds: z.array(z.string()).optional(),
+    sharedWithOrgIds: z.array(z.string()).optional(),
+    allowClone: z.boolean().optional(),
+    allowDownload: z.boolean().optional(),
+    allowCommunityRating: z.boolean().optional(),
+  }).optional(),
+  community: z.object({
+    favorite: z.boolean().optional(),
+    userRating: z.number().min(1).max(5).nullable().optional(),
+    tags: z.array(z.string()).optional(),
+    listedInMarketplace: z.boolean().optional(),
+  }).optional(),
 });
 
 const ActionSchema = z.discriminatedUnion('action', [
@@ -60,6 +78,15 @@ const ActionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('rename'), label: z.string().min(1).max(160) }),
   z.object({ action: z.literal('archive') }),
   z.object({ action: z.literal('delete') }),
+  z.object({
+    action: z.literal('set-visibility'),
+    visibility: z.enum(['private', 'organization', 'shared', 'public', 'unlisted']),
+    allowClone: z.boolean().optional(),
+    allowDownload: z.boolean().optional(),
+    allowCommunityRating: z.boolean().optional(),
+  }),
+  z.object({ action: z.literal('favorite'), favorite: z.boolean() }),
+  z.object({ action: z.literal('rate'), rating: z.number().min(1).max(5) }),
 ]);
 
 const ShareSchema = z.object({
@@ -71,6 +98,17 @@ export const GET = withAuth<RouteContext>(async (_request, user, context) => {
   try {
     const { capsuleId } = await context.params;
     if (user.isDemo) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+    const url = new URL(_request.url);
+    if (url.searchParams.get('format') === 'core') {
+      const exported = await exportCapsuleCorePackage(user.uid, capsuleId);
+      if (!exported) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return new NextResponse(JSON.stringify(exported.package, null, 2), {
+        headers: {
+          'content-type': exported.mimeType,
+          'content-disposition': `attachment; filename="${exported.filename}"`,
+        },
+      });
+    }
     const capsule = await getCapsule(user.uid, capsuleId);
     if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
     return NextResponse.json({ capsule });
@@ -182,6 +220,26 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
       const result = await deleteCapsule(user.uid, capsuleId);
       if (!result.deleted) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
       return NextResponse.json({ deleted: true });
+    }
+    if (parsed.data.action === 'set-visibility') {
+      const capsule = await setCapsuleAccessPolicy(user.uid, capsuleId, {
+        visibility: parsed.data.visibility,
+        allowClone: parsed.data.allowClone,
+        allowDownload: parsed.data.allowDownload,
+        allowCommunityRating: parsed.data.allowCommunityRating,
+      });
+      if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return NextResponse.json({ capsule });
+    }
+    if (parsed.data.action === 'favorite') {
+      const capsule = await setCapsuleFavorite(user.uid, capsuleId, parsed.data.favorite);
+      if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return NextResponse.json({ capsule });
+    }
+    if (parsed.data.action === 'rate') {
+      const capsule = await rateCapsule(user.uid, capsuleId, parsed.data.rating);
+      if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return NextResponse.json({ capsule });
     }
     if (parsed.data.action !== 'fork') {
       return NextResponse.json({ error: 'Invalid capsule action' }, { status: 400 });

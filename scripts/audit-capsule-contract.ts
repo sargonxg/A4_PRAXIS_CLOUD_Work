@@ -29,6 +29,14 @@ if (!capsuleRoute.includes("queryAction === 'share'")) {
 if (!capsuleRoute.includes("collection('capsule_shares')")) {
   failures.push('capsule share action must write users/{uid}/capsule_shares/{token}');
 }
+for (const token of ["format') === 'core'", "action: z.literal('set-visibility')", "action: z.literal('favorite')", "action: z.literal('rate')"]) {
+  if (!capsuleRoute.includes(token)) failures.push(`capsule route missing marketplace/.core marker: ${token}`);
+}
+
+const capsulesRoute = read('src/app/api/context/capsules/route.ts');
+if (!capsulesRoute.includes("action: z.literal('import-core')") || !capsulesRoute.includes('createCapsuleFromCorePackage')) {
+  failures.push('capsule collection route must import .core packages into owner-scoped capsules');
+}
 
 const sharedRoute = read('src/app/api/context/capsules/shared/[token]/route.ts');
 if (!sharedRoute.includes("collectionGroup('capsule_shares')")) {
@@ -73,8 +81,13 @@ if (!swapRoute.includes('lockedCoreKinds')) {
 }
 
 const capsuleService = read('src/lib/context/capsule-service.ts');
-for (const token of ['setCapsuleCoreLock', "collection('versions')", 'lockedCoreKinds']) {
+for (const token of ['setCapsuleCoreLock', "collection('versions')", 'lockedCoreKinds', 'CapsuleTrustSemaphore', 'setCapsuleAccessPolicy', 'exportCapsuleCorePackage']) {
   if (!capsuleService.includes(token)) failures.push(`capsule service must include ${token}`);
+}
+
+const corePackage = read('src/lib/context/core-package.ts');
+for (const token of ['CORE_PACKAGE_EXTENSION', '.core', 'application/praxis-core+json', 'privateByDefault', 'cloneCreatesNewOwnerObject']) {
+  if (!corePackage.includes(token)) failures.push(`core package contract missing ${token}`);
 }
 
 if (failures.length > 0) {

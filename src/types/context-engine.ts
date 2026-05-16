@@ -30,9 +30,12 @@ export interface ContextHealthSignal {
 
 export interface ContextHealth {
   score: number;
+  semaphore?: 'green' | 'amber' | 'red' | 'grey';
   signals: ContextHealthSignal[];
   missingCores: ContextCoreId[];
   warnings: string[];
+  blockers?: string[];
+  recommendations?: string[];
 }
 
 export interface ContextPackage {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { AlertTriangle, CheckCircle2, Sparkles, Wrench } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Circle, Sparkles, Wrench } from 'lucide-react';
 import { CapsuleRadar } from '@/components/cores/CapsuleRadar';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import { cn } from '@/lib/utils/cn';
@@ -15,6 +15,7 @@ export function CapsuleReadinessRail({ capsule, onAxisActivate }: CapsuleReadine
   const warnings = capsule?.health.warnings ?? [];
   const missing = capsule?.health.missingCores ?? [];
   const score = capsule?.health.score ?? 0;
+  const trust = capsule?.trust;
   const signals = useMemo(() => capsule?.health.signals ?? [], [capsule]);
   const ready = signals.filter((s) => s.status === 'ready').length;
   const thin = signals.filter((s) => s.status === 'thin').length;
@@ -23,16 +24,30 @@ export function CapsuleReadinessRail({ capsule, onAxisActivate }: CapsuleReadine
     <aside className="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
       <section className="rounded-2xl border border-white/70 bg-white/85 p-4 shadow-sm shadow-navy-950/5 backdrop-blur">
         <header className="mb-3 flex items-center justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Readiness</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">Core health semaphore</p>
           <span
             className={cn(
               'rounded-full px-2 py-0.5 text-[10px] font-bold',
-              score >= 75 ? 'bg-emerald-100 text-emerald-800' : score >= 50 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800',
+              trust?.level === 'green' ? 'bg-emerald-100 text-emerald-800' : trust?.level === 'amber' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800',
             )}
           >
-            {score}/100
+            {trust?.label ?? `${score}/100`}
           </span>
         </header>
+        <div className="mb-3 flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <Circle
+            className={cn(
+              'mt-0.5 h-3.5 w-3.5 fill-current',
+              trust?.level === 'green' ? 'text-emerald-600' : trust?.level === 'amber' ? 'text-amber-500' : 'text-rose-600',
+            )}
+          />
+          <div>
+            <p className="text-xs font-semibold text-navy-950">{score}/100 · {trust?.level ?? 'grey'}</p>
+            <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
+              {trust?.summary ?? 'Select or build a capsule to check whether its cores are solid enough.'}
+            </p>
+          </div>
+        </div>
         <div className="flex items-center justify-center">
           <CapsuleRadar size="full" capsuleId={capsule?.capsuleId ?? null} onAxisActivate={onAxisActivate} />
         </div>

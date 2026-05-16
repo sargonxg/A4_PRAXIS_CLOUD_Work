@@ -1,5 +1,6 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
+import { buildCorePackage, type PraxisCorePackageV1 } from '@/lib/context/core-package';
 import {
   DEFAULT_CONTEXT_STACK_ID,
   defaultActiveContextStack,
@@ -10,6 +11,8 @@ import type { ContextHealth, ContextRetrievalPolicy } from '@/types/context-engi
 import { DEFAULT_CORPUS_LAYERS, DEFAULT_CORPUS_LIMIT } from '@/types/corpus';
 
 export type CapsuleScope = 'user' | 'situation' | 'team';
+export type CapsuleVisibility = 'private' | 'organization' | 'shared' | 'public' | 'unlisted';
+export type CapsuleTrustLevel = 'green' | 'amber' | 'red' | 'grey';
 export type CapsuleLockKind =
   | 'user'
   | 'situation'
@@ -60,6 +63,37 @@ export interface CapsuleProvenance {
   notes?: string;
 }
 
+export interface CapsuleAccessPolicy {
+  visibility: CapsuleVisibility;
+  sharedWithUserIds: string[];
+  sharedWithOrgIds: string[];
+  allowClone: boolean;
+  allowDownload: boolean;
+  allowCommunityRating: boolean;
+}
+
+export interface CapsuleCommunityProfile {
+  favorite: boolean;
+  userRating: number | null;
+  averageRating: number | null;
+  ratingCount: number;
+  tags: string[];
+  listedInMarketplace: boolean;
+  publishedAt: string | null;
+  cloneCount: number;
+  downloadCount: number;
+}
+
+export interface CapsuleTrustSemaphore {
+  level: CapsuleTrustLevel;
+  score: number;
+  label: string;
+  summary: string;
+  blockers: string[];
+  recommendations: string[];
+  checkedAt: string;
+}
+
 export interface PraxisCapsule {
   capsuleId: string;
   ownerUid: string;
@@ -72,6 +106,9 @@ export interface PraxisCapsule {
   activeForSituationIds: string[];
   lockedCoreKinds: CapsuleLockKind[];
   provenance: CapsuleProvenance;
+  access: CapsuleAccessPolicy;
+  community: CapsuleCommunityProfile;
+  trust: CapsuleTrustSemaphore;
   createdAt: string;
   updatedAt: string;
   archivedAt?: string | null;
@@ -88,6 +125,8 @@ export interface CreateCapsuleInput {
   retrievalPolicy?: Partial<ContextRetrievalPolicy>;
   activeForSituationIds?: string[];
   provenance?: Partial<CapsuleProvenance>;
+  access?: Partial<CapsuleAccessPolicy>;
+  community?: Partial<CapsuleCommunityProfile>;
 }
 
 export interface CapsuleCombineConflict {
@@ -108,6 +147,12 @@ export interface CombineCapsulesResult {
   capsule: PraxisCapsule;
   parentCapsuleIds: string[];
   conflicts: CapsuleCombineConflict[];
+}
+
+export interface CapsuleCoreExport {
+  filename: string;
+  mimeType: 'application/praxis-core+json';
+  package: PraxisCorePackageV1;
 }
 
 export interface CapsuleServiceDeps {
@@ -165,6 +210,8 @@ export async function createCapsule(
       forkedFromVersion: input.provenance?.forkedFromVersion ?? null,
       notes: input.provenance?.notes,
     },
+    access: normalizeAccessPolicy(input.access),
+    community: normalizeCommunityProfile(input.community),
     createdAt: timestamp,
     updatedAt: timestamp,
     archivedAt: null,
@@ -402,6 +449,8 @@ export async function bumpCapsuleVersion(
     retrievalPolicy: normalizeRetrievalPolicy({ ...capsule.retrievalPolicy, ...(patch.retrievalPolicy ?? {}) }),
     activeForSituationIds: patch.activeForSituationIds ?? capsule.activeForSituationIds,
     health: computeCapsuleHealth({ ...capsule.coreRefs, ...(patch.coreRefs ?? {}) }),
+    access: normalizeAccessPolicy({ ...capsule.access, ...(patch.access ?? {}) }),
+    community: normalizeCommunityProfile({ ...capsule.community, ...(patch.community ?? {}) }),
     version: capsule.version + 1,
     updatedAt: nowIso(deps),
   });
@@ -453,6 +502,109 @@ export async function setCapsuleCoreLock(
   await batch.commit();
   await mirrorActiveContextStack(uid, updated, deps);
   return updated;
+}
+
+export async function setCapsuleAccessPolicy(
+  uid: string,
+  capsuleId: string,
+  patch: Partial<CapsuleAccessPolicy>,
+  deps?: CapsuleServiceDeps,
+): Promise<PraxisCapsule | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  return bumpCapsuleVersion(uid, capsuleId, {
+    access: normalizeAccessPolicy({ ...capsule.access, ...patch }),
+    community: normalizeCommunityProfile({
+      ...capsule.community,
+      listedInMarketplace: patch.visibility === 'public'
+        ? true
+        : patch.visibility === 'private'
+          ? false
+          : capsule.community.listedInMarketplace,
+      publishedAt: patch.visibility === 'public'
+        ? capsule.community.publishedAt ?? nowIso(deps)
+        : patch.visibility === 'private'
+          ? null
+          : capsule.community.publishedAt,
+    }),
+  }, deps);
+}
+
+export async function setCapsuleFavorite(
+  uid: string,
+  capsuleId: string,
+  favorite: boolean,
+  deps?: CapsuleServiceDeps,
+): Promise<PraxisCapsule | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  return bumpCapsuleVersion(uid, capsuleId, {
+    community: normalizeCommunityProfile({ ...capsule.community, favorite }),
+  }, deps);
+}
+
+export async function rateCapsule(
+  uid: string,
+  capsuleId: string,
+  rating: number,
+  deps?: CapsuleServiceDeps,
+): Promise<PraxisCapsule | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  const safeRating = Math.max(1, Math.min(5, Math.round(rating)));
+  const previousAverage = capsule.community.averageRating ?? safeRating;
+  const previousCount = Math.max(0, capsule.community.ratingCount);
+  const nextCount = capsule.community.userRating ? previousCount : previousCount + 1;
+  const nextAverage = capsule.community.userRating
+    ? ((previousAverage * Math.max(previousCount, 1)) - capsule.community.userRating + safeRating) / Math.max(previousCount, 1)
+    : ((previousAverage * previousCount) + safeRating) / Math.max(nextCount, 1);
+  return bumpCapsuleVersion(uid, capsuleId, {
+    community: normalizeCommunityProfile({
+      ...capsule.community,
+      userRating: safeRating,
+      averageRating: Number(nextAverage.toFixed(2)),
+      ratingCount: nextCount,
+    }),
+  }, deps);
+}
+
+export async function exportCapsuleCorePackage(
+  uid: string,
+  capsuleId: string,
+  deps?: CapsuleServiceDeps,
+): Promise<CapsuleCoreExport | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  const body = buildCorePackage(capsule, deps?.now?.() ?? new Date());
+  return {
+    filename: `${cleanId(capsule.label, capsule.capsuleId)}.core`,
+    mimeType: 'application/praxis-core+json',
+    package: body,
+  };
+}
+
+export async function createCapsuleFromCorePackage(
+  uid: string,
+  corePackage: PraxisCorePackageV1,
+  input: { capsuleId?: string; label?: string; scope?: CapsuleScope } = {},
+  deps?: CapsuleServiceDeps,
+): Promise<PraxisCapsule> {
+  return createCapsule(uid, {
+    capsuleId: input.capsuleId,
+    label: input.label ?? `${corePackage.capsule.label} clone`,
+    scope: input.scope ?? corePackage.capsule.scope,
+    coreRefs: corePackage.capsule.coreRefs,
+    retrievalPolicy: corePackage.capsule.retrievalPolicy,
+    provenance: {
+      source: 'fork',
+      createdBy: uid,
+      parentCapsuleId: corePackage.capsule.capsuleId,
+      forkedFromVersion: corePackage.capsule.version,
+      notes: `Cloned from ${corePackage.packageId} via .core package.`,
+    },
+    access: { visibility: 'private', allowClone: true, allowDownload: true, allowCommunityRating: false },
+    community: { tags: corePackage.capsule.community.tags },
+  }, deps);
 }
 
 export async function getOrMigrateDefaultCapsule(uid: string, deps?: CapsuleServiceDeps): Promise<{
@@ -533,7 +685,16 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
   const version = typeof body.version === 'number' && Number.isFinite(body.version) ? Math.max(1, Math.floor(body.version)) : 1;
   const createdAt = stringOrNull(body.createdAt) ?? new Date(0).toISOString();
   const provenanceBody = isRecord(body.provenance) ? body.provenance : {};
-  return {
+  const provenance: CapsuleProvenance = {
+    source: provenanceBody.source === 'context-stack-migration' || provenanceBody.source === 'fork' || provenanceBody.source === 'combine' || provenanceBody.source === 'api' || provenanceBody.source === 'created'
+      ? provenanceBody.source
+      : 'created',
+    createdBy: stringOrNull(provenanceBody.createdBy) ?? ownerUid,
+    parentCapsuleId: stringOrNull(provenanceBody.parentCapsuleId),
+    forkedFromVersion: typeof provenanceBody.forkedFromVersion === 'number' ? Math.max(1, Math.floor(provenanceBody.forkedFromVersion)) : null,
+    notes: stringOrNull(provenanceBody.notes) ?? undefined,
+  };
+  const capsule: Omit<PraxisCapsule, 'trust'> = {
     capsuleId: cleanId(capsuleId, DEFAULT_CONTEXT_STACK_ID),
     ownerUid,
     scope: body.scope === 'team' || body.scope === 'situation' || body.scope === 'user' ? body.scope : inferScope(coreRefs),
@@ -541,24 +702,22 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     forkedFromVersion: typeof body.forkedFromVersion === 'number' ? Math.max(1, Math.floor(body.forkedFromVersion)) : null,
     coreRefs,
     retrievalPolicy: normalizeRetrievalPolicy(isRecord(body.retrievalPolicy) ? body.retrievalPolicy : {}),
-    health: isContextHealth(body.health) ? body.health : computeCapsuleHealth(coreRefs),
+    health: isContextHealth(body.health) ? enrichContextHealth(body.health) : computeCapsuleHealth(coreRefs),
     activeForSituationIds: cleanStringArray(body.activeForSituationIds).slice(0, 50),
     lockedCoreKinds: uniqueLockKinds(cleanStringArray(body.lockedCoreKinds)),
-    provenance: {
-      source: provenanceBody.source === 'context-stack-migration' || provenanceBody.source === 'fork' || provenanceBody.source === 'combine' || provenanceBody.source === 'api' || provenanceBody.source === 'created'
-        ? provenanceBody.source
-        : 'created',
-      createdBy: stringOrNull(provenanceBody.createdBy) ?? ownerUid,
-      parentCapsuleId: stringOrNull(provenanceBody.parentCapsuleId),
-      forkedFromVersion: typeof provenanceBody.forkedFromVersion === 'number' ? Math.max(1, Math.floor(provenanceBody.forkedFromVersion)) : null,
-      notes: stringOrNull(provenanceBody.notes) ?? undefined,
-    },
+    provenance,
+    access: normalizeAccessPolicy(isRecord(body.access) ? body.access : {}),
+    community: normalizeCommunityProfile(isRecord(body.community) ? body.community : {}),
     createdAt,
     updatedAt: stringOrNull(body.updatedAt) ?? createdAt,
     archivedAt: stringOrNull(body.archivedAt),
-    schemaVersion: 1,
+    schemaVersion: 1 as const,
     version,
     label: stringOrNull(body.label) ?? defaultCapsuleLabel(coreRefs),
+  };
+  return {
+    ...capsule,
+    trust: normalizeTrustSemaphore(isRecord(body.trust) ? body.trust : null, capsule.health, capsule.updatedAt),
   };
 }
 
@@ -599,6 +758,79 @@ function normalizeRetrievalPolicy(input: Partial<ContextRetrievalPolicy> | unkno
       ? Math.max(1, Math.min(3650, Math.floor(body.freshnessWindowDays)))
       : DEFAULT_RETRIEVAL_POLICY.freshnessWindowDays,
   };
+}
+
+function normalizeAccessPolicy(input: Partial<CapsuleAccessPolicy> | unknown): CapsuleAccessPolicy {
+  const body = isRecord(input) ? input : {};
+  const visibility: CapsuleVisibility =
+    body.visibility === 'public' ||
+    body.visibility === 'organization' ||
+    body.visibility === 'shared' ||
+    body.visibility === 'unlisted' ||
+    body.visibility === 'private'
+      ? body.visibility
+      : 'private';
+  return {
+    visibility,
+    sharedWithUserIds: cleanStringArray(body.sharedWithUserIds).slice(0, 100),
+    sharedWithOrgIds: cleanStringArray(body.sharedWithOrgIds).slice(0, 50),
+    allowClone: body.allowClone !== false,
+    allowDownload: body.allowDownload !== false,
+    allowCommunityRating: body.allowCommunityRating === true || visibility === 'public',
+  };
+}
+
+function normalizeCommunityProfile(input: Partial<CapsuleCommunityProfile> | unknown): CapsuleCommunityProfile {
+  const body = isRecord(input) ? input : {};
+  const userRating = typeof body.userRating === 'number' && Number.isFinite(body.userRating)
+    ? Math.max(1, Math.min(5, Math.round(body.userRating)))
+    : null;
+  const averageRating = typeof body.averageRating === 'number' && Number.isFinite(body.averageRating)
+    ? Math.max(1, Math.min(5, Number(body.averageRating.toFixed(2))))
+    : userRating;
+  return {
+    favorite: body.favorite === true,
+    userRating,
+    averageRating,
+    ratingCount: typeof body.ratingCount === 'number' && Number.isFinite(body.ratingCount)
+      ? Math.max(0, Math.floor(body.ratingCount))
+      : userRating
+        ? 1
+        : 0,
+    tags: cleanStringArray(body.tags).slice(0, 20),
+    listedInMarketplace: body.listedInMarketplace === true,
+    publishedAt: stringOrNull(body.publishedAt),
+    cloneCount: typeof body.cloneCount === 'number' && Number.isFinite(body.cloneCount) ? Math.max(0, Math.floor(body.cloneCount)) : 0,
+    downloadCount: typeof body.downloadCount === 'number' && Number.isFinite(body.downloadCount) ? Math.max(0, Math.floor(body.downloadCount)) : 0,
+  };
+}
+
+function normalizeTrustSemaphore(input: Record<string, unknown> | null, health: ContextHealth, checkedAt: string): CapsuleTrustSemaphore {
+  const fromHealth = trustFromHealth(health, checkedAt);
+  if (!input) return fromHealth;
+  const level: CapsuleTrustLevel =
+    input.level === 'green' || input.level === 'amber' || input.level === 'red' || input.level === 'grey'
+      ? input.level
+      : fromHealth.level;
+  return {
+    level,
+    score: typeof input.score === 'number' && Number.isFinite(input.score) ? Math.max(0, Math.min(100, Math.round(input.score))) : fromHealth.score,
+    label: stringOrNull(input.label) ?? fromHealth.label,
+    summary: stringOrNull(input.summary) ?? fromHealth.summary,
+    blockers: cleanStringArray(input.blockers).slice(0, 10),
+    recommendations: cleanStringArray(input.recommendations).slice(0, 10),
+    checkedAt: stringOrNull(input.checkedAt) ?? checkedAt,
+  };
+}
+
+function enrichContextHealth(health: ContextHealth): ContextHealth {
+  const enriched = {
+    ...health,
+    semaphore: health.semaphore ?? semaphoreForScore(health.score),
+    blockers: health.blockers ?? health.warnings.filter((warning) => /No Situation|No Path|missing/i.test(warning)).slice(0, 5),
+    recommendations: health.recommendations ?? health.warnings.slice(0, 5),
+  };
+  return enriched;
 }
 
 function patchForCoreSwap(
@@ -715,14 +947,53 @@ function computeCapsuleHealth(input: Partial<CapsuleCoreRefs> | unknown): Contex
     signal('tool-core', refs.toolCoreIds?.length ? 'ready' : 'thin', refs.toolCoreIds?.length ? 70 : 40, refs.toolCoreIds?.length ? `${refs.toolCoreIds.length} Tool Core reference(s).` : 'No Tool Core references.'),
     signal('objective-core', refs.objectiveCoreIds?.length ? 'ready' : 'thin', refs.objectiveCoreIds?.length ? 75 : 40, refs.objectiveCoreIds?.length ? 'Objective Core selected.' : 'No Objective Core selected.'),
     signal('product-core', refs.productCoreIds?.length ? 'ready' : 'thin', refs.productCoreIds?.length ? 70 : 40, refs.productCoreIds?.length ? 'Product Core selected.' : 'No Product Core selected.'),
+    signal('memory-core', refs.memoryCoreId ? 'ready' : 'thin', refs.memoryCoreId ? 70 : 40, refs.memoryCoreId ? 'Memory Core selected.' : 'No Memory Core selected.'),
     signal('team-core', refs.teamCoreId ? 'staged' : 'staged', refs.teamCoreId ? 45 : 20, 'Team Core is staged.'),
   ];
   const score = Math.round(signals.reduce((sum, item) => sum + item.score, 0) / signals.length);
+  const warnings = signals.filter((item) => item.status === 'thin' || item.status === 'missing').map((item) => item.message);
+  const blockers = signals.filter((item) => item.status === 'missing').map((item) => item.message);
   return {
     score,
+    semaphore: semaphoreForScore(score),
     signals,
     missingCores: signals.filter((item) => item.status === 'missing' || item.score < 40).map((item) => item.coreId),
-    warnings: signals.filter((item) => item.status === 'thin' || item.status === 'missing').map((item) => item.message),
+    warnings,
+    blockers,
+    recommendations: warnings.slice(0, 6),
+  };
+}
+
+function semaphoreForScore(score: number): CapsuleTrustLevel {
+  if (score >= 70) return 'green';
+  if (score >= 50) return 'amber';
+  if (score > 0) return 'red';
+  return 'grey';
+}
+
+function trustFromHealth(health: ContextHealth, checkedAt: string): CapsuleTrustSemaphore {
+  const level = health.semaphore ?? semaphoreForScore(health.score);
+  const label = level === 'green'
+    ? 'Ready'
+    : level === 'amber'
+      ? 'Usable with gaps'
+      : level === 'red'
+        ? 'Needs repair'
+        : 'Not checked';
+  return {
+    level,
+    score: health.score,
+    label,
+    summary: level === 'green'
+      ? 'The capsule has enough solid cores for normal Ask PRAXIS and memo work.'
+      : level === 'amber'
+        ? 'The capsule can be used, but PRAXIS should surface gaps and avoid confident unsupported output.'
+        : level === 'red'
+          ? 'The capsule is missing blocking cores and should be improved before serious work.'
+          : 'The capsule has not been checked.',
+    blockers: health.blockers ?? [],
+    recommendations: health.recommendations ?? health.warnings,
+    checkedAt,
   };
 }
 

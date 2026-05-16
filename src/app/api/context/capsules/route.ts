@@ -6,9 +6,11 @@ import {
   activateCapsule,
   combineCapsules,
   createCapsule,
+  createCapsuleFromCorePackage,
   forkCapsule,
   listCapsules,
 } from '@/lib/context/capsule-service';
+import { parseCorePackage } from '@/lib/context/core-package';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +60,14 @@ const ActivateSchema = z.object({
   situationId: z.string().min(1).optional(),
 });
 
+const ImportCoreSchema = z.object({
+  action: z.literal('import-core'),
+  corePackage: z.unknown(),
+  capsuleId: z.string().min(1).max(120).optional(),
+  label: z.string().min(1).max(160).optional(),
+  scope: z.enum(['user', 'situation', 'team']).optional(),
+});
+
 const CombineSchema = z.object({
   action: z.literal('combine'),
   capsuleIds: z.array(z.string().min(1)).min(2).max(10),
@@ -87,6 +97,18 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json({ error: 'Demo mode cannot create private capsules' }, { status: 403 });
     }
     const raw = await request.json().catch(() => ({}));
+
+    const importParsed = ImportCoreSchema.safeParse(raw);
+    if (importParsed.success) {
+      const corePackage = parseCorePackage(importParsed.data.corePackage);
+      if (!corePackage) return NextResponse.json({ error: 'Invalid .core package' }, { status: 400 });
+      const capsule = await createCapsuleFromCorePackage(user.uid, corePackage, {
+        capsuleId: importParsed.data.capsuleId,
+        label: importParsed.data.label,
+        scope: importParsed.data.scope,
+      });
+      return NextResponse.json({ capsule, imported: true }, { status: 201 });
+    }
 
     const activateParsed = ActivateSchema.safeParse(raw);
     if (activateParsed.success) {

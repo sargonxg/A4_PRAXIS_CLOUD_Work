@@ -150,19 +150,19 @@ export function ContextBuilderRoom({ situationId, initialMode = 'repository' }: 
 
       <section className="grid gap-3 lg:grid-cols-3">
         <RepositoryFact
-          label="Active capsule"
+          label="Health semaphore"
           value={activeCapsule?.label ?? activeCapsule?.capsuleId ?? 'Create or select a capsule'}
-          detail={activeCapsule ? `v${activeCapsule.version} · ${activeCapsule.scope} · health ${activeCapsule.health.score}/100` : 'This becomes the context Ask PRAXIS and Memo Studio inherit.'}
+          detail={activeCapsule ? `${activeCapsule.trust.label} · ${activeCapsule.health.score}/100 · ${activeCapsule.access.visibility}` : 'This becomes the context Ask PRAXIS and Memo Studio inherit.'}
         />
         <RepositoryFact
-          label="Context package"
-          value="Resolved through /api/context/resolve"
-          detail="The same core refs feed Ask PRAXIS, search, drafting, and handover."
+          label=".core package"
+          value={activeCapsule ? `${activeCapsule.label}.core` : 'Portable capsule file'}
+          detail="Download, clone, import, or share a versioned capsule without leaking private owner scope."
         />
         <RepositoryFact
-          label="Tools"
-          value={`${filteredTools.length} visible`}
-          detail="Filtered by the active context and grouped by job, not exposed as a separate marketplace."
+          label="Community"
+          value={activeCapsule?.community.listedInMarketplace ? 'Listed' : activeCapsule?.community.favorite ? 'Favorite' : 'Private by default'}
+          detail="Capsules can become team, organization, public, or community marketplace cores when explicitly published."
         />
       </section>
 

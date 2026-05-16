@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MoreHorizontal, Pencil, Power, Archive, Trash2, GitFork } from 'lucide-react';
+import { MoreHorizontal, Pencil, Power, Archive, Trash2, GitFork, Download, Star, Globe2 } from 'lucide-react';
 import { ShareCapsuleButton } from '@/components/cores/ShareCapsuleButton';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 
@@ -16,6 +16,7 @@ export function CapsuleManagerMenu({ capsule, onChanged }: CapsuleManagerMenuPro
   const [error, setError] = useState<string | null>(null);
 
   if (!capsule) return null;
+  const currentCapsule = capsule;
   const capsuleId = capsule.capsuleId;
   const capsuleLabel = capsule.label;
 
@@ -59,6 +60,33 @@ export function CapsuleManagerMenu({ capsule, onChanged }: CapsuleManagerMenuPro
     await call({ action: 'fork' });
   }
 
+  function handleDownload() {
+    window.location.href = `/api/context/capsules/${encodeURIComponent(capsuleId)}?format=core`;
+  }
+
+  async function handleFavorite() {
+    await call({ action: 'favorite', favorite: !currentCapsule.community.favorite });
+  }
+
+  async function handlePublishToggle() {
+    const nextVisibility = currentCapsule.access.visibility === 'public' ? 'private' : 'public';
+    await call({
+      action: 'set-visibility',
+      visibility: nextVisibility,
+      allowClone: true,
+      allowDownload: true,
+      allowCommunityRating: nextVisibility === 'public',
+    });
+  }
+
+  async function handleRate() {
+    const value = window.prompt('Rate this capsule from 1 to 5', String(currentCapsule.community.userRating ?? 5));
+    if (!value) return;
+    const rating = Number(value);
+    if (!Number.isFinite(rating)) return;
+    await call({ action: 'rate', rating: Math.max(1, Math.min(5, Math.round(rating))) });
+  }
+
   async function handleArchive() {
     if (!window.confirm(`Archive "${capsuleLabel}"? You can restore later.`)) return;
     await call({}, { method: 'DELETE' });
@@ -85,7 +113,11 @@ export function CapsuleManagerMenu({ capsule, onChanged }: CapsuleManagerMenuPro
         <div role="menu" className="absolute right-0 top-full z-40 mt-1 w-44 overflow-hidden rounded-md border border-slate-200 bg-white text-xs shadow-lg">
           <MenuItem icon={Pencil} label="Rename" onClick={handleRename} disabled={busy} />
           <MenuItem icon={Power} label="Activate here" onClick={handleActivate} disabled={busy} />
-          <MenuItem icon={GitFork} label="Fork" onClick={handleFork} disabled={busy} />
+          <MenuItem icon={GitFork} label="Clone / fork" onClick={handleFork} disabled={busy} />
+          <MenuItem icon={Download} label="Download .core" onClick={handleDownload} disabled={busy || !currentCapsule.access.allowDownload} />
+          <MenuItem icon={Star} label={currentCapsule.community.favorite ? 'Unfavorite' : 'Favorite'} onClick={handleFavorite} disabled={busy} />
+          <MenuItem icon={Star} label="Rate" onClick={handleRate} disabled={busy} />
+          <MenuItem icon={Globe2} label={currentCapsule.access.visibility === 'public' ? 'Make private' : 'Publish'} onClick={handlePublishToggle} disabled={busy} />
           <MenuItem icon={Archive} label="Archive" onClick={handleArchive} disabled={busy} />
           <MenuItem icon={Trash2} label="Delete" onClick={handleDelete} disabled={busy} tone="danger" />
           {error ? <p className="border-t border-rose-200 bg-rose-50 px-3 py-2 text-rose-900">{error}</p> : null}

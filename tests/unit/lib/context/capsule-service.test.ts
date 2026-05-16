@@ -7,14 +7,19 @@ import {
   combineCapsules,
   createCapsule,
   detachCapsuleRefs,
+  exportCapsuleCorePackage,
   forkCapsule,
   getCapsule,
   getOrMigrateDefaultCapsule,
   listCapsules,
+  rateCapsule,
   saveContextStackCompat,
+  setCapsuleAccessPolicy,
   setCapsuleCoreLock,
+  setCapsuleFavorite,
   swapCapsuleCore,
 } from '@/lib/context/capsule-service';
+import { parseCorePackage } from '@/lib/context/core-package';
 import { buildCapsuleInjectionKey, resolveInjectableContext } from '@/lib/context/context-injection';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
 
@@ -309,6 +314,55 @@ describe('capsule service', () => {
     expect(updated?.coreRefs.sourceCoreIds).toEqual(['src-2']);
     expect(updated?.coreRefs.documentCoreIds).toEqual(['doc-1']);
     expect(updated?.version).toBe(2);
+  });
+
+  it('computes a trust semaphore and carries private-by-default marketplace metadata', async () => {
+    const db = new FakeFirestore();
+    const thin = await createCapsule('u1', { capsuleId: 'thin' }, deps(db));
+    const strong = await createCapsule('u1', {
+      capsuleId: 'strong',
+      coreRefs: {
+        userCoreId: 'user-1',
+        situationCoreId: 'sit-1',
+        pathCoreId: 'path-policy',
+        sourceCoreIds: ['src-1'],
+        documentCoreIds: ['doc-1'],
+        graphCoreId: 'graph-1',
+        outputCoreIds: ['memo'],
+        toolCoreIds: ['ask-praxis'],
+        objectiveCoreIds: ['options'],
+        productCoreIds: ['memo'],
+        memoryCoreId: 'mem-1',
+      },
+    }, deps(db));
+
+    expect(thin.trust.level).toBe('red');
+    expect(thin.access.visibility).toBe('private');
+    expect(strong.trust.level).toBe('amber');
+    expect(strong.trust.score).toBeGreaterThanOrEqual(65);
+    expect(strong.health.blockers).toEqual([]);
+  });
+
+  it('publishes, favorites, rates, and exports capsules as .core packages', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', {
+      capsuleId: 'ChinaEconomy',
+      label: 'ChinaEconomy',
+      coreRefs: { situationCoreId: 'china-economy', sourceCoreIds: ['src-1'] },
+    }, deps(db));
+
+    const publicCapsule = await setCapsuleAccessPolicy('u1', 'ChinaEconomy', { visibility: 'public' }, deps(db));
+    const favorite = await setCapsuleFavorite('u1', 'ChinaEconomy', true, deps(db));
+    const rated = await rateCapsule('u1', 'ChinaEconomy', 5, deps(db));
+    const exported = await exportCapsuleCorePackage('u1', 'ChinaEconomy', deps(db));
+
+    expect(publicCapsule?.access.visibility).toBe('public');
+    expect(publicCapsule?.community.listedInMarketplace).toBe(true);
+    expect(favorite?.community.favorite).toBe(true);
+    expect(rated?.community.userRating).toBe(5);
+    expect(exported?.filename).toBe('ChinaEconomy.core');
+    expect(exported?.mimeType).toBe('application/praxis-core+json');
+    expect(parseCorePackage(exported?.package)?.capsule.capsuleId).toBe('ChinaEconomy');
   });
 });
 
