@@ -1,140 +1,57 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { OUTPUT_CAPSULE_TEMPLATES } from "@/lib/output-capsules/templates";
+import type { OutputCapsuleFamily, OutputCapsuleTemplate } from "@/lib/output-capsules/types";
 
 /**
- * Output catalog — postcard-sized cards for each output capsule template.
+ * Output catalog — postcard cards for every registered output-capsule template.
  *
- * Standalone marketing component. Data is illustrative; when the Codex output-
- * capsule registry lands, replace OUTPUT_SAMPLES with a server-fed list pulled
- * from `src/lib/product/output-capsules.ts` (or wherever the registry settles).
+ * Source of truth is `src/lib/output-capsules/templates.ts` (Codex registry).
+ * This component is presentation-only: derive label, family, and preview from
+ * the live template registry so the catalog stays in sync as templates grow.
  */
 
-type OutputSample = {
-  id: string;
-  family: string;
-  title: string;
-  preview: string;
-  accent: "navy" | "blue" | "gold" | "sage" | "terracotta" | "purple";
+type Accent = "navy" | "blue" | "gold" | "sage" | "terracotta" | "purple";
+
+const FAMILY_ACCENT: Record<OutputCapsuleFamily, Accent> = {
+  daily: "navy",
+  country: "blue",
+  actor: "purple",
+  conflict: "navy",
+  humanitarian: "sage",
+  diplomatic: "navy",
+  mediation: "sage",
+  "legal-sanctions": "terracotta",
+  "media-info": "terracotta",
+  risk: "terracotta",
+  "board-exec": "blue",
+  research: "purple",
+  tactical: "navy",
+  policy: "purple",
+  composite: "gold",
 };
 
-const OUTPUT_SAMPLES: readonly OutputSample[] = [
-  {
-    id: "morning-brief",
-    family: "Daily",
-    title: "Morning Brief",
-    preview:
-      "Overnight feed digest with three signals worth your attention, ranked against your mandate.",
-    accent: "navy",
-  },
-  {
-    id: "country-one-pager",
-    family: "Country",
-    title: "Country One-Pager",
-    preview:
-      "Single-page snapshot — actors, claims, risk posture, last-week events, recommended watch items.",
-    accent: "blue",
-  },
-  {
-    id: "media-roundup",
-    family: "Media / Info",
-    title: "Media Roundup",
-    preview:
-      "Foreign-policy framing across English, Arabic, French press, with narrative-divergence call-outs.",
-    accent: "terracotta",
-  },
-  {
-    id: "humanitarian-one-pager",
-    family: "Humanitarian",
-    title: "Humanitarian One-Pager",
-    preview:
-      "IPC bands, displacement deltas, access constraints, donor commitments — sourced to HDX and OCHA.",
-    accent: "sage",
-  },
-  {
-    id: "actor-dossier",
-    family: "Actor",
-    title: "Actor Dossier",
-    preview:
-      "Bio, faction map, declared interests vs. inferred interests, leverage inventory, salience score.",
-    accent: "purple",
-  },
-  {
-    id: "diplomatic-cable",
-    family: "Diplomatic",
-    title: "Diplomatic Cable",
-    preview:
-      "Démarche-ready memo with talking points, audience tone match, and a redaction-safe variant.",
-    accent: "navy",
-  },
-  {
-    id: "sanctions-tracker",
-    family: "Legal / Sanctions",
-    title: "Sanctions Tracker",
-    preview:
-      "Designations diff since last run, compliance-note draft, treaty cross-reference, IHL flags.",
-    accent: "terracotta",
-  },
-  {
-    id: "scenario-tree",
-    family: "Risk",
-    title: "Scenario Tree",
-    preview:
-      "Three branching futures with probability bands, leading indicators, and decision-trigger thresholds.",
-    accent: "gold",
-  },
-  {
-    id: "board-brief",
-    family: "Executive",
-    title: "Board Brief",
-    preview:
-      "Concatenates country one-pager + risk card + options memo into a single board-ready deck.",
-    accent: "blue",
-  },
-  {
-    id: "mediation-options",
-    family: "Mediation",
-    title: "Options Paper",
-    preview:
-      "Stakeholder map, BATNAs, sequencing, and a red-team annex challenging the preferred path.",
-    accent: "sage",
-  },
-  {
-    id: "regulatory-watch",
-    family: "Policy",
-    title: "Regulatory Watch",
-    preview:
-      "New rule-makings against your watchlist, impact tags, and a draft response-window memo.",
-    accent: "purple",
-  },
-  {
-    id: "event-timeline",
-    family: "Tactical",
-    title: "Event Timeline",
-    preview:
-      "Sigact-style chronology with actor tagging, cited to source receipts, exportable to PPTX.",
-    accent: "navy",
-  },
-  {
-    id: "narrative-monitor",
-    family: "Media / Info",
-    title: "Narrative Monitor",
-    preview:
-      "Tracked frames, momentum deltas, surfacing accounts, and a counter-narrative drafting prompt.",
-    accent: "terracotta",
-  },
-  {
-    id: "handover-pack",
-    family: "Composite",
-    title: "Handover Pack",
-    preview:
-      "Everything an incoming officer needs — capsule diff, recent outputs, open threads, red-line list.",
-    accent: "gold",
-  },
-];
+const FAMILY_LABEL: Record<OutputCapsuleFamily, string> = {
+  daily: "Daily",
+  country: "Country",
+  actor: "Actor",
+  conflict: "Conflict",
+  humanitarian: "Humanitarian",
+  diplomatic: "Diplomatic",
+  mediation: "Mediation",
+  "legal-sanctions": "Legal / Sanctions",
+  "media-info": "Media / Info",
+  risk: "Risk",
+  "board-exec": "Executive",
+  research: "Research",
+  tactical: "Tactical",
+  policy: "Policy",
+  composite: "Composite",
+};
 
-const ACCENT_TINT: Record<OutputSample["accent"], string> = {
+const ACCENT_TINT: Record<Accent, string> = {
   navy: "rgba(27,58,92,0.10)",
   blue: "rgba(75,146,219,0.12)",
   gold: "rgba(232,185,49,0.18)",
@@ -143,7 +60,7 @@ const ACCENT_TINT: Record<OutputSample["accent"], string> = {
   purple: "rgba(123,109,141,0.12)",
 };
 
-const ACCENT_INK: Record<OutputSample["accent"], string> = {
+const ACCENT_INK: Record<Accent, string> = {
   navy: "#1B3A5C",
   blue: "#1B3A5C",
   gold: "#A37A14",
@@ -152,8 +69,32 @@ const ACCENT_INK: Record<OutputSample["accent"], string> = {
   purple: "#574A6A",
 };
 
+type CardData = {
+  id: string;
+  family: string;
+  title: string;
+  preview: string;
+  accent: Accent;
+  composable: number;
+};
+
+function templateToCard(t: OutputCapsuleTemplate): CardData {
+  return {
+    id: t.id,
+    family: FAMILY_LABEL[t.family],
+    title: t.label,
+    preview: t.description,
+    accent: FAMILY_ACCENT[t.family],
+    composable: t.composableWith.length,
+  };
+}
+
 export function OutputCatalogCarousel() {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const cards = useMemo(
+    () => OUTPUT_CAPSULE_TEMPLATES.map(templateToCard),
+    [],
+  );
 
   const scrollBy = (dir: 1 | -1) => {
     const el = scrollerRef.current;
@@ -208,7 +149,7 @@ export function OutputCatalogCarousel() {
         className="-mx-5 flex snap-x snap-mandatory gap-5 overflow-x-auto px-5 pb-6 pt-2 lg:-mx-8 lg:px-8 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
         role="list"
       >
-        {OUTPUT_SAMPLES.map((s, i) => {
+        {cards.map((s, i) => {
           const tiltDeg = i % 2 === 0 ? -1.5 : 1.5;
           return (
             <article
