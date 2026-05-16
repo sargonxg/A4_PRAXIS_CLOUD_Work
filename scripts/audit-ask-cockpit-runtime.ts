@@ -39,6 +39,9 @@ expectIncludes('src/lib/firebase/firestore.ts', [
 expectIncludes('src/lib/ai/ask-runtime-catalog.ts', [
   'Gemini 3 Flash Preview',
   'Gemini 3 Pro Preview',
+  'Gemini 2.5 Pro',
+  'Gemini 2.5 Flash',
+  'Gemini 2.5 Flash-Lite',
   'Genkit flow',
   'Agent Engine memory',
 ]);
@@ -57,6 +60,9 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'data-testid="capsule-concatenation-actions"',
   'onDrop={handleDrop}',
   'data-testid="capsule-search-popup"',
+  'Tool and core library',
+  'Shift+Up edits the last queued message',
+  'replaceCapsule',
   'onContextMenu={handlePromptContextMenu}',
   'data-testid="selected-text-actions"',
   'data-testid="canonical-user-types"',

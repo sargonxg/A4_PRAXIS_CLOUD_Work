@@ -30,6 +30,30 @@ export const ASK_RUNTIME_OPTIONS = [
     status: 'live',
     summary: 'Deeper reasoning for memos, long context synthesis, and high-stakes review.',
   },
+  {
+    id: 'gemini-2.5-pro',
+    label: 'Gemini 2.5 Pro',
+    provider: 'vertex',
+    mode: 'research_memo',
+    status: 'live',
+    summary: 'Stable GA reasoning fallback for long policy synthesis when preview access is constrained.',
+  },
+  {
+    id: 'gemini-2.5-flash',
+    label: 'Gemini 2.5 Flash',
+    provider: 'vertex',
+    mode: 'chat',
+    status: 'live',
+    summary: 'Balanced GA model for everyday capsule discussion, source triage, and tool routing.',
+  },
+  {
+    id: 'gemini-2.5-flash-lite',
+    label: 'Gemini 2.5 Flash-Lite',
+    provider: 'vertex',
+    mode: 'chat',
+    status: 'live',
+    summary: 'High-throughput GA fallback for quick classification, drafting, and lightweight checks.',
+  },
 ] as const satisfies readonly AskRuntimeOption[];
 
 export const ASK_ORCHESTRATION_OPTIONS = [

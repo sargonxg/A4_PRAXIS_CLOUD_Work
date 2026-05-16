@@ -95,6 +95,8 @@ export function TaskletPraxisWorkbench({
   const [composerExpanded, setComposerExpanded] = useState(false);
   const [capsuleSearchOpen, setCapsuleSearchOpen] = useState(false);
   const [capsuleQuery, setCapsuleQuery] = useState('');
+  const [replaceCapsuleId, setReplaceCapsuleId] = useState<string | null>(null);
+  const [lastQueuedPrompt, setLastQueuedPrompt] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>(['ask-praxis', 'sourceability', 'memo-drafter']);
   const [selectedArchetypeId, setSelectedArchetypeId] = useState(COCKPIT_USER_ARCHETYPES[0]?.id ?? 'user-1');
@@ -146,7 +148,11 @@ export function TaskletPraxisWorkbench({
   const filteredCapsules = COCKPIT_CAPSULE_LIBRARY.filter((capsule) => {
     const query = capsuleQuery.trim().toLowerCase();
     return !query || capsule.label.toLowerCase().includes(query) || capsule.code.toLowerCase().includes(query);
-  }).slice(0, 6);
+  }).slice(0, 12);
+  const filteredLibraryTools = COCKPIT_TOOL_SUGGESTIONS.filter((tool) => {
+    const query = capsuleQuery.trim().toLowerCase();
+    return !query || tool.label.toLowerCase().includes(query) || tool.name.toLowerCase().includes(query) || tool.produces.toLowerCase().includes(query);
+  }).slice(0, 12);
   const launcherState: ContextCapsuleLauncherState = {
     prompt,
     selectedCapsuleId: capsuleId,
@@ -185,6 +191,26 @@ export function TaskletPraxisWorkbench({
     setActiveCapsules((current) => current.some((item) => item.id === capsule.id)
       ? current
       : [...current, { id: capsule.id, label: capsule.label, code: capsule.code }]);
+  }
+
+  function replaceCapsule(targetId: string, nextId: string) {
+    const capsule = findCapsuleTemplate(nextId);
+    if (!capsule) return;
+    setActiveCapsules((current) => {
+      const next = current.map((item) => item.id === targetId
+        ? { id: capsule.id, label: capsule.label, code: capsule.code }
+        : item);
+      return next.filter((item, index) => next.findIndex((candidate) => candidate.id === item.id) === index);
+    });
+  }
+
+  function chooseCapsuleFromLibrary(id: string) {
+    if (replaceCapsuleId) {
+      replaceCapsule(replaceCapsuleId, id);
+      setReplaceCapsuleId(null);
+    } else {
+      addCapsule(id);
+    }
   }
 
   function removeCapsule(id: string) {
@@ -291,6 +317,20 @@ export function TaskletPraxisWorkbench({
     if (userIdFromDrop) setSelectedArchetypeId(userIdFromDrop);
   }
 
+  function handlePromptKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      openAgentChat();
+      return;
+    }
+    if (event.key === 'ArrowUp' && event.shiftKey && lastQueuedPrompt) {
+      event.preventDefault();
+      setPrompt(lastQueuedPrompt);
+      setComposerExpanded(true);
+      setRunState({ status: 'idle', message: 'Last queued message restored for editing.' });
+    }
+  }
+
   function handlePromptContextMenu(event: React.MouseEvent<HTMLTextAreaElement>) {
     const target = event.currentTarget;
     const selection = target.value.slice(target.selectionStart, target.selectionEnd).trim();
@@ -345,6 +385,7 @@ export function TaskletPraxisWorkbench({
 
   function openAgentChat(agent: PolicyAgentDefinition = selectedAgent) {
     const cleanPrompt = prompt.trim() || `Discuss ${agent.label} from ${activeCapsuleName}.`;
+    setLastQueuedPrompt(cleanPrompt);
     if (surfaceMode === 'public') {
       window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, cleanPrompt);
       window.localStorage.setItem(PENDING_POLICY_AGENT_ID_KEY, agent.id);
@@ -467,6 +508,17 @@ export function TaskletPraxisWorkbench({
                         {capsule.label}
                         <button
                           type="button"
+                          aria-label={`Change ${capsule.label}`}
+                          onClick={() => {
+                            setReplaceCapsuleId(capsule.id);
+                            setCapsuleSearchOpen(true);
+                          }}
+                          className="rounded px-1.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-slate-500 hover:bg-white hover:text-slate-800"
+                        >
+                          Change
+                        </button>
+                        <button
+                          type="button"
                           aria-label={`Remove ${capsule.label}`}
                           onClick={() => removeCapsule(capsule.id)}
                           className="rounded p-0.5 text-slate-400 hover:bg-white hover:text-slate-700"
@@ -480,7 +532,10 @@ export function TaskletPraxisWorkbench({
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => setCapsuleSearchOpen((open) => !open)}
+                    onClick={() => {
+                      setReplaceCapsuleId(null);
+                      setCapsuleSearchOpen((open) => !open);
+                    }}
                     className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:shadow-sm"
                   >
                     <Search className="h-4 w-4" />
@@ -525,30 +580,61 @@ export function TaskletPraxisWorkbench({
               </div>
               {capsuleSearchOpen ? (
                 <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3" data-testid="capsule-search-popup">
-                  <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
-                    <Search className="h-4 w-4 text-slate-400" />
-                    <input
-                      value={capsuleQuery}
-                      onChange={(event) => setCapsuleQuery(event.target.value)}
-                      placeholder="Search capsules by name or code"
-                      className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"
-                    />
-                  </label>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredCapsules.map((capsule) => (
-                      <button
-                        key={capsule.id}
-                        type="button"
-                        draggable
-                        onDragStart={(event) => event.dataTransfer.setData('application/x-praxis-capsule', capsule.id)}
-                        onClick={() => addCapsule(capsule.id)}
-                        className="rounded-md border border-slate-200 bg-white p-3 text-left transition hover:-translate-y-0.5 hover:border-sage/40 hover:shadow-sm"
-                      >
-                        <span className="font-mono text-[10px] font-semibold text-slate-400">{capsule.code}</span>
-                        <span className="mt-1 block text-sm font-semibold text-slate-900">{capsule.label}</span>
-                        <span className="mt-1 block text-xs leading-5 text-slate-500">{capsule.output}</span>
-                      </button>
-                    ))}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
+                      <Search className="h-4 w-4 text-slate-400" />
+                      <input
+                        value={capsuleQuery}
+                        onChange={(event) => setCapsuleQuery(event.target.value)}
+                        placeholder="Search capsules, core types, tools, or codes"
+                        className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                      />
+                    </label>
+                    <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600">
+                      {replaceCapsuleId ? 'Choose replacement capsule' : 'Add to active stack'}
+                    </span>
+                  </div>
+                  <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+                    <section>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Capsule library</p>
+                      <div className="mt-2 grid max-h-72 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+                        {filteredCapsules.map((capsule) => (
+                          <button
+                            key={capsule.id}
+                            type="button"
+                            draggable
+                            onDragStart={(event) => event.dataTransfer.setData('application/x-praxis-capsule', capsule.id)}
+                            onClick={() => chooseCapsuleFromLibrary(capsule.id)}
+                            className="rounded-md border border-slate-200 bg-white p-3 text-left transition hover:-translate-y-0.5 hover:border-sage/40 hover:shadow-sm"
+                          >
+                            <span className="font-mono text-[10px] font-semibold text-slate-400">{capsule.code}</span>
+                            <span className="mt-1 block text-sm font-semibold text-slate-900">{capsule.label}</span>
+                            <span className="mt-1 block text-xs leading-5 text-slate-500">{capsule.output}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                    <section>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Tool and core library</p>
+                      <div className="mt-2 grid max-h-72 gap-2 overflow-y-auto pr-1">
+                        {filteredLibraryTools.map((tool) => (
+                          <button
+                            key={tool.id}
+                            type="button"
+                            draggable
+                            onDragStart={(event) => event.dataTransfer.setData('application/x-praxis-tool', tool.id)}
+                            onClick={() => toggleTool(tool.id)}
+                            className={cn(
+                              'rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm',
+                              selectedToolIds.includes(tool.id) ? 'border-sage/40 bg-sage/10' : 'border-slate-200 bg-white hover:border-sage/40',
+                            )}
+                          >
+                            <span className="block text-sm font-semibold text-slate-900">{tool.label}</span>
+                            <span className="mt-1 block text-xs leading-5 text-slate-500">{tool.produces.replace('_', ' ')} · {tool.readiness}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
                   </div>
                 </div>
               ) : null}
@@ -558,6 +644,7 @@ export function TaskletPraxisWorkbench({
               <textarea
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
+                onKeyDown={handlePromptKeyDown}
                 onContextMenu={handlePromptContextMenu}
                 rows={composerExpanded ? 7 : 3}
                 className={cn(
@@ -613,7 +700,7 @@ export function TaskletPraxisWorkbench({
               <div className="flex items-center justify-between gap-3 border-t border-black/10 bg-white px-5 py-2 text-sm text-slate-500">
                 <span className="inline-flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4" />
-                  Policy sources, documents, grounded search, and selected passages can be copied, checked, or sent to Memo Studio
+                  Policy sources, documents, grounded search · Enter sends · Shift+Enter adds a line · Shift+Up edits the last queued message
                 </span>
                 {runState.href ? (
                   <Link href={runState.href} className="font-semibold text-diplomatic-blue">

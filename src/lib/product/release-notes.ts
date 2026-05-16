@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.16.04',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'Capsule library mechanics and Gemini model choices',
+    summary: 'The Ask cockpit now treats Context Capsules as a real editable stack and exposes the current Gemini 3 plus stable Gemini 2.5 Vertex choices.',
+    category: 'product',
+    items: [
+      'Capsules in the rail above the Ask bar can now be changed, removed, searched, or replaced from the capsule library.',
+      'The same popup includes a tool and core library so policy tools can be toggled without leaving the discussion surface.',
+      'The composer supports Enter to send, Shift+Enter for a new line, and Shift+Up to restore the last queued message for editing.',
+      'The model selector now includes Gemini 3 Flash/Pro Preview and Gemini 2.5 Pro/Flash/Flash-Lite Vertex options.',
+    ],
+  },
+  {
     buildNumber: '2026.05.16.03',
     version: '6.4.1',
     date: '2026-05-16',

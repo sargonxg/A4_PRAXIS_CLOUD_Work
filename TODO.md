@@ -37,6 +37,10 @@ from the active ledger above.
    mounts the floating Ask launcher, capsule concatenation lives only above the
    Ask bar, and `/app/contexts` is framed as the trust/health/.core management
    surface rather than a second composition cockpit.
+0. Capsule stack mechanics now need persistence hardening: the cockpit can add,
+   replace, delete, search, drag/drop, and tool-toggle the active stack above the
+   Ask bar, but the next backend wave should persist the composed stack as a
+   first-class run input/receipt for every Ask PRAXIS turn.
 0. First OutputCapsule product slice is now implemented in
    `src/lib/output-capsules/`: typed templates, payload schema ids/versions,
    deterministic planner, quality gates, hidden-tool bindings, and

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(cockpit): strengthen capsule stack editing and Gemini model selection.
+  Build 2026.05.16.04 makes the capsule rail above Ask PRAXIS editable from
+  the library, adds tool/core toggles in the same popup, supports Enter send,
+  Shift+Enter new lines, and Shift+Up edit-last-queued-message behavior, and
+  exposes Gemini 3 Preview plus stable Gemini 2.5 Vertex model choices.
 - feat(home): align dashboard and context management with the shared cockpit.
   Build 2026.05.16.03 removes the dashboard floating Ask launcher, keeps
   capsule concatenation only in the rail above the Ask bar, and reframes

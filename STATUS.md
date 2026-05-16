@@ -5,7 +5,7 @@
 Current release checkpoint:
 
 - Central app metadata is now `PRAXIS v6.4.1` with build number
-  `2026.05.16.03` in `src/lib/constants/app-version.ts`.
+  `2026.05.16.04` in `src/lib/constants/app-version.ts`.
 - `/release-notes` reads from the centralized
   `src/lib/product/release-notes.ts` registry instead of a page-local notes
   array.
@@ -14,6 +14,19 @@ Current release checkpoint:
   entry stay aligned.
 - Significant product/runtime/documentation changes should bump
   `APP_BUILD_NUMBER`, add a release note entry, and update `CHANGELOG.md`.
+
+## 2026-05-16 — Capsule Stack Mechanics And Gemini Choices
+
+Current cockpit checkpoint:
+
+- The capsule rail above Ask PRAXIS is now the single editable stack: users can
+  add, change, remove, search, drag/drop, and replace capsules from the library.
+- The same popup exposes tool/core toggles so the discussion bar can carry the
+  selected capsule stack and selected policy tools together.
+- The composer supports Enter to send, Shift+Enter for a new line, and Shift+Up
+  to restore the last queued prompt for editing.
+- The runtime selector includes Gemini 3 Flash/Pro Preview plus Gemini 2.5
+  Pro/Flash/Flash-Lite Vertex fallback options.
 
 ## 2026-05-16 — Dashboard And Context Shell Coherence
 
