@@ -1,8 +1,11 @@
 "use client";
 
 import { TaskletPraxisWorkbench } from "@/components/praxis/tasklet-praxis-workbench";
+import { CapsuleAnatomyHoneycomb } from "@/components/landing/capsule-anatomy-honeycomb";
 import { OutputCatalogCarousel } from "@/components/landing/output-catalog-carousel";
-import { ComposeCapsulesDemo } from "@/components/landing/compose-capsules-demo";
+import { ComposeCapsulesShowcase } from "@/components/landing/compose-capsules-demo";
+import { PersonaCards } from "@/components/landing/persona-cards";
+import { ConnectorStrip } from "@/components/landing/connector-strip";
 
 export function Phase8WowLanding() {
   return (
@@ -14,8 +17,11 @@ export function Phase8WowLanding() {
 
       {/* PRAXIS visual identity sections — additive, below cockpit */}
       <div className="section-rhythm bg-[var(--color-cream-100)] py-20 sm:py-28 lg:py-32">
+        <CapsuleAnatomyHoneycomb />
         <OutputCatalogCarousel />
-        <ComposeCapsulesDemo />
+        <ComposeCapsulesShowcase />
+        <PersonaCards />
+        <ConnectorStrip />
       </div>
     </main>
   );
