@@ -22,13 +22,12 @@ export default function LandingLayout({
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 32);
+    const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Lock body scroll while mobile menu is open
   useEffect(() => {
     if (typeof document === "undefined") return;
     document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
@@ -42,103 +41,115 @@ export default function LandingLayout({
       id="top"
       className="landing-light relative min-h-screen bg-[var(--color-cream-100)] paper-texture"
     >
-      <header
-        className={cn(
-          "sticky top-0 z-50 transition-all duration-300 ease-out",
-          scrolled
-            ? "border-b border-[color:var(--color-rose-gold)]/30 bg-[var(--color-cream-100)]/85 backdrop-blur-xl"
-            : "border-b border-transparent bg-transparent"
-        )}
-      >
-        <nav
+      {/* Atmospheric gold spotlight — anchors the page in the brand color */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[480px]"
+        style={{
+          background:
+            "radial-gradient(60% 100% at 50% 0%, rgba(232,185,49,0.08), transparent 70%)",
+        }}
+      />
+
+      {/* Floating capsule navbar — rounded, glass, deliberate */}
+      <div className="sticky top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
+        <header
           className={cn(
-            "mx-auto flex max-w-7xl items-center justify-between px-5 transition-all duration-300 ease-out lg:px-8",
-            scrolled ? "py-3" : "py-5"
+            "mx-auto max-w-[1180px] rounded-full transition-all duration-500 ease-out",
+            scrolled
+              ? "surface-glass border border-[color:var(--color-rose-gold)]/35 shadow-capsule"
+              : "border border-transparent",
           )}
         >
-          {/* Logo */}
-          <Link
-            href="/"
-            className="group flex items-center gap-3"
-            aria-label="PRAXIS home"
-          >
-            <PraxisMark
-              size={26}
-              className="text-[color:var(--color-gold-600)] transition-transform duration-300 group-hover:rotate-12"
-              title="PRAXIS"
-            />
-            <span className="font-serif text-[22px] font-semibold tracking-wide text-[color:var(--color-diplomatic-blue)] sm:text-2xl">
-              PRAXIS
-            </span>
-            <span className="hidden rounded-full border border-[color:var(--color-rose-gold)]/40 bg-[color:var(--color-gold-500)]/8 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-gold-700)] transition-colors group-hover:bg-[color:var(--color-gold-500)]/14 sm:inline-flex">
-              by TACITUS
-            </span>
-            <span
-              aria-label="Beta release"
-              className="hidden items-center gap-1 rounded-full bg-[color:var(--color-terracotta)]/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-terracotta)] sm:inline-flex"
-            >
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--color-terracotta)]" />
-              Beta
-            </span>
-          </Link>
-
-          {/* Desktop nav links */}
-          <div className="hidden items-center gap-8 lg:flex">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="relative text-sm font-medium text-[color:var(--color-ink)]/70 transition-colors duration-200 hover:text-[color:var(--color-ink)]"
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
-
-          {/* Desktop CTAs */}
-          <div className="hidden items-center gap-3 lg:flex">
-            <Link
-              href="/login"
-              prefetch={false}
-              className="btn-capsule-secondary inline-flex h-10 items-center justify-center rounded-full px-5 font-serif text-[15px] font-semibold tracking-tight"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/login?mode=signup"
-              prefetch={false}
-              className="btn-capsule-primary inline-flex h-10 items-center justify-center rounded-full px-6 font-serif text-[15px] font-semibold tracking-tight"
-            >
-              New capsule
-            </Link>
-          </div>
-
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setMobileMenuOpen((v) => !v)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--color-rose-gold)]/40 bg-white/60 text-[color:var(--color-ink)] backdrop-blur transition-all hover:bg-white hover:shadow-capsule lg:hidden"
-            aria-label="Toggle menu"
-            aria-expanded={mobileMenuOpen}
-          >
-            {mobileMenuOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
+          <nav
+            className={cn(
+              "flex items-center justify-between gap-3 transition-all duration-500 ease-out",
+              scrolled ? "px-4 py-2 sm:px-5" : "px-4 py-2.5 sm:px-6",
             )}
-          </button>
-        </nav>
+          >
+            {/* Brand */}
+            <Link
+              href="/"
+              className="group flex shrink-0 items-center gap-2 sm:gap-3"
+              aria-label="PRAXIS home"
+            >
+              {/* Glyph chip — anchors the brand color in a rounded square */}
+              <span className="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-[color:var(--color-rose-gold)]/40 bg-gradient-to-br from-[color:var(--color-gold-500)]/20 to-[color:var(--color-gold-500)]/5 transition-transform duration-500 group-hover:rotate-[8deg]">
+                <PraxisMark
+                  size={20}
+                  className="text-[color:var(--color-gold-700)]"
+                  title="PRAXIS"
+                />
+              </span>
+              <span className="font-serif text-[20px] font-semibold tracking-[-0.01em] text-[color:var(--color-diplomatic-blue)] sm:text-[22px]">
+                PRAXIS
+              </span>
+              <span className="hidden rounded-full bg-[color:var(--color-gold-500)]/10 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-[color:var(--color-gold-700)] sm:inline-flex">
+                by TACITUS
+              </span>
+              <span
+                aria-label="Beta release"
+                className="hidden items-center gap-1 rounded-full bg-[color:var(--color-terracotta)]/12 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-[color:var(--color-terracotta)] sm:inline-flex"
+              >
+                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--color-terracotta)]" />
+                Beta
+              </span>
+            </Link>
 
-        {/* Mobile menu — full-width drawer */}
+            {/* Desktop nav links — rounded pill row */}
+            <div className="hidden items-center rounded-full px-1 lg:flex">
+              {navLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="praxis-nav-link relative rounded-full px-3 py-1.5 text-[13px] font-medium text-[color:var(--color-ink)]/65 transition-colors duration-200 hover:text-[color:var(--color-ink)]"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+
+            {/* Desktop CTAs */}
+            <div className="hidden items-center gap-2 lg:flex">
+              <Link
+                href="/login"
+                prefetch={false}
+                className="btn-capsule-secondary inline-flex h-9 items-center justify-center rounded-full px-4 font-serif text-[14px] font-semibold tracking-tight"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/login?mode=signup"
+                prefetch={false}
+                className="btn-capsule-primary inline-flex h-9 items-center justify-center rounded-full px-5 font-serif text-[14px] font-semibold tracking-tight"
+              >
+                New capsule
+              </Link>
+            </div>
+
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-[color:var(--color-rose-gold)]/40 bg-white/70 text-[color:var(--color-ink)] backdrop-blur transition-all hover:bg-white hover:shadow-capsule lg:hidden"
+              aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </nav>
+        </header>
+
+        {/* Mobile drawer */}
         <div
           id="mobile-menu"
           className={cn(
-            "overflow-hidden transition-[max-height,opacity] duration-300 ease-out lg:hidden",
+            "mx-auto mt-2 max-w-[1180px] overflow-hidden rounded-3xl transition-[max-height,opacity] duration-300 ease-out lg:hidden",
             mobileMenuOpen
-              ? "max-h-[80vh] opacity-100"
-              : "max-h-0 opacity-0"
+              ? "max-h-[80vh] opacity-100 surface-glass border border-[color:var(--color-rose-gold)]/30 shadow-capsule-lg"
+              : "max-h-0 opacity-0",
           )}
         >
-          <div className="border-t border-[color:var(--color-rose-gold)]/25 bg-white/95 px-6 pb-6 pt-3 backdrop-blur-xl">
+          <div className="px-6 pb-6 pt-3">
             <div className="flex flex-col">
               {navLinks.map((link) => (
                 <a
@@ -171,23 +182,25 @@ export default function LandingLayout({
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Page content */}
-      <main>{children}</main>
+      <main className="relative z-10">{children}</main>
 
-      {/* Footer — institutional, single line, rose-gold hairline */}
-      <footer className="relative z-10 mt-24 border-t border-[color:var(--color-rose-gold)]/25 bg-[var(--color-cream-100)]/60 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-6 sm:flex-row lg:px-8">
-          <div className="flex items-center gap-2.5">
-            <PraxisMark size={18} className="text-[color:var(--color-gold-600)]" />
+      {/* Footer — glass capsule, single row, brand-anchored */}
+      <footer className="relative z-10 mt-24 px-3 pb-6 sm:px-5">
+        <div className="mx-auto flex max-w-[1180px] flex-col items-center justify-between gap-3 rounded-3xl border border-[color:var(--color-rose-gold)]/25 bg-white/45 px-6 py-5 backdrop-blur-md sm:flex-row sm:gap-4">
+          <Link href="/" className="group flex items-center gap-2.5">
+            <span className="flex h-7 w-7 items-center justify-center rounded-xl border border-[color:var(--color-rose-gold)]/40 bg-gradient-to-br from-[color:var(--color-gold-500)]/20 to-[color:var(--color-gold-500)]/5 transition-transform duration-500 group-hover:rotate-[8deg]">
+              <PraxisMark size={15} className="text-[color:var(--color-gold-700)]" />
+            </span>
             <span className="font-serif text-base font-semibold tracking-wide text-[color:var(--color-diplomatic-blue)]">
               PRAXIS
             </span>
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink)]/45">
               by TACITUS · v6.4
             </span>
-          </div>
+          </Link>
           <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[color:var(--color-ink)]/65">
             <Link href="/learn" className="hover:text-[color:var(--color-ink)]">
               Learn
