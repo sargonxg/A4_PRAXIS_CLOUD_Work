@@ -55,6 +55,25 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'PRAXIS_USAGE_COPY.askCost',
   'model: selectedRuntime.id',
   'ASK_ORCHESTRATION_OPTIONS',
+  'data-testid="capsule-composition-rail"',
+  'onDrop={handleDrop}',
+  'data-testid="capsule-search-popup"',
+  'onContextMenu={handlePromptContextMenu}',
+  'data-testid="selected-text-actions"',
+  'data-testid="canonical-user-types"',
+  'data-testid="suggested-capsule-tools"',
+  'data-testid="capsule-combination-recipes"',
+  'activeCapsules',
+  'selectedToolIds',
+  'selectedUserArchetype',
+]);
+
+expectIncludes('src/lib/product/cockpit-composition.ts', [
+  'POLICY_NEED_TABS',
+  'COCKPIT_USER_ARCHETYPES',
+  'COCKPIT_TOOL_SUGGESTIONS',
+  'COCKPIT_COMBINATION_RECIPES',
+  'findCapsuleTemplate',
 ]);
 
 expectIncludes('src/app/api/ai/chat/route.ts', [

@@ -22,6 +22,12 @@ product_contract:
         PRAXIS starts from reusable User, Situation, Source/Document, Graph,
         Time, and Output cores so expertise can travel between questions,
         tools, drafts, and handovers without being re-explained.
+    - name: Capsule Composition
+      rule: >-
+        Home and Ask surfaces should make the active capsule combination
+        tangible: users can search by name/code, add suggested user/tool cores,
+        combine compatible capsules, and keep the selected composition visible
+        before running AI work.
     - name: Deterministic Situation Intelligence
       rule: >-
         Temporal, causal, actor, source, domain, and graph-readiness checks
@@ -72,6 +78,19 @@ product_contract:
         - find sources
         - review risks
         - create handover note
+    selected_text_actions:
+      appears_on:
+        - Ask prompt
+        - Ask answer
+        - memo paragraph
+      actions:
+        - copy passage
+        - use as sourced input
+        - check against attached documents, repositories, and capsules
+        - send to Memo Studio with provenance
+      rule: >-
+        Passage actions must preserve which capsule cores, tools, sources, and
+        output destination were active when the action was created.
     next_best_action:
       max_visible: 3
       source: deterministic context-health rules first, AI explanation later

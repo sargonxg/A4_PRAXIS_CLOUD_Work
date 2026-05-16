@@ -2,11 +2,38 @@ import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getStorage, type Storage } from 'firebase-admin/storage';
+import { readFileSync } from 'node:fs';
 
 let _app: App | null = null;
 let _auth: Auth | null = null;
 let _db: Firestore | null = null;
 let _initError: string | null = null;
+let _credentialSource: 'FIREBASE_SERVICE_ACCOUNT_KEY' | 'FIREBASE_SERVICE_ACCOUNT_KEY_FILE' | 'GOOGLE_APPLICATION_CREDENTIALS' | null = null;
+
+function readServiceAccountJson(): string | null {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+    _credentialSource = 'FIREBASE_SERVICE_ACCOUNT_KEY';
+    return process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  }
+
+  const credentialPath =
+    process.env.FIREBASE_SERVICE_ACCOUNT_KEY_FILE ||
+    process.env.GOOGLE_APPLICATION_CREDENTIALS;
+
+  if (!credentialPath) return null;
+
+  _credentialSource = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_FILE
+    ? 'FIREBASE_SERVICE_ACCOUNT_KEY_FILE'
+    : 'GOOGLE_APPLICATION_CREDENTIALS';
+
+  try {
+    return readFileSync(credentialPath, 'utf8');
+  } catch (err) {
+    _initError = err instanceof Error ? err.message : String(err);
+    console.error(`[firebase-admin] Could not read service-account file from ${_credentialSource}:`, _initError);
+    return null;
+  }
+}
 
 function ensureInitialized() {
   if (_app) return;
@@ -19,10 +46,10 @@ function ensureInitialized() {
     return;
   }
 
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  const raw = readServiceAccountJson();
 
   if (!raw) {
-    _initError = 'FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set';
+    _initError = _initError || 'Firebase Admin service-account credentials are not configured';
     console.error(`[firebase-admin] ${_initError}`);
     // Initialize without credentials — auth fallback will still work
     _app = initializeApp({ projectId: 'praxisbytacitus' });
@@ -45,7 +72,7 @@ function ensureInitialized() {
     });
     _auth = getAuth(_app);
     _db = getFirestore(_app);
-    console.log('[firebase-admin] Initialized successfully with service account');
+    console.log(`[firebase-admin] Initialized successfully with service account from ${_credentialSource}`);
   } catch (e) {
     _initError = e instanceof Error ? e.message : String(e);
     console.error('[firebase-admin] Failed to initialize:', _initError);
@@ -73,8 +100,8 @@ export const adminDb: Firestore = _db!;
 
 export function getAdminDbOrThrow(): Firestore {
   if (!_db) {
-    const hint = !process.env.FIREBASE_SERVICE_ACCOUNT_KEY
-      ? 'FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set. Check Secret Manager and Cloud Run configuration.'
+    const hint = !process.env.FIREBASE_SERVICE_ACCOUNT_KEY && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY_FILE && !process.env.GOOGLE_APPLICATION_CREDENTIALS
+      ? 'Firebase Admin credentials are not configured. Set FIREBASE_SERVICE_ACCOUNT_KEY, FIREBASE_SERVICE_ACCOUNT_KEY_FILE, or GOOGLE_APPLICATION_CREDENTIALS.'
       : `Firebase Admin SDK failed to initialize: ${_initError}`;
     throw new Error(`[firebase-admin] Firestore unavailable. ${hint}`);
   }

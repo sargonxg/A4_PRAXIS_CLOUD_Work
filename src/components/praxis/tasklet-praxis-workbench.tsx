@@ -8,15 +8,23 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronsRight,
+  Clipboard,
+  Combine,
   Cpu,
   FileText,
+  FileSearch,
   FolderKanban,
+  GripVertical,
+  Layers3,
+  Maximize2,
   Mic,
   Paperclip,
+  Quote,
   Search,
   ShieldCheck,
   Sparkles,
   Upload,
+  X,
 } from 'lucide-react';
 import {
   destinationHref,
@@ -32,6 +40,14 @@ import {
 import { ASK_ORCHESTRATION_OPTIONS, ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
 import type { ModelPreferenceValue } from '@/lib/ai/model-preferences';
 import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
+import {
+  COCKPIT_CAPSULE_LIBRARY,
+  COCKPIT_COMBINATION_RECIPES,
+  COCKPIT_TOOL_SUGGESTIONS,
+  COCKPIT_USER_ARCHETYPES,
+  POLICY_NEED_TABS,
+  findCapsuleTemplate,
+} from '@/lib/product/cockpit-composition';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
 
@@ -43,7 +59,13 @@ type TaskletPraxisWorkbenchProps = {
   className?: string;
 };
 
-const tabs = ['Analysis', 'Monitoring', 'Review', 'Handover', 'Capsules'] as const;
+type PolicyNeedTabId = (typeof POLICY_NEED_TABS)[number]['id'];
+
+interface ActiveCapsuleChip {
+  id: string;
+  label: string;
+  code: string;
+}
 
 const defaultRecentRuns = [
   { label: 'Middle East policy memo', detail: 'Research Memo Agent -> Memo Studio', status: 'draft' },
@@ -61,22 +83,41 @@ export function TaskletPraxisWorkbench({
   const { user, credits } = useAuth();
   const surfaceMode: HomeSurfaceMode = mode === 'app' ? 'authenticated' : mode;
   const [prompt, setPrompt] = useState('Draft a sourced options memo from the active capsule.');
-  const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>('Analysis');
+  const [activeTab, setActiveTab] = useState<PolicyNeedTabId>('analysis');
   const [selectedAgentId, setSelectedAgentId] = useState('research-memo');
   const [agentDrawerOpen, setAgentDrawerOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<ModelPreferenceValue>(ASK_RUNTIME_OPTIONS[0].id);
+  const [composerExpanded, setComposerExpanded] = useState(false);
+  const [capsuleSearchOpen, setCapsuleSearchOpen] = useState(false);
+  const [capsuleQuery, setCapsuleQuery] = useState('');
+  const [selectedToolIds, setSelectedToolIds] = useState<string[]>(['ask-praxis', 'sourceability', 'memo-drafter']);
+  const [selectedArchetypeId, setSelectedArchetypeId] = useState(COCKPIT_USER_ARCHETYPES[0]?.id ?? 'user-1');
+  const [activeCapsules, setActiveCapsules] = useState<ActiveCapsuleChip[]>([
+    { id: capsuleId, label: activeCapsuleName, code: 'ACTIVE' },
+    { id: 'conflict-analysis', label: 'Conflict analysis', code: 'CAP-001' },
+  ]);
+  const [textMenu, setTextMenu] = useState<{ x: number; y: number; text: string } | null>(null);
   const [runState, setRunState] = useState<{ status: 'idle' | 'running' | 'ready' | 'error'; message: string; href?: string }>({
     status: 'idle',
     message: surfaceMode === 'public' ? 'Sign in to run this capsule.' : 'Ready to create a capsule run.',
   });
 
   const visibleAgents = useMemo(() => {
-    const category = activeTab.toLowerCase();
-    if (activeTab === 'Capsules') return PRAXIS_POLICY_AGENTS;
+    const category = activeTab;
+    if (activeTab === 'capsules') return PRAXIS_POLICY_AGENTS;
     return PRAXIS_POLICY_AGENTS.filter((agent) => agent.category === category);
   }, [activeTab]);
+  const activePolicyNeed = POLICY_NEED_TABS.find((tab) => tab.id === activeTab) ?? POLICY_NEED_TABS[0]!;
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
   const selectedRuntime = getAskRuntimeOption(selectedModel);
+  const selectedArchetype = COCKPIT_USER_ARCHETYPES.find((item) => item.id === selectedArchetypeId) ?? COCKPIT_USER_ARCHETYPES[0]!;
+  const suggestedTools = COCKPIT_TOOL_SUGGESTIONS.filter((tool) => (
+    activePolicyNeed.toolIds.includes(tool.id) || selectedArchetype.suggestedToolIds.includes(tool.id) || selectedToolIds.includes(tool.id)
+  )).slice(0, 9);
+  const filteredCapsules = COCKPIT_CAPSULE_LIBRARY.filter((capsule) => {
+    const query = capsuleQuery.trim().toLowerCase();
+    return !query || capsule.label.toLowerCase().includes(query) || capsule.code.toLowerCase().includes(query);
+  }).slice(0, 6);
   const launcherState: ContextCapsuleLauncherState = {
     prompt,
     selectedCapsuleId: capsuleId,
@@ -100,6 +141,70 @@ export function TaskletPraxisWorkbench({
       // localStorage is a convenience handoff, not required for the app.
     }
   }, [surfaceMode]);
+
+  useEffect(() => {
+    setActiveCapsules((current) => {
+      const [first, ...rest] = current;
+      if (first?.id === capsuleId && first.label === activeCapsuleName) return current;
+      return [{ id: capsuleId, label: activeCapsuleName, code: 'ACTIVE' }, ...rest];
+    });
+  }, [activeCapsuleName, capsuleId]);
+
+  function addCapsule(id: string) {
+    const capsule = findCapsuleTemplate(id);
+    if (!capsule) return;
+    setActiveCapsules((current) => current.some((item) => item.id === capsule.id)
+      ? current
+      : [...current, { id: capsule.id, label: capsule.label, code: capsule.code }]);
+  }
+
+  function removeCapsule(id: string) {
+    setActiveCapsules((current) => current.length <= 1 ? current : current.filter((item) => item.id !== id));
+  }
+
+  function toggleTool(id: string) {
+    setSelectedToolIds((current) => current.includes(id)
+      ? current.filter((item) => item !== id)
+      : [...current, id]);
+  }
+
+  function addTool(id: string) {
+    setSelectedToolIds((current) => current.includes(id) ? current : [...current, id]);
+  }
+
+  function handleDrop(event: React.DragEvent<HTMLElement>) {
+    event.preventDefault();
+    const capsuleIdFromDrop = event.dataTransfer.getData('application/x-praxis-capsule');
+    const toolIdFromDrop = event.dataTransfer.getData('application/x-praxis-tool');
+    const userIdFromDrop = event.dataTransfer.getData('application/x-praxis-user');
+    if (capsuleIdFromDrop) addCapsule(capsuleIdFromDrop);
+    if (toolIdFromDrop) addTool(toolIdFromDrop);
+    if (userIdFromDrop) setSelectedArchetypeId(userIdFromDrop);
+  }
+
+  function handlePromptContextMenu(event: React.MouseEvent<HTMLTextAreaElement>) {
+    const target = event.currentTarget;
+    const selection = target.value.slice(target.selectionStart, target.selectionEnd).trim();
+    if (!selection) return;
+    event.preventDefault();
+    setTextMenu({ x: event.clientX, y: event.clientY, text: selection.slice(0, 500) });
+  }
+
+  function applyTextAction(action: 'source' | 'check' | 'memo' | 'copy') {
+    if (!textMenu) return;
+    if (action === 'copy') {
+      void navigator.clipboard?.writeText(textMenu.text).catch(() => undefined);
+    } else if (action === 'source') {
+      setPrompt((current) => `${current.trim()}\n\nUse this selected text as sourced input:\n"${textMenu.text}"`);
+    } else if (action === 'check') {
+      setPrompt((current) => `${current.trim()}\n\nCheck this paragraph against attached documents, repositories, and active capsules:\n"${textMenu.text}"`);
+      if (!selectedToolIds.includes('sourceability')) setSelectedToolIds((current) => [...current, 'sourceability']);
+    } else {
+      setPrompt((current) => `${current.trim()}\n\nSend this passage to Memo Studio with provenance:\n"${textMenu.text}"`);
+      if (!selectedToolIds.includes('memo-drafter')) setSelectedToolIds((current) => [...current, 'memo-drafter']);
+    }
+    setTextMenu(null);
+  }
 
   async function launchRun(agent: PolicyAgentDefinition = selectedAgent) {
     const cleanPrompt = prompt.trim() || `Run ${agent.label} from ${activeCapsuleName}.`;
@@ -129,6 +234,10 @@ export function TaskletPraxisWorkbench({
           outputDestination: agent.outputDestination,
           model: selectedRuntime.id,
           provider: selectedRuntime.provider,
+          activeCapsules,
+          selectedToolIds,
+          selectedUserArchetype: selectedArchetype?.label ?? null,
+          sourceActionModel: 'selected_text_context_menu',
           approvalLevel: agent.approvalLevel,
           taskletSurface: true,
         },
@@ -233,16 +342,114 @@ export function TaskletPraxisWorkbench({
             <h1 className="mt-8 text-center font-serif text-5xl font-semibold tracking-tight text-[#151515] sm:text-6xl">
               What policy work should PRAXIS run?
             </h1>
-            <div className="mt-6 rounded-md bg-white/70 px-4 py-2 text-sm font-semibold text-slate-600">
-              Active capsule <span className="px-2 text-slate-300">•</span><span className="text-sage">{activeCapsuleName}</span>
+
+            <div
+              className="mt-10 w-full max-w-5xl rounded-lg border border-black/10 bg-white/85 p-4 shadow-sm shadow-black/5 transition hover:-translate-y-0.5"
+              data-testid="capsule-composition-rail"
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={handleDrop}
+            >
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
+                    <Layers3 className="h-4 w-4 text-sage" />
+                    Active capsule composition
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {activeCapsules.map((capsule) => (
+                      <span
+                        key={capsule.id}
+                        className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm font-semibold text-slate-800"
+                      >
+                        <GripVertical className="h-3.5 w-3.5 text-slate-400" />
+                        <span className="rounded bg-white px-1.5 py-0.5 font-mono text-[10px] text-slate-500">{capsule.code}</span>
+                        {capsule.label}
+                        <button
+                          type="button"
+                          aria-label={`Remove ${capsule.label}`}
+                          onClick={() => removeCapsule(capsule.id)}
+                          className="rounded p-0.5 text-slate-400 hover:bg-white hover:text-slate-700"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCapsuleSearchOpen((open) => !open)}
+                    className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:shadow-sm"
+                  >
+                    <Search className="h-4 w-4" />
+                    Search by name/code
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => COCKPIT_COMBINATION_RECIPES[0]?.inputs.forEach(addCapsule)}
+                    className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-sm"
+                  >
+                    <Combine className="h-4 w-4" />
+                    Combine
+                  </button>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {selectedToolIds.map((toolId) => {
+                  const tool = COCKPIT_TOOL_SUGGESTIONS.find((item) => item.id === toolId);
+                  if (!tool) return null;
+                  return (
+                    <span key={tool.id} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600">
+                      {tool.label}
+                    </span>
+                  );
+                })}
+                <span className="rounded-md border border-sage/25 bg-sage/10 px-2 py-1 text-[11px] font-semibold text-sage">
+                  {selectedArchetype.label}
+                </span>
+              </div>
+              {capsuleSearchOpen ? (
+                <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3" data-testid="capsule-search-popup">
+                  <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
+                    <Search className="h-4 w-4 text-slate-400" />
+                    <input
+                      value={capsuleQuery}
+                      onChange={(event) => setCapsuleQuery(event.target.value)}
+                      placeholder="Search capsules by name or code"
+                      className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                    />
+                  </label>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredCapsules.map((capsule) => (
+                      <button
+                        key={capsule.id}
+                        type="button"
+                        draggable
+                        onDragStart={(event) => event.dataTransfer.setData('application/x-praxis-capsule', capsule.id)}
+                        onClick={() => addCapsule(capsule.id)}
+                        className="rounded-md border border-slate-200 bg-white p-3 text-left transition hover:-translate-y-0.5 hover:border-sage/40 hover:shadow-sm"
+                      >
+                        <span className="font-mono text-[10px] font-semibold text-slate-400">{capsule.code}</span>
+                        <span className="mt-1 block text-sm font-semibold text-slate-900">{capsule.label}</span>
+                        <span className="mt-1 block text-xs leading-5 text-slate-500">{capsule.output}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="mt-6 w-full max-w-4xl rounded-lg border border-black/10 bg-white shadow-lg shadow-black/5">
               <textarea
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
-                rows={3}
-                className="min-h-28 w-full resize-none rounded-t-lg px-5 py-5 text-lg text-slate-900 outline-none placeholder:text-slate-400"
+                onContextMenu={handlePromptContextMenu}
+                rows={composerExpanded ? 7 : 3}
+                className={cn(
+                  'w-full resize-none rounded-t-lg px-5 py-5 text-lg text-slate-900 outline-none placeholder:text-slate-400',
+                  composerExpanded ? 'min-h-64' : 'min-h-28',
+                )}
                 placeholder="Describe the policy task, source question, memo, or responsibility"
               />
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/10 px-4 py-3">
@@ -257,6 +464,14 @@ export function TaskletPraxisWorkbench({
                   <span className="hidden rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500 sm:inline">
                     approval-gated
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setComposerExpanded((expanded) => !expanded)}
+                    aria-label={composerExpanded ? 'Compact composer' : 'Expand composer'}
+                    className="rounded-md p-2 text-slate-600 transition hover:-translate-y-0.5 hover:bg-slate-100"
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </button>
                   <button type="button" aria-label="Voice input" className="rounded-md p-2 text-slate-600 hover:bg-slate-100">
                     <Mic className="h-4 w-4" />
                   </button>
@@ -273,7 +488,7 @@ export function TaskletPraxisWorkbench({
               <div className="flex items-center justify-between gap-3 border-t border-black/10 bg-white px-5 py-2 text-sm text-slate-500">
                 <span className="inline-flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4" />
-                  Policy sources, documents, grounded search, and internal capsule tools
+                  Policy sources, documents, grounded search, and selected passages can be copied, checked, or sent to Memo Studio
                 </span>
                 {runState.href ? (
                   <Link href={runState.href} className="font-semibold text-diplomatic-blue">
@@ -296,12 +511,16 @@ export function TaskletPraxisWorkbench({
                     ))}
                   </select>
                 </label>
-                <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
-                  {user?.isDemo ? 'demo account' : `${credits.toLocaleString()} tokens`}
-                </span>
-                <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
-                  {PRAXIS_USAGE_COPY.askCost}
-                </span>
+                {surfaceMode === 'authenticated' ? (
+                  <>
+                    <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
+                      {user?.isDemo ? 'demo account' : `${credits.toLocaleString()} tokens`}
+                    </span>
+                    <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
+                      {PRAXIS_USAGE_COPY.askCost}
+                    </span>
+                  </>
+                ) : null}
                 {ASK_ORCHESTRATION_OPTIONS.map((option) => (
                   <span
                     key={option.id}
@@ -315,6 +534,31 @@ export function TaskletPraxisWorkbench({
                   </span>
                 ))}
               </div>
+              {textMenu ? (
+                <div
+                  className="fixed z-50 w-64 rounded-lg border border-slate-200 bg-white p-2 shadow-xl shadow-black/15"
+                  style={{ left: textMenu.x, top: textMenu.y }}
+                  data-testid="selected-text-actions"
+                >
+                  <p className="truncate px-2 py-1 text-xs font-semibold text-slate-500">{textMenu.text}</p>
+                  {[
+                    { action: 'copy' as const, Icon: Clipboard, label: 'Copy' },
+                    { action: 'source' as const, Icon: Quote, label: 'Use as sourced text' },
+                    { action: 'check' as const, Icon: FileSearch, label: 'Check against context' },
+                    { action: 'memo' as const, Icon: FileText, label: 'Send to Memo Studio' },
+                  ].map(({ action, Icon, label }) => (
+                    <button
+                      key={action}
+                      type="button"
+                      onClick={() => applyTextAction(action)}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      <Icon className="h-4 w-4 text-slate-500" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
             <p className={cn('mt-3 text-sm', runState.status === 'error' ? 'text-red-700' : 'text-slate-500')}>
@@ -359,31 +603,115 @@ export function TaskletPraxisWorkbench({
             {surfaceMode === 'authenticated' && agentDrawerOpen ? (
               <div className="mt-6 w-full max-w-6xl rounded-lg border border-black/10 bg-white/75 p-4" data-testid="policy-agent-drawer">
                 <nav className="flex flex-wrap items-center border-b border-black/10" aria-label="Policy agent categories">
-                  {tabs.map((tab) => (
+                  {POLICY_NEED_TABS.map((tab) => (
                     <button
-                      key={tab}
+                      key={tab.id}
                       type="button"
-                      onClick={() => setActiveTab(tab)}
+                      onClick={() => setActiveTab(tab.id)}
                       className={cn(
-                        'px-4 py-3 text-sm font-semibold',
-                        activeTab === tab ? 'border-b-2 border-[#ff714d] text-[#ff714d]' : 'text-slate-500 hover:text-slate-900',
+                        'px-4 py-3 text-left text-sm font-semibold transition hover:-translate-y-0.5',
+                        activeTab === tab.id ? 'border-b-2 border-[#ff714d] text-[#ff714d]' : 'text-slate-500 hover:text-slate-900',
                       )}
                     >
-                      {tab}
+                      <span className="block">{tab.label}</span>
+                      <span className="block max-w-40 truncate text-[11px] font-medium text-slate-400">{tab.policyNeed}</span>
                     </button>
                   ))}
                 </nav>
 
-                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {visibleAgents.map((agent) => (
-                    <PolicyAgentCard
-                      key={agent.id}
-                      agent={agent}
-                      selected={selectedAgentId === agent.id}
-                      onSelect={() => setSelectedAgentId(agent.id)}
-                      onRun={() => void launchRun(agent)}
-                    />
-                  ))}
+                <div className="mt-5 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+                  <div className="rounded-lg border border-slate-200 bg-white p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-slate-500">Policy need</p>
+                        <h3 className="mt-1 text-xl font-semibold text-slate-950">{activePolicyNeed.policyNeed}</h3>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">{activePolicyNeed.intent}</p>
+                      </div>
+                      <span className="rounded-md border border-sage/20 bg-sage/10 px-2 py-1 text-xs font-semibold text-sage">
+                        {activeCapsules.length} capsules
+                      </span>
+                    </div>
+                    <div className="mt-5 grid gap-3 md:grid-cols-2">
+                      {visibleAgents.map((agent) => (
+                        <PolicyAgentCard
+                          key={agent.id}
+                          agent={agent}
+                          selected={selectedAgentId === agent.id}
+                          onSelect={() => setSelectedAgentId(agent.id)}
+                          onRun={() => void launchRun(agent)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <section className="rounded-lg border border-slate-200 bg-white p-4" data-testid="canonical-user-types">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase text-slate-500">Canonical user types</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-900">{selectedArchetype.label}</p>
+                        </div>
+                        <span className="rounded-md border border-slate-200 px-2 py-1 font-mono text-[10px] text-slate-500">10</span>
+                      </div>
+                      <div className="mt-3 grid max-h-80 gap-2 overflow-y-auto pr-1">
+                        {COCKPIT_USER_ARCHETYPES.slice(0, 10).map((archetype) => (
+                          <button
+                            key={archetype.id}
+                            type="button"
+                            draggable
+                            onDragStart={(event) => event.dataTransfer.setData('application/x-praxis-user', archetype.id)}
+                            onClick={() => setSelectedArchetypeId(archetype.id)}
+                            className={cn(
+                              'rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm',
+                              selectedArchetypeId === archetype.id ? 'border-[#ff714d]/50 bg-[#fff3ef]' : 'border-slate-200 bg-slate-50 hover:bg-white',
+                            )}
+                          >
+                            <span className="block text-sm font-semibold text-slate-900">{archetype.label}</span>
+                            <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">{archetype.detail}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="rounded-lg border border-slate-200 bg-white p-4" data-testid="suggested-capsule-tools">
+                      <p className="text-xs font-semibold uppercase text-slate-500">Suggested tools</p>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                        {suggestedTools.map((tool) => (
+                          <button
+                            key={tool.id}
+                            type="button"
+                            draggable
+                            onDragStart={(event) => event.dataTransfer.setData('application/x-praxis-tool', tool.id)}
+                            onClick={() => toggleTool(tool.id)}
+                            className={cn(
+                              'rounded-md border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm',
+                              selectedToolIds.includes(tool.id) ? 'border-sage/40 bg-sage/10' : 'border-slate-200 bg-slate-50 hover:bg-white',
+                            )}
+                          >
+                            <span className="block text-sm font-semibold text-slate-900">{tool.label}</span>
+                            <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">{tool.produces}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="rounded-lg border border-slate-200 bg-white p-4" data-testid="capsule-combination-recipes">
+                      <p className="text-xs font-semibold uppercase text-slate-500">Capsule recipes</p>
+                      <div className="mt-3 space-y-2">
+                        {COCKPIT_COMBINATION_RECIPES.slice(0, 4).map((recipe) => (
+                          <button
+                            key={recipe.label}
+                            type="button"
+                            onClick={() => recipe.inputs.forEach(addCapsule)}
+                            className="w-full rounded-md border border-slate-200 bg-slate-50 p-3 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
+                          >
+                            <span className="block text-sm font-semibold text-slate-900">{recipe.label}</span>
+                            <span className="mt-1 block text-xs leading-5 text-slate-500">{recipe.output}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  </div>
                 </div>
               </div>
             ) : null}

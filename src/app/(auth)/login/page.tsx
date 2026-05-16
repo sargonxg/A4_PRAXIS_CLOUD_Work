@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils/cn';
-import { Shield, ArrowRight, Loader2, Mail, Chrome } from 'lucide-react';
+import { Shield, ArrowRight, Loader2, Mail, Chrome, Layers3, FileText, Search, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import {
@@ -272,42 +272,125 @@ function LoginForm() {
   }, [queryMode, loading, user]);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-navy-950 px-4">
-      {/* Background pattern */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, var(--color-gold-500) 1px, transparent 0)`,
-            backgroundSize: '48px 48px',
-          }}
-        />
-        <div className="absolute top-0 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold-500/5 blur-[120px]" />
-      </div>
+    <div className="min-h-screen bg-[#F6F8FB] text-slate-950">
+      <div className="grid min-h-screen lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.72fr)]">
+        <section className="relative hidden overflow-hidden border-r border-slate-200 bg-white lg:block">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.035)_1px,transparent_1px)] bg-[size:28px_28px]" />
+          <div className="relative flex min-h-screen flex-col p-8">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">PRAXIS by TACITUS</p>
+                  <p className="text-xs text-slate-500">ContextCapsule agent workspace</p>
+                </div>
+              </div>
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                Firebase Auth
+              </span>
+            </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-md"
-      >
-        {/* Card */}
-        <div className="rounded-2xl border border-navy-700/50 bg-navy-900/80 p-8 shadow-2xl backdrop-blur-sm sm:p-10">
-          {/* Logo area */}
+            <div className="grid flex-1 gap-8 py-10 xl:grid-cols-[240px_minmax(0,1fr)]">
+              <aside className="space-y-3">
+                {[
+                  ['New capsule', Layers3],
+                  ['Search capsules', Search],
+                  ['Memo Studio', FileText],
+                ].map(([label, Icon]) => (
+                  <div key={label as string} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 shadow-sm">
+                    <Icon className="h-4 w-4 text-slate-600" />
+                    <span className="text-sm font-semibold text-slate-700">{label as string}</span>
+                  </div>
+                ))}
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-sm font-semibold text-slate-950">Use your own sources</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">
+                    Sign in to create private capsules, attach documents, and keep outputs in the workspace.
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="rounded-md border border-slate-200 bg-white px-2 py-2 text-center text-[11px] font-semibold text-slate-600">Sources</div>
+                    <div className="rounded-md border border-slate-200 bg-white px-2 py-2 text-center text-[11px] font-semibold text-slate-600">Memos</div>
+                  </div>
+                </div>
+              </aside>
+
+              <div className="flex flex-col justify-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  PRAXIS runs policy agents from ContextCapsules
+                </p>
+                <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-[-0.02em] text-slate-950 xl:text-5xl">
+                  Sign in, then run the workbench from the same capsule context.
+                </h1>
+                <div className="mt-8 rounded-lg border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70">
+                  <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-4">
+                    {['ACTIVE', 'USER', 'SOURCES', 'OUTPUT'].map((code) => (
+                      <span key={code} className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                        {code}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-sm font-semibold text-slate-950">Draft a sourced options memo from the active capsule.</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {['Ask PRAXIS', 'Sourceability', 'Memo Drafter'].map((tool) => (
+                        <span key={tool} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
+                          {tool}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                    {[
+                      ['Context health', 'Ready'],
+                      ['Source posture', 'Review'],
+                      ['Memo output', 'Queued'],
+                    ].map(([label, status]) => (
+                      <div key={label} className="rounded-lg border border-slate-200 bg-white p-3">
+                        <p className="text-[11px] font-semibold uppercase text-slate-500">{label}</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950">{status}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-navy-950 px-4 py-8">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div
+              className="absolute inset-0 opacity-[0.035]"
+              style={{
+                backgroundImage: `radial-gradient(circle at 1px 1px, var(--color-gold-500) 1px, transparent 0)`,
+                backgroundSize: '44px 44px',
+              }}
+            />
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="relative z-10 w-full max-w-md"
+          >
+            <div className="rounded-xl border border-navy-700/50 bg-navy-900/88 p-6 shadow-2xl backdrop-blur-sm sm:p-8">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.5 }}
-            className="mb-8 text-center"
+            className="mb-6 text-center"
           >
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-gold-500/20 bg-gold-500/10">
-              <Shield className="h-7 w-7 text-gold-500" />
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-gold-500/20 bg-gold-500/10">
+              <Sparkles className="h-6 w-6 text-gold-500" />
             </div>
             <h1 className="font-serif text-3xl tracking-wide text-gold-500">
               PRAXIS
             </h1>
             <p className="mt-1.5 text-sm tracking-widest text-navy-400 uppercase">
-              ContextCapsule agent workspace
+              Sign in to continue
             </p>
           </motion.div>
 
@@ -341,7 +424,7 @@ function LoginForm() {
                 </div>
               ) : null}
               <p className="mt-2 text-xs leading-5 text-navy-400">
-                Sign in to open the Tasklet-style PRAXIS workspace: active capsule, policy agents, source receipts, Memo Studio, Canvas, Library, and handover.
+                Sign in to preserve the prompt and open it inside your private PRAXIS workspace.
               </p>
             </motion.div>
           ) : null}
@@ -385,7 +468,7 @@ function LoginForm() {
           >
             <div className="h-px flex-1 bg-navy-700/50" />
             <span className="text-xs tracking-wider text-navy-500 uppercase">
-              or continue with email
+              or email
             </span>
             <div className="h-px flex-1 bg-navy-700/50" />
           </motion.div>
@@ -600,7 +683,7 @@ function LoginForm() {
           >
             <div className="h-px flex-1 bg-navy-700/50" />
             <span className="text-xs tracking-wider text-navy-500 uppercase">
-              or open shared case session
+              example workspace
             </span>
             <div className="h-px flex-1 bg-navy-700/50" />
           </motion.div>
@@ -634,11 +717,10 @@ function LoginForm() {
               )}
             </button>
             <p className="mt-2 text-center text-[11px] text-navy-500">
-              Creates a guest session for a pre-loaded example case inside the real PRAXIS app.
+              Opens a pre-loaded case without creating a private account.
             </p>
           </motion.div>
 
-          {/* Plan info */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -646,12 +728,11 @@ function LoginForm() {
             className="mt-5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3"
           >
             <p className="text-center text-xs text-emerald-400">
-              <span className="font-semibold">Free Plan</span> opens the Tasklet-style PRAXIS workspace: capsule, policy agents, source receipts, and memo tools.
+              <span className="font-semibold">Free Plan</span> includes capsules, source receipts, policy agents, and memo tools.
             </p>
           </motion.div>
         </div>
 
-        {/* Footer */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -661,6 +742,8 @@ function LoginForm() {
           Secured by TACITUS Intelligence Systems
         </motion.p>
       </motion.div>
+        </section>
+      </div>
     </div>
   );
 }

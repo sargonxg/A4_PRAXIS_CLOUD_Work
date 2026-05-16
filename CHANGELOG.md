@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(home): make the capsule cockpit composable.
+  Added the active capsule composition rail, capsule search by name/code,
+  draggable canonical user-type and tool suggestions, capsule combination
+  recipes, an expandable sourced prompt composer, selected-text actions, and
+  audits/tests for the cockpit composition contract.
 - feat(ask): harden the login-gated ContextCapsule cockpit.
   Added starter PRAXIS token policy constants (1,000 initial, 10 per Ask
   question), client-safe Gemini runtime options, Ask cockpit model controls,
