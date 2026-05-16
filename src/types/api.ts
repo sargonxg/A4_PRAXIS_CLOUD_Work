@@ -1,4 +1,12 @@
-import type { ConflictEntity, ConflictEntityType } from './conflict-grammar';
+// conflict-grammar types removed during MVP cleanup; aliased to permissive shapes
+// until the conflict grammar surface is rebuilt against the new capsule model.
+export type ConflictEntityType = string;
+export interface ConflictEntity {
+  id: string;
+  type: ConflictEntityType;
+  label?: string;
+  [key: string]: unknown;
+}
 import type { Report, ReportSection } from './report';
 import type { Source } from './index';
 

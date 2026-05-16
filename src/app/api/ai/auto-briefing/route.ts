@@ -6,7 +6,7 @@ import { buildToolContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
-import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { isServerDemoMode } from '@/lib/compat/sample-mode';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { audienceTonePreset, audienceTuningEnabled } from '@/lib/ai/audience-presets';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';

@@ -36,12 +36,8 @@ Accepted ADRs are not edited for meaning. Supersede them with a later ADR.
 - `0035-marketplace-cap-and-deferred-candidates.md`
 - `0036-gcp-production-verification-discipline.md`
 - `0037-draft-briefing-assembly-contract.md`
-- `0037-user-models-as-first-class-versioned-artifacts.md`
 - `0038-ai-first-case-creation-pattern.md`
-- `0038-two-context-product-model-on-dual-ontology-layer.md`
-- `0039-seven-logical-graphs-one-user-facing-graph.md`
 - `0040-chapters-layered-content-rendering.md`
-- `0040-twelve-named-llm-graph-interaction-patterns.md`
 - `0041-desk-command-center-contract.md`
 - `0042-library-tab-as-artifact-faceted-view.md`
 - `0043-research-as-ingestion-front-door.md`
@@ -52,11 +48,8 @@ Accepted ADRs are not edited for meaning. Supersede them with a later ADR.
 - `0048-analytics-sanctions-simulation-as-cross-cutting-tools.md`
 - `0049-cognee-memory-layer-disabled-first.md`
 
-Note: Phase 0 of the v5 build pack requested specific ADR filenames using
-`0037`, `0038`, `0039`, and `0040`. Existing historical ADRs already occupied
-`0037`, `0038`, and `0040`; those files were preserved and the requested v5
-ADRs were added with the requested filenames. Future ADRs should resume at the
-next unused numeric prefix.
+Historical v5 duplicate ADRs were removed during the Tasklet cleanup. Future
+ADRs should resume at the next unused numeric prefix.
 
 Active target-state gaps are tracked in:
 

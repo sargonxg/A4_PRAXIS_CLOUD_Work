@@ -39,9 +39,9 @@ work unless Giulio explicitly asks.
 17. [`TODO.md`](./TODO.md)
 18. [`CHANGELOG.md`](./CHANGELOG.md) — `[Unreleased]` section only
 
-Historical v5 phase prompts remain useful evidence. Consult
-[`docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`](./docs/build/PRAXIS_v5_EXECUTION_LEDGER.md)
-and related v5 files only when a task explicitly touches older v5 work.
+Historical v4/v5 phase prompt stubs were removed during the Tasklet cleanup.
+Use the current product docs and Tasklet runtime ledger instead of resurrecting
+old phase queues.
 
 ## Operational references (consult when relevant)
 

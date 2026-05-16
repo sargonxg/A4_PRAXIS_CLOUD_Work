@@ -105,8 +105,14 @@ expectIncludes('src/app/sitemap.ts', ['/learn', '/tacitus', '/release-notes']);
 expectIncludes('src/app/tour/page.tsx', ["redirect('/')", 'noindex, nofollow']);
 expectIncludes('src/app/docs/page.tsx', ["redirect('/learn')", 'index: false']);
 expectIncludes('src/app/waitlist/page.tsx', ["redirect('/login?mode=signup')", 'index: false']);
-expectIncludes('docs/build/PRAXIS_v5_EXECUTION_LEDGER.md', ['Archived v5 Execution Ledger', 'docs/_archive/build/v5/PRAXIS_v5_EXECUTION_LEDGER.md']);
-expectIncludes('docs/build/PRAXIS_GENKIT_SPRINT_CODEX_BRIEF_2026-05-14.md', ['Archived Genkit Sprint Codex Brief', 'docs/_archive/build/genkit-sprint-2026-05-14']);
+expectIncludes('docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md', [
+  'ContextCapsule',
+  'Tasklet',
+]);
+expectIncludes('docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md', [
+  'Tasklet',
+  'Agent',
+]);
 
 const cleanupLedger = read('docs/audits/2026-05-15-tasklet-mvp-cleanup-ledger.md');
 for (const marker of ['## Keep', '## Fold Or Archive', '## Remove Only With Evidence', '## Next Deletion Pass']) {

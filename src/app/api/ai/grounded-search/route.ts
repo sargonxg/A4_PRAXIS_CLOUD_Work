@@ -1,5 +1,5 @@
 import { conductResearch } from '@/lib/ai/research-engine';
-import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/demo/demo-mode';
+import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/compat/sample-mode';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { toLegacyDataStreamResponse } from '@/lib/ai/legacy-data-stream';

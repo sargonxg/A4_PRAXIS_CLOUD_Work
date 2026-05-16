@@ -11,7 +11,7 @@ import {
 import { createGraphUpdateProposalsFromGraphData } from '@/lib/firebase/graph-updates-service';
 import { saveToolData } from '@/lib/firebase/tool-data-service';
 import { runCanonicalPreCheck, formatPreCheckContext } from '@/lib/services/canonical-precheck';
-import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { isServerDemoMode } from '@/lib/compat/sample-mode';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 
 export const maxDuration = 180;

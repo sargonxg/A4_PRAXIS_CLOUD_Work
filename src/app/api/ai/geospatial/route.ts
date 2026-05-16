@@ -6,7 +6,7 @@ import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-co
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
-import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { isServerDemoMode } from '@/lib/compat/sample-mode';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import type { Situation } from '@/types/situation';

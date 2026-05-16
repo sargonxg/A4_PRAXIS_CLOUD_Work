@@ -2,20 +2,27 @@
 // Core Type Definitions for TACITUS
 // ============================================================================
 
-// Re-exports from domain-specific type modules
-export type {
-  Actor,
-  Claim,
-  Interest,
-  Constraint,
-  Leverage,
-  Commitment,
-  Event,
-  Narrative,
-  ConflictEntity,
-  ConflictEntityType,
-  ConflictGraph,
-} from './conflict-grammar';
+// conflict-grammar removed during MVP cleanup. Permissive aliases live here
+// so callers keep compiling until the grammar is rebuilt around capsule cores.
+export type Actor = { id: string; type: string; name?: string; [k: string]: unknown };
+export type Claim = { id: string; statement: string; [k: string]: unknown };
+export type Interest = { id: string; statement: string; [k: string]: unknown };
+export type Constraint = { id: string; kind: string; [k: string]: unknown };
+export type Leverage = { id: string; kind: string; [k: string]: unknown };
+export type Commitment = { id: string; statement: string; [k: string]: unknown };
+export type Event = { id: string; kind: string; [k: string]: unknown };
+export type Narrative = { id: string; summary: string; [k: string]: unknown };
+export type ConflictEntityType = string;
+export interface ConflictEntity {
+  id: string;
+  type: ConflictEntityType;
+  label?: string;
+  [k: string]: unknown;
+}
+export interface ConflictGraph {
+  nodes: ConflictEntity[];
+  edges: Array<{ source: string; target: string; type?: string }>;
+}
 
 export type { Report, ReportSection } from './report';
 

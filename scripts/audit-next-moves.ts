@@ -14,7 +14,7 @@
  *      "Add Situation Core"). Adding a new label requires
  *      updating this audit explicitly.
  *
- *   3. NextMove[] consumers — the Ask workspace and the dashboard
+ *   3. NextMove[] consumers — the Ask workspace and the app shell
  *      home — must import getNextMoves; they should not render
  *      tool grids inline.
  *
@@ -71,7 +71,7 @@ if (src) {
 // tool grid logic.
 const CONSUMERS = [
   'src/components/ask/AskWorkspacePage.tsx',
-  'src/components/dashboard/ask-praxis-home.tsx',
+  'src/components/app/praxis-workspace-shell.tsx',
 ];
 for (const consumer of CONSUMERS) {
   const text = read(consumer);

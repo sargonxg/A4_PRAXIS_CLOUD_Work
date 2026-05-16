@@ -12,7 +12,7 @@ claims so engineers and future agents can safely continue implementation.
 
 The latest compact architecture-level truth ledger is
 `docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md`, with the actionable
-blocker queue in `docs/backlog/2026-05-06-from-self-audit.md`. Older detailed
+blocker queue in the current `TODO.md` and build ledger. Older detailed
 self-audit and reality-check reports were removed from the active tree during
 the 2026-05-08 repo-shape cleanup and remain recoverable from git history.
 
@@ -125,7 +125,7 @@ The architecture bible now describes the compact app routes:
 `/app/tools`. The current app still exposes a large Next.js API route surface under `src/app/api`.
 That is not ignored: `npm run audit:routes` currently counts 66 calibrated AI
 routes, and route collapse remains tracked in
-`docs/backlog/2026-05-06-master-charter-completion-todo.md`.
+the current `TODO.md`.
 
 ## Current Local Gate
 
@@ -172,6 +172,6 @@ npm run smoke:tasklet-app
 When code moves a target-state row to shipped:
 
 1. Update `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`.
-2. Update `docs/backlog/2026-05-06-master-charter-completion-todo.md`.
+2. Update `TODO.md` and the current build ledger.
 3. Update the relevant audit if the invariant can be checked statically.
 4. Record verification in `docs/audits/`.

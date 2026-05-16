@@ -8,9 +8,9 @@ const requiredFiles = [
   'docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md',
   'docs/architecture/MODEL_SELECTION.md',
   'docs/adr/README.md',
-  'docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md',
-  'docs/backlog/2026-05-06-from-self-audit.md',
-  'docs/backlog/2026-05-06-master-charter-completion-todo.md',
+  'docs/product/README.md',
+  'docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md',
+  'docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md',
   'ARCHITECTURE.md',
   'package.json',
   'README.md',
@@ -35,8 +35,9 @@ if (failures.length === 0) {
   const bible = body('docs/architecture/PRAXIS_ARCHITECTURE.md');
   const alignment = body('docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md');
   const adrReadme = body('docs/adr/README.md');
-  const selfAudit = body('docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md');
-  const selfAuditBacklog = body('docs/backlog/2026-05-06-from-self-audit.md');
+  const productIndex = body('docs/product/README.md');
+  const taskletPlan = body('docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md');
+  const buildLedger = body('docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md');
   const rootArchitecture = body('ARCHITECTURE.md');
   const startupDocs = ['README.md', 'AGENTS.md', 'CLAUDE.md', 'TODO.md'];
 
@@ -66,12 +67,16 @@ if (failures.length === 0) {
     if (!adrReadme.includes(marker)) failures.push(`ADR README missing marker: ${marker}`);
   }
 
-  for (const marker of ['PRAXIS Self Audit Against Architecture Bible', '3 S0', '15 S1', 'Proposed Plan For Giulio']) {
-    if (!selfAudit.includes(marker)) failures.push(`self-audit missing marker: ${marker}`);
+  for (const marker of ['PRAXIS Product Documentation Index', 'Tasklet-style', 'ContextCapsule']) {
+    if (!productIndex.includes(marker)) failures.push(`product index missing marker: ${marker}`);
   }
 
-  for (const marker of ['S0 / S1 Launch Blockers', 'Public demo contract', 'Persona CI', 'S2 Backlog']) {
-    if (!selfAuditBacklog.includes(marker)) failures.push(`self-audit backlog missing marker: ${marker}`);
+  for (const marker of ['Tasklet-style', 'MCP', 'multi-step reasoning']) {
+    if (!taskletPlan.includes(marker)) failures.push(`Tasklet plan missing marker: ${marker}`);
+  }
+
+  for (const marker of ['ContextCapsule', 'Cloud SQL', 'agent run ledger']) {
+    if (!buildLedger.includes(marker)) failures.push(`build ledger missing marker: ${marker}`);
   }
 
   for (const marker of ['PRAXIS_ARCHITECTURE.md', 'PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md', 'audit:architecture-reference', 'audit:architecture-chain']) {

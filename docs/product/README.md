@@ -126,12 +126,11 @@ Use older docs this way:
 
 - `docs/architecture/*`: architecture invariants, source-of-truth constraints,
   provider/security boundaries.
-- `docs/build/PRAXIS_v5_*`: prior build ledger and completed phase evidence.
 - `docs/_archive/*`: historical prompt packs and audits only.
 
 When a new wave changes the canonical structure, update this index,
 `PRAXIS_CANONICAL_APP_STRUCTURE.md`, `ARCHITECTURE.md`, `STATUS.md`,
 `TODO.md`, and `CHANGELOG.md` together.
 
-Do not delete old docs just because they are old. Archive or mark them
-subsumed only after checking references and current imports/links.
+Old docs that no longer describe the Tasklet-style ContextCapsule product
+should be deleted after references and audits are updated.

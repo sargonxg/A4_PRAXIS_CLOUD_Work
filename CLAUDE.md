@@ -8,13 +8,10 @@
 > **Current handoff:** Before continuing work, read `ARCHITECTURE.md`,
 > `docs/architecture/PRAXIS_ARCHITECTURE.md`,
 > `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`,
-> `docs/architecture/PRAXIS_VISION_v4_01_VISION.md`,
-> `docs/architecture/PRAXIS_VISION_v4_02_ARCHITECTURE.md`,
-> `docs/architecture/PRAXIS_VISION_v4_03_BUILD.md`,
-> `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`,
-> `docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md`, the assigned
-> v5 phase prompt in `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md`
-> or `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`, `TODO.md`,
+> `docs/product/README.md`,
+> `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`,
+> `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`,
+> `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`, `TODO.md`,
 > `docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md`, and the
 > `[Unreleased]` section in `CHANGELOG.md`. The current product direction is
 > the Tasklet-style ContextCapsule agent runtime coordinated through
@@ -37,23 +34,22 @@ on GCP Cloud Run.
 ## Agent Handoff
 
 Before changing code, future Claude Code / Codex sessions read these in
-order. Skipping items 4–8 will produce duplicate work.
+order. Skipping items 4-10 will produce duplicate work.
 
 1. `README.md`
 2. `CLAUDE.md` (this file)
 3. `AGENTS.md` — hard rules, validation gate, deploy procedure
 4. `ARCHITECTURE.md` — architecture entrypoint and canonical links
-5. `docs/architecture/PRAXIS_VISION_v4_01_VISION.md` — v5 MVP product vision and three-persona market frame
-6. `docs/architecture/PRAXIS_VISION_v4_02_ARCHITECTURE.md` — v5 MVP architecture direction
-7. `docs/architecture/PRAXIS_VISION_v4_03_BUILD.md` — v5 MVP phase plan
-8. `docs/architecture/PRAXIS_ARCHITECTURE.md` — architecture bible / invariants
-9. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` — shipped vs gated state
-10. `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md` — phase status, owners, validation, commit checkpoints
-11. `docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md` — v5 operating guide
-12. Assigned v5 phase prompt in `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md` or `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`
-13. `STATUS.md`
-14. `TODO.md`
-15. `CHANGELOG.md` — `[Unreleased]` section only
+5. `docs/product/README.md` — current product documentation index
+6. `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md` — current app/runtime structure
+7. `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md` — Tasklet-style runtime plan
+8. `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md` — active build ledger
+9. `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` — active implementation prompts
+10. `docs/architecture/PRAXIS_ARCHITECTURE.md` — architecture bible / invariants
+11. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` — shipped vs gated state
+12. `STATUS.md`
+13. `TODO.md`
+14. `CHANGELOG.md` — `[Unreleased]` section only
 
 ### Operational references (consult when relevant, not every session)
 

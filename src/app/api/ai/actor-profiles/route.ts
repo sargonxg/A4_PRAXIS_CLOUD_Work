@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-context';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
-import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { isServerDemoMode } from '@/lib/compat/sample-mode';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';

@@ -3,7 +3,7 @@ import { Output } from 'ai';
 import { z } from 'zod';
 import { callProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
-import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { isServerDemoMode } from '@/lib/compat/sample-mode';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';

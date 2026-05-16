@@ -3,7 +3,7 @@
 /**
  * CoreSwapDrawer — slide-over picker for managing one active capsule slot.
  *
- * Brief: Claude Code CC-1 (docs/build/PRAXIS_GENKIT_SPRINT_CLAUDE_CODE_BRIEF_2026-05-14.md).
+ * Implements the current ContextCapsule core swap surface.
  *
  * Opens when a CapsuleSlot is clicked or a draggable from CoreLibraryRail
  * is dropped onto a slot. Fetches /api/cores/library?kind={slot.kind}

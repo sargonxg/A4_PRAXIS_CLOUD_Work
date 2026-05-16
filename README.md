@@ -238,7 +238,6 @@ https://praxis.tacitus.me
 - `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` - copy-paste prompts for Codex and Claude Code sessions
 - `docs/architecture/PRAXIS_ARCHITECTURE.md` - canonical architecture bible
 - `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` - shipped vs target-state notes
-- `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md` - current execution ledger
 - `docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md` - current cleanup ledger
 - `STATUS.md`, `TODO.md`, `CHANGELOG.md` - current repo status and backlog
 
@@ -273,7 +272,8 @@ If you are a Codex or Claude session continuing this repo, read these first:
 2. `AGENTS.md`
 3. `ARCHITECTURE.md`
 4. `docs/architecture/PRAXIS_ARCHITECTURE.md`
-5. `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`
+5. `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`
+6. `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`
 
 The short version: do not widen the product surface by accident. Keep the
 app centered on core context, serious analysis, and writing.

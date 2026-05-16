@@ -4,9 +4,6 @@ Last updated: 2026-05-15.
 
 ## Canonical references
 
-- [`docs/architecture/PRAXIS_VISION_v4_01_VISION.md`](./docs/architecture/PRAXIS_VISION_v4_01_VISION.md) — v5 MVP product vision and three-persona market frame.
-- [`docs/architecture/PRAXIS_VISION_v4_02_ARCHITECTURE.md`](./docs/architecture/PRAXIS_VISION_v4_02_ARCHITECTURE.md) — v5 MVP architecture direction: dual ontology layer, owner scope, model/provider boundaries, and two-phase commit posture.
-- [`docs/architecture/PRAXIS_VISION_v4_03_BUILD.md`](./docs/architecture/PRAXIS_VISION_v4_03_BUILD.md) — v5 MVP phase plan and build governance.
 - [`docs/architecture/PRAXIS_ARCHITECTURE.md`](./docs/architecture/PRAXIS_ARCHITECTURE.md) — architecture bible / invariant source.
 - [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md) — shipped, partial, gated, and drift state.
 - [`docs/architecture/PRAXIS_DIALECTICA_KNOWLEDGE_LAYER_ALIGNMENT.md`](./docs/architecture/PRAXIS_DIALECTICA_KNOWLEDGE_LAYER_ALIGNMENT.md) — future product boundary: PRAXIS as the user-facing policy workbench, DIALECTICA as the ingestion/knowledge layer, with KAIROS and AGON feeding structured evidence upstream.
@@ -20,16 +17,10 @@ Last updated: 2026-05-15.
 - [`docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`](./docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md) — active implementation ledger and queue for the public-to-app, capsule workbench, run ledger, dispatch, and agent waves.
 - [`docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`](./docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md) — copy-paste Codex and Claude Code prompts for parallel implementation sessions.
 
-## Active MVP Build (v5)
-
-- [`docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`](./docs/build/PRAXIS_v5_EXECUTION_LEDGER.md) — phase queue, validation, commit, and blocker ledger.
-- [`docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md`](./docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md) — agent operating guide.
-- [`docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md`](./docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md) and [`docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`](./docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md) — executable phase prompts.
-
 ## Historical / Subsumed Directions
 
-Historical v7 and May 8 design-led slice plans were removed during the Tasklet
-cleanup pass. Use the product docs above and
+Historical v4/v5/v7 and May 8 design-led slice plans were removed during the
+Tasklet cleanup pass. Use the product docs above and
 [`docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md`](./docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md)
 for the current runtime-first cleanup ledger.
 
@@ -112,5 +103,4 @@ reauthentication.
 - [`AGENTS.md`](./AGENTS.md): AI-agent startup order.
 - [`docs/architecture/MODEL_SELECTION.md`](./docs/architecture/MODEL_SELECTION.md): model matrix and Gemini Enterprise / Vertex AI posture.
 - [`docs/architecture/CAPACITY_PLAN.md`](./docs/architecture/CAPACITY_PLAN.md): Pack 14 capacity plan scaffold.
-- [`docs/backlog/2026-05-06-master-charter-completion-todo.md`](./docs/backlog/2026-05-06-master-charter-completion-todo.md): live remaining-work ledger.
 - [`docs/audits/2026-05-06-MASTER_CHARTER_STATUS.md`](./docs/audits/2026-05-06-MASTER_CHARTER_STATUS.md): current master-charter status.

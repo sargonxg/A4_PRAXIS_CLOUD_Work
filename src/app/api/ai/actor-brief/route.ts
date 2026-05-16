@@ -1,7 +1,7 @@
 import { streamText } from 'ai';
 import { getProModel } from '@/lib/ai/providers';
 import { buildToolContext } from '@/lib/ai/situation-context';
-import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
+import { isServerDemoMode, formatAsStreamResponse } from '@/lib/compat/sample-mode';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import type { Situation } from '@/types/situation';

@@ -2,7 +2,7 @@
 
 Work ontologies describe the analyst mandate and output environment. They sit
 beside domain ontologies rather than replacing them. The architectural source is
-`docs/architecture/PRAXIS_VISION_v4_02_ARCHITECTURE.md`, section 3.2.
+`docs/architecture/PRAXIS_ARCHITECTURE.md`.
 
 MVP work ontologies:
 

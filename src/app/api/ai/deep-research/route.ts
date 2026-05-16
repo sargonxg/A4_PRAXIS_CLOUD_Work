@@ -6,7 +6,7 @@ import {
   encodeDeepResearchEvent,
   streamResearchEngineEnvelope,
 } from '@/lib/ai/deep-research-envelope';
-import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { isServerDemoMode } from '@/lib/compat/sample-mode';
 import type { ResearchDepth, ResearchMode } from '@/lib/ai/research-engine';
 import { z } from 'zod';
 

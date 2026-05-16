@@ -8,14 +8,9 @@ Last updated: 2026-05-16.
   `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`.
 - Current prompt pack:
   `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`.
-- v5 MVP control file: `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md`.
-- v5 operating guide: `docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md`.
-- Backend phase prompts: `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md`.
-- Frontend/ship prompts: `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`.
 
-The v5 files remain historical/build evidence unless an active task explicitly
-references them. New Tasklet-style ContextCapsule runtime work should start
-from the active ledger above.
+Historical v4/v5 pointer stubs and May 6 backlog files were removed during the
+Tasklet cleanup. New work starts from the active ledger above.
 
 ## Immediate Next Steps
 
@@ -169,7 +164,7 @@ from the active ledger above.
 11. Track persona smoke CI until the required 10 consecutive green runs are real, not projected; current streak is 3/10.
 12. Decide whether to leave Cognee disabled-first or deploy the separate `praxis-cognee` service.
 13. Review the 2026-05-13 GCP/Firebase cleanup candidates before any mutating cloud cleanup: retired provider secrets, Artifact Registry retention, and the two unclear projects `plasma-talon-lt3cf` / `google-mpf-mc7f341560lx`.
-14. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
+14. Run live export/download checks for briefing artifacts in the next improvement round.
 15. Add production-browser coverage for the authenticated command palette once a stable production test user/session path is approved; local signed-session smoke now covers the simplified five-surface flow.
 16. After the current capsule/core composer lands, use `docs/superpowers/specs/2026-05-15-next-20-simplification-ai-context-writing-search.md` as the next improvement queue for simplification, stronger AI, context creation/combination, drafting, writing, and search.
 17. Run the next evidence-based cleanup pass against `retired user-owned routes`, user-owned-only

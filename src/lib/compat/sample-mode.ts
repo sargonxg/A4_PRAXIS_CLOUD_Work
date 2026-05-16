@@ -76,8 +76,8 @@ export function hashInput(input: object): string {
 }
 
 /**
- * Retrieves a cached response for a given route and input hash.
- * Returns undefined if no cached response is available.
+ * Retrieves a canned response for a given route and input hash.
+ * Retired sample sessions always return undefined.
  */
 export function getCachedResponse(routeKey: string, inputHash: string): string | undefined {
   void routeKey;
@@ -86,8 +86,7 @@ export function getCachedResponse(routeKey: string, inputHash: string): string |
 }
 
 /**
- * Formats a cached response as a Vercel AI SDK text-stream response.
- * This makes the cached response indistinguishable from a live streamed response.
+ * Formats text as a Vercel AI SDK text-stream response.
  */
 export function formatAsStreamResponse(text: string): Response {
   // Vercel AI SDK text-stream format: each text chunk is prefixed with "0:"

@@ -430,12 +430,9 @@ Current cleanup checkpoint:
 
 ## 2026-05-13 — v5 MVP Queue Status
 
-The v5 queue in `docs/build/PRAXIS_v5_ANTIGRAVITY_QUEUE_PROMPTS.md` is the
-active tracker. Queues `00` through `15` are complete and pushed. Queue `16`
-Phase 9 is in progress with graph polish, live database review, persona smoke
-CI/checkpoint work, production deploy evidence, and Queue `18` final QA
-completed. Queue `17` is complete for this session and live on
-`praxis.tacitus.me`.
+The older v5 queue and pointer stubs were retired during the Tasklet cleanup.
+The active tracker is now
+`docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`.
 
 Current local cleanup pass:
 
@@ -615,11 +612,10 @@ ledger as the active MVP build queue.
 
 Phase 0 repo notes:
 
-- The referenced standalone v4 vision files were absent at phase start; repo-local
-  canonical files were created under `docs/architecture/PRAXIS_VISION_v4_*`
-  from the authoritative v5 build pack.
-- The existing ADR directory already had unrelated `0037`, `0038`, and `0040`
-  ADRs; Phase 0 preserves them and adds the requested v5 ADR filenames.
+- The old standalone v4/v5 vision files were removed during the Tasklet cleanup;
+  current product/runtime direction lives under `docs/product/`.
+- Historical duplicate v5 ADRs were removed during the Tasklet cleanup; current
+  architectural decisions are listed in `docs/adr/README.md`.
 - The eight v5 audit stubs are intentionally red and are wired only into
   `audit:v5-readiness`, not `audit:gate`.
 - `audit:gate` currently fails in existing `audit:pack22-verification` because
@@ -655,7 +651,7 @@ core) plus v7 STATUS.
   - Workbench root JS gzipped: current built workbench initial client JS is `514.2 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
   - Tools chapter density: live user-owned DOM count is 54 interactive controls after opening the closed Recipe library.
   - Prompt-health: thin synthetic case `72/red`, rich user-owned user-owned `94/yellow`, prompt block delta `+2179` bytes for rich.
-- Next-session priorities: deploy D0/Z1/Z2/Z3 telemetry and confirm production Cloud Logging emits `praxis.telemetry.*`; run browser E2E for briefing/boardroom downloads, user-owned copy-to-workspace, and Deep Research Agent fallback stream shape; then wire D1 BigQuery sink/dashboard; decide C2 Option A deploy vs Option B rename; run B0 KG preflight from a VPC-connected shell; deploy or provision `praxis-cognee` before C0; GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
+- Next-session priorities: deploy telemetry and confirm production Cloud Logging emits `praxis.telemetry.*`; run browser E2E for briefing downloads, user-owned copy-to-workspace, and Deep Research Agent fallback stream shape; then wire BigQuery sink/dashboard; run KG preflight from a VPC-connected shell; deploy or provision `praxis-cognee`; runtime document ingest parity and production app smoke remain carried follow-ups.
 - Blockers requiring GC: none for the low-risk code changes here; production deployment/commit approval remains separate.
 
 ---
@@ -706,7 +702,7 @@ core) plus v7 STATUS.
 | V2_D1_KPI_PIPELINE | partial | BigQuery views/queries, deploy helper, alert definitions, KPI/dashboard docs, and `audit:bq-views` added; live sink/dashboard verification waits for production D0 events. |
 | V2_ITERATE_LOOP | done | Preserved `ITERATE_LOOP.md` as a V2 control prompt, registered it in `audit:codex-prompts`, and kept the recovery playbook available for future audit/test failures. |
 | V2_STATUS_TEMPLATE | done | Preserved `STATUS_TEMPLATE.md` as a V2 control prompt, registered it in `audit:codex-prompts`, and reconciled its required operational-step structure with this richer status ledger. |
-| V2_Z1_EXPORT_E2E | partial | Briefing and boardroom export structure, telemetry hooks, client progress, prompt preservation, and `audit:export-coverage` are built; live browser download and Cloud Logging telemetry confirmation remain deployment gates. |
+| V2_Z1_EXPORT_E2E | partial | Briefing export structure, telemetry hooks, client progress, prompt preservation, and `audit:export-coverage` are built; live browser download and Cloud Logging telemetry confirmation remain deployment gates. |
 | V2_Z2_user-owned_TRANSITION | partial | Public user-owned copy CTA, authenticated `/api/situations/copy-from-user-owned`, canonical graph seed, workspace banner, prompt preservation, and `audit:user-owned-claim` are built; authenticated production copy smoke remains a deployment gate. |
 | V2_Z3_DEEP_RESEARCH_CONSOLIDATE | partial | `/api/ai/deep-search-agent` is canonical, `/api/ai/deep-research` is soft-deprecated with the same SSE envelope, active consumers point to the canonical route, tool docs regenerated, and `audit:deep-research-canonical` is in gate; D1 p50/p95/cost/failure metrics remain unavailable locally. |
 | COMPREHENSIVE_AUDIT | done | Read-only audit saved at `docs/audits/2026-05-08-CODEBASE_AUDIT/`; generated 44+ evidence artifacts plus the source prompt, mapped deletion/consolidation/refactor candidates, and intentionally executed no source deletions per the prompt's hard rule. |

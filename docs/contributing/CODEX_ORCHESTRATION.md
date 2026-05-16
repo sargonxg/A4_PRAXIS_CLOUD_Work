@@ -17,7 +17,7 @@ Codex work on PRAXIS follows the same production loop as the master charter: rea
 
 - Confirm repo path and remote before repo-level work.
 - Preserve prompt packs in `docs/codex-prompts/`.
-- Update `docs/backlog/2026-05-06-master-charter-completion-todo.md` when a gap changes state.
+- Update `TODO.md`, `STATUS.md`, and the current build ledger when a gap changes state.
 - Run the smallest relevant audit first, then broader gates.
 - Keep owner-gated items explicit. Terraform apply, canary promotion, production load tests, and launch signature are not simulated.
 

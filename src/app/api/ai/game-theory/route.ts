@@ -10,7 +10,7 @@ import { handleRouteError } from '@/lib/api/standard-error';
 import { situationContextSchema } from '@/lib/api/schemas';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import type { Situation } from '@/types/situation';
-import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { isServerDemoMode } from '@/lib/compat/sample-mode';
 
 const DEMO_RESPONSE = {
   actors: [{ id: 'a1', name: 'Government', strategies: ['Negotiate', 'Escalate'], dominantStrategy: 'Negotiate' }, { id: 'a2', name: 'Armed Group', strategies: ['Cooperate', 'Defect'], dominantStrategy: null }],

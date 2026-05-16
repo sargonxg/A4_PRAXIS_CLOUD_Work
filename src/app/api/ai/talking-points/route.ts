@@ -6,7 +6,7 @@ import { writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
-import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { isServerDemoMode } from '@/lib/compat/sample-mode';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import {

@@ -6,7 +6,7 @@ import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder
 import { executeWebResearch } from '@/lib/ai/web-research';
 import { z } from 'zod';
 import type { Situation } from '@/types/situation';
-import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { isServerDemoMode } from '@/lib/compat/sample-mode';
 
 export const maxDuration = 60;
 

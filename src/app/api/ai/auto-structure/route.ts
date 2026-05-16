@@ -1,6 +1,6 @@
 import { streamText, stepCountIs } from 'ai';
 import { getModel } from '@/lib/ai/providers';
-import { isServerDemoMode } from '@/lib/demo/demo-mode';
+import { isServerDemoMode } from '@/lib/compat/sample-mode';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { tacitusTools } from '@/lib/ai/tools';

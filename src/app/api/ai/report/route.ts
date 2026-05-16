@@ -7,7 +7,7 @@ import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { handleRouteError } from '@/lib/api/standard-error';
 import type { Situation } from '@/types/situation';
-import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
+import { isServerDemoMode, formatAsStreamResponse } from '@/lib/compat/sample-mode';
 
 export const maxDuration = 60;
 

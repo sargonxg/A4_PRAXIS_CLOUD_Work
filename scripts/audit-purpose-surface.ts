@@ -31,12 +31,12 @@ if (!contexts.includes('ContextBuilderRoom')) failures.push('Contexts page must 
 const toolsPage = read('src/app/app/tools/page.tsx');
 if (!toolsPage.includes('ContextBuilderRoom')) failures.push('Tools page must reuse the unified ContextBuilderRoom');
 
-const draft = read('src/components/writer/PraxisWriter.tsx');
+const memoDesk = read('src/components/memo/memo-desk.tsx');
 for (const marker of ['Redaction aware', 'Manifest embedded', 'DOCX/PDF/Markdown']) {
-  if (draft.includes(marker)) failures.push(`Draft still exposes decorative badge ${marker}`);
+  if (memoDesk.includes(marker)) failures.push(`Memo Studio still exposes decorative badge ${marker}`);
 }
-for (const marker of ['PraxisWriter', 'CitationSidebar', 'useWriterAutosave', "onExport={(format) => void exportDocument(format)}"]) {
-  if (!draft.includes(marker)) failures.push(`PraxisWriter missing canonical writing marker ${marker}`);
+for (const marker of ['data-testid="memo-desk"', 'Saved from Memo Studio with active context capsule.', 'Write for Memo Studio as an editable document']) {
+  if (!memoDesk.includes(marker)) failures.push(`Memo Studio missing canonical writing marker ${marker}`);
 }
 
 const debugPanel = read('src/components/app/debug-panel.tsx');

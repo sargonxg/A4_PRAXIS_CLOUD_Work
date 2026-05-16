@@ -5,8 +5,8 @@
 PRAXIS is now being shipped as a Tasklet-style ContextCapsule agent runtime, not
 as the older multi-surface workbench with a visible Agentic Boardroom/persona
 product. This audit records the aggressive cleanup pass that removes generated
-bulk and stale frontend surfaces while preserving backend contracts that are
-still imported by active ADK/Agent Engine code.
+bulk, stale frontend surfaces, and backend contracts that no longer belong to
+the Tasklet-style ContextCapsule runtime.
 
 ## Repo Size Snapshot
 
@@ -86,16 +86,74 @@ Generated local bloat removed before source cleanup:
 
 ## Redirect And Surface Changes
 
-- Legacy `/app/boardroom`, `/app/brainstorming-table`, `/app/advisory`,
-  `/app/concordia`, `/app/scenarios`, `/app/game-theory`,
+- Legacy `/app/brainstorming-table`, `/app/advisory`, `/app/concordia`,
+  `/app/scenarios`, `/app/game-theory`,
   `/app/mediation-design`, and `/app/negotiation-prep` aliases now redirect to
   `/app/tools` instead of the removed workbench Boardroom tab.
+- Legacy `/app/boardroom` compatibility redirects were removed; that surface is
+  now fully retired instead of silently preserved.
 - Other legacy workbench aliases now redirect to current canonical app routes
   such as `/app/dashboard`, `/app/contexts`, `/app/library`, `/app/assistant`,
   `/app/canvas`, and `/app/write` instead of `/app/workbench?tab=...`.
 - The visible product-surface registry no longer lists `boardroom` as a default
   surface.
 - User Core now links to core preferences instead of removed persona settings.
+
+## Wave 4 Removed From Source
+
+| Path | Reason |
+|---|---|
+| `backend/agents/analyst_persona/` | retired persona subagent for removed Boardroom product |
+| `backend/agents/moderator/` | retired Boardroom orchestration subagent |
+| `backend/types/boardroom.py` | schema used only by removed persona/Boardroom stack |
+| `backend/routers/custom_personas.py` | custom-persona prep route not registered in FastAPI and tied to removed surface |
+| `backend/services/custom_personas/` | custom-persona validation/prompt/sandbox helpers for removed surface |
+| `backend/services/persona_corpus/` | persona-corpus retrieval plan for removed custom-persona stack |
+| `backend/services/workspace_orchestrator/subgraphs/boardroom.py` | Boardroom chapter helper after chapter endpoints were removed |
+| `backend/tests/test_boardroom_types.py` | tests for removed Boardroom schema/runners |
+| `backend/tests/test_custom_personas.py` | tests for removed custom-persona route/service |
+| `backend/tests/test_persona_corpus_retrieval.py` | tests for removed persona-corpus service |
+| `backend/.pytest_cache` and backend `__pycache__/` folders | generated Python cache output |
+| `docs/tools/UX_AUDIT_2026-04-26.md` | stale old-tool UX audit superseded by current runtime audits |
+| `docs/tools/CORE_TOOL_AUDIT_2026-04-27.md` | stale old-tool audit superseded by current runtime audits |
+| `docs/tools/brainstorming-table.md` | stale planned expert-deliberation tool spec |
+
+## Wave 4 Contract Changes
+
+- Backend agent registry now exposes only the current durable flows:
+  `document_extraction`, `deep_research`, `symbolic_firewall`,
+  `red_team_analyst`, and `gdelt_monitor`.
+- Backend chapter router no longer exposes `/boardroom` or briefing CRUD/export
+  endpoints.
+- Next backend proxy allowlist no longer forwards `chapters/boardroom`.
+- Boardroom-specific telemetry and open-question resolver enum values were
+  removed.
+- Advisor constants now describe routed policy lenses, not a visible Boardroom.
+
+## Wave 5 Removed From Source
+
+| Path | Reason |
+|---|---|
+| `docs/build/ANTIGRAVITY_V5_HANDOFF.md` | old v5 handoff pointer stub |
+| `docs/build/PRAXIS_GENKIT_SPRINT_*_2026-05-14.md` | superseded May 14 sprint prompt stubs |
+| `docs/build/PRAXIS_MVP_PACKS_ABCD_COMPLETION_LEDGER.md` | superseded v5/MVP pointer stub |
+| `docs/build/PRAXIS_v5_*.md` | retired v5 phase prompt and ledger stubs |
+| `docs/backlog/2026-05-06-*.md` | retired May 6 backlog files replaced by current ledger/TODO |
+| `docs/architecture/PRAXIS_VISION_v4_*.md` | retired v4/v5 vision files replaced by current product docs |
+| `docs/adr/0037-user-models-as-first-class-versioned-artifacts.md` | duplicate v5 ADR no longer part of current direction |
+| `docs/adr/0038-two-context-product-model-on-dual-ontology-layer.md` | duplicate v5 ADR no longer part of current direction |
+| `docs/adr/0039-seven-logical-graphs-one-user-facing-graph.md` | duplicate v5 ADR no longer part of current direction |
+| `docs/adr/0040-twelve-named-llm-graph-interaction-patterns.md` | duplicate v5 ADR no longer part of current direction |
+| `skills/subagents/analyst_persona/` | local skill for retired Boardroom persona subagent |
+| `skills/subagents/moderator/` | local skill for retired Boardroom moderator subagent |
+
+## Wave 5 Reference Changes
+
+- Startup docs now point to `docs/product/` and the current Tasklet build ledger
+  instead of v4/v5 handoff docs.
+- Architecture/reference audits now verify current Tasklet/product docs rather
+  than deleted May 6 backlog files or v5 pointer stubs.
+- `docs/adr/README.md` no longer lists the retired duplicate v5 ADRs.
 
 ## Preserved For Now
 
@@ -104,21 +162,18 @@ contracts and should be removed only in a backend migration:
 
 | Path | Why preserved |
 |---|---|
-| `backend/types/boardroom.py` | imported by `backend/agents/analyst_persona` and `backend/agents/moderator` |
-| `backend/routers/chapters.py` Boardroom chapter endpoints | still part of backend chapter proxy contract |
-| `backend/routers/custom_personas.py` and `backend/services/custom_personas/` | backend custom-persona route/service stack still imports shared schemas |
-| `backend/services/workspace_orchestrator/subgraphs/boardroom.py` | backend chapter orchestration helper |
-| Boardroom/persona ADRs and architecture history | keep until backend removal ADR lands |
+| Large calibrated AI route catalogue | still covered by `node scripts/audit-ai-routes.mjs`; collapse only with registry/tool-contract migration |
+| Historical migrations with `briefings` tables | database history should not be rewritten in cleanup passes |
+| Legacy `/app/workbench` compatibility redirect | preserves inbound links while routing to `/app/contexts` |
 
 ## Next Aggressive Cleanup Queue
 
-1. Remove or replace backend Boardroom/custom-persona modules once ADK
-   `analyst_persona` and `moderator` are refactored into the new
-   agent-runtime/tool-registry loop.
-2. Replace `/app/workbench`-based marketplace staging links with current
+1. Replace `/app/workbench`-based marketplace staging links with current
    Ask PRAXIS, Canvas, Memo Studio, and Advanced routes.
-3. Collapse old v5/phase/boardroom architecture history into the current
+2. Collapse old v5/phase architecture history into the current
    Tasklet runtime plan and mark the old docs historical.
+3. Collapse specialist AI routes into the canonical agent runtime after the
+   tool registry is reduced to the max-10 visible tools.
 4. Run Knip after the shared tree settles; current dirty deletes already show
    several demo/the selected situation constants removed by parallel cleanup.
 
@@ -131,19 +186,22 @@ contracts and should be removed only in a backend migration:
    hidden behind role-gated settings.
 3. Remove the old Pack/v5/v7 planning docs after the Tasklet runtime plan,
    canonical app structure, and build ledger contain the current source of truth.
-4. Retire backend Boardroom/persona modules after ADK `analyst_persona` and
-   `moderator` are mapped to generic runtime tool calls or removed from the
-   Agent Engine registry.
+4. Keep backend agents generic: document extraction, deep research, symbolic
+   firewall, red-team review, monitoring, and the Tasklet reasoning loop.
 5. Keep only tests that validate the shipped spine: Ask PRAXIS, Context/User
    Core, Library, Memo Studio, Canvas, Advanced, agent-run SSE, and runtime
    approval gates.
 
 ## Validation Notes
 
-- `npx vitest run tests/unit/lib/agent-runtime` passed before this cleanup pass
-  after the Tasklet runtime implementation.
-- `npm run audit:tasklet-policy-workbench` passed before this cleanup pass.
-- `npm run audit:tasklet-mvp-foundation` passed before this cleanup pass.
-- Full `npx tsc --noEmit` remains red from pre-existing unrelated TypeScript
-  failures in old demo/tool files; do not treat those as introduced by this
-  cleanup without a focused diff.
+- `npx tsc --noEmit` passed after the route/backend cleanup.
+- `npx vitest run tests/unit/lib/constants/advisors.test.ts tests/unit/lib/constants/dialectica-backbone.test.ts tests/unit/lib/navigation/product-surfaces.test.ts`
+  passed: 3 files, 8 tests.
+- `npm run audit:repo-shape` passed.
+- `npm run audit:route-consolidation` passed.
+- `npm run audit:tasklet-policy-workbench` passed.
+- `node scripts/audit-ai-routes.mjs` passed: 69 AI route files, 69 calibrated,
+  10 exempt.
+- Direct backend registry smoke passed with the reduced registry. Full pytest
+  via `PYTHONPATH=backend` is blocked by the existing `backend/types` package
+  shadowing Python stdlib `types`.

@@ -18,7 +18,6 @@ const requiredFiles = [
   'backend/migrations/sql/cognee_rls_apply.sql',
   'src/app/api/memory/[...slug]/route.ts',
   'src/app/api/health/features/route.ts',
-  'src/hooks/use-feature-flags.ts',
   'src/lib/features/client.ts',
   'src/lib/knowledge/memory-layer.ts',
   'src/types/env.d.ts',
@@ -29,7 +28,6 @@ const requiredFiles = [
   'infrastructure/cognee-kuzu-snapshot.sh',
   'infrastructure/scheduler/cognee-kuzu-snapshot.yaml',
   'monitoring/dashboards/cognee.json',
-  'scripts/audit-cognee-operations.ts',
 ];
 
 for (const file of requiredFiles) {

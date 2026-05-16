@@ -1,6 +1,4 @@
-import { AGENTIC_WORKFLOWS, type AgenticWorkflowArea } from '@/lib/agentic-workflows/registry';
-
-export type ProductExperienceAreaId = AgenticWorkflowArea;
+export type ProductExperienceAreaId = 'home' | 'ask' | 'situation' | 'sources' | 'outputs' | 'advanced';
 
 export interface ProductExperienceArea {
   id: ProductExperienceAreaId;
@@ -140,5 +138,5 @@ export function mapRouteToExperienceArea(route: string): ProductExperienceAreaId
 }
 
 export function getWorkflowCountForArea(area: ProductExperienceAreaId): number {
-  return AGENTIC_WORKFLOWS.filter((workflow) => workflow.primaryArea === area).length;
+  return PRODUCT_EXPERIENCE_ROUTES.filter((route) => route.area === area).length;
 }

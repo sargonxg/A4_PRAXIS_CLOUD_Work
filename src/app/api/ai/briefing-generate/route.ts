@@ -6,7 +6,7 @@ import { buildToolContext, buildWebGroundedContext } from '@/lib/ai/situation-co
 import { buildGraphContext, writeToolDataServer } from '@/lib/ai/context-builder-server';
 import { withCalibration } from '@/lib/api/with-calibration';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
-import { isServerDemoMode, formatAsStreamResponse } from '@/lib/demo/demo-mode';
+import { isServerDemoMode, formatAsStreamResponse } from '@/lib/compat/sample-mode';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
 import { searchWeb, formatResultsAsContext } from '@/lib/ai/grounded-research';
