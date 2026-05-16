@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
 import { Menu, X } from "lucide-react";
+import { PraxisMark } from "@/components/brand/praxis-mark";
 
 const navLinks = [
   { label: "Learn", href: "/learn" },
@@ -61,6 +62,11 @@ export default function LandingLayout({
             className="group flex items-center gap-3"
             aria-label="PRAXIS home"
           >
+            <PraxisMark
+              size={26}
+              className="text-[color:var(--color-gold-600)] transition-transform duration-300 group-hover:rotate-12"
+              title="PRAXIS"
+            />
             <span className="font-serif text-[22px] font-semibold tracking-wide text-[color:var(--color-diplomatic-blue)] sm:text-2xl">
               PRAXIS
             </span>
@@ -173,7 +179,8 @@ export default function LandingLayout({
       {/* Footer — institutional, single line, rose-gold hairline */}
       <footer className="relative z-10 mt-24 border-t border-[color:var(--color-rose-gold)]/25 bg-[var(--color-cream-100)]/60 backdrop-blur-sm">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-6 sm:flex-row lg:px-8">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <PraxisMark size={18} className="text-[color:var(--color-gold-600)]" />
             <span className="font-serif text-base font-semibold tracking-wide text-[color:var(--color-diplomatic-blue)]">
               PRAXIS
             </span>

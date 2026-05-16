@@ -547,6 +547,124 @@ body {
   .rise-in { animation: none; opacity: 1; transform: none; }
 }
 
+/* =========================================================
+   PRAXIS thinking glyph — ◳ rune with halo + gentle rotation
+   ========================================================= */
+
+@keyframes praxis-rune-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes praxis-rune-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50%      { transform: scale(1.08); opacity: 1; }
+}
+@keyframes praxis-halo-pulse {
+  0%   { transform: scale(0.92); opacity: 0.0; }
+  35%  { opacity: 0.7; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.praxis-thinking-glyph {
+  color: var(--color-gold-600);
+}
+.praxis-thinking-rune {
+  display: inline-block;
+  animation:
+    praxis-rune-spin 6s linear infinite,
+    praxis-rune-breathe 2.6s ease-in-out infinite;
+  transform-origin: center;
+}
+.praxis-thinking-halo {
+  position: absolute;
+  inset: -30%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    rgba(232, 185, 49, 0.35) 0%,
+    rgba(232, 185, 49, 0) 60%
+  );
+  animation: praxis-halo-pulse 2.4s ease-out infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .praxis-thinking-rune,
+  .praxis-thinking-halo {
+    animation: none !important;
+  }
+  .praxis-thinking-halo { opacity: 0.45; transform: scale(1.1); }
+}
+
+/* =========================================================
+   Rounded tab system — for AskBar mode tabs + segmented controls
+   ========================================================= */
+.praxis-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-ink) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-rose-gold) 25%, transparent);
+}
+.praxis-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--color-ink) 60%, transparent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 180ms ease;
+  white-space: nowrap;
+}
+.praxis-tab:hover {
+  color: var(--color-ink);
+  background: color-mix(in srgb, white 60%, transparent);
+}
+.praxis-tab[aria-selected="true"],
+.praxis-tab.is-active {
+  color: var(--color-ink);
+  background: white;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 8px 20px -12px rgba(27, 58, 92, 0.25);
+}
+
+/* =========================================================
+   Refined capsule chip — softer than the dot strip,
+   carries the ◳ glyph as a brand anchor
+   ========================================================= */
+.praxis-capsule-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, white 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-rose-gold) 30%, transparent);
+  font-size: 12.5px;
+  color: color-mix(in srgb, var(--color-ink) 78%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: all 180ms ease;
+}
+.praxis-capsule-chip:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 14px 28px -16px rgba(27, 58, 92, 0.3);
+}
+.praxis-capsule-chip .rune {
+  color: var(--color-gold-600);
+  font-family: var(--font-serif);
+}
+
 /* Filament trace — for rim-light reveal on hero card */
 @keyframes filament-trace {
   0% { stroke-dashoffset: var(--dash-len, 1000); opacity: 0; }

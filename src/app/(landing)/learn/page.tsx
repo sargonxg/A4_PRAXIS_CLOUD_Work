@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CoreCapsuleHero } from "@/components/landing/core-capsule-hero";
+import { PraxisMark } from "@/components/brand/praxis-mark";
+import { PraxisThinking } from "@/components/brand/praxis-thinking";
 import { CapsuleAnatomyHoneycomb } from "@/components/landing/capsule-anatomy-honeycomb";
 import { OutputCatalogCarousel } from "@/components/landing/output-catalog-carousel";
 import { ComposeCapsulesShowcase } from "@/components/landing/compose-capsules-demo";
@@ -33,7 +35,8 @@ export default function LearnPage() {
       {/* Hero band */}
       <section className="relative z-10 mx-auto grid w-full max-w-[1280px] grid-cols-1 items-center gap-12 px-5 pb-16 pt-12 sm:pt-20 lg:grid-cols-[5fr_7fr] lg:px-8 lg:pb-24">
         <div>
-          <span className="text-overline text-[color:var(--color-gold-700)]">
+          <span className="inline-flex items-center gap-2 text-overline text-[color:var(--color-gold-700)]">
+            <PraxisMark size={14} className="text-[color:var(--color-gold-600)]" />
             How PRAXIS works
           </span>
           <h1 className="mt-3 font-serif text-[clamp(36px,5.4vw,64px)] font-medium leading-[1.04] tracking-tight text-[color:var(--color-ink)]">
@@ -64,9 +67,13 @@ export default function LearnPage() {
           </div>
 
           {/* Specimen line — fine type, museum-label feel */}
-          <p className="mt-10 font-mono text-[10.5px] uppercase tracking-[0.24em] text-[color:var(--color-ink)]/45">
-            12 cores · 14 outputs · 20 connectors · 1 capsule
-          </p>
+          <div className="mt-10 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <p className="font-mono text-[10.5px] uppercase tracking-[0.24em] text-[color:var(--color-ink)]/45">
+              12 cores · 14 outputs · 20 connectors · 1 capsule
+            </p>
+            <span aria-hidden className="hidden h-3 w-px bg-[color:var(--color-rose-gold)]/40 sm:inline-block" />
+            <PraxisThinking compact size={14} className="text-[color:var(--color-ink)]/55" />
+          </div>
         </div>
 
         <div className="relative">
