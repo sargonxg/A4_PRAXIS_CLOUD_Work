@@ -26,6 +26,19 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.16.13',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'Public Learn and TACITUS links restored',
+    summary: 'The one-app model now keeps Learn, Pricing, Release notes, and the external TACITUS link working as the only public support surfaces.',
+    category: 'product',
+    items: [
+      'Restored /learn as a concise public explanation of the ContextCapsule workflow.',
+      'Changed /tacitus into an external redirect to tacitus.me.',
+      'Kept /app and legacy app URLs consolidated into the single signed-in cockpit.',
+    ],
+  },
+  {
     buildNumber: '2026.05.16.12',
     version: '6.4.1',
     date: '2026-05-16',
@@ -77,7 +90,7 @@ export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
     items: [
       'The signed-in cockpit now loads real user capsules, supports capsule search and category filters, and shows stored ids, versions, sources, documents, tools, and outputs.',
       'Capsule cards can select, ask, improve, categorize, refresh, upload into, or archive capsules without leaving /app.',
-      'Public navigation is reduced to Home, Capsules, Pricing, and Release notes; /learn and /tacitus redirect back to Home.',
+      'Public navigation is reduced to Home, Capsules, Pricing, Release notes, Learn, and the external TACITUS link.',
       'The app sidebar and command palette now point users back to the capsule manager instead of separate Memo, Canvas, Library, Ask, or Advanced pages.',
     ],
   },

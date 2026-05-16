@@ -131,11 +131,8 @@ export function proxy(request: NextRequest) {
   if (pathname === '/app/pricing') {
     return redirectWithSearch(request, nonce, '/pricing');
   }
-  if (pathname === '/learn' || pathname.startsWith('/learn/')) {
-    return redirectWithSearch(request, nonce, '/');
-  }
   if (pathname === '/tacitus' || pathname.startsWith('/tacitus/')) {
-    return redirectWithSearch(request, nonce, '/');
+    return addSecurityHeaders(NextResponse.redirect('https://tacitus.me'), nonce);
   }
 
   if (pathname === '/contexts') {
@@ -312,8 +309,6 @@ export const config = {
     '/methods/:path*',
     '/ontologies/:path*',
     '/users/:path*',
-    '/learn',
-    '/learn/:path*',
     '/tacitus',
     '/tacitus/:path*',
     '/onboarding/:path*',

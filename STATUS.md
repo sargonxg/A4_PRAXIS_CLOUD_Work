@@ -1,5 +1,16 @@
 # PRAXIS — STATUS
 
+## 2026-05-16 — Public Learn And TACITUS Links
+
+Current product checkpoint:
+
+- Central app metadata is now build `2026.05.16.13`.
+- `/learn` is restored as a concise public ContextCapsule explainer, not a
+  second app surface.
+- `/tacitus` now redirects externally to `https://tacitus.me`.
+- `/app` and legacy app URLs remain consolidated into the single signed-in
+  cockpit.
+
 ## 2026-05-16 — Temporal, Causal, And Friction Capsules
 
 Current product checkpoint:
@@ -50,9 +61,8 @@ Current product checkpoint:
 - Capsule cards show stored ids through the detail panel plus version,
   source/document/tool/output counts, tags, scope, and trust label when
   available.
-- Public navigation is narrowed to Home, Capsules, Pricing, and Release notes.
-  `/learn` and `/tacitus` now redirect home, leaving Pricing and Release notes
-  as the only standalone public product pages beside Home/Login.
+- Public navigation is narrowed around Home, Learn, Pricing, Release notes, and
+  the external TACITUS link.
 
 ## 2026-05-16 — One-Page App Consolidation
 

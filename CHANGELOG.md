@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- fix(public): keep Learn and TACITUS public links working.
+  Build 2026.05.16.13 restores `/learn` as a concise ContextCapsule explainer
+  and routes `/tacitus` to `https://tacitus.me` while keeping `/app`
+  consolidated into the signed-in cockpit.
 - feat(capsules): add temporal, causal, and human-friction capsule structures.
   Build 2026.05.16.12 adds Temporal and causal map, Human friction map, and
   Decision clock capsule templates so complex policy work can track sequence,
@@ -19,9 +23,8 @@
   Build 2026.05.16.09 turns `/app` into a real capsule-library manager:
   signed-in users can search, categorize, select, improve, upload into,
   refresh, and archive stored ContextCapsules while seeing ids, versions,
-  source/document counts, tools, and output counts. Public navigation is now
-  Home, Capsules, Pricing, and Release notes; `/learn` and `/tacitus` redirect
-  home instead of remaining standalone pages.
+  source/document counts, tools, and output counts. Public navigation stays
+  narrow around Home, Learn, Pricing, Release notes, and TACITUS.
 - feat(app): consolidate PRAXIS into one authenticated cockpit.
   Build 2026.05.16.08 makes `/app` the single signed-in product surface,
   redirects legacy dashboard/assistant/context/tools/settings URLs into that
