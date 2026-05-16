@@ -54,6 +54,7 @@ codex` comment at the top of the file and commit a one-line note here.
 | `src/components/landing/compose-capsules-demo.tsx` | Compose showcase. |
 | `src/components/landing/persona-cards.tsx` | Persona section. |
 | `src/components/landing/connector-strip.tsx` | Connector trust strip. |
+| `src/app/(landing)/learn/page.tsx` | Identity showcase page (`/learn`) — hosts the capsule hero + 5 marketing sections. |
 | `src/components/cockpit/capsule-strip.tsx` | 12-dot strip for cockpit header. Slot via prop. |
 | `src/lib/constants/capsule-cores.ts` | 12 canonical cores (key, label, description, color). Shared; extend by appending only. |
 | `scripts/audit-design.mjs` | Visual identity audit. |
@@ -67,7 +68,7 @@ codex` comment at the top of the file and commit a one-line note here.
 
 | Path | Rule |
 |---|---|
-| `src/components/landing/phase8-wow-landing.tsx` | Codex owns the cockpit row inside this file; Claude owns the section list rendered below it. Additive only. |
+| `src/components/landing/phase8-wow-landing.tsx` | **Codex-only — public `/` is cockpit-only.** Marketing sections moved to `src/app/(landing)/learn/page.tsx` (Claude-owned). Do not re-add marketing content to phase8 without an explicit `[landing-merge]` commit. |
 | `package.json` `scripts` | Both may add scripts. Do not delete an owner's script. |
 | `CHANGELOG.md` `[Unreleased]` | Both append bullets. |
 | `docs/contributing/CODEX_ORCHESTRATION.md` | Codex authored; Claude appends a section. |
@@ -124,3 +125,6 @@ npm run audit:design:strict    # errors on raw hex literals too
 - 2026-05-16 — Claude rebuilt CoreCapsuleHero, added carousel + compose
   showcase, then anatomy + personas + connector strip + cockpit strip + this
   ownership map.
+- 2026-05-16 — Codex consolidated `phase8-wow-landing.tsx` to cockpit-only.
+  Claude moved the 5 marketing sections + CoreCapsuleHero to `/learn`
+  (`src/app/(landing)/learn/page.tsx`). Navbar's "Learn" link now resolves.
