@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CoreCapsuleHero } from "@/components/landing/core-capsule-hero";
-import { PraxisMark } from "@/components/brand/praxis-mark";
+import { PraxisGlyphChip } from "@/components/brand/praxis-mark";
 import { PraxisThinking } from "@/components/brand/praxis-thinking";
 import { CapsuleAnatomyHoneycomb } from "@/components/landing/capsule-anatomy-honeycomb";
 import { OutputCatalogCarousel } from "@/components/landing/output-catalog-carousel";
@@ -35,9 +35,11 @@ export default function LearnPage() {
       {/* Hero band */}
       <section className="relative z-10 mx-auto grid w-full max-w-[1280px] grid-cols-1 items-center gap-12 px-5 pb-16 pt-12 sm:pt-20 lg:grid-cols-[5fr_7fr] lg:px-8 lg:pb-24">
         <div>
-          <span className="inline-flex items-center gap-2 text-overline text-[color:var(--color-gold-700)]">
-            <PraxisMark size={14} className="text-[color:var(--color-gold-600)]" />
-            How PRAXIS works
+          <span className="group inline-flex items-center gap-2.5">
+            <PraxisGlyphChip size={28} />
+            <span className="text-overline text-[color:var(--color-gold-700)]">
+              How PRAXIS works
+            </span>
           </span>
           <h1 className="mt-3 font-serif text-[clamp(36px,5.4vw,64px)] font-medium leading-[1.04] tracking-tight text-[color:var(--color-ink)]">
             One capsule.{" "}
