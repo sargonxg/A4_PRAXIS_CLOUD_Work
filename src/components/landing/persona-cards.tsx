@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PraxisGlyphChip } from "@/components/brand/praxis-mark";
 
 /**
  * Persona cards — three audiences with example output capsules.
@@ -67,9 +68,12 @@ export function PersonaCards() {
       aria-labelledby="personas-heading"
       className="relative mx-auto w-full max-w-[1280px] px-5 lg:px-8"
     >
-      <div className="mb-10 max-w-[60ch]">
-        <span className="text-overline text-[color:var(--color-gold-700)]">
-          For whom
+      <div className="group mb-10 max-w-[60ch]">
+        <span className="inline-flex items-center gap-2.5">
+          <PraxisGlyphChip size={24} />
+          <span className="text-overline text-[color:var(--color-gold-700)]">
+            For whom
+          </span>
         </span>
         <h2
           id="personas-heading"

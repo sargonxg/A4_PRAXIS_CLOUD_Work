@@ -223,7 +223,7 @@ export function TaskletPraxisWorkbench({
           currentPath: '/app/dashboard',
           forceRun: true,
           activeContextStack: {
-            stackId: currentCapsuleId,
+            stackId: 'default',
             capsuleId: currentCapsuleId,
             situationId: situationCapsule?.id ?? currentCapsuleId,
             sourceIds: [],
@@ -331,6 +331,7 @@ export function TaskletPraxisWorkbench({
 
   function tryTool(agent: PolicyAgentDefinition) {
     setSelectedAgentId(agent.id);
+    attachToolCapsule(agent.id, agent.label);
     const nextPrompt = `${prompt.trim() || 'Help me with this policy question.'}\n\nUse ${agent.label} if it helps.`;
     void sendToPraxis(agent, nextPrompt);
   }
@@ -346,10 +347,10 @@ export function TaskletPraxisWorkbench({
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         action: 'create',
-        label: label ?? `ContextCapsule Lite: ${selectedUserType.label}`,
+        label: label ?? 'ContextCapsule Lite',
         scope: 'user',
         coreRefs: {
-          toolCoreIds: selectedToolIds,
+          toolCoreIds: seed?.role === 'tool' && seed.toolId ? uniqueIds([...selectedToolIds, seed.toolId]) : selectedToolIds,
           objectiveCoreIds: [selectedAgent.id],
           productCoreIds: [activeTab],
         },
@@ -364,6 +365,9 @@ export function TaskletPraxisWorkbench({
       id: payload.capsule.capsuleId as string,
       label: payload.capsule.label as string,
       code: seed?.code ?? 'LITE',
+      role: seed?.role ?? 'situation',
+      toolId: seed?.toolId,
+      templateId: seed?.templateId,
     };
     setCurrentCapsuleId(created.id);
     setActiveCapsules((current) => [created, ...current.filter((item) => item.id !== created.id).slice(0, 4)]);
@@ -391,13 +395,14 @@ export function TaskletPraxisWorkbench({
       id: payload.capsule.capsuleId as string,
       label: payload.capsule.label as string,
       code: 'COMBINED',
+      role: 'situation' as const,
     };
     setCurrentCapsuleId(combined.id);
     setActiveCapsules([combined, ...capsulesToCombine.slice(0, 4)]);
     setStatus(`${combined.label} is now the active ContextCapsule Lite.`);
   }
 
-  async function addCapsule(id: string) {
+  async function addCapsule(id: string, role: CapsuleRole = capsulePickerRole) {
     const capsule = findCapsuleTemplate(id);
     if (!capsule) return;
     if (!isAuthenticated) {
@@ -405,14 +410,52 @@ export function TaskletPraxisWorkbench({
       return;
     }
     try {
-      const created = await createCapsuleLite(`ContextCapsule Lite: ${capsule.label}`, { code: capsule.code });
+      const created = await createCapsuleLite(`ContextCapsule Lite: ${capsule.label}`, {
+        code: capsule.code,
+        role,
+        templateId: capsule.id,
+      });
       if (!created) return;
       const next = [...activeCapsules, created].filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index).slice(0, 5);
       setActiveCapsules(next);
       if (next.length >= 2) await combineCapsuleLiteStack(next);
+      setCapsulePickerOpen(false);
     } catch (err) {
       setStatus(err instanceof Error ? `Capsule failed: ${err.message}` : 'Capsule failed.');
     }
+  }
+
+  function attachToolCapsule(toolId: string, label: string) {
+    const capsule: ActiveCapsuleChip = {
+      id: `tool:${toolId}`,
+      label,
+      code: 'TOOL',
+      role: 'tool',
+      toolId,
+    };
+    setActiveCapsules((current) => [capsule, ...current.filter((item) => item.id !== capsule.id)].slice(0, 6));
+  }
+
+  function removeCapsule(id: string) {
+    setActiveCapsules((current) => current.length <= 1 ? current : current.filter((capsule) => capsule.id !== id));
+    if (currentCapsuleId === id) {
+      const next = activeCapsules.find((capsule) => capsule.id !== id);
+      if (next) setCurrentCapsuleId(next.id);
+    }
+  }
+
+  function reorderCapsules(targetId: string) {
+    if (!draggingCapsuleId || draggingCapsuleId === targetId) return;
+    setActiveCapsules((current) => {
+      const from = current.findIndex((capsule) => capsule.id === draggingCapsuleId);
+      const to = current.findIndex((capsule) => capsule.id === targetId);
+      if (from < 0 || to < 0) return current;
+      const next = [...current];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+    setDraggingCapsuleId(null);
   }
 
   function startVoiceInput() {
@@ -521,6 +564,58 @@ export function TaskletPraxisWorkbench({
             </div>
 
             <div className="mt-6 w-full max-w-5xl rounded-lg border border-black/10 bg-white shadow-sm shadow-black/5" data-testid="praxis-main-composer">
+              <div className="border-b border-black/10 px-5 py-3" data-testid="capsule-context-bar">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Capsule context</span>
+                  {activeCapsules.map((capsule, index) => (
+                    <span
+                      key={capsule.id}
+                      draggable
+                      onDragStart={() => setDraggingCapsuleId(capsule.id)}
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={() => reorderCapsules(capsule.id)}
+                      className={cn(
+                        'inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold',
+                        capsuleRoleStyles[capsule.role],
+                      )}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCurrentCapsuleId(capsule.id);
+                          setCapsulePickerOpen(true);
+                          setCapsulePickerRole(capsule.role);
+                        }}
+                        className="inline-flex min-w-0 items-center gap-2"
+                      >
+                        <span>{index === 0 ? 'Active' : capsuleRoles.find((role) => role.id === capsule.role)?.label}</span>
+                        <span className="max-w-44 truncate text-slate-800">{capsule.label}</span>
+                      </button>
+                      {activeCapsules.length > 1 ? (
+                        <button
+                          type="button"
+                          aria-label={`Remove ${capsule.label}`}
+                          onClick={() => removeCapsule(capsule.id)}
+                          className="rounded p-0.5 text-slate-500 hover:bg-black/10"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      ) : null}
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCapsulePickerOpen(true);
+                      setCapsulePickerRole('situation');
+                    }}
+                    className="inline-flex items-center gap-2 rounded-md border border-dashed border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Capsule
+                  </button>
+                </div>
+              </div>
               <textarea
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
@@ -552,16 +647,6 @@ export function TaskletPraxisWorkbench({
                 </div>
                 <div className="flex items-center gap-2">
                   <select
-                    value={selectedUserTypeId}
-                    onChange={(event) => setSelectedUserTypeId(event.target.value)}
-                    aria-label="User type"
-                    className="hidden max-w-48 rounded-md border border-slate-200 bg-white px-2 py-2 text-sm font-semibold text-slate-700 outline-none md:block"
-                  >
-                    {COCKPIT_USER_ARCHETYPES.slice(0, 8).map((type) => (
-                      <option key={type.id} value={type.id}>{type.label}</option>
-                    ))}
-                  </select>
-                  <select
                     value={selectedModel}
                     onChange={(event) => setSelectedModel(event.target.value as ModelPreferenceValue)}
                     aria-label="Model"
@@ -590,6 +675,54 @@ export function TaskletPraxisWorkbench({
                 <span>{status}</span>
               </div>
             </div>
+
+            {capsulePickerOpen ? (
+              <section className="mt-3 w-full max-w-5xl rounded-lg border border-black/10 bg-white p-4 shadow-lg shadow-black/10" data-testid="capsule-context-picker">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap gap-2">
+                    {capsuleRoles.map((role) => (
+                      <button
+                        key={role.id}
+                        type="button"
+                        onClick={() => setCapsulePickerRole(role.id)}
+                        className={cn(
+                          'rounded-md border px-3 py-1.5 text-xs font-semibold',
+                          capsulePickerRole === role.id ? capsuleRoleStyles[role.id] : 'border-slate-200 text-slate-600 hover:bg-slate-50',
+                        )}
+                      >
+                        {role.label}
+                      </button>
+                    ))}
+                  </div>
+                  <button type="button" aria-label="Close capsule picker" onClick={() => setCapsulePickerOpen(false)} className="rounded-md p-2 text-slate-500 hover:bg-slate-100">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <label className="mt-4 flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2">
+                  <Search className="h-4 w-4 text-slate-400" />
+                  <input
+                    value={capsulePickerQuery}
+                    onChange={(event) => setCapsulePickerQuery(event.target.value)}
+                    placeholder="Search capsules"
+                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
+                  />
+                </label>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  {filteredCapsules.map((capsule) => (
+                    <button
+                      key={capsule.id}
+                      type="button"
+                      onClick={() => addCapsule(capsule.id, capsulePickerRole)}
+                      className="rounded-md border border-slate-200 p-3 text-left hover:border-slate-300 hover:bg-slate-50"
+                    >
+                      <span className="text-xs font-semibold text-slate-400">{capsule.code}</span>
+                      <span className="mt-1 block text-sm font-semibold text-slate-800">{capsule.label}</span>
+                      <span className="mt-2 line-clamp-2 block text-xs leading-5 text-slate-500">{capsule.prompt}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
             {chatMessages.length ? (
               <section className="mt-5 w-full max-w-5xl space-y-3 rounded-lg border border-black/10 bg-white/80 p-4" data-testid="praxis-chat-thread">
@@ -653,7 +786,7 @@ export function TaskletPraxisWorkbench({
                         <button
                           type="button"
                           onClick={() => {
-                            setSelectedToolIds((current) => current.includes(tool.id) ? current : [...current, tool.id]);
+                            attachToolCapsule(tool.id, tool.label);
                             const nextPrompt = `${prompt.trim() || 'Help me with this policy question.'}\n\nUse ${tool.label} if it helps.`;
                             void sendToPraxis(selectedAgent, nextPrompt);
                           }}
@@ -673,6 +806,10 @@ export function TaskletPraxisWorkbench({
       </div>
     </section>
   );
+}
+
+function uniqueIds(values: string[]): string[] {
+  return Array.from(new Set(values.filter(Boolean)));
 }
 
 function SidebarButton({ icon: Icon, label, onClick, active = false }: { icon: typeof Search; label: string; onClick: () => void; active?: boolean }) {

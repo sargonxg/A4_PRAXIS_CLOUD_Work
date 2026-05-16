@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, Sparkles } from "lucide-react";
+import { PraxisGlyphChip } from "@/components/brand/praxis-mark";
 
 /**
  * Compose showcase — visual proof that two capsules concatenate into a third.
@@ -53,9 +54,12 @@ export function ComposeCapsulesShowcase() {
       aria-labelledby="compose-heading"
       className="relative mx-auto w-full max-w-[1280px] px-5 lg:px-8"
     >
-      <div className="mb-10 max-w-[60ch]">
-        <span className="text-overline text-[color:var(--color-gold-700)]">
-          Compose
+      <div className="group mb-10 max-w-[60ch]">
+        <span className="inline-flex items-center gap-2.5">
+          <PraxisGlyphChip size={24} />
+          <span className="text-overline text-[color:var(--color-gold-700)]">
+            Compose
+          </span>
         </span>
         <h2
           id="compose-heading"

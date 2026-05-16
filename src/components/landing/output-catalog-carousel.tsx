@@ -2,6 +2,7 @@
 
 import { useMemo, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { PraxisGlyphChip } from "@/components/brand/praxis-mark";
 import { OUTPUT_CAPSULE_TEMPLATES } from "@/lib/output-capsules/templates";
 import type { OutputCapsuleFamily, OutputCapsuleTemplate } from "@/lib/output-capsules/types";
 
@@ -109,9 +110,12 @@ export function OutputCatalogCarousel() {
       className="relative mx-auto w-full max-w-[1280px] px-5 lg:px-8"
     >
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <span className="text-overline text-[color:var(--color-gold-700)]">
-            Output catalog
+        <div className="group">
+          <span className="inline-flex items-center gap-2.5">
+            <PraxisGlyphChip size={24} />
+            <span className="text-overline text-[color:var(--color-gold-700)]">
+              Output catalog
+            </span>
           </span>
           <h2
             id="output-catalog-heading"

@@ -1,5 +1,7 @@
 "use client";
 
+import { PraxisGlyphChip } from "@/components/brand/praxis-mark";
+
 /**
  * Connector strip — the trust signal layer.
  *
@@ -67,9 +69,12 @@ export function ConnectorStrip() {
       className="relative mx-auto w-full max-w-[1280px] px-5 lg:px-8"
     >
       <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div className="max-w-[60ch]">
-          <span className="text-overline text-[color:var(--color-gold-700)]">
-            Source layer
+        <div className="group max-w-[60ch]">
+          <span className="inline-flex items-center gap-2.5">
+            <PraxisGlyphChip size={24} />
+            <span className="text-overline text-[color:var(--color-gold-700)]">
+              Source layer
+            </span>
           </span>
           <h2
             id="connector-heading"

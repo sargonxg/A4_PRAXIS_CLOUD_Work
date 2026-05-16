@@ -57,8 +57,12 @@ expectExcludes('src/components/landing/phase8-wow-landing.tsx', [
 ]);
 expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'data-testid="praxis-main-composer"',
+  'data-testid="capsule-context-bar"',
+  'data-testid="capsule-context-picker"',
   'data-testid="tasklet-tool-cards"',
   'data-testid="tasklet-capsule-cards"',
+  "'/api/ai/ask-praxis'",
+  'forceRun: true',
   'What can PRAXIS do for you?',
   'Describe a task or responsibility',
   'AccountProfileButton',
@@ -76,6 +80,10 @@ expectExcludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'Recommended agent',
   'Canonical user types',
   'Suggested tools',
+  'COCKPIT_USER_ARCHETYPES',
+  'selectedUserTypeId',
+  'aria-label="User type"',
+  "'/api/ai/chat'",
 ]);
 expectExcludes('src/components/landing/phase8-wow-landing.tsx', [
   'the selected situation',

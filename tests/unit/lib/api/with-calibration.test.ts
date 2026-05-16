@@ -68,6 +68,7 @@ vi.mock('@/lib/firebase/analyst-profile-admin', () => ({
 
 import { AI_REQUEST_LIMITS } from '@/lib/api/ai-request-limits';
 import { withCalibration } from '@/lib/api/with-calibration';
+import { withContextAware } from '@/lib/api/with-context-aware';
 import { buildCalibratedContext } from '@/lib/context/profile-context';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 
@@ -100,6 +101,55 @@ function completeProfile() {
       skipCount: 0,
       createdAt: null,
       deletedAt: null,
+    },
+  };
+}
+
+function thinContextAwareSnapshot() {
+  return {
+    headers: new Headers(),
+    snapshot: {
+      user: {
+        uid: 'u1',
+        workspaceId: 'personal-u1',
+        identity: { displayName: 'A', role: 'analyst' },
+        preferences: {},
+        capturedAt: {},
+      },
+      workspace: {
+        workspaceId: 'personal-u1',
+        ownerUid: 'u1',
+        label: 'Personal workspace',
+        guidelines: [],
+        methodologyDocs: [],
+      },
+      case: {
+        caseId: 's1',
+        ownerUid: 'u1',
+        ontologyId: 'conflict',
+        frame: { name: '', summary: '' },
+        sourceCount: 0,
+        documentCount: 0,
+        graphNodeCount: 0,
+        graphEdgeCount: 0,
+        contextHealth: {
+          score: 18,
+          threshold: 60,
+          ready: false,
+          lowestDimension: { id: 'sources', label: 'Sources', score: 0, detail: 'No sources.' },
+        },
+      },
+      conversation: {
+        sessionId: 'test-session',
+        startedAt: '2026-05-08T00:00:00.000Z',
+        workbenchTab: 'tools',
+        recentActions: [],
+      },
+      composite: {
+        health: 18,
+        weakestLayer: 'case',
+        advisories: ['Add a situation frame and sources.'],
+      },
     },
   };
 }
@@ -252,11 +302,52 @@ describe('withCalibration', () => {
   });
 
   it('bypasses onboarding gate for sample users', async () => {
-    (getAnalystProfile as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
     const handler = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true })));
     const route = withCalibration('risk-monitor', 'ai_risk_assessment')(handler);
     const req = new Request('http://x', { method: 'POST', body: JSON.stringify({}) });
     const res = await (route as unknown as (r: Request, u: { uid: string; email: string; name: string; isDemo: boolean }) => Promise<Response>)(req, { uid: 'demo-user-001', email: '', name: '', isDemo: true });
+    expect(res.status).toBe(200);
+    expect(handler).toHaveBeenCalled();
+  });
+
+  it('blocks thin context by default before invoking the handler', async () => {
+    (withContextAware as ReturnType<typeof vi.fn>).mockResolvedValueOnce(thinContextAwareSnapshot());
+    const handler = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true })));
+    const route = withCalibration('risk-monitor', 'ai_risk_assessment')(handler);
+    const req = new Request('http://x', {
+      method: 'POST',
+      body: JSON.stringify({ situationId: 's1', messages: [{ role: 'user', content: 'Assess this.' }] }),
+    });
+
+    const res = await (route as unknown as (r: Request, u: { uid: string; email: string; name: string; isDemo: boolean }) => Promise<Response>)(
+      req,
+      { uid: 'u1', email: '', name: '', isDemo: false },
+    );
+    const body = await res.json() as { error: string; reason: string };
+
+    expect(res.status).toBe(422);
+    expect(body.error).toBe('context_too_thin');
+    expect(body.reason).toBe('context-too-thin');
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('allows thin context when a streaming Ask route opts out of the hard block', async () => {
+    (withContextAware as ReturnType<typeof vi.fn>).mockResolvedValueOnce(thinContextAwareSnapshot());
+    const handler = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true })));
+    const route = withCalibration('chat', 'ai_chat', {
+      variant: 'streaming',
+      blockOnThinContext: false,
+    })(handler);
+    const req = new Request('http://x', {
+      method: 'POST',
+      body: JSON.stringify({ situationId: 's1', messages: [{ role: 'user', content: 'Assess this.' }] }),
+    });
+
+    const res = await (route as unknown as (r: Request, u: { uid: string; email: string; name: string; isDemo: boolean }) => Promise<Response>)(
+      req,
+      { uid: 'u1', email: '', name: '', isDemo: false },
+    );
+
     expect(res.status).toBe(200);
     expect(handler).toHaveBeenCalled();
   });

@@ -44,4 +44,34 @@ export function PraxisMark({
   );
 }
 
+/**
+ * GlyphChip — the rounded-2xl gradient tile that holds the ◳ glyph.
+ * Used in the navbar, footer, section headings, and anywhere the brand
+ * anchor should read as a deliberate object on the page.
+ */
+export function PraxisGlyphChip({
+  size = 28,
+  className,
+  rotateOnHover = true,
+}: {
+  size?: number;
+  className?: string;
+  rotateOnHover?: boolean;
+}) {
+  const inner = Math.round(size * 0.6);
+  return (
+    <span
+      className={cn(
+        "relative inline-flex items-center justify-center rounded-2xl border border-[color:var(--color-rose-gold)]/40 bg-gradient-to-br from-[color:var(--color-gold-500)]/20 to-[color:var(--color-gold-500)]/5 transition-transform duration-500",
+        rotateOnHover && "group-hover:rotate-[8deg]",
+        className,
+      )}
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      <PraxisMark size={inner} className="text-[color:var(--color-gold-700)]" />
+    </span>
+  );
+}
+
 export default PraxisMark;
