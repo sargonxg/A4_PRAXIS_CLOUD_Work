@@ -15,6 +15,7 @@ import { autoStructureDocument } from '@/lib/documents/auto-structure';
 import { emitTelemetrySafe } from '@/lib/telemetry/emit';
 import { localKnowledgeAdapter } from '@/lib/knowledge/context-engine';
 import { attachCapsuleRefs, getOrMigrateDefaultCapsule } from '@/lib/context/capsule-service';
+import { mirrorDocumentIngestionSql } from '@/lib/agent-runtime/document-postgres';
 
 /**
  * Canonical document ingestion endpoint.
@@ -129,6 +130,21 @@ export const POST = withAuth(async (request, user) => {
       } catch (metaErr) {
         console.warn('[documents/upload] Firestore mirror failed:', metaErr);
       }
+      await mirrorDocumentIngestionSql({
+        id: docId,
+        ownerUid: user.uid,
+        situationId: body.situationId,
+        title: body.title,
+        fileType: 'html',
+        sizeBytes: Buffer.byteLength(body.html, 'utf8'),
+        status: 'artifact-synced',
+        bucketUri: `gs://${bucketName}/${objectPath}`,
+        metadata: {
+          mode: 'json',
+          toolId: body.toolId || 'editor',
+          objectPath,
+        },
+      }).catch((sqlErr) => console.warn('[documents/upload] SQL artifact mirror failed:', sqlErr));
 
       await emitTelemetrySafe({
         eventName: 'document.upload-complete',
@@ -350,6 +366,29 @@ export const POST = withAuth(async (request, user) => {
       sourceIds: [sourceCoreId],
       documentIds: [stored.id],
     });
+    await mirrorDocumentIngestionSql({
+      id: stored.id,
+      ownerUid: user.uid,
+      situationId,
+      title: stored.title,
+      fileType,
+      sizeBytes: file.size,
+      status: stored.status,
+      bucketUri,
+      sourceCoreId,
+      sourceReceiptId: sourceReceipt.id,
+      ingestionRunId: ingestionRun.id,
+      ingestionStatus: ingestionRun.status,
+      chunkCount,
+      entityCount: structured.actors.length,
+      metadata: {
+        mode: 'multipart',
+        sourceType: structured.sourceType,
+        receiptConfidence,
+        capsuleId: capsule.capsuleId,
+        parser,
+      },
+    }).catch((sqlErr) => console.warn('[documents/upload] SQL document mirror failed:', sqlErr));
 
     await emitTelemetrySafe({
       eventName: 'document.upload-complete',

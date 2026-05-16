@@ -149,6 +149,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {children}
             </ToolErrorBoundary>
           </ErrorBoundary>
+          <FloatingPraxis hideLauncher />
           <AiErrorToast />
         </div>
       ) : (

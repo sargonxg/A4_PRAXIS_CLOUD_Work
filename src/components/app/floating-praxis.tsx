@@ -249,7 +249,7 @@ function getCurrentToolId(pathname: string | null): string | undefined {
  * Available on every /app/* and /demo/* page.
  * Does NOT show on the full assistant page (to avoid duplication).
  */
-export function FloatingPraxis() {
+export function FloatingPraxis({ hideLauncher = false }: { hideLauncher?: boolean } = {}) {
   const pathname = usePathname();
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const demoMode = useAppStore((s) => s.demoMode);
@@ -265,6 +265,7 @@ export function FloatingPraxis() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
+  const [pendingAutoSend, setPendingAutoSend] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const contextPills = useMemo(
@@ -373,8 +374,9 @@ export function FloatingPraxis() {
   // Listen for header "Ask PRAXIS" button and keyboard shortcut
   useEffect(() => {
     const openHandler = (event: Event) => {
-      const detail = (event as CustomEvent<{ prompt?: string }>).detail;
+      const detail = (event as CustomEvent<{ prompt?: string; autoSend?: boolean }>).detail;
       if (detail?.prompt) setInput(detail.prompt);
+      if (detail?.autoSend) setPendingAutoSend(true);
       setIsOpen(true);
     };
     const keyHandler = (e: KeyboardEvent) => {
@@ -552,6 +554,14 @@ export function FloatingPraxis() {
     sendWithText(input);
   }, [input, sendWithText]);
 
+  useEffect(() => {
+    if (!pendingAutoSend || !isOpen || isStreaming) return;
+    const text = input.trim();
+    if (!text) return;
+    setPendingAutoSend(false);
+    void sendWithText(text);
+  }, [input, isOpen, isStreaming, pendingAutoSend, sendWithText]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -580,7 +590,7 @@ export function FloatingPraxis() {
       {/* Floating Action Button — always visible bottom-right pill.
           On mobile sits above the bottom nav (bottom-24); on desktop bottom-6. */}
       <AnimatePresence>
-        {!isOpen && (
+        {!isOpen && !hideLauncher && (
           <motion.button
             initial={{ scale: 0.85, opacity: 0, y: 8 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}

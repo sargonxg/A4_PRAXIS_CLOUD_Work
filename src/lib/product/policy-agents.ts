@@ -70,7 +70,7 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     outputDestination: 'memo_studio',
     approvalLevel: 'confirm',
     readiness: 'live',
-    actionLabel: 'Run memo',
+    actionLabel: 'Discuss memo',
   },
   {
     id: 'daily-brief',
@@ -82,7 +82,7 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     outputDestination: 'library',
     approvalLevel: 'approval_required',
     readiness: 'planned',
-    actionLabel: 'Plan brief',
+    actionLabel: 'Discuss brief',
   },
   {
     id: 'conflict-monitor',
@@ -94,7 +94,7 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     outputDestination: 'canvas',
     approvalLevel: 'approval_required',
     readiness: 'planned',
-    actionLabel: 'Set monitor',
+    actionLabel: 'Discuss monitor',
   },
   {
     id: 'sourceability-reviewer',
@@ -106,7 +106,7 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     outputDestination: 'memo_studio',
     approvalLevel: 'none',
     readiness: 'queued',
-    actionLabel: 'Review sources',
+    actionLabel: 'Discuss sources',
   },
   {
     id: 'red-team-analyst',
@@ -118,7 +118,7 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     outputDestination: 'memo_studio',
     approvalLevel: 'confirm',
     readiness: 'queued',
-    actionLabel: 'Red-team',
+    actionLabel: 'Discuss challenge',
   },
   {
     id: 'handover-builder',
@@ -130,7 +130,7 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     outputDestination: 'handover',
     approvalLevel: 'confirm',
     readiness: 'queued',
-    actionLabel: 'Build handover',
+    actionLabel: 'Discuss handover',
   },
 ];
 

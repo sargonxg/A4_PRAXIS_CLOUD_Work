@@ -8,6 +8,7 @@ import { useAppStore } from '@/stores/app-store';
 import { NotificationBell } from '@/components/shared/notifications';
 import { TrustPostureChip } from '@/components/app/trust-posture-chip';
 import { CapsuleStripHeader } from '@/components/app/capsule-strip-header';
+import { AccountProfileButton } from '@/components/app/account-profile-button';
 import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
 import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 
@@ -149,6 +150,7 @@ export function Header({
           <CapsuleStripHeader />
           <TrustPostureChip />
           <NotificationBell />
+          <AccountProfileButton compact={isMobile} />
         </div>
       </header>
   );

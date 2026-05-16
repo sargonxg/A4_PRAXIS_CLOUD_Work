@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   BookOpenText,
@@ -27,11 +27,10 @@ import {
   X,
 } from 'lucide-react';
 import {
-  destinationHref,
   PENDING_POLICY_AGENT_ID_KEY,
   PENDING_TASKLET_PROMPT_KEY,
-  policyAgentRunIntent,
   policyAgentLoginHref,
+  policyAgentRunIntent,
   PRAXIS_POLICY_AGENTS,
   type ContextCapsuleLauncherState,
   type HomeSurfaceMode,
@@ -68,9 +67,9 @@ interface ActiveCapsuleChip {
 }
 
 const defaultRecentRuns = [
-  { label: 'Middle East policy memo', detail: 'Research Memo Agent -> Memo Studio', status: 'draft' },
-  { label: 'Red Sea source check', detail: 'Sourceability Reviewer -> source receipt', status: 'review' },
-  { label: 'Sanctions handover', detail: 'Handover Builder -> capsule package', status: 'queued' },
+  { label: 'Middle East policy memo', detail: 'Ask PRAXIS -> Memo Studio', status: 'draft' },
+  { label: 'Red Sea source check', detail: 'Ask PRAXIS -> source receipt', status: 'review' },
+  { label: 'Sanctions handover', detail: 'Ask PRAXIS -> capsule package', status: 'queued' },
 ];
 
 export function TaskletPraxisWorkbench({
@@ -90,6 +89,7 @@ export function TaskletPraxisWorkbench({
   const [composerExpanded, setComposerExpanded] = useState(false);
   const [capsuleSearchOpen, setCapsuleSearchOpen] = useState(false);
   const [capsuleQuery, setCapsuleQuery] = useState('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>(['ask-praxis', 'sourceability', 'memo-drafter']);
   const [selectedArchetypeId, setSelectedArchetypeId] = useState(COCKPIT_USER_ARCHETYPES[0]?.id ?? 'user-1');
   const [activeCapsules, setActiveCapsules] = useState<ActiveCapsuleChip[]>([
@@ -99,7 +99,7 @@ export function TaskletPraxisWorkbench({
   const [textMenu, setTextMenu] = useState<{ x: number; y: number; text: string } | null>(null);
   const [runState, setRunState] = useState<{ status: 'idle' | 'running' | 'ready' | 'error'; message: string; href?: string }>({
     status: 'idle',
-    message: 'Ready to create a capsule run.',
+    message: 'Ready to discuss this capsule with PRAXIS.',
   });
 
   const visibleAgents = useMemo(() => {
@@ -173,6 +173,86 @@ export function TaskletPraxisWorkbench({
     setSelectedToolIds((current) => current.includes(id) ? current : [...current, id]);
   }
 
+  async function uploadDocument(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    if (surfaceMode === 'public') {
+      window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, prompt.trim());
+      window.location.href = policyAgentLoginHref(selectedAgent.id, prompt.trim());
+      return;
+    }
+    setRunState({ status: 'running', message: `Uploading ${file.name} into the active capsule...` });
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('situationId', capsuleId);
+      const documentResponse = await fetch('/api/documents/upload', { method: 'POST', body: form });
+      const documentPayload = await documentResponse.json().catch(() => ({}));
+      if (!documentResponse.ok) throw new Error(documentPayload?.error ?? 'document upload failed');
+
+      const libraryForm = new FormData();
+      libraryForm.append('file', file);
+      const documentId = typeof documentPayload?.documentId === 'string'
+        ? documentPayload.documentId
+        : typeof documentPayload?.document?.id === 'string'
+          ? documentPayload.document.id
+          : null;
+      if (documentId) libraryForm.append('documentId', documentId);
+      await fetch(`/api/backend/tabs/library/ingest?case_id=${encodeURIComponent(capsuleId)}`, {
+        method: 'POST',
+        body: libraryForm,
+      }).catch(() => null);
+
+      setPrompt((current) => `${current.trim()}\n\nUse uploaded document "${file.name}" as context. Check claims against its extracted chunks before drafting.`.trim());
+      setRunState({
+        status: 'ready',
+        message: `${file.name} uploaded, indexed, mirrored to SQL when configured, and attached to the active ContextCapsule.`,
+        href: '/app/contexts',
+      });
+    } catch (err) {
+      setRunState({
+        status: 'error',
+        message: err instanceof Error ? `Upload failed: ${err.message}` : 'Upload failed.',
+      });
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  function askWithPrompt(nextPrompt: string, options: { autoSend?: boolean } = {}) {
+    setPrompt(nextPrompt);
+    window.dispatchEvent(new CustomEvent('open-praxis-chat', { detail: { prompt: nextPrompt, autoSend: options.autoSend } }));
+  }
+
+  function startVoiceInput() {
+    type SpeechRecognitionConstructor = new () => {
+      lang: string;
+      interimResults: boolean;
+      onresult: ((event: { results?: ArrayLike<ArrayLike<{ transcript?: string }>> }) => void) | null;
+      onerror: (() => void) | null;
+      start: () => void;
+    };
+    const win = window as unknown as {
+      SpeechRecognition?: SpeechRecognitionConstructor;
+      webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    };
+    const SpeechRecognitionCtor = win.SpeechRecognition || win.webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) {
+      setRunState({ status: 'idle', message: 'Voice input is not supported in this browser. Type the request in the composer.' });
+      return;
+    }
+    const recognition = new SpeechRecognitionCtor();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.onresult = (event) => {
+      const text = event.results?.[0]?.[0]?.transcript;
+      if (text) setPrompt((current) => `${current.trim()} ${text}`.trim());
+    };
+    recognition.onerror = () => setRunState({ status: 'error', message: 'Voice input could not start. Check browser microphone permissions.' });
+    recognition.start();
+    setRunState({ status: 'running', message: 'Listening for voice input...' });
+  }
+
   function handleDrop(event: React.DragEvent<HTMLElement>) {
     event.preventDefault();
     const capsuleIdFromDrop = event.dataTransfer.getData('application/x-praxis-capsule');
@@ -207,8 +287,34 @@ export function TaskletPraxisWorkbench({
     setTextMenu(null);
   }
 
-  async function launchRun(agent: PolicyAgentDefinition = selectedAgent) {
-    const cleanPrompt = prompt.trim() || `Run ${agent.label} from ${activeCapsuleName}.`;
+  function buildAgentChatPrompt(agent: PolicyAgentDefinition, cleanPrompt: string): string {
+    const chatIntentMetadata = {
+      model: selectedRuntime.id,
+      selectedUserArchetype: selectedArchetype?.label ?? null,
+    };
+    return [
+      cleanPrompt,
+      '',
+      'Use the active ContextCapsule and behave like a standalone chat assistant first. Decide whether to answer directly, ask a clarifying question, search sources, inspect uploaded documents, draft a memo, or suggest a policy tool.',
+      '',
+      `Selected policy tool: ${agent.label}`,
+      `Tool intent: ${policyAgentRunIntent(agent.id).replaceAll('_', ' ')}`,
+      `Output target if useful: ${agent.outputDestination.replaceAll('_', ' ')}`,
+      `Active capsule: ${activeCapsuleName} (${capsuleId})`,
+      `Conversation thread: ${conversationThreadId}`,
+      'conversationPersistence: users/{uid}/capsules/{capsuleId}/askThreads/{threadId}',
+      'artifactPersistence: users/{uid}/situations/{situationId}/artifacts + users/{uid}/memos',
+      'capsuleManagementMode: text_documents_repository_tool_instructions',
+      `Selected tools: ${selectedToolIds.join(', ') || 'none'}`,
+      `User lens: ${chatIntentMetadata.selectedUserArchetype ?? 'Analyst'}`,
+      `Model preference: ${selectedRuntime.label} (${chatIntentMetadata.model})`,
+      '',
+      'Keep it conversational. Do not assume the user wants a memo unless the conversation asks for one. If a document or connector is needed, say exactly what is missing.',
+    ].join('\n');
+  }
+
+  function openAgentChat(agent: PolicyAgentDefinition = selectedAgent) {
+    const cleanPrompt = prompt.trim() || `Discuss ${agent.label} from ${activeCapsuleName}.`;
     if (surfaceMode === 'public') {
       window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, cleanPrompt);
       window.localStorage.setItem(PENDING_POLICY_AGENT_ID_KEY, agent.id);
@@ -216,57 +322,11 @@ export function TaskletPraxisWorkbench({
       return;
     }
 
-    setRunState({ status: 'running', message: `Creating ${agent.label} from ${activeCapsuleName}...` });
-    const response = await fetch('/api/agents/runs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        capsuleId,
-        agentSpecId: `policy-agent:${agent.id}`,
-        objective: cleanPrompt,
-        selectedCoreIds: {
-          toolCoreIds: [agent.id],
-          outputCoreIds: [agent.outputDestination],
-        },
-        metadata: {
-          policyAgentId: agent.id,
-          policyAgentLabel: agent.label,
-          runIntent: policyAgentRunIntent(agent.id),
-          outputDestination: agent.outputDestination,
-          model: selectedRuntime.id,
-          provider: selectedRuntime.provider,
-          activeCapsules,
-          selectedToolIds,
-          selectedUserArchetype: selectedArchetype?.label ?? null,
-          sourceActionModel: 'selected_text_context_menu',
-          approvalLevel: agent.approvalLevel,
-          taskletSurface: true,
-          conversationThreadId,
-          conversationPersistence: 'users/{uid}/capsules/{capsuleId}/askThreads/{threadId}',
-          artifactPersistence: 'users/{uid}/situations/{situationId}/artifacts + users/{uid}/memos',
-          capsuleManagementMode: 'text_documents_repository_tool_instructions',
-          capsuleInstructionMode: selectedArchetype?.detail ?? 'policy capsule context',
-          policySolutionMode: 'capsule_bound_policy_and_conflict_analysis',
-        },
-      }),
-    });
-    if (!response.ok) {
-      const body = await response.json().catch(() => null);
-      setRunState({
-        status: 'error',
-        message: body?.error === 'Agent run ledger is not configured'
-          ? 'Run ledger is not configured in this environment.'
-          : body?.error === 'Demo mode cannot create private agent runs'
-            ? 'Sign in to create private capsule runs.'
-          : `Could not create ${agent.label}.`,
-      });
-      return;
-    }
-    const body = await response.json() as { runId?: string; status?: string; outputDestination?: string; outputHref?: string };
+    const nextPrompt = buildAgentChatPrompt(agent, cleanPrompt);
+    window.dispatchEvent(new CustomEvent('open-praxis-chat', { detail: { prompt: nextPrompt, autoSend: true } }));
     setRunState({
       status: 'ready',
-      message: `${agent.label} ${body.status ?? 'queued'} as ${body.runId ?? 'new run'}.`,
-      href: body.outputHref ?? destinationHref(agent.outputDestination),
+      message: `${agent.label} opened in Ask PRAXIS. The discussion uses the active capsule, selected tools, and conversation memory.`,
     });
     try {
       window.localStorage.removeItem(PENDING_TASKLET_PROMPT_KEY);
@@ -306,7 +366,7 @@ export function TaskletPraxisWorkbench({
             </div>
           </div>
           <div className="mt-7">
-            <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">Recent runs <ChevronDown className="h-3 w-3" /></p>
+            <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">Recent discussions <ChevronDown className="h-3 w-3" /></p>
             <div className="mt-3 space-y-2">
               {recentRuns.map((run) => (
                 <div key={run.label} className="rounded-md px-1 py-1.5">
@@ -325,10 +385,12 @@ export function TaskletPraxisWorkbench({
             </div>
           </div>
           <div className="mt-auto flex items-center gap-3 border-t border-black/10 pt-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-300 text-xs font-semibold text-slate-700">GC</div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-300 text-xs font-semibold text-slate-700">
+              {userInitials(user?.name || user?.email)}
+            </div>
             <div>
-              <p className="text-sm font-medium text-slate-900">Giulio Catanzariti</p>
-              <p className="text-xs text-slate-500">Capsule workspace</p>
+              <p className="text-sm font-medium text-slate-900">{user?.name || 'Analyst'}</p>
+              <p className="text-xs text-slate-500">{user?.orgName || 'Capsule workspace'}</p>
             </div>
           </div>
         </aside>
@@ -454,10 +516,21 @@ export function TaskletPraxisWorkbench({
               />
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/10 px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <IconButton label="Attach document" icon={Paperclip} />
-                  <IconButton label="Upload sources" icon={Upload} />
-                  <IconButton label="Search policy sources" icon={Search} />
-                  <IconButton label="Memo output" icon={FileText} />
+                  <IconButton label="Attach document" icon={Paperclip} onClick={() => fileInputRef.current?.click()} />
+                  <IconButton label="Upload sources" icon={Upload} onClick={() => fileInputRef.current?.click()} />
+                  <IconButton
+                    label="Search policy sources"
+                    icon={Search}
+                    onClick={() => askWithPrompt(`Find source receipts and evidence gaps for: ${prompt.trim() || activeCapsuleName}`, { autoSend: true })}
+                  />
+                  <IconButton label="Memo output" icon={FileText} onClick={() => { window.location.href = workspaceHref(surfaceMode, '/app/write'); }} />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.docx,.txt,.md,.html"
+                    className="hidden"
+                    onChange={(event) => void uploadDocument(event.target.files)}
+                  />
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="hidden text-sm font-semibold text-slate-700 sm:inline">Advanced</span>
@@ -472,15 +545,15 @@ export function TaskletPraxisWorkbench({
                   >
                     <Maximize2 className="h-4 w-4" />
                   </button>
-                  <button type="button" aria-label="Voice input" className="rounded-md p-2 text-slate-600 hover:bg-slate-100">
+                  <button type="button" aria-label="Voice input" onClick={startVoiceInput} className="rounded-md p-2 text-slate-600 hover:bg-slate-100">
                     <Mic className="h-4 w-4" />
                   </button>
                   <button
                     type="button"
-                    onClick={() => void launchRun()}
+                    onClick={() => openAgentChat()}
                     className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
                   >
-                    {selectedAgent.actionLabel}
+                    Chat with PRAXIS
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -583,10 +656,10 @@ export function TaskletPraxisWorkbench({
                   </button>
                   <button
                     type="button"
-                    onClick={() => void launchRun(selectedAgent)}
+                    onClick={() => openAgentChat(selectedAgent)}
                     className="inline-flex items-center gap-2 rounded-md bg-[#ff714d] px-3 py-2 text-sm font-semibold text-white hover:bg-[#ec5f3d]"
                   >
-                    {selectedAgent.actionLabel}
+                    Chat with PRAXIS
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -636,7 +709,7 @@ export function TaskletPraxisWorkbench({
                           agent={agent}
                           selected={selectedAgentId === agent.id}
                           onSelect={() => setSelectedAgentId(agent.id)}
-                          onRun={() => void launchRun(agent)}
+                          onRun={() => openAgentChat(agent)}
                         />
                       ))}
                     </div>
@@ -726,6 +799,15 @@ function workspaceHref(surfaceMode: HomeSurfaceMode, href: string): string {
   return `/login?mode=signup&redirect=${encodeURIComponent(href)}`;
 }
 
+function userInitials(value: string | undefined | null): string {
+  return (value || 'Analyst')
+    .split(/\s|@/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'A';
+}
+
 function SidebarButton({ href, icon: Icon, label, active = false }: { href: string; icon: typeof Search; label: string; active?: boolean }) {
   return (
     <Link
@@ -741,9 +823,9 @@ function SidebarButton({ href, icon: Icon, label, active = false }: { href: stri
   );
 }
 
-function IconButton({ label, icon: Icon }: { label: string; icon: typeof Search }) {
+function IconButton({ label, icon: Icon, onClick }: { label: string; icon: typeof Search; onClick: () => void }) {
   return (
-    <button type="button" title={label} aria-label={label} className="rounded-md border border-slate-200 p-2 text-slate-700 hover:bg-slate-50">
+    <button type="button" title={label} aria-label={label} onClick={onClick} className="rounded-md border border-slate-200 p-2 text-slate-700 hover:bg-slate-50">
       <Icon className="h-4 w-4" />
     </button>
   );
