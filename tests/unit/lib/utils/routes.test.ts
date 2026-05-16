@@ -10,7 +10,6 @@ describe('shouldPrefixPraxisHref', () => {
 
   it('does not prefix already-prefixed, public, or external links', () => {
     expect(shouldPrefixPraxisHref('/app/dashboard')).toBe(false);
-    expect(shouldPrefixPraxisHref('/demo/dashboard')).toBe(false);
     expect(shouldPrefixPraxisHref('/pricing')).toBe(false);
     expect(shouldPrefixPraxisHref('/login')).toBe(false);
     expect(shouldPrefixPraxisHref('/privacy')).toBe(false);

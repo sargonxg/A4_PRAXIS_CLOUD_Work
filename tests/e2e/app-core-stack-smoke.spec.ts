@@ -3,7 +3,7 @@ import { openExampleWorkbench } from './personas/_shared/persona-fixtures';
 
 test.describe('authenticated core stack', () => {
   test('example session shows the unified workspace shell and core library after login', async ({ page }) => {
-    await openExampleWorkbench(page, 'syria-2026');
+    await openExampleWorkbench(page, 'user-case');
     await page.goto('/app/dashboard');
 
     await expect(page.getByTestId('praxis-workspace-shell')).toBeVisible();

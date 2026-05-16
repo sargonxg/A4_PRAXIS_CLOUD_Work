@@ -43,7 +43,7 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
   const consoleErrors = collectConsoleErrors(page);
   const closeWorkspaceTab = () => page.getByRole('button', { name: /^Close workspace tab$/i }).click();
 
-  await openExampleWorkbench(page, 'syria-2026');
+  await openExampleWorkbench(page, 'user-case');
   await expect(page.getByTestId('praxis-workspace-shell')).toBeVisible();
 
   await expect(page.getByRole('button', { name: /Desk.*always on/i })).toBeVisible();
@@ -135,7 +135,7 @@ test('demo workbench exposes context, ontology, graph, tools, memo, and draft su
 test('workbench case picker uses readable copy contrast', async ({ page }) => {
   const consoleErrors = collectConsoleErrors(page);
 
-  await openExampleWorkbench(page, 'syria-2026');
+  await openExampleWorkbench(page, 'user-case');
   await page.goto('/app/workbench');
   await expect(page).toHaveURL(/\/app\/dashboard$/);
   const intro = page.getByText(/Active context:|Create or choose a context/i).first();
@@ -159,7 +159,7 @@ test('workbench case picker uses readable copy contrast', async ({ page }) => {
 test('Each case opens through the streamlined workspace entry', async ({ page }) => {
   const consoleErrors = collectConsoleErrors(page);
 
-  await openExampleWorkbench(page, 'syria-2026');
+  await openExampleWorkbench(page, 'user-case');
   await expect(page.getByTestId('praxis-workspace-shell')).toBeVisible();
   await expect(page.getByRole('link', { name: /Write with PRAXIS/i }).first()).toBeVisible();
 
@@ -169,7 +169,7 @@ test('Each case opens through the streamlined workspace entry', async ({ page })
 test('ask workspace exposes the full-page write surface and core attachers', async ({ page }) => {
   const consoleErrors = collectConsoleErrors(page);
 
-  await openExampleWorkbench(page, 'syria-2026');
+  await openExampleWorkbench(page, 'user-case');
   await page.goto('/app/assistant');
 
   await expect(page.getByTestId('ask-workspace-page')).toBeVisible();

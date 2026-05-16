@@ -640,10 +640,16 @@ Every tool execution produces a `ToolRun` record at `users/{uid}/situations/{cas
 | **Output Refiner** | Adapts tool output to user's communication style; schema-validated, can't change facts | claude-opus-4.7@vertex | $0.03/call | 4s |
 | **Memo Drafter** | Drafts memo blocks from prepared context with graph citations | claude-opus-4.7@vertex | $0.08/call | 6s |
 | **Red Team Analyst** | Safe adversary-perspective modeling for Pack 15 SATs | gemini-3-flash | $0.06/call | 6s |
-| **Analyst Persona** | Parameterized Pack 16 boardroom persona contribution; loads persona spec, corpus namespace, and tool affinity | claude-opus-4.7@vertex for final prose | $0.04/call | 5s |
-| **Moderator** | Pack 16 boardroom orchestration; schedules phases, surfaces dissent, enforces cost guard, calls synthesis | gemini-3-flash | $1.50/deliberation | 30s |
+| **Tool Runtime Analyst** | Tasklet-style reasoning loop over ContextCapsule state and registered tools | gemini-3-flash (gemini-3.1-pro for high-stakes) | $0.06/call | 8s |
+| **Approval Moderator** | Enforces risk gates, human approvals, and synthesis boundaries before high-risk actions | gemini-3-flash | $0.04/gate | 5s |
 
-Pack 16 adds the Agentic Boardroom as a first-class workbench surface at `/app/workbench/[caseId]/boardroom`. The local foundation uses deterministic orchestration and authenticated owner-scoped API routes under `/api/boardroom/deliberations` for create/read/update, start, abort, deterministic SSE turn streaming, DOCX/Markdown export, and synthesis-claim promotion into `graph_updates`. Custom persona authoring v1 lives at `/app/settings/personas` with declared corpus manifests, detail/new routes, prompt sandboxing, and tool affinity; binary corpus ingestion, live pgvector retrieval, and live Agent Engine deployment for `analyst_persona` and `moderator` remain the staging/prod follow-up.
+The old Pack 16 visible Agentic Boardroom/persona UI has been retired from the
+default product surface. Multi-perspective review now belongs behind the
+Tasklet-style agent runtime: agents reason over the tool registry, emit citable
+events, and stop at approval gates rather than sending users to a separate
+Boardroom page. Backend Boardroom/persona modules that are still imported by
+Agent Engine schemas are historical compatibility code until the backend
+migration is complete.
 
 ### 12.2 Why Vertex AI Agent Engine
 

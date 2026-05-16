@@ -3,9 +3,9 @@ import type { CaseModule, LandingCaseCard } from '@/types/case-module';
 /**
  * Example-case registry.
  *
- * The demo case modules (Syria 2026, Nordalia 2026, v5 demo contexts) were
- * removed during MVP cleanup. The registry now returns an empty list; landing
- * cards fall back to the "coming soon" placeholders in landing-cards.ts.
+ * Example case modules were removed during MVP cleanup. The registry now
+ * returns an empty list; real work starts from user-owned situations and
+ * landing cards fall back to the "coming soon" placeholders in landing-cards.ts.
  *
  * To add a real case module, push it onto EXAMPLE_CASE_MODULES below.
  */

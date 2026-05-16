@@ -13,7 +13,7 @@ describe('getSuggestedPromptCategories', () => {
     }));
 
     expect(prompts).toContain('create my first situation');
-    expect(prompts).not.toMatch(/Nordalia|DRM|ceasefire collapse/i);
+    expect(prompts).not.toMatch(/User Case|DRM|ceasefire collapse/i);
   });
 
   it('uses the active real situation when available', () => {
@@ -27,7 +27,7 @@ describe('getSuggestedPromptCategories', () => {
 
     expect(prompts).toContain('Blue River Negotiation');
     expect(prompts).toContain("City Council's core interests");
-    expect(prompts).not.toMatch(/Nordalia|DRM/i);
+    expect(prompts).not.toMatch(/User Case|DRM/i);
   });
 
   it('keeps demo prompts isolated to demo mode', () => {
@@ -36,6 +36,6 @@ describe('getSuggestedPromptCategories', () => {
       activeSituation: null,
     }));
 
-    expect(prompts).toMatch(/Nordalia|DRM/);
+    expect(prompts).toMatch(/User Case|DRM/);
   });
 });

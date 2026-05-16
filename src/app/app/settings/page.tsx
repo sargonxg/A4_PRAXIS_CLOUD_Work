@@ -423,28 +423,6 @@ export default function SettingsPage() {
 
       <FullAccessCodeSection />
 
-      <SettingsSection
-        icon={Briefcase}
-        title="Boardroom Personas"
-        description="Workspace-scoped experts for Agentic Boardroom deliberations"
-      >
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-navy-200 bg-navy-50 px-4 py-3">
-          <div>
-            <p className="text-sm font-medium text-navy-900">Custom persona authoring</p>
-            <p className="mt-1 text-xs leading-5 text-navy-500">
-              Define role, corpus manifest, voice profile, and tool affinity before including a persona in boardroom sessions.
-            </p>
-          </div>
-          <PraxisLink
-            href="/settings/personas"
-            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-diplomatic-blue px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-diplomatic-blue/90"
-          >
-            Manage personas
-            <ArrowRight className="h-3.5 w-3.5" />
-          </PraxisLink>
-        </div>
-      </SettingsSection>
-
       {/* ── AI Provider ───────────────────────────────────────────── */}
       <SettingsSection
         icon={Cpu}

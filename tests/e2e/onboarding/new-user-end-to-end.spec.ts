@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { openExampleWorkbench } from '../personas/_shared/persona-fixtures';
 
 test('activation proxy covers scaffold, tools, memos, and draft export surfaces', async ({ page }) => {
-  await openExampleWorkbench(page, 'syria-2026');
+  await openExampleWorkbench(page, 'user-case');
 
   const scaffold = await page.evaluate(async () => {
     const response = await fetch('/api/cases/scaffold', {

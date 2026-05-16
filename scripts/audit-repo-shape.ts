@@ -9,7 +9,7 @@ const warnings: string[] = [];
 const graphPath = join(root, 'graphify-out/graph.json');
 const reportPath = join(root, 'graphify-out/GRAPH_REPORT.md');
 const todoPath = join(root, 'TODO.md');
-const handoffPath = join(root, 'docs/audits/2026-05-08-REPO_PURPOSE_AUDIT/summary.md');
+const handoffPath = join(root, 'docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md');
 
 if (!existsSync(graphPath)) failures.push('missing graphify-out/graph.json');
 if (!existsSync(reportPath)) failures.push('missing graphify-out/GRAPH_REPORT.md');

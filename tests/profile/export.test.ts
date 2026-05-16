@@ -15,7 +15,7 @@ vi.mock('@/lib/firebase/admin', () => {
     meta: { version: 1, completedAt: 'x', lastEditedAt: 'x', skipCount: 0, createdAt: 'x', deletedAt: null },
   };
 
-  const situationDocs = [{ id: 's1', data: () => ({ name: 'Nordalia', type: 'war', region: 'West Africa' }) }];
+  const situationDocs = [{ id: 's1', data: () => ({ name: 'User Case', type: 'war', region: 'West Africa' }) }];
   const versionDocs = [{ data: () => ({ ...profileData, _snapshotAt: 'ts' }) }];
 
   return {

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { openExampleWorkbench } from '../personas/_shared/persona-fixtures';
 
 test('AI-first case creation scaffold route returns a reviewable Pack 28 proposal', async ({ page }) => {
-  await openExampleWorkbench(page, 'syria-2026');
+  await openExampleWorkbench(page, 'user-case');
 
   const result = await page.evaluate(async () => {
     const response = await fetch('/api/cases/scaffold', {

@@ -27,13 +27,13 @@ const snapshot: ContextSnapshot = {
     }],
   },
   case: {
-    caseId: 'syria-2026',
+    caseId: 'user-case',
     ownerUid: 'phase-5-canary',
     ontologyId: 'conflict',
     ontologyIds: ['conflict', 'mediation', 'governance', 'narrative'],
     primaryOntologyId: 'conflict',
     frame: {
-      name: 'Syria Transition',
+      name: 'User Transition',
       region: 'Levant',
       summary: 'Synthetic Phase 5 canary context with actors, claims, sources, and evidence.',
     },
@@ -82,7 +82,7 @@ describe('Phase 5 MVP methods', () => {
       expect(() => MethodRunOutputSchema.parse(output)).not.toThrow();
       expect(output.methodId).toBe(method.id);
       expect(output.runtimeId).toBe(method.runtimeId);
-      expect(output.caseId).toBe('syria-2026');
+      expect(output.caseId).toBe('user-case');
       expect(output.findings.length).toBeGreaterThanOrEqual(2);
       expect(output.citations.length).toBeGreaterThanOrEqual(1);
       expect(output.persistence.ownerScoped).toBe(true);

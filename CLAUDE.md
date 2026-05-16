@@ -31,7 +31,7 @@ helps practitioners turn sources, documents, live feeds, and graph context into
 cited assessments, briefings, reports, and decision support. In TACITUS terms,
 PRAXIS is the system of record for conflict: a governed data layer for human
 friction centered on Actor, Claim, Interest, Constraint, Leverage, Commitment,
-Event, and Narrative. Two experiences: a demo for prospects (`/demo/*`) and a
+Event, and Narrative. Two experiences: a user-owned for prospects (`retired user-owned routes`) and a
 real situation-driven workspace for authenticated users (`/app/*`). Deployed
 on GCP Cloud Run.
 
@@ -82,7 +82,7 @@ npm install
 ┌─────────────────────────────────────────────────────────┐
 │  Frontend (Next.js 16 App Router)  →  Cloud Run         │
 │    src/app/app/*   (55 registered tool surfaces)        │
-│    src/app/demo/*  (demo mode, cookie auth)             │
+│    src/appretired user-owned routes  (authenticated mode, cookie auth)             │
 │    src/app/api/*   (73 API routes: AI, data, auth)      │
 ├─────────────────────────────────────────────────────────┤
 │  Backend (Python FastAPI)  →  Cloud Run                 │
@@ -111,7 +111,7 @@ npm install
 - Schema: `src/lib/ai/schemas/situation-intelligence.ts`.
 - UI: `src/components/dashboard/executive-intelligence-panel.tsx`.
 - Dashboard mount: `src/app/app/dashboard/page.tsx`.
-- Contract: no demo/static output; generation requires a real active situation,
+- Contract: no user-owned/static output; generation requires a real active situation,
   schema-valid AI output, source-fragment provenance, confidence notes, and
   persisted memory through the existing tool-data path.
 - Focused test: `tests/unit/lib/ai/situation-intelligence-schema.test.ts`.
@@ -151,7 +151,7 @@ npm install
 ```
 /                            Next.js frontend (root)
 ├── src/app/app/             55 registered tool surfaces
-├── src/app/demo/            Demo mirror pages
+├── src/app/app/            user-owned mirror pages
 ├── src/app/onboarding/      3-screen wizard + layout (identity, perspective, working style)
 ├── src/app/api/             API routes (73 total)
 │   ├── ai/                  35 AI tool routes
@@ -241,7 +241,7 @@ Every authenticated user has an `AnalystProfile` stored at `users/{uid}/profile/
 
 **Consumption** — `withCalibration(toolId, creditOpType)(handler)` is the middleware factory that every AI route wraps. It chains `withAuth → credits check → buildCalibratedContext → handler`. The resulting `CalibrationCtx` carries a `calibration.systemPromptBlock` string (rendered `<analyst-profile>` + `<situation-frame>` + `<output-constraints>` XML block) ready to prepend to any AI system prompt.
 
-**Gate** — `withCalibration` returns HTTP 403 when a non-demo user has no `profile.meta.completedAt`. Client-side, `useSituationGuard()` returns `needsOnboarding: true` and `ToolPageShell` renders `<OnboardingRequiredState />` in place of the tool UI.
+**Gate** — `withCalibration` returns HTTP 403 when a non-user-owned user has no `profile.meta.completedAt`. Client-side, `useSituationGuard()` returns `needsOnboarding: true` and `ToolPageShell` renders `<OnboardingRequiredState />` in place of the tool UI.
 
 **11 calibration dimensions** the audit script scores each AI route on:
 1. Reads AnalystProfile via `withCalibration`  2. Reads current situation  3. Uses `buildCalibratedContext`  4. Applies output language  5. Applies red-line constraints  6. Applies audience tone  7. Uses SKC retrieval (lens-weighted)  8. Persists output via `saveToolOutput`  9. Writes Memory Bank trace  10. Validates output schema (Zod)  11. Deducts credits correctly
@@ -307,7 +307,7 @@ Spec: `docs/superpowers/specs/2026-04-19-domain-taxonomy-stabilization-design.md
 
 ### Authentication
 ```
-Login → Firebase Auth (Google redirect | email/password | demo cookie)
+Login → Firebase Auth (Google redirect | email/password | user-owned cookie)
   → onAuthStateChanged → syncTokenCookie → POST /api/auth/session
   → ensureUserProfile() → 5,000 initial credits
   → middleware.ts checks JWT on /app/* routes
@@ -352,7 +352,7 @@ Verify with: `rg "gemini-2\.0|gemini-3-pro-preview" src/ backend/` — must retu
 
 - "Add `'unsafe-inline'` to fix the CSP" — use a nonce instead
 - "Just hardcode the model string for now" — always go through `providers.ts`
-- "Skip the demo guard, the route's only used by paid users" — every AI route needs `isServerDemoMode()`
+- "Skip the user-owned guard, the route's only used by paid users" — every AI route needs `isServeruser-ownedMode()`
 - "Use `getProModel()` directly so we hard-fail on quota" — use `callProModel` with auto-fallback
 - "Add a new file under `src/lib/services/` for this" — first check if a canonical service already exists
 - "Write to Firestore from middleware" — middleware runs on Edge runtime, no firebase-admin
@@ -411,7 +411,7 @@ GraphOps v0.1:
 
 ## TACITUS Credits
 
-5,000 on signup. Costs: 1 (chat) → 10 (deep search agent). Demo: unlimited.
+5,000 on signup. Costs: 1 (chat) → 10 (deep search agent). user-owned: unlimited.
 Authoritative source: `src/lib/api/with-credits.ts`
 Deducted atomically via Firestore transactions. Real-time sync via onSnapshot.
 
@@ -423,7 +423,7 @@ Deducted atomically via Firestore transactions. Real-time sync via onSnapshot.
 | Artifact Registry | Docker images | us-central1-docker.pkg.dev/praxisbytacitus/praxis |
 | Cloud Build | CI/CD pipeline | cloudbuild.yaml, E2_HIGHCPU_8 |
 | Firestore | Auth, data, real-time sync | Native mode, owner-only rules |
-| Firebase Auth | Google + email/password + demo | Session cookies (httpOnly) |
+| Firebase Auth | Google + email/password + user-owned | Session cookies (httpOnly) |
 | Vertex AI | ADK Deep Research Agent | us-central1, Reasoning Engine |
 | BigQuery | Pipeline analytics | praxis_analytics dataset |
 | Cloud Storage | Document uploads | gs://praxisbytacitus-praxis-uploads |
@@ -438,7 +438,7 @@ Deducted atomically via Firestore transactions. Real-time sync via onSnapshot.
 |---|---|
 | **Hero loop** | The 12 primary working surfaces in `src/lib/tools/tool-path-taxonomy.ts`, shown first in `/app/tools`. |
 | **Archive / specialist** | The remaining 43 registry surfaces remain linked, auditable, and available behind `show_archive=1`. |
-| **Source of truth** | `src/lib/constants/tool-registry.ts`, `src/lib/tools/tool-navigation.ts`, and `src/lib/tools/tool-path-taxonomy.ts`. Generated specs live in `docs/tools/generated/`. |
+| **Source of truth** | `src/lib/constants/tool-registry.ts`, `src/lib/tools/tool-navigation.ts`, and `src/lib/tools/tool-path-taxonomy.ts`. Expanded generated specs are local audit artifacts; refresh them with `npm run generate:tool-docs` when needed. |
 
 ## Analytical Frameworks (15)
 
@@ -479,7 +479,7 @@ The `NEXT_PUBLIC_FIREBASE_*` client config values are public and have defaults i
 
 ## Conventions
 
-- `PraxisLink` / `usePraxisRoute()` for all navigation (auto-prefixes /app or /demo)
+- `PraxisLink` / `usePraxisRoute()` for all navigation (auto-prefixes /app or /app)
 - `useSituationGuard()` at top of every tool page
 - `withAuth()` wraps all protected API routes
 - `checkAndDeductCredits()` before AI calls
@@ -494,7 +494,7 @@ The `NEXT_PUBLIC_FIREBASE_*` client config values are public and have defaults i
 - `buildCalibratedContext({uid, situationId, toolId, retrievalQuery})` is the single module that composes profile + situation + SKC retrieval into a `ContextBlock`
 - `saveToolOutput({uid, situationId, toolId, profileVersion, output})` persists tool outputs to `users/{uid}/situations/{sitId}/tools/{toolId}` with profile-version provenance
 - `ToolPageShell` consumes `useSituationGuard()` which now also returns `needsOnboarding`; tools render `<OnboardingRequiredState />` when the gate triggers
-- Server-side: `withCalibration` returns 403 when a non-demo user has no `profile.meta.completedAt`
+- Server-side: `withCalibration` returns 403 when a non-user-owned user has no `profile.meta.completedAt`
 - `renderSystemPromptBlock()` from `@/lib/context/system-prompt-block` renders the `<analyst-profile>` + `<situation-frame>` + `<output-constraints>` XML block injected into AI system prompts
 
 ## Design System

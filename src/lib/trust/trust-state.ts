@@ -1,5 +1,3 @@
-import { SYRIA_SOURCE_LIBRARY } from '@/lib/syria/source-library';
-
 export interface TrustMetric {
   id: string;
   label: string;
@@ -23,12 +21,16 @@ export function buildTrustState(
   return {
     activeModel,
     modelCurrentAsOf: now.toISOString().slice(0, 10),
-    sourceDomains: SYRIA_SOURCE_LIBRARY.map((source) => ({
-      name: source.name,
-      url: source.url,
-      tier: source.tier,
-      liveEnabled: source.liveEnabled,
-    })),
+    sourceDomains: [
+      { name: 'User uploads', url: 'users/{uid}/situations/{sid}/documents', tier: 'customer', liveEnabled: true },
+      { name: 'Grounded Google Search', url: 'https://google.com/search', tier: 'grounded-search', liveEnabled: true },
+      { name: 'GDELT', url: 'https://www.gdeltproject.org/', tier: 'open-data', liveEnabled: true },
+      { name: 'UCDP', url: 'https://ucdp.uu.se/', tier: 'open-data', liveEnabled: true },
+      { name: 'ReliefWeb', url: 'https://reliefweb.int/', tier: 'open-data', liveEnabled: true },
+      { name: 'HDX', url: 'https://data.humdata.org/', tier: 'open-data', liveEnabled: true },
+      { name: 'UN News', url: 'https://news.un.org/', tier: 'open-data', liveEnabled: true },
+      { name: 'World Bank', url: 'https://data.worldbank.org/', tier: 'open-data', liveEnabled: true },
+    ],
     evaluation: [
       { id: 'extraction_f1', label: 'Extraction F1', value: 'A10 pending', status: 'pending' },
       { id: 'edge_precision', label: 'Edge precision', value: 'A10 pending', status: 'pending' },
@@ -44,7 +46,7 @@ export function buildTrustState(
     limits: [
       'Does not train foundation models on customer data.',
       'Does not reproduce copyrighted articles in full.',
-      'Does not imply classified access: Syria is a public-source case file.',
+      'Does not imply classified access; PRAXIS works from user-attached sources and configured connectors.',
       'Does not silently mix cached fallback data into authenticated user state.',
     ],
   };

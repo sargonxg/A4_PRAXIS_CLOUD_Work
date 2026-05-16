@@ -21,7 +21,7 @@ const baseValid = {
     {
       name: 'Crisis Group Briefing',
       url: 'https://crisisgroup.org/example',
-      reason: 'Crisis Group has a Nordalia analyst with a recent briefing on AFN field-commander politics.',
+      reason: 'Crisis Group has a User Case analyst with a recent briefing on AFN field-commander politics.',
       reliability: 'tier_a' as const,
       corroborated: true,
       format: 'report' as const,

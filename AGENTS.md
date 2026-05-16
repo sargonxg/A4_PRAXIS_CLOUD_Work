@@ -53,20 +53,11 @@ and related v5 files only when a task explicitly touches older v5 work.
 - [`docs/PRAXIS_TECHNICAL_SPECIFICATION.md`](./docs/PRAXIS_TECHNICAL_SPECIFICATION.md)
 
 
-## v7 Slice Work
+## Current Slice Work
 
 The current canonical product/runtime structure is under `docs/product/`.
-For historical design-led Ask PRAXIS, mobile-first, tacit-knowledge
-simplification work, consult these only when a v7 slice is explicitly assigned:
-
-1. [`docs/v7/README.md`](./docs/v7/README.md)
-2. [`docs/v7/STATUS.md`](./docs/v7/STATUS.md)
-3. [`docs/v7/AGENTS.md`](./docs/v7/AGENTS.md)
-4. [`docs/v7/OPEN_QUESTIONS.md`](./docs/v7/OPEN_QUESTIONS.md)
-
-Do not start a v7 slice that is still marked `proposed` without Giulio's
-approval. Use [`docs/v7/SLICE_TEMPLATE.md`](./docs/v7/SLICE_TEMPLATE.md) for
-new slices and store slice plans under [`docs/v7/SLICES/`](./docs/v7/SLICES/).
+Historical v7 slice plans were removed during the Tasklet cleanup pass; do not
+recreate them unless Giulio explicitly asks for a new slice-planning system.
 
 ## Validation
 

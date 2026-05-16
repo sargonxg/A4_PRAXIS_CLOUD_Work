@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { syria2026CaseModule } from '@/lib/cases/syria-2026';
 import { buildMemoBlocksForCase, listMemoTemplates } from '@/lib/memo/templates/registry';
+import { userCaseModule } from '../../../fixtures/user-case-module';
 
 describe('memo templates', () => {
   it('ships the six launch memo templates', () => {
@@ -16,7 +16,7 @@ describe('memo templates', () => {
 
   it('auto-populates cited blocks from the active case', () => {
     for (const template of listMemoTemplates()) {
-      const blocks = buildMemoBlocksForCase(syria2026CaseModule, template.id);
+      const blocks = buildMemoBlocksForCase(userCaseModule, template.id);
       expect(blocks.length).toBeGreaterThan(2);
       expect(blocks.some((block) => block.citations.some((citation) => citation.sourceReceiptIds.length > 0))).toBe(true);
     }

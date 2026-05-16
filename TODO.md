@@ -27,10 +27,10 @@ from the active ledger above.
    guards package/app version, build number, release registry, page import, and
    changelog alignment. Significant changes should bump `APP_BUILD_NUMBER` and
    add a release note entry before commit.
-0. Route cleanup is now under way: redundant App Router `/demo` page files are
-   removed while `src/proxy.ts` keeps `/demo/*` compatibility redirects, the old
+0. Route cleanup is now under way: redundant App Router `/app` page files are
+   removed while `src/proxy.ts` keeps `retired user-owned routes` compatibility redirects, the old
    guided-tour component stack is gone, and the dashboard smoke now targets the
-   shared PRAXIS cockpit. Next cleanup should shrink Syria-only component bulk
+   shared PRAXIS cockpit. Next cleanup should shrink user-owned-only component bulk
    only after the workbench fixture/chapter imports have a replacement.
 0. Public Home and authenticated Home now share the same polished cockpit:
    rounded capsule/composer surfaces, subtle policy-grid background, no
@@ -83,7 +83,7 @@ from the active ledger above.
    `docs/audits/2026-05-15-tasklet-mvp-cleanup-ledger.md` plus
    `npm run audit:tasklet-mvp-foundation` guard the cleanup direction. Next
    deletion work must extend the route consolidation audit before removing
-   demo/Syria/tour/specialist surfaces.
+   user-owned/user-owned/tour/specialist surfaces.
 0. Keep the public-to-authenticated path usable before adding deeper runtime
    scope: homepage prompt bar, path-aware capsule preview, active capsule
    glimpse, login/signup continuation, app sidebar, active capsule strip, Home
@@ -160,7 +160,7 @@ from the active ledger above.
    source of truth.
 3. Extend Active Context Stack persistence beyond the reliable default stack to named stacks when the final multi-stack UX is approved.
 4. Promote Canvas from draggable review-layout nodes to a richer read/write graph-editing surface if the team approves that scope; React Flow is not needed for the current MVP.
-5. Add a signed-in integration test for v5 demo copy against a Firebase emulator or test project; current validation covers the typed demo core objects and the UI copy affordance, not a live Firestore mutation.
+5. Add a signed-in integration test for v5 user-owned copy against a Firebase emulator or test project; current validation covers the typed user-owned core objects and the UI copy affordance, not a live Firestore mutation.
 6. Add the first PRAXIS-to-DIALECTICA adapter proof only after the standalone MVP flow is smooth: one typed context query, one cited response, one reviewable graph delta.
 7. Complete Pack 24 backend Reasoning Spine: Rust BLAKE3 context-pack compiler, real trace ids, Langfuse or equivalent trace store, and live event streaming behind the current Spine panel.
 8. Complete Pack 23 backend Library Bucket: production-grade source auto-structure after upload, including better PDF page provenance, source-span citations, entity normalization, and review queues beyond the current inline MVP extraction.
@@ -172,7 +172,7 @@ from the active ledger above.
 14. Run live export/download checks for briefing and boardroom artifacts in the next improvement round.
 15. Add production-browser coverage for the authenticated command palette once a stable production test user/session path is approved; local signed-session smoke now covers the simplified five-surface flow.
 16. After the current capsule/core composer lands, use `docs/superpowers/specs/2026-05-15-next-20-simplification-ai-context-writing-search.md` as the next improvement queue for simplification, stronger AI, context creation/combination, drafting, writing, and search.
-17. Run the next evidence-based cleanup pass against `/demo/*`, Syria-only
+17. Run the next evidence-based cleanup pass against `retired user-owned routes`, user-owned-only
     components, old tour components, and duplicate specialist surfaces. Archive
     useful evidence and delete only after `rg`, route audits, imports, tests,
     and graph references prove the target is safe.
@@ -203,4 +203,4 @@ from the active ledger above.
 - **Knip**: dead-export detection. Not currently in `audit:gate`; run on demand when chasing unused exports.
 - **audit:architecture-reference**: startup docs link to `docs/architecture/PRAXIS_ARCHITECTURE.md` and `PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`.
 - **smoke:core-flows**: fast Playwright check for the landing Ask preview, `/app/cores/context`, and memo output in the workbench.
-- **audit:mvp-route-shape**: static guard that legacy public demo/context/method/draft/user routes redirect into the canonical app surface.
+- **audit:mvp-route-shape**: static guard that legacy public user-owned/context/method/draft/user routes redirect into the canonical app surface.

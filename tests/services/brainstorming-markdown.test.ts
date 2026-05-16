@@ -44,7 +44,7 @@ const sample = {
     ],
   },
   retrievalTrace: { layersSearched: ['argus', 'documents'], itemCount: 7, durationMs: 412 },
-  situationName: 'Nordalia',
+  situationName: 'User Case',
   analystName: 'Giulio',
 };
 
@@ -53,7 +53,7 @@ describe('brainstormingTableToMarkdown', () => {
     const md = brainstormingTableToMarkdown(sample);
     expect(md.startsWith('---\n')).toBe(true);
     expect(md).toMatch(/title: "Brainstorming Table — /);
-    expect(md).toMatch(/situation: "Nordalia"/);
+    expect(md).toMatch(/situation: "User Case"/);
     expect(md).toMatch(/analyst: "Giulio"/);
     expect(md).toMatch(/personas: \["mediator", "humanitarian", "red-team"\]/);
     expect(md).toMatch(/turns: 2/);
@@ -119,7 +119,7 @@ describe('brainstormingTableToMarkdown', () => {
 
 describe('brainstormingTableFilename', () => {
   it('slugifies situation name and prepends date', () => {
-    expect(brainstormingTableFilename(sample)).toBe('brainstorming-nordalia-2026-04-26');
+    expect(brainstormingTableFilename(sample)).toBe('brainstorming-user-case-alt-04-26');
   });
 
   it('falls back to "situation" when no situation name', () => {
@@ -130,6 +130,6 @@ describe('brainstormingTableFilename', () => {
   it('falls back to today when no generatedAt', () => {
     const noDate = { ...sample, generatedAt: '' };
     const today = new Date().toISOString().slice(0, 10);
-    expect(brainstormingTableFilename(noDate)).toBe(`brainstorming-nordalia-${today}`);
+    expect(brainstormingTableFilename(noDate)).toBe(`brainstorming-User Case-${today}`);
   });
 });

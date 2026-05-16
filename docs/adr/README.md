@@ -30,9 +30,6 @@ Accepted ADRs are not edited for meaning. Supersede them with a later ADR.
 - `0021-sats-as-first-class.md`
 - `0022-red-team-analyst-subagent.md`
 - `0023-ach-workbench-surface.md`
-- `0026-agentic-boardroom-architecture.md`
-- `0027-parameterized-analyst-persona-subagent.md`
-- `0028-persona-corpus-retrieval.md`
 - `0030-dynamic-ontology-lenses.md`
 - `0033-marketplace-depth-strategy.md`
 - `0034-composition-chain-governance.md`
@@ -63,6 +60,5 @@ next unused numeric prefix.
 
 Active target-state gaps are tracked in:
 
-- `docs/audits/2026-05-08-CLEANUP_RETAINED_EVIDENCE.md`
-- `docs/backlog/2026-05-06-from-self-audit.md`
+- `docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md`
 - `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`

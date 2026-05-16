@@ -1,9 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useAppStore } from '@/stores/app-store';
 import { useSituationStore } from '@/stores/situation-store';
-import { useRoutePrefix } from '@/lib/utils/routes';
 import { useAuth } from '@/lib/auth/auth-context';
 import type { Situation } from '@/types/situation';
 
@@ -28,7 +26,6 @@ export type SituationGuardResult =
 /**
  * Hook for tool pages to check situation state.
  *
- * - In /demo/* routes: isDemo=true, pages use demo constants as before
  * - In /app/* routes: checks for active situation AND completed onboarding
  *   - Onboarding not complete → needsOnboarding=true, showGuard=true
  *   - No situation → showGuard=true (render NoSituationState)
@@ -39,13 +36,11 @@ export type SituationGuardResult =
  * children without causing render loops (React #300).
  */
 export function useSituationGuard(): SituationGuardResult {
-  const prefix = useRoutePrefix();
-  const demoMode = useAppStore((s) => s.demoMode);
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const loading = useSituationStore((s) => s.loading);
   const onboardingComplete = useAuth().onboardingComplete;
 
-  const isDemo = prefix === '/demo' || demoMode;
+  const isDemo = false;
   const hasSituation = !!activeSituation;
   const needsOnboarding = !isDemo && !onboardingComplete;
   const showGuard = !isDemo && (needsOnboarding || (!activeSituation && !loading));

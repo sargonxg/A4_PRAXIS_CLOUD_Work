@@ -13,7 +13,6 @@ const LEGACY_TOOL_ID_ALIASES: Record<string, string> = {
   context: 'context-builder',
   research: 'source-scout',
   graph: 'graphops',
-  boardroom: 'brainstorming-table',
   draft: 'policy-memo',
   sources: 'sources-library',
 };

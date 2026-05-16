@@ -1,23 +1,15 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { useSearchParams } from 'next/navigation';
 import {
-  Clock3,
   FileText,
   GitBranch,
   MessageSquare,
   Search,
-  Shield,
   Users,
   Wrench,
-  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { useRoutePrefix } from '@/lib/utils/routes';
-import { useAuth } from '@/lib/auth/auth-context';
-// Demo content removed; syria-demo-case import stubbed.
-const isSyriaWorkspaceCase = (_caseId: string | null | undefined, _isDemo?: boolean): boolean => false;
 
 interface WelcomeModalProps {
   onStartTour: () => void;
@@ -33,20 +25,6 @@ const REAL_FEATURES = [
   { icon: GitBranch, label: 'Canvas', description: 'Inspect actors, claims, and graph proposals when needed.' },
 ];
 
-const DEMO_FEATURES = [
-  { icon: GitBranch, label: 'Conflict graph', description: 'Synthetic actor and event network.' },
-  { icon: Zap, label: 'Sample briefs', description: 'Example outputs from a seeded workspace.' },
-  { icon: FileText, label: 'Report studio', description: 'Templates for policy notes and memos.' },
-  { icon: Shield, label: 'Early warning', description: 'Escalation signals and risk view.' },
-];
-
-const SYRIA_DEMO_FEATURES = [
-  { icon: Search, label: 'Source receipts', description: 'Public-source audit with visible provenance.' },
-  { icon: GitBranch, label: 'Syria graph', description: 'Actors, agreements, displacement, and spillover.' },
-  { icon: Clock3, label: 'Temporality', description: 'Sequence, phases, and change over time.' },
-  { icon: FileText, label: 'Decision brief', description: 'Editable briefing with export-ready structure.' },
-];
-
 const WORKFLOW_STEPS = [
   { title: 'Choose capsule', description: 'Start with the active context: user, situation, sources, and output.' },
   { title: 'Run agent', description: 'Use the big prompt or a suggested policy agent card.' },
@@ -54,13 +32,6 @@ const WORKFLOW_STEPS = [
 ] as const;
 
 export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) {
-  const prefix = useRoutePrefix();
-  const searchParams = useSearchParams();
-  const { user } = useAuth();
-  const isDemo = prefix === '/demo' || user?.isDemo === true;
-  const isSyriaCase = isSyriaWorkspaceCase(searchParams.get('case'), user?.isDemo === true);
-  const features = isSyriaCase ? SYRIA_DEMO_FEATURES : isDemo ? DEMO_FEATURES : REAL_FEATURES;
-
   return (
     <AnimatePresence>
       <motion.div
@@ -92,27 +63,11 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
             </p>
 
             <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-navy-600">
-              {isDemo ? (
-                isSyriaCase ? (
-                  <>
-                    Explore the <span className="font-semibold text-navy-800">Syria Transition</span> public-source case file. PRAXIS shows receipts, time, actors, and the memo path in one workspace.
-                  </>
-                ) : (
-                  <>
-                    Explore the <span className="font-semibold text-navy-800">Nordalia</span> sample workspace. It is a synthetic policy case built to show how PRAXIS organizes sources, context, and writing.
-                  </>
-                )
-              ) : (
-                <>
-                  PRAXIS works like a simple agent dashboard: choose a ContextCapsule, describe the policy task, run a policy agent, then review the output.
-                </>
-              )}
+              PRAXIS works like a simple agent dashboard: choose a ContextCapsule, describe the policy task, run a policy agent, then review the output.
             </p>
-            {!isDemo && (
-              <p className="mt-3 text-xs font-medium text-navy-500">
-                Advanced tools stay behind approval gates; the main workspace stays simple.
-              </p>
-            )}
+            <p className="mt-3 text-xs font-medium text-navy-500">
+              Advanced tools stay behind approval gates; the main workspace stays simple.
+            </p>
           </div>
 
           <div className="px-8 py-5">
@@ -131,10 +86,10 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
 
           <div className="px-8 pb-5">
             <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-navy-400 text-center">
-              {isDemo ? 'What you will explore' : 'What PRAXIS does for policy work'}
+              What PRAXIS does for policy work
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
-              {features.map(({ icon: Icon, label, description }) => (
+              {REAL_FEATURES.map(({ icon: Icon, label, description }) => (
                 <div key={label} className="flex items-start gap-2.5 rounded-lg bg-gray-50 px-3 py-2.5">
                   <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-diplomatic-blue/10">
                     <Icon className="h-3.5 w-3.5 text-diplomatic-blue" />
@@ -157,7 +112,7 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
                 'shadow-md shadow-diplomatic-blue/20'
               )}
             >
-              {isDemo ? 'Start guided tour' : 'Open PRAXIS Home'}
+              Open PRAXIS Home
             </button>
 
             <button
@@ -167,15 +122,11 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
                 'transition-all duration-150 hover:bg-gray-50 active:scale-[0.98]'
               )}
             >
-              {isDemo ? 'Explore sample workspace' : 'Skip welcome'}
+              Skip welcome
             </button>
 
             <p className="text-center text-[11px] text-navy-400 mt-1">
-              {isDemo
-                ? isSyriaCase
-                  ? 'Public-source case file - not live or classified intelligence'
-                  : 'Demo environment - synthetic sample data only'
-                : 'You can revisit this from Settings anytime'}
+              You can revisit this from Settings anytime
             </p>
           </div>
         </motion.div>

@@ -8,12 +8,12 @@ import {
 describe('document evidence review', () => {
   it('normalizes source labels and urls', () => {
     const sources = normalizeEvidenceSources([
-      'UN Geneva Syria briefing https://example.org/syria',
+      'UN Geneva User-defined context briefing https://example.org/User-defined context',
       'ReliefWeb humanitarian update',
     ]);
 
     expect(sources).toEqual([
-      { id: 'source-1', label: 'UN Geneva Syria briefing', url: 'https://example.org/syria' },
+      { id: 'source-1', label: 'UN Geneva User-defined context briefing', url: 'https://example.org/User-defined context' },
       { id: 'source-2', label: 'ReliefWeb humanitarian update', url: undefined },
     ]);
   });
@@ -27,7 +27,7 @@ describe('document evidence review', () => {
           body: 'Adopt an implementation-first posture because humanitarian access and rights guarantees remain uncertain. Tie any public optimism to dated verification triggers, district-level implementation evidence, and explicit follow-up searches before leadership repeats the line.',
         },
       ],
-      ['UN Geneva Syria transition briefing', 'ReliefWeb humanitarian access update'],
+      ['UN Geneva User Transition briefing', 'ReliefWeb humanitarian access update'],
     );
 
     expect(reviews[0].coverageState).toBe('ready');

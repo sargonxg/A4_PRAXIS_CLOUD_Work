@@ -10,11 +10,11 @@ import type { Situation } from '@/types/situation';
 
 const situation = {
   id: 'sit-1',
-  name: 'Syria Transition',
+  name: 'User transition file',
   type: 'international',
   description: 'Transition case.',
-  region: 'Syria',
-  actors: ['Damascus', 'SDF'],
+  region: 'User-defined',
+  actors: ['Lead ministry', 'Regional partner'],
   userRole: 'analyst',
   status: 'active',
   riskScore: 78,
@@ -79,14 +79,14 @@ describe('Ask PRAXIS context pack', () => {
   it('summarizes graph structure and asks for lower confidence when sparse', () => {
     const block = summarizeAskPraxisGraphSnapshot({
       nodes: [
-        { id: 'a1', type: 'actor', label: 'Damascus' },
+        { id: 'a1', type: 'actor', label: 'Lead ministry' },
         { id: 'c1', type: 'claim', label: 'Integration track remains stabilizing' },
       ],
       edges: [{ source: 'a1', target: 'c1', type: 'asserts' }],
     });
 
     expect(block).toContain('Nodes: 2');
-    expect(block).toContain('actor: Damascus');
+    expect(block).toContain('actor: Lead ministry');
     expect(block).toContain('[graph]');
   });
 });

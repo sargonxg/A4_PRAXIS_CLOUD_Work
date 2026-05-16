@@ -18,7 +18,6 @@ import { auth, db } from '@/lib/firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { AnalystProfileSchema, type AnalystProfile } from '@/types/analyst-profile';
 import type { SubscriptionTier } from '@/lib/firebase/firestore';
-import { SYRIA_DEMO_ANALYST_PROFILE } from '@/lib/constants/syria-demo-workspace';
 import { isOnboardingComplete } from '@/lib/auth/onboarding-status';
 
 // ---------------------------------------------------------------------------
@@ -128,9 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null);
 
   // ---------------------------------------------------------------------------
-  // Restore demo session on mount / page refresh.
-  // The demo cookie survives refreshes but the in-memory state does not.
-  // Check the session endpoint to see if a demo cookie exists and restore it.
+  // Restore legacy session on mount / page refresh.
   //
   // We track completion so onAuthStateChanged knows whether it's safe to
   // set loading=false. Without this, the Firebase listener can set
@@ -147,10 +144,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((data) => {
         if (cancelled) return;
         if (data?.user?.isDemo) {
-          setUser(DEMO_USER);
-          setCredits(999);
-          setIsDemoMode(true);
-          setAnalystProfile(SYRIA_DEMO_ANALYST_PROFILE);
+          setUser(null);
+          setCredits(0);
+          setIsDemoMode(false);
+          setAnalystProfile(null);
         }
       })
       .catch(() => {})
@@ -396,10 +393,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Stays null on logout / demo mode — banner and card check this field.
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    if (isDemoMode) {
-      setAnalystProfile(SYRIA_DEMO_ANALYST_PROFILE);
-      return;
-    }
+    if (isDemoMode) { setAnalystProfile(null); return; }
     if (!firebaseUser?.uid) { setAnalystProfile(null); return; }
     const profileRef = doc(db, 'users', firebaseUser.uid, 'profile', 'analyst');
     const unsubscribe = onSnapshot(
@@ -519,20 +513,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Demo mode
+  // Legacy demo entry point retained for UI compatibility; demo sessions are retired.
   const signInAsDemo = useCallback(async () => {
     setAuthError(null);
-    // Set demo cookie FIRST so middleware allows navigation
-    await fetch('/api/auth/session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ demo: true }),
-    });
-    setUser(DEMO_USER);
+    await fetch('/api/auth/session', { method: 'DELETE' });
+    setUser(null);
     setFirebaseUser(null);
-    setCredits(999);
-    setIsDemoMode(true);
-    setAnalystProfile(SYRIA_DEMO_ANALYST_PROFILE);
+    setCredits(0);
+    setIsDemoMode(false);
+    setAnalystProfile(null);
     setLoading(false);
   }, []);
 

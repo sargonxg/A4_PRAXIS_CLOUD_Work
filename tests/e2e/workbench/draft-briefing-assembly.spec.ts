@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { openExampleWorkbench, openWorkbenchChapter } from '../personas/_shared/persona-fixtures';
 
 test('draft renders Pack 28 briefing assembly and exports a package', async ({ page }) => {
-  await openExampleWorkbench(page, 'syria-2026');
+  await openExampleWorkbench(page, 'user-case');
   await openWorkbenchChapter(page, 'Draft');
 
   await expect(page.getByTestId('workbench-draft-surface')).toBeVisible();

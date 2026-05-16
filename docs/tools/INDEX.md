@@ -89,8 +89,9 @@ As of the same sprint, every registered tool also has a computed context
 blueprint in `src/lib/tools/tool-context-blueprints.ts`. The blueprint declares
 required context layers, database paths, graph-backbone mode, evidence policy,
 document-production/LibreOffice readiness, and future Dialectica role. Generated
-per-tool specifications live under `docs/tools/generated/` and can be refreshed
-with `npm run generate:tool-docs`.
+per-tool specifications are no longer committed; refresh them locally with
+`npm run generate:tool-docs` when a tool-contract review needs the expanded
+artifact set.
 
 ## Authoring guidance for future docs
 

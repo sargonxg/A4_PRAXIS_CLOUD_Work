@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { openExampleWorkbench } from '../personas/_shared/persona-fixtures';
 
 test('context tab renders Pack 26 scope studio sections', async ({ page }) => {
-  await openExampleWorkbench(page, 'syria-2026', 'context');
+  await openExampleWorkbench(page, 'user-case', 'context');
 
   await expect(page.getByTestId('workbench-context-surface')).toBeVisible();
   await expect(page.getByRole('heading', { name: /^Context Studio$/i })).toBeVisible();

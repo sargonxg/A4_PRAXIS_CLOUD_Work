@@ -192,7 +192,7 @@ function tasksFor(row: Omit<ToolBacklogRow, 'sprintTasks' | 'verification'>): st
 
 function verificationFor(row: Omit<ToolBacklogRow, 'sprintTasks' | 'verification'>): string[] {
   const checks = [
-    `Open /demo/${PAGE_ALIASES[row.id] ?? row.id} or /app/${PAGE_ALIASES[row.id] ?? row.id} and verify header, operating contract, loading, empty, error, and generated states.`,
+    `Open /app/${PAGE_ALIASES[row.id] ?? row.id} and verify header, operating contract, loading, empty, error, and generated states.`,
     'Ask PRAXIS: "this output is wrong, update it because..." and verify it asks missing required questions before writing.',
   ];
   if (row.routeName.startsWith('/')) {

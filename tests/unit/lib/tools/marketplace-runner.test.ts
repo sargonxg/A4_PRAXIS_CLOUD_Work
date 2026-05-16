@@ -20,10 +20,10 @@ const snapshot: ContextSnapshot = {
     methodologyDocs: [],
   },
   case: {
-    caseId: 'syria-2026',
+    caseId: 'user-case',
     ownerUid: 'u1',
     ontologyId: 'conflict',
-    frame: { name: 'Syria 2026', region: 'Levant', summary: 'Example context.' },
+    frame: { name: 'User Case', region: 'Levant', summary: 'Example context.' },
     sourceCount: 2,
     documentCount: 1,
     graphNodeCount: 3,
@@ -93,11 +93,11 @@ describe('marketplace runner', () => {
     const result = buildMarketplaceToolRun({
       tool,
       runContext,
-      analystContext: { caseName: 'Syria 2026', region: 'Levant' },
+      analystContext: { caseName: 'User Case', region: 'Levant' },
     });
 
-    expect(result.rawText).toContain('Syria 2026');
-    expect(result.structuredOutput.case).toMatchObject({ name: 'Syria 2026', region: 'Levant' });
+    expect(result.rawText).toContain('User Case');
+    expect(result.structuredOutput.case).toMatchObject({ name: 'User Case', region: 'Levant' });
   });
 
   it('returns SAT-shaped structured output for the analyst toolkit tools', () => {

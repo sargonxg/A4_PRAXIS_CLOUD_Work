@@ -104,7 +104,7 @@ Audit pass to remove or fold:
 | `/app/cases` (legacy "cases" list) | Fold into Library; redirect. |
 | `/app/situations` and `/app/situations/new` | Fold into a "Start a Situation" flow that lives inside the Cores page; redirect both routes. |
 | `/app/profile` | Fold into `/app/settings/profile`; redirect. |
-| `/app/settings/personas/*` | Move to Admin. Personas are an admin concept. |
+| `/app/settings/personas/*` | Removed in the Tasklet cleanup pass; persona behavior should be expressed through User Core preferences and runtime policy, not a visible settings subtree. |
 | `/app/settings/api-keys`, `model-preferences`, `notifications`, `system-health` | Move to Admin → Settings. |
 | `/app/tools/archive` | Already gated by `?show_archive=1`. Make it admin-only. |
 

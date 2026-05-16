@@ -164,6 +164,31 @@ export async function listAgentRunsForCapsule(ownerUid: string, capsuleId: strin
   return result.rows.map(rowToAgentRun);
 }
 
+export async function listAgentRunEvents(input: {
+  ownerUid: string;
+  runId: string;
+  after?: string | null;
+  limit?: number;
+}): Promise<AgentRunEvent[]> {
+  await ensureSchema();
+  const run = await getAgentRun(input.ownerUid, input.runId);
+  if (!run) return [];
+  const limit = Math.max(1, Math.min(200, Math.floor(input.limit ?? 100)));
+  const after = input.after ? new Date(input.after) : null;
+  const result = await getPool().query(
+    `
+      SELECT * FROM agent_run_events
+      WHERE run_id = $1
+        AND owner_uid = $2
+        AND ($3::timestamptz IS NULL OR created_at > $3::timestamptz)
+      ORDER BY created_at ASC
+      LIMIT $4
+    `,
+    [run.id, input.ownerUid, after, limit],
+  );
+  return result.rows.map(rowToAgentRunEvent);
+}
+
 export async function appendAgentRunEvent(input: AgentRunEvent): Promise<AgentRunEvent> {
   await ensureSchema();
   const result = await getPool().query(

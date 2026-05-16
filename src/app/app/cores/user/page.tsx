@@ -88,8 +88,8 @@ export default function UserCorePage() {
             body: 'Advanced settings keep persona, model, notification, and API preferences available without crowding the main workflow.',
           },
         ]}
-        actionHref="/app/settings/personas"
-        actionLabel="Open persona settings"
+        actionHref="/app/settings/preferences"
+        actionLabel="Open core preferences"
       />
     </main>
   );

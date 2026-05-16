@@ -1,19 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { PRODUCT_SURFACES, PRODUCT_SURFACE_IDS } from '@/lib/navigation/product-surfaces';
 
-describe('Phase 3 product surfaces', () => {
-  it('defines exactly the eight default app surfaces in order', () => {
+describe('Tasklet-era product surfaces', () => {
+  it('defines the compact default app surfaces in order', () => {
     expect(PRODUCT_SURFACE_IDS).toEqual([
       'desk',
       'context',
       'library',
       'research',
       'graph',
-      'boardroom',
       'draft',
       'tools',
     ]);
-    expect(PRODUCT_SURFACES).toHaveLength(8);
+    expect(PRODUCT_SURFACES).toHaveLength(7);
   });
 
   it('keeps every surface routable under /app', () => {

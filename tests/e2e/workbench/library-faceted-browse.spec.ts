@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { openExampleWorkbench } from '../personas/_shared/persona-fixtures';
 
 test('library renders Pack 27 faceted artifact browser', async ({ page }) => {
-  await openExampleWorkbench(page, 'syria-2026', 'library');
+  await openExampleWorkbench(page, 'user-case', 'library');
 
   await expect(page.getByTestId('workbench-library-surface')).toBeVisible();
   await expect(page.getByRole('heading', { name: /^Library$/i })).toBeVisible();

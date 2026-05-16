@@ -1,11 +1,29 @@
 import { tool, generateText, Output } from 'ai';
 import { z } from 'zod';
-import { DEMO_CONFLICT } from '@/lib/constants/demo-conflict';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { findMediaOutlet } from '@/lib/constants/media-database';
 import { executeWebResearch, type WebResearchResult } from '@/lib/ai/web-research';
 import { searchWeb } from '@/lib/ai/grounded-research';
 import { getModel, getProModel } from '@/lib/ai/providers';
+
+const DEFAULT_USER_CONFLICT = {
+  id: 'user-context',
+  name: 'User context',
+  description: 'User-owned situation context. Ask PRAXIS should use the active Situation, ContextCapsules, source receipts, and graph snapshot whenever they are available.',
+  actors: [
+    { id: 'primary-user-actor', name: 'Primary user-defined actor', type: 'user-defined', description: 'Actor supplied by the active user situation.' },
+  ],
+  events: [] as Array<Record<string, unknown>>,
+  narratives: [] as Array<Record<string, unknown>>,
+  claims: [] as Array<Record<string, unknown>>,
+  interests: [] as Array<Record<string, unknown>>,
+  constraints: [] as Array<Record<string, unknown>>,
+  leverage: [] as Array<Record<string, unknown>>,
+  commitments: [] as Array<Record<string, unknown>>,
+  relationships: [] as Array<Record<string, unknown>>,
+  glaslStage: 0,
+  escalationTrend: 'stable',
+};
 
 // ---------------------------------------------------------------------------
 // Shared helpers — truncation and timeout
@@ -237,7 +255,7 @@ export const queryConflictGraph = tool({
     try {
       // In production: fetch conflict from database by conflictId.
       // For demo, use the pre-loaded Nordalia Crisis dataset.
-      const conflict = DEMO_CONFLICT;
+      const conflict = DEFAULT_USER_CONFLICT;
 
       let results: unknown[] = [];
 
@@ -354,7 +372,7 @@ export const draftSection = tool({
   execute: async ({ sectionTitle, templateType, conflictId: _conflictId, instructions, wordLimit, tone }) => {
     try {
       // Load real conflict data for grounding
-      const conflict = DEMO_CONFLICT;
+      const conflict = DEFAULT_USER_CONFLICT;
       const actorSummary = conflict.actors
         .map((a) => `${a.name} (${a.type}): ${a.description.slice(0, 120)}...`)
         .join('\n');
@@ -893,7 +911,7 @@ export const generateTalkingPoints = tool({
   execute: async ({ topic: _topic, audience, position, conflictId, maxPoints }) => {
     try {
     // Ground in real conflict data if available
-    const conflict = DEMO_CONFLICT;
+    const conflict = DEFAULT_USER_CONFLICT;
     const actorContext = conflict.actors
       .slice(0, 5)
       .map((a) => `${a.name}: ${a.description.slice(0, 80)}...`)
@@ -980,7 +998,7 @@ export const escalationAssessment = tool({
   execute: async ({ conflictId: _conflictId, specificConcern, timeHorizon }) => {
     try {
     // Load conflict data
-    const conflict = DEMO_CONFLICT;
+    const conflict = DEFAULT_USER_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
     const events = (conflictData.events as Array<Record<string, unknown>> | undefined) ?? [];
     const recentEvents = events
@@ -1089,7 +1107,7 @@ export const negotiationSpaceAnalysis = tool({
   }),
   execute: async ({ conflictId: _conflictId, issuesOfFocus, mediationContext }) => {
     try {
-    const conflict = DEMO_CONFLICT;
+    const conflict = DEFAULT_USER_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
     const actors = conflict.actors.slice(0, 6).map((a) => ({
       id: a.id,
@@ -1208,7 +1226,7 @@ export const narrativeEcosystemMap = tool({
   }),
   execute: async ({ conflictId: _conflictId, focus, audienceFocus }) => {
     try {
-    const conflict = DEMO_CONFLICT;
+    const conflict = DEFAULT_USER_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
     const narratives = ((conflictData.narratives as Array<Record<string, unknown>> | undefined) ?? [])
       .map(
@@ -1326,7 +1344,7 @@ export const historicalParallelsAnalysis = tool({
   }),
   execute: async ({ conflictId, dimension, timeframe }) => {
     try {
-    const conflict = DEMO_CONFLICT;
+    const conflict = DEFAULT_USER_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
     const actors = conflict.actors.slice(0, 6).map((a) => `${a.name} (${a.type})`).join(', ');
     const events = (conflictData.events as Array<Record<string, unknown>> | undefined) ?? [];
@@ -1415,7 +1433,7 @@ export const generateTimeline = tool({
   }),
   execute: async ({ conflictId, startDate, endDate, eventTypes, includeProjected }) => {
     try {
-    const conflict = DEMO_CONFLICT;
+    const conflict = DEFAULT_USER_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
     const allEvents = (conflictData.events as Array<Record<string, unknown>> | undefined) ?? [];
 
@@ -1546,7 +1564,7 @@ export const sanctionsCheck = tool({
   }),
   execute: async ({ entityName, conflictId, sanctionsBody, includeGuidance }) => {
     try {
-    const conflict = DEMO_CONFLICT;
+    const conflict = DEFAULT_USER_CONFLICT;
     const conflictActors = conflict.actors.map((a) => `${a.name} (${a.type}): ${a.description.slice(0, 80)}`).join('\n');
 
     const { output } = await generateText({
@@ -1666,7 +1684,7 @@ export const humanitarianSnapshot = tool({
   }),
   execute: async ({ conflictId, focusSectors, asOfDate }) => {
     try {
-    const conflict = DEMO_CONFLICT;
+    const conflict = DEFAULT_USER_CONFLICT;
     const conflictData = conflict as Record<string, unknown>;
     const actors = conflict.actors.map((a) => `${a.name} (${a.type})`).join(', ');
     const events = (conflictData.events as Array<Record<string, unknown>> | undefined) ?? [];
@@ -1803,7 +1821,7 @@ export const compareConflicts = tool({
   }),
   execute: async ({ conflictId1, conflictId2, dimensions, purpose }) => {
     try {
-    const conflict1 = DEMO_CONFLICT;
+    const conflict1 = DEFAULT_USER_CONFLICT;
     const conflictData1 = conflict1 as Record<string, unknown>;
     const actors1 = conflict1.actors.slice(0, 5).map((a) => `${a.name} (${a.type})`).join(', ');
     const events1 = (conflictData1.events as Array<Record<string, unknown>> | undefined) ?? [];
@@ -2745,7 +2763,7 @@ export interface ConflictGraphSnapshot {
 
 /**
  * Creates situation-bound tool instances for the authenticated chat route.
- * Tools that used to hardcode DEMO_CONFLICT will now use real situation data.
+ * Tools that used to hardcode DEFAULT_USER_CONFLICT will now use real situation data.
  *
  * @param situationCtx - Structured context from the user's active situation
  * @param graphSnapshot - Pre-fetched conflict graph data from Firestore (optional)
@@ -2755,15 +2773,15 @@ export function createSituationBoundTools(
   graphSnapshot?: ConflictGraphSnapshot | null,
 ) {
   // Derive a context string for prompt injection
-  const ctxName = situationCtx?.name ?? DEMO_CONFLICT.name;
-  const ctxDescription = situationCtx?.description ?? DEMO_CONFLICT.description;
-  const ctxActors = situationCtx?.actorSummary ?? DEMO_CONFLICT.actors.slice(0, 5).map((a) => `${a.name}: ${a.description.slice(0, 80)}`).join('\n');
+  const ctxName = situationCtx?.name ?? DEFAULT_USER_CONFLICT.name;
+  const ctxDescription = situationCtx?.description ?? DEFAULT_USER_CONFLICT.description;
+  const ctxActors = situationCtx?.actorSummary ?? DEFAULT_USER_CONFLICT.actors.slice(0, 5).map((a) => `${a.name}: ${a.description.slice(0, 80)}`).join('\n');
   const ctxEvents = situationCtx?.eventSummary ?? '';
   const ctxRegion = situationCtx?.region ?? 'Unknown region';
   const isRealSituation = !!situationCtx;
 
   // --- Bound: queryConflictGraph ---
-  // Uses the pre-fetched graph snapshot when available; falls back to DEMO_CONFLICT.
+  // Uses the pre-fetched graph snapshot when available; falls back to DEFAULT_USER_CONFLICT.
   const boundQueryConflictGraph = tool({
     description: queryConflictGraph.description,
     inputSchema: queryConflictGraph.inputSchema,
@@ -2825,7 +2843,7 @@ export function createSituationBoundTools(
           };
         }
 
-        // Fall back to DEMO_CONFLICT for demo users
+        // Fall back to DEFAULT_USER_CONFLICT for demo users
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (queryConflictGraph.execute as any)({ conflictId, entityType, actorId, query });
       } catch (err) {
@@ -2836,7 +2854,7 @@ export function createSituationBoundTools(
   });
 
   // --- Bound: escalationAssessment ---
-  // Uses real situation context instead of DEMO_CONFLICT.
+  // Uses real situation context instead of DEFAULT_USER_CONFLICT.
   const boundEscalationAssessment = tool({
     description: escalationAssessment.description,
     inputSchema: escalationAssessment.inputSchema,

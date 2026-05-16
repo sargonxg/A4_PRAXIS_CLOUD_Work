@@ -14,7 +14,7 @@ describe('post-login redirect', () => {
     expect(resolvePostLoginRedirect(new URLSearchParams('redirect=/app/dashboard'), false, false)).toBe('/onboarding');
   });
 
-  it('keeps demo users on example workbench routes', () => {
-    expect(resolvePostLoginRedirect(new URLSearchParams('example=syria-2026'), true, true)).toBe('/app/workbench/syria-2026');
+  it('keeps legacy demo users on the user-owned dashboard', () => {
+    expect(resolvePostLoginRedirect(new URLSearchParams('example=user-case'), true, true)).toBe('/app/dashboard');
   });
 });

@@ -23,21 +23,21 @@ describe('buildAdvancedMediaSearchQuery', () => {
 
   it('drops empty terms without changing operator order', () => {
     const query = buildAdvancedMediaSearchQuery({
-      keywords: ['  Nordalia ', ''],
+      keywords: ['  User Case ', ''],
       exactPhrases: ['  ceasefire   violation  '],
       excludeTerms: [''],
     });
 
-    expect(query).toBe('(Nordalia) "ceasefire violation"');
+    expect(query).toBe('(User Case) "ceasefire violation"');
   });
 });
 
 describe('buildSituationMediaKeywords', () => {
   it('combines situation name, region, and actors', () => {
     expect(buildSituationMediaKeywords({
-      name: 'Nordalia Crisis',
+      name: 'User Case Crisis',
       region: 'Eastern Provinces',
       actors: ['AFN', 'DRM'],
-    })).toEqual(['Nordalia Crisis', 'Eastern Provinces', 'AFN', 'DRM']);
+    })).toEqual(['User Case Crisis', 'Eastern Provinces', 'AFN', 'DRM']);
   });
 });

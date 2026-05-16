@@ -25,7 +25,7 @@ Already established:
 
 - Public product pages now include `/learn`, `/tacitus`, `/pricing`, and
   `/release-notes`, and public navigation points to those pages rather than
-  older demo-first language.
+  older user-owned-first language.
 - `/app/contexts` now includes a capsule composition panel for pick/fork/lock
   and combination-recipe review.
 - Evidence-based cleanup for the Tasklet-style MVP direction is tracked in
@@ -142,7 +142,7 @@ Tasks:
 - Preserve selected path and output goal through the login handoff.
 - Add custom User Core creation for user personas.
 - Attach suggested tools and outputs from the chosen path.
-- Keep user-owned cores separate from demo cores.
+- Keep user-owned cores separate from user-owned cores.
 - Add tests when new paths, outputs, connectors, or recipes are added.
 
 Validation:
@@ -166,7 +166,7 @@ Tasks:
 - Ensure create-new-core flows are available for User, Situation, Source,
   Document, Graph, Time, Tool, Objective, Product, Output, and Memory where
   current APIs support it.
-- Improve fork/copy/demo language so demo mode stays read-only until copied.
+- Improve fork/copy/app language so authenticated mode stays read-only until copied.
 - Add capsule combination UI as a proposal/review flow, not a destructive merge.
 - Preserve contradictions and graph proposals during combination.
 

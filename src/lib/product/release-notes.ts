@@ -33,7 +33,7 @@ export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
     summary: 'The public surface is narrower: legacy demo pages and old tour UI are removed while compatibility redirects stay in proxy.',
     category: 'governance',
     items: [
-      'Removed the redundant /demo App Router pages now that proxy redirects send legacy demo links into the authenticated workbench shape.',
+      'Removed the retired demo route surface so users enter PRAXIS through authenticated, user-owned workspaces.',
       'Deleted the unused guided-tour component stack and its stale unit test.',
       'Replaced the dashboard command-center smoke with checks for the shared Tasklet-style PRAXIS capsule cockpit.',
       'The demo fixture verifier now validates seed data only, not a public demo route implementation.',

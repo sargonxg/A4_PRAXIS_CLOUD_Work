@@ -116,7 +116,18 @@ export async function getUserAwareIntelligence(opts: UserAwareOptions): Promise<
   };
   for (const item of items) {
     const days = item.date ? Math.max(0, Math.floor((now - new Date(item.date).getTime()) / 86400000)) : 30;
-    item.trustScore = computeTrustworthiness({ sources: [sourceMap[item.source] ?? item.source], recencyDays: days });
+    const trust = computeTrustworthiness({ sources: [sourceMap[item.source] ?? item.source], recencyDays: days });
+    item.trustScore = {
+      score: trust.score,
+      level: trust.level === 'verified' || trust.level === 'high'
+        ? 'high'
+        : trust.level === 'medium'
+          ? 'medium'
+          : trust.level === 'low'
+            ? 'low'
+            : 'unknown',
+      reasons: [trust.reasoning],
+    };
   }
 
   // Coverage gaps — what is the user missing and how do they unlock it?

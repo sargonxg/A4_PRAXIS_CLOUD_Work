@@ -5,13 +5,13 @@
 Current cleanup checkpoint:
 
 - Central app metadata is now build `2026.05.16.07`.
-- Redundant App Router `/demo` page files are removed; legacy `/demo/*` URLs
+- Redundant App Router `/app` page files are removed; legacy `retired user-owned routes` URLs
   continue to redirect through `src/proxy.ts` into `/app/workbench/*`.
 - The unused guided-tour component stack is deleted.
 - The old dashboard-command-center Playwright smoke is replaced with shared
   PRAXIS cockpit checks for desktop and mobile.
-- Demo fixture verification now validates seed context quality without
-  requiring a public `/demo/[contextId]` route implementation.
+- user-owned fixture verification now validates seed context quality without
+  requiring a public `/app/[contextId]` route implementation.
 
 ## 2026-05-16 — Release Notes And Build Number Governance
 
@@ -124,8 +124,8 @@ Current cleanup checkpoint:
   current Tasklet runtime docs.
 - `/tour` now redirects to `/`, keeping the public product entry on the
   Tasklet-style PRAXIS workbench.
-- `/demo/*` remains as redirect/sample-session compatibility until the remaining
-  demo-copy and smoke-test references are removed.
+- `retired user-owned routes` remains as redirect/sample-session compatibility until the remaining
+  user-owned-copy and smoke-test references are removed.
 
 ## 2026-05-15 — Tasklet-Style Login And Welcome Handoff
 
@@ -173,13 +173,13 @@ Current foundation checkpoint:
   Pricing, and Release notes, with the homepage still acting as the
   prompt-first ContextCapsule entry point.
 - Added `/learn`, `/tacitus`, and `/release-notes` so the public site supports
-  the Tasklet-style PRAXIS model without sending users into old demo-first
+  the Tasklet-style PRAXIS model without sending users into old user-owned-first
   pages.
 - `/app/contexts` now includes a capsule composition panel for pick/fork/lock
   and combination-recipe review, keeping complex context assembly inside the
   capsule manager rather than creating another top-level product.
 - Pricing copy now describes ContextCapsule workspaces and user/capsule/tool
-  value instead of demo-era walkthrough packaging.
+  value instead of user-owned-era walkthrough packaging.
 - Added `docs/audits/2026-05-15-tasklet-mvp-cleanup-ledger.md` and
   `npm run audit:tasklet-mvp-foundation` to keep cleanup evidence-based before
   route/component deletion.
@@ -458,10 +458,10 @@ Current local cleanup pass:
   soft warnings. Live findings and cleanup candidates are recorded in
   `docs/audits/2026-05-13-gcp-firebase-auth-cleanup.md`.
 - Landing page is being consolidated around Ask PRAXIS, User Core, Situation
-  Core, suggested tools, and memo output. The previous "Live demo bar",
+  Core, suggested tools, and memo output. The previous "Live user-owned bar",
   cached-answer CTA, and read-only context CTA are removed from active landing
   copy.
-- Public duplicate routes `/demo/*`, `/contexts*`, `/methods*`, `/draft*`, and
+- Public duplicate routes `retired user-owned routes`, `/contexts*`, `/methods*`, `/draft*`, and
   `/users*` are legacy redirects into canonical `/app/*` surfaces rather than
   first-class product pages.
 - `audit:mvp-route-shape` now guards the simplified route posture and the
@@ -485,7 +485,7 @@ Current local cleanup pass:
   follow-up, not a claimed production feature.
 - Active Context Stack persistence is now implemented through
   `/api/workspace/context-stack`, stored at `users/{uid}/contextStacks/default`
-  with owner-only Firestore rules. Demo sessions remain non-mutating.
+  with owner-only Firestore rules. user-owned sessions remain non-mutating.
 - The "Work on this" action menu is live on core cards, next actions, Canvas
   nodes, and selected Library receipts. Memo Studio now exposes deterministic
   claim-level Evidence Gap Reports with `supported`, `weak`, `unsupported`, and
@@ -496,13 +496,13 @@ Current local cleanup pass:
   command-palette-first secondary actions, progressive disclosure, and
   workbench visual rules. The app shell includes a `cmdk` command palette for
   Home, Ask PRAXIS, Library, Memo Studio, Canvas, and core context actions.
-- Demo-to-real conversion now supports the three v5 demo Situation Cores:
+- user-owned-to-real conversion now supports the three v5 user-owned Situation Cores:
   Indo-Pacific Strategic Competition 2026, AI Regulation 2026 - US Federal
   and State Landscape, and Food and Beverage Regulatory and Sustainability
   Outlook 2026. The copy endpoint creates a user-owned Situation, structured
   User/Situation/Source/Graph/Output Core records under `users/{uid}/cores`,
   source receipts under the copied Situation, a default active context stack,
-  and starter next moves. Syria copy remains on the older dedicated demo path.
+  and starter next moves. user-owned copy remains on the older dedicated user-owned path.
 - Library source intake now has a visible drop zone backed by the existing
   `/api/documents/upload` and library ingest path. TXT/MD/HTML, PDF, and DOCX
   uploads extract inline, chunk for retrieval, attach document IDs to the
@@ -518,7 +518,7 @@ Current local cleanup pass:
   `npx playwright test tests/e2e/simplified-workbench-smoke.spec.ts`,
   `npm run audit:mvp-route-shape`, and
   `npm run audit:architecture-reference`.
-- Focused validation for the demo-core pass passed on 2026-05-13:
+- Focused validation for the user-owned-core pass passed on 2026-05-13:
   `npm run typecheck`, `npx vitest run src/__tests__/context-health.test.ts`,
   `npx playwright test tests/e2e/simplified-workbench-smoke.spec.ts`,
   `npm run build`, `npm run audit:mvp-route-shape`,
@@ -537,7 +537,7 @@ Current Phase 9 blockers:
 
 Latest production deploy evidence:
 
-- Demo-core context workbench deploy:
+- user-owned-core context workbench deploy:
   - Commit `435ca95a` pushed to `main`.
   - Cloud Build `dfc67dd4-1b85-4fc7-b439-c574ceb65d87` succeeded.
   - Cloud Run frontend revision `praxis-frontend-00374-g8v` became ready with 100% traffic.
@@ -579,7 +579,7 @@ Latest production deploy evidence:
 - Cloud Run frontend revision `praxis-frontend-00308-29d` became ready.
 - Final cleanup revision `praxis-frontend-00310-bqx` became ready after Cloud
   Build `337715b7-ec55-4cec-b15b-5511f6861684`.
-- `https://praxis.tacitus.me/`, `/api/health`, three public demo routes,
+- `https://praxis.tacitus.me/`, `/api/health`, three public user-owned routes,
   `/pricing`, and `/login` returned HTTP 200.
 - Production browser checks across desktop/mobile reported no console
   warnings/errors on the checked routes.
@@ -611,7 +611,7 @@ ledger as the active MVP build queue.
 | Phase 5 | Ask homepage + Public landing | not-started |
 | Phase 6 | Drafting Studio + 5 templates | not-started |
 | Phase 7 | Subagent runtime on Vertex Agent Engine | not-started |
-| Phase 8 | Demo seeding (3 Contexts) + Polish + Ship | not-started |
+| Phase 8 | user-owned seeding (3 Contexts) + Polish + Ship | not-started |
 
 Phase 0 repo notes:
 
@@ -648,14 +648,14 @@ core) plus v7 STATUS.
 
 ## Morning Brief
 
-- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `COMPREHENSIVE_AUDIT` read-only evidence pass, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt, `V2_D0_STRUCTURED_EVENTS` static implementation, `V2_D1_KPI_PIPELINE` static assets, `V2_ITERATE_LOOP`, `V2_STATUS_TEMPLATE`, `V2_Z1_EXPORT_E2E`, `V2_Z2_DEMO_TRANSITION`, `V2_Z3_DEEP_RESEARCH_CONSOLIDATE`.
+- Prompts completed: `01_DIAGNOSTICS`, `02_MARKETPLACE_HONESTY`, `03_CALIBRATION_INVARIANT`, `04_COGNEE_UI_HONESTY`, `05_CHAPTER_CODE_SPLIT`, `06_LIBRARY_INGEST_CONSOLIDATION` static implementation, `07_ONBOARDING_GATE`, `08_THIN_CASE_CALIBRATION`, `10_ACO_EXPLAINER`, `11_AUDIT_PROMOTION`, `12_HYGIENE` low-risk items, `13_ITERATE_LOOP`, `STATUS_TEMPLATE`, `COMPREHENSIVE_AUDIT` read-only evidence pass, `V2_00_README`, `V2_A0_MT_DATA_MODEL`, `V2_B0_KG_PREFLIGHT` local attempt, `V2_D0_STRUCTURED_EVENTS` static implementation, `V2_D1_KPI_PIPELINE` static assets, `V2_ITERATE_LOOP`, `V2_STATUS_TEMPLATE`, `V2_Z1_EXPORT_E2E`, `V2_Z2_user-owned_TRANSITION`, `V2_Z3_DEEP_RESEARCH_CONSOLIDATE`.
 - Prompts deferred: Cloud SQL live row counts from `01` and `V2_B0_KG_PREFLIGHT` are blocked locally by private IP plus missing local `psql`/Cloud SQL Proxy; `V2_A1_ORGID_CONTEXT` through `V2_A6_MT_AUDIT_LOG` are blocked until all MT approval rows below are marked approved or explicitly revised; `V2_B1_DUAL_WRITE_GRAPH` through `V2_B3_RETIRE_FIRESTORE_GRAPH` are blocked until B0 live counts select and approve Case 1/2/3, B1 runs clean for 7 days, and B2 runs clean for 7 days; `V2_C0_COGNEE_LIVE` and `V2_C1_MEMORY_RECALL_IN_CALIBRATION` are blocked because `praxis-cognee` is not deployed in Cloud Run; `V2_C2_AGENT_ENGINE_SUBAGENTS` is blocked pending the deploy-vs-rename decision.
 - Recovery loop resolved: `audit:ux-polish`, `audit:workbench`, `audit:evidence-drawer`, `audit:graph-viewer`, `audit:visualization`, `audit:master-charter`, stale Graphify outputs, and withCalibration unit fixture drift.
 - Measured deltas:
   - Workbench root JS gzipped: current built workbench initial client JS is `514.2 KB gzip`, guarded by `audit:workbench-bundle` at `520 KB`.
-  - Tools chapter density: live demo DOM count is 54 interactive controls after opening the closed Recipe library.
-  - Prompt-health: thin synthetic case `72/red`, rich Syria demo `94/yellow`, prompt block delta `+2179` bytes for rich.
-- Next-session priorities: deploy D0/Z1/Z2/Z3 telemetry and confirm production Cloud Logging emits `praxis.telemetry.*`; run browser E2E for briefing/boardroom downloads, demo copy-to-workspace, and Deep Research Agent fallback stream shape; then wire D1 BigQuery sink/dashboard; decide C2 Option A deploy vs Option B rename; run B0 KG preflight from a VPC-connected shell; deploy or provision `praxis-cognee` before C0; GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
+  - Tools chapter density: live user-owned DOM count is 54 interactive controls after opening the closed Recipe library.
+  - Prompt-health: thin synthetic case `72/red`, rich user-owned user-owned `94/yellow`, prompt block delta `+2179` bytes for rich.
+- Next-session priorities: deploy D0/Z1/Z2/Z3 telemetry and confirm production Cloud Logging emits `praxis.telemetry.*`; run browser E2E for briefing/boardroom downloads, user-owned copy-to-workspace, and Deep Research Agent fallback stream shape; then wire D1 BigQuery sink/dashboard; decide C2 Option A deploy vs Option B rename; run B0 KG preflight from a VPC-connected shell; deploy or provision `praxis-cognee` before C0; GC approval of the five MT decisions, then `A1_ORGID_CONTEXT.md`; runtime document ingest parity and production workbench smoke remain carried follow-ups.
 - Blockers requiring GC: none for the low-risk code changes here; production deployment/commit approval remains separate.
 
 ---
@@ -707,7 +707,7 @@ core) plus v7 STATUS.
 | V2_ITERATE_LOOP | done | Preserved `ITERATE_LOOP.md` as a V2 control prompt, registered it in `audit:codex-prompts`, and kept the recovery playbook available for future audit/test failures. |
 | V2_STATUS_TEMPLATE | done | Preserved `STATUS_TEMPLATE.md` as a V2 control prompt, registered it in `audit:codex-prompts`, and reconciled its required operational-step structure with this richer status ledger. |
 | V2_Z1_EXPORT_E2E | partial | Briefing and boardroom export structure, telemetry hooks, client progress, prompt preservation, and `audit:export-coverage` are built; live browser download and Cloud Logging telemetry confirmation remain deployment gates. |
-| V2_Z2_DEMO_TRANSITION | partial | Public demo copy CTA, authenticated `/api/situations/copy-from-demo`, canonical graph seed, workspace banner, prompt preservation, and `audit:demo-claim` are built; authenticated production copy smoke remains a deployment gate. |
+| V2_Z2_user-owned_TRANSITION | partial | Public user-owned copy CTA, authenticated `/api/situations/copy-from-user-owned`, canonical graph seed, workspace banner, prompt preservation, and `audit:user-owned-claim` are built; authenticated production copy smoke remains a deployment gate. |
 | V2_Z3_DEEP_RESEARCH_CONSOLIDATE | partial | `/api/ai/deep-search-agent` is canonical, `/api/ai/deep-research` is soft-deprecated with the same SSE envelope, active consumers point to the canonical route, tool docs regenerated, and `audit:deep-research-canonical` is in gate; D1 p50/p95/cost/failure metrics remain unavailable locally. |
 | COMPREHENSIVE_AUDIT | done | Read-only audit saved at `docs/audits/2026-05-08-CODEBASE_AUDIT/`; generated 44+ evidence artifacts plus the source prompt, mapped deletion/consolidation/refactor candidates, and intentionally executed no source deletions per the prompt's hard rule. |
 
@@ -851,7 +851,7 @@ marked `approved` or `revised: <alternative>`.
 
 ### Tools Chapter Density
 
-- Runtime path: local production server on `localhost:3032`, demo session cookie, `/app/workbench/syria-2026`, opened the closed `Tools` chapter.
+- Runtime path: local production server on `localhost:3032`, user-owned session cookie, `/app/workbench/user-owned-2026`, opened the closed `Tools` chapter.
 - Container: `[data-testid="tool-marketplace"]`.
 - Heading: `Recipe library`.
 - Buttons: `51`.
@@ -865,7 +865,7 @@ marked `approved` or `revised: <alternative>`.
 
 - Thin synthetic case: `72/red`.
 - Thin missing/weak layers: no source/document evidence, thin graph, no retrieved chunks or episodes.
-- Rich Syria demo case: `94/yellow`.
+- Rich user-owned user-owned case: `94/yellow`.
 - Rich finding: freshness warning, `Situation context has not been refreshed in 6 day(s).`
 - Prompt block bytes: thin `3022`, rich `5201`, delta `+2179`.
 - Prompt files written for this diagnostic run: `%TEMP%\prompt-thin.txt`, `%TEMP%\prompt-rich.txt`.

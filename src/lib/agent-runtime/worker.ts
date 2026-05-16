@@ -2,6 +2,7 @@ import type { AgentRun } from '@/lib/agent-runtime/types';
 import { getAgentRun, updateAgentRunStatus } from '@/lib/agent-runtime/postgres';
 import { saveMemoDraft, type SaveMemoDraftInput } from '@/lib/firebase/memo-service';
 import { getPolicyAgent } from '@/lib/product/policy-agents';
+import { buildResearchMemoReasoningLoop } from '@/lib/agent-runtime/reasoning-loop';
 import {
   buildCapsuleWorkerContext,
   mirrorWorkerEvent,
@@ -203,6 +204,7 @@ async function executeResearchMemoAgentRun(
     }
 
     const workerContext = buildCapsuleWorkerContext(running);
+    const loop = buildResearchMemoReasoningLoop(running);
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'context_resolved',
@@ -214,6 +216,43 @@ async function executeResearchMemoAgentRun(
         executionMode: 'research-memo',
       },
     }, deps);
+
+    for (const step of loop.steps) {
+      await mirrorWorkerEvent(running, {
+        substrate: 'praxis',
+        phase: `reasoning.${step.phase}`,
+        message: step.message,
+        data: {
+          stepId: step.id,
+          toolId: step.toolId,
+          risk: step.risk,
+          requiresApproval: step.requiresApproval,
+          receiptId: step.receiptId,
+          stoppedForApproval: loop.stoppedForApproval,
+        },
+      }, deps);
+    }
+
+    if (loop.stoppedForApproval) {
+      const waiting = await updateStatus({
+        ownerUid: running.ownerUid,
+        runId: running.id,
+        toStatus: 'waiting_approval',
+        message: loop.nextApprovalReason ?? 'Agent run is waiting for approval before continuing.',
+        data: {
+          dispatchId: payload.dispatchId,
+          attempt: payload.attempt,
+          executionMode: 'research-memo',
+          approvalReason: loop.nextApprovalReason,
+        },
+      });
+      return {
+        runId: waiting?.id ?? running.id,
+        status: waiting?.status ?? 'waiting_approval',
+        executionMode: 'research-memo',
+        traceId: running.traceId,
+      };
+    }
 
     const sourceCount = running.selectedCoreIds.sourceCoreIds.length + running.selectedCoreIds.documentCoreIds.length;
     const gapItems = [

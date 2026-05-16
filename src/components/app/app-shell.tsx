@@ -8,7 +8,6 @@ import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
 import { AppSidebar } from '@/components/app/app-sidebar';
 import { Header } from '@/components/app/header';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { DemoModeBanner } from '@/components/onboarding/demo-mode-banner';
 import { OnboardingWrapper } from '@/components/onboarding/onboarding-wrapper';
 import { SkipNudgeBanner } from '@/components/onboarding/skip-nudge-banner';
 import { OnboardingBanner } from '@/components/shared/onboarding-banner';
@@ -76,7 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       });
       if (user.isDemo) {
         setDemoMode(true);
-        useNotificationStore.getState().seedDemoNotifications();
+        useNotificationStore.getState().seedWorkspaceNotifications();
       } else {
         setDemoMode(false);
       }
@@ -177,7 +176,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="flex flex-1 flex-col overflow-hidden">
-          <DemoModeBanner />
           <OnboardingBanner />
           {!user.isDemo && <SkipNudgeBanner />}
           <Header isMobile={isMobile} onOpenSearch={openSearch} />

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { openExampleWorkbench } from '../personas/_shared/persona-fixtures';
 
 test('chapters render the five Pack 26 case chapters with actionable content', async ({ page }) => {
-  await openExampleWorkbench(page, 'syria-2026');
+  await openExampleWorkbench(page, 'user-case');
 
   for (const title of [
     'Situation Frame',

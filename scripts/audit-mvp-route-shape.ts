@@ -62,10 +62,11 @@ for (const marker of [
   "pathname.startsWith('/ontologies/')",
   "pathname === '/users'",
   "pathname.startsWith('/users/')",
-  "'/app/syria-case'",
-  "'/app/workbench/syria-2026'",
 ]) {
   if (!proxy.includes(marker)) failures.push(`proxy missing legacy redirect marker: ${marker}`);
+}
+for (const removedMarker of ["'/app/syria-case'", "'/app/workbench/syria-2026'", "pathname.startsWith('/demo')", "'/demo/:path*'"]) {
+  if (proxy.includes(removedMarker)) failures.push(`proxy still includes removed demo/case marker: ${removedMarker}`);
 }
 if (proxy.includes("'/app/draft'") || proxy.includes("startsWith('/app/draft/'))")) {
   failures.push('proxy still exposes the old /app/draft route');
@@ -78,6 +79,11 @@ for (const rel of [
   'src/app/users',
   'src/app/demo',
   'src/app/app/syria-case',
+  'src/lib/cases/syria-2026',
+  'src/lib/cases/v5-demo-contexts.ts',
+  'src/lib/syria',
+  'scripts/seed-demos',
+  'tests/demo',
   'src/components/app/situation-selector.tsx',
   'src/components/tour',
   'src/lib/tour',

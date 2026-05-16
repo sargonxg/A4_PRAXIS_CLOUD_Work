@@ -22,7 +22,7 @@ function collectConsoleErrors(page: Page) {
 test('dashboard is the shared PRAXIS capsule cockpit', async ({ page }) => {
   const consoleErrors = collectConsoleErrors(page);
 
-  await openExampleWorkbench(page, 'syria-2026');
+  await openExampleWorkbench(page, 'user-case');
   await page.goto('/app/dashboard');
 
   await expect(page.getByTestId('dashboard-cockpit-only-shell')).toBeVisible();
@@ -42,7 +42,7 @@ test('dashboard cockpit stays usable on mobile', async ({ page }) => {
   const consoleErrors = collectConsoleErrors(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await openExampleWorkbench(page, 'syria-2026');
+  await openExampleWorkbench(page, 'user-case');
   await page.goto('/app/dashboard');
 
   const composer = page.getByTestId('praxis-main-composer');

@@ -19,16 +19,16 @@ interface NotificationStore {
   markRead: (id: string) => void;
   markAllRead: () => void;
   dismiss: (id: string) => void;
-  seedDemoNotifications: () => void;
+  seedWorkspaceNotifications: () => void;
   clearAll: () => void;
 }
 
-const DEMO_NOTIFICATIONS: Notification[] = [
+const WORKSPACE_NOTIFICATIONS: Notification[] = [
   {
     id: 'n1',
     type: 'alert',
-    title: 'Ceasefire Violation Detected',
-    body: 'UNMN reports artillery fire in Nordalia Eastern Province. Risk score elevated to HIGH.',
+    title: 'Context health needs review',
+    body: 'The active workspace has new source gaps. Review Context health before running another memo agent.',
     href: '/early-warning',
     timestamp: new Date(Date.now() - 1000 * 60 * 18),
     read: false,
@@ -36,8 +36,8 @@ const DEMO_NOTIFICATIONS: Notification[] = [
   {
     id: 'n2',
     type: 'warning',
-    title: 'UNSC Mandate Renewal — 12 Days',
-    body: 'UNMN mandate expires March 17. Draft renewal resolution circulating. Position paper needed.',
+    title: 'Memo review pending',
+    body: 'A draft memo is ready for source and assumption review.',
     href: '/calendar',
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
     read: false,
@@ -45,8 +45,8 @@ const DEMO_NOTIFICATIONS: Notification[] = [
   {
     id: 'n3',
     type: 'info',
-    title: 'New UNSC Resolution Adopted',
-    body: 'S/RES/2731 adopted: Humanitarian access provisions for eastern Nordalia. 14-0-1.',
+    title: 'Source receipt added',
+    body: 'A user-attached document was indexed and is available in Library.',
     href: '/sanctions',
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5),
     read: false,
@@ -54,8 +54,8 @@ const DEMO_NOTIFICATIONS: Notification[] = [
   {
     id: 'n4',
     type: 'success',
-    title: 'Report Published',
-    body: 'Q1 Nordalia Situation Report has been finalized and shared with team.',
+    title: 'Output saved',
+    body: 'The latest user workspace output has been saved to Memo Studio.',
     href: '/reports',
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
     read: true,
@@ -65,7 +65,7 @@ const DEMO_NOTIFICATIONS: Notification[] = [
 let counter = 0;
 
 export const useNotificationStore = create<NotificationStore>((set) => ({
-  // Start empty — demo mode seeds notifications via seedDemoNotifications()
+  // Start empty; authenticated workspace events add notifications as work happens.
   notifications: [],
   unreadCount: 0,
 
@@ -101,10 +101,10 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
       return { notifications: updated, unreadCount: updated.filter((n) => !n.read).length };
     }),
 
-  seedDemoNotifications: () =>
+  seedWorkspaceNotifications: () =>
     set({
-      notifications: DEMO_NOTIFICATIONS,
-      unreadCount: DEMO_NOTIFICATIONS.filter((n) => !n.read).length,
+      notifications: WORKSPACE_NOTIFICATIONS,
+      unreadCount: WORKSPACE_NOTIFICATIONS.filter((n) => !n.read).length,
     }),
 
   clearAll: () => set({ notifications: [], unreadCount: 0 }),

@@ -3,7 +3,7 @@ import { openExampleWorkbench } from './personas/_shared/persona-fixtures';
 
 test.describe('PRAXIS MVP core surfaces', () => {
   test('authenticated app exposes Ask, User Core, Situation Core, and tool suggestions', async ({ page }) => {
-    await openExampleWorkbench(page, 'syria-2026');
+    await openExampleWorkbench(page, 'user-case');
     await page.goto('/app/dashboard');
 
     await expect(page.getByTestId('praxis-workspace-shell')).toBeVisible();

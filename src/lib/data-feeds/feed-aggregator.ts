@@ -46,7 +46,7 @@ export interface IntelligenceItem {
 export interface TrustworthinessScore {
   score: number;
   level: 'high' | 'medium' | 'low' | 'unknown';
-  reasons: string[];
+  reasons?: string[];
 }
 
 function computeLocalTrustworthiness(input: { sources: string[]; recencyDays: number }): TrustworthinessScore {

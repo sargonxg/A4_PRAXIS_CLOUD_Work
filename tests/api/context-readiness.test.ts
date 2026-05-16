@@ -48,7 +48,7 @@ describe('/api/context/readiness', () => {
     mocks.getAnalystProfile.mockResolvedValue({ perspective: { lenses: ['security'] } });
     mocks.getSituationAdmin.mockResolvedValue({
       id: 'sit-1',
-      name: 'Nordalia',
+      name: 'User Case',
       description: 'Security escalation and source posture.',
       actors: ['A', 'B', 'C'],
       region: 'North',

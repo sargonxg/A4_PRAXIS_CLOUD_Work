@@ -17,6 +17,8 @@ export type AgentTriggerType =
 
 export type AgentToolRisk = 'low' | 'medium' | 'high';
 
+export type AgentReasoningPhase = 'plan' | 'act' | 'reflect' | 'approval_gate' | 'complete';
+
 export interface SelectedCoreIds {
   userCoreId: string | null;
   teamCoreId: string | null;
@@ -137,6 +139,23 @@ export interface AgentTrigger {
   idempotencyScope: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AgentReasoningStep {
+  id: string;
+  phase: AgentReasoningPhase;
+  toolId: string | null;
+  risk: AgentToolRisk;
+  message: string;
+  requiresApproval: boolean;
+  receiptId: string | null;
+}
+
+export interface AgentReasoningLoopResult {
+  completed: boolean;
+  stoppedForApproval: boolean;
+  steps: AgentReasoningStep[];
+  nextApprovalReason: string | null;
 }
 
 export type CreateAgentRunInput = {

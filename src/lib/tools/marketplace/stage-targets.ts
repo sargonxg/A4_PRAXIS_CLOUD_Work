@@ -12,7 +12,7 @@ export type MarketplaceHeroToolId =
   | 'treaty-analyzer'
   | 'policy-memo';
 
-export type MarketplaceStageChapter = 'desk' | 'research' | 'draft' | 'boardroom';
+export type MarketplaceStageChapter = 'desk' | 'research' | 'draft' | 'tools';
 
 export interface MarketplaceStageTarget {
   heroToolId: MarketplaceHeroToolId;
@@ -47,12 +47,12 @@ const HERO_TARGETS: Record<MarketplaceHeroToolId, Pick<MarketplaceStageTarget, '
   scenarios: {
     heroToolId: 'scenarios',
     heroToolName: 'Scenario Planner',
-    chapter: 'boardroom',
+    chapter: 'tools',
   },
   'negotiation-prep': {
     heroToolId: 'negotiation-prep',
     heroToolName: 'Negotiation Prep',
-    chapter: 'boardroom',
+    chapter: 'tools',
   },
   'source-scout': {
     heroToolId: 'source-scout',
@@ -62,7 +62,7 @@ const HERO_TARGETS: Record<MarketplaceHeroToolId, Pick<MarketplaceStageTarget, '
   'brainstorming-table': {
     heroToolId: 'brainstorming-table',
     heroToolName: 'Brainstorming Table',
-    chapter: 'boardroom',
+    chapter: 'tools',
   },
   'treaty-analyzer': {
     heroToolId: 'treaty-analyzer',
@@ -379,6 +379,14 @@ export function renderMarketplaceStagePrompt(target: MarketplaceStageTarget, cas
 }
 
 export function stageTargetHref(caseId: string, target: MarketplaceStageTarget): string {
+  if (target.chapter === 'tools') {
+    const params = new URLSearchParams({
+      stagedTool: target.heroToolId,
+      caseId,
+    });
+    return `/app/tools?${params.toString()}`;
+  }
+
   const params = new URLSearchParams({
     stagedTool: target.heroToolId,
     openChapter: target.chapter,

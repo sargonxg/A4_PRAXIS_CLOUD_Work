@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { openExampleWorkbench } from '../personas/_shared/persona-fixtures';
 
 test('Graph tab displays map projection', async ({ page }) => {
-  await openExampleWorkbench(page, 'syria-2026', 'graph');
+  await openExampleWorkbench(page, 'user-case', 'graph');
 
   await page.getByTestId('graph-layout-toggle').getByRole('button', { name: /Map/i }).click();
   await expect(page.getByTestId('praxis-map')).toBeVisible();

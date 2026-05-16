@@ -4,7 +4,6 @@ export type ProductSurfaceId =
   | 'library'
   | 'research'
   | 'graph'
-  | 'boardroom'
   | 'draft'
   | 'tools';
 
@@ -57,14 +56,6 @@ export const PRODUCT_SURFACES: ProductSurface[] = [
     toolId: 'graphops',
     icon: 'GitBranch',
     summary: 'GraphOps, read-only Cypher, and graph maintenance signals.',
-  },
-  {
-    id: 'boardroom',
-    label: 'Boardroom',
-    href: '/boardroom',
-    toolId: 'brainstorming-table',
-    icon: 'MessagesSquare',
-    summary: 'Five-advisor deliberation room with synthesis and Draft handoff.',
   },
   {
     id: 'draft',

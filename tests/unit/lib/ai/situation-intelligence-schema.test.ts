@@ -160,8 +160,8 @@ describe('SituationIntelligenceSchema', () => {
   it('validates a geopolitical situation output', () => {
     const parsed = validateSituationIntelligence(baseFixture({
       strategicInsight: {
-        insight: 'Nordalia and Sudralia are publicly contesting sovereignty, but the port access constraint makes maritime inspection sequencing more valuable than status language.',
-        actors: ['Nordalia', 'Sudralia'],
+        insight: 'User Case and Sudralia are publicly contesting sovereignty, but the port access constraint makes maritime inspection sequencing more valuable than status language.',
+        actors: ['User Case', 'Sudralia'],
         constraint: 'Port access and inspection sequencing',
         rationale: 'Both actors can claim firmness while using inspection timing to reduce immediate security risk.',
       },

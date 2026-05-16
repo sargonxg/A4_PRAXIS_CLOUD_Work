@@ -1,43 +1,14 @@
 // ---------------------------------------------------------------------------
-// Demo mode utilities for PRAXIS investor demonstrations.
-// Enables the platform to function with pre-computed AI responses when no
-// API key is configured or when ?demo=true is present in the URL.
+// Legacy compatibility utilities. Demo mode has been retired; these helpers
+// remain so older API routes compile while returning live/user-owned behavior.
 // ---------------------------------------------------------------------------
 
-import { CACHED_RESPONSES } from './cached-responses';
-import { hasServerAiProvider } from '@/lib/ai/providers';
-
-/**
- * Determines whether the application is running in demo mode.
- *
- * Demo mode is active when:
- * 1. No live server AI provider is configured (Google AI key or Vertex), OR
- * 2. The URL contains the query parameter ?demo=true (client-side)
- *
- * On the server (API routes), only condition 1 is checked.
- * On the client, condition 2 is also evaluated.
- */
 export function isDemoMode(): boolean {
-  // Server-side: no live AI provider means demo mode
-  if (typeof window === 'undefined') {
-    return !hasServerAiProvider();
-  }
-
-  // Client-side: check URL param or absence of API key (proxied via a header/flag)
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('demo') === 'true') return true;
-
-  // Client cannot directly check env vars, so we also check for a global flag
-  // that can be set by the server layout or a meta tag.
   return false;
 }
 
-/**
- * Checks demo mode on the server side only (for use in API routes).
- * Returns true if no live server AI provider is configured.
- */
 export function isServerDemoMode(): boolean {
-  return !hasServerAiProvider();
+  return false;
 }
 
 /**
@@ -109,8 +80,9 @@ export function hashInput(input: object): string {
  * Returns undefined if no cached response is available.
  */
 export function getCachedResponse(routeKey: string, inputHash: string): string | undefined {
-  const key = `${routeKey}:${inputHash}`;
-  return CACHED_RESPONSES.get(key);
+  void routeKey;
+  void inputHash;
+  return undefined;
 }
 
 /**
@@ -130,7 +102,6 @@ export function formatAsStreamResponse(text: string): Response {
     status: 200,
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
-      'X-Praxis-Demo': 'true',
     },
   });
 }

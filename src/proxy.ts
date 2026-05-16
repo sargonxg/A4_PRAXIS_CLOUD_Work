@@ -2,64 +2,63 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
-const LEGACY_WORKBENCH_ROUTE_ALIASES: Record<string, string> = {
-  '/app/desk': 'desk',
-  '/app/cockpit': 'desk',
-  '/app/context': 'context',
-  '/app/context-builder': 'context',
-  '/app/actors': 'context',
-  '/app/requirements': 'context',
-  '/app/sources': 'library',
-  '/app/library': 'library',
-  '/app/documents': 'library',
-  '/app/reports': 'draft',
-  '/app/source-scout': 'research',
-  '/app/research': 'research',
-  '/app/source-monitor': 'research',
-  '/app/deep-search-agent': 'research',
-  '/app/argus': 'research',
-  '/app/global-search': 'research',
-  '/app/compare': 'research',
-  '/app/graphops': 'graph',
-  '/app/graph': 'graph',
-  '/app/conflict-graph': 'graph',
-  '/app/power-map': 'graph',
-  '/app/external-actors': 'graph',
-  '/app/dialectica': 'graph',
-  '/app/brainstorming-table': 'boardroom',
-  '/app/boardroom': 'boardroom',
-  '/app/auto-briefings': 'draft',
-  '/app/advisory': 'boardroom',
-  '/app/concordia': 'boardroom',
-  '/app/scenarios': 'boardroom',
-  '/app/game-theory': 'boardroom',
-  '/app/briefing': 'draft',
-  '/app/policy-memo': 'draft',
-  '/app/talking-points': 'draft',
-  '/app/dossier': 'draft',
-  '/app/export-center': 'draft',
-  '/app/editor': 'draft',
-  '/app/risk-monitor': 'desk',
-  '/app/early-warning': 'desk',
-  '/app/humanitarian': 'desk',
-  '/app/human-rights': 'desk',
-  '/app/economic-impact': 'desk',
-  '/app/electoral-risk': 'desk',
-  '/app/peacebuilding-index': 'desk',
-  '/app/geospatial-monitor': 'desk',
-  '/app/media-compass': 'research',
-  '/app/media-roundup': 'research',
-  '/app/info-environment': 'research',
-  '/app/sanctions': 'draft',
-  '/app/sanctions-explorer': 'draft',
-  '/app/legal-tracker': 'draft',
-  '/app/treaty-analyzer': 'draft',
-  '/app/un-toolkit': 'draft',
-  '/app/mediation-design': 'boardroom',
-  '/app/negotiation-prep': 'boardroom',
-  '/app/commitments': 'graph',
-  '/app/timeline': 'graph',
-  '/app/team': 'desk',
+const LEGACY_APP_ROUTE_TARGETS: Record<string, string> = {
+  '/app/desk': '/app/dashboard',
+  '/app/cockpit': '/app/dashboard',
+  '/app/context': '/app/contexts',
+  '/app/context-builder': '/app/contexts',
+  '/app/actors': '/app/contexts',
+  '/app/requirements': '/app/contexts',
+  '/app/sources': '/app/library',
+  '/app/documents': '/app/library',
+  '/app/reports': '/app/write',
+  '/app/source-scout': '/app/assistant',
+  '/app/research': '/app/assistant',
+  '/app/source-monitor': '/app/assistant',
+  '/app/deep-search-agent': '/app/assistant',
+  '/app/argus': '/app/assistant',
+  '/app/global-search': '/app/assistant',
+  '/app/compare': '/app/assistant',
+  '/app/graphops': '/app/canvas',
+  '/app/graph': '/app/canvas',
+  '/app/conflict-graph': '/app/canvas',
+  '/app/power-map': '/app/canvas',
+  '/app/external-actors': '/app/canvas',
+  '/app/dialectica': '/app/canvas',
+  '/app/brainstorming-table': '/app/tools',
+  '/app/boardroom': '/app/tools',
+  '/app/auto-briefings': '/app/write',
+  '/app/advisory': '/app/tools',
+  '/app/concordia': '/app/tools',
+  '/app/scenarios': '/app/tools',
+  '/app/game-theory': '/app/tools',
+  '/app/briefing': '/app/write',
+  '/app/policy-memo': '/app/write',
+  '/app/talking-points': '/app/write',
+  '/app/dossier': '/app/write',
+  '/app/export-center': '/app/write',
+  '/app/editor': '/app/write',
+  '/app/risk-monitor': '/app/dashboard',
+  '/app/early-warning': '/app/dashboard',
+  '/app/humanitarian': '/app/dashboard',
+  '/app/human-rights': '/app/dashboard',
+  '/app/economic-impact': '/app/dashboard',
+  '/app/electoral-risk': '/app/dashboard',
+  '/app/peacebuilding-index': '/app/dashboard',
+  '/app/geospatial-monitor': '/app/dashboard',
+  '/app/media-compass': '/app/assistant',
+  '/app/media-roundup': '/app/assistant',
+  '/app/info-environment': '/app/assistant',
+  '/app/sanctions': '/app/write',
+  '/app/sanctions-explorer': '/app/write',
+  '/app/legal-tracker': '/app/write',
+  '/app/treaty-analyzer': '/app/write',
+  '/app/un-toolkit': '/app/write',
+  '/app/mediation-design': '/app/tools',
+  '/app/negotiation-prep': '/app/tools',
+  '/app/commitments': '/app/canvas',
+  '/app/timeline': '/app/canvas',
+  '/app/team': '/app/dashboard',
 };
 
 function redirectWithSearch(request: NextRequest, nonce: string, target: string): NextResponse {
@@ -135,25 +134,12 @@ export function proxy(request: NextRequest) {
     return addSecurityHeaders(NextResponse.redirect(new URL('/pricing', request.url)), nonce);
   }
 
-  if (pathname === '/app/syria-case') {
-    return redirectWithSearch(request, nonce, '/app/workbench/syria-2026');
-  }
-
-  if (pathname === '/app/demo/syria-2024' || pathname === '/app/demo/syria-2026') {
-    return redirectWithSearch(request, nonce, '/app/workbench/syria-2026');
-  }
-  if (pathname === '/app/demo/syria-2024/write' || pathname === '/app/demo/syria-2026/write') {
-    const url = new URL('/app/write', request.url);
-    url.searchParams.set('situationId', 'syria-2026');
-    request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
-    return addSecurityHeaders(NextResponse.redirect(url), nonce);
-  }
-
   if (pathname === '/contexts') {
     return redirectWithSearch(request, nonce, '/app/contexts');
   }
   if (pathname.startsWith('/contexts/')) {
-    const slug = pathname.split('/').filter(Boolean).at(1) ?? 'syria-2026';
+    const slug = pathname.split('/').filter(Boolean).at(1);
+    if (!slug) return redirectWithSearch(request, nonce, '/app/contexts');
     return redirectWithSearch(request, nonce, `/app/workbench/${slug}`);
   }
   if (pathname === '/methods') {
@@ -187,29 +173,18 @@ export function proxy(request: NextRequest) {
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
 
-  const legacyWorkbenchTab = LEGACY_WORKBENCH_ROUTE_ALIASES[pathname];
-  const legacyWorkbenchPrefixTab =
-    pathname.startsWith('/app/boardroom/') ? 'boardroom'
-    : pathname.startsWith('/app/library/') ? 'library'
-    : null;
-  const workbenchTab = legacyWorkbenchTab ?? legacyWorkbenchPrefixTab;
-  if (workbenchTab) {
-    const url = new URL('/app/workbench', request.url);
+  const legacyAppTarget = LEGACY_APP_ROUTE_TARGETS[pathname]
+    ?? (pathname.startsWith('/app/boardroom/') ? '/app/tools' : null)
+    ?? (pathname.startsWith('/app/library/') ? '/app/library' : null);
+  if (legacyAppTarget) {
+    const url = new URL(legacyAppTarget, request.url);
     request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
-    url.searchParams.set('tab', workbenchTab);
-    return addSecurityHeaders(NextResponse.redirect(url), nonce);
-  }
-
-  // --- /demo/* routes: legacy redirects into the authenticated app shape ---
-  if (pathname.startsWith('/demo')) {
-    const slug = pathname === '/demo' ? 'syria-2026' : pathname.split('/').filter(Boolean).at(1);
-    const url = new URL(`/app/workbench/${slug === 'syria-2024' ? 'syria-2026' : slug || 'syria-2026'}`, request.url);
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
 
   // --- /onboarding routes ---
   if (pathname.startsWith('/onboarding')) {
-    if (isDemo) return addSecurityHeaders(NextResponse.redirect(new URL('/app/workbench/syria-2026', request.url)), nonce);
+    if (isDemo) return addSecurityHeaders(NextResponse.redirect(new URL('/app/dashboard', request.url)), nonce);
     if (!hasFirebaseToken) return addSecurityHeaders(NextResponse.redirect(new URL('/login', request.url)), nonce);
     return nextWithNonce(request, nonce);
   }
@@ -294,7 +269,6 @@ function addSecurityHeaders(response: NextResponse, nonce?: string): NextRespons
 
 export const config = {
   matcher: [
-    '/demo/:path*',
     '/app/:path*',
     '/contexts/:path*',
     '/methods/:path*',

@@ -46,14 +46,16 @@ const debugPanel = read('src/components/app/debug-panel.tsx');
 if (!debugPanel.includes('NEXT_PUBLIC_DEBUG_PANEL')) failures.push('Debug panel is not gated behind explicit production opt-in');
 if (!debugPanel.includes("process.env.NODE_ENV !== 'production'")) failures.push('Debug panel lacks production environment guard');
 
-const askPraxis = read('src/components/syria/ask-praxis.tsx');
-for (const marker of ['UN NY', 'P-Rep', 'Security Council', 'NGO Working Group', 'UNSC informal']) {
-  if (askPraxis.includes(marker)) failures.push(`Ask Praxis still exposes generic institution/persona copy: ${marker}`);
+if (existsSync(path.join(root, 'src/components/syria'))) {
+  failures.push('retired Syria component directory still exists');
 }
 
-const briefBlocks = read('src/components/briefing/brief-blocks-panel.tsx');
-for (const marker of ["useState('UNSC informal consultations')", "audience: 'UNSC informal consultations'", 'Audience (e.g., UNSC, Cabinet)']) {
-  if (briefBlocks.includes(marker)) failures.push(`Briefing builder still exposes institutional placeholder: ${marker}`);
+const briefBlocksPath = 'src/components/briefing/brief-blocks-panel.tsx';
+if (existsSync(path.join(root, briefBlocksPath))) {
+  const briefBlocks = read(briefBlocksPath);
+  for (const marker of ["useState('UNSC informal consultations')", "audience: 'UNSC informal consultations'", 'Audience (e.g., UNSC, Cabinet)']) {
+    if (briefBlocks.includes(marker)) failures.push(`Briefing builder still exposes institutional placeholder: ${marker}`);
+  }
 }
 
 const tools = read('src/app/app/tools/page.tsx');

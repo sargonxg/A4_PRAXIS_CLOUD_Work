@@ -17,7 +17,6 @@ export function shouldPrefixPraxisHref(href: string): boolean {
   if (!href) return false;
   if (
     href.startsWith('/app') ||
-    href.startsWith('/demo') ||
     href.startsWith('http') ||
     href.startsWith('#') ||
     href.startsWith('mailto:')
@@ -29,11 +28,10 @@ export function shouldPrefixPraxisHref(href: string): boolean {
 }
 
 /**
- * Returns the current route prefix based on whether we're in demo or app mode.
+ * Returns the current authenticated app route prefix.
  */
-export function useRoutePrefix(): '/app' | '/demo' {
-  const pathname = usePathname();
-  if (pathname.startsWith('/demo')) return '/demo';
+export function useRoutePrefix(): '/app' {
+  usePathname();
   return '/app';
 }
 

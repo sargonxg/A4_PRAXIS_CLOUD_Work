@@ -1,7 +1,7 @@
 /**
  * audit:admin-only-internals
  *
- * Operational internals (API keys, persona registry, system health,
+ * Operational internals (API keys, system health,
  * graph backend, model preferences, read logs, audit invariants)
  * must only appear inside the Administration NAV_GROUPS group, which
  * is admin-role gated. They must never show up in Workspace or
@@ -25,7 +25,6 @@ const INTERNAL_PATHS = [
   '/app/settings/system-health',
   '/app/settings/graph-backend',
   '/app/settings/model-preferences',
-  '/app/settings/personas',
   '/app/admin/read-log',
   '/app/admin/audit-runs',
 ];

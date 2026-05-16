@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { openExampleWorkbench } from '../personas/_shared/persona-fixtures';
 
 test('desk renders Pack 26 command-center panels', async ({ page }) => {
-  await openExampleWorkbench(page, 'syria-2026', 'desk');
+  await openExampleWorkbench(page, 'user-case', 'desk');
 
   await expect(page.getByTestId('workbench-desk-surface')).toBeVisible();
   await expect(page.getByRole('heading', { name: /^Desk$/i })).toBeVisible();

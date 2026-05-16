@@ -46,7 +46,7 @@ async function main() {
   const phase = arg('phase') as CanaryPhase | undefined;
   const baseUrl = arg('url', 'https://praxis.tacitus.me')!;
   const samplesPerPath = Number(arg('samples', '3'));
-  const paths = ['/', '/api/health', '/demo', '/login'];
+  const paths = ['/', '/api/health', '/login'];
 
   if (!phase || !['5', '25', '100'].includes(phase)) {
     throw new Error('Usage: tsx scripts/canary-monitor.ts --phase=5|25|100 [--url=https://praxis.tacitus.me] [--samples=3]');

@@ -29,8 +29,7 @@ export type SuperToolId =
   | 'narrative-media'
   | 'commitment-tracker'
   | 'review-red-team'
-  | 'drafting-studio'
-  | 'boardroom';
+  | 'drafting-studio';
 
 export type ContextCoreId =
   | 'user-core'
@@ -64,7 +63,6 @@ export type CapabilityId =
   | 'legal-compliance'
   | 'narrative-media'
   | 'negotiation-design'
-  | 'boardroom-deliberation'
   | 'drafting-studio'
   | 'context-builder'
   | 'research'
@@ -143,7 +141,6 @@ export const CAPABILITIES: Record<CapabilityId, CapabilityDefinition> = {
   'legal-compliance': capability('legal-compliance', 'review', 'legal-compliance', 'risk', '/api/ai/risk', ['situation-core', 'source-core'], 'output-core', 'tool_run', ['Use for sanctions, human rights, legal checks, and compliance analysis.']),
   'narrative-media': capability('narrative-media', 'research', 'narrative-media', 'search', '/api/ai/search', ['situation-core', 'source-core'], 'source-core', 'source_receipt', ['Use for media scan, information environment, source reliability, and narrative risk.']),
   'negotiation-design': capability('negotiation-design', 'model', 'negotiation-designer', 'framework-analysis', '/api/ai/framework-analysis', ['situation-core', 'source-core'], 'output-core', 'tool_run', ['Use for mediation design, ZOPA/BATNA, concessions, and process options.']),
-  'boardroom-deliberation': capability('boardroom-deliberation', 'operate', 'boardroom', 'comparison', '/api/ai/comparison', ['situation-core', 'source-core'], 'output-core', 'tool_run', ['Use for persona deliberation, synthesis, and executive decision preparation.']),
   'drafting-studio': capability('drafting-studio', 'draft', 'drafting-studio', 'brief', '/api/ai/brief', ['user-core', 'situation-core', 'source-core'], 'output-core', 'memo', ['Use for memo canvas actions: ground paragraph, cite, shorten, rewrite, stress-test.']),
   'context-builder': capability('context-builder', 'operate', 'context-builder', 'document', '/api/ai/document', ['user-core', 'situation-core'], null, 'context_capsule', ['Use to create, fork, repair, or activate a Context Capsule.']),
   research: capability('research', 'research', 'research', 'search', '/api/ai/search', ['situation-core'], 'source-core', 'source_receipt', ['Use for deep research, source scout, grounded search, and corpus search.']),
@@ -161,7 +158,6 @@ export const LEGACY_AI_ROUTE_CAPABILITY_MAP: Record<string, CapabilityId> = {
   'ask-praxis': 'ask-praxis',
   'auto-briefing': 'brief-generation',
   'auto-structure': 'document-analysis',
-  boardroom: 'boardroom-deliberation',
   brief: 'brief-generation',
   'brainstorming-table': 'option-comparison',
   'brief-builder': 'brief-generation',
@@ -219,6 +215,7 @@ export const LEGACY_AI_ROUTE_CAPABILITY_MAP: Record<string, CapabilityId> = {
   search: 'source-search',
   'situation-intelligence': 'situation-intelligence',
   'source-scout': 'source-search',
+  sourceability: 'evidence-critique',
   'stakeholder-map': 'stakeholder-mapping',
   'talking-points': 'brief-generation',
   terminology: 'tone-translation',
