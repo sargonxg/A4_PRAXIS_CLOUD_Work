@@ -117,9 +117,11 @@ export function withCalibration(
     retrievalQuery?: (req: Request, body: Record<string, unknown>) => string | undefined;
     situationId?: (req: Request, body: Record<string, unknown>) => string | undefined;
     variant?: 'oneshot' | 'streaming' | 'agent';
+    blockOnThinContext?: boolean;
   } = {},
 ) {
   const variant = opts.variant ?? 'oneshot';
+  const blockOnThinContext = opts.blockOnThinContext ?? true;
 
   return (handler: CalibratedHandler) =>
     withAuth(async (req: Request, user: AuthenticatedUser) => {
@@ -238,7 +240,7 @@ export function withCalibration(
         },
       });
       const promptHealth = buildPromptHealthReport(contextAware.snapshot);
-      if (promptHealth.forceRunRequired && body.forceRun !== true) {
+      if (blockOnThinContext && promptHealth.forceRunRequired && body.forceRun !== true) {
         await emitTelemetrySafe({
           eventName: 'calibration.refusal',
           uid: user.uid,
@@ -314,9 +316,10 @@ export function withCalibration(
           promptHealthState: promptHealth.state,
           promptHealthScore: promptHealth.score,
           forceRun: body.forceRun === true,
+          blockOnThinContext,
         },
       });
-      if (body.forceRun === true) {
+      if (body.forceRun === true || (!blockOnThinContext && promptHealth.forceRunRequired)) {
         await emitTelemetrySafe({
           eventName: 'calibration.force-run',
           uid: user.uid,
@@ -329,6 +332,7 @@ export function withCalibration(
           details: {
             promptHealthState: promptHealth.state,
             promptHealthScore: promptHealth.score,
+            autoAllowedThinContext: body.forceRun !== true && !blockOnThinContext && promptHealth.forceRunRequired,
           },
         });
       }

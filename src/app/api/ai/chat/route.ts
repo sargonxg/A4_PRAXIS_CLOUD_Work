@@ -95,6 +95,8 @@ export const POST = withCalibration('chat', 'ai_chat', {
     if (last && typeof last.content === 'string') return last.content.slice(0, 500);
     return undefined;
   },
+  variant: 'streaming',
+  blockOnThinContext: false,
 })(async (request: Request, _user) => {
   try {
     const body = await request.json();

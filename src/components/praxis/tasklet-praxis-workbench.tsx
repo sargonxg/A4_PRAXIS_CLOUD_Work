@@ -21,6 +21,7 @@ import {
   Upload,
   UsersRound,
   WandSparkles,
+  X,
 } from 'lucide-react';
 import { AccountProfileButton } from '@/components/app/account-profile-button';
 import { ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
@@ -37,7 +38,6 @@ import {
 import {
   COCKPIT_CAPSULE_LIBRARY,
   COCKPIT_TOOL_SUGGESTIONS,
-  COCKPIT_USER_ARCHETYPES,
   POLICY_NEED_TABS,
   findCapsuleTemplate,
 } from '@/lib/product/cockpit-composition';
@@ -55,7 +55,15 @@ type TaskletPraxisWorkbenchProps = {
 
 type PolicyNeedTabId = (typeof POLICY_NEED_TABS)[number]['id'];
 type ChatMessage = { role: 'user' | 'assistant'; text: string };
-type ActiveCapsuleChip = { id: string; label: string; code: string };
+type CapsuleRole = 'user' | 'situation' | 'tool' | 'output';
+type ActiveCapsuleChip = {
+  id: string;
+  label: string;
+  code: string;
+  role: CapsuleRole;
+  toolId?: string;
+  templateId?: string;
+};
 
 const defaultRecentRuns = [
   { label: 'Weekly Middle East Analysis', detail: 'Capsule discussion', status: 'active' },
@@ -78,6 +86,20 @@ const categoryIcon: Record<PolicyNeedTabId, typeof Bot> = {
   capsules: FolderKanban,
 };
 
+const capsuleRoles: Array<{ id: CapsuleRole; label: string }> = [
+  { id: 'situation', label: 'Situation' },
+  { id: 'user', label: 'User' },
+  { id: 'tool', label: 'Tool' },
+  { id: 'output', label: 'Output' },
+];
+
+const capsuleRoleStyles: Record<CapsuleRole, string> = {
+  user: 'border-sky-200 bg-sky-50 text-sky-900',
+  situation: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+  tool: 'border-amber-200 bg-amber-50 text-amber-900',
+  output: 'border-violet-200 bg-violet-50 text-violet-900',
+};
+
 export function TaskletPraxisWorkbench({
   mode,
   activeCapsuleName = 'Weekly Middle East Analysis',
@@ -91,24 +113,35 @@ export function TaskletPraxisWorkbench({
   const [prompt, setPrompt] = useState('Draft a sourced options memo from the active capsule.');
   const [activeTab, setActiveTab] = useState<PolicyNeedTabId>('analysis');
   const [selectedAgentId, setSelectedAgentId] = useState(PRAXIS_POLICY_AGENTS[0]?.id ?? 'research-memo');
-  const [selectedUserTypeId, setSelectedUserTypeId] = useState(COCKPIT_USER_ARCHETYPES[0]?.id ?? 'user-1');
   const [selectedModel, setSelectedModel] = useState<ModelPreferenceValue>(ASK_RUNTIME_OPTIONS[0].id);
-  const [selectedToolIds, setSelectedToolIds] = useState<string[]>(['ask-praxis', 'sourceability', 'memo-drafter']);
   const [currentCapsuleId, setCurrentCapsuleId] = useState(capsuleId);
-  const [activeCapsules, setActiveCapsules] = useState<ActiveCapsuleChip[]>([{ id: capsuleId, label: activeCapsuleName, code: 'LITE' }]);
+  const [activeCapsules, setActiveCapsules] = useState<ActiveCapsuleChip[]>([
+    { id: capsuleId, label: activeCapsuleName, code: 'SITUATION', role: 'situation' },
+  ]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [status, setStatus] = useState('Ask PRAXIS can answer directly or choose the right tool from your capsule.');
+  const [capsulePickerOpen, setCapsulePickerOpen] = useState(false);
+  const [capsulePickerRole, setCapsulePickerRole] = useState<CapsuleRole>('situation');
+  const [capsulePickerQuery, setCapsulePickerQuery] = useState('');
+  const [draggingCapsuleId, setDraggingCapsuleId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
   const selectedRuntime = getAskRuntimeOption(selectedModel);
-  const selectedUserType = COCKPIT_USER_ARCHETYPES.find((item) => item.id === selectedUserTypeId) ?? COCKPIT_USER_ARCHETYPES[0]!;
   const activePolicyNeed = POLICY_NEED_TABS.find((tab) => tab.id === activeTab) ?? POLICY_NEED_TABS[0]!;
   const visibleAgents = PRAXIS_POLICY_AGENTS.filter((agent) => agent.category === activeTab || activeTab === 'capsules');
+  const selectedToolIds = activeCapsules
+    .filter((capsule) => capsule.role === 'tool')
+    .map((capsule) => capsule.toolId ?? capsule.templateId ?? capsule.id);
+  const availableToolIds = selectedToolIds.length ? selectedToolIds : ['ask-praxis'];
   const toolCards = COCKPIT_TOOL_SUGGESTIONS.filter((tool) => (
-    activePolicyNeed.toolIds.includes(tool.id) || selectedToolIds.includes(tool.id) || selectedUserType.suggestedToolIds.includes(tool.id)
+    activePolicyNeed.toolIds.includes(tool.id) || availableToolIds.includes(tool.id)
   )).slice(0, 6);
   const capsules = COCKPIT_CAPSULE_LIBRARY.slice(0, 6);
+  const filteredCapsules = COCKPIT_CAPSULE_LIBRARY.filter((capsule) => {
+    const query = capsulePickerQuery.trim().toLowerCase();
+    return !query || capsule.label.toLowerCase().includes(query) || capsule.prompt.toLowerCase().includes(query) || capsule.code.toLowerCase().includes(query);
+  }).slice(0, 8);
   const conversationThreadId = `tasklet-${currentCapsuleId}`;
 
   useEffect(() => {
@@ -116,7 +149,7 @@ export function TaskletPraxisWorkbench({
       const first = current[0];
       if (first?.id === capsuleId && first.label === activeCapsuleName) return current;
       setCurrentCapsuleId(capsuleId);
-      return [{ id: capsuleId, label: activeCapsuleName, code: 'LITE' }, ...current.slice(1)];
+      return [{ id: capsuleId, label: activeCapsuleName, code: 'SITUATION', role: 'situation' }, ...current.slice(1)];
     });
   }, [activeCapsuleName, capsuleId]);
 
@@ -142,15 +175,16 @@ export function TaskletPraxisWorkbench({
   }
 
   function buildChatPrompt(agent: PolicyAgentDefinition, cleanPrompt: string): string {
-    const capsuleStack = activeCapsules.map((capsule) => `${capsule.label} (${capsule.id})`).join(', ');
+    const capsuleStack = activeCapsules
+      .map((capsule) => `${capsule.role.toUpperCase()}: ${capsule.label} (${capsule.id})`)
+      .join('\n');
     return [
       cleanPrompt,
       '',
       `Selected policy tool: ${agent.label}`,
       `Tool intent: ${policyAgentRunIntent(agent.id).replaceAll('_', ' ')}`,
-      `Selected user type: ${selectedUserType.label}`,
-      `Selected tools: ${selectedToolIds.join(', ') || 'none'}`,
-      `Active ContextCapsule Lite stack: ${capsuleStack}`,
+      `Tool capsules: ${availableToolIds.join(', ')}`,
+      `Active ContextCapsule stack:\n${capsuleStack}`,
       `Conversation thread: ${conversationThreadId}`,
       '',
       'Behave like a normal chat assistant first. Answer directly when enough context exists. If a tool, upload, connector, source check, memo, or capsule update would help, decide that yourself and explain the next step plainly.',
@@ -172,7 +206,9 @@ export function TaskletPraxisWorkbench({
     setChatMessages((current) => [...current, userMessage, { role: 'assistant', text: '' }]);
 
     try {
-      const response = await fetch('/api/ai/chat', {
+      const outputCapsule = activeCapsules.find((capsule) => capsule.role === 'output');
+      const situationCapsule = activeCapsules.find((capsule) => capsule.role === 'situation') ?? activeCapsules[0];
+      const response = await fetch('/api/ai/ask-praxis', {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
@@ -185,12 +221,18 @@ export function TaskletPraxisWorkbench({
           threadId: conversationThreadId,
           currentToolId: agent.id,
           currentPath: '/app/dashboard',
+          forceRun: true,
           activeContextStack: {
+            stackId: currentCapsuleId,
             capsuleId: currentCapsuleId,
-            capsuleIds: activeCapsules.map((capsule) => capsule.id),
-            selectedToolIds,
-            selectedUserTypeId,
-            selectedPolicyAgentId: agent.id,
+            situationId: situationCapsule?.id ?? currentCapsuleId,
+            sourceIds: [],
+            documentIds: [],
+            outputGoal: outputCapsule?.label ?? agent.label,
+            evidenceGaps: [],
+            canvasLayout: {},
+            schemaVersion: 1,
+            updatedAt: new Date().toISOString(),
           },
           aiSettings: {
             provider: 'vertex',
@@ -199,7 +241,16 @@ export function TaskletPraxisWorkbench({
           },
         }),
       });
-      if (!response.ok || !response.body) throw new Error(`${response.status} ${response.statusText}`);
+      if (!response.ok || !response.body) {
+        let detail = `${response.status} ${response.statusText}`;
+        try {
+          const payload = await response.clone().json() as { message?: string; error?: string };
+          detail = payload.message ?? payload.error ?? detail;
+        } catch {
+          // Keep the HTTP status fallback.
+        }
+        throw new Error(detail);
+      }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
