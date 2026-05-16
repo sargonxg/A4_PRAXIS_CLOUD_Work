@@ -5,7 +5,7 @@
 Current release checkpoint:
 
 - Central app metadata is now `PRAXIS v6.4.1` with build number
-  `2026.05.16.05` in `src/lib/constants/app-version.ts`.
+  `2026.05.16.06` in `src/lib/constants/app-version.ts`.
 - `/release-notes` reads from the centralized
   `src/lib/product/release-notes.ts` registry instead of a page-local notes
   array.
@@ -14,6 +14,18 @@ Current release checkpoint:
   entry stay aligned.
 - Significant product/runtime/documentation changes should bump
   `APP_BUILD_NUMBER`, add a release note entry, and update `CHANGELOG.md`.
+
+## 2026-05-16 — Gemini 3.1 Pro Runtime Selector
+
+Current runtime checkpoint:
+
+- The central model matrix now defaults deep reasoning, long-context, and
+  writing-quality work to `gemini-3.1-pro-preview`.
+- The cockpit selector keeps Gemini 3 Flash Preview as the fast default and
+  exposes Gemini 3.1 Pro Preview and Gemini 2.5 fallbacks for model-specific
+  runs.
+- This follows the current Google Cloud Gemini 3 guidance for global Vertex
+  endpoints while keeping the visible app simple.
 
 ## 2026-05-16 — Inline Capsule-Aware Discussion
 

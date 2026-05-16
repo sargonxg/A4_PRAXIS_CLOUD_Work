@@ -26,6 +26,19 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.16.06',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'Gemini 3.1 Pro cockpit option',
+    summary: 'The model selector now tracks the current Google Cloud Gemini 3 guidance for deep policy reasoning while preserving Gemini 2.5 fallbacks.',
+    category: 'runtime',
+    items: [
+      'Deep memo and long-context routes now default to Gemini 3.1 Pro Preview in the central model matrix.',
+      'The cockpit exposes Gemini 3.1 Pro Preview, Gemini 3 Flash Preview, and Gemini 2.5 fallback choices.',
+      'The runtime catalog test now guards the expanded frontier model selector.',
+    ],
+  },
+  {
     buildNumber: '2026.05.16.05',
     version: '6.4.1',
     date: '2026-05-16',

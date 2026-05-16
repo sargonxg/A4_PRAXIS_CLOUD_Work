@@ -24,7 +24,7 @@ export const ASK_RUNTIME_OPTIONS = [
   },
   {
     id: getModelMatrixEntry('complex_reasoning').model,
-    label: 'Gemini 3 Pro Preview',
+    label: 'Gemini 3.1 Pro Preview',
     provider: 'vertex',
     mode: 'research_memo',
     status: 'live',

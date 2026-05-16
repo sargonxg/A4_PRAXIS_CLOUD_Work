@@ -44,6 +44,9 @@ from the active ledger above.
 0. Inline Ask PRAXIS discussion now runs from the shared cockpit and sends the
    composed capsule/tool/model context. Next, persist the full composed stack as
    an immutable run receipt and expose resume/history controls in the same rail.
+0. Gemini 3.1 Pro Preview is now in the central selector for deep reasoning.
+   Next, add a server-side model-availability receipt per run so the UI can
+   explain when a selected preview model falls back to another Vertex target.
 0. First OutputCapsule product slice is now implemented in
    `src/lib/output-capsules/`: typed templates, payload schema ids/versions,
    deterministic planner, quality gates, hidden-tool bindings, and

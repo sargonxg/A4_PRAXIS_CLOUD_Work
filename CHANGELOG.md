@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- feat(runtime): add Gemini 3.1 Pro Preview to the cockpit selector.
+  Build 2026.05.16.06 updates the central model matrix so deep memo and
+  long-context work use `gemini-3.1-pro-preview`, keeps Gemini 2.5 fallbacks
+  available, and expands the Ask runtime catalog tests.
 - feat(cockpit): run inline capsule-aware Ask PRAXIS discussions.
   Build 2026.05.16.05 makes the shared cockpit bar call `/api/ai/ask-praxis`
   directly when signed in, passes the concatenated capsule stack, selected

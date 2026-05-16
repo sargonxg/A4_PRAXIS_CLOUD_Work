@@ -7,12 +7,12 @@
  *
  * Models are selected from MODEL_MATRIX.json:
  *   - balanced / cheap_classify : Gemini 3 Flash Preview
- *   - complex_reasoning / writing_quality / long_context : Gemini 3 Pro Preview
+ *   - complex_reasoning / writing_quality / long_context : Gemini 3.1 Pro Preview
  *   - embeddings_text / embeddings_long : text-embedding-005
  *
  * Zero-Config Fallback Chain (Part 3):
- *   getProModel():       Vertex Gemini 3 Pro Preview → Google AI Gemini 3 Pro Preview → Flash
- *   getAnalysisModel():  Gemini 3 Pro Preview
+ *   getProModel():       Vertex Gemini 3.1 Pro Preview → Google AI Gemini 3.1 Pro Preview → Flash
+ *   getAnalysisModel():  Gemini 3.1 Pro Preview
  *   getEmbeddingModel(): text-embedding-005 → null (vector disabled)
  *
  * All routes import from here — never hardcode model strings in route files.

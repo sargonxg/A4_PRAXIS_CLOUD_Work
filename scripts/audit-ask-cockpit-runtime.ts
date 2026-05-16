@@ -38,7 +38,7 @@ expectIncludes('src/lib/firebase/firestore.ts', [
 
 expectIncludes('src/lib/ai/ask-runtime-catalog.ts', [
   'Gemini 3 Flash Preview',
-  'Gemini 3 Pro Preview',
+  'Gemini 3.1 Pro Preview',
   'Gemini 2.5 Pro',
   'Gemini 2.5 Flash',
   'Gemini 2.5 Flash-Lite',

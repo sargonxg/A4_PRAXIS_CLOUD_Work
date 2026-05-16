@@ -17,7 +17,7 @@ export function isModelPreferenceValue(value: unknown): value is ModelPreference
 }
 
 export function modelPreferenceLabel(value: ModelPreferenceValue): string {
-  if (value === getModelMatrixEntry('complex_reasoning').model) return 'Gemini 3 Pro Preview (deep, comprehensive)';
+  if (value === getModelMatrixEntry('complex_reasoning').model) return 'Gemini 3.1 Pro Preview (deep, comprehensive)';
   if (value === 'gemini-2.5-pro') return 'Gemini 2.5 Pro (GA reasoning fallback)';
   if (value === 'gemini-2.5-flash') return 'Gemini 2.5 Flash (GA balanced fallback)';
   if (value === 'gemini-2.5-flash-lite') return 'Gemini 2.5 Flash-Lite (GA high-throughput fallback)';
