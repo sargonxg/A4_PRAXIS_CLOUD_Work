@@ -4,7 +4,6 @@ import type { NextRequest } from 'next/server';
 const SESSION_COOKIE = 'tacitus-auth-session';
 const PUBLIC_SYRIA_APP_ROUTES = new Set([
   '/app/workbench',
-  '/app/dashboard',
   '/app/syria-case',
   '/app/context-builder',
   '/app/source-scout',

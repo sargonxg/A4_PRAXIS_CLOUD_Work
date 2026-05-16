@@ -50,6 +50,13 @@ expectIncludes('src/components/ask/AskStreamPanel.tsx', [
   'activeContextStack',
 ]);
 
+expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
+  'ASK_RUNTIME_OPTIONS',
+  'PRAXIS_USAGE_COPY.askCost',
+  'model: selectedRuntime.id',
+  'ASK_ORCHESTRATION_OPTIONS',
+]);
+
 expectIncludes('src/app/api/ai/chat/route.ts', [
   'if (_user.uid && text)',
   'persistAskThreadTurn',

@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronsRight,
+  Cpu,
   FileText,
   FolderKanban,
   Mic,
@@ -28,6 +29,10 @@ import {
   type HomeSurfaceMode,
   type PolicyAgentDefinition,
 } from '@/lib/product/policy-agents';
+import { ASK_ORCHESTRATION_OPTIONS, ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
+import type { ModelPreferenceValue } from '@/lib/ai/model-preferences';
+import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
+import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
 
 type TaskletPraxisWorkbenchProps = {
@@ -53,11 +58,13 @@ export function TaskletPraxisWorkbench({
   recentRuns = defaultRecentRuns,
   className,
 }: TaskletPraxisWorkbenchProps) {
+  const { user, credits } = useAuth();
   const surfaceMode: HomeSurfaceMode = mode === 'app' ? 'authenticated' : mode;
   const [prompt, setPrompt] = useState('Draft a sourced options memo from the active capsule.');
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>('Analysis');
   const [selectedAgentId, setSelectedAgentId] = useState('research-memo');
   const [agentDrawerOpen, setAgentDrawerOpen] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<ModelPreferenceValue>(ASK_RUNTIME_OPTIONS[0].id);
   const [runState, setRunState] = useState<{ status: 'idle' | 'running' | 'ready' | 'error'; message: string; href?: string }>({
     status: 'idle',
     message: surfaceMode === 'public' ? 'Sign in to run this capsule.' : 'Ready to create a capsule run.',
@@ -69,6 +76,7 @@ export function TaskletPraxisWorkbench({
     return PRAXIS_POLICY_AGENTS.filter((agent) => agent.category === category);
   }, [activeTab]);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
+  const selectedRuntime = getAskRuntimeOption(selectedModel);
   const launcherState: ContextCapsuleLauncherState = {
     prompt,
     selectedCapsuleId: capsuleId,
@@ -119,6 +127,8 @@ export function TaskletPraxisWorkbench({
           policyAgentLabel: agent.label,
           runIntent: policyAgentRunIntent(agent.id),
           outputDestination: agent.outputDestination,
+          model: selectedRuntime.id,
+          provider: selectedRuntime.provider,
           approvalLevel: agent.approvalLevel,
           taskletSurface: true,
         },
@@ -130,6 +140,8 @@ export function TaskletPraxisWorkbench({
         status: 'error',
         message: body?.error === 'Agent run ledger is not configured'
           ? 'Run ledger is not configured in this environment.'
+          : body?.error === 'Demo mode cannot create private agent runs'
+            ? 'Sign in to create private capsule runs.'
           : `Could not create ${agent.label}.`,
       });
       return;
@@ -268,6 +280,40 @@ export function TaskletPraxisWorkbench({
                     Open output
                   </Link>
                 ) : null}
+              </div>
+              <div className="flex flex-wrap items-center gap-2 border-t border-black/10 bg-slate-50/70 px-5 py-2 text-[11px] text-slate-600">
+                <label className="inline-flex min-w-0 items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1">
+                  <Cpu className="h-3.5 w-3.5 text-slate-500" />
+                  <span className="font-bold uppercase tracking-[0.12em] text-slate-500">Model</span>
+                  <select
+                    value={selectedModel}
+                    onChange={(event) => setSelectedModel(event.target.value as ModelPreferenceValue)}
+                    className="max-w-[13rem] bg-transparent font-mono text-[11px] font-semibold text-slate-900 focus:outline-none"
+                    aria-label="PRAXIS cockpit model"
+                  >
+                    {ASK_RUNTIME_OPTIONS.map((option) => (
+                      <option key={option.id} value={option.id}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
+                  {user?.isDemo ? 'demo account' : `${credits.toLocaleString()} tokens`}
+                </span>
+                <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
+                  {PRAXIS_USAGE_COPY.askCost}
+                </span>
+                {ASK_ORCHESTRATION_OPTIONS.map((option) => (
+                  <span
+                    key={option.id}
+                    className={cn(
+                      'rounded-md border px-2 py-1 font-semibold',
+                      option.status === 'live' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-500',
+                    )}
+                    title={option.summary}
+                  >
+                    {option.label}
+                  </span>
+                ))}
               </div>
             </div>
 
