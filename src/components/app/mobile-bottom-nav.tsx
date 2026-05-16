@@ -2,7 +2,7 @@
 
 import type { ComponentType } from 'react';
 import Link from 'next/link';
-import { FileText, Home, LibraryBig, Network, Sparkles, Wrench } from 'lucide-react';
+import { FolderKanban, Home, Sparkles } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 import { NAV_GROUPS, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
@@ -11,10 +11,7 @@ import { NAV_GROUPS, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
 const ICONS: Partial<Record<PrimaryNavIcon, ComponentType<{ className?: string }>>> = {
   Home,
   Sparkles,
-  LibraryBig,
-  FileText,
-  Network,
-  Wrench,
+  FolderKanban,
 };
 
 export function MobileBottomNav() {
@@ -28,7 +25,10 @@ export function MobileBottomNav() {
       aria-label="Primary mobile navigation"
       data-testid="mobile-bottom-nav"
     >
-      <div className="mx-auto grid max-w-lg grid-cols-6 gap-1">
+      <div
+        className="mx-auto grid max-w-lg gap-1"
+        style={{ gridTemplateColumns: `repeat(${Math.max(items.length, 1)}, minmax(0, 1fr))` }}
+      >
         {items.map((item) => {
           const Icon = ICONS[item.icon] ?? Sparkles;
           if (item.id === 'ask') {

@@ -35,10 +35,11 @@ Status: canonical index for the current app structure
 ## Build Queue
 
 Use [`../build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`](../build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md)
-as the current implementation ledger. It converts this product structure into
-queue items for public-to-app usability, capsule onboarding, `/app/contexts`,
-Cloud SQL run ledger, Cloud Tasks dispatch, Research Memo Agent, daily brief,
-approvals, MCP/connectors, and the deferred browser/sandbox lane.
+as the current implementation ledger. Read older `/app/contexts` items as
+capsule-manager work inside `/app`: public-to-app usability, capsule
+onboarding, document/source intake, Cloud SQL run ledger, Cloud Tasks dispatch,
+Research Memo Agent, daily brief, approvals, MCP/connectors, and the deferred
+browser/sandbox lane.
 
 Use [`../build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`](../build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md)
 for paste-ready Codex and Claude Code prompts.
@@ -78,22 +79,18 @@ Keep the visible app simple:
 
 ```text
 Home
-Ask PRAXIS
-Library
-Memo Studio
-Canvas
-Advanced
+Capsules
 ```
 
-Do not add a new primary navigation item for agents. Agent runs appear inside
-the existing surfaces:
+Pricing and Release notes are public pages. Login remains operational but is
+not a product surface. Do not add new signed-in top-level pages for agents,
+library, memo, canvas, or advanced tools.
 
-- Home: recent runs, scheduled briefs, next work.
-- Ask PRAXIS: run a capsule-aware agent from the active capsule.
-- Library: sources/documents/specs and source-triggered runs.
-- Memo Studio: outputs and review receipts.
-- Canvas: graph/timeline/source-gap outputs.
-- Advanced: run logs, triggers, MCP, provider/runtime diagnostics.
+- Home: prompt bar, active capsule, recent work, and direct Ask PRAXIS.
+- Capsules: searchable stored ContextCapsules with ids, versions, categories,
+  source/document refs, upload, improve, archive, and AI-guided build actions.
+- Deeper memo, canvas, library, run-log, and diagnostic behavior should open as
+  panels/actions inside the capsule manager or remain admin/debug-only.
 
 ## Runtime Spine
 

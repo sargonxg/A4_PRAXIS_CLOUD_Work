@@ -1,0 +1,90 @@
+import Link from 'next/link';
+import type { Metadata } from 'next';
+import { PRICING_TIERS, PLAN_USAGE_BUCKETS, INTERNAL_COST_DISCLOSURE_NOTICE } from '@/lib/constants/pricing';
+import { PraxisGlyphChip } from '@/components/brand/praxis-mark';
+
+export const metadata: Metadata = {
+  title: 'Pricing | PRAXIS by TACITUS',
+  description: 'Simple monthly PRAXIS plans built around ContextCapsules, sourceability, and grounded policy work.',
+};
+
+export default function PricingPage() {
+  return (
+    <main className="landing-light min-h-screen bg-[var(--color-cream-100)] px-5 py-10 text-[color:var(--color-ink)]">
+      <div className="mx-auto max-w-6xl">
+        <PublicHeader />
+        <section className="py-16">
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--color-gold-700)]">Pricing</p>
+          <h1 className="mt-4 max-w-3xl font-serif text-5xl font-semibold tracking-normal text-[color:var(--color-diplomatic-blue)]">
+            Monthly plans for one ContextCapsule workspace.
+          </h1>
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-[color:var(--color-ink)]/70">
+            PRAXIS is priced as a workspace, not as a menu of tool charges. Start with one capsule and upgrade when capsules, sources, and handovers need to move across people.
+          </p>
+        </section>
+        <section className="grid gap-4 lg:grid-cols-4">
+          {PRICING_TIERS.map((tier) => (
+            <article
+              key={tier.id}
+              className={`rounded-2xl border bg-white/75 p-5 shadow-sm ${tier.highlighted ? 'border-[color:var(--color-gold-500)]' : 'border-[color:var(--color-rose-gold)]/25'}`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-serif text-2xl font-semibold text-[color:var(--color-diplomatic-blue)]">{tier.name}</h2>
+                {tier.highlighted ? <span className="rounded-full bg-[color:var(--color-gold-500)]/15 px-2 py-1 text-xs font-semibold text-[color:var(--color-gold-700)]">Most useful</span> : null}
+              </div>
+              <p className="mt-2 text-sm text-[color:var(--color-ink)]/60">{tier.audience}</p>
+              <p className="mt-6 font-serif text-3xl font-semibold">
+                {tier.price < 0 ? 'Custom' : tier.price === 0 ? 'Free' : `$${tier.price}`}
+                {tier.price > 0 ? <span className="text-sm font-normal text-[color:var(--color-ink)]/55"> / month</span> : null}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-[color:var(--color-ink)]/70">{tier.usage}</p>
+              <ul className="mt-6 space-y-3 text-sm leading-6 text-[color:var(--color-ink)]/75">
+                {tier.features.map((feature) => (
+                  <li key={feature} className="flex gap-2">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--color-gold-500)]" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href={tier.id === 'enterprise' ? 'mailto:hello@tacitus.me' : '/login?mode=signup'}
+                className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-full bg-[color:var(--color-diplomatic-blue)] px-4 text-sm font-semibold text-white"
+              >
+                {tier.cta}
+              </Link>
+            </article>
+          ))}
+        </section>
+        <section className="mt-16 rounded-2xl border border-[color:var(--color-rose-gold)]/25 bg-white/55 p-6">
+          <h2 className="font-serif text-2xl font-semibold text-[color:var(--color-diplomatic-blue)]">What plans include</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            {PLAN_USAGE_BUCKETS.map((bucket) => (
+              <div key={bucket.name} className="rounded-xl border border-[color:var(--color-rose-gold)]/20 bg-white/70 p-4">
+                <h3 className="text-sm font-semibold">{bucket.name}</h3>
+                <p className="mt-2 text-sm leading-6 text-[color:var(--color-ink)]/65">{bucket.description}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 text-sm text-[color:var(--color-ink)]/60">{INTERNAL_COST_DISCLOSURE_NOTICE}</p>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function PublicHeader() {
+  return (
+    <header className="flex items-center justify-between gap-4">
+      <Link href="/" className="flex items-center gap-3">
+        <PraxisGlyphChip size={34} />
+        <span className="font-serif text-xl font-semibold text-[color:var(--color-diplomatic-blue)]">PRAXIS</span>
+      </Link>
+      <nav className="flex items-center gap-4 text-sm font-semibold text-[color:var(--color-ink)]/65">
+        <Link href="/learn">Learn</Link>
+        <Link href="/release-notes">Release notes</Link>
+        <a href="https://tacitus.me" rel="noreferrer">TACITUS</a>
+        <Link href="/login" className="rounded-full bg-white px-4 py-2 text-[color:var(--color-ink)]">Sign in</Link>
+      </nav>
+    </header>
+  );
+}

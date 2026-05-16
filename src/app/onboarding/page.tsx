@@ -90,7 +90,7 @@ function OnboardingWizard() {
 
   const skipForLater = useCallback(async () => {
     await fetch('/api/onboarding/skip', { method: 'POST' });
-    router.push('/app/dashboard');
+    router.push('/app');
   }, [router]);
 
   const complete = useCallback(async (createFirstSituation: boolean) => {
@@ -124,7 +124,7 @@ function OnboardingWizard() {
     <div className="space-y-5 pb-10">
       {resumeMode && (
         <Link
-          href="/app/settings/profile"
+          href="/app"
           className="inline-flex items-center gap-1 text-xs font-medium text-navy-500 hover:text-navy-900"
         >
           <ArrowLeft className="h-3.5 w-3.5" />

@@ -15,7 +15,7 @@ export default function NotFound() {
       </p>
       <div className="flex gap-3 flex-wrap justify-center">
         <Link
-          href="/app/contexts"
+          href="/app"
           className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-sm font-medium transition-colors"
         >
           Go to Dashboard

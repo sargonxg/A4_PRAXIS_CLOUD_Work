@@ -22,7 +22,7 @@ describe('PRAXIS policy agent registry', () => {
     ]);
 
     for (const agent of PRAXIS_POLICY_AGENTS) {
-      expect(destinationHref(agent.outputDestination)).toMatch(/^\/app\//);
+      expect(destinationHref(agent.outputDestination)).toBe('/app');
       expect(agent.requiredCores.length).toBeGreaterThan(0);
       expect(agent.description.toLowerCase()).not.toMatch(/\b(filesystem|shell|gmail|slack)\b/);
     }
@@ -46,7 +46,7 @@ describe('PRAXIS policy agent registry', () => {
 
     expect(url.pathname).toBe('/login');
     expect(url.searchParams.get('mode')).toBe('signup');
-    expect(url.searchParams.get('redirect')).toBe('/app/dashboard');
+    expect(url.searchParams.get('redirect')).toBe('/app');
     expect(url.searchParams.get('policyAgentId')).toBe('research-memo');
     expect(url.searchParams.get('capsulePrompt')).toBe('Draft a sourced options memo.');
   });

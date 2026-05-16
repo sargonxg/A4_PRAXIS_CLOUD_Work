@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+- feat(capsules): make the capsule manager the signed-in app.
+  Build 2026.05.16.09 turns `/app` into a real capsule-library manager:
+  signed-in users can search, categorize, select, improve, upload into,
+  refresh, and archive stored ContextCapsules while seeing ids, versions,
+  source/document counts, tools, and output counts. Public navigation is now
+  Home, Capsules, Pricing, and Release notes; `/learn` and `/tacitus` redirect
+  home instead of remaining standalone pages.
+- feat(app): consolidate PRAXIS into one authenticated cockpit.
+  Build 2026.05.16.08 makes `/app` the single signed-in product surface,
+  redirects legacy dashboard/assistant/context/tools/settings URLs into that
+  cockpit, adds public `/pricing` and centralized `/release-notes`, keeps
+  TACITUS as an external `tacitus.me` path, and binds document uploads to the
+  active ContextCapsule id selected in the cockpit.
 - chore(cleanup): remove redundant demo pages and old tour UI.
   Build 2026.05.16.07 deletes the App Router `/demo` page files now covered
   by proxy redirects, removes the unused guided-tour component stack, and

@@ -34,7 +34,7 @@ describe('POST /api/onboarding/complete', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.versionId).toBe('v1');
-    expect(data.redirectTo).toBe('/app/dashboard');
+    expect(data.redirectTo).toBe('/app');
   });
 
   it('returns /app/situations/new when createFirstSituation true', async () => {

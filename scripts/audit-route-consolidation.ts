@@ -24,17 +24,31 @@ const failures: string[] = [];
 // Routes that have been folded. Key = legacy route file path,
 // value = expected canonical redirect target.
 const FOLDED_ROUTES: Record<string, string> = {
-  'src/app/docs/page.tsx': '/learn',
-  'src/app/waitlist/page.tsx': '/login?mode=signup',
-  'src/app/app/situations/page.tsx': '/app/contexts',
-  'src/app/app/profile/page.tsx': '/app/settings/profile',
+  'src/app/app/dashboard/page.tsx': '/app',
+  'src/app/app/assistant/page.tsx': '/app',
+  'src/app/app/contexts/page.tsx': '/app',
+  'src/app/app/cores/context/page.tsx': '/app',
+  'src/app/app/cores/user/page.tsx': '/app',
+  'src/app/app/canvas/page.tsx': '/app',
+  'src/app/app/profile/page.tsx': '/app',
+  'src/app/app/settings/page.tsx': '/app',
+  'src/app/app/settings/api-keys/page.tsx': '/app',
+  'src/app/app/settings/graph-backend/page.tsx': '/app',
+  'src/app/app/settings/model-preferences/page.tsx': '/app',
+  'src/app/app/settings/notifications/page.tsx': '/app',
+  'src/app/app/settings/preferences/page.tsx': '/app',
+  'src/app/app/settings/profile/page.tsx': '/app',
+  'src/app/app/settings/system-health/page.tsx': '/app',
+  'src/app/app/situations/page.tsx': '/app',
+  'src/app/app/situations/new/page.tsx': '/app',
+  'src/app/app/tools/page.tsx': '/app',
+  'src/app/app/tools/archive/page.tsx': '/app',
+  'src/app/app/write/page.tsx': '/app',
 };
 
 // Routes that are still alive on purpose during the v6 transition.
 // Listed here so the audit script does not flag them as missing.
-const ALLOWED_ALIVE = new Set<string>([
-  '/app/situations/new', // wizard still consumed by global search, source picker, etc.
-]);
+const ALLOWED_ALIVE = new Set<string>();
 
 function read(rel: string): string {
   const full = join(root, rel);

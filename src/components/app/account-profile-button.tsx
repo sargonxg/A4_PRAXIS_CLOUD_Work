@@ -93,9 +93,9 @@ export function AccountProfileButton({ compact = false }: { compact?: boolean })
             </div>
 
             <div className="mt-2 grid gap-1">
-              <MenuLink href="/app/settings/profile" icon={UserRound} label="Profile / User Core" onClick={() => setOpen(false)} />
-              <MenuLink href="/app/settings/api-keys" icon={KeyRound} label="Connectors and API keys" onClick={() => setOpen(false)} />
-              <MenuLink href="/app/settings" icon={Settings} label="Workspace settings" onClick={() => setOpen(false)} />
+              <MenuLink href="/app" icon={UserRound} label="Capsule manager" onClick={() => setOpen(false)} />
+              <MenuLink href="/app" icon={KeyRound} label="Upload and connectors" onClick={() => setOpen(false)} />
+              <MenuLink href="/app" icon={Settings} label="Workspace" onClick={() => setOpen(false)} />
               <button
                 type="button"
                 onClick={() => void signOut()}

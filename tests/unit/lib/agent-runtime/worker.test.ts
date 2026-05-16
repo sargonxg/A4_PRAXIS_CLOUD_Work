@@ -126,7 +126,7 @@ describe('agent runtime no-op worker', () => {
     });
 
     expect(transitions).toEqual(['running', 'succeeded']);
-    expect(result).toMatchObject({ status: 'succeeded', executionMode: 'research-memo', memoId: 'memo-1', outputHref: '/app/write' });
+    expect(result).toMatchObject({ status: 'succeeded', executionMode: 'research-memo', memoId: 'memo-1', outputHref: '/app' });
     expect(mirrored).toContain('context_resolved');
     expect(mirrored).toContain('reasoning.plan');
     expect(mirrored).toContain('reasoning.act');

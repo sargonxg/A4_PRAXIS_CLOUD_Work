@@ -66,7 +66,7 @@ test.describe('golden path — free tier smoke', () => {
 
     // Land on dashboard
     if (!page.url().includes('/dashboard')) {
-      await page.goto(`${BASE}/app/dashboard`);
+      await page.goto(`${BASE}/app`);
     }
 
     // ── 4. Dashboard renders with coverage banner + widgets ──────────────

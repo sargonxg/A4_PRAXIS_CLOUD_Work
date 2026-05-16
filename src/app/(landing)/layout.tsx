@@ -7,7 +7,10 @@ import { Menu, X } from "lucide-react";
 import { PraxisMark } from "@/components/brand/praxis-mark";
 
 const navLinks = [
-  { label: "Learn", href: "/learn" },
+  { label: "Home", href: "/" },
+  { label: "Capsules", href: "/login?mode=signup" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "Release notes", href: "/release-notes" },
 ];
 
 export default function LandingLayout({
@@ -100,6 +103,7 @@ export default function LandingLayout({
                   key={link.label}
                   href={link.href}
                   className="praxis-nav-link relative rounded-full px-3 py-1.5 text-[13px] font-medium text-[color:var(--color-ink)]/65 transition-colors duration-200 hover:text-[color:var(--color-ink)]"
+                  {...(link.href.startsWith('http') ? { rel: 'noreferrer' } : {})}
                 >
                   {link.label}
                 </a>
@@ -154,6 +158,7 @@ export default function LandingLayout({
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className="border-b border-[color:var(--color-rose-gold)]/15 py-4 text-base font-medium text-[color:var(--color-ink)]/80 transition-colors hover:text-[color:var(--color-ink)]"
+                  {...(link.href.startsWith('http') ? { rel: 'noreferrer' } : {})}
                 >
                   {link.label}
                 </a>
@@ -199,8 +204,17 @@ export default function LandingLayout({
             </span>
           </Link>
           <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[color:var(--color-ink)]/65">
-            <Link href="/learn" className="hover:text-[color:var(--color-ink)]">
-              Learn
+            <Link href="/" className="hover:text-[color:var(--color-ink)]">
+              Home
+            </Link>
+            <Link href="/login?mode=signup" className="hover:text-[color:var(--color-ink)]">
+              Capsules
+            </Link>
+            <Link href="/pricing" className="hover:text-[color:var(--color-ink)]">
+              Pricing
+            </Link>
+            <Link href="/release-notes" className="hover:text-[color:var(--color-ink)]">
+              Release notes
             </Link>
             <a
               href="mailto:hello@tacitus.me"

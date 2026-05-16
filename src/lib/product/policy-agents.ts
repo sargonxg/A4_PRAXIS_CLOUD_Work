@@ -165,7 +165,7 @@ export function policyAgentRunIntent(agentId: string | null | undefined): Policy
 export function policyAgentLoginHref(agentId: string, prompt: string): string {
   const params = new URLSearchParams({
     mode: 'signup',
-    redirect: '/app/dashboard',
+    redirect: '/app',
     policyAgentId: agentId,
   });
   if (prompt.trim()) params.set('capsulePrompt', prompt.trim());
@@ -175,12 +175,12 @@ export function policyAgentLoginHref(agentId: string, prompt: string): string {
 export function destinationHref(destination: PolicyAgentOutputDestination): string {
   switch (destination) {
     case 'memo_studio':
-      return '/app/write';
+      return '/app';
     case 'canvas':
-      return '/app/canvas';
+      return '/app';
     case 'library':
-      return '/app/contexts';
+      return '/app';
     case 'handover':
-      return '/app/contexts';
+      return '/app';
   }
 }

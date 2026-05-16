@@ -32,14 +32,13 @@ function expectExcludes(rel: string, markers: string[]): void {
 }
 
 for (const rel of [
-  'src/app/(landing)/learn/page.tsx',
   'docs/audits/2026-05-15-tasklet-mvp-cleanup-ledger.md',
 ]) {
   expectFile(rel);
 }
 
-expectIncludes('src/app/(landing)/layout.tsx', ['Learn', 'Contact', 'New capsule']);
-expectExcludes('src/app/(landing)/layout.tsx', ['Pricing', 'Release notes', 'href="/tacitus"']);
+expectIncludes('src/app/(landing)/layout.tsx', ['Home', 'Capsules', 'Pricing', 'Release notes', 'New capsule']);
+expectExcludes('src/app/(landing)/layout.tsx', ['href="/tacitus"', 'https://tacitus.me', 'Learn']);
 expectIncludes('src/components/landing/phase8-wow-landing.tsx', [
   'TaskletPraxisWorkbench',
   'mode="public"',
@@ -55,7 +54,7 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'data-testid="praxis-main-composer"',
   'data-testid="capsule-context-bar"',
   'data-testid="capsule-context-picker"',
-  'data-testid="tasklet-tool-cards"',
+  'data-testid="capsule-manager"',
   'data-testid="tasklet-capsule-cards"',
   "'/api/ai/ask-praxis'",
   'forceRun: true',
@@ -64,9 +63,11 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'AccountProfileButton',
   'conversationThreadId',
   'policyAgentRunIntent',
+  'refreshCapsules',
+  'capsule-detail-panel',
 ]);
 expectIncludes('src/components/app/app-shell.tsx', [
-  'data-testid="dashboard-cockpit-only-shell"',
+  'data-testid="praxis-one-page-app-shell"',
 ]);
 expectExcludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'data-testid="public-contextcapsule-explainer"',
@@ -99,14 +100,17 @@ expectExcludes('src/components/cores/ContextBuilderRoom.tsx', [
 ]);
 expectIncludes('src/lib/navigation/primary-nav.ts', [
   "label: 'Home'",
+  "label: 'Capsules'",
+]);
+expectExcludes('src/lib/navigation/primary-nav.ts', [
   "label: 'Ask PRAXIS'",
   "label: 'Library'",
   "label: 'Memo Studio'",
   "label: 'Canvas'",
   "label: 'Advanced'",
 ]);
-expectIncludes('src/app/sitemap.ts', ['/learn', '/login']);
-expectExcludes('src/app/sitemap.ts', ['/pricing', '/tacitus', '/release-notes', '/privacy', '/terms']);
+expectIncludes('src/app/sitemap.ts', ['/pricing', '/release-notes', '/login']);
+expectExcludes('src/app/sitemap.ts', ['/learn', '/tacitus', '/privacy', '/terms']);
 expectIncludes('docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md', [
   'ContextCapsule',
   'Tasklet',

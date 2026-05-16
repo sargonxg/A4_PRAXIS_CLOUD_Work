@@ -151,7 +151,7 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 | PASS | notifications stack includes quiet_hours | notifications stack contains required marker. | None. |
 | PASS | notifications stack includes provider_unconfigured | notifications stack contains required marker. | None. |
 | PASS | notifications stack includes MAX_DELIVERY_ATTEMPTS | notifications stack contains required marker. | None. |
-| PASS | notifications stack includes formatNotificationType | notifications stack contains required marker. | None. |
+| PASS | notifications stack includes AskPraxisHome | notifications stack contains required marker. | None. |
 
 ## 18. Frontend polish
 

@@ -1,6 +1,6 @@
 # PRAXIS Tool Operating Contract Audit - 2026-05-16
 
-Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 49/55.
+Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 51/55.
 
 | Tool | Score | Route | Page | Objective | Questions | Outputs | Ask PRAXIS | Quality |
 |---|---:|---|---|---|---|---|---|---|
@@ -8,8 +8,6 @@ Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 49/
 | early-warning | 5/7 | no | no | yes | yes | yes | yes | yes |
 | geospatial-monitor | 5/7 | no | no | yes | yes | yes | yes | yes |
 | risk-monitor | 5/7 | no | no | yes | yes | yes | yes | yes |
-| stakeholder-map | 5/7 | no | no | yes | yes | yes | yes | yes |
-| timeline | 5/7 | no | no | yes | yes | yes | yes | yes |
 | actor-profiles | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | advisory | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | alert-center | 6/7 | yes | no | yes | yes | yes | yes | yes |
@@ -51,7 +49,9 @@ Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 49/
 | source-monitor | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | source-scout | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | sources-library | 6/7 | yes | no | yes | yes | yes | yes | yes |
+| stakeholder-map | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | talking-points | 6/7 | yes | no | yes | yes | yes | yes | yes |
+| timeline | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | treaty-analyzer | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | un-toolkit | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | brainstorming-table | 7/7 | yes | yes | yes | yes | yes | yes | yes |
@@ -66,8 +66,6 @@ Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 49/
 - early-warning: missing route, missing page
 - geospatial-monitor: missing route, missing page
 - risk-monitor: missing route, missing page
-- stakeholder-map: missing route, missing page
-- timeline: missing route, missing page
 - actor-profiles: missing page
 - advisory: missing page
 - alert-center: missing page
@@ -109,6 +107,8 @@ Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 49/
 - source-monitor: missing page
 - source-scout: missing page
 - sources-library: missing page
+- stakeholder-map: missing page
 - talking-points: missing page
+- timeline: missing page
 - treaty-analyzer: missing page
 - un-toolkit: missing page

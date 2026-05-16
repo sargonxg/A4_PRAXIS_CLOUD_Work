@@ -896,9 +896,9 @@
       "remediation": "None."
     },
     {
-      "id": "notifications-pre-ship-formatnotificationtype",
+      "id": "notifications-pre-ship-askpraxishome",
       "section": "13. Notifications system",
-      "title": "notifications stack includes formatNotificationType",
+      "title": "notifications stack includes AskPraxisHome",
       "status": "PASS",
       "evidence": "notifications stack contains required marker.",
       "remediation": "None."

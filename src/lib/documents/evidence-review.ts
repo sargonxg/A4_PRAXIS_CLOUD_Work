@@ -73,10 +73,12 @@ export function normalizeEvidenceSources(sources: string[]): EvidenceSource[] {
     .map((source) => source.trim())
     .filter(Boolean)
     .map((source, index) => {
-      const url = source.match(/https?:\/\/\S+/)?.[0];
+      const urlMatch = source.match(/https?:\/\/\S+/);
+      const url = urlMatch?.[0];
+      const labelSource = urlMatch ? source.slice(0, urlMatch.index).trim() : source;
       return {
         id: `source-${index + 1}`,
-        label: source.replace(url ?? '', '').trim().replace(/[(-]\s*$/, '') || url || source,
+        label: labelSource.replace(/[(-]\s*$/, '') || url || source,
         url,
       };
     });

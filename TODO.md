@@ -16,6 +16,19 @@ Tasklet cleanup. New work starts from the active ledger above.
 
 ### Canonical Tasklet-Style Runtime Build
 
+0. Capsule manager is now the signed-in app surface: `/app` loads real
+   user-owned capsules, supports search/category filtering, shows ids,
+   versions, sources, documents, tools, outputs, tags, trust label, and lets
+   users upload, improve, refresh, categorize, select, or archive capsules.
+   Next hardening should replace the temporary category prompt with a polished
+   inline editor and add capsule-thread history/resume controls in the same
+   page.
+0. One-page app consolidation is now the active product shape: `/app` is the
+   only authenticated PRAXIS surface, old dashboard/assistant/context/tools/
+   settings URLs redirect into it, and public navigation is limited to Home,
+   Capsules, `/pricing`, and `/release-notes`. Next
+   cleanup should remove component code that is proven unused by the one-page
+   cockpit after validation, not by route-name assumptions.
 0. Release note governance is now explicit: `src/lib/constants/app-version.ts`
    is the central version/build source, `/release-notes` reads from
    `src/lib/product/release-notes.ts`, and `npm run audit:release-notes`
@@ -30,9 +43,8 @@ Tasklet cleanup. New work starts from the active ledger above.
 0. Public Home and authenticated Home now share the same polished cockpit:
    rounded capsule/composer surfaces, subtle policy-grid background, no
    low-level provider/runtime/token-cost labels, and no extra public-only
-   landing sections. `/learn` now carries the explanatory load through compact
-   clickable sections for cores, ten paths, tools, outputs, connectors, and
-   planned scaffolded capabilities.
+   landing sections. Pricing and Release notes carry the remaining standalone
+   public page surface while capsule education moves into the app manager.
 0. Dashboard/context shell parity is tightened: `/app/dashboard` no longer
    mounts the floating Ask launcher, capsule concatenation lives only above the
    Ask bar, and `/app/contexts` is framed as the trust/health/.core management

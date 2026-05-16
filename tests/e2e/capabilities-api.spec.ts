@@ -19,7 +19,7 @@ test.describe('public surface smoke', () => {
     await expect(page.getByRole('heading', { name: /Build the right context for policy AI\./i })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toHaveAttribute('href', '/app/assistant');
+    await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toHaveAttribute('href', '/app');
     await expect(page.getByText(/User Core/i).first()).toBeVisible();
     await expect(page.getByText(/Situation Core/i).first()).toBeVisible();
     await expect(page.getByText(/Source Core/i).first()).toBeVisible();

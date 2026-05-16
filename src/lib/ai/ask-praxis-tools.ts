@@ -151,7 +151,7 @@ export function makeRunDeepResearch(b: AskPraxisToolBindings) {
         ok: true,
         directive: 'suggest_internal_tool',
         toolId: 'grounded-research',
-        toolPath: '/app/tools',
+        toolPath: '/app',
         message: 'Deep research is routed through the internal Grounded Research capability; keep the user in Ask PRAXIS or the tool repository.',
         prefill: { question, depth },
         _generatedAt: new Date().toISOString(),

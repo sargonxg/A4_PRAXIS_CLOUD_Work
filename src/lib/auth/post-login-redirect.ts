@@ -6,12 +6,12 @@ export function resolvePostLoginRedirect(
   const explicit = params.get('redirect');
 
   if (isDemoMode) {
-    return '/app/dashboard';
+    return '/app';
   }
 
   if (!onboardingComplete) return '/onboarding';
 
-  if (explicit && explicit.startsWith('/app/')) return explicit;
+  if (explicit && (explicit === '/app' || explicit.startsWith('/app/'))) return '/app';
 
-  return '/app/dashboard';
+  return '/app';
 }

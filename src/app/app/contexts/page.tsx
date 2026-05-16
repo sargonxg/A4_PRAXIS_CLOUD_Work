@@ -1,7 +1,5 @@
-import { ContextBuilderRoom } from '@/components/cores/ContextBuilderRoom';
+import { redirect } from 'next/navigation';
 
-export const metadata = { title: 'Context Builder | PRAXIS' };
-
-export default function AppContextsPage() {
-  return <ContextBuilderRoom />;
+export default function ContextsRedirectPage() {
+  redirect('/app');
 }

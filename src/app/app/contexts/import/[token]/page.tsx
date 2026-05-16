@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * /app/contexts/import/[token] — accept / decline a shared capsule.
+ * /app/contexts/import/[token] - accept / decline a shared capsule.
  *
  * Brief: Claude Code CC-8. Validates the token via
  * /api/capsules/import/{token} (Codex CX-7) and renders the
@@ -59,10 +59,10 @@ export default function CapsuleImportPage({ params }: { params: Promise<{ token:
       if (res.ok) {
         const body = (await res.json()) as { capsuleId?: string };
         if (action === 'accept' && body.capsuleId) {
-          window.location.href = `/app/contexts?capsuleId=${encodeURIComponent(body.capsuleId)}`;
+          window.location.href = `/app?capsuleId=${encodeURIComponent(body.capsuleId)}`;
           return;
         }
-        window.location.href = '/app/contexts';
+        window.location.href = '/app';
       }
     } finally {
       setPending(null);
@@ -86,7 +86,7 @@ export default function CapsuleImportPage({ params }: { params: Promise<{ token:
         <p className="text-sm text-slate-700">
           The token couldn't be validated ({error ?? 'unknown'}). Ask the inviter to regenerate.
         </p>
-        <Link href="/app/contexts" className="text-sm font-semibold text-diplomatic-blue hover:underline">
+        <Link href="/app" className="text-sm font-semibold text-diplomatic-blue hover:underline">
           Back to capsules
         </Link>
       </main>

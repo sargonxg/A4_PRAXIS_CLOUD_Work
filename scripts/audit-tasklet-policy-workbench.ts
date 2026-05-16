@@ -30,7 +30,7 @@ for (const forbidden of ['Policy sources, documents, grounded search', 'Recommen
 }
 
 const redirectText = readFileSync(resolve(root, 'src/lib/auth/post-login-redirect.ts'), 'utf8');
-assert(redirectText.includes("return '/app/dashboard'"), 'Normal login should land on the Tasklet-style Home dashboard');
+assert(redirectText.includes("return '/app'"), 'Normal login should land on the one-page PRAXIS app');
 
 const loginText = readFileSync(resolve(root, 'src/app/(auth)/login/page.tsx'), 'utf8');
 for (const marker of ['PRAXIS run queued', 'What can PRAXIS do for you?', 'Describe a task or responsibility', 'PENDING_POLICY_AGENT_ID_KEY']) {
@@ -43,7 +43,7 @@ for (const marker of ['Open PRAXIS Home', 'Choose capsule', 'Run agent', 'Open o
 }
 
 for (const agent of PRAXIS_POLICY_AGENTS) {
-  assert(destinationHref(agent.outputDestination).startsWith('/app/'), `${agent.id} has no concrete app destination`);
+  assert(destinationHref(agent.outputDestination) === '/app', `${agent.id} must route to the one-page app destination`);
   assert(agent.requiredCores.length > 0, `${agent.id} has no required capsule cores`);
 }
 

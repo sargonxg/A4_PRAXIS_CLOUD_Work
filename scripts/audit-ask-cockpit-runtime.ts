@@ -60,14 +60,14 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'data-testid="praxis-chat-thread"',
   'data-testid="tasklet-tool-cards"',
   'data-testid="tasklet-capsule-cards"',
-  "fetch('/api/ai/chat'",
-  'Active ContextCapsule Lite stack',
+  "fetch('/api/ai/ask-praxis'",
+  'Active ContextCapsule stack',
   'ContextCapsule Lite',
   'action: \'combine\'',
   'AccountProfileButton',
   'activeCapsules',
   'selectedToolIds',
-  'selectedUserTypeId',
+  'selectedAgentId',
 ]);
 
 expectIncludes('src/lib/product/cockpit-composition.ts', [

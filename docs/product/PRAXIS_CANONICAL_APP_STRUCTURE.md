@@ -6,7 +6,8 @@ Status: source-of-truth product and infrastructure structure for the next build 
 
 ## North Star
 
-PRAXIS is a ContextCapsule-native agent workbench for serious policy work.
+PRAXIS is a ContextCapsule-native capsule manager and agent workbench for
+serious policy work.
 
 It should feel as simple as Tasklet at the surface: describe the work, choose or
 build the context, run the agent, review the output. Underneath, PRAXIS is more
@@ -32,32 +33,28 @@ capsules being combined, and clear login/signup entry into the same app shell.
 ## Product Spine
 
 Do not add a new top-level "agent app" or generic automation dashboard. The
-visible app spine remains:
+visible signed-in app spine is now:
 
 ```text
 Home
-Ask PRAXIS
-Library
-Memo Studio
-Canvas
-Advanced
+Capsules
 ```
 
-The surfaces mean:
+Pricing and Release notes remain public routes. Login remains operational. The
+surfaces mean:
 
 | Surface | Canonical role |
 |---|---|
-| Home | Active ContextCapsule, recent runs, scheduled briefs, next work |
-| Ask PRAXIS | Ask and run agents against the active capsule |
-| Library | Sources, documents, specifications, receipts, attached context |
-| Memo Studio | Drafts, briefs, handover packets, review receipts |
-| Canvas | Timeline, actors, graph proposals, power map, source gaps |
-| Advanced | Tool registry, run logs, triggers, audits, provider/runtime diagnostics |
+| Home | Active ContextCapsule, prompt bar, recent work, next action |
+| Capsules | Search, create, improve, categorize, upload into, archive, and inspect stored ContextCapsules |
+| Pricing | Public monthly plan surface |
+| Release notes | Public product/runtime change log |
 
-The authenticated shell should always make the active capsule visible near the
-top of the workspace. Users should not need to find a separate manager before
-they understand which User Core, Situation Core, sources, time horizon, tools,
-and output goal are active.
+Ask PRAXIS, document upload, source review, memo drafting, graph/canvas
+inspection, and advanced run diagnostics should appear as actions or panels
+inside the capsule manager, not as competing primary pages. The authenticated
+shell should always make the active capsule visible near the top of the
+workspace.
 
 ## ContextCapsule Product Contract
 

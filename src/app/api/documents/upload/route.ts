@@ -14,7 +14,7 @@ import {
 import { autoStructureDocument } from '@/lib/documents/auto-structure';
 import { emitTelemetrySafe } from '@/lib/telemetry/emit';
 import { localKnowledgeAdapter } from '@/lib/knowledge/context-engine';
-import { attachCapsuleRefs, getOrMigrateDefaultCapsule } from '@/lib/context/capsule-service';
+import { attachCapsuleRefs, getCapsule, getOrMigrateDefaultCapsule } from '@/lib/context/capsule-service';
 import { mirrorDocumentIngestionSql } from '@/lib/agent-runtime/document-postgres';
 
 /**
@@ -186,6 +186,7 @@ export const POST = withAuth(async (request, user) => {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const situationId = formData.get('situationId') as string | null;
+    const requestedCapsuleId = formData.get('capsuleId') as string | null;
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -356,7 +357,9 @@ export const POST = withAuth(async (request, user) => {
           linkedAt: stored.sourceCore?.linkedAt ?? new Date().toISOString(),
         },
       }, { merge: true });
-    const { capsule } = await getOrMigrateDefaultCapsule(user.uid);
+    const explicitCapsule = requestedCapsuleId ? await getCapsule(user.uid, requestedCapsuleId).catch(() => null) : null;
+    const { capsule: fallbackCapsule } = await getOrMigrateDefaultCapsule(user.uid);
+    const capsule = explicitCapsule && !explicitCapsule.archivedAt ? explicitCapsule : fallbackCapsule;
     await attachCapsuleRefs(user.uid, capsule.capsuleId, {
       sourceIds: [sourceCoreId],
       documentIds: [stored.id],

@@ -1,5 +1,16 @@
-import { redirect } from 'next/navigation';
+import { AskPraxisHome } from '@/components/dashboard/ask-praxis-home';
+import { listExampleCases } from '@/lib/cases/registry';
 
 export default function AppIndexPage() {
-  redirect('/app/dashboard');
+  const exampleCases = listExampleCases().map((caseModule) => ({
+    id: caseModule.id,
+    name: caseModule.manifest.name,
+    region: caseModule.manifest.region,
+    summary: caseModule.manifest.summary,
+    risk: caseModule.manifest.risk,
+    glaslStage: caseModule.manifest.glaslStage,
+    tags: caseModule.manifest.tags,
+  }));
+
+  return <AskPraxisHome exampleCases={exampleCases} marketplaceToolCount={0} />;
 }

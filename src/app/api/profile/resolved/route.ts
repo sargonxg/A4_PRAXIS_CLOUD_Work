@@ -11,7 +11,7 @@
  * - versionsHistory   → last 5 immutable snapshots from
  *                       users/{uid}/profile_versions/{vN}
  *
- * Consumed by the read-only /app/profile page.
+ * Consumed by the one-page PRAXIS app.
  */
 
 import { NextResponse } from 'next/server';

@@ -1,7 +1,5 @@
-import { ContextBuilderRoom } from '@/components/cores/ContextBuilderRoom';
+import { redirect } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-
-export default function CanvasPage() {
-  return <ContextBuilderRoom />;
+export default function CanvasRedirectPage() {
+  redirect('/app');
 }

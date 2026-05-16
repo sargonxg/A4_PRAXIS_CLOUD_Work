@@ -5,11 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Command } from 'cmdk';
 import {
   BookOpenCheck,
-  FileText,
   FolderKanban,
   Home,
-  LibraryBig,
-  Network,
   Plus,
   Search,
   ShieldAlert,
@@ -30,17 +27,13 @@ type PraxisCommand = {
 };
 
 const COMMANDS: PraxisCommand[] = [
-  { id: 'open-home', label: 'Open Home', description: 'Assemble the active context stack.', href: '/app/dashboard', icon: Home, group: 'Primary surfaces' },
-  { id: 'ask-praxis', label: 'Ask PRAXIS', description: 'Ask with current context.', href: '/app/assistant', icon: Sparkles, group: 'Primary surfaces' },
-  { id: 'open-library', label: 'Open Library', description: 'Ground context in sources.', href: '/app/contexts', icon: LibraryBig, group: 'Primary surfaces' },
-  { id: 'open-memo', label: 'Open Memo Studio', description: 'Draft from context.', href: '/app/write', icon: FileText, group: 'Primary surfaces' },
-  { id: 'open-canvas', label: 'Open Canvas', description: 'Review context structure.', href: '/app/canvas', icon: Network, group: 'Primary surfaces' },
-  { id: 'attach-source', label: 'Attach source', description: 'Upload or attach a source to the active Situation Core.', href: '/app/contexts', icon: Upload, group: 'Context actions' },
-  { id: 'find-gaps', label: 'Find evidence gaps', description: 'Open Memo Studio evidence review.', href: '/app/write', icon: ShieldAlert, group: 'Context actions' },
-  { id: 'create-situation', label: 'Create Situation Core', description: 'Start a reusable case context.', href: '/app/situations/new', icon: Plus, group: 'Context actions' },
-  { id: 'create-user', label: 'Create User Core', description: 'Manage role, audience, writing style, and standards.', href: '/app/cores/user', icon: FolderKanban, group: 'Context actions' },
-  { id: 'fork-demo', label: 'Fork demo core', description: 'Copy a demo structure into your workspace.', href: '/app/contexts', icon: BookOpenCheck, group: 'Context actions' },
-  { id: 'export-memo', label: 'Export memo', description: 'Use Memo Studio export controls.', href: '/app/write', icon: FileText, group: 'Output actions' },
+  { id: 'open-home', label: 'Open PRAXIS', description: 'Ask from the active capsule.', href: '/app', icon: Home, group: 'Primary surfaces' },
+  { id: 'open-capsules', label: 'Open Capsules', description: 'Search, build, and update capsule context.', href: '/app', icon: FolderKanban, group: 'Primary surfaces' },
+  { id: 'attach-source', label: 'Attach source', description: 'Upload or attach a source to the active capsule.', href: '/app', icon: Upload, group: 'Context actions' },
+  { id: 'find-gaps', label: 'Find evidence gaps', description: 'Review evidence gaps from the active capsule.', href: '/app', icon: ShieldAlert, group: 'Context actions' },
+  { id: 'create-capsule', label: 'Create capsule', description: 'Start reusable context from the manager.', href: '/app', icon: Plus, group: 'Context actions' },
+  { id: 'fork-demo', label: 'Fork sample capsule', description: 'Copy a sample structure into your workspace.', href: '/app', icon: BookOpenCheck, group: 'Context actions' },
+  { id: 'improve-capsule', label: 'Improve capsule', description: 'Ask PRAXIS to find missing context.', href: '/app', icon: Sparkles, group: 'Output actions' },
 ];
 
 export function GlobalSearch({
@@ -58,7 +51,7 @@ export function GlobalSearch({
     if (cleaned.length > 0) {
       window.dispatchEvent(new CustomEvent('open-praxis-chat', { detail: { prompt: cleaned } }));
     } else {
-      router.push('/app/assistant');
+      router.push('/app');
     }
     onClose();
   }, [onClose, router]);

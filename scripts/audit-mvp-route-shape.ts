@@ -20,19 +20,16 @@ function expectMissing(rel: string): void {
 const primaryNav = read('src/lib/navigation/primary-nav.ts');
 for (const marker of [
   "label: 'Home'",
-  "label: 'Ask PRAXIS'",
-  "label: 'Library'",
-  "label: 'Memo Studio'",
-  "label: 'Canvas'",
-  "label: 'Advanced'",
-  "href: '/app/dashboard'",
-  "href: '/app/assistant'",
-  "href: '/app/contexts'",
-  "href: '/app/write'",
-  "href: '/app/canvas'",
-  "href: '/app/tools'",
+  "label: 'Capsules'",
+  "href: '/app'",
 ]) {
   if (!primaryNav.includes(marker)) failures.push(`PRIMARY_NAV missing canonical marker: ${marker}`);
+}
+for (const oldLabel of ["label: 'Ask PRAXIS'", "label: 'Library'", "label: 'Memo Studio'", "label: 'Canvas'", "label: 'Advanced'"]) {
+  if (primaryNav.includes(oldLabel)) failures.push(`PRIMARY_NAV still exposes old app label: ${oldLabel}`);
+}
+for (const legacyHref of ["href: '/app/dashboard'", "href: '/app/assistant'", "href: '/app/contexts'", "href: '/app/write'", "href: '/app/canvas'", "href: '/app/tools'"]) {
+  if (primaryNav.includes(legacyHref)) failures.push(`PRIMARY_NAV still exposes old app page: ${legacyHref}`);
 }
 
 const sidebar = read('src/components/app/app-sidebar.tsx');
@@ -65,6 +62,17 @@ for (const marker of [
 ]) {
   if (!proxy.includes(marker)) failures.push(`proxy missing legacy redirect marker: ${marker}`);
 }
+for (const marker of [
+  "pathname === '/app/dashboard'",
+  "pathname === '/app/assistant'",
+  "pathname === '/app/contexts'",
+  "pathname === '/app/tools'",
+  "pathname === '/app/write'",
+  "pathname === '/app/canvas'",
+  "pathname.startsWith('/app/settings/')",
+]) {
+  if (!proxy.includes(marker)) failures.push(`proxy missing one-page app redirect marker: ${marker}`);
+}
 for (const removedMarker of ["'/app/user-case-case'", "'/app/workbench/user-case'", "pathname.startsWith('/demo')", "'/demo/:path*'"]) {
   if (proxy.includes(removedMarker)) failures.push(`proxy still includes removed demo/case marker: ${removedMarker}`);
 }
@@ -93,6 +101,9 @@ for (const rel of [
 
 const appShell = read('src/components/app/app-shell.tsx');
 if (appShell.includes('<DebugPanel')) failures.push('DebugPanel should not render from AppShell');
+if (!appShell.includes('data-testid="praxis-one-page-app-shell"')) {
+  failures.push('AppShell must special-case only /app as the one-page cockpit shell');
+}
 if (!appShell.includes('GlobalSearch') || !appShell.includes('initialQuery')) {
   failures.push('AppShell must own the shared command/search overlay state');
 }

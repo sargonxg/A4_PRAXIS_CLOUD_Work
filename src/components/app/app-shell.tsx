@@ -31,7 +31,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const fetchSituations = useSituationStore((state) => state.fetchSituations);
   const router = useRouter();
   const pathname = usePathname();
-  const isDashboardCockpit = pathname === '/app/dashboard';
+  const isOnePageCockpit = pathname === '/app';
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
@@ -99,13 +99,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     openSearch: () => openSearch(),
     openAsk,
     openHelp: () => setHelpOpen(true),
-    goHome: () => router.push('/app/dashboard'),
-    goCores: () => router.push('/app/contexts'),
-    goLibrary: () => router.push('/app/contexts'),
-    goWrite: () => router.push('/app/write'),
-    goCanvas: () => router.push('/app/canvas'),
-    goTools: () => router.push('/app/tools'),
-    goSettings: () => router.push('/app/settings'),
+    goHome: () => router.push('/app'),
+    goCores: () => router.push('/app'),
+    goLibrary: () => router.push('/app'),
+    goWrite: () => router.push('/app'),
+    goCanvas: () => router.push('/app'),
+    goTools: () => router.push('/app'),
+    goSettings: () => router.push('/app'),
     closeModal: closeOverlay,
   });
 
@@ -134,8 +134,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <TooltipProvider delayDuration={0}>
-      {isDashboardCockpit ? (
-        <div className="app-light h-screen overflow-y-auto bg-[#f3f5f1]" data-testid="dashboard-cockpit-only-shell">
+      {isOnePageCockpit ? (
+        <div className="app-light h-screen overflow-y-auto bg-[#f3f5f1]" data-testid="praxis-one-page-app-shell">
           <ErrorBoundary>
             <ToolErrorBoundary>
               {children}

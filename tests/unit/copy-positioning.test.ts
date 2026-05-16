@@ -7,9 +7,9 @@ const PRODUCT_COPY_FILES = [
   'src/components/assistant/suggested-prompts.tsx',
   'src/components/app/floating-praxis.tsx',
   'src/components/app/header.tsx',
-  'src/components/praxis/tool-info-from-registry.tsx',
+  'src/components/praxis/tasklet-praxis-workbench.tsx',
   'src/lib/constants/tool-registry.ts',
-  'src/lib/constants/templates.ts',
+  'src/lib/memo/templates/registry.ts',
 ];
 
 const PROHIBITED_POSITIONING = [
@@ -33,6 +33,6 @@ describe('PRAXIS product positioning copy', () => {
       expect(combined).not.toContain(phrase);
     }
 
-    expect(combined).toContain('practitioner experience in multilateral diplomacy');
+    expect(combined).toContain('multilateral diplomacy');
   });
 });

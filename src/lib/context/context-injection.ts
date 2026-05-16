@@ -58,7 +58,7 @@ export async function resolveInjectableContext(
     stack,
     injectionKey: buildCapsuleInjectionKey(capsule),
     promptBlock: buildCapsulePromptBlock(capsule, { resolvedAt, situationId: input.situationId }),
-    sharePath: `/app/contexts?capsuleId=${encodeURIComponent(capsule.capsuleId)}`,
+    sharePath: `/app?capsuleId=${encodeURIComponent(capsule.capsuleId)}`,
     resolvedAt,
   };
 }

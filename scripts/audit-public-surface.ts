@@ -42,7 +42,7 @@ for (const required of [
 
 for (const required of [
   'data-testid="praxis-main-composer"',
-  'data-testid="tasklet-tool-cards"',
+  'data-testid="capsule-manager"',
   'data-testid="tasklet-capsule-cards"',
   'What can PRAXIS do for you?',
   'Describe a task or responsibility',
@@ -51,15 +51,16 @@ for (const required of [
   'data-testid="capsule-context-bar"',
   'data-testid="praxis-chat-thread"',
   'ContextCapsule Lite',
+  'Search capsules',
 ]) {
   if (!workbench.includes(required)) failures.push(`shared cockpit missing marker: ${required}`);
 }
 
 for (const required of [
-  'data-testid="dashboard-cockpit-only-shell"',
-  "pathname === '/app/dashboard'",
+  'data-testid="praxis-one-page-app-shell"',
+  "pathname === '/app'",
 ]) {
-  if (!appShell.includes(required)) failures.push(`app shell missing dashboard cockpit marker: ${required}`);
+  if (!appShell.includes(required)) failures.push(`app shell missing one-page cockpit marker: ${required}`);
 }
 
 for (const forbidden of [

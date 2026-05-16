@@ -175,7 +175,7 @@ describe('capsule service', () => {
     expect(resolved.promptBlock).toContain('situation_core: indo-pacific-2026');
     expect(resolved.promptBlock).toContain('source_cores: src-1, src-2');
     expect(resolved.promptBlock).toContain('document_cores: doc-1');
-    expect(resolved.sharePath).toBe('/app/contexts?capsuleId=default');
+    expect(resolved.sharePath).toBe('/app?capsuleId=default');
   });
 
   it('stores tool, objective, product, time, and memory cores on the capsule', async () => {

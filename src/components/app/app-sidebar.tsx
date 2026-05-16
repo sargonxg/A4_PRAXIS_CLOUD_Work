@@ -98,7 +98,7 @@ export function AppSidebar() {
       aria-label="PRAXIS navigation"
     >
       <div className="flex h-16 items-center gap-3 border-b border-[var(--color-app-border)] px-3">
-        <PraxisLink href="/app/assistant" className="flex min-w-0 flex-1 items-center gap-3">
+        <PraxisLink href="/app" className="flex min-w-0 flex-1 items-center gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-diplomatic-blue text-sm font-bold text-white">P</span>
           {sidebarOpen ? (
             <span className="min-w-0">
@@ -134,7 +134,7 @@ export function AppSidebar() {
 
       <div className="border-t border-[var(--color-app-border)] p-2">
         <PraxisLink
-          href="/app/settings/profile"
+          href="/app"
           className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-[var(--color-app-surface-alt)]"
           title="Open user profile"
         >
@@ -184,7 +184,7 @@ function ContextCapsulePanel() {
   return (
     <div className="border-b border-[var(--color-app-border)] px-3 py-3">
       <PraxisLink
-        href="/app/contexts"
+        href="/app"
         className="block rounded-lg border border-gold-200 bg-gold-50/70 p-3 text-navy-900 transition hover:border-gold-300 hover:bg-gold-50"
       >
         <div className="flex items-center gap-2">

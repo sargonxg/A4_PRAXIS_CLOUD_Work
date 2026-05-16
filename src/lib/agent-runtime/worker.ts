@@ -177,7 +177,7 @@ async function executeResearchMemoAgentRun(
       status: run.status,
       executionMode: 'research-memo',
       traceId: run.traceId,
-      outputHref: '/app/write',
+      outputHref: '/app',
       idempotent: true,
     };
   }
@@ -330,7 +330,7 @@ async function executeResearchMemoAgentRun(
       message: 'Research Memo Agent created a Memo Studio draft with source and gap receipts.',
       data: {
         memoId: memoRecord.memo.id,
-        outputHref: '/app/write',
+        outputHref: '/app',
         sourceCount,
         gapCount: gapItems.length,
       },
@@ -346,7 +346,7 @@ async function executeResearchMemoAgentRun(
         attempt: payload.attempt,
         executionMode: 'research-memo',
         memoId: memoRecord.memo.id,
-        outputHref: '/app/write',
+        outputHref: '/app',
       },
     });
 
@@ -355,7 +355,7 @@ async function executeResearchMemoAgentRun(
       status: succeeded?.status ?? 'succeeded',
       executionMode: 'research-memo',
       traceId: running.traceId,
-      outputHref: '/app/write',
+      outputHref: '/app',
       memoId: memoRecord.memo.id,
     };
   } catch (err) {

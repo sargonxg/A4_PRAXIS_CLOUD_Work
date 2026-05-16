@@ -79,7 +79,7 @@ describe('consolidated PRAXIS tool model', () => {
   });
 
   it('classifies canonical tools by product readiness without exposing internals', () => {
-    expect(PRAXIS_CANONICAL_TOOLS).toHaveLength(12);
+    expect(PRAXIS_CANONICAL_TOOLS).toHaveLength(13);
     const statuses = new Set(PRAXIS_CANONICAL_TOOLS.map((tool) => tool.readiness));
     expect(statuses).toEqual(new Set(['live', 'routed', 'staged']));
 

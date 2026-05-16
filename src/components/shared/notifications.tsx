@@ -89,7 +89,7 @@ export function NotificationBell() {
                   </button>
                 )}
                 <button
-                  onClick={() => { router.push('/app/settings/notifications'); setOpen(false); }}
+                  onClick={() => { router.push('/app'); setOpen(false); }}
                   className="rounded-md p-1 text-navy-500 transition-colors hover:bg-[var(--color-app-surface-alt)] hover:text-navy-800"
                   aria-label="Notification settings"
                 >

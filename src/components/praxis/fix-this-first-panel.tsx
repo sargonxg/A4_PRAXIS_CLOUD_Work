@@ -36,11 +36,11 @@ const CORE_LABEL: Record<RequiredCoreKind, string> = {
 
 const CORE_REPAIR_HREF: Record<RequiredCoreKind, string> = {
   user: '/app/cores/user',
-  situation: '/app/contexts',
-  source: '/app/contexts',
-  graph: '/app/canvas',
-  time: '/app/contexts',
-  output: '/app/write',
+  situation: '/app',
+  source: '/app',
+  graph: '/app',
+  time: '/app',
+  output: '/app',
 };
 
 const CORE_REPAIR_CTA: Record<RequiredCoreKind, string> = {

@@ -322,7 +322,7 @@ You have access to the user's active situation data. When answering questions:
     }
 
     // --- Heavy-question routing — keep deliberation inside the simplified spine ---
-    systemPrompt += `\n\n## Routing Heavy Questions\nWhen the user asks a strategic, multi-stakeholder question that warrants multi-perspective deliberation (for example: "should I attribute publicly", "is a pause better than a statement", or "how does my mediation step play against the multilateral forum track"), keep the user in the simple PRAXIS spine. Recommend: (1) create an options memo in Memo Studio at \`/app/write\`, (2) map actors, claims, and tradeoffs in Canvas at \`/app/canvas\`, or (3) use Advanced only for internal receipts and review. If specialist deliberation would help but is not directly exposed, label it as a routed internal capability instead of presenting it as a live page.`;
+    systemPrompt += `\n\n## Routing Heavy Questions\nWhen the user asks a strategic, multi-stakeholder question that warrants multi-perspective deliberation, keep the user in the single PRAXIS app at \`/app\`. Recommend creating a memo, mapping actors, reviewing claims, or opening advanced receipts inside that same cockpit instead of presenting separate live pages. If specialist deliberation would help but is not directly exposed, label it as a routed internal capability.`;
 
     // Build situation-aware tool instances.
     // For real users, pre-fetch the conflict graph from Firestore so that

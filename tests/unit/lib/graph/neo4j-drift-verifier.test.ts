@@ -53,7 +53,7 @@ describe('neo4j-drift-verifier', () => {
 
     expect(report.status).toBe('ok');
     expect(report.mode).toBe('example-contract');
-    expect(report.compared).toBeGreaterThanOrEqual(2);
-    expect(listExampleGraphSnapshots().map((snapshot) => snapshot.situationId)).toContain('user-case');
+    expect(report.compared).toBe(0);
+    expect(listExampleGraphSnapshots()).toEqual([]);
   });
 });

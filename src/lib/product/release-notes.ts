@@ -26,6 +26,34 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.16.09',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'Capsule manager becomes the app surface',
+    summary: 'PRAXIS now treats the capsule library as the only substantive app page beside public pricing and release notes.',
+    category: 'product',
+    items: [
+      'The signed-in cockpit now loads real user capsules, supports capsule search and category filters, and shows stored ids, versions, sources, documents, tools, and outputs.',
+      'Capsule cards can select, ask, improve, categorize, refresh, upload into, or archive capsules without leaving /app.',
+      'Public navigation is reduced to Home, Capsules, Pricing, and Release notes; /learn and /tacitus redirect back to Home.',
+      'The app sidebar and command palette now point users back to the capsule manager instead of separate Memo, Canvas, Library, Ask, or Advanced pages.',
+    ],
+  },
+  {
+    buildNumber: '2026.05.16.08',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'One-page PRAXIS app consolidation',
+    summary: 'PRAXIS now enters one authenticated app surface at /app while Learn, Pricing, Release notes, and TACITUS remain the only public navigation links.',
+    category: 'product',
+    items: [
+      'Collapsed the authenticated dashboard, assistant, context, canvas, writing, tools, situations, profile, and settings pages into the single /app cockpit.',
+      'Kept compatibility redirects for old app URLs so shared links land on the one-page PRAXIS workspace.',
+      'Added public Pricing and Release notes pages beside Learn, with TACITUS routed to tacitus.me.',
+      'Document uploads now carry the active ContextCapsule id from the cockpit so the library intake binds files to the selected capsule.',
+    ],
+  },
+  {
     buildNumber: '2026.05.16.07',
     version: '6.4.1',
     date: '2026-05-16',

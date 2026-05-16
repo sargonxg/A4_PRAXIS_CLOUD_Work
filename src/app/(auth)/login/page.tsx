@@ -48,7 +48,7 @@ function LoginForm() {
   const capsuleOutputParam = searchParams.get('capsuleOutput');
   const policyAgentParam = searchParams.get('policyAgentId');
   const appRedirect = planParam
-    ? `/app/settings?upgrade=${planParam}` // Send to settings with upgrade prompt
+    ? `/pricing?upgrade=${planParam}`
     : resolvePostLoginRedirect(searchParams, false);
   const {
     user,
@@ -81,7 +81,7 @@ function LoginForm() {
     // demo entry from /login.
     if (user && user.isDemo) {
       didNavigate.current = true;
-      router.push('/app/dashboard');
+      router.push('/app');
       return;
     }
   }, [user, loading, router, appRedirect]);

@@ -1,5 +1,34 @@
 # PRAXIS — STATUS
 
+## 2026-05-16 — Capsule Manager Surface
+
+Current product checkpoint:
+
+- Central app metadata is now build `2026.05.16.09`.
+- `/app` now exposes the capsule library as the primary signed-in product
+  surface: search, category filters, active selection, upload, improve,
+  archive, refresh, and capsule metadata all live in the one cockpit.
+- Capsule cards show stored ids through the detail panel plus version,
+  source/document/tool/output counts, tags, scope, and trust label when
+  available.
+- Public navigation is narrowed to Home, Capsules, Pricing, and Release notes.
+  `/learn` and `/tacitus` now redirect home, leaving Pricing and Release notes
+  as the only standalone public product pages beside Home/Login.
+
+## 2026-05-16 — One-Page App Consolidation
+
+Current product checkpoint:
+
+- Central app metadata is now build `2026.05.16.08`.
+- `/app` is the single authenticated PRAXIS surface; legacy dashboard,
+  assistant, contexts, tools, writing, canvas, situations, profile, and settings
+  routes redirect there instead of maintaining separate page implementations.
+- Public navigation is narrowed to Learn, Pricing, Release notes, and TACITUS
+  at `https://tacitus.me`.
+- The cockpit keeps the animated TACITUS square mark visible, preserves the
+  capsule bar/chat surface, and sends uploaded library documents with the active
+  ContextCapsule id for capsule-owned intake.
+
 ## 2026-05-16 — Route Cleanup And Cockpit Smoke Alignment
 
 Current cleanup checkpoint:

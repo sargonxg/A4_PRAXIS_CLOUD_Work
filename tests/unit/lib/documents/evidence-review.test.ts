@@ -13,7 +13,7 @@ describe('document evidence review', () => {
     ]);
 
     expect(sources).toEqual([
-      { id: 'source-1', label: 'UN Geneva User-defined context briefing', url: 'https://example.org/User-defined context' },
+      { id: 'source-1', label: 'UN Geneva User-defined context briefing', url: 'https://example.org/User-defined' },
       { id: 'source-2', label: 'ReliefWeb humanitarian update', url: undefined },
     ]);
   });

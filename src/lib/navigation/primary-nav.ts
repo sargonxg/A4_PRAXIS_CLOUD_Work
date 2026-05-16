@@ -1,11 +1,8 @@
 /**
  * PRAXIS navigation map.
  *
- * The sidebar keeps the visible product contract small:
- * Home, Ask PRAXIS, Library, Memo Studio, Canvas, and Advanced.
- * Core builders, diagnostics, and specialist tools stay
- * reachable through those surfaces instead of becoming competing nav areas.
- * Compatibility route marker for audits: href: '/app/contexts'.
+ * The visible PRAXIS app is one cockpit route: /app, centered on the
+ * capsule manager. Pricing and release notes stay public routes.
  */
 
 export type PrimaryNavIcon =
@@ -46,12 +43,8 @@ export const NAV_GROUPS: readonly PrimaryNavGroup[] = [
     label: 'Workspace',
     defaultOpen: true,
     items: [
-      { id: 'home', label: 'Home', icon: 'Home', href: '/app/dashboard', shortcut: 'g h', hint: 'Choose or create context, then ask' },
-      { id: 'ask', label: 'Ask PRAXIS', icon: 'Sparkles', href: '/app/assistant', shortcut: '/', hint: 'Reason from the active capsule' },
-      { id: 'library', label: 'Library', icon: 'LibraryBig', href: '/app/contexts', shortcut: 'g l', hint: 'Upload sources and documents into knowledge cores' },
-      { id: 'write', label: 'Memo Studio', icon: 'FileText', href: '/app/write', shortcut: 'g m', hint: 'Draft from the active context' },
-      { id: 'canvas', label: 'Canvas', icon: 'Network', href: '/app/canvas', shortcut: 'g v', hint: 'Inspect or arrange context when needed' },
-      { id: 'advanced', label: 'Advanced', icon: 'Wrench', href: '/app/tools', shortcut: 'g a', hint: 'Detailed tools, diagnostics, graph, ACH, and settings' },
+      { id: 'home', label: 'Home', icon: 'Home', href: '/app', shortcut: 'g h', hint: 'Ask from the active capsule' },
+      { id: 'capsules', label: 'Capsules', icon: 'FolderKanban', href: '/app', shortcut: 'g c', hint: 'Manage capsule library, sources, and documents' },
     ],
   },
   {
@@ -65,7 +58,7 @@ export const NAV_GROUPS: readonly PrimaryNavGroup[] = [
       { id: 'admin-advisors', label: 'Advisors', icon: 'Sparkles', href: '/app/admin/advisors', hint: 'Persona library + feed control' },
       { id: 'admin-domains', label: 'Domains', icon: 'Boxes', href: '/app/admin/domains', hint: 'Domain taxonomy + lens weights' },
       { id: 'admin-diag', label: 'Diagnostics', icon: 'Network', href: '/app/admin/diagnostics', hint: 'System health + invariants' },
-      { id: 'settings', label: 'Settings', icon: 'Cog', href: '/app/settings', hint: 'API keys, models, notifications' },
+      { id: 'settings', label: 'Settings', icon: 'Cog', href: '/app', hint: 'Runtime settings inside the PRAXIS cockpit' },
     ],
   },
 ] as const;

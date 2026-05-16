@@ -11,8 +11,7 @@ describe('Ask PRAXIS clean routing contract', () => {
   it('routes heavy work through the simple app spine instead of removed tool pages', () => {
     expect(chatRouteSource).not.toContain('recommend running the **Brainstorming Table**');
     expect(chatRouteSource).not.toContain('`/app/brainstorming-table`');
-    expect(chatRouteSource).toContain('Memo Studio at \\`/app/write\\`');
-    expect(chatRouteSource).toContain('Canvas at \\`/app/canvas\\`');
+    expect(chatRouteSource).toContain('single PRAXIS app at \\`/app\\`');
     expect(chatRouteSource).toContain('label it as a routed internal capability');
   });
 
@@ -28,6 +27,6 @@ describe('Ask PRAXIS clean routing contract', () => {
     expect(askToolsSource).not.toContain("toolPath: '/app/deep-search-agent'");
     expect(askToolsSource).toContain("directive: 'suggest_internal_tool'");
     expect(askToolsSource).toContain("toolId: 'grounded-research'");
-    expect(askToolsSource).toContain("toolPath: '/app/tools'");
+    expect(askToolsSource).toContain("toolPath: '/app'");
   });
 });

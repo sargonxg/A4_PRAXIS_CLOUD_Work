@@ -26,10 +26,10 @@ for (const marker of [
   if (!report.includes(marker)) failures.push(`purpose report missing ${marker}`);
 }
 
-const contexts = read('src/app/app/contexts/page.tsx');
-if (!contexts.includes('ContextBuilderRoom')) failures.push('Contexts page must render the unified ContextBuilderRoom');
-const toolsPage = read('src/app/app/tools/page.tsx');
-if (!toolsPage.includes('ContextBuilderRoom')) failures.push('Tools page must reuse the unified ContextBuilderRoom');
+for (const rel of ['src/app/app/contexts/page.tsx', 'src/app/app/tools/page.tsx', 'src/app/app/write/page.tsx']) {
+  const source = read(rel);
+  if (!source.includes("redirect('/app')")) failures.push(`${rel} must redirect into the one-page PRAXIS app`);
+}
 
 const memoDesk = read('src/components/memo/memo-desk.tsx');
 for (const marker of ['Redaction aware', 'Manifest embedded', 'DOCX/PDF/Markdown']) {
@@ -55,16 +55,9 @@ if (existsSync(path.join(root, briefBlocksPath))) {
   }
 }
 
-const tools = read('src/app/app/tools/page.tsx');
-if (tools.includes('Showing the opinionated 8-surface PRAXIS shell')) {
-  failures.push('Tools page still shows archived-tool explanation before active workflow');
-}
-if (!tools.includes('Review archived tools')) failures.push('Tools page lacks secondary archive access after hiding first-view archive copy');
-
-const notificationSettings = read('src/app/app/settings/notifications/page.tsx');
-if (!notificationSettings.includes('formatNotificationType')) failures.push('Notification settings do not format event names as human labels');
-for (const marker of ['Source ingest complete', 'Research thread saved to memory', 'Memory service degraded']) {
-  if (!notificationSettings.includes(marker)) failures.push(`Notification settings missing human label ${marker}`);
+const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
+for (const marker of ['data-testid="praxis-main-composer"', 'data-testid="capsule-context-bar"', "'/api/documents/upload'", "action: 'combine'"]) {
+  if (!workbench.includes(marker)) failures.push(`one-page cockpit missing purpose marker ${marker}`);
 }
 
 if (failures.length) {

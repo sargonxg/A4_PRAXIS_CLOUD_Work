@@ -10,7 +10,7 @@
  *  - A Workspace NAV_GROUPS entry has an href starting with
  *    /app/admin, /app/tools/archive, /app/settings, or
  *    /app/workbench/[caseId]/ach.
- *  - The Workspace group exceeds four items (creep guard).
+ *  - The Workspace group exceeds six mode labels (creep guard).
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -55,8 +55,8 @@ if (hrefMatches.length === 0) {
   failures.push('Workspace group has no href entries — has the schema changed?');
 }
 
-if (hrefMatches.length > 5) {
-  failures.push(`Workspace group has ${hrefMatches.length} items — must stay <= 5 to keep the surface Apple-simple`);
+if (hrefMatches.length > 6) {
+  failures.push(`Workspace group has ${hrefMatches.length} items — must stay <= 6 while all modes point at /app`);
 }
 
 const FORBIDDEN_PREFIXES = [
