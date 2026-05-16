@@ -3,7 +3,7 @@
 import { Plus, Sparkles } from "lucide-react";
 
 /**
- * Compose demo — visual proof that two capsules concatenate into a third.
+ * Compose showcase — visual proof that two capsules concatenate into a third.
  *
  * Pure presentation. The actual concatenation logic lives in
  * src/lib/context/capsule-service.ts (combineCapsules). This section sells
@@ -47,7 +47,7 @@ const RESULT: MiniCapsule = {
   accent: "gold",
 };
 
-export function ComposeCapsulesDemo() {
+export function ComposeCapsulesShowcase() {
   return (
     <section
       aria-labelledby="compose-heading"
@@ -199,4 +199,4 @@ function Connector({ glyph }: { glyph: "plus" | "arrow" }) {
   );
 }
 
-export default ComposeCapsulesDemo;
+export default ComposeCapsulesShowcase;

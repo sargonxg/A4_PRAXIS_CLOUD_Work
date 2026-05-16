@@ -9,6 +9,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { generateEmbedding, generateEmbeddings, chunkText } from './embedding-service';
 import { EMBEDDING_DIMENSION, EMBEDDING_MODEL } from './embedding-config';
 import type { VectorResult } from './types';
+import { findVertexVectorNeighbors, isVertexVectorSearchConfigured } from './vertex-vector-search';
 
 export class VectorLayer {
   private embeddingAvailable: boolean;
@@ -81,6 +82,42 @@ export class VectorLayer {
     if (!queryEmb) return [];
 
     try {
+      if (isVertexVectorSearchConfigured()) {
+        try {
+          const neighbors = await findVertexVectorNeighbors({
+            featureVector: queryEmb,
+            neighborCount: topK,
+          });
+          if (neighbors.length) {
+            const hydrated: Array<VectorResult | null> = await Promise.all(neighbors.map(async (neighbor) => {
+              const doc = await this.embeddingsRef().doc(neighbor.datapointId).get();
+              if (!doc.exists) return null;
+              const data = doc.data() ?? {};
+              let vector: number[] | undefined;
+              const raw = data.embedding;
+              if (raw && typeof raw.toArray === 'function') {
+                vector = raw.toArray();
+              } else if (Array.isArray(raw)) {
+                vector = raw as number[];
+              }
+              const result: VectorResult = {
+                chunkId: doc.id,
+                text: data.text ?? '',
+                score: neighbor.distance === null ? 0 : 1 - neighbor.distance,
+                sourceDocId: data.sourceDocId,
+                entityReferences: data.entityReferences ?? [],
+                timestamp: data.createdAt ?? '',
+                vector,
+              };
+              return result;
+            }));
+            return hydrated.filter((item): item is VectorResult => Boolean(item));
+          }
+        } catch (vertexErr) {
+          console.warn('[SKC:vector] Vertex Vector Search failed; falling back to Firestore KNN:', vertexErr);
+        }
+      }
+
       const results = await this.embeddingsRef()
         .findNearest({
           vectorField: 'embedding',

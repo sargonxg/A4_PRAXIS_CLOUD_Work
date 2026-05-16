@@ -34,6 +34,7 @@ import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
 import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 import { inferResponseActionKinds } from '@/lib/assistant/response-action-kinds';
 import { listAskThreadTurns, persistAskThreadTurn } from '@/lib/firebase/ask-thread-service';
+import { listAskThreadTurnsSql, persistAskThreadTurnSql } from '@/lib/agent-runtime/ask-thread-postgres';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -55,6 +56,19 @@ export const GET = withAuth(async (request: Request, user) => {
       );
     }
 
+    const sqlHistory = await listAskThreadTurnsSql({
+      uid: user.uid,
+      capsuleId,
+      threadId,
+      limit: Number.isFinite(limit) ? limit : undefined,
+    }).catch((err) => {
+      console.warn('[chat.history] SQL thread read failed; falling back to Firestore:', err);
+      return null;
+    });
+    if (sqlHistory?.thread || sqlHistory?.turns.length) {
+      return Response.json({ ...sqlHistory, persistence: 'cloud-sql' });
+    }
+
     const history = await listAskThreadTurns({
       uid: user.uid,
       capsuleId,
@@ -62,7 +76,7 @@ export const GET = withAuth(async (request: Request, user) => {
       limit: Number.isFinite(limit) ? limit : undefined,
     });
 
-    return Response.json(history);
+    return Response.json({ ...history, persistence: 'firestore' });
   } catch (err) {
     return handleRouteError(err, 'chat.history');
   }
@@ -344,9 +358,8 @@ You have access to the user's active situation data. When answering questions:
       : '\n\nANALYSIS DEPTH: Provide a concise operational answer with the most relevant assumptions and next action.';
     systemPrompt += depthDirective;
 
-    // Select model based on user preferences.
-    // Default: gemini-3-flash for fast conversational chat. Users can override
-    // to Pro or Claude via aiSettings. Analytical tools use getProModel() instead.
+    // Select model based on user preferences. The default comes from
+    // MODEL_MATRIX.json so the app follows the single provider/matrix contract.
     const runtime = selectAskRuntime(aiSettings);
     const model = runtime.model;
     const askStartedAt = Date.now();
@@ -401,6 +414,20 @@ You have access to the user's active situation data. When answering questions:
             toolInvocations,
             output: text,
           }).catch((err) => console.warn('[chat] persistAskThreadTurn failed:', err));
+          await persistAskThreadTurnSql({
+            uid: _user.uid,
+            situationId: sitId,
+            capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
+            threadId,
+            prompt: lastUserPrompt(messages),
+            capsuleVersion: capsuleContext?.capsule?.version ?? null,
+            runtime: runtime.receipt,
+            pathId: _user.calibration.path?.id ?? null,
+            pathVersion: _user.calibration.path?.version ?? null,
+            frameworkSteps,
+            toolInvocations,
+            output: text,
+          }).catch((err) => console.warn('[chat] persistAskThreadTurnSql failed:', err));
           if (sitId) {
             await persistAskReadLedger({
               uid: _user.uid,

@@ -37,8 +37,8 @@ expectIncludes('src/lib/firebase/firestore.ts', [
 ]);
 
 expectIncludes('src/lib/ai/ask-runtime-catalog.ts', [
-  'Gemini 2.5 Flash',
-  'Gemini 2.5 Pro',
+  'Gemini 3 Flash Preview',
+  'Gemini 3 Pro Preview',
   'Genkit flow',
   'Agent Engine memory',
 ]);

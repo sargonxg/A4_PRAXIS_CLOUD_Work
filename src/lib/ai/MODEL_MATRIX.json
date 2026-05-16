@@ -1,45 +1,45 @@
 {
-  "version": "pack14-2026-05-06",
+  "version": "pack15-2026-05-16",
   "platform": {
     "enterpriseAgentPlatform": "gemini-enterprise",
     "developerModelRuntime": "vertex-ai",
     "agentRuntime": "gemini-enterprise-agent-platform-runtime",
     "localDeveloperFallback": "google-ai-studio",
-    "defaultRegion": "us-central1",
-    "vectorSearchPosture": "pgvector-primary-vertex-vector-search-2-secondary"
+    "defaultRegion": "global",
+    "vectorSearchPosture": "pgvector-primary-vertex-vector-search-ready-secondary"
   },
   "taskKinds": {
     "balanced": {
       "provider": "vertex",
-      "model": "gemini-2.5-flash",
+      "model": "gemini-3-flash-preview",
       "maxTokens": 4096,
       "temperature": 0.3,
       "costClass": "medium"
     },
     "complex_reasoning": {
       "provider": "vertex",
-      "model": "gemini-2.5-pro",
+      "model": "gemini-3-pro-preview",
       "maxTokens": 8192,
       "temperature": 0.2,
       "costClass": "expensive"
     },
     "cheap_classify": {
       "provider": "vertex",
-      "model": "gemini-2.5-flash",
+      "model": "gemini-3-flash-preview",
       "maxTokens": 1024,
       "temperature": 0,
       "costClass": "cheap"
     },
     "long_context": {
       "provider": "vertex",
-      "model": "gemini-2.5-pro",
+      "model": "gemini-3-pro-preview",
       "maxTokens": 32768,
       "temperature": 0.2,
       "costClass": "expensive_long"
     },
     "writing_quality": {
       "provider": "vertex",
-      "model": "gemini-2.5-pro",
+      "model": "gemini-3-pro-preview",
       "maxTokens": 4096,
       "temperature": 0.4,
       "costClass": "expensive"
@@ -59,11 +59,11 @@
   },
   "fallbackProvider": {
     "google-ai-studio": {
-      "balanced": "gemini-2.5-flash",
-      "complex_reasoning": "gemini-2.5-pro",
-      "cheap_classify": "gemini-2.5-flash",
-      "long_context": "gemini-2.5-pro",
-      "writing_quality": "gemini-2.5-pro",
+      "balanced": "gemini-3-flash-preview",
+      "complex_reasoning": "gemini-3-pro-preview",
+      "cheap_classify": "gemini-3-flash-preview",
+      "long_context": "gemini-3-pro-preview",
+      "writing_quality": "gemini-3-pro-preview",
       "embeddings_text": "text-embedding-005",
       "embeddings_long": "text-embedding-005"
     }

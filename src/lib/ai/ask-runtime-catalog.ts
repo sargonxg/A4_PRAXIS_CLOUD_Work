@@ -16,7 +16,7 @@ export interface AskRuntimeOption {
 export const ASK_RUNTIME_OPTIONS = [
   {
     id: getModelMatrixEntry('balanced').model,
-    label: 'Gemini 2.5 Flash',
+    label: 'Gemini 3 Flash Preview',
     provider: 'vertex',
     mode: 'chat',
     status: 'live',
@@ -24,7 +24,7 @@ export const ASK_RUNTIME_OPTIONS = [
   },
   {
     id: getModelMatrixEntry('complex_reasoning').model,
-    label: 'Gemini 2.5 Pro',
+    label: 'Gemini 3 Pro Preview',
     provider: 'vertex',
     mode: 'research_memo',
     status: 'live',

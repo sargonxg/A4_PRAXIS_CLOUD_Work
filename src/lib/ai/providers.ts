@@ -6,13 +6,13 @@
  *   2. Google AI Studio via GOOGLE_AI_API_KEY — dev fallback
  *
  * Models are selected from MODEL_MATRIX.json:
- *   - balanced / cheap_classify : Gemini Flash
- *   - complex_reasoning / writing_quality / long_context : Gemini Pro
+ *   - balanced / cheap_classify : Gemini 3 Flash Preview
+ *   - complex_reasoning / writing_quality / long_context : Gemini 3 Pro Preview
  *   - embeddings_text / embeddings_long : text-embedding-005
  *
  * Zero-Config Fallback Chain (Part 3):
- *   getProModel():       Vertex Gemini 2.5 Pro → Google AI Gemini 2.5 Pro → Flash
- *   getAnalysisModel():  Gemini 2.5 Pro
+ *   getProModel():       Vertex Gemini 3 Pro Preview → Google AI Gemini 3 Pro Preview → Flash
+ *   getAnalysisModel():  Gemini 3 Pro Preview
  *   getEmbeddingModel(): text-embedding-005 → null (vector disabled)
  *
  * All routes import from here — never hardcode model strings in route files.
@@ -34,10 +34,9 @@ export interface ProviderInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Model IDs — Vertex latest stable aliases.
-// Google Cloud's Vertex model lifecycle page lists gemini-2.5-pro and
-// gemini-2.5-flash as latest stable model IDs. The previous Gemini 3 preview
-// strings returned Vertex 404s in praxisbytacitus.
+// Model IDs come from MODEL_MATRIX.json. Gemini 3 models are preview/Pre-GA on
+// Vertex and currently require the global endpoint, so do not scatter raw model
+// strings through routes.
 // ---------------------------------------------------------------------------
 
 const MODEL_FLASH = getModelMatrixEntry('balanced').model;
@@ -50,9 +49,12 @@ const MODEL_EMBED = getModelMatrixEntry('embeddings_text').model;
 
 function createVertexModel(modelId: string): LanguageModel {
   const { createVertex } = require('@ai-sdk/google-vertex') as typeof import('@ai-sdk/google-vertex');
+  const location = modelId.startsWith('gemini-3')
+    ? (process.env.GOOGLE_VERTEX_GEMINI_LOCATION || 'global')
+    : (process.env.GOOGLE_VERTEX_LOCATION || AI_PLATFORM_POSTURE.defaultRegion || 'us-central1');
   return createVertex({
     project:  process.env.GOOGLE_VERTEX_PROJECT!,
-    location: process.env.GOOGLE_VERTEX_LOCATION || 'us-central1',
+    location,
   })(modelId);
 }
 
@@ -88,14 +90,14 @@ export function hasServerAiProvider(): boolean {
 // ---------------------------------------------------------------------------
 
 /**
- * Standard model (gemini-2.5-flash) — chat, lightweight analysis, terminology.
+ * Standard model — chat, lightweight analysis, terminology.
  */
 export function getModel(modelId?: string): LanguageModel {
   return createModel(modelId ?? MODEL_FLASH);
 }
 
 /**
- * Pro model (gemini-2.5-pro) — structured tool generation, dossiers, reports.
+ * Pro model — structured tool generation, dossiers, reports.
  * 1M context window, 65K output tokens. Falls back to Flash if Pro unavailable.
  */
 export function getProModel(): LanguageModel {
@@ -126,9 +128,6 @@ export function getAnalysisModel(): LanguageModel {
  * Callers pass it per-request: { providerOptions: { google: { thinking_level: 'high' } } }
  */
 export function getDeepThinkModel(_level: 'low' | 'medium' | 'high' = 'medium'): LanguageModel {
-  if (process.env.PRAXIS_USE_GEMINI_31 === 'true') {
-    try { return createModel('gemini-3.1-pro-preview'); } catch { /* fall through */ }
-  }
   return createModel(MODEL_PRO);
 }
 
@@ -211,11 +210,10 @@ export function getGroundedModel(_modelId?: string): LanguageModel {
 
 /** User-preference model — routes to the model the user selected in settings. */
 export function getModelForUser(settings?: { preferredModel?: string; model?: string }): LanguageModel {
-  switch (settings?.preferredModel ?? settings?.model) {
-    case 'gemini-2.5-pro':   return getProModel();
-    case 'gemini-2.5-flash':
-    default:                         return getModel();
-  }
+  const selected = settings?.preferredModel ?? settings?.model;
+  if (selected === MODEL_PRO || selected === 'gemini-2.5-pro') return getProModel();
+  if (selected === MODEL_FLASH || selected === 'gemini-2.5-flash') return getModel();
+  return getModel();
 }
 
 /** Async variant — kept for back-compat. */
@@ -257,7 +255,7 @@ export function getAvailableProviders() {
       name:         'Google AI Studio',
       configured:   !!process.env.GOOGLE_AI_API_KEY,
       model:        MODEL_FLASH,
-      capabilities: ['Chat', 'Google Search Grounding', 'Tool Use', 'Streaming', 'Gemini 2.5', 'Embeddings (768-dim)'],
+      capabilities: ['Chat', 'Google Search Grounding', 'Tool Use', 'Streaming', 'Gemini 3 preview', 'Embeddings (768-dim)'],
       note:         'Local fallback — production should use Vertex AI ADC',
     },
     vertex: {

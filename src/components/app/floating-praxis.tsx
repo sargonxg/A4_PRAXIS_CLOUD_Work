@@ -19,6 +19,7 @@ import {
 } from '@/components/assistant/mutation-confirm-card';
 import { ResponseActions } from '@/components/assistant/response-actions';
 import { inferResponseActionKinds, type ResponseActionKind } from '@/lib/assistant/response-action-kinds';
+import { DEFAULT_MODEL_PREFERENCE } from '@/lib/ai/model-preferences';
 
 interface ChatProposal {
   summary: string;
@@ -291,6 +292,8 @@ export function FloatingPraxis() {
     ],
     [activeSituation?.documentCount, activeSituation?.name, activeSituation?.sourceUrls?.length, stack.documentIds.length, stack.situationId, stack.sourceIds.length, stack.userModelId]
   );
+  const activeCapsuleId = stack.capsuleId ?? stack.stackId ?? activeSituation?.id ?? 'home';
+  const conversationThreadId = `home-${activeCapsuleId}`;
 
   // Don't show on the full assistant page
   const isAssistantPage = pathname?.includes('/assistant');
@@ -305,6 +308,43 @@ export function FloatingPraxis() {
       setMessages([]);
     }
   }, [storageKey]);
+
+  // Hydrate the simple home chat from the server-side Ask thread store. This
+  // keeps the ChatGPT-like conversation memory across browsers/devices when the
+  // user is signed in, while localStorage remains an instant fallback.
+  useEffect(() => {
+    if (demoMode) return;
+    let cancelled = false;
+    const params = new URLSearchParams({
+      capsuleId: activeCapsuleId,
+      threadId: conversationThreadId,
+      limit: '30',
+    });
+    fetch(`/api/ai/chat?${params.toString()}`, { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((history: { turns?: Array<{ id: string; prompt: string; output: string }> } | null) => {
+        if (cancelled || !history?.turns?.length) return;
+        const hydrated = history.turns.flatMap<ChatMessage>((turn) => [
+          {
+            id: `${turn.id}-user`,
+            role: 'user',
+            content: turn.prompt,
+          },
+          {
+            id: `${turn.id}-assistant`,
+            role: 'assistant',
+            content: turn.output,
+            question: turn.prompt,
+            availableActions: inferResponseActionKinds(turn.output),
+          },
+        ]);
+        setMessages(hydrated.slice(-50));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCapsuleId, conversationThreadId, demoMode]);
 
   // Persist messages to localStorage
   useEffect(() => {
@@ -403,13 +443,19 @@ export function FloatingPraxis() {
               : activeSituation?.name || undefined,
             currentToolId,
             currentPath: pathname,
-            capsuleId: stack.capsuleId ?? stack.stackId,
+            capsuleId: activeCapsuleId,
+            threadId: conversationThreadId,
             contextPackageId: stack.contextPackageId ?? undefined,
             activeContextStack: stack,
             sourceIds: stack.sourceIds,
             documentIds: stack.documentIds,
             outputGoal: stack.outputGoal,
             evidenceGaps: stack.evidenceGaps.slice(0, 5),
+            aiSettings: {
+              provider: 'vertex',
+              model: DEFAULT_MODEL_PREFERENCE,
+              analysisDepth: 'standard',
+            },
           }),
         });
 
@@ -499,7 +545,7 @@ export function FloatingPraxis() {
         )
       );
     },
-    [isStreaming, messages, activeSituation, demoMode, currentToolId, pathname, stack]
+    [isStreaming, messages, activeSituation, demoMode, currentToolId, pathname, stack, activeCapsuleId, conversationThreadId]
   );
 
   const sendMessage = useCallback(() => {
