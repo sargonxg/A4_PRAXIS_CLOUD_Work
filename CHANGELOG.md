@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- feat(home): polish the shared capsule cockpit and Learn hub.
+  Removed internal token/runtime labels from the cockpit, made the public and
+  signed-in Home visually identical again, added the professional policy grid
+  background and rounder controls, and rebuilt `/learn` as a compact sidebar
+  guide to capsule cores, policy paths, tools, outputs, connectors, and planned
+  work.
 - feat(output-capsules): add the first policy output registry slice.
   Added typed OutputCapsule templates, schema-versioned records, hidden-tool
   mappings, deterministic planning, quality gates, country-pack composition,

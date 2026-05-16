@@ -299,7 +299,7 @@ function LoginForm() {
 
               <div className="flex flex-col justify-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  PRAXIS runs policy agents from ContextCapsules
+                  Work from a Context Capsule, not a blank chat
                 </p>
                 <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-[-0.02em] text-slate-950 xl:text-5xl">
                   Sign in, then run the workbench from the same capsule context.

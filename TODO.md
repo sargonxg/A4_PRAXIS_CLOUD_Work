@@ -21,6 +21,12 @@ from the active ledger above.
 
 ### Canonical Tasklet-Style Runtime Build
 
+0. Public Home and authenticated Home now share the same polished cockpit:
+   rounded capsule/composer surfaces, subtle policy-grid background, no
+   low-level provider/runtime/token-cost labels, and no extra public-only
+   landing sections. `/learn` now carries the explanatory load through compact
+   clickable sections for cores, ten paths, tools, outputs, connectors, and
+   planned scaffolded capabilities.
 0. First OutputCapsule product slice is now implemented in
    `src/lib/output-capsules/`: typed templates, payload schema ids/versions,
    deterministic planner, quality gates, hidden-tool bindings, and

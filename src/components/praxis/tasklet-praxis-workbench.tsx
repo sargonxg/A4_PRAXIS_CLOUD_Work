@@ -42,9 +42,8 @@ import {
   planOutputCapsuleRun,
 } from '@/lib/output-capsules';
 import type { CoreKind } from '@/lib/tools/contract';
-import { ASK_ORCHESTRATION_OPTIONS, ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
+import { ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
 import type { ModelPreferenceValue } from '@/lib/ai/model-preferences';
-import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
 import {
   COCKPIT_CAPSULE_LIBRARY,
   COCKPIT_COMBINATION_RECIPES,
@@ -85,7 +84,7 @@ export function TaskletPraxisWorkbench({
   recentRuns = defaultRecentRuns,
   className,
 }: TaskletPraxisWorkbenchProps) {
-  const { user, credits } = useAuth();
+  const { user } = useAuth();
   const surfaceMode: HomeSurfaceMode = mode === 'app' ? 'authenticated' : mode;
   const [prompt, setPrompt] = useState('Draft a sourced options memo from the active capsule.');
   const [activeTab, setActiveTab] = useState<PolicyNeedTabId>('analysis');
@@ -368,9 +367,15 @@ export function TaskletPraxisWorkbench({
   }
 
   return (
-    <section className={cn('min-h-[calc(100vh-5rem)] bg-[#f6f6f4] text-[#1d1d1f]', className)} data-testid="tasklet-praxis-workbench">
+    <section
+      className={cn(
+        'min-h-screen bg-[#f3f5f1] bg-[linear-gradient(90deg,rgba(26,51,43,0.045)_1px,transparent_1px),linear-gradient(180deg,rgba(26,51,43,0.045)_1px,transparent_1px)] bg-[size:56px_56px] text-[#1d1d1f]',
+        className,
+      )}
+      data-testid="tasklet-praxis-workbench"
+    >
       <div className="grid min-h-[calc(100vh-5rem)] lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="hidden border-r border-black/10 bg-[#ececeb] px-4 py-5 lg:flex lg:flex-col">
+        <aside className="hidden border-r border-black/10 bg-[#e8ebe4]/95 px-4 py-5 shadow-[inset_-1px_0_0_rgba(255,255,255,0.7)] backdrop-blur lg:flex lg:flex-col">
           <Link href={surfaceMode === 'public' ? '/' : '/app/dashboard'} className="mb-6 flex items-center gap-2 text-lg font-semibold text-navy-950">
             <span className="flex h-8 w-8 items-center justify-center rounded-md bg-sage text-white">P</span>
             PRAXIS
@@ -428,16 +433,16 @@ export function TaskletPraxisWorkbench({
 
         <div className="px-4 py-8 sm:px-6 lg:px-10">
           <div className="mx-auto flex max-w-6xl flex-col items-center">
-            <p className="mt-8 flex items-center gap-2 text-sm font-medium text-slate-600">
+            <p className="mt-8 flex items-center gap-2 rounded-full border border-sage/20 bg-white/70 px-3 py-1.5 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 backdrop-blur">
               <Sparkles className="h-4 w-4 text-[#ff714d]" />
-              PRAXIS runs policy agents from ContextCapsules
+              Work from a Context Capsule, not a blank chat
             </p>
             <h1 className="mt-8 text-center font-serif text-5xl font-semibold tracking-tight text-[#151515] sm:text-6xl">
               What policy work should PRAXIS run?
             </h1>
 
             <div
-              className="mt-10 w-full max-w-5xl rounded-lg border border-black/10 bg-white/85 p-4 shadow-sm shadow-black/5 transition hover:-translate-y-0.5"
+              className="mt-10 w-full max-w-5xl rounded-2xl border border-black/10 bg-white/90 p-4 shadow-xl shadow-slate-900/5 backdrop-blur transition hover:-translate-y-0.5"
               data-testid="capsule-composition-rail"
               onDragOver={(event) => event.preventDefault()}
               onDrop={handleDrop}
@@ -452,7 +457,7 @@ export function TaskletPraxisWorkbench({
                     {activeCapsules.map((capsule) => (
                       <span
                         key={capsule.id}
-                        className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm font-semibold text-slate-800"
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm font-semibold text-slate-800"
                       >
                         <GripVertical className="h-3.5 w-3.5 text-slate-400" />
                         <span className="rounded bg-white px-1.5 py-0.5 font-mono text-[10px] text-slate-500">{capsule.code}</span>
@@ -473,7 +478,7 @@ export function TaskletPraxisWorkbench({
                   <button
                     type="button"
                     onClick={() => setCapsuleSearchOpen((open) => !open)}
-                    className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:shadow-sm"
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:shadow-sm"
                   >
                     <Search className="h-4 w-4" />
                     Search by name/code
@@ -481,7 +486,7 @@ export function TaskletPraxisWorkbench({
                   <button
                     type="button"
                     onClick={() => COCKPIT_COMBINATION_RECIPES[0]?.inputs.forEach(addCapsule)}
-                    className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-sm"
+                    className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-3 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-sm"
                   >
                     <Combine className="h-4 w-4" />
                     Combine
@@ -533,14 +538,14 @@ export function TaskletPraxisWorkbench({
               ) : null}
             </div>
 
-            <div className="mt-6 w-full max-w-4xl rounded-lg border border-black/10 bg-white shadow-lg shadow-black/5">
+            <div className="mt-6 w-full max-w-4xl rounded-2xl border border-black/10 bg-white shadow-2xl shadow-slate-900/10">
               <textarea
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
                 onContextMenu={handlePromptContextMenu}
                 rows={composerExpanded ? 7 : 3}
                 className={cn(
-                  'w-full resize-none rounded-t-lg px-5 py-5 text-lg text-slate-900 outline-none placeholder:text-slate-400',
+                  'w-full resize-none rounded-t-2xl px-5 py-5 text-lg text-slate-900 outline-none placeholder:text-slate-400',
                   composerExpanded ? 'min-h-64' : 'min-h-28',
                 )}
                 placeholder="Describe the policy task, source question, memo, or responsibility"
@@ -582,7 +587,7 @@ export function TaskletPraxisWorkbench({
                   <button
                     type="button"
                     onClick={() => openAgentChat()}
-                    className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                    className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-3 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-sm"
                   >
                     Chat with PRAXIS
                     <ArrowRight className="h-4 w-4" />
@@ -616,27 +621,13 @@ export function TaskletPraxisWorkbench({
                   </select>
                 </label>
                 {surfaceMode === 'authenticated' ? (
-                  <>
-                    <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
-                      {user?.isDemo ? 'demo account' : `${credits.toLocaleString()} tokens`}
-                    </span>
-                    <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
-                      {PRAXIS_USAGE_COPY.askCost}
-                    </span>
-                  </>
-                ) : null}
-                {ASK_ORCHESTRATION_OPTIONS.map((option) => (
-                  <span
-                    key={option.id}
-                    className={cn(
-                      'rounded-md border px-2 py-1 font-semibold',
-                      option.status === 'live' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-500',
-                    )}
-                    title={option.summary}
-                  >
-                    {option.label}
+                  <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-semibold">
+                    Signed-in workspace
                   </span>
-                ))}
+                ) : null}
+                <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 font-semibold text-emerald-900">
+                  Sources and memory attached through the capsule
+                </span>
               </div>
               <div className="grid gap-2 border-t border-black/10 bg-white px-5 py-3 text-xs text-slate-600 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
                 <label className="flex min-w-0 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">

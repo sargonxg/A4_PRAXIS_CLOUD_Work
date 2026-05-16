@@ -28,7 +28,6 @@ export function AskPraxisHome({ exampleCases }: AskPraxisHomeProps) {
       mode="app"
       activeCapsuleName={activeCase?.name ?? 'No Situation selected'}
       capsuleId={activeCase?.id ?? 'default'}
-      className="min-h-[calc(100vh-8rem)] overflow-hidden rounded-lg border border-slate-200 shadow-sm shadow-navy-950/5"
     />
   );
 }

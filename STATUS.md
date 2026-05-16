@@ -1,5 +1,20 @@
 # PRAXIS — STATUS
 
+## 2026-05-16 — Cockpit Visual Polish And Learn Hub
+
+Current public/app surface checkpoint:
+
+- Public Home and signed-in `/app/dashboard` use the same shared cockpit again;
+  the public landing no longer appends separate below-fold marketing sections.
+- The cockpit now uses a subtle policy-grid background, rounder capsule and
+  composer surfaces, stronger hover motion, and product-language runtime copy.
+- Internal labels such as provider grounding, Genkit flow, Agent Engine memory,
+  visible token balances, and per-question token cost are removed from the main
+  cockpit surface.
+- `/learn` is rebuilt as a compact guide with a sidebar and clickable sections
+  for Context Capsule cores, ten policy paths, tool families, Output Capsules,
+  connectors, and planned scaffolded capabilities.
+
 ## 2026-05-16 — First OutputCapsule Product Slice
 
 Current output checkpoint:
