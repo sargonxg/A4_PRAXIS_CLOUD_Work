@@ -54,6 +54,7 @@ import {
 } from '@/lib/product/cockpit-composition';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
+import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 type TaskletPraxisWorkbenchProps = {
   mode: HomeSurfaceMode | 'app';
@@ -97,6 +98,7 @@ export function TaskletPraxisWorkbench({
   const [capsuleQuery, setCapsuleQuery] = useState('');
   const [replaceCapsuleId, setReplaceCapsuleId] = useState<string | null>(null);
   const [lastQueuedPrompt, setLastQueuedPrompt] = useState('');
+  const [chatTranscript, setChatTranscript] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>(['ask-praxis', 'sourceability', 'memo-drafter']);
   const [selectedArchetypeId, setSelectedArchetypeId] = useState(COCKPIT_USER_ARCHETYPES[0]?.id ?? 'user-1');
@@ -275,7 +277,14 @@ export function TaskletPraxisWorkbench({
 
   function askWithPrompt(nextPrompt: string, options: { autoSend?: boolean } = {}) {
     setPrompt(nextPrompt);
-    window.dispatchEvent(new CustomEvent('open-praxis-chat', { detail: { prompt: nextPrompt, autoSend: options.autoSend } }));
+    if (surfaceMode === 'public') {
+      window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, nextPrompt);
+      window.location.href = policyAgentLoginHref(selectedAgent.id, nextPrompt);
+      return;
+    }
+    if (options.autoSend) {
+      void runInlineAsk(selectedAgent, nextPrompt);
+    }
   }
 
   function startVoiceInput() {
@@ -360,6 +369,9 @@ export function TaskletPraxisWorkbench({
       model: selectedRuntime.id,
       selectedUserArchetype: selectedArchetype?.label ?? null,
     };
+    const capsuleStack = activeCapsules
+      .map((capsule, index) => `${index + 1}. ${capsule.label} [${capsule.code}:${capsule.id}]`)
+      .join('\n');
     return [
       cleanPrompt,
       '',
@@ -371,6 +383,7 @@ export function TaskletPraxisWorkbench({
       `OutputCapsule template: ${selectedOutputTemplate.label} (${selectedOutputTemplate.id}, schema ${selectedOutputTemplate.schemaId}@v${selectedOutputTemplate.schemaVersion})`,
       `OutputCapsule missing cores: ${outputPlan.missingRequiredCores.join(', ') || 'none'}`,
       `Active capsule: ${activeCapsuleName} (${capsuleId})`,
+      `Concatenated ContextCapsule stack:\n${capsuleStack}`,
       `Conversation thread: ${conversationThreadId}`,
       'conversationPersistence: users/{uid}/capsules/{capsuleId}/askThreads/{threadId}',
       'artifactPersistence: users/{uid}/situations/{situationId}/artifacts + users/{uid}/memos',
@@ -383,6 +396,89 @@ export function TaskletPraxisWorkbench({
     ].join('\n');
   }
 
+  async function runInlineAsk(agent: PolicyAgentDefinition, cleanPrompt: string) {
+    const enrichedPrompt = buildAgentChatPrompt(agent, cleanPrompt);
+    setRunState({ status: 'running', message: 'PRAXIS is reading the selected capsule stack and policy tools...' });
+    setChatTranscript((current) => [...current, { role: 'user', text: cleanPrompt }, { role: 'assistant', text: '' }]);
+    try {
+      const response = await fetch('/api/ai/ask-praxis', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json', accept: 'text/event-stream, text/plain' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: enrichedPrompt }],
+          capsuleId,
+          threadId: conversationThreadId,
+          activeContextStack: {
+            capsuleIds: activeCapsules.map((capsule) => capsule.id),
+            selectedToolIds,
+            selectedUserArchetypeId: selectedArchetypeId,
+            selectedOutputTemplateId: selectedOutputTemplate.id,
+          },
+          aiSettings: {
+            provider: 'vertex',
+            model: selectedRuntime.id,
+            analysisDepth: selectedRuntime.mode === 'research_memo' ? 'deep' : 'standard',
+          },
+        }),
+      });
+      if (!response.ok || !response.body) throw new Error(`${response.status} ${response.statusText}`);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      const appendAnswer = (chunk: string) => {
+        if (!chunk) return;
+        setChatTranscript((current) => {
+          const next = [...current];
+          const last = next[next.length - 1];
+          if (last?.role === 'assistant') {
+            next[next.length - 1] = { ...last, text: `${last.text}${chunk}` };
+          }
+          return next;
+        });
+      };
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const raw of lines) {
+          const line = raw.trimEnd();
+          if (line.startsWith('0:')) appendAnswer(parseDataStreamChunk(`${line}\n`));
+          if (line.startsWith('data:')) {
+            const payload = line.slice(5).trim();
+            if (!payload || payload === '[DONE]') continue;
+            try {
+              const event = JSON.parse(payload) as { stage?: string; answer?: string; summary?: string };
+              if (event.stage === 'synthesis' && event.answer) appendAnswer(event.answer);
+              if (event.stage === 'tool_call' && event.summary) appendAnswer(`\n\n[tool] ${event.summary}`);
+            } catch {
+              // Provider/data-stream chunks are best-effort here; Ask workspace keeps the full renderer.
+            }
+          }
+        }
+      }
+      if (buffer.trim().startsWith('0:')) appendAnswer(parseDataStreamChunk(`${buffer.trimEnd()}\n`));
+      setRunState({ status: 'ready', message: 'PRAXIS answered from the selected ContextCapsule stack.', href: '/app/assistant' });
+    } catch (err) {
+      setRunState({
+        status: 'error',
+        message: err instanceof Error ? `Ask PRAXIS failed: ${err.message}` : 'Ask PRAXIS failed.',
+      });
+      setChatTranscript((current) => {
+        const next = [...current];
+        const last = next[next.length - 1];
+        if (last?.role === 'assistant' && !last.text) {
+          next[next.length - 1] = { ...last, text: 'Ask PRAXIS could not start. Check authentication and model access.' };
+        }
+        return next;
+      });
+    }
+  }
+
   function openAgentChat(agent: PolicyAgentDefinition = selectedAgent) {
     const cleanPrompt = prompt.trim() || `Discuss ${agent.label} from ${activeCapsuleName}.`;
     setLastQueuedPrompt(cleanPrompt);
@@ -393,12 +489,7 @@ export function TaskletPraxisWorkbench({
       return;
     }
 
-    const nextPrompt = buildAgentChatPrompt(agent, cleanPrompt);
-    window.dispatchEvent(new CustomEvent('open-praxis-chat', { detail: { prompt: nextPrompt, autoSend: true } }));
-    setRunState({
-      status: 'ready',
-      message: `${agent.label} opened in Ask PRAXIS. The discussion uses the active capsule, selected tools, and conversation memory.`,
-    });
+    void runInlineAsk(agent, cleanPrompt);
     try {
       window.localStorage.removeItem(PENDING_TASKLET_PROMPT_KEY);
       window.localStorage.removeItem(PENDING_POLICY_AGENT_ID_KEY);
@@ -791,6 +882,41 @@ export function TaskletPraxisWorkbench({
             <p className={cn('mt-3 text-sm', runState.status === 'error' ? 'text-red-700' : 'text-slate-500')}>
               {runState.message}
             </p>
+
+            {chatTranscript.length ? (
+              <section
+                className="mt-4 w-full max-w-4xl rounded-2xl border border-black/10 bg-white/90 p-4 shadow-xl shadow-slate-900/5"
+                data-testid="inline-praxis-discussion"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Live discussion</p>
+                    <h2 className="mt-1 text-base font-semibold text-slate-950">Ask PRAXIS is using the concatenated capsule stack.</h2>
+                  </div>
+                  <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600">
+                    {selectedRuntime.label}
+                  </span>
+                </div>
+                <div className="mt-3 max-h-96 space-y-3 overflow-y-auto pr-1">
+                  {chatTranscript.map((message, index) => (
+                    <article
+                      key={`${message.role}-${index}`}
+                      className={cn(
+                        'rounded-xl border p-3 text-sm leading-6',
+                        message.role === 'user'
+                          ? 'border-slate-200 bg-slate-50 text-slate-800'
+                          : 'border-sage/25 bg-sage/10 text-slate-900',
+                      )}
+                    >
+                      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                        {message.role === 'user' ? 'You' : 'PRAXIS'}
+                      </p>
+                      <p className="whitespace-pre-wrap">{message.text || 'Reading selected capsules, tools, and sources...'}</p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
             <div className="mt-8 w-full max-w-4xl rounded-lg border border-black/10 bg-white/70 p-4" data-testid="recommended-agent-panel">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

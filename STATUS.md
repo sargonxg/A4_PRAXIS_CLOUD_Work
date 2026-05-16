@@ -5,7 +5,7 @@
 Current release checkpoint:
 
 - Central app metadata is now `PRAXIS v6.4.1` with build number
-  `2026.05.16.04` in `src/lib/constants/app-version.ts`.
+  `2026.05.16.05` in `src/lib/constants/app-version.ts`.
 - `/release-notes` reads from the centralized
   `src/lib/product/release-notes.ts` registry instead of a page-local notes
   array.
@@ -14,6 +14,18 @@ Current release checkpoint:
   entry stay aligned.
 - Significant product/runtime/documentation changes should bump
   `APP_BUILD_NUMBER`, add a release note entry, and update `CHANGELOG.md`.
+
+## 2026-05-16 — Inline Capsule-Aware Discussion
+
+Current runtime checkpoint:
+
+- The shared cockpit bar now starts Ask PRAXIS directly from the dashboard
+  without depending on the floating assistant launcher.
+- Signed-in runs send the concatenated ContextCapsule stack, selected policy
+  tools, output template, user lens, and selected Gemini model to
+  `/api/ai/ask-praxis`.
+- The dashboard renders the response inline, while public Home keeps the same
+  visible surface and routes attempted runs through login handoff.
 
 ## 2026-05-16 — Capsule Stack Mechanics And Gemini Choices
 

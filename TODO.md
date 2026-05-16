@@ -41,6 +41,9 @@ from the active ledger above.
    replace, delete, search, drag/drop, and tool-toggle the active stack above the
    Ask bar, but the next backend wave should persist the composed stack as a
    first-class run input/receipt for every Ask PRAXIS turn.
+0. Inline Ask PRAXIS discussion now runs from the shared cockpit and sends the
+   composed capsule/tool/model context. Next, persist the full composed stack as
+   an immutable run receipt and expose resume/history controls in the same rail.
 0. First OutputCapsule product slice is now implemented in
    `src/lib/output-capsules/`: typed templates, payload schema ids/versions,
    deterministic planner, quality gates, hidden-tool bindings, and

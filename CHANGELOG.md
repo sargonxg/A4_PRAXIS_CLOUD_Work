@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(cockpit): run inline capsule-aware Ask PRAXIS discussions.
+  Build 2026.05.16.05 makes the shared cockpit bar call `/api/ai/ask-praxis`
+  directly when signed in, passes the concatenated capsule stack, selected
+  tools, output type, user lens, and selected Gemini model into the run, and
+  renders the discussion inline without reintroducing the floating launcher.
 - feat(cockpit): strengthen capsule stack editing and Gemini model selection.
   Build 2026.05.16.04 makes the capsule rail above Ask PRAXIS editable from
   the library, adds tool/core toggles in the same popup, supports Enter send,

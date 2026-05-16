@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.16.05',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'Inline capsule-aware PRAXIS discussion',
+    summary: 'The shared cockpit bar can now discuss directly from the selected ContextCapsule stack instead of depending on the floating assistant shell.',
+    category: 'runtime',
+    items: [
+      'Chat with PRAXIS now calls the Ask PRAXIS endpoint directly from the cockpit when signed in.',
+      'Each run sends the concatenated capsule stack, selected tools, output template, user lens, and selected Gemini model as context.',
+      'The cockpit renders an inline discussion panel so the dashboard remains visually aligned with the public Home while gaining signed-in functionality.',
+      'Public Home keeps the same surface and routes attempted runs through login handoff.',
+    ],
+  },
+  {
     buildNumber: '2026.05.16.04',
     version: '6.4.1',
     date: '2026-05-16',
