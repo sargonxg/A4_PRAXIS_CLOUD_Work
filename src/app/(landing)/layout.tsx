@@ -7,8 +7,9 @@ import { Menu, X } from "lucide-react";
 
 const navLinks = [
   { label: "Learn", href: "/learn" },
-  { label: "TACITUS", href: "/tacitus" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Release notes", href: "/release-notes" },
+  { label: "TACITUS", href: "/tacitus" },
 ];
 
 export default function LandingLayout({
@@ -63,8 +64,15 @@ export default function LandingLayout({
             <span className="font-serif text-[22px] font-semibold tracking-wide text-[color:var(--color-diplomatic-blue)] sm:text-2xl">
               PRAXIS
             </span>
-            <span className="hidden rounded-full bg-gold-600/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-gold-700 transition-colors group-hover:bg-gold-600/15 sm:inline-flex">
+            <span className="hidden rounded-full border border-[color:var(--color-rose-gold)]/40 bg-[color:var(--color-gold-500)]/8 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-gold-700)] transition-colors group-hover:bg-[color:var(--color-gold-500)]/14 sm:inline-flex">
               by TACITUS
+            </span>
+            <span
+              aria-label="Beta release"
+              className="hidden items-center gap-1 rounded-full bg-[color:var(--color-terracotta)]/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-terracotta)] sm:inline-flex"
+            >
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--color-terracotta)]" />
+              Beta
             </span>
           </Link>
 
@@ -161,6 +169,37 @@ export default function LandingLayout({
 
       {/* Page content */}
       <main>{children}</main>
+
+      {/* Footer — institutional, single line, rose-gold hairline */}
+      <footer className="relative z-10 mt-24 border-t border-[color:var(--color-rose-gold)]/25 bg-[var(--color-cream-100)]/60 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-6 sm:flex-row lg:px-8">
+          <div className="flex items-center gap-3">
+            <span className="font-serif text-base font-semibold tracking-wide text-[color:var(--color-diplomatic-blue)]">
+              PRAXIS
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink)]/45">
+              by TACITUS · v6.4
+            </span>
+          </div>
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[color:var(--color-ink)]/65">
+            <Link href="/learn" className="hover:text-[color:var(--color-ink)]">
+              Learn
+            </Link>
+            <Link href="/pricing" className="hover:text-[color:var(--color-ink)]">
+              Pricing
+            </Link>
+            <Link href="/release-notes" className="hover:text-[color:var(--color-ink)]">
+              Release notes
+            </Link>
+            <Link href="/tacitus" className="hover:text-[color:var(--color-ink)]">
+              TACITUS
+            </Link>
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink)]/40">
+              © 2026
+            </span>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }
