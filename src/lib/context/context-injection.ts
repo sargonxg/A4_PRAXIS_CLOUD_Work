@@ -81,6 +81,8 @@ export function buildCapsulePromptBlock(
   const refs = capsule.coreRefs;
   const lines = [
     '<praxis-context-capsule>',
+    'context_mode: praxis_lite',
+    'display_label: ContextCapsule Lite',
     `capsule_id: ${capsule.capsuleId}`,
     `capsule_version: ${capsule.version}`,
     `injection_key: ${buildCapsuleInjectionKey(capsule)}`,
@@ -112,7 +114,8 @@ export function buildCapsulePromptBlock(
     `freshness_window_days: ${capsule.retrievalPolicy.freshnessWindowDays ?? 'default'}`,
     '',
     '[rules]',
-    'Use this capsule as the inherited working context for the answer.',
+    'Use this ContextCapsule Lite as the inherited working context for the answer.',
+    'Treat ContextCapsule Lite as the current PRAXIS-built lightweight institutional-memory object; full DIALECTICA-built capsules may arrive through the adapter later.',
     'Respect locked cores as fixed context. Do not suggest swapping them unless the user asks to unlock.',
     'Treat missing cores and warnings as constraints; do not invent their contents.',
     'Prefer cited source and document cores when making factual claims.',

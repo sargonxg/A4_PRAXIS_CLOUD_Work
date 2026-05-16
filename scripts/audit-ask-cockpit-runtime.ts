@@ -56,23 +56,18 @@ expectIncludes('src/components/ask/AskStreamPanel.tsx', [
 expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'ASK_RUNTIME_OPTIONS',
   'model: selectedRuntime.id',
-  'data-testid="capsule-composition-rail"',
-  'data-testid="capsule-concatenation-actions"',
-  'onDrop={handleDrop}',
-  'data-testid="capsule-search-popup"',
-  'Tool and core library',
-  'Shift+Up edits the last queued message',
-  'replaceCapsule',
-  'data-testid="inline-praxis-discussion"',
-  "fetch('/api/ai/ask-praxis'",
-  'Concatenated ContextCapsule stack',
-  'onContextMenu={handlePromptContextMenu}',
-  'data-testid="selected-text-actions"',
-  'data-testid="canonical-user-types"',
-  'data-testid="suggested-capsule-tools"',
+  'data-testid="praxis-main-composer"',
+  'data-testid="praxis-chat-thread"',
+  'data-testid="tasklet-tool-cards"',
+  'data-testid="tasklet-capsule-cards"',
+  "fetch('/api/ai/chat'",
+  'Active ContextCapsule Lite stack',
+  'ContextCapsule Lite',
+  'action: \'combine\'',
+  'AccountProfileButton',
   'activeCapsules',
   'selectedToolIds',
-  'selectedUserArchetype',
+  'selectedUserTypeId',
 ]);
 
 expectIncludes('src/lib/product/cockpit-composition.ts', [
@@ -86,7 +81,9 @@ expectIncludes('src/lib/product/cockpit-composition.ts', [
 expectIncludes('src/app/api/ai/chat/route.ts', [
   'if (_user.uid && text)',
   'persistAskThreadTurn',
-  'situationId: sitId',
+  'effectiveSituationId',
+  'situationId: effectiveSituationId',
+  'contextMode: \'praxis_lite\'',
 ]);
 
 if (failures.length) {

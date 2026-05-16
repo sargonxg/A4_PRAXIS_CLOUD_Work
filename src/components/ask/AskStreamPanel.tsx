@@ -55,6 +55,37 @@ interface StreamEvent extends Record<string, unknown> {
   stage?: StreamStage['stage'];
 }
 
+type AskThreadTurn = {
+  id: string;
+  prompt: string;
+  output: string;
+  capsuleVersion: number | null;
+  runtime?: {
+    provider?: string;
+    model?: string;
+    intent?: string;
+    contextCores?: {
+      userCoreId?: string | null;
+      situationCoreId?: string | null;
+      sourceDocumentCoreIds?: string[];
+      graphCoreId?: string | null;
+      outputCoreIds?: string[];
+    };
+    retrieval?: {
+      corpusSearch?: boolean;
+      groundedSearch?: boolean;
+      sourceDocumentCount?: number;
+      activeGapCount?: number;
+    };
+  };
+  createdAt: string;
+};
+
+type AskThreadHistory = {
+  persistence?: string;
+  turns?: AskThreadTurn[];
+};
+
 export interface AskCoreBrick {
   id: string;
   label: string;
@@ -108,8 +139,12 @@ export function AskStreamPanel({
   const [interrupt, setInterrupt] = useState<InterruptRequest | null>(null);
   const [swapTarget, setSwapTarget] = useState<CoreSpecimenKind | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelPreferenceValue>(ASK_RUNTIME_OPTIONS[0].id);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyTurns, setHistoryTurns] = useState<AskThreadTurn[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const selectedRuntime = useMemo(() => getAskRuntimeOption(selectedModel), [selectedModel]);
+  const threadId = useMemo(() => (capsuleId ? `ask-${capsuleId}` : null), [capsuleId]);
   const contextHealth = useMemo(() => buildContextHealthReport({
     hasUserCore: true,
     hasSituationCore: Boolean(activeSituation),
@@ -122,6 +157,25 @@ export function AskStreamPanel({
     situationHref: activeSituation ? `/app/workbench/${activeSituation.id}` : '/app/contexts',
   }), [activeSituation]);
   const activeHealthScore = healthScore ?? contextHealth.score;
+
+  const loadHistory = useCallback(async () => {
+    if (!capsuleId || !threadId) {
+      setHistoryTurns([]);
+      return;
+    }
+    setHistoryLoading(true);
+    try {
+      const params = new URLSearchParams({ capsuleId, threadId, limit: '8' });
+      const res = await fetch(`/api/ai/chat?${params.toString()}`, { credentials: 'include' });
+      if (!res.ok) return;
+      const json = await res.json() as AskThreadHistory;
+      setHistoryTurns(json.turns ?? []);
+    } catch (err) {
+      console.warn('[AskStreamPanel] history load failed', err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [capsuleId, threadId]);
 
   const cancel = useCallback(() => {
     abortRef.current?.abort();
@@ -142,7 +196,7 @@ export function AskStreamPanel({
         const requestBody = {
           messages: [{ role: 'user' as const, content: text }],
           ...(activeSituation?.name ? { situation: activeSituation } : {}),
-          ...(capsuleId ? { capsuleId, threadId: `ask-${capsuleId}` } : {}),
+          ...(capsuleId && threadId ? { capsuleId, threadId } : {}),
           ...(contextPackageId ? { contextPackageId } : {}),
           ...(activeContextStack ? { activeContextStack } : {}),
           aiSettings: {
@@ -234,6 +288,7 @@ export function AskStreamPanel({
         }
         if (sseBuffer.trim()) consumeSseBlock(sseBuffer);
         if (dataLineBuffer.trim()) consumeDataStreamLine(dataLineBuffer.trimEnd());
+        void loadHistory();
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
           console.warn('[AskStreamPanel] stream error', err);
@@ -243,10 +298,14 @@ export function AskStreamPanel({
         abortRef.current = null;
       }
     },
-    [thinking, capsuleId, contextPackageId, activeContextStack, activeSituation, selectedRuntime],
+    [thinking, capsuleId, threadId, contextPackageId, activeContextStack, activeSituation, selectedRuntime, loadHistory],
   );
 
   useEffect(() => () => abortRef.current?.abort(), []);
+
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -304,9 +363,32 @@ export function AskStreamPanel({
           <span className="min-w-0 flex-1 truncate text-slate-500">
             {selectedRuntime.summary}
           </span>
+          <button
+            type="button"
+            onClick={() => {
+              setHistoryOpen((open) => !open);
+              if (!historyOpen) void loadHistory();
+            }}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-semibold text-slate-700 hover:bg-white"
+          >
+            {historyOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+            Recent Ask turns
+            {historyTurns.length ? <span className="font-mono text-slate-500">{historyTurns.length}</span> : null}
+          </button>
         </div>
 
         <div className="min-h-[22rem] flex-1 space-y-3 overflow-y-auto p-3">
+          {historyOpen ? (
+            <RecentAskTurnsPanel
+              loading={historyLoading}
+              turns={historyTurns}
+              onResume={(turn) => {
+                setEvents([{ stage: 'synthesis', answer: turn.output }]);
+                setPrompt('');
+              }}
+            />
+          ) : null}
+
           {events.length === 0 && !thinking ? (
             <div className="flex h-full min-h-[20rem] items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/70 px-6 text-center">
               <div className="max-w-md">
@@ -433,6 +515,98 @@ export function AskStreamPanel({
       />
     </section>
   );
+}
+
+function RecentAskTurnsPanel({
+  loading,
+  onResume,
+  turns,
+}: {
+  loading: boolean;
+  onResume: (turn: AskThreadTurn) => void;
+  turns: AskThreadTurn[];
+}) {
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-3 py-2">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Recent Ask turns</p>
+          <p className="truncate text-xs text-slate-600">Capsule-scoped memory for follow-up questions and receipts.</p>
+        </div>
+        {loading ? <Loader2 className="h-4 w-4 animate-spin text-slate-500" /> : null}
+      </div>
+      <div className="max-h-72 divide-y divide-slate-100 overflow-y-auto">
+        {turns.length === 0 && !loading ? (
+          <p className="px-3 py-4 text-sm text-slate-500">No saved Ask turns for this capsule yet.</p>
+        ) : null}
+        {turns.slice().reverse().map((turn) => (
+          <article key={turn.id} className="px-3 py-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-navy-950">{turn.prompt}</p>
+                <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600">{turn.output}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onResume(turn)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                <History className="h-3 w-3" />
+                Resume
+              </button>
+            </div>
+            <AskTurnReceipt turn={turn} />
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AskTurnReceipt({ turn }: { turn: AskThreadTurn }) {
+  const runtime = turn.runtime ?? {};
+  const retrieval = runtime.retrieval;
+  const cores = runtime.contextCores;
+  const model = runtime.model ?? runtime.provider ?? 'model recorded';
+  const sourceCount = retrieval?.sourceDocumentCount ?? cores?.sourceDocumentCoreIds?.length ?? 0;
+  const gapCount = retrieval?.activeGapCount ?? 0;
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
+      <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
+        <Cpu className="h-2.5 w-2.5" />
+        {model}
+      </span>
+      {runtime.intent ? (
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
+          {runtime.intent.replace(/_/g, ' ')}
+        </span>
+      ) : null}
+      <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
+        capsule v{turn.capsuleVersion ?? 'n/a'}
+      </span>
+      <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
+        {sourceCount} source/doc cores
+      </span>
+      {retrieval?.corpusSearch ? (
+        <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-semibold text-emerald-900">
+          <CheckCircle2 className="h-2.5 w-2.5" />
+          corpus checked
+        </span>
+      ) : null}
+      {gapCount ? (
+        <span className="rounded-md border border-gold-200 bg-gold-50 px-1.5 py-0.5 font-semibold text-gold-900">
+          {gapCount} gaps
+        </span>
+      ) : null}
+      <span className="font-mono">{formatTurnTime(turn.createdAt)}</span>
+    </div>
+  );
+}
+
+function formatTurnTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function CapsuleIndicatorBar({

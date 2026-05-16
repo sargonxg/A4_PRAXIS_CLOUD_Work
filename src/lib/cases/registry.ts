@@ -1,13 +1,16 @@
 import type { CaseModule, LandingCaseCard } from '@/types/case-module';
-import { syria2026CaseModule } from '@/lib/cases/syria-2026';
-import { nordalia2026CaseModule } from '@/lib/cases/nordalia-2026';
-import { V5_DEMO_CASE_MODULES } from '@/lib/cases/v5-demo-contexts';
 
-export const EXAMPLE_CASE_MODULES: CaseModule[] = [
-  ...V5_DEMO_CASE_MODULES,
-  syria2026CaseModule,
-  nordalia2026CaseModule,
-];
+/**
+ * Example-case registry.
+ *
+ * The demo case modules (Syria 2026, Nordalia 2026, v5 demo contexts) were
+ * removed during MVP cleanup. The registry now returns an empty list; landing
+ * cards fall back to the "coming soon" placeholders in landing-cards.ts.
+ *
+ * To add a real case module, push it onto EXAMPLE_CASE_MODULES below.
+ */
+
+export const EXAMPLE_CASE_MODULES: CaseModule[] = [];
 
 export function listExampleCases(): CaseModule[] {
   return EXAMPLE_CASE_MODULES;

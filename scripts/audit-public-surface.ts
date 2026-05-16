@@ -41,18 +41,15 @@ for (const required of [
 }
 
 for (const required of [
-  'data-testid="recommended-agent-panel"',
-  'data-testid="policy-agent-drawer"',
-  'data-testid="capsule-composition-rail"',
-  'data-testid="canonical-user-types"',
-  'data-testid="suggested-capsule-tools"',
-  'data-testid="capsule-concatenation-actions"',
-  'Past conversations',
-  'Past artifacts',
-  'Documents',
-  'conversationPersistence',
-  'artifactPersistence',
-  'capsuleManagementMode',
+  'data-testid="praxis-main-composer"',
+  'data-testid="tasklet-tool-cards"',
+  'data-testid="tasklet-capsule-cards"',
+  'What can PRAXIS do for you?',
+  'Describe a task or responsibility',
+  'AccountProfileButton',
+  "fetch('/api/ai/chat'",
+  'Active ContextCapsule Lite stack',
+  'ContextCapsule Lite',
 ]) {
   if (!workbench.includes(required)) failures.push(`shared cockpit missing marker: ${required}`);
 }
@@ -69,6 +66,11 @@ for (const forbidden of [
   "surfaceMode === 'authenticated' && agentDrawerOpen",
   'Public preview',
   'Use your own sources',
+  'Policy sources, documents, grounded search',
+  'Recommended agent',
+  'Canonical user types',
+  'Suggested tools',
+  'Produce',
 ]) {
   if (workbench.includes(forbidden)) failures.push(`shared cockpit keeps signed-out-only marker: ${forbidden}`);
 }

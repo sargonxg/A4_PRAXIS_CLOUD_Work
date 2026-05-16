@@ -33,8 +33,14 @@ import { toLegacyDataStreamResponse } from '@/lib/ai/legacy-data-stream';
 import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
 import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 import { inferResponseActionKinds } from '@/lib/assistant/response-action-kinds';
-import { listAskThreadTurns, persistAskThreadTurn } from '@/lib/firebase/ask-thread-service';
-import { listAskThreadTurnsSql, persistAskThreadTurnSql } from '@/lib/agent-runtime/ask-thread-postgres';
+import { listAskThreadTurns, persistAskThreadTurn, type AskThreadTurnRecord } from '@/lib/firebase/ask-thread-service';
+import { isAskThreadSqlConfigured, listAskThreadTurnsSql, persistAskThreadTurnSql } from '@/lib/agent-runtime/ask-thread-postgres';
+import {
+  askIntentDirective,
+  buildAskConversationMessages,
+  classifyAskIntent,
+  type AskIntent,
+} from '@/lib/ai/ask-conversation';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -109,13 +115,18 @@ export const POST = withCalibration('chat', 'ai_chat', {
     const validation = validateAiRequest(body, requestSchema);
     if (!validation.success) return validation.response;
     const { messages, conflictContext, situation, currentToolId, currentPath, contextPackageId, capsuleId, activeContextStack, threadId, aiSettings } = validation.data;
-    const sitId = (situation as Situation | undefined)?.id;
+    const requestSituationId = (situation as Situation | undefined)?.id;
+    const prompt = lastUserPrompt(messages);
+    const askIntent = classifyAskIntent(prompt);
     let capsuleContext: InjectableContext | null = null;
     let turnCapsule: TurnCapsule | null = null;
+    let effectiveSituationId: string | undefined = requestSituationId;
+    let retrievedDocumentIds: string[] = [];
+    let retrievedSourceIds: string[] = [];
     const toolInvocations: AskToolInvocationReceipt[] = [];
     const frameworkSteps = buildAskFrameworkStepReceipts(
       _user.calibration.path,
-      lastUserPrompt(messages),
+      prompt,
     );
 
     // --- Demo mode ---
@@ -149,11 +160,15 @@ export const POST = withCalibration('chat', 'ai_chat', {
           capsuleId,
           contextPackageId,
           activeContextStack: isRecord(activeContextStack) ? activeContextStack as Partial<ActiveContextStackState> : null,
-          situationId: sitId,
-          query: lastUserPrompt(messages),
+          situationId: requestSituationId,
+          query: prompt,
         })
       : null;
     capsuleContext = turnCapsule?.injectableContext ?? null;
+    effectiveSituationId = requestSituationId
+      ?? capsuleContext?.capsule.coreRefs.situationCoreId
+      ?? turnCapsule?.situationCore
+      ?? undefined;
 
     // Build situation-aware system prompt with super-agent capabilities.
     // Prepend the calibrated analyst-profile/situation-frame/output-constraints block.
@@ -264,7 +279,7 @@ You have access to the user's active situation data. When answering questions:
     // Replaces the older `buildAskPraxisCorpusContext` cookie-parsing path with
     // the canonical `searchSituationCorpus` (Lane A, 2026-04-26) so Ask PRAXIS
     // and calibrated internal routes reason over the same evidence layers.
-    if (situation && !_user.isDemo && _user.uid && situation.id) {
+    if (effectiveSituationId && !_user.isDemo && _user.uid) {
       try {
         const lastMessage = messages?.[messages.length - 1];
         const query = typeof lastMessage?.content === 'string' ? lastMessage.content : '';
@@ -273,7 +288,7 @@ You have access to the user's active situation data. When answering questions:
             ? await localKnowledgeAdapter.buildContextPack({
                 uid: _user.uid,
                 contextPackageId,
-                situationId: situation.id,
+                situationId: effectiveSituationId,
                 query,
               })
             : null;
@@ -282,10 +297,16 @@ You have access to the user's active situation data. When answering questions:
           }
           const corpus = runtimeContext?.corpus ?? await searchSituationCorpus({
             uid: _user.uid,
-            situationId: situation.id,
+            situationId: effectiveSituationId,
             query,
             limit: 12,
           });
+          retrievedDocumentIds = uniqueStrings(corpus.items
+            .filter((item) => item.sourceType === 'documents')
+            .map((item) => item.sourceId.split('#')[0] ?? item.sourceId));
+          retrievedSourceIds = uniqueStrings(corpus.items
+            .filter((item) => item.sourceType !== 'documents')
+            .map((item) => item.sourceId));
           if (corpus.items.length > 0) {
             systemPrompt += '\n\n' + formatAskPraxisCorpusBlock(corpus);
           } else {
@@ -347,7 +368,7 @@ You have access to the user's active situation data. When answering questions:
     const tier = await resolveTier(_user.uid ?? 'demo-user-001', _user.isDemo === true);
     const askPraxisExt = buildAskPraxisExtensions({
       uid: _user.uid ?? 'demo-user-001',
-      situationId: (situation as Situation | undefined)?.id,
+      situationId: effectiveSituationId,
       profileVersion: _user.calibration.provenance.profileVersion ?? 1,
       tier,
       isDemo: _user.isDemo === true,
@@ -357,26 +378,48 @@ You have access to the user's active situation data. When answering questions:
       ? '\n\nANALYSIS DEPTH: Provide a more detailed answer with explicit assumptions, alternative interpretations, source/corpus gaps, and practical next actions. Keep it concise enough for an analyst to use.'
       : '\n\nANALYSIS DEPTH: Provide a concise operational answer with the most relevant assumptions and next action.';
     systemPrompt += depthDirective;
+    systemPrompt += '\n\n' + askIntentDirective(askIntent);
 
     // Select model based on user preferences. The default comes from
     // MODEL_MATRIX.json so the app follows the single provider/matrix contract.
     const runtime = selectAskRuntime(aiSettings);
     const model = runtime.model;
+    const runtimeReceipt = decorateAskRuntimeReceipt(runtime.receipt, {
+      intent: askIntent,
+      contextPackageId,
+      capsule: capsuleContext?.capsule ?? null,
+      turnCapsule,
+      corpusSearch: Boolean(effectiveSituationId && !_user.isDemo && _user.uid),
+      groundedSearch: false,
+      effectiveSituationId: effectiveSituationId ?? null,
+      retrievedDocumentIds,
+      retrievedSourceIds,
+      memoryPersistence: isAskThreadSqlConfigured() ? 'cloud-sql' : 'firestore',
+    });
     const askStartedAt = Date.now();
+    const persistedHistory = await loadServerAskHistory({
+      uid: _user.uid,
+      capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
+      threadId,
+    });
+    const effectiveMessages = buildAskConversationMessages(
+      messages,
+      persistedHistory,
+    );
 
     const { provenance } = _user.calibration;
     const result = streamText({
       model,
       system: systemPrompt,
-      messages: messages as unknown as ModelMessage[],
+      messages: effectiveMessages as unknown as ModelMessage[],
       tools,
       stopWhen: stepCountIs(15),
       onFinish: async ({ text }) => {
         if (_user.uid && text) {
-          if (sitId) {
+          if (effectiveSituationId) {
             await saveToolOutput({
               uid: _user.uid,
-              situationId: sitId,
+              situationId: effectiveSituationId,
               toolId: 'chat',
               profileVersion: provenance.profileVersion,
               output: {
@@ -388,11 +431,11 @@ You have access to the user's active situation data. When answering questions:
             }).catch((err) => console.warn('[chat] saveToolOutput failed:', err));
             await persistAskTurn({
               uid: _user.uid,
-              situationId: sitId,
+              situationId: effectiveSituationId,
               threadId,
-              prompt: lastUserPrompt(messages),
+              prompt,
               capsule: capsuleContext?.capsule ?? null,
-              runtime: runtime.receipt,
+              runtime: runtimeReceipt,
               pathId: _user.calibration.path?.id ?? null,
               pathVersion: _user.calibration.path?.version ?? null,
               frameworkSteps,
@@ -402,12 +445,12 @@ You have access to the user's active situation data. When answering questions:
           }
           await persistAskThreadTurn({
             uid: _user.uid,
-            situationId: sitId,
+            situationId: effectiveSituationId,
             capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
             threadId,
-            prompt: lastUserPrompt(messages),
+            prompt,
             capsuleVersion: capsuleContext?.capsule?.version ?? null,
-            runtime: runtime.receipt,
+            runtime: runtimeReceipt,
             pathId: _user.calibration.path?.id ?? null,
             pathVersion: _user.calibration.path?.version ?? null,
             frameworkSteps,
@@ -416,25 +459,25 @@ You have access to the user's active situation data. When answering questions:
           }).catch((err) => console.warn('[chat] persistAskThreadTurn failed:', err));
           await persistAskThreadTurnSql({
             uid: _user.uid,
-            situationId: sitId,
+            situationId: effectiveSituationId,
             capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
             threadId,
-            prompt: lastUserPrompt(messages),
+            prompt,
             capsuleVersion: capsuleContext?.capsule?.version ?? null,
-            runtime: runtime.receipt,
+            runtime: runtimeReceipt,
             pathId: _user.calibration.path?.id ?? null,
             pathVersion: _user.calibration.path?.version ?? null,
             frameworkSteps,
             toolInvocations,
             output: text,
           }).catch((err) => console.warn('[chat] persistAskThreadTurnSql failed:', err));
-          if (sitId) {
+          if (effectiveSituationId) {
             await persistAskReadLedger({
               uid: _user.uid,
-              situationId: sitId,
+              situationId: effectiveSituationId,
               threadId,
               capsule: capsuleContext?.capsule ?? null,
-              runtime: runtime.receipt,
+              runtime: runtimeReceipt,
               pathId: _user.calibration.path?.id ?? null,
               frameworkSteps,
               toolInvocations,
@@ -451,11 +494,46 @@ You have access to the user's active situation data. When answering questions:
   }
 });
 
-interface AskRuntimeReceipt {
+interface AskRuntimeReceipt extends Record<string, unknown> {
   provider?: string;
   model?: string;
   analysisDepth?: string;
   selectedAt: string;
+  intent?: AskIntent;
+  contextPackageId?: string | null;
+  capsuleId?: string | null;
+  capsuleVersion?: number | null;
+  traceId?: string | null;
+  tokenPosture?: {
+    operation: 'ai_chat';
+    charged: boolean;
+  };
+  contextCores?: {
+    userCoreId: string | null;
+    situationCoreId: string | null;
+    sourceDocumentCoreIds: string[];
+    graphCoreId: string | null;
+    memoryCoreId: string | null;
+    outputCoreIds: string[];
+  };
+  retrieval?: {
+    corpusSearch: boolean;
+    groundedSearch: boolean;
+    sourceDocumentCount: number;
+    activeGapCount: number;
+    retrievedDocumentIds: string[];
+    retrievedSourceIds: string[];
+  };
+  effectiveSituationId?: string | null;
+  resolvedCapsules?: Array<{
+    capsuleId: string;
+    capsuleVersion: number;
+    label: string;
+    mode: 'praxis_lite';
+    parentCapsuleId: string | null;
+  }>;
+  contextMode?: 'praxis_lite';
+  memoryPersistence?: 'cloud-sql' | 'firestore';
 }
 
 interface AskToolInvocationReceipt {
@@ -536,6 +614,96 @@ function selectAskRuntime(aiSettings: AiSettings) {
       selectedAt: new Date().toISOString(),
     } satisfies AskRuntimeReceipt,
   };
+}
+
+function decorateAskRuntimeReceipt(
+  receipt: AskRuntimeReceipt,
+  input: {
+    intent: AskIntent;
+    contextPackageId?: string;
+    capsule: PraxisCapsule | null;
+    turnCapsule: TurnCapsule | null;
+    corpusSearch: boolean;
+    groundedSearch: boolean;
+    effectiveSituationId: string | null;
+    retrievedDocumentIds: string[];
+    retrievedSourceIds: string[];
+    memoryPersistence: 'cloud-sql' | 'firestore';
+  },
+): AskRuntimeReceipt {
+  const resolvedCapsule = input.capsule ?? input.turnCapsule?.injectableContext.capsule ?? null;
+  return {
+    ...receipt,
+    intent: input.intent,
+    contextPackageId: input.contextPackageId ?? null,
+    capsuleId: resolvedCapsule?.capsuleId ?? input.turnCapsule?.capsuleId ?? null,
+    capsuleVersion: resolvedCapsule?.version ?? input.turnCapsule?.capsuleVersion ?? null,
+    traceId: input.turnCapsule?.traceId ?? null,
+    effectiveSituationId: input.effectiveSituationId,
+    contextMode: 'praxis_lite',
+    memoryPersistence: input.memoryPersistence,
+    resolvedCapsules: resolvedCapsule
+      ? [{
+          capsuleId: resolvedCapsule.capsuleId,
+          capsuleVersion: resolvedCapsule.version,
+          label: resolvedCapsule.label,
+          mode: 'praxis_lite',
+          parentCapsuleId: resolvedCapsule.parentCapsuleId,
+        }]
+      : [],
+    tokenPosture: {
+      operation: 'ai_chat',
+      charged: true,
+    },
+    contextCores: {
+      userCoreId: input.turnCapsule?.userCore ?? null,
+      situationCoreId: input.turnCapsule?.situationCore ?? null,
+      sourceDocumentCoreIds: input.turnCapsule?.sourceDocumentCore ?? [],
+      graphCoreId: input.turnCapsule?.graphCore ?? null,
+      memoryCoreId: input.turnCapsule?.memoryCore ?? null,
+      outputCoreIds: input.turnCapsule?.outputCore ?? [],
+    },
+    retrieval: {
+      corpusSearch: input.corpusSearch,
+      groundedSearch: input.groundedSearch,
+      sourceDocumentCount: input.turnCapsule?.sourceDocumentCore.length ?? 0,
+      activeGapCount: input.turnCapsule?.activeGaps.length ?? 0,
+      retrievedDocumentIds: input.retrievedDocumentIds,
+      retrievedSourceIds: input.retrievedSourceIds,
+    },
+  };
+}
+
+async function loadServerAskHistory(input: {
+  uid?: string | null;
+  capsuleId?: string | null;
+  threadId?: string | null;
+}): Promise<AskThreadTurnRecord[]> {
+  const capsuleId = input.capsuleId?.trim();
+  const threadId = input.threadId?.trim();
+  if (!input.uid || !capsuleId || !threadId) return [];
+
+  const sqlHistory = await listAskThreadTurnsSql({
+    uid: input.uid,
+    capsuleId,
+    threadId,
+    limit: 8,
+  }).catch((err) => {
+    console.warn('[chat.history] SQL continuity read failed; falling back to Firestore:', err);
+    return null;
+  });
+  if (sqlHistory?.turns.length) return sqlHistory.turns;
+
+  const history = await listAskThreadTurns({
+    uid: input.uid,
+    capsuleId,
+    threadId,
+    limit: 8,
+  }).catch((err) => {
+    console.warn('[chat.history] Firestore continuity read failed:', err);
+    return null;
+  });
+  return history?.turns ?? [];
 }
 
 function runAskTools<TTools extends Record<string, unknown>>(
@@ -636,6 +804,12 @@ async function persistAskReadLedger(input: {
 }) {
   const model = input.runtime.model ?? input.runtime.provider ?? 'default';
   const costClass = input.runtime.analysisDepth ?? 'standard';
+  const retrievedSourceIds = input.runtime.retrieval
+    ? uniqueStrings([
+        ...input.runtime.retrieval.retrievedSourceIds,
+        ...input.runtime.retrieval.retrievedDocumentIds.map((id) => `document:${id}`),
+      ])
+    : [];
   await writeReadAuditEvents([
     {
       uid: input.uid,
@@ -643,7 +817,7 @@ async function persistAskReadLedger(input: {
       capsuleId: input.capsule?.capsuleId ?? null,
       threadId: input.threadId ?? null,
       toolId: 'ask-praxis',
-      sourceIds: [],
+      sourceIds: retrievedSourceIds,
       model,
       latencyMs: input.askLatencyMs,
       status: 'ok',
@@ -711,6 +885,10 @@ function previewJson(value: unknown): string {
   } catch {
     return String(value).slice(0, 1200);
   }
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).slice(0, 50);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

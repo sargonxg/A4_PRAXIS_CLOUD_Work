@@ -29,6 +29,7 @@
     "audit:purpose-surface": "tsx scripts/audit-purpose-surface.ts",
     "audit:public-surface": "tsx scripts/audit-public-surface.ts",
     "audit:release-notes": "tsx scripts/audit-release-notes.ts",
+    "audit:ai-functionality": "tsx scripts/audit-ai-functionality.ts",
     "audit:ask-cockpit-runtime": "tsx scripts/audit-ask-cockpit-runtime.ts",
     "audit:tasklet-mvp-foundation": "tsx scripts/audit-tasklet-mvp-foundation.ts",
     "audit:tasklet-policy-workbench": "tsx scripts/audit-tasklet-policy-workbench.ts",

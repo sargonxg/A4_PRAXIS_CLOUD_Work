@@ -32,7 +32,7 @@ function expectExcludes(rel: string, markers: string[]): void {
 }
 
 for (const rel of [
-  'src/app/learn/page.tsx',
+  'src/app/(landing)/learn/page.tsx',
   'src/app/tacitus/page.tsx',
   'src/app/release-notes/page.tsx',
   'src/app/docs/page.tsx',
@@ -44,7 +44,6 @@ for (const rel of [
 }
 
 expectIncludes('src/app/(landing)/layout.tsx', ['Learn', 'TACITUS', 'Pricing', 'New capsule']);
-expectExcludes('src/app/(landing)/layout.tsx', ['Release notes", href']);
 expectIncludes('src/components/landing/phase8-wow-landing.tsx', [
   'TaskletPraxisWorkbench',
   'mode="public"',
@@ -57,14 +56,13 @@ expectExcludes('src/components/landing/phase8-wow-landing.tsx', [
   'CAPSULE_COMBINATION_RECIPES',
 ]);
 expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
-  'data-testid="recommended-agent-panel"',
-  'data-testid="policy-agent-drawer"',
-  'data-testid="capsule-composition-rail"',
-  'data-testid="canonical-user-types"',
-  'Past conversations',
-  'Past artifacts',
+  'data-testid="praxis-main-composer"',
+  'data-testid="tasklet-tool-cards"',
+  'data-testid="tasklet-capsule-cards"',
+  'What can PRAXIS do for you?',
+  'Describe a task or responsibility',
+  'AccountProfileButton',
   'conversationThreadId',
-  'artifactPersistence',
   'policyAgentRunIntent',
 ]);
 expectIncludes('src/components/app/app-shell.tsx', [
@@ -74,6 +72,10 @@ expectExcludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'data-testid="public-contextcapsule-explainer"',
   'Public preview',
   'Use your own sources',
+  'Policy sources, documents, grounded search',
+  'Recommended agent',
+  'Canonical user types',
+  'Suggested tools',
 ]);
 expectExcludes('src/components/landing/phase8-wow-landing.tsx', [
   'Syria',

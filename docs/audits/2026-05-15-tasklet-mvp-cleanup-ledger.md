@@ -25,6 +25,17 @@ Status: first implementation ledger for the Tasklet-style PRAXIS cleanup and fou
 - Kept `/demo/*` as redirect/sample-session compatibility for now because copy
   to workspace, demo sessions, and smoke tests still reference those routes.
 
+## 2026-05-16 Update
+
+- Removed the redundant App Router `/demo` page files after confirming
+  `src/proxy.ts` owns the `/demo/*` compatibility redirect into
+  `/app/workbench/*`.
+- Kept demo seed fixtures and copy-to-workspace data, but stopped treating a
+  public `/demo/[contextId]` route as required seed verification.
+- Removed the unused guided-tour component stack and stale unit coverage.
+- Replaced the old dashboard command-center smoke with desktop/mobile checks
+  for the shared Tasklet-style PRAXIS cockpit.
+
 ## Purpose
 
 This ledger keeps the cleanup tied to the product target:
@@ -56,7 +67,7 @@ needed for the MVP.
 
 ## Fold Or Archive
 
-- Old demo-first public surfaces should redirect into the real app or be moved
+- Old demo-first public URLs should redirect into the real app or be moved
   under archived evidence when no longer useful.
 - Syria showcase components remain evidence until references are removed; they
   should not be the public homepage or primary product story.
@@ -89,6 +100,7 @@ Current high-confidence cleanup class:
 - Extend `audit:route-consolidation` with the next folded routes after each
   route is proven safe.
 - Run `npx knip` before package/dependency cleanup.
-- Add a focused route inventory for `/demo/*`, Syria-only components, and old
-  tour components before removing them.
+- Continue the focused route inventory for Syria-only components before
+  removing them; the public `/demo` page implementation and old tour component
+  stack have already been removed.
 - Keep `graphify update .` as the post-code-change graph refresh gate.

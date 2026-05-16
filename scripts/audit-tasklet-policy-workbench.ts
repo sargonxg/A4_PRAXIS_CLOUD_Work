@@ -22,15 +22,18 @@ for (const file of requiredFiles) {
 }
 
 const workbenchText = readFileSync(resolve(root, 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
-for (const marker of ['New capsule', 'Search capsules', 'Recent runs', 'Describe the policy task', 'Policy sources, documents, grounded search', 'policyAgentLoginHref']) {
+for (const marker of ['New capsule', 'Search capsules', 'Recent', 'Describe a task or responsibility', 'What can PRAXIS do for you?', 'policyAgentLoginHref']) {
   assert(workbenchText.includes(marker), `Tasklet workbench is missing marker: ${marker}`);
+}
+for (const forbidden of ['Policy sources, documents, grounded search', 'Recommended agent', 'Canonical user types', 'Suggested tools', 'Produce']) {
+  assert(!workbenchText.includes(forbidden), `Tasklet workbench keeps dense marker: ${forbidden}`);
 }
 
 const redirectText = readFileSync(resolve(root, 'src/lib/auth/post-login-redirect.ts'), 'utf8');
 assert(redirectText.includes("return '/app/dashboard'"), 'Normal login should land on the Tasklet-style Home dashboard');
 
 const loginText = readFileSync(resolve(root, 'src/app/(auth)/login/page.tsx'), 'utf8');
-for (const marker of ['PRAXIS run queued', 'ContextCapsule agent workspace', 'PENDING_POLICY_AGENT_ID_KEY']) {
+for (const marker of ['PRAXIS run queued', 'What can PRAXIS do for you?', 'Describe a task or responsibility', 'PENDING_POLICY_AGENT_ID_KEY']) {
   assert(loginText.includes(marker), `Login handoff is missing marker: ${marker}`);
 }
 

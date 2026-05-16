@@ -76,8 +76,11 @@ for (const rel of [
   'src/app/methods',
   'src/app/ontologies',
   'src/app/users',
+  'src/app/demo',
   'src/app/app/syria-case',
   'src/components/app/situation-selector.tsx',
+  'src/components/tour',
+  'src/lib/tour',
 ]) {
   expectMissing(rel);
 }

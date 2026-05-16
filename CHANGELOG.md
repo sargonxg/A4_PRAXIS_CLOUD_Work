@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- chore(cleanup): remove redundant demo pages and old tour UI.
+  Build 2026.05.16.07 deletes the App Router `/demo` page files now covered
+  by proxy redirects, removes the unused guided-tour component stack, and
+  replaces the old dashboard-command-center smoke with cockpit-focused checks.
 - feat(runtime): add Gemini 3.1 Pro Preview to the cockpit selector.
   Build 2026.05.16.06 updates the central model matrix so deep memo and
   long-context work use `gemini-3.1-pro-preview`, keeps Gemini 2.5 fallbacks

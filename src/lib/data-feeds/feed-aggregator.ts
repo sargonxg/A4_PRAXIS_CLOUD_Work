@@ -39,8 +39,29 @@ export interface IntelligenceItem {
   location?: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
   metadata: Record<string, unknown>;
-  /** Trustworthiness score computed from source reliability, recency, and triangulation */
-  trustScore?: import('@/lib/analytics/trustworthiness-engine').TrustworthinessScore;
+  /** Trustworthiness score computed from source reliability and recency. */
+  trustScore?: TrustworthinessScore;
+}
+
+export interface TrustworthinessScore {
+  score: number;
+  level: 'high' | 'medium' | 'low' | 'unknown';
+  reasons: string[];
+}
+
+function computeLocalTrustworthiness(input: { sources: string[]; recencyDays: number }): TrustworthinessScore {
+  const reliableSource = input.sources.some((source) => /UN|UCDP|ReliefWeb|World Bank|GDELT|Crisis Group/i.test(source));
+  const recencyScore = input.recencyDays <= 7 ? 0.95 : input.recencyDays <= 30 ? 0.75 : 0.55;
+  const sourceScore = reliableSource ? 0.9 : 0.65;
+  const score = Math.round(((recencyScore + sourceScore) / 2) * 100) / 100;
+  return {
+    score,
+    level: score >= 0.8 ? 'high' : score >= 0.6 ? 'medium' : 'low',
+    reasons: [
+      reliableSource ? 'recognized source family' : 'source family needs review',
+      `recency ${input.recencyDays} day(s)`,
+    ],
+  };
 }
 
 export interface HumanitarianSnapshot {
@@ -380,8 +401,8 @@ export async function getSituationIntelligence(options: {
     return severityOrder[a.severity] - severityOrder[b.severity];
   });
 
-  // Compute trustworthiness scores for each item
-  const { computeTrustworthiness } = await import('@/lib/analytics/trustworthiness-engine');
+  // Compute lightweight trust scores without depending on the removed legacy
+  // analytics engine.
   const now = Date.now();
   for (const item of items) {
     const daysSinceEvent = item.date
@@ -394,7 +415,7 @@ export async function getSituationIntelligence(options: {
       grounded_search: 'Google Search (Gemini Grounded)',
     };
 
-    item.trustScore = computeTrustworthiness({
+    item.trustScore = computeLocalTrustworthiness({
       sources: [sourceMap[item.source] || item.source],
       recencyDays: daysSinceEvent,
     });

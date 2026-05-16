@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils/cn';
-import { Shield, ArrowRight, Loader2, Mail, Chrome, Layers3, FileText, Search, Sparkles } from 'lucide-react';
+import { Shield, ArrowRight, Loader2, Mail, Chrome, Paperclip, Upload, Monitor, Mic, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import {
@@ -265,7 +265,7 @@ function LoginForm() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-950">PRAXIS by TACITUS</p>
-                  <p className="text-xs text-slate-500">ContextCapsule agent workspace</p>
+                  <p className="text-xs text-slate-500">Private workspace</p>
                 </div>
               </div>
               <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -273,68 +273,30 @@ function LoginForm() {
               </span>
             </div>
 
-            <div className="grid flex-1 gap-8 py-10 xl:grid-cols-[240px_minmax(0,1fr)]">
-              <aside className="space-y-3">
-                {[
-                  ['New capsule', Layers3],
-                  ['Search capsules', Search],
-                  ['Memo Studio', FileText],
-                ].map(([label, Icon]) => (
-                  <div key={label as string} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 shadow-sm">
-                    <Icon className="h-4 w-4 text-slate-600" />
-                    <span className="text-sm font-semibold text-slate-700">{label as string}</span>
-                  </div>
-                ))}
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-950">Use your own sources</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-600">
-                    Sign in to create private capsules, attach documents, and keep outputs in the workspace.
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div className="rounded-md border border-slate-200 bg-white px-2 py-2 text-center text-[11px] font-semibold text-slate-600">Sources</div>
-                    <div className="rounded-md border border-slate-200 bg-white px-2 py-2 text-center text-[11px] font-semibold text-slate-600">Memos</div>
-                  </div>
-                </div>
-              </aside>
-
-              <div className="flex flex-col justify-center">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Work from a Context Capsule, not a blank chat
-                </p>
-                <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-[-0.02em] text-slate-950 xl:text-5xl">
-                  Sign in, then run the workbench from the same capsule context.
-                </h1>
-                <div className="mt-8 rounded-lg border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70">
-                  <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-4">
-                    {['ACTIVE', 'USER', 'SOURCES', 'OUTPUT'].map((code) => (
-                      <span key={code} className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-                        {code}
+            <div className="flex flex-1 flex-col justify-center py-10">
+              <p className="text-center text-sm font-medium text-slate-500">Same workspace before and after sign-in</p>
+              <h1 className="mx-auto mt-6 max-w-3xl text-center font-serif text-5xl font-semibold tracking-tight text-slate-950">
+                What can PRAXIS do for you?
+              </h1>
+              <div className="mx-auto mt-8 w-full max-w-3xl rounded-lg border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70">
+                <p className="px-1 py-2 text-xl text-slate-400">Describe a task or responsibility</p>
+                <div className="mt-10 flex items-center justify-between border-t border-slate-100 pt-4">
+                  <div className="flex items-center gap-2 text-slate-600">
+                    {[Paperclip, Upload, Monitor].map((Icon, index) => (
+                      <span key={index} className="rounded-md border border-slate-200 p-2">
+                        <Icon className="h-4 w-4" />
                       </span>
                     ))}
                   </div>
-                  <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-sm font-semibold text-slate-950">Draft a sourced options memo from the active capsule.</p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {['Ask PRAXIS', 'Sourceability', 'Memo Drafter'].map((tool) => (
-                        <span key={tool} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
-                          {tool}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                    {[
-                      ['Context health', 'Ready'],
-                      ['Source posture', 'Review'],
-                      ['Memo output', 'Queued'],
-                    ].map(([label, status]) => (
-                      <div key={label} className="rounded-lg border border-slate-200 bg-white p-3">
-                        <p className="text-[11px] font-semibold uppercase text-slate-500">{label}</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-950">{status}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <span className="rounded-md p-2 text-slate-600">
+                    <Mic className="h-4 w-4" />
+                  </span>
                 </div>
+              </div>
+              <div className="mx-auto mt-8 flex max-w-3xl justify-center gap-10 border-b border-slate-200 text-sm font-semibold text-slate-400">
+                {['Analysis', 'Monitoring', 'Review', 'Context'].map((tab, index) => (
+                  <span key={tab} className={cn('pb-3', index === 0 ? 'border-b-2 border-[#ff714d] text-[#ff714d]' : '')}>{tab}</span>
+                ))}
               </div>
             </div>
           </div>

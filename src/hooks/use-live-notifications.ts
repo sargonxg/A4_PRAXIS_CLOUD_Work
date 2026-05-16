@@ -18,7 +18,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useNotificationStore, type Notification as DemoNotification, type NotificationType } from '@/stores/notification-store';
-import { useNotifications, type NotificationRow } from './use-activity-feed';
 
 export interface LiveNotification {
   id: string;
@@ -55,26 +54,6 @@ function fromDemo(n: DemoNotification): LiveNotification {
     type: n.type,
     read: n.read,
     href: n.href,
-  };
-}
-
-function semaphoreToType(semaphore: NotificationRow['semaphore']): NotificationType {
-  if (semaphore === 'red') return 'alert';
-  if (semaphore === 'yellow') return 'warning';
-  if (semaphore === 'green') return 'success';
-  return 'info';
-}
-
-function fromFirestore(n: NotificationRow): LiveNotification {
-  const ts = n.createdAt?.toDate?.() ?? new Date();
-  return {
-    id: n.notificationId,
-    title: n.title,
-    body: n.body ?? '',
-    timestamp: ts,
-    type: semaphoreToType(n.semaphore),
-    read: n.read === true,
-    href: n.actionUrl ?? undefined,
   };
 }
 
@@ -116,13 +95,13 @@ export function useLiveNotifications(): LiveNotificationsResult {
   const isDemo = user?.isDemo ?? false;
   const uid = user?.id ?? null;
 
-  // Always subscribe to demo store (cheap), and to Firestore feed when not demo.
+  // Always subscribe to demo store (cheap). Authenticated users read the
+  // backend notification stream/fallback endpoint directly.
   const demoNotifications = useNotificationStore((s) => s.notifications);
   const demoUnread = useNotificationStore((s) => s.unreadCount);
   const demoMarkRead = useNotificationStore((s) => s.markRead);
   const demoMarkAllRead = useNotificationStore((s) => s.markAllRead);
   const demoDismiss = useNotificationStore((s) => s.dismiss);
-  const liveRows = useNotifications(isDemo ? null : uid, undefined, 50);
   const [backendRows, setBackendRows] = useState<BackendNotification[]>([]);
 
   useEffect(() => {
@@ -179,7 +158,7 @@ export function useLiveNotifications(): LiveNotificationsResult {
         live: false,
       };
     }
-    const live = backendRows.length > 0 ? backendRows.map(fromBackend) : liveRows.map(fromFirestore);
+    const live = backendRows.map(fromBackend);
     const unread = live.filter((n) => !n.read).length;
     return {
       notifications: live,
@@ -224,7 +203,7 @@ export function useLiveNotifications(): LiveNotificationsResult {
       },
       live: true,
     };
-  }, [isDemo, demoNotifications, demoUnread, demoMarkRead, demoMarkAllRead, demoDismiss, backendRows, liveRows]);
+  }, [isDemo, demoNotifications, demoUnread, demoMarkRead, demoMarkAllRead, demoDismiss, backendRows]);
 
   return result;
 }

@@ -27,6 +27,11 @@ from the active ledger above.
    guards package/app version, build number, release registry, page import, and
    changelog alignment. Significant changes should bump `APP_BUILD_NUMBER` and
    add a release note entry before commit.
+0. Route cleanup is now under way: redundant App Router `/demo` page files are
+   removed while `src/proxy.ts` keeps `/demo/*` compatibility redirects, the old
+   guided-tour component stack is gone, and the dashboard smoke now targets the
+   shared PRAXIS cockpit. Next cleanup should shrink Syria-only component bulk
+   only after the workbench fixture/chapter imports have a replacement.
 0. Public Home and authenticated Home now share the same polished cockpit:
    rounded capsule/composer surfaces, subtle policy-grid background, no
    low-level provider/runtime/token-cost labels, and no extra public-only

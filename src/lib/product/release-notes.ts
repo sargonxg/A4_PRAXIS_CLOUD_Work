@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.16.07',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'Route cleanup and cockpit smoke alignment',
+    summary: 'The public surface is narrower: legacy demo pages and old tour UI are removed while compatibility redirects stay in proxy.',
+    category: 'governance',
+    items: [
+      'Removed the redundant /demo App Router pages now that proxy redirects send legacy demo links into the authenticated workbench shape.',
+      'Deleted the unused guided-tour component stack and its stale unit test.',
+      'Replaced the dashboard command-center smoke with checks for the shared Tasklet-style PRAXIS capsule cockpit.',
+      'The demo fixture verifier now validates seed data only, not a public demo route implementation.',
+    ],
+  },
+  {
     buildNumber: '2026.05.16.06',
     version: '6.4.1',
     date: '2026-05-16',

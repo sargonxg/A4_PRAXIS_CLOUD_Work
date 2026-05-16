@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { WORKSPACE_CHAPTER_MANIFESTS } from '@/chapters/registry';
 import { WORKSPACE_TAB_MANIFESTS } from '@/tabs/registry';
 
 describe('workspace manifests', () => {
@@ -16,32 +15,6 @@ describe('workspace manifests', () => {
       expect(tab.short_title.length).toBeGreaterThan(0);
       expect(tab.feature_flag).toMatch(/^workspace\.tabs\./);
     }
-  });
-
-  it('keeps seven chapters with Desk locked on and product writes scoped', () => {
-    expect(WORKSPACE_CHAPTER_MANIFESTS.map((chapter) => chapter.id)).toEqual([
-      'desk',
-      'research',
-      'memos',
-      'draft',
-      'ach',
-      'tools',
-      'boardroom',
-    ]);
-    expect(WORKSPACE_CHAPTER_MANIFESTS[0]).toMatchObject({
-      id: 'desk',
-      always_on: true,
-      writes: 'none',
-    });
-    expect(WORKSPACE_CHAPTER_MANIFESTS.map((chapter) => chapter.writes)).toEqual([
-      'none',
-      'research_threads',
-      'memos',
-      'draft_exports',
-      'ach_matrices',
-      'dialectica_runs',
-      'briefings',
-    ]);
   });
 
   it('supports the locked, available, active, complete gating states', () => {

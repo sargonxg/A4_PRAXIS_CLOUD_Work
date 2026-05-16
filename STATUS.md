@@ -1,5 +1,18 @@
 # PRAXIS — STATUS
 
+## 2026-05-16 — Route Cleanup And Cockpit Smoke Alignment
+
+Current cleanup checkpoint:
+
+- Central app metadata is now build `2026.05.16.07`.
+- Redundant App Router `/demo` page files are removed; legacy `/demo/*` URLs
+  continue to redirect through `src/proxy.ts` into `/app/workbench/*`.
+- The unused guided-tour component stack is deleted.
+- The old dashboard-command-center Playwright smoke is replaced with shared
+  PRAXIS cockpit checks for desktop and mobile.
+- Demo fixture verification now validates seed context quality without
+  requiring a public `/demo/[contextId]` route implementation.
+
 ## 2026-05-16 — Release Notes And Build Number Governance
 
 Current release checkpoint:
