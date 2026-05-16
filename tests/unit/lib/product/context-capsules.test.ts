@@ -8,9 +8,13 @@ import {
   CAPSULE_OUTPUT_PRODUCTS,
   CONTEXT_CAPSULE_TEMPLATES,
   POLICY_PATH_PROFILES,
+  POLICY_TEAM_CATEGORIES,
   capsuleAttachmentCounts,
   capsuleSlotReadiness,
+  categoryTagsForPolicyTeam,
   contextCapsuleLoginHref,
+  getPolicyTeamCategory,
+  policyTeamCategoryForTags,
 } from '@/lib/product/context-capsules';
 
 describe('context capsule product contract', () => {
@@ -96,6 +100,43 @@ describe('context capsule product contract', () => {
         expect(pathIds.has(pathId), `${product.id} references missing path ${pathId}`).toBe(true);
       }
     }
+  });
+
+  it('keeps policy team categories unique and mapped to real paths and templates', () => {
+    const categoryIds = new Set(POLICY_TEAM_CATEGORIES.map((category) => category.id));
+
+    expect(categoryIds.size).toBe(POLICY_TEAM_CATEGORIES.length);
+    expect(getPolicyTeamCategory('economic-sanctions')?.shortLabel).toBe('Economic');
+
+    for (const category of POLICY_TEAM_CATEGORIES) {
+      expect(category.toolIds.length).toBeGreaterThanOrEqual(3);
+      expect(category.missingInfoPrompts.length).toBeGreaterThanOrEqual(3);
+      expect(categoryTagsForPolicyTeam(category)).toContain(category.id);
+
+      for (const pathId of category.policyPathIds) {
+        expect(pathIds.has(pathId), `${category.id} references missing path ${pathId}`).toBe(true);
+      }
+      for (const templateId of category.templateIds) {
+        expect(templateIds.has(templateId), `${category.id} references missing template ${templateId}`).toBe(true);
+      }
+    }
+  });
+
+  it('defines temporal, causal, and human-friction capsules for complex policy reasoning', () => {
+    const templates = new Map(CONTEXT_CAPSULE_TEMPLATES.map((template) => [template.id, template]));
+
+    expect(templates.get('temporal-causal-map')?.contextCores).toEqual(
+      expect.arrayContaining(['time', 'graph', 'objective']),
+    );
+    expect(templates.get('human-friction-map')?.prompt.toLowerCase()).toContain('blockers');
+    expect(templates.get('decision-clock')?.prompt.toLowerCase()).toContain('stale assumptions');
+    expect(CAPSULE_COMBINATION_RECIPES.some((recipe) => recipe.id === 'temporal-friction-decision')).toBe(true);
+  });
+
+  it('finds policy teams from capsule tags', () => {
+    expect(policyTeamCategoryForTags(['ofac', 'urgent'])?.id).toBe('economic-sanctions');
+    expect(policyTeamCategoryForTags(['humanitarian-analysis'])?.id).toBe('humanitarian');
+    expect(policyTeamCategoryForTags(['unknown'])).toBeNull();
   });
 
   it('keeps connector posture explicit for what is live, candidate, and deferred', () => {

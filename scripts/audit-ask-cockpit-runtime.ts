@@ -58,8 +58,11 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'model: selectedRuntime.id',
   'data-testid="praxis-main-composer"',
   'data-testid="praxis-chat-thread"',
-  'data-testid="tasklet-tool-cards"',
+  'data-testid="praxis-answer-markdown"',
+  'data-testid="policy-team-next-actions"',
+  'data-testid="capsule-manager"',
   'data-testid="tasklet-capsule-cards"',
+  'data-testid="capsule-detail-panel"',
   "fetch('/api/ai/ask-praxis'",
   'Active ContextCapsule stack',
   'ContextCapsule Lite',
@@ -68,6 +71,7 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'activeCapsules',
   'selectedToolIds',
   'selectedAgentId',
+  'ReactMarkdown',
 ]);
 
 expectIncludes('src/lib/product/cockpit-composition.ts', [

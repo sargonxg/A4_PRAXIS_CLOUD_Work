@@ -26,6 +26,48 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.16.12',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'Temporal, causal, and friction capsules',
+    summary: 'PRAXIS now has explicit capsule templates for time, causality, decision windows, and human friction in complex policy work.',
+    category: 'product',
+    items: [
+      'Added Temporal and causal map, Human friction map, and Decision clock capsule templates.',
+      'Policy-team categories now seed these structures where timing, blockers, incentives, and causal uncertainty matter most.',
+      'Added a combination recipe that turns temporal and friction capsules into a decision-window brief.',
+      'Expanded the capsule capability map with explicit Causality and Human Friction areas.',
+    ],
+  },
+  {
+    buildNumber: '2026.05.16.11',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'Capsule library gets policy-team routing',
+    summary: 'The capsule manager now understands policy-team categories, creates category-seeded capsules, and suggests the right PRAXIS tools from capsule metadata.',
+    category: 'product',
+    items: [
+      'Added a canonical policy-team taxonomy for economic, diplomatic, security, humanitarian, rights/legal, governance, climate/development, information/cyber, crisis/ops, and research/strategy work.',
+      'New capsules can be created from policy-team presets that save category tags, output goals, and recommended tool cores through the existing capsule contract.',
+      'Capsule details now show policy-team assignment and capsule-aware suggested tools with one-click attach.',
+      'Core library search now indexes capsule category tags and attached tool/product ids so user capsules are easier to find and reuse.',
+    ],
+  },
+  {
+    buildNumber: '2026.05.16.10',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'Policy-team cockpit polish',
+    summary: 'The one-page cockpit now has stronger visual parity, clearer policy-team actions, Markdown answer rendering, and inline capsule categorization.',
+    category: 'product',
+    items: [
+      'Public and signed-in cockpit surfaces keep the same composer, capsule bar, policy-team actions, and capsule manager shape.',
+      'Ask PRAXIS responses render as structured Markdown with headings, lists, and tables instead of plain text.',
+      'Capsule cards use inline category entry instead of browser prompts, keeping add, select, improve, archive, upload, and refresh inside the app page.',
+      'The Ask prompt contract now asks PRAXIS to format answers for policy teams with findings, source posture, gaps, and next actions when relevant.',
+    ],
+  },
+  {
     buildNumber: '2026.05.16.09',
     version: '6.4.1',
     date: '2026-05-16',

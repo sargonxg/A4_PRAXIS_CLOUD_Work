@@ -31,9 +31,6 @@ Accepted ADRs are not edited for meaning. Supersede them with a later ADR.
 - `0022-red-team-analyst-subagent.md`
 - `0023-ach-workbench-surface.md`
 - `0030-dynamic-ontology-lenses.md`
-- `0033-marketplace-depth-strategy.md`
-- `0034-composition-chain-governance.md`
-- `0035-marketplace-cap-and-deferred-candidates.md`
 - `0036-gcp-production-verification-discipline.md`
 - `0037-draft-briefing-assembly-contract.md`
 - `0038-ai-first-case-creation-pattern.md`
@@ -43,13 +40,15 @@ Accepted ADRs are not edited for meaning. Supersede them with a later ADR.
 - `0043-research-as-ingestion-front-door.md`
 - `0044-draft-as-briefing-assembly-contract.md`
 - `0045-ai-first-case-creation-pattern.md`
-- `0046-visualization-library-decision-matrix.md`
-- `0047-extraction-layering-plus-graphrag-batch.md`
-- `0048-analytics-sanctions-simulation-as-cross-cutting-tools.md`
 - `0049-cognee-memory-layer-disabled-first.md`
 
-Historical v5 duplicate ADRs were removed during the Tasklet cleanup. Future
-ADRs should resume at the next unused numeric prefix.
+Historical v5 duplicate ADRs and superseded marketplace/tool-lane ADRs were
+removed or archived during Tasklet cleanup. The 2026-05-16 aggressive cleanup
+archive keeps the retired marketplace/depth, composition-chain,
+visualization/extraction, and cross-cutting-tool ADRs as evidence without
+listing them as current decisions.
+
+Future ADRs should resume at the next unused numeric prefix.
 
 Active target-state gaps are tracked in:
 

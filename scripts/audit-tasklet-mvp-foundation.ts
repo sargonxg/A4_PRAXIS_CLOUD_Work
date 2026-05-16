@@ -65,6 +65,8 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'policyAgentRunIntent',
   'refreshCapsules',
   'capsule-detail-panel',
+  'policy-team-next-actions',
+  'praxis-answer-markdown',
 ]);
 expectIncludes('src/components/app/app-shell.tsx', [
   'data-testid="praxis-one-page-app-shell"',
@@ -81,6 +83,7 @@ expectExcludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'selectedUserTypeId',
   'aria-label="User type"',
   "'/api/ai/chat'",
+  'window.prompt',
 ]);
 expectExcludes('src/components/landing/phase8-wow-landing.tsx', [
   'the selected situation',

@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   ArrowUp,
   ChevronDown,
@@ -36,6 +38,14 @@ import {
   POLICY_NEED_TABS,
   findCapsuleTemplate,
 } from '@/lib/product/cockpit-composition';
+import {
+  POLICY_TEAM_CATEGORIES,
+  categoryTagsForPolicyTeam,
+  getPolicyTeamCategory,
+  policyTeamCategoryForTags,
+  type PolicyTeamCategory,
+} from '@/lib/product/context-capsules';
+import { recommendCapsuleTools, type CapsuleToolRecommendation } from '@/lib/tools/recommend';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
@@ -93,6 +103,13 @@ const actionIcons = [
   { label: 'Improve prompt', icon: WandSparkles, kind: 'improve' },
 ] as const;
 
+const policyNextActions = [
+  { label: 'Ask', prompt: 'Ask the active capsule for a concise situation read.' },
+  { label: 'Source-check', prompt: 'Review the active capsule for weak claims, missing citations, and stale assumptions.' },
+  { label: 'Draft memo', prompt: 'Draft a short options memo from the active capsule with findings, caveats, and next actions.' },
+  { label: 'Handover', prompt: 'Prepare a handover note from this capsule for another policy team member.' },
+] as const;
+
 const capsuleRoles: Array<{ id: CapsuleRole; label: string }> = [
   { id: 'situation', label: 'Situation' },
   { id: 'user', label: 'User' },
@@ -106,6 +123,15 @@ const capsuleRoleStyles: Record<CapsuleRole, string> = {
   tool: 'border-amber-200 bg-amber-50 text-amber-900',
   output: 'border-violet-200 bg-violet-50 text-violet-900',
 };
+
+const capsuleLibraryFilters = [
+  { id: 'all', label: 'All' },
+  { id: 'context', label: 'Context' },
+  { id: 'tool-capsules', label: 'Tools' },
+  { id: 'source-docs', label: 'Docs' },
+  { id: 'outputs', label: 'Outputs' },
+  { id: 'archived', label: 'Archived' },
+] as const;
 
 export function TaskletPraxisWorkbench({
   mode,
@@ -145,6 +171,14 @@ export function TaskletPraxisWorkbench({
   const availableToolIds = selectedToolIds.length ? selectedToolIds : ['ask-praxis'];
   const capsules = COCKPIT_CAPSULE_LIBRARY.slice(0, 6);
   const selectedCapsule = userCapsules.find((capsule) => capsule.capsuleId === currentCapsuleId) ?? null;
+  const selectedPolicyTeam = selectedCapsule ? policyTeamCategoryForTags(selectedCapsule.community?.tags) : getPolicyTeamCategory(capsuleCategory);
+  const capsuleRecommendations = selectedCapsule
+    ? recommendCapsuleTools({
+        capsule: selectedCapsule,
+        policyTeamId: selectedPolicyTeam?.id ?? capsuleCategory,
+        recentToolIds: selectedToolIds,
+      })
+    : [];
   const capsuleCategories = buildCapsuleCategories(userCapsules);
   const filteredUserCapsules = filterUserCapsules(userCapsules, capsuleSearch, capsuleCategory);
   const filteredCapsules = COCKPIT_CAPSULE_LIBRARY.filter((capsule) => {
@@ -176,11 +210,6 @@ export function TaskletPraxisWorkbench({
     }
   }, [isAuthenticated]);
 
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    void refreshCapsules();
-  }, [isAuthenticated]);
-
   const recentLabel = isAuthenticated ? 'Recent' : 'Examples';
   function sendPublicToLogin(nextPrompt: string, agent: PolicyAgentDefinition = selectedAgent) {
     window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, nextPrompt);
@@ -202,6 +231,7 @@ export function TaskletPraxisWorkbench({
       `Conversation thread: ${conversationThreadId}`,
       '',
       'Behave like a normal chat assistant first. Answer directly when enough context exists. If a tool, upload, connector, source check, memo, or capsule update would help, decide that yourself and explain the next step plainly.',
+      'Format the answer for a policy team: start with a short answer, then use concise headings for Findings, Source posture, Gaps, and Next actions when relevant. Do not fabricate citations; name source gaps plainly.',
     ].join('\n');
   }
 
@@ -346,26 +376,34 @@ export function TaskletPraxisWorkbench({
     setPrompt((current) => `Improve this PRAXIS request and ask any missing context question: ${current.trim()}`);
   }
 
-  async function refreshCapsules(selectCapsuleId?: string) {
+  const refreshCapsules = useCallback(async (selectCapsuleId?: string) => {
     if (!isAuthenticated) return;
     setCapsulesLoading(true);
     try {
-      const response = await fetch('/api/context/capsules', { credentials: 'include' });
+      const response = await fetch('/api/context/capsules?includeArchived=true', { credentials: 'include' });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error ?? 'capsule list failed');
       const next = Array.isArray(payload?.capsules) ? payload.capsules as PraxisCapsuleSummary[] : [];
-      const visible = next.filter((capsule) => !capsule.archivedAt);
-      setUserCapsules(visible);
+      setUserCapsules(next);
       const selected = selectCapsuleId
-        ? visible.find((capsule) => capsule.capsuleId === selectCapsuleId)
-        : visible.find((capsule) => capsule.capsuleId === currentCapsuleId) ?? visible[0];
-      if (selected) selectUserCapsule(selected);
+        ? next.find((capsule) => capsule.capsuleId === selectCapsuleId)
+        : next.find((capsule) => capsule.capsuleId === currentCapsuleId && !capsule.archivedAt) ?? next.find((capsule) => !capsule.archivedAt);
+      if (selected) {
+        const chip = capsuleToChip(selected);
+        setCurrentCapsuleId(chip.id);
+        setActiveCapsules((current) => [chip, ...current.filter((item) => item.id !== chip.id)].slice(0, 6));
+      }
     } catch (err) {
       setStatus(err instanceof Error ? `Capsule library failed: ${err.message}` : 'Capsule library failed.');
     } finally {
       setCapsulesLoading(false);
     }
-  }
+  }, [currentCapsuleId, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    void refreshCapsules();
+  }, [isAuthenticated, refreshCapsules]);
 
   function selectUserCapsule(capsule: PraxisCapsuleSummary) {
     const chip = capsuleToChip(capsule);
@@ -409,39 +447,86 @@ export function TaskletPraxisWorkbench({
     await refreshCapsules(capsule.capsuleId);
   }
 
+  async function assignPolicyTeam(capsule: PraxisCapsuleSummary, category: PolicyTeamCategory) {
+    const currentTags = capsule.community?.tags ?? [];
+    const tags = uniqueIds([
+      ...currentTags.filter((tag) => !POLICY_TEAM_CATEGORIES.some((item) => item.id === tag)),
+      ...categoryTagsForPolicyTeam(category),
+    ]).slice(0, 20);
+    const response = await fetch(`/api/context/capsules/${encodeURIComponent(capsule.capsuleId)}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ community: { tags } }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setStatus(payload?.error ? `Policy team failed: ${payload.error}` : 'Policy team failed.');
+      return;
+    }
+    setCapsuleCategory(category.id);
+    setStatus(`${capsule.label} is now categorized for ${category.label}.`);
+    await refreshCapsules(capsule.capsuleId);
+  }
+
+  async function attachRecommendedTool(capsule: PraxisCapsuleSummary, recommendation: CapsuleToolRecommendation) {
+    const nextTools = uniqueIds([...(capsule.coreRefs.toolCoreIds ?? []), recommendation.tool.id]).slice(0, 20);
+    const response = await fetch(`/api/context/capsules/${encodeURIComponent(capsule.capsuleId)}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ coreRefs: { toolCoreIds: nextTools } }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setStatus(payload?.error ? `Tool attach failed: ${payload.error}` : 'Tool attach failed.');
+      return;
+    }
+    setStatus(`${recommendation.tool.shortLabel} attached to ${capsule.label}.`);
+    await refreshCapsules(capsule.capsuleId);
+  }
+
   function improveCapsule(capsule?: PraxisCapsuleSummary) {
     const target = capsule ?? selectedCapsule ?? userCapsules[0];
     if (!target) return;
     selectUserCapsule(target);
     const refs = target.coreRefs ?? {};
+    const team = policyTeamCategoryForTags(target.community?.tags);
     const nextPrompt = [
       `Improve the ContextCapsule "${target.label}".`,
       `Capsule id: ${target.capsuleId}.`,
+      team ? `Policy team category: ${team.label}.` : 'Policy team category: not assigned.',
       `Sources: ${refs.sourceCoreIds?.length ?? 0}. Documents: ${refs.documentCoreIds?.length ?? 0}. Tools: ${refs.toolCoreIds?.length ?? 0}.`,
-      'Ask only for missing information, suggest useful documents, and update the capsule plan before drafting anything.',
+      'Ask only for missing information, suggest useful documents, recommend the best PRAXIS tools, and update the capsule plan before drafting anything.',
     ].join('\n');
     setPrompt(nextPrompt);
     void sendToPraxis(selectedAgent, nextPrompt);
   }
 
-  async function createCapsuleLite(label?: string, seed?: Partial<ActiveCapsuleChip>) {
+  async function createCapsuleLite(label?: string, seed?: Partial<ActiveCapsuleChip>, policyTeam?: PolicyTeamCategory | null) {
     if (!isAuthenticated) {
       sendPublicToLogin(prompt.trim() || 'Build a ContextCapsule Lite.');
       return null;
     }
+    const team = policyTeam ?? getPolicyTeamCategory(capsuleCategory);
+    const templateId = seed?.templateId ?? team?.templateIds[0];
     const response = await fetch('/api/context/capsules', {
       method: 'POST',
       credentials: 'include',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         action: 'create',
-        label: label ?? 'ContextCapsule Lite',
+        label: label ?? (team ? `${team.shortLabel} ContextCapsule` : 'ContextCapsule Lite'),
         scope: 'user',
         coreRefs: {
-          toolCoreIds: seed?.role === 'tool' && seed.toolId ? uniqueIds([...selectedToolIds, seed.toolId]) : selectedToolIds,
+          toolCoreIds: uniqueIds([
+            ...(team?.toolIds.slice(0, 3) ?? []),
+            ...(seed?.role === 'tool' && seed.toolId ? [...selectedToolIds, seed.toolId] : selectedToolIds),
+          ]),
           objectiveCoreIds: [selectedAgent.id],
-          productCoreIds: [activeTab],
+          productCoreIds: uniqueIds([activeTab, ...(team?.outputProductIds.slice(0, 2) ?? [])]),
         },
+        community: team ? { tags: categoryTagsForPolicyTeam(team).slice(0, 12) } : undefined,
         activeForSituationIds: [currentCapsuleId],
       }),
     });
@@ -455,7 +540,7 @@ export function TaskletPraxisWorkbench({
       code: seed?.code ?? 'LITE',
       role: seed?.role ?? 'situation',
       toolId: seed?.toolId,
-      templateId: seed?.templateId,
+      templateId,
     };
     setCurrentCapsuleId(created.id);
     setActiveCapsules((current) => [created, ...current.filter((item) => item.id !== created.id).slice(0, 4)]);
@@ -643,6 +728,22 @@ export function TaskletPraxisWorkbench({
               <Link href={isAuthenticated ? '/pricing' : '/login?mode=signup'} className="text-sage">Upgrade</Link>
             </div>
 
+            <div className="mt-5 flex w-full max-w-5xl flex-wrap items-center justify-center gap-2" data-testid="policy-team-next-actions">
+              {policyNextActions.map((action) => (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={() => {
+                    setPrompt(action.prompt);
+                    if (action.label !== 'Ask') void sendToPraxis(selectedAgent, action.prompt);
+                  }}
+                  className="rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 transition hover:border-[#ff714d]/40 hover:bg-[#fff7f3]"
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+
             <div className="mt-6 w-full max-w-5xl rounded-lg border border-black/10 bg-white shadow-sm shadow-black/5" data-testid="praxis-main-composer">
               <div className="border-b border-black/10 px-5 py-3" data-testid="capsule-context-bar">
                 <div className="flex flex-wrap items-center gap-2">
@@ -805,16 +906,23 @@ export function TaskletPraxisWorkbench({
             ) : null}
 
             {chatMessages.length ? (
-              <section className="mt-5 w-full max-w-5xl space-y-3 rounded-lg border border-black/10 bg-white/80 p-4" data-testid="praxis-chat-thread">
+              <section className="mt-5 w-full max-w-5xl space-y-3 rounded-lg border border-black/10 bg-white/85 p-4 shadow-sm shadow-black/5" data-testid="praxis-chat-thread">
                 {chatMessages.map((message, index) => (
                   <article
                     key={`${message.role}-${index}`}
                     className={cn(
-                      'rounded-lg px-4 py-3 text-sm leading-6',
-                      message.role === 'user' ? 'ml-auto max-w-[82%] bg-slate-950 text-white' : 'mr-auto max-w-[88%] bg-slate-100 text-slate-900',
+                      'rounded-lg px-4 py-3 text-sm leading-6 shadow-sm',
+                      message.role === 'user' ? 'ml-auto max-w-[82%] bg-slate-950 text-white shadow-black/10' : 'mr-auto max-w-[92%] border border-slate-200 bg-white text-slate-900 shadow-black/5',
                     )}
                   >
-                    <p className="whitespace-pre-wrap">{message.text || 'Reading context...'}</p>
+                    <div className={cn('mb-2 text-[11px] font-semibold uppercase tracking-wide', message.role === 'user' ? 'text-white/60' : 'text-slate-400')}>
+                      {message.role === 'user' ? 'You' : 'PRAXIS'}
+                    </div>
+                    {message.role === 'assistant' ? (
+                      <AssistantMarkdown text={message.text || 'Reading context...'} />
+                    ) : (
+                      <p className="whitespace-pre-wrap">{message.text}</p>
+                    )}
                   </article>
                 ))}
               </section>
@@ -838,7 +946,7 @@ export function TaskletPraxisWorkbench({
                   </label>
                   <button
                     type="button"
-                    onClick={() => void createCapsuleLite('ContextCapsule Lite')}
+                    onClick={() => void createCapsuleLite(undefined, undefined, getPolicyTeamCategory(capsuleCategory))}
                     className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
                   >
                     <Plus className="h-4 w-4" />
@@ -854,14 +962,28 @@ export function TaskletPraxisWorkbench({
                     type="button"
                     onClick={() => setCapsuleCategory(category)}
                     className={cn(
-                      'rounded-md border px-3 py-1.5 text-xs font-semibold capitalize',
+                      'rounded-md border px-3 py-1.5 text-xs font-semibold',
                       capsuleCategory === category ? 'border-[#ff714d] bg-[#fff2ed] text-[#ca4a25]' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
                     )}
                   >
-                    {category}
+                    {capsuleCategoryLabel(category)}
                   </button>
                 ))}
               </nav>
+
+              <div className="mt-4 grid gap-2 md:grid-cols-5" aria-label="New context capsule presets">
+                {POLICY_TEAM_CATEGORIES.map((category) => (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => void createCapsuleLite(`${category.shortLabel} ContextCapsule`, undefined, category)}
+                    className="rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-600 hover:border-[#ff714d] hover:text-slate-950"
+                  >
+                    <span className="block truncate">{category.shortLabel}</span>
+                    <span className="mt-1 block truncate font-normal text-slate-400">{category.templateIds[0]}</span>
+                  </button>
+                ))}
+              </div>
 
               {isAuthenticated ? (
                 <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -890,9 +1012,17 @@ export function TaskletPraxisWorkbench({
                   </div>
                   <CapsuleDetailPanel
                     capsule={selectedCapsule}
+                    policyTeam={selectedPolicyTeam}
+                    recommendations={capsuleRecommendations}
                     onUpload={() => fileInputRef.current?.click()}
                     onImprove={() => improveCapsule()}
                     onRefresh={() => void refreshCapsules(currentCapsuleId)}
+                    onAssignPolicyTeam={(category) => {
+                      if (selectedCapsule) void assignPolicyTeam(selectedCapsule, category);
+                    }}
+                    onAttachTool={(recommendation) => {
+                      if (selectedCapsule) void attachRecommendedTool(selectedCapsule, recommendation);
+                    }}
                   />
                 </div>
               ) : (
@@ -918,6 +1048,32 @@ export function TaskletPraxisWorkbench({
   );
 }
 
+function AssistantMarkdown({ text }: { text: string }) {
+  return (
+    <div className="space-y-3 text-sm leading-6 text-slate-800" data-testid="praxis-answer-markdown">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          h1: ({ children }) => <h3 className="text-base font-semibold text-slate-950">{children}</h3>,
+          h2: ({ children }) => <h3 className="text-base font-semibold text-slate-950">{children}</h3>,
+          h3: ({ children }) => <h4 className="text-sm font-semibold text-slate-950">{children}</h4>,
+          p: ({ children }) => <p>{children}</p>,
+          ul: ({ children }) => <ul className="list-disc space-y-1 pl-5">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal space-y-1 pl-5">{children}</ol>,
+          li: ({ children }) => <li>{children}</li>,
+          strong: ({ children }) => <strong className="font-semibold text-slate-950">{children}</strong>,
+          table: ({ children }) => <div className="overflow-x-auto rounded-md border border-slate-200"><table className="min-w-full divide-y divide-slate-200 text-left text-xs">{children}</table></div>,
+          th: ({ children }) => <th className="bg-slate-50 px-3 py-2 font-semibold text-slate-700">{children}</th>,
+          td: ({ children }) => <td className="border-t border-slate-100 px-3 py-2 align-top">{children}</td>,
+          code: ({ children }) => <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[12px] text-slate-800">{children}</code>,
+        }}
+      >
+        {text}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
 function uniqueIds(values: string[]): string[] {
   return Array.from(new Set(values.filter(Boolean)));
 }
@@ -932,10 +1088,14 @@ function capsuleToChip(capsule: PraxisCapsuleSummary): ActiveCapsuleChip {
 }
 
 function buildCapsuleCategories(capsules: PraxisCapsuleSummary[]): string[] {
-  return ['all', ...Array.from(new Set(capsules.flatMap((capsule) => [
-    capsule.scope,
-    ...(capsule.community?.tags ?? []),
-  ]))).slice(0, 10)];
+  const generatedTags = Array.from(new Set(capsules.flatMap((capsule) => capsule.community?.tags ?? [])))
+    .filter((tag) => !POLICY_TEAM_CATEGORIES.some((category) => category.id === tag))
+    .slice(0, 8);
+  return [
+    ...capsuleLibraryFilters.map((filter) => filter.id),
+    ...POLICY_TEAM_CATEGORIES.map((category) => category.id),
+    ...generatedTags,
+  ];
 }
 
 function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, category: string): PraxisCapsuleSummary[] {
@@ -943,7 +1103,18 @@ function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, cat
   return capsules
     .filter((capsule) => {
       const tags = capsule.community?.tags ?? [];
-      const matchesCategory = category === 'all' || capsule.scope === category || tags.includes(category);
+      const counts = capsuleCounts(capsule);
+      const isArchived = Boolean(capsule.archivedAt);
+      const policyTeam = getPolicyTeamCategory(category);
+      const matchesCategory =
+        category === 'all' ? !isArchived :
+        category === 'archived' ? isArchived :
+        category === 'context' ? !isArchived && (capsule.scope === 'user' || capsule.scope === 'situation' || capsule.scope === 'team') :
+        category === 'tool-capsules' ? !isArchived && counts.tools > 0 :
+        category === 'source-docs' ? !isArchived && (counts.sources + counts.documents > 0) :
+        category === 'outputs' ? !isArchived && counts.outputs > 0 :
+        policyTeam ? !isArchived && categoryMatchesPolicyTeam(tags, policyTeam) :
+        !isArchived && (capsule.scope === category || tags.includes(category));
       if (!matchesCategory) return false;
       if (!clean) return true;
       return [
@@ -956,6 +1127,19 @@ function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, cat
       ].join(' ').toLowerCase().includes(clean);
     })
     .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+}
+
+function capsuleCategoryLabel(category: string): string {
+  return capsuleLibraryFilters.find((filter) => filter.id === category)?.label ??
+    getPolicyTeamCategory(category)?.shortLabel ??
+    category.replaceAll('-', ' ');
+}
+
+function categoryMatchesPolicyTeam(tags: string[], category: PolicyTeamCategory): boolean {
+  const normalized = new Set(tags);
+  return normalized.has(category.id) ||
+    category.policyPathIds.some((pathId) => normalized.has(pathId)) ||
+    category.sourceTags.some((tag) => normalized.has(tag));
 }
 
 function capsuleCounts(capsule: PraxisCapsuleSummary) {
@@ -993,6 +1177,7 @@ function CapsuleCard({
   onTag: (tag: string) => void;
 }) {
   const counts = capsuleCounts(capsule);
+  const [tagDraft, setTagDraft] = useState('');
   return (
     <article className={cn('rounded-lg border bg-white p-4 shadow-sm shadow-black/5', active ? 'border-[#ff714d]' : 'border-black/10')}>
       <button type="button" onClick={onSelect} className="block w-full text-left">
@@ -1015,23 +1200,46 @@ function CapsuleCard({
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <button type="button" onClick={onAsk} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Ask</button>
         <button type="button" onClick={onImprove} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Improve</button>
-        <button type="button" onClick={() => onTag(window.prompt('Category') ?? '')} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Category</button>
         <button type="button" onClick={onArchive} className="ml-auto rounded-md px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-50 hover:text-slate-700">Archive</button>
       </div>
+      <form
+        className="mt-3 flex gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onTag(tagDraft);
+          setTagDraft('');
+        }}
+      >
+        <input
+          value={tagDraft}
+          onChange={(event) => setTagDraft(event.target.value)}
+          placeholder="Add category"
+          className="min-w-0 flex-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs outline-none placeholder:text-slate-400 focus:border-[#ff714d]"
+        />
+        <button type="submit" disabled={!tagDraft.trim()} className="rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white disabled:bg-slate-300">Save</button>
+      </form>
     </article>
   );
 }
 
 function CapsuleDetailPanel({
   capsule,
+  policyTeam,
+  recommendations,
   onUpload,
   onImprove,
   onRefresh,
+  onAssignPolicyTeam,
+  onAttachTool,
 }: {
   capsule: PraxisCapsuleSummary | null;
+  policyTeam: PolicyTeamCategory | null;
+  recommendations: CapsuleToolRecommendation[];
   onUpload: () => void;
   onImprove: () => void;
   onRefresh: () => void;
+  onAssignPolicyTeam: (category: PolicyTeamCategory) => void;
+  onAttachTool: (recommendation: CapsuleToolRecommendation) => void;
 }) {
   if (!capsule) {
     return (
@@ -1055,6 +1263,47 @@ function CapsuleDetailPanel({
         <Metric label="Sources" value={counts.sources} />
         <Metric label="Tools" value={counts.tools} />
         <Metric label="Outputs" value={counts.outputs} />
+      </div>
+      <div className="mt-4">
+        <p className="text-[11px] font-semibold uppercase text-slate-400">Policy team</p>
+        <div className="mt-2 grid grid-cols-2 gap-1.5">
+          {POLICY_TEAM_CATEGORIES.map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => onAssignPolicyTeam(category)}
+              className={cn(
+                'rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold',
+                policyTeam?.id === category.id ? 'border-[#ff714d] bg-[#fff2ed] text-[#ca4a25]' : 'border-slate-200 text-slate-500 hover:bg-slate-50',
+              )}
+            >
+              {category.shortLabel}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mt-4">
+        <p className="text-[11px] font-semibold uppercase text-slate-400">Tool suggestions</p>
+        <div className="mt-2 space-y-2">
+          {recommendations.map((recommendation) => {
+            const attached = capsule.coreRefs.toolCoreIds?.includes(recommendation.tool.id) ?? false;
+            return (
+              <button
+                key={recommendation.tool.id}
+                type="button"
+                disabled={attached}
+                onClick={() => onAttachTool(recommendation)}
+                className="w-full rounded-md border border-slate-200 px-3 py-2 text-left hover:bg-slate-50 disabled:cursor-default disabled:bg-slate-50"
+              >
+                <span className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-800">
+                  <span className="truncate">{recommendation.tool.shortLabel}</span>
+                  <span className="shrink-0 text-[11px] text-slate-400">{attached ? 'attached' : 'add'}</span>
+                </span>
+                <span className="mt-1 block truncate text-[11px] text-slate-400">{recommendation.reason}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
       <div className="mt-4 flex flex-col gap-2">
         <button type="button" onClick={onUpload} className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">

@@ -43,6 +43,11 @@ const CreateSchema = z.object({
   scope: z.enum(['user', 'situation', 'team']).optional(),
   coreRefs: CoreRefsSchema,
   retrievalPolicy: RetrievalPolicySchema,
+  community: z.object({
+    favorite: z.boolean().optional(),
+    tags: z.array(z.string()).optional(),
+    listedInMarketplace: z.boolean().optional(),
+  }).optional(),
   activeForSituationIds: z.array(z.string()).optional(),
 });
 
@@ -153,6 +158,7 @@ export const POST = withAuth(async (request, user) => {
       scope: parsed.data.scope,
       coreRefs: parsed.data.coreRefs,
       retrievalPolicy: parsed.data.retrievalPolicy,
+      community: parsed.data.community,
       activeForSituationIds: parsed.data.activeForSituationIds,
       provenance: { source: 'api', createdBy: user.uid },
     });

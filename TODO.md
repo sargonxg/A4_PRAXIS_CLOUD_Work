@@ -16,6 +16,17 @@ Tasklet cleanup. New work starts from the active ledger above.
 
 ### Canonical Tasklet-Style Runtime Build
 
+0. Temporal, causal, and human-friction capsule structures are now explicit:
+   Temporal and causal map, Human friction map, and Decision clock templates
+   seed complex policy work with triggers, blockers, incentives, stale
+   assumptions, and review windows. Next hardening should let Ask PRAXIS save
+   discovered trigger/blocker updates back into capsule core refs with review.
+0. Policy-team capsule routing is now implemented in the `/app` manager:
+   canonical categories seed new ContextCapsules, category tags persist through
+   the existing capsule contract, suggested tools can be attached from the
+   capsule detail panel, and core-library search indexes category/tool/product
+   tags. Next hardening should persist AI-generated capsule improvement plans
+   as structured capsule updates instead of only sending them through chat.
 0. Capsule manager is now the signed-in app surface: `/app` loads real
    user-owned capsules, supports search/category filtering, shows ids,
    versions, sources, documents, tools, outputs, tags, trust label, and lets
@@ -192,9 +203,9 @@ Tasklet cleanup. New work starts from the active ledger above.
 
 ## Live Production Blockers
 
-- Provider-backed notification delivery remains open; see `BLOCKERS.md`.
-- Live Cognee SDK calls remain service-owned and disabled-first; see `BLOCKERS.md`.
-- Deep pre-ship live checks still require staging/prod execution; see `BLOCKERS.md`.
+- Provider-backed notification delivery remains open; historical blocker detail is archived in `docs/_archive/2026-05-16-aggressive-cleanup/root/BLOCKERS.md`.
+- Live Cognee SDK calls remain service-owned and disabled-first; historical blocker detail is archived in `docs/_archive/2026-05-16-aggressive-cleanup/root/BLOCKERS.md`.
+- Deep pre-ship live checks still require staging/prod execution; historical blocker detail is archived in `docs/_archive/2026-05-16-aggressive-cleanup/root/BLOCKERS.md`.
 - Phase 9 production deploy approval was granted in this session; final QA is recorded in `docs/audits/2026-05-11-v5-final-product-qa.md`; billing provider configuration remains open.
 
 ## Standing Rules

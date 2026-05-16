@@ -50,6 +50,8 @@ for (const required of [
   "fetch('/api/ai/ask-praxis'",
   'data-testid="capsule-context-bar"',
   'data-testid="praxis-chat-thread"',
+  'data-testid="policy-team-next-actions"',
+  'data-testid="praxis-answer-markdown"',
   'ContextCapsule Lite',
   'Search capsules',
 ]) {
@@ -73,6 +75,7 @@ for (const forbidden of [
   'Canonical user types',
   'Suggested tools',
   'Produce',
+  'window.prompt',
 ]) {
   if (workbench.includes(forbidden)) failures.push(`shared cockpit keeps signed-out-only marker: ${forbidden}`);
 }

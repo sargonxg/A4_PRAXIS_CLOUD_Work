@@ -1,4 +1,5 @@
 import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
+import type { DomainId } from '@/types/domain';
 
 export const PENDING_CONTEXT_CAPSULE_PROMPT_KEY = 'praxis.pendingContextCapsulePrompt';
 export const PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY = 'praxis.pendingContextCapsuleTemplate';
@@ -215,7 +216,10 @@ export type ContextCapsuleTemplateId =
   | 'public-sector-memo'
   | 'agent-handover'
   | 'sanctions-compliance'
-  | 'board-brief';
+  | 'board-brief'
+  | 'temporal-causal-map'
+  | 'human-friction-map'
+  | 'decision-clock';
 
 export interface ContextCapsuleTemplate {
   id: ContextCapsuleTemplateId;
@@ -251,6 +255,32 @@ export interface PolicyPathProfile {
   defaultTemplates: ContextCapsuleTemplateId[];
   suggestedTools: string[];
   suggestedOutputs: string[];
+}
+
+export type PolicyTeamCategoryId =
+  | 'economic-sanctions'
+  | 'diplomatic'
+  | 'security-defence'
+  | 'humanitarian'
+  | 'human-rights-legal'
+  | 'governance-public-sector'
+  | 'climate-development'
+  | 'information-cyber'
+  | 'crisis-ops'
+  | 'research-strategy';
+
+export interface PolicyTeamCategory {
+  id: PolicyTeamCategoryId;
+  label: string;
+  shortLabel: string;
+  description: string;
+  domainId: DomainId;
+  policyPathIds: PolicyPathId[];
+  templateIds: ContextCapsuleTemplateId[];
+  toolIds: string[];
+  outputProductIds: string[];
+  sourceTags: string[];
+  missingInfoPrompts: string[];
 }
 
 export interface CapsuleOutputProduct {
@@ -357,6 +387,30 @@ export const CONTEXT_CAPSULE_TEMPLATES: ContextCapsuleTemplate[] = [
     output: 'Board brief',
     contextCores: ['user', 'situation', 'source', 'time', 'graph', 'product', 'output'],
   },
+  {
+    id: 'temporal-causal-map',
+    label: 'Temporal and causal map',
+    prompt: 'Build a capsule that separates timeline facts, causal claims, trigger events, lag effects, and indicators that would change the assessment.',
+    audience: 'Policy analysis team',
+    output: 'Temporal-causal assessment',
+    contextCores: ['situation', 'source', 'time', 'graph', 'objective', 'output'],
+  },
+  {
+    id: 'human-friction-map',
+    label: 'Human friction map',
+    prompt: 'Map incentives, fears, blockers, informal authority, office friction, stakeholder fatigue, and implementation resistance inside the policy situation.',
+    audience: 'Policy lead or mediation team',
+    output: 'Friction and blocker map',
+    contextCores: ['user', 'situation', 'source', 'graph', 'memory', 'output'],
+  },
+  {
+    id: 'decision-clock',
+    label: 'Decision clock',
+    prompt: 'Create a decision-clock capsule with deadlines, review gates, stale assumptions, external milestones, trigger points, and monitoring cadence.',
+    audience: 'Crisis or executive team',
+    output: 'Decision-window brief',
+    contextCores: ['situation', 'source', 'time', 'tool', 'objective', 'output'],
+  },
 ];
 
 export const POLICY_USER_ARCHETYPES = [
@@ -433,7 +487,7 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     id: 'conflict-resolution',
     label: 'Conflict resolution practitioner',
     userFrame: 'Actors, interests, commitments, mediation timing, ripeness, and spoilers.',
-    defaultTemplates: ['conflict-analysis', 'crisis-brief', 'agent-handover'],
+    defaultTemplates: ['conflict-analysis', 'temporal-causal-map', 'human-friction-map'],
     suggestedTools: ['Stakeholder Map', 'Mediation Design', 'Scenario Review', 'Red-team review'],
     suggestedOutputs: ['Mediation brief', 'Actor-interest map', 'Process design note'],
   },
@@ -441,7 +495,7 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     id: 'mediator-peace-process',
     label: 'Mediator / peace process practitioner',
     userFrame: 'Parties, interests, red lines, confidence-building measures, commitments, and process sequencing.',
-    defaultTemplates: ['conflict-analysis', 'director-handover', 'agent-handover'],
+    defaultTemplates: ['conflict-analysis', 'human-friction-map', 'decision-clock'],
     suggestedTools: ['Mediation Design', 'Stakeholder Map', 'Commitment Scan', 'Scenario Review'],
     suggestedOutputs: ['Process design note', 'Party-position brief', 'Confidence-building memo'],
   },
@@ -449,7 +503,7 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     id: 'humanitarian-analysis',
     label: 'Humanitarian analyst',
     userFrame: 'Access constraints, needs, protection risks, affected populations, operational partners, and source freshness.',
-    defaultTemplates: ['crisis-brief', 'public-sector-memo', 'director-handover'],
+    defaultTemplates: ['crisis-brief', 'decision-clock', 'temporal-causal-map'],
     suggestedTools: ['Humanitarian Snapshot', 'ReliefWeb Search', 'Risk Indicators', 'Daily Brief'],
     suggestedOutputs: ['Humanitarian situation brief', 'Access risk note', 'Operational handover'],
   },
@@ -505,7 +559,7 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     id: 'crisis-management',
     label: 'Crisis manager',
     userFrame: 'Episodes, deadlines, changing actors, escalation, decisions, and executive updates.',
-    defaultTemplates: ['crisis-brief', 'director-handover', 'agent-handover'],
+    defaultTemplates: ['crisis-brief', 'decision-clock', 'director-handover'],
     suggestedTools: ['Timeline Events', 'Risk Indicators', 'Daily Brief', 'Executive Intelligence'],
     suggestedOutputs: ['Situation brief', 'Decision log', 'Morning update'],
   },
@@ -540,6 +594,139 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['sanctions-compliance', 'conflict-analysis', 'public-sector-memo'],
     suggestedTools: ['Human Rights Review', 'Treaty Analyze', 'Sourceability check', 'Red-team review'],
     suggestedOutputs: ['Accountability brief', 'Allegation matrix', 'Legal risk note'],
+  },
+];
+
+export const POLICY_TEAM_CATEGORIES: PolicyTeamCategory[] = [
+  {
+    id: 'economic-sanctions',
+    label: 'Economic & sanctions',
+    shortLabel: 'Economic',
+    description: 'Sanctions, trade controls, financial exposure, markets, development finance, and economic statecraft.',
+    domainId: 'economic-sanctions',
+    policyPathIds: ['legal-compliance', 'strategy-operations', 'public-affairs'],
+    templateIds: ['sanctions-compliance', 'regulatory-watch', 'board-brief'],
+    toolIds: ['grounded-research', 'sourceability', 'memo-drafter', 'ach'],
+    outputProductIds: ['compliance-note', 'options-memo', 'board-brief'],
+    sourceTags: ['world-bank', 'ofac', 'sanctions', 'trade', 'finance'],
+    missingInfoPrompts: ['Which entities or sectors are in scope?', 'What jurisdiction or regime controls the decision?', 'What exposure or decision must be reviewed?'],
+  },
+  {
+    id: 'diplomatic',
+    label: 'Diplomatic',
+    shortLabel: 'Diplomacy',
+    description: 'Foreign policy, multilateral posture, negotiation, mediation, and official briefing work.',
+    domainId: 'diplomacy-negotiation',
+    policyPathIds: ['foreign-policy', 'conflict-resolution', 'mediator-peace-process'],
+    templateIds: ['conflict-analysis', 'human-friction-map', 'decision-clock'],
+    toolIds: ['stakeholder-map', 'position-vs-interest', 'scenario-projector', 'memo-drafter'],
+    outputProductIds: ['options-memo', 'actor-power-map', 'agent-handover'],
+    sourceTags: ['un-news', 'crisis-group', 'diplomacy', 'mediation', 'negotiation'],
+    missingInfoPrompts: ['Who is the audience for the brief?', 'Which parties or institutions must be represented?', 'What red lines or mandate limits matter?'],
+  },
+  {
+    id: 'security-defence',
+    label: 'Security & defence',
+    shortLabel: 'Security',
+    description: 'Armed conflict, defence capture, escalation, force posture, procurement, and security risk.',
+    domainId: 'armed-conflict-security',
+    policyPathIds: ['defence-capture', 'conflict-resolution', 'crisis-management'],
+    templateIds: ['defence-opportunity', 'temporal-causal-map', 'human-friction-map'],
+    toolIds: ['stakeholder-map', 'scenario-projector', 'coalition-detector', 'ach'],
+    outputProductIds: ['actor-power-map', 'situation-brief', 'board-brief'],
+    sourceTags: ['ucdp', 'gdelt', 'sipri', 'defence', 'security'],
+    missingInfoPrompts: ['Which actors and capabilities are in scope?', 'What decision window or procurement gate matters?', 'Which sources are trusted for security claims?'],
+  },
+  {
+    id: 'humanitarian',
+    label: 'Humanitarian',
+    shortLabel: 'Humanitarian',
+    description: 'Needs, access, displacement, protection, operations, and humanitarian coordination.',
+    domainId: 'humanitarian',
+    policyPathIds: ['humanitarian-analysis', 'program-delivery', 'crisis-management'],
+    templateIds: ['crisis-brief', 'decision-clock', 'temporal-causal-map'],
+    toolIds: ['grounded-research', 'sourceability', 'scenario-projector', 'memo-drafter'],
+    outputProductIds: ['situation-brief', 'agent-handover', 'options-memo'],
+    sourceTags: ['reliefweb', 'hdx', 'ocha', 'unhcr', 'protection'],
+    missingInfoPrompts: ['Which affected populations are in scope?', 'What access or protection constraint is decision-relevant?', 'How current must the operational picture be?'],
+  },
+  {
+    id: 'human-rights-legal',
+    label: 'Human rights & legal',
+    shortLabel: 'Rights/legal',
+    description: 'Rights allegations, accountability, legal thresholds, compliance, and review receipts.',
+    domainId: 'human-rights',
+    policyPathIds: ['human-rights-accountability', 'legal-compliance', 'public-sector-policy'],
+    templateIds: ['sanctions-compliance', 'conflict-analysis', 'public-sector-memo'],
+    toolIds: ['sourceability', 'contradiction-finder', 'ach', 'memo-drafter'],
+    outputProductIds: ['compliance-note', 'actor-power-map', 'options-memo'],
+    sourceTags: ['ohchr', 'amnesty', 'hrw', 'ihl', 'accountability'],
+    missingInfoPrompts: ['What legal or institutional threshold is being tested?', 'Which claims require source receipts?', 'Who signs off before export?'],
+  },
+  {
+    id: 'governance-public-sector',
+    label: 'Governance & public sector',
+    shortLabel: 'Governance',
+    description: 'Government decisions, implementation constraints, regulation, public administration, and stakeholder effects.',
+    domainId: 'governance-rule-of-law',
+    policyPathIds: ['public-sector-policy', 'regulatory-public-affairs', 'public-affairs'],
+    templateIds: ['public-sector-memo', 'regulatory-watch', 'director-handover'],
+    toolIds: ['context-builder', 'stakeholder-map', 'sourceability', 'memo-drafter'],
+    outputProductIds: ['options-memo', 'compliance-note', 'agent-handover'],
+    sourceTags: ['governance', 'regulatory', 'public-sector', 'rule-of-law', 'implementation'],
+    missingInfoPrompts: ['What decision or submission is this serving?', 'Which statutory or institutional rules bind the work?', 'Who is affected by the policy change?'],
+  },
+  {
+    id: 'climate-development',
+    label: 'Climate & development',
+    shortLabel: 'Climate/dev',
+    description: 'Development, stabilization, climate security, resource risk, and long-horizon program choices.',
+    domainId: 'development-stabilization',
+    policyPathIds: ['program-delivery', 'humanitarian-analysis', 'strategy-operations'],
+    templateIds: ['public-sector-memo', 'crisis-brief', 'board-brief'],
+    toolIds: ['grounded-research', 'scenario-projector', 'stakeholder-map', 'memo-drafter'],
+    outputProductIds: ['options-memo', 'situation-brief', 'agent-handover'],
+    sourceTags: ['world-bank', 'undp', 'climate', 'development', 'stabilization'],
+    missingInfoPrompts: ['What geography and horizon matter?', 'Which program or policy lever can change?', 'What indicators should be monitored?'],
+  },
+  {
+    id: 'information-cyber',
+    label: 'Information & cyber',
+    shortLabel: 'Info/cyber',
+    description: 'Narratives, disinformation, media integrity, cyber posture, and information environment analysis.',
+    domainId: 'information-cyber',
+    policyPathIds: ['public-affairs', 'foreign-policy', 'strategy-operations'],
+    templateIds: ['regulatory-watch', 'crisis-brief', 'board-brief'],
+    toolIds: ['grounded-research', 'frame-narrative', 'contradiction-finder', 'memo-drafter'],
+    outputProductIds: ['situation-brief', 'options-memo', 'board-brief'],
+    sourceTags: ['gdelt', 'media', 'narrative', 'disinformation', 'cyber'],
+    missingInfoPrompts: ['Which narrative or platform is in scope?', 'What language or geography should be watched?', 'What response or memo is needed?'],
+  },
+  {
+    id: 'crisis-ops',
+    label: 'Crisis & operations',
+    shortLabel: 'Crisis/ops',
+    description: 'Fast-moving incidents, decisions, handovers, daily briefs, and operational next actions.',
+    domainId: 'armed-conflict-security',
+    policyPathIds: ['crisis-management', 'program-delivery', 'research-direction'],
+    templateIds: ['crisis-brief', 'decision-clock', 'human-friction-map'],
+    toolIds: ['ask-praxis', 'grounded-research', 'scenario-projector', 'commitment-tracker'],
+    outputProductIds: ['situation-brief', 'agent-handover', 'options-memo'],
+    sourceTags: ['crisis', 'ops', 'timeline', 'handover', 'brief'],
+    missingInfoPrompts: ['What changed since the last update?', 'What deadline or decision window is live?', 'Who needs the handover?'],
+  },
+  {
+    id: 'research-strategy',
+    label: 'Research & strategy',
+    shortLabel: 'Research',
+    description: 'Reusable team knowledge, evidence quality, strategic options, board language, and agent handover.',
+    domainId: 'generic',
+    policyPathIds: ['research-direction', 'strategy-operations', 'generic-policy'],
+    templateIds: ['director-handover', 'board-brief', 'agent-handover'],
+    toolIds: ['ask-praxis', 'sourceability', 'contradiction-finder', 'memo-drafter'],
+    outputProductIds: ['board-brief', 'agent-handover', 'options-memo'],
+    sourceTags: ['research', 'strategy', 'quality', 'handover', 'memo'],
+    missingInfoPrompts: ['What should be reusable by the team?', 'Which assumptions need red-team review?', 'What output should this capsule produce first?'],
   },
 ];
 
@@ -581,6 +768,23 @@ export const CAPSULE_OUTPUT_PRODUCTS: CapsuleOutputProduct[] = [
     bestFor: ['generic-policy', 'research-direction', 'crisis-management', 'program-delivery'],
   },
 ];
+
+export function getPolicyTeamCategory(id: string | null | undefined): PolicyTeamCategory | null {
+  if (!id) return null;
+  return POLICY_TEAM_CATEGORIES.find((category) => category.id === id) ?? null;
+}
+
+export function categoryTagsForPolicyTeam(category: PolicyTeamCategory): string[] {
+  return [category.id, ...category.policyPathIds, ...category.sourceTags];
+}
+
+export function policyTeamCategoryForTags(tags: string[] | null | undefined): PolicyTeamCategory | null {
+  const normalized = new Set((tags ?? []).map((tag) => tag.toLowerCase()));
+  return POLICY_TEAM_CATEGORIES.find((category) => normalized.has(category.id)) ??
+    POLICY_TEAM_CATEGORIES.find((category) => category.sourceTags.some((tag) => normalized.has(tag))) ??
+    POLICY_TEAM_CATEGORIES.find((category) => category.policyPathIds.some((pathId) => normalized.has(pathId))) ??
+    null;
+}
 
 export const CAPSULE_CONNECTOR_IDEAS: CapsuleConnectorIdea[] = [
   {
@@ -663,6 +867,13 @@ export const CAPSULE_COMBINATION_RECIPES: CapsuleCombinationRecipe[] = [
     output: 'Executive handover packet with open questions, allowed actions, and escalation rules.',
     mergeRules: ['keep decisions and open questions separate', 'preserve handover caveats', 'require approval for external actions'],
   },
+  {
+    id: 'temporal-friction-decision',
+    label: 'Temporal map + human friction -> decision clock',
+    inputs: ['temporal-causal-map', 'human-friction-map'],
+    output: 'Decision-window brief with trigger events, blockers, incentives, stale assumptions, and next review gates.',
+    mergeRules: ['separate sequence from causality', 'preserve named blockers and incentives', 'flag assumptions that expire before the next decision'],
+  },
 ];
 
 export const CAPSULE_CAPABILITY_AREAS = [
@@ -675,8 +886,16 @@ export const CAPSULE_CAPABILITY_AREAS = [
     detail: 'Episodes, what changed, stale assumptions, decision windows.',
   },
   {
+    label: 'Causality',
+    detail: 'Trigger events, causal claims, lag effects, indicators, and alternative explanations.',
+  },
+  {
     label: 'Power Dynamics',
     detail: 'Actors, approvers, blockers, incentives, conflict or office friction.',
+  },
+  {
+    label: 'Human Friction',
+    detail: 'Informal authority, fear, fatigue, implementation resistance, and office or coalition blockers.',
   },
   {
     label: 'Analysis',

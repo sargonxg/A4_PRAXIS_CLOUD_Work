@@ -526,6 +526,7 @@ async function readMemoryCores(uid: string, db: Firestore): Promise<LibraryCore[
 }
 
 function capsuleToCore(capsule: PraxisCapsule): LibraryCore {
+  const communityTags = capsule.community.tags ?? [];
   return {
     id: capsule.capsuleId,
     kind: 'product',
@@ -534,7 +535,14 @@ function capsuleToCore(capsule: PraxisCapsule): LibraryCore {
     completeness: capsule.health.score,
     projectedReadinessDelta: capsule.activeForSituationIds.length ? 14 : 7,
     essence: `${capsule.scope} capsule with ${capsule.coreRefs.sourceCoreIds.length} source and ${capsule.coreRefs.documentCoreIds.length} document core(s).`,
-    tags: ['capsule', capsule.scope, capsule.archivedAt ? 'archived' : 'active'],
+    tags: [
+      'capsule',
+      capsule.scope,
+      capsule.archivedAt ? 'archived' : 'active',
+      ...communityTags,
+      ...(capsule.coreRefs.toolCoreIds ?? []),
+      ...(capsule.coreRefs.productCoreIds ?? []),
+    ],
     ownerScope: capsule.scope === 'team' ? 'team' : capsule.scope,
     template: false,
     updatedAt: capsule.updatedAt,

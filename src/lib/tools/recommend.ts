@@ -2,6 +2,12 @@ import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 import type { AttachableTool, CoreKind } from '@/lib/tools/contract';
 import { DOMAIN_SEEDS } from '@/lib/domain/seeds';
 import type { DomainId } from '@/types/domain';
+import {
+  getPolicyTeamCategory,
+  policyTeamCategoryForTags,
+  type PolicyTeamCategory,
+  type PolicyTeamCategoryId,
+} from '@/lib/product/context-capsules';
 
 const STAGE_BOOSTS: Record<string, string[]> = {
   intake: ['context-builder', 'grounded-research', 'sourceability', 'ask-praxis'],
@@ -42,6 +48,89 @@ export function recommendTools(args: {
     .map((entry) => entry.tool);
 }
 
+export interface CapsuleRecommendationInput {
+  capsule: {
+    scope?: string | null;
+    coreRefs?: {
+      userCoreId?: string | null;
+      situationCoreId?: string | null;
+      pathCoreId?: string | null;
+      sourceCoreIds?: string[];
+      documentCoreIds?: string[];
+      graphCoreId?: string | null;
+      timeCoreId?: string | null;
+      outputCoreIds?: string[];
+      toolCoreIds?: string[];
+      objectiveCoreIds?: string[];
+      productCoreIds?: string[];
+      memoryCoreId?: string | null;
+    } | null;
+    community?: { tags?: string[] } | null;
+    updatedAt?: string | null;
+  };
+  policyTeamId?: PolicyTeamCategoryId | string | null;
+  recentToolIds?: string[];
+  limit?: number;
+}
+
+export interface CapsuleToolRecommendation {
+  tool: AttachableTool;
+  reason: string;
+  missingCoreKinds: CoreKind[];
+  category: PolicyTeamCategory | null;
+}
+
+export function recommendCapsuleTools(args: CapsuleRecommendationInput): CapsuleToolRecommendation[] {
+  const refs = args.capsule.coreRefs ?? {};
+  const tags = args.capsule.community?.tags ?? [];
+  const category = getPolicyTeamCategory(args.policyTeamId) ?? policyTeamCategoryForTags(tags);
+  const attached = attachedCoresFromCapsule(args.capsule);
+  const existingToolIds = refs.toolCoreIds ?? [];
+  const seeded = recommendTools({
+    attached,
+    situationStage: capsuleStage(refs, tags),
+    recentToolIds: [...(args.recentToolIds ?? []), ...(refs.toolCoreIds ?? [])],
+    domainId: category?.domainId ?? null,
+  });
+  const preferredIds = category?.toolIds ?? [];
+  const preferred = preferredIds
+    .map((id) => PRAXIS_CANONICAL_TOOLS.find((tool) => tool.id === id))
+    .filter((tool): tool is AttachableTool => Boolean(tool));
+  const merged = uniqueTools([...preferred, ...seeded, ...PRAXIS_CANONICAL_TOOLS]);
+  return merged
+    .filter((tool) => !existingToolIds.includes(tool.id))
+    .map((tool) => ({
+      tool,
+      score: capsuleToolScore(tool, attached, category, existingToolIds),
+    }))
+    .sort((a, b) => b.score - a.score || a.tool.name.localeCompare(b.tool.name))
+    .slice(0, Math.max(1, Math.min(args.limit ?? 4, 8)))
+    .map(({ tool }) => ({
+      tool,
+      reason: recommendationReason(tool, category, attached),
+      missingCoreKinds: tool.requires.filter((core) => !attached[core]),
+      category,
+    }));
+}
+
+export function attachedCoresFromCapsule(input: CapsuleRecommendationInput['capsule']): Record<CoreKind, boolean> {
+  const refs = input.coreRefs ?? {};
+  return {
+    user: Boolean(refs.userCoreId || input.scope === 'user'),
+    situation: Boolean(refs.situationCoreId || input.scope === 'situation'),
+    path: Boolean(refs.pathCoreId),
+    source: Boolean(refs.sourceCoreIds?.length),
+    document: Boolean(refs.documentCoreIds?.length),
+    graph: Boolean(refs.graphCoreId),
+    time: Boolean(refs.timeCoreId),
+    tool: Boolean(refs.toolCoreIds?.length),
+    objective: Boolean(refs.objectiveCoreIds?.length),
+    product: Boolean(refs.productCoreIds?.length),
+    output: Boolean(refs.outputCoreIds?.length || refs.productCoreIds?.length),
+    memory: Boolean(refs.memoryCoreId),
+  };
+}
+
 export function attachedCoresFromSituation(input?: {
   id?: string | null;
   actors?: unknown[];
@@ -65,4 +154,47 @@ export function attachedCoresFromSituation(input?: {
     output: true,
     memory: false,
   };
+}
+
+function capsuleStage(refs: NonNullable<CapsuleRecommendationInput['capsule']['coreRefs']>, tags: string[]): string {
+  if ((refs.outputCoreIds?.length ?? 0) + (refs.productCoreIds?.length ?? 0) > 0) return 'reporting';
+  if (refs.timeCoreId || tags.some((tag) => /watch|monitor|crisis|ops/.test(tag))) return 'monitoring';
+  if (refs.graphCoreId) return 'mapping';
+  if ((refs.sourceCoreIds?.length ?? 0) + (refs.documentCoreIds?.length ?? 0) > 0) return 'research';
+  return 'intake';
+}
+
+function capsuleToolScore(
+  tool: AttachableTool,
+  attached: Record<CoreKind, boolean>,
+  category: PolicyTeamCategory | null,
+  existingToolIds: string[],
+): number {
+  const required = tool.requires.reduce((score, core) => score + (attached[core] ? 3 : -1), 0);
+  const preferred = category?.toolIds.includes(tool.id) ? 8 : 0;
+  const alreadyAttached = existingToolIds.includes(tool.id) ? -6 : 0;
+  const live = tool.readiness === 'live' ? 2 : tool.readiness === 'routed' ? 1 : 0;
+  return required + preferred + alreadyAttached + live;
+}
+
+function recommendationReason(
+  tool: AttachableTool,
+  category: PolicyTeamCategory | null,
+  attached: Record<CoreKind, boolean>,
+): string {
+  if (category?.toolIds.includes(tool.id)) return `${category.shortLabel} capsule fit`;
+  const missing = tool.requires.filter((core) => !attached[core]);
+  if (missing.length) return `Useful after ${missing.map((core) => `${core} core`).join(', ')}`;
+  return 'Ready with current capsule';
+}
+
+function uniqueTools(tools: AttachableTool[]): AttachableTool[] {
+  const seen = new Set<string>();
+  const out: AttachableTool[] = [];
+  for (const tool of tools) {
+    if (seen.has(tool.id)) continue;
+    seen.add(tool.id);
+    out.push(tool);
+  }
+  return out;
 }

@@ -1,5 +1,44 @@
 # PRAXIS — STATUS
 
+## 2026-05-16 — Temporal, Causal, And Friction Capsules
+
+Current product checkpoint:
+
+- Central app metadata is now build `2026.05.16.12`.
+- PRAXIS now has explicit capsule templates for temporal-causal mapping, human
+  friction mapping, and decision-clock work.
+- Policy-team presets can seed these capsules when teams need sequence,
+  causality, blockers, incentives, stale assumptions, and decision windows.
+- The capsule capability map now names Causality and Human Friction as first
+  class reasoning areas for Ask PRAXIS and agent handover.
+
+## 2026-05-16 — Capsule Policy-Team Routing
+
+Current product checkpoint:
+
+- Central app metadata is now build `2026.05.16.11`.
+- The capsule product contract now has canonical policy-team categories for
+  economic/sanctions, diplomacy, security/defence, humanitarian, rights/legal,
+  governance, climate/development, information/cyber, crisis/ops, and
+  research/strategy work.
+- `/app` can create category-seeded ContextCapsules, save category tags through
+  the existing capsule API, and attach suggested PRAXIS tools from the capsule
+  detail panel.
+- The user core library now indexes capsule category tags plus attached
+  tool/product ids so capsules are easier to find, filter, and reuse.
+
+## 2026-05-16 — Policy-Team Cockpit Polish
+
+Current product checkpoint:
+
+- Central app metadata is now build `2026.05.16.10`.
+- The shared cockpit has a compact policy-team next-action strip for Ask,
+  source-check, memo drafting, and handover without leaving `/app`.
+- Ask PRAXIS answers render as Markdown so generated text reads like a usable
+  policy product with headings, lists, and tables.
+- Capsule category editing is now inline on the capsule card instead of using
+  browser prompts.
+
 ## 2026-05-16 — Capsule Manager Surface
 
 Current product checkpoint:

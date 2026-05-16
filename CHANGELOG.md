@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+- feat(capsules): add temporal, causal, and human-friction capsule structures.
+  Build 2026.05.16.12 adds Temporal and causal map, Human friction map, and
+  Decision clock capsule templates so complex policy work can track sequence,
+  causality, incentives, blockers, stale assumptions, and decision windows.
+- feat(capsules): add policy-team capsule routing.
+  Build 2026.05.16.11 adds a canonical policy-team taxonomy, category-seeded
+  capsule creation, capsule-aware suggested tools with one-click attach, and
+  searchable category/tool/product tags in the user core library.
+- feat(cockpit): polish the one-page policy-team cockpit.
+  Build 2026.05.16.10 adds a compact policy-team next-action strip, renders
+  Ask PRAXIS responses as Markdown, replaces browser category prompts with
+  inline capsule category entry, and tightens the Ask prompt contract around
+  findings, source posture, gaps, and next actions.
 - feat(capsules): make the capsule manager the signed-in app.
   Build 2026.05.16.09 turns `/app` into a real capsule-library manager:
   signed-in users can search, categorize, select, improve, upload into,

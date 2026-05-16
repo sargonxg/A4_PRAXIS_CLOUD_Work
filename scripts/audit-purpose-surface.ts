@@ -13,7 +13,7 @@ function read(rel: string): string {
   return readFileSync(full, 'utf8');
 }
 
-const report = read('PURPOSE_AUDIT_REPORT.md');
+const report = read('docs/_archive/2026-05-16-aggressive-cleanup/root/PURPOSE_AUDIT_REPORT.md');
 for (const marker of [
   '## TL;DR',
   '## Findings: Remove',
