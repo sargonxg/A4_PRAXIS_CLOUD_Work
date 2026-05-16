@@ -8,8 +8,6 @@ import { PraxisMark } from "@/components/brand/praxis-mark";
 
 const navLinks = [
   { label: "Learn", href: "/learn" },
-  { label: "Release notes", href: "/release-notes" },
-  { label: "TACITUS", href: "/tacitus" },
 ];
 
 export default function LandingLayout({
@@ -204,14 +202,14 @@ export default function LandingLayout({
             <Link href="/learn" className="hover:text-[color:var(--color-ink)]">
               Learn
             </Link>
-            <Link href="/release-notes" className="hover:text-[color:var(--color-ink)]">
-              Release notes
-            </Link>
-            <Link href="/tacitus" className="hover:text-[color:var(--color-ink)]">
-              TACITUS
-            </Link>
+            <a
+              href="mailto:hello@tacitus.me"
+              className="hover:text-[color:var(--color-ink)]"
+            >
+              Contact
+            </a>
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink)]/40">
-              © 2026
+              © 2026 · TACITUS
             </span>
           </nav>
         </div>
