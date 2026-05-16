@@ -337,6 +337,25 @@ AGENT_RUN_TASKS_QUEUE=agent-runs
 Local smoke can use `AGENT_RUN_WORKER_SHARED_SECRET`, but production should use
 Cloud Tasks OIDC and a trusted service account.
 
+Cloud SQL connection notes:
+
+- The canonical PRAXIS ledger database is `praxis` on
+  `praxisbytacitus:us-east4:praxisbytacitus-instance` with app user
+  `praxis_app`.
+- The instance is private-IP only. Local `gcloud sql connect` requires both
+  Cloud SQL Proxy v2 and `psql` in PATH, but direct local queries still require
+  VPC reachability. Prefer Cloud Shell, a VPC-connected runner, or Cloud Run for
+  live row-count checks.
+- For app/runtime checks, use the same connection contract as the code:
+  `AGENT_RUNTIME_DATABASE_URL` first, then `PRAXIS_DATABASE_URL`, then
+  `DATABASE_URL`.
+- Local proxy shape from a VPC-connected shell:
+
+```bash
+cloud-sql-proxy --gcloud-auth --private-ip --port 15432 \
+  praxisbytacitus:us-east4:praxisbytacitus-instance
+```
+
 Create or verify the queue:
 
 ```bash
