@@ -107,7 +107,7 @@ export function withAuth<TContext>(
         return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
       }
 
-      // Demo mode — still rate-limited to prevent abuse
+      // Sample mode — still rate-limited to prevent abuse
       if (sessionData.demo === true) {
         const demoUser: AuthenticatedUser = {
           uid: 'demo-user-001',

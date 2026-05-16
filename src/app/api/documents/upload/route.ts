@@ -184,7 +184,7 @@ export const POST = withAuth(async (request, user) => {
 
   // ── Multipart path (existing behaviour): user-uploaded source documents.
   if (user.isDemo) {
-    return NextResponse.json({ error: 'Document upload is not available in demo mode' }, { status: 403 });
+    return NextResponse.json({ error: 'Document upload is not available for this session' }, { status: 403 });
   }
 
   try {

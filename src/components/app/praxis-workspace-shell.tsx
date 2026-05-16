@@ -150,7 +150,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
       : Boolean(selectedCase),
     evidenceGapCount: selectedCase ? Math.max(0, 3 - ((selectedCase.sourceCount ?? 0) + (selectedCase.documentCount ?? 0))) : 4,
     hasDraft: draftText.trim().length > 40,
-    situationHref: selectedCase ? `/app/workbench/${selectedCase.id}` : '/app/contexts',
+    situationHref: selectedCase ? `/app/contexts?situationId=${selectedCase.id}` : '/app/contexts',
   }), [activeUserModel, draftText, selectedCase]);
   const displayedToolCards = (savedNextMoves?.length
     ? savedNextMoves.map(nextMoveToToolCard)
@@ -346,7 +346,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
     const id = String(event.active.id);
     if (id.startsWith('user:')) activateUserModel(id.replace('user:', ''));
     if (id.startsWith('situation:')) activateSituation(id.replace('situation:', ''));
-    if (id === 'source-stack' && selectedCase) window.location.href = `/app/workbench/${selectedCase.id}?tab=library`;
+    if (id === 'source-stack' && selectedCase) window.location.href = `/app/contexts?situationId=${selectedCase.id}`;
     if (id === 'output-stack') window.location.href = '/app/write';
   }
 
@@ -383,7 +383,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
                   Create context
                 </Link>
                 <Link
-                  href="/app/workbench?tab=library"
+                  href="/app/contexts"
                   className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-navy-800 hover:bg-slate-50"
                 >
                   <LibraryBig className="h-4 w-4" />
@@ -397,7 +397,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
               <CoreChip
                 label="Situation Core"
                 detail={selectedCase ? selectedCase.name : 'No situation selected'}
-                href={selectedCase ? `/app/workbench/${selectedCase.id}` : '/app/workbench'}
+                href={selectedCase ? `/app/contexts?situationId=${selectedCase.id}` : '/app/contexts'}
                 tone="gold"
               />
               <CoreChip label="Writing focus" detail={workspaceLens.writingLabel} href="#draft-workbench" tone="slate" />
@@ -518,7 +518,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
                     meta={`${item.actorCount} actors · ${item.sourceCount + item.documentCount} evidence items`}
                     active={selectedCase?.id === item.id}
                     kind={item.kind}
-                    href={item.kind === 'user' ? `/app/workbench/${item.id}` : `/app/workbench/${item.id}`}
+                    href={`/app/contexts?situationId=${item.id}`}
                     onActivate={() => activateSituation(item.id)}
                     copyHref={item.kind === 'example' ? `/api/situations/copy-from-demo?demoCaseId=${encodeURIComponent(item.id)}` : undefined}
                   />
@@ -638,7 +638,7 @@ export function PraxisWorkspaceShell({ exampleCases, marketplaceToolCount, caseI
               <h2 className="mt-1 text-xl font-semibold text-navy-950">Write the brief, memo, or working note here.</h2>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Link href={selectedCase ? `/app/workbench/${selectedCase.id}?openChapter=memos` : '/app/workbench'} className="inline-flex items-center gap-2 rounded-md border border-diplomatic-blue/25 bg-white px-3 py-2 text-sm font-semibold text-diplomatic-blue hover:bg-diplomatic-blue/5">
+              <Link href={selectedCase ? `/app/write?situationId=${selectedCase.id}` : '/app/write'} className="inline-flex items-center gap-2 rounded-md border border-diplomatic-blue/25 bg-white px-3 py-2 text-sm font-semibold text-diplomatic-blue hover:bg-diplomatic-blue/5">
                 Open memo route
               </Link>
               <Link href="/app/tools" className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-navy-800 hover:bg-slate-50">

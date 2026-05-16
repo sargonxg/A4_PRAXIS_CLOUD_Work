@@ -55,7 +55,7 @@ const DEMO_RESPONSE = {
       severity: 'critical' as const,
       category: 'military' as const,
       signal:
-        'UNMN aerial surveillance detected Armed Forces of Nordalia (AFN) forward observation post at coordinates 12.4°N / 31.7°E — inside the 5-km buffer zone established by the September 2025 ceasefire.',
+        'UNMN aerial surveillance detected Armed Forces of the selected situation (AFN) forward observation post at coordinates 12.4°N / 31.7°E — inside the 5-km buffer zone established by the September 2025 ceasefire.',
       evidence:
         'UNMN Report #MN-2026-0118: "Three sandbagged positions and one armoured personnel carrier observed inside Sector Bravo buffer zone since 06 April 2026." Corroborated by DRM field radio intercept shared through SRSG back-channel.',
       source: 'UNMN Verification Commission / SRSG back-channel',
@@ -72,7 +72,7 @@ const DEMO_RESPONSE = {
       severity: 'high' as const,
       category: 'military' as const,
       signal:
-        'Open-source flight tracking (FlightRadar24 / ADS-B Exchange) shows 40% increase in KAF Il-76 sorties to Nordalia International Airport over the past 14 days versus the 90-day baseline.',
+        'Open-source flight tracking (FlightRadar24 / ADS-B Exchange) shows 40% increase in KAF Il-76 sorties to the selected situation International Airport over the past 14 days versus the 90-day baseline.',
       evidence:
         'Open-source logistics monitoring indicates 3 additional AFN heavy-weapons systems (M-46 artillery) repositioned to eastern front in same period. Pattern consistent with pre-offensive resupply in 6 historical cases analysed by ARGUS.',
       source: 'OSINT / UNMN logistics tracking / GDELT signal review',
@@ -166,7 +166,7 @@ export const POST = withCalibration('argus', 'ai_analysis', {
     if (!validation.success) return validation.response;
     const { situation } = validation.data;
 
-    // --- Demo mode ---
+    // --- Sample mode ---
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }

@@ -168,7 +168,7 @@ function EcosystemACOSection() {
         ))}
       </div>
       <p className="mt-4 text-[11px] text-navy-500">
-        The Agentic Conflict Ontology (ACO) v2.0 powers all TACITUS products. Disabling a primitive in demo mode hides it from analysis views.
+        The Agentic Conflict Ontology (ACO) v2.0 powers all TACITUS products. Disabling a primitive hides it from analysis views.
       </p>
     </SettingsSection>
   );

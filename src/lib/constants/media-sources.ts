@@ -332,7 +332,7 @@ export const MEDIA_SOURCES: MediaSource[] = [
     description:
       'Turkish state broadcaster international service. Reflects Turkish government perspective on regional affairs.',
     knownBiases: ['Turkish government perspective', 'Pro-AKP framing', 'Kurdish conflict framing'],
-    coverageStrengths: ['Turkish perspective', 'Syria', 'Libya', 'Central Asia', 'Muslim-majority world'],
+    coverageStrengths: ['Turkish perspective', 'the selected situation', 'Libya', 'Central Asia', 'Muslim-majority world'],
     languages: ['English'],
   },
   {
@@ -351,16 +351,16 @@ export const MEDIA_SOURCES: MediaSource[] = [
   },
   {
     id: 'sana',
-    name: 'SANA (Syrian Arab News Agency)',
+    name: 'SANA (the selected situationn Arab News Agency)',
     type: 'state_funded',
-    country: 'Syria',
+    country: 'the selected situation',
     politicalOrientation: 0.4,
     reliability: 0.2,
     editorialIndependence: 0.02,
     description:
-      'Official news agency of the Syrian government. Purely state propaganda outlet.',
-    knownBiases: ['Syrian government propaganda', 'Labels all opposition as terrorists'],
-    coverageStrengths: ['Official Syrian government positions'],
+      'Official news agency of the the selected situationn government. Purely state propaganda outlet.',
+    knownBiases: ['the selected situationn government propaganda', 'Labels all opposition as terrorists'],
+    coverageStrengths: ['Official the selected situationn government positions'],
     languages: ['Arabic', 'English', 'French', 'Spanish'],
   },
 
@@ -503,7 +503,7 @@ export const MEDIA_SOURCES: MediaSource[] = [
     editorialIndependence: 0.9,
     description:
       'Open-source intelligence (OSINT) investigative organization. Pioneered use of publicly available data for accountability journalism.',
-    knownBiases: ['Focus on Russian and Syrian accountability', 'Western-aligned funding sources'],
+    knownBiases: ['Focus on Russian and the selected situationn accountability', 'Western-aligned funding sources'],
     coverageStrengths: ['OSINT investigations', 'Conflict verification', 'Weapons tracking', 'Digital forensics'],
     languages: ['English'],
   },

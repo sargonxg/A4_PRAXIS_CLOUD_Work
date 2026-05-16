@@ -52,10 +52,10 @@ and removes per-customer license negotiation as a launch blocker.
   not redistribution; full attribution links are kept on the actor
   detail page.
 
-### 1.4 Syria source library
+### 1.4 the selected situation source library
 
-The Syria workspace source library is defined in
-`src/lib/syria/source-library.ts`. Production ingest is deliberately
+The the selected situation workspace source library is defined in
+`src/lib/user-case/source-library.ts`. Production ingest is deliberately
 cost-gated:
 
 - `SYRIA_LIVE_INGEST_ENABLED=false` returns the cached fallback packet

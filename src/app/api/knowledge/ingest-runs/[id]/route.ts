@@ -16,7 +16,7 @@ const RetrySchema = z.object({
 
 export const GET = withAuth(async (request: Request, user: AuthenticatedUser, context: { params: Promise<{ id: string }> | { id: string } }) => {
   try {
-    if (user.isDemo) return NextResponse.json({ error: 'Demo mode has no private ingestion runs' }, { status: 403 });
+    if (user.isDemo) return NextResponse.json({ error: 'Sample mode has no private ingestion runs' }, { status: 403 });
     const params = await context.params;
     const parsedParams = ParamsSchema.safeParse(params);
     if (!parsedParams.success) return NextResponse.json({ error: 'Invalid run id' }, { status: 400 });
@@ -33,7 +33,7 @@ export const GET = withAuth(async (request: Request, user: AuthenticatedUser, co
 
 export const POST = withAuth(async (request: Request, user: AuthenticatedUser, context: { params: Promise<{ id: string }> | { id: string } }) => {
   try {
-    if (user.isDemo) return NextResponse.json({ error: 'Demo mode cannot retry ingestion runs' }, { status: 403 });
+    if (user.isDemo) return NextResponse.json({ error: 'Sample mode cannot retry ingestion runs' }, { status: 403 });
     const params = await context.params;
     const parsedParams = ParamsSchema.safeParse(params);
     if (!parsedParams.success) return NextResponse.json({ error: 'Invalid run id' }, { status: 400 });

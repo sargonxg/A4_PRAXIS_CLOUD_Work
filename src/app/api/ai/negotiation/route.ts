@@ -47,7 +47,7 @@ const DEMO_RESPONSE = {
       issue: 'Eastern Province Revenue Sharing',
       partyPositions: [
         {
-          party: 'Government of Nordalia',
+          party: 'Government of the selected situation',
           min: 'Maintain current centralized revenue control with token development fund for eastern provinces (5-10% allocation)',
           max: 'Full central government control of all mineral revenues with discretionary regional transfers',
           ideal: 'Complete sovereignty over resource extraction with no legally binding revenue-sharing obligations',
@@ -65,7 +65,7 @@ const DEMO_RESPONSE = {
       issue: 'Political Representation and Elections',
       partyPositions: [
         {
-          party: 'Government of Nordalia',
+          party: 'Government of the selected situation',
           min: 'DRM disarms completely before participating in existing electoral framework with minor reforms',
           max: 'DRM disbands as a political-military organization and individuals participate through existing registered parties',
           ideal: 'DRM surrenders, leadership faces justice, no political concessions made',
@@ -83,7 +83,7 @@ const DEMO_RESPONSE = {
       issue: 'Security Arrangements and DDR',
       partyPositions: [
         {
-          party: 'Government of Nordalia',
+          party: 'Government of the selected situation',
           min: 'DRM begins disarmament within 90 days under AFN supervision, with UNMN monitoring',
           max: 'Immediate DRM disarmament and integration of selected fighters into AFN under government command',
           ideal: 'Unconditional DRM surrender and prosecution of military commanders',
@@ -100,7 +100,7 @@ const DEMO_RESPONSE = {
   ],
   batnaAssessments: [
     {
-      party: 'Government of Nordalia',
+      party: 'Government of the selected situation',
       alternatives: [
         'Military solution: Launch offensive to recapture Eastern Provinces (requires Karovian support, uncertain outcome, high humanitarian cost)',
         'Status quo maintenance: Continue ceasefire while building military capacity, hoping economic pressure erodes DRM support',
@@ -152,7 +152,7 @@ export const POST = withCalibration('negotiation_prep', 'ai_analysis', {
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
     const situationId = (situation as Situation | undefined)?.id ?? '';
 
-    // --- Demo mode ---
+    // --- Sample mode ---
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }

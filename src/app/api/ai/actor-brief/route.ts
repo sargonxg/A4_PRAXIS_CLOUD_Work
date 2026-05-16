@@ -42,12 +42,12 @@ const ACTOR_BRIEF_SYSTEM_PROMPT = `You are a senior TACITUS analyst preparing a 
 
 Be specific. Ground analysis in the situation context provided. Flag where confidence is low. Use professional diplomatic language standards.`;
 
-const DEMO_BRIEF = `## ACTOR PROFILE: Government of Nordalia
+const DEMO_BRIEF = `## ACTOR PROFILE: Government of the selected situation
 
 ### Background & Structure
-The Government of Nordalia (GoN) is led by President Amara Osei, who claimed victory in the disputed March 2024 elections. The executive commands the Armed Forces of Nordalia (AFN, approximately 45,000 active personnel), controls the capital and state revenue institutions, and maintains international recognition despite contested democratic legitimacy. A recent cabinet reshuffle replaced the moderate Defence Minister with hardliner General Mensah, signalling an internal shift toward more coercive approaches.
+The Government of the selected situation (GoN) is led by President Amara Osei, who claimed victory in the disputed March 2024 elections. The executive commands the Armed Forces of the selected situation (AFN, approximately 45,000 active personnel), controls the capital and state revenue institutions, and maintains international recognition despite contested democratic legitimacy. A recent cabinet reshuffle replaced the moderate Defence Minister with hardliner General Mensah, signalling an internal shift toward more coercive approaches.
 
-The GoN's external patron is **Karovia**, which provides military equipment, logistics, intelligence cooperation, and seconded military advisors under a 2019 bilateral defence treaty. Karovian military logistics flights to Nordalia City have increased 40% in the past 21 days.
+The GoN's external patron is **Karovia**, which provides military equipment, logistics, intelligence cooperation, and seconded military advisors under a 2019 bilateral defence treaty. Karovian military logistics flights to the selected situation City have increased 40% in the past 21 days.
 
 ### Stated Positions
 - The March 2024 elections were legitimate and their outcome is non-negotiable
@@ -102,7 +102,7 @@ The GoN's external patron is **Karovia**, which provides military equipment, log
 
 ---
 **60-SECOND ELEVATOR BRIEF:**
-The Government of Nordalia under President Osei is at an inflection point between negotiation and escalation, with the recent appointment of hardliner General Mensah as Defence Minister signalling that the military faction is ascendant. The GoN's stated position — disarmament before dialogue — is a maximalist opening; their actual interest is regime survival and control of eastern resource revenues. Your strongest levers are the fiscal crisis (36.4% currency depreciation) and indirect pressure through Karovia, whose military support the GoN cannot survive without. The GoN's commitment record is poor — 47 ceasefire violations and deteriorating UNMN cooperation — but the successful prisoner exchange shows back-channel functionality remains intact. Approach with sovereignty acknowledgement, pivot to economic pragmatism, and avoid the election legitimacy trap. The window is 60-90 days before military dynamics could overtake the political track.`;
+The Government of the selected situation under President Osei is at an inflection point between negotiation and escalation, with the recent appointment of hardliner General Mensah as Defence Minister signalling that the military faction is ascendant. The GoN's stated position — disarmament before dialogue — is a maximalist opening; their actual interest is regime survival and control of eastern resource revenues. Your strongest levers are the fiscal crisis (36.4% currency depreciation) and indirect pressure through Karovia, whose military support the GoN cannot survive without. The GoN's commitment record is poor — 47 ceasefire violations and deteriorating UNMN cooperation — but the successful prisoner exchange shows back-channel functionality remains intact. Approach with sovereignty acknowledgement, pivot to economic pragmatism, and avoid the election legitimacy trap. The window is 60-90 days before military dynamics could overtake the political track.`;
 
 export const POST = withCalibration('actor_profiles', 'ai_report', {
   retrievalQuery: (_req, body) => {
@@ -128,7 +128,7 @@ export const POST = withCalibration('actor_profiles', 'ai_report', {
       );
     }
 
-    // --- Demo mode ---
+    // --- Sample mode ---
     if (isServerDemoMode()) {
       return formatAsStreamResponse(DEMO_BRIEF);
     }

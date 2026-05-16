@@ -72,8 +72,8 @@ const MediaCompassSchema = z.object({
 const DEMO_RESPONSE = {
   outlets: [
     {
-      name: 'Nordalia Broadcasting Corporation (NBC)',
-      country: 'Nordalia',
+      name: 'the selected situation Broadcasting Corporation (NBC)',
+      country: 'the selected situation',
       ownership: 'State-controlled — board appointed by President Osei; 100% government funding',
       bias: 'pro-government' as const,
       reach: 'national' as const,
@@ -88,7 +88,7 @@ const DEMO_RESPONSE = {
     },
     {
       name: 'Eastern Provinces Voice (EPV)',
-      country: 'Nordalia',
+      country: 'the selected situation',
       ownership: 'DRM Political Wing (Eastern Provincial Authority) — editorial board appointed by Commander Asante',
       bias: 'pro-opposition' as const,
       reach: 'regional' as const,
@@ -176,7 +176,7 @@ const DEMO_RESPONSE = {
       'Civilian casualty figures — GoN claims zero, DRM claims 340+, UNMN verified 47 conflict-related deaths since September',
     ],
     suppressed: [
-      'Civil society peace initiatives from the Nordalia Reconciliation Forum — virtually absent from all partisan outlets',
+      'Civil society peace initiatives from the the selected situation Reconciliation Forum — virtually absent from all partisan outlets',
       'Economic grievances of non-combatant eastern population beyond political framing (housing, employment, food)',
       'Karovian domestic opposition to military involvement — suppressed inside Karovia, underreported internationally',
       'Moderate DRM political wing voices willing to negotiate — overshadowed by Commander Asante military messaging',
@@ -184,7 +184,7 @@ const DEMO_RESPONSE = {
   },
   influencers: [
     {
-      name: '@NordaliaWatch',
+      name: '@the selected situationWatch',
       platform: 'X (Twitter)',
       followers: '1.4M',
       stance: 'Pro-DRM English-language account. Amplifies atrocity documentation and Westmark parliamentary debate. Suspected DFRLab-flagged coordinated amplification network.',
@@ -230,7 +230,7 @@ export const POST = withCalibration('media_compass', 'ai_analysis', {
     if (!validation.success) return validation.response;
     const { situation } = validation.data;
 
-    // --- Demo mode ---
+    // --- Sample mode ---
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }

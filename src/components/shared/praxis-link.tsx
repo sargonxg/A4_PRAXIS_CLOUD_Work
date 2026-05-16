@@ -7,8 +7,8 @@ import { shouldPrefixPraxisHref, useRoutePrefix } from '@/lib/utils/routes';
 type PraxisLinkProps = ComponentProps<typeof Link>;
 
 /**
- * Drop-in replacement for Next.js Link that auto-prefixes href with /app or /demo
- * based on the current route group. External URLs and already-prefixed paths pass through.
+ * Drop-in replacement for Next.js Link that auto-prefixes authenticated app hrefs.
+ * External URLs and already-prefixed paths pass through.
  */
 export function PraxisLink({ href, ...props }: PraxisLinkProps) {
   const prefix = useRoutePrefix();

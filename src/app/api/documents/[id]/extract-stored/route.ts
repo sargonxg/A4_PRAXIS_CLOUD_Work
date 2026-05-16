@@ -84,7 +84,7 @@ type ExtractedEntities = z.infer<typeof ExtractedEntitySchema>;
 
 export const POST = withAuth(async (request, user) => {
   if (user.isDemo) {
-    return NextResponse.json({ error: 'Not available in demo mode' }, { status: 403 });
+    return NextResponse.json({ error: 'Not available for this session' }, { status: 403 });
   }
 
   // Extract doc id from URL pathname: /api/documents/{id}/extract-stored

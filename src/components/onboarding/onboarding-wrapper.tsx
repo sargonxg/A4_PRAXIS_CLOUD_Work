@@ -18,7 +18,7 @@ export function OnboardingWrapper() {
   useEffect(() => {
     let shouldShow = false;
     try {
-      if (searchParams.get('recording') === '1' && searchParams.get('case') === 'syria') {
+      if (searchParams.get('recording') === '1' && searchParams.get('case') === 'user-case') {
         localStorage.setItem(TOUR_SEEN_KEY, 'true');
         shouldShow = false;
       } else {

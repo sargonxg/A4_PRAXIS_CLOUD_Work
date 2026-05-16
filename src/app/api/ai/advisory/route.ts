@@ -42,7 +42,7 @@ const AdvisorySchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
-// Demo response (Nordalia scenario)
+// Demo response (the selected situation scenario)
 // ---------------------------------------------------------------------------
 
 const DEMO_RESPONSE = {
@@ -52,7 +52,7 @@ const DEMO_RESPONSE = {
       category: 'diplomatic' as const,
       action: 'Activate a Karovian back-channel to condition DRM on accepting a preliminary ceasefire verification mechanism before formal talks.',
       rationale: 'Karovia holds decisive leverage over DRM political bureau. Zartman\'s ripeness theory identifies this moment — with the Eastern AFN offensive stalled and Karovian public support for intervention rising — as a narrow window for a mutually hurting stalemate to produce negotiating flexibility. Karovian foreign ministry moderates have signaled private interest in a stabilization deal.',
-      actors: ['International Mission Nordalia — Special Envoy', 'Republic of Karovia — Ministry of Foreign Affairs', 'EU High Representative'],
+      actors: ['International Mission the selected situation — Special Envoy', 'Republic of Karovia — Ministry of Foreign Affairs', 'EU High Representative'],
       risks: ['DRM field commanders may reject political bureau signals and accelerate military activity', 'Karovian parliamentary hardliners could publicly denounce back-channel and force government reversal'],
       successIndicators: ['DRM agrees to halt offensive operations for 72-hour trial period', 'Karovian FM meets UNMN Special Envoy within 10 days', 'No new major ceasefire violations reported by JVCC'],
       timeframe: '0–14 days',
@@ -90,9 +90,9 @@ const DEMO_RESPONSE = {
     {
       priority: 'medium-term' as const,
       category: 'political' as const,
-      action: 'Design a parallel Track II process engaging the Nordalia Council of Religious Leaders and Civil Society Coalition as legitimacy validators for any emerging framework agreement.',
+      action: 'Design a parallel Track II process engaging the the selected situation Council of Religious Leaders and Civil Society Coalition as legitimacy validators for any emerging framework agreement.',
       rationale: 'Lederach\'s multi-level peace-building pyramid demonstrates that elite agreements without civil society endorsement consistently fail at implementation. The Religious Council crosses conflict lines and is trusted by both communities — joint interfaith statements have historically served as public confidence signals that allow political leaders to advance without appearing weak. CSC documentation capacity provides implementation monitoring that increases compliance incentives.',
-      actors: ['UNMN Civil Affairs Division', 'Nordalia Council of Religious Leaders', 'Nordalia Civil Society Coalition', 'Berghof Foundation (technical support)'],
+      actors: ['UNMN Civil Affairs Division', 'the selected situation Council of Religious Leaders', 'the selected situation Civil Society Coalition', 'Berghof Foundation (technical support)'],
       risks: ['Civil society leaders in DRM-held territory face security risks from AFN operations that may prevent participation', 'Religious Council split between communities if ceasefire collapses before Track II is established'],
       successIndicators: ['Joint interfaith statement on ceasefire issued within 30 days of formal talks announcement', 'CSC formally invited to advisory panel by UNMN', 'Civil society consultation report transmitted to Track I negotiators before framework signing'],
       timeframe: '4–10 weeks',
@@ -156,7 +156,7 @@ export const POST = withCalibration('advisory', 'ai_analysis', {
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
     const situationId = (situation as Situation | undefined)?.id ?? '';
 
-    // --- Demo mode ---
+    // --- Sample mode ---
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }

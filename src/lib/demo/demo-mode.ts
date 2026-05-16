@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Legacy compatibility utilities. Demo mode has been retired; these helpers
+// Legacy compatibility utilities. Sample mode has been retired; these helpers
 // remain so older API routes compile while returning live/user-owned behavior.
 // ---------------------------------------------------------------------------
 

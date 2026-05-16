@@ -12,7 +12,7 @@
  * Client-side equivalent: src/lib/ai/context-builder.ts (uses client SDK)
  */
 import { adminDb } from '@/lib/firebase/admin';
-import { getAdapter } from '@/lib/dialectica';
+import { getAdapter, type DialecticaPack } from '@/lib/dialectica/index';
 
 /**
  * Build graph-enriched context for a specific tool.
@@ -36,7 +36,7 @@ export async function buildGraphContext(
 
   // Run graph context (existing) + SKC enrichment in parallel
   const [graphCtx, skcCtx] = await Promise.all([
-    getAdapter().contextPack({ uid, situationId, toolId: toolKey, loadAll }).then((pack) => pack.prompt).catch(() => ''),
+    getAdapter().contextPack({ uid, situationId, toolId: toolKey, loadAll }).then((pack: DialecticaPack) => pack.prompt).catch(() => ''),
     buildSKCContext(uid, situationId, toolKey).catch(() => ''),
   ]);
 

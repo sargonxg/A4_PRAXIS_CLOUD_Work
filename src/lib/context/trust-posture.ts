@@ -65,7 +65,7 @@ function evidenceCoverage(capsule: PraxisCapsule, situation?: Partial<Situation>
     weight: 0.25,
     detail: `${evidenceCount} evidence item(s): ${sourceCount} source(s), ${documentCount} document(s). Target is 8 mixed receipts.`,
     clickTarget: {
-      href: situation?.id ? `/app/workbench/${situation.id}?tab=library` : '/app/contexts',
+      href: situation?.id ? `/app/contexts?situationId=${situation.id}` : '/app/contexts',
       label: 'Open Source Core',
     },
   };
@@ -86,7 +86,7 @@ function sourceFreshness(capsule: PraxisCapsule, situation?: Partial<Situation> 
         ? `${liveFreshness.length} configured feed(s) report fresh source posture.`
         : `${stale.length}/${liveFreshness.length} feed(s) need action: ${stale.slice(0, 3).map((feed) => `${feed.feedId}:${feed.suggestedAction}`).join(', ')}.`,
       clickTarget: {
-        href: situation?.id ? `/app/workbench/${situation.id}?tab=research` : '/app/contexts',
+        href: situation?.id ? `/app/assistant?situationId=${situation.id}` : '/app/contexts',
         label: 'Check sources',
       },
     };
@@ -110,7 +110,7 @@ function sourceFreshness(capsule: PraxisCapsule, situation?: Partial<Situation> 
       ? `Newest context signal is ${Math.max(0, Math.round(ageDays))} day(s) old; freshness window is ${freshnessWindowDays} days.`
       : 'No dated source or situation refresh signal is available.',
     clickTarget: {
-      href: situation?.id ? `/app/workbench/${situation.id}?tab=research` : '/app/contexts',
+      href: situation?.id ? `/app/assistant?situationId=${situation.id}` : '/app/contexts',
       label: 'Check sources',
     },
   };
@@ -142,7 +142,7 @@ function graphReadiness(capsule: PraxisCapsule, situation?: Partial<Situation> |
       ? `${graphNodes} graph node(s) plus an attached graph core signal.`
       : `${graphNodes} graph node(s); attach or build the Situation Core graph before high-trust handoff.`,
     clickTarget: {
-      href: situation?.id ? `/app/workbench/${situation.id}?tab=context` : '/app/contexts',
+      href: situation?.id ? `/app/contexts?situationId=${situation.id}` : '/app/contexts',
       label: 'Open Situation Core',
     },
   };
@@ -159,7 +159,7 @@ function claimSupport(capsule: PraxisCapsule, situation?: Partial<Situation> | n
     weight: 0.2,
     detail: `Capsule health is ${capsuleHealth}; data completeness is ${dataCompleteness || 'unknown'}${warningPenalty ? ` with ${warningPenalty} warning penalty.` : '.'}`,
     clickTarget: {
-      href: situation?.id ? `/app/workbench/${situation.id}?tab=desk` : '/app/assistant',
+      href: situation?.id ? `/app/assistant?situationId=${situation.id}` : '/app/assistant',
       label: 'Review claim support',
     },
   };
@@ -178,7 +178,7 @@ function missingGaps(capsule: PraxisCapsule, situation?: Partial<Situation> | nu
       ? 'No missing capsule core or explicit evidence gap is currently flagged.'
       : `${gapCount} gap(s): ${missingCoreCount} missing core(s), ${explicitGapCount} open evidence question(s).`,
     clickTarget: {
-      href: situation?.id ? `/app/workbench/${situation.id}?tab=context` : '/app/contexts',
+      href: situation?.id ? `/app/contexts?situationId=${situation.id}` : '/app/contexts',
       label: 'Close gaps',
     },
   };

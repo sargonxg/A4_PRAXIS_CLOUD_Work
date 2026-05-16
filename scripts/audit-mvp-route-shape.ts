@@ -65,7 +65,7 @@ for (const marker of [
 ]) {
   if (!proxy.includes(marker)) failures.push(`proxy missing legacy redirect marker: ${marker}`);
 }
-for (const removedMarker of ["'/app/syria-case'", "'/app/workbench/syria-2026'", "pathname.startsWith('/demo')", "'/demo/:path*'"]) {
+for (const removedMarker of ["'/app/user-case-case'", "'/app/workbench/user-case'", "pathname.startsWith('/demo')", "'/demo/:path*'"]) {
   if (proxy.includes(removedMarker)) failures.push(`proxy still includes removed demo/case marker: ${removedMarker}`);
 }
 if (proxy.includes("'/app/draft'") || proxy.includes("startsWith('/app/draft/'))")) {
@@ -78,10 +78,10 @@ for (const rel of [
   'src/app/ontologies',
   'src/app/users',
   'src/app/demo',
-  'src/app/app/syria-case',
-  'src/lib/cases/syria-2026',
+  'src/app/app/user-case-case',
+  'src/lib/cases/user-case',
   'src/lib/cases/v5-demo-contexts.ts',
-  'src/lib/syria',
+  'src/lib/user-case',
   'scripts/seed-demos',
   'tests/demo',
   'src/components/app/situation-selector.tsx',

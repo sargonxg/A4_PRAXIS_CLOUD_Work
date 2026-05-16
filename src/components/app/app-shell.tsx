@@ -13,7 +13,6 @@ import { SkipNudgeBanner } from '@/components/onboarding/skip-nudge-banner';
 import { OnboardingBanner } from '@/components/shared/onboarding-banner';
 import { GlobalSearch } from '@/components/shared/global-search';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
-import { useNotificationStore } from '@/stores/notification-store';
 import { Loader2 } from 'lucide-react';
 import { FloatingPraxis } from '@/components/app/floating-praxis';
 import { MobileBottomNav } from '@/components/app/mobile-bottom-nav';
@@ -32,7 +31,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const fetchSituations = useSituationStore((state) => state.fetchSituations);
   const router = useRouter();
   const pathname = usePathname();
-  const isDemoRoute = pathname.startsWith('/demo');
   const isDashboardCockpit = pathname === '/app/dashboard';
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');
@@ -57,10 +55,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [pathname, isMobile, setSidebarOpen]);
 
   useEffect(() => {
-    if (!loading && !user && !isDemoRoute) {
+    if (!loading && !user) {
       router.push('/login');
     }
-  }, [isDemoRoute, loading, user, router]);
+  }, [loading, user, router]);
 
   useEffect(() => {
     if (user) {
@@ -73,12 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         orgName: user.orgName,
         isDemo: user.isDemo,
       });
-      if (user.isDemo) {
-        setDemoMode(true);
-        useNotificationStore.getState().seedWorkspaceNotifications();
-      } else {
-        setDemoMode(false);
-      }
+      setDemoMode(false);
     }
   }, [user, setUser, setDemoMode]);
 
@@ -108,7 +101,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     openHelp: () => setHelpOpen(true),
     goHome: () => router.push('/app/dashboard'),
     goCores: () => router.push('/app/contexts'),
-    goLibrary: () => router.push('/app/workbench'),
+    goLibrary: () => router.push('/app/contexts'),
     goWrite: () => router.push('/app/write'),
     goCanvas: () => router.push('/app/canvas'),
     goTools: () => router.push('/app/tools'),

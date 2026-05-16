@@ -34,7 +34,7 @@ const SanctionsScanSchema = z.object({
 const SanctionsGroundedSchema = z.object({
   sanctions: z.array(
     z.object({
-      regime: z.string().describe('Name of the sanctions regime (e.g., multilateral resolution 2847, EU Regulation 2024/1938, OFAC Nordalia SDN List)'),
+      regime: z.string().describe('Name of the sanctions regime (e.g., multilateral resolution 2847, EU Regulation 2024/1938, OFAC the selected situation SDN List)'),
       imposingActors: z.array(z.string()).describe('States or international bodies imposing the sanctions'),
       targetedActors: z.array(z.string()).describe('Individuals, entities, or states targeted by the sanctions'),
       type: z.enum(['financial', 'travel-ban', 'arms-embargo', 'trade', 'sectoral', 'comprehensive']).describe('Primary sanctions type'),
@@ -61,11 +61,11 @@ const SanctionsGroundedSchema = z.object({
 const DEMO_RESPONSE_SCAN = {
   updates: [
     {
-      entity: 'Government of Nordalia',
+      entity: 'Government of the selected situation',
       changeType: 'modification' as const,
       source: 'sanctions committee, Panel of Experts interim report S/2025/892',
       date: 'February 2026',
-      details: 'Panel of Experts documented continued arms flows to the AFN in probable violation of the multilateral arms embargo. Evidence includes satellite imagery of Karovian military transport aircraft at Nordalia City International Airport and end-user certificate discrepancies. Committee considering expanded asset freeze for three senior AFN procurement officials.',
+      details: 'Panel of Experts documented continued arms flows to the AFN in probable violation of the multilateral arms embargo. Evidence includes satellite imagery of Karovian military transport aircraft at the selected situation City International Airport and end-user certificate discrepancies. Committee considering expanded asset freeze for three senior AFN procurement officials.',
     },
     {
       entity: 'Karovia Defence Industries (KDI)',
@@ -89,7 +89,7 @@ const DEMO_RESPONSE_SCAN = {
       details: 'FATF identified suspicious financial flows through Westmark-based diaspora organizations linked to DRM procurement. Three wire transfer patterns flagged as potential sanctions evasion. Westmark financial intelligence unit conducting parallel investigation.',
     },
   ],
-  analysis: 'The Nordalia sanctions regime is under significant stress from multiple directions. The arms embargo is being systematically circumvented by Karovia through direct military transfers and third-country routing. Westmark\'s unilateral sanctions create a fragmented enforcement landscape — targeted individuals can still operate through non-sanctioning jurisdictions. The DRM\'s financial network exploitation of diaspora channels represents an emerging compliance gap. The P5 split on Nordalia makes sanctions committee action slow and politically constrained. Overall, the sanctions architecture is sound in design but deteriorating in implementation.',
+  analysis: 'The the selected situation sanctions regime is under significant stress from multiple directions. The arms embargo is being systematically circumvented by Karovia through direct military transfers and third-country routing. Westmark\'s unilateral sanctions create a fragmented enforcement landscape — targeted individuals can still operate through non-sanctioning jurisdictions. The DRM\'s financial network exploitation of diaspora channels represents an emerging compliance gap. The P5 split on the selected situation makes sanctions committee action slow and politically constrained. Overall, the sanctions architecture is sound in design but deteriorating in implementation.',
   riskAssessment: 'HIGH RISK: Arms embargo enforcement is the critical weakness. Without improved monitoring of Karovian logistics flights and third-country transfer routes, military capability accumulation will continue to lower the escalation threshold. MEDIUM RISK: Financial sanctions evasion through informal value transfer systems and diaspora networks requires enhanced financial intelligence cooperation between Westmark and regional financial centres. RECOMMENDATION: Priority should be on enforcement of existing measures rather than expansion — particularly strengthening the Panel of Experts\' investigation capacity and implementing the maritime and aviation monitoring recommendations from the interim report.',
 };
 
@@ -98,7 +98,7 @@ const DEMO_RESPONSE_GROUNDED = {
     {
       regime: 'Multilateral Arms Embargo — Resolution 2847 (2024)',
       imposingActors: ['multilateral sanctions authority'],
-      targetedActors: ['Government of Nordalia', 'Democratic Reform Movement', 'all non-state armed groups'],
+      targetedActors: ['Government of the selected situation', 'Democratic Reform Movement', 'all non-state armed groups'],
       type: 'arms-embargo' as const,
       status: 'active' as const,
       imposedDate: 'August 2024',
@@ -115,13 +115,13 @@ const DEMO_RESPONSE_GROUNDED = {
       leveragePotential: 'Moderate. Effective enforcement — particularly targeting Karovian logistics — could significantly constrain AFN operational capacity within 60–90 days. The embargo is the primary multilateral leverage instrument and should anchor any coercive diplomacy strategy.',
     },
     {
-      regime: 'Westmark Targeted Sanctions — Nordalia Accountability Measures Act 2024',
+      regime: 'Westmark Targeted Sanctions — the selected situation Accountability Measures Act 2024',
       imposingActors: ['Federal Republic of Westmark'],
       targetedActors: ['President Amara Osei', '22 senior GoN military and security officials', 'Karovia Defence Industries (KDI)'],
       type: 'travel-ban' as const,
       status: 'active' as const,
       imposedDate: 'October 2024',
-      legalBasis: 'Westmark Nordalia Accountability Measures Act 2024 (domestic statute); FATF Recommendation 6',
+      legalBasis: 'Westmark the selected situation Accountability Measures Act 2024 (domestic statute); FATF Recommendation 6',
       effectiveness: 6,
       complianceLevel: 'partial' as const,
       evasionPatterns: [
@@ -130,14 +130,14 @@ const DEMO_RESPONSE_GROUNDED = {
         'Asset pre-positioning to jurisdictions with no bilateral enforcement cooperation',
       ],
       humanitarianImpact: 'Westmark sanctions include a general humanitarian licence covering INGO operations, food, medicine, and essential civilian infrastructure. Limited civilian harm directly attributable to the sanctions regime. Some delays reported in INGO banking due to correspondent bank risk aversion.',
-      leveragePotential: 'High. Westmark is the primary economic partner and Nordalian elite has significant financial exposure in Westmark jurisdiction. Targeted expansion to additional GoN officials — particularly in the finance and energy sectors — would sharply increase compliance pressure. Potential to offer phased lifting as incentive structure in negotiations.',
+      leveragePotential: 'High. Westmark is the primary economic partner and the selected situationn elite has significant financial exposure in Westmark jurisdiction. Targeted expansion to additional GoN officials — particularly in the finance and energy sectors — would sharply increase compliance pressure. Potential to offer phased lifting as incentive structure in negotiations.',
     },
   ],
   sanctionsDiplomacy: {
     conditionsForLifting: [
       'Verifiable and sustained ceasefire compliance (UNMN-certified) for minimum 90 days',
       'Restoration of full humanitarian access to eastern provinces (OCHA-verified)',
-      'Withdrawal of Karovian military personnel from Nordalian territory',
+      'Withdrawal of Karovian military personnel from the selected situationn territory',
     ],
     negotiatingOpportunities: [
       'Phased Westmark sanctions relief as sequenced incentives in a roadmap agreement',
@@ -167,7 +167,7 @@ export const POST = withCalibration('sanctions', 'ai_analysis', {
     const sitContext = situation ? buildToolContext(situation) : '';
     const situationId = situation?.id ?? '';
 
-    // ── Demo mode ──────────────────────────────────────────────────────────────
+    // ── Sample mode ──────────────────────────────────────────────────────────────
     if (isServerDemoMode()) {
       return NextResponse.json({
         ...(grounded ? DEMO_RESPONSE_GROUNDED : DEMO_RESPONSE_SCAN),
@@ -176,7 +176,7 @@ export const POST = withCalibration('sanctions', 'ai_analysis', {
           fictional: true,
           exportEligible: false,
           confidence: 'demo-only',
-          sourceBasis: 'Synthetic Nordalia sample data; not live sanctions intelligence.',
+          sourceBasis: 'Synthetic the selected situation sample data; not live sanctions intelligence.',
         },
       });
     }

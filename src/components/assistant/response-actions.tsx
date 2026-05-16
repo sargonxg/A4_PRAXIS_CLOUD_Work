@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BookOpenText, CheckSquare, FileQuestion, FolderKanban, GitBranch, Search, SquareArrowOutUpRight } from 'lucide-react';
 import type { CoreKind } from '@/lib/tools/contract';
-import type { WorkbenchTabId } from '@/types/workbench';
 import { inferResponseActionKinds, type ResponseActionKind } from '@/lib/assistant/response-action-kinds';
 
 export interface Citation {
@@ -24,7 +23,7 @@ export type ResponseAction =
   | { kind: 'attach_to_core'; payload: { situationId: string; coreKind: CoreKind; content: string } }
   | { kind: 'add_next_move'; payload: { situationId: string; text: string } }
   | { kind: 'run_deep_research'; payload: { situationId: string; question: string } }
-  | { kind: 'open_in_workbench'; payload: { situationId: string; tab: WorkbenchTabId } }
+  | { kind: 'open_context'; payload: { situationId: string } }
   | { kind: 'propose_graph_edit'; payload: { situationId: string; delta: GraphDelta } };
 
 interface ResponseActionsProps {
@@ -50,7 +49,7 @@ const ACTION_META: Record<ResponseActionKind, {
   attach_to_core: { label: 'Attach to Core', icon: FolderKanban },
   add_next_move: { label: 'Add next move', icon: CheckSquare },
   run_deep_research: { label: 'Run deep research', icon: Search },
-  open_in_workbench: { label: 'Open in workbench', icon: SquareArrowOutUpRight },
+  open_context: { label: 'Open context', icon: SquareArrowOutUpRight },
   propose_graph_edit: { label: 'Propose graph edit', icon: GitBranch },
 };
 
@@ -62,7 +61,7 @@ export function ResponseActions({
 }: ResponseActionsProps) {
   const router = useRouter();
   const [status, setStatus] = useState<string | null>(null);
-  const situationId = situation?.id ?? 'syria-2026';
+  const situationId = situation?.id ?? 'user-case';
   const actions = useMemo(() => {
     const inferred = message.availableActions?.length ? message.availableActions : inferResponseActionKinds(message.content);
     return inferred.filter((action, index) => inferred.indexOf(action) === index).slice(0, 5);
@@ -128,7 +127,7 @@ export function ResponseActions({
                 id: `ask-${message.id ?? stableIdFromText(message.content)}`,
                 label: 'Ask PRAXIS follow-up',
                 detail: extractFirstLine(question || message.content),
-                href: `/app/workbench/${encodeURIComponent(situationId)}?tab=context`,
+                href: `/app/contexts?situationId=${encodeURIComponent(situationId)}`,
                 emphasis: 'primary',
               },
             ],
@@ -156,8 +155,8 @@ export function ResponseActions({
         return;
       }
 
-      router.push(`/app/workbench/${encodeURIComponent(situationId)}?tab=context`);
-      setStatus('Opening workbench');
+      router.push(`/app/contexts?situationId=${encodeURIComponent(situationId)}`);
+      setStatus('Opening context');
     } catch {
       setStatus('Action failed');
     }

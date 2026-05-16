@@ -53,10 +53,10 @@ const DEMO_RESPONSE = {
     },
     {
       headline: 'Economic recovery and rare earth revenue-sharing offer a concrete entry point for confidence-building',
-      sharedInterest: 'Both parties and regional neighbours share an interest in Nordalia\'s economic stabilisation',
+      sharedInterest: 'Both parties and regional neighbours share an interest in the selected situation\'s economic stabilisation',
       concession: 'Acknowledges that equitable resource revenue distribution has been a legitimate grievance',
       bridgeToCommonGround: 'A joint economic working group on rare earth revenues is achievable without requiring political agreement on contested sovereignty questions',
-      supportingArguments: ['Nordalian krone depreciation 36.4% — economic pain is shared', 'Rare earth deposits in contested eastern provinces create both conflict incentive and cooperation opportunity'],
+      supportingArguments: ['the selected situationn krone depreciation 36.4% — economic pain is shared', 'Rare earth deposits in contested eastern provinces create both conflict incentive and cooperation opportunity'],
     },
   ],
   anticipatedQuestions: [
@@ -75,9 +75,9 @@ const DEMO_RESPONSE = {
   closingGuidance: 'Close by reaffirming AU commitment to the June mediation round and requesting PSC political support for SRSG access to both capitals.',
   draftingAudit: {
     artifactMode: 'talking-points' as const,
-    sourceUse: [{ source: 'demo situation record', claim: 'Nordalia talking points and likely questions', confidence: 'medium' as const }],
+    sourceUse: [{ source: 'demo situation record', claim: 'the selected situation talking points and likely questions', confidence: 'medium' as const }],
     confidenceNote: 'Medium confidence because this is synthetic demo data.',
-    limits: ['No live source verification in demo mode'],
+    limits: ['No live source verification in this session'],
     followUpResearch: ['Verify mandate renewal status', 'Update humanitarian access figures'],
   },
 };

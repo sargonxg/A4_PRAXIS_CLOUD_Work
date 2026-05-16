@@ -69,20 +69,20 @@ const DossierSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
-// Demo response (Nordalia scenario)
+// Demo response (the selected situation scenario)
 // ---------------------------------------------------------------------------
 
 const DEMO_RESPONSE = {
   classificationNote: 'UNCLASSIFIED',
-  bluf: 'The Nordalia Crisis has entered a critical inflection point: a narrow 60-90 day diplomatic window exists before military dynamics overtake the political track, driven by GoN hardliner ascendance and a fragile ceasefire with 47 documented violations. Immediate priority is reinforcing UNMN\'s ceasefire monitoring mandate while activating a Karovian back-channel on DRM conditionality.',
-  executiveSummary: `The Nordalia Crisis represents a complex, multi-layered conflict combining contested electoral legitimacy, armed insurgency, regional proxy dynamics, and resource competition. Since the disputed March 2024 elections, the situation has escalated to Glasl Stage 5 (Loss of Face) with the Government of Nordalia (GoN) and the Democratic Reform Movement (DRM) locked in positional entrenchment reinforced by external patrons Karovia and Westmark respectively.
+  bluf: 'The User Workspace has entered a critical inflection point: a narrow 60-90 day diplomatic window exists before military dynamics overtake the political track, driven by GoN hardliner ascendance and a fragile ceasefire with 47 documented violations. Immediate priority is reinforcing UNMN\'s ceasefire monitoring mandate while activating a Karovian back-channel on DRM conditionality.',
+  executiveSummary: `The User Workspace represents a complex, multi-layered conflict combining contested electoral legitimacy, armed insurgency, regional proxy dynamics, and resource competition. Since the disputed March 2024 elections, the situation has escalated to Glasl Stage 5 (Loss of Face) with the Government of the selected situation (GoN) and the Democratic Reform Movement (DRM) locked in positional entrenchment reinforced by external patrons Karovia and Westmark respectively.
 
 The September 2025 ceasefire, brokered by UNMN and the AU Panel of the Wise, remains fragile but intact. However, 47 documented violations, accelerating buffer-zone incursions, and a hardline cabinet reshuffle by President Osei suggest the window for political progress is narrowing.
 
 The humanitarian toll — 1.2 million IDPs, 340,000 refugees, 2.8 million food-insecure — continues to mount. This dossier assesses that a 60-90 day window exists for meaningful diplomatic intervention before military dynamics overtake the political track.`,
   actorProfiles: [
     {
-      name: 'Government of Nordalia (GoN)',
+      name: 'Government of the selected situation (GoN)',
       type: 'State',
       positions: [
         'Rejects any power-sharing arrangement that questions President Osei\'s electoral mandate',
@@ -142,7 +142,7 @@ The humanitarian toll — 1.2 million IDPs, 340,000 refugees, 2.8 million food-i
       'Electoral legitimacy crisis — March 2024 disputed results unresolved',
       'Exclusionary political economy — Belara rare earth revenues captured by GoN-aligned elite networks',
       'Identity-based marginalisation of Eastern Province communities predating current conflict',
-      'Institutional weakness of Nordalian judiciary — no credible accountability mechanism',
+      'Institutional weakness of the selected situationn judiciary — no credible accountability mechanism',
     ],
     escalationDrivers: [
       'GoN hardliner ascendance following Mensah appointment',
@@ -270,7 +270,7 @@ export const POST = withCalibration('dossier', 'ai_report', {
     const sitContext = sitObj ? buildToolContext(sitObj as unknown as Situation) : '';
     const situationId = (sitObj as unknown as Situation | undefined)?.id ?? '';
 
-    // --- Demo mode ---
+    // --- Sample mode ---
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }

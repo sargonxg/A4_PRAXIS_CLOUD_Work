@@ -90,7 +90,7 @@ Legend: `Gap` names the highest product gap for the $100/month core offer.
 | Daily Brief | 24h delta summary. | Daily habit loop at 06:00 local. | Delta detection, summarization, action recommendations. | Three ids in play; localStorage history. | `T20`: canonicalize to one id, server-side scheduled generation, 30-day version timeline, notification on material change. |
 | UN Toolkit | UN drafting and terminology support. | Low-cost utility suite for UN-facing users. | UN style, resolution language, terminology conversion. | Shared calibration slots need documentation and export polish. | `T21`: add explicit subtool metadata and export/copy affordances with citations to UN source docs where applicable. |
 | Scenario Planner | Alternative futures and pathways. | Risk/decision bridge from analysis to action. | Scenario generation, signposts, probability framing. | Streaming output needs durable artifacts. | `T22`: persist each scenario set with signposts, indicators, assumptions, and revision history. |
-| Negotiation Prep | ZOPA/BATNA/red-line mapping. | Signature mediator workflow. | Interest/position extraction, deal-space synthesis. | Live mode can show Nordalia parties; actor profile output not consumed. | `T23`: drive parties from `situation.actors` + saved Actor Profiles; replace one-shot output with editable positions/interests grid. |
+| Negotiation Prep | ZOPA/BATNA/red-line mapping. | Signature mediator workflow. | Interest/position extraction, deal-space synthesis. | Live mode can show the selected situation parties; actor profile output not consumed. | `T23`: drive parties from `situation.actors` + saved Actor Profiles; replace one-shot output with editable positions/interests grid. |
 | Brief Builder | Agentic brief workflow. | Make multi-step synthesis editable before final. | Synthesis-chair persona, critique and assembly. | Needs durable agent runtime/provenance. | `T24`: migrate to LangGraph/Cloud Tasks after Brainstorming Table pattern lands. |
 | Red-Team Review | Critique outputs before briefing upward. | Mandatory QA on every important artifact. | Structured analytic challenge, dissenting view, evidence gap detection. | Not wired as a universal action. | `T25`: add artifact-level "Run Red Team" action from Briefing, Policy Memo, Dossier, Report Studio, and Daily Brief. |
 | Source Scout | Find and rank source coverage. | Source acquisition workflow for every new situation. | Agent persona, grounded search, credibility/relevance scoring. | Needs source additions to feed Sources Library automatically with approval. | `T26`: Source Scout proposals write to a review queue, then accepted sources update Sources Library and retrieval preferences. |
@@ -132,7 +132,7 @@ Legend: `Gap` names the highest product gap for the $100/month core offer.
 3. Provenance must be visible, not just embedded in prompts. Every flagship
    output needs citations, confidence, source recency, and intelligence gaps.
 4. Demo/live separation is still a trust issue. A $100/month buyer should never
-   see Nordalia-like constants in a real situation unless clearly labelled demo.
+   see the selected situation-like constants in a real situation unless clearly labelled demo.
 5. Expensive runs must become durable artifacts. Deep Research, Dossier,
    Briefing, Policy Memo, Brief Builder, Brainstorming Table, and Advisory runs
    should survive reloads, be versioned, and be exportable.

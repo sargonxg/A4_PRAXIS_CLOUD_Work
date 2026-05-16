@@ -53,7 +53,7 @@ export const GET = withAuth(async (request, user) => {
 export const POST = withAuth(async (request, user) => {
   try {
     if (user.isDemo) {
-      return NextResponse.json({ error: 'Demo mode cannot create private context packages' }, { status: 403 });
+      return NextResponse.json({ error: 'Sample mode cannot create private context packages' }, { status: 403 });
     }
     const raw = await request.json().catch(() => ({}));
     const switchParsed = SwitchSchema.safeParse(raw);

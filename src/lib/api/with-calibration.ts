@@ -344,7 +344,7 @@ export function withCalibration(
         details: { variant },
       });
 
-      // Start tool_run record (non-demo only — demo users do not get persisted runs)
+      // Start tool_run record (non-demo only — sample users do not get persisted runs)
       let toolRunId: string | null = null;
       if (!user.isDemo) {
         try {

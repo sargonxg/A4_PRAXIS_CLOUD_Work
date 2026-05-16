@@ -5,6 +5,206 @@ export const PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY = 'praxis.pendingContextCapsul
 export const PENDING_CONTEXT_CAPSULE_PATH_KEY = 'praxis.pendingContextCapsulePath';
 export const PENDING_CONTEXT_CAPSULE_OUTPUT_KEY = 'praxis.pendingContextCapsuleOutput';
 
+export type CapsuleAttachmentRole = 'primary' | 'reference' | 'comparison' | 'archived';
+
+export type CapsuleSlotId =
+  | 'user'
+  | 'situation'
+  | 'source'
+  | 'document'
+  | 'connector'
+  | 'time'
+  | 'graph'
+  | 'rules'
+  | 'tool'
+  | 'objective'
+  | 'output'
+  | 'memory';
+
+export interface CapsuleSlotDefinition {
+  id: CapsuleSlotId;
+  label: string;
+  shortLabel: string;
+  description: string;
+  policyQuestions: string[];
+  mappedCoreKinds: CoreSpecimenKind[];
+}
+
+export interface CapsuleRoleDefinition {
+  role: CapsuleAttachmentRole;
+  label: string;
+  description: string;
+}
+
+export interface CapsuleCoreRefsLike {
+  userCoreId?: string | null;
+  situationCoreId?: string | null;
+  pathCoreId?: string | null;
+  sourceCoreIds?: string[];
+  documentCoreIds?: string[];
+  graphCoreId?: string | null;
+  timeCoreId?: string | null;
+  outputCoreIds?: string[];
+  toolCoreIds?: string[];
+  objectiveCoreIds?: string[];
+  productCoreIds?: string[];
+  memoryCoreId?: string | null;
+}
+
+export const CAPSULE_ATTACHMENT_ROLES: CapsuleRoleDefinition[] = [
+  {
+    role: 'primary',
+    label: 'Primary',
+    description: 'The capsule that controls the answer, tool routing, and output target.',
+  },
+  {
+    role: 'reference',
+    label: 'Reference',
+    description: 'Read-only background context that can be cited but should not override the primary capsule.',
+  },
+  {
+    role: 'comparison',
+    label: 'Comparison',
+    description: 'A second capsule used to compare claims, timeframes, sources, or recommendations.',
+  },
+  {
+    role: 'archived',
+    label: 'Archived',
+    description: 'Retained for lineage and handover receipts, but excluded from model-ready context by default.',
+  },
+];
+
+export const CAPSULE_SLOT_DEFINITIONS: CapsuleSlotDefinition[] = [
+  {
+    id: 'user',
+    label: 'User Core',
+    shortLabel: 'User',
+    description: 'Role, institution, lens, tone, language, source preferences, and red lines.',
+    policyQuestions: ['Who is asking?', 'What mandate and voice should PRAXIS inherit?'],
+    mappedCoreKinds: ['user'],
+  },
+  {
+    id: 'situation',
+    label: 'Situation Core',
+    shortLabel: 'Situation',
+    description: 'Case, region, timeframe, actors, stakes, hypotheses, open questions, and contested claims.',
+    policyQuestions: ['What is the policy situation?', 'Which claims and actors are in scope?'],
+    mappedCoreKinds: ['situation', 'path'],
+  },
+  {
+    id: 'source',
+    label: 'Source Core',
+    shortLabel: 'Sources',
+    description: 'Trusted source receipts, source tiers, whitelist or blacklist posture, recency, and reliability policy.',
+    policyQuestions: ['Which receipts can ground claims?', 'Which source tiers are acceptable?'],
+    mappedCoreKinds: ['source'],
+  },
+  {
+    id: 'document',
+    label: 'Document Core',
+    shortLabel: 'Docs',
+    description: 'Uploaded files, extraction status, chunks, paragraph IDs, page offsets, and citation metadata.',
+    policyQuestions: ['Which documents travel with the answer?', 'Are paragraph or page references usable?'],
+    mappedCoreKinds: ['document'],
+  },
+  {
+    id: 'connector',
+    label: 'Connector Core',
+    shortLabel: 'Connectors',
+    description: 'Read-only feeds and integrations such as GDELT, UCDP, ReliefWeb, HDX, UN News, World Bank, grounded Google Search, and private library sources.',
+    policyQuestions: ['Which feeds are allowed?', 'Should connector results be saved, referenced, or promoted?'],
+    mappedCoreKinds: ['source', 'tool'],
+  },
+  {
+    id: 'time',
+    label: 'Time Core',
+    shortLabel: 'Time',
+    description: 'As-of date, horizon, event pace, stale-claim policy, and update cadence.',
+    policyQuestions: ['What date is the answer current as of?', 'Which claims may be stale?'],
+    mappedCoreKinds: ['time'],
+  },
+  {
+    id: 'graph',
+    label: 'Graph/Power Core',
+    shortLabel: 'Power',
+    description: 'Actors, factions, commitments, relationships, influence, blockers, claims, and evidence edges.',
+    policyQuestions: ['Who decides or blocks?', 'Which relationships and evidence edges matter?'],
+    mappedCoreKinds: ['graph'],
+  },
+  {
+    id: 'rules',
+    label: 'Rules Core',
+    shortLabel: 'Rules',
+    description: 'Legal, institutional, classification, compliance, writing, and review constraints.',
+    policyQuestions: ['Which legal or institutional limits bind the work?', 'What must be reviewed before export?'],
+    mappedCoreKinds: ['path', 'product'],
+  },
+  {
+    id: 'tool',
+    label: 'Tool Core',
+    shortLabel: 'Tools',
+    description: 'Selected PRAXIS tools, allowed actions, approval requirements, tool readiness, and receipts.',
+    policyQuestions: ['Which tools may run?', 'Which actions require approval?'],
+    mappedCoreKinds: ['tool'],
+  },
+  {
+    id: 'objective',
+    label: 'Objective Core',
+    shortLabel: 'Objective',
+    description: 'Current task, decision question, success criteria, and workflow stage.',
+    policyQuestions: ['What decision is this work serving?', 'What counts as done?'],
+    mappedCoreKinds: ['objective'],
+  },
+  {
+    id: 'output',
+    label: 'Output Core',
+    shortLabel: 'Output',
+    description: 'Memo, brief, talking points, template, audience, length, citation style, must-include, and must-avoid rules.',
+    policyQuestions: ['What output is PRAXIS producing?', 'Who will read it?'],
+    mappedCoreKinds: ['output', 'product'],
+  },
+  {
+    id: 'memory',
+    label: 'Memory/Handover Core',
+    shortLabel: 'Memory',
+    description: 'Prior runs, accepted conclusions, unresolved red-team findings, approvals, and agent instructions.',
+    policyQuestions: ['What conclusions are inherited?', 'Which caveats or approvals must survive handover?'],
+    mappedCoreKinds: ['memory'],
+  },
+];
+
+export function capsuleSlotReadiness(refs: CapsuleCoreRefsLike | null | undefined): Record<CapsuleSlotId, boolean> {
+  const coreRefs = refs ?? {};
+  return {
+    user: Boolean(coreRefs.userCoreId),
+    situation: Boolean(coreRefs.situationCoreId || coreRefs.pathCoreId),
+    source: Boolean(coreRefs.sourceCoreIds?.length),
+    document: Boolean(coreRefs.documentCoreIds?.length),
+    connector: Boolean(coreRefs.sourceCoreIds?.length || coreRefs.toolCoreIds?.length),
+    time: Boolean(coreRefs.timeCoreId),
+    graph: Boolean(coreRefs.graphCoreId),
+    rules: Boolean(coreRefs.pathCoreId || coreRefs.productCoreIds?.length),
+    tool: Boolean(coreRefs.toolCoreIds?.length),
+    objective: Boolean(coreRefs.objectiveCoreIds?.length),
+    output: Boolean(coreRefs.outputCoreIds?.length || coreRefs.productCoreIds?.length),
+    memory: Boolean(coreRefs.memoryCoreId),
+  };
+}
+
+export function capsuleAttachmentCounts(refs: CapsuleCoreRefsLike | null | undefined) {
+  const sourceCount = refs?.sourceCoreIds?.length ?? 0;
+  const documentCount = refs?.documentCoreIds?.length ?? 0;
+  const toolCount = refs?.toolCoreIds?.length ?? 0;
+
+  return {
+    attachments: sourceCount + documentCount,
+    connectors: toolCount,
+    sources: sourceCount,
+    documents: documentCount,
+    tools: toolCount,
+  };
+}
+
 export type ContextCapsuleTemplateId =
   | 'conflict-analysis'
   | 'director-handover'
@@ -30,14 +230,19 @@ export type PolicyPathId =
   | 'generic-policy'
   | 'foreign-policy'
   | 'conflict-resolution'
+  | 'mediator-peace-process'
+  | 'humanitarian-analysis'
   | 'defence-capture'
   | 'public-affairs'
+  | 'public-sector-policy'
+  | 'regulatory-public-affairs'
   | 'hr-policy'
   | 'legal-compliance'
   | 'crisis-management'
   | 'strategy-operations'
   | 'program-delivery'
-  | 'research-direction';
+  | 'research-direction'
+  | 'human-rights-accountability';
 
 export interface PolicyPathProfile {
   id: PolicyPathId;
@@ -233,6 +438,22 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     suggestedOutputs: ['Mediation brief', 'Actor-interest map', 'Process design note'],
   },
   {
+    id: 'mediator-peace-process',
+    label: 'Mediator / peace process practitioner',
+    userFrame: 'Parties, interests, red lines, confidence-building measures, commitments, and process sequencing.',
+    defaultTemplates: ['conflict-analysis', 'director-handover', 'agent-handover'],
+    suggestedTools: ['Mediation Design', 'Stakeholder Map', 'Commitment Scan', 'Scenario Review'],
+    suggestedOutputs: ['Process design note', 'Party-position brief', 'Confidence-building memo'],
+  },
+  {
+    id: 'humanitarian-analysis',
+    label: 'Humanitarian analyst',
+    userFrame: 'Access constraints, needs, protection risks, affected populations, operational partners, and source freshness.',
+    defaultTemplates: ['crisis-brief', 'public-sector-memo', 'director-handover'],
+    suggestedTools: ['Humanitarian Snapshot', 'ReliefWeb Search', 'Risk Indicators', 'Daily Brief'],
+    suggestedOutputs: ['Humanitarian situation brief', 'Access risk note', 'Operational handover'],
+  },
+  {
     id: 'defence-capture',
     label: 'Defence capture lead',
     userFrame: 'Requirements, procurement timeline, approval path, competitors, and blockers.',
@@ -247,6 +468,22 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['regulatory-watch', 'public-sector-memo', 'board-brief'],
     suggestedTools: ['Regulatory Watch', 'Media Compass', 'Stakeholder Map', 'Talking Points'],
     suggestedOutputs: ['Regulatory memo', 'Stakeholder brief', 'Narrative posture note'],
+  },
+  {
+    id: 'public-sector-policy',
+    label: 'Public-sector policy officer',
+    userFrame: 'Decision memos, implementation constraints, statutory duties, stakeholder effects, and ministerial language.',
+    defaultTemplates: ['public-sector-memo', 'regulatory-watch', 'director-handover'],
+    suggestedTools: ['Policy Memo', 'Stakeholder Map', 'Citation Repair', 'Red-team review'],
+    suggestedOutputs: ['Options memo', 'Ministerial submission', 'Implementation note'],
+  },
+  {
+    id: 'regulatory-public-affairs',
+    label: 'Regulatory / public affairs analyst',
+    userFrame: 'Rule movement, affected entities, consultation windows, enforcement posture, and communications risk.',
+    defaultTemplates: ['regulatory-watch', 'board-brief', 'public-sector-memo'],
+    suggestedTools: ['Regulatory Watch', 'Media Compass', 'Timeline Events', 'Talking Points'],
+    suggestedOutputs: ['Regulatory update', 'Stakeholder map', 'Public affairs brief'],
   },
   {
     id: 'hr-policy',
@@ -295,6 +532,14 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['director-handover', 'board-brief', 'agent-handover'],
     suggestedTools: ['Red-team review', 'Sourceability check', 'Memo Studio', 'Agent Handover'],
     suggestedOutputs: ['Research handover', 'Quality review', 'Reusable capsule template'],
+  },
+  {
+    id: 'human-rights-accountability',
+    label: 'Human rights / accountability analyst',
+    userFrame: 'Allegations, actors, legal thresholds, source reliability, chain of custody, and review gaps.',
+    defaultTemplates: ['sanctions-compliance', 'conflict-analysis', 'public-sector-memo'],
+    suggestedTools: ['Human Rights Review', 'Treaty Analyze', 'Sourceability check', 'Red-team review'],
+    suggestedOutputs: ['Accountability brief', 'Allegation matrix', 'Legal risk note'],
   },
 ];
 

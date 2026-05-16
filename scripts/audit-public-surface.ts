@@ -18,8 +18,8 @@ const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
 const appShell = read('src/components/app/app-shell.tsx');
 
 for (const forbidden of [
-  'components/syria',
-  '@/components/syria',
+  'components/user-case',
+  '@/components/user-case',
   'components/tour',
   '@/components/tour',
   'ContextCapsulePreview',

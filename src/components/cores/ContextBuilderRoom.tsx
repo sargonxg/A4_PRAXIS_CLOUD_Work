@@ -62,7 +62,7 @@ export function ContextBuilderRoom({ situationId, initialMode = 'repository' }: 
               Tool filters
             </Link>
             <Link
-              href="/app/workbench?tab=library"
+              href="/app/contexts"
               className="inline-flex rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-navy-900 transition hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-sm"
             >
               Upload knowledge
@@ -269,7 +269,7 @@ function RepositoryToolCard({
     : tool.id === 'ask-praxis'
       ? '/app/assistant'
       : situationId
-        ? `/app/workbench/${encodeURIComponent(situationId)}`
+        ? `/app/contexts?situationId=${encodeURIComponent(situationId)}`
         : '/app/contexts';
   return (
     <article className="flex min-h-[210px] flex-col justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 transition hover:border-diplomatic-blue/40 hover:bg-white">

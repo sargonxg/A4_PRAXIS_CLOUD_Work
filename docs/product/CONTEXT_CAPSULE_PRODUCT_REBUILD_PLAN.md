@@ -92,7 +92,7 @@ Existing repo anchors:
 - Capsule service: `src/lib/context/capsule-service.ts`
 - Core contracts: `src/lib/context/core-objects.ts`
 - Context engine types and APIs: `src/types/context-engine.ts`, `src/app/api/context/*`
-- Tool marketplace: `src/components/tools/ToolMarketplace.tsx`
+- Tool marketplace: `src/components/cores/ContextBuilderRoom.tsx`
 - Tool recommendation: `src/lib/tools/recommend.ts`
 - Canonical tools: `src/lib/tools/canonical.ts`, `src/lib/tools/contract.ts`
 - Memo handover package API: `src/app/api/memos/[id]/handover-package/route.ts`

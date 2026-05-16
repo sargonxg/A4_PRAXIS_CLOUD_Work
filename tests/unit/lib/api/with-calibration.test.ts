@@ -238,7 +238,7 @@ describe('withCalibration', () => {
     expect(buildCalibratedContext).not.toHaveBeenCalled();
   });
 
-  it('returns 403 when non-demo user has no completed onboarding profile', async () => {
+  it('returns 403 when non-sample user has no completed onboarding profile', async () => {
     (getAnalystProfile as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
     const handler = vi.fn();
     const route = withCalibration('risk-monitor', 'ai_risk_assessment')(handler);
@@ -251,7 +251,7 @@ describe('withCalibration', () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it('bypasses onboarding gate for demo users', async () => {
+  it('bypasses onboarding gate for sample users', async () => {
     (getAnalystProfile as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
     const handler = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true })));
     const route = withCalibration('risk-monitor', 'ai_risk_assessment')(handler);

@@ -391,5 +391,5 @@ export function stageTargetHref(caseId: string, target: MarketplaceStageTarget):
     stagedTool: target.heroToolId,
     openChapter: target.chapter,
   });
-  return `/app/workbench/${encodeURIComponent(caseId)}?${params.toString()}#${target.chapter}`;
+  return `/app/contexts?situationId=${encodeURIComponent(caseId)}&${params.toString()}`;
 }

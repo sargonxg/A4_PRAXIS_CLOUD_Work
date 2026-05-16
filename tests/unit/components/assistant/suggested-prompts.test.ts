@@ -6,7 +6,7 @@ function flattenPrompts(categories: ReturnType<typeof getSuggestedPromptCategori
 }
 
 describe('getSuggestedPromptCategories', () => {
-  it('does not show demo conflict prompts to real users without an active situation', () => {
+  it('shows workspace-start prompts when no active situation exists', () => {
     const prompts = flattenPrompts(getSuggestedPromptCategories({
       demoMode: false,
       activeSituation: null,
@@ -30,12 +30,13 @@ describe('getSuggestedPromptCategories', () => {
     expect(prompts).not.toMatch(/User Case|DRM/i);
   });
 
-  it('keeps demo prompts isolated to demo mode', () => {
+  it('keeps sample mode on the empty workspace prompts', () => {
     const prompts = flattenPrompts(getSuggestedPromptCategories({
       demoMode: true,
       activeSituation: null,
     }));
 
-    expect(prompts).toMatch(/User Case|DRM/);
+    expect(prompts).toContain('create my first situation');
+    expect(prompts).not.toMatch(/User Case|DRM/);
   });
 });

@@ -121,7 +121,7 @@ export const PATCH = withAuth<RouteContext>(async (request, user, context) => {
   try {
     const { capsuleId } = await context.params;
     if (user.isDemo) {
-      return NextResponse.json({ error: 'Demo mode cannot update private capsules' }, { status: 403 });
+      return NextResponse.json({ error: 'Sample mode cannot update private capsules' }, { status: 403 });
     }
     const parsed = PatchSchema.safeParse(await request.json().catch(() => ({})));
     if (!parsed.success) {
@@ -139,7 +139,7 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
   try {
     const { capsuleId } = await context.params;
     if (user.isDemo) {
-      return NextResponse.json({ error: 'Demo mode cannot mutate private capsules' }, { status: 403 });
+      return NextResponse.json({ error: 'Sample mode cannot mutate private capsules' }, { status: 403 });
     }
     const url = new URL(request.url);
     const queryAction = url.searchParams.get('action');
@@ -260,7 +260,7 @@ export const DELETE = withAuth<RouteContext>(async (request, user, context) => {
   try {
     const { capsuleId } = await context.params;
     if (user.isDemo) {
-      return NextResponse.json({ error: 'Demo mode cannot mutate private capsules' }, { status: 403 });
+      return NextResponse.json({ error: 'Sample mode cannot mutate private capsules' }, { status: 403 });
     }
     const url = new URL(request.url);
     const mode = url.searchParams.get('mode') === 'delete' ? 'delete' : 'archive';

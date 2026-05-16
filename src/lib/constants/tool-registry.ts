@@ -969,7 +969,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     surface: 'archive',
     visible: false,
     tier: 'deterministic-structural',
-    description: 'Pre-loaded reference conflict library with structured case files for historical and ongoing situations. Browse case studies from the Nordalia Crisis (demo), and real-world conflicts across Africa, Asia, Europe, and the Middle East.',
+    description: 'Pre-loaded reference conflict library with structured case files for historical and ongoing situations. Browse case studies from the User Workspace (demo), and real-world conflicts across Africa, Asia, Europe, and the Middle East.',
     shortDescription: 'Reference conflict library and case studies',
     credits: 0,
     icon: 'Archive',

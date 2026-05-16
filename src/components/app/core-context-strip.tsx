@@ -34,7 +34,7 @@ export function CoreContextStrip() {
           id: exampleCase.id,
           name: exampleCase.manifest.name,
           meta: `${exampleCase.manifest.region} - ${exampleCase.manifest.domain}`,
-          href: `/app/workbench/${exampleCase.id}`,
+          href: `/app/contexts?situationId=${exampleCase.id}`,
         };
       }
     }
@@ -75,7 +75,7 @@ export function CoreContextStrip() {
           detail={`${org} - ${lenses}`}
         />
         <ContextCell
-          href={context?.href ?? '/app/workbench'}
+          href={context?.href ?? '/app/contexts'}
           icon={Target}
           label="Situation"
           title={context?.name ?? 'No context selected'}
@@ -83,7 +83,7 @@ export function CoreContextStrip() {
           muted={!context}
         />
         <ContextCell
-          href={context?.href ? `${context.href}?tab=library` : '/app/workbench'}
+          href={context?.href ?? '/app/contexts'}
           icon={LibraryBig}
           label="Sourceability"
           title={`${attachedCount} attached`}
@@ -91,7 +91,7 @@ export function CoreContextStrip() {
           muted={attachedCount === 0}
         />
         <ContextCell
-          href={context?.href ?? '/app/workbench'}
+          href={context?.href ?? '/app/contexts'}
           icon={Clock3}
           label="Temporality"
           title={health.signals.find((item) => item.id === 'timeline')?.status === 'ready' ? 'Episodes ready' : 'Needs episodes'}
@@ -198,7 +198,7 @@ function fromUserSituation(situation: Situation) {
     id: situation.id,
     name: situation.name,
     meta: `${situation.region || 'Region open'} - ${actorCount} actors - ${sourceCount} sources`,
-    href: `/app/workbench/${situation.id}`,
+    href: `/app/contexts?situationId=${situation.id}`,
   };
 }
 

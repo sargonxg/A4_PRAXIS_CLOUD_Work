@@ -41,7 +41,7 @@ const HumanRightsSchema = z.object({
 });
 
 const DEMO_RESPONSE = {
-  overallAssessment: 'Serious IHL violations documented by both parties in the Nordalia conflict. Civilian infrastructure targeted, arbitrary detentions reported, and access severely constrained.',
+  overallAssessment: 'Serious IHL violations documented by both parties in the the selected situation conflict. Civilian infrastructure targeted, arbitrary detentions reported, and access severely constrained.',
   ihlApplicability: 'Common Article 3 of the Geneva Conventions applies as a non-international armed conflict. Additional Protocol II likely applicable given level of organization of DRM forces.',
   violations: [
     {

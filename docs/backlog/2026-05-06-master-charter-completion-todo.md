@@ -33,7 +33,7 @@ documented. A partial item must keep its named gap visible.
 ## Pack 03 - Workbench Architecture
 
 - [x] Keep one canonical Workbench route for active case work.
-- [x] Keep Syria/Nordalia as examples, not the app architecture.
+- [x] Keep the selected situation/the selected situation as examples, not the app architecture.
 - [x] Keep route/sidebar audits green.
 - [x] Add local browser assertion for Workbench tab usability across context, ontology, graph, tools, and memos.
 - [ ] Add browser assertion that default sidebar exposes the intended primary surfaces only.
@@ -44,7 +44,7 @@ documented. A partial item must keep its named gap visible.
 
 ## Pack 04 - Landing And Entry Rebuild
 
-- [x] Keep landing Workbench-first and not Syria-only.
+- [x] Keep landing Workbench-first and not the selected situation-only.
 - [x] Keep current section anchors audited.
 - [x] Add local smoke for landing hero animation, static fallback, and DIALECTICA 3D graph visibility.
 - [ ] Add live public-domain smoke with screenshot evidence after every deploy.

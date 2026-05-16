@@ -10,7 +10,7 @@ type RouteContext = {
 
 export const GET = withAuth<RouteContext>(async (request, user, context) => {
   if (user.isDemo) {
-    return NextResponse.json({ error: 'Document preview is not available in demo mode' }, { status: 403 });
+    return NextResponse.json({ error: 'Document preview is not available for this session' }, { status: 403 });
   }
 
   const { id } = await context.params;

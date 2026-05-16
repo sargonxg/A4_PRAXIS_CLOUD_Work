@@ -4,6 +4,7 @@ import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { localKnowledgeAdapter } from '@/lib/knowledge/context-engine';
 import { resolveInjectableContext } from '@/lib/context/context-injection';
+import { buildTurnCapsule, compileEffectiveCapsule } from '@/lib/ai/context-kernel';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
 
 const RequestSchema = z.object({
@@ -31,7 +32,7 @@ const RequestSchema = z.object({
 export const POST = withAuth(async (request, user) => {
   try {
     if (user.isDemo) {
-      return NextResponse.json({ error: 'Demo mode cannot resolve private context packages' }, { status: 403 });
+      return NextResponse.json({ error: 'Sample mode cannot resolve private context packages' }, { status: 403 });
     }
     const raw = await request.json().catch(() => ({}));
     const parsed = RequestSchema.safeParse(raw);
@@ -47,9 +48,20 @@ export const POST = withAuth(async (request, user) => {
         : null,
       situationId: parsed.data.situationId,
     });
+    const turnCapsule = await buildTurnCapsule({
+      uid: user.uid,
+      capsuleId: parsed.data.capsuleId,
+      contextPackageId: parsed.data.contextPackageId,
+      activeContextStack: isRecord(parsed.data.activeContextStack)
+        ? parsed.data.activeContextStack as Partial<ActiveContextStackState>
+        : null,
+      situationId: parsed.data.situationId,
+      query: parsed.data.query,
+    });
+    const effectiveCapsule = compileEffectiveCapsule(turnCapsule, parsed.data.query);
     const situationId = parsed.data.situationId ?? injectable.stack.situationId;
     if (!situationId) {
-      return NextResponse.json({ injectable });
+      return NextResponse.json({ injectable, effectiveCapsule });
     }
 
     const context = await localKnowledgeAdapter.buildContextPack({
@@ -59,7 +71,7 @@ export const POST = withAuth(async (request, user) => {
       query: parsed.data.query,
       coreRefs: parsed.data.coreRefs,
     });
-    return NextResponse.json({ ...context, injectable });
+    return NextResponse.json({ ...context, injectable, effectiveCapsule });
   } catch (err) {
     return handleRouteError(err, 'context/resolve');
   }

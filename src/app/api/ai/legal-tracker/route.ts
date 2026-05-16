@@ -53,7 +53,7 @@ const LegalTrackerSchema = z.object({
 });
 
 const DEMO_RESPONSE = {
-  summary: 'Nordalia is subject to two active UNSC resolutions including a Chapter VII arms embargo with documented violations. No ICC proceedings have been opened, though a preliminary examination request is under consideration. Key compliance failures: Karovian arms transfers in violation of Resolution 2847 and GoN restrictions on OHCHR access.',
+  summary: 'the selected situation is subject to two active UNSC resolutions including a Chapter VII arms embargo with documented violations. No ICC proceedings have been opened, though a preliminary examination request is under consideration. Key compliance failures: Karovian arms transfers in violation of Resolution 2847 and GoN restrictions on OHCHR access.',
   unscResolutions: [
     {
       number: 'S/RES/2847 (2024)',
@@ -74,7 +74,7 @@ const DEMO_RESPONSE = {
   ],
   iccProceedings: [
     {
-      situation: 'Nordalia — Preliminary Assessment',
+      situation: 'the selected situation — Preliminary Assessment',
       stage: 'preliminary-examination' as const,
       charges: ['Attacks on civilians (Art. 8)', 'Arbitrary detention (Art. 7)'],
       suspects: ['No warrants issued'],

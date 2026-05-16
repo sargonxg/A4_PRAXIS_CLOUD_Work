@@ -78,7 +78,7 @@ expectExcludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'Suggested tools',
 ]);
 expectExcludes('src/components/landing/phase8-wow-landing.tsx', [
-  'Syria',
+  'the selected situation',
   'Demo',
   'Tour',
   'PolicyAgentCard',

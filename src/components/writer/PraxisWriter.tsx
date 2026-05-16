@@ -200,7 +200,7 @@ export function PraxisWriter({
     hasTimeline: Boolean(activeSituation?.keyDates?.length || activeSituation?.latestEventDate || activeSituation?.conflictOnsetDate),
     evidenceGapCount,
     hasDraft: blocks.length > 3,
-    situationHref: activeSituation ? `/app/workbench/${activeSituation.id}` : '/app/contexts',
+    situationHref: activeSituation ? `/app/contexts?situationId=${activeSituation.id}` : '/app/contexts',
   }), [activeSituation, activeUserCore, blocks.length, evidenceGapCount, sources.length]);
   const autosave = useWriterAutosave({
     key: storageKey,
@@ -523,7 +523,7 @@ export function PraxisWriter({
                   <p className="mt-1 line-clamp-3 text-xs font-semibold text-navy-900">{review.claim}</p>
                   <p className="mt-1 text-xs leading-5 text-slate-600">{review.rationale}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <Link href={activeSituation ? `/app/workbench/${activeSituation.id}?tab=library` : '/app/contexts'} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-navy-700">
+                    <Link href={activeSituation ? `/app/contexts?situationId=${activeSituation.id}` : '/app/contexts'} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-navy-700">
                       Find source
                     </Link>
                     <button type="button" onClick={() => void runAsk('soften')} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-navy-700">

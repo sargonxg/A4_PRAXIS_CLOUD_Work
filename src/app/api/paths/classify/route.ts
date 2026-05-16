@@ -27,7 +27,7 @@ export const POST = withAuth(async (request, user) => {
         evidencePosture: 'Do not treat demo material as user-owned evidence.',
       },
       suggestedSituationCore: {
-        problemFrame: 'Demo mode does not create a persistent situation core.',
+        problemFrame: 'Sample mode does not create a persistent situation core.',
         actors: [],
         geography: null,
         decisionContext: 'Copy or create a user-owned capsule before using path defaults.',

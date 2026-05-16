@@ -17,7 +17,7 @@ Latest engineering verification snapshot:
   with `status: ok`; Firestore, AI provider, cookie secret, and Vertex ADK were
   `ok`; Polar remains `unconfigured`.
 - Public demo Lighthouse: performance 87, accessibility 95 on
-  `/demo/syria-2024`; this is below the Pack 18 launch target and remains open.
+  `/demo/user-case-2024`; this is below the Pack 18 launch target and remains open.
 - Master charter posture: launch foundation is verified; strict v1.0.0 charter sign-off remains pending.
 
 Checks required before a public launch claim:

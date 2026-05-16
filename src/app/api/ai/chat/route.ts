@@ -129,7 +129,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
       prompt,
     );
 
-    // --- Demo mode ---
+    // --- Sample mode ---
     if (isServerDemoMode()) {
       const lastMessage = messages?.[messages.length - 1];
       const userContent = typeof lastMessage?.content === 'string' ? lastMessage.content : '';

@@ -119,7 +119,7 @@ export default function ProfileSettingsPage() {
   if (user?.isDemo) {
     return (
       <div className="mx-auto max-w-2xl rounded-xl border border-gold-500/30 bg-gold-500/5 p-6 text-sm text-navy-800">
-        <p className="font-semibold text-gold-700">Demo mode</p>
+        <p className="font-semibold text-gold-700">Sample mode</p>
         <p className="mt-2 text-navy-600">
           Demo users use a shared analyst profile. Sign in with a real account to edit your own.
         </p>

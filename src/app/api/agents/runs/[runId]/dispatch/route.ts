@@ -11,7 +11,7 @@ export const POST = withAuth<{ params: Promise<{ runId: string }> }>(async (requ
     return NextResponse.json({ error: 'Invalid run id', details: parsed.error.flatten() }, { status: 400 });
   }
   if (user.isDemo) {
-    return NextResponse.json({ error: 'Demo mode cannot dispatch private agent runs' }, { status: 403 });
+    return NextResponse.json({ error: 'Sample mode cannot dispatch private agent runs' }, { status: 403 });
   }
 
   const body = await request.json().catch(() => ({}));

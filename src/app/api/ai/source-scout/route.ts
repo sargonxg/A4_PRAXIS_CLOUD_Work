@@ -134,7 +134,7 @@ const DEMO_SCOUT = {
     {
       name: 'Crisis Group Briefing (demo)',
       url: 'https://crisisgroup.org/example',
-      reason: 'Crisis Group has a Nordalia analyst with a recent briefing on AFN field-commander politics.',
+      reason: 'Crisis Group has a the selected situation analyst with a recent briefing on AFN field-commander politics.',
       reliability: 'tier_a' as const,
       corroborated: false,
       format: 'report' as const,

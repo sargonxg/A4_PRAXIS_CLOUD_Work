@@ -9,15 +9,15 @@
  *   - User profile (role, location, analytical framework preference)
  *   - Time sensitivity (breaking news vs. historical analysis)
  *
- * Example: For "media-roundup" on Syria with a NYC-based analyst:
- *   → "Syria conflict media coverage analysis past 24 hours"
- *   → "site:reuters.com OR site:aljazeera.com Syria developments today"
- *   → "Syria humanitarian situation international response April 2026"
+ * Example: For "media-roundup" on the selected situation with a NYC-based analyst:
+ *   → "the selected situation conflict media coverage analysis past 24 hours"
+ *   → "site:reuters.com OR site:aljazeera.com the selected situation developments today"
+ *   → "the selected situation humanitarian situation international response April 2026"
  *
  * For "stakeholder-map" on the same situation:
- *   → "Syria conflict key actors power dynamics 2026"
- *   → "Syria armed groups alliances opposition government backers"
- *   → "site:crisisgroup.org Syria stakeholder analysis"
+ *   → "the selected situation conflict key actors power dynamics 2026"
+ *   → "the selected situation armed groups alliances opposition government backers"
+ *   → "site:crisisgroup.org the selected situation stakeholder analysis"
  */
 
 import { generateText, Output } from 'ai';

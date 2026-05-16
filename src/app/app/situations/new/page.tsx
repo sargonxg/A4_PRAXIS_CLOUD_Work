@@ -319,7 +319,7 @@ function StepDescribe({
 
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-navy-700">Situation Name <span className="text-red-500">*</span></label>
-        <input type="text" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g., Syria Ceasefire Monitoring" autoFocus
+        <input type="text" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g., Ceasefire Monitoring" autoFocus
           className="w-full rounded-lg border border-navy-200 bg-white px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-400 focus:border-diplomatic-blue focus:outline-none focus:ring-2 focus:ring-diplomatic-blue/20" />
         <p className="text-[10px] text-navy-400">Used as the workspace title and seeds the initial research query.</p>
       </div>
@@ -1806,7 +1806,7 @@ export default function NewSituationPage() {
             <Globe className="h-6 w-6 text-gold-600" />
           </div>
           <h2 className="text-lg font-semibold text-navy-900">Sign in to Create Situations</h2>
-          <p className="mt-2 text-sm text-navy-500">Creating real situations requires a TACITUS account. Demo mode uses the pre-built Nordalia Crisis scenario.</p>
+          <p className="mt-2 text-sm text-navy-500">Creating real situations requires a TACITUS account.</p>
           <button onClick={() => router.push(route('/workbench'))} className="mt-6 rounded-lg bg-gold-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-gold-600 shadow-md shadow-gold-500/20">
             Back to Dashboard
           </button>

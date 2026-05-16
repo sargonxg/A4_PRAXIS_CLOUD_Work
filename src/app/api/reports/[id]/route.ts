@@ -6,16 +6,15 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  // Return a mock report
   const report = {
     id,
-    title: 'Nordalia Situation Assessment Q1 2026',
+    title: 'Untitled Report',
     template: 'conflict_assessment',
     status: 'draft',
     createdAt: '2026-02-28T09:00:00Z',
     updatedAt: '2026-03-01T14:30:00Z',
     metadata: {
-      conflictId: 'nordalia-crisis',
+      conflictId: null,
       tone: 'formal_un',
     },
     sections: [

@@ -4,14 +4,14 @@
  * Bridge hook — Brick #52 round 5.
  *
  * Returns a unified shape the `<NotificationBell />` consumes regardless
- * of whether the user is in demo mode (reads the existing
+ * of whether the user is in sample mode (reads the existing
  * `notification-store` Zustand state) or authenticated (reads
  * `users/{uid}/notifications` via `useNotifications` from
  * `use-activity-feed`).
  *
  * Live notifications populated by the operational spine — every
  * `withCalibration` 5xx publishes a notification (see
- * `src/lib/api/with-calibration.ts`). Demo mode keeps the existing
+ * `src/lib/api/with-calibration.ts`). Sample mode keeps the existing
  * seeded fixture for marketing screenshots.
  */
 

@@ -136,7 +136,7 @@ const TYPE_LABELS: Record<string, string> = {
   private: "Private Media",
   state: "State-Affiliated",
   international_org: "International Organization",
-  local: "Local Syrian Media",
+  local: "Local the selected situationn Media",
   diaspora: "Diaspora / Exile Media",
   economic: "Economic Specialist",
   monitoring: "Monitoring Network",

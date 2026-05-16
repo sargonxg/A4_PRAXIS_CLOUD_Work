@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-07
 
-PRAXIS is a workbench for policy, conflict, mediation, diplomacy, and analytic teams. It turns messy situation material - user preferences, case notes, uploaded sources, research threads, graph candidates, structured analytic techniques, tools, memos, and briefings - into reviewable, cited work products. Syria is one demo case; the product is the reusable operating room for any policy/conflict situation.
+PRAXIS is a workbench for policy, conflict, mediation, diplomacy, and analytic teams. It turns messy situation material - user preferences, case notes, uploaded sources, research threads, graph candidates, structured analytic techniques, tools, memos, and briefings - into reviewable, cited work products. the selected situation is one demo case; the product is the reusable operating room for any policy/conflict situation.
 
 ## What Users Can Do
 

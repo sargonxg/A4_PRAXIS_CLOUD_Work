@@ -162,7 +162,7 @@ function getQuickActions(pathname: string, situationName?: string): QuickAction[
     'sources': [
       { label: 'Reliability map', prompt: `Show me the reliability landscape for current sources on ${name}.` },
       { label: 'Add NGO sources', prompt: `Suggest NGO and humanitarian sources I should add for ${name}.` },
-      { label: 'Local angle', prompt: `Which Syrian local-language outlets give the best ground truth for ${name}?` },
+      { label: 'Local angle', prompt: `Which local-language outlets give the best ground truth for ${name}?` },
       { label: 'Source gaps', prompt: `Where do my sources have gaps that block confidence?` },
     ],
     'briefing': [
@@ -246,7 +246,7 @@ function getCurrentToolId(pathname: string | null): string | undefined {
 
 /**
  * Floating Ask PRAXIS button + slide-over chat panel.
- * Available on every /app/* and /demo/* page.
+ * Available on every /app/* page.
  * Does NOT show on the full assistant page (to avoid duplication).
  */
 export function FloatingPraxis({ hideLauncher = false }: { hideLauncher?: boolean } = {}) {
@@ -440,9 +440,7 @@ export function FloatingPraxis({ hideLauncher = false }: { hideLauncher?: boolea
             })),
             situation:
               !demoMode && activeSituation ? activeSituation : undefined,
-            conflictContext: demoMode
-              ? 'nordalia'
-              : activeSituation?.name || undefined,
+            conflictContext: activeSituation?.name || undefined,
             currentToolId,
             currentPath: pathname,
             capsuleId: activeCapsuleId,

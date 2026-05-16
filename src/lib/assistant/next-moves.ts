@@ -80,7 +80,7 @@ export function getNextMoves(ctx: NextMovesContext): NextMove[] {
       detail: preferredFeed
         ? `Review source coverage, freshness, and evidence gaps, with ${preferredFeed} as the first domain feed to check.`
         : 'Review source coverage, freshness, and evidence gaps before trusting the answer.',
-      href: '/app/workbench?tab=library',
+      href: '/app/contexts',
       prompt: preferredFeed
         ? `Check my source coverage against ${preferredFeed} first, then list the most important evidence gaps.`
         : 'Check my source coverage and list the most important evidence gaps.',
@@ -156,7 +156,7 @@ function inferHealthScore(attached: Record<CoreKind, boolean>): number {
 
 function situationHref(ctx: NextMovesContext): string {
   const situationId = ctx.situation?.id ?? ctx.capsule?.coreRefs.situationCoreId;
-  return situationId ? `/app/workbench/${encodeURIComponent(situationId)}` : '/app/contexts';
+  return situationId ? `/app/contexts?situationId=${encodeURIComponent(situationId)}` : '/app/contexts';
 }
 
 function domainFromContext(ctx: NextMovesContext): DomainId {

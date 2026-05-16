@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import type { CanonicalSourceReceipt } from '@/types/source-receipt';
 import type { ContextEpisode } from '@/types/episode';
 import type { Situation } from '@/types/situation';
-import type { WorkbenchChapterId } from '@/lib/workbench/chapter-flow';
 
 export type CaseModuleKind = 'example' | 'user';
 
@@ -37,7 +36,7 @@ export interface CaseModule {
     targetPath: string;
     latencyTargetMs: number;
   }>;
-  chapters?: Partial<Record<WorkbenchChapterId, () => ReactNode>>;
+  attachments?: Partial<Record<string, () => ReactNode>>;
   truthLayers: {
     source: TruthLayerSnapshot;
     claim: TruthLayerSnapshot;

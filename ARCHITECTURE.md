@@ -28,9 +28,10 @@ Last updated: 2026-05-15.
 
 ## Historical / Subsumed Directions
 
-- [`docs/v7/STATUS.md`](./docs/v7/STATUS.md) — slice ledger.
-- [`docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md`](./docs/v7/00_VISION_AND_OPERATING_PRINCIPLES.md).
-- [`docs/v7/SLICES/`](./docs/v7/SLICES/) — v7 design-led simplification slices. Slice 1 is now mapped to v5 Phase 1; remaining v7 slices are historical planning references unless remapped in the v5 ledger.
+Historical v7 and May 8 design-led slice plans were removed during the Tasklet
+cleanup pass. Use the product docs above and
+[`docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md`](./docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md)
+for the current runtime-first cleanup ledger.
 
 ## Current Production Shape
 

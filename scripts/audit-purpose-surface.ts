@@ -26,13 +26,10 @@ for (const marker of [
   if (!report.includes(marker)) failures.push(`purpose report missing ${marker}`);
 }
 
-const context = read('src/components/workbench/ContextTab.tsx');
-if (context.includes('Context storage contract')) failures.push('Context implementation contract copy is still visible');
-if (context.includes('full re-genesis jobs remain backend follow-up work')) failures.push('Context exposes backend follow-up copy');
-
-const library = read('src/components/workbench/LibraryTab.tsx');
-if (library.includes('Save case-frame claim')) failures.push('Library still exposes duplicate save-case-frame-claim action');
-if (library.includes('Saved case-frame claim')) failures.push('Library still has duplicate saved-claim fallback copy');
+const contexts = read('src/app/app/contexts/page.tsx');
+if (!contexts.includes('ContextBuilderRoom')) failures.push('Contexts page must render the unified ContextBuilderRoom');
+const toolsPage = read('src/app/app/tools/page.tsx');
+if (!toolsPage.includes('ContextBuilderRoom')) failures.push('Tools page must reuse the unified ContextBuilderRoom');
 
 const draft = read('src/components/writer/PraxisWriter.tsx');
 for (const marker of ['Redaction aware', 'Manifest embedded', 'DOCX/PDF/Markdown']) {
@@ -46,8 +43,8 @@ const debugPanel = read('src/components/app/debug-panel.tsx');
 if (!debugPanel.includes('NEXT_PUBLIC_DEBUG_PANEL')) failures.push('Debug panel is not gated behind explicit production opt-in');
 if (!debugPanel.includes("process.env.NODE_ENV !== 'production'")) failures.push('Debug panel lacks production environment guard');
 
-if (existsSync(path.join(root, 'src/components/syria'))) {
-  failures.push('retired Syria component directory still exists');
+if (existsSync(path.join(root, 'src/components/user-case'))) {
+  failures.push('retired the selected situation component directory still exists');
 }
 
 const briefBlocksPath = 'src/components/briefing/brief-blocks-panel.tsx';

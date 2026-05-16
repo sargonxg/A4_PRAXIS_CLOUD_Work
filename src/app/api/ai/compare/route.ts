@@ -63,12 +63,12 @@ const CompareSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
-// Demo response — Nordalia fictional conflict vs. 3 real/plausible cases
+// Demo response — the selected situation fictional conflict vs. 3 real/plausible cases
 // ---------------------------------------------------------------------------
 
 const DEMO_RESPONSE = {
   currentSituation: {
-    name: 'Nordalia — Eastern Provinces Conflict',
+    name: 'the selected situation — Eastern Provinces Conflict',
     keyCharacteristics: [
       'Sub-state ethnic-regional armed group (DRM) challenging central government authority',
       'Resource wealth (Belara Mining Complex) as primary driver',
@@ -99,7 +99,7 @@ const DEMO_RESPONSE = {
       location: 'Indonesia (Aceh Province)',
       period: '1976–2005',
       similarity: 0.78,
-      mssdRationale: 'Selected under MSSD because both cases share: sub-state ethnic-regional insurgency, resource wealth as driver (Aceh: natural gas; Nordalia: mining), state with democratic deficit but functional central government, and external patron dynamics. The isolated variable is the presence of a natural disaster catalyst (2004 tsunami) — this comparison tests whether Nordalia requires an exogenous shock to create ripeness or whether economic deterioration can substitute.',
+      mssdRationale: 'Selected under MSSD because both cases share: sub-state ethnic-regional insurgency, resource wealth as driver (Aceh: natural gas; the selected situation: mining), state with democratic deficit but functional central government, and external patron dynamics. The isolated variable is the presence of a natural disaster catalyst (2004 tsunami) — this comparison tests whether the selected situation requires an exogenous shock to create ripeness or whether economic deterioration can substitute.',
       keyActors: ['Government of Indonesia (GoI)', 'Free Aceh Movement (GAM)', 'Crisis Management Initiative (CMI)', 'European Union (monitors)'],
       glaslStageAtPeak: 7,
       resolution: 'resolved',
@@ -108,9 +108,9 @@ const DEMO_RESPONSE = {
       dimensionComparison: {
         actors: 'GAM, like DRM, was an ethnically-based armed movement with diaspora financing (GAM: Sweden; DRM: Westmark). Both face central governments with authoritarian tendencies but formal democratic structures. Key difference: GAM had unified command structure; DRM shows signs of internal factional fragmentation.',
         triggers: 'Both conflicts rooted in identity-resource grievance nexus: Aceh resented Java extracting gas revenues; DRM resents Noralian capital extracting Belara mining revenues. Trigger events differ: GAM emerged post-1976 oil boom; DRM emerged post-2019 electoral dispute.',
-        externalSupport: 'Aceh: GAM supported by diaspora in Sweden and Malaysia, no state patron. Nordalia: DRM has active state patron (Karovia) which is a significant complication — Karovia involvement creates spoiler dynamics absent in Aceh.',
-        economicFactors: 'In both cases, the resource wealth created both the grievance AND a potential MEO. The 70% revenue retention formula in Helsinki is the most transferable structural element to Nordalia\'s Belara situation.',
-        trajectory: 'Aceh escalated sharply to Glasl 7 (limited war) before the tsunami created a sudden MHS. Nordalia is at Glasl 5 with gradual escalation — more time to intervene but also less urgency driving parties to the table.',
+        externalSupport: 'Aceh: GAM supported by diaspora in Sweden and Malaysia, no state patron. the selected situation: DRM has active state patron (Karovia) which is a significant complication — Karovia involvement creates spoiler dynamics absent in Aceh.',
+        economicFactors: 'In both cases, the resource wealth created both the grievance AND a potential MEO. The 70% revenue retention formula in Helsinki is the most transferable structural element to the selected situation\'s Belara situation.',
+        trajectory: 'Aceh escalated sharply to Glasl 7 (limited war) before the tsunami created a sudden MHS. the selected situation is at Glasl 5 with gradual escalation — more time to intervene but also less urgency driving parties to the table.',
       },
       keyLessons: [
         'Exogenous shocks (tsunami, economic collapse) can rapidly create ripeness where military stalemate alone cannot',
@@ -122,7 +122,7 @@ const DEMO_RESPONSE = {
       transferableLessons: [
         'Structure a Belara Mining Revenue Retention Framework (targeting 40-60% to Eastern Provincial Authority) as the MEO to substitute for a MHS trigger event',
         'Engage DRM diaspora in Westmark through Track 1.5 dialogue — they likely hold more negotiating flexibility than the field commanders',
-        'Identify a genuinely neutral mediator with no prior Nordalia investment — CMI model suggests small European states or Nordic institutions',
+        'Identify a genuinely neutral mediator with no prior the selected situation investment — CMI model suggests small European states or Nordic institutions',
         'Prepare amnesty framework in parallel with revenue talks — do not sequence it as a "reward" for disarmament',
         'Back-channel communications should precede any public negotiation announcement to avoid face-saving constraints',
       ],
@@ -138,7 +138,7 @@ const DEMO_RESPONSE = {
       location: 'Philippines (Mindanao)',
       period: '1969–2014',
       similarity: 0.71,
-      mssdRationale: 'Selected because both cases involve: a sub-state Muslim/ethnic minority armed movement with territorial control, a neighbouring state with ethnic-linguistic ties to the armed group (Malaysia:MILF :: Karovia:DRM), active ceasefire with violations, and a resource-revenue grievance (land and agricultural wealth in Mindanao; mining in Nordalia). The isolated variable is the role of a state-level patron that transitions from spoiler to mediator — directly relevant to the Karovian dynamic.',
+      mssdRationale: 'Selected because both cases involve: a sub-state Muslim/ethnic minority armed movement with territorial control, a neighbouring state with ethnic-linguistic ties to the armed group (Malaysia:MILF :: Karovia:DRM), active ceasefire with violations, and a resource-revenue grievance (land and agricultural wealth in Mindanao; mining in the selected situation). The isolated variable is the role of a state-level patron that transitions from spoiler to mediator — directly relevant to the Karovian dynamic.',
       keyActors: ['Government of the Philippines (GPH)', 'Moro Islamic Liberation Front (MILF)', 'Malaysia (facilitator)', 'International Contact Group'],
       glaslStageAtPeak: 8,
       resolution: 'resolved',
@@ -146,10 +146,10 @@ const DEMO_RESPONSE = {
       durationMonths: 540,
       dimensionComparison: {
         actors: 'MILF, like DRM, had both political and military wings with unclear command-and-control over field units. Both governments used military operations to strengthen bargaining position before talks. Key similarity: Malaysia\'s role as MILF ethnic kin and patron who then became mediator is the closest historical parallel to Karovia\'s current position vis-à-vis DRM.',
-        triggers: 'Mindanao: land dispossession + religious-cultural marginalization. Nordalia: territorial-resource grievance + cultural autonomy demands. Both have legitimate historical grievances entrenched across generations.',
+        triggers: 'Mindanao: land dispossession + religious-cultural marginalization. the selected situation: territorial-resource grievance + cultural autonomy demands. Both have legitimate historical grievances entrenched across generations.',
         externalSupport: 'Most directly comparable case: Malaysia provided sanctuary, training, and political support to MILF before assuming mediator role in 2001. This transition — from patron to honest broker — is the key variable for the Karovian track.',
-        economicFactors: 'Mindanao: agricultural land and natural resource wealth. Nordalia: Belara Mining Complex. In both cases, economic stakes were existential for the armed movement\'s popular legitimacy.',
-        trajectory: 'Mindanao escalated higher (Glasl 8) and took far longer. Multiple false starts (1996 MNLF agreement that excluded MILF; 2008 MOA-AD struck down). Nordalia must avoid a "MNLF trap" of reaching agreement with the wrong interlocutor.',
+        economicFactors: 'Mindanao: agricultural land and natural resource wealth. the selected situation: Belara Mining Complex. In both cases, economic stakes were existential for the armed movement\'s popular legitimacy.',
+        trajectory: 'Mindanao escalated higher (Glasl 8) and took far longer. Multiple false starts (1996 MNLF agreement that excluded MILF; 2008 MOA-AD struck down). the selected situation must avoid a "MNLF trap" of reaching agreement with the wrong interlocutor.',
       },
       keyLessons: [
         'A neighbouring state patron (Malaysia) can be converted from spoiler to mediator — this conversion was decisive',
@@ -162,7 +162,7 @@ const DEMO_RESPONSE = {
         'Invest immediately in converting Karovia from DRM patron to co-guarantor of a peace process — offer Karovia a formal mediation or observer role with security guarantees',
         'Ensure any interim agreement explicitly covers DRM as the primary interlocutor — do not allow a situation where GoN negotiates with a smaller DRM faction while the main movement remains outside',
         'Establish a Joint Ceasefire Monitoring Committee with international observers to reduce violation incidents and create a trust-building feedback loop',
-        'Map the Nordalia constitutional constraints on autonomy early — do not allow talks to progress to an agreement that the Constitutional Court will strike down (MOA-AD failure pattern)',
+        'Map the the selected situation constitutional constraints on autonomy early — do not allow talks to progress to an agreement that the Constitutional Court will strike down (MOA-AD failure pattern)',
       ],
       contraindications: [
         'Do NOT replicate the 1996 MNLF approach of reaching a quick agreement with a moderate faction to marginalize the harder line — this backfired catastrophically and extended the conflict by nearly two decades',
@@ -176,7 +176,7 @@ const DEMO_RESPONSE = {
       location: 'Serbia/Kosovo',
       period: '1998–2008',
       similarity: 0.58,
-      mssdRationale: 'Selected as a contrast case under MSSD with LOWER similarity to isolate the effect of international legal status as a conflict variable. Kosovo shares: ethnic-regional sub-state conflict, external state patron (Albania/NATO :: Karovia), resource and territorial grievances, active international military presence. The key divergence is the international intervention (NATO) and ultimate outcome (supervised independence) — Nordalia\'s situation lacks NATO-level international engagement, making this case a ceiling rather than a template.',
+      mssdRationale: 'Selected as a contrast case under MSSD with LOWER similarity to isolate the effect of international legal status as a conflict variable. Kosovo shares: ethnic-regional sub-state conflict, external state patron (Albania/NATO :: Karovia), resource and territorial grievances, active international military presence. The key divergence is the international intervention (NATO) and ultimate outcome (supervised independence) — the selected situation\'s situation lacks NATO-level international engagement, making this case a ceiling rather than a template.',
       keyActors: ['Government of Serbia', 'Kosovo Liberation Army / Kosovo Albanian leadership', 'UNMIK', 'NATO (KFOR)', 'Martti Ahtisaari (UN SRSG)', 'Contact Group (US, EU, Russia)'],
       glaslStageAtPeak: 9,
       resolution: 'resolved',
@@ -184,10 +184,10 @@ const DEMO_RESPONSE = {
       durationMonths: 120,
       dimensionComparison: {
         actors: 'Both conflicts involve a government with nationalist political constituency making concessions costly; and an armed group with external patron backing. Key difference: Kosovo had a relatively unified Albanian leadership; DRM shows fragmentation. Kosovo also benefited from near-universal international sympathy post-Milosevic atrocities — DRM lacks this degree of international legitimacy.',
-        triggers: 'Kosovo: systematic repression under Milosevic\'s revocation of autonomy (1989) + ethnic cleansing. Nordalia: resource-revenue extraction + cultural marginalisation. Kosovo triggers were more acute and visible internationally.',
-        externalSupport: 'NATO as security guarantor has no Nordalia equivalent. Karovia is a regional power, not an alliance structure. The Kosovo model only applies if Nordalia generates sufficient international attention to attract multilateral involvement.',
-        economicFactors: 'Kosovo: less economically critical than Nordalia (limited natural resources). Nordalia\'s Belara Mining Complex creates stronger economic incentive for negotiated solution AND stronger GoN resistance to territorial concessions.',
-        trajectory: 'Kosovo escalated to full war (Glasl 9) before international intervention created resolution conditions. Nordalia is at Glasl 5 — the Kosovo case demonstrates the cost of allowing escalation to continue: a decade of UN administration was required to rebuild governance capacity destroyed by conflict.',
+        triggers: 'Kosovo: systematic repression under Milosevic\'s revocation of autonomy (1989) + ethnic cleansing. the selected situation: resource-revenue extraction + cultural marginalisation. Kosovo triggers were more acute and visible internationally.',
+        externalSupport: 'NATO as security guarantor has no the selected situation equivalent. Karovia is a regional power, not an alliance structure. The Kosovo model only applies if the selected situation generates sufficient international attention to attract multilateral involvement.',
+        economicFactors: 'Kosovo: less economically critical than the selected situation (limited natural resources). the selected situation\'s Belara Mining Complex creates stronger economic incentive for negotiated solution AND stronger GoN resistance to territorial concessions.',
+        trajectory: 'Kosovo escalated to full war (Glasl 9) before international intervention created resolution conditions. the selected situation is at Glasl 5 — the Kosovo case demonstrates the cost of allowing escalation to continue: a decade of UN administration was required to rebuild governance capacity destroyed by conflict.',
       },
       keyLessons: [
         'International administration (UNMIK) as a transition mechanism is costly, slow, and creates dependency — to be avoided if a negotiated political solution is achievable',
@@ -197,15 +197,15 @@ const DEMO_RESPONSE = {
       ],
       transferableLessons: [
         'Design any mediation process with a clear timeline and deadline — open-ended negotiations entrench positions (Kosovo spent 8 years in status ambiguity)',
-        'Include a decentralisation package within Nordalia\'s Eastern Provinces as a confidence measure for GoN — it reduces the sovereignty cost of the concessions',
-        'Map the "Contact Group" equivalent for Nordalia — identify which external powers (EU, AU, regional body) could serve as co-guarantors to constrain both GoN and Karovia',
+        'Include a decentralisation package within the selected situation\'s Eastern Provinces as a confidence measure for GoN — it reduces the sovereignty cost of the concessions',
+        'Map the "Contact Group" equivalent for the selected situation — identify which external powers (EU, AU, regional body) could serve as co-guarantors to constrain both GoN and Karovia',
       ],
       contraindications: [
-        'Do NOT use Kosovo as a template for outcome — supervised independence is not applicable to Nordalia and invoking Kosovo as precedent will harden GoN maximalism',
-        'Do NOT allow conflict to escalate to Glasl 7+ hoping for international intervention analogous to NATO — no such intervention mechanism exists for Nordalia and the human cost would be catastrophic',
+        'Do NOT use Kosovo as a template for outcome — supervised independence is not applicable to the selected situation and invoking Kosovo as precedent will harden GoN maximalism',
+        'Do NOT allow conflict to escalate to Glasl 7+ hoping for international intervention analogous to NATO — no such intervention mechanism exists for the selected situation and the human cost would be catastrophic',
         'Do NOT establish open-ended international administration as a "interim solution" — UNMIK\'s 8-year legacy demonstrates this approach creates governance dependency rather than building local capacity',
       ],
-      ripenessAtResolution: 'Externally-imposed ripeness via NATO military intervention (1999) rather than organic MHS. The 1999 bombing campaign created an artificial MHS by destroying Serbian military capacity and political will. The subsequent resolution was driven by EU membership incentive (MEO for Serbia) rather than genuine conflict transformation. This model is not replicable for Nordalia without a comparable international security architecture.',
+      ripenessAtResolution: 'Externally-imposed ripeness via NATO military intervention (1999) rather than organic MHS. The 1999 bombing campaign created an artificial MHS by destroying Serbian military capacity and political will. The subsequent resolution was driven by EU membership incentive (MEO for Serbia) rather than genuine conflict transformation. This model is not replicable for the selected situation without a comparable international security architecture.',
     },
   ],
 
@@ -224,8 +224,8 @@ const DEMO_RESPONSE = {
       'Single-track mediation without patron engagement: Processes that did not address the external patron track separately (and simultaneously) failed to sustain momentum',
       'Donor fatigue without process milestones: Long processes without clear milestone-based financing collapsed when donor attention shifted',
     ],
-    optimalEntryPoint: 'Based on cross-case evidence, the optimal intervention window for Nordalia is NOW — at Glasl 5, before escalation to 6-7 where face-saving becomes structurally impossible without military defeat. The Aceh and Mindanao cases demonstrate that MHS does not need to be fully "ripe" if a compelling MEO exists. Recommended entry sequence: (1) Initiate back-channel Track 1.5 contact with DRM leadership and diaspora simultaneously; (2) Open a parallel diplomatic track with Karovia to convert it from patron to co-guarantor; (3) Float a Belara Mining Revenue Framework as an MEO; (4) Formalise a ceasefire monitoring body with international observers to reduce violations and build trust. Avoid a public mediation announcement until all three tracks show preliminary positive signals.',
-    estimatedResolutionTimeline: 'Cross-case evidence: Aceh (29 years total, but 6 months from first Helsinki meeting to MOU); Mindanao (45 years total, 17 years of formal talks); Kosovo (10 years from NATO intervention to independence). For Nordalia at Glasl 5 with moderate international engagement: 18-36 months to a preliminary framework agreement IF the Karovian patron-conversion succeeds and a Belara MEO is structured; 4-8 years to full implementation including disarmament and institutional reform. The critical accelerating variable is whether Karovia can be converted to co-guarantor within the next 6-12 months.',
+    optimalEntryPoint: 'Based on cross-case evidence, the optimal intervention window for the selected situation is NOW — at Glasl 5, before escalation to 6-7 where face-saving becomes structurally impossible without military defeat. The Aceh and Mindanao cases demonstrate that MHS does not need to be fully "ripe" if a compelling MEO exists. Recommended entry sequence: (1) Initiate back-channel Track 1.5 contact with DRM leadership and diaspora simultaneously; (2) Open a parallel diplomatic track with Karovia to convert it from patron to co-guarantor; (3) Float a Belara Mining Revenue Framework as an MEO; (4) Formalise a ceasefire monitoring body with international observers to reduce violations and build trust. Avoid a public mediation announcement until all three tracks show preliminary positive signals.',
+    estimatedResolutionTimeline: 'Cross-case evidence: Aceh (29 years total, but 6 months from first Helsinki meeting to MOU); Mindanao (45 years total, 17 years of formal talks); Kosovo (10 years from NATO intervention to independence). For the selected situation at Glasl 5 with moderate international engagement: 18-36 months to a preliminary framework agreement IF the Karovian patron-conversion succeeds and a Belara MEO is structured; 4-8 years to full implementation including disarmament and institutional reform. The critical accelerating variable is whether Karovia can be converted to co-guarantor within the next 6-12 months.',
   },
 };
 
@@ -253,7 +253,7 @@ export const POST = withCalibration('compare', 'ai_analysis', {
 
     const situationId = (situation as Situation | undefined)?.id ?? '';
 
-    // --- Demo mode ---
+    // --- Sample mode ---
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }

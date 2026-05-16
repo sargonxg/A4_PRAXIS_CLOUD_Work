@@ -140,7 +140,10 @@ export function proxy(request: NextRequest) {
   if (pathname.startsWith('/contexts/')) {
     const slug = pathname.split('/').filter(Boolean).at(1);
     if (!slug) return redirectWithSearch(request, nonce, '/app/contexts');
-    return redirectWithSearch(request, nonce, `/app/workbench/${slug}`);
+    const url = new URL('/app/contexts', request.url);
+    url.searchParams.set('situationId', slug);
+    request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+    return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
   if (pathname === '/methods') {
     return redirectWithSearch(request, nonce, '/app/tools');
@@ -174,10 +177,16 @@ export function proxy(request: NextRequest) {
   }
 
   const legacyAppTarget = LEGACY_APP_ROUTE_TARGETS[pathname]
+    ?? (pathname === '/app/workbench' ? '/app/contexts' : null)
+    ?? (pathname.startsWith('/app/workbench/') ? '/app/contexts' : null)
     ?? (pathname.startsWith('/app/boardroom/') ? '/app/tools' : null)
-    ?? (pathname.startsWith('/app/library/') ? '/app/library' : null);
+    ?? (pathname.startsWith('/app/library/') ? '/app/contexts' : null);
   if (legacyAppTarget) {
     const url = new URL(legacyAppTarget, request.url);
+    if (pathname.startsWith('/app/workbench/')) {
+      const situationId = pathname.split('/').filter(Boolean).at(2);
+      if (situationId) url.searchParams.set('situationId', situationId);
+    }
     request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }

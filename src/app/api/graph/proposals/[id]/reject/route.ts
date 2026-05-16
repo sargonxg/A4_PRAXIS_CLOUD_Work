@@ -15,7 +15,7 @@ const BodySchema = z.object({
 
 export const POST = withAuth<RouteContext>(async (request, user, context) => {
   try {
-    if (user.isDemo) return NextResponse.json({ error: 'Demo mode cannot review graph proposals' }, { status: 403 });
+    if (user.isDemo) return NextResponse.json({ error: 'Sample mode cannot review graph proposals' }, { status: 403 });
     const { id } = await context.params;
     const parsed = BodySchema.safeParse(await request.json().catch(() => ({})));
     if (!parsed.success) {

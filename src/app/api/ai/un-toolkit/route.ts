@@ -51,18 +51,18 @@ const UnToolkitSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
-// Demo response (Nordalia scenario — Multilateral Resolution)
+// Demo response (the selected situation scenario — Multilateral Resolution)
 // ---------------------------------------------------------------------------
 
 const DEMO_RESPONSE = {
   documentType: 'Multilateral Resolution',
-  title: 'On the situation in Nordalia',
+  title: 'On the situation in the selected situation',
   preamble: [
-    'Recalling its resolution 2847 (2024) and all subsequent relevant resolutions and statements of its President on the situation in Nordalia,',
-    'Reaffirming its strong commitment to the sovereignty, independence, unity and territorial integrity of Nordalia,',
+    'Recalling its resolution 2847 (2024) and all subsequent relevant resolutions and statements of its President on the situation in the selected situation,',
+    'Reaffirming its strong commitment to the sovereignty, independence, unity and territorial integrity of the selected situation,',
     'Expressing grave concern at the continuing deterioration of the humanitarian situation, including the displacement of approximately 1.2 million internally displaced persons and 340,000 refugees,',
     'Deeply concerned by the 47 documented violations of the ceasefire established pursuant to resolution 2847 (2024), and by reports of continued military activity in buffer zones,',
-    'Welcoming the continued engagement of the African Union and the United Nations Mission in Nordalia (UNMN) in supporting the AU Roadmap for Elections of September 2025,',
+    'Welcoming the continued engagement of the African Union and the United Nations Mission in the selected situation (UNMN) in supporting the AU Roadmap for Elections of September 2025,',
     'Noting with concern the obstruction of humanitarian access to Kessara and Baravon districts since January 2026, in violation of international humanitarian law,',
     'Reaffirming the primary responsibility of all parties to the conflict for the protection of civilians in accordance with applicable international humanitarian law,',
     'Acting under Chapter VII of the Charter of the United Nations,',
@@ -70,7 +70,7 @@ const DEMO_RESPONSE = {
   operativeClauses: [
     'Demands that all parties immediately cease all offensive military operations and refrain from actions that violate or undermine the ceasefire framework established under resolution 2847 (2024);',
     'Calls upon all parties to the conflict to immediately facilitate safe, unimpeded and sustained humanitarian access to all civilians in need, including in Kessara and Baravon districts, in accordance with international humanitarian law and United Nations guiding principles of humanitarian assistance;',
-    'Urges the Government of Nordalia and the Democratic Reform Movement to engage constructively and in good faith in the AU Roadmap for Elections process under the facilitation of the United Nations Mission in Nordalia, and to convene the next mediation round not later than 30 June 2026;',
+    'Urges the Government of the selected situation and the Democratic Reform Movement to engage constructively and in good faith in the AU Roadmap for Elections process under the facilitation of the United Nations Mission in the selected situation, and to convene the next mediation round not later than 30 June 2026;',
     'Requests the Secretary-General to report to the Council within 60 days on the implementation of this resolution, including on ceasefire compliance, humanitarian access, and progress in the political process;',
     'Decides to remain actively seized of the matter.',
   ],
@@ -85,15 +85,15 @@ on [Date] 2026
 
 The forum,
 
-Recalling its resolution 2847 (2024) and all subsequent relevant resolutions and statements of its President on the situation in Nordalia,
+Recalling its resolution 2847 (2024) and all subsequent relevant resolutions and statements of its President on the situation in the selected situation,
 
-Reaffirming its strong commitment to the sovereignty, independence, unity and territorial integrity of Nordalia,
+Reaffirming its strong commitment to the sovereignty, independence, unity and territorial integrity of the selected situation,
 
 Expressing grave concern at the continuing deterioration of the humanitarian situation, including the displacement of approximately 1.2 million internally displaced persons and 340,000 refugees,
 
 Deeply concerned by the 47 documented violations of the ceasefire established pursuant to resolution 2847 (2024), and by reports of continued military activity in buffer zones,
 
-Welcoming the continued engagement of the African Union and the United Nations Mission in Nordalia (UNMN) in supporting the AU Roadmap for Elections of September 2025,
+Welcoming the continued engagement of the African Union and the United Nations Mission in the selected situation (UNMN) in supporting the AU Roadmap for Elections of September 2025,
 
 Noting with concern the obstruction of humanitarian access to Kessara and Baravon districts since January 2026, in violation of international humanitarian law,
 
@@ -105,7 +105,7 @@ Acting under Chapter VII of the Charter of the United Nations,
 
 2. Calls upon all parties to the conflict to immediately facilitate safe, unimpeded and sustained humanitarian access to all civilians in need, including in Kessara and Baravon districts, in accordance with international humanitarian law and United Nations guiding principles of humanitarian assistance;
 
-3. Urges the Government of Nordalia and the Democratic Reform Movement to engage constructively and in good faith in the AU Roadmap for Elections process under the facilitation of the United Nations Mission in Nordalia, and to convene the next mediation round not later than 30 June 2026;
+3. Urges the Government of the selected situation and the Democratic Reform Movement to engage constructively and in good faith in the AU Roadmap for Elections process under the facilitation of the United Nations Mission in the selected situation, and to convene the next mediation round not later than 30 June 2026;
 
 4. Requests the Secretary-General to report to the Council within 60 days on the implementation of this resolution, including on ceasefire compliance, humanitarian access, and progress in the political process;
 
@@ -114,7 +114,7 @@ Acting under Chapter VII of the Charter of the United Nations,
     '"Demands" in OP1 reflects Chapter VII authority and signals maximum political pressure — appropriate given repeated ceasefire violations. Downgrading to "Calls upon" would signal P3 disunity and reward non-compliance.',
     'The preambular reference to "Acting under Chapter VII" before the operative paragraphs is deliberate — it authorises the "Demands" language and creates a legal basis for future enforcement action without prejudging it.',
     '"Facilitate safe, unimpeded and sustained humanitarian access" is established IHL language from resolution 2417 (2018) on humanitarian access in armed conflict — referencing it implicitly invokes that precedent.',
-    'OP3 names both parties explicitly ("Government of Nordalia and the Democratic Reform Movement") to avoid any suggestion of unequal status — DRM inclusion signals political process legitimacy without prejudging recognition.',
+    'OP3 names both parties explicitly ("Government of the selected situation and the Democratic Reform Movement") to avoid any suggestion of unequal status — DRM inclusion signals political process legitimacy without prejudging recognition.',
     'The 60-day reporting timeline in OP4 is shorter than standard (90 days) — chosen deliberately to maintain Council attention during the critical diplomatic window.',
   ],
   alternativeLanguage: [
@@ -223,7 +223,7 @@ export const POST = withCalibration('un_toolkit', 'ai_report', {
     const sitContext = sitObj ? buildToolContext(sitObj as unknown as Situation) : '';
     const situationId = (sitObj as unknown as Situation | undefined)?.id ?? '';
 
-    // --- Demo mode ---
+    // --- Sample mode ---
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }

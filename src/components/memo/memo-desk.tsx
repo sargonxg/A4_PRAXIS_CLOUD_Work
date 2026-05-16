@@ -920,13 +920,13 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                 icon={Library}
                 title={`${sources.length} sources`}
                 subtitle="Receipts attached to this capsule."
-                href="/app/workbench"
+                href="/app/contexts"
               />
               <LibrarySection
                 icon={Upload}
                 title="Import documents"
                 subtitle="Add receipts before drafting."
-                href={activeSituation?.id ? `/app/workbench/${activeSituation.id}?tab=library` : '/app/contexts'}
+                href={activeSituation?.id ? `/app/contexts?situationId=${activeSituation.id}` : '/app/contexts'}
               />
             </div>
             <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">

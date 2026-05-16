@@ -11,7 +11,7 @@ export const GET = withAuth<{ params: Promise<{ runId: string }> }>(async (_requ
     return NextResponse.json({ error: 'Invalid run id', details: parsed.error.flatten() }, { status: 400 });
   }
   if (user.isDemo) {
-    return NextResponse.json({ error: 'Demo mode does not persist private agent runs' }, { status: 404 });
+    return NextResponse.json({ error: 'Sample mode does not persist private agent runs' }, { status: 404 });
   }
 
   try {

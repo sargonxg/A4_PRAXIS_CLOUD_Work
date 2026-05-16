@@ -19,7 +19,7 @@ the 2026-05-08 repo-shape cleanup and remain recoverable from git history.
 Current launch-blocking gaps are not architectural disagreements; they are
 implementation gaps against this reference:
 
-- canonical public demo `/demo/syria-2024`;
+- canonical public demo `/demo/user-case-2024`;
 - persona CI green-streak evidence;
 - canonical `/waitlist`, `/login/callback`, and `/legal/*` routes;
 - production context/storage parity and Firestore/Postgres reconciliation;
@@ -70,7 +70,7 @@ chain. The repo now enforces command parity in two ways:
   production fixtures must be listed in the gated block below.
 
 Local aliases added for the real app include `typecheck`, `test`,
-`test:e2e:personas`, `audit:ontology-mapping`, `audit:ontology-versions`,
+`smoke:tasklet-app`, `audit:ontology-mapping`, `audit:ontology-versions`,
 `audit:ontology-classifier-accuracy`, `audit:context-types-parity`, `audit:tool-skill-conforms`,
 `audit:tool-canary-executable`, `audit:tool-semantic-canaries`,
 `audit:tool-persona-coverage`, `audit:tool-authoring-spike`,
@@ -114,15 +114,15 @@ shifts, and high-intensity load tests remain owner-gated operational work.
 | Four subagents run on Gemini Enterprise / Agent Engine | Deep Research/Agent Engine path exists; Context Preparer, Source Augmenter, Output Refiner, Memo Drafter runtime remains open | Subagent deployment plan, typed input/output schemas, staging smoke |
 | Two-phase Firestore/Postgres commit everywhere | Designed and tracked; not complete across all ingestion/tool write paths | Reconciler and crash-injection tests |
 | Identity Platform magic-link signup | Login/waitlist surfaces exist; final Identity Platform/magic-link posture is owner-gated | Owner decision, implementation, onboarding wow-flow e2e |
-| Public read-only `/demo/syria-2024` | Demo route exists, but exact Syria 2024 public snapshot/watermark launch gate remains open | Demo snapshot, watermark, no-write guard, 30-second comprehension smoke |
+| Public read-only `/demo/user-case-2024` | Demo route exists, but exact the selected situation 2024 public snapshot/watermark launch gate remains open | Demo snapshot, watermark, no-write guard, 30-second comprehension smoke |
 | Terraform is only infra path | Pack 14 scaffolding and audits exist; Terraform apply remains owner/cloud gated | Terraform plan/apply in staging after gcloud auth and owner sign-off |
 | Canary 5/25/100 | Monitor script and log template exist; traffic shift not started | Owner-approved canary execution |
 
 ## Known Reference/API Shape Drift
 
-The architecture bible describes clean product routes such as
-`/app/workbench/[caseId]/tools` and backend-style `/v1/cases/...` flows. The
-current app still exposes a large Next.js API route surface under `src/app/api`.
+The architecture bible now describes the compact app routes:
+`/app/assistant`, `/app/contexts`, `/app/write`, `/app/canvas`, and
+`/app/tools`. The current app still exposes a large Next.js API route surface under `src/app/api`.
 That is not ignored: `npm run audit:routes` currently counts 66 calibrated AI
 routes, and route collapse remains tracked in
 `docs/backlog/2026-05-06-master-charter-completion-todo.md`.
@@ -164,7 +164,7 @@ Then run browser smoke when UI or routes changed:
 
 ```bash
 npm run smoke:app-usability
-npx playwright test tests/e2e/landing-smoke.spec.ts tests/e2e/personas
+npm run smoke:tasklet-app
 ```
 
 ## Update Protocol

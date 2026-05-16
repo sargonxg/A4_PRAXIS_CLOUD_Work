@@ -226,7 +226,7 @@ For each entity, include the exact source passage it was extracted from. Rate co
 
 // ============================================================================
 // Tool 3: queryConflictGraph
-// Returns REAL data from the PRAXIS demo conflict (Nordalia Crisis)
+// Returns REAL data from the PRAXIS demo conflict (User Workspace)
 // ============================================================================
 
 export const queryConflictGraph = tool({
@@ -254,7 +254,7 @@ export const queryConflictGraph = tool({
   execute: async ({ conflictId, entityType, actorId, query }) => {
     try {
       // In production: fetch conflict from database by conflictId.
-      // For demo, use the pre-loaded Nordalia Crisis dataset.
+      // For demo, use the pre-loaded User Workspace dataset.
       const conflict = DEFAULT_USER_CONFLICT;
 
       let results: unknown[] = [];
@@ -945,7 +945,7 @@ Audience: ${audience.replace(/_/g, ' ')}
 Position/Perspective: ${position || 'UN Secretary-General / SRSG'}
 Number of points: ${maxPoints || 5}
 
-CONFLICT CONTEXT (Nordalia Crisis):
+CONFLICT CONTEXT (User Workspace):
 ${actorContext}
 
 AUDIENCE-SPECIFIC REQUIREMENTS:
@@ -1629,7 +1629,7 @@ SANCTIONS BODIES TO COVER: ${sanctionsBody === 'all' || !sanctionsBody ? 'UN Sec
 INCLUDE COMPLIANCE GUIDANCE: ${includeGuidance !== false ? 'YES' : 'NO'}
 
 ${entityName ? `ENTITY LOOKUP:
-Generate realistic but clearly illustrative sanctions information for "${entityName}" in the context of the ${conflict.name} scenario. For the Nordalia Crisis (a fictional scenario), create fictional but realistic-sounding sanctions designations that reflect the conflict dynamics.
+Generate realistic but clearly illustrative sanctions information for "${entityName}" in the context of the ${conflict.name} scenario. For the User Workspace (a fictional scenario), create fictional but realistic-sounding sanctions designations that reflect the conflict dynamics.
 
 If this is a real-world conflict, generate accurate information based on real sanctions regimes.` : ''}
 
@@ -1772,7 +1772,7 @@ OCHA FORMATTING STANDARDS:
 - UN OCHA format for funding (Humanitarian Response Plan)
 - Cluster system for sector coordination (Food Cluster, Health Cluster, WASH Cluster, etc.)
 
-Generate a realistic, analytically substantive snapshot following OCHA's Situation Report format. For fictional conflicts (like Nordalia Crisis), create plausible indicators consistent with the conflict's known dynamics. Include realistic-sounding (but clearly illustrative) figures and percentages.
+Generate a realistic, analytically substantive snapshot following OCHA's Situation Report format. For fictional conflicts (like User Workspace), create plausible indicators consistent with the conflict's known dynamics. Include realistic-sounding (but clearly illustrative) figures and percentages.
 
 Lead with the most urgent/life-threatening concerns. Be frank about access constraints. Include realistic funding gaps.`,
     });
@@ -2843,7 +2843,7 @@ export function createSituationBoundTools(
           };
         }
 
-        // Fall back to DEFAULT_USER_CONFLICT for demo users
+        // Fall back to DEFAULT_USER_CONFLICT for sample users
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (queryConflictGraph.execute as any)({ conflictId, entityType, actorId, query });
       } catch (err) {

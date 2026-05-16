@@ -99,15 +99,15 @@ const ConcordiaSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
-// Demo response — Nordalia conflict scenario (realistic 3-phase process)
+// Demo response — the selected situation conflict scenario (realistic 3-phase process)
 // ---------------------------------------------------------------------------
 
 const DEMO_RESPONSE = {
   processDesign: {
     format: 'proximity-talks' as const,
     venue: 'Geneva, Switzerland (Palais des Nations, UN Office) — neutral, well-resourced, and symbolically aligned with international humanitarian law. The AU Peace and senior diplomatic forum provides co-convening authority. Secondary track-2 channels hosted in Nairobi under Rift Valley Institute auspices.',
-    mediator: 'Joint UN-AU mediation team led by a multilateral diplomacy Senior Mediation Adviser (P5 level) as process facilitator, co-chaired by the AU High Representative for the Nordalia Process. Supported by a technical secretariat comprising economic affairs specialists (World Bank secondee), security sector reform advisers (DCAF), and a human rights legal adviser (OHCHR). A senior woman mediator should co-lead in line with Resolution 1325 commitments.',
-    rationale: 'Proximity talks are appropriate given the deep mutual distrust between the Government of Nordalia (GoN) and the Democratic Reform Movement (DRM): direct talks would be premature and would hand GoN leverage to walk out theatrically, while shuttle diplomacy is too slow given the humanitarian emergency. Geneva sends a neutral signal without favouring either party\'s regional patrons. The UN-AU co-convening structure distributes legitimacy across both the global and regional levels, insulating the process from any single external actor\'s interference. The joint mediation team ensures no single personality becomes the bottleneck.',
+    mediator: 'Joint UN-AU mediation team led by a multilateral diplomacy Senior Mediation Adviser (P5 level) as process facilitator, co-chaired by the AU High Representative for the the selected situation Process. Supported by a technical secretariat comprising economic affairs specialists (World Bank secondee), security sector reform advisers (DCAF), and a human rights legal adviser (OHCHR). A senior woman mediator should co-lead in line with Resolution 1325 commitments.',
+    rationale: 'Proximity talks are appropriate given the deep mutual distrust between the Government of the selected situation (GoN) and the Democratic Reform Movement (DRM): direct talks would be premature and would hand GoN leverage to walk out theatrically, while shuttle diplomacy is too slow given the humanitarian emergency. Geneva sends a neutral signal without favouring either party\'s regional patrons. The UN-AU co-convening structure distributes legitimacy across both the global and regional levels, insulating the process from any single external actor\'s interference. The joint mediation team ensures no single personality becomes the bottleneck.',
   },
   phases: [
     {
@@ -122,7 +122,7 @@ const DEMO_RESPONSE = {
       ],
       keyActivities: [
         'Bilateral back-channel consultations with GoN and DRM leadership through existing intermediaries (Rift Valley Institute, ICRC)',
-        'Mediation team visits to Nordalia capital and DRM-controlled territories to assess negotiating mandates',
+        'Mediation team visits to the selected situation capital and DRM-controlled territories to assess negotiating mandates',
         'ICRC-facilitated prisoner exchange: minimum 25 per side as first CBM',
         'Technical working group on ceasefire monitoring architecture (military experts, UNMN)',
         'Humanitarian access negotiations with GoN Ministry of Interior and DRM military command',
@@ -164,7 +164,7 @@ const DEMO_RESPONSE = {
         'Political track: Transitional governance arrangements including DRM participation in interim bodies; constitutional reform roadmap for eastern autonomy; internationally supervised election timeline',
         'Transitional justice track: Hybrid tribunal architecture (national-international), truth commission mandate, reparations framework',
         'Belara Mining escrow account operationalised with World Bank and African Development Bank as joint administrators',
-        'Two international pledging conferences for Nordalia reconstruction to create positive economic incentives',
+        'Two international pledging conferences for the selected situation reconstruction to create positive economic incentives',
         'Monthly plenary sessions in Geneva with inter-sessional working group meetings in Nairobi',
       ],
       confidenceBuilding: [
@@ -232,7 +232,7 @@ const DEMO_RESPONSE = {
       item: 'Belara Mining Revenue-Sharing and Eastern Provincial Development Fund',
       priority: 'core' as const,
       timeframe: 'phase-2' as const,
-      parties: ['Government of Nordalia', 'Democratic Reform Movement'],
+      parties: ['Government of the selected situation', 'Democratic Reform Movement'],
       linkages: ['Security and DDR framework', 'Eastern provincial autonomy arrangements'],
       zoneOfPossibleAgreement: 'Fisher-Ury analysis: GoN\'s stated position is maximum 15% revenue to eastern provinces; DRM\'s stated position is 60%. Underlying interests: GoN needs fiscal stability and international investor confidence; DRM needs a tangible economic dividend to justify demobilisation. ZOPA is likely 28-42% revenue share administered through an internationally supervised Provincial Development Fund. World Bank modelling suggests 35% is fiscally sustainable for GoN while meeting DRM\'s minimum economic threshold. Package: couple revenue share with an international investment guarantee scheme that increases GoN\'s overall mining revenue, making the relative share less politically costly.',
     },
@@ -240,7 +240,7 @@ const DEMO_RESPONSE = {
       item: 'Disarmament, Demobilisation and Reintegration (DDR) and Security Guarantees',
       priority: 'core' as const,
       timeframe: 'phase-2' as const,
-      parties: ['Government of Nordalia', 'Democratic Reform Movement', 'UNMN'],
+      parties: ['Government of the selected situation', 'Democratic Reform Movement', 'UNMN'],
       linkages: ['Political transitional arrangements', 'International guarantees package', 'Eastern provincial autonomy'],
       zoneOfPossibleAgreement: 'GoN position: immediate disarmament before political talks conclude. DRM position: political settlement first, then conditional disarmament with full security guarantees. Underlying interests: GoN needs security sector control; DRM needs physical survival guarantees for leadership and fighters. ZOPA: phased DDR where cantonment is linked to political milestones, not front-loaded. Fighters enter cantonment in tranches tied to political benchmarks (revenue agreement, autonomy framework, elections). International peacekeeping force expansion provides security guarantee. UNMN Chapter VII enforcement authority resolves GoN\'s credible commitment problem.',
     },
@@ -248,7 +248,7 @@ const DEMO_RESPONSE = {
       item: 'Eastern Province Autonomy and Constitutional Reform',
       priority: 'core' as const,
       timeframe: 'phase-2' as const,
-      parties: ['Government of Nordalia', 'Democratic Reform Movement', 'Eastern Provincial Council'],
+      parties: ['Government of the selected situation', 'Democratic Reform Movement', 'Eastern Provincial Council'],
       linkages: ['Electoral framework', 'Revenue-sharing arrangement', 'Transitional justice'],
       zoneOfPossibleAgreement: 'GoN position: decentralisation within unitary state, no constitutional change. DRM position: federal status or self-determination referendum. Underlying interests: GoN needs territorial integrity and sovereignty signal; DRM needs meaningful self-governance and protection from future resource exploitation. ZOPA: asymmetric autonomy model (e.g., Mindanao Bangsamoro or South Tyrol precedent) — substantial administrative autonomy with constitutional protection, without federalism label. Framing as "special status" rather than federalism allows GoN to claim territorial integrity victory while DRM gains substantive self-governance.',
     },
@@ -256,7 +256,7 @@ const DEMO_RESPONSE = {
       item: 'Transitional Justice and Accountability Mechanism',
       priority: 'important' as const,
       timeframe: 'phase-2' as const,
-      parties: ['Government of Nordalia', 'Democratic Reform Movement', 'Civil Society', 'OHCHR'],
+      parties: ['Government of the selected situation', 'Democratic Reform Movement', 'Civil Society', 'OHCHR'],
       linkages: ['International guarantees', 'DDR security guarantees for DRM leadership'],
       zoneOfPossibleAgreement: 'GoN position: no accountability mechanism; at most a truth commission without criminal jurisdiction. DRM position: international criminal tribunal for GoN military abuses. DRM leadership privately fears accountability for their own conduct. ZOPA: hybrid tribunal with OHCHR-endorsed mandate focused on most serious violations by all parties; truth commission with conditional amnesty for lower-level actors; reparations fund. Key lever: guarantee to DRM political and military leadership that truth commission participation is differentiated from criminal prosecution — creates incentive for voluntary disclosure.',
     },
@@ -264,7 +264,7 @@ const DEMO_RESPONSE = {
       item: 'Ceasefire Compliance and Monitoring Architecture',
       priority: 'core' as const,
       timeframe: 'phase-1' as const,
-      parties: ['Government of Nordalia', 'Democratic Reform Movement', 'UNMN'],
+      parties: ['Government of the selected situation', 'Democratic Reform Movement', 'UNMN'],
       linkages: ['DDR framework', 'Humanitarian access', 'Karovia non-interference'],
       zoneOfPossibleAgreement: 'Strongest ZOPA of any agenda item — both parties are suffering from continued fighting and both face rising economic costs. GoN needs international legitimacy; DRM needs a breathing space. Agreement range: Joint Ceasefire Monitoring Committee with UNMN chair; daily incident reporting; 48-hour investigation protocol for violations; clear escalation ladder to multilateral forum. Karovia non-interference is the key variable — if Karovia continues arms supply, DRM has less incentive to observe ceasefire. Manage through multilateral forum targeted sanctions threat against Karovian officials.',
     },
@@ -272,7 +272,7 @@ const DEMO_RESPONSE = {
       item: 'International Guarantees and Implementation Monitoring Framework',
       priority: 'important' as const,
       timeframe: 'phase-3' as const,
-      parties: ['Government of Nordalia', 'Democratic Reform Movement', 'AU', 'UN', 'EU', 'World Bank'],
+      parties: ['Government of the selected situation', 'Democratic Reform Movement', 'AU', 'UN', 'EU', 'World Bank'],
       linkages: ['All core agenda items', 'DDR', 'Electoral framework'],
       zoneOfPossibleAgreement: 'Both parties need credible international guarantees — GoN to lock in international investment and legitimacy; DRM to ensure any agreement is enforced against GoN if commitments are breached. ZOPA: International Contact Group with binding reporting obligations to multilateral forum; phased release of reconstruction funds conditioned on implementation benchmarks; AU-deployed monitoring mission with enforcement authority. The World Bank and African Development Bank as co-administrators of the Provincial Development Fund provides the economic guarantee architecture.',
     },
@@ -280,7 +280,7 @@ const DEMO_RESPONSE = {
       item: 'Electoral Framework and Political Participation',
       priority: 'important' as const,
       timeframe: 'phase-2' as const,
-      parties: ['Government of Nordalia', 'Democratic Reform Movement', 'UNDP', 'AU Election Observer Mission'],
+      parties: ['Government of the selected situation', 'Democratic Reform Movement', 'UNDP', 'AU Election Observer Mission'],
       linkages: ['Eastern provincial autonomy', 'DDR framework', 'Transitional governance'],
       zoneOfPossibleAgreement: 'GoN position: elections on existing constitutional timeline with DRM disarmed and excluded from political participation. DRM position: transitional authority period with DRM included before elections. ZOPA: transitional period of 18-24 months with UNDP-supervised electoral commission; DRM political wing registers as party after signing agreement; internationally supervised elections with AU observation; interim power-sharing in national unity transitional cabinet. Timing linked to DDR milestones — elections only proceed when minimum cantonment benchmarks met.',
     },
@@ -320,7 +320,7 @@ const DEMO_RESPONSE = {
     mutuallyHurtingStalemate: true,
     mutuallyEnticing: false,
     assessmentNote: 'Zartman\'s mutually hurting stalemate (MHS) is present: GoN has failed to achieve military victory despite 18 months of operations; mounting casualties and economic costs (estimated 4.2% GDP impact per IMF) are eroding domestic support. DRM cannot translate military holding capacity into territorial control or political leverage; Karovia\'s support is increasingly conditional. Both parties are "ripe" in the negative sense — neither can win, and the costs of continued fighting are rising. However, Zartman\'s mutually enticing opportunity (MEO) is NOT yet present: neither party has articulated a positive vision of a negotiated future that their constituents would accept. Ripeness score: 6.5/10. The window is open but fragile. Key indicators to monitor: GoN election calendar (pressure to resolve before elections reduces GoN\'s incentive to make concessions after them); Karovia\'s economic situation (declining oil revenues increasing Karovia\'s own cost-benefit calculation); DRM leadership cohesion (any fragmentation reduces DRM\'s negotiating authority and ripeness).',
-    interventionWindow: 'The current intervention window is estimated at 9-15 months. It is most likely to close in the downward direction if: (1) GoN elections occur without a settlement, removing the electoral incentive that currently motivates GoN to resolve; (2) Karovia escalates support to DRM following the failure of diplomatic overtures; or (3) DRM splinters into negotiating and non-negotiating factions. The window could be extended by: early economic dividends visible to both communities, sustained international financial pressure on Karovia, and a high-profile international political initiative (multilateral forum ministerial session on Nordalia) that raises the cost of non-engagement.',
+    interventionWindow: 'The current intervention window is estimated at 9-15 months. It is most likely to close in the downward direction if: (1) GoN elections occur without a settlement, removing the electoral incentive that currently motivates GoN to resolve; (2) Karovia escalates support to DRM following the failure of diplomatic overtures; or (3) DRM splinters into negotiating and non-negotiating factions. The window could be extended by: early economic dividends visible to both communities, sustained international financial pressure on Karovia, and a high-profile international political initiative (multilateral forum ministerial session on the selected situation) that raises the cost of non-engagement.',
   },
   guarantees: [
     {
@@ -330,17 +330,17 @@ const DEMO_RESPONSE = {
     },
     {
       type: 'economic' as const,
-      mechanism: 'Belara Mining Provincial Development Fund administered jointly by World Bank and African Development Bank with quarterly independent audits. All fund disbursements conditional on implementation benchmarks verified by JIC. International investment guarantee scheme (MIGA) covering private investment in eastern provinces. USD 2.4 billion international reconstruction pledge managed through a Nordalia Recovery Trust Fund.',
+      mechanism: 'Belara Mining Provincial Development Fund administered jointly by World Bank and African Development Bank with quarterly independent audits. All fund disbursements conditional on implementation benchmarks verified by JIC. International investment guarantee scheme (MIGA) covering private investment in eastern provinces. USD 2.4 billion international reconstruction pledge managed through a the selected situation Recovery Trust Fund.',
       guarantor: 'World Bank Group, African Development Bank, International Monetary Fund (fiscal monitoring), European Union (largest bilateral reconstruction donor), International Contact Group member states.',
     },
     {
       type: 'political' as const,
-      mechanism: 'International Contact Group (ICG) comprising AU, UN, EU, and key bilateral actors meets quarterly at Ministerial level. ICG has authority to publicly name parties failing to implement agreed commitments. multilateral forum reporting cycle: Joint Implementation Commission reports every 90 days; multilateral forum holds a dedicated Nordalia session every 6 months for the 3-year implementation period.',
+      mechanism: 'International Contact Group (ICG) comprising AU, UN, EU, and key bilateral actors meets quarterly at Ministerial level. ICG has authority to publicly name parties failing to implement agreed commitments. multilateral forum reporting cycle: Joint Implementation Commission reports every 90 days; multilateral forum holds a dedicated the selected situation session every 6 months for the 3-year implementation period.',
       guarantor: 'UN senior diplomatic forum (permanent political anchor), African Union Commission, European Union External Action Service, International Contact Group member states (France, Germany, UK, Kenya, Nigeria, Norway).',
     },
     {
       type: 'international' as const,
-      mechanism: 'Comprehensive peace agreement registered with the UN Treaty Collection under Article 102 UN Charter, conferring legal status and creating an international legal obligation on all parties. Agreement includes an ICSID arbitration clause for disputes over the economic provisions. OHCHR field presence in Nordalia with human rights monitoring mandate for the 5-year implementation period.',
+      mechanism: 'Comprehensive peace agreement registered with the UN Treaty Collection under Article 102 UN Charter, conferring legal status and creating an international legal obligation on all parties. Agreement includes an ICSID arbitration clause for disputes over the economic provisions. OHCHR field presence in the selected situation with human rights monitoring mandate for the 5-year implementation period.',
       guarantor: 'United Nations Secretariat (treaty registration and OHCHR deployment), International Centre for Settlement of Investment Disputes (economic arbitration), International Criminal Court (deterrent role — situation already under preliminary examination).',
     },
   ],

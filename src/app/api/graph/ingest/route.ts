@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No entities provided' }, { status: 400 });
     }
 
-    const targetConflictId = conflictId || 'nordalia-crisis';
+    const targetConflictId = conflictId || 'user-case';
 
     // Ensure the conflict exists
     let conflict = getConflict(targetConflictId);

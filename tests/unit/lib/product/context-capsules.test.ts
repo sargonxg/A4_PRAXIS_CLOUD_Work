@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  CAPSULE_ATTACHMENT_ROLES,
+  CAPSULE_SLOT_DEFINITIONS,
   CAPSULE_COMBINATION_RECIPES,
   CAPSULE_CONNECTOR_IDEAS,
   CAPSULE_OUTPUT_PRODUCTS,
   CONTEXT_CAPSULE_TEMPLATES,
   POLICY_PATH_PROFILES,
+  capsuleAttachmentCounts,
+  capsuleSlotReadiness,
   contextCapsuleLoginHref,
 } from '@/lib/product/context-capsules';
 
@@ -17,6 +21,55 @@ describe('context capsule product contract', () => {
     expect(POLICY_PATH_PROFILES[0]?.id).toBe('generic-policy');
     expect(POLICY_PATH_PROFILES.length).toBeGreaterThanOrEqual(8);
     expect(POLICY_PATH_PROFILES[0]?.suggestedOutputs.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('defines the full policy-analysis capsule anatomy and attachment roles', () => {
+    expect(CAPSULE_SLOT_DEFINITIONS.map((slot) => slot.id)).toEqual([
+      'user',
+      'situation',
+      'source',
+      'document',
+      'connector',
+      'time',
+      'graph',
+      'rules',
+      'tool',
+      'objective',
+      'output',
+      'memory',
+    ]);
+    expect(CAPSULE_ATTACHMENT_ROLES.map((role) => role.role)).toEqual(['primary', 'reference', 'comparison', 'archived']);
+    expect(CAPSULE_SLOT_DEFINITIONS.every((slot) => slot.policyQuestions.length >= 2)).toBe(true);
+  });
+
+  it('computes slot readiness and attachment counts from capsule refs', () => {
+    const refs = {
+      userCoreId: 'user-1',
+      situationCoreId: 'situation-1',
+      sourceCoreIds: ['source-1', 'source-2'],
+      documentCoreIds: ['doc-1'],
+      graphCoreId: null,
+      timeCoreId: 'time-1',
+      outputCoreIds: ['memo'],
+      toolCoreIds: ['source-scout'],
+      objectiveCoreIds: [],
+      productCoreIds: ['rules-product'],
+      memoryCoreId: null,
+    };
+
+    const readiness = capsuleSlotReadiness(refs);
+    expect(readiness.user).toBe(true);
+    expect(readiness.connector).toBe(true);
+    expect(readiness.rules).toBe(true);
+    expect(readiness.graph).toBe(false);
+    expect(readiness.memory).toBe(false);
+    expect(capsuleAttachmentCounts(refs)).toMatchObject({
+      attachments: 3,
+      connectors: 1,
+      sources: 2,
+      documents: 1,
+      tools: 1,
+    });
   });
 
   it('maps every policy path to existing capsule templates and usable suggestions', () => {

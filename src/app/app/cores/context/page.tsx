@@ -42,7 +42,7 @@ export default function ContextCorePage() {
               <Plus className="h-4 w-4" />
               Create context
             </Link>
-            <Link href="/app/workbench?tab=library" className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-navy-900 hover:bg-slate-50">
+            <Link href="/app/contexts" className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-navy-900 hover:bg-slate-50">
               <FilePlus2 className="h-4 w-4" />
               Attach sources
             </Link>

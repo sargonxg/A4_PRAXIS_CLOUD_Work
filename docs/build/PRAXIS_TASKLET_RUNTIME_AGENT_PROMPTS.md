@@ -315,7 +315,7 @@ Read first:
 - src/components/ask/AskWorkspacePage.tsx
 - src/components/app/core-context-strip.tsx
 - src/components/dashboard/ask-praxis-home.tsx
-- src/components/tools/ToolMarketplace.tsx
+- src/components/cores/ContextBuilderRoom.tsx
 - STATUS.md
 - TODO.md
 
@@ -337,7 +337,7 @@ Own these areas:
   - src/components/ask/AskWorkspacePage.tsx
   - src/components/dashboard/ask-praxis-home.tsx
   - src/components/app/core-context-strip.tsx
-  - src/components/tools/ToolMarketplace.tsx
+  - src/components/cores/ContextBuilderRoom.tsx
   - src/components/landing/phase8-wow-landing.tsx
 
 Avoid backend runtime files unless the Codex session asks for a shared type.
@@ -669,7 +669,7 @@ Read first:
 - src/components/ask/AskBar.tsx
 - src/components/app/capsule-strip-header.tsx
 - src/components/app/core-context-strip.tsx
-- src/components/tools/ToolMarketplace.tsx
+- src/components/cores/ContextBuilderRoom.tsx
 - src/lib/product/context-capsules.ts
 - src/lib/tools/canonical.ts
 - STATUS.md
@@ -854,7 +854,7 @@ Read first:
 - src/components/ask/AskWorkspacePage.tsx
 - src/components/assistant/response-actions.tsx
 - src/components/writer/PraxisWriter.tsx
-- src/components/tools/ToolMarketplace.tsx
+- src/components/cores/ContextBuilderRoom.tsx
 - tests/e2e/app-usability-smoke.spec.ts
 - STATUS.md
 - TODO.md

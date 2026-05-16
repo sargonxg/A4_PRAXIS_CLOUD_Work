@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTurnCapsule, persistSuggestedActionReceipt, runCapability, suggestNextActions } from '@/lib/ai/context-kernel';
+import { buildTurnCapsule, compileEffectiveCapsule, persistSuggestedActionReceipt, runCapability, suggestNextActions } from '@/lib/ai/context-kernel';
 
 describe('context kernel', () => {
   it('builds a turn capsule and excludes deleted memory from the next capsule', async () => {
@@ -87,6 +87,34 @@ describe('context kernel', () => {
     expect(actions.map((action) => action.label)).toContain('Find sources');
     expect(actions.every((action) => action.capabilityId)).toBe(true);
     expect(actions.map((action) => action.label).join(' ')).not.toContain('/api/ai/search');
+  });
+
+  it('compiles a model-ready effective capsule with slot trace and hash', async () => {
+    const db = new FakeFirestore();
+    const capsule = await buildTurnCapsule({
+      uid: 'u1',
+      traceId: 'trace-compile',
+      activeContextStack: {
+        stackId: 'default',
+        userModelId: 'user-core-1',
+        situationId: 'situation-core-1',
+        sourceIds: ['source-1'],
+        documentIds: ['doc-1'],
+        outputGoal: 'options memo',
+      },
+      activeGaps: ['Graph Core missing.'],
+    }, deps(db));
+
+    const effective = compileEffectiveCapsule(capsule, 'Draft an options memo.');
+
+    expect(effective.primaryCapsuleId).toBe('default');
+    expect(effective.objective).toBe('Draft an options memo.');
+    expect(effective.selectedFiles).toEqual(['doc-1']);
+    expect(effective.selectedConnectors).toEqual(['source-1']);
+    expect(effective.slotTrace.find((slot) => slot.slot === 'sourceDocument')?.status).toBe('ready');
+    expect(effective.readiness.missingSlots).toContain('graph');
+    expect(effective.contentHash).toMatch(/^fnv1a_[a-f0-9]{8}$/);
+    expect(effective.promptBlock).toContain('<praxis-context-capsule>');
   });
 
   it('persists suggested action receipts under the owner scope', async () => {

@@ -239,7 +239,7 @@ https://praxis.tacitus.me
 - `docs/architecture/PRAXIS_ARCHITECTURE.md` - canonical architecture bible
 - `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` - shipped vs target-state notes
 - `docs/build/PRAXIS_v5_EXECUTION_LEDGER.md` - current execution ledger
-- `docs/v7/README.md` - current v7 slice entrypoint
+- `docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md` - current cleanup ledger
 - `STATUS.md`, `TODO.md`, `CHANGELOG.md` - current repo status and backlog
 
 ---

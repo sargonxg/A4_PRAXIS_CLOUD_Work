@@ -13,7 +13,7 @@
  * itself is the single allowed source of <h1> for that surface.
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -40,6 +40,10 @@ function relPath(p) {
 }
 
 const offenders = [];
+if (!existsSync(WORKBENCH_DIR)) {
+  console.log('audit-single-h1: ok - retired workbench component tree is absent.');
+  process.exit(0);
+}
 for (const file of walk(WORKBENCH_DIR)) {
   const rel = relPath(file);
   if (ALLOWED_H1_FILES.has(rel)) continue;

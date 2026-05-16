@@ -3,7 +3,7 @@
  *
  * The sidebar keeps the visible product contract small:
  * Home, Ask PRAXIS, Library, Memo Studio, Canvas, and Advanced.
- * Core builders, diagnostics, ACH, Boardroom, and specialist tools stay
+ * Core builders, diagnostics, and specialist tools stay
  * reachable through those surfaces instead of becoming competing nav areas.
  * Compatibility route marker for audits: href: '/app/contexts'.
  */
@@ -48,7 +48,7 @@ export const NAV_GROUPS: readonly PrimaryNavGroup[] = [
     items: [
       { id: 'home', label: 'Home', icon: 'Home', href: '/app/dashboard', shortcut: 'g h', hint: 'Choose or create context, then ask' },
       { id: 'ask', label: 'Ask PRAXIS', icon: 'Sparkles', href: '/app/assistant', shortcut: '/', hint: 'Reason from the active capsule' },
-      { id: 'library', label: 'Library', icon: 'LibraryBig', href: '/app/workbench', shortcut: 'g l', hint: 'Upload sources and documents into knowledge cores' },
+      { id: 'library', label: 'Library', icon: 'LibraryBig', href: '/app/contexts', shortcut: 'g l', hint: 'Upload sources and documents into knowledge cores' },
       { id: 'write', label: 'Memo Studio', icon: 'FileText', href: '/app/write', shortcut: 'g m', hint: 'Draft from the active context' },
       { id: 'canvas', label: 'Canvas', icon: 'Network', href: '/app/canvas', shortcut: 'g v', hint: 'Inspect or arrange context when needed' },
       { id: 'advanced', label: 'Advanced', icon: 'Wrench', href: '/app/tools', shortcut: 'g a', hint: 'Detailed tools, diagnostics, graph, ACH, and settings' },

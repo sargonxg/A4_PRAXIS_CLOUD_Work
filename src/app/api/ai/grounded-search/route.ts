@@ -33,7 +33,7 @@ export const POST = withCalibration('grounded-search', 'ai_grounded_search', {
     }
     const { messages, conflictContext, situationId } = parsedBody.data;
 
-    // --- Demo mode: return pre-computed responses when no API key is set ---
+    // --- Sample mode: return pre-computed responses when no API key is set ---
     if (isServerDemoMode()) {
       const lastMessage = messages?.[messages.length - 1];
       const userContent = typeof lastMessage?.content === 'string' ? lastMessage.content : '';

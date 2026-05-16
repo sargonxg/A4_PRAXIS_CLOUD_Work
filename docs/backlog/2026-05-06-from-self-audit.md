@@ -13,7 +13,7 @@ These block any `v1.0.0` readiness claim.
 
 | Priority | Area | Item | Acceptance Check | Owner | Target |
 |---|---|---|---|---|---|
-| S0 | Public demo | Public demo contract | Signed-out `/demo/syria-2024` returns 200, is read-only, watermarked, and has Playwright + Lighthouse/axe evidence. | PRAXIS engineering | v1.0 gate |
+| S0 | Public demo | Public demo contract | Signed-out `/demo/user-case-2024` returns 200, is read-only, watermarked, and has Playwright + Lighthouse/axe evidence. | PRAXIS engineering | v1.0 gate |
 | S0 | Personas | Persona CI | Four persona suites are green in CI; green-streak ledger records progress toward 10 consecutive runs. | PRAXIS engineering | v1.0 gate |
 | S0 | Landing funnel | Landing primary demo funnel | Homepage primary CTA points at the canonical public demo and no copy claims a flow that does not exist. | PRAXIS engineering | v1.0 gate |
 | S1 | Canonical entry routes | Canonical entry routes | `/waitlist`, `/login/callback`, and `/legal/{privacy,terms,security,data-retention}` resolve or redirect by documented contract. | PRAXIS engineering | v1.0 gate |
@@ -48,7 +48,7 @@ These block any `v1.0.0` readiness claim.
 | Empty states | Add brand-new-user sweep with screenshot ledger. | PRAXIS engineering | v1.0 |
 | Storage platform | Add read-only Cloud Storage posture evidence. | PRAXIS engineering | v1.0 |
 | Observability | Add structured log coverage sampler for `traceId`, `spanId`, `userId`, `caseId`, and `requestId`. | PRAXIS engineering | v1.1 |
-| Landing | Continue de-Syriafied product copy, marketplace/memo sections, real workbench screenshots, and Lighthouse proof. | PRAXIS engineering | v1.0 |
+| Landing | Continue de-the selected situationfied product copy, marketplace/memo sections, real workbench screenshots, and Lighthouse proof. | PRAXIS engineering | v1.0 |
 
 ## S3 / Deferred
 

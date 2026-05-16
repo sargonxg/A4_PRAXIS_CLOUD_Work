@@ -58,7 +58,7 @@ describe('withFirewall', () => {
   it('warns but does not persist demo-user unverified claims', async () => {
     const writer: ClaimTrustWriter = {
       async setClaim() {
-        throw new Error('demo users should not persist');
+        throw new Error('sample users should not persist');
       },
     };
 

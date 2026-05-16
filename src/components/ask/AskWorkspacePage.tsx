@@ -31,6 +31,9 @@ import type { UserModelRecord } from '@/lib/user-models/types';
 import { getActiveUserModelId, listPrivateUserModels, setActiveUserModel } from '@/lib/users/api';
 import {
   CONTEXT_CAPSULE_TEMPLATES,
+  CAPSULE_ATTACHMENT_ROLES,
+  CAPSULE_SLOT_DEFINITIONS,
+  capsuleAttachmentCounts,
   PENDING_CONTEXT_CAPSULE_OUTPUT_KEY,
   PENDING_CONTEXT_CAPSULE_PATH_KEY,
   PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
@@ -180,7 +183,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
       : Boolean(selectedCase),
     evidenceGapCount: selectedCase ? Math.max(0, 3 - evidenceCount) : 4,
     hasDraft: Boolean(stack.outputGoal),
-    situationHref: selectedCase ? `/app/workbench/${selectedCase.id}` : '/app/contexts',
+    situationHref: selectedCase ? `/app/contexts?situationId=${selectedCase.id}` : '/app/contexts',
   });
   const activeContextName = selectedCase?.name ?? 'No Situation Core';
   const bricks = buildCoreBricks({
@@ -192,6 +195,20 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     healthScore: contextHealth.score,
   });
   const missingBricks = bricks.filter((brick) => !brick.ready);
+  const canonicalCoreRefs = {
+    userCoreId: activeUserModel.modelId,
+    situationCoreId: selectedCase?.id ?? null,
+    sourceCoreIds: selectedCase?.sourceCount ? [`${selectedCase.sourceCount} source receipts`] : [],
+    documentCoreIds: selectedCase?.documentCount ? [`${selectedCase.documentCount} document receipts`] : [],
+    graphCoreId: selectedCase?.actorCount ? `${selectedCase.actorCount} actor graph` : null,
+    timeCoreId: capsuleTimeHorizon !== 'Set horizon' ? capsuleTimeHorizon : null,
+    outputCoreIds: stack.outputGoal ? [stack.outputGoal] : [],
+    toolCoreIds: marketplaceToolCount > 0 ? ['capsule-aware-tool-registry'] : [],
+    objectiveCoreIds: pendingCapsulePrompt ? ['landing-scaffold-objective'] : [],
+    productCoreIds: pendingCapsuleOutput ? [pendingCapsuleOutput] : [],
+    memoryCoreId: stack.capsuleId ?? null,
+  };
+  const capsuleCounts = capsuleAttachmentCounts(canonicalCoreRefs);
   const nextMoves = getNextMoves({
     situation: selectedCase?.kind === 'user' ? selectedCase.situation : null,
     situationStage: selectedCase?.tags.join(' ') ?? 'intake',
@@ -321,6 +338,8 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
             marketplaceToolCount={marketplaceToolCount}
             nextMoves={nextMoves}
             outputGoal={outputGoal}
+            capsuleCounts={capsuleCounts}
+            canonicalCoreRefs={canonicalCoreRefs}
             selectedCase={selectedCase}
             selectedCaseId={selectedCase?.id ?? ''}
             workspaceCases={workspaceCases}
@@ -344,6 +363,8 @@ function ContextComposer({
   missingBricks,
   nextMoves,
   outputGoal,
+  capsuleCounts,
+  canonicalCoreRefs,
   selectedCase,
   selectedCaseId,
   workspaceCases,
@@ -360,6 +381,8 @@ function ContextComposer({
   missingBricks: CoreBrick[];
   nextMoves: Array<{ id: string; label: string; detail: string; href: string }>;
   outputGoal: string;
+  capsuleCounts: ReturnType<typeof capsuleAttachmentCounts>;
+  canonicalCoreRefs: Parameters<typeof capsuleAttachmentCounts>[0];
   selectedCase: WorkspaceCase | null;
   selectedCaseId: string;
   workspaceCases: WorkspaceCase[];
@@ -384,9 +407,17 @@ function ContextComposer({
         contextHealthScore={contextHealthScore}
         evidenceCount={evidenceCount}
         marketplaceToolCount={marketplaceToolCount}
+        missingBricks={missingBricks}
         outputGoal={outputGoal}
         selectedCase={selectedCase}
         userCoreLabel={availableModels.find((model) => model.modelId === activeUserModelId)?.identity ?? 'User Core'}
+      />
+
+      <UsedContextReceipt
+        activeContextName={activeContextName}
+        capsuleCounts={capsuleCounts}
+        canonicalCoreRefs={canonicalCoreRefs}
+        outputGoal={outputGoal}
       />
 
       <div className="mt-4 grid grid-cols-2 gap-2">
@@ -481,7 +512,7 @@ function ContextComposer({
       </div>
 
       <div className="mt-5 grid gap-2">
-        <ComposerAction href={selectedCase ? `/app/workbench/${selectedCase.id}?tab=library` : '/app/contexts'} icon={Plus} label="Attach sources or documents" wide />
+        <ComposerAction href={selectedCase ? `/app/contexts?situationId=${selectedCase.id}` : '/app/contexts'} icon={Plus} label="Attach sources or documents" wide />
         <ComposerAction href="/app/write" icon={BookOpenText} label="Send answer to Memo Studio" wide />
         <ComposerAction href="/app/tools" icon={ShieldCheck} label={`${marketplaceToolCount} tools contained in Advanced`} wide muted />
       </div>
@@ -494,6 +525,7 @@ function AskRunReadinessPanel({
   contextHealthScore,
   evidenceCount,
   marketplaceToolCount,
+  missingBricks,
   outputGoal,
   selectedCase,
   userCoreLabel,
@@ -502,6 +534,7 @@ function AskRunReadinessPanel({
   contextHealthScore: number;
   evidenceCount: number;
   marketplaceToolCount: number;
+  missingBricks: CoreBrick[];
   outputGoal: string;
   selectedCase: WorkspaceCase | null;
   userCoreLabel: string;
@@ -534,6 +567,8 @@ function AskRunReadinessPanel({
         </span>
       </div>
 
+      <ProposedCapsuleDiffPanel missingBricks={missingBricks} selectedCase={selectedCase} />
+
       <div className="mt-3 grid gap-2 text-xs">
         <ReadinessRow label="User Core" value={userCoreLabel} state="ready" />
         <ReadinessRow label="Situation Core" value={situationLabel} state={selectedCase ? 'ready' : 'gap'} />
@@ -553,6 +588,145 @@ function AskRunReadinessPanel({
       <p className="mt-3 text-[11px] leading-4 text-navy-200">
         Ask PRAXIS can answer from this capsule now. Durable ADK Research Memo runs remain planned until worker execution is wired.
       </p>
+    </section>
+  );
+}
+
+function UsedContextReceipt({
+  activeContextName,
+  capsuleCounts,
+  canonicalCoreRefs,
+  outputGoal,
+}: {
+  activeContextName: string;
+  capsuleCounts: ReturnType<typeof capsuleAttachmentCounts>;
+  canonicalCoreRefs: Parameters<typeof capsuleAttachmentCounts>[0];
+  outputGoal: string;
+}) {
+  const readySlots = CAPSULE_SLOT_DEFINITIONS.filter((slot) => {
+    switch (slot.id) {
+      case 'user':
+        return Boolean(canonicalCoreRefs?.userCoreId);
+      case 'situation':
+        return Boolean(canonicalCoreRefs?.situationCoreId);
+      case 'source':
+        return Boolean(canonicalCoreRefs?.sourceCoreIds?.length);
+      case 'document':
+        return Boolean(canonicalCoreRefs?.documentCoreIds?.length);
+      case 'connector':
+        return Boolean(canonicalCoreRefs?.sourceCoreIds?.length || canonicalCoreRefs?.toolCoreIds?.length);
+      case 'time':
+        return Boolean(canonicalCoreRefs?.timeCoreId);
+      case 'graph':
+        return Boolean(canonicalCoreRefs?.graphCoreId);
+      case 'rules':
+        return Boolean(canonicalCoreRefs?.productCoreIds?.length);
+      case 'tool':
+        return Boolean(canonicalCoreRefs?.toolCoreIds?.length);
+      case 'objective':
+        return Boolean(canonicalCoreRefs?.objectiveCoreIds?.length);
+      case 'output':
+        return Boolean(canonicalCoreRefs?.outputCoreIds?.length || outputGoal !== 'Memo goal');
+      case 'memory':
+        return Boolean(canonicalCoreRefs?.memoryCoreId);
+    }
+  });
+
+  return (
+    <section className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Used context receipt</p>
+          <p className="mt-1 truncate text-sm font-semibold text-navy-950">Primary: {activeContextName}</p>
+          <p className="mt-1 text-xs leading-5 text-slate-600">
+            Reference: none attached / Comparison: none attached / Output: {outputGoal}
+          </p>
+        </div>
+        <span className="shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-[11px] text-slate-700">
+          {readySlots.length}/{CAPSULE_SLOT_DEFINITIONS.length}
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+        <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">{capsuleCounts.attachments} files/sources</span>
+        <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">{capsuleCounts.connectors} connectors/tools</span>
+        {CAPSULE_ATTACHMENT_ROLES.slice(0, 3).map((role) => (
+          <span key={role.role} className="rounded-md border border-slate-200 bg-white px-2 py-1 font-semibold text-slate-700">
+            {role.label}{role.role === 'primary' ? ': active' : ': 0'}
+          </span>
+        ))}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {CAPSULE_SLOT_DEFINITIONS.map((slot) => {
+          const ready = readySlots.some((readySlot) => readySlot.id === slot.id);
+          return (
+            <span
+              key={slot.id}
+              className={cn(
+                'rounded-md border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.1em]',
+                ready
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                  : 'border-slate-200 bg-white text-slate-500',
+              )}
+              title={slot.description}
+            >
+              {slot.shortLabel}
+            </span>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function ProposedCapsuleDiffPanel({
+  missingBricks,
+  selectedCase,
+}: {
+  missingBricks: CoreBrick[];
+  selectedCase: WorkspaceCase | null;
+}) {
+  const [state, setState] = useState<'open' | 'accepted' | 'rejected'>('open');
+  const topMissing = missingBricks.slice(0, 3);
+  if (topMissing.length === 0) return null;
+
+  return (
+    <section className="mt-5 rounded-md border border-diplomatic-blue/20 bg-blue-50/60 p-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-diplomatic-blue">Proposed capsule diff</p>
+      <p className="mt-1 text-sm leading-5 text-navy-900">
+        {selectedCase ? 'PRAXIS can repair this capsule before answering.' : 'Attach a Situation Core before PRAXIS runs a grounded answer.'}
+      </p>
+      <div className="mt-2 space-y-1 text-sm text-navy-800">
+        {topMissing.map((brick) => (
+          <p key={brick.id}>+ {brick.label}: {brick.detail}</p>
+        ))}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setState('accepted')}
+          className="rounded-md bg-diplomatic-blue px-2.5 py-1.5 text-xs font-semibold text-white"
+        >
+          Accept diff
+        </button>
+        <Link
+          href="/app/contexts"
+          className="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-navy-900 hover:bg-slate-50"
+        >
+          Edit in workshop
+        </Link>
+        <button
+          type="button"
+          onClick={() => setState('rejected')}
+          className="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-navy-900 hover:bg-slate-50"
+        >
+          Reject
+        </button>
+      </div>
+      {state !== 'open' ? (
+        <p className="mt-2 text-xs font-semibold text-slate-600">
+          Diff {state}. This local cockpit state will be replaced by persisted capsule diffs when the backend mutation endpoint owns this flow.
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -657,7 +831,7 @@ function buildCoreBricks({
       label: 'Source/Document Core',
       value: `${evidenceCount} attached`,
       detail: evidenceCount > 0 ? 'Receipts and uploaded documents are available' : 'Attach sources before high-confidence answers',
-      href: selectedCase ? `/app/workbench/${selectedCase.id}?tab=library` : '/app/contexts',
+      href: selectedCase ? `/app/contexts?situationId=${selectedCase.id}` : '/app/contexts',
       version: 'v1',
       ready: evidenceCount > 0,
       locked: false,
@@ -677,16 +851,64 @@ function buildCoreBricks({
       icon: Network,
     },
     {
+      id: 'rules',
+      label: 'Rules Core',
+      value: selectedCase ? 'Policy constraints' : 'Rules pending',
+      detail: 'Legal, institutional, classification, compliance, writing, and review constraints',
+      href: '/app/contexts',
+      version: 'v1',
+      ready: Boolean(selectedCase),
+      locked: false,
+      optional: true,
+      icon: ShieldCheck,
+    },
+    {
       id: 'time',
       label: 'Time Core',
       value: capsuleTimeHorizon,
       detail: 'Current period, history window, forecast horizon',
-      href: selectedCase ? `/app/workbench/${selectedCase.id}` : '/app/contexts',
+      href: selectedCase ? `/app/contexts?situationId=${selectedCase.id}` : '/app/contexts',
       version: 'v1',
       ready: capsuleTimeHorizon !== 'Set horizon',
       locked: false,
       optional: true,
       icon: Clock,
+    },
+    {
+      id: 'connector',
+      label: 'Connector Core',
+      value: evidenceCount > 0 ? 'Read-only feeds available' : 'Add source feed',
+      detail: 'GDELT, UCDP, ReliefWeb, HDX, UN News, World Bank, grounded Search, and private library sources',
+      href: '/app/contexts',
+      version: 'v1',
+      ready: evidenceCount > 0,
+      locked: false,
+      optional: true,
+      icon: LibraryBig,
+    },
+    {
+      id: 'tool',
+      label: 'Tool Core',
+      value: 'Advanced registry',
+      detail: 'Selected PRAXIS tools, allowed actions, approvals, readiness, and receipts',
+      href: '/app/tools',
+      version: 'v1',
+      ready: true,
+      locked: false,
+      optional: true,
+      icon: ShieldCheck,
+    },
+    {
+      id: 'objective',
+      label: 'Objective Core',
+      value: stack.outputGoal ? 'Output-bound task' : 'Ask-first task',
+      detail: 'Current task, decision question, success criteria, and workflow stage',
+      href: '/app/contexts',
+      version: 'v1',
+      ready: Boolean(selectedCase || stack.outputGoal),
+      locked: false,
+      optional: true,
+      icon: Target,
     },
     {
       id: 'output',
@@ -699,6 +921,18 @@ function buildCoreBricks({
       locked: false,
       optional: true,
       icon: FileText,
+    },
+    {
+      id: 'memory',
+      label: 'Memory/Handover Core',
+      value: stack.capsuleId ?? 'Default capsule',
+      detail: 'Prior runs, accepted conclusions, red-team findings, approvals, and agent instructions',
+      href: '/app/contexts',
+      version: 'v1',
+      ready: Boolean(stack.capsuleId || selectedCase),
+      locked: false,
+      optional: true,
+      icon: History,
     },
   ];
 }

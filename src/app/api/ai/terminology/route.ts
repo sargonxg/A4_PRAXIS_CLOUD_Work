@@ -73,7 +73,7 @@ export const POST = withCalibration('un_toolkit', 'ai_chat', {
   },
 })(async (request, ctx) => {
   if (isServerDemoMode()) {
-    return Response.json({ issues: [], overallCompliance: 'compliant', complianceScore: 100, styleRecommendations: ['Demo mode — configure GOOGLE_AI_API_KEY for AI-powered terminology checking'], recommendation: 'Demo mode active. AI analysis unavailable.' });
+    return Response.json({ issues: [], overallCompliance: 'compliant', complianceScore: 100, styleRecommendations: ['Sample mode — configure GOOGLE_AI_API_KEY for AI-powered terminology checking'], recommendation: 'Sample mode active. AI analysis unavailable.' });
   }
 
   if (!hasServerAiProvider()) {

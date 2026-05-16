@@ -76,7 +76,7 @@ const SettlementSchema = z.object({
 // ── Demo responses ────────────────────────────────────────────────────────────
 
 const DEMO_RESPONSE_DESIGN = {
-  processName: 'Nordalia Inclusive Peace Process (NIPP)',
+  processName: 'the selected situation Inclusive Peace Process (NIPP)',
   format: 'hybrid' as const,
   venue: 'Kigali, Rwanda (African Union Peace and senior diplomatic forum facilities)',
   mediatorProfile: 'Joint AU-UN mediation team: AU Commissioner for Peace and Security (lead), multilateral diplomacy senior political officer, supported by technical advisors for security, economic, and human rights tracks.',
@@ -164,21 +164,21 @@ const DEMO_RESPONSE_DESIGN = {
     {
       title: 'ICRC prisoner exchange',
       type: 'military' as const,
-      parties: ['Government of Nordalia', 'Democratic Reform Movement'],
+      parties: ['Government of the selected situation', 'Democratic Reform Movement'],
       timeline: 'Phase 1 — weeks 4-6',
       verificationMechanism: 'ICRC independent monitoring; UNMN observation; joint prisoner list submission.',
     },
     {
       title: 'Humanitarian access opening',
       type: 'humanitarian' as const,
-      parties: ['Government of Nordalia', 'OCHA'],
+      parties: ['Government of the selected situation', 'OCHA'],
       timeline: 'Phase 1 — weeks 1-3',
       verificationMechanism: 'OCHA weekly convoy reporting; UNMN checkpoint monitoring.',
     },
     {
       title: 'Belara Mining escrow',
       type: 'economic' as const,
-      parties: ['Government of Nordalia', 'Democratic Reform Movement', 'World Bank'],
+      parties: ['Government of the selected situation', 'Democratic Reform Movement', 'World Bank'],
       timeline: 'Ongoing from Phase 1',
       verificationMechanism: 'World Bank monthly financial transparency reports.',
     },
@@ -285,7 +285,7 @@ const DEMO_SETTLEMENT = {
     },
   ],
   signatories: [
-    'Government of Nordalia (President Amara Osei)',
+    'Government of the selected situation (President Amara Osei)',
     'Democratic Reform Movement (Commander Kwame Asante)',
     'UNMN (SRSG Maria Santos, as witness)',
     'African Union (Panel of the Wise Chair, as guarantor)',
@@ -331,7 +331,7 @@ export const POST = withCalibration('mediation_design', 'ai_analysis', {
 
     const { situation, action = 'design' } = body;
 
-    // ── Demo mode ──────────────────────────────────────────────────────────────
+    // ── Sample mode ──────────────────────────────────────────────────────────────
     if (isServerDemoMode()) {
       if (action === 'plan') return NextResponse.json(DEMO_PLAN);
       if (action === 'settle') return NextResponse.json(DEMO_SETTLEMENT);

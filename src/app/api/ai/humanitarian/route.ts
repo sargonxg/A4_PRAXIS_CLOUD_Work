@@ -119,8 +119,8 @@ export const HumanitarianSnapshotSchema = z.object({
 
 const DEMO_SNAPSHOT = {
   bluf:
-    'Demo snapshot: Nordalia eastern provinces are at IPC Phase 4 with rising IDP outflows and a 56% HRP funding gap; immediate cluster reinforcement of food and protection is warranted.',
-  region: 'Nordalia — Eastern Provinces',
+    'Demo snapshot: the selected situation eastern provinces are at IPC Phase 4 with rising IDP outflows and a 56% HRP funding gap; immediate cluster reinforcement of food and protection is warranted.',
+  region: 'the selected situation — Eastern Provinces',
   asOfDate: '2026-04-26',
   ipcPhases: [
     {
@@ -151,7 +151,7 @@ const DEMO_SNAPSHOT = {
     requirementUsd: 487000000,
     fundedUsd: 214280000,
     gapPercent: 56,
-    appealName: 'Nordalia HRP 2026',
+    appealName: 'the selected situation HRP 2026',
     source: { name: 'OCHA FTS (demo)', url: '' },
   },
   protection: [

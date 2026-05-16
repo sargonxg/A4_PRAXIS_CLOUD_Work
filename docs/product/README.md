@@ -119,7 +119,7 @@ Use Google Cloud as the main runtime:
 
 ## Older Documentation Policy
 
-Older v4/v5/v7 docs remain useful evidence and historical context. They should
+Older v4/v5 docs remain useful evidence and historical context. They should
 not override the current canonical app structure.
 
 Use older docs this way:
@@ -127,8 +127,6 @@ Use older docs this way:
 - `docs/architecture/*`: architecture invariants, source-of-truth constraints,
   provider/security boundaries.
 - `docs/build/PRAXIS_v5_*`: prior build ledger and completed phase evidence.
-- `docs/v7/*`: design-led simplification references, not the main build queue
-  unless a slice is explicitly reactivated.
 - `docs/_archive/*`: historical prompt packs and audits only.
 
 When a new wave changes the canonical structure, update this index,

@@ -4,12 +4,12 @@ export type ResponseActionKind =
   | 'attach_to_core'
   | 'add_next_move'
   | 'run_deep_research'
-  | 'open_in_workbench'
+  | 'open_context'
   | 'propose_graph_edit';
 
 export function inferResponseActionKinds(text: string): ResponseActionKind[] {
   const normalized = text.toLowerCase();
-  const actions = new Set<ResponseActionKind>(['open_in_workbench']);
+  const actions = new Set<ResponseActionKind>(['open_context']);
 
   if (hasCitationSignal(normalized)) actions.add('save_to_write');
   if (/\b(gap|missing|unknown|unverified|unclear|insufficient|need(?:s)? evidence)\b/.test(normalized)) {

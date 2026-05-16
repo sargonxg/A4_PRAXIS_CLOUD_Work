@@ -91,7 +91,7 @@ function inferOntologyIds(objective: string, role?: UserRole): OntologyId[] {
 }
 
 function inferRegion(objective: string) {
-  const known = ['Sudan', 'Khartoum', 'West Darfur', 'Syria', 'Northwind', 'Nordalia', 'Sahel', 'Ukraine', 'Gaza', 'Yemen'];
+  const known = ['Sudan', 'Khartoum', 'West Darfur', 'the selected situation', 'Northwind', 'the selected situation', 'Sahel', 'Ukraine', 'Gaza', 'Yemen'];
   const hit = known.find((candidate) => objective.toLowerCase().includes(candidate.toLowerCase()));
   if (!hit) return '';
   if (hit === 'Khartoum' || hit === 'West Darfur') return 'Sudan';
@@ -115,9 +115,9 @@ function inferActors(objective: string, region: string): string[][] {
       ['UN mediation and humanitarian actors', 'Third party'],
     ];
   }
-  if (/syria/i.test(objective)) {
+  if (/user-case/i.test(objective)) {
     return [
-      ['Government of Syria', 'State actor'],
+      ['Government of the selected situation', 'State actor'],
       ['Opposition negotiating bodies', 'Party'],
       ['Regional guarantors', 'Third party'],
       ['UN Special Envoy team', 'Mediator'],

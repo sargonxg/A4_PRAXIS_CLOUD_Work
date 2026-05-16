@@ -89,7 +89,7 @@ const DEMO_RESPONSE = {
       id: 'n1',
       title: 'Counter-terrorism framing',
       framing: 'GoN state media frames the conflict as a counterterrorism operation against a foreign-backed insurgency, systematically excluding DRM\'s political grievances.',
-      amplifiers: ['Nordalian State Broadcasting', 'Presidential press office', 'GoN-aligned diaspora blogs'],
+      amplifiers: ['the selected situationn State Broadcasting', 'Presidential press office', 'GoN-aligned diaspora blogs'],
       platforms: ['State TV', 'Twitter/X', 'Facebook'],
       trend: 'stable' as const,
       reachScore: 78,
@@ -145,8 +145,8 @@ const DEMO_RESPONSE = {
   ],
   actorInfoProfiles: [
     {
-      actor: 'Government of Nordalia (GoN)',
-      amplificationNetworks: ['Nordalian State Broadcasting (NSB) — fully state-controlled', 'GoN-aligned diaspora blogs in Westmark', '340+ suspected bot accounts on Twitter/X (Operation MIRROR)', 'GoN Ministry of Information Telegram channel'],
+      actor: 'Government of the selected situation (GoN)',
+      amplificationNetworks: ['the selected situationn State Broadcasting (NSB) — fully state-controlled', 'GoN-aligned diaspora blogs in Westmark', '340+ suspected bot accounts on Twitter/X (Operation MIRROR)', 'GoN Ministry of Information Telegram channel'],
       primaryNarratives: ['n1'],
       infoCapacity: 'high' as const,
     },
@@ -199,7 +199,7 @@ const DEMO_RESPONSE = {
     {
       platform: 'State television',
       dominantTone: 'GoN-controlled — no opposition voices.',
-      keyActors: ['Nordalian State Broadcasting'],
+      keyActors: ['the selected situationn State Broadcasting'],
       riskLevel: 'medium' as const,
     },
   ],
@@ -208,7 +208,7 @@ const DEMO_RESPONSE = {
       narrative: 'Counter-terrorism framing (n1)',
       vulnerabilities: 'The GoN counter-terrorism narrative is contradicted by documented civilian casualty patterns and DRM\'s participation in prior electoral processes. NIMN investigative reporting has exposed three specific fabrications in GoN casualty claims.',
       recommendedCounter: 'Center DRM\'s documented political demands and democratic history. Amplify UNMN monitoring reports that contradict GoN casualty figures. Reframe: "political grievances, not terrorism."',
-      messenger: 'UNMN Spokesperson and OCHA — perceived as neutral international bodies. Faith leaders and civil society figures inside Nordalia have highest domestic credibility. Avoid Karovian state media as messenger (perceived partisan).',
+      messenger: 'UNMN Spokesperson and OCHA — perceived as neutral international bodies. Faith leaders and civil society figures inside the selected situation have highest domestic credibility. Avoid Karovian state media as messenger (perceived partisan).',
     },
     {
       narrative: 'Operation MIRROR bot network (infoOps)',

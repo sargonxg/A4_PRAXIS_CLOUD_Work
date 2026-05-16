@@ -50,7 +50,7 @@ export const POST = withCalibration('auto_structure', 'ai_analysis', {
   },
 })(async (req, user) => {
   if (user.isDemo || isServerDemoMode()) {
-    return new Response(JSON.stringify({ error: 'Not available in demo mode' }), { status: 403 });
+    return new Response(JSON.stringify({ error: 'Not available for this session' }), { status: 403 });
   }
 
   try {

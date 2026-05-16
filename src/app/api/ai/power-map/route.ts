@@ -163,9 +163,9 @@ const StakeholderMapSchema = z.object({
 
 const DEMO_RESPONSE_POWER = {
   actors: [
-    { id: 'gov', name: 'Government of Nordalia (GoN)', shortName: 'GoN', type: 'state' as const, power: 8, interest: 9, stance: 'opponent' as const, color: '#1A2332', keyLeverage: 'Territorial control, international legitimacy, AFN military capacity', engagementStrategy: 'Manage closely — decision-maker with high stakes. Engage at ministerial level. Frame any concessions as sovereignty-preserving.' },
+    { id: 'gov', name: 'Government of the selected situation (GoN)', shortName: 'GoN', type: 'state' as const, power: 8, interest: 9, stance: 'opponent' as const, color: '#1A2332', keyLeverage: 'Territorial control, international legitimacy, AFN military capacity', engagementStrategy: 'Manage closely — decision-maker with high stakes. Engage at ministerial level. Frame any concessions as sovereignty-preserving.' },
     { id: 'drm', name: 'Democratic Reform Movement', shortName: 'DRM', type: 'non_state_armed' as const, power: 6, interest: 10, stance: 'opponent' as const, color: '#A63D40', keyLeverage: 'Territorial control of Eastern Provinces, armed capacity, civilian support base', engagementStrategy: 'Manage closely — existential stakes. Engage through backchannel and international interlocutors. Address security guarantees first.' },
-    { id: 'unmn', name: 'UN Mission Nordalia', shortName: 'UNMN', type: 'international' as const, power: 7, interest: 8, stance: 'mediator' as const, color: '#4B92DB', keyLeverage: 'International legitimacy, monitoring capacity, multilateral forum reporting mandate', engagementStrategy: 'Key player — coordinate all mediation efforts. Leverage multilateral forum mandate for pressure on both parties.' },
+    { id: 'unmn', name: 'UN Mission the selected situation', shortName: 'UNMN', type: 'international' as const, power: 7, interest: 8, stance: 'mediator' as const, color: '#4B92DB', keyLeverage: 'International legitimacy, monitoring capacity, multilateral forum reporting mandate', engagementStrategy: 'Key player — coordinate all mediation efforts. Leverage multilateral forum mandate for pressure on both parties.' },
     { id: 'karovia', name: 'Republic of Karovia', shortName: 'Karovia', type: 'state' as const, power: 8, interest: 7, stance: 'supporter' as const, color: '#5B8C5A', keyLeverage: 'DRM material support, border access, regional influence', engagementStrategy: 'Keep satisfied — regional patron with material leverage over DRM. Critical for ceasefire compliance. Engage bilaterally on security guarantees.' },
     { id: 'cso', name: 'Civil Society Coalition', shortName: 'CSO', type: 'civil_society' as const, power: 3, interest: 8, stance: 'supporter' as const, color: '#C8961E', keyLeverage: 'Public legitimacy, documentation capacity, diaspora networks', engagementStrategy: 'Keep informed — high interest but limited power. Consult regularly for ground-truth. Include in implementation monitoring.' },
     { id: 'au', name: 'African Union PSC', shortName: 'AU', type: 'regional' as const, power: 6, interest: 6, stance: 'neutral' as const, color: '#4B6584', keyLeverage: 'Regional framework, peer pressure on member states, financial support for mediation', engagementStrategy: 'Keep satisfied — regional legitimizer. Engage to co-sponsor mediation framework and provide meeting venue.' },
@@ -198,7 +198,7 @@ const DEMO_RESPONSE_POWER = {
 const DEMO_RESPONSE_STAKEHOLDER = {
   actors: [
     {
-      name: 'Government of Nordalia (GoN) — Cabinet',
+      name: 'Government of the selected situation (GoN) — Cabinet',
       lederachTrack: 'track-1' as const,
       trackLabel: 'Top Leadership',
       powerLevel: 8.5,
@@ -237,7 +237,7 @@ const DEMO_RESPONSE_STAKEHOLDER = {
       ],
     },
     {
-      name: 'UN Mission Nordalia (UNMN) — Special Envoy',
+      name: 'UN Mission the selected situation (UNMN) — Special Envoy',
       lederachTrack: 'track-1' as const,
       trackLabel: 'Top Leadership',
       powerLevel: 7,
@@ -263,7 +263,7 @@ const DEMO_RESPONSE_STAKEHOLDER = {
       stance: 'supporter' as const,
       engagementStrategy: "Keep satisfied — Karovia's patron relationship with DRM makes it a veto player. Engage bilaterally at Deputy FM level on security guarantee framework.",
       keyInterests: [
-        'Buffer zone in eastern Nordalia limiting GoN military pressure on Karovian border',
+        'Buffer zone in eastern the selected situation limiting GoN military pressure on Karovian border',
         'Protect Karovian ethnic minority concentrated in DRM-held territory',
       ],
       redLines: [
@@ -272,7 +272,7 @@ const DEMO_RESPONSE_STAKEHOLDER = {
       ],
     },
     {
-      name: 'Nordalia Civil Society Coalition (CSC)',
+      name: 'the selected situation Civil Society Coalition (CSC)',
       lederachTrack: 'track-2' as const,
       trackLabel: 'Middle-Range Leaders',
       powerLevel: 3.5,
@@ -293,7 +293,7 @@ const DEMO_RESPONSE_STAKEHOLDER = {
   coalitions: [
     {
       name: 'GoN Establishment Bloc',
-      members: ['Government of Nordalia (GoN) — Cabinet', 'Nordalia Armed Forces (AFN) — General Staff'],
+      members: ['Government of the selected situation (GoN) — Cabinet', 'the selected situation Armed Forces (AFN) — General Staff'],
       cohesion: 'medium' as const,
       sharedInterest: 'Maintaining the political and economic status quo.',
       vulnerabilities: 'AFN hardliners and GoN civilian cabinet have diverging timelines: cabinet faces electoral pressure, military does not.',
@@ -314,9 +314,9 @@ const DEMO_RESPONSE_STAKEHOLDER = {
     'Karovian role in any settlement framework',
   ],
   bridgeBuilders: [
-    'Nordalia Council of Religious Leaders — crosses conflict lines, trusted by both communities',
+    'the selected situation Council of Religious Leaders — crosses conflict lines, trusted by both communities',
     'Republic of Karovia — Foreign Ministry moderates have direct leverage over DRM political bureau',
-    'UN Mission Nordalia (UNMN) — Special Envoy has mandate and relationships with both parties',
+    'UN Mission the selected situation (UNMN) — Special Envoy has mandate and relationships with both parties',
   ],
   engagementSequence: [
     {
@@ -326,7 +326,7 @@ const DEMO_RESPONSE_STAKEHOLDER = {
     },
     {
       step: 2,
-      actor: 'Government of Nordalia (GoN) — Cabinet',
+      actor: 'Government of the selected situation (GoN) — Cabinet',
       rationale: 'With Karovian CBM secured, engage GoN civilian cabinet on the revenue-sharing issue where ZOPA exists.',
     },
     {
@@ -358,7 +358,7 @@ export const POST = withCalibration('power_map', 'ai_analysis', {
     // Accept situationId from body (used by stakeholder view refresh buttons)
     const situationId = situation?.id ?? body.situationId ?? '';
 
-    // ── Demo mode ──────────────────────────────────────────────────────────────
+    // ── Sample mode ──────────────────────────────────────────────────────────────
     if (isServerDemoMode()) {
       return NextResponse.json(view === 'stakeholder' ? DEMO_RESPONSE_STAKEHOLDER : DEMO_RESPONSE_POWER);
     }

@@ -56,6 +56,33 @@ Generated local bloat removed before source cleanup:
 | `docs/adr/0028-persona-corpus-retrieval.md` | retired custom-persona corpus plan |
 | `tests/e2e/personas/` | E2E tests for old persona-specific walkthroughs |
 | `src/app/api/ai/boardroom/` | orphan AI replay route for removed Boardroom UI |
+| `docs/v7/` | historical slice plan folder pointing at removed May 8 roadmaps |
+| `docs/PRAXIS_PHASE_SPEC_AUDIT_2026-05-06.md` | old phase audit tied to removed phase/Boardroom surfaces |
+
+## Wave 3 Removed From Source
+
+| Path | Reason |
+|---|---|
+| `src/components/workbench/` | orphan UI shell after `/app/workbench` route removal |
+| `src/tabs/` | old workspace-tab registry consumed only by removed workbench tests |
+| `src/components/tools/ToolMarketplace.tsx` | old workbench-scoped marketplace; `/app/tools` now uses `ContextBuilderRoom` |
+| `src/components/ontology/OntologySchemaViewer.tsx` | old workbench ontology tab viewer |
+| `tests/e2e/workbench/` | E2E tests for removed workbench route family |
+| `tests/unit/workspace-*.test.ts` | tests for removed tab/workbench shell |
+| `src/lib/workbench/*` unused helpers | old chapter/surface/empty-state scaffolds; kept only reusable library/research/draft/open-question helpers |
+| `docs/implementation/WORKSPACE_TABS_CHAPTERS_FOUNDATION.md` | old tabs/chapters implementation note |
+| `docs/adr/0023-ach-workbench-surface.md` | retired ACH workbench-surface ADR |
+| `docs/runbooks/MAP_TILE_HOSTING.md` | map runbook for removed workbench graph view |
+| `docs/superpowers/specs/2026-05-13-hero-animation-and-context-core-narrative-ideation.md` | old ideation doc tied to removed workbench graph route |
+
+## Wave 3 Route Simplification
+
+- `/app/workbench` and `/app/workbench/*` now redirect to `/app/contexts`.
+- Visible navigation Library now points directly to `/app/contexts`.
+- Workbench deep links in active source were retargeted to `/app/contexts`,
+  `/app/write`, `/app/assistant`, `/app/canvas`, or `/app/tools`.
+- A minimal `/app/canvas` route now reuses the current ContextBuilderRoom so
+  the visible Canvas nav item is not a dead link.
 
 ## Redirect And Surface Changes
 
@@ -93,7 +120,7 @@ contracts and should be removed only in a backend migration:
 3. Collapse old v5/phase/boardroom architecture history into the current
    Tasklet runtime plan and mark the old docs historical.
 4. Run Knip after the shared tree settles; current dirty deletes already show
-   several demo/Syria constants removed by parallel cleanup.
+   several demo/the selected situation constants removed by parallel cleanup.
 
 ## Simplification Suggestions
 

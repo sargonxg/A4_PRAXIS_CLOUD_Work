@@ -49,6 +49,33 @@ export interface TurnCapsule {
   memory: Record<MemoryType, KernelMemoryItem[]>;
 }
 
+export interface EffectiveCapsuleSlotTrace {
+  slot: 'user' | 'situation' | 'sourceDocument' | 'graph' | 'memory' | 'output' | 'tool' | 'objective';
+  status: 'ready' | 'missing';
+  ids: string[];
+  role: 'primary' | 'reference' | 'comparison';
+}
+
+export interface EffectiveCapsule {
+  capsuleId: string;
+  capsuleVersion: number;
+  objective: string | null;
+  primaryCapsuleId: string;
+  referenceCapsuleIds: string[];
+  comparisonCapsuleIds: string[];
+  slotTrace: EffectiveCapsuleSlotTrace[];
+  selectedFiles: string[];
+  selectedConnectors: string[];
+  selectedTools: string[];
+  readiness: {
+    score: number;
+    warnings: string[];
+    missingSlots: EffectiveCapsuleSlotTrace['slot'][];
+  };
+  contentHash: string;
+  promptBlock: string;
+}
+
 export interface TurnCapsuleInput extends InjectableContextInput {
   query?: string;
   traceId?: string;
@@ -158,7 +185,7 @@ export function suggestNextActions(capsule: TurnCapsule, surface: 'ask' | 'draft
   const missingSources = capsule.sourceDocumentCore.length === 0;
   const hasGaps = capsule.activeGaps.length > 0;
   const base = [
-    action('find_sources', missingSources ? 98 : hasGaps ? 84 : 48, 'Find sources', 'Fill the most important source gaps before relying on this answer.', '/app/workbench?tab=library', 'Find sources for the weakest claims in the active Context Capsule.', 'source-search'),
+    action('find_sources', missingSources ? 98 : hasGaps ? 84 : 48, 'Find sources', 'Fill the most important source gaps before relying on this answer.', '/app/contexts', 'Find sources for the weakest claims in the active Context Capsule.', 'source-search'),
     action('extract_commitments', capsule.sourceDocumentCore.length ? 86 : 52, 'Extract commitments', 'Pull commitments, obligations, claims, and dates into reviewable proposals.', '/app/canvas', 'Extract commitments and claims from the active capsule sources.', 'commitment-tracking'),
     action('map_stakeholders', capsule.graphCore ? 62 : 80, 'Map stakeholders', 'Turn actors, claims, and relationships into reviewable graph proposals.', '/app/canvas', 'Map stakeholders, commitments, and evidence gaps from the active capsule.', 'stakeholder-mapping'),
     action('draft_memo', surface === 'drafting' ? 92 : 68, 'Draft memo', 'Move the answer into an Output Core with citations and explicit gaps.', '/app/write', 'Draft a concise options memo from this capsule and mark weak evidence.', 'brief-generation'),
@@ -167,6 +194,49 @@ export function suggestNextActions(capsule: TurnCapsule, surface: 'ask' | 'draft
   ].sort((a, b) => b.priority - a.priority);
 
   return base.slice(0, 3);
+}
+
+export function compileEffectiveCapsule(capsule: TurnCapsule, objective?: string | null): EffectiveCapsule {
+  const refs = capsule.injectableContext.capsule.coreRefs;
+  const slotTrace: EffectiveCapsuleSlotTrace[] = [
+    slot('user', refs.userCoreId ? [refs.userCoreId] : []),
+    slot('situation', refs.situationCoreId ? [refs.situationCoreId] : []),
+    slot('sourceDocument', [...refs.sourceCoreIds, ...refs.documentCoreIds]),
+    slot('graph', refs.graphCoreId ? [refs.graphCoreId] : []),
+    slot('memory', refs.memoryCoreId ? [refs.memoryCoreId] : []),
+    slot('output', refs.outputCoreIds),
+    slot('tool', refs.toolCoreIds ?? []),
+    slot('objective', refs.objectiveCoreIds ?? []),
+  ];
+  const missingSlots = slotTrace.filter((item) => item.status === 'missing').map((item) => item.slot);
+  const hashInput = JSON.stringify({
+    capsuleId: capsule.capsuleId,
+    capsuleVersion: capsule.capsuleVersion,
+    objective: objective ?? null,
+    slotTrace,
+    warnings: capsule.activeGaps,
+    injectionKey: capsule.injectableContext.injectionKey,
+  });
+
+  return {
+    capsuleId: capsule.capsuleId,
+    capsuleVersion: capsule.capsuleVersion,
+    objective: objective?.trim() ? objective.trim().slice(0, 500) : null,
+    primaryCapsuleId: capsule.capsuleId,
+    referenceCapsuleIds: [],
+    comparisonCapsuleIds: [],
+    slotTrace,
+    selectedFiles: refs.documentCoreIds,
+    selectedConnectors: refs.sourceCoreIds,
+    selectedTools: refs.toolCoreIds ?? [],
+    readiness: {
+      score: capsule.injectableContext.capsule.health.score,
+      warnings: capsule.activeGaps,
+      missingSlots,
+    },
+    contentHash: stableHash(hashInput),
+    promptBlock: capsule.injectableContext.promptBlock,
+  };
 }
 
 export function runCapability(input: RunCapabilityInput): CapabilityRunPlan {
@@ -238,4 +308,22 @@ function action(
   capabilityId: CapabilityId,
 ): SemanticNextAction {
   return { id, priority, label, detail, href, prompt, capabilityId };
+}
+
+function slot(slot: EffectiveCapsuleSlotTrace['slot'], ids: string[]): EffectiveCapsuleSlotTrace {
+  return {
+    slot,
+    ids,
+    status: ids.length > 0 ? 'ready' : 'missing',
+    role: 'primary',
+  };
+}
+
+function stableHash(input: string): string {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return `fnv1a_${(hash >>> 0).toString(16).padStart(8, '0')}`;
 }

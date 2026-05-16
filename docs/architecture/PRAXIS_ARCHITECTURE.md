@@ -46,7 +46,7 @@ PRAXIS is a workbench for **policy, conflict, mediation, and diplomacy professio
                               has many │
                                       ▼
                               ┌───────────────┐
-                              │   SITUATION   │  ← Syria 2024, Northwind, UN CTED…
+                              │   SITUATION   │  ← the selected situation 2024, Northwind, UN CTED…
                               │   (a case)    │
                               └───────┬───────┘
                                       │
@@ -147,7 +147,7 @@ Cost ceiling enforced at the runtime. Per-call latency budget. Cloud Trace span 
 
 ### 3.11 Persona suites are the production bar
 
-Diplomat-Syria, Mediator-Northwind, Analyst-Sahel, Researcher-Nordalia. Ten consecutive green CI runs before any merge to `main`.
+Diplomat-the selected situation, Mediator-Northwind, Analyst-Sahel, Researcher-the selected situation. Ten consecutive green CI runs before any merge to `main`.
 
 ### 3.12 Terraform is the only sanctioned infrastructure
 
@@ -201,16 +201,15 @@ The user's path through PRAXIS:
 ```
 landing (/)                       ← public, value prop in 15s
   ↓
-demo (/demo/syria-2024)           ← public, read-only, watermarked
+demo (/demo/user-case-2024)           ← public, read-only, watermarked
   ↓
 waitlist or magic-link (/login)
   ↓
 welcome (60-second wow)           ← Welcome → sample case → first memo → DOCX
   ↓
-workbench (/app/workbench)        ← situation picker
+contexts (/app/contexts)          ← ContextCapsule library and source intake
   ↓
-workbench/[caseId]                ← Frame · Sources · Documents · Ontology
-                                    Graph · Tools · Memos · Runs
+Ask · Memo Studio · Canvas · Tools ← reasoning, writing, graph view, advanced runs
   ↓
 settings (/app/settings)          ← preferences + workspace guidelines
 admin (/app/admin)                ← owner-only (diagnostics, users, ops, cost)
@@ -308,7 +307,7 @@ Synthesized labeling lives at:
 ```
 src/app/
   (landing)/page.tsx                 ← public landing
-  demo/syria-2024/page.tsx           ← public demo
+  demo/user-case-2024/page.tsx           ← public demo
   waitlist/page.tsx
   login/page.tsx + callback/         ← magic link via Identity Platform
   legal/{privacy,terms,security,data-retention}/
@@ -582,10 +581,10 @@ Every tool declares its full surface as static fields:
 
 ### 11.2 The marketplace UI
 
-At `/app/workbench/[caseId]/tools` the user sees:
+At `/app/tools` the user sees:
 
 - **Suggestion banner**: top 3 tools ranked by the suggestion engine, each with a one-sentence rationale ("Recommended because your case is mediation-ontology and you're a mediator").
-- **Analyst's Toolkit strip**: ACH, Key Assumptions Check, Red Team Analysis, and Premortem grouped as Heuer-Pherson SATs (Premortem cites Klein 2007). ACH links to its first-class workbench surface; the other SATs run as marketplace tools.
+- **Analyst's Toolkit strip**: key assumptions, red-team review, premortem, and other review methods grouped as gated tools.
 - **Card grid**: all 52 curated marketplace tools with `ToolFitBadge` (Ready / Needs more sources / Not for this ontology — colored, advisory).
 - **Filters**: by category, ontology, cost class, recent runs.
 - **Per-tool page** at `tools/[toolId]`: schema-driven form (via @rjsf/core), composition links, "About this tool" panel rendering the SKILL.md.
@@ -613,7 +612,7 @@ foundation set honors the cap by registering the 20 Pack 20 ontology-forward
 tools, 7 cross-cutting depth tools, and 3 conflict-depth tools. The deferred
 six original-ontology depth candidates require a later cap decision.
 
-ACH is also a first-class workbench surface at `/app/workbench/[caseId]/ach/[achId]` because its central artifact is a multi-session hypothesis x evidence matrix. The surface loads and saves through authenticated owner-scoped Next API routes under `/api/sats/ach`, storing matrices at `users/{uid}/situations/{caseId}/ach/{achId}`. SAT outputs are synthesized and advisory until the user promotes claims through the review queue and symbolic firewall.
+Legacy ACH workbench routes have been retired from the default product surface. Structured analytic techniques remain available as review-gated tools behind Advanced and the agent runtime.
 
 ### 11.4 Adding a new tool
 
@@ -1039,7 +1038,7 @@ The diagnostics dashboard's subagent panel picks it up automatically.
 
 ### 17.5 New surface in the UI (e.g., "a global search bar")
 
-**It's a workbench tab or a settings section, not a top-level route.** Add a tab under `src/app/app/workbench/[caseId]/` (case-scoped) or a section under `src/app/app/settings/` (user-scoped). Update the sidebar component. Update the canonical route map at `docs/architecture/ROUTE_MAP.md`. Run `npm run audit:routes`.
+**It belongs inside an existing surface, not a new top-level route.** Prefer Ask PRAXIS, Contexts, Memo Studio, Canvas, Tools, or Settings. Update the sidebar only if the visible product contract changes. Run `npm run audit:routes`.
 
 ### 17.6 New data store (e.g., "a graph database for high-fanout queries")
 
@@ -1135,7 +1134,7 @@ The current ADR set:
 
 ### 18.5 Persona suites as the production bar
 
-Diplomat-Syria, Mediator-Northwind, Analyst-Sahel, Researcher-Nordalia. Each is a Playwright spec running a full user journey end-to-end against a deployed environment. They run on every commit. They must be green for ten consecutive runs before merge to `main`. They catch what unit tests can't: the moment a refactor breaks the flow a real user takes.
+Diplomat-the selected situation, Mediator-Northwind, Analyst-Sahel, Researcher-the selected situation. Each is a Playwright spec running a full user journey end-to-end against a deployed environment. They run on every commit. They must be green for ten consecutive runs before merge to `main`. They catch what unit tests can't: the moment a refactor breaks the flow a real user takes.
 
 ### 18.6 Cost discipline
 
@@ -1201,8 +1200,8 @@ npm run audit:runbook-bundle              # operational runbooks present
 npm run audit:pack22-verification         # GCP/Gemini evidence package
 npm run audit:security                    # npm audit, pip-audit, gitleaks
 
-# Persona suites — production bar
-npm run test:e2e:personas
+# Tasklet app smoke — production bar
+npm run smoke:tasklet-app
 
 # Performance budgets
 npm run lh:ci
@@ -1341,7 +1340,7 @@ Updates flow:
 ```
 npm run audit:gate --fast-only         # before every commit
 npm run audit:gate                     # before every push
-npm run test:e2e:personas              # before every PR
+npm run smoke:tasklet-app              # before every PR
 bash scripts/terraform-apply.sh staging  # to provision a fresh environment
 bash scripts/deploy-subagents-staging.sh # after subagent changes
 npm run lh:ci                          # before any UI-touching merge

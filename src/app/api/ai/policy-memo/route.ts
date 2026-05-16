@@ -67,9 +67,9 @@ const PolicyMemoSchema = z.object({
 });
 
 const DEMO_RESPONSE = {
-  title: 'Policy Options for the Nordalia Crisis',
+  title: 'Policy Options for the User Workspace',
   executiveSummary: 'Three policy options are available, ranging from immediate ceasefire facilitation to phased autonomy negotiations. Option 2 (Structured Autonomy Framework) is recommended as the most feasible given current domestic and international constraints.',
-  situationAssessment: 'The Nordalia conflict is at Glasl Stage 5, with both parties entrenched but back-channels functional. The mutually hurting stalemate creates a narrow ripeness window.',
+  situationAssessment: 'The the selected situation conflict is at Glasl Stage 5, with both parties entrenched but back-channels functional. The mutually hurting stalemate creates a narrow ripeness window.',
   options: [
     {
       title: 'Option 1: Emergency Ceasefire + Confidence-Building Measures',
@@ -97,9 +97,9 @@ const DEMO_RESPONSE = {
   classification: 'UNCLASSIFIED // POLICY PLANNING',
   to: 'Senior Policy Principals',
   from: 'PRAXIS Policy Cell',
-  subject: 'Policy Options for the Nordalia Crisis',
+  subject: 'Policy Options for the User Workspace',
   problemStatement: 'The ceasefire framework is deteriorating while the political process remains formally open.',
-  contextAndBackground: 'Nordalia remains in a fragile conflict environment with contested legitimacy, external patronage, and humanitarian access constraints.',
+  contextAndBackground: 'the selected situation remains in a fragile conflict environment with contested legitimacy, external patronage, and humanitarian access constraints.',
   policyOptions: [
     {
       option: 'Emergency Ceasefire + Confidence-Building Measures',
@@ -128,9 +128,9 @@ const DEMO_RESPONSE = {
   monitoringIndicators: ['Ceasefire violations', 'Humanitarian access approvals', 'Participation in AU roadmap sessions'],
   draftingAudit: {
     artifactMode: 'policy-memo' as const,
-    sourceUse: [{ source: 'demo situation record', claim: 'Nordalia policy options and ceasefire risks', confidence: 'medium' as const }],
+    sourceUse: [{ source: 'demo situation record', claim: 'the selected situation policy options and ceasefire risks', confidence: 'medium' as const }],
     confidenceNote: 'Medium confidence because this is synthetic demo data.',
-    limits: ['No live source verification in demo mode'],
+    limits: ['No live source verification in this session'],
     followUpResearch: ['Verify current UNSC posture', 'Update humanitarian access figures'],
   },
 };

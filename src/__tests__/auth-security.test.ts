@@ -35,7 +35,7 @@ describe('Auth Security Contracts', () => {
     expect(parts).toHaveLength(3);
   });
 
-  it('demo user has fixed UID', () => {
+  it('sample user has fixed UID', () => {
     const DEMO_UID = 'demo-user-001';
     expect(DEMO_UID).toBe('demo-user-001');
   });

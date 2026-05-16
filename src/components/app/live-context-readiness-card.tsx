@@ -65,7 +65,7 @@ export function LiveContextReadinessCard() {
   }, []);
 
   const dots = useMemo<ReadinessDot[]>(() => {
-    const sitHref = activeSituation ? `/app/workbench/${activeSituation.id}` : '/app/contexts';
+    const sitHref = activeSituation ? `/app/contexts?situationId=${activeSituation.id}` : '/app/contexts';
     const sourceCount =
       (activeSituation?.sourceUrls?.length ?? 0) +
       (activeSituation?.customSources?.length ?? 0) +

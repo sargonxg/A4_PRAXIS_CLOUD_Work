@@ -31,7 +31,7 @@ export const GET = withAuth<RouteContext>(async (_request, user, context) => {
 
 export const POST = withAuth<RouteContext>(async (_request, user, context) => {
   try {
-    if (user.isDemo) return NextResponse.json({ error: 'Demo mode cannot clone shared capsules' }, { status: 403 });
+    if (user.isDemo) return NextResponse.json({ error: 'Sample mode cannot clone shared capsules' }, { status: 403 });
     const share = await resolveShare((await context.params).token);
     if (!share) return NextResponse.json({ error: 'Share not found' }, { status: 404 });
     if (isExpired(share.expiresAt)) return NextResponse.json({ error: 'Share expired' }, { status: 410 });

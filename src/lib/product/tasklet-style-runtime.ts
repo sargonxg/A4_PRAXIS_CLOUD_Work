@@ -117,7 +117,7 @@ export const PRAXIS_TASKLET_STYLE_STACK: PraxisAgentRuntimeDecision[] = [
     layer: 'outputs',
     status: 'live',
     use: 'Memo Studio, Canvas, Library, handover packages',
-    repoAnchor: 'src/app/api/memos, src/components/workbench',
+    repoAnchor: 'src/app/api/memos, src/components/cores',
     rationale: 'Agents should produce known PRAXIS artifacts rather than arbitrary generated UI.',
   },
   {

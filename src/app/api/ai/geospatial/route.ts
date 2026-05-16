@@ -86,7 +86,7 @@ const DEMO_RESPONSE = {
       zoneType: 'active-conflict',
       description: 'Contested corridor along the Kessara River, site of ongoing AFN-DRM military operations. Heavy open-source reporting and GDELT event-signal coverage since Q3 2024.',
       controllingActor: 'Democratic Resistance Movement (DRM)',
-      contestedBy: ['Armed Forces of Nordalia (AFN)'],
+      contestedBy: ['Armed Forces of the selected situation (AFN)'],
       estimatedCivilianPopulation: 185000,
       keyDevelopments: [
         'AFN artillery operations resumed after 72-hour pause',
@@ -105,10 +105,10 @@ const DEMO_RESPONSE = {
       ],
     },
     {
-      name: 'Nordalia Capital Region',
+      name: 'the selected situation Capital Region',
       zoneType: 'stable',
       description: 'Government-controlled capital region with deteriorating economic conditions but no active combat.',
-      controllingActor: 'Government of Nordalia (GoN)',
+      controllingActor: 'Government of the selected situation (GoN)',
       estimatedCivilianPopulation: 1200000,
     },
     {
@@ -162,7 +162,7 @@ const DEMO_RESPONSE = {
     },
     {
       type: 'water',
-      location: 'Nordalia Eastern Water Authority (NEWA) Network',
+      location: 'the selected situation Eastern Water Authority (NEWA) Network',
       status: 'damaged',
       impactedPopulation: 220000,
       description: 'Primary water treatment plant at 30% capacity. Cholera risk elevated to HIGH (WHO).',
@@ -195,14 +195,14 @@ const DEMO_RESPONSE = {
       triggerConditions: ['AFN force concentration >3,000 personnel', 'Failure of UNSC informal consultations'],
     },
     {
-      location: 'Karovia-Nordalia Border Crossing Alpha',
+      location: 'Karovia-the selected situation Border Crossing Alpha',
       riskLevel: 'high',
       threat: 'Karovia military intervention if cross-border shelling continues; refugee surge trigger',
       timeframe: '30–60 days',
       affectedActors: ['Karovian Border Forces', 'AFN', 'Refugee population'],
     },
     {
-      location: 'Nordalia Capital — Business District',
+      location: 'the selected situation Capital — Business District',
       riskLevel: 'medium',
       threat: 'Civil unrest driven by economic deterioration (36% currency collapse) and journalist arrests',
       timeframe: '60–90 days',
@@ -250,7 +250,7 @@ export const POST = withCalibration('geospatial', 'ai_analysis', {
     const sitContext = situation ? buildToolContext(situation as unknown as Situation) : '';
     const situationId = (situation as Situation | undefined)?.id ?? '';
 
-    // --- Demo mode ---
+    // --- Sample mode ---
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }

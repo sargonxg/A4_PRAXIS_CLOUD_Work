@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/app/', '/demo/', '/api/'],
+        disallow: ['/app/', '/api/'],
       },
     ],
     sitemap: 'https://praxis.tacitus.me/sitemap.xml',

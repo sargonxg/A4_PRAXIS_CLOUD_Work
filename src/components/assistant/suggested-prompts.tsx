@@ -67,57 +67,6 @@ function buildCategories(sitName: string, actors: string[]) {
   ];
 }
 
-const DEMO_CATEGORIES = [
-  {
-    title: 'Conflict Analysis',
-    icon: GitBranch,
-    accent: 'border-diplomatic-blue',
-    iconBg: 'bg-diplomatic-blue/10',
-    iconColor: 'text-diplomatic-blue',
-    prompts: [
-      'Assess the current Glasl escalation stage for Nordalia',
-      'Map all actors with leverage over the ceasefire',
-      "What are the DRM's core interests vs stated positions?",
-    ],
-  },
-  {
-    title: 'Intelligence & Research',
-    icon: Globe,
-    accent: 'border-gold-600',
-    iconBg: 'bg-gold-500/10',
-    iconColor: 'text-gold-600',
-    prompts: [
-      'Generate a morning intelligence brief for Nordalia',
-      'Compare media narratives on the Eastern Marches',
-      'Find historical parallels to the current escalation pattern',
-    ],
-  },
-  {
-    title: 'Drafting & Reporting',
-    icon: FileText,
-    accent: 'border-teal',
-    iconBg: 'bg-teal/10',
-    iconColor: 'text-teal',
-    prompts: [
-      'Draft senior briefing talking points',
-      'Prepare a situation report in professional diplomatic format',
-      'Generate a mediation preparation package',
-    ],
-  },
-  {
-    title: 'TACITUS Ecosystem',
-    icon: Layers,
-    accent: 'border-emerald-500',
-    iconBg: 'bg-emerald-500/10',
-    iconColor: 'text-emerald-500',
-    prompts: [
-      'Query ARGUS: Show commitment chains between Government and DRM',
-      'What would CONCORDIA recommend for the next mediation round?',
-      'Run a Wind Tunnel scenario: ceasefire collapse',
-    ],
-  },
-];
-
 const EMPTY_APP_CATEGORIES = [
   {
     title: 'Start a Workspace',
@@ -173,7 +122,6 @@ export function getSuggestedPromptCategories(input: {
   demoMode: boolean;
   activeSituation: { name: string; actors?: string[] } | null;
 }) {
-  if (input.demoMode) return DEMO_CATEGORIES;
   if (input.activeSituation) {
     return buildCategories(input.activeSituation.name, input.activeSituation.actors || []);
   }

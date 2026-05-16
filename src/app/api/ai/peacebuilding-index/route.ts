@@ -90,7 +90,7 @@ const DEMO_RESPONSE = {
     },
   },
   overallTrend: 'deteriorating' as const,
-  benchmarkComparison: 'Nordalia scores below the median for comparable post-agreement African conflicts (median composite: 42). Security and economic pillars are notably weaker than the Sierra Leone trajectory at equivalent conflict stage, though social cohesion is stronger than CAR at a comparable point.',
+  benchmarkComparison: 'the selected situation scores below the median for comparable post-agreement African conflicts (median composite: 42). Security and economic pillars are notably weaker than the Sierra Leone trajectory at equivalent conflict stage, though social cohesion is stronger than CAR at a comparable point.',
   priorities: [
     'Restore ceasefire monitoring and enforcement — security pillar is the binding constraint',
     'Negotiate humanitarian access before second consecutive failed planting season',

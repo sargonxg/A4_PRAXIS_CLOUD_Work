@@ -15,12 +15,11 @@
 > `docs/build/PRAXIS_v5_BUILD_01_AGENT_OPERATING_GUIDE.md`, the assigned
 > v5 phase prompt in `docs/build/PRAXIS_v5_BUILD_02_BACKEND_PHASES_0-3.md`
 > or `docs/build/PRAXIS_v5_BUILD_03_FRONTEND_AND_SHIP.md`, `TODO.md`,
-> `docs/v7/README.md`, `docs/v7/STATUS.md`, `docs/v7/AGENTS.md`,
-> `docs/v7/OPEN_QUESTIONS.md`, and the `[Unreleased]` section in
-> `CHANGELOG.md`. The current product direction is the v5 MVP build pack,
-> coordinated through the execution ledger; v7 slice work remains governed by
-> the v7 status docs and must not start from `proposed` without Giulio's
-> approval. Validate with `npx tsc --noEmit`, focused Vitest/pytest for touched
+> `docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md`, and the
+> `[Unreleased]` section in `CHANGELOG.md`. The current product direction is
+> the Tasklet-style ContextCapsule agent runtime coordinated through
+> `docs/product/` and the execution ledger. Validate with `npx tsc --noEmit`,
+> focused Vitest/pytest for touched
 > areas, `npm run build`, `npm run audit:repo-shape`, and relevant audit gates
 > before deploying via Cloud Build.
 

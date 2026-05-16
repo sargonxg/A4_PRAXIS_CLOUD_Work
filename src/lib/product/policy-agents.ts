@@ -179,7 +179,7 @@ export function destinationHref(destination: PolicyAgentOutputDestination): stri
     case 'canvas':
       return '/app/canvas';
     case 'library':
-      return '/app/workbench?tab=library';
+      return '/app/contexts';
     case 'handover':
       return '/app/contexts';
   }

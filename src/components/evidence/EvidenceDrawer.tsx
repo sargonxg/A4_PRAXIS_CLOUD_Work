@@ -51,7 +51,7 @@ function compactJson(value: unknown): string {
 function provenanceLink(caseId: string, provenance: string | null) {
   if (!provenance) return null;
   if (!provenance.startsWith('case:')) return null;
-  return `/app/workbench/${encodeURIComponent(caseId)}?tab=graph`;
+  return `/app/canvas?situationId=${encodeURIComponent(caseId)}`;
 }
 
 export function EvidenceDrawer({ open, onClose, caseId, artifact }: EvidenceDrawerProps) {

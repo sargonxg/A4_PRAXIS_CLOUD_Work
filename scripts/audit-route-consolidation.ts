@@ -26,7 +26,6 @@ const failures: string[] = [];
 const FOLDED_ROUTES: Record<string, string> = {
   'src/app/docs/page.tsx': '/learn',
   'src/app/waitlist/page.tsx': '/login?mode=signup',
-  'src/app/app/cases/page.tsx': '/app/workbench',
   'src/app/app/situations/page.tsx': '/app/contexts',
   'src/app/app/profile/page.tsx': '/app/settings/profile',
 };

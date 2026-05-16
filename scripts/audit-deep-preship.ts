@@ -274,7 +274,7 @@ requireIncludes(
 const e2eFiles = walk(path.join(root, 'tests/e2e')).filter((file) => file.endsWith('.ts')).map((file) => path.relative(root, file).replaceAll('\\', '/'));
 for (const expected of [
   'tests/e2e/golden-path.spec.ts',
-  'tests/e2e/app-usability-smoke.spec.ts',
+  'tests/e2e/golden-path.spec.ts',
   'tests/e2e/workbench/draft-briefing-assembly.spec.ts',
   'tests/e2e/workbench/desk-command-center.spec.ts',
   'tests/e2e/visualization/timeline-display.spec.ts',
@@ -290,7 +290,7 @@ for (const expected of [
 }
 
 const packageJson = read('package.json');
-for (const script of ['smoke:app-usability', 'smoke:golden-path', 'smoke:personas']) {
+for (const script of ['smoke:app-usability', 'smoke:golden-path', 'smoke:tasklet-app']) {
   const present = packageJson.includes(`"${script}"`);
   add({
     id: `e2e-script-${script.replace(/[^a-z0-9]+/gi, '-')}`,

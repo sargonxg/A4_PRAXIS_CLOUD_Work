@@ -49,7 +49,7 @@ const EconomicImpactSchema = z.object({
 });
 
 const DEMO_RESPONSE = {
-  summary: 'The Nordalia conflict has caused severe macroeconomic deterioration — currency down 36.4%, growth running 7-9 percentage points below pre-conflict trend — with a war economy emerging around rare earth extraction in eastern provinces.',
+  summary: 'The the selected situation conflict has caused severe macroeconomic deterioration — currency down 36.4%, growth running 7-9 percentage points below pre-conflict trend — with a war economy emerging around rare earth extraction in eastern provinces.',
   macroIndicators: {
     gdpGrowthDeviation: 'GDP growth estimated at -4.2% vs pre-conflict trend of +3.1% (deviation: -7.3pp)',
     inflationRate: 'Consumer price inflation at 34.7% annualised, driven by fuel and food import disruption',
@@ -76,7 +76,7 @@ const DEMO_RESPONSE = {
     },
     {
       actor: 'Cross-border traders (Karovian border)',
-      benefitFromConflict: 'Profit from arbitrage between conflict-depressed Nordalian prices and regional market rates',
+      benefitFromConflict: 'Profit from arbitrage between conflict-depressed the selected situationn prices and regional market rates',
       stakeInPeace: 'Would lose arbitrage margins but gain from restored formal trade volumes',
     },
   ],

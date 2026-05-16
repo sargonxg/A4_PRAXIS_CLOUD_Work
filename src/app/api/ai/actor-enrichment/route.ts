@@ -37,7 +37,7 @@ const DEMO_RESPONSE = {
     {
       date: 'March 2026',
       event: 'President Osei reshuffled the security cabinet, replacing the moderate Defence Minister with AFN hardliner General Mensah. Widely interpreted as a signal of willingness to pursue military options if the political track remains stalled.',
-      source: 'Nordalian Independent Media Network; ICG Africa Report No. 312',
+      source: 'the selected situationn Independent Media Network; ICG Africa Report No. 312',
     },
     {
       date: 'February 2026',
@@ -50,11 +50,11 @@ const DEMO_RESPONSE = {
       source: 'AU Panel of the Wise communique, 12 Jan 2026',
     },
   ],
-  positionAnalysis: 'The Government of Nordalia maintains its stated position that the 2024 elections were legitimate and the DRM must disarm before political dialogue. However, the cabinet reshuffle suggests an internal debate between accommodationists (who favour a negotiated settlement preserving GoN authority) and hardliners (who advocate a military solution). The appointment of General Mensah indicates the hardline faction is currently ascendant. Underlying interests remain unchanged: regime survival, control of eastern rare earth revenues, and preventing a precedent of armed opposition forcing power-sharing.',
+  positionAnalysis: 'The Government of the selected situation maintains its stated position that the 2024 elections were legitimate and the DRM must disarm before political dialogue. However, the cabinet reshuffle suggests an internal debate between accommodationists (who favour a negotiated settlement preserving GoN authority) and hardliners (who advocate a military solution). The appointment of General Mensah indicates the hardline faction is currently ascendant. Underlying interests remain unchanged: regime survival, control of eastern rare earth revenues, and preventing a precedent of armed opposition forcing power-sharing.',
   relationshipUpdates: [
     {
       actor: 'Karovia',
-      change: 'Relationship has deepened following the defence cabinet reshuffle. Karovian military logistics flights to Nordalia City increased 40% in the past 21 days, suggesting enhanced military cooperation. The patron-client dynamic is strengthening.',
+      change: 'Relationship has deepened following the defence cabinet reshuffle. Karovian military logistics flights to the selected situation City increased 40% in the past 21 days, suggesting enhanced military cooperation. The patron-client dynamic is strengthening.',
     },
     {
       actor: 'UNMN',
@@ -65,7 +65,7 @@ const DEMO_RESPONSE = {
       change: 'The prisoner exchange demonstrated continued back-channel functionality, but public rhetoric has hardened. GoN state media references to DRM as "terrorists" increased 60% in Q1 2026.',
     },
   ],
-  assessment: 'The Government of Nordalia is at a critical inflection point. The cabinet reshuffle, increased Karovian military cooperation, and restrictions on UNMN access collectively suggest preparation for a potential military escalation if the political track does not produce results within 60-90 days. However, the GoN faces significant constraints: fiscal pressure from the currency depreciation (36.4% since March 2024), international legitimacy concerns, and uncertain military capacity for sustained operations in eastern terrain. The most likely trajectory is continued brinkmanship — using the threat of military action to extract concessions in the AU-mediated process — rather than an actual offensive. Confidence: Medium. Key uncertainty: internal GoN decision-making dynamics between Osei and the AFN command.',
+  assessment: 'The Government of the selected situation is at a critical inflection point. The cabinet reshuffle, increased Karovian military cooperation, and restrictions on UNMN access collectively suggest preparation for a potential military escalation if the political track does not produce results within 60-90 days. However, the GoN faces significant constraints: fiscal pressure from the currency depreciation (36.4% since March 2024), international legitimacy concerns, and uncertain military capacity for sustained operations in eastern terrain. The most likely trajectory is continued brinkmanship — using the threat of military action to extract concessions in the AU-mediated process — rather than an actual offensive. Confidence: Medium. Key uncertainty: internal GoN decision-making dynamics between Osei and the AFN command.',
 };
 
 export const POST = withCalibration('actor_profiles', 'ai_analysis', {
@@ -84,7 +84,7 @@ export const POST = withCalibration('actor_profiles', 'ai_analysis', {
     };
     const sitContext = situation ? buildToolContext(situation) : '';
 
-    // --- Demo mode ---
+    // --- Sample mode ---
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }

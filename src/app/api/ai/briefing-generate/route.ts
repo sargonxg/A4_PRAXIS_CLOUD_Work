@@ -72,7 +72,7 @@ FORMAT RULES:
 
 const MORNING_DIGEST_DEMO = `## OVERNIGHT DEVELOPMENTS
 - 🔴 CRITICAL: Buffer zone incursion reported near Kessara corridor — third incident this week. UNMN observers confirmed vehicle movement from GoN side at 0300 UTC.
-- 🟡 IMPORTANT: Karovian military transport flight KV-4112 landed at Nordalia City International at 0145 UTC. Sixth flight in 10 days — logistics pattern suggests materiel buildup.
+- 🟡 IMPORTANT: Karovian military transport flight KV-4112 landed at the selected situation City International at 0145 UTC. Sixth flight in 10 days — logistics pattern suggests materiel buildup.
 - 🟢 ROUTINE: OCHA convoy reached Sector 3 distribution point. DRM taxation checkpoint extracted 8% "transit fee." Within recent norms but concerning trend.
 
 ## RISK ASSESSMENT UPDATE
@@ -89,18 +89,18 @@ const MORNING_DIGEST_DEMO = `## OVERNIGHT DEVELOPMENTS
 
 ## TODAY'S RECOMMENDED FOCUS
 1. **Monitor General Mensah's first statement** — Content and tone will indicate whether GoN is preparing escalation or using appointment as bargaining leverage. Draft talking points for SRSG response.
-2. **Track Karovian logistics pattern** — Request updated satellite imagery of Nordalia City airfield. Cross-reference with Panel of Experts shipping data for arms embargo compliance.
+2. **Track Karovian logistics pattern** — Request updated satellite imagery of the selected situation City airfield. Cross-reference with Panel of Experts shipping data for arms embargo compliance.
 3. **Prepare humanitarian access brief** — Planting season (April-May) window approaching. Draft options paper for OCHA on checkpoint negotiations before agricultural disruption becomes irreversible.
 
 ## UPCOMING DEADLINES & MILESTONES
 - 🔴 **Today:** General Mensah expected first public statement
-- 🟡 **Wednesday:** multilateral forum informal consultations on Nordalia mandate
+- 🟡 **Wednesday:** multilateral forum informal consultations on the selected situation mandate
 - 🟡 **Friday:** SRSG weekly briefing to P5 ambassadors
-- 🟢 **Next Monday:** AU PSC consultative meeting on Sahel/Nordalia regional dynamics
+- 🟢 **Next Monday:** AU PSC consultative meeting on Sahel/the selected situation regional dynamics
 - 🟢 **April 1:** Eastern Province planting season begins — humanitarian access critical`;
 
 const DEMO_RESPONSE_FULL = {
-  bluf: 'The Nordalia conflict remains at Glasl Stage 5 with ceasefire holding but under increasing strain from buffer zone incursions and the appointment of AFN hardliner General Mensah as Defence Minister; Karovian military logistics have increased 40% over the past 30 days. Immediate priorities are reinforcing UNMN ceasefire monitoring at Kessara corridor and launching an economic working group on rare earth revenue-sharing before the June AU mediation round.',
+  bluf: 'The the selected situation conflict remains at Glasl Stage 5 with ceasefire holding but under increasing strain from buffer zone incursions and the appointment of AFN hardliner General Mensah as Defence Minister; Karovian military logistics have increased 40% over the past 30 days. Immediate priorities are reinforcing UNMN ceasefire monitoring at Kessara corridor and launching an economic working group on rare earth revenue-sharing before the June AU mediation round.',
   speakerNotes: 'Open with the Mensah appointment — it is the most significant political development and signals the hardline faction is ascendant. Emphasise the 60-90 day window before the June AU round. Close with the planting season humanitarian urgency.',
   keyJudgments: [
     { judgment: 'GoN will not return to formal negotiations prior to June AU round without external pressure from Karovia or the P3', confidence: 'likely' as const, evidence: 'Mensah appointment signals hardline dominance; no GoN outreach to SRSG in past 3 weeks' },
@@ -109,7 +109,7 @@ const DEMO_RESPONSE_FULL = {
   ],
   slides: [
     {
-      title: 'Situation Overview: Nordalia Crisis',
+      title: 'Situation Overview: User Workspace',
       content: `- **Conflict status:** Stage 5 (Glasl) — Loss of Face
 - **Ceasefire:** Fragile but holding since September 2025
 - **Violations:** 47 documented since inception; accelerating in Kessara corridor
@@ -122,9 +122,9 @@ const DEMO_RESPONSE_FULL = {
       title: 'Key Developments (Last 30 Days)',
       content: `- **Cabinet reshuffle:** President Osei replaced moderate Defence Minister with AFN hardliner General Mensah
 - **Buffer zone incursions:** Third consecutive week of violations by both parties in Kessara corridor
-- **Karovian logistics:** 40% increase in military transport flights to Nordalia City
+- **Karovian logistics:** 40% increase in military transport flights to the selected situation City
 - **Journalist detentions:** Two additional NIMN journalists arrested, bringing total to five
-- **Currency:** Nordalian krone fell 2.1%, cumulative depreciation now 36.4%`,
+- **Currency:** the selected situationn krone fell 2.1%, cumulative depreciation now 36.4%`,
       speakerNotes: 'The cabinet reshuffle is the most significant political development. It signals that the hardline faction within the GoN is currently ascendant. Combined with the Karovian logistics increase, this suggests preparation for potential military escalation if the political track does not produce results.',
       sources: ['NIMN reporting, March 2026', 'Open-source flight tracking data', 'ICG Africa Report No. 312'],
     },

@@ -214,7 +214,7 @@ function AttachableToolCard({
     ? '/app/write'
     : tool.id === 'ask-praxis'
       ? '/app/assistant'
-      : '/app/workbench';
+      : '/app/contexts';
 
   return (
     <article className="flex min-h-[260px] flex-col justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 transition hover:border-diplomatic-blue/40 hover:bg-white">

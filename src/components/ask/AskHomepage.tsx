@@ -48,7 +48,7 @@ export function AskHomepage({
             <h2 className="text-sm font-semibold text-navy-900">Recent contexts</h2>
             <div className="mt-3 space-y-2">
               {contexts.slice(0, 4).map((context) => (
-                <Link key={context.id} href={`/app/workbench/${context.id}`} className="block rounded-md border border-slate-200 bg-slate-50 p-3 hover:bg-white">
+                <Link key={context.id} href={`/app/contexts?situationId=${context.id}`} className="block rounded-md border border-slate-200 bg-slate-50 p-3 hover:bg-white">
                   <p className="text-sm font-semibold text-navy-900">{context.name}</p>
                   <p className="mt-1 text-xs text-navy-600">{context.region}</p>
                 </Link>
@@ -62,7 +62,7 @@ export function AskHomepage({
               <UtilityLink icon={Search} href="/app/tools" label="Advanced actions" />
               <UtilityLink icon={Layers3} href="/app/contexts" label="Manage stack" />
               <UtilityLink icon={UserRound} href="/app/cores/user" label="Edit user core" />
-              <UtilityLink icon={FileText} href="/app/workbench?openChapter=memos" label="Memo Output" />
+              <UtilityLink icon={FileText} href="/app/write" label="Memo Output" />
               <UtilityLink icon={BookOpen} href="/app/dashboard" label="Dashboard" />
             </div>
           </section>

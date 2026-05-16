@@ -18,7 +18,7 @@ const AttachSchema = z.object({
 
 export const POST = withAuth<RouteContext>(async (request, user, context) => {
   try {
-    if (user.isDemo) return NextResponse.json({ error: 'Demo mode cannot mutate private capsules' }, { status: 403 });
+    if (user.isDemo) return NextResponse.json({ error: 'Sample mode cannot mutate private capsules' }, { status: 403 });
     const { capsuleId } = await context.params;
     const parsed = AttachSchema.safeParse(await request.json().catch(() => ({})));
     if (!parsed.success) {

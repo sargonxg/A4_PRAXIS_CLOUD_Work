@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — PRAXIS by TACITUS",
-  description: "Privacy Policy for PRAXIS by TACITUS. Experimental demo platform — please read carefully.",
+  description: "Privacy Policy for PRAXIS by TACITUS. Experimental platform — please read carefully.",
 };
 
 export default function PrivacyPage() {
@@ -22,13 +22,13 @@ export default function PrivacyPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-6 py-16">
-        {/* Demo disclaimer banner */}
+        {/* Experimental disclaimer banner */}
         <div className="mb-10 rounded-xl border border-amber-200 bg-amber-50 p-5">
           <p className="text-sm font-semibold text-amber-800">
             Experimental Platform — Important Notice
           </p>
           <p className="mt-1 text-sm text-amber-700">
-            PRAXIS is currently in early demo mode. This Privacy Policy describes our
+            PRAXIS is currently in early access. This Privacy Policy describes our
             intended data practices. As the platform evolves, this policy will be updated.
             This document does not constitute legal advice and should not be relied upon as
             a substitute for independent legal counsel.
@@ -39,10 +39,10 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="mb-2 text-sm text-gray-500">
-          Last updated: March 2026 &nbsp;|&nbsp; Version: 0.1 (Demo)
+          Last updated: March 2026 &nbsp;|&nbsp; Version: 0.1
         </p>
         <p className="mb-12 text-sm text-gray-400 italic">
-          This policy applies to the PRAXIS demo platform operated by TACITUS.
+          This policy applies to the PRAXIS platform operated by TACITUS.
         </p>
 
         <div className="prose prose-gray max-w-none space-y-10 text-gray-700">
@@ -75,7 +75,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="mb-3 font-serif text-2xl font-semibold text-gray-900">3. What Data We Collect</h2>
-            <p>In demo mode, we may collect:</p>
+            <p>We may collect:</p>
             <ul className="mt-3 space-y-2 list-disc pl-6">
               <li><strong>Contact information:</strong> Email addresses you voluntarily provide when contacting us or joining the mailing list.</li>
               <li><strong>Usage data:</strong> Anonymised interactions with the platform interface (pages visited, features used) to understand how practitioners use the tool.</li>
@@ -83,8 +83,8 @@ export default function PrivacyPage() {
               <li><strong>Technical data:</strong> Browser type, IP address, and device information collected automatically via standard web server logs and analytics tools.</li>
             </ul>
             <p className="mt-4 rounded-lg border border-amber-100 bg-amber-50 p-4 text-sm text-amber-800">
-              <strong>Demo Warning:</strong> Please do not enter classified, confidential,
-              or personally sensitive information into PRAXIS during the demo phase.
+              <strong>Data Warning:</strong> Please do not enter classified, confidential,
+              or personally sensitive information into PRAXIS during the early-access phase.
               The platform is not yet certified for handling sensitive data.
             </p>
           </section>
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
             <p>We use collected data to:</p>
             <ul className="mt-3 space-y-2 list-disc pl-6">
               <li>Respond to feedback and enquiries sent to hello@tacitus.me</li>
-              <li>Understand how practitioners interact with the demo and improve the platform</li>
+              <li>Understand how practitioners interact with the product and improve the platform</li>
               <li>Send product updates to those who join our mailing list (you can unsubscribe at any time)</li>
               <li>Maintain the security and stability of the platform</li>
             </ul>
@@ -107,7 +107,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="mb-3 font-serif text-2xl font-semibold text-gray-900">5. Data Retention</h2>
             <p>
-              During the demo phase, data retention policies are not yet formally defined.
+              During the early-access phase, data retention policies are not yet formally defined.
               We aim to retain data only as long as necessary for the purposes described above.
               If you wish to request deletion of any data associated with your email address,
               contact us at <a href="mailto:hello@tacitus.me" className="text-[#1a2744] underline">hello@tacitus.me</a>.
@@ -123,7 +123,7 @@ export default function PrivacyPage() {
             </p>
             <p className="mt-3">
               SOC 2 Type II certification and formal penetration testing are <strong>planned</strong>
-              and have not yet been completed. Do not use PRAXIS in demo mode for sensitive,
+              and have not yet been completed. Do not use PRAXIS for sensitive,
               classified, or mission-critical workloads.
             </p>
           </section>
@@ -155,7 +155,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="mb-3 font-serif text-2xl font-semibold text-gray-900">9. Changes to This Policy</h2>
             <p>
-              As PRAXIS evolves from demo to commercial product, this Privacy Policy will be
+              As PRAXIS evolves toward a commercial product, this Privacy Policy will be
               updated substantially. We will notify mailing list subscribers of material changes.
               The current version number and date are shown at the top of this page.
             </p>

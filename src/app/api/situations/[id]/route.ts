@@ -13,7 +13,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 function rejectDemo(user: AuthenticatedUser) {
   if (user.isDemo) {
     return NextResponse.json(
-      { error: 'Not available in demo mode' },
+      { error: 'Not available for this session' },
       { status: 403 }
     );
   }

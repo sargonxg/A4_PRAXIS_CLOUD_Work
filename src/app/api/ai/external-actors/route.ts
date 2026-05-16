@@ -35,7 +35,7 @@ const ExternalActorsSchema = z.object({
 });
 
 const DEMO_RESPONSE = {
-  summary: 'Two primary external actors (Karovia, Westmark) and a significant diaspora network are materially sustaining the Nordalia conflict.',
+  summary: 'Two primary external actors (Karovia, Westmark) and a significant diaspora network are materially sustaining the the selected situation conflict.',
   externalActors: [
     {
       name: 'Karovia',
@@ -47,7 +47,7 @@ const DEMO_RESPONSE = {
       source: 'Crisis Group Report #347',
     },
     {
-      name: 'Nordalia Diaspora (Westmark)',
+      name: 'the selected situation Diaspora (Westmark)',
       type: 'diaspora' as const,
       involvement: ['financial' as const, 'informational' as const],
       alignment: 'pro-party-b' as const,

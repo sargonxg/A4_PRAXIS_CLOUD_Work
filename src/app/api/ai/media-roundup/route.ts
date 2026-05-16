@@ -76,7 +76,7 @@ const DEMO_RESPONSE = {
       country: 'International',
       significance:
         'First formal UNMN ultimatum since ceasefire signing. Triggers Article 7 review mechanism. Failure to comply activates senior diplomatic forum notification protocol — the first such escalation of the UNMN mandate.',
-      link: 'https://reuters.com/world/africa/unmn-buffer-zone-nordalia-2026-04-09',
+      link: 'https://reuters.com/world/africa/unmn-buffer-zone-user-case-2026-04-09',
     },
     {
       title: 'Westmark arms vote: coalition holds, €120M DRM package to proceed 14 April',
@@ -92,12 +92,12 @@ const DEMO_RESPONSE = {
       country: 'International',
       significance:
         'IPC Phase 3 threshold crossed in three eastern districts. MSF 6-day supply warning now public. International pressure on GoN will intensify — creates diplomatic leverage window for humanitarian access negotiation.',
-      link: 'https://news.un.org/en/story/2026/04/nordalia-checkpoint-bravo',
+      link: 'https://news.un.org/en/story/2026/04/user-case-checkpoint-bravo',
     },
     {
       title: 'GoN: buffer zone activity is "defensive posture responding to DRM provocation"',
-      outlet: 'Nordalia Broadcasting Corporation',
-      country: 'Nordalia',
+      outlet: 'the selected situation Broadcasting Corporation',
+      country: 'the selected situation',
       significance:
         'GoN framing positions ceasefire violation as reactive, not offensive. Consistent with Stage 5 face-saving narrative. Likely precursor to GoN blocking JCMC emergency session request.',
       link: 'https://nbc.gov.nd/news/defense-statement-040926',
@@ -108,12 +108,12 @@ const DEMO_RESPONSE = {
       country: 'International',
       significance:
         'Provides GoN with international legitimacy boost and weakens DRM\'s moral framing internationally. Westmark government under pressure to distance from DRM ahead of arms vote. Narrative blowback risk for DRM political wing.',
-      link: 'https://dfrlab.org/2026/04/09/nordalia-ib-network',
+      link: 'https://dfrlab.org/2026/04/09/user-case-ib-network',
     },
     {
       title: 'Commander Asante: "Ceasefire is over if AFN post not removed by Friday"',
       outlet: 'Eastern Provinces Voice',
-      country: 'Nordalia',
+      country: 'the selected situation',
       significance:
         'First explicit public ultimatum from DRM military command. Classic Stage 6 "strategy of threats" language. If GoN does not respond, DRM may stage a demonstrative military action to show credibility.',
       link: 'https://epvoice.nd/asante-statement-2026-04-09',
@@ -124,7 +124,7 @@ const DEMO_RESPONSE = {
       country: 'International',
       significance:
         'De-escalation opportunity. AU Panel has credibility with both parties from November 2025 prisoner exchange. Time-limited — window closes if Friday ultimatum passes without response.',
-      link: 'https://au.int/news/panel-wise-nordalia-2026-04-09',
+      link: 'https://au.int/news/panel-wise-user-case-2026-04-09',
     },
     {
       title: 'Karovian KAF: additional logistics flights "routine resupply, not pre-positioning"',
@@ -166,17 +166,17 @@ const DEMO_RESPONSE = {
   ],
   propagandaAlerts: [
     {
-      outlet: '@NordaliaWatch coordinated network (X / Telegram)',
+      outlet: '@the selected situationWatch coordinated network (X / Telegram)',
       tactic: 'Atrocity fabrication and coordinated amplification',
       content:
         'Network of 340 accounts (DFRLab confirmed) amplifying fabricated atrocity imagery from unrelated conflicts, attributed to AFN. Three mainstream outlets ran unverified images before correction. Designed to accelerate Westmark arms vote and international condemnation of GoN.',
       riskLevel: 'high' as const,
     },
     {
-      outlet: 'Nordalia Broadcasting Corporation (NBC)',
+      outlet: 'the selected situation Broadcasting Corporation (NBC)',
       tactic: 'Dehumanisation and delegitimisation',
       content:
-        'NBC morning broadcast 09 April described UNMN demand as "foreign interference in Nordalian sovereignty" and referred to SRSG Santos as an "agent of Westmark interests." Classic Stage 5 dehumanisation of mediating third party — undermines future mediation space.',
+        'NBC morning broadcast 09 April described UNMN demand as "foreign interference in the selected situationn sovereignty" and referred to SRSG Santos as an "agent of Westmark interests." Classic Stage 5 dehumanisation of mediating third party — undermines future mediation space.',
       riskLevel: 'medium' as const,
     },
     {
@@ -220,7 +220,7 @@ export const POST = withCalibration('media_roundup', 'ai_analysis', {
     if (!validation.success) return validation.response;
     const { situation, keywords, exactPhrases, sourceDomains, language } = validation.data;
 
-    // --- Demo mode ---
+    // --- Sample mode ---
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }

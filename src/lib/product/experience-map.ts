@@ -49,7 +49,7 @@ export const PRODUCT_EXPERIENCE_AREAS: ProductExperienceArea[] = [
     shortLabel: 'Library',
     summary: 'Upload documents and sources into knowledge cores.',
     mobilePriority: 'primary',
-    defaultHref: '/app/workbench',
+    defaultHref: '/app/contexts',
   },
   {
     id: 'outputs',
@@ -73,18 +73,14 @@ export const PRODUCT_EXPERIENCE_ROUTES: ProductExperienceRoute[] = [
   { pattern: '/app', area: 'home', label: 'App redirect', mobilePriority: 'primary' },
   { pattern: '/app/dashboard', area: 'home', label: 'Home dashboard', mobilePriority: 'primary' },
   { pattern: '/app/assistant', area: 'ask', label: 'Ask PRAXIS workspace', mobilePriority: 'primary' },
-  // /app/cases is folded into /app/workbench via server redirect.
-  { pattern: '/app/cases', area: 'home', label: 'Workbench (legacy redirect)', mobilePriority: 'secondary' },
+  // /app/cases is folded into /app/contexts via server redirect.
+  { pattern: '/app/cases', area: 'home', label: 'Contexts (legacy redirect)', mobilePriority: 'secondary' },
   { pattern: '/app/contexts', area: 'sources', label: 'Core Library', mobilePriority: 'secondary' },
   // /app/situations folds into /app/contexts; /app/situations/new stays live during v6 transition.
   { pattern: '/app/situations', area: 'home', label: 'Cores (legacy redirect)', mobilePriority: 'secondary' },
   { pattern: '/app/situations/new', area: 'home', label: 'New Situation wizard', mobilePriority: 'secondary' },
   { pattern: '/app/cores/context', area: 'advanced', label: 'Context Core', mobilePriority: 'advanced' },
   { pattern: '/app/cores/user', area: 'advanced', label: 'User Core', mobilePriority: 'advanced' },
-  { pattern: '/app/workbench', area: 'sources', label: 'Library', mobilePriority: 'primary' },
-  { pattern: '/app/workbench/[caseId]', area: 'sources', label: 'Library case', mobilePriority: 'primary' },
-  { pattern: '/app/workbench/[caseId]/ach', area: 'advanced', label: 'ACH', mobilePriority: 'advanced' },
-  { pattern: '/app/workbench/[caseId]/ach/[achId]', area: 'advanced', label: 'ACH matrix', mobilePriority: 'advanced' },
   { pattern: '/app/write', area: 'outputs', label: 'Write with PRAXIS', mobilePriority: 'primary' },
   { pattern: '/app/canvas', area: 'situation', label: 'Canvas', mobilePriority: 'primary' },
   { pattern: '/app/tools', area: 'advanced', label: 'Advanced tools', mobilePriority: 'advanced' },

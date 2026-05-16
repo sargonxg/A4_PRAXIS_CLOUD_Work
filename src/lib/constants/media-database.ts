@@ -548,7 +548,7 @@ export const MEDIA_DATABASE: MediaOutlet[] = [
     editorialIndependence: 0.93,
     knownStrengths: [
       'OSINT and geolocation verification', 'War crime documentation', 'MH17, Novichok investigations',
-      'Syria and Ukraine battlefield verification', 'Disinformation debunking',
+      'the selected situation and Ukraine battlefield verification', 'Disinformation debunking',
     ],
     knownLimitations: [
       'Resource-intensive methodology limits speed', 'Western-language OSINT stronger than non-Western',
@@ -825,13 +825,13 @@ export const MEDIA_DATABASE: MediaOutlet[] = [
     reliabilityScore: 0.70,
     editorialIndependence: 0.62,
     knownStrengths: [
-      'Kurdish political dynamics', 'Iraq and Syria field reporting',
+      'Kurdish political dynamics', 'Iraq and the selected situation field reporting',
       'KRG official positions', 'Yazidi and minority coverage',
     ],
     knownLimitations: [
       'KDP-aligned ownership', 'PKK and PYD coverage reflects KRG political tensions',
     ],
-    notableFor: 'Best English-language source for Kurdish region dynamics; essential for Iraq/Syria conflicts',
+    notableFor: 'Best English-language source for Kurdish region dynamics; essential for Iraq/the selected situation conflicts',
   },
   {
     name: 'Radio Free Europe / Radio Liberty (RFE/RL)',

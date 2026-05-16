@@ -154,7 +154,7 @@ export function AskStreamPanel({
     hasTimeline: Boolean(activeSituation?.keyDates?.length || activeSituation?.latestEventDate || activeSituation?.conflictOnsetDate),
     evidenceGapCount: activeSituation ? Math.max(0, 3 - ((activeSituation.sourceUrls?.length ?? 0) + (activeSituation.documentCount ?? 0))) : 4,
     hasDraft: false,
-    situationHref: activeSituation ? `/app/workbench/${activeSituation.id}` : '/app/contexts',
+    situationHref: activeSituation ? `/app/contexts?situationId=${activeSituation.id}` : '/app/contexts',
   }), [activeSituation]);
   const activeHealthScore = healthScore ?? contextHealth.score;
 
@@ -377,6 +377,13 @@ export function AskStreamPanel({
           </button>
         </div>
 
+        <ChatContextReceipt
+          capsuleId={capsuleId}
+          coreBricks={coreBricks}
+          contextPackageId={contextPackageId}
+          outputGoal={outputGoal}
+        />
+
         <div className="min-h-[22rem] flex-1 space-y-3 overflow-y-auto p-3">
           {historyOpen ? (
             <RecentAskTurnsPanel
@@ -514,6 +521,46 @@ export function AskStreamPanel({
         onClose={() => setSwapTarget(null)}
       />
     </section>
+  );
+}
+
+function ChatContextReceipt({
+  capsuleId,
+  contextPackageId,
+  coreBricks,
+  outputGoal,
+}: {
+  capsuleId?: string | null;
+  contextPackageId?: string | null;
+  coreBricks?: AskCoreBrick[];
+  outputGoal: string;
+}) {
+  const ready = coreBricks?.filter((brick) => brick.ready) ?? [];
+  const sources = coreBricks?.find((brick) => brick.id === 'source-document');
+  const tools = coreBricks?.find((brick) => brick.id === 'tool');
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 bg-[#F8FAFC] px-3 py-2 text-[11px] text-slate-600">
+      <span className="font-bold uppercase tracking-[0.14em] text-slate-500">Context used</span>
+      <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
+        active {capsuleId ? capsuleId.slice(0, 18) : 'default capsule'}
+      </span>
+      <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
+        reference 0
+      </span>
+      <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
+        package {contextPackageId ? contextPackageId.slice(0, 18) : 'resolved on send'}
+      </span>
+      <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
+        {ready.length}/{coreBricks?.length ?? 0} cores ready
+      </span>
+      <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
+        {sources?.value ?? '0 attached'}
+      </span>
+      <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
+        {tools?.value ?? 'tools from Advanced'}
+      </span>
+      <span className="min-w-0 flex-1 truncate">Output: {outputGoal}</span>
+    </div>
   );
 }
 
@@ -675,7 +722,7 @@ function CapsuleIndicatorBar({
         label: 'Time Core',
         value: activeSituation?.latestEventDate ?? 'horizon',
         detail: 'Freshness and forecast window',
-        href: activeSituation ? `/app/workbench/${activeSituation.id}` : '/app/contexts',
+        href: activeSituation ? `/app/contexts?situationId=${activeSituation.id}` : '/app/contexts',
         version: 'v1',
         ready: Boolean(activeSituation),
         locked: false,

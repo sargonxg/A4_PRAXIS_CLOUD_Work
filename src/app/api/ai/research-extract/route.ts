@@ -62,7 +62,7 @@ export const POST = withCalibration('research-extract', 'ai_research', {
   },
 })(async (req, user) => {
   if (user.isDemo || isServerDemoMode()) {
-    return Response.json({ error: 'Not available in demo mode' }, { status: 403 });
+    return Response.json({ error: 'Not available for this session' }, { status: 403 });
   }
 
   try {

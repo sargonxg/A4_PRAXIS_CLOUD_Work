@@ -18,7 +18,7 @@ describe('dashboard next moves persistence contract', () => {
           id: 'memo-drafter',
           label: 'Memo Drafter',
           detail: 'Turn the selected cores into a reviewable draft.',
-          href: '/app/workbench/sit-1?openChapter=memos',
+          href: '/app/write?situationId=sit-1',
           emphasis: 'primary',
         },
         {

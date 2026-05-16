@@ -18,7 +18,7 @@
     "expectedPrimaryOntologyId": "governance"
   },
   {
-    "name": "Nordalia disinformation cascade",
+    "name": "the selected situation disinformation cascade",
     "description": "Map propaganda, framing, counter-narrative opportunities, media channels, and information operations.",
     "role": "researcher",
     "expectedPrimaryOntologyId": "narrative"

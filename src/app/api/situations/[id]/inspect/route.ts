@@ -44,7 +44,7 @@ export function GET(req: NextRequest, ctx: RouteContext) {
   return withAuth(async (_r, user) => {
     if (user.isDemo) {
       return NextResponse.json(
-        { error: 'Not available in demo mode' },
+        { error: 'Not available for this session' },
         { status: 403 },
       );
     }

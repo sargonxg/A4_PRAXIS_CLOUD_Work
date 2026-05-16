@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     const cookieOptions = cookieOptionsForRequest(request);
 
     if (body.demo === true) {
-      // Demo mode session
+      // Sample mode session
       const response = NextResponse.json({ success: true });
       response.cookies.set(
         SESSION_COOKIE,

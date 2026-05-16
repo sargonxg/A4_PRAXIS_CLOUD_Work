@@ -70,7 +70,7 @@ const GWNO_BY_COUNTRY: Record<string, number> = {
   russia: 365,
   somalia: 520,
   sudan: 625,
-  syria: 652,
+  'user case': 652,
   ukraine: 369,
   yemen: 678,
 };

@@ -76,7 +76,7 @@ const DEMO_RESPONSE = {
   complianceSummary: {
     overall: 42,
     byParty: {
-      'Government of Nordalia': 35,
+      'Government of the selected situation': 35,
       'Democratic Reform Movement': 48,
       'UNMN': 72,
       'Republic of Karovia': 15,
@@ -111,7 +111,7 @@ export const POST = withCalibration('treaty_analyzer', 'ai_deep_think', {
       ? await buildGraphContext(ctx.uid, situationId, 'treaty_analysis').catch(() => '')
       : '';
 
-    // --- Demo mode ---
+    // --- Sample mode ---
     if (isServerDemoMode()) {
       return NextResponse.json(DEMO_RESPONSE);
     }

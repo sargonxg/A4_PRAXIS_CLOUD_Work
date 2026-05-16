@@ -18,7 +18,7 @@ const COUNTRY_ISO3: Record<string, string> = {
   'ethiopia': 'ETH', 'iraq': 'IRQ', 'libya': 'LBY', 'mali': 'MLI',
   'mozambique': 'MOZ', 'myanmar': 'MMR', 'niger': 'NER', 'nigeria': 'NGA',
   'pakistan': 'PAK', 'palestine': 'PSE', 'gaza': 'PSE', 'philippines': 'PHL',
-  'somalia': 'SOM', 'south sudan': 'SSD', 'sudan': 'SDN', 'syria': 'SYR',
+  'somalia': 'SOM', 'south sudan': 'SSD', 'sudan': 'SDN', 'user-case': 'SYR',
   'ukraine': 'UKR', 'yemen': 'YEM', 'haiti': 'HTI', 'lebanon': 'LBN',
   'israel': 'ISR', 'turkey': 'TUR', 'türkiye': 'TUR', 'china': 'CHN',
   'russia': 'RUS', 'iran': 'IRN', 'india': 'IND', 'bangladesh': 'BGD',
@@ -43,7 +43,7 @@ export function countryNameToIso3(name: string): string | null {
   // Direct lookup
   const lower = name.toLowerCase().trim();
   if (COUNTRY_ISO3[lower]) return COUNTRY_ISO3[lower];
-  // Try to find a partial match (e.g. "Syria" in "Syrian Arab Republic")
+  // Try to find a partial match (e.g. "the selected situation" in "the selected situationn Arab Republic")
   for (const [key, iso3] of Object.entries(COUNTRY_ISO3)) {
     if (lower.includes(key) || key.includes(lower)) return iso3;
   }

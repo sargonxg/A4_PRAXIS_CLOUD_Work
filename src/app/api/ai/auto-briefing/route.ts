@@ -31,7 +31,7 @@ const AutoBriefingSchema = z.object({
 });
 
 const DEMO_RESPONSE = {
-  situationName: 'Nordalia Crisis',
+  situationName: 'User Workspace',
   riskLevel: 'high' as const,
   trend: 'escalating' as const,
   headline: 'Ceasefire under severe stress: 14 AFN buffer zone violations in 30 days; humanitarian access blocked for 11th consecutive day.',
@@ -44,14 +44,14 @@ const DEMO_RESPONSE = {
   ],
   securitySituation: 'UNMN reports sustained AFN artillery violations in the 5km buffer zone. No direct engagement, but DRM tactical repositioning increases proximity risk. Joint Ceasefire Monitoring Commission still not established (overdue 45 days), leaving monitoring to ad hoc UNMN patrols only.',
   politicalDynamics: 'Political track stalled. No pre-negotiation contacts this week. Karovia cancellation is the most significant diplomatic signal — possibly indicating displeasure with GoN escalatory behavior, but unconfirmed. AU mediation team reports no progress on ground rules for pre-talks.',
-  humanitarianUpdate: 'CRITICAL: Eleven consecutive days of blocked OCHA convoy access. 2.3M people in DRM territory relying on pre-positioned stocks only. MSF reports increasing critical medical cases unable to reach Nordalia City. Nutrition surveillance indicates acute malnutrition increasing in three eastern districts.',
+  humanitarianUpdate: 'CRITICAL: Eleven consecutive days of blocked OCHA convoy access. 2.3M people in DRM territory relying on pre-positioned stocks only. MSF reports increasing critical medical cases unable to reach the selected situation City. Nutrition surveillance indicates acute malnutrition increasing in three eastern districts.',
   mediaEnvironment: 'GoN state media amplifying counterterrorism narrative around Kessara. NIMN published buffer zone violation documentation today. International coverage increasing — BBC and Al Jazeera both ran humanitarian crisis features. Operation MIRROR social media campaign actively suppressing UNMN reporting.',
   actionItems: [
     'URGENT: Invoke OCHA escalation mechanism — emergency humanitarian access meeting within 48 hours',
     'Request UNMN formally report buffer zone violations to multilateral forum under S/2025/891 mandate',
     'Senior bilateral engagement with Karovia to clarify FM cancellation signal',
     'Issue joint AU-UN ceasefire compliance statement before international media cycle closes',
-    'Brief multilateral forum P3 on deteriorating access ahead of monthly Nordalia consultation',
+    'Brief multilateral forum P3 on deteriorating access ahead of monthly the selected situation consultation',
   ],
   nextReview: '24 hours — monitor Karovian diplomatic signals, OCHA convoy status, and any DRM statement on Kessara',
 };

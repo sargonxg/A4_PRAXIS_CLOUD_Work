@@ -60,9 +60,8 @@ function clampConfidence(value: number): number {
 }
 
 const REGION_CENTERS: Record<string, { latitude: number; longitude: number }> = {
-  syria: { latitude: 35.05, longitude: 38.55 },
+  'user case': { latitude: 35.05, longitude: 38.55 },
   levant: { latitude: 34.8, longitude: 38.7 },
-  nordalia: { latitude: 7.8, longitude: 2.1 },
   africa: { latitude: 12.8, longitude: -1.8 },
   sahel: { latitude: 14.6, longitude: -1.9 },
   'west africa': { latitude: 8.2, longitude: -1.3 },

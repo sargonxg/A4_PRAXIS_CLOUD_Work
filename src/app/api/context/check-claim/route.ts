@@ -14,7 +14,7 @@ const RequestSchema = z.object({
 export const POST = withAuth(async (request, user) => {
   try {
     if (user.isDemo) {
-      return NextResponse.json({ error: 'Demo mode cannot check private claims' }, { status: 403 });
+      return NextResponse.json({ error: 'Sample mode cannot check private claims' }, { status: 403 });
     }
     const raw = await request.json().catch(() => ({}));
     const parsed = RequestSchema.safeParse(raw);

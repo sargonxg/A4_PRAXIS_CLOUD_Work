@@ -57,22 +57,6 @@ interface AuthContextValue {
 }
 
 // ---------------------------------------------------------------------------
-// Demo user constant
-// ---------------------------------------------------------------------------
-
-const DEMO_USER: AuthUser = {
-  id: 'demo-user-001',
-  email: 'analyst@tacitus.demo',
-  name: 'Demo Analyst',
-  role: 'senior',
-  orgId: 'org-demo-001',
-  orgName: 'TACITUS Demo Organization',
-  isDemo: true,
-  credits: 999,
-  subscription: 'free',
-};
-
-// ---------------------------------------------------------------------------
 // Context
 // ---------------------------------------------------------------------------
 
@@ -127,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null);
 
   // ---------------------------------------------------------------------------
-  // Restore legacy session on mount / page refresh.
+  // Clear any legacy sample session on mount / page refresh.
   //
   // We track completion so onAuthStateChanged knows whether it's safe to
   // set loading=false. Without this, the Firebase listener can set
@@ -201,9 +185,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [isDemoMode]);
 
   // Listen to Firebase auth state.
-  // Use a ref for isDemoMode to avoid re-subscribing on demo toggle
-  // (re-subscribing triggers an immediate onAuthStateChanged callback that
-  // can flash user=null before the demo state is re-applied).
+  // Use a ref for the legacy sample flag to avoid re-subscribing on session
+  // cleanup.
   const isDemoModeRef = useRef(isDemoMode);
   isDemoModeRef.current = isDemoMode;
 
@@ -390,7 +373,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ---------------------------------------------------------------------------
   // Analyst profile: live subscription so onboarding/settings edits reshape the
   // shell, dashboard recommendations, and guards without a page reload.
-  // Stays null on logout / demo mode — banner and card check this field.
+  // Stays null on logout or legacy sample state.
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (isDemoMode) { setAnalystProfile(null); return; }
@@ -513,7 +496,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Legacy demo entry point retained for UI compatibility; demo sessions are retired.
+  // Legacy sample entry point retained for UI compatibility; sample sessions are retired.
   const signInAsDemo = useCallback(async () => {
     setAuthError(null);
     await fetch('/api/auth/session', { method: 'DELETE' });
