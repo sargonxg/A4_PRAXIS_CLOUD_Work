@@ -16,7 +16,8 @@ import {
 import { cn } from '@/lib/utils/cn';
 import { useRoutePrefix } from '@/lib/utils/routes';
 import { useAuth } from '@/lib/auth/auth-context';
-import { isSyriaWorkspaceCase } from '@/lib/constants/syria-demo-case';
+// Demo content removed; syria-demo-case import stubbed.
+const isSyriaWorkspaceCase = (_caseId: string | null | undefined, _isDemo?: boolean): boolean => false;
 
 interface WelcomeModalProps {
   onStartTour: () => void;
