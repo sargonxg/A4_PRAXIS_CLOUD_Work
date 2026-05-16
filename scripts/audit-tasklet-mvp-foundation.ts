@@ -35,13 +35,16 @@ for (const rel of [
   'src/app/learn/page.tsx',
   'src/app/tacitus/page.tsx',
   'src/app/release-notes/page.tsx',
+  'src/app/docs/page.tsx',
   'src/app/tour/page.tsx',
+  'src/app/waitlist/page.tsx',
   'docs/audits/2026-05-15-tasklet-mvp-cleanup-ledger.md',
 ]) {
   expectFile(rel);
 }
 
-expectIncludes('src/app/(landing)/layout.tsx', ['Learn', 'TACITUS', 'Pricing', 'Release notes', 'New capsule']);
+expectIncludes('src/app/(landing)/layout.tsx', ['Learn', 'TACITUS', 'Pricing', 'New capsule']);
+expectExcludes('src/app/(landing)/layout.tsx', ['Release notes", href']);
 expectIncludes('src/components/landing/phase8-wow-landing.tsx', [
   'TaskletPraxisWorkbench',
   'mode="public"',
@@ -52,6 +55,18 @@ expectExcludes('src/components/landing/phase8-wow-landing.tsx', [
   'No agent run before login',
   'ContextCapsulePreview',
   'CAPSULE_COMBINATION_RECIPES',
+]);
+expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
+  'data-testid="recommended-agent-panel"',
+  'data-testid="public-contextcapsule-explainer"',
+  'data-testid="policy-agent-drawer"',
+  'policyAgentRunIntent',
+]);
+expectExcludes('src/components/landing/phase8-wow-landing.tsx', [
+  'Syria',
+  'Demo',
+  'Tour',
+  'PolicyAgentCard',
 ]);
 expectIncludes('src/components/cores/ContextBuilderRoom.tsx', [
   'Capsule composition',
@@ -69,6 +84,8 @@ expectIncludes('src/lib/navigation/primary-nav.ts', [
 ]);
 expectIncludes('src/app/sitemap.ts', ['/learn', '/tacitus', '/release-notes']);
 expectIncludes('src/app/tour/page.tsx', ["redirect('/')", 'noindex, nofollow']);
+expectIncludes('src/app/docs/page.tsx', ["redirect('/learn')", 'index: false']);
+expectIncludes('src/app/waitlist/page.tsx', ["redirect('/login?mode=signup')", 'index: false']);
 expectIncludes('docs/build/PRAXIS_v5_EXECUTION_LEDGER.md', ['Archived v5 Execution Ledger', 'docs/_archive/build/v5/PRAXIS_v5_EXECUTION_LEDGER.md']);
 expectIncludes('docs/build/PRAXIS_GENKIT_SPRINT_CODEX_BRIEF_2026-05-14.md', ['Archived Genkit Sprint Codex Brief', 'docs/_archive/build/genkit-sprint-2026-05-14']);
 

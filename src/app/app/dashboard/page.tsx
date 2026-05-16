@@ -1,4 +1,4 @@
-import { DashboardCommandCenter } from '@/components/dashboard/dashboard-command-center';
+import { AskPraxisHome } from '@/components/dashboard/ask-praxis-home';
 import { listExampleCases } from '@/lib/cases/registry';
 import { MARKETPLACE_TOOLS } from '@/lib/tools/marketplace/registry';
 
@@ -14,7 +14,7 @@ export default function DashboardPage() {
   }));
 
   return (
-    <DashboardCommandCenter
+    <AskPraxisHome
       exampleCases={exampleCases}
       marketplaceToolCount={MARKETPLACE_TOOLS.length}
     />

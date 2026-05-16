@@ -6,6 +6,42 @@ export type PolicyAgentApprovalLevel = 'none' | 'confirm' | 'approval_required' 
 
 export type PolicyAgentOutputDestination = 'memo_studio' | 'canvas' | 'library' | 'handover';
 
+export type HomeSurfaceMode = 'public' | 'authenticated';
+
+export type PolicyAgentRunIntent =
+  | 'normal_answer'
+  | 'research_memo'
+  | 'sourceability_review'
+  | 'red_team_review'
+  | 'handover';
+
+export type ApprovalGateActionType =
+  | 'external_send'
+  | 'graph_mutation'
+  | 'unsupported_claim_acceptance'
+  | 'browser_action'
+  | 'mcp_write'
+  | 'memo_export';
+
+export type ApprovalGateRiskLevel = 'low' | 'medium' | 'high';
+
+export type ApprovalGateStatus = 'not_required' | 'required' | 'pending' | 'approved' | 'rejected';
+
+export interface ApprovalGate {
+  actionType: ApprovalGateActionType;
+  riskLevel: ApprovalGateRiskLevel;
+  status: ApprovalGateStatus;
+  destination: PolicyAgentOutputDestination | 'external' | 'graph' | 'browser' | 'mcp';
+  receiptId: string | null;
+}
+
+export interface ContextCapsuleLauncherState {
+  prompt: string;
+  selectedCapsuleId: string;
+  selectedPolicyAgentId: string;
+  outputDestination: PolicyAgentOutputDestination;
+}
+
 export const PENDING_TASKLET_PROMPT_KEY = 'praxis.pending.taskletPrompt';
 export const PENDING_POLICY_AGENT_ID_KEY = 'praxis.pending.policyAgentId';
 
@@ -109,6 +145,21 @@ export const FORBIDDEN_MVP_INTEGRATION_CLAIMS = [
 
 export function getPolicyAgent(id: string | null | undefined): PolicyAgentDefinition | null {
   return PRAXIS_POLICY_AGENTS.find((agent) => agent.id === id) ?? null;
+}
+
+export function policyAgentRunIntent(agentId: string | null | undefined): PolicyAgentRunIntent {
+  switch (agentId) {
+    case 'research-memo':
+      return 'research_memo';
+    case 'sourceability-reviewer':
+      return 'sourceability_review';
+    case 'red-team-analyst':
+      return 'red_team_review';
+    case 'handover-builder':
+      return 'handover';
+    default:
+      return 'normal_answer';
+  }
 }
 
 export function policyAgentLoginHref(agentId: string, prompt: string): string {

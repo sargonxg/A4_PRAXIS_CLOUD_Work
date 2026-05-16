@@ -2,10 +2,11 @@ import { cookies } from 'next/headers';
 import { verifyIdToken, getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { verifyCookie } from '@/lib/auth/cookie-signer';
 import { FieldValue } from 'firebase-admin/firestore';
+import { PRAXIS_ASK_TOKEN_COST, PRAXIS_STARTER_TOKEN_ALLOWANCE } from '@/lib/billing/usage-policy';
 
 // Cost table for AI operations (in credits) — server-side authoritative copy
 export const AI_CREDIT_COSTS: Record<string, number> = {
-  'ai_chat': 1,
+  'ai_chat': PRAXIS_ASK_TOKEN_COST,
   'ai_terminology': 1,
   'ai_scenario': 2,
   'ai_extract': 2,
@@ -153,7 +154,7 @@ async function deductCreditsAdmin(
 
     if (!userSnap.exists) {
       // No profile yet — create one with initial credits then deduct
-      const initial = 5000;
+      const initial = PRAXIS_STARTER_TOKEN_ALLOWANCE;
       if (initial < cost) return { success: false, remainingCredits: 0, reason: 'insufficient' as const };
       tx.set(userRef, {
         uid,

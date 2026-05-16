@@ -32,6 +32,12 @@ from the active ledger above.
 0. Historical v5 and May 14 Genkit sprint prompt packs are now archived under
    `docs/_archive/build/`, with pointer stubs left in `docs/build/`. `/tour`
    redirects to `/`; keep all public entry work on the Tasklet-style Home.
+0. Ask PRAXIS cockpit token/model/context slice is now documented in
+   `docs/product/PRAXIS_ASK_CONTEXT_CAPSULE_COCKPIT_PLAN_2026-05-16.md`.
+   Live Ask remains login/onboarding gated; new users start with 1,000 PRAXIS
+   tokens; Ask costs 10 tokens per question; the cockpit exposes Gemini Flash
+   and Gemini Pro selection; and capsule-owned Ask thread turns persist even
+   without a legacy situation id.
 0. First Tasklet-style MVP foundation pass is now in place: public pages
    `/learn`, `/tacitus`, `/pricing`, and `/release-notes`; homepage nav aligned
    to those pages; `/app/contexts` has a capsule composition panel for

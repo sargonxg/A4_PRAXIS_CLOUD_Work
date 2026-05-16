@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  Cpu,
   FileText,
   History,
   LibraryBig,
@@ -33,6 +34,10 @@ import { CoreSwapDrawer } from '@/components/cores/CoreSwapDrawer';
 import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
 import { buildContextHealthReport } from '@/lib/context/context-health';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
+import { ASK_ORCHESTRATION_OPTIONS, ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
+import type { ModelPreferenceValue } from '@/lib/ai/model-preferences';
+import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
+import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { useSituationStore } from '@/stores/situation-store';
@@ -94,6 +99,7 @@ export function AskStreamPanel({
   onOpenComposer,
   className,
 }: AskStreamPanelProps) {
+  const { user, credits } = useAuth();
   const reduceMotion = useReducedMotion();
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const [prompt, setPrompt] = useState('');
@@ -101,7 +107,9 @@ export function AskStreamPanel({
   const [thinking, setThinking] = useState(false);
   const [interrupt, setInterrupt] = useState<InterruptRequest | null>(null);
   const [swapTarget, setSwapTarget] = useState<CoreSpecimenKind | null>(null);
+  const [selectedModel, setSelectedModel] = useState<ModelPreferenceValue>(ASK_RUNTIME_OPTIONS[0].id);
   const abortRef = useRef<AbortController | null>(null);
+  const selectedRuntime = useMemo(() => getAskRuntimeOption(selectedModel), [selectedModel]);
   const contextHealth = useMemo(() => buildContextHealthReport({
     hasUserCore: true,
     hasSituationCore: Boolean(activeSituation),
@@ -137,7 +145,11 @@ export function AskStreamPanel({
           ...(capsuleId ? { capsuleId, threadId: `ask-${capsuleId}` } : {}),
           ...(contextPackageId ? { contextPackageId } : {}),
           ...(activeContextStack ? { activeContextStack } : {}),
-          aiSettings: { analysisDepth: 'standard' as const },
+          aiSettings: {
+            provider: 'vertex',
+            model: selectedRuntime.id,
+            analysisDepth: selectedRuntime.mode === 'research_memo' ? 'deep' as const : 'standard' as const,
+          },
         };
 
         const res = await fetch('/api/ai/ask-praxis', {
@@ -231,7 +243,7 @@ export function AskStreamPanel({
         abortRef.current = null;
       }
     },
-    [thinking, capsuleId, contextPackageId, activeContextStack, activeSituation],
+    [thinking, capsuleId, contextPackageId, activeContextStack, activeSituation, selectedRuntime],
   );
 
   useEffect(() => () => abortRef.current?.abort(), []);
@@ -266,6 +278,32 @@ export function AskStreamPanel({
             <FileText className="h-3.5 w-3.5" />
             Send to Memo Studio
           </Link>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600">
+          <label className="inline-flex min-w-0 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1">
+            <Cpu className="h-3.5 w-3.5 text-slate-500" />
+            <span className="font-bold uppercase tracking-[0.12em] text-slate-500">Model</span>
+            <select
+              value={selectedModel}
+              onChange={(event) => setSelectedModel(event.target.value as ModelPreferenceValue)}
+              className="max-w-[13rem] bg-transparent font-mono text-[11px] font-semibold text-slate-900 focus:outline-none"
+              aria-label="Ask PRAXIS model"
+            >
+              {ASK_RUNTIME_OPTIONS.map((option) => (
+                <option key={option.id} value={option.id}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+          <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono">
+            {user?.isDemo ? 'demo account' : `${credits.toLocaleString()} tokens`}
+          </span>
+          <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono">
+            {PRAXIS_USAGE_COPY.askCost}
+          </span>
+          <span className="min-w-0 flex-1 truncate text-slate-500">
+            {selectedRuntime.summary}
+          </span>
         </div>
 
         <div className="min-h-[22rem] flex-1 space-y-3 overflow-y-auto p-3">
@@ -344,6 +382,20 @@ export function AskStreamPanel({
                 <tool.icon className="h-3 w-3" />
                 {tool.label}
               </button>
+            ))}
+            {ASK_ORCHESTRATION_OPTIONS.map((option) => (
+              <span
+                key={option.id}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-semibold',
+                  option.status === 'live'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                    : 'border-slate-200 bg-slate-50 text-slate-500',
+                )}
+                title={option.summary}
+              >
+                {option.label}
+              </span>
             ))}
           </div>
           <form

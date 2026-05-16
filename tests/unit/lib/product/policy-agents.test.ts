@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   destinationHref,
   FORBIDDEN_MVP_INTEGRATION_CLAIMS,
+  policyAgentRunIntent,
   PRAXIS_POLICY_AGENTS,
   policyAgentLoginHref,
+  type ApprovalGate,
+  type ContextCapsuleLauncherState,
+  type HomeSurfaceMode,
 } from '@/lib/product/policy-agents';
 
 describe('PRAXIS policy agent registry', () => {
@@ -45,5 +49,29 @@ describe('PRAXIS policy agent registry', () => {
     expect(url.searchParams.get('redirect')).toBe('/app/dashboard');
     expect(url.searchParams.get('policyAgentId')).toBe('research-memo');
     expect(url.searchParams.get('capsulePrompt')).toBe('Draft a sourced options memo.');
+  });
+
+  it('defines the simple Home launcher and approval gate contracts', () => {
+    const mode: HomeSurfaceMode = 'authenticated';
+    const launcher: ContextCapsuleLauncherState = {
+      prompt: 'Check this memo against attached sources.',
+      selectedCapsuleId: 'cap-1',
+      selectedPolicyAgentId: 'sourceability-reviewer',
+      outputDestination: 'memo_studio',
+    };
+    const gate: ApprovalGate = {
+      actionType: 'graph_mutation',
+      riskLevel: 'high',
+      status: 'required',
+      destination: 'graph',
+      receiptId: null,
+    };
+
+    expect(mode).toBe('authenticated');
+    expect(launcher.outputDestination).toBe('memo_studio');
+    expect(gate.status).toBe('required');
+    expect(policyAgentRunIntent('research-memo')).toBe('research_memo');
+    expect(policyAgentRunIntent('red-team-analyst')).toBe('red_team_review');
+    expect(policyAgentRunIntent('unknown')).toBe('normal_answer');
   });
 });

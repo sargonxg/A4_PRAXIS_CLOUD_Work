@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
-import { WaitlistPageClient } from "./waitlist-page-client";
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = {
-  title: "Join the Waitlist - PRAXIS by TACITUS",
-  description:
-    "Request early access to PRAXIS, the graph-grounded workbench for policy, conflict, mediation, and diplomacy professionals.",
+export const metadata = {
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
-export default function WaitlistPage() {
-  return <WaitlistPageClient />;
+export default function WaitlistRedirectPage() {
+  redirect('/login?mode=signup');
 }

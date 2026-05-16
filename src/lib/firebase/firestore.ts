@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import { DEFAULT_MODEL_PREFERENCE, type ModelPreferenceValue } from '@/lib/ai/model-preferences';
+import { PRAXIS_ASK_TOKEN_COST, PRAXIS_STARTER_TOKEN_ALLOWANCE } from '@/lib/billing/usage-policy';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -84,7 +85,7 @@ export interface CreditTransaction {
 // Constants
 // ---------------------------------------------------------------------------
 
-const INITIAL_CREDITS = 5000;
+const INITIAL_CREDITS = PRAXIS_STARTER_TOKEN_ALLOWANCE;
 const USERS_COLLECTION = 'users';
 const CREDIT_TRANSACTIONS_COLLECTION = 'credit_transactions';
 const CONFLICTS_COLLECTION = 'conflicts';
@@ -145,7 +146,7 @@ export async function ensureUserProfile(user: {
   await recordCreditTransaction(user.uid, {
     amount: INITIAL_CREDITS,
     type: 'signup',
-    description: 'Welcome bonus — 5,000 TACITUS Credits',
+    description: 'Welcome bonus — 1,000 PRAXIS tokens',
   });
 
   return profile;
@@ -178,7 +179,7 @@ export async function updateUserProfile(
 // Cost table for AI operations (in credits)
 export const AI_CREDIT_COSTS: Record<string, number> = {
   // Core routes
-  'ai_chat': 1,
+  'ai_chat': PRAXIS_ASK_TOKEN_COST,
   'ai_terminology': 1,
   'ai_scenario': 2,
   'ai_extract': 2,

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- feat(ask): harden the login-gated ContextCapsule cockpit.
+  Added starter PRAXIS token policy constants (1,000 initial, 10 per Ask
+  question), client-safe Gemini runtime options, Ask cockpit model controls,
+  capsule-only Ask thread persistence, and an audit for the Ask runtime surface.
 - chore(cleanup): archive historical build prompt packs.
   Moved full v5 and May 14 Genkit sprint prompt packs under
   `docs/_archive/build/`, kept active pointer stubs, and redirected `/tour`

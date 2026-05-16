@@ -3,21 +3,22 @@ import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { withAuth } from '@/lib/api/with-auth';
 import { isAdminPrincipal } from '@/lib/auth/admin-gate';
+import { PRAXIS_STARTER_TOKEN_ALLOWANCE } from '@/lib/billing/usage-policy';
 
 export const maxDuration = 60;
 
-const TARGET_CREDITS = 5000;
-const CONFIRMATION = 'SET_ALL_CREDITS_TO_5000';
+const TARGET_CREDITS = PRAXIS_STARTER_TOKEN_ALLOWANCE;
+const CONFIRMATION = 'SET_ALL_CREDITS_TO_1000';
 
 /**
  * POST /api/admin/set-all-credits
  *
- * Sets ALL users' credits to 5000. Admin-only and intentionally requires an
+ * Sets ALL users' credits to 1000. Admin-only and intentionally requires an
  * explicit confirmation body because this is a destructive bulk operation.
  * Run once to bootstrap credits for existing users.
  *
  * Body:
- *   { "confirm": "SET_ALL_CREDITS_TO_5000" }
+ *   { "confirm": "SET_ALL_CREDITS_TO_1000" }
  */
 export const POST = withAuth(async (req, user) => {
   if (!isAdminPrincipal(user)) {

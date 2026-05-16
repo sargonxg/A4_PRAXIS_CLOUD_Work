@@ -9,7 +9,6 @@ const navLinks = [
   { label: "Learn", href: "/learn" },
   { label: "TACITUS", href: "/tacitus" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Release notes", href: "/release-notes" },
 ];
 
 export default function LandingLayout({

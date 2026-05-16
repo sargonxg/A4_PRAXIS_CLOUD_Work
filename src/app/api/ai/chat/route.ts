@@ -359,32 +359,34 @@ You have access to the user's active situation data. When answering questions:
       tools,
       stopWhen: stepCountIs(15),
       onFinish: async ({ text }) => {
-        if (sitId && _user.uid && text) {
-          await saveToolOutput({
-            uid: _user.uid,
-            situationId: sitId,
-            toolId: 'chat',
-            profileVersion: provenance.profileVersion,
-            output: {
-              lastMessage: text.slice(0, 4000),
-              availableActions: inferResponseActionKinds(text),
-              suggestedNextActions: turnCapsule ? suggestNextActions(turnCapsule, 'ask') : [],
-              at: new Date().toISOString(),
-            },
-          }).catch((err) => console.warn('[chat] saveToolOutput failed:', err));
-          await persistAskTurn({
-            uid: _user.uid,
-            situationId: sitId,
-            threadId,
-            prompt: lastUserPrompt(messages),
-            capsule: capsuleContext?.capsule ?? null,
-            runtime: runtime.receipt,
-            pathId: _user.calibration.path?.id ?? null,
-            pathVersion: _user.calibration.path?.version ?? null,
-            frameworkSteps,
-            toolInvocations,
-            output: text,
-          }).catch((err) => console.warn('[chat] persistAskTurn failed:', err));
+        if (_user.uid && text) {
+          if (sitId) {
+            await saveToolOutput({
+              uid: _user.uid,
+              situationId: sitId,
+              toolId: 'chat',
+              profileVersion: provenance.profileVersion,
+              output: {
+                lastMessage: text.slice(0, 4000),
+                availableActions: inferResponseActionKinds(text),
+                suggestedNextActions: turnCapsule ? suggestNextActions(turnCapsule, 'ask') : [],
+                at: new Date().toISOString(),
+              },
+            }).catch((err) => console.warn('[chat] saveToolOutput failed:', err));
+            await persistAskTurn({
+              uid: _user.uid,
+              situationId: sitId,
+              threadId,
+              prompt: lastUserPrompt(messages),
+              capsule: capsuleContext?.capsule ?? null,
+              runtime: runtime.receipt,
+              pathId: _user.calibration.path?.id ?? null,
+              pathVersion: _user.calibration.path?.version ?? null,
+              frameworkSteps,
+              toolInvocations,
+              output: text,
+            }).catch((err) => console.warn('[chat] persistAskTurn failed:', err));
+          }
           await persistAskThreadTurn({
             uid: _user.uid,
             situationId: sitId,
@@ -399,17 +401,19 @@ You have access to the user's active situation data. When answering questions:
             toolInvocations,
             output: text,
           }).catch((err) => console.warn('[chat] persistAskThreadTurn failed:', err));
-          await persistAskReadLedger({
-            uid: _user.uid,
-            situationId: sitId,
-            threadId,
-            capsule: capsuleContext?.capsule ?? null,
-            runtime: runtime.receipt,
-            pathId: _user.calibration.path?.id ?? null,
-            frameworkSteps,
-            toolInvocations,
-            askLatencyMs: Date.now() - askStartedAt,
-          }).catch((err) => console.warn('[chat] audit ledger write failed:', err));
+          if (sitId) {
+            await persistAskReadLedger({
+              uid: _user.uid,
+              situationId: sitId,
+              threadId,
+              capsule: capsuleContext?.capsule ?? null,
+              runtime: runtime.receipt,
+              pathId: _user.calibration.path?.id ?? null,
+              frameworkSteps,
+              toolInvocations,
+              askLatencyMs: Date.now() - askStartedAt,
+            }).catch((err) => console.warn('[chat] audit ledger write failed:', err));
+          }
         }
       },
     });

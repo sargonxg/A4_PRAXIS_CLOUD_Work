@@ -23,9 +23,9 @@ describe('Auth Security Contracts', () => {
     expect(RATE_WINDOW_MS).toBe(60_000); // 1 minute
   });
 
-  it('initial credits is 5000 (per CLAUDE.md: 5,000 on signup)', () => {
-    const INITIAL_CREDITS = 5000;
-    expect(INITIAL_CREDITS).toBe(5000);
+  it('initial PRAXIS token allowance is 1000 on signup', () => {
+    const INITIAL_CREDITS = 1000;
+    expect(INITIAL_CREDITS).toBe(1000);
   });
 
   it('JWT has exactly 3 parts separated by dots', () => {
@@ -120,9 +120,9 @@ describe('Credit Cost Validation', () => {
     }
   });
 
-  it('chat is the cheapest operation (1 credit)', async () => {
+  it('Ask PRAXIS chat costs 10 starter tokens per question', async () => {
     const { AI_CREDIT_COSTS } = await import('../lib/firebase/firestore');
-    expect(AI_CREDIT_COSTS['ai_chat']).toBe(1);
+    expect(AI_CREDIT_COSTS['ai_chat']).toBe(10);
   });
 
   it('no operation costs more than 10 credits', async () => {

@@ -7,9 +7,9 @@ import {
   BookOpenText,
   CheckCircle2,
   ChevronDown,
+  ChevronsRight,
   FileText,
   FolderKanban,
-  Library,
   Mic,
   Paperclip,
   Search,
@@ -21,14 +21,17 @@ import {
   destinationHref,
   PENDING_POLICY_AGENT_ID_KEY,
   PENDING_TASKLET_PROMPT_KEY,
+  policyAgentRunIntent,
   policyAgentLoginHref,
   PRAXIS_POLICY_AGENTS,
+  type ContextCapsuleLauncherState,
+  type HomeSurfaceMode,
   type PolicyAgentDefinition,
 } from '@/lib/product/policy-agents';
 import { cn } from '@/lib/utils/cn';
 
 type TaskletPraxisWorkbenchProps = {
-  mode: 'public' | 'app';
+  mode: HomeSurfaceMode | 'app';
   activeCapsuleName?: string;
   capsuleId?: string;
   recentRuns?: Array<{ label: string; detail: string; status: string }>;
@@ -50,12 +53,14 @@ export function TaskletPraxisWorkbench({
   recentRuns = defaultRecentRuns,
   className,
 }: TaskletPraxisWorkbenchProps) {
+  const surfaceMode: HomeSurfaceMode = mode === 'app' ? 'authenticated' : mode;
   const [prompt, setPrompt] = useState('Draft a sourced options memo from the active capsule.');
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>('Analysis');
   const [selectedAgentId, setSelectedAgentId] = useState('research-memo');
+  const [agentDrawerOpen, setAgentDrawerOpen] = useState(false);
   const [runState, setRunState] = useState<{ status: 'idle' | 'running' | 'ready' | 'error'; message: string; href?: string }>({
     status: 'idle',
-    message: mode === 'public' ? 'Preview the PRAXIS run flow.' : 'Ready to create a capsule run.',
+    message: surfaceMode === 'public' ? 'Sign in to run this capsule.' : 'Ready to create a capsule run.',
   });
 
   const visibleAgents = useMemo(() => {
@@ -64,9 +69,15 @@ export function TaskletPraxisWorkbench({
     return PRAXIS_POLICY_AGENTS.filter((agent) => agent.category === category);
   }, [activeTab]);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
+  const launcherState: ContextCapsuleLauncherState = {
+    prompt,
+    selectedCapsuleId: capsuleId,
+    selectedPolicyAgentId: selectedAgent.id,
+    outputDestination: selectedAgent.outputDestination,
+  };
 
   useEffect(() => {
-    if (mode !== 'app') return;
+    if (surfaceMode !== 'authenticated') return;
     try {
       const pendingPrompt = window.localStorage.getItem(PENDING_TASKLET_PROMPT_KEY);
       const pendingAgentId = window.localStorage.getItem(PENDING_POLICY_AGENT_ID_KEY);
@@ -80,11 +91,11 @@ export function TaskletPraxisWorkbench({
     } catch {
       // localStorage is a convenience handoff, not required for the app.
     }
-  }, [mode]);
+  }, [surfaceMode]);
 
   async function launchRun(agent: PolicyAgentDefinition = selectedAgent) {
     const cleanPrompt = prompt.trim() || `Run ${agent.label} from ${activeCapsuleName}.`;
-    if (mode === 'public') {
+    if (surfaceMode === 'public') {
       window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, cleanPrompt);
       window.localStorage.setItem(PENDING_POLICY_AGENT_ID_KEY, agent.id);
       window.location.href = policyAgentLoginHref(agent.id, cleanPrompt);
@@ -106,6 +117,7 @@ export function TaskletPraxisWorkbench({
         metadata: {
           policyAgentId: agent.id,
           policyAgentLabel: agent.label,
+          runIntent: policyAgentRunIntent(agent.id),
           outputDestination: agent.outputDestination,
           approvalLevel: agent.approvalLevel,
           taskletSurface: true,
@@ -140,32 +152,62 @@ export function TaskletPraxisWorkbench({
     <section className={cn('min-h-[calc(100vh-5rem)] bg-[#f6f6f4] text-[#1d1d1f]', className)} data-testid="tasklet-praxis-workbench">
       <div className="grid min-h-[calc(100vh-5rem)] lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="hidden border-r border-black/10 bg-[#ececeb] px-4 py-5 lg:flex lg:flex-col">
-          <Link href={mode === 'public' ? '/' : '/app/dashboard'} className="mb-6 flex items-center gap-2 text-lg font-semibold text-navy-950">
+          <Link href={surfaceMode === 'public' ? '/' : '/app/dashboard'} className="mb-6 flex items-center gap-2 text-lg font-semibold text-navy-950">
             <span className="flex h-8 w-8 items-center justify-center rounded-md bg-sage text-white">P</span>
             PRAXIS
           </Link>
-          <SidebarButton href={mode === 'public' ? '/login' : '/app/contexts'} icon={FolderKanban} label="New capsule" active />
-          <SidebarButton href={mode === 'public' ? '/learn' : '/app/contexts'} icon={Search} label="Search capsules" />
+          <SidebarButton href={surfaceMode === 'public' ? '/login?mode=signup' : '/app/contexts'} icon={FolderKanban} label="New capsule" active />
+          <SidebarButton href={surfaceMode === 'public' ? '/learn' : '/app/contexts'} icon={Search} label="Search capsules" />
           <div className="mt-7">
-            <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">Capsules <ChevronDown className="h-3 w-3" /></p>
-            <p className="mt-3 text-sm leading-5 text-slate-600">Build, fork, lock, and combine ContextCapsules.</p>
-          </div>
-          <div className="mt-7">
-            <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">Recent runs <ChevronDown className="h-3 w-3" /></p>
+            <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">
+              {surfaceMode === 'public' ? 'Example capsules' : 'My ContextCapsules'} <ChevronDown className="h-3 w-3" />
+            </p>
             <div className="mt-3 space-y-2">
-              {recentRuns.map((run) => (
-                <div key={run.label} className="rounded-md px-1 py-1.5">
-                  <p className="truncate text-sm font-medium text-slate-900">{run.label}</p>
-                  <p className="truncate text-xs text-slate-500">{run.detail}</p>
-                </div>
+              {['Middle East policy analysis', 'Sourceable board memo', 'Handover package'].map((capsule) => (
+                <button
+                  key={capsule}
+                  type="button"
+                  className={cn(
+                    'block w-full truncate rounded-md px-1 py-1.5 text-left text-sm font-medium',
+                    capsule === activeCapsuleName ? 'bg-black/5 text-slate-950' : 'text-slate-600 hover:bg-black/5',
+                  )}
+                >
+                  {capsule}
+                </button>
               ))}
             </div>
           </div>
+          {surfaceMode === 'authenticated' ? (
+            <div className="mt-7">
+              <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">Recent runs <ChevronDown className="h-3 w-3" /></p>
+              <div className="mt-3 space-y-2">
+                {recentRuns.map((run) => (
+                  <div key={run.label} className="rounded-md px-1 py-1.5">
+                    <p className="truncate text-sm font-medium text-slate-900">{run.label}</p>
+                    <p className="truncate text-xs text-slate-500">{run.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="mt-7 rounded-lg border border-black/10 bg-white/60 p-3">
+              <p className="text-sm font-semibold text-slate-950">Use your own sources</p>
+              <p className="mt-1 text-xs leading-5 text-slate-600">Create a private capsule, attach documents, and keep outputs in the workspace.</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Link href="/login" className="rounded-md border border-slate-300 px-2 py-2 text-center text-xs font-semibold text-slate-700">
+                  Sign in
+                </Link>
+                <Link href="/login?mode=signup" className="rounded-md bg-slate-950 px-2 py-2 text-center text-xs font-semibold text-white">
+                  Sign up
+                </Link>
+              </div>
+            </div>
+          )}
           <div className="mt-auto flex items-center gap-3 border-t border-black/10 pt-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-300 text-xs font-semibold text-slate-700">GC</div>
             <div>
-              <p className="text-sm font-medium text-slate-900">Giulio Catanzariti</p>
-              <p className="text-xs text-slate-500">{mode === 'public' ? 'Preview plan' : 'Capsule workspace'}</p>
+              <p className="text-sm font-medium text-slate-900">{surfaceMode === 'public' ? 'Public preview' : 'Giulio Catanzariti'}</p>
+              <p className="text-xs text-slate-500">{surfaceMode === 'public' ? 'Sign in to save' : 'Capsule workspace'}</p>
             </div>
           </div>
         </aside>
@@ -233,33 +275,89 @@ export function TaskletPraxisWorkbench({
               {runState.message}
             </p>
 
-            <nav className="mt-10 flex w-full max-w-3xl items-center justify-center border-b border-black/10" aria-label="Policy agent categories">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={cn(
-                    'px-5 py-3 text-sm font-semibold',
-                    activeTab === tab ? 'border-b-2 border-[#ff714d] text-[#ff714d]' : 'text-slate-500 hover:text-slate-900',
-                  )}
-                >
-                  {tab}
-                </button>
-              ))}
-            </nav>
-
-            <div className="mt-9 grid w-full max-w-6xl gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {visibleAgents.map((agent) => (
-                <PolicyAgentCard
-                  key={agent.id}
-                  agent={agent}
-                  selected={selectedAgentId === agent.id}
-                  onSelect={() => setSelectedAgentId(agent.id)}
-                  onRun={() => void launchRun(agent)}
-                />
-              ))}
+            <div className="mt-8 w-full max-w-4xl rounded-lg border border-black/10 bg-white/70 p-4" data-testid="recommended-agent-panel">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase text-slate-500">Recommended agent</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-950">{selectedAgent.label}</p>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">{selectedAgent.description}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  {surfaceMode === 'authenticated' ? (
+                    <button
+                      type="button"
+                      onClick={() => setAgentDrawerOpen((open) => !open)}
+                      className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-white"
+                    >
+                      Agents
+                      <ChevronsRight className={cn('h-4 w-4 transition', agentDrawerOpen ? 'rotate-90' : '')} />
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => void launchRun(selectedAgent)}
+                    className="inline-flex items-center gap-2 rounded-md bg-[#ff714d] px-3 py-2 text-sm font-semibold text-white hover:bg-[#ec5f3d]"
+                  >
+                    {selectedAgent.actionLabel}
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
+                <span>Intent: {policyAgentRunIntent(launcherState.selectedPolicyAgentId).replaceAll('_', ' ')}</span>
+                <span>Output: {launcherState.outputDestination.replace('_', ' ')}</span>
+                <span>Capsule: {launcherState.selectedCapsuleId}</span>
+              </div>
             </div>
+
+            {surfaceMode === 'authenticated' && agentDrawerOpen ? (
+              <div className="mt-6 w-full max-w-6xl rounded-lg border border-black/10 bg-white/75 p-4" data-testid="policy-agent-drawer">
+                <nav className="flex flex-wrap items-center border-b border-black/10" aria-label="Policy agent categories">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setActiveTab(tab)}
+                      className={cn(
+                        'px-4 py-3 text-sm font-semibold',
+                        activeTab === tab ? 'border-b-2 border-[#ff714d] text-[#ff714d]' : 'text-slate-500 hover:text-slate-900',
+                      )}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </nav>
+
+                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {visibleAgents.map((agent) => (
+                    <PolicyAgentCard
+                      key={agent.id}
+                      agent={agent}
+                      selected={selectedAgentId === agent.id}
+                      onSelect={() => setSelectedAgentId(agent.id)}
+                      onRun={() => void launchRun(agent)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {surfaceMode === 'public' ? (
+              <div className="mt-16 w-full max-w-5xl border-t border-black/10 pt-8" data-testid="public-contextcapsule-explainer">
+                <div className="grid gap-5 md:grid-cols-3">
+                  {[
+                    ['ContextCapsules', 'Reusable policy context with user, situation, source, time, output, and handover cores.'],
+                    ['Source receipts', 'Attached documents and searches stay visible beside the draft instead of disappearing into chat.'],
+                    ['Outputs', 'Memo Studio, Canvas, Library, and Handover receive the work from the active capsule.'],
+                  ].map(([title, detail]) => (
+                    <article key={title} className="rounded-lg border border-black/10 bg-white/60 p-4">
+                      <h2 className="text-base font-semibold text-slate-950">{title}</h2>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
