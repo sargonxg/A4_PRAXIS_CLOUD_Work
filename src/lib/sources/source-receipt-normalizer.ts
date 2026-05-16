@@ -1,9 +1,11 @@
 import type {
   CanonicalSourceReceipt,
+  SourceReceiptSpan,
   SourceReceiptConfidence,
   SourceReceiptKind,
   SourceReceiptRetrievalMethod,
 } from '@/types/source-receipt';
+import type { SpatialBoundingBox, SpatialCitationRef } from '@/types/spatial-source';
 
 export function normalizeSourceReceipts(values: unknown[] | undefined | null): CanonicalSourceReceipt[] {
   if (!Array.isArray(values)) return [];
@@ -95,31 +97,62 @@ function normalizeReliability(value: unknown): number {
   return Math.max(0, Math.min(1, numeric));
 }
 
-function normalizeSpan(value: unknown, fallbackQuote?: string) {
+function normalizeSpan(value: unknown, fallbackQuote?: string): SourceReceiptSpan | undefined {
   if (isRecord(value)) {
     return {
       start: typeof value.start === 'number' ? value.start : undefined,
       end: typeof value.end === 'number' ? value.end : undefined,
       quote: readString(value, 'quote') ?? fallbackQuote,
       pageNumber: typeof value.pageNumber === 'number' ? value.pageNumber : undefined,
-      coords: isRecord(value.coords) ? value.coords : undefined,
-      citationRef: isRecord(value.citationRef) ? value.citationRef : undefined,
+      coords: normalizeCoords(value.coords),
+      citationRef: normalizeSpatialCitationRef(value.citationRef),
     };
   }
   if (fallbackQuote) return { quote: fallbackQuote };
   return undefined;
 }
 
-function normalizeSpatialCitationRefs(value: unknown) {
+function normalizeSpatialCitationRefs(value: unknown): SpatialCitationRef[] | undefined {
   if (!Array.isArray(value)) return undefined;
-  const refs = value.filter(isRecord).filter((ref) => (
-    typeof ref.cid === 'string'
-    && typeof ref.documentId === 'string'
-    && typeof ref.chunkId === 'string'
-    && typeof ref.textPreview === 'string'
-    && typeof ref.quoteHash === 'string'
-  ));
+  const refs = value.flatMap((ref) => {
+    const normalized = normalizeSpatialCitationRef(ref);
+    return normalized ? [normalized] : [];
+  });
   return refs.length > 0 ? refs : undefined;
+}
+
+function normalizeSpatialCitationRef(value: unknown): SpatialCitationRef | undefined {
+  if (!isRecord(value)) return undefined;
+  if (
+    typeof value.cid !== 'string'
+    || typeof value.documentId !== 'string'
+    || typeof value.chunkId !== 'string'
+    || typeof value.textPreview !== 'string'
+    || typeof value.quoteHash !== 'string'
+  ) {
+    return undefined;
+  }
+  return {
+    cid: value.cid,
+    documentId: value.documentId,
+    chunkId: value.chunkId,
+    textPreview: value.textPreview,
+    quoteHash: value.quoteHash,
+    sourceReceiptId: readString(value, 'sourceReceiptId'),
+    pageNumber: typeof value.pageNumber === 'number' ? value.pageNumber : undefined,
+    coords: normalizeCoords(value.coords),
+    confidence: typeof value.confidence === 'number' ? value.confidence : 0.5,
+  };
+}
+
+function normalizeCoords(value: unknown): SpatialBoundingBox | undefined {
+  if (!isRecord(value)) return undefined;
+  const x = typeof value.x === 'number' ? value.x : undefined;
+  const y = typeof value.y === 'number' ? value.y : undefined;
+  const width = typeof value.width === 'number' ? value.width : undefined;
+  const height = typeof value.height === 'number' ? value.height : undefined;
+  if (x === undefined || y === undefined || width === undefined || height === undefined) return undefined;
+  return { x, y, width, height };
 }
 
 function readString(record: Record<string, unknown>, key: string): string | undefined {

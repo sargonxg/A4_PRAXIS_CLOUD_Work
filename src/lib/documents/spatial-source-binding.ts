@@ -28,15 +28,17 @@ type DocumentAiLayoutBlock = {
   };
 };
 
+type DocumentAiChunk = {
+  chunkId?: string;
+  content?: string;
+  pageSpan?: { pageStart?: number; pageEnd?: number };
+};
+
 type DocumentAiResponse = {
   document?: {
     text?: string;
     chunkedDocument?: {
-      chunks?: Array<{
-        chunkId?: string;
-        content?: string;
-        pageSpan?: { pageStart?: number; pageEnd?: number };
-      }>;
+      chunks?: DocumentAiChunk[];
     };
     documentLayout?: {
       blocks?: DocumentAiLayoutBlock[];
@@ -235,7 +237,7 @@ function blockToLayoutChunk(input: SpatialBindingInput, block: DocumentAiLayoutB
 
 function chunkToLayoutChunk(
   input: SpatialBindingInput,
-  chunk: NonNullable<NonNullable<DocumentAiResponse['document']>['chunkedDocument']>['chunks'][number],
+  chunk: DocumentAiChunk,
   index: number,
 ): DocumentLayoutChunk | null {
   const text = chunk.content?.trim().replace(/\s+/g, ' ');
