@@ -540,7 +540,6 @@ export function TaskletPraxisWorkbench({
             </Link>
             <nav className="ml-auto hidden items-center gap-8 text-sm font-semibold text-slate-500 md:flex">
               <Link href="/learn" className="hover:text-slate-900">Learn</Link>
-              <Link href="/pricing" className="hover:text-slate-900">Pricing</Link>
               <Link href="/release-notes" className="hover:text-slate-900">Release notes</Link>
             </nav>
             <div className="flex items-center gap-2">
@@ -560,7 +559,7 @@ export function TaskletPraxisWorkbench({
             <div className="mt-8 inline-flex items-center gap-2 rounded-md bg-white/70 px-3 py-2 text-sm font-semibold text-slate-500">
               {isAuthenticated ? (user?.subscription || 'Free plan') : 'Free plan'}
               <span className="text-slate-300">·</span>
-              <Link href={isAuthenticated ? '/app/billing/upgrade' : '/pricing'} className="text-sage">Upgrade</Link>
+              <Link href={isAuthenticated ? '/app/billing/upgrade' : '/login?mode=signup'} className="text-sage">Upgrade</Link>
             </div>
 
             <div className="mt-6 w-full max-w-5xl rounded-lg border border-black/10 bg-white shadow-sm shadow-black/5" data-testid="praxis-main-composer">

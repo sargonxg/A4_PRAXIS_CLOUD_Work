@@ -247,7 +247,7 @@ function PaymentBanner() {
         <AlertCircle className="h-5 w-5 shrink-0 text-gold-600" />
         <div className="flex-1">
           <p className="text-sm font-semibold text-gold-800">Payment Cancelled</p>
-          <p className="text-xs text-gold-600">No charges were made. You can upgrade anytime from the pricing page.</p>
+          <p className="text-xs text-gold-600">No charges were made. You can upgrade anytime from workspace billing.</p>
         </div>
         <button onClick={() => setDismissed(true)} className="text-gold-400 hover:text-gold-600 text-xs">Dismiss</button>
       </div>

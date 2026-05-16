@@ -41,7 +41,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryMode = searchParams.get('mode');
-  const planParam = searchParams.get('plan'); // e.g. ?plan=analyst from pricing page
+  const planParam = searchParams.get('plan'); // e.g. ?plan=analyst from billing or invite links
   const capsulePromptParam = searchParams.get('capsulePrompt');
   const capsuleTemplateParam = searchParams.get('capsuleTemplate');
   const capsulePathParam = searchParams.get('capsulePath');

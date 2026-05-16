@@ -169,10 +169,10 @@ export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
     version: '6.4.0',
     date: '2026-05-15',
     title: 'Public pages and cleanup guardrails',
-    summary: 'The public surface was narrowed around Learn, TACITUS, Pricing, Release notes, and the capsule cockpit.',
+    summary: 'The public surface was narrowed around Learn, TACITUS, Release notes, and the capsule cockpit.',
     category: 'documentation',
     items: [
-      'Added public Learn, TACITUS, Pricing, and Release notes surfaces.',
+      'Added public Learn, TACITUS, and Release notes surfaces.',
       '/tour redirects back to Home.',
       'Tasklet MVP and public-surface audits guard the simplified public entry.',
       'Historical build prompt packs moved under docs/_archive/build with active pointer stubs preserved.',

@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 const PUBLIC_ROOT_PATHS = new Set([
   '/',
   '/login',
-  '/pricing',
   '/privacy',
   '/terms',
   '/robots.txt',

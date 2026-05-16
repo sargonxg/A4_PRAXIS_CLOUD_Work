@@ -49,6 +49,7 @@ export function normalizeSourceReceipt(value: unknown, index = 0): CanonicalSour
     excerpt,
     contentHash,
     span: normalizeSpan(value.span, excerpt),
+    spatialCitationRefs: normalizeSpatialCitationRefs(value.spatialCitationRefs),
     graphPath: Array.isArray(value.graphPath) ? value.graphPath.filter((item): item is string => typeof item === 'string') : undefined,
     advisorId: readString(value, 'advisorId') ?? readString(value, 'advisor_id'),
     toolRunId: readString(value, 'toolRunId') ?? readString(value, 'tool_run_id'),
@@ -100,10 +101,25 @@ function normalizeSpan(value: unknown, fallbackQuote?: string) {
       start: typeof value.start === 'number' ? value.start : undefined,
       end: typeof value.end === 'number' ? value.end : undefined,
       quote: readString(value, 'quote') ?? fallbackQuote,
+      pageNumber: typeof value.pageNumber === 'number' ? value.pageNumber : undefined,
+      coords: isRecord(value.coords) ? value.coords : undefined,
+      citationRef: isRecord(value.citationRef) ? value.citationRef : undefined,
     };
   }
   if (fallbackQuote) return { quote: fallbackQuote };
   return undefined;
+}
+
+function normalizeSpatialCitationRefs(value: unknown) {
+  if (!Array.isArray(value)) return undefined;
+  const refs = value.filter(isRecord).filter((ref) => (
+    typeof ref.cid === 'string'
+    && typeof ref.documentId === 'string'
+    && typeof ref.chunkId === 'string'
+    && typeof ref.textPreview === 'string'
+    && typeof ref.quoteHash === 'string'
+  ));
+  return refs.length > 0 ? refs : undefined;
 }
 
 function readString(record: Record<string, unknown>, key: string): string | undefined {

@@ -33,8 +33,8 @@ function expectExcludes(rel: string, markers: string[]): void {
 
 for (const rel of [
   'src/app/(landing)/learn/page.tsx',
-  'src/app/tacitus/page.tsx',
-  'src/app/release-notes/page.tsx',
+  'src/app/(landing)/tacitus/page.tsx',
+  'src/app/(landing)/release-notes/page.tsx',
   'src/app/docs/page.tsx',
   'src/app/tour/page.tsx',
   'src/app/waitlist/page.tsx',
@@ -43,7 +43,7 @@ for (const rel of [
   expectFile(rel);
 }
 
-expectIncludes('src/app/(landing)/layout.tsx', ['Learn', 'TACITUS', 'Pricing', 'New capsule']);
+expectIncludes('src/app/(landing)/layout.tsx', ['Learn', 'TACITUS', 'Release notes', 'New capsule']);
 expectIncludes('src/components/landing/phase8-wow-landing.tsx', [
   'TaskletPraxisWorkbench',
   'mode="public"',
@@ -110,6 +110,7 @@ expectIncludes('src/lib/navigation/primary-nav.ts', [
   "label: 'Advanced'",
 ]);
 expectIncludes('src/app/sitemap.ts', ['/learn', '/tacitus', '/release-notes']);
+expectExcludes('src/app/sitemap.ts', ['/pricing']);
 expectIncludes('src/app/tour/page.tsx', ["redirect('/')", 'noindex, nofollow']);
 expectIncludes('src/app/docs/page.tsx', ["redirect('/learn')", 'index: false']);
 expectIncludes('src/app/waitlist/page.tsx', ["redirect('/login?mode=signup')", 'index: false']);

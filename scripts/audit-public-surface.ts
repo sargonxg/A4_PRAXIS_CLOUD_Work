@@ -47,8 +47,9 @@ for (const required of [
   'What can PRAXIS do for you?',
   'Describe a task or responsibility',
   'AccountProfileButton',
-  "fetch('/api/ai/chat'",
-  'Active ContextCapsule Lite stack',
+  "fetch('/api/ai/ask-praxis'",
+  'data-testid="capsule-context-bar"',
+  'data-testid="praxis-chat-thread"',
   'ContextCapsule Lite',
 ]) {
   if (!workbench.includes(required)) failures.push(`shared cockpit missing marker: ${required}`);

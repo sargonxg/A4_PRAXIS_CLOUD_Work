@@ -16,7 +16,6 @@ export default function ReleaseNotesPage() {
           <nav className="hidden items-center gap-6 text-sm font-semibold text-slate-600 sm:flex">
             <Link href="/learn">Learn</Link>
             <Link href="/tacitus">TACITUS</Link>
-            <Link href="/pricing">Pricing</Link>
           </nav>
           <Link href="/login" className="text-sm font-semibold text-gold-700">Sign in</Link>
         </div>
@@ -84,4 +83,3 @@ export default function ReleaseNotesPage() {
     </main>
   );
 }
-

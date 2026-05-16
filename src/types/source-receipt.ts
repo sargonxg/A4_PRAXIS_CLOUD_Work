@@ -15,6 +15,9 @@ export interface SourceReceiptSpan {
   start?: number;
   end?: number;
   quote?: string;
+  pageNumber?: number;
+  coords?: import('@/types/spatial-source').SpatialBoundingBox;
+  citationRef?: import('@/types/spatial-source').SpatialCitationRef;
 }
 
 export interface CanonicalSourceReceipt {
@@ -36,6 +39,7 @@ export interface CanonicalSourceReceipt {
   excerpt?: string;
   contentHash?: string;
   span?: SourceReceiptSpan;
+  spatialCitationRefs?: import('@/types/spatial-source').SpatialCitationRef[];
   graphPath?: string[];
   advisorId?: string;
   toolRunId?: string;

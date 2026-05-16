@@ -33,6 +33,8 @@ export interface CorpusItem {
   excerpt: string;
   /** Firestore path / URL / graph node id — for citation linking. */
   citation: string;
+  /** Optional page/coordinate citation pointer for source-bound document views. */
+  citationRef?: import('@/types/spatial-source').SpatialCitationRef;
   /** Coarse confidence band reflecting source reliability + retrieval signal. */
   confidence: CorpusConfidence;
   /** ISO timestamp the underlying record was last generated/observed. May be empty if unknown. */

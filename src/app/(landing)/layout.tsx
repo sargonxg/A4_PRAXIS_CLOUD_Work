@@ -8,7 +8,6 @@ import { PraxisMark } from "@/components/brand/praxis-mark";
 
 const navLinks = [
   { label: "Learn", href: "/learn" },
-  { label: "Pricing", href: "/pricing" },
   { label: "Release notes", href: "/release-notes" },
   { label: "TACITUS", href: "/tacitus" },
 ];
@@ -204,9 +203,6 @@ export default function LandingLayout({
           <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[color:var(--color-ink)]/65">
             <Link href="/learn" className="hover:text-[color:var(--color-ink)]">
               Learn
-            </Link>
-            <Link href="/pricing" className="hover:text-[color:var(--color-ink)]">
-              Pricing
             </Link>
             <Link href="/release-notes" className="hover:text-[color:var(--color-ink)]">
               Release notes

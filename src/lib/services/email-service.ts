@@ -114,7 +114,7 @@ export async function sendCreditWarningEmail(
       <p style="color:#475569;line-height:1.6">Your TACITUS Credit balance is running low. You have <strong>${remaining} credits</strong> remaining.</p>
       <p style="color:#475569;line-height:1.6">At current usage, you may run out within the next few sessions. Upgrade your plan to continue using PRAXIS without interruption.</p>
       <div style="text-align:center;margin:24px 0">
-        <a href="https://praxis.tacitus.me/pricing" style="display:inline-block;background:#1B3A5C;color:#fff;font-weight:600;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:14px">View Plans & Upgrade</a>
+        <a href="https://praxis.tacitus.me/login?mode=signup" style="display:inline-block;background:#1B3A5C;color:#fff;font-weight:600;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:14px">Open PRAXIS</a>
       </div>
       <p style="color:#94A3B8;font-size:13px">Current balance: ${remaining} credits</p>
     `),

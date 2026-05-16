@@ -1,57 +1,92 @@
-import Link from 'next/link';
-import { ArrowRight, BrainCircuit, GitBranch, Landmark, ShieldCheck } from 'lucide-react';
+import Link from "next/link";
+import { PraxisGlyphChip } from "@/components/brand/praxis-mark";
 
 const layers = [
-  ['PRAXIS', 'The user-facing policy workbench for context, analysis, writing, review, and handover.'],
-  ['DIALECTICA', 'The ingestion and knowledge layer that structures documents, sources, and graph evidence through a narrow adapter.'],
-  ['KAIROS', 'The temporality layer for episodes, stale assumptions, deadlines, windows, and changing context.'],
-  ['AGON', 'The human-friction layer for actors, claims, commitments, incentives, blockers, and conflict dynamics.'],
-] as const;
+  {
+    name: "PRAXIS",
+    summary:
+      "The user-facing policy workbench. Build a capsule, ask the capsule, use tools, ship sourced outputs.",
+  },
+  {
+    name: "KAIROS",
+    summary:
+      "The temporality layer. Episodes, stale assumptions, deadlines, windows, and changing context.",
+  },
+  {
+    name: "AGON",
+    summary:
+      "The human-friction layer. Actors, claims, commitments, incentives, blockers, and conflict dynamics.",
+  },
+];
 
 export const metadata = {
-  title: 'TACITUS',
-  description: 'The TACITUS product architecture behind PRAXIS.',
+  title: "TACITUS",
+  description: "The TACITUS product architecture behind PRAXIS.",
 };
 
 export default function TacitusPage() {
   return (
-    <main className="min-h-screen bg-white text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="font-serif text-2xl font-semibold text-diplomatic-blue">TACITUS</Link>
-          <Link href="/app/assistant" className="text-sm font-semibold text-gold-700">Open PRAXIS</Link>
-        </div>
-      </header>
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">TACITUS</p>
-        <h1 className="mt-4 max-w-4xl font-serif text-5xl font-semibold leading-tight">
-          Software for statecraft, policy analysis, conflict intelligence, and institutional memory.
-        </h1>
-        <p className="mt-5 max-w-3xl text-base leading-7 text-slate-700">
-          TACITUS builds the deeper systems behind PRAXIS. The public product stays simple: users build ContextCapsules, ask the active capsule, use tools, and produce sourceable outputs. The TACITUS layers stay mostly behind the scenes.
-        </p>
-        <div className="mt-12 grid gap-4 md:grid-cols-2">
-          {layers.map(([name, detail]) => (
-            <article key={name} className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-              <div className="flex items-center gap-2">
-                {name === 'PRAXIS' ? <Landmark className="h-5 w-5 text-gold-700" /> : name === 'DIALECTICA' ? <GitBranch className="h-5 w-5 text-gold-700" /> : name === 'KAIROS' ? <BrainCircuit className="h-5 w-5 text-gold-700" /> : <ShieldCheck className="h-5 w-5 text-gold-700" />}
-                <h2 className="text-lg font-semibold">{name}</h2>
-              </div>
-              <p className="mt-3 text-sm leading-6 text-slate-600">{detail}</p>
-            </article>
-          ))}
-        </div>
-        <div className="mt-10 flex flex-wrap gap-3">
-          <Link href="/learn" className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white">
-            Learn PRAXIS
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <a href="mailto:hello@tacitus.me" className="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900">
-            Contact TACITUS
-          </a>
-        </div>
-      </section>
-    </main>
+    <section className="relative z-10 mx-auto max-w-[1180px] px-5 pb-24 pt-12 sm:pt-20 lg:px-8">
+      <div className="group inline-flex items-center gap-2.5">
+        <PraxisGlyphChip size={28} />
+        <span className="text-overline text-[color:var(--color-gold-700)]">
+          TACITUS
+        </span>
+      </div>
+      <h1 className="mt-4 max-w-[28ch] font-serif text-[clamp(36px,5.4vw,64px)] font-medium leading-[1.04] tracking-tight text-[color:var(--color-ink)]">
+        Software for statecraft, policy, and conflict intelligence.
+      </h1>
+      <p className="mt-5 max-w-[58ch] text-[16px] leading-relaxed text-[color:var(--color-ink)]/72">
+        TACITUS builds the deeper systems behind PRAXIS. The product stays
+        simple: users build capsules, ask the capsule, run tools, and produce
+        sourced outputs. The layers below sit quietly underneath.
+      </p>
+
+      <div className="mt-12 grid gap-5 md:grid-cols-3">
+        {layers.map((layer) => (
+          <article
+            key={layer.name}
+            className="surface-glass relative overflow-hidden rounded-3xl border border-[color:var(--color-rose-gold)]/25 p-6 shadow-capsule transition-all duration-300 hover:-translate-y-1 hover:shadow-capsule-lg"
+          >
+            <div className="group inline-flex items-center gap-2">
+              <PraxisGlyphChip size={22} />
+              <h2 className="font-serif text-lg font-semibold tracking-wide text-[color:var(--color-diplomatic-blue)]">
+                {layer.name}
+              </h2>
+            </div>
+            <div
+              className="my-4 h-px w-full"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, rgba(201,169,97,0.55), transparent)",
+              }}
+            />
+            <p className="text-[14px] leading-relaxed text-[color:var(--color-ink)]/72">
+              {layer.summary}
+            </p>
+          </article>
+        ))}
+      </div>
+
+      <div className="mt-12 flex flex-wrap items-center gap-3">
+        <Link
+          href="/learn"
+          prefetch={false}
+          className="btn-capsule-primary inline-flex h-11 items-center justify-center rounded-full px-6 font-serif text-[15px] font-semibold tracking-tight"
+        >
+          Learn PRAXIS
+        </Link>
+        <a
+          href="mailto:hello@tacitus.me"
+          className="btn-capsule-secondary inline-flex h-11 items-center justify-center rounded-full px-5 font-serif text-[15px] font-semibold tracking-tight"
+        >
+          Contact TACITUS
+        </a>
+      </div>
+
+      <p className="mt-10 font-mono text-[10.5px] uppercase tracking-[0.24em] text-[color:var(--color-ink)]/45">
+        TACITUS · The system of record for human friction
+      </p>
+    </section>
   );
 }
-
