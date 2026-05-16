@@ -61,7 +61,14 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'data-testid="policy-agent-drawer"',
   'data-testid="capsule-composition-rail"',
   'data-testid="canonical-user-types"',
+  'Past conversations',
+  'Past artifacts',
+  'conversationThreadId',
+  'artifactPersistence',
   'policyAgentRunIntent',
+]);
+expectIncludes('src/components/app/app-shell.tsx', [
+  'data-testid="dashboard-cockpit-only-shell"',
 ]);
 expectExcludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'data-testid="public-contextcapsule-explainer"',

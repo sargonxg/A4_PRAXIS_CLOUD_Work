@@ -15,6 +15,7 @@ function read(rel: string): string {
 
 const landing = read('src/components/landing/phase8-wow-landing.tsx');
 const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
+const appShell = read('src/components/app/app-shell.tsx');
 
 for (const forbidden of [
   'components/syria',
@@ -46,8 +47,21 @@ for (const required of [
   'data-testid="canonical-user-types"',
   'data-testid="suggested-capsule-tools"',
   'data-testid="capsule-combination-recipes"',
+  'Past conversations',
+  'Past artifacts',
+  'Documents',
+  'conversationPersistence',
+  'artifactPersistence',
+  'capsuleManagementMode',
 ]) {
   if (!workbench.includes(required)) failures.push(`shared cockpit missing marker: ${required}`);
+}
+
+for (const required of [
+  'data-testid="dashboard-cockpit-only-shell"',
+  "pathname === '/app/dashboard'",
+]) {
+  if (!appShell.includes(required)) failures.push(`app shell missing dashboard cockpit marker: ${required}`);
 }
 
 for (const forbidden of [

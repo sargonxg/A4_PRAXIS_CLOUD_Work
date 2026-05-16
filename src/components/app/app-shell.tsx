@@ -11,6 +11,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { DemoModeBanner } from '@/components/onboarding/demo-mode-banner';
 import { OnboardingWrapper } from '@/components/onboarding/onboarding-wrapper';
 import { SkipNudgeBanner } from '@/components/onboarding/skip-nudge-banner';
+import { OnboardingBanner } from '@/components/shared/onboarding-banner';
 import { GlobalSearch } from '@/components/shared/global-search';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useNotificationStore } from '@/stores/notification-store';
@@ -33,6 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const isDemoRoute = pathname.startsWith('/demo');
+  const isDashboardCockpit = pathname === '/app/dashboard';
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
@@ -140,6 +142,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <TooltipProvider delayDuration={0}>
+      {isDashboardCockpit ? (
+        <div className="app-light h-screen overflow-y-auto bg-[#f6f6f4]" data-testid="dashboard-cockpit-only-shell">
+          <ErrorBoundary>
+            <ToolErrorBoundary>
+              {children}
+            </ToolErrorBoundary>
+          </ErrorBoundary>
+          <AiErrorToast />
+        </div>
+      ) : (
+      <>
       <div className="app-light flex h-screen overflow-hidden bg-[var(--color-app-bg)]">
         {/* Mobile sidebar overlay */}
         {isMobile && sidebarOpen && (
@@ -165,6 +178,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="flex flex-1 flex-col overflow-hidden">
           <DemoModeBanner />
+          <OnboardingBanner />
           {!user.isDemo && <SkipNudgeBanner />}
           <Header isMobile={isMobile} onOpenSearch={openSearch} />
           <CoreContextStrip />
@@ -224,6 +238,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           src/stores/ai-error-store. Every tool's failed fetch can publish
           a structured error and show a consistent retry-able toast here. */}
       <AiErrorToast />
+      </>
+      )}
     </TooltipProvider>
   );
 }

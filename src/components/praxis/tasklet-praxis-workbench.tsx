@@ -111,6 +111,7 @@ export function TaskletPraxisWorkbench({
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
   const selectedRuntime = getAskRuntimeOption(selectedModel);
   const selectedArchetype = COCKPIT_USER_ARCHETYPES.find((item) => item.id === selectedArchetypeId) ?? COCKPIT_USER_ARCHETYPES[0]!;
+  const conversationThreadId = `tasklet-${capsuleId}`;
   const suggestedTools = COCKPIT_TOOL_SUGGESTIONS.filter((tool) => (
     activePolicyNeed.toolIds.includes(tool.id) || selectedArchetype.suggestedToolIds.includes(tool.id) || selectedToolIds.includes(tool.id)
   )).slice(0, 9);
@@ -240,6 +241,12 @@ export function TaskletPraxisWorkbench({
           sourceActionModel: 'selected_text_context_menu',
           approvalLevel: agent.approvalLevel,
           taskletSurface: true,
+          conversationThreadId,
+          conversationPersistence: 'users/{uid}/capsules/{capsuleId}/askThreads/{threadId}',
+          artifactPersistence: 'users/{uid}/situations/{situationId}/artifacts + users/{uid}/memos',
+          capsuleManagementMode: 'text_documents_repository_tool_instructions',
+          capsuleInstructionMode: selectedArchetype?.detail ?? 'policy capsule context',
+          policySolutionMode: 'capsule_bound_policy_and_conflict_analysis',
         },
       }),
     });
@@ -307,6 +314,14 @@ export function TaskletPraxisWorkbench({
                   <p className="truncate text-xs text-slate-500">{run.detail}</p>
                 </div>
               ))}
+            </div>
+          </div>
+          <div className="mt-7">
+            <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">Memory & outputs <ChevronDown className="h-3 w-3" /></p>
+            <div className="mt-3 space-y-1">
+              <SidebarButton href={workspaceHref(surfaceMode, '/app/assistant')} icon={BookOpenText} label="Past conversations" />
+              <SidebarButton href={workspaceHref(surfaceMode, '/app/workbench')} icon={FileText} label="Past artifacts" />
+              <SidebarButton href={workspaceHref(surfaceMode, '/app/workbench')} icon={Upload} label="Documents" />
             </div>
           </div>
           <div className="mt-auto flex items-center gap-3 border-t border-black/10 pt-4">
@@ -704,6 +719,11 @@ export function TaskletPraxisWorkbench({
       </div>
     </section>
   );
+}
+
+function workspaceHref(surfaceMode: HomeSurfaceMode, href: string): string {
+  if (surfaceMode === 'authenticated') return href;
+  return `/login?mode=signup&redirect=${encodeURIComponent(href)}`;
 }
 
 function SidebarButton({ href, icon: Icon, label, active = false }: { href: string; icon: typeof Search; label: string; active?: boolean }) {

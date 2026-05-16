@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(home): keep signed-in dashboard identical to the public cockpit.
+  Dashboard now bypasses the extra authenticated chrome around the capsule
+  cockpit, keeps the same sidebar/bar/composition surface after login, and
+  records run metadata for capsule threads, artifacts, documents, and
+  policy/conflict-analysis capsule modes.
 - feat(home): make the capsule cockpit composable.
   Added the active capsule composition rail, capsule search by name/code,
   draggable canonical user-type and tool suggestions, capsule combination

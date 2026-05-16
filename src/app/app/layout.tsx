@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { AppShell } from '@/components/app/app-shell';
-import { OnboardingBanner } from '@/components/shared/onboarding-banner';
 import { AuthProvider } from '@/lib/auth/auth-context';
 
 export const metadata: Metadata = {
@@ -17,7 +16,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
       <AppShell>
-        <OnboardingBanner />
         {children}
       </AppShell>
     </AuthProvider>
