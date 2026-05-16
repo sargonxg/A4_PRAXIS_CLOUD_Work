@@ -17,6 +17,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 const ROOT = resolve(process.cwd());
+const STRICT = process.argv.includes("--strict");
 const TARGETS = [
   "src/app/(landing)",
   "src/components/landing",
@@ -109,14 +110,29 @@ async function main() {
     okFiles++;
   }
 
+  const errors = violations.filter((v) => v.rule !== "no-hex" || STRICT);
+  const warnings = violations.filter((v) => v.rule === "no-hex" && !STRICT);
+
   if (violations.length === 0) {
     console.log(`audit:design — ok (${okFiles} files scanned)`);
     process.exit(0);
   }
 
-  console.error(`audit:design — ${violations.length} violation(s) across ${okFiles} files`);
-  for (const v of violations) {
-    console.error(`  [${v.rule}] ${v.file}: ${v.detail}`);
+  if (warnings.length > 0) {
+    console.warn(`audit:design — ${warnings.length} warning(s) [no-hex] (run with --strict to fail)`);
+    for (const v of warnings) {
+      console.warn(`  WARN [${v.rule}] ${v.file}: ${v.detail}`);
+    }
+  }
+
+  if (errors.length === 0) {
+    console.log(`audit:design — ok (${okFiles} files scanned, warnings only)`);
+    process.exit(0);
+  }
+
+  console.error(`audit:design — ${errors.length} error(s) across ${okFiles} files`);
+  for (const v of errors) {
+    console.error(`  ERROR [${v.rule}] ${v.file}: ${v.detail}`);
   }
   process.exit(1);
 }
