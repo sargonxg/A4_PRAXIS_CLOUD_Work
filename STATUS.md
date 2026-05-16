@@ -1,5 +1,20 @@
 # PRAXIS — STATUS
 
+## 2026-05-16 — Release Notes And Build Number Governance
+
+Current release checkpoint:
+
+- Central app metadata is now `PRAXIS v6.4.1` with build number
+  `2026.05.16.02` in `src/lib/constants/app-version.ts`.
+- `/release-notes` reads from the centralized
+  `src/lib/product/release-notes.ts` registry instead of a page-local notes
+  array.
+- `npm run audit:release-notes` now checks that package version, app version,
+  current build number, release registry, release page import, and changelog
+  entry stay aligned.
+- Significant product/runtime/documentation changes should bump
+  `APP_BUILD_NUMBER`, add a release note entry, and update `CHANGELOG.md`.
+
 ## 2026-05-16 — Cockpit Visual Polish And Learn Hub
 
 Current public/app surface checkpoint:

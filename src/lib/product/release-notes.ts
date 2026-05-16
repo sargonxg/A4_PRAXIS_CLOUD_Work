@@ -1,0 +1,113 @@
+import {
+  APP_BUILD_DATE,
+  APP_BUILD_LABEL,
+  APP_BUILD_NUMBER,
+  APP_RELEASE_LABEL,
+  APP_VERSION,
+} from '@/lib/constants/app-version';
+
+export interface PraxisReleaseNote {
+  buildNumber: string;
+  version: string;
+  date: string;
+  title: string;
+  summary: string;
+  category: 'product' | 'runtime' | 'documentation' | 'governance';
+  items: string[];
+}
+
+export const CURRENT_PRAXIS_RELEASE = {
+  version: APP_VERSION,
+  buildDate: APP_BUILD_DATE,
+  buildNumber: APP_BUILD_NUMBER,
+  releaseLabel: APP_RELEASE_LABEL,
+  buildLabel: APP_BUILD_LABEL,
+} as const;
+
+export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
+  {
+    buildNumber: '2026.05.16.02',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'Cockpit polish and Learn hub',
+    summary: 'The public and signed-in cockpit now stay visually aligned, while Learn carries the deeper product explanation.',
+    category: 'product',
+    items: [
+      'Public Home and signed-in Home share the same capsule cockpit surface.',
+      'Internal provider/runtime/token labels were removed from the main cockpit.',
+      'The cockpit uses a quieter policy-grid background, rounder surfaces, and clearer Context Capsule language.',
+      '/learn now has a sidebar with sections for capsule cores, ten policy paths, tools, outputs, connectors, and planned scaffolding.',
+    ],
+  },
+  {
+    buildNumber: '2026.05.16.01',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'First OutputCapsule registry slice',
+    summary: 'PRAXIS now has a typed output-product catalog behind the same simple cockpit.',
+    category: 'runtime',
+    items: [
+      'Added schema-versioned OutputCapsule templates for daily reads, country packs, media, risk, humanitarian, diplomatic, memo, and talking-point outputs.',
+      'Added deterministic planning, quality blockers, hidden-tool mappings, and country-pack composition.',
+      'The cockpit shows a compact Produce selector with missing cores and suggested producer steps.',
+      'Persistence from live agent/tool runs remains the next runtime wave.',
+    ],
+  },
+  {
+    buildNumber: '2026.05.15.04',
+    version: '6.4.0',
+    date: '2026-05-15',
+    title: 'Context Capsule cockpit and portable cores',
+    summary: 'The PRAXIS cockpit became capsule-first, with core health and portable package support.',
+    category: 'product',
+    items: [
+      'Public and authenticated Home use the same Tasklet-style PRAXIS cockpit.',
+      'Context Capsule management gained trust/health posture, .core export/import, clone/share/download foundations, and community metadata.',
+      'Ask PRAXIS can preserve capsule conversation context and attach document/source intent.',
+      'The visible app stays simple while advanced capsule management remains in the context surfaces.',
+    ],
+  },
+  {
+    buildNumber: '2026.05.15.03',
+    version: '6.4.0',
+    date: '2026-05-15',
+    title: 'Research Memo Agent and policy workbench',
+    summary: 'Policy agents moved behind a compact cockpit instead of a default marketplace grid.',
+    category: 'runtime',
+    items: [
+      'Introduced the policy-agent registry for research memo, sourceability review, red-team review, daily brief, and handover modes.',
+      'Research Memo Agent creates a Memo Studio draft with source and gap receipts through the worker boundary.',
+      'Policy agents stay recommended or drawer-based instead of overwhelming the default surface.',
+      'Run destinations are explicit: Memo Studio, Canvas, Library, and Handover.',
+    ],
+  },
+  {
+    buildNumber: '2026.05.15.02',
+    version: '6.4.0',
+    date: '2026-05-15',
+    title: 'Genkit sourceability and path classifier',
+    summary: 'Typed Genkit flows became available as safe capsule-aware checks.',
+    category: 'runtime',
+    items: [
+      'Added Sourceability Check for supported, weak, unsupported, and date-sensitive claims against provided snippets.',
+      'Added Context Capsule path classification against the canonical policy path registry.',
+      'Fallback behavior remains deterministic when provider execution is unavailable.',
+      'The routes classify and review only; they do not mutate capsules, send externally, or claim broader automation.',
+    ],
+  },
+  {
+    buildNumber: '2026.05.15.01',
+    version: '6.4.0',
+    date: '2026-05-15',
+    title: 'Public pages and cleanup guardrails',
+    summary: 'The public surface was narrowed around Learn, TACITUS, Pricing, Release notes, and the capsule cockpit.',
+    category: 'documentation',
+    items: [
+      'Added public Learn, TACITUS, Pricing, and Release notes surfaces.',
+      '/tour redirects back to Home.',
+      'Tasklet MVP and public-surface audits guard the simplified public entry.',
+      'Historical build prompt packs moved under docs/_archive/build with active pointer stubs preserved.',
+    ],
+  },
+];
+

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(release): centralize release notes and build number.
+  Build 2026.05.16.02 updates PRAXIS to v6.4.1, moves `/release-notes`
+  onto the centralized release registry, and adds `audit:release-notes` so
+  significant changes keep app version, build number, changelog, and release
+  notes aligned.
 - feat(home): polish the shared capsule cockpit and Learn hub.
   Removed internal token/runtime labels from the cockpit, made the public and
   signed-in Home visually identical again, added the professional policy grid

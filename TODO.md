@@ -21,6 +21,12 @@ from the active ledger above.
 
 ### Canonical Tasklet-Style Runtime Build
 
+0. Release note governance is now explicit: `src/lib/constants/app-version.ts`
+   is the central version/build source, `/release-notes` reads from
+   `src/lib/product/release-notes.ts`, and `npm run audit:release-notes`
+   guards package/app version, build number, release registry, page import, and
+   changelog alignment. Significant changes should bump `APP_BUILD_NUMBER` and
+   add a release note entry before commit.
 0. Public Home and authenticated Home now share the same polished cockpit:
    rounded capsule/composer surfaces, subtle policy-grid background, no
    low-level provider/runtime/token-cost labels, and no extra public-only
