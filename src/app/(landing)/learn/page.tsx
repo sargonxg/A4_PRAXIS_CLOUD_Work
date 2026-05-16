@@ -38,15 +38,7 @@ export default function LearnPage() {
           </span>
           <h1 className="mt-3 font-serif text-[clamp(36px,5.4vw,64px)] font-medium leading-[1.04] tracking-tight text-[color:var(--color-ink)]">
             One capsule.{" "}
-            <span
-              className="bg-clip-text text-transparent"
-              style={{
-                backgroundImage:
-                  "linear-gradient(120deg, #1B3A5C 0%, #1B3A5C 25%, #A37A14 60%, #E8B931 100%)",
-              }}
-            >
-              Every brief
-            </span>{" "}
+            <span className="text-gold-sheen">Every brief</span>{" "}
             you ship.
           </h1>
           <p className="mt-5 max-w-[58ch] text-[16px] leading-relaxed text-[color:var(--color-ink)]/72">
@@ -58,7 +50,7 @@ export default function LearnPage() {
             <Link
               href="/login?mode=signup"
               prefetch={false}
-              className="btn-capsule-primary inline-flex h-12 items-center justify-center rounded-full px-7 font-serif text-[16px] font-semibold tracking-tight"
+              className="btn-capsule-primary glow-pulse inline-flex h-12 items-center justify-center rounded-full px-7 font-serif text-[16px] font-semibold tracking-tight"
             >
               Open a capsule
             </Link>
@@ -99,11 +91,21 @@ export default function LearnPage() {
 
       {/* Identity sections — paper section with section-rhythm spacing */}
       <div className="section-rhythm relative z-10 py-20 sm:py-28 lg:py-32">
-        <CapsuleAnatomyHoneycomb />
-        <OutputCatalogCarousel />
-        <ComposeCapsulesShowcase />
-        <PersonaCards />
-        <ConnectorStrip />
+        <div className="rise-in rise-in-delay-1">
+          <CapsuleAnatomyHoneycomb />
+        </div>
+        <div className="rise-in rise-in-delay-2">
+          <OutputCatalogCarousel />
+        </div>
+        <div className="rise-in rise-in-delay-3">
+          <ComposeCapsulesShowcase />
+        </div>
+        <div className="rise-in rise-in-delay-4">
+          <PersonaCards />
+        </div>
+        <div className="rise-in rise-in-delay-5">
+          <ConnectorStrip />
+        </div>
       </div>
 
       {/* Footer call-to-action */}
