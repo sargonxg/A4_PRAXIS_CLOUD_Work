@@ -192,6 +192,18 @@ Initial production services:
 | `praxis-daily-brief` | Cloud Scheduler | recurring capsule brief trigger |
 | `praxis-uploads` / docs bucket | Cloud Storage | uploaded and generated artifacts |
 
+Runtime connection contract:
+
+- Production should set `AGENT_RUNTIME_DATABASE_URL` for the PRAXIS-owned
+  Cloud SQL run ledger. `src/lib/agent-runtime/postgres.ts` falls back to
+  `PRAXIS_DATABASE_URL` and then `DATABASE_URL` for local or migration tooling.
+- The canonical instance remains
+  `praxisbytacitus:us-east4:praxisbytacitus-instance`, database `praxis`,
+  user `praxis_app`.
+- Local direct connection requires either Cloud SQL Auth Proxy / `gcloud sql
+  connect` support or a VPC-connected shell because the instance is private-IP
+  only.
+
 ## Canonical Data Model
 
 MVP Cloud SQL tables:

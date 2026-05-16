@@ -50,7 +50,6 @@ function LoginForm() {
   const appRedirect = planParam
     ? `/app/settings?upgrade=${planParam}` // Send to settings with upgrade prompt
     : resolvePostLoginRedirect(searchParams, false);
-  const caseRedirect = resolvePostLoginRedirect(searchParams, true);
   const {
     user,
     loading,
@@ -59,7 +58,6 @@ function LoginForm() {
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,
-    signInAsDemo,
     resetPassword,
   } = useAuth();
 
@@ -79,13 +77,14 @@ function LoginForm() {
       return;
     }
 
-    // Already logged-in no-account user → redirect to the populated app case
+    // Already logged-in demo sessions are legacy-only; do not expose a new
+    // demo entry from /login.
     if (user && user.isDemo) {
       didNavigate.current = true;
-      router.push(caseRedirect);
+      router.push('/app/dashboard');
       return;
     }
-  }, [user, loading, router, appRedirect, caseRedirect]);
+  }, [user, loading, router, appRedirect]);
 
   const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>(
     queryMode === 'signup' ? 'signup' : 'signin',
@@ -252,24 +251,6 @@ function LoginForm() {
       setIsLoading(false);
     }
   }
-
-  async function handleDemoMode() {
-    setIsLoading(true);
-    await signInAsDemo();
-    // Small delay to ensure cookie is set before navigation
-    await new Promise((r) => setTimeout(r, 100));
-    router.push(caseRedirect);
-  }
-
-  // Auto-enter demo mode when redirected from middleware with ?mode=demo
-  const demoAutoEntered = useRef(false);
-  useEffect(() => {
-    if (queryMode === 'demo' && !loading && !user && !demoAutoEntered.current) {
-      demoAutoEntered.current = true;
-      handleDemoMode();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryMode, loading, user]);
 
   return (
     <div className="min-h-screen bg-[#F6F8FB] text-slate-950">
@@ -674,57 +655,10 @@ function LoginForm() {
             </p>
           </motion.form>
 
-          {/* Divider */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="my-5 flex items-center gap-3"
-          >
-            <div className="h-px flex-1 bg-navy-700/50" />
-            <span className="text-xs tracking-wider text-navy-500 uppercase">
-              example workspace
-            </span>
-            <div className="h-px flex-1 bg-navy-700/50" />
-          </motion.div>
-
-          {/* Demo mode button — prominent, gold-accented */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-          >
-            <button
-              type="button"
-              onClick={handleDemoMode}
-              disabled={isLoading}
-              className={cn(
-                'flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3.5',
-                'border border-gold-500/30 bg-gold-500/5 text-sm font-semibold text-gold-400',
-                'transition-all duration-200',
-                'hover:border-gold-500/50 hover:bg-gold-500/10 hover:text-gold-300',
-                'active:scale-[0.98]',
-                'disabled:cursor-not-allowed disabled:opacity-60'
-              )}
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Shield className="h-4 w-4" />
-                  Open example case workspace
-                </>
-              )}
-            </button>
-            <p className="mt-2 text-center text-[11px] text-navy-500">
-              Opens a pre-loaded case without creating a private account.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
+            transition={{ delay: 0.45, duration: 0.5 }}
             className="mt-5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3"
           >
             <p className="text-center text-xs text-emerald-400">

@@ -82,6 +82,15 @@ provider resolution, schemas, tools, and audits:
 - `package.json` includes the Genkit dependencies and runtime scripts,
   including `genkit:dev`, `audit:genkit-runtime`, and
   `audit:genkit-coverage`.
+- The current JavaScript package set is `genkit`, `@genkit-ai/google-genai`,
+  `@genkit-ai/vertexai`, and `@genkit-ai/google-cloud`. The older
+  `@genkit-ai/googleai` package name should not be reintroduced unless the
+  Genkit package matrix is intentionally downgraded.
+- Google AI Studio key lookup accepts `GOOGLE_GENAI_API_KEY` first, then the
+  older PRAXIS aliases `GEMINI_API_KEY`, `GOOGLE_API_KEY`, and
+  `GOOGLE_AI_API_KEY`. Vertex remains preferred when
+  `GOOGLE_VERTEX_PROJECT`/`GOOGLE_CLOUD_PROJECT` is configured and no API-key
+  fallback is present.
 - `scripts/audit-genkit-runtime.ts` enforces the expected flow files, prompt
   files, provider resolver, and route imports.
 - `scripts/audit-genkit-coverage.mjs` reports which AI routes have moved to

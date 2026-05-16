@@ -58,9 +58,15 @@ expectExcludes('src/components/landing/phase8-wow-landing.tsx', [
 ]);
 expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'data-testid="recommended-agent-panel"',
-  'data-testid="public-contextcapsule-explainer"',
   'data-testid="policy-agent-drawer"',
+  'data-testid="capsule-composition-rail"',
+  'data-testid="canonical-user-types"',
   'policyAgentRunIntent',
+]);
+expectExcludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
+  'data-testid="public-contextcapsule-explainer"',
+  'Public preview',
+  'Use your own sources',
 ]);
 expectExcludes('src/components/landing/phase8-wow-landing.tsx', [
   'Syria',

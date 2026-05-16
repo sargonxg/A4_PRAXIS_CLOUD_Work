@@ -76,7 +76,7 @@ if (provider.kind === 'vertex' && !provider.projectId && process.env.NODE_ENV ==
   failures.push('Genkit resolved Vertex in production without GOOGLE_VERTEX_PROJECT/GOOGLE_CLOUD_PROJECT/GCLOUD_PROJECT');
 }
 if (provider.kind === 'google-ai' && !provider.apiKey) {
-  warnings.push('Genkit Google AI fallback has no API key; live flow calls will fail until GOOGLE_AI_API_KEY/GEMINI_API_KEY is set.');
+  warnings.push('Genkit Google AI fallback has no API key; live flow calls will fail until GOOGLE_GENAI_API_KEY/GOOGLE_AI_API_KEY/GEMINI_API_KEY is set.');
 }
 
 console.log('Genkit runtime audit');

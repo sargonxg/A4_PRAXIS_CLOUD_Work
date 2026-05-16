@@ -41,11 +41,22 @@ for (const required of [
 
 for (const required of [
   'data-testid="recommended-agent-panel"',
-  'data-testid="public-contextcapsule-explainer"',
   'data-testid="policy-agent-drawer"',
-  "surfaceMode === 'authenticated' && agentDrawerOpen",
+  'data-testid="capsule-composition-rail"',
+  'data-testid="canonical-user-types"',
+  'data-testid="suggested-capsule-tools"',
+  'data-testid="capsule-combination-recipes"',
 ]) {
   if (!workbench.includes(required)) failures.push(`shared cockpit missing marker: ${required}`);
+}
+
+for (const forbidden of [
+  'data-testid="public-contextcapsule-explainer"',
+  "surfaceMode === 'authenticated' && agentDrawerOpen",
+  'Public preview',
+  'Use your own sources',
+]) {
+  if (workbench.includes(forbidden)) failures.push(`shared cockpit keeps signed-out-only marker: ${forbidden}`);
 }
 
 if (failures.length) {

@@ -14,7 +14,7 @@ type GenkitProviderEnv = Record<string, string | undefined>;
 
 export function resolveGenkitGoogleProvider(env: GenkitProviderEnv = process.env): GenkitGoogleProviderConfig {
   const providerOverride = normalizeProviderOverride(env.GENKIT_GOOGLE_PROVIDER ?? env.AI_PROVIDER);
-  const apiKey = env.GEMINI_API_KEY ?? env.GOOGLE_API_KEY ?? env.GOOGLE_AI_API_KEY;
+  const apiKey = env.GOOGLE_GENAI_API_KEY ?? env.GEMINI_API_KEY ?? env.GOOGLE_API_KEY ?? env.GOOGLE_AI_API_KEY;
   const projectId = env.GOOGLE_VERTEX_PROJECT ?? env.GOOGLE_CLOUD_PROJECT ?? env.GCLOUD_PROJECT;
   const location = env.GOOGLE_VERTEX_LOCATION ?? env.GCLOUD_LOCATION ?? modelMatrix.platform.defaultRegion;
 
@@ -54,7 +54,7 @@ export function resolveGenkitGoogleProvider(env: GenkitProviderEnv = process.env
     location,
     reason: apiKey
       ? 'using Google AI Studio key fallback'
-      : 'defaulting to Google AI Studio path; set GOOGLE_AI_API_KEY or GOOGLE_VERTEX_PROJECT',
+      : 'defaulting to Google AI Studio path; set GOOGLE_GENAI_API_KEY or GOOGLE_VERTEX_PROJECT',
   };
 }
 

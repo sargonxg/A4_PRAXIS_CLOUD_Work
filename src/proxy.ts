@@ -2,33 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
-const PUBLIC_SYRIA_APP_ROUTES = new Set([
-  '/app/workbench',
-  '/app/syria-case',
-  '/app/context-builder',
-  '/app/source-scout',
-  '/app/media-compass',
-  '/app/media-roundup',
-  '/app/graphops',
-  '/app/conflict-graph',
-  '/app/brainstorming-table',
-  '/app/policy-memo',
-  '/app/briefing',
-  '/app/documents',
-  '/app/tools',
-]);
-
-function isPublicSyriaAppRoute(pathname: string): boolean {
-  return (
-    PUBLIC_SYRIA_APP_ROUTES.has(pathname) ||
-    pathname === '/app/workbench/syria-2026' ||
-    pathname.startsWith('/app/workbench/syria-2026/') ||
-    pathname === '/app/write' ||
-    pathname === '/app/demo/syria-2024' ||
-    pathname === '/app/demo/syria-2024/write'
-  );
-}
-
 const LEGACY_WORKBENCH_ROUTE_ALIASES: Record<string, string> = {
   '/app/desk': 'desk',
   '/app/cockpit': 'desk',
@@ -258,10 +231,6 @@ export function proxy(request: NextRequest) {
     if (!hasFirebaseToken) {
       const loginUrl = new URL('/login', request.url);
       const redirectUrl = request.nextUrl.clone();
-      if (isPublicSyriaAppRoute(pathname)) {
-        loginUrl.searchParams.set('mode', 'demo');
-        loginUrl.searchParams.set('example', 'syria-2026');
-      }
       loginUrl.searchParams.set('redirect', `${redirectUrl.pathname}${redirectUrl.search}`);
       return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce);
     }

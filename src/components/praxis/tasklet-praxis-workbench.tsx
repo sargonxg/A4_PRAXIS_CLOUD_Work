@@ -99,7 +99,7 @@ export function TaskletPraxisWorkbench({
   const [textMenu, setTextMenu] = useState<{ x: number; y: number; text: string } | null>(null);
   const [runState, setRunState] = useState<{ status: 'idle' | 'running' | 'ready' | 'error'; message: string; href?: string }>({
     status: 'idle',
-    message: surfaceMode === 'public' ? 'Sign in to run this capsule.' : 'Ready to create a capsule run.',
+    message: 'Ready to create a capsule run.',
   });
 
   const visibleAgents = useMemo(() => {
@@ -281,7 +281,7 @@ export function TaskletPraxisWorkbench({
           <SidebarButton href={surfaceMode === 'public' ? '/learn' : '/app/contexts'} icon={Search} label="Search capsules" />
           <div className="mt-7">
             <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">
-              {surfaceMode === 'public' ? 'Example capsules' : 'My ContextCapsules'} <ChevronDown className="h-3 w-3" />
+              My ContextCapsules <ChevronDown className="h-3 w-3" />
             </p>
             <div className="mt-3 space-y-2">
               {['Middle East policy analysis', 'Sourceable board memo', 'Handover package'].map((capsule) => (
@@ -298,37 +298,22 @@ export function TaskletPraxisWorkbench({
               ))}
             </div>
           </div>
-          {surfaceMode === 'authenticated' ? (
-            <div className="mt-7">
-              <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">Recent runs <ChevronDown className="h-3 w-3" /></p>
-              <div className="mt-3 space-y-2">
-                {recentRuns.map((run) => (
-                  <div key={run.label} className="rounded-md px-1 py-1.5">
-                    <p className="truncate text-sm font-medium text-slate-900">{run.label}</p>
-                    <p className="truncate text-xs text-slate-500">{run.detail}</p>
-                  </div>
-                ))}
-              </div>
+          <div className="mt-7">
+            <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">Recent runs <ChevronDown className="h-3 w-3" /></p>
+            <div className="mt-3 space-y-2">
+              {recentRuns.map((run) => (
+                <div key={run.label} className="rounded-md px-1 py-1.5">
+                  <p className="truncate text-sm font-medium text-slate-900">{run.label}</p>
+                  <p className="truncate text-xs text-slate-500">{run.detail}</p>
+                </div>
+              ))}
             </div>
-          ) : (
-            <div className="mt-7 rounded-lg border border-black/10 bg-white/60 p-3">
-              <p className="text-sm font-semibold text-slate-950">Use your own sources</p>
-              <p className="mt-1 text-xs leading-5 text-slate-600">Create a private capsule, attach documents, and keep outputs in the workspace.</p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <Link href="/login" className="rounded-md border border-slate-300 px-2 py-2 text-center text-xs font-semibold text-slate-700">
-                  Sign in
-                </Link>
-                <Link href="/login?mode=signup" className="rounded-md bg-slate-950 px-2 py-2 text-center text-xs font-semibold text-white">
-                  Sign up
-                </Link>
-              </div>
-            </div>
-          )}
+          </div>
           <div className="mt-auto flex items-center gap-3 border-t border-black/10 pt-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-300 text-xs font-semibold text-slate-700">GC</div>
             <div>
-              <p className="text-sm font-medium text-slate-900">{surfaceMode === 'public' ? 'Public preview' : 'Giulio Catanzariti'}</p>
-              <p className="text-xs text-slate-500">{surfaceMode === 'public' ? 'Sign in to save' : 'Capsule workspace'}</p>
+              <p className="text-sm font-medium text-slate-900">Giulio Catanzariti</p>
+              <p className="text-xs text-slate-500">Capsule workspace</p>
             </div>
           </div>
         </aside>
@@ -573,16 +558,14 @@ export function TaskletPraxisWorkbench({
                   <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">{selectedAgent.description}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  {surfaceMode === 'authenticated' ? (
-                    <button
-                      type="button"
-                      onClick={() => setAgentDrawerOpen((open) => !open)}
-                      className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-white"
-                    >
-                      Agents
-                      <ChevronsRight className={cn('h-4 w-4 transition', agentDrawerOpen ? 'rotate-90' : '')} />
-                    </button>
-                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setAgentDrawerOpen((open) => !open)}
+                    className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
+                  >
+                    Agents
+                    <ChevronsRight className={cn('h-4 w-4 transition', agentDrawerOpen ? 'rotate-90' : '')} />
+                  </button>
                   <button
                     type="button"
                     onClick={() => void launchRun(selectedAgent)}
@@ -600,7 +583,7 @@ export function TaskletPraxisWorkbench({
               </div>
             </div>
 
-            {surfaceMode === 'authenticated' && agentDrawerOpen ? (
+            {agentDrawerOpen ? (
               <div className="mt-6 w-full max-w-6xl rounded-lg border border-black/10 bg-white/75 p-4" data-testid="policy-agent-drawer">
                 <nav className="flex flex-wrap items-center border-b border-black/10" aria-label="Policy agent categories">
                   {POLICY_NEED_TABS.map((tab) => (
@@ -716,22 +699,6 @@ export function TaskletPraxisWorkbench({
               </div>
             ) : null}
 
-            {surfaceMode === 'public' ? (
-              <div className="mt-16 w-full max-w-5xl border-t border-black/10 pt-8" data-testid="public-contextcapsule-explainer">
-                <div className="grid gap-5 md:grid-cols-3">
-                  {[
-                    ['ContextCapsules', 'Reusable policy context with user, situation, source, time, output, and handover cores.'],
-                    ['Source receipts', 'Attached documents and searches stay visible beside the draft instead of disappearing into chat.'],
-                    ['Outputs', 'Memo Studio, Canvas, Library, and Handover receive the work from the active capsule.'],
-                  ].map(([title, detail]) => (
-                    <article key={title} className="rounded-lg border border-black/10 bg-white/60 p-4">
-                      <h2 className="text-base font-semibold text-slate-950">{title}</h2>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            ) : null}
           </div>
         </div>
       </div>

@@ -7,6 +7,12 @@
   draggable canonical user-type and tool suggestions, capsule combination
   recipes, an expandable sourced prompt composer, selected-text actions, and
   audits/tests for the cockpit composition contract.
+- feat(home): align signed-out Home with the authenticated cockpit.
+  Removed the remaining public-only explainer/sidebar blocks so the pre-login
+  homepage uses the same capsule rail, recent runs, agent drawer, user-type
+  windows, suggested tools, and capsule recipes as the signed-in Home.
+  Removed the MVP announcement/progress chrome from the landing shell and sends
+  public New capsule actions through signup.
 - feat(ask): harden the login-gated ContextCapsule cockpit.
   Added starter PRAXIS token policy constants (1,000 initial, 10 per Ask
   question), client-safe Gemini runtime options, Ask cockpit model controls,
