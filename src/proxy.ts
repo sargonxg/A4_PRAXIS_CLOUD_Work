@@ -26,7 +26,6 @@ const LEGACY_APP_ROUTE_TARGETS: Record<string, string> = {
   '/app/external-actors': '/app/canvas',
   '/app/dialectica': '/app/canvas',
   '/app/brainstorming-table': '/app/tools',
-  '/app/boardroom': '/app/tools',
   '/app/auto-briefings': '/app/write',
   '/app/advisory': '/app/tools',
   '/app/concordia': '/app/tools',
@@ -179,7 +178,6 @@ export function proxy(request: NextRequest) {
   const legacyAppTarget = LEGACY_APP_ROUTE_TARGETS[pathname]
     ?? (pathname === '/app/workbench' ? '/app/contexts' : null)
     ?? (pathname.startsWith('/app/workbench/') ? '/app/contexts' : null)
-    ?? (pathname.startsWith('/app/boardroom/') ? '/app/tools' : null)
     ?? (pathname.startsWith('/app/library/') ? '/app/contexts' : null);
   if (legacyAppTarget) {
     const url = new URL(legacyAppTarget, request.url);

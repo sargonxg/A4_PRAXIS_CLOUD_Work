@@ -145,7 +145,7 @@ async def send_test_notification(
             "case_id": req.case_id,
             "briefing_id": "test-briefing",
             "format": "pdf",
-            "download_url": f"/app/workbench/{req.case_id}?chapter=boardroom",
+            "download_url": f"/app/write?situationId={req.case_id}",
         },
     }
     payload = payload_by_type.get(req.notification_type)

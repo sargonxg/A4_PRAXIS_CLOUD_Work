@@ -9,7 +9,7 @@
  * Fail modes:
  *  - A Workspace NAV_GROUPS entry has an href starting with
  *    /app/admin, /app/tools/archive, /app/settings, or
- *    /app/workbench/[caseId]/{ach,boardroom}.
+ *    /app/workbench/[caseId]/ach.
  *  - The Workspace group exceeds four items (creep guard).
  */
 
@@ -67,7 +67,6 @@ const FORBIDDEN_PREFIXES = [
 
 const FORBIDDEN_SUFFIXES = [
   '/ach',
-  '/boardroom',
 ];
 
 for (const href of hrefMatches) {

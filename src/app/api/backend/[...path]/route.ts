@@ -34,7 +34,7 @@ const ALLOWED_BACKEND_PATHS: Array<{ method: string; pattern: RegExp }> = [
   { method: 'POST', pattern: /^tabs\/library\/[^/]+\/re-extract$/ },
   { method: 'DELETE', pattern: /^tabs\/library\/[^/]+$/ },
   { method: 'POST', pattern: /^tabs\/ontology\/merge$/ },
-  { method: 'GET', pattern: /^chapters\/(desk\/summary|research\/threads|memos|drafts|ach|tools\/recipes|boardroom)$/ },
+  { method: 'GET', pattern: /^chapters\/(desk\/summary|research\/threads|memos|drafts|ach|tools\/recipes)$/ },
   { method: 'POST', pattern: /^chapters\/desk\/ask$/ },
   { method: 'POST', pattern: /^chapters\/desk\/dismiss-suggestion\/[^/]+$/ },
   { method: 'POST', pattern: /^chapters\/research\/threads$/ },
@@ -50,10 +50,6 @@ const ALLOWED_BACKEND_PATHS: Array<{ method: string; pattern: RegExp }> = [
   { method: 'POST', pattern: /^chapters\/tools\/run$/ },
   { method: 'GET', pattern: /^chapters\/tools\/runs\/[^/]+$/ },
   { method: 'POST', pattern: /^chapters\/tools\/runs\/[^/]+\/save-as-memo$/ },
-  { method: 'POST', pattern: /^chapters\/boardroom\/briefings$/ },
-  { method: 'PUT', pattern: /^chapters\/boardroom\/briefings\/[^/]+$/ },
-  { method: 'POST', pattern: /^chapters\/boardroom\/briefings\/[^/]+\/sections\/[0-9]+\/synth$/ },
-  { method: 'POST', pattern: /^chapters\/boardroom\/briefings\/[^/]+\/export$/ },
 ];
 
 export function isAllowedBackendPath(method: string, path: string): boolean {

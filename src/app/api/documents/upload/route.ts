@@ -52,13 +52,8 @@ export const POST = withAuth(async (request, user) => {
   if (contentTypeHeader.includes('application/json')) {
     if (user.isDemo) {
       return NextResponse.json(
-        {
-          success: true,
-          mode: 'demo-noop',
-          message: 'Demo session — bucket sync was simulated. Artifact stays local.',
-          uri: 'demo://praxis-artifacts/' + Math.random().toString(36).slice(2, 10),
-        },
-        { status: 200 },
+        { error: 'Document upload is not available for this session' },
+        { status: 403 },
       );
     }
     let body: JsonUploadBody;

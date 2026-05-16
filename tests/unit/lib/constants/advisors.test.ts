@@ -11,7 +11,7 @@ describe('flagship advisor capability registry', () => {
   it('defines real agent capabilities for every flagship advisor', () => {
     for (const advisor of advisors) {
       expect(advisor.method.length).toBeGreaterThan(80);
-      expect(advisor.boardroomRole.length).toBeGreaterThan(60);
+      expect(advisor.deliberationRole.length).toBeGreaterThan(60);
       expect(advisor.toolAccess.length).toBeGreaterThanOrEqual(3);
       expect(advisor.dataAccess.length).toBeGreaterThanOrEqual(4);
       expect(advisor.dialecticaLayer.length).toBeGreaterThan(70);
@@ -19,7 +19,7 @@ describe('flagship advisor capability registry', () => {
     }
   });
 
-  it('keeps fallback runtime configs available for the boardroom', () => {
+  it('keeps fallback runtime configs available for routed policy lenses', () => {
     expect(FALLBACK_ADVISOR_CONFIGS.map((advisor) => advisor.id)).toEqual(ADVISOR_IDS);
     for (const advisor of FALLBACK_ADVISOR_CONFIGS) {
       expect(advisor.persona.length).toBeGreaterThan(300);

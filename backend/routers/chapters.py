@@ -48,13 +48,6 @@ class ToolRunRequest(BaseModel):
     input: dict[str, Any] = Field(default_factory=dict)
 
 
-class BoardroomBriefingRequest(BaseModel):
-    case_id: str = Field(..., min_length=1, max_length=128)
-    title: str = Field(default="Untitled briefing", max_length=300)
-    audience: str = Field(default="principal", max_length=80)
-    sections: list[dict[str, Any]] = Field(default_factory=list)
-
-
 class ResearchThreadRequest(BaseModel):
     case_id: str = Field(..., min_length=1, max_length=128)
     question: str = Field(..., min_length=1, max_length=2000)
@@ -536,52 +529,3 @@ async def save_run_as_memo(run_id: str, token: dict = Depends(verify_firebase_to
     return {"ok": True, "runId": run_id, "memo": memo[0]}
 
 
-@router.get("/boardroom")
-async def get_boardroom(case_id: str = Query(..., min_length=1, max_length=128), token: dict = Depends(verify_firebase_token)) -> dict[str, Any]:
-    async with tenant_session(token["uid"]) as conn:
-        rows = await conn.fetch("SELECT * FROM briefings WHERE owner_uid = %s AND case_id = %s ORDER BY updated_at DESC LIMIT 50", token["uid"], case_id)
-    return {"briefings": rows}
-
-
-@router.post("/boardroom/briefings")
-async def create_boardroom_briefing(req: BoardroomBriefingRequest, token: dict = Depends(verify_firebase_token)) -> dict[str, Any]:
-    async with tenant_session(token["uid"]) as conn:
-        rows = await conn.fetch(
-            "INSERT INTO briefings (owner_uid, case_id, title, audience, sections) VALUES (%s, %s, %s, %s, %s::jsonb) RETURNING *",
-            token["uid"],
-            req.case_id,
-            req.title,
-            req.audience,
-            req.sections,
-        )
-        await log_orchestrator_event(conn, owner_uid=token["uid"], case_id=req.case_id, surface_key="chapter.boardroom", event_type="briefing_created", payload={"briefingId": str(rows[0]["id"]), "title": req.title})
-    return {"briefing": rows[0]}
-
-
-@router.put("/boardroom/briefings/{briefing_id}")
-async def update_boardroom_briefing(briefing_id: str, req: BoardroomBriefingRequest, token: dict = Depends(verify_firebase_token)) -> dict[str, Any]:
-    async with tenant_session(token["uid"]) as conn:
-        rows = await conn.fetch(
-            "UPDATE briefings SET title = %s, audience = %s, sections = %s::jsonb, updated_at = now() WHERE owner_uid = %s AND id = %s::uuid RETURNING *",
-            req.title,
-            req.audience,
-            req.sections,
-            token["uid"],
-            briefing_id,
-        )
-    if not rows:
-        raise HTTPException(status_code=404, detail="briefing_not_found")
-    return {"briefing": rows[0]}
-
-
-@router.post("/boardroom/briefings/{briefing_id}/sections/{section_idx}/synth")
-async def synth_boardroom_section(briefing_id: str, section_idx: int, token: dict = Depends(verify_firebase_token)) -> dict[str, Any]:
-    _ = token
-    return {"briefingId": briefing_id, "sectionIndex": section_idx, "synthesized": True, "confidence": 0.55, "text": "Advisory synthesis staged. Verify source receipts before export."}
-
-
-@router.post("/boardroom/briefings/{briefing_id}/export")
-async def export_boardroom_briefing(briefing_id: str, format: str = Query(default="docx", pattern="^(pdf|docx|pptx)$"), token: dict = Depends(verify_firebase_token)) -> dict[str, Any]:
-    async with tenant_session(token["uid"]) as conn:
-        await conn.execute("UPDATE briefings SET export_status = %s, updated_at = now() WHERE owner_uid = %s AND id = %s::uuid", f"queued_{format}", token["uid"], briefing_id)
-    return {"briefingId": briefing_id, "exportStatus": "queued", "format": format}

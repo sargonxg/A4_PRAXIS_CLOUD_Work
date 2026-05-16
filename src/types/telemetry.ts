@@ -17,7 +17,6 @@ export const TELEMETRY_EVENT_NAMES = [
   'document.upload-complete',
   'document.upload-fail',
   'export.briefing',
-  'export.boardroom',
   'graph.populate-start',
   'graph.populate-complete',
   'graph.populate-fail',

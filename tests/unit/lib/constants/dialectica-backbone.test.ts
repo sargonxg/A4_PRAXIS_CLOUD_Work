@@ -29,6 +29,6 @@ describe('dialectica backbone constants', () => {
   it('documents the named graph layers needed for provenance and reasoning', () => {
     expect(DIALECTICA_NAMED_GRAPHS.map((graph) => graph.id)).toContain('provenance');
     expect(DIALECTICA_NAMED_GRAPHS.map((graph) => graph.id)).toContain('contradictions');
-    expect(DIALECTICA_NAMED_GRAPHS.map((graph) => graph.id)).toContain('advisor_reasoning');
+    expect(DIALECTICA_NAMED_GRAPHS.map((graph) => graph.id)).toContain('agent_reasoning');
   });
 });

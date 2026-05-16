@@ -117,10 +117,10 @@ export const DIALECTICA_NAMED_GRAPHS: DialecticaNamedGraph[] = [
     readiness: 'standard',
   },
   {
-    id: 'advisor_reasoning',
-    label: 'Advisor Reasoning',
-    purpose: 'Structured expert turns, dissent, citations, cost, model, and tool-use metadata.',
-    currentState: 'Visible in Brainstorming Table demo output; persistent boardroom artifact is next.',
+    id: 'agent_reasoning',
+    label: 'Agent Reasoning',
+    purpose: 'Structured agent turns, dissent, citations, cost, model, and tool-use metadata.',
+    currentState: 'Tracked through agent runs, tool calls, output capsules, and Ask PRAXIS traces.',
     readiness: 'standard',
   },
   {

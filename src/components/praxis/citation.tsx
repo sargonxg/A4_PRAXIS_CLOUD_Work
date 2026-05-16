@@ -3,10 +3,7 @@
 /**
  * <Citation /> — shared inline source citation.
  *
- * Cross-tool findings in `docs/tools/UX_AUDIT_2026-04-26.md` flagged that
- * citation rendering is inconsistent across tools (some surface URLs, some
- * render publish dates, some hide sources entirely). This primitive gives
- * every PRAXIS tool a consistent way to render a single citation.
+ * Shared citation primitive for PRAXIS tools and output capsules.
  *
  * Two variants:
  *   - inline (default): "Source: NAME · 2026-04-26 (URL ↗)" suitable inside

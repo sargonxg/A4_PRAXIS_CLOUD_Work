@@ -19,7 +19,7 @@ export const OpenQuestionSchema = z.object({
   status: OpenQuestionStatusSchema.default('open'),
   createdAt: z.string(),
   resolvedAt: z.string().optional(),
-  resolvedBy: z.enum(['user', 'memo-block', 'tool-run', 'boardroom-claim']).optional(),
+  resolvedBy: z.enum(['user', 'memo-block', 'tool-run', 'agent-run']).optional(),
   resolvedRef: z.string().optional(),
   notes: z.string().optional(),
 });

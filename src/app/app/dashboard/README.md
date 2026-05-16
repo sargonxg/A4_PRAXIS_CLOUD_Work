@@ -1,6 +1,6 @@
 # Dashboard
 
-**Purpose.** First-touch app command center. It tells an analyst, mediator, or policy user which case is active and routes them into the real workbench surfaces: context, graph, tools, memo studio, boardroom, ACH, and settings.
+**Purpose.** First-touch app command center. It tells an analyst, mediator, or policy user which situation is active and routes them into the simple PRAXIS surfaces: Ask, Context, Library, Canvas, Memo Studio, Tools, and Advanced.
 
 **Methodology.** No blocking AI call on mount. The page uses the local case store plus example-case registry data, then links into case-scoped workbench routes so context and tool execution stay together.
 

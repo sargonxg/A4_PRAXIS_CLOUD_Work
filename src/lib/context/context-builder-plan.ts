@@ -214,9 +214,9 @@ function buildNextActions(checklist: ContextBuilderChecklistItem[]): ContextBuil
       priority: 'recommended',
     },
     {
-      label: 'Convene advisors',
-      detail: 'Use the boardroom once context health is not blocking the answer.',
-      href: '/brainstorming-table',
+      label: 'Route policy lenses',
+      detail: 'Ask PRAXIS can route specialist lenses once context health is not blocking the answer.',
+      href: '/app/assistant',
       priority: 'optional',
     },
   );
@@ -229,7 +229,7 @@ function buildRunSequence(): ContextBuilderRunStep[] {
     { label: 'Frame', detail: 'Confirm mandate, geography, actors, sensitivity, and first question.', href: '/situations/new' },
     { label: 'Source', detail: 'Upload documents and run source scout for fresh, source-receipted evidence.', href: '/source-scout' },
     { label: 'Structure', detail: 'Use GraphOps to extract actors, claims, interests, events, commitments, and leverage.', href: '/graphops' },
-    { label: 'Deliberate', detail: 'Run expert advisors with dissent preservation and uncertainty labels.', href: '/brainstorming-table' },
+    { label: 'Deliberate', detail: 'Run internal policy lenses with dissent preservation and uncertainty labels.', href: '/app/assistant' },
     { label: 'Produce', detail: 'Export a brief, policy memo, talking points, or mediation pack.', href: '/briefing' },
   ];
 }

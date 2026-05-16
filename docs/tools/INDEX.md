@@ -65,7 +65,6 @@ long tail. Tools that already have a doc in this folder:
 - `geospatial-monitor.md` — ACLED event map
 - `briefing.md` — UN-DPPA-style intelligence briefing
 - `assistant.md` — Multi-tool chat assistant
-- `brainstorming-table.md` — Planned expert-agent deliberation table
 - `risk-monitor.md` — INFORM Risk Index dashboard
 - `early-warning.md` — Glasl-stage escalation monitor
 - `argus.md` — Deep web research
@@ -113,12 +112,6 @@ When adding a new tool's doc:
   `src/lib/geo/region-centers.ts` for the initial map centroid when no
   explicit `geoBoundingBox` is set. Previously defaulted to Sudan for
   every bbox-less situation.
-- Brainstorming Table: added a planned-tool spec for expert-agent
-  deliberation, shared context packet requirements, persistence, and export
-  targets.
-- Strategic roadmap: `docs/STRATEGIC_AGENTIC_ROADMAP_2026-04-26.md` now
-  defines the 20-item high-impact queue, agent ownership lanes, and next
-  Claude Code prompt for tool-quality and dashboard work.
-- Corpus and agents: `docs/CORPUS_ARCHITECTURE.md` and
-  `docs/AGENTIC_SYSTEM.md` now define the shared situation corpus and
-  Brainstorming Table / Cloud Tasks agent execution model.
+- Strategic roadmap and generated tool-doc history were retired during the
+  Tasklet-style ContextCapsule cleanup. Current tool behavior lives in the
+  registry, operating contracts, and runtime audits.

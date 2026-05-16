@@ -1123,9 +1123,6 @@ The current ADR set:
 | 0021 | SATs as first-class Analyst's Toolkit surfaces | 15 |
 | 0022 | Red Team Analyst subagent | 15 |
 | 0023 | ACH workbench surface | 15 |
-| 0026 | Agentic Boardroom architecture | 16 |
-| 0027 | Parameterized analyst_persona subagent | 16 |
-| 0028 | Persona corpus retrieval pattern | 16 |
 | 0030 | Dynamic ontology lenses | 20 |
 | 0033 | Marketplace depth strategy | 21 |
 | 0034 | Composition chain governance | 21 |

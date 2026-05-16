@@ -33,9 +33,9 @@ async def test_registry_builds_required_flows():
     flows = build_registry(saver)
     assert set(flows) == {
         "document_extraction",
-        "boardroom",
         "deep_research",
         "symbolic_firewall",
+        "red_team_analyst",
         "gdelt_monitor",
     }
 
@@ -58,9 +58,9 @@ async def test_pgvector_roundtrip():
 
 @pytest.mark.asyncio
 async def test_agent_memory_recall_weighted_by_importance():
-    await remember("alice", "boardroom_principal", "situation", "sit1", "Past synthesis: De-escalation works", {}, importance=5)
-    await remember("alice", "boardroom_principal", "situation", "sit1", "Past synthesis: Sanctions escalate", {}, importance=1)
-    results = await recall("alice", "boardroom_principal", "situation", "sit1", "How do we de-escalate?", k=2)
+    await remember("alice", "policy_research_agent", "situation", "sit1", "Past synthesis: De-escalation works", {}, importance=5)
+    await remember("alice", "policy_research_agent", "situation", "sit1", "Past synthesis: Sanctions escalate", {}, importance=1)
+    results = await recall("alice", "policy_research_agent", "situation", "sit1", "How do we de-escalate?", k=2)
     assert "De-escalation" in results[0]["summary"]
 
 

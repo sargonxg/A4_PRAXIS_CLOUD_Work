@@ -32,11 +32,6 @@ FLOW_REGISTRY: dict[str, FlowRegistration] = {
         _placeholder_flow("document_extraction"),
         "Durable document parsing, extraction, and graph proposal staging.",
     ),
-    "boardroom": FlowRegistration(
-        "boardroom",
-        _placeholder_flow("boardroom"),
-        "Multi-advisor deliberation with human-in-the-loop resume points.",
-    ),
     "deep_research": FlowRegistration(
         "deep_research",
         _placeholder_flow("deep_research"),
@@ -51,16 +46,6 @@ FLOW_REGISTRY: dict[str, FlowRegistration] = {
         "red_team_analyst",
         _placeholder_flow("red_team_analyst"),
         "Safe adversary-perspective modeling subagent for Pack 15 SAT toolkit.",
-    ),
-    "analyst_persona": FlowRegistration(
-        "analyst_persona",
-        _placeholder_flow("analyst_persona"),
-        "Parameterized specialist persona contribution subagent for Pack 16 boardroom.",
-    ),
-    "moderator": FlowRegistration(
-        "moderator",
-        _placeholder_flow("moderator"),
-        "Agentic Boardroom orchestration subagent with cost guard and synthesis handoff.",
     ),
     "gdelt_monitor": FlowRegistration(
         "gdelt_monitor",
