@@ -39,9 +39,9 @@ for (const marker of ['data-testid="memo-desk"', 'Saved from Memo Studio with ac
   if (!memoDesk.includes(marker)) failures.push(`Memo Studio missing canonical writing marker ${marker}`);
 }
 
-const debugPanel = read('src/components/app/debug-panel.tsx');
-if (!debugPanel.includes('NEXT_PUBLIC_DEBUG_PANEL')) failures.push('Debug panel is not gated behind explicit production opt-in');
-if (!debugPanel.includes("process.env.NODE_ENV !== 'production'")) failures.push('Debug panel lacks production environment guard');
+if (existsSync(path.join(root, 'src/components/app/debug-panel.tsx'))) {
+  failures.push('Retired debug panel still exists');
+}
 
 if (existsSync(path.join(root, 'src/components/user-case'))) {
   failures.push('retired the selected situation component directory still exists');
