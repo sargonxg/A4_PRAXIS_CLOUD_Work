@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.16.03',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'Dashboard and context shell coherence',
+    summary: 'The signed-in dashboard now matches the public cockpit more closely, with one visible capsule-concatenation control and a quieter context management page.',
+    category: 'product',
+    items: [
+      'Removed the dashboard floating Ask launcher so the signed-in Home keeps the same bar-first cockpit as public Home.',
+      'Moved capsule recipe actions into the single Context Capsule concatenation rail above the Ask bar.',
+      'Removed duplicate capsule composition UI from Context management; that page now focuses on context health, portable .core packages, sharing posture, and governance.',
+      'Updated cockpit audits to guard the single concatenation affordance.',
+    ],
+  },
+  {
     buildNumber: '2026.05.16.02',
     version: '6.4.1',
     date: '2026-05-16',
@@ -110,4 +124,3 @@ export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
     ],
   },
 ];
-

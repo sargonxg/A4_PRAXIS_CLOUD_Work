@@ -46,7 +46,7 @@ for (const required of [
   'data-testid="capsule-composition-rail"',
   'data-testid="canonical-user-types"',
   'data-testid="suggested-capsule-tools"',
-  'data-testid="capsule-combination-recipes"',
+  'data-testid="capsule-concatenation-actions"',
   'Past conversations',
   'Past artifacts',
   'Documents',

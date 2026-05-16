@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2, Filter, GitFork, LockKeyhole, Paperclip, Repeat2, Sparkles, Wrench } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Filter, Paperclip, Sparkles, Wrench } from 'lucide-react';
 import { AdvancedExplanationPanel } from '@/components/app/advanced-explanation-panel';
 import { OneClickContextBuilder } from '@/components/context/one-click-context-builder';
 import { CoreLibraryRail } from '@/components/cores/CoreLibraryRail';
@@ -11,7 +11,6 @@ import { CapsuleReadinessRail } from '@/components/cores/CapsuleReadinessRail';
 import { CapsuleListPicker } from '@/components/cores/CapsuleListPicker';
 import { CapsuleManagerMenu } from '@/components/cores/CapsuleManagerMenu';
 import { CapsuleLineageTree } from '@/components/cores/CapsuleLineageTree';
-import { CAPSULE_COMBINATION_RECIPES, CONTEXT_CAPSULE_TEMPLATES } from '@/lib/product/context-capsules';
 import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 import { coreLabel, type AttachableTool } from '@/lib/tools/contract';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
@@ -43,42 +42,30 @@ export function ContextBuilderRoom({ situationId, initialMode = 'repository' }: 
   const filteredTools = PRAXIS_CANONICAL_TOOLS.filter((tool) => toolMatchesCategory(tool, toolCategory));
 
   return (
-    <main className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 pb-16">
-      <header className="rounded-2xl border border-white/70 bg-white/85 px-5 py-4 shadow-sm shadow-navy-950/5 backdrop-blur">
+    <main className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 bg-[#f3f5f1] bg-[linear-gradient(rgba(19,34,27,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(19,34,27,0.045)_1px,transparent_1px)] bg-[length:36px_36px] px-4 pb-16 pt-4 sm:px-6 lg:px-8">
+      <header className="rounded-3xl border border-black/10 bg-white/90 px-5 py-5 shadow-xl shadow-slate-900/5 backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Context + tools repository</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Context Capsule management</p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-navy-950">
-              Build the capsule once, then use it everywhere.
+              Build, trust, and govern the cores PRAXIS will use.
             </h1>
             <p className="mt-2 text-sm leading-6 text-slate-700">
-              This is the single repository for context cores and filtered tools. Create or select the capsule here; Ask PRAXIS, Memo Studio, Canvas, and Library then inherit the same active stack.
+              Create or select a capsule here, check whether its context is strong enough, and manage the package. Concatenating multiple capsules happens only in the Ask PRAXIS bar so the active stack is always obvious.
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <Link
-              href="/app/contexts"
-              className="inline-flex rounded-md bg-navy-950 px-3 py-2 text-sm font-semibold text-white hover:bg-navy-800"
-            >
-              Context repository
-            </Link>
-            <Link
               href="/app/tools"
-              className="inline-flex rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-navy-900 hover:bg-slate-50"
+              className="inline-flex rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-navy-900 transition hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-sm"
             >
               Tool filters
             </Link>
             <Link
               href="/app/workbench?tab=library"
-              className="inline-flex rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-navy-900 hover:bg-slate-50"
+              className="inline-flex rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-navy-900 transition hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-sm"
             >
               Upload knowledge
-            </Link>
-            <Link
-              href="/app/assistant"
-              className="inline-flex rounded-md border border-gold-200 bg-gold-50 px-3 py-2 text-sm font-semibold text-gold-900 hover:bg-gold-100"
-            >
-              Open Ask
             </Link>
           </div>
         </div>
@@ -98,7 +85,7 @@ export function ContextBuilderRoom({ situationId, initialMode = 'repository' }: 
                 aria-selected={mode === item.id}
                 onClick={() => setMode(item.id)}
                 className={cn(
-                  'inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition',
+                  'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition hover:-translate-y-0.5',
                   mode === item.id
                     ? 'border-navy-900 bg-navy-950 text-white'
                     : 'border-slate-200 bg-white text-navy-900 hover:bg-slate-50',
@@ -128,7 +115,7 @@ export function ContextBuilderRoom({ situationId, initialMode = 'repository' }: 
             <button
               type="button"
               onClick={() => setShowManageStack((value) => !value)}
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-navy-900 hover:bg-slate-50"
+              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-navy-900 transition hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-sm"
             >
               {showManageStack ? 'Hide stack controls' : 'Manage stack'}
             </button>
@@ -150,27 +137,24 @@ export function ContextBuilderRoom({ situationId, initialMode = 'repository' }: 
 
       <section className="grid gap-3 lg:grid-cols-3">
         <RepositoryFact
-          label="Health semaphore"
+          label="Context health"
           value={activeCapsule?.label ?? activeCapsule?.capsuleId ?? 'Create or select a capsule'}
-          detail={activeCapsule ? `${activeCapsule.trust.label} · ${activeCapsule.health.score}/100 · ${activeCapsule.access.visibility}` : 'This becomes the context Ask PRAXIS and Memo Studio inherit.'}
+          detail={activeCapsule ? `${activeCapsule.trust.label} · ${activeCapsule.health.score}/100 · ${activeCapsule.access.visibility}` : 'The capsule should be strong enough before it drives policy answers.'}
         />
         <RepositoryFact
-          label=".core package"
+          label="Portable .core"
           value={activeCapsule ? `${activeCapsule.label}.core` : 'Portable capsule file'}
           detail="Download, clone, import, or share a versioned capsule without leaking private owner scope."
         />
         <RepositoryFact
-          label="Community"
+          label="Sharing posture"
           value={activeCapsule?.community.listedInMarketplace ? 'Listed' : activeCapsule?.community.favorite ? 'Favorite' : 'Private by default'}
           detail="Capsules can become team, organization, public, or community marketplace cores when explicitly published."
         />
       </section>
 
       {mode === 'repository' ? (
-        <>
-          <OneClickContextBuilder />
-          <CapsuleCompositionPanel activeCapsule={activeCapsule} />
-        </>
+        <OneClickContextBuilder />
       ) : null}
 
       {mode === 'tools' || mode === 'repository' ? (
@@ -246,104 +230,17 @@ export function ContextBuilderRoom({ situationId, initialMode = 'repository' }: 
             body: 'A stack can carry User, Situation, Source, Document, Graph, Memory, and Output cores. The simple screen shows what Ask PRAXIS will actually use.',
           },
           {
-            title: 'Review gates',
-            body: 'Extraction can propose graph changes, but proposals stay in review until approved. Deleted memory is excluded from future capsules.',
+            title: 'Trust posture',
+            body: 'Health, source coverage, access scope, and unresolved gaps determine whether a capsule is ready for answers, memos, or handover.',
           },
           {
             title: 'Versioning',
-            body: 'Lock, fork, share, and lineage controls are still available from Manage stack for expert handover work.',
-          },
-          {
-            title: 'Advanced tools',
-            body: 'ACH, Boardroom, graph diagnostics, backend status, and specialist capabilities live behind Advanced.',
+            body: 'Clone, delete, download, share, favorite, lock, fork, and lineage controls stay available from Manage stack for expert handover work.',
           },
         ]}
         actionHref="/app/contexts"
       />
     </main>
-  );
-}
-
-function CapsuleCompositionPanel({ activeCapsule }: { activeCapsule: PraxisCapsule | null }) {
-  const recipes = CAPSULE_COMBINATION_RECIPES.slice(0, 4).map((recipe) => ({
-    ...recipe,
-    labels: recipe.inputs.map((id) => CONTEXT_CAPSULE_TEMPLATES.find((template) => template.id === id)?.label ?? id),
-  }));
-
-  return (
-    <section className="rounded-2xl border border-white/70 bg-white/90 p-4 shadow-sm shadow-navy-950/5 backdrop-blur" data-testid="capsule-composition-panel">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-700">Capsule composition</p>
-          <h2 className="mt-1 text-lg font-semibold text-navy-950">Pick, fork, combine, then lock the context.</h2>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-700">
-            The MVP flow keeps composition review-based: combine capsules as proposals, preserve source receipts and timelines, and only lock a version when it is ready for Ask PRAXIS, Memo Studio, Canvas, or handover.
-          </p>
-        </div>
-        <Link href="/app/assistant" className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-sm font-semibold text-white hover:bg-navy-800">
-          Ask active capsule
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <CompositionStep icon={Paperclip} label="Pick" detail={activeCapsule ? `Active: ${activeCapsule.label}` : 'Select or create a capsule before running tools.'} />
-        <CompositionStep icon={GitFork} label="Fork" detail="Copy demo or team context into a user-owned working capsule before editing." />
-        <CompositionStep icon={LockKeyhole} label="Lock" detail="Freeze a reviewed version with open questions, allowed actions, and export rules." />
-      </div>
-
-      <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        {recipes.map((recipe) => (
-          <article key={recipe.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Combination recipe</p>
-                <h3 className="mt-1 text-sm font-semibold text-navy-950">{recipe.label}</h3>
-              </div>
-              <Repeat2 className="h-4 w-4 shrink-0 text-gold-700" />
-            </div>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {recipe.labels.map((label) => (
-                <span key={label} className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700">
-                  {label}
-                </span>
-              ))}
-            </div>
-            <p className="mt-3 text-xs leading-5 text-slate-600">{recipe.output}</p>
-            <ul className="mt-3 space-y-1.5">
-              {recipe.mergeRules.slice(0, 2).map((rule) => (
-                <li key={rule} className="flex gap-2 text-[11px] leading-4 text-slate-600">
-                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                  {rule}
-                </li>
-              ))}
-            </ul>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function CompositionStep({
-  icon: Icon,
-  label,
-  detail,
-}: {
-  icon: typeof Paperclip;
-  label: string;
-  detail: string;
-}) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-      <div className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white text-gold-700">
-          <Icon className="h-4 w-4" />
-        </span>
-        <p className="text-sm font-semibold text-navy-950">{label}</p>
-      </div>
-      <p className="mt-2 text-xs leading-5 text-slate-600">{detail}</p>
-    </div>
   );
 }
 

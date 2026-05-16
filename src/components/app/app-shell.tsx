@@ -143,13 +143,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider delayDuration={0}>
       {isDashboardCockpit ? (
-        <div className="app-light h-screen overflow-y-auto bg-[#f6f6f4]" data-testid="dashboard-cockpit-only-shell">
+        <div className="app-light h-screen overflow-y-auto bg-[#f3f5f1]" data-testid="dashboard-cockpit-only-shell">
           <ErrorBoundary>
             <ToolErrorBoundary>
               {children}
             </ToolErrorBoundary>
           </ErrorBoundary>
-          <FloatingPraxis hideLauncher />
           <AiErrorToast />
         </div>
       ) : (

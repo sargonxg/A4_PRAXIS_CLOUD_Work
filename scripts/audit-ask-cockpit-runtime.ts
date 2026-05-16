@@ -52,17 +52,15 @@ expectIncludes('src/components/ask/AskStreamPanel.tsx', [
 
 expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'ASK_RUNTIME_OPTIONS',
-  'PRAXIS_USAGE_COPY.askCost',
   'model: selectedRuntime.id',
-  'ASK_ORCHESTRATION_OPTIONS',
   'data-testid="capsule-composition-rail"',
+  'data-testid="capsule-concatenation-actions"',
   'onDrop={handleDrop}',
   'data-testid="capsule-search-popup"',
   'onContextMenu={handlePromptContextMenu}',
   'data-testid="selected-text-actions"',
   'data-testid="canonical-user-types"',
   'data-testid="suggested-capsule-tools"',
-  'data-testid="capsule-combination-recipes"',
   'activeCapsules',
   'selectedToolIds',
   'selectedUserArchetype',

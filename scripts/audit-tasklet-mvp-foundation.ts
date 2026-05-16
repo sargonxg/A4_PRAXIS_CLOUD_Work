@@ -82,10 +82,14 @@ expectExcludes('src/components/landing/phase8-wow-landing.tsx', [
   'PolicyAgentCard',
 ]);
 expectIncludes('src/components/cores/ContextBuilderRoom.tsx', [
-  'Capsule composition',
-  'Pick, fork, combine, then lock the context.',
-  'CAPSULE_COMBINATION_RECIPES',
+  'Context Capsule management',
+  'Context health',
+  'Portable .core',
+  'Sharing posture',
+]);
+expectExcludes('src/components/cores/ContextBuilderRoom.tsx', [
   'data-testid="capsule-composition-panel"',
+  'CAPSULE_COMBINATION_RECIPES',
 ]);
 expectIncludes('src/lib/navigation/primary-nav.ts', [
   "label: 'Home'",

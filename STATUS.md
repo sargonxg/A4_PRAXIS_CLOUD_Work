@@ -5,7 +5,7 @@
 Current release checkpoint:
 
 - Central app metadata is now `PRAXIS v6.4.1` with build number
-  `2026.05.16.02` in `src/lib/constants/app-version.ts`.
+  `2026.05.16.03` in `src/lib/constants/app-version.ts`.
 - `/release-notes` reads from the centralized
   `src/lib/product/release-notes.ts` registry instead of a page-local notes
   array.
@@ -14,6 +14,19 @@ Current release checkpoint:
   entry stay aligned.
 - Significant product/runtime/documentation changes should bump
   `APP_BUILD_NUMBER`, add a release note entry, and update `CHANGELOG.md`.
+
+## 2026-05-16 — Dashboard And Context Shell Coherence
+
+Current surface checkpoint:
+
+- `/app/dashboard` keeps the same public/auth cockpit surface and no longer
+  mounts the bottom-right floating Ask launcher.
+- Context Capsule concatenation now lives only in the rail above the Ask bar:
+  users can search by capsule name/code, drag/drop capsules, or apply compact
+  recipe actions from that one place.
+- `/app/contexts` is now the context management and trust surface, focused on
+  context health, portable `.core` packages, sharing posture, tool filtering,
+  manage-stack controls, and lineage.
 
 ## 2026-05-16 — Cockpit Visual Polish And Learn Hub
 

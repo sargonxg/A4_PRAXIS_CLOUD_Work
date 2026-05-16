@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(home): align dashboard and context management with the shared cockpit.
+  Build 2026.05.16.03 removes the dashboard floating Ask launcher, keeps
+  capsule concatenation only in the rail above the Ask bar, and reframes
+  `/app/contexts` around context health, portable `.core` packages, sharing,
+  and governance instead of a second composition surface.
 - feat(release): centralize release notes and build number.
   Build 2026.05.16.02 updates PRAXIS to v6.4.1, moves `/release-notes`
   onto the centralized release registry, and adds `audit:release-notes` so

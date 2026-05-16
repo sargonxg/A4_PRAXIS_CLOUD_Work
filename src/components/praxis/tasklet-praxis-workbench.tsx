@@ -402,7 +402,7 @@ export function TaskletPraxisWorkbench({
             </div>
           </div>
           <div className="mt-7">
-            <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">Recent discussions <ChevronDown className="h-3 w-3" /></p>
+            <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">Recent runs <ChevronDown className="h-3 w-3" /></p>
             <div className="mt-3 space-y-2">
               {recentRuns.map((run) => (
                 <div key={run.label} className="rounded-md px-1 py-1.5">
@@ -451,7 +451,10 @@ export function TaskletPraxisWorkbench({
                 <div>
                   <p className="flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
                     <Layers3 className="h-4 w-4 text-sage" />
-                    Active capsule composition
+                    Concatenate Context Capsules
+                  </p>
+                  <p className="mt-1 max-w-2xl text-sm leading-5 text-slate-600">
+                    Build the active context stack here, then ask PRAXIS from that exact stack.
                   </p>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     {activeCapsules.map((capsule) => (
@@ -489,9 +492,22 @@ export function TaskletPraxisWorkbench({
                     className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-3 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-sm"
                   >
                     <Combine className="h-4 w-4" />
-                    Combine
+                    Concatenate
                   </button>
                 </div>
+              </div>
+              <div className="mt-4 grid gap-2 lg:grid-cols-3" data-testid="capsule-concatenation-actions">
+                {COCKPIT_COMBINATION_RECIPES.slice(0, 3).map((recipe) => (
+                  <button
+                    key={recipe.label}
+                    type="button"
+                    onClick={() => recipe.inputs.forEach(addCapsule)}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-left transition hover:-translate-y-0.5 hover:border-sage/40 hover:bg-white hover:shadow-sm"
+                  >
+                    <span className="block text-sm font-semibold text-slate-900">{recipe.label}</span>
+                    <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">{recipe.output}</span>
+                  </button>
+                ))}
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {selectedToolIds.map((toolId) => {
@@ -620,11 +636,6 @@ export function TaskletPraxisWorkbench({
                     ))}
                   </select>
                 </label>
-                {surfaceMode === 'authenticated' ? (
-                  <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-semibold">
-                    Signed-in workspace
-                  </span>
-                ) : null}
                 <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 font-semibold text-emerald-900">
                   Sources and memory attached through the capsule
                 </span>
@@ -817,23 +828,6 @@ export function TaskletPraxisWorkbench({
                           >
                             <span className="block text-sm font-semibold text-slate-900">{tool.label}</span>
                             <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">{tool.produces}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </section>
-
-                    <section className="rounded-lg border border-slate-200 bg-white p-4" data-testid="capsule-combination-recipes">
-                      <p className="text-xs font-semibold uppercase text-slate-500">Capsule recipes</p>
-                      <div className="mt-3 space-y-2">
-                        {COCKPIT_COMBINATION_RECIPES.slice(0, 4).map((recipe) => (
-                          <button
-                            key={recipe.label}
-                            type="button"
-                            onClick={() => recipe.inputs.forEach(addCapsule)}
-                            className="w-full rounded-md border border-slate-200 bg-slate-50 p-3 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
-                          >
-                            <span className="block text-sm font-semibold text-slate-900">{recipe.label}</span>
-                            <span className="mt-1 block text-xs leading-5 text-slate-500">{recipe.output}</span>
                           </button>
                         ))}
                       </div>

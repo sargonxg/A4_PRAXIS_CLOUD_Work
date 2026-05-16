@@ -33,6 +33,10 @@ from the active ledger above.
    landing sections. `/learn` now carries the explanatory load through compact
    clickable sections for cores, ten paths, tools, outputs, connectors, and
    planned scaffolded capabilities.
+0. Dashboard/context shell parity is tightened: `/app/dashboard` no longer
+   mounts the floating Ask launcher, capsule concatenation lives only above the
+   Ask bar, and `/app/contexts` is framed as the trust/health/.core management
+   surface rather than a second composition cockpit.
 0. First OutputCapsule product slice is now implemented in
    `src/lib/output-capsules/`: typed templates, payload schema ids/versions,
    deterministic planner, quality gates, hidden-tool bindings, and
