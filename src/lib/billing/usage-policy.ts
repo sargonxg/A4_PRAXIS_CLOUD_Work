@@ -1,6 +1,5 @@
 /**
- * Billing usage-policy — stubbed during MVP cleanup. Values mirror prior
- * production constants so credit deduction and UI copy remain stable.
+ * Shared PRAXIS usage constants for server metering and user-facing copy.
  */
 export const PRAXIS_ASK_TOKEN_COST = 10;
 export const PRAXIS_STARTER_TOKEN_ALLOWANCE = 1000;

@@ -14,7 +14,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { publishBacklogEntry } from '@/lib/dev-backlog/service';
 import { requireCronSecret } from '@/lib/api/cron-auth';
 
 export const maxDuration = 300; // up to 5 min — iterates many situations
@@ -106,17 +105,7 @@ export async function GET(request: Request) {
       const r = await runDailyBriefForSituation(uid, doc.id, origin);
       results.push(r);
       if (r.status === 'failed') {
-        await publishBacklogEntry({
-          kind: 'error.route',
-          source: 'auto',
-          severity: 'medium',
-          message: `Daily Brief cron failed for situation ${doc.id}`,
-          situationId: doc.id,
-          uid,
-          route: '/api/cron/daily-brief',
-          httpStatus: 500,
-          detail: r.reason,
-        }).catch(() => {});
+        console.warn('[daily-brief] failed', { uid, situationId: doc.id, reason: r.reason });
       }
     }
 

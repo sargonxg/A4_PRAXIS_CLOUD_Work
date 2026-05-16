@@ -12,7 +12,6 @@
  * Client-side equivalent: src/lib/ai/context-builder.ts (uses client SDK)
  */
 import { adminDb } from '@/lib/firebase/admin';
-import { getAdapter, type DialecticaPack } from '@/lib/dialectica/index';
 
 /**
  * Build graph-enriched context for a specific tool.
@@ -23,7 +22,7 @@ import { getAdapter, type DialecticaPack } from '@/lib/dialectica/index';
  *
  * @param uid - Firebase user ID (from withAuth)
  * @param situationId - Active situation ID
- * @param toolKey - Tool name key used by the DIALECTICA adapter context pack.
+ * @param toolKey - Tool name key used by context retrieval.
  * @param loadAll - If true, load all tool outputs (for Briefing)
  */
 export async function buildGraphContext(
@@ -34,17 +33,16 @@ export async function buildGraphContext(
 ): Promise<string> {
   if (!adminDb) return '';
 
-  // Run graph context (existing) + SKC enrichment in parallel
-  const [graphCtx, skcCtx] = await Promise.all([
-    getAdapter().contextPack({ uid, situationId, toolId: toolKey, loadAll }).then((pack: DialecticaPack) => pack.prompt).catch(() => ''),
-    buildSKCContext(uid, situationId, toolKey).catch(() => ''),
-  ]);
+  // Full DIALECTICA context will enter through ContextCapsule adapters. This
+  // legacy builder keeps only live SKC, annotation, and memory context.
+  void loadAll;
+  const skcCtx = await buildSKCContext(uid, situationId, toolKey).catch(() => '');
 
   const [annotationCtx, memoryCtx] = await Promise.all([
     buildAnnotationContext(uid, situationId, toolKey).catch(() => ''),
     buildMemoryContext(uid).catch(() => ''),
   ]);
-  return graphCtx + skcCtx + annotationCtx + memoryCtx;
+  return skcCtx + annotationCtx + memoryCtx;
 }
 
 /**

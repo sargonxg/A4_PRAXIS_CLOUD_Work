@@ -2,8 +2,7 @@ import type { ToolRunContext } from '@/lib/tools/context-provider';
 import { getMarketplaceHandlerContract } from '@/lib/tools/marketplace/handler-contracts';
 import { buildMarketplaceSemanticProfile } from '@/lib/tools/marketplace/semantic-canaries';
 import type { MarketplaceToolDefinition } from '@/lib/tools/marketplace/types';
-import { rankACH } from '@/lib/sats/ach-ranking';
-import type { ACHMatrix } from '@/types/sats';
+import type { ACHMatrix, ACHRanking } from '@/types/sats';
 
 export interface MarketplaceToolRunInput {
   tool: MarketplaceToolDefinition;
@@ -43,6 +42,31 @@ function nextActions(tool: MarketplaceToolDefinition, runContext: ToolRunContext
   if (actions.length === 0) actions.push('Review the result and rerun with a more specific prompt if needed.');
 
   return Array.from(new Set(actions)).slice(0, 5);
+}
+
+function rankACH(matrix: ACHMatrix): ACHRanking[] {
+  const rows = matrix.hypotheses.map((hypothesis) => {
+    const scores = matrix.scores.filter((score) => score.hypothesisId === hypothesis.id);
+    const weightedInconsistency = scores.reduce((total, score) => {
+      if (score.rating === 'inconsistent') return total + 2;
+      if (score.rating === 'unknown') return total + 0.5;
+      return total;
+    }, 0);
+
+    return {
+      hypothesisId: hypothesis.id,
+      inconsistencyCount: scores.filter((score) => score.rating === 'inconsistent').length,
+      weightedInconsistency,
+    };
+  });
+
+  return rows
+    .sort((a, b) => a.weightedInconsistency - b.weightedInconsistency)
+    .map((row, index) => ({
+      ...row,
+      rank: index + 1,
+      conclusion: index === 0 ? 'most_likely' : index === 1 ? 'plausible' : 'unlikely',
+    }));
 }
 
 function buildSatStructuredOutput(tool: MarketplaceToolDefinition, runContext: ToolRunContext, displayCaseName: string): Record<string, unknown> | null {
