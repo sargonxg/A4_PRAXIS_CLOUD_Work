@@ -72,10 +72,10 @@ test.describe("Mobile landing — iPhone 13 (390×844)", () => {
 test.describe("Mobile landing — reduced motion", () => {
   test.use({
     ...devices["iPhone 13"],
-    reducedMotion: "reduce",
   });
 
   test("respects prefers-reduced-motion on capsule hero", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(BASE_URL);
     // The CoreCapsuleHero is not necessarily on the landing today, but the
     // capsule strip / section rhythm should still render without runtime

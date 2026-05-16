@@ -56,11 +56,11 @@ export async function findVertexVectorNeighbors(input: {
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      deployedIndexId,
+      deployed_index_id: deployedIndexId,
       queries: [
         {
-          datapoint: { featureVector: input.featureVector },
-          neighborCount: Math.max(1, Math.min(100, Math.floor(input.neighborCount))),
+          datapoint: { datapoint_id: 'query', feature_vector: input.featureVector },
+          neighbor_count: Math.max(1, Math.min(100, Math.floor(input.neighborCount))),
         },
       ],
     }),
