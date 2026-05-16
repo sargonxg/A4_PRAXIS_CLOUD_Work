@@ -45,6 +45,16 @@
   --color-purple: #7B6D8D;
   --color-tan: #D4A373;
 
+  /* Extended palette — deliberate gold separation
+     - --color-ink: deeper than navy-950 for AA+ body on cream.
+     - --color-vellum: warmer cream variant for inner card surfaces.
+     - --color-rose-gold: muted gold for hairlines/dividers; reserves
+       --color-gold-500/600 for CTAs and active state only. */
+  --color-ink: #0A1628;
+  --color-vellum: #F8F1E0;
+  --color-rose-gold: #C9A961;
+  --color-rose-gold-soft: #E8D9AE;
+
   /* App light theme palette */
   --color-app-bg: #FAFBFD;
   --color-app-surface: #FFFFFF;
@@ -394,4 +404,180 @@ body {
 .praxis-timeline .praxis-timeline-verdict {
   border-color: #be123c;
   background: #ffe4e6;
+}
+
+/* =========================================================
+   PRAXIS visual identity — shared by landing + app shell
+   ========================================================= */
+
+/* Two-layer stacked elevation — tight inset + soft drop. */
+.shadow-capsule {
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 24px 64px -32px rgba(27, 58, 92, 0.25);
+}
+.shadow-capsule-lg {
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.08),
+    0 40px 96px -40px rgba(27, 58, 92, 0.35);
+}
+.shadow-gold-halo {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 8px 24px -8px rgba(232, 185, 49, 0.55);
+}
+
+/* Brushed-gold hairline border via conic gradient. Apply as a wrapper:
+   <div class="border-brushed-gold rounded-full p-px"> <inner/> </div> */
+.border-brushed-gold {
+  background: conic-gradient(
+    from 140deg,
+    #E8B931 0deg,
+    #F5D978 60deg,
+    #A37A14 180deg,
+    #E8B931 280deg,
+    #C9A961 360deg
+  );
+}
+
+/* Surface treatments */
+.surface-vellum {
+  background-color: var(--color-vellum);
+}
+.surface-glass {
+  background: color-mix(in srgb, white 60%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, white 40%, transparent);
+}
+.surface-glass-dark {
+  background: color-mix(in srgb, var(--color-ink) 60%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--color-rose-gold) 20%, transparent);
+}
+
+/* Hairline divider in rose-gold (non-CTA accents) */
+.divider-rose-gold {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-rose-gold-soft) 30%,
+    var(--color-rose-gold) 50%,
+    var(--color-rose-gold-soft) 70%,
+    transparent 100%
+  );
+}
+
+/* Section rhythm */
+.section-rhythm > * + * {
+  margin-top: clamp(64px, 12vw, 160px);
+}
+
+/* Animated gold sweep — one-shot on mount or on hover */
+@keyframes gold-sweep {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.gold-sweep {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-gold-400) 60%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: gold-sweep 1.2s ease-out;
+}
+
+/* Filament trace — for rim-light reveal on hero card */
+@keyframes filament-trace {
+  0% { stroke-dashoffset: var(--dash-len, 1000); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0.4; }
+}
+
+/* Capsule CTA — pill + inner highlight + gold halo, used by primary buttons */
+.btn-capsule-primary {
+  position: relative;
+  background: linear-gradient(180deg, #F0CA4D 0%, #E8B931 55%, #C8961E 100%);
+  color: var(--color-ink);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(163, 122, 20, 0.35),
+    0 8px 24px -8px rgba(232, 185, 49, 0.55);
+}
+.btn-capsule-primary:hover {
+  background: linear-gradient(180deg, #F5D978 0%, #F0CA4D 55%, #E8B931 100%);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 rgba(163, 122, 20, 0.30),
+    0 14px 28px -10px rgba(232, 185, 49, 0.65),
+    0 0 0 6px rgba(232, 185, 49, 0.18);
+}
+.btn-capsule-primary:active {
+  transform: translateY(0);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 4px 10px -4px rgba(232, 185, 49, 0.45);
+}
+
+.btn-capsule-secondary {
+  background: transparent;
+  color: var(--color-ink);
+  border: 1.5px solid var(--color-diplomatic-blue);
+  box-shadow: inset 0 0 0 0 rgba(27, 58, 92, 0);
+  transition: background 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+.btn-capsule-secondary:hover {
+  background: color-mix(in srgb, var(--color-diplomatic-blue) 6%, transparent);
+  transform: translateY(-1px);
+}
+
+.btn-capsule-ghost {
+  background: transparent;
+  color: var(--color-ink);
+  position: relative;
+  padding-left: 1rem;
+}
+.btn-capsule-ghost::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 50%;
+  width: 6px; height: 6px;
+  border-radius: 9999px;
+  background: var(--color-gold-500);
+  transform: translateY(-50%) scale(1);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.btn-capsule-ghost:hover::before {
+  transform: translateY(-50%) scale(1.4);
+  box-shadow: 0 0 0 4px rgba(232, 185, 49, 0.2);
+}
+.btn-capsule-ghost::after {
+  content: "";
+  position: absolute;
+  left: 1rem; right: 0.5rem; bottom: 0.35rem;
+  height: 1px;
+  background: var(--color-gold-500);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 240ms ease;
+}
+.btn-capsule-ghost:hover::after {
+  transform: scaleX(1);
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .gold-sweep,
+  .btn-capsule-primary,
+  .btn-capsule-secondary,
+  .btn-capsule-ghost {
+    animation: none !important;
+    transition: none !important;
+  }
 }
