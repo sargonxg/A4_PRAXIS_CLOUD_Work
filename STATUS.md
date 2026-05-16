@@ -1,5 +1,26 @@
 # PRAXIS — STATUS
 
+## 2026-05-16 — First OutputCapsule Product Slice
+
+Current output checkpoint:
+
+- Added the first code-backed OutputCapsule registry under
+  `src/lib/output-capsules/` with template metadata, payload schema ids and
+  versions, deterministic run planning, quality policy checks, and composition
+  helpers.
+- Registered the initial daily, country, actor, media, humanitarian, risk,
+  governance, diplomatic, talking-points, options-memo, and country-pack
+  templates without storing Zod schema objects in Firestore records.
+- Bound existing hidden/default tools such as media-roundup, info-environment,
+  electoral-risk, peacebuilding-index, scenarios, humanitarian, policy-memo,
+  and talking-points to durable output templates through an adapter function.
+- The public and authenticated cockpit remain the same shared PRAXIS surface;
+  it now includes a compact Produce selector that shows selected output type,
+  active capsule, missing cores, and suggested producer steps.
+- Live scope is registry/planner/quality/composition/UI affordance only. Real
+  persistence of generated OutputCapsules from agent/tool runs remains the next
+  runtime wave.
+
 ## 2026-05-15 — Aggressive Tasklet Cleanup Checkpoint
 
 Current cleanup checkpoint:

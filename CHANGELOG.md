@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(output-capsules): add the first policy output registry slice.
+  Added typed OutputCapsule templates, schema-versioned records, hidden-tool
+  mappings, deterministic planning, quality gates, country-pack composition,
+  focused tests, and a compact Produce selector in the shared public/auth
+  cockpit without adding navigation.
 - feat(home): keep signed-in dashboard identical to the public cockpit.
   Dashboard now bypasses the extra authenticated chrome around the capsule
   cockpit, keeps the same sidebar/bar/composition surface after login, and

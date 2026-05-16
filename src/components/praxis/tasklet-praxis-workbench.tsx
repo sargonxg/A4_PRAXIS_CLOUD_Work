@@ -36,6 +36,12 @@ import {
   type HomeSurfaceMode,
   type PolicyAgentDefinition,
 } from '@/lib/product/policy-agents';
+import {
+  OUTPUT_CAPSULE_TEMPLATES,
+  getOutputTemplatesForTool,
+  planOutputCapsuleRun,
+} from '@/lib/output-capsules';
+import type { CoreKind } from '@/lib/tools/contract';
 import { ASK_ORCHESTRATION_OPTIONS, ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
 import type { ModelPreferenceValue } from '@/lib/ai/model-preferences';
 import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
@@ -86,6 +92,7 @@ export function TaskletPraxisWorkbench({
   const [selectedAgentId, setSelectedAgentId] = useState('research-memo');
   const [agentDrawerOpen, setAgentDrawerOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<ModelPreferenceValue>(ASK_RUNTIME_OPTIONS[0].id);
+  const [selectedOutputTemplateId, setSelectedOutputTemplateId] = useState('options-memo');
   const [composerExpanded, setComposerExpanded] = useState(false);
   const [capsuleSearchOpen, setCapsuleSearchOpen] = useState(false);
   const [capsuleQuery, setCapsuleQuery] = useState('');
@@ -112,6 +119,28 @@ export function TaskletPraxisWorkbench({
   const selectedRuntime = getAskRuntimeOption(selectedModel);
   const selectedArchetype = COCKPIT_USER_ARCHETYPES.find((item) => item.id === selectedArchetypeId) ?? COCKPIT_USER_ARCHETYPES[0]!;
   const conversationThreadId = `tasklet-${capsuleId}`;
+  const availableOutputCoreKinds = useMemo<CoreKind[]>(() => {
+    const cores = new Set<CoreKind>(['user', 'situation', 'source', 'output']);
+    if (activeCapsules.length > 1) cores.add('graph');
+    if (selectedToolIds.includes('scenario-projector') || selectedToolIds.includes('scenarios')) cores.add('time');
+    if (selectedToolIds.includes('memo-drafter')) cores.add('memory');
+    return [...cores];
+  }, [activeCapsules.length, selectedToolIds]);
+  const outputTemplateOptions = useMemo(() => {
+    const mapped = selectedToolIds.flatMap((toolId) => getOutputTemplatesForTool(toolId));
+    const byId = new Map(OUTPUT_CAPSULE_TEMPLATES.map((template) => [template.id, template]));
+    for (const template of mapped) byId.set(template.id, template);
+    return [...byId.values()].slice(0, 15);
+  }, [selectedToolIds]);
+  const selectedOutputTemplate = OUTPUT_CAPSULE_TEMPLATES.find((template) => template.id === selectedOutputTemplateId)
+    ?? OUTPUT_CAPSULE_TEMPLATES.find((template) => template.id === 'options-memo')
+    ?? OUTPUT_CAPSULE_TEMPLATES[0]!;
+  const outputPlan = useMemo(() => planOutputCapsuleRun({
+    targetTemplateId: selectedOutputTemplate.id,
+    availableCores: availableOutputCoreKinds,
+    availableToolIds: selectedToolIds,
+    objective: prompt,
+  }), [availableOutputCoreKinds, prompt, selectedOutputTemplate.id, selectedToolIds]);
   const suggestedTools = COCKPIT_TOOL_SUGGESTIONS.filter((tool) => (
     activePolicyNeed.toolIds.includes(tool.id) || selectedArchetype.suggestedToolIds.includes(tool.id) || selectedToolIds.includes(tool.id)
   )).slice(0, 9);
@@ -300,6 +329,8 @@ export function TaskletPraxisWorkbench({
       `Selected policy tool: ${agent.label}`,
       `Tool intent: ${policyAgentRunIntent(agent.id).replaceAll('_', ' ')}`,
       `Output target if useful: ${agent.outputDestination.replaceAll('_', ' ')}`,
+      `OutputCapsule template: ${selectedOutputTemplate.label} (${selectedOutputTemplate.id}, schema ${selectedOutputTemplate.schemaId}@v${selectedOutputTemplate.schemaVersion})`,
+      `OutputCapsule missing cores: ${outputPlan.missingRequiredCores.join(', ') || 'none'}`,
       `Active capsule: ${activeCapsuleName} (${capsuleId})`,
       `Conversation thread: ${conversationThreadId}`,
       'conversationPersistence: users/{uid}/capsules/{capsuleId}/askThreads/{threadId}',
@@ -606,6 +637,40 @@ export function TaskletPraxisWorkbench({
                     {option.label}
                   </span>
                 ))}
+              </div>
+              <div className="grid gap-2 border-t border-black/10 bg-white px-5 py-3 text-xs text-slate-600 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+                <label className="flex min-w-0 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                  <FileText className="h-4 w-4 text-[#ff714d]" />
+                  <span className="font-bold uppercase tracking-[0.12em] text-slate-500">Produce</span>
+                  <select
+                    value={selectedOutputTemplate.id}
+                    onChange={(event) => setSelectedOutputTemplateId(event.target.value)}
+                    className="min-w-0 flex-1 bg-transparent font-semibold text-slate-950 outline-none"
+                    aria-label="OutputCapsule type"
+                  >
+                    {outputTemplateOptions.map((template) => (
+                      <option key={template.id} value={template.id}>{template.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-semibold">
+                    Capsule: {activeCapsuleName}
+                  </span>
+                  <span className={cn(
+                    'rounded-md border px-2 py-1 font-semibold',
+                    outputPlan.missingRequiredCores.length === 0
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                      : 'border-amber-200 bg-amber-50 text-amber-900',
+                  )}>
+                    Missing: {outputPlan.missingRequiredCores.map((core) => `${core} core`).join(', ') || 'none'}
+                  </span>
+                  {outputPlan.suggestedSteps.slice(0, 3).map((step) => (
+                    <span key={step.id} className="rounded-md border border-slate-200 bg-white px-2 py-1 font-semibold">
+                      {step.label}
+                    </span>
+                  ))}
+                </div>
               </div>
               {textMenu ? (
                 <div

@@ -4,6 +4,7 @@ import {
   OUTPUT_CAPSULE_TEMPLATES,
   composeOutputCapsules,
   createOutputCapsuleRecord,
+  canTransitionOutputCapsule,
   evaluateOutputCapsuleQuality,
   getOutputTemplatesForTool,
   planOutputCapsuleRun,
@@ -40,12 +41,19 @@ describe('OutputCapsules', () => {
 
     for (const id of [
       'daily-read',
+      'morning-brief',
       'country-one-pager',
+      'country-risk-card',
+      'actor-dossier',
       'media-roundup',
+      'narrative-monitor',
       'humanitarian-one-pager',
+      'risk-monitor-card',
       'electoral-risk-card',
       'governance-index',
       'options-memo',
+      'diplomatic-cable',
+      'talking-points',
       'country-pack',
     ]) {
       expect(ids.has(id), `${id} missing from OutputCapsule catalog`).toBe(true);
@@ -57,7 +65,10 @@ describe('OutputCapsules', () => {
     expect(getOutputTemplatesForTool('info-environment').map((template) => template.id)).toContain('narrative-monitor');
     expect(getOutputTemplatesForTool('electoral-risk').map((template) => template.id)).toContain('electoral-risk-card');
     expect(getOutputTemplatesForTool('peacebuilding-index').map((template) => template.id)).toContain('governance-index');
+    expect(getOutputTemplatesForTool('scenarios').map((template) => template.id)).toContain('risk-monitor-card');
     expect(getOutputTemplatesForTool('humanitarian').map((template) => template.id)).toContain('humanitarian-one-pager');
+    expect(getOutputTemplatesForTool('policy-memo').map((template) => template.id)).toContain('options-memo');
+    expect(getOutputTemplatesForTool('talking-points').map((template) => template.id)).toContain('talking-points');
   });
 
   it('plans missing cores and available tool steps deterministically', () => {
@@ -83,6 +94,26 @@ describe('OutputCapsules', () => {
     });
 
     expect(quality.blockers).toContain('unsupported-claims-unresolved');
+  });
+
+  it('keeps draft/review possible but blocks approval and shipping when quality is not clean', () => {
+    const blocked = createOutputCapsuleRecord({
+      id: 'blocked',
+      ownerUid: 'u1',
+      templateId: 'options-memo',
+      payload: {
+        title: 'Options',
+        summary: 'Options summary',
+        sections: [{ heading: 'Recommendation', body: 'Unsupported recommendation.', citationIds: [] }],
+      },
+      gaps: [{ id: 'gap-1', claim: 'Unsupported recommendation', reason: 'No source span', severity: 'high' }],
+      provenance: { createdBy: 'test', toolIds: ['policy-memo'], agentIds: [] },
+    });
+
+    expect(canTransitionOutputCapsule(blocked, 'draft')).toBe(true);
+    expect(canTransitionOutputCapsule(blocked, 'review')).toBe(true);
+    expect(canTransitionOutputCapsule(blocked, 'approved')).toBe(false);
+    expect(canTransitionOutputCapsule(blocked, 'shipped')).toBe(false);
   });
 
   it('composes country-pack from input output capsules while preserving provenance', () => {

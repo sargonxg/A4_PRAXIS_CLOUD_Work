@@ -1,6 +1,6 @@
 # PRAXIS TODO
 
-Last updated: 2026-05-15.
+Last updated: 2026-05-16.
 
 ## Current Build Queue
 
@@ -21,6 +21,13 @@ from the active ledger above.
 
 ### Canonical Tasklet-Style Runtime Build
 
+0. First OutputCapsule product slice is now implemented in
+   `src/lib/output-capsules/`: typed templates, payload schema ids/versions,
+   deterministic planner, quality gates, hidden-tool bindings, and
+   `country-pack` composition. The shared public/auth cockpit exposes a compact
+   Produce selector from this registry without adding navigation. Next, persist
+   generated OutputCapsule records from real agent/tool runs into Memo Studio,
+   Library, Canvas, or Handover with run-ledger receipts.
 0. Tasklet-style first viewport is now implemented for public Home and
    authenticated Home: left sidebar, big prompt, active ContextCapsule, recent
    runs, policy-agent cards, and run-to-output posture. The marketplace now
