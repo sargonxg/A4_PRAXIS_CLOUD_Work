@@ -75,7 +75,7 @@ type TaskletPraxisWorkbenchProps = {
 type PolicyNeedTabId = (typeof POLICY_NEED_TABS)[number]['id'];
 type ChatMessage = { role: 'user' | 'assistant'; text: string };
 type CapsuleRole = 'user' | 'situation' | 'tool' | 'output';
-type CapsuleDetailTab = 'build' | 'connect' | 'retrieve';
+type CapsuleDetailTab = 'build' | 'connect' | 'retrieve' | 'agents';
 type RepositoryDocument = {
   id: string;
   title: string;
@@ -85,6 +85,20 @@ type RepositoryDocument = {
   uploadedAt: string;
   entityCount?: number;
   chunkCount?: number;
+};
+type AgentRunSummary = {
+  runId: string;
+  status: 'queued' | 'running' | 'waiting_approval' | 'succeeded' | 'failed' | 'cancelled' | 'expired';
+  capsuleId: string;
+  createdAt: string;
+  updatedAt: string;
+  objective: string;
+  policyAgentId?: string | null;
+  policyAgentLabel?: string | null;
+  outputDestination?: 'memo_studio' | 'canvas' | 'library' | 'handover' | null;
+  outputHref?: string | null;
+  readiness?: PolicyAgentDefinition['readiness'] | null;
+  riskLevel?: PolicyAgentDefinition['riskLevel'] | null;
 };
 type SpanTargetCore = 'sourceability' | 'temporality' | 'causality' | 'human-friction' | 'rules' | 'open-question';
 type CapsuleCoreRefs = {
@@ -190,6 +204,7 @@ const capsuleLibraryFilters = [
   { id: 'all', label: 'All' },
   { id: 'context', label: 'Context' },
   { id: 'tool-capsules', label: 'Tools' },
+  { id: 'agents', label: 'Agents' },
   { id: 'source-docs', label: 'Docs' },
   { id: 'outputs', label: 'Outputs' },
   { id: 'archived', label: 'Archived' },
@@ -231,6 +246,9 @@ export function TaskletPraxisWorkbench({
   const [agentDrawerOpen, setAgentDrawerOpen] = useState(false);
   const [repositoryDocuments, setRepositoryDocuments] = useState<RepositoryDocument[]>([]);
   const [repositoryLoading, setRepositoryLoading] = useState(false);
+  const [agentRuns, setAgentRuns] = useState<AgentRunSummary[]>([]);
+  const [agentRunsLoading, setAgentRunsLoading] = useState(false);
+  const [agentRunCreating, setAgentRunCreating] = useState(false);
   const [builderLabel, setBuilderLabel] = useState('');
   const [builderNotes, setBuilderNotes] = useState('');
   const [builderLinks, setBuilderLinks] = useState('');
@@ -597,6 +615,89 @@ export function TaskletPraxisWorkbench({
     if (!isAuthenticated) return;
     void refreshRepository();
   }, [isAuthenticated, refreshRepository]);
+
+  const refreshAgentRuns = useCallback(async () => {
+    if (!isAuthenticated || !currentCapsuleId) return;
+    setAgentRunsLoading(true);
+    try {
+      const response = await fetch(`/api/agents/runs?capsuleId=${encodeURIComponent(currentCapsuleId)}&limit=8`, { credentials: 'include' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error ?? 'agent run list failed');
+      setAgentRuns(Array.isArray(payload?.runs) ? payload.runs as AgentRunSummary[] : []);
+    } catch (err) {
+      setStatus(err instanceof Error ? `Agent runs unavailable: ${err.message}` : 'Agent runs unavailable.');
+      setAgentRuns([]);
+    } finally {
+      setAgentRunsLoading(false);
+    }
+  }, [currentCapsuleId, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    void refreshAgentRuns();
+  }, [isAuthenticated, refreshAgentRuns]);
+
+  async function createAgentRun(agent: PolicyAgentDefinition = selectedAgent, overridePrompt?: string) {
+    const cleanPrompt = (overridePrompt ?? prompt).trim();
+    if (!cleanPrompt || agentRunCreating) return;
+    if (!isAuthenticated) {
+      sendPublicToLogin(cleanPrompt, agent);
+      return;
+    }
+
+    setAgentRunCreating(true);
+    setStatus(`${agent.label} is being queued inside this capsule...`);
+    try {
+      const response = await fetch('/api/agents/runs', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          capsuleId: currentCapsuleId,
+          contextStackId: 'default',
+          policyAgentId: agent.id,
+          outputDestination: agent.outputDestination,
+          objective: cleanPrompt,
+          triggerType: 'manual',
+          idempotencyKey: `ui:${currentCapsuleId}:${agent.id}:${Date.now()}`,
+          maxStep: agent.id === 'research-memo' ? 12 : 8,
+          maxSessionMinutes: 30,
+          metadata: {
+            policyAgentId: agent.id,
+            policyAgentLabel: agent.label,
+            outputDestination: agent.outputDestination,
+            capsuleSlots: agent.capsuleSlots,
+            allowedTools: agent.allowedTools,
+            riskLevel: agent.riskLevel,
+            source: 'tasklet-cockpit',
+          },
+        }),
+      });
+      const run = await response.json().catch(() => ({})) as AgentRunSummary & { error?: string; detail?: string };
+      if (!response.ok || !run?.runId) throw new Error(run?.error ?? run?.detail ?? 'agent run creation failed');
+      setAgentRuns((current) => [run, ...current.filter((item) => item.runId !== run.runId)].slice(0, 8));
+      setCapsuleDetailTab('agents');
+      setStatus(`${agent.label} queued as run ${run.runId.slice(0, 8)}. Dispatching worker...`);
+
+      const dispatchResponse = await fetch(`/api/agents/runs/${encodeURIComponent(run.runId)}/dispatch`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ attempt: 1 }),
+      });
+      if (!dispatchResponse.ok) {
+        const payload = await dispatchResponse.json().catch(() => ({}));
+        setStatus(`${agent.label} is queued. Worker dispatch is not active here: ${payload?.error ?? dispatchResponse.statusText}`);
+      } else {
+        setStatus(`${agent.label} dispatched. Open Agents for run status and receipts.`);
+      }
+      void refreshAgentRuns();
+    } catch (err) {
+      setStatus(err instanceof Error ? `Agent run failed: ${err.message}` : 'Agent run failed.');
+    } finally {
+      setAgentRunCreating(false);
+    }
+  }
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -1071,9 +1172,10 @@ export function TaskletPraxisWorkbench({
             <CapsuleMap
               capsule={selectedCapsule}
               fallbackLabel={activeCapsules[0]?.label ?? activeCapsuleName}
+              agentRunCount={agentRuns.length}
               onFilter={(filter) => {
                 setCapsuleCategory(filter);
-                setCapsuleDetailTab(filter === 'source-docs' ? 'retrieve' : filter === 'tool-capsules' ? 'build' : 'connect');
+                setCapsuleDetailTab(filter === 'source-docs' ? 'retrieve' : filter === 'tool-capsules' ? 'build' : filter === 'agents' ? 'agents' : 'connect');
               }}
             />
 
@@ -1161,6 +1263,16 @@ export function TaskletPraxisWorkbench({
                 </div>
                 <div className="flex items-center gap-2">
                   <select
+                    value={selectedAgentId}
+                    onChange={(event) => setSelectedAgentId(event.target.value)}
+                    aria-label="Policy agent"
+                    className="hidden max-w-48 rounded-md border border-slate-200 bg-white px-2 py-2 text-sm font-semibold text-slate-700 outline-none sm:block"
+                  >
+                    {PRAXIS_POLICY_AGENTS.map((agent) => (
+                      <option key={agent.id} value={agent.id}>{agent.label}</option>
+                    ))}
+                  </select>
+                  <select
                     value={selectedModel}
                     onChange={(event) => setSelectedModel(event.target.value as ModelPreferenceValue)}
                     aria-label="Model"
@@ -1172,6 +1284,14 @@ export function TaskletPraxisWorkbench({
                   </select>
                   <button type="button" aria-label="Voice input" onClick={startVoiceInput} className="rounded-md p-2.5 text-slate-600 hover:bg-slate-100">
                     <Mic className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!prompt.trim() || agentRunCreating}
+                    onClick={() => void createAgentRun()}
+                    className="hidden rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 sm:inline-flex"
+                  >
+                    {agentRunCreating ? 'Queuing...' : 'Run agent'}
                   </button>
                   <button
                     type="button"
@@ -1380,11 +1500,16 @@ export function TaskletPraxisWorkbench({
                     detailTab={capsuleDetailTab}
                     repositoryDocuments={visibleRepositoryDocuments}
                     repositoryLoading={repositoryLoading}
+                    agentRuns={agentRuns}
+                    agentRunsLoading={agentRunsLoading}
+                    selectedAgentId={selectedAgentId}
                     onUpload={() => fileInputRef.current?.click()}
                     onDetailTab={setCapsuleDetailTab}
                     onOpenRepository={() => { setRepositoryOpen(true); void refreshRepository(); }}
                     onImprove={() => improveCapsule()}
                     onRefresh={() => void refreshCapsules(currentCapsuleId)}
+                    onSelectAgent={setSelectedAgentId}
+                    onRunAgent={(agent) => void createAgentRun(agent)}
                     onAssignPolicyTeam={(category) => {
                       if (selectedCapsule) void assignPolicyTeam(selectedCapsule, category);
                     }}
@@ -1490,7 +1615,13 @@ export function TaskletPraxisWorkbench({
       ) : null}
       {agentDrawerOpen ? (
         <AgentActionDrawer
+          selectedAgentId={selectedAgentId}
           onClose={() => setAgentDrawerOpen(false)}
+          onSelectAgent={setSelectedAgentId}
+          onRunAgent={(agent) => {
+            setAgentDrawerOpen(false);
+            void createAgentRun(agent);
+          }}
           onRun={(promptText) => {
             setAgentDrawerOpen(false);
             setPrompt(promptText);
@@ -1568,6 +1699,7 @@ function buildPublicCapsuleCategories(): string[] {
       .filter((category) => category.templateIds.some((templateId) => COCKPIT_CAPSULE_LIBRARY.some((capsule) => capsule.id === templateId)))
       .map((category) => category.id),
     'source-docs',
+    'agents',
     'outputs',
   ];
 }
@@ -1580,10 +1712,11 @@ function filterPublicCapsules(query: string, category: string) {
   const clean = query.trim().toLowerCase();
   return COCKPIT_CAPSULE_LIBRARY.filter((capsule) => {
     const team = getPolicyTeamCategory(category);
-    const matchesCategory =
-      category === 'all' ? true :
-      category === 'source-docs' ? capsule.contextCores.some((core) => core === 'source' || core === 'document') :
-      category === 'outputs' ? capsule.contextCores.some((core) => core === 'output' || core === 'product') :
+      const matchesCategory =
+        category === 'all' ? true :
+        category === 'source-docs' ? capsule.contextCores.some((core) => core === 'source' || core === 'document') :
+        category === 'agents' ? true :
+        category === 'outputs' ? capsule.contextCores.some((core) => core === 'output' || core === 'product') :
       team ? team.templateIds.some((id) => id === capsule.id) :
       true;
     if (!matchesCategory) return false;
@@ -1613,6 +1746,7 @@ function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, cat
         category === 'archived' ? isArchived :
         category === 'context' ? !isArchived && (capsule.scope === 'user' || capsule.scope === 'situation' || capsule.scope === 'team') :
         category === 'tool-capsules' ? !isArchived && counts.tools > 0 :
+        category === 'agents' ? !isArchived && ((capsule.coreRefs.objectiveCoreIds?.length ?? 0) > 0 || (capsule.coreRefs.toolCoreIds?.length ?? 0) > 0) :
         category === 'source-docs' ? !isArchived && (counts.sources + counts.documents > 0) :
         category === 'outputs' ? !isArchived && counts.outputs > 0 :
         policyTeam ? !isArchived && categoryMatchesPolicyTeam(tags, policyTeam) :
@@ -1656,10 +1790,12 @@ function capsuleCounts(capsule: PraxisCapsuleSummary) {
 function CapsuleMap({
   capsule,
   fallbackLabel,
+  agentRunCount,
   onFilter,
 }: {
   capsule: PraxisCapsuleSummary | null;
   fallbackLabel: string;
+  agentRunCount: number;
   onFilter: (filter: string) => void;
 }) {
   const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
@@ -1669,6 +1805,7 @@ function CapsuleMap({
     { id: 'sources', label: 'Sources', value: counts.sources, filter: 'source-docs', icon: Search },
     { id: 'tools', label: 'Tools', value: counts.tools, filter: 'tool-capsules', icon: WandSparkles },
     { id: 'outputs', label: 'Outputs', value: counts.outputs, filter: 'outputs', icon: Clipboard },
+    { id: 'agents', label: 'Agents', value: agentRunCount || PRAXIS_POLICY_AGENTS.filter((agent) => agent.readiness === 'live').length, filter: 'agents', icon: Sparkles },
     { id: 'team', label: 'Policy team', value: capsule?.community?.tags?.length ?? 0, filter: 'all', icon: ShieldCheck },
   ];
 
@@ -1687,7 +1824,7 @@ function CapsuleMap({
             <CapsuleStateBadge state={state} />
           </div>
         </div>
-        <div className="grid gap-2 sm:grid-cols-5">
+        <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-6">
           {segments.map((segment) => (
             <button
               key={segment.id}
@@ -1846,11 +1983,16 @@ function CapsuleDetailPanel({
   detailTab,
   repositoryDocuments,
   repositoryLoading,
+  agentRuns,
+  agentRunsLoading,
+  selectedAgentId,
   onUpload,
   onDetailTab,
   onOpenRepository,
   onImprove,
   onRefresh,
+  onSelectAgent,
+  onRunAgent,
   onAssignPolicyTeam,
   onAttachTool,
 }: {
@@ -1860,11 +2002,16 @@ function CapsuleDetailPanel({
   detailTab: CapsuleDetailTab;
   repositoryDocuments: RepositoryDocument[];
   repositoryLoading: boolean;
+  agentRuns: AgentRunSummary[];
+  agentRunsLoading: boolean;
+  selectedAgentId: string;
   onUpload: () => void;
   onDetailTab: (tab: CapsuleDetailTab) => void;
   onOpenRepository: () => void;
   onImprove: () => void;
   onRefresh: () => void;
+  onSelectAgent: (agentId: string) => void;
+  onRunAgent: (agent: PolicyAgentDefinition) => void;
   onAssignPolicyTeam: (category: PolicyTeamCategory) => void;
   onAttachTool: (recommendation: CapsuleToolRecommendation) => void;
 }) {
@@ -1892,8 +2039,8 @@ function CapsuleDetailPanel({
         <Metric label="Tools" value={counts.tools} />
         <Metric label="Outputs" value={counts.outputs} />
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-1 rounded-md bg-slate-100 p-1" data-testid="capsule-detail-tabs">
-        {(['build', 'connect', 'retrieve'] as const).map((tab) => (
+      <div className="mt-4 grid grid-cols-4 gap-1 rounded-md bg-slate-100 p-1" data-testid="capsule-detail-tabs">
+        {(['build', 'connect', 'retrieve', 'agents'] as const).map((tab) => (
           <button
             key={tab}
             type="button"
@@ -1985,6 +2132,44 @@ function CapsuleDetailPanel({
           {!repositoryLoading && repositoryDocuments.length === 0 ? <p className="text-xs text-slate-500">No repository documents loaded for this capsule.</p> : null}
         </div>
       ) : null}
+      {detailTab === 'agents' ? (
+        <div className="mt-4 space-y-3" data-testid="capsule-agent-lane">
+          <div className="rounded-md border border-slate-200 p-3">
+            <p className="text-xs font-semibold text-slate-800">Capsule agents</p>
+            <p className="mt-1 text-[11px] leading-5 text-slate-500">Agents inherit this capsule, selected cores, repository sources, approval posture, and output target.</p>
+          </div>
+          <div className="space-y-2">
+            {PRAXIS_POLICY_AGENTS.map((agent) => (
+              <AgentRegistryCard
+                key={agent.id}
+                agent={agent}
+                selected={selectedAgentId === agent.id}
+                onSelect={() => onSelectAgent(agent.id)}
+                onRun={() => onRunAgent(agent)}
+              />
+            ))}
+          </div>
+          <div className="rounded-md border border-slate-200 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-slate-800">Recent runs</p>
+              <span className="text-[11px] font-semibold text-slate-400">{agentRunsLoading ? 'loading' : `${agentRuns.length} shown`}</span>
+            </div>
+            <div className="mt-2 space-y-2">
+              {agentRuns.map((run) => (
+                <article key={run.runId} className="rounded-md bg-slate-50 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-xs font-semibold text-slate-800">{run.policyAgentLabel ?? run.policyAgentId ?? 'Capsule agent'}</p>
+                    <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-semibold', agentRunStatusClass(run.status))}>{run.status.replaceAll('_', ' ')}</span>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-slate-500">{run.objective}</p>
+                  <p className="mt-1 font-mono text-[10px] text-slate-400">{run.runId.slice(0, 12)} · {new Date(run.createdAt).toLocaleDateString()}</p>
+                </article>
+              ))}
+              {!agentRunsLoading && agentRuns.length === 0 ? <p className="text-xs text-slate-500">No durable agent runs yet. Run Research Memo or Output Formatter to create one.</p> : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="mt-4 flex flex-col gap-2">
         <button type="button" onClick={onUpload} className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">
           <Upload className="h-4 w-4" />
@@ -2003,6 +2188,94 @@ function CapsuleDetailPanel({
       <p className="mt-4 text-xs text-slate-400">Updated {new Date(capsule.updatedAt).toLocaleDateString()}</p>
     </aside>
   );
+}
+
+function AgentRegistryCard({
+  agent,
+  selected,
+  onSelect,
+  onRun,
+}: {
+  agent: PolicyAgentDefinition;
+  selected: boolean;
+  onSelect: () => void;
+  onRun: () => void;
+}) {
+  const runnable = agent.readiness === 'live' || agent.readiness === 'queued';
+  return (
+    <article className={cn('rounded-md border p-3', selected ? 'border-[#ff714d] bg-[#fff7f3]' : 'border-slate-200')}>
+      <button type="button" onClick={onSelect} className="block w-full text-left">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-semibold text-slate-900">{agent.label}</p>
+            <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-slate-500">{agent.description}</p>
+          </div>
+          <span className={cn('shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold', agentReadinessClass(agent.readiness))}>
+            {agent.readiness}
+          </span>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1">
+          <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-semibold', agentRiskClass(agent.riskLevel))}>risk {agent.riskLevel}</span>
+          {agent.capsuleSlots.slice(0, 3).map((slot) => (
+            <span key={slot} className="rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{slot}</span>
+          ))}
+        </div>
+      </button>
+      <div className="mt-3 flex items-center gap-2">
+        <button type="button" onClick={onSelect} className="rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          Select
+        </button>
+        <button
+          type="button"
+          disabled={!runnable}
+          onClick={onRun}
+          className="rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+        >
+          {runnable ? agent.actionLabel : 'Planned'}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function agentReadinessClass(readiness: PolicyAgentDefinition['readiness']): string {
+  switch (readiness) {
+    case 'live':
+      return 'bg-emerald-50 text-emerald-700';
+    case 'queued':
+      return 'bg-sky-50 text-sky-700';
+    case 'gated':
+      return 'bg-amber-50 text-amber-700';
+    case 'planned':
+      return 'bg-slate-100 text-slate-500';
+  }
+}
+
+function agentRiskClass(risk: PolicyAgentDefinition['riskLevel']): string {
+  switch (risk) {
+    case 'low':
+      return 'bg-emerald-50 text-emerald-700';
+    case 'medium':
+      return 'bg-amber-50 text-amber-700';
+    case 'high':
+      return 'bg-rose-50 text-rose-700';
+  }
+}
+
+function agentRunStatusClass(status: AgentRunSummary['status']): string {
+  switch (status) {
+    case 'succeeded':
+      return 'bg-emerald-100 text-emerald-700';
+    case 'running':
+    case 'queued':
+      return 'bg-sky-100 text-sky-700';
+    case 'waiting_approval':
+      return 'bg-amber-100 text-amber-700';
+    case 'failed':
+    case 'cancelled':
+    case 'expired':
+      return 'bg-rose-100 text-rose-700';
+  }
 }
 
 function MessageActionRow({
@@ -2222,7 +2495,20 @@ function CapsuleInspectorSheet({
   );
 }
 
-function AgentActionDrawer({ onClose, onRun }: { onClose: () => void; onRun: (prompt: string) => void }) {
+function AgentActionDrawer({
+  selectedAgentId,
+  onClose,
+  onSelectAgent,
+  onRunAgent,
+  onRun,
+}: {
+  selectedAgentId: string;
+  onClose: () => void;
+  onSelectAgent: (agentId: string) => void;
+  onRunAgent: (agent: PolicyAgentDefinition) => void;
+  onRun: (prompt: string) => void;
+}) {
+  const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
   return (
     <div className="fixed inset-0 z-40 bg-black/25" data-testid="agent-action-drawer">
       <aside className="ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-2xl">
@@ -2238,6 +2524,22 @@ function AgentActionDrawer({ onClose, onRun }: { onClose: () => void; onRun: (pr
           </div>
         </div>
         <div className="grid gap-3 overflow-y-auto p-5">
+          <section className="rounded-lg border border-slate-200 p-3">
+            <p className="text-xs font-semibold uppercase text-slate-400">Capsule agent</p>
+            <select
+              value={selectedAgentId}
+              onChange={(event) => onSelectAgent(event.target.value)}
+              className="mt-2 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#ff714d]"
+            >
+              {PRAXIS_POLICY_AGENTS.map((agent) => (
+                <option key={agent.id} value={agent.id}>{agent.label}</option>
+              ))}
+            </select>
+            <p className="mt-2 text-xs leading-5 text-slate-500">{selectedAgent.description}</p>
+            <button type="button" onClick={() => onRunAgent(selectedAgent)} className="mt-3 w-full rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+              {selectedAgent.actionLabel}
+            </button>
+          </section>
           {capsuleActionPrompts.map((action) => (
             <button key={action.label} type="button" onClick={() => onRun(action.prompt)} className="rounded-lg border border-slate-200 p-4 text-left hover:border-[#ff714d]/50 hover:bg-[#fff7f3]">
               <span className="block text-sm font-semibold text-slate-950">{action.label}</span>

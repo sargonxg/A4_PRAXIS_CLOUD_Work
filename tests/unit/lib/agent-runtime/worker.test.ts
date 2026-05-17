@@ -134,4 +134,30 @@ describe('agent runtime no-op worker', () => {
     expect(mirrored).toContain('reasoning.complete');
     expect(mirrored).toContain('memo_draft_created');
   });
+
+  it('routes output-formatter runs into an export-ready memo draft', async () => {
+    const transitions: AgentRun['status'][] = [];
+    const mirrored: string[] = [];
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', { policyAgentId: 'output-formatter' }),
+      updateStatus: async (input) => {
+        transitions.push(input.toStatus);
+        return makeRun(input.toStatus, { policyAgentId: 'output-formatter' });
+      },
+      appendEvent: async (event) => {
+        mirrored.push(String(event.data.phase ?? event.eventType));
+        return event;
+      },
+      saveMemoDraft: async (_uid, input) => {
+        expect(input.templateId).toBe('policy-memo');
+        expect(input.blocks.some((block) => block.id === 'structure')).toBe(true);
+        expect(input.blocks.some((block) => block.id === 'export-readiness')).toBe(true);
+        return { memo: { id: 'memo-format-1' } };
+      },
+    });
+
+    expect(transitions).toEqual(['running', 'succeeded']);
+    expect(result).toMatchObject({ status: 'succeeded', executionMode: 'output-formatter', memoId: 'memo-format-1', outputHref: '/app' });
+    expect(mirrored).toContain('formatted_output_created');
+  });
 });

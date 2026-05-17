@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { AgentRun } from '@/lib/agent-runtime/types';
-import { destinationHref, getPolicyAgent } from '@/lib/product/policy-agents';
+import { destinationHref, getPolicyAgent, type PolicyAgentOutputDestination } from '@/lib/product/policy-agents';
 
 export const AgentTriggerTypeSchema = z.enum([
   'manual',
@@ -32,6 +32,8 @@ export const CreateManualAgentRunRequestSchema = z.object({
   contextStackId: z.string().min(1).max(240).nullable().optional(),
   contextPackageId: z.string().min(1).max(240).nullable().optional(),
   selectedCoreIds: SelectedCoreIdsSchema,
+  policyAgentId: z.string().min(1).max(240).optional(),
+  outputDestination: z.enum(['memo_studio', 'canvas', 'library', 'handover']).optional(),
   agentSpecId: z.string().min(1).max(240).nullable().optional(),
   triggerType: AgentTriggerTypeSchema.default('manual'),
   objective: z.string().min(1).max(2000),
@@ -58,10 +60,14 @@ export const AgentRunOutputSchema = z.object({
   status: z.enum(['queued', 'running', 'waiting_approval', 'succeeded', 'failed', 'cancelled', 'expired']),
   capsuleId: z.string(),
   createdAt: z.string(),
+  updatedAt: z.string(),
+  objective: z.string(),
   policyAgentId: z.string().nullable().optional(),
   policyAgentLabel: z.string().nullable().optional(),
   outputDestination: z.enum(['memo_studio', 'canvas', 'library', 'handover']).nullable().optional(),
   outputHref: z.string().nullable().optional(),
+  readiness: z.enum(['live', 'queued', 'planned', 'gated']).nullable().optional(),
+  riskLevel: z.enum(['low', 'medium', 'high']).nullable().optional(),
 });
 
 export type CreateManualAgentRunRequest = z.infer<typeof CreateManualAgentRunRequestSchema>;
@@ -72,15 +78,26 @@ export type AgentRunOutput = z.infer<typeof AgentRunOutputSchema>;
 export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
   const policyAgentId = typeof run.metadata?.policyAgentId === 'string' ? run.metadata.policyAgentId : null;
   const policyAgent = getPolicyAgent(policyAgentId);
-  const outputDestination = policyAgent?.outputDestination ?? null;
+  const metadataDestination = normalizeOutputDestination(run.metadata?.outputDestination);
+  const outputDestination = policyAgent?.outputDestination ?? metadataDestination;
   return AgentRunOutputSchema.parse({
     runId: run.id,
     status: run.status,
     capsuleId: run.capsuleId,
     createdAt: run.createdAt,
+    updatedAt: run.updatedAt,
+    objective: run.objective,
     policyAgentId,
     policyAgentLabel: policyAgent?.label ?? null,
     outputDestination,
     outputHref: outputDestination ? destinationHref(outputDestination) : null,
+    readiness: policyAgent?.readiness ?? null,
+    riskLevel: policyAgent?.riskLevel ?? null,
   });
+}
+
+function normalizeOutputDestination(value: unknown): PolicyAgentOutputDestination | null {
+  return value === 'memo_studio' || value === 'canvas' || value === 'library' || value === 'handover'
+    ? value
+    : null;
 }

@@ -1,9 +1,12 @@
 import { createHash, randomUUID } from 'crypto';
 import {
+  type AgentApproval,
   DEFAULT_SELECTED_CORE_IDS,
   type AgentRun,
   type AgentRunEvent,
   type AgentRunStatus,
+  type AgentToolCall,
+  type AgentToolRisk,
   type CreateAgentRunInput,
   type SelectedCoreIds,
 } from '@/lib/agent-runtime/types';
@@ -54,6 +57,69 @@ export function makeAgentRunEvent(input: {
     data: input.data ?? {},
     traceId: input.traceId?.trim() || randomUUID(),
     createdAt: createdAt.toISOString(),
+  };
+}
+
+export function makeAgentToolCall(input: {
+  runId: string;
+  ownerUid: string;
+  capsuleId: string;
+  toolId: string;
+  risk: AgentToolRisk;
+  status?: AgentToolCall['status'];
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown> | null;
+  error?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  createdAt?: Date;
+}): AgentToolCall {
+  const createdAt = input.createdAt ?? new Date();
+  return {
+    id: randomUUID(),
+    runId: normalizePointer(input.runId, 'run'),
+    ownerUid: input.ownerUid.trim(),
+    capsuleId: normalizePointer(input.capsuleId, 'default'),
+    toolId: normalizePointer(input.toolId, 'tool'),
+    risk: input.risk,
+    status: input.status ?? 'planned',
+    input: input.input ?? {},
+    output: input.output ?? null,
+    error: input.error ?? null,
+    startedAt: input.startedAt ?? null,
+    completedAt: input.completedAt ?? null,
+    createdAt: createdAt.toISOString(),
+    updatedAt: createdAt.toISOString(),
+  };
+}
+
+export function makeAgentApproval(input: {
+  runId: string;
+  ownerUid: string;
+  capsuleId: string;
+  toolCallId?: string | null;
+  reason: string;
+  risk: AgentToolRisk;
+  status?: AgentApproval['status'];
+  requestedAt?: Date;
+  decidedAt?: string | null;
+  decidedByUid?: string | null;
+  expiresAt?: string | null;
+}): AgentApproval {
+  const requestedAt = input.requestedAt ?? new Date();
+  return {
+    id: randomUUID(),
+    runId: normalizePointer(input.runId, 'run'),
+    ownerUid: input.ownerUid.trim(),
+    capsuleId: normalizePointer(input.capsuleId, 'default'),
+    toolCallId: input.toolCallId ? normalizePointer(input.toolCallId, 'tool-call') : null,
+    status: input.status ?? 'pending',
+    reason: input.reason.trim().slice(0, 1000) || 'Approval required before continuing.',
+    risk: input.risk,
+    requestedAt: requestedAt.toISOString(),
+    decidedAt: input.decidedAt ?? null,
+    decidedByUid: input.decidedByUid ?? null,
+    expiresAt: input.expiresAt ?? null,
   };
 }
 

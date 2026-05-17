@@ -35,6 +35,8 @@ describe('agent run API validation schema', () => {
     const parsed = CreateManualAgentRunRequestSchema.safeParse({
       capsuleId: 'cap-1',
       contextPackageId: 'pack-1',
+      policyAgentId: 'research-memo',
+      outputDestination: 'memo_studio',
       objective: 'Queue only.',
       selectedCoreIds: {
         situationCoreId: 'sit-1',
@@ -58,6 +60,8 @@ describe('agent run API validation schema', () => {
       status: 'queued',
       capsuleId: 'cap-1',
       createdAt: '2026-05-15T12:00:00.000Z',
+      updatedAt: '2026-05-15T12:00:00.000Z',
+      objective: 'Prepare memo',
       internalEstimatedCostCents: 25,
       internalSpendCents: 10,
     } as never);
@@ -67,10 +71,14 @@ describe('agent run API validation schema', () => {
       status: 'queued',
       capsuleId: 'cap-1',
       createdAt: '2026-05-15T12:00:00.000Z',
+      updatedAt: '2026-05-15T12:00:00.000Z',
+      objective: 'Prepare memo',
       policyAgentId: null,
       policyAgentLabel: null,
       outputDestination: null,
       outputHref: null,
+      readiness: null,
+      riskLevel: null,
     });
     expect(AgentRunOutputSchema.safeParse(dto).success).toBe(true);
     expect('internalSpendCents' in dto).toBe(false);

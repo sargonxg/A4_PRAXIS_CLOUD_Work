@@ -14,6 +14,7 @@ describe('PRAXIS policy agent registry', () => {
   it('defines the MVP Tasklet-style policy agents with concrete output destinations', () => {
     expect(PRAXIS_POLICY_AGENTS.map((agent) => agent.id)).toEqual([
       'research-memo',
+      'output-formatter',
       'daily-brief',
       'conflict-monitor',
       'sourceability-reviewer',
@@ -24,6 +25,9 @@ describe('PRAXIS policy agent registry', () => {
     for (const agent of PRAXIS_POLICY_AGENTS) {
       expect(destinationHref(agent.outputDestination)).toBe('/app');
       expect(agent.requiredCores.length).toBeGreaterThan(0);
+      expect(agent.allowedTools.length).toBeGreaterThan(0);
+      expect(agent.capsuleSlots.length).toBeGreaterThan(0);
+      expect(['low', 'medium', 'high']).toContain(agent.riskLevel);
       expect(agent.description.toLowerCase()).not.toMatch(/\b(filesystem|shell|gmail|slack)\b/);
     }
   });
@@ -71,6 +75,7 @@ describe('PRAXIS policy agent registry', () => {
     expect(launcher.outputDestination).toBe('memo_studio');
     expect(gate.status).toBe('required');
     expect(policyAgentRunIntent('research-memo')).toBe('research_memo');
+    expect(policyAgentRunIntent('output-formatter')).toBe('format_output');
     expect(policyAgentRunIntent('red-team-analyst')).toBe('red_team_review');
     expect(policyAgentRunIntent('unknown')).toBe('normal_answer');
   });

@@ -1,9 +1,11 @@
 import { randomUUID } from 'crypto';
 import { Pool, type QueryResultRow } from 'pg';
 import {
+  type AgentApproval,
   type AgentRun,
   type AgentRunEvent,
   type AgentRunStatus,
+  type AgentToolCall,
   type CreateAgentRunInput,
 } from '@/lib/agent-runtime/types';
 import {
@@ -84,6 +86,40 @@ async function ensureSchema(): Promise<void> {
       );
       CREATE INDEX IF NOT EXISTS agent_run_events_run_created_idx
         ON agent_run_events (run_id, created_at ASC);
+      CREATE TABLE IF NOT EXISTS agent_tool_calls (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE,
+        owner_uid TEXT NOT NULL,
+        capsule_id TEXT NOT NULL,
+        tool_id TEXT NOT NULL,
+        risk TEXT NOT NULL,
+        status TEXT NOT NULL,
+        input JSONB NOT NULL DEFAULT '{}'::jsonb,
+        output JSONB,
+        error TEXT,
+        started_at TIMESTAMPTZ,
+        completed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS agent_tool_calls_run_created_idx
+        ON agent_tool_calls (run_id, created_at ASC);
+      CREATE TABLE IF NOT EXISTS agent_approvals (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE,
+        owner_uid TEXT NOT NULL,
+        capsule_id TEXT NOT NULL,
+        tool_call_id TEXT,
+        status TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        risk TEXT NOT NULL,
+        requested_at TIMESTAMPTZ NOT NULL,
+        decided_at TIMESTAMPTZ,
+        decided_by_uid TEXT,
+        expires_at TIMESTAMPTZ
+      );
+      CREATE INDEX IF NOT EXISTS agent_approvals_run_requested_idx
+        ON agent_approvals (run_id, requested_at ASC);
     `).then(() => undefined);
   }
   return schemaReady;
@@ -217,6 +253,102 @@ export async function appendAgentRunEvent(input: AgentRunEvent): Promise<AgentRu
   return rowToAgentRunEvent(result.rows[0]);
 }
 
+export async function appendAgentToolCall(input: AgentToolCall): Promise<AgentToolCall> {
+  await ensureSchema();
+  const result = await getPool().query(
+    `
+      INSERT INTO agent_tool_calls (
+        id, run_id, owner_uid, capsule_id, tool_id, risk, status, input, output,
+        error, started_at, completed_at, created_at, updated_at
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      RETURNING *
+    `,
+    [
+      input.id,
+      input.runId,
+      input.ownerUid,
+      input.capsuleId,
+      input.toolId,
+      input.risk,
+      input.status,
+      JSON.stringify(input.input),
+      input.output ? JSON.stringify(input.output) : null,
+      input.error,
+      input.startedAt,
+      input.completedAt,
+      input.createdAt,
+      input.updatedAt,
+    ],
+  );
+  return rowToAgentToolCall(result.rows[0]);
+}
+
+export async function listAgentToolCalls(input: {
+  ownerUid: string;
+  runId: string;
+}): Promise<AgentToolCall[]> {
+  await ensureSchema();
+  const run = await getAgentRun(input.ownerUid, input.runId);
+  if (!run) return [];
+  const result = await getPool().query(
+    `
+      SELECT * FROM agent_tool_calls
+      WHERE run_id = $1 AND owner_uid = $2
+      ORDER BY created_at ASC
+    `,
+    [input.runId, input.ownerUid],
+  );
+  return result.rows.map(rowToAgentToolCall);
+}
+
+export async function appendAgentApproval(input: AgentApproval): Promise<AgentApproval> {
+  await ensureSchema();
+  const result = await getPool().query(
+    `
+      INSERT INTO agent_approvals (
+        id, run_id, owner_uid, capsule_id, tool_call_id, status, reason, risk,
+        requested_at, decided_at, decided_by_uid, expires_at
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      RETURNING *
+    `,
+    [
+      input.id,
+      input.runId,
+      input.ownerUid,
+      input.capsuleId,
+      input.toolCallId,
+      input.status,
+      input.reason,
+      input.risk,
+      input.requestedAt,
+      input.decidedAt,
+      input.decidedByUid,
+      input.expiresAt,
+    ],
+  );
+  return rowToAgentApproval(result.rows[0]);
+}
+
+export async function listAgentApprovals(input: {
+  ownerUid: string;
+  runId: string;
+}): Promise<AgentApproval[]> {
+  await ensureSchema();
+  const run = await getAgentRun(input.ownerUid, input.runId);
+  if (!run) return [];
+  const result = await getPool().query(
+    `
+      SELECT * FROM agent_approvals
+      WHERE run_id = $1 AND owner_uid = $2
+      ORDER BY requested_at ASC
+    `,
+    [input.runId, input.ownerUid],
+  );
+  return result.rows.map(rowToAgentApproval);
+}
+
 export async function updateAgentRunStatus(input: {
   ownerUid: string;
   runId: string;
@@ -299,6 +431,42 @@ function rowToAgentRunEvent(row: QueryResultRow): AgentRunEvent {
     data: row.data ?? {},
     traceId: String(row.trace_id),
     createdAt: dateIso(row.created_at),
+  };
+}
+
+function rowToAgentToolCall(row: QueryResultRow): AgentToolCall {
+  return {
+    id: String(row.id),
+    runId: String(row.run_id),
+    ownerUid: String(row.owner_uid),
+    capsuleId: String(row.capsule_id),
+    toolId: String(row.tool_id),
+    risk: row.risk,
+    status: row.status,
+    input: row.input ?? {},
+    output: row.output ?? null,
+    error: row.error ?? null,
+    startedAt: row.started_at ? dateIso(row.started_at) : null,
+    completedAt: row.completed_at ? dateIso(row.completed_at) : null,
+    createdAt: dateIso(row.created_at),
+    updatedAt: dateIso(row.updated_at),
+  };
+}
+
+function rowToAgentApproval(row: QueryResultRow): AgentApproval {
+  return {
+    id: String(row.id),
+    runId: String(row.run_id),
+    ownerUid: String(row.owner_uid),
+    capsuleId: String(row.capsule_id),
+    toolCallId: row.tool_call_id ?? null,
+    status: row.status,
+    reason: String(row.reason),
+    risk: row.risk,
+    requestedAt: dateIso(row.requested_at),
+    decidedAt: row.decided_at ? dateIso(row.decided_at) : null,
+    decidedByUid: row.decided_by_uid ?? null,
+    expiresAt: row.expires_at ? dateIso(row.expires_at) : null,
   };
 }
 

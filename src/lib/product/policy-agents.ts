@@ -6,12 +6,25 @@ export type PolicyAgentApprovalLevel = 'none' | 'confirm' | 'approval_required' 
 
 export type PolicyAgentOutputDestination = 'memo_studio' | 'canvas' | 'library' | 'handover';
 
+export type PolicyAgentRiskLevel = 'low' | 'medium' | 'high';
+
+export type PolicyAgentCapsuleSlot =
+  | 'user'
+  | 'situation'
+  | 'sources'
+  | 'documents'
+  | 'tools'
+  | 'outputs'
+  | 'memory'
+  | 'handover';
+
 export type HomeSurfaceMode = 'public' | 'authenticated';
 
 export type PolicyAgentRunIntent =
   | 'normal_answer'
   | 'research_memo'
   | 'sourceability_review'
+  | 'format_output'
   | 'red_team_review'
   | 'handover';
 
@@ -55,6 +68,9 @@ export interface PolicyAgentDefinition {
   outputDestination: PolicyAgentOutputDestination;
   approvalLevel: PolicyAgentApprovalLevel;
   readiness: PolicyAgentReadiness;
+  riskLevel: PolicyAgentRiskLevel;
+  allowedTools: string[];
+  capsuleSlots: PolicyAgentCapsuleSlot[];
   actionLabel: string;
   deferredCapabilities?: string[];
 }
@@ -70,7 +86,25 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     outputDestination: 'memo_studio',
     approvalLevel: 'confirm',
     readiness: 'live',
-    actionLabel: 'Discuss memo',
+    riskLevel: 'medium',
+    allowedTools: ['context-resolve', 'document-retrieve', 'grounded-search', 'policy-memo', 'sourceability-reviewer'],
+    capsuleSlots: ['user', 'situation', 'sources', 'documents', 'outputs'],
+    actionLabel: 'Run memo agent',
+  },
+  {
+    id: 'output-formatter',
+    label: 'Output Formatter',
+    category: 'analysis',
+    description: 'Turns a PRAXIS answer, memo draft, or capsule notes into a structured Markdown, DOCX, PDF, or handover-ready work product.',
+    requiredCores: ['Output Core', 'Document Core', 'Source Core'],
+    inputTypes: ['memo draft', 'assistant answer', 'uploaded document', 'capsule'],
+    outputDestination: 'memo_studio',
+    approvalLevel: 'confirm',
+    readiness: 'live',
+    riskLevel: 'medium',
+    allowedTools: ['context-resolve', 'memo-formatter', 'sourceability-reviewer', 'handover-package'],
+    capsuleSlots: ['documents', 'sources', 'outputs', 'handover'],
+    actionLabel: 'Run formatter',
   },
   {
     id: 'daily-brief',
@@ -82,6 +116,9 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     outputDestination: 'library',
     approvalLevel: 'approval_required',
     readiness: 'planned',
+    riskLevel: 'medium',
+    allowedTools: ['context-resolve', 'approved-feed-retrieval', 'daily-brief'],
+    capsuleSlots: ['situation', 'sources', 'memory', 'outputs'],
     actionLabel: 'Discuss brief',
   },
   {
@@ -94,6 +131,9 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     outputDestination: 'canvas',
     approvalLevel: 'approval_required',
     readiness: 'planned',
+    riskLevel: 'high',
+    allowedTools: ['context-resolve', 'source-monitor', 'graph-proposal'],
+    capsuleSlots: ['situation', 'sources', 'tools', 'memory'],
     actionLabel: 'Discuss monitor',
   },
   {
@@ -106,6 +146,9 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     outputDestination: 'memo_studio',
     approvalLevel: 'none',
     readiness: 'queued',
+    riskLevel: 'low',
+    allowedTools: ['context-resolve', 'document-retrieve', 'sourceability-reviewer'],
+    capsuleSlots: ['sources', 'documents', 'outputs'],
     actionLabel: 'Discuss sources',
   },
   {
@@ -118,6 +161,9 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     outputDestination: 'memo_studio',
     approvalLevel: 'confirm',
     readiness: 'queued',
+    riskLevel: 'medium',
+    allowedTools: ['context-resolve', 'red-team-review', 'sourceability-reviewer'],
+    capsuleSlots: ['user', 'situation', 'sources', 'outputs'],
     actionLabel: 'Discuss challenge',
   },
   {
@@ -130,6 +176,9 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     outputDestination: 'handover',
     approvalLevel: 'confirm',
     readiness: 'queued',
+    riskLevel: 'medium',
+    allowedTools: ['context-resolve', 'memo-formatter', 'handover-package'],
+    capsuleSlots: ['user', 'situation', 'sources', 'outputs', 'memory', 'handover'],
     actionLabel: 'Discuss handover',
   },
 ];
@@ -153,6 +202,8 @@ export function policyAgentRunIntent(agentId: string | null | undefined): Policy
       return 'research_memo';
     case 'sourceability-reviewer':
       return 'sourceability_review';
+    case 'output-formatter':
+      return 'format_output';
     case 'red-team-analyst':
       return 'red_team_review';
     case 'handover-builder':

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
-import { getAgentRun } from '@/lib/agent-runtime/postgres';
+import { getAgentRun, listAgentApprovals, listAgentToolCalls } from '@/lib/agent-runtime/postgres';
 import { GetAgentRunParamsSchema, toAgentRunOutput } from '@/lib/agent-runtime/schema';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +17,11 @@ export const GET = withAuth<{ params: Promise<{ runId: string }> }>(async (_requ
   try {
     const run = await getAgentRun(user.uid, parsed.data.runId);
     if (!run) return NextResponse.json({ error: 'Agent run not found' }, { status: 404 });
-    return NextResponse.json({ run: toAgentRunOutput(run), persisted: true });
+    const [toolCalls, approvals] = await Promise.all([
+      listAgentToolCalls({ ownerUid: user.uid, runId: run.id }),
+      listAgentApprovals({ ownerUid: user.uid, runId: run.id }),
+    ]);
+    return NextResponse.json({ run: toAgentRunOutput(run), toolCalls, approvals, persisted: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (message.includes('Agent run ledger is not configured')) {

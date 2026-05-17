@@ -21,6 +21,7 @@ import type { ActiveContextStackState } from '@/lib/context/active-context-stack
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import { writeReadAuditEvents } from '@/lib/audit/read-ledger';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
+import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock } from '@/lib/agent-runtime/evidence-pack';
 import { buildTurnCapsule, suggestNextActions, type TurnCapsule } from '@/lib/ai/context-kernel';
 import {
   buildAskPraxisAnswerPolicyBlock,
@@ -125,6 +126,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
     let effectiveSituationId: string | undefined = requestSituationId;
     let retrievedDocumentIds: string[] = [];
     let retrievedSourceIds: string[] = [];
+    let evidencePackReceipt: { packId: string; paragraphCount: number; gapCount: number } | null = null;
     const toolInvocations: AskToolInvocationReceipt[] = [];
     const frameworkSteps = buildAskFrameworkStepReceipts(
       _user.calibration.path,
@@ -182,6 +184,33 @@ export const POST = withCalibration('chat', 'ai_chat', {
     });
     if (turnCapsule) {
       systemPrompt += '\n\n' + turnCapsule.retrievalPlan.promptBlock;
+      if (_user.uid && (capsuleContext?.capsule?.capsuleId ?? capsuleId)) {
+        const evidencePack = await buildCapsuleEvidencePack({
+          ownerUid: _user.uid,
+          capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? 'default',
+          objective: prompt,
+          maxParagraphs: 6,
+        }).catch((err) => {
+          console.warn('[chat] evidence pack build failed (non-fatal):', err);
+          return null;
+        });
+        if (evidencePack) {
+          systemPrompt += '\n\n' + formatEvidencePackPromptBlock(evidencePack);
+          retrievedDocumentIds = uniqueStrings([
+            ...retrievedDocumentIds,
+            ...evidencePack.sourcedParagraphs.map((paragraph) => paragraph.documentId),
+          ]);
+          retrievedSourceIds = uniqueStrings([
+            ...retrievedSourceIds,
+            ...evidencePack.sourceReceiptIds,
+          ]);
+          evidencePackReceipt = {
+            packId: evidencePack.packId,
+            paragraphCount: evidencePack.sourcedParagraphs.length,
+            gapCount: evidencePack.openGaps.length,
+          };
+        }
+      }
     }
     systemPrompt += '\n\n' + buildAskPraxisPathFrameworkBlock(_user.calibration.path);
 
@@ -532,7 +561,10 @@ interface AskRuntimeReceipt extends Record<string, unknown> {
     repositoryDocumentIds?: string[];
     repositorySourceReceiptIds?: string[];
     repositoryChunkCount?: number;
-    repositoryFreshness?: string;
+      repositoryFreshness?: string;
+      evidencePackId?: string;
+      evidenceParagraphCount?: number;
+      evidenceGapCount?: number;
   };
   effectiveSituationId?: string | null;
   resolvedCapsules?: Array<{
@@ -685,6 +717,9 @@ function decorateAskRuntimeReceipt(
       repositorySourceReceiptIds: input.turnCapsule?.retrievalPlan.repository.sourceReceiptIds,
       repositoryChunkCount: input.turnCapsule?.retrievalPlan.repository.chunkCount,
       repositoryFreshness: input.turnCapsule?.retrievalPlan.repository.freshness,
+      evidencePackId: evidencePackReceipt?.packId,
+      evidenceParagraphCount: evidencePackReceipt?.paragraphCount,
+      evidenceGapCount: evidencePackReceipt?.gapCount,
     },
   };
 }

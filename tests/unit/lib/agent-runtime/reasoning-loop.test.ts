@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { runBoundedReasoningLoop } from '@/lib/agent-runtime/reasoning-loop';
+import { buildOutputFormatterReasoningLoop, runBoundedReasoningLoop } from '@/lib/agent-runtime/reasoning-loop';
 import type { AgentRun } from '@/lib/agent-runtime/types';
 
 function run(maxStep = 20): AgentRun {
@@ -67,5 +67,14 @@ describe('agent reasoning loop', () => {
     expect(result.stoppedForApproval).toBe(true);
     expect(result.nextApprovalReason).toContain('external-send-email');
     expect(result.steps.map((step) => step.phase)).toEqual(['plan', 'approval_gate']);
+  });
+
+  it('builds an output formatter loop that preserves citation review', () => {
+    const result = buildOutputFormatterReasoningLoop(run());
+
+    expect(result.completed).toBe(true);
+    expect(result.stoppedForApproval).toBe(false);
+    expect(result.steps.map((step) => step.id)).toContain('format-work-product');
+    expect(result.steps.map((step) => step.id)).toContain('preserve-citations');
   });
 });

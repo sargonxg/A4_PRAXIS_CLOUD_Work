@@ -73,6 +73,8 @@ export const POST = withAuth(async (request, user) => {
       internalEstimatedCostCents: parsed.data.internalEstimatedCostCents ?? null,
       metadata: {
         ...(parsed.data.metadata ?? {}),
+        ...(parsed.data.policyAgentId ? { policyAgentId: parsed.data.policyAgentId } : {}),
+        ...(parsed.data.outputDestination ? { outputDestination: parsed.data.outputDestination } : {}),
         executionMode: 'queued-only',
       },
     });

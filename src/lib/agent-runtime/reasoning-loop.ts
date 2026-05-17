@@ -23,10 +23,10 @@ const RESEARCH_MEMO_PLAN: PlannedStep[] = [
     readOnly: true,
   },
   {
-    id: 'inspect-sources',
+    id: 'build-evidence-pack',
     phase: 'act',
-    toolId: 'source-scout',
-    message: 'Inspect attached source and document coverage before drafting.',
+    toolId: 'capsule-evidence-pack',
+    message: 'Build the capsule evidence pack from documents, chunks, receipts, outputs, and memories.',
     readOnly: true,
   },
   {
@@ -44,8 +44,42 @@ const RESEARCH_MEMO_PLAN: PlannedStep[] = [
   },
 ];
 
+const OUTPUT_FORMATTER_PLAN: PlannedStep[] = [
+  {
+    id: 'resolve-context',
+    phase: 'plan',
+    toolId: 'context-resolve',
+    message: 'Resolve the active ContextCapsule and output target before formatting.',
+    readOnly: true,
+  },
+  {
+    id: 'inspect-output-source',
+    phase: 'act',
+    toolId: 'document-retrieve',
+    message: 'Inspect attached memo, answer, document, and source receipts before formatting.',
+    readOnly: true,
+  },
+  {
+    id: 'format-work-product',
+    phase: 'act',
+    toolId: 'memo-formatter',
+    message: 'Create a structured Memo Studio draft that can export to Markdown, DOCX, PDF, or handover package.',
+  },
+  {
+    id: 'preserve-citations',
+    phase: 'reflect',
+    toolId: 'sourceability-reviewer',
+    message: 'Verify citation, gap, and sourceability markers survived formatting.',
+    readOnly: true,
+  },
+];
+
 export function buildResearchMemoReasoningLoop(run: AgentRun): AgentReasoningLoopResult {
   return runBoundedReasoningLoop(run, RESEARCH_MEMO_PLAN);
+}
+
+export function buildOutputFormatterReasoningLoop(run: AgentRun): AgentReasoningLoopResult {
+  return runBoundedReasoningLoop(run, OUTPUT_FORMATTER_PLAN);
 }
 
 export function runBoundedReasoningLoop(
