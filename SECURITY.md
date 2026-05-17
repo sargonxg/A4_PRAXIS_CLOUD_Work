@@ -1,13 +1,11 @@
 # PRAXIS Security
 
-Last updated: 2026-04-29.
+Last updated: 2026-05-16.
 
-This file summarizes the active security posture and review checklist. It does
-not replace the implementation docs in `CLAUDE.md`, `AGENTS.md`,
-`docs/AUTH.md`, `docs/COMPLIANCE.md`, and `docs/GCP_OPERATIONS.md`.
-
-The current security/cloud execution plan is in
-`docs/PRAXIS_SUPERPLAN_2026-04-29.md`, especially Phase 5 and Phase 6.
+This file summarizes the active security posture, the review checklist, and
+the incident-response procedure. It does not replace the implementation docs
+in `CLAUDE.md`, `AGENTS.md`, `docs/AUTH.md`, `docs/COMPLIANCE.md`, and
+`docs/GCP_OPERATIONS.md`.
 
 ## Core Rules
 
@@ -23,7 +21,7 @@ The current security/cloud execution plan is in
 
 ## Trust Boundary
 
-- Frontend/API gateway: Next.js Cloud Run service.
+- Frontend / API gateway: Next.js Cloud Run service.
 - Backend: private FastAPI Cloud Run service.
 - Service-to-service calls: Cloud Run OIDC with expected audience and trusted
   service-account allowlist.
@@ -45,34 +43,64 @@ The current security/cloud execution plan is in
       chat history, and very large aggregate text before credit deduction or
       model calls.
 - [ ] Logs redact secrets, tokens, document text where inappropriate, and raw
-  provider responses that may contain sensitive user data.
+      provider responses that may contain sensitive user data.
 - [ ] Webhooks verify signatures.
-- [ ] Cron/internal routes do not rely only on shared secrets when user impact
-  is destructive.
+- [ ] Cron / internal routes do not rely only on shared secrets when user impact
+      is destructive.
 - [ ] User API keys are encrypted with envelope encryption.
 - [ ] Local secrets have a rotation procedure.
 
-## Active Security TODO
+## Incident Response
 
-- Rotate local workstation secrets and update Secret Manager.
-- Automate GCP audit and Firestore rules/index drift checks in Cloud Build.
-- Add App Check or comparable abuse control for high-cost endpoints.
-- Tune the shared AI request limits from observed production traffic and add
-  per-tier concurrency controls for long-running agent routes.
-- Continue tests around admin gates, cookie signing, Firestore rules, Storage
-  rules, backend OIDC, and tool-output access boundaries.
-- Document incident response for provider key exposure, Firebase credential
-  exposure, billing webhook abuse, and accidental public backend exposure.
+**Report channel.** Suspected security issues go to `security@tacitus.me`.
+Encrypted reports may use the PGP key published at `https://tacitus.me/.well-known/security.txt`.
+
+**Severity matrix.**
+
+| Severity | Definition | Response SLA | Resolution SLA |
+|----------|------------|--------------|----------------|
+| **P0 — Critical** | Active exploitation, data exfiltration, full auth bypass, secrets leak in public repo, billing fraud at scale | Acknowledge within 1 hour, 24/7 | Mitigation within 24 hours |
+| **P1 — High** | Theoretical auth bypass, privilege escalation, persistent data corruption, single-user PII leak | Acknowledge within 4 hours (business) | Patch within 7 days |
+| **P2 — Medium** | Information disclosure with limited impact, abuse / DoS without persistence, security-hardening gaps | Acknowledge within 2 business days | Patch within 30 days |
+| **P3 — Low** | Best-practice deviations, defense-in-depth improvements | Acknowledge within 5 business days | Schedule next planning cycle |
+
+**Triage flow.**
+
+1. Reporter emails `security@tacitus.me` with reproduction steps and impact.
+2. On-call (currently @sargonxg) assigns severity and opens a private incident
+   doc in `docs/incidents/YYYY-MM-DD-<slug>.md` (gitignored until resolved).
+3. For P0 / P1, rotate any exposed secrets immediately via Secret Manager and
+   redeploy via Cloud Build with the rotation noted in the incident doc.
+4. Land the fix on a private branch; merge to `main` only when verification
+   passes the full `npm run audit:gate` plus the post-deploy smoke check.
+5. Publish a post-mortem to `docs/incidents/` within 14 days of resolution
+   (sanitized of attacker-specific detail when warranted).
+
+**Specific runbooks** for the most common exposures live in
+`docs/runbooks/SECURITY_RUNBOOK.md` (TODO: create as separate PR if missing).
+Until then, the procedure for the four primary exposure classes is:
+
+- **Provider key (Google AI, Anthropic, Firecrawl, etc.) leaked.** Rotate in
+  the provider console → update Secret Manager version → redeploy → revoke the
+  old key after the new revision is healthy.
+- **Firebase Admin credential leaked.** Disable the service-account key in IAM
+  → generate replacement → update `praxis-firebase-sa` secret → redeploy →
+  audit Firestore logs for the leaked-key window.
+- **Billing webhook abuse.** Disable the webhook endpoint, rotate the signing
+  secret, replay missed events from the provider dashboard after the fix
+  lands.
+- **Accidental public exposure of the backend Cloud Run service.** Set
+  `--no-allow-unauthenticated` immediately, audit access logs, and confirm
+  `BACKEND_TRUSTED_SERVICE_ACCOUNTS` is enforced.
 
 ## Deeper References
 
-- `docs/PRAXIS_SUPERPLAN_2026-04-29.md`.
 - `docs/AUTH.md`.
 - `docs/COMPLIANCE.md`.
 - `docs/GCP_OPERATIONS.md`.
 - `docs/OPERATIONAL_SPINE.md`.
 - `firestore.rules`.
 - `storage.rules`.
-- `src/middleware.ts`.
+- `src/proxy.ts`.
 - `backend/auth.py`.
 - `TODO.md`.
