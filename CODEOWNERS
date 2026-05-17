@@ -1,0 +1,16 @@
+# PRAXIS code owners
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+*                                 @sargonxg
+
+# Security-critical paths (require extra review when team grows)
+/firestore.rules                  @sargonxg
+/storage.rules                    @sargonxg
+/src/middleware.ts                @sargonxg
+/src/proxy.ts                     @sargonxg
+/src/lib/firebase/admin.ts        @sargonxg
+/src/lib/api/with-auth.ts         @sargonxg
+/src/lib/auth/cookie-signer.ts    @sargonxg
+/cloudbuild.yaml                  @sargonxg
+/infrastructure/                  @sargonxg
