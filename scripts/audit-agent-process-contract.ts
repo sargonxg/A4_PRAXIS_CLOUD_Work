@@ -28,6 +28,7 @@ requireIncludes('src/lib/agent-runtime/postgres.ts', [
   'CREATE TABLE IF NOT EXISTS agent_runs',
   'CREATE TABLE IF NOT EXISTS agent_run_events',
   'agent_runs_owner_capsule_created_idx',
+  'decideAgentApproval',
 ]);
 
 requireIncludes('src/lib/agent-runtime/worker.ts', [
@@ -35,6 +36,23 @@ requireIncludes('src/lib/agent-runtime/worker.ts', [
   'buildCapsuleWorkerContext',
   'mirrorWorkerEvent',
   'saveMemoDraft',
+  'outputHrefFromMetadata',
+]);
+
+requireIncludes('src/app/api/agents/runs/[runId]/cancel/route.ts', [
+  "toStatus: 'cancelled'",
+  'Sample mode cannot cancel private agent runs',
+]);
+
+requireIncludes('src/app/api/agents/runs/[runId]/retry/route.ts', [
+  'enqueueAgentRunDispatch',
+  'parentRunId: source.id',
+]);
+
+requireIncludes('src/app/api/agents/runs/[runId]/approvals/[approvalId]/route.ts', [
+  'decideAgentApproval',
+  "decision !== 'approved'",
+  'enqueueAgentRunDispatch',
 ]);
 
 requireIncludes('src/lib/agent-runtime/adk-bridge.ts', [
@@ -66,7 +84,12 @@ requireIncludes('src/proxy.ts', [
 requireIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'focusedRunId',
   '`/api/agents/runs/${encodeURIComponent(runId)}`',
+  '`/api/agents/runs/${encodeURIComponent(focusedRunId)}/${path}`',
   "router.push(`/agents/${encodeURIComponent(run.runId)}`)",
+  'setInterval',
+  'onRetryFocusedRun',
+  'onCancelFocusedRun',
+  'onDecideApproval',
   'FocusedAgentRunPanel',
 ]);
 

@@ -109,10 +109,19 @@ type AgentRunEventSummary = {
   createdAt: string;
   data?: Record<string, unknown>;
 };
+type AgentApprovalSummary = {
+  id: string;
+  toolName: string;
+  riskLevel: 'low' | 'medium' | 'high';
+  status: 'pending' | 'approved' | 'rejected' | 'expired';
+  reason?: string | null;
+  requestedAt: string;
+  decidedAt?: string | null;
+};
 type AgentRunDetail = {
   run: AgentRunSummary;
   toolCalls?: unknown[];
-  approvals?: unknown[];
+  approvals?: AgentApprovalSummary[];
 };
 type SpanTargetCore = 'sourceability' | 'temporality' | 'causality' | 'human-friction' | 'rules' | 'open-question';
 type CapsuleCoreRefs = {
@@ -268,6 +277,7 @@ export function TaskletPraxisWorkbench({
   const [focusedRun, setFocusedRun] = useState<AgentRunDetail | null>(null);
   const [focusedRunEvents, setFocusedRunEvents] = useState<AgentRunEventSummary[]>([]);
   const [focusedRunLoading, setFocusedRunLoading] = useState(false);
+  const [focusedRunAction, setFocusedRunAction] = useState<string | null>(null);
   const [builderLabel, setBuilderLabel] = useState('');
   const [builderNotes, setBuilderNotes] = useState('');
   const [builderLinks, setBuilderLinks] = useState('');
@@ -657,59 +667,95 @@ export function TaskletPraxisWorkbench({
     void refreshAgentRuns();
   }, [isAuthenticated, refreshAgentRuns]);
 
+  const loadFocusedRunDetails = useCallback(async (runId: string, options?: { showLoading?: boolean; announce?: boolean }) => {
+    if (!isAuthenticated) return null;
+    const showLoading = options?.showLoading ?? false;
+    const announce = options?.announce ?? false;
+    if (showLoading) setFocusedRunLoading(true);
+    setCapsuleDetailTab('agents');
+    setActiveTab('capsules');
+    if (announce) setStatus(`Opening agent run ${runId.slice(0, 12)}...`);
+    try {
+      const response = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}`, { credentials: 'include' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.run?.runId) throw new Error(payload?.error ?? 'agent run not found');
+
+      const detail = payload as AgentRunDetail;
+      setFocusedRun(detail);
+      setCurrentCapsuleId(detail.run.capsuleId);
+      if (detail.run.policyAgentId) setSelectedAgentId(detail.run.policyAgentId);
+      setPrompt(detail.run.objective);
+      setActiveCapsules((current) => {
+        const chip: ActiveCapsuleChip = {
+          id: detail.run.capsuleId,
+          label: detail.run.capsuleId,
+          code: 'SITUATION',
+          role: 'situation',
+        };
+        return [chip, ...current.filter((item) => item.id !== chip.id)].slice(0, 6);
+      });
+      setAgentRuns((current) => [detail.run, ...current.filter((item) => item.runId !== detail.run.runId)].slice(0, 8));
+      if (announce) setStatus(`${detail.run.policyAgentLabel ?? 'Capsule agent'} opened as run ${detail.run.runId.slice(0, 12)}.`);
+
+      const eventsResponse = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}/stream?limit=30`, { credentials: 'include' });
+      const eventsText = await eventsResponse.text().catch(() => '');
+      if (eventsResponse.ok) setFocusedRunEvents(parseAgentRunSse(eventsText));
+      return detail;
+    } catch (err) {
+      setFocusedRun(null);
+      setFocusedRunEvents([]);
+      setStatus(err instanceof Error ? `Agent workspace unavailable: ${err.message}` : 'Agent workspace unavailable.');
+      return null;
+    } finally {
+      if (showLoading) setFocusedRunLoading(false);
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     if (!isAuthenticated || !focusedRunId) return;
     let cancelled = false;
-    const runId = focusedRunId;
-
-    async function loadFocusedRun() {
-      setFocusedRunLoading(true);
-      setCapsuleDetailTab('agents');
-      setActiveTab('capsules');
-      setStatus(`Opening agent run ${runId.slice(0, 12)}...`);
-      try {
-        const response = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}`, { credentials: 'include' });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || !payload?.run?.runId) throw new Error(payload?.error ?? 'agent run not found');
-        if (cancelled) return;
-
-        const detail = payload as AgentRunDetail;
-        setFocusedRun(detail);
-        setCurrentCapsuleId(detail.run.capsuleId);
-        if (detail.run.policyAgentId) setSelectedAgentId(detail.run.policyAgentId);
-        setPrompt(detail.run.objective);
-        setActiveCapsules((current) => {
-          const chip: ActiveCapsuleChip = {
-            id: detail.run.capsuleId,
-            label: detail.run.capsuleId,
-            code: 'SITUATION',
-            role: 'situation',
-          };
-          return [chip, ...current.filter((item) => item.id !== chip.id)].slice(0, 6);
-        });
-        setAgentRuns((current) => [detail.run, ...current.filter((item) => item.runId !== detail.run.runId)].slice(0, 8));
-        setStatus(`${detail.run.policyAgentLabel ?? 'Capsule agent'} opened as run ${detail.run.runId.slice(0, 12)}.`);
-        void refreshCapsules(detail.run.capsuleId);
-
-        const eventsResponse = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}/stream?limit=30`, { credentials: 'include' });
-        const eventsText = await eventsResponse.text().catch(() => '');
-        if (!cancelled && eventsResponse.ok) setFocusedRunEvents(parseAgentRunSse(eventsText));
-      } catch (err) {
-        if (!cancelled) {
-          setFocusedRun(null);
-          setFocusedRunEvents([]);
-          setStatus(err instanceof Error ? `Agent workspace unavailable: ${err.message}` : 'Agent workspace unavailable.');
-        }
-      } finally {
-        if (!cancelled) setFocusedRunLoading(false);
-      }
-    }
-
-    void loadFocusedRun();
+    void loadFocusedRunDetails(focusedRunId, { showLoading: true, announce: true }).then((detail) => {
+      if (!cancelled && detail) void refreshCapsules(detail.run.capsuleId);
+    });
     return () => {
       cancelled = true;
     };
-  }, [focusedRunId, isAuthenticated, refreshCapsules]);
+  }, [focusedRunId, isAuthenticated, loadFocusedRunDetails, refreshCapsules]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !focusedRunId || !focusedRun || isTerminalAgentRunStatus(focusedRun.run.status)) return;
+    const interval = window.setInterval(() => {
+      void loadFocusedRunDetails(focusedRunId);
+    }, 5000);
+    return () => window.clearInterval(interval);
+  }, [focusedRun, focusedRunId, isAuthenticated, loadFocusedRunDetails]);
+
+  async function postFocusedRunAction(path: string, body?: Record<string, unknown>) {
+    if (!focusedRunId || focusedRunAction) return;
+    setFocusedRunAction(path);
+    try {
+      const response = await fetch(`/api/agents/runs/${encodeURIComponent(focusedRunId)}/${path}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: body ? { 'content-type': 'application/json' } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error ?? 'agent action failed');
+      const nextRunId = typeof payload?.run?.runId === 'string' ? payload.run.runId : focusedRunId;
+      setStatus(`Agent run ${nextRunId.slice(0, 12)} updated.`);
+      if (nextRunId !== focusedRunId) {
+        router.push(`/agents/${encodeURIComponent(nextRunId)}`);
+        return;
+      }
+      void loadFocusedRunDetails(focusedRunId, { showLoading: true });
+      void refreshAgentRuns();
+    } catch (err) {
+      setStatus(err instanceof Error ? `Agent action failed: ${err.message}` : 'Agent action failed.');
+    } finally {
+      setFocusedRunAction(null);
+    }
+  }
 
   async function createAgentRun(agent: PolicyAgentDefinition = selectedAgent, overridePrompt?: string) {
     const cleanPrompt = (overridePrompt ?? prompt).trim();
@@ -1592,6 +1638,7 @@ export function TaskletPraxisWorkbench({
                     focusedRun={focusedRun}
                     focusedRunEvents={focusedRunEvents}
                     focusedRunLoading={focusedRunLoading}
+                    focusedRunAction={focusedRunAction}
                     selectedAgentId={selectedAgentId}
                     onUpload={() => fileInputRef.current?.click()}
                     onDetailTab={setCapsuleDetailTab}
@@ -1600,6 +1647,9 @@ export function TaskletPraxisWorkbench({
                     onRefresh={() => void refreshCapsules(currentCapsuleId)}
                     onSelectAgent={setSelectedAgentId}
                     onRunAgent={(agent) => void createAgentRun(agent)}
+                    onRetryFocusedRun={() => void postFocusedRunAction('retry')}
+                    onCancelFocusedRun={() => void postFocusedRunAction('cancel')}
+                    onDecideApproval={(approvalId, decision) => void postFocusedRunAction(`approvals/${encodeURIComponent(approvalId)}`, { decision })}
                     onAssignPolicyTeam={(category) => {
                       if (selectedCapsule) void assignPolicyTeam(selectedCapsule, category);
                     }}
@@ -2078,6 +2128,7 @@ function CapsuleDetailPanel({
   focusedRun,
   focusedRunEvents,
   focusedRunLoading,
+  focusedRunAction,
   selectedAgentId,
   onUpload,
   onDetailTab,
@@ -2086,6 +2137,9 @@ function CapsuleDetailPanel({
   onRefresh,
   onSelectAgent,
   onRunAgent,
+  onRetryFocusedRun,
+  onCancelFocusedRun,
+  onDecideApproval,
   onAssignPolicyTeam,
   onAttachTool,
 }: {
@@ -2100,6 +2154,7 @@ function CapsuleDetailPanel({
   focusedRun: AgentRunDetail | null;
   focusedRunEvents: AgentRunEventSummary[];
   focusedRunLoading: boolean;
+  focusedRunAction: string | null;
   selectedAgentId: string;
   onUpload: () => void;
   onDetailTab: (tab: CapsuleDetailTab) => void;
@@ -2108,6 +2163,9 @@ function CapsuleDetailPanel({
   onRefresh: () => void;
   onSelectAgent: (agentId: string) => void;
   onRunAgent: (agent: PolicyAgentDefinition) => void;
+  onRetryFocusedRun: () => void;
+  onCancelFocusedRun: () => void;
+  onDecideApproval: (approvalId: string, decision: 'approved' | 'rejected') => void;
   onAssignPolicyTeam: (category: PolicyTeamCategory) => void;
   onAttachTool: (recommendation: CapsuleToolRecommendation) => void;
 }) {
@@ -2236,7 +2294,16 @@ function CapsuleDetailPanel({
               Opening selected agent run...
             </div>
           ) : null}
-          {focusedRun ? <FocusedAgentRunPanel detail={focusedRun} events={focusedRunEvents} /> : null}
+          {focusedRun ? (
+            <FocusedAgentRunPanel
+              detail={focusedRun}
+              events={focusedRunEvents}
+              action={focusedRunAction}
+              onRetry={onRetryFocusedRun}
+              onCancel={onCancelFocusedRun}
+              onDecideApproval={onDecideApproval}
+            />
+          ) : null}
           <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-3">
             <div className="flex items-start gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-white shadow-sm shadow-slate-950/20">
@@ -2304,9 +2371,27 @@ function CapsuleDetailPanel({
   );
 }
 
-function FocusedAgentRunPanel({ detail, events }: { detail: AgentRunDetail; events: AgentRunEventSummary[] }) {
+function FocusedAgentRunPanel({
+  detail,
+  events,
+  action,
+  onRetry,
+  onCancel,
+  onDecideApproval,
+}: {
+  detail: AgentRunDetail;
+  events: AgentRunEventSummary[];
+  action: string | null;
+  onRetry: () => void;
+  onCancel: () => void;
+  onDecideApproval: (approvalId: string, decision: 'approved' | 'rejected') => void;
+}) {
   const { run, toolCalls = [], approvals = [] } = detail;
   const latestEvents = (events.length ? events : [{ id: 'empty', eventType: 'run.loaded', message: 'Run loaded. Waiting for worker receipts.', createdAt: run.updatedAt }]).slice(-5);
+  const pendingApprovals = approvals.filter((approval) => approval.status === 'pending');
+  const canRetry = run.status === 'queued' || run.status === 'failed' || run.status === 'cancelled' || run.status === 'expired';
+  const canCancel = run.status === 'queued' || run.status === 'running' || run.status === 'waiting_approval';
+  const disabled = Boolean(action);
   return (
     <article className="overflow-hidden rounded-xl border border-[#ff714d]/25 bg-[#fff8f5] shadow-sm shadow-[#ff714d]/10" data-testid="focused-agent-run">
       <div className="relative border-b border-[#ff714d]/15 bg-gradient-to-br from-[#fff7f3] via-white to-[#f8fafc] p-4">
@@ -2334,6 +2419,63 @@ function FocusedAgentRunPanel({ detail, events }: { detail: AgentRunDetail; even
           <Link href={run.outputHref} className="inline-flex rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
             Open output
           </Link>
+        </div>
+      ) : null}
+      {(canRetry || canCancel || pendingApprovals.length > 0) ? (
+        <div className="grid gap-2 border-t border-[#ff714d]/15 bg-white/80 p-3">
+          <div className="flex flex-wrap gap-2">
+            {canRetry ? (
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={onRetry}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:text-slate-300"
+              >
+                {action === 'retry' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
+                Retry
+              </button>
+            ) : null}
+            {canCancel ? (
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={onCancel}
+                className="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-white px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:cursor-wait disabled:text-rose-200"
+              >
+                {action === 'cancel' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
+                Cancel
+              </button>
+            ) : null}
+          </div>
+          {pendingApprovals.map((approval) => (
+            <div key={approval.id} className="rounded-md border border-amber-200 bg-amber-50/70 p-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-slate-800">{approval.toolName}</p>
+                  <p className="mt-1 text-[11px] leading-5 text-slate-500">{approval.reason ?? `Risk ${approval.riskLevel} approval requested.`}</p>
+                </div>
+                <span className={cn('shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold', agentRiskClass(approval.riskLevel))}>{approval.riskLevel}</span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => onDecideApproval(approval.id, 'approved')}
+                  className="rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-wait disabled:bg-slate-300"
+                >
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => onDecideApproval(approval.id, 'rejected')}
+                  className="rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:text-slate-300"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       ) : null}
       <RunEventTimeline events={latestEvents} />
@@ -2547,6 +2689,10 @@ function agentRunStatusClass(status: AgentRunSummary['status']): string {
     case 'expired':
       return 'bg-rose-100 text-rose-700';
   }
+}
+
+function isTerminalAgentRunStatus(status: AgentRunSummary['status']): boolean {
+  return status === 'succeeded' || status === 'failed' || status === 'cancelled' || status === 'expired';
 }
 
 function parseAgentRunSse(text: string): AgentRunEventSummary[] {

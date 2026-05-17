@@ -42,7 +42,7 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
             data: { approvalId: approval.id },
           })
         : run;
-      return NextResponse.json({ approval, run: toAgentRunOutput(failed), resumed: false });
+      return NextResponse.json({ approval, run: toAgentRunOutput(failed ?? run), resumed: false });
     }
 
     const resumed = run.status === 'waiting_approval'

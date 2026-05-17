@@ -179,7 +179,7 @@ describe('agent runtime no-op worker', () => {
       executionMode: 'research-memo',
       memoId: 'memo-1',
       outputCapsuleId: 'output-1',
-      outputHref: '/app',
+      outputHref: '/app?panel=memo&memoId=memo-1&outputCapsuleId=output-1',
     });
     expect(toolCalls).toContain('capsule-evidence-pack:succeeded');
     expect(toolCalls).toContain('policy-memo:succeeded');
@@ -214,7 +214,7 @@ describe('agent runtime no-op worker', () => {
     });
 
     expect(transitions).toEqual(['running', 'succeeded']);
-    expect(result).toMatchObject({ status: 'succeeded', executionMode: 'output-formatter', memoId: 'memo-format-1', outputHref: '/app' });
+    expect(result).toMatchObject({ status: 'succeeded', executionMode: 'output-formatter', memoId: 'memo-format-1', outputHref: '/app?panel=memo&memoId=memo-format-1' });
     expect(mirrored).toContain('formatted_output_created');
   });
 });
