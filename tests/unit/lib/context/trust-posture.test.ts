@@ -68,6 +68,7 @@ function readyCapsule(): PraxisCapsule {
     scope: 'situation',
     parentCapsuleId: null,
     forkedFromVersion: null,
+    associatedCapsuleIds: [],
     coreRefs: {
       userCoreId: 'user-core',
       teamCoreId: null,

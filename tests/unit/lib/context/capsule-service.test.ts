@@ -137,6 +137,20 @@ describe('capsule service', () => {
     expect(db.data.has('users/u1/capsules/cap-2/versions/v2')).toBe(true);
   });
 
+  it('associates reference capsules without adding the active capsule to itself', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: 'cap-main', coreRefs: { situationCoreId: 'sit-1' } }, deps(db));
+    await createCapsule('u1', { capsuleId: 'cap-source', coreRefs: { sourceCoreIds: ['src-1'] } }, deps(db));
+    await createCapsule('u1', { capsuleId: 'cap-output', coreRefs: { outputCoreIds: ['memo'] } }, deps(db));
+
+    const updated = await bumpCapsuleVersion('u1', 'cap-main', {
+      associatedCapsuleIds: ['cap-source', 'cap-main', 'cap-output', 'cap-source'],
+    }, deps(db));
+
+    expect(updated?.associatedCapsuleIds).toEqual(['cap-source', 'cap-output']);
+    expect(updated?.version).toBe(2);
+  });
+
   it('keeps the context-stack compatibility adapter capsule-backed', async () => {
     const db = new FakeFirestore();
     const result = await saveContextStackCompat('u1', {

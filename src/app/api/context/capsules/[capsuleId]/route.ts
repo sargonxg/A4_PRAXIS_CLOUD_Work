@@ -26,6 +26,7 @@ type RouteContext = { params: Promise<{ capsuleId: string }> };
 const PatchSchema = z.object({
   label: z.string().min(1).max(160).optional(),
   scope: z.enum(['user', 'situation', 'team']).optional(),
+  associatedCapsuleIds: z.array(z.string().min(1).max(120)).max(20).optional(),
   coreRefs: z.object({
     userCoreId: z.string().nullable().optional(),
     teamCoreId: z.string().nullable().optional(),

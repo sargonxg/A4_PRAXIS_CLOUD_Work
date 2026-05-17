@@ -42,6 +42,7 @@ const CreateSchema = z.object({
   capsuleId: z.string().min(1).max(120).optional(),
   label: z.string().min(1).max(160).optional(),
   scope: z.enum(['user', 'situation', 'team']).optional(),
+  associatedCapsuleIds: z.array(z.string().min(1).max(120)).max(20).optional(),
   coreRefs: CoreRefsSchema,
   retrievalPolicy: RetrievalPolicySchema,
   community: z.object({
@@ -167,6 +168,7 @@ export const POST = withAuth(async (request, user) => {
       capsuleId: parsed.data.capsuleId,
       label: parsed.data.label,
       scope: parsed.data.scope,
+      associatedCapsuleIds: parsed.data.associatedCapsuleIds,
       coreRefs: parsed.data.coreRefs,
       retrievalPolicy: parsed.data.retrievalPolicy,
       community: parsed.data.community,

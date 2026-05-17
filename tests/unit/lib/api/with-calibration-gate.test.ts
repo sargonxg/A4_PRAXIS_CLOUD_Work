@@ -34,6 +34,7 @@ function fakeCapsule(refs: CapsuleCoreRefs): PraxisCapsule {
     scope: 'situation',
     parentCapsuleId: null,
     forkedFromVersion: null,
+    associatedCapsuleIds: [],
     coreRefs: refs,
     retrievalPolicy: { layers: [], limit: 10, checkFreshness: false, freshnessWindowDays: 90 },
     health: { score: 80, label: 'ready', dimensions: [] } as unknown as PraxisCapsule['health'],

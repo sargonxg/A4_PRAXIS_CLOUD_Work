@@ -101,6 +101,7 @@ export interface PraxisCapsule {
   scope: CapsuleScope;
   parentCapsuleId: string | null;
   forkedFromVersion: number | null;
+  associatedCapsuleIds: string[];
   coreRefs: CapsuleCoreRefs;
   retrievalPolicy: ContextRetrievalPolicy;
   health: ContextHealth;
@@ -122,6 +123,7 @@ export interface CreateCapsuleInput {
   capsuleId?: string;
   label?: string;
   scope?: CapsuleScope;
+  associatedCapsuleIds?: string[];
   coreRefs?: Partial<CapsuleCoreRefs>;
   retrievalPolicy?: Partial<ContextRetrievalPolicy>;
   activeForSituationIds?: string[];
@@ -205,6 +207,7 @@ export async function createCapsule(
     scope: input.scope ?? inferScope(input.coreRefs),
     parentCapsuleId: input.provenance?.parentCapsuleId ?? null,
     forkedFromVersion: input.provenance?.forkedFromVersion ?? null,
+    associatedCapsuleIds: cleanStringArray(input.associatedCapsuleIds),
     coreRefs: normalizeCoreRefs(input.coreRefs),
     retrievalPolicy: normalizeRetrievalPolicy(input.retrievalPolicy),
     health: computeCapsuleHealth(input.coreRefs),
@@ -527,6 +530,9 @@ export async function bumpCapsuleVersion(
     ...capsule,
     label: patch.label ?? capsule.label,
     scope: patch.scope ?? capsule.scope,
+    associatedCapsuleIds: patch.associatedCapsuleIds
+      ? uniqueStrings(cleanStringArray(patch.associatedCapsuleIds).filter((id) => id !== capsule.capsuleId)).slice(0, 20)
+      : capsule.associatedCapsuleIds,
     coreRefs: normalizeCoreRefs({ ...capsule.coreRefs, ...(patch.coreRefs ?? {}) }),
     retrievalPolicy: normalizeRetrievalPolicy({ ...capsule.retrievalPolicy, ...(patch.retrievalPolicy ?? {}) }),
     activeForSituationIds: patch.activeForSituationIds ?? capsule.activeForSituationIds,
@@ -782,6 +788,7 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     scope: body.scope === 'team' || body.scope === 'situation' || body.scope === 'user' ? body.scope : inferScope(coreRefs),
     parentCapsuleId: stringOrNull(body.parentCapsuleId),
     forkedFromVersion: typeof body.forkedFromVersion === 'number' ? Math.max(1, Math.floor(body.forkedFromVersion)) : null,
+    associatedCapsuleIds: uniqueStrings(cleanStringArray(body.associatedCapsuleIds).filter((id) => id !== cleanId(capsuleId, DEFAULT_CONTEXT_STACK_ID))).slice(0, 20),
     coreRefs,
     retrievalPolicy: normalizeRetrievalPolicy(isRecord(body.retrievalPolicy) ? body.retrievalPolicy : {}),
     health: isContextHealth(body.health) ? enrichContextHealth(body.health) : computeCapsuleHealth(coreRefs),
