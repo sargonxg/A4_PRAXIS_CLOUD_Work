@@ -24,7 +24,7 @@ const capsule = {
     productCoreIds: [],
     memoryCoreId: null,
   },
-} as PraxisCapsule;
+} as unknown as PraxisCapsule;
 
 describe('capsule evidence pack', () => {
   it('builds sourced paragraph records from capsule refs, knowledge docs, chunks, memories, and output history', async () => {

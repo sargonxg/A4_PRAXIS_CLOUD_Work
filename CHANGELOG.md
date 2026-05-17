@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Removed
+
+- Dead route `api/graph/ingest` and its orphan `conflict-service` (zero callers).
+
 - feat(knowledge): add user-scoped repository backend for capsule documents.
   Build 2026.05.17.01 adds Knowledge Library repositories, repository document
   records, capsule document association APIs, Vertex/Gemini document digestion,
