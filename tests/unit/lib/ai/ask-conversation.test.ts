@@ -1,12 +1,88 @@
 import { describe, expect, it } from 'vitest';
 import {
   askIntentDirective,
+  buildAskContextReceipt,
+  buildAskTimelineMessages,
   buildAskConversationMessages,
   classifyAskIntent,
 } from '@/lib/ai/ask-conversation';
 import type { AskThreadTurnRecord } from '@/lib/firebase/ask-thread-service';
 
 describe('ask conversation continuity', () => {
+  it('builds an auditable context receipt from Ask runtime metadata', () => {
+    const receipt = buildAskContextReceipt({
+      capsuleId: 'capsule-1',
+      capsuleVersion: 3,
+      threadId: 'ask-capsule-1',
+      runtime: {
+        traceId: 'trace-1',
+        memoryPersistence: 'cloud-sql',
+        contextCores: {
+          userCoreId: 'user-core-1',
+          situationCoreId: 'situation-core-1',
+          sourceDocumentCoreIds: ['doc-1', 'source-1'],
+          graphCoreId: 'graph-1',
+          memoryCoreId: 'memory-1',
+          outputCoreIds: ['memo'],
+        },
+        retrieval: {
+          corpusSearch: true,
+          groundedSearch: false,
+          sourceDocumentCount: 2,
+          activeGapCount: 1,
+          retrievedDocumentIds: ['doc-1'],
+          retrievedSourceIds: ['source-1'],
+          planLayerOrder: ['capsule-core-refs', 'source-receipts'],
+          evidencePackId: 'pack-1',
+          evidenceParagraphCount: 4,
+          evidenceGapCount: 1,
+        },
+      },
+      historyTurnCount: 2,
+      warnings: ['Thin source coverage.'],
+    });
+
+    expect(receipt).toMatchObject({
+      capsuleId: 'capsule-1',
+      capsuleVersion: 3,
+      threadId: 'ask-capsule-1',
+      traceId: 'trace-1',
+      health: 'thin',
+      evidenceCount: 4,
+      historyTurnCount: 2,
+      memoryPersistence: 'cloud-sql',
+    });
+    expect(receipt.coreRefs.sourceDocumentCoreIds).toEqual(['doc-1', 'source-1']);
+    expect(receipt.retrievalLayers).toEqual(['capsule-core-refs', 'source-receipts']);
+    expect(receipt.stages.map((stage) => stage.stage)).toEqual([
+      'capsule_resolved',
+      'history_loaded',
+      'retrieval_plan_built',
+      'evidence_pack_built',
+      'model_started',
+      'turn_persisted',
+    ]);
+  });
+
+  it('maps persisted turns into inline Ask timeline messages', () => {
+    const timeline = buildAskTimelineMessages([
+      turn('turn-1', 'Summarize the situation.', 'The main issue is a disputed deadline.'),
+      turn('turn-2', 'Who can block this?', 'The regulator and finance ministry can delay approval.'),
+    ]);
+
+    expect(timeline.map((message) => message.role)).toEqual(['user', 'assistant', 'user', 'assistant']);
+    expect(timeline[0]).toEqual(expect.objectContaining({
+      id: 'turn-1-user',
+      content: 'Summarize the situation.',
+    }));
+    expect(timeline[1]).toEqual(expect.objectContaining({
+      id: 'turn-1-assistant',
+      content: 'The main issue is a disputed deadline.',
+      turnId: 'turn-1',
+      receipt: expect.objectContaining({ capsuleVersion: 1 }),
+    }));
+  });
+
   it('injects persisted turns before a one-message follow-up', () => {
     const messages = [{ role: 'user' as const, content: 'What changed since then?' }];
     const turns = [

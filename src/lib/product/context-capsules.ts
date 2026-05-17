@@ -237,6 +237,28 @@ export interface ContextCapsuleTemplate {
   contextCores: CoreSpecimenKind[];
 }
 
+export type CapsuleStarterCategory = 'situation' | 'tool' | 'output' | 'user';
+
+export interface CapsuleStarterInspectionSection {
+  label: string;
+  detail: string;
+}
+
+export interface CapsuleStarterDefinition {
+  starterId: string;
+  category: CapsuleStarterCategory;
+  label: string;
+  summary: string;
+  detail: string;
+  tags: string[];
+  colorToken: string;
+  coreRefs: CapsuleCoreRefsLike;
+  recommendedToolIds: string[];
+  outputProductIds: string[];
+  inspectionSections: CapsuleStarterInspectionSection[];
+  combinesWellWith: string[];
+}
+
 export type PolicyPathId =
   | 'generic-policy'
   | 'foreign-policy'
@@ -590,6 +612,94 @@ export const CONTEXT_CAPSULE_TEMPLATES: ContextCapsuleTemplate[] = [
     contextCores: ['situation', 'source', 'time', 'tool', 'objective', 'output'],
   },
 ];
+
+const STARTER_COLORS: Record<CapsuleStarterCategory, string> = {
+  situation: '#0f766e',
+  tool: '#b45309',
+  output: '#6d28d9',
+  user: '#2563eb',
+};
+
+function starter(
+  starterId: string,
+  category: CapsuleStarterCategory,
+  label: string,
+  summary: string,
+  detail: string,
+  tags: string[],
+  coreRefs: CapsuleCoreRefsLike,
+  recommendedToolIds: string[],
+  outputProductIds: string[],
+  combinesWellWith: string[],
+): CapsuleStarterDefinition {
+  return {
+    starterId,
+    category,
+    label,
+    summary,
+    detail,
+    tags: ['starter', category, ...tags],
+    colorToken: STARTER_COLORS[category],
+    coreRefs,
+    recommendedToolIds,
+    outputProductIds,
+    combinesWellWith,
+    inspectionSections: [
+      { label: 'Best use', detail: summary },
+      { label: 'How PRAXIS should use it', detail },
+      { label: 'Interchange rule', detail: 'This capsule is safe to fork, combine, tag, and improve without changing the starter definition.' },
+    ],
+  };
+}
+
+export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
+  starter('starter-situation-conflict-analysis', 'situation', 'Conflict analysis capsule', 'A reusable conflict-analysis situation capsule for actors, episodes, claims, source posture, and power dynamics.', 'Use this when a policy question starts with instability, contested authority, coercion, negotiation, or escalation risk. It primes PRAXIS to ask for actors, claims, events, sources, and decision windows before drafting.', ['diplomatic', 'security-defence', 'conflict-resolution'], { situationCoreId: 'starter-situation-conflict-analysis', pathCoreId: 'conflict-resolution', toolCoreIds: ['stakeholder-map', 'ach'], outputCoreIds: ['situation-brief'], productCoreIds: ['actor-power-map'] }, ['stakeholder-map', 'ach', 'scenario-projector'], ['situation-brief', 'actor-power-map'], ['starter-tool-stakeholder-map', 'starter-output-options-memo', 'starter-user-foreign-policy-analyst']),
+  starter('starter-situation-crisis-brief', 'situation', 'Crisis brief capsule', 'A fast-moving crisis capsule for updates, deadlines, stale assumptions, immediate risks, and executive briefings.', 'Use this for daily or hourly policy work where time, source freshness, and escalation gates matter. It keeps the answer focused on what changed, what is uncertain, and what decision is live.', ['crisis-ops', 'timeline', 'brief'], { situationCoreId: 'starter-situation-crisis-brief', timeCoreId: 'starter-time-crisis-clock', toolCoreIds: ['ask-praxis', 'grounded-research'], outputCoreIds: ['situation-brief'], productCoreIds: ['situation-brief'] }, ['grounded-research', 'scenario-projector', 'commitment-tracker'], ['situation-brief', 'agent-handover'], ['starter-tool-grounded-research', 'starter-output-situation-brief', 'starter-user-crisis-operator']),
+  starter('starter-situation-humanitarian-access', 'situation', 'Humanitarian access capsule', 'A humanitarian situation capsule for affected populations, access constraints, protection concerns, and operational source gaps.', 'Use this for access, needs, displacement, protection, and humanitarian coordination work. It tells PRAXIS to separate operational reporting from legal or advocacy claims.', ['humanitarian', 'ocha', 'access', 'protection'], { situationCoreId: 'starter-situation-humanitarian-access', pathCoreId: 'humanitarian-analysis', sourceCoreIds: ['humanitarian_web'], toolCoreIds: ['grounded-research', 'sourceability'], outputCoreIds: ['situation-brief'] }, ['grounded-research', 'sourceability', 'memo-drafter'], ['situation-brief', 'options-memo'], ['starter-tool-sourceability-check', 'starter-output-situation-brief', 'starter-user-crisis-operator']),
+  starter('starter-situation-economic-exposure', 'situation', 'Economic exposure capsule', 'An economic statecraft capsule for entities, sectors, sanctions posture, trade exposure, and decision-relevant risks.', 'Use this when policy analysis depends on financial exposure, sanctions, trade controls, development finance, or market effects. It keeps jurisdictions, regimes, sources, and sign-off gaps visible.', ['economic-sanctions', 'ofac', 'trade', 'finance'], { situationCoreId: 'starter-situation-economic-exposure', pathCoreId: 'economic-sanctions', sourceCoreIds: ['world-bank', 'ofac'], toolCoreIds: ['grounded-research', 'sourceability'], outputCoreIds: ['compliance-note'] }, ['grounded-research', 'sourceability', 'ach'], ['compliance-note', 'options-memo'], ['starter-tool-sourceability-check', 'starter-output-compliance-note', 'starter-user-legal-compliance-reviewer']),
+  starter('starter-situation-information-environment', 'situation', 'Information environment capsule', 'A narrative and cyber-information capsule for media posture, disinformation risk, platform scope, and response options.', 'Use this when the work turns on narratives, public communication, cyber posture, or information integrity. It prompts PRAXIS to separate observed claims from narrative interpretation.', ['information-cyber', 'media', 'narrative', 'disinformation'], { situationCoreId: 'starter-situation-information-environment', pathCoreId: 'information-cyber', sourceCoreIds: ['grounded_search'], toolCoreIds: ['grounded-research', 'frame-narrative'], outputCoreIds: ['information-environment-brief'] }, ['grounded-research', 'frame-narrative', 'contradiction-finder'], ['information-environment-brief', 'options-memo'], ['starter-tool-grounded-research', 'starter-output-options-memo', 'starter-user-foreign-policy-analyst']),
+  starter('starter-situation-decision-clock', 'situation', 'Decision clock capsule', 'A time-sensitive decision capsule for deadlines, review gates, trigger points, stale assumptions, and monitoring cadence.', 'Use this when the most important question is timing. It helps PRAXIS reason about what expires, what must be watched, and when a recommendation should be revisited.', ['crisis-ops', 'timeline', 'monitoring', 'decision-window'], { situationCoreId: 'starter-situation-decision-clock', timeCoreId: 'starter-time-decision-clock', toolCoreIds: ['scenario-projector', 'commitment-tracker'], outputCoreIds: ['situation-brief'], productCoreIds: ['agent-handover'] }, ['scenario-projector', 'commitment-tracker', 'ask-praxis'], ['situation-brief', 'agent-handover'], ['starter-situation-crisis-brief', 'starter-tool-scenario-projector', 'starter-output-agent-handover']),
+  starter('starter-tool-grounded-research', 'tool', 'Grounded research tool capsule', 'A tool capsule that routes source discovery, search posture, source receipts, and import decisions into PRAXIS runs.', 'Use this when the active capsule needs better source coverage. It marks grounded research as allowed, but keeps source promotion explicit instead of silently treating search hits as canonical.', ['grounded-search', 'source', 'research'], { toolCoreIds: ['grounded-research'], objectiveCoreIds: ['find-source-gaps'], sourceCoreIds: ['grounded_search'] }, ['grounded-research', 'sourceability', 'ask-praxis'], ['situation-brief', 'options-memo'], ['starter-situation-crisis-brief', 'starter-situation-economic-exposure', 'starter-output-situation-brief']),
+  starter('starter-tool-sourceability-check', 'tool', 'Sourceability check tool capsule', 'A tool capsule for claim support, weak evidence, citation gaps, and source reliability review.', 'Use this before exporting a memo or brief. It tells PRAXIS to mark unsupported claims, stale citations, missing receipts, and corroboration needs.', ['sourceability', 'citations', 'review'], { toolCoreIds: ['sourceability'], objectiveCoreIds: ['review-weak-claims'], outputCoreIds: ['compliance-note'] }, ['sourceability', 'contradiction-finder', 'ach'], ['compliance-note', 'options-memo'], ['starter-output-compliance-note', 'starter-output-options-memo', 'starter-user-legal-compliance-reviewer']),
+  starter('starter-tool-stakeholder-map', 'tool', 'Stakeholder map tool capsule', 'A tool capsule for actors, blockers, approvers, incentives, and relationship mapping.', 'Use this when the answer needs a power map rather than a generic summary. It routes PRAXIS toward actor relations, influence, incentives, and blockers.', ['stakeholder-map', 'graph', 'power'], { toolCoreIds: ['stakeholder-map'], graphCoreId: 'starter-graph-stakeholder-map', objectiveCoreIds: ['map-stakeholders'], productCoreIds: ['actor-power-map'] }, ['stakeholder-map', 'position-vs-interest', 'coalition-detector'], ['actor-power-map', 'options-memo'], ['starter-situation-conflict-analysis', 'starter-output-board-brief', 'starter-user-mediation-practitioner']),
+  starter('starter-tool-scenario-projector', 'tool', 'Scenario projector tool capsule', 'A tool capsule for plausible futures, indicators, triggers, and decision-branch monitoring.', 'Use this when the user needs scenarios or next-path analysis. It keeps indicators, assumptions, and uncertainty explicit in the run.', ['scenario', 'forecast', 'monitoring'], { toolCoreIds: ['scenario-projector'], timeCoreId: 'starter-time-scenario-horizon', objectiveCoreIds: ['build-scenarios'] }, ['scenario-projector', 'commitment-tracker', 'ach'], ['situation-brief', 'board-brief'], ['starter-situation-decision-clock', 'starter-output-situation-brief', 'starter-user-crisis-operator']),
+  starter('starter-tool-memo-drafter', 'tool', 'Memo drafter tool capsule', 'A tool capsule that routes capsule context into memo, brief, handover, or board-ready drafting.', 'Use this once the context is good enough to write. It keeps output target, audience, citation posture, and gaps tied to the capsule.', ['memo-drafter', 'writing', 'output'], { toolCoreIds: ['memo-drafter'], outputCoreIds: ['options-memo'], productCoreIds: ['options-memo'], objectiveCoreIds: ['draft-output'] }, ['memo-drafter', 'sourceability', 'ask-praxis'], ['options-memo', 'board-brief', 'agent-handover'], ['starter-output-options-memo', 'starter-output-board-brief', 'starter-user-foreign-policy-analyst']),
+  starter('starter-output-options-memo', 'output', 'Options memo output capsule', 'An output capsule for decision memos with options, tradeoffs, risks, evidence posture, and recommendation framing.', 'Use this when the end product is a concise policy memo. It gives PRAXIS a stable output target and asks for caveats and weak evidence instead of polished certainty.', ['options-memo', 'decision', 'writing'], { outputCoreIds: ['options-memo'], productCoreIds: ['options-memo'], objectiveCoreIds: ['decision-options'] }, ['memo-drafter', 'sourceability', 'ach'], ['options-memo'], ['starter-tool-memo-drafter', 'starter-tool-sourceability-check', 'starter-user-foreign-policy-analyst']),
+  starter('starter-output-situation-brief', 'output', 'Situation brief output capsule', 'An output capsule for compact updates on what changed, why it matters, and what decisions are live.', 'Use this for crisis, humanitarian, or monitoring work where the reader needs current posture quickly. It emphasizes change, freshness, and next action.', ['situation-brief', 'update', 'crisis'], { outputCoreIds: ['situation-brief'], productCoreIds: ['situation-brief'], timeCoreId: 'starter-time-situation-brief' }, ['ask-praxis', 'grounded-research', 'memo-drafter'], ['situation-brief'], ['starter-situation-crisis-brief', 'starter-tool-grounded-research', 'starter-user-crisis-operator']),
+  starter('starter-output-board-brief', 'output', 'Board brief output capsule', 'An output capsule for executive synthesis with risk, options, requested decision, and board-level language.', 'Use this when the reader is senior and needs the issue translated into decision, exposure, and governance terms. It suppresses unnecessary process detail.', ['board-brief', 'executive', 'strategy'], { outputCoreIds: ['board-brief'], productCoreIds: ['board-brief'], userCoreId: 'starter-user-executive-reader' }, ['memo-drafter', 'sourceability', 'scenario-projector'], ['board-brief'], ['starter-tool-memo-drafter', 'starter-tool-scenario-projector', 'starter-user-foreign-policy-analyst']),
+  starter('starter-output-compliance-note', 'output', 'Compliance note output capsule', 'An output capsule for rule checks, exposure, source receipts, contradictions, and sign-off posture.', 'Use this for legal, sanctions, rights, HR, or regulatory review. It asks PRAXIS to keep rules, evidence, and unresolved review gates separate.', ['compliance-note', 'legal', 'review'], { outputCoreIds: ['compliance-note'], productCoreIds: ['compliance-note'], pathCoreId: 'legal-compliance' }, ['sourceability', 'contradiction-finder', 'memo-drafter'], ['compliance-note'], ['starter-situation-economic-exposure', 'starter-tool-sourceability-check', 'starter-user-legal-compliance-reviewer']),
+  starter('starter-output-agent-handover', 'output', 'Agent handover output capsule', 'An output capsule for allowed actions, source scope, escalation rules, caveats, and next-run instructions.', 'Use this when another analyst or agent should inherit the work. It preserves constraints, open questions, approvals, and what not to do.', ['agent-handover', 'memory', 'handover'], { outputCoreIds: ['agent-handover'], productCoreIds: ['agent-handover'], memoryCoreId: 'starter-memory-agent-handover' }, ['ask-praxis', 'memo-drafter', 'sourceability'], ['agent-handover'], ['starter-situation-decision-clock', 'starter-tool-memo-drafter', 'starter-user-crisis-operator']),
+  starter('starter-user-foreign-policy-analyst', 'user', 'Foreign policy analyst user capsule', 'A user capsule for diplomatic analysis, source discipline, concise memo style, and policy-relevant uncertainty.', 'Use this to set the inherited voice and analytical lens for foreign policy work. It favors clear caveats, official-source posture, and decision usefulness.', ['foreign-policy', 'diplomatic', 'analyst'], { userCoreId: 'starter-user-foreign-policy-analyst', toolCoreIds: ['ask-praxis', 'sourceability'], outputCoreIds: ['options-memo'] }, ['ask-praxis', 'sourceability', 'memo-drafter'], ['options-memo', 'situation-brief'], ['starter-situation-conflict-analysis', 'starter-output-options-memo', 'starter-tool-grounded-research']),
+  starter('starter-user-mediation-practitioner', 'user', 'Mediation practitioner user capsule', 'A user capsule for negotiation, incentives, red lines, informal authority, and conflict-resolution posture.', 'Use this when recommendations must respect parties, mandates, relationships, and political timing. It asks PRAXIS to separate positions from interests.', ['mediation', 'negotiation', 'human-friction'], { userCoreId: 'starter-user-mediation-practitioner', pathCoreId: 'mediator-peace-process', toolCoreIds: ['position-vs-interest', 'stakeholder-map'], outputCoreIds: ['actor-power-map'] }, ['position-vs-interest', 'stakeholder-map', 'scenario-projector'], ['actor-power-map', 'options-memo'], ['starter-tool-stakeholder-map', 'starter-situation-conflict-analysis', 'starter-output-options-memo']),
+  starter('starter-user-crisis-operator', 'user', 'Crisis operator user capsule', 'A user capsule for operational speed, current facts, decision windows, escalation, and handover readiness.', 'Use this for time-sensitive work where the answer should be direct, current, and action-oriented. It keeps gaps visible instead of burying uncertainty.', ['crisis-ops', 'handover', 'operations'], { userCoreId: 'starter-user-crisis-operator', toolCoreIds: ['ask-praxis', 'grounded-research'], outputCoreIds: ['situation-brief'], memoryCoreId: 'starter-memory-crisis-handover' }, ['ask-praxis', 'grounded-research', 'commitment-tracker'], ['situation-brief', 'agent-handover'], ['starter-situation-crisis-brief', 'starter-situation-decision-clock', 'starter-output-situation-brief']),
+  starter('starter-user-legal-compliance-reviewer', 'user', 'Legal compliance reviewer user capsule', 'A user capsule for rules, source receipts, thresholds, sign-off gates, and cautious compliance language.', 'Use this when the reader needs a conservative review stance. It pushes PRAXIS to distinguish evidence, rule interpretation, risk, and required approval.', ['legal-compliance', 'review', 'sourceability'], { userCoreId: 'starter-user-legal-compliance-reviewer', pathCoreId: 'legal-compliance', toolCoreIds: ['sourceability', 'contradiction-finder'], outputCoreIds: ['compliance-note'] }, ['sourceability', 'contradiction-finder', 'ach'], ['compliance-note', 'options-memo'], ['starter-output-compliance-note', 'starter-tool-sourceability-check', 'starter-situation-economic-exposure']),
+];
+
+export function getCapsuleStarterDefinition(capsuleId: string | null | undefined): CapsuleStarterDefinition | null {
+  if (!capsuleId) return null;
+  return CAPSULE_STARTER_DEFINITIONS.find((starterDefinition) => starterDefinition.starterId === capsuleId) ?? null;
+}
+
+export function buildCapsuleStarterPromptBlock(capsuleId: string | null | undefined): string | null {
+  const starterDefinition = getCapsuleStarterDefinition(capsuleId);
+  if (!starterDefinition) return null;
+  return [
+    '[starter_capsule_definition]',
+    `starter_id: ${starterDefinition.starterId}`,
+    `starter_category: ${starterDefinition.category}`,
+    `starter_label: ${starterDefinition.label}`,
+    `starter_summary: ${starterDefinition.summary}`,
+    `starter_detail: ${starterDefinition.detail}`,
+    `starter_tags: ${starterDefinition.tags.join(', ')}`,
+    `recommended_tools: ${starterDefinition.recommendedToolIds.length ? starterDefinition.recommendedToolIds.join(', ') : 'none'}`,
+    `output_targets: ${starterDefinition.outputProductIds.length ? starterDefinition.outputProductIds.join(', ') : 'none'}`,
+    `combines_well_with: ${starterDefinition.combinesWellWith.length ? starterDefinition.combinesWellWith.join(', ') : 'none'}`,
+    ...starterDefinition.inspectionSections.map((section) => `starter_section_${stableReceiptPart(section.label)}: ${section.detail}`),
+    'runtime_rule: Treat this starter definition as reusable operating context for Ask PRAXIS, tool routing, agent runs, and output drafting.',
+    'runtime_rule: Preserve user edits on the persisted capsule, but use this starter definition to explain what the capsule is for and how to improve it.',
+    '',
+  ].join('\n');
+}
 
 export const POLICY_USER_ARCHETYPES = [
   {

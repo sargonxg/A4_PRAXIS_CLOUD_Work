@@ -9,6 +9,7 @@ import {
   createCapsuleFromCorePackage,
   forkCapsule,
   listCapsules,
+  seedStarterCapsules,
 } from '@/lib/context/capsule-service';
 import { parseCorePackage } from '@/lib/context/core-package';
 
@@ -82,6 +83,10 @@ const CombineSchema = z.object({
   activateForSituationIds: z.array(z.string().min(1)).optional(),
 });
 
+const SeedStartersSchema = z.object({
+  action: z.literal('seed-starters'),
+});
+
 export const GET = withAuth(async (request, user) => {
   try {
     if (user.isDemo) return NextResponse.json({ capsules: [], persisted: false });
@@ -102,6 +107,12 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json({ error: 'Sample mode cannot create private capsules' }, { status: 403 });
     }
     const raw = await request.json().catch(() => ({}));
+
+    const seedParsed = SeedStartersSchema.safeParse(raw);
+    if (seedParsed.success) {
+      const result = await seedStarterCapsules(user.uid);
+      return NextResponse.json(result, { status: result.created > 0 ? 201 : 200 });
+    }
 
     const importParsed = ImportCoreSchema.safeParse(raw);
     if (importParsed.success) {

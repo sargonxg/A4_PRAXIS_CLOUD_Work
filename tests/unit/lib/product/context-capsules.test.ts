@@ -7,9 +7,11 @@ import {
   CAPSULE_CONNECTOR_REGISTRY,
   CAPSULE_CONNECTOR_IDEAS,
   CAPSULE_OUTPUT_PRODUCTS,
+  CAPSULE_STARTER_DEFINITIONS,
   CONTEXT_CAPSULE_TEMPLATES,
   POLICY_PATH_PROFILES,
   POLICY_TEAM_CATEGORIES,
+  buildCapsuleStarterPromptBlock,
   capsuleAttachmentCounts,
   capsuleSlotReadiness,
   categoryTagsForPolicyTeam,
@@ -148,6 +150,42 @@ describe('context capsule product contract', () => {
     expect(templates.get('human-friction-map')?.prompt.toLowerCase()).toContain('blockers');
     expect(templates.get('decision-clock')?.prompt.toLowerCase()).toContain('stale assumptions');
     expect(CAPSULE_COMBINATION_RECIPES.some((recipe) => recipe.id === 'temporal-friction-decision')).toBe(true);
+  });
+
+  it('defines exactly twenty rich starter capsules across situation, tool, output, and user categories', () => {
+    const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
+    const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
+
+    expect(CAPSULE_STARTER_DEFINITIONS).toHaveLength(20);
+    expect(starterIds.size).toBe(20);
+    expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
+
+    const categoryCounts = CAPSULE_STARTER_DEFINITIONS.reduce<Record<string, number>>((counts, starter) => {
+      counts[starter.category] = (counts[starter.category] ?? 0) + 1;
+      return counts;
+    }, {});
+    expect(categoryCounts).toMatchObject({ situation: 6, tool: 5, output: 5, user: 4 });
+
+    for (const starter of CAPSULE_STARTER_DEFINITIONS) {
+      expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
+      expect(starter.tags).toEqual(expect.arrayContaining(['starter', starter.category]));
+      expect(starter.summary.length).toBeGreaterThan(20);
+      expect(starter.detail.length).toBeGreaterThan(40);
+      expect(starter.colorToken).toMatch(/^#/);
+      expect(starter.inspectionSections.length).toBeGreaterThanOrEqual(3);
+      expect(starter.combinesWellWith.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('builds model-ready starter context for Ask PRAXIS and agent runs', () => {
+    const promptBlock = buildCapsuleStarterPromptBlock('starter-tool-grounded-research');
+
+    expect(promptBlock).toContain('[starter_capsule_definition]');
+    expect(promptBlock).toContain('starter_category: tool');
+    expect(promptBlock).toContain('recommended_tools: grounded-research, sourceability, ask-praxis');
+    expect(promptBlock).toContain('output_targets: situation-brief, options-memo');
+    expect(promptBlock).toContain('runtime_rule: Treat this starter definition as reusable operating context');
+    expect(buildCapsuleStarterPromptBlock('custom-capsule')).toBeNull();
   });
 
   it('finds policy teams from capsule tags', () => {

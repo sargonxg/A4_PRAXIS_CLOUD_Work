@@ -8,8 +8,10 @@
  */
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   CheckCircle2,
   ChevronDown,
@@ -37,6 +39,7 @@ import type { ActiveContextStackState } from '@/lib/context/active-context-stack
 import { ASK_ORCHESTRATION_OPTIONS, ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
 import type { ModelPreferenceValue } from '@/lib/ai/model-preferences';
 import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
+import { buildAskTimelineMessages, type AskTimelineMessage } from '@/lib/ai/ask-conversation';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
@@ -57,13 +60,22 @@ interface StreamEvent extends Record<string, unknown> {
 
 type AskThreadTurn = {
   id: string;
+  uid?: string;
+  capsuleId?: string;
+  threadId?: string;
+  situationId?: string | null;
   prompt: string;
   output: string;
   capsuleVersion: number | null;
+  pathId?: string | null;
+  pathVersion?: number | null;
+  frameworkSteps?: unknown[];
+  toolInvocations?: unknown[];
   runtime?: {
     provider?: string;
     model?: string;
     intent?: string;
+    contextReceipt?: Record<string, unknown>;
     contextCores?: {
       userCoreId?: string | null;
       situationCoreId?: string | null;
@@ -79,6 +91,11 @@ type AskThreadTurn = {
     };
   };
   createdAt: string;
+};
+
+type AskPanelMessage = AskTimelineMessage & {
+  stages?: StreamStage[];
+  streaming?: boolean;
 };
 
 type AskThreadHistory = {
@@ -134,7 +151,7 @@ export function AskStreamPanel({
   const reduceMotion = useReducedMotion();
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const [prompt, setPrompt] = useState('');
-  const [events, setEvents] = useState<StreamStage[]>([]);
+  const [timelineMessages, setTimelineMessages] = useState<AskPanelMessage[]>([]);
   const [thinking, setThinking] = useState(false);
   const [interrupt, setInterrupt] = useState<InterruptRequest | null>(null);
   const [swapTarget, setSwapTarget] = useState<CoreSpecimenKind | null>(null);
@@ -143,6 +160,7 @@ export function AskStreamPanel({
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyTurns, setHistoryTurns] = useState<AskThreadTurn[]>([]);
   const abortRef = useRef<AbortController | null>(null);
+  const timelineEndRef = useRef<HTMLDivElement>(null);
   const selectedRuntime = useMemo(() => getAskRuntimeOption(selectedModel), [selectedModel]);
   const threadId = useMemo(() => (capsuleId ? `ask-${capsuleId}` : null), [capsuleId]);
   const contextHealth = useMemo(() => buildContextHealthReport({
@@ -161,6 +179,7 @@ export function AskStreamPanel({
   const loadHistory = useCallback(async () => {
     if (!capsuleId || !threadId) {
       setHistoryTurns([]);
+      setTimelineMessages([]);
       return;
     }
     setHistoryLoading(true);
@@ -169,13 +188,17 @@ export function AskStreamPanel({
       const res = await fetch(`/api/ai/chat?${params.toString()}`, { credentials: 'include' });
       if (!res.ok) return;
       const json = await res.json() as AskThreadHistory;
-      setHistoryTurns(json.turns ?? []);
+      const turns = json.turns ?? [];
+      setHistoryTurns(turns);
+      if (!thinking) {
+        setTimelineMessages(buildAskTimelineMessages(turns.map(normalizeAskTurnForTimeline)));
+      }
     } catch (err) {
       console.warn('[AskStreamPanel] history load failed', err);
     } finally {
       setHistoryLoading(false);
     }
-  }, [capsuleId, threadId]);
+  }, [capsuleId, thinking, threadId]);
 
   const cancel = useCallback(() => {
     abortRef.current?.abort();
@@ -185,16 +208,36 @@ export function AskStreamPanel({
 
   const send = useCallback(
     async (text: string) => {
-      if (!text.trim() || thinking) return;
-      setEvents([]);
+      const trimmedText = text.trim();
+      if (!trimmedText || thinking) return;
       setInterrupt(null);
       setThinking(true);
       const controller = new AbortController();
       abortRef.current = controller;
+      const timestamp = Date.now();
+      const assistantId = `live-${timestamp}-assistant`;
+      setTimelineMessages((current) => [
+        ...current,
+        {
+          id: `live-${timestamp}-user`,
+          role: 'user',
+          content: trimmedText,
+          createdAt: new Date(timestamp).toISOString(),
+        },
+        {
+          id: assistantId,
+          role: 'assistant',
+          content: '',
+          prompt: trimmedText,
+          createdAt: new Date(timestamp).toISOString(),
+          streaming: true,
+          stages: [],
+        },
+      ]);
 
       try {
         const requestBody = {
-          messages: [{ role: 'user' as const, content: text }],
+          messages: [{ role: 'user' as const, content: trimmedText }],
           ...(activeSituation?.name ? { situation: activeSituation } : {}),
           ...(capsuleId && threadId ? { capsuleId, threadId } : {}),
           ...(contextPackageId ? { contextPackageId } : {}),
@@ -214,12 +257,10 @@ export function AskStreamPanel({
           signal: controller.signal,
         });
         if (!res.ok || !res.body) {
-          setEvents([
-            {
-              stage: 'synthesis',
-              answer: `Ask PRAXIS could not start the stream (${res.status} ${res.statusText}).`,
-            },
-          ]);
+          updateTimelineMessage(setTimelineMessages, assistantId, {
+            content: `Ask PRAXIS could not start the stream (${res.status} ${res.statusText}).`,
+            streaming: false,
+          });
           setThinking(false);
           return;
         }
@@ -230,13 +271,7 @@ export function AskStreamPanel({
 
         const appendSynthesisToken = (token: string) => {
           if (!token) return;
-          setEvents((prev) => {
-            const last = prev[prev.length - 1];
-            if (last?.stage === 'synthesis') {
-              return [...prev.slice(0, -1), { ...last, answer: `${last.answer}${token}` }];
-            }
-            return [...prev, { stage: 'synthesis', answer: token }];
-          });
+          appendTimelineContent(setTimelineMessages, assistantId, token);
         };
 
         const consumeStreamEvent = (json: string) => {
@@ -245,8 +280,11 @@ export function AskStreamPanel({
             const evt = JSON.parse(json) as StreamEvent;
             if (evt.stage === 'interrupt') {
               setInterrupt((evt as { request: InterruptRequest }).request);
+            } else if (evt.stage === 'synthesis') {
+              const synthesis = evt as Extract<StreamStage, { stage: 'synthesis' }>;
+              appendSynthesisToken(synthesis.answer);
             } else if (evt.stage) {
-              setEvents((prev) => [...prev, evt as StreamStage]);
+              appendTimelineStage(setTimelineMessages, assistantId, evt as StreamStage);
             }
           } catch {
             /* ignore unparseable SSE payloads */
@@ -292,10 +330,14 @@ export function AskStreamPanel({
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
           console.warn('[AskStreamPanel] stream error', err);
+          updateTimelineMessage(setTimelineMessages, assistantId, {
+            content: 'Ask PRAXIS hit a network error before it could finish the answer.',
+          });
         }
       } finally {
         setThinking(false);
         abortRef.current = null;
+        updateTimelineMessage(setTimelineMessages, assistantId, { streaming: false });
       }
     },
     [thinking, capsuleId, threadId, contextPackageId, activeContextStack, activeSituation, selectedRuntime, loadHistory],
@@ -306,6 +348,10 @@ export function AskStreamPanel({
   useEffect(() => {
     void loadHistory();
   }, [loadHistory]);
+
+  useEffect(() => {
+    timelineEndRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'end' });
+  }, [reduceMotion, timelineMessages]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -383,6 +429,7 @@ export function AskStreamPanel({
           contextPackageId={contextPackageId}
           outputGoal={outputGoal}
         />
+        <CapsuleSoftGate coreBricks={coreBricks} healthScore={activeHealthScore} onOpenComposer={onOpenComposer} />
 
         <div className="min-h-[22rem] flex-1 space-y-3 overflow-y-auto p-3">
           {historyOpen ? (
@@ -390,13 +437,13 @@ export function AskStreamPanel({
               loading={historyLoading}
               turns={historyTurns}
               onResume={(turn) => {
-                setEvents([{ stage: 'synthesis', answer: turn.output }]);
-                setPrompt('');
+                setHistoryOpen(false);
+                setPrompt(`Follow up on: ${turn.prompt}\n`);
               }}
             />
           ) : null}
 
-          {events.length === 0 && !thinking ? (
+          {timelineMessages.length === 0 && !thinking ? (
             <div className="flex h-full min-h-[20rem] items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white/70 px-6 text-center">
               <div className="max-w-md">
                 <p className="font-serif text-2xl font-semibold text-navy-950">Ask from the active capsule.</p>
@@ -408,15 +455,15 @@ export function AskStreamPanel({
           ) : null}
 
           <AnimatePresence>
-            {events.map((evt, idx) => (
+            {timelineMessages.map((message, idx) => (
               <motion.div
-                key={`${evt.stage}-${idx}`}
+                key={message.id}
                 initial={reduceMotion ? false : { opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
                 transition={reduceMotion ? { duration: 0 } : { ...SPRING, delay: idx * 0.05 }}
               >
-                <StageCard event={evt} />
+                <AskMessageBubble message={message} />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -457,6 +504,7 @@ export function AskStreamPanel({
               </button>
             </div>
           ) : null}
+          <div ref={timelineEndRef} />
         </div>
 
         <div className="border-t border-slate-200 bg-white px-3 py-2">
@@ -524,6 +572,179 @@ export function AskStreamPanel({
   );
 }
 
+type TimelineSetter = Dispatch<SetStateAction<AskPanelMessage[]>>;
+
+function normalizeAskTurnForTimeline(turn: AskThreadTurn) {
+  return {
+    id: turn.id,
+    uid: turn.uid ?? '',
+    capsuleId: turn.capsuleId ?? '',
+    threadId: turn.threadId ?? '',
+    situationId: turn.situationId ?? null,
+    prompt: turn.prompt,
+    output: turn.output,
+    capsuleVersion: turn.capsuleVersion,
+    runtime: turn.runtime ?? {},
+    pathId: turn.pathId ?? null,
+    pathVersion: turn.pathVersion ?? null,
+    frameworkSteps: turn.frameworkSteps ?? [],
+    toolInvocations: turn.toolInvocations ?? [],
+    createdAt: turn.createdAt,
+  };
+}
+
+function updateTimelineMessage(setMessages: TimelineSetter, messageId: string, patch: Partial<AskPanelMessage>) {
+  setMessages((current) => current.map((message) => (
+    message.id === messageId ? { ...message, ...patch } : message
+  )));
+}
+
+function appendTimelineContent(setMessages: TimelineSetter, messageId: string, token: string) {
+  setMessages((current) => current.map((message) => (
+    message.id === messageId ? { ...message, content: `${message.content}${token}` } : message
+  )));
+}
+
+function appendTimelineStage(setMessages: TimelineSetter, messageId: string, stage: StreamStage) {
+  setMessages((current) => current.map((message) => (
+    message.id === messageId ? { ...message, stages: [...(message.stages ?? []), stage] } : message
+  )));
+}
+
+function AskMessageBubble({ message }: { message: AskPanelMessage }) {
+  if (message.role === 'user') {
+    return (
+      <div className="flex justify-end">
+        <article className="max-w-[82%] rounded-2xl rounded-br-md bg-diplomatic-blue px-4 py-3 text-sm leading-6 text-white shadow-sm">
+          <p className="whitespace-pre-wrap">{message.content}</p>
+        </article>
+      </div>
+    );
+  }
+
+  const stages = message.stages?.filter((stage) => stage.stage !== 'synthesis' && stage.stage !== 'interrupt') ?? [];
+  return (
+    <div className="flex justify-start">
+      <article className="max-w-[88%] rounded-2xl rounded-bl-md border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm">
+        <div className="prose prose-sm max-w-none prose-headings:font-serif prose-headings:text-navy-950 prose-a:text-diplomatic-blue prose-strong:text-navy-950">
+          {message.content ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {message.content}
+            </ReactMarkdown>
+          ) : (
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Reading the active capsule...
+            </span>
+          )}
+        </div>
+
+        {message.streaming ? (
+          <span className="mt-2 inline-block h-4 w-0.5 animate-pulse bg-gold-500" />
+        ) : null}
+
+        <TimelineMessageReceipt message={message} />
+
+        {stages.length ? (
+          <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2">
+            <summary className="cursor-pointer text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">
+              Tool and retrieval receipts
+            </summary>
+            <div className="mt-2 space-y-2">
+              {stages.map((stage, index) => <StageCard key={`${stage.stage}-${index}`} event={stage} />)}
+            </div>
+          </details>
+        ) : null}
+
+        {!message.streaming && message.content ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/app/write" className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-800">
+              <FileText className="h-3.5 w-3.5" />
+              Send to Memo Studio
+            </Link>
+            <Link href="/app/contexts" className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">
+              Review context
+            </Link>
+          </div>
+        ) : null}
+      </article>
+    </div>
+  );
+}
+
+function TimelineMessageReceipt({ message }: { message: AskPanelMessage }) {
+  const runtime = message.receipt?.runtime ?? {};
+  const retrieval = isRecord(runtime.retrieval) ? runtime.retrieval : {};
+  const contextReceipt = isRecord(runtime.contextReceipt) ? runtime.contextReceipt : null;
+  const model = stringValue(runtime.model) ?? stringValue(runtime.provider) ?? 'model pending';
+  const intent = stringValue(runtime.intent);
+  const sourceCount = numberValue(retrieval.sourceDocumentCount) ?? contextReceiptSourceCount(contextReceipt);
+  const gapCount = numberValue(retrieval.activeGapCount) ?? numberValue(retrieval.evidenceGapCount) ?? contextReceiptWarningCount(contextReceipt);
+  const capsuleVersion = numberValue(contextReceipt?.capsuleVersion) ?? message.receipt?.capsuleVersion ?? null;
+  const evidenceCount = numberValue(contextReceipt?.evidenceCount);
+  const historyTurnCount = numberValue(contextReceipt?.historyTurnCount);
+  const health = stringValue(contextReceipt?.health);
+  const memoryPersistence = stringValue(contextReceipt?.memoryPersistence);
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
+      <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
+        <Cpu className="h-2.5 w-2.5" />
+        {model}
+      </span>
+      {intent ? (
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
+          {intent.replace(/_/g, ' ')}
+        </span>
+      ) : null}
+      <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
+        capsule v{capsuleVersion ?? 'pending'}
+      </span>
+      {health ? (
+        <span className={cn(
+          'rounded-md border px-1.5 py-0.5 font-semibold',
+          health === 'ready'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+            : 'border-gold-200 bg-gold-50 text-gold-900',
+        )}>
+          {health} context
+        </span>
+      ) : null}
+      <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
+        {sourceCount} source/doc cores
+      </span>
+      {evidenceCount !== null ? (
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
+          {evidenceCount} evidence paragraphs
+        </span>
+      ) : null}
+      {historyTurnCount !== null ? (
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
+          {historyTurnCount} prior turns
+        </span>
+      ) : null}
+      {Boolean(retrieval.corpusSearch) ? (
+        <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-semibold text-emerald-900">
+          <CheckCircle2 className="h-2.5 w-2.5" />
+          corpus checked
+        </span>
+      ) : null}
+      {gapCount ? (
+        <span className="rounded-md border border-gold-200 bg-gold-50 px-1.5 py-0.5 font-semibold text-gold-900">
+          {gapCount} gaps
+        </span>
+      ) : null}
+      {memoryPersistence && memoryPersistence !== 'none' ? (
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
+          saved in {memoryPersistence}
+        </span>
+      ) : null}
+      {message.createdAt ? <span className="font-mono">{formatTurnTime(message.createdAt)}</span> : null}
+      {contextReceipt ? <ContextReceiptDetails receipt={contextReceipt} /> : null}
+    </div>
+  );
+}
+
 function ChatContextReceipt({
   capsuleId,
   contextPackageId,
@@ -560,6 +781,38 @@ function ChatContextReceipt({
         {tools?.value ?? 'tools from Advanced'}
       </span>
       <span className="min-w-0 flex-1 truncate">Output: {outputGoal}</span>
+    </div>
+  );
+}
+
+function CapsuleSoftGate({
+  coreBricks,
+  healthScore,
+  onOpenComposer,
+}: {
+  coreBricks?: AskCoreBrick[];
+  healthScore: number;
+  onOpenComposer?: () => void;
+}) {
+  const missing = coreBricks?.filter((brick) => !brick.ready) ?? [];
+  if (missing.length === 0 && healthScore >= 70) return null;
+  const missingLabels = missing.map((brick) => brick.label).slice(0, 3).join(', ');
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gold-200 bg-gold-50 px-3 py-2 text-xs text-gold-950">
+      <div className="min-w-0">
+        <span className="font-bold uppercase tracking-[0.14em]">Thin capsule</span>
+        <span className="ml-2">
+          Ask is open, but PRAXIS will treat {missingLabels || 'low context health'} as an evidence gap.
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={onOpenComposer}
+        className="inline-flex items-center gap-1.5 rounded-md border border-gold-300 bg-white px-2 py-1 text-[11px] font-semibold text-gold-900 hover:bg-gold-100"
+      >
+        <LibraryBig className="h-3.5 w-3.5" />
+        Attach context
+      </button>
     </div>
   );
 }
@@ -614,9 +867,13 @@ function AskTurnReceipt({ turn }: { turn: AskThreadTurn }) {
   const runtime = turn.runtime ?? {};
   const retrieval = runtime.retrieval;
   const cores = runtime.contextCores;
+  const contextReceipt = isRecord(runtime.contextReceipt) ? runtime.contextReceipt : null;
   const model = runtime.model ?? runtime.provider ?? 'model recorded';
-  const sourceCount = retrieval?.sourceDocumentCount ?? cores?.sourceDocumentCoreIds?.length ?? 0;
-  const gapCount = retrieval?.activeGapCount ?? 0;
+  const sourceCount = retrieval?.sourceDocumentCount ?? cores?.sourceDocumentCoreIds?.length ?? contextReceiptSourceCount(contextReceipt);
+  const gapCount = retrieval?.activeGapCount ?? contextReceiptWarningCount(contextReceipt);
+  const evidenceCount = numberValue(contextReceipt?.evidenceCount);
+  const historyTurnCount = numberValue(contextReceipt?.historyTurnCount);
+  const health = stringValue(contextReceipt?.health);
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
       <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
@@ -631,9 +888,29 @@ function AskTurnReceipt({ turn }: { turn: AskThreadTurn }) {
       <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
         capsule v{turn.capsuleVersion ?? 'n/a'}
       </span>
+      {health ? (
+        <span className={cn(
+          'rounded-md border px-1.5 py-0.5 font-semibold',
+          health === 'ready'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+            : 'border-gold-200 bg-gold-50 text-gold-900',
+        )}>
+          {health} context
+        </span>
+      ) : null}
       <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
         {sourceCount} source/doc cores
       </span>
+      {evidenceCount !== null ? (
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
+          {evidenceCount} evidence paragraphs
+        </span>
+      ) : null}
+      {historyTurnCount !== null ? (
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
+          {historyTurnCount} prior turns
+        </span>
+      ) : null}
       {retrieval?.corpusSearch ? (
         <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-semibold text-emerald-900">
           <CheckCircle2 className="h-2.5 w-2.5" />
@@ -646,7 +923,39 @@ function AskTurnReceipt({ turn }: { turn: AskThreadTurn }) {
         </span>
       ) : null}
       <span className="font-mono">{formatTurnTime(turn.createdAt)}</span>
+      {contextReceipt ? <ContextReceiptDetails receipt={contextReceipt} /> : null}
     </div>
+  );
+}
+
+function ContextReceiptDetails({ receipt }: { receipt: Record<string, unknown> }) {
+  const stages = Array.isArray(receipt.stages) ? receipt.stages.filter(isRecord) : [];
+  if (stages.length === 0) return null;
+  return (
+    <details className="basis-full">
+      <summary className="mt-1 cursor-pointer font-bold uppercase tracking-[0.14em] text-slate-500">
+        Context receipt
+      </summary>
+      <div className="mt-1 grid gap-1 sm:grid-cols-2">
+        {stages.map((stage, index) => {
+          const status = stringValue(stage.status) ?? 'warn';
+          return (
+            <div
+              key={`${stringValue(stage.stage) ?? 'stage'}-${index}`}
+              className={cn(
+                'rounded-md border px-2 py-1',
+                status === 'ok'
+                  ? 'border-emerald-100 bg-emerald-50 text-emerald-950'
+                  : 'border-gold-100 bg-gold-50 text-gold-950',
+              )}
+            >
+              <p className="font-mono font-semibold">{String(stage.stage ?? 'stage').replace(/_/g, ' ')}</p>
+              <p className="mt-0.5 text-[10px] leading-4">{stringValue(stage.detail) ?? status}</p>
+            </div>
+          );
+        })}
+      </div>
+    </details>
   );
 }
 
@@ -654,6 +963,30 @@ function formatTurnTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function contextReceiptSourceCount(receipt: Record<string, unknown> | null): number {
+  if (!receipt) return 0;
+  const coreRefs = isRecord(receipt.coreRefs) ? receipt.coreRefs : {};
+  const sourceDocumentCoreIds = Array.isArray(coreRefs.sourceDocumentCoreIds) ? coreRefs.sourceDocumentCoreIds : [];
+  return sourceDocumentCoreIds.filter((item) => typeof item === 'string' && item.trim().length > 0).length;
+}
+
+function contextReceiptWarningCount(receipt: Record<string, unknown> | null): number {
+  if (!receipt) return 0;
+  return Array.isArray(receipt.warnings) ? receipt.warnings.length : 0;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function numberValue(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function CapsuleIndicatorBar({

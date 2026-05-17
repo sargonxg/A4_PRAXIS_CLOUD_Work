@@ -9,6 +9,7 @@ import {
 } from '@/lib/context/active-context-stack';
 import type { ContextHealth, ContextRetrievalPolicy } from '@/types/context-engine';
 import { DEFAULT_CORPUS_LAYERS, DEFAULT_CORPUS_LIMIT } from '@/types/corpus';
+import { CAPSULE_STARTER_DEFINITIONS, type CapsuleStarterDefinition } from '@/lib/product/context-capsules';
 
 export type CapsuleScope = 'user' | 'situation' | 'team';
 export type CapsuleVisibility = 'private' | 'organization' | 'shared' | 'public' | 'unlisted';
@@ -155,6 +156,12 @@ export interface CapsuleCoreExport {
   package: PraxisCorePackageV1;
 }
 
+export interface SeedStarterCapsulesResult {
+  created: number;
+  existing: number;
+  capsules: PraxisCapsule[];
+}
+
 export interface CapsuleServiceDeps {
   db?: Firestore;
   now?: () => Date;
@@ -238,12 +245,41 @@ export async function listCapsules(
   const capsules = snap.docs
     .map((doc) => sanitizeCapsule({ ...doc.data(), capsuleId: doc.id }))
     .filter((capsule) => input.includeArchived || !capsule.archivedAt);
-  if (!input.situationId) return capsules;
+  const sorted = sortCapsulesForLibrary(capsules);
+  if (!input.situationId) return sorted;
   const situationId = input.situationId;
-  return capsules.filter((capsule) =>
+  return sorted.filter((capsule) =>
     capsule.coreRefs.situationCoreId === situationId ||
     capsule.activeForSituationIds.includes(situationId),
   );
+}
+
+export async function seedStarterCapsules(
+  uid: string,
+  deps?: CapsuleServiceDeps,
+): Promise<SeedStarterCapsulesResult> {
+  const capsules: PraxisCapsule[] = [];
+  let created = 0;
+  let existing = 0;
+
+  for (const starterDefinition of CAPSULE_STARTER_DEFINITIONS) {
+    const current = await getCapsule(uid, starterDefinition.starterId, deps);
+    if (current) {
+      existing += 1;
+      capsules.push(current);
+      continue;
+    }
+
+    const capsule = await createCapsule(uid, starterToCreateInput(uid, starterDefinition), deps);
+    created += 1;
+    capsules.push(capsule);
+  }
+
+  return {
+    created,
+    existing,
+    capsules: sortCapsulesForLibrary(capsules),
+  };
 }
 
 export async function renameCapsule(
@@ -719,6 +755,67 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     ...capsule,
     trust: normalizeTrustSemaphore(isRecord(body.trust) ? body.trust : null, capsule.health, capsule.updatedAt),
   };
+}
+
+function starterToCreateInput(uid: string, starterDefinition: CapsuleStarterDefinition): CreateCapsuleInput {
+  return {
+    capsuleId: starterDefinition.starterId,
+    label: starterDefinition.label,
+    scope: starterDefinition.category === 'user' ? 'user' : 'situation',
+    coreRefs: {
+      userCoreId: starterDefinition.coreRefs.userCoreId,
+      situationCoreId: starterDefinition.coreRefs.situationCoreId,
+      pathCoreId: starterDefinition.coreRefs.pathCoreId,
+      sourceCoreIds: starterDefinition.coreRefs.sourceCoreIds,
+      documentCoreIds: starterDefinition.coreRefs.documentCoreIds,
+      graphCoreId: starterDefinition.coreRefs.graphCoreId,
+      timeCoreId: starterDefinition.coreRefs.timeCoreId,
+      outputCoreIds: uniqueStrings([
+        ...(starterDefinition.coreRefs.outputCoreIds ?? []),
+        ...starterDefinition.outputProductIds,
+      ]),
+      toolCoreIds: uniqueStrings([
+        ...(starterDefinition.coreRefs.toolCoreIds ?? []),
+        ...starterDefinition.recommendedToolIds.slice(0, 2),
+      ]),
+      objectiveCoreIds: starterDefinition.coreRefs.objectiveCoreIds,
+      productCoreIds: uniqueStrings([
+        ...(starterDefinition.coreRefs.productCoreIds ?? []),
+        ...starterDefinition.outputProductIds,
+      ]),
+      memoryCoreId: starterDefinition.coreRefs.memoryCoreId,
+    },
+    community: {
+      tags: uniqueStrings(starterDefinition.tags).slice(0, 20),
+      listedInMarketplace: false,
+    },
+    access: {
+      visibility: 'private',
+      allowClone: true,
+      allowDownload: true,
+      allowCommunityRating: false,
+    },
+    activeForSituationIds: starterDefinition.category === 'situation' ? [starterDefinition.starterId] : [],
+    provenance: {
+      source: 'api',
+      createdBy: uid,
+      notes: starterDefinition.summary,
+    },
+  };
+}
+
+function sortCapsulesForLibrary(capsules: PraxisCapsule[]): PraxisCapsule[] {
+  return [...capsules].sort((a, b) => {
+    const favoriteDelta = Number(Boolean(b.community.favorite)) - Number(Boolean(a.community.favorite));
+    if (favoriteDelta) return favoriteDelta;
+    const activeDelta = Number(b.activeForSituationIds.length > 0) - Number(a.activeForSituationIds.length > 0);
+    if (activeDelta) return activeDelta;
+    const starterDelta = Number(b.community.tags.includes('starter')) - Number(a.community.tags.includes('starter'));
+    if (starterDelta) return starterDelta;
+    const archivedDelta = Number(Boolean(a.archivedAt)) - Number(Boolean(b.archivedAt));
+    if (archivedDelta) return archivedDelta;
+    return Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
+  });
 }
 
 function normalizeCoreRefs(input: Partial<CapsuleCoreRefs> | unknown): CapsuleCoreRefs {

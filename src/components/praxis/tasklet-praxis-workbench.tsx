@@ -52,11 +52,14 @@ import {
   findCapsuleTemplate,
 } from '@/lib/product/cockpit-composition';
 import {
+  CAPSULE_STARTER_DEFINITIONS,
   CAPSULE_CONNECTOR_REGISTRY,
   POLICY_TEAM_CATEGORIES,
   categoryTagsForPolicyTeam,
   getPolicyTeamCategory,
   policyTeamCategoryForTags,
+  type CapsuleStarterCategory,
+  type CapsuleStarterDefinition,
   type CapsuleConnectorDefinition,
   type PolicyTeamCategory,
 } from '@/lib/product/context-capsules';
@@ -76,6 +79,7 @@ type TaskletPraxisWorkbenchProps = {
 
 type PolicyNeedTabId = (typeof POLICY_NEED_TABS)[number]['id'];
 type ChatMessage = { role: 'user' | 'assistant'; text: string };
+type ThreadHistoryTurn = { prompt?: string; output?: string; createdAt?: string };
 type CapsuleRole = 'user' | 'situation' | 'tool' | 'output';
 type CapsuleDetailTab = 'build' | 'connect' | 'retrieve' | 'agents';
 type RepositoryDocument = {
@@ -125,12 +129,18 @@ type AgentRunDetail = {
 };
 type SpanTargetCore = 'sourceability' | 'temporality' | 'causality' | 'human-friction' | 'rules' | 'open-question';
 type CapsuleCoreRefs = {
+  userCoreId?: string | null;
+  situationCoreId?: string | null;
+  pathCoreId?: string | null;
   sourceCoreIds?: string[];
   documentCoreIds?: string[];
+  graphCoreId?: string | null;
+  timeCoreId?: string | null;
   toolCoreIds?: string[];
   objectiveCoreIds?: string[];
   outputCoreIds?: string[];
   productCoreIds?: string[];
+  memoryCoreId?: string | null;
 };
 type PraxisCapsuleSummary = {
   capsuleId: string;
@@ -141,6 +151,7 @@ type PraxisCapsuleSummary = {
   archivedAt?: string | null;
   activeForSituationIds?: string[];
   coreRefs: CapsuleCoreRefs;
+  health?: { score?: number; warnings?: string[]; blockers?: string[] };
   community?: { tags?: string[]; favorite?: boolean };
   trust?: { level?: string; score?: number; label?: string };
 };
@@ -226,6 +237,8 @@ const connectorIconMap = {
 const capsuleLibraryFilters = [
   { id: 'all', label: 'All' },
   { id: 'context', label: 'Context' },
+  { id: 'situation', label: 'Situations' },
+  { id: 'user', label: 'Users' },
   { id: 'tool-capsules', label: 'Tools' },
   { id: 'agents', label: 'Agents' },
   { id: 'source-docs', label: 'Docs' },
@@ -254,6 +267,8 @@ export function TaskletPraxisWorkbench({
     { id: capsuleId, label: activeCapsuleName, code: 'SITUATION', role: 'situation' },
   ]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [conversationThreadId, setConversationThreadId] = useState<string | null>(null);
+  const [conversationLoadedFor, setConversationLoadedFor] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [status, setStatus] = useState('Ask PRAXIS can answer directly or choose the right tool from your capsule.');
   const [capsulePickerOpen, setCapsulePickerOpen] = useState(false);
@@ -285,6 +300,7 @@ export function TaskletPraxisWorkbench({
   const [selectedText, setSelectedText] = useState('');
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const starterSeededRef = useRef(false);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
   const selectedRuntime = getAskRuntimeOption(selectedModel);
   const selectedToolIds = activeCapsules
@@ -308,11 +324,11 @@ export function TaskletPraxisWorkbench({
     const query = capsulePickerQuery.trim().toLowerCase();
     return !query || capsule.label.toLowerCase().includes(query) || capsule.prompt.toLowerCase().includes(query) || capsule.code.toLowerCase().includes(query);
   }).slice(0, 8);
-  const conversationThreadId = `tasklet-${currentCapsuleId}`;
   const repositoryDocIds = new Set(selectedCapsule?.coreRefs.documentCoreIds ?? []);
   const visibleRepositoryDocuments = repositoryDocuments.filter((document) =>
     repositoryDocIds.size === 0 || repositoryDocIds.has(document.id),
   );
+  const conversationUrl = conversationThreadId ? buildConversationUrl(currentCapsuleId, conversationThreadId) : null;
 
   useEffect(() => {
     if (focusedRunId) return;
@@ -353,7 +369,49 @@ export function TaskletPraxisWorkbench({
     return false;
   }
 
-  function buildChatPrompt(agent: PolicyAgentDefinition, cleanPrompt: string): string {
+  function ensureConversationThread(): string {
+    if (conversationThreadId) return conversationThreadId;
+    const nextThreadId = createConversationThreadId();
+    setConversationThreadId(nextThreadId);
+    setConversationLoadedFor(`${currentCapsuleId}:${nextThreadId}`);
+    pushConversationUrl(currentCapsuleId, nextThreadId);
+    return nextThreadId;
+  }
+
+  function startNewConversation() {
+    if (!isAuthenticated) {
+      sendPublicToLogin(prompt.trim() || 'Start a PRAXIS conversation.');
+      return;
+    }
+    const nextThreadId = createConversationThreadId();
+    setConversationThreadId(nextThreadId);
+    setConversationLoadedFor(`${currentCapsuleId}:${nextThreadId}`);
+    setChatMessages([]);
+    pushConversationUrl(currentCapsuleId, nextThreadId);
+    setStatus('New conversation link ready. Start talking and PRAXIS will save the work here.');
+  }
+
+  async function copyConversationLink() {
+    if (!isAuthenticated) {
+      sendPublicToLogin(prompt.trim() || 'Start a PRAXIS conversation.');
+      return;
+    }
+    const nextThreadId = conversationThreadId ?? createConversationThreadId();
+    if (!conversationThreadId) {
+      setConversationThreadId(nextThreadId);
+      setConversationLoadedFor(`${currentCapsuleId}:${nextThreadId}`);
+      pushConversationUrl(currentCapsuleId, nextThreadId);
+    }
+    const link = buildConversationUrl(currentCapsuleId, nextThreadId);
+    try {
+      await navigator.clipboard?.writeText(link);
+      setStatus('Conversation link copied.');
+    } catch {
+      setStatus(link);
+    }
+  }
+
+  function buildChatPrompt(agent: PolicyAgentDefinition, cleanPrompt: string, threadId: string): string {
     const capsuleStack = activeCapsules
       .map((capsule) => `${capsule.role.toUpperCase()}: ${capsule.label} (${capsule.id})`)
       .join('\n');
@@ -364,7 +422,7 @@ export function TaskletPraxisWorkbench({
       `Tool intent: ${policyAgentRunIntent(agent.id).replaceAll('_', ' ')}`,
       `Tool capsules: ${availableToolIds.join(', ')}`,
       `Active ContextCapsule stack:\n${capsuleStack}`,
-      `Conversation thread: ${conversationThreadId}`,
+      `Conversation thread: ${threadId}`,
       '',
       'Behave like a normal chat assistant first. Answer directly when enough context exists. If a tool, upload, connector, source check, memo, or capsule update would help, decide that yourself and explain the next step plainly.',
       'Format the answer for a policy team: start with a short answer, then use concise headings for Findings, Source posture, Gaps, and Next actions when relevant. Do not fabricate citations; name source gaps plainly.',
@@ -381,8 +439,9 @@ export function TaskletPraxisWorkbench({
 
     setIsStreaming(true);
     setStatus('PRAXIS is reading the active capsule and conversation memory...');
+    const nextThreadId = ensureConversationThread();
     const userMessage: ChatMessage = { role: 'user', text: cleanPrompt };
-    const enrichedPrompt = buildChatPrompt(agent, cleanPrompt);
+    const enrichedPrompt = buildChatPrompt(agent, cleanPrompt, nextThreadId);
     setChatMessages((current) => [...current, userMessage, { role: 'assistant', text: '' }]);
 
     try {
@@ -398,7 +457,7 @@ export function TaskletPraxisWorkbench({
             content: message.text,
           })),
           capsuleId: currentCapsuleId,
-          threadId: conversationThreadId,
+          threadId: nextThreadId,
           currentToolId: agent.id,
           currentPath: '/app',
           forceRun: true,
@@ -451,7 +510,7 @@ export function TaskletPraxisWorkbench({
           });
         }
       }
-      setStatus('Conversation saved to this user and capsule thread.');
+      setStatus('Conversation saved at this link.');
       void refreshCapsules();
       try {
         window.localStorage.removeItem(PENDING_TASKLET_PROMPT_KEY);
@@ -600,10 +659,20 @@ export function TaskletPraxisWorkbench({
     if (!isAuthenticated) return;
     setCapsulesLoading(true);
     try {
-      const response = await fetch('/api/context/capsules?includeArchived=true', { credentials: 'include' });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload?.error ?? 'capsule list failed');
-      const next = Array.isArray(payload?.capsules) ? payload.capsules as PraxisCapsuleSummary[] : [];
+      let next = await fetchCapsuleLibrary();
+      const visibleCount = next.filter((capsule) => !capsule.archivedAt).length;
+      if (!starterSeededRef.current && visibleCount < CAPSULE_STARTER_DEFINITIONS.length) {
+        starterSeededRef.current = true;
+        const seedResponse = await fetch('/api/context/capsules', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ action: 'seed-starters' }),
+        });
+        const seedPayload = await seedResponse.json().catch(() => ({}));
+        if (!seedResponse.ok) throw new Error(seedPayload?.error ?? 'starter capsule seed failed');
+        next = await fetchCapsuleLibrary();
+      }
       setUserCapsules(next);
       const selected = selectCapsuleId
         ? next.find((capsule) => capsule.capsuleId === selectCapsuleId)
@@ -644,6 +713,38 @@ export function TaskletPraxisWorkbench({
     if (!isAuthenticated) return;
     void refreshRepository();
   }, [isAuthenticated, refreshRepository]);
+
+  const loadConversationHistory = useCallback(async (capsuleIdToLoad: string, threadIdToLoad: string) => {
+    if (!isAuthenticated || !capsuleIdToLoad || !threadIdToLoad) return;
+    const loadKey = `${capsuleIdToLoad}:${threadIdToLoad}`;
+    setConversationLoadedFor(loadKey);
+    try {
+      const params = new URLSearchParams({
+        capsuleId: capsuleIdToLoad,
+        threadId: threadIdToLoad,
+        limit: '12',
+      });
+      const response = await fetch(`/api/ai/chat?${params.toString()}`, { credentials: 'include' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error ?? 'conversation history failed');
+      const turns = Array.isArray(payload?.turns) ? payload.turns as ThreadHistoryTurn[] : [];
+      const historyMessages = turns.flatMap((turn) => [
+        { role: 'user' as const, text: turn.prompt ?? '' },
+        { role: 'assistant' as const, text: turn.output ?? '' },
+      ]).filter((message) => message.text.trim().length > 0);
+      setChatMessages(historyMessages);
+      setStatus(turns.length ? `Conversation link loaded (${turns.length} turns).` : 'New conversation link ready.');
+    } catch (err) {
+      setStatus(err instanceof Error ? `Conversation link could not load: ${err.message}` : 'Conversation link could not load.');
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !conversationThreadId) return;
+    const loadKey = `${currentCapsuleId}:${conversationThreadId}`;
+    if (conversationLoadedFor === loadKey) return;
+    void loadConversationHistory(currentCapsuleId, conversationThreadId);
+  }, [conversationLoadedFor, conversationThreadId, currentCapsuleId, isAuthenticated, loadConversationHistory]);
 
   const refreshAgentRuns = useCallback(async () => {
     if (!isAuthenticated || !currentCapsuleId) return;
@@ -824,6 +925,7 @@ export function TaskletPraxisWorkbench({
     const searchParams = new URLSearchParams(window.location.search);
     const panel = searchParams.get('panel');
     const capsuleParam = searchParams.get('capsuleId') ?? searchParams.get('situationId');
+    const threadParam = sanitizeConversationThreadId(searchParams.get('threadId') ?? searchParams.get('conversationId'));
     const importToken = searchParams.get('importToken');
     if (capsuleParam) {
       setCurrentCapsuleId(capsuleParam);
@@ -832,6 +934,10 @@ export function TaskletPraxisWorkbench({
         const chip: ActiveCapsuleChip = { id: capsuleParam, label: capsuleParam, code: 'SITUATION', role: 'situation' };
         return [chip, ...current].slice(0, 6);
       });
+    }
+    if (threadParam) {
+      setConversationThreadId(threadParam);
+      setActiveTab('analysis');
     }
     if (importToken) {
       setRepositoryOpen(true);
@@ -855,6 +961,10 @@ export function TaskletPraxisWorkbench({
     const chip = capsuleToChip(capsule);
     setCurrentCapsuleId(chip.id);
     setActiveCapsules((current) => [chip, ...current.filter((item) => item.id !== chip.id)].slice(0, 6));
+    setConversationThreadId(null);
+    setConversationLoadedFor(null);
+    setChatMessages([]);
+    setStatus(`${chip.label} opened. Start talking to create a shareable conversation link.`);
   }
 
   async function archiveUserCapsule(capsule: PraxisCapsuleSummary) {
@@ -1436,9 +1546,34 @@ export function TaskletPraxisWorkbench({
                   </button>
                 </div>
               </div>
-              <div className="flex items-center gap-2 border-t border-black/10 bg-white/70 px-5 py-2 text-sm text-slate-500">
-                <ShieldCheck className="h-4 w-4" />
-                <span>{status}</span>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/10 bg-white/70 px-5 py-2 text-sm text-slate-500">
+                <div className="flex min-w-0 items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 shrink-0" />
+                  <span className="min-w-0">{status}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {conversationThreadId ? (
+                    <span className="max-w-48 truncate rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] text-slate-500" title={conversationUrl ?? undefined}>
+                      {conversationThreadId}
+                    </span>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={startNewConversation}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    New chat
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void copyConversationLink()}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy link
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1492,6 +1627,22 @@ export function TaskletPraxisWorkbench({
 
             {chatMessages.length ? (
               <section className="mt-5 w-full max-w-5xl space-y-3 rounded-lg border border-black/10 bg-white/85 p-4 shadow-sm shadow-black/5" data-testid="praxis-chat-thread">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Conversation workspace</p>
+                    <p className="mt-1 truncate text-xs text-slate-500">
+                      {conversationUrl ?? 'Start talking to create a shareable PRAXIS link.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void copyConversationLink()}
+                    className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy link
+                  </button>
+                </div>
                 {chatMessages.map((message, index) => (
                   <article
                     key={`${message.role}-${index}`}
@@ -1619,7 +1770,17 @@ export function TaskletPraxisWorkbench({
                           selectUserCapsule(capsule);
                           setPrompt(`Ask this capsule: ${capsule.label}`);
                         }}
+                        onInspect={() => {
+                          selectUserCapsule(capsule);
+                          setInspectorOpen(true);
+                        }}
                         onImprove={() => improveCapsule(capsule)}
+                        onCombine={() => {
+                          const current = selectedCapsule && selectedCapsule.capsuleId !== capsule.capsuleId
+                            ? [capsuleToChip(selectedCapsule), capsuleToChip(capsule)]
+                            : [capsuleToChip(capsule), ...activeCapsules.filter((item) => item.id !== capsule.capsuleId)];
+                          void combineCapsuleLiteStack(current.slice(0, 5));
+                        }}
                         onArchive={() => void archiveUserCapsule(capsule)}
                         onTag={(tag) => void tagUserCapsule(capsule, tag)}
                       />
@@ -1811,12 +1972,54 @@ function escapeHtml(value: string): string {
     .replaceAll("'", '&#39;');
 }
 
+async function fetchCapsuleLibrary(): Promise<PraxisCapsuleSummary[]> {
+  const response = await fetch('/api/context/capsules?includeArchived=true', { credentials: 'include' });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload?.error ?? 'capsule list failed');
+  return Array.isArray(payload?.capsules) ? payload.capsules as PraxisCapsuleSummary[] : [];
+}
+
 function capsuleToChip(capsule: PraxisCapsuleSummary): ActiveCapsuleChip {
   return {
     id: capsule.capsuleId,
     label: capsule.label,
     code: capsule.scope.toUpperCase(),
     role: capsule.scope === 'user' ? 'user' : 'situation',
+  };
+}
+
+function starterDefinitionForCapsule(capsule: PraxisCapsuleSummary | null): CapsuleStarterDefinition | null {
+  if (!capsule) return null;
+  return CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === capsule.capsuleId) ?? null;
+}
+
+function capsuleCategory(capsule: PraxisCapsuleSummary): CapsuleStarterCategory | 'custom' {
+  const starterDefinition = starterDefinitionForCapsule(capsule);
+  if (starterDefinition) return starterDefinition.category;
+  const tags = new Set(capsule.community?.tags ?? []);
+  if (tags.has('tool') || (capsule.coreRefs.toolCoreIds?.length ?? 0) > 0) return 'tool';
+  if (tags.has('output') || (capsule.coreRefs.outputCoreIds?.length ?? 0) + (capsule.coreRefs.productCoreIds?.length ?? 0) > 0) return 'output';
+  if (tags.has('user') || capsule.scope === 'user') return 'user';
+  if (tags.has('situation') || capsule.scope === 'situation') return 'situation';
+  return 'custom';
+}
+
+function capsuleCategoryMeta(capsule: PraxisCapsuleSummary) {
+  const starterDefinition = starterDefinitionForCapsule(capsule);
+  const category = capsuleCategory(capsule);
+  const meta: Record<CapsuleStarterCategory | 'custom', { label: string; color: string; soft: string }> = {
+    situation: { label: 'Situation', color: '#0f766e', soft: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+    tool: { label: 'Tool', color: '#b45309', soft: 'bg-amber-50 text-amber-800 border-amber-200' },
+    output: { label: 'Output', color: '#6d28d9', soft: 'bg-violet-50 text-violet-800 border-violet-200' },
+    user: { label: 'User', color: '#2563eb', soft: 'bg-sky-50 text-sky-800 border-sky-200' },
+    custom: { label: 'Custom', color: '#475569', soft: 'bg-slate-50 text-slate-700 border-slate-200' },
+  };
+  return {
+    ...meta[category],
+    summary: starterDefinition?.summary ?? 'User-created capsule stored in this workspace.',
+    detail: starterDefinition?.detail ?? 'This capsule can be improved, combined, inspected, and used by Ask PRAXIS through the existing context resolver.',
+    starterDefinition,
+    category,
   };
 }
 
@@ -1884,6 +2087,8 @@ function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, cat
         category === 'all' ? !isArchived :
         category === 'archived' ? isArchived :
         category === 'context' ? !isArchived && (capsule.scope === 'user' || capsule.scope === 'situation' || capsule.scope === 'team') :
+        category === 'situation' ? !isArchived && capsuleCategory(capsule) === 'situation' :
+        category === 'user' ? !isArchived && capsuleCategory(capsule) === 'user' :
         category === 'tool-capsules' ? !isArchived && counts.tools > 0 :
         category === 'agents' ? !isArchived && ((capsule.coreRefs.objectiveCoreIds?.length ?? 0) > 0 || (capsule.coreRefs.toolCoreIds?.length ?? 0) > 0) :
         category === 'source-docs' ? !isArchived && (counts.sources + counts.documents > 0) :
@@ -1896,9 +2101,14 @@ function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, cat
         capsule.capsuleId,
         capsule.label,
         capsule.scope,
+        capsuleCategoryMeta(capsule).summary,
+        capsuleCategoryMeta(capsule).detail,
         ...tags,
         ...(capsule.coreRefs.sourceCoreIds ?? []),
         ...(capsule.coreRefs.documentCoreIds ?? []),
+        ...(capsule.coreRefs.toolCoreIds ?? []),
+        ...(capsule.coreRefs.outputCoreIds ?? []),
+        ...(capsule.coreRefs.productCoreIds ?? []),
       ].join(' ').toLowerCase().includes(clean);
     })
     .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
@@ -2055,7 +2265,9 @@ function CapsuleCard({
   active,
   onSelect,
   onAsk,
+  onInspect,
   onImprove,
+  onCombine,
   onArchive,
   onTag,
 }: {
@@ -2063,36 +2275,71 @@ function CapsuleCard({
   active: boolean;
   onSelect: () => void;
   onAsk: () => void;
+  onInspect: () => void;
   onImprove: () => void;
+  onCombine: () => void;
   onArchive: () => void;
   onTag: (tag: string) => void;
 }) {
   const counts = capsuleCounts(capsule);
   const state = capsuleState(capsule);
+  const meta = capsuleCategoryMeta(capsule);
+  const score = capsule.trust?.score ?? capsule.health?.score ?? 0;
+  const toolRefs = capsule.coreRefs.toolCoreIds ?? [];
+  const outputRefs = [...(capsule.coreRefs.outputCoreIds ?? []), ...(capsule.coreRefs.productCoreIds ?? [])];
   const [tagDraft, setTagDraft] = useState('');
   return (
-    <article className={cn('od-praxis-card rounded-lg p-4', active ? 'border-[#ff714d]' : 'border-black/10')}>
+    <article
+      className={cn('od-praxis-card min-h-[21rem] rounded-lg p-4 transition hover:-translate-y-0.5', active ? 'border-[#ff714d]' : 'border-black/10')}
+      style={{ borderTopColor: meta.color, borderTopWidth: 4 }}
+    >
       <button type="button" onClick={onSelect} className="block w-full text-left">
         <span className="flex items-center justify-between gap-3">
-          <span className="truncate text-base font-semibold text-slate-900">{capsule.label}</span>
+          <span className="min-w-0">
+            <span className="block truncate text-base font-semibold text-slate-900">{capsule.label}</span>
+            <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">{meta.summary}</span>
+          </span>
           <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">v{capsule.version}</span>
         </span>
-        <CapsuleStateBadge state={state} />
+        <span className="mt-3 flex flex-wrap items-center gap-2">
+          <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', meta.soft)}>{meta.label}</span>
+          <CapsuleStateBadge state={state} />
+          <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-[11px] font-semibold text-slate-500">{score}/100</span>
+        </span>
         <span className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
           <span className="inline-flex items-center gap-1"><Circle className="h-2 w-2 fill-current" /> {capsule.scope}</span>
           <span>{counts.documents} docs</span>
           <span>{counts.sources} sources</span>
           <span>{counts.tools} tools</span>
+          <span>{counts.outputs} outputs</span>
         </span>
       </button>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {(capsule.community?.tags ?? []).slice(0, 4).map((tag) => (
+      <div className="mt-3 grid grid-cols-4 gap-1.5" aria-label={`${capsule.label} readiness`}>
+        {[
+          { label: 'Docs', active: counts.documents > 0 },
+          { label: 'Sources', active: counts.sources > 0 },
+          { label: 'Tools', active: counts.tools > 0 },
+          { label: 'Outputs', active: counts.outputs > 0 },
+        ].map((item) => (
+          <span key={item.label} title={item.label} className="h-1.5 rounded-full bg-slate-100">
+            <span className="block h-1.5 rounded-full" style={{ backgroundColor: item.active ? meta.color : '#e2e8f0' }} />
+          </span>
+        ))}
+      </div>
+      <div className="mt-3 flex min-h-7 flex-wrap gap-1.5">
+        {(capsule.community?.tags ?? []).slice(0, 7).map((tag) => (
           <span key={tag} className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">{tag}</span>
         ))}
       </div>
+      <div className="mt-3 grid gap-1 text-[11px] leading-5 text-slate-500">
+        <p className="truncate"><span className="font-semibold text-slate-700">Tools:</span> {toolRefs.length ? toolRefs.slice(0, 4).join(', ') : 'not attached yet'}</p>
+        <p className="truncate"><span className="font-semibold text-slate-700">Outputs:</span> {outputRefs.length ? outputRefs.slice(0, 4).join(', ') : 'open target'}</p>
+      </div>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <button type="button" onClick={onAsk} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Ask</button>
+        <button type="button" onClick={onInspect} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Inspect</button>
         <button type="button" onClick={onImprove} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Improve</button>
+        <button type="button" onClick={onCombine} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Combine</button>
         <button type="button" onClick={onArchive} className="ml-auto rounded-md px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-50 hover:text-slate-700">Archive</button>
       </div>
       <form
@@ -2807,6 +3054,32 @@ function CapsuleBuilderDialog({
   );
 }
 
+function createConversationThreadId(): string {
+  const time = Date.now().toString(36);
+  const random = Math.random().toString(36).slice(2, 8);
+  return `ask-${time}-${random}`;
+}
+
+function sanitizeConversationThreadId(value: string | null | undefined): string | null {
+  const clean = value?.trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 96);
+  return clean && clean.length >= 3 ? clean : null;
+}
+
+function buildConversationUrl(capsuleId: string, threadId: string): string {
+  if (typeof window === 'undefined') return `/app?panel=ask&capsuleId=${encodeURIComponent(capsuleId)}&threadId=${encodeURIComponent(threadId)}`;
+  const url = new URL('/app', window.location.origin);
+  url.searchParams.set('panel', 'ask');
+  url.searchParams.set('capsuleId', capsuleId);
+  url.searchParams.set('threadId', threadId);
+  return url.toString();
+}
+
+function pushConversationUrl(capsuleId: string, threadId: string) {
+  if (typeof window === 'undefined') return;
+  const url = new URL(buildConversationUrl(capsuleId, threadId));
+  window.history.pushState(null, '', `${url.pathname}?${url.searchParams.toString()}`);
+}
+
 function RepositorySheet({
   capsule,
   documents,
@@ -2896,24 +3169,80 @@ function CapsuleInspectorSheet({
   onRepository: () => void;
 }) {
   const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
+  const meta = capsule ? capsuleCategoryMeta(capsule) : null;
+  const refs = capsule?.coreRefs;
+  const starterSections = meta?.starterDefinition?.inspectionSections ?? [];
+  const starterTools = meta?.starterDefinition?.recommendedToolIds ?? [];
+  const starterOutputs = meta?.starterDefinition?.outputProductIds ?? [];
+  const compatible = meta?.starterDefinition?.combinesWellWith
+    .map((id) => CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === id)?.label ?? id)
+    .slice(0, 4) ?? [];
+  const warnings = capsule?.health?.warnings ?? [];
   return (
     <div className="fixed inset-0 z-40 bg-black/25" data-testid="capsule-inspector-sheet">
-      <aside className="ml-auto flex h-full w-full max-w-md flex-col bg-white p-5 shadow-2xl">
+      <aside className="ml-auto flex h-full w-full max-w-xl flex-col overflow-y-auto bg-white p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ca4a25]">Capsule inspector</p>
             <h2 className="mt-1 truncate text-xl font-semibold text-slate-950">{capsule?.label ?? 'No capsule selected'}</h2>
+            {meta ? (
+              <p className="mt-2 text-sm leading-6 text-slate-500">{meta.detail}</p>
+            ) : null}
           </div>
           <button type="button" aria-label="Close inspector" onClick={onClose} className="rounded-md p-2 text-slate-500 hover:bg-slate-100">
             <X className="h-4 w-4" />
           </button>
         </div>
+        {meta ? (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className={cn('rounded-md border px-2 py-1 text-xs font-semibold', meta.soft)}>{meta.label}</span>
+            <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-xs font-semibold text-slate-500">v{capsule?.version ?? 0}</span>
+            <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-500">{capsule?.trust?.label ?? 'Trust pending'}</span>
+          </div>
+        ) : null}
         <div className="mt-5 grid grid-cols-2 gap-2">
           <Metric label="Documents" value={counts.documents} />
           <Metric label="Sources" value={counts.sources} />
           <Metric label="Tools" value={counts.tools} />
           <Metric label="Outputs" value={counts.outputs} />
         </div>
+        {capsule ? (
+          <div className="mt-5 rounded-lg border border-slate-200 p-4">
+            <p className="text-xs font-semibold uppercase text-slate-400">Capsule anatomy</p>
+            <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600">
+              <InspectorRef label="User" value={refs?.userCoreId} />
+              <InspectorRef label="Situation" value={refs?.situationCoreId} />
+              <InspectorRef label="Path" value={refs?.pathCoreId} />
+              <InspectorRef label="Time" value={refs?.timeCoreId} />
+              <InspectorRef label="Graph" value={refs?.graphCoreId} />
+              <InspectorRef label="Memory" value={refs?.memoryCoreId} />
+              <InspectorRef label="Tools" value={refs?.toolCoreIds?.join(', ')} />
+              <InspectorRef label="Outputs" value={[...(refs?.outputCoreIds ?? []), ...(refs?.productCoreIds ?? [])].join(', ')} />
+            </div>
+          </div>
+        ) : null}
+        {starterSections.length ? (
+          <div className="mt-5 space-y-2">
+            {starterSections.map((section) => (
+              <section key={section.label} className="rounded-lg border border-slate-200 p-3">
+                <p className="text-xs font-semibold text-slate-800">{section.label}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{section.detail}</p>
+              </section>
+            ))}
+          </div>
+        ) : null}
+        {(starterTools.length || starterOutputs.length) ? (
+          <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 p-4">
+            <div>
+              <p className="text-xs font-semibold uppercase text-slate-400">Plug-in defaults</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">These values travel with the capsule into Ask PRAXIS, tool routing, agent runs, and output drafting.</p>
+            </div>
+            <div className="grid gap-2">
+              <InspectorRef label="Recommended tools" value={starterTools.join(', ')} />
+              <InspectorRef label="Output targets" value={starterOutputs.join(', ')} />
+            </div>
+          </div>
+        ) : null}
         <div className="mt-5 rounded-lg border border-slate-200 p-4">
           <p className="text-xs font-semibold uppercase text-slate-400">Reasoning posture</p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
@@ -2925,12 +3254,37 @@ function CapsuleInspectorSheet({
             {policyTeam ? `${policyTeam.label} preset active.` : 'Assign a policy-team preset to improve tool recommendations and output defaults.'}
           </p>
         </div>
+        <div className="mt-5 rounded-lg border border-slate-200 p-4">
+          <p className="text-xs font-semibold uppercase text-slate-400">Interchange</p>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {(compatible.length ? compatible : ['Any user capsule', 'Any tool capsule', 'Any output capsule']).map((item) => (
+              <span key={item} className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{item}</span>
+            ))}
+          </div>
+        </div>
+        {warnings.length ? (
+          <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <p className="text-xs font-semibold uppercase text-amber-800">Open gaps</p>
+            <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-5 text-amber-900">
+              {warnings.slice(0, 5).map((warning) => <li key={warning}>{warning}</li>)}
+            </ul>
+          </div>
+        ) : null}
         <div className="mt-5 space-y-2">
           <button type="button" onClick={onRepository} className="w-full rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">Open repository</button>
           <button type="button" onClick={onImprove} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Improve capsule</button>
         </div>
       </aside>
     </div>
+  );
+}
+
+function InspectorRef({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <p className="flex items-start justify-between gap-3 rounded-md bg-slate-50 px-2 py-1.5">
+      <span className="font-semibold text-slate-500">{label}</span>
+      <span className="min-w-0 truncate text-right font-mono text-[11px] text-slate-700">{value || 'open'}</span>
+    </p>
   );
 }
 

@@ -14,6 +14,7 @@ import {
   listCapsules,
   rateCapsule,
   saveContextStackCompat,
+  seedStarterCapsules,
   setCapsuleAccessPolicy,
   setCapsuleCoreLock,
   setCapsuleFavorite,
@@ -363,6 +364,45 @@ describe('capsule service', () => {
     expect(exported?.filename).toBe('ChinaEconomy.core');
     expect(exported?.mimeType).toBe('application/praxis-core+json');
     expect(parseCorePackage(exported?.package)?.capsule.capsuleId).toBe('ChinaEconomy');
+  });
+
+  it('seeds the starter capsule library once per owner without duplicating records', async () => {
+    const db = new FakeFirestore();
+
+    const first = await seedStarterCapsules('u1', deps(db));
+    const second = await seedStarterCapsules('u1', deps(db));
+    const capsules = await listCapsules('u1', { includeArchived: true }, deps(db));
+
+    expect(first.created).toBe(20);
+    expect(first.existing).toBe(0);
+    expect(second.created).toBe(0);
+    expect(second.existing).toBe(20);
+    expect(capsules.filter((capsule) => capsule.community.tags.includes('starter'))).toHaveLength(20);
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-grounded-research')?.coreRefs.toolCoreIds).toContain('grounded-research');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-options-memo')?.coreRefs.outputCoreIds).toContain('options-memo');
+
+    const resolved = await resolveInjectableContext({ uid: 'u1', capsuleId: 'starter-tool-grounded-research' }, deps(db));
+    expect(resolved.promptBlock).toContain('[starter_capsule_definition]');
+    expect(resolved.promptBlock).toContain('starter_category: tool');
+    expect(resolved.promptBlock).toContain('recommended_tools: grounded-research, sourceability, ask-praxis');
+  });
+
+  it('does not overwrite an edited starter capsule during reseeding', async () => {
+    const db = new FakeFirestore();
+    await seedStarterCapsules('u1', deps(db));
+    await bumpCapsuleVersion('u1', 'starter-situation-conflict-analysis', {
+      label: 'Edited conflict capsule',
+      community: { tags: ['starter', 'situation', 'custom-tag'] },
+    }, deps(db));
+
+    const result = await seedStarterCapsules('u1', deps(db));
+    const capsule = await getCapsule('u1', 'starter-situation-conflict-analysis', deps(db));
+
+    expect(result.created).toBe(0);
+    expect(result.existing).toBe(20);
+    expect(capsule?.label).toBe('Edited conflict capsule');
+    expect(capsule?.community.tags).toContain('custom-tag');
+    expect(capsule?.version).toBe(2);
   });
 });
 

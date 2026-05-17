@@ -11,6 +11,7 @@ import {
   type CapsuleServiceDeps,
   type PraxisCapsule,
 } from '@/lib/context/capsule-service';
+import { buildCapsuleStarterPromptBlock } from '@/lib/product/context-capsules';
 
 export interface InjectableContextInput {
   uid: string;
@@ -107,6 +108,7 @@ export function buildCapsulePromptBlock(
     `product_cores: ${refs.productCoreIds?.length ? refs.productCoreIds.join(', ') : 'none'}`,
     `memory_core: ${refs.memoryCoreId ?? 'none'}`,
     '',
+    buildCapsuleStarterPromptBlock(capsule.capsuleId),
     '[retrieval_policy]',
     `layers: ${capsule.retrievalPolicy.layers.join(', ')}`,
     `limit: ${capsule.retrievalPolicy.limit}`,

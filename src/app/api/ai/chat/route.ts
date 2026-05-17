@@ -38,6 +38,7 @@ import { listAskThreadTurns, persistAskThreadTurn, type AskThreadTurnRecord } fr
 import { isAskThreadSqlConfigured, listAskThreadTurnsSql, persistAskThreadTurnSql } from '@/lib/agent-runtime/ask-thread-postgres';
 import {
   askIntentDirective,
+  buildAskContextReceipt,
   buildAskConversationMessages,
   classifyAskIntent,
   type AskIntent,
@@ -437,6 +438,14 @@ You have access to the user's active situation data. When answering questions:
       capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
       threadId,
     });
+    runtimeReceipt.contextReceipt = buildAskContextReceipt({
+      capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
+      capsuleVersion: capsuleContext?.capsule?.version ?? turnCapsule?.capsuleVersion ?? null,
+      threadId,
+      runtime: runtimeReceipt,
+      historyTurnCount: persistedHistory.length,
+      warnings: turnCapsule?.activeGaps ?? [],
+    });
     const effectiveMessages = buildAskConversationMessages(
       messages,
       persistedHistory,
@@ -577,6 +586,7 @@ interface AskRuntimeReceipt extends Record<string, unknown> {
   }>;
   contextMode?: 'praxis_lite';
   memoryPersistence?: 'cloud-sql' | 'firestore';
+  contextReceipt?: ReturnType<typeof buildAskContextReceipt>;
 }
 
 interface AskToolInvocationReceipt {
