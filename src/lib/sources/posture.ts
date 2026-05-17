@@ -16,14 +16,7 @@ export type SourcePosture = z.infer<typeof SourcePostureSchema>;
 export type SourceMixWeight = { feed: string; weight: number };
 
 const DEFAULT_FEED_RELIABILITY: Record<string, number> = {
-  ucdp: 0.9,
-  gdelt: 0.72,
   grounded_search: 0.68,
-  reliefweb: 0.86,
-  hdx: 0.86,
-  unhcr: 0.86,
-  un_news: 0.82,
-  world_bank: 0.84,
   treaties: 0.9,
   documents: 0.78,
   osint: 0.58,
@@ -83,8 +76,6 @@ function inferFeedOrigin(id: string): string {
   for (const feed of Object.keys(DEFAULT_FEED_RELIABILITY)) {
     if (normalized.includes(feed)) return feed;
   }
-  if (normalized.includes('worldbank')) return 'world_bank';
-  if (normalized.includes('unnews')) return 'un_news';
   return normalized.split(':')[0] || 'unknown';
 }
 

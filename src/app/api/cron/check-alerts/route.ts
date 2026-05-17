@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { searchArticles } from '@/lib/data-feeds/gdelt-client';
-import { getCurrentStability } from '@/lib/data-feeds/gdelt-stability';
+import { getGroundedSearchEvents } from '@/lib/data-feeds/grounded-search-client';
 import { requireCronSecret } from '@/lib/api/cron-auth';
 
 export const maxDuration = 60;
@@ -13,7 +12,7 @@ interface SituationAlert {
   situationId: string;
   situationName: string;
   uid: string;
-  type: 'tone_spike' | 'volume_spike' | 'stability_shift' | 'high_severity_event';
+  type: 'volume_spike' | 'high_severity_event';
   severity: 'critical' | 'high' | 'medium';
   title: string;
   description: string;
@@ -24,12 +23,6 @@ interface SituationAlert {
   read: boolean;
 }
 
-// Tone thresholds: GDELT tone ranges from roughly -25 to +25.
-// Goldstein-style deviation: tones beyond +/- 5 are noteworthy,
-// beyond +/- 8 are significant.
-const TONE_THRESHOLD_HIGH = 8;
-const TONE_THRESHOLD_MEDIUM = 5;
-
 /**
  * Cron job: Check all active situations for alert conditions.
  * Runs daily at 06:00 UTC via Cloud Scheduler.
@@ -37,8 +30,8 @@ const TONE_THRESHOLD_MEDIUM = 5;
  *
  * Process:
  * 1. List all active situations from Firestore (all users)
- * 2. For each, fetch latest GDELT data and stability scores
- * 3. Compare against alert thresholds (tone spikes, volume anomalies)
+ * 2. For each, fetch latest Google-grounded web signals
+ * 3. Compare against alert thresholds (volume and high-severity events)
  * 4. Store alerts to Firestore for display on the dashboard
  */
 export async function GET(request: Request) {
@@ -110,7 +103,7 @@ export async function GET(request: Request) {
     }
 
     // -----------------------------------------------------------------------
-    // 2. For each situation, fetch GDELT data and check for alert conditions
+    // 2. For each situation, fetch grounded web data and check alert conditions
     // -----------------------------------------------------------------------
     const allAlerts: SituationAlert[] = [];
 
@@ -119,95 +112,53 @@ export async function GET(request: Request) {
       if (!query) continue;
 
       try {
-        // Fetch recent GDELT articles (last 24 hours)
-        const articles = await searchArticles({
+        const events = await getGroundedSearchEvents({
           query,
-          timespan: '24h',
-          maxRecords: 30,
+          country: sit.region,
+          limit: 12,
         });
 
-        // Fetch stability score for the region
-        const countryCode = sit.region.slice(0, 2).toUpperCase();
-        const stability = await getCurrentStability(countryCode);
+        const highSeverityEvents = events.filter((event) => event.severity === 'critical' || event.severity === 'high');
 
-        // --- Check for significant tone deviations (Goldstein-scale proxy) ---
-        const highToneArticles = articles.filter(
-          (a) => Math.abs(a.tone) >= TONE_THRESHOLD_HIGH
-        );
-        const mediumToneArticles = articles.filter(
-          (a) => Math.abs(a.tone) >= TONE_THRESHOLD_MEDIUM && Math.abs(a.tone) < TONE_THRESHOLD_HIGH
-        );
-
-        // Critical alerts: extremely negative tone articles
-        for (const article of highToneArticles) {
+        for (const event of highSeverityEvents) {
           allAlerts.push({
             situationId: sit.id,
             situationName: sit.name,
             uid: sit.uid,
-            type: 'tone_spike',
-            severity: article.tone < -TONE_THRESHOLD_HIGH ? 'critical' : 'high',
-            title: `High-severity media signal: ${article.title.slice(0, 120)}`,
-            description: `GDELT detected article with extreme tone (${article.tone.toFixed(1)}) from ${article.domain}. This indicates strong negative sentiment or escalatory language.`,
-            source: 'gdelt',
-            url: article.url,
+            type: 'high_severity_event',
+            severity: event.severity === 'critical' ? 'critical' : 'high',
+            title: `High-severity web signal: ${event.title.slice(0, 120)}`,
+            description: event.description,
+            source: 'google_search',
+            url: event.url,
             metadata: {
-              tone: article.tone,
-              domain: article.domain,
-              sourcecountry: article.sourcecountry,
-              seendate: article.seendate,
+              publishedAt: event.date,
+              source: event.source,
             },
             createdAt: new Date().toISOString(),
             read: false,
           });
         }
 
-        // Volume spike: if more than 20 articles in 24h, that's notable
-        if (articles.length >= 20) {
+        if (events.length >= 10) {
           allAlerts.push({
             situationId: sit.id,
             situationName: sit.name,
             uid: sit.uid,
             type: 'volume_spike',
-            severity: articles.length >= 25 ? 'high' : 'medium',
-            title: `Media volume spike: ${articles.length} articles in 24h for "${sit.name}"`,
-            description: `Unusually high media attention detected. ${highToneArticles.length} articles with extreme tone, ${mediumToneArticles.length} with elevated tone. Top domains: ${[...new Set(articles.slice(0, 5).map((a) => a.domain))].join(', ')}.`,
-            source: 'gdelt',
+            severity: events.length >= 12 ? 'high' : 'medium',
+            title: `Web signal volume spike: ${events.length} current results for "${sit.name}"`,
+            description: `Grounded Google Search returned a dense cluster of current results. High-severity items: ${highSeverityEvents.length}.`,
+            source: 'google_search',
             metadata: {
-              articleCount: articles.length,
-              highToneCount: highToneArticles.length,
-              averageTone: articles.length > 0
-                ? articles.reduce((sum, a) => sum + a.tone, 0) / articles.length
-                : 0,
+              resultCount: events.length,
+              highSeverityCount: highSeverityEvents.length,
+              urls: events.slice(0, 5).map((event) => event.url),
             },
             createdAt: new Date().toISOString(),
             read: false,
           });
         }
-
-        // Stability shift: worsening trend from GDELT stability API
-        if (stability && stability.trend === 'worsening') {
-          allAlerts.push({
-            situationId: sit.id,
-            situationName: sit.name,
-            uid: sit.uid,
-            type: 'stability_shift',
-            severity: stability.score > 5 ? 'high' : 'medium',
-            title: `Stability deterioration detected in ${sit.region}`,
-            description: `GDELT stability index shows worsening trend. 7-day average: ${stability.recent7d.toFixed(2)}, 30-day baseline: ${stability.baseline30d.toFixed(2)}. This may indicate emerging instability.`,
-            source: 'gdelt',
-            metadata: {
-              stabilityScore: stability.score,
-              recent7d: stability.recent7d,
-              baseline30d: stability.baseline30d,
-              trend: stability.trend,
-            },
-            createdAt: new Date().toISOString(),
-            read: false,
-          });
-        }
-
-        // Rate limit: GDELT allows ~1 req/sec, so pause between situations
-        await new Promise((resolve) => setTimeout(resolve, 1200));
       } catch (err) {
         console.error(`[cron] Failed to check alerts for situation "${sit.name}":`, err);
       }
@@ -261,9 +212,8 @@ export async function GET(request: Request) {
       alertsStored: storedCount,
       timestamp: new Date().toISOString(),
       summary: {
-        toneSpikes: allAlerts.filter((a) => a.type === 'tone_spike').length,
+        highSeverityEvents: allAlerts.filter((a) => a.type === 'high_severity_event').length,
         volumeSpikes: allAlerts.filter((a) => a.type === 'volume_spike').length,
-        stabilityShifts: allAlerts.filter((a) => a.type === 'stability_shift').length,
       },
     });
   } catch (err) {

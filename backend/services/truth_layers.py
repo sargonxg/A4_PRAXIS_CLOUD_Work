@@ -30,13 +30,6 @@ class ProvenanceRef(BaseModel):
     retrievedAt: str = Field(min_length=1)
     retriever: Literal[
         "analyst",
-        "gdelt",
-        "ucdp",
-        "reliefweb",
-        "hdx",
-        "unhcr",
-        "un-news",
-        "world-bank",
         "google-grounded",
         "private-corpus",
     ] | None = None

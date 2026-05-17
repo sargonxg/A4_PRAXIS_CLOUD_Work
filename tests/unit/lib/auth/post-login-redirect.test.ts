@@ -10,6 +10,10 @@ describe('post-login redirect', () => {
     expect(resolvePostLoginRedirect(new URLSearchParams('redirect=/app/assistant'), false, true)).toBe('/app');
   });
 
+  it('preserves safe explicit agent workspace redirects', () => {
+    expect(resolvePostLoginRedirect(new URLSearchParams('redirect=/agents/run_123'), false, true)).toBe('/agents/run_123');
+  });
+
   it('keeps incomplete onboarding users in onboarding before the app shell', () => {
     expect(resolvePostLoginRedirect(new URLSearchParams('redirect=/app/dashboard'), false, false)).toBe('/onboarding');
   });

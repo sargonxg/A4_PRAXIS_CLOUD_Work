@@ -1,5 +1,22 @@
 # PRAXIS — STATUS
 
+## 2026-05-17 — Agent Workspace Deep Links
+
+Current product checkpoint:
+
+- Central app metadata is now build `2026.05.17.03`.
+- `/agents/[runId]` is now the canonical private workspace URL for a durable
+  capsule-bound agent run on `praxis.tacitus.me`.
+- Creating an agent run from the shared cockpit now queues/dispatches the run
+  and opens `/agents/{runId}`, where the same PRAXIS workbench focuses the
+  selected run, active capsule, run events, tool-call/approval counts, and
+  output link.
+- `/app/agents/[runId]` redirects to `/agents/[runId]` for compatibility, and
+  login/onboarding middleware preserves the deep-link target without creating a
+  second app domain or top-level navigation item.
+- `npm run audit:agent-process-contract` now guards the route, middleware
+  matcher, and focused-run workbench wiring.
+
 ## 2026-05-17 — Capsule Agent Lane
 
 Current product checkpoint:

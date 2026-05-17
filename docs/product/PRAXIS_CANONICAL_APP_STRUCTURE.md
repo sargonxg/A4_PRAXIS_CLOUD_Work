@@ -399,6 +399,7 @@ Ship:
 - `POST /api/agents/runs`;
 - `GET /api/agents/runs/[runId]`;
 - run list by active capsule;
+- private `/agents/[runId]` workspace route on `praxis.tacitus.me`;
 - unit tests for state transitions and path/schema shape.
 
 ### Wave 2: Cloud Tasks Dispatch
@@ -412,6 +413,13 @@ Ship:
 
 Current implementation checkpoint:
 
+- `/agents/[runId]` is the canonical signed-in route for inspecting a durable
+  agent run in the real PRAXIS cockpit. It reuses the shared workbench, focuses
+  the selected run, loads the run's capsule, reads run events from the existing
+  stream endpoint, and shows tool-call/approval counts plus output links.
+- `/app/agents/[runId]` redirects to `/agents/[runId]` for compatibility. Login
+  and onboarding middleware preserve the deep-link target; this is not a second
+  app surface or navigation item.
 - `POST /api/agents/runs/[runId]/dispatch` enqueues a Cloud Tasks HTTP target
   for the run's execute route.
 - `POST /api/agents/runs/[runId]/execute` is the private worker boundary. The

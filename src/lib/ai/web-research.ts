@@ -57,26 +57,15 @@ const resultCache = new Map<string, { data: WebResearchResult[]; ts: number }>()
 const SOURCE_SEARCH_TERMS: Record<string, string[]> = {
   reuters: ['site:reuters.com'],
   ap: ['site:apnews.com'],
-  crisisgroup: ['site:crisisgroup.org'],
   chathamhouse: ['site:chathamhouse.org'],
-  un: ['site:news.un.org OR site:undocs.org OR site:reliefweb.int'],
-  ocha: ['site:unocha.org OR site:reliefweb.int'],
-  unhcr: ['site:unhcr.org'],
   bbc: ['site:bbc.com OR site:bbc.co.uk'],
   aljazeera: ['site:aljazeera.com'],
   guardian: ['site:theguardian.com'],
-  worldbank: ['site:worldbank.org'],
-  ucdp: ['site:ucdp.uu.se'],
 };
 
 const HOST_RELIABILITY: Record<string, number> = {
   'reuters.com': 0.95,
   'apnews.com': 0.95,
-  'news.un.org': 0.92,
-  'reliefweb.int': 0.90,
-  'crisisgroup.org': 0.90,
-  'worldbank.org': 0.90,
-  'ucdp.uu.se': 0.92,
   'bbc.com': 0.88,
   'bbc.co.uk': 0.88,
   'aljazeera.com': 0.85,
@@ -192,7 +181,7 @@ async function searchGoogle(
         prompt: `Use Google Search grounding to research: ${q}
 
 ${timeRangeInstruction(options.timeRange)}
-Prioritize checkable, authoritative sources: wire services, official institutions, UN/OCHA/ReliefWeb, court or legislative records, reputable local outlets, and established think tanks.
+Prioritize checkable, authoritative sources: wire services, official institutions, court or legislative records, reputable local outlets, and established think tanks.
 
 Return a concise research brief and a source receipts section. Do not invent URLs. If sources disagree, identify the disagreement.`,
       });

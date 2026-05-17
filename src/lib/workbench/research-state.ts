@@ -29,12 +29,9 @@ export interface ResearchPlanStep {
 export const RESEARCH_SOURCE_SETS: ResearchSourceSet[] = [
   { id: 'reuters', label: 'Reuters', hint: 'wire reporting and dated event confirmation' },
   { id: 'ap', label: 'AP', hint: 'wire reporting and cross-checking' },
-  { id: 'crisisgroup', label: 'ICG', hint: 'conflict analysis and mediation context' },
-  { id: 'un', label: 'UN', hint: 'official documents, briefings, ReliefWeb, OCHA' },
-  { id: 'ucdp', label: 'UCDP', hint: 'conflict event and actor datasets' },
+  { id: 'google-search', label: 'Google Search', hint: 'grounded web research and source discovery' },
   { id: 'bbc', label: 'BBC', hint: 'public reporting and explainers' },
   { id: 'aljazeera', label: 'Al Jazeera', hint: 'regional reporting and narrative signals' },
-  { id: 'worldbank', label: 'World Bank', hint: 'economic and development indicators' },
   { id: 'local-media', label: 'Local media', hint: 'local narrative and incident monitoring' },
   { id: 'case-docs', label: 'Search my docs', hint: 'uploaded documents and accepted receipts' },
 ];
@@ -42,12 +39,9 @@ export const RESEARCH_SOURCE_SETS: ResearchSourceSet[] = [
 const SOURCE_URLS: Record<string, string> = {
   reuters: 'https://www.reuters.com/search/news?blob=',
   ap: 'https://apnews.com/search?q=',
-  crisisgroup: 'https://www.crisisgroup.org/search?search=',
-  un: 'https://reliefweb.int/search/results?search=',
-  ucdp: 'https://ucdp.uu.se/',
+  'google-search': 'https://www.google.com/search?q=',
   bbc: 'https://www.bbc.co.uk/search?q=',
   aljazeera: 'https://www.aljazeera.com/search/',
-  worldbank: 'https://www.worldbank.org/en/search?q=',
   'local-media': 'https://www.google.com/search?q=',
   'case-docs': '#case-docs',
 };
@@ -60,7 +54,7 @@ export function buildResearchPlan(caseModule: CaseModule, question: string): Res
       id: 'background',
       title: 'Establish the baseline',
       query: `${base} background ${caseModule.manifest.region}`,
-      sourceSets: ['un', 'crisisgroup', 'bbc'],
+      sourceSets: ['google-search', 'bbc', 'case-docs'],
       rationale: 'Start with durable background and official framing before searching for fresh incidents.',
     },
     {
@@ -74,8 +68,8 @@ export function buildResearchPlan(caseModule: CaseModule, question: string): Res
       id: 'cross-check',
       title: 'Cross-check claims',
       query: `${base} source verification evidence`,
-      sourceSets: ['case-docs', 'ucdp', 'worldbank'],
-      rationale: 'Compare live reporting against attached receipts, datasets, and institutional records.',
+      sourceSets: ['case-docs', 'google-search', 'reuters'],
+      rationale: 'Compare live reporting against attached receipts and source-linked web evidence.',
     },
   ];
 }
@@ -83,7 +77,7 @@ export function buildResearchPlan(caseModule: CaseModule, question: string): Res
 export function buildResearchCandidates(caseModule: CaseModule, question: string, selectedSourceSets: string[], depth: ResearchDepth): ResearchCandidate[] {
   const query = question.trim() || `${caseModule.manifest.name} ${caseModule.manifest.region}`;
   const limit = depth === 'deep' ? 10 : depth === 'standard' ? 7 : 4;
-  const selected = selectedSourceSets.length ? selectedSourceSets : ['un', 'crisisgroup', 'reuters'];
+  const selected = selectedSourceSets.length ? selectedSourceSets : ['google-search', 'reuters', 'ap'];
   const fromReceipts = caseModule.sources.slice(0, 4).map((source, index): ResearchCandidate => ({
     id: `receipt-${source.receiptId}`,
     title: source.title ?? source.name ?? source.source,

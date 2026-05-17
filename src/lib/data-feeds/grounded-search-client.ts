@@ -1,10 +1,9 @@
 /**
  * Grounded Search Client — Gemini Flash + Google Search.
  *
- * Primary PRAXIS live-research path. Structured feeds such as GDELT,
- * ReliefWeb, HDX, UCDP, and UN News are corroborating signals; this client
- * gives users checkable URLs for the current political information they are
- * asking the system to understand.
+ * Primary PRAXIS live-research path. This client gives users checkable URLs
+ * for the current political information they are asking the system to
+ * understand.
  *
  * Zero-config: works with just GOOGLE_AI_API_KEY or Vertex ADC on Cloud Run.
  */

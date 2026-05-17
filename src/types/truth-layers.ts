@@ -6,13 +6,6 @@ export interface ProvenanceRef {
   retrievedAt: string;
   retriever?:
     | 'analyst'
-    | 'gdelt'
-    | 'ucdp'
-    | 'reliefweb'
-    | 'hdx'
-    | 'unhcr'
-    | 'un-news'
-    | 'world-bank'
     | 'google-grounded'
     | 'private-corpus';
 }

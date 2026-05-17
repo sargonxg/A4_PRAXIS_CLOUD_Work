@@ -1,1 +1,1 @@
-# Feed clients package: GDELT plus TypeScript-side UCDP providers.
+# Feed clients package retained for backend compatibility.

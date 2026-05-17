@@ -324,9 +324,8 @@ function toolCores(): LibraryCore[] {
 
 function sourceCores(): LibraryCore[] {
   return [
-    core('src-gdelt-grounded-search', 'source', 'GDELT + grounded Google Search', 'live', 90, 12, 'Live media/event triangulation with grounded search fallback.', ['source', 'gdelt', 'google']),
-    core('src-reliefweb-hdx', 'source', 'ReliefWeb + HDX humanitarian receipts', 'live', 87, 10, 'Humanitarian operations, needs, access, and cluster evidence.', ['source', 'humanitarian', 'hdx']),
-    core('src-ucdp-gdelt-events', 'source', 'UCDP / GDELT event posture', 'live', 84, 10, 'Conflict event baselines and escalation pattern support.', ['source', 'conflict', 'events']),
+    core('src-grounded-google-search', 'source', 'Grounded Google Search', 'live', 90, 12, 'Live web research with source-linked current evidence.', ['source', 'google', 'grounded-search']),
+    core('src-web-crawler-receipts', 'source', 'Web crawler receipts', 'live', 84, 10, 'Optional crawler evidence with URLs, excerpts, and receipt metadata.', ['source', 'crawler', 'receipts']),
     core('doc-uploaded-corpus', 'document', 'Uploaded document corpus', 'workspace', 72, 9, 'User-owned files chunked, embedded, and attached to active capsules.', ['document', 'upload', 'retrieval']),
   ];
 }

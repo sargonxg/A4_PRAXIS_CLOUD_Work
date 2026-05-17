@@ -20,7 +20,7 @@ export const maxDuration = 300;
  * Rebuilds or extends the ACO knowledge graph for the given situation. Reads
  * the caller's uploaded documents, the situation description, and — when no
  * content is available — seeds the graph via grounded Google Search. Every
- * Actor node is enriched with Wikipedia + GDELT signal so the graph carries
+ * Actor node is enriched with Wikipedia + Google-grounded signal so the graph carries
  * live context at the moment of population.
  *
  * Idempotent: running twice on the same situation merges with existing nodes

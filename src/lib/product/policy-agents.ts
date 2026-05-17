@@ -127,7 +127,7 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     category: 'monitoring',
     description: 'Tracks actor, event, commitment, and source changes for conflict and statecraft cases.',
     requiredCores: ['Situation Core', 'Source Core', 'Graph Core', 'Time Core'],
-    inputTypes: ['GDELT', 'UCDP', 'ReliefWeb', 'HDX', 'UN News', 'World Bank'],
+    inputTypes: ['Google Search grounding', 'web crawler receipts', 'user documents'],
     outputDestination: 'canvas',
     approvalLevel: 'approval_required',
     readiness: 'planned',

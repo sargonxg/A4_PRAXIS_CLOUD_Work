@@ -32,7 +32,7 @@ export function buildToolContext(situation: Situation): string {
     situation.graphEntities > 0 ? `${situation.graphEntities} graph entities` : null,
     situation.documentCount > 0 ? `${situation.documentCount} docs in RAG` : null,
     situation.ontology ? 'Structured Grammar (ACO) Available' : null,
-  ].filter(Boolean).join(' · ') || 'No structured data — use description + live feeds';
+  ].filter(Boolean).join(' · ') || 'No structured data — use description + grounded web research';
 
   const mappingBlock = situation.ontology ? `
 STRUCTURED MAPPING (v2.0):
@@ -69,7 +69,7 @@ ANALYTICAL FRAMEWORK
 - Apply INFORM Risk Index (Hazard, Vulnerability, Coping) for multi-dimensional risk
 - Reference all actors by their exact names listed above
 - Tailor outputs to the role of: ${formatRole(situation.userRole)}
-- Flag data gaps explicitly and recommend: GDELT / UCDP / ReliefWeb / HDX / UN News / Google Search sources
+- Flag data gaps explicitly and recommend Google-grounded search, crawler receipts, or user-provided sources
 - Write to UN/diplomatic professional standards${situation.sourceUrls?.length ? `\n\nPRIMARY REFERENCES (analyst-provided — cite these):\n${situation.sourceUrls.map((u, i) => `${i + 1}. ${u}`).join('\n')}` : ''}${situation.contextNotes ? `\n\nANALYST CONTEXT NOTES:\n${situation.contextNotes}` : ''}`;
 }
 

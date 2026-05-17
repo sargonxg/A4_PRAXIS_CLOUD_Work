@@ -8,8 +8,6 @@ import { scrapeUrl, scrapeMultiple, searchWeb, isGroundedSearchConfigured } from
 import { updateSituationAdmin, getSituationAdmin } from '@/lib/firebase/situations';
 import { getAllDocumentText } from '@/lib/firebase/documents-service';
 import { getSituationIntelligence } from '@/lib/data-feeds/feed-aggregator';
-import { countryNameToIso3 } from '@/lib/data-feeds/hdx-client';
-import { getEconomicSnapshot } from '@/lib/data-feeds/worldbank-client';
 import { initializeSituationTools } from '@/lib/services/situation-initializer';
 import { runCanonicalPreCheck, formatPreCheckContext } from '@/lib/services/canonical-precheck';
 import { saveToolData } from '@/lib/firebase/tool-data-service';
@@ -175,55 +173,17 @@ export const POST = withCalibration('auto_structure', 'ai_analysis', {
       );
     }
 
-    // Phase 5: Live intelligence feeds + World Bank economic data
-    const countryIso3 = countryNameToIso3(region || situationName);
-
+    // Phase 5: Live Google-grounded intelligence
     gatherPromises.push(
       getSituationIntelligence({ country: region || situationName, query: situationName, limit: 20 }).then((intel) => {
         if (intel.events.length > 0) {
           const feedItems = intel.events.slice(0, 12).map((e) =>
             `- [${e.source.toUpperCase()}] ${e.date || 'recent'}: ${e.title}${e.severity ? ` (severity: ${e.severity})` : ''}`
           ).join('\n');
-          contextSections.push(`\n\nLIVE INTELLIGENCE FEED (${intel.events.length} items):\n${feedItems}`);
-        }
-        // Include humanitarian snapshot if available
-        if (intel.humanitarian) {
-          const hum = intel.humanitarian;
-          const parts: string[] = [];
-          if (hum.displacement?.idps || hum.displacement?.refugees) {
-            parts.push(`IDPs: ${(hum.displacement.idps || 0).toLocaleString()}, Refugees: ${(hum.displacement.refugees || 0).toLocaleString()}`);
-          }
-          if (hum.foodSecurity?.length) {
-            const worst = hum.foodSecurity.reduce((a, b) => (parseInt(a.phase) > parseInt(b.phase) ? a : b));
-            parts.push(`Food security: ${worst.pct}% of population in Phase ${worst.phase}`);
-          }
-          if (hum.funding?.required) {
-            parts.push(`Humanitarian funding: ${hum.funding.pct}% of $${(hum.funding.required / 1e6).toFixed(0)}M required funded`);
-          }
-          if (parts.length > 0) {
-            contextSections.push(`\n\nHUMANITARIAN SNAPSHOT:\n${parts.join('\n')}`);
-          }
-        }
-        if (intel.stability) {
-          contextSections.push(`\n\nSTABILITY INDEX: Score ${intel.stability.score}/10 (trend: ${intel.stability.trend})`);
+          contextSections.push(`\n\nLIVE GOOGLE-GROUNDED INTELLIGENCE (${intel.events.length} items):\n${feedItems}`);
         }
       }).catch(() => {})
     );
-
-    // Phase 5b: World Bank economic indicators (free)
-    if (countryIso3) {
-      gatherPromises.push(
-        getEconomicSnapshot(countryIso3).then((econ) => {
-          const parts: string[] = [];
-          if (econ.gdp?.value) parts.push(`GDP: $${(econ.gdp.value / 1e9).toFixed(1)}B (${econ.gdp.year})`);
-          if (econ.inflation?.value) parts.push(`Inflation: ${econ.inflation.value.toFixed(1)}% (${econ.inflation.year})`);
-          if (econ.militarySpending?.value) parts.push(`Military spending: ${econ.militarySpending.value.toFixed(1)}% of GDP`);
-          if (parts.length > 0) {
-            contextSections.push(`\n\nECONOMIC INDICATORS (World Bank):\n${parts.join('\n')}`);
-          }
-        }).catch(() => {})
-      );
-    }
 
     await Promise.all(gatherPromises);
 

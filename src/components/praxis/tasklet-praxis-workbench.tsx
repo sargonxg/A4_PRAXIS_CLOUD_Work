@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -68,6 +69,7 @@ type TaskletPraxisWorkbenchProps = {
   mode: HomeSurfaceMode | 'app';
   activeCapsuleName?: string;
   capsuleId?: string;
+  focusedRunId?: string;
   recentRuns?: Array<{ label: string; detail: string; status: string }>;
   className?: string;
 };
@@ -99,6 +101,18 @@ type AgentRunSummary = {
   outputHref?: string | null;
   readiness?: PolicyAgentDefinition['readiness'] | null;
   riskLevel?: PolicyAgentDefinition['riskLevel'] | null;
+};
+type AgentRunEventSummary = {
+  id: string;
+  eventType: string;
+  message?: string | null;
+  createdAt: string;
+  data?: Record<string, unknown>;
+};
+type AgentRunDetail = {
+  run: AgentRunSummary;
+  toolCalls?: unknown[];
+  approvals?: unknown[];
 };
 type SpanTargetCore = 'sourceability' | 'temporality' | 'causality' | 'human-friction' | 'rules' | 'open-question';
 type CapsuleCoreRefs = {
@@ -214,9 +228,11 @@ export function TaskletPraxisWorkbench({
   mode,
   activeCapsuleName = 'Weekly Middle East Analysis',
   capsuleId = 'default',
+  focusedRunId,
   recentRuns = defaultRecentRuns,
   className,
 }: TaskletPraxisWorkbenchProps) {
+  const router = useRouter();
   const { user } = useAuth();
   const surfaceMode: HomeSurfaceMode = mode === 'app' ? 'authenticated' : mode;
   const isAuthenticated = surfaceMode === 'authenticated';
@@ -249,6 +265,9 @@ export function TaskletPraxisWorkbench({
   const [agentRuns, setAgentRuns] = useState<AgentRunSummary[]>([]);
   const [agentRunsLoading, setAgentRunsLoading] = useState(false);
   const [agentRunCreating, setAgentRunCreating] = useState(false);
+  const [focusedRun, setFocusedRun] = useState<AgentRunDetail | null>(null);
+  const [focusedRunEvents, setFocusedRunEvents] = useState<AgentRunEventSummary[]>([]);
+  const [focusedRunLoading, setFocusedRunLoading] = useState(false);
   const [builderLabel, setBuilderLabel] = useState('');
   const [builderNotes, setBuilderNotes] = useState('');
   const [builderLinks, setBuilderLinks] = useState('');
@@ -287,13 +306,14 @@ export function TaskletPraxisWorkbench({
   );
 
   useEffect(() => {
+    if (focusedRunId) return;
     setActiveCapsules((current) => {
       const first = current[0];
       if (first?.id === capsuleId && first.label === activeCapsuleName) return current;
       setCurrentCapsuleId(capsuleId);
       return [{ id: capsuleId, label: activeCapsuleName, code: 'SITUATION', role: 'situation' }, ...current.slice(1)];
     });
-  }, [activeCapsuleName, capsuleId]);
+  }, [activeCapsuleName, capsuleId, focusedRunId]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -637,6 +657,60 @@ export function TaskletPraxisWorkbench({
     void refreshAgentRuns();
   }, [isAuthenticated, refreshAgentRuns]);
 
+  useEffect(() => {
+    if (!isAuthenticated || !focusedRunId) return;
+    let cancelled = false;
+    const runId = focusedRunId;
+
+    async function loadFocusedRun() {
+      setFocusedRunLoading(true);
+      setCapsuleDetailTab('agents');
+      setActiveTab('capsules');
+      setStatus(`Opening agent run ${runId.slice(0, 12)}...`);
+      try {
+        const response = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}`, { credentials: 'include' });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload?.run?.runId) throw new Error(payload?.error ?? 'agent run not found');
+        if (cancelled) return;
+
+        const detail = payload as AgentRunDetail;
+        setFocusedRun(detail);
+        setCurrentCapsuleId(detail.run.capsuleId);
+        if (detail.run.policyAgentId) setSelectedAgentId(detail.run.policyAgentId);
+        setPrompt(detail.run.objective);
+        setActiveCapsules((current) => {
+          const chip: ActiveCapsuleChip = {
+            id: detail.run.capsuleId,
+            label: detail.run.capsuleId,
+            code: 'SITUATION',
+            role: 'situation',
+          };
+          return [chip, ...current.filter((item) => item.id !== chip.id)].slice(0, 6);
+        });
+        setAgentRuns((current) => [detail.run, ...current.filter((item) => item.runId !== detail.run.runId)].slice(0, 8));
+        setStatus(`${detail.run.policyAgentLabel ?? 'Capsule agent'} opened as run ${detail.run.runId.slice(0, 12)}.`);
+        void refreshCapsules(detail.run.capsuleId);
+
+        const eventsResponse = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}/stream?limit=30`, { credentials: 'include' });
+        const eventsText = await eventsResponse.text().catch(() => '');
+        if (!cancelled && eventsResponse.ok) setFocusedRunEvents(parseAgentRunSse(eventsText));
+      } catch (err) {
+        if (!cancelled) {
+          setFocusedRun(null);
+          setFocusedRunEvents([]);
+          setStatus(err instanceof Error ? `Agent workspace unavailable: ${err.message}` : 'Agent workspace unavailable.');
+        }
+      } finally {
+        if (!cancelled) setFocusedRunLoading(false);
+      }
+    }
+
+    void loadFocusedRun();
+    return () => {
+      cancelled = true;
+    };
+  }, [focusedRunId, isAuthenticated, refreshCapsules]);
+
   async function createAgentRun(agent: PolicyAgentDefinition = selectedAgent, overridePrompt?: string) {
     const cleanPrompt = (overridePrompt ?? prompt).trim();
     if (!cleanPrompt || agentRunCreating) return;
@@ -691,6 +765,7 @@ export function TaskletPraxisWorkbench({
       } else {
         setStatus(`${agent.label} dispatched. Open Agents for run status and receipts.`);
       }
+      router.push(`/agents/${encodeURIComponent(run.runId)}`);
       void refreshAgentRuns();
     } catch (err) {
       setStatus(err instanceof Error ? `Agent run failed: ${err.message}` : 'Agent run failed.');
@@ -1047,7 +1122,19 @@ export function TaskletPraxisWorkbench({
           <div className="mt-8">
             <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">{recentLabel} <ChevronDown className="h-3 w-3" /></p>
             <div className="mt-3 space-y-2">
-              {recentRuns.slice(0, 5).map((run) => (
+              {isAuthenticated && agentRuns.length ? agentRuns.slice(0, 5).map((run) => (
+                <button
+                  key={run.runId}
+                  type="button"
+                  onClick={() => router.push(`/agents/${encodeURIComponent(run.runId)}`)}
+                  className={cn(
+                    'block w-full truncate rounded-md px-1 py-1.5 text-left text-sm font-medium hover:bg-black/5',
+                    focusedRunId === run.runId ? 'bg-black/5 text-slate-950' : 'text-slate-800',
+                  )}
+                >
+                  {run.policyAgentLabel ?? run.policyAgentId ?? run.objective}
+                </button>
+              )) : recentRuns.slice(0, 5).map((run) => (
                 <button key={run.label} type="button" className="block w-full truncate rounded-md px-1 py-1.5 text-left text-sm font-medium text-slate-800 hover:bg-black/5">
                   {run.label}
                 </button>
@@ -1502,6 +1589,9 @@ export function TaskletPraxisWorkbench({
                     repositoryLoading={repositoryLoading}
                     agentRuns={agentRuns}
                     agentRunsLoading={agentRunsLoading}
+                    focusedRun={focusedRun}
+                    focusedRunEvents={focusedRunEvents}
+                    focusedRunLoading={focusedRunLoading}
                     selectedAgentId={selectedAgentId}
                     onUpload={() => fileInputRef.current?.click()}
                     onDetailTab={setCapsuleDetailTab}
@@ -1985,6 +2075,9 @@ function CapsuleDetailPanel({
   repositoryLoading,
   agentRuns,
   agentRunsLoading,
+  focusedRun,
+  focusedRunEvents,
+  focusedRunLoading,
   selectedAgentId,
   onUpload,
   onDetailTab,
@@ -2004,6 +2097,9 @@ function CapsuleDetailPanel({
   repositoryLoading: boolean;
   agentRuns: AgentRunSummary[];
   agentRunsLoading: boolean;
+  focusedRun: AgentRunDetail | null;
+  focusedRunEvents: AgentRunEventSummary[];
+  focusedRunLoading: boolean;
   selectedAgentId: string;
   onUpload: () => void;
   onDetailTab: (tab: CapsuleDetailTab) => void;
@@ -2134,6 +2230,12 @@ function CapsuleDetailPanel({
       ) : null}
       {detailTab === 'agents' ? (
         <div className="mt-4 space-y-3" data-testid="capsule-agent-lane">
+          {focusedRunLoading ? (
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-500">
+              Opening selected agent run...
+            </div>
+          ) : null}
+          {focusedRun ? <FocusedAgentRunPanel detail={focusedRun} events={focusedRunEvents} /> : null}
           <div className="rounded-md border border-slate-200 p-3">
             <p className="text-xs font-semibold text-slate-800">Capsule agents</p>
             <p className="mt-1 text-[11px] leading-5 text-slate-500">Agents inherit this capsule, selected cores, repository sources, approval posture, and output target.</p>
@@ -2162,7 +2264,10 @@ function CapsuleDetailPanel({
                     <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-semibold', agentRunStatusClass(run.status))}>{run.status.replaceAll('_', ' ')}</span>
                   </div>
                   <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-slate-500">{run.objective}</p>
-                  <p className="mt-1 font-mono text-[10px] text-slate-400">{run.runId.slice(0, 12)} · {new Date(run.createdAt).toLocaleDateString()}</p>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <p className="font-mono text-[10px] text-slate-400">{run.runId.slice(0, 12)} · {new Date(run.createdAt).toLocaleDateString()}</p>
+                    <Link href={`/agents/${encodeURIComponent(run.runId)}`} className="text-[11px] font-semibold text-[#ca4a25] hover:underline">Open</Link>
+                  </div>
                 </article>
               ))}
               {!agentRunsLoading && agentRuns.length === 0 ? <p className="text-xs text-slate-500">No durable agent runs yet. Run Research Memo or Output Formatter to create one.</p> : null}
@@ -2187,6 +2292,42 @@ function CapsuleDetailPanel({
       </div>
       <p className="mt-4 text-xs text-slate-400">Updated {new Date(capsule.updatedAt).toLocaleDateString()}</p>
     </aside>
+  );
+}
+
+function FocusedAgentRunPanel({ detail, events }: { detail: AgentRunDetail; events: AgentRunEventSummary[] }) {
+  const { run, toolCalls = [], approvals = [] } = detail;
+  return (
+    <article className="rounded-md border border-[#ff714d]/30 bg-[#fff7f3] p-3" data-testid="focused-agent-run">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-slate-950">{run.policyAgentLabel ?? run.policyAgentId ?? 'Capsule agent workspace'}</p>
+          <p className="mt-1 font-mono text-[10px] text-slate-500">{run.runId}</p>
+        </div>
+        <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-semibold', agentRunStatusClass(run.status))}>
+          {run.status.replaceAll('_', ' ')}
+        </span>
+      </div>
+      <p className="mt-3 text-xs leading-5 text-slate-700">{run.objective}</p>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <Metric label="Events" value={events.length} />
+        <Metric label="Tools" value={toolCalls.length} />
+        <Metric label="Approvals" value={approvals.length} />
+      </div>
+      {run.outputHref ? (
+        <Link href={run.outputHref} className="mt-3 inline-flex rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+          Open output
+        </Link>
+      ) : null}
+      <div className="mt-3 space-y-2">
+        {(events.length ? events : [{ id: 'empty', eventType: 'run.loaded', message: 'Run loaded. Waiting for worker receipts.', createdAt: run.updatedAt }]).slice(-5).map((event) => (
+          <div key={event.id} className="rounded-md bg-white/80 px-3 py-2">
+            <p className="text-[11px] font-semibold text-slate-800">{event.eventType}</p>
+            {event.message ? <p className="mt-1 text-[11px] leading-5 text-slate-500">{event.message}</p> : null}
+          </div>
+        ))}
+      </div>
+    </article>
   );
 }
 
@@ -2276,6 +2417,23 @@ function agentRunStatusClass(status: AgentRunSummary['status']): string {
     case 'expired':
       return 'bg-rose-100 text-rose-700';
   }
+}
+
+function parseAgentRunSse(text: string): AgentRunEventSummary[] {
+  return text
+    .split('\n\n')
+    .map((chunk) => {
+      const dataLine = chunk.split('\n').find((line) => line.startsWith('data: '));
+      if (!dataLine) return null;
+      try {
+        const parsed = JSON.parse(dataLine.slice(6)) as AgentRunEventSummary;
+        if (!parsed.id || !parsed.eventType || !parsed.createdAt) return null;
+        return parsed;
+      } catch {
+        return null;
+      }
+    })
+    .filter((event): event is AgentRunEventSummary => Boolean(event));
 }
 
 function MessageActionRow({

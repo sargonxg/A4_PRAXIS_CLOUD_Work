@@ -208,7 +208,7 @@ steps:
       - '--set-env-vars'
       - '^|^AI_PROVIDER=vertex|GOOGLE_VERTEX_PROJECT=praxisbytacitus|GOOGLE_VERTEX_LOCATION=us-central1|VERTEX_AGENT_LOCATION=us-central1|GOOGLE_CLOUD_PROJECT=praxisbytacitus|ADMIN_EMAIL_ALLOWLIST=giulio@tacitus.me,giuliocatanzariti@gmail.com'
       - '--set-secrets'
-      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,UCDP_API_TOKEN=praxis-ucdp-api-token:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest,USER_KEY_MASTER=praxis-user-key-master:latest,VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest,PUBSUB_PUSH_SHARED_SECRET=praxis-pubsub-push-secret:latest'
+      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest,USER_KEY_MASTER=praxis-user-key-master:latest,VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest,PUBSUB_PUSH_SHARED_SECRET=praxis-pubsub-push-secret:latest'
     id: 'deploy-frontend'
     waitFor: ['push-frontend']
 
@@ -224,14 +224,14 @@ steps:
     id: 'set-frontend-env'
     waitFor: ['deploy-frontend']
 
-  # ── Vendor _shared spine helper into each function/worker source dir ─────
+  # ── Vendor _shared spine helper into each function source dir ─────
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: bash
     args:
       - '-c'
       - |
         set -e
-        for target in cloud_functions/gdelt_poller cloud_functions/on_situation_created cloud_functions/on_document_uploaded; do
+        for target in cloud_functions/on_situation_created cloud_functions/on_document_uploaded; do
           rm -rf "$target/_shared"
           cp -r cloud_functions/_shared "$target/_shared"
           echo "Vendored _shared into $target"
@@ -239,43 +239,10 @@ steps:
     id: 'vendor-shared'
     waitFor: ['check-model-strings']
 
-  # ── GDELT Worker Pool ──────────────────────────────────────────────────────
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller', './cloud_functions/gdelt_poller']
-    id: 'build-gdelt-worker'
-    waitFor: ['vendor-shared']
-
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller']
-    id: 'push-gdelt-worker'
-    waitFor: ['build-gdelt-worker']
-
-  # gdelt-poller MUST have PRAXIS_BACKEND_URL or worker.py crashes on boot.
-  # Re-apply env vars on every deploy so a previous --clear-env-vars or fresh
-  # recreate cannot leave the worker without its required config.
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: bash
-    args:
-      - '-c'
-      - |
-        set -e
-        BACKEND_URL=$(cat /workspace/backend_url.txt)
-        if [ -z "$$BACKEND_URL" ]; then
-          echo "ERROR: backend_url.txt is empty — backend deploy did not write a URL"
-          exit 1
-        fi
-        gcloud beta run worker-pools update gdelt-poller \
-          --image=us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller \
-          --region=us-central1 \
-          --update-env-vars="PRAXIS_BACKEND_URL=$$BACKEND_URL,POLL_INTERVAL_SECONDS=900"
-    id: 'deploy-gdelt-worker'
-    waitFor: ['push-gdelt-worker', 'get-backend-url']
-
 images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-backend'
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-pgbouncer'
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend'
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/gdelt-poller'
 
 substitutions:
   # Enforce GCP readiness checks in Cloud Build. The Cloud Build service account

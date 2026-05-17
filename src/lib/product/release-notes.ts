@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.17.03',
+    version: '6.4.1',
+    date: '2026-05-17',
+    title: 'Agent runs get direct workspaces',
+    summary: 'Capsule-bound agent runs now open through canonical /agents/[runId] workspaces on the same PRAXIS domain, so a queued run becomes a durable conversation-style workspace instead of only a recent-run row.',
+    category: 'runtime',
+    items: [
+      'Added the private /agents/[runId] route that loads the shared PRAXIS cockpit with the selected run, capsule, events, tool calls, approvals, and output link focused.',
+      'Run creation now navigates directly to the canonical agent workspace after queueing and dispatch, while /app/agents/[runId] redirects for compatibility.',
+      'Login and middleware preserve private agent workspace redirects and keep onboarding enforcement aligned with /app.',
+      'Expanded the agent-process contract audit so future cleanup must preserve the deep-link route, middleware matcher, and focused-run workbench wiring.',
+    ],
+  },
+  {
     buildNumber: '2026.05.17.02',
     version: '6.4.1',
     date: '2026-05-17',

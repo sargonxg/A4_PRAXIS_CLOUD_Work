@@ -1,5 +1,5 @@
 /**
- * PRAXIS Feed Layer — TTL-cached data feed accessor.
+ * PRAXIS Feed Layer — TTL-cached grounded-research accessor.
  * Reads from Firestore feed-cache subcollection.
  * TTL: per-feed configuration. Returns stale indicator.
  */
@@ -7,22 +7,9 @@
 import { adminDb } from '@/lib/firebase/admin';
 import type { FeedCacheEntry } from './types';
 
-// TTL per feed (in hours)
 const FEED_TTL_HOURS: Record<string, number> = {
-  gdelt: 1,
-  hdx: 6,
-  reliefweb: 6,
-  unhcr: 12,
-  ucdp: 24,
-  worldbank: 48,
-  unnews: 4,
-  icg: 24,
-  sipri: 168, // weekly
-  opensanctions: 24,
-  vdem: 720, // monthly
-  icews: 168,
-  acaps: 24,
-  'ace-electoral': 720,
+  grounded_search: 4,
+  documents: 24,
 };
 
 export class FeedLayer {
@@ -77,23 +64,23 @@ export class FeedLayer {
 
   async getToolRelevantFeeds(toolId: string): Promise<Record<string, FeedCacheEntry>> {
     const toolFeedMap: Record<string, string[]> = {
-      'risk-monitor': ['gdelt', 'hdx', 'ucdp'],
-      'early-warning': ['gdelt', 'icews', 'ucdp'],
-      'humanitarian': ['hdx', 'unhcr', 'reliefweb', 'acaps'],
-      'timeline': ['gdelt', 'unnews', 'ucdp'],
-      'argus': ['gdelt', 'icews', 'ucdp'],
-      'media-compass': ['gdelt', 'reliefweb', 'unnews'],
-      'media-roundup': ['gdelt', 'unnews', 'reliefweb'],
-      'geospatial-monitor': ['gdelt', 'hdx', 'unhcr'],
-      'sanctions': ['opensanctions'],
-      'actor-profiles': ['gdelt', 'opensanctions'],
-      'power-map': ['gdelt', 'vdem'],
-      'info-environment': ['gdelt', 'unnews'],
-      'alert-center': ['gdelt', 'hdx'],
-      'dashboard': ['gdelt', 'hdx', 'reliefweb'],
-      'sources-library': ['gdelt', 'reliefweb', 'unnews'],
+      'risk-monitor': ['grounded_search', 'documents'],
+      'early-warning': ['grounded_search', 'documents'],
+      'humanitarian': ['grounded_search', 'documents'],
+      'timeline': ['grounded_search', 'documents'],
+      'argus': ['grounded_search', 'documents'],
+      'media-compass': ['grounded_search', 'documents'],
+      'media-roundup': ['grounded_search', 'documents'],
+      'geospatial-monitor': ['grounded_search', 'documents'],
+      'sanctions': ['grounded_search', 'documents'],
+      'actor-profiles': ['grounded_search', 'documents'],
+      'power-map': ['grounded_search', 'documents'],
+      'info-environment': ['grounded_search', 'documents'],
+      'alert-center': ['grounded_search', 'documents'],
+      'dashboard': ['grounded_search', 'documents'],
+      'sources-library': ['grounded_search', 'documents'],
     };
-    const feeds = toolFeedMap[toolId] ?? ['gdelt'];
+    const feeds = toolFeedMap[toolId] ?? ['grounded_search', 'documents'];
     return this.getMultipleFeedData(feeds);
   }
 

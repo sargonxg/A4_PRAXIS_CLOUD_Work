@@ -24,7 +24,6 @@ export interface SourceReceiptAudit {
 export interface SourceReceiptBuildInput {
   results?: WebResearchResult[];
   scraped?: LiveSourcePack['scraped'];
-  ucdp?: LiveSourcePack['ucdp'];
   gaps?: string[];
   generatedAt?: string;
 }
@@ -77,29 +76,6 @@ export function buildSourceReceipts(input: SourceReceiptBuildInput): SourceRecei
       excerpt,
       contentHash: stableId([scrape.url, scrape.title, excerpt].filter(Boolean).join('|'), 'hash'),
       span: excerpt ? { quote: excerpt } : undefined,
-    });
-  }
-
-  const ucdp = input.ucdp;
-  if (ucdp?.conflicts.length || ucdp?.battleDeaths.length) {
-    const sourceId = stableId('https://ucdp.uu.se/apidocs/', 'src');
-    const excerpt = `${ucdp.conflicts.length} conflict record(s), ${ucdp.battleDeaths.length} battle-death trend row(s).`;
-    receipts.push({
-      receiptId: stableId(`${sourceId}:${generatedAt}`, 'rcpt'),
-      sourceId,
-      name: 'UCDP API',
-      title: 'UCDP structured conflict data',
-      url: 'https://ucdp.uu.se/apidocs/',
-      provider: 'ucdp',
-      source: 'ucdp.uu.se',
-      kind: 'structured-data',
-      retrievalMethod: 'structured_data',
-      timestamp: generatedAt,
-      reliabilityScore: 0.92,
-      confidence: 'high',
-      excerpt,
-      contentHash: stableId(excerpt, 'hash'),
-      span: { quote: excerpt },
     });
   }
 

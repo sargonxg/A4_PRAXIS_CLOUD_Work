@@ -245,7 +245,6 @@ export async function resolveEffectiveApiKey(
   const fallback: ProviderPayload = {};
   const envMap: Record<string, string> = {
     GOOGLE_AI_API_KEY: 'key',
-    UCDP_API_TOKEN: 'token',
   };
   for (const envVar of spec.platformFallbackEnvVars) {
     const fieldName = envMap[envVar];

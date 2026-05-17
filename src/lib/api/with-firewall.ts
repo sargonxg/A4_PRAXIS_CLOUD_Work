@@ -44,7 +44,7 @@ const CLAIM_KEYS = new Set([
 ]);
 
 const SOURCE_MARKERS = [
-  /\[[^\]]*(?:source|gdelt|reliefweb|ucdp|hdx|un\s+news|world\s+bank|praxis\s+graph|receipt|citation)[^\]]*\]/i,
+  /\[[^\]]*(?:source|google\s+search|grounded\s+search|web|praxis\s+graph|receipt|citation)[^\]]*\]/i,
   /https?:\/\/\S+/i,
   /\b(?:according to|source receipt|provenance|cited by|reported by)\b/i,
 ];

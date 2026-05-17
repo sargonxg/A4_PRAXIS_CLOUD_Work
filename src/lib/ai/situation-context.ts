@@ -55,18 +55,16 @@ ${actorList}
 - **Trend**: ${situation.escalationTrend}
 
 ### Knowledge Base
-${knowledgeBase.length > 0 ? knowledgeBase.map((d) => `- ${d}`).join('\n') : '- No structured data yet — rely on the description below and live feeds'}
+${knowledgeBase.length > 0 ? knowledgeBase.map((d) => `- ${d}`).join('\n') : '- No structured data yet — rely on the description below and grounded web research'}
 ${ontologyBlock}
 ${situation.description ? `### Situation Intelligence\n${situation.description}` : ''}
 
-### Live Data Sources (always available)
-- **GDELT**: Real-time news, tone analysis, event volume
-- **ReliefWeb / OCHA**: Humanitarian reports, situation updates
-- **HDX HAPI**: Displacement, food security (IPC phases), funding
-- **World Bank**: GDP, inflation, governance indicators
+### Live Data Sources
+- **Google Search grounding**: Current web evidence with checkable URLs
 - **Wikipedia**: Canonical names, background, history
+- **User documents and URLs**: Analyst-provided primary references
 
-When data is missing, proactively offer: "I can research [topic] now — shall I search GDELT and ReliefWeb?"
+When data is missing, proactively offer: "I can research [topic] now with Google-grounded search."
 
 ### Conflict Grammar (ACO v2.0)
 Structure all intelligence into 14 entities:
@@ -107,7 +105,7 @@ export function buildToolContext(situation: Situation): string {
     situation.graphEntities > 0 ? `${situation.graphEntities} graph entities` : null,
     situation.documentCount > 0 ? `${situation.documentCount} docs in RAG` : null,
     situation.ontology ? 'Structured Grammar (ACO) Available' : null,
-  ].filter(Boolean).join(' · ') || 'No structured data — use description + live feeds';
+  ].filter(Boolean).join(' · ') || 'No structured data — use description + grounded web research';
 
   // v4.0 — High-fidelity mapping
   const mappingBlock = situation.ontology ? `
@@ -146,7 +144,7 @@ ANALYTICAL FRAMEWORK
 - Apply INFORM Risk Index (Hazard, Vulnerability, Coping) for multi-dimensional risk
 - Reference all actors by their exact names listed above
 - Tailor outputs to the role of: ${formatRole(situation.userRole)}
-- Flag data gaps explicitly and recommend: GDELT / UCDP / ReliefWeb / HDX / UN News / Google Search sources
+- Flag data gaps explicitly and recommend Google-grounded search, crawler receipts, or user-provided sources
 - Write to UN/diplomatic professional standards${situation.sourceUrls?.length ? `\n\nPRIMARY REFERENCES (analyst-provided — cite these):\n${situation.sourceUrls.map((u, i) => `${i + 1}. ${u}`).join('\n')}` : ''}${situation.contextNotes ? `\n\nANALYST CONTEXT NOTES:\n${situation.contextNotes}` : ''}`;
 }
 

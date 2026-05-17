@@ -76,7 +76,6 @@ const checks = [
   { name: 'Secret: praxis-db-password',                    category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-db-password') },
   { name: 'Secret: NEO4J_URI',                             category: 'secret',  run: () => gcloudDescribe('secrets describe NEO4J_URI') },
   { name: 'Secret: praxis-langgraph-db-password',           category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-langgraph-db-password') },
-  { name: 'Secret: praxis-ucdp-api-token',                 category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-ucdp-api-token') },
   { name: 'Secret: praxis-vertex-adk-engine-id',           category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-vertex-adk-engine-id') },
   { name: 'Secret: praxis-pubsub-push-secret',             category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-pubsub-push-secret') },
 
@@ -93,7 +92,6 @@ const checks = [
   // Cloud Run services
   { name: 'Cloud Run: praxis-frontend',                    category: 'runtime', run: () => gcloudDescribe('run services describe praxis-frontend --region=us-central1') },
   { name: 'Cloud Run: praxis-backend',                     category: 'runtime', run: () => gcloudDescribe('run services describe praxis-backend --region=us-central1') },
-  { name: 'Cloud Run worker pool: gdelt-poller',            category: 'runtime', soft: true, run: () => gcloudDescribe('beta run worker-pools describe gdelt-poller --region=us-central1') },
 
   // Phase 1 application database, reusing the existing private Cloud SQL
   // instance to avoid provisioning a second paid Postgres instance.
@@ -103,7 +101,7 @@ const checks = [
   { name: 'Cloud SQL database: praxis_langgraph',           category: 'sql',     run: () => gcloudList('sql databases list --instance=praxisbytacitus-instance').includes('praxis_langgraph') },
   { name: 'Service account: praxis-agents-sa',              category: 'iam',     run: () => gcloudDescribe('iam service-accounts describe praxis-agents-sa@praxisbytacitus.iam.gserviceaccount.com') },
 
-  // Cloud Scheduler jobs (GDELT poll, alerts, briefing — declared in plan)
+  // Cloud Scheduler jobs (alerts, briefing — declared in plan)
   { name: 'Scheduler job exists',                          category: 'schedule', soft: true, run: () => gcloudList('scheduler jobs list --location=us-central1').length > 0 },
 ];
 

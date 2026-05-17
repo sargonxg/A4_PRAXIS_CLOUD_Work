@@ -11,7 +11,7 @@ export const maxDuration = 30;
  * Body: { query: string, useAiSummary?: boolean }
  *
  * Returns a best-effort structured enrichment for any entity name:
- * Wikipedia summary + GDELT mention volume + tone + top covering domains,
+ * Wikipedia summary + Google-grounded source context,
  * with an optional grounded-AI summary when Wikipedia is thin.
  *
  * Used by actor profiles, graph-node inspectors, and the advisor council

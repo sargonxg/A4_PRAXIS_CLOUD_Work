@@ -71,7 +71,7 @@ export const POST = withCalibration('timeline-events', 'ai_argus', {
     const rangeEnd = new Date();
     const rangeStart = new Date(rangeEnd.getTime() - windowDays * 86_400_000);
 
-    const systemPrompt = `${ctx.calibration.systemPromptBlock}\n\nYou produce a structured event timeline for the active situation. Source priority: (1) the user's situation corpus (uploaded docs + ARGUS), (2) GDELT / news from grounded search, (3) public records. NEVER fabricate events. When a date is uncertain, say so in the details and lower confidence to 'low'.`;
+    const systemPrompt = `${ctx.calibration.systemPromptBlock}\n\nYou produce a structured event timeline for the active situation. Source priority: (1) the user's situation corpus (uploaded docs + ARGUS), (2) news from grounded search, (3) public records. NEVER fabricate events. When a date is uncertain, say so in the details and lower confidence to 'low'.`;
 
     const userPrompt = `Situation: ${situation?.name ?? 'unknown'} (region=${situation?.region ?? 'unknown'}).\nDescription: ${(situation?.description ?? '').slice(0, 1200)}.\nWindow: last ${windowDays} days, from ${rangeStart.toISOString().slice(0, 10)} to ${rangeEnd.toISOString().slice(0, 10)}.\n\nReturn 12-30 distinct events ordered by ts ascending. Cluster related items by linking related[] to other event ids. Mark severity per event. Each event must carry at least one source — corpus citations for items already in the user's docs, web URLs for grounded search results.`;
 

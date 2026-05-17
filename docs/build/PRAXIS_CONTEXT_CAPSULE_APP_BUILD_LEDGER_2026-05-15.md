@@ -317,6 +317,41 @@ Validation:
 - mocked model/tool integration test;
 - Ask-to-Memo smoke when feasible.
 
+### 6A. Agent Workspace Deep Links
+
+Owner: Codex frontend/runtime session  
+Status: implemented; production login flow should be browser-smoked with a real
+test account before deploy
+
+Goal:
+
+Make each durable agent run open like a Tasklet-style work session on the same
+PRAXIS domain.
+
+Shipped in this wave:
+
+- `src/app/agents/[runId]/page.tsx` as the canonical private run workspace.
+- `TaskletPraxisWorkbench` focused-run mode that loads
+  `/api/agents/runs/[runId]`, selects the run capsule, reads recent run events
+  from `/api/agents/runs/[runId]/stream`, and shows the run, receipts, counts,
+  and output link in the existing capsule Agents lane.
+- Cockpit run creation now navigates to `/agents/{runId}` after queueing and
+  dispatching.
+- `src/proxy.ts` protects `/agents/[runId]`, preserves login redirects, keeps
+  onboarding enforcement aligned with `/app`, and redirects
+  `/app/agents/[runId]` to the canonical route.
+- `scripts/audit-agent-process-contract.ts` now guards the route, middleware
+  matcher, and focused-run workbench wiring.
+
+Validation:
+
+- `npx vitest run tests/unit/lib/auth/post-login-redirect.test.ts tests/unit/agent-workspace-route.test.ts`
+- `npx tsc --noEmit`
+- `npm run audit:agent-process-contract`
+- `npm run build`
+- `npm run audit:mvp-route-shape`
+- local HTTP checks for `/agents/run_123` and `/app/agents/run_123`
+
 ### 7. Daily Brief And Watchlist
 
 Owner: backend/runtime session  

@@ -33,7 +33,7 @@ export interface TrustworthinessScore {
 }
 
 function computeTrustworthiness(input: { sources: string[]; recencyDays: number }): TrustworthinessScore {
-  const reliableSource = input.sources.some((source) => /UN|UCDP|ReliefWeb|World Bank|GDELT|Crisis Group/i.test(source));
+  const reliableSource = input.sources.some((source) => /Google|Reuters|AP|BBC|Wikipedia|document|source|receipt/i.test(source));
   const recencyScore = input.recencyDays <= 7 ? 0.95 : input.recencyDays <= 30 ? 0.75 : 0.55;
   const sourceScore = reliableSource ? 0.9 : 0.65;
   const score = Math.round(((recencyScore + sourceScore) / 2) * 100) / 100;

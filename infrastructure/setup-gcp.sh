@@ -81,10 +81,6 @@ BACKEND_SA="${PROJECT_ID}@appspot.gserviceaccount.com"
 BACKEND_URL=$(gcloud run services describe praxis-backend --region="${REGION}" --format="value(status.url)" 2>/dev/null || echo "")
 FRONTEND_URL=$(gcloud run services describe praxis-frontend --region="${REGION}" --format="value(status.url)" 2>/dev/null || echo "")
 
-# NOTE: gdelt-poller is now a Cloud Run Worker Pool (continuous, no Scheduler job needed).
-# If a legacy Cloud Scheduler job named gdelt-poller exists, delete it:
-#   gcloud scheduler jobs delete gdelt-poller --location=us-central1
-
 # Resolve CRON_SECRET for scheduler jobs
 CRON_SECRET=$(gcloud secrets versions access latest --secret=praxis-cron-secret --project="${PROJECT_ID}" 2>/dev/null || echo "changeme")
 COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
@@ -238,10 +234,10 @@ for bucket in praxis-cognee-graph praxis-cognee-graph-backups; do
 done
 
 # ── Vendor shared spine helper into each function source dir ────────────────
-# The _shared package gives functions/workers a uniform job/event API. Cloud
+# The _shared package gives functions a uniform job/event API. Cloud
 # Functions deploys only the source dir, so we copy it in before each deploy.
 if [ -d "cloud_functions/_shared" ]; then
-  for target in cloud_functions/gdelt_poller cloud_functions/on_situation_created cloud_functions/on_document_uploaded; do
+  for target in cloud_functions/on_situation_created cloud_functions/on_document_uploaded; do
     rm -rf "${target}/_shared"
     cp -r cloud_functions/_shared "${target}/_shared"
     echo "  Vendored _shared into ${target}"
@@ -316,21 +312,6 @@ else
   fi
 
 fi
-
-# ── Cloud Run Worker Pool: GDELT poller ──────────────────────────────────
-echo "Deploying gdelt-poller worker pool..."
-BACKEND_URL=$(gcloud run services describe praxis-backend --region="${REGION}" --format="value(status.url)" 2>/dev/null || echo "")
-gcloud beta run worker-pools deploy gdelt-poller \
-  --image="us-central1-docker.pkg.dev/${PROJECT_ID}/praxis/gdelt-poller" \
-  --region="${REGION}" \
-  --min-instances=1 \
-  --max-instances=1 \
-  --cpu=1 \
-  --memory=512Mi \
-  --no-cpu-throttling \
-  --set-env-vars="PRAXIS_BACKEND_URL=${BACKEND_URL},POLL_INTERVAL_SECONDS=900" \
-  --service-account="${COMPUTE_SA}" \
-  2>/dev/null || echo "Worker pool create failed — you may need: gcloud config set run/launch-stage BETA"
 
 echo ""
 

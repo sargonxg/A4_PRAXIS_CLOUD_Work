@@ -6,7 +6,7 @@ export const maxDuration = 15;
 export const POST = withAuth(async (request) => {
   try {
     const { provider, apiKey } = await request.json() as {
-      provider: 'google_ai' | 'ucdp';
+      provider: 'google_ai';
       apiKey: string;
     };
 
@@ -19,10 +19,6 @@ export const POST = withAuth(async (request) => {
         signal: AbortSignal.timeout(10_000),
       });
       return NextResponse.json({ valid: res.ok });
-    }
-
-    if (provider === 'ucdp') {
-      return NextResponse.json({ valid: true });
     }
 
     return NextResponse.json({ valid: false, error: 'Unknown provider' }, { status: 400 });

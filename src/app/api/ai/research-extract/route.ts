@@ -130,7 +130,7 @@ export const POST = withCalibration('research-extract', 'ai_research', {
     const sources: SourceContent[] = [];
 
     // Search web per category. Live Source Pack gives us grounded Google
-    // Search first, optional scrape excerpts, and UCDP corroboration without
+    // Search first, then optional scrape excerpts without
     // requiring Grounded Search to be configured.
     const searchPromises = categories
       .filter((cat: string) => CATEGORY_TERMS[cat])

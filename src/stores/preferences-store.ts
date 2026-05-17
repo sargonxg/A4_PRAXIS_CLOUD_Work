@@ -12,7 +12,7 @@ export interface MediaPreferences {
 export interface SourcePreferences {
   /** Default data source mode for tools */
   defaultMode: DataSourceMode;
-  /** Preferred web sources (e.g., 'reuters', 'crisisgroup') */
+  /** Preferred web sources (e.g., 'google-search', 'reuters') */
   favoriteSources: string[];
   /** Sources the user wants to exclude */
   excludedSources: string[];
@@ -55,9 +55,9 @@ export const usePreferencesStore = create<PreferencesStore>()(
   persist(
     (set, get) => ({
       defaultMode: 'all',
-      favoriteSources: ['wikipedia', 'reuters', 'crisisgroup', 'un'],
+      favoriteSources: ['google-search', 'wikipedia', 'reuters', 'ap'],
       excludedSources: [],
-      trustedSources: ['GDELT', 'UCDP', 'UNHCR', 'ReliefWeb', 'World Bank', 'UN News'],
+      trustedSources: ['Google Search', 'Wikipedia', 'User Documents'],
       mediaPreferences: {
         preferredOutlets: [],
         avoidedOutlets: [],

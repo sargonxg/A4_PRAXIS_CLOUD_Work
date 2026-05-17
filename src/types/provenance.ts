@@ -4,15 +4,6 @@
  */
 
 export type ProvenanceSource =
-  | 'GDELT'
-  | 'ReliefWeb'
-  | 'UNHCR'
-  | 'HDX'
-  | 'WorldBank'
-  | 'UCDP'
-  | 'UNNews'
-  | 'SIPRI'
-  | 'CrisisGroup'
   | 'Google Grounding'
   | 'Google Search'
   | 'GraphRAG'

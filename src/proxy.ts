@@ -191,6 +191,12 @@ export function proxy(request: NextRequest) {
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
 
+  if (pathname.startsWith('/app/agents/')) {
+    const runId = pathname.split('/').filter(Boolean).at(2);
+    const target = runId ? `/agents/${runId}` : '/app';
+    return redirectWithSearch(request, nonce, target);
+  }
+
   if (
     pathname !== '/app' &&
     (
@@ -248,7 +254,7 @@ export function proxy(request: NextRequest) {
 
   // --- First-login redirect for un-onboarded Firebase users ---
   if (
-    pathname.startsWith('/app') &&
+    (pathname.startsWith('/app') || pathname.startsWith('/agents/')) &&
     hasFirebaseToken &&
     sessionData?.onboardingComplete !== true &&
     sessionData?.onboarded !== true &&
@@ -257,8 +263,8 @@ export function proxy(request: NextRequest) {
     return addSecurityHeaders(NextResponse.redirect(new URL('/onboarding', request.url)), nonce);
   }
 
-  // --- /app/* routes ---
-  if (pathname.startsWith('/app')) {
+  // --- /app/* and private agent workspace routes ---
+  if (pathname.startsWith('/app') || pathname.startsWith('/agents/')) {
     if (isDemo) return nextWithNonce(request, nonce);
     if (!hasFirebaseToken) {
       const loginUrl = new URL('/login', request.url);
@@ -327,6 +333,7 @@ function addSecurityHeaders(response: NextResponse, nonce?: string): NextRespons
 export const config = {
   matcher: [
     '/app/:path*',
+    '/agents/:path*',
     '/contexts/:path*',
     '/methods/:path*',
     '/ontologies/:path*',

@@ -1,20 +1,17 @@
 /**
  * Entity enrichment service.
  *
- * Takes a bare entity name (e.g. an actor pulled out of a document or feed
- * item) and returns the best-available structured summary we can assemble
- * without asking the user for more input. Sources tried in order:
+ * Takes a bare entity name and returns the best-available structured summary
+ * we can assemble without asking the user for more input. Sources tried in
+ * order:
  *
  *   1. Wikipedia (English) — summary, type, location, categories.
- *   2. GDELT DOC 2.0 — mention volume, average tone, top domains (reach signal).
- *   3. Grounded Gemini fallback — when both of the above are thin, ask the
- *      model to synthesise a one-paragraph bio with inline citations.
+ *   2. Google Search grounding — recent web context when Wikipedia is thin.
  *
- * All three paths are non-throwing; the caller receives a best-effort object
+ * Both paths are non-throwing; the caller receives a best-effort object
  * with explicit null fields on failure.
  */
 
-import { getEntitySignal, type GKGEntitySignal } from '@/lib/data-feeds/gdelt-gkg-client';
 import { getGroundedSearchEvents } from '@/lib/data-feeds/grounded-search-client';
 
 export interface WikipediaSummary {
@@ -28,7 +25,6 @@ export interface WikipediaSummary {
 export interface EnrichedEntity {
   query: string;
   wikipedia: WikipediaSummary | null;
-  gdelt: GKGEntitySignal | null;
   aiSummary: string | null;
   citations: string[];
   fetchedAt: string;
@@ -66,14 +62,10 @@ export async function fetchWikipediaSummary(query: string): Promise<WikipediaSum
 }
 
 export async function enrichEntity(query: string, opts: { useAiSummary?: boolean } = {}): Promise<EnrichedEntity> {
-  const [wikipedia, gdelt] = await Promise.all([
-    fetchWikipediaSummary(query),
-    getEntitySignal({ query, window: '7d' }),
-  ]);
+  const wikipedia = await fetchWikipediaSummary(query);
 
   const citations: string[] = [];
   if (wikipedia) citations.push(wikipedia.url);
-  if (gdelt && gdelt.topDomains.length > 0) citations.push(...gdelt.topDomains.slice(0, 5).map((d) => `https://${d}`));
 
   let aiSummary: string | null = null;
   const wantAi = opts.useAiSummary !== false;
@@ -97,7 +89,6 @@ export async function enrichEntity(query: string, opts: { useAiSummary?: boolean
   return {
     query,
     wikipedia,
-    gdelt,
     aiSummary,
     citations: Array.from(new Set(citations)).slice(0, 10),
     fetchedAt: new Date().toISOString(),

@@ -1,7 +1,7 @@
 /**
  * Job + tool-run lifecycle helpers.
  *
- * Every async unit of work in PRAXIS — AI tool calls, pipeline runs, GDELT
+ * Every async unit of work in PRAXIS — AI tool calls, pipeline runs,
  * polls, agent sessions — gets a row in `tool_runs` (per AI/tool action) and
  * `background_jobs` (per worker/function/cron unit). Both surface to the user
  * via the activity feed and inform the semaphore status indicator.

@@ -7,7 +7,7 @@ import {
 import type { WebResearchResult } from '@/lib/ai/web-research';
 
 describe('source receipts', () => {
-  it('normalizes web, scrape, and structured data receipts', () => {
+  it('normalizes web and scrape receipts', () => {
     const results: WebResearchResult[] = [
       {
         title: 'UN report on corridor access',
@@ -25,32 +25,16 @@ describe('source receipts', () => {
     const receipts = buildSourceReceipts({
       results,
       scraped: [{
-        url: 'https://reliefweb.int/example',
-        title: 'ReliefWeb update',
+        url: 'https://example.org/update',
+        title: 'Field update',
         content: 'Full page excerpt',
         success: true,
       }],
-      ucdp: {
-        configured: true,
-        conflicts: [{
-          conflict_id: 1,
-          conflict_name: 'Test conflict',
-          side_a: 'A',
-          side_b: 'B',
-          location: 'Testland',
-          intensity_level: 1,
-          cumulative_intensity: 1,
-          type_of_conflict: 3,
-          start_date: '2025-01-01',
-          ep_end_date: null,
-        }],
-        battleDeaths: [{ year: 2025, bestDeaths: 10, lowDeaths: 5, highDeaths: 20 }],
-      },
       generatedAt: '2026-04-30T00:00:00.000Z',
     });
 
-    expect(receipts).toHaveLength(3);
-    expect(receipts.map((receipt) => receipt.kind)).toEqual(['web-result', 'scraped-excerpt', 'structured-data']);
+    expect(receipts).toHaveLength(2);
+    expect(receipts.map((receipt) => receipt.kind)).toEqual(['web-result', 'scraped-excerpt']);
     expect(receipts[0].confidence).toBe('high');
     expect(receipts[0].receiptId).toMatch(/^rcpt_/);
     expect(receipts[0].sourceId).toMatch(/^src_/);

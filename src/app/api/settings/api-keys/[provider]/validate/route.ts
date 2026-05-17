@@ -24,16 +24,6 @@ async function runValidator(providerId: string, payload: Record<string, string>)
       if (res.status === 401 || res.status === 403) return { ok: false, error: 'Invalid Google AI key' };
       return { ok: res.ok, error: res.ok ? undefined : `Google AI responded ${res.status}` };
     }
-    case 'ucdp': {
-      const token = payload.token;
-      if (!token) return { ok: false, error: 'Missing token' };
-      const res = await fetch('https://ucdpapi.pcr.uu.se/api/gedevents/25.1?pagesize=1', {
-        headers: { Accept: 'application/json', 'x-ucdp-access-token': token },
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (res.status === 401 || res.status === 403) return { ok: false, error: 'Invalid UCDP token' };
-      return { ok: res.ok, error: res.ok ? undefined : `UCDP responded ${res.status}` };
-    }
     default:
       return { ok: false, error: `No validator registered for ${providerId}` };
   }

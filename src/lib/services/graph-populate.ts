@@ -9,8 +9,8 @@
  *
  * Each text blob is fed through `extractEntities` (Gemini Pro, ACO v2.0
  * schema). Results are merged — entities are deduped by `id` — and then
- * enriched: every Actor node gets a Wikipedia + GDELT GKG lookup so the
- * graph carries mention volume, tone, and a short bio.
+ * enriched: every Actor node gets a Wikipedia/grounded-search lookup so the
+ * graph carries source-linked context and a short bio.
  *
  * Writes land in `users/{uid}/situations/{sitId}/graph/main` via the Admin
  * SDK so the operation can be authored from server routes. A snapshot is
@@ -192,9 +192,8 @@ async function enrichActors(graph: GraphData, maxActors = 6): Promise<number> {
         ...actor.metadata,
         wikipediaUrl: detail.wikipedia?.url,
         wikipediaExtract: detail.wikipedia?.extract?.slice(0, 480),
-        gdeltMentionCount: detail.gdelt?.mentionCount,
-        gdeltAverageTone: detail.gdelt?.averageTone ?? undefined,
-        gdeltTopDomains: detail.gdelt?.topDomains ?? [],
+        groundedSummary: detail.aiSummary ?? undefined,
+        groundedSourceUrls: detail.citations.filter((url) => !url.includes('wikipedia.org')).slice(0, 5),
         enrichedAt: detail.fetchedAt,
       };
       enriched++;

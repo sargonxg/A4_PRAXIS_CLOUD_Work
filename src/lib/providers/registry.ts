@@ -1,5 +1,5 @@
-export type ProviderId = 'google_ai' | 'ucdp';
-export type ProviderCategory = 'ai' | 'feed';
+export type ProviderId = 'google_ai';
+export type ProviderCategory = 'ai';
 export type ProviderTier = 'free';
 
 export interface ProviderField {
@@ -40,20 +40,6 @@ export const PROVIDER_REGISTRY: Readonly<Record<ProviderId, ProviderSpec>> = Obj
     validator: 'google_ai',
     platformFallbackEnvVars: ['GOOGLE_AI_API_KEY'],
   },
-  ucdp: {
-    id: 'ucdp',
-    label: 'UCDP',
-    tagline: 'Uppsala Conflict Data Program API for structured conflict records and event history.',
-    category: 'feed',
-    tier: 'free',
-    fields: [{ name: 'token', label: 'API Token', placeholder: 'UCDP access token', required: true, secret: true }],
-    signupUrl: 'https://ucdp.uu.se/apidocs/',
-    docsUrl: 'https://ucdp.uu.se/apidocs/',
-    costHint: 'Authenticated access is limited by UCDP quota.',
-    unlocks: ['UCDP conflict records', 'Historical event trends'],
-    validator: 'ucdp',
-    platformFallbackEnvVars: ['UCDP_API_TOKEN'],
-  },
 });
 
 export const PROVIDER_IDS = Object.keys(PROVIDER_REGISTRY) as ProviderId[];
@@ -64,7 +50,7 @@ export function toProviderId(raw: unknown): ProviderId | null {
 }
 
 export function providersByCategory(): Record<ProviderCategory, ProviderSpec[]> {
-  const out: Record<ProviderCategory, ProviderSpec[]> = { ai: [], feed: [] };
+  const out: Record<ProviderCategory, ProviderSpec[]> = { ai: [] };
   for (const id of PROVIDER_IDS) out[PROVIDER_REGISTRY[id].category].push(PROVIDER_REGISTRY[id]);
   return out;
 }

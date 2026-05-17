@@ -7,6 +7,12 @@
 - Dead route `api/graph/ingest` and its orphan `conflict-service` (zero callers).
 - Pub/Sub topics `praxis.pipeline`, `praxis.extract`, `praxis.ingest`, `praxis.alert` removed from `setup-gcp.sh` (zero publishers / subscribers in repo). Re-add when a real consumer lands.
 
+- feat(agent-workspace): add canonical agent run deep links.
+  Build 2026.05.17.03 adds private `/agents/[runId]` workspaces on
+  `praxis.tacitus.me`, redirects `/app/agents/[runId]` into the canonical URL,
+  opens new cockpit-created runs directly in their workspace, preserves
+  login/onboarding redirects, and guards the route/workbench contract in the
+  agent-process audit.
 - feat(agent-runtime): make capsule agents visible and runnable.
   Build 2026.05.17.02 adds a capsule Agents lane, policy-agent risk/tool/slot
   metadata, cockpit-created durable agent runs, recent run status, and a live

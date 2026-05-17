@@ -1,4 +1,4 @@
-export type ExternalMcpToolSource = 'ucdp' | 'gdelt' | 'reliefweb' | 'hdx' | 'un-news' | 'world-bank';
+export type ExternalMcpToolSource = 'google-search' | 'web-crawler';
 
 export interface ExternalMcpToolRegistration {
   source: ExternalMcpToolSource;
@@ -9,34 +9,14 @@ export interface ExternalMcpToolRegistration {
 
 export const EXTERNAL_MCP_TOOL_STUBS: ExternalMcpToolRegistration[] = [
   {
-    source: 'ucdp',
-    enabled: false,
-    notes: 'Conflict event and dyad tools will register here after MCP credentials and source posture rules are finalized.',
+    source: 'google-search',
+    enabled: true,
+    notes: 'Grounded Google Search is the supported live research path.',
   },
   {
-    source: 'gdelt',
+    source: 'web-crawler',
     enabled: false,
-    notes: 'Media/event stream tools will register here behind attribution and freshness checks.',
-  },
-  {
-    source: 'reliefweb',
-    enabled: false,
-    notes: 'Humanitarian response tools will register here after rate limits and receipt persistence are defined.',
-  },
-  {
-    source: 'hdx',
-    enabled: false,
-    notes: 'Dataset discovery tools will register here with explicit dataset provenance.',
-  },
-  {
-    source: 'un-news',
-    enabled: false,
-    notes: 'UN source tools will register here as read-only MCP resources.',
-  },
-  {
-    source: 'world-bank',
-    enabled: false,
-    notes: 'Indicator and development data tools will register here after query shaping is locked.',
+    notes: 'Optional crawler integrations can register here when they return source-linked receipts.',
   },
 ];
 

@@ -40,7 +40,7 @@ const DEMO_RESPONSE = {
     'OCHA convoy blocked at Marka checkpoint for 11th consecutive day; 2.3M civilians without sustained aid access',
     'DRM claims GoN is preparing Kessara corridor offensive; UNMN cannot confirm but reports DRM repositioning',
     'Karovia Foreign Minister cancelled scheduled GoN meeting — no explanation',
-    'World Bank escrow compliance maintained — only commitment with full implementation this reporting period',
+    'Financial escrow compliance maintained — only commitment with full implementation this reporting period',
   ],
   securitySituation: 'UNMN reports sustained AFN artillery violations in the 5km buffer zone. No direct engagement, but DRM tactical repositioning increases proximity risk. Joint Ceasefire Monitoring Commission still not established (overdue 45 days), leaving monitoring to ad hoc UNMN patrols only.',
   politicalDynamics: 'Political track stalled. No pre-negotiation contacts this week. Karovia cancellation is the most significant diplomatic signal — possibly indicating displeasure with GoN escalatory behavior, but unconfirmed. AU mediation team reports no progress on ground rules for pre-talks.',
@@ -87,7 +87,7 @@ export const POST = withCalibration('daily_brief', 'ai_report', {
       ? await buildGraphContext(user.uid, situationId, 'daily_brief').catch(() => '')
       : '';
 
-    // ── 1. Live intel feeds (8s timeout — never block the brief on slow feeds) ──
+    // ── 1. Live grounded signals (8s timeout — never block the brief on slow research) ──
     let intelContext = '';
     if (situation) {
       const intel = await withTimeout(
@@ -99,7 +99,7 @@ export const POST = withCalibration('daily_brief', 'ai_report', {
         8000
       );
       if (intel && intel.events.length > 0) {
-        intelContext = '\n\nLIVE INTEL FEED (GDELT/ReliefWeb/UN News/Google Search — ' + new Date().toDateString() + '):\n' +
+        intelContext = '\n\nLIVE GOOGLE-GROUNDED INTELLIGENCE (' + new Date().toDateString() + '):\n' +
           intel.events.slice(0, 10).map(e =>
             `- [${e.source.toUpperCase()}] ${e.date}: ${e.title} (severity: ${e.severity})`
           ).join('\n');
@@ -179,7 +179,7 @@ STRUCTURE:
 6. mediaEnvironment: narratives, international coverage, info operations
 7. actionItems: 3-5 concrete, time-bound recommendations
 8. nextReview: specific monitoring triggers for next cycle
-${deepResearch ? '9. sourcesSummary: which sources (web crawler/grounded search/GDELT/ReliefWeb/UN News) informed this brief' : ''}
+${deepResearch ? '9. sourcesSummary: which sources (web crawler/grounded search/user sources) informed this brief' : ''}
 
 Be specific and evidence-grounded. Write for a senior diplomatic representative's morning briefing.`,
       system: `You are a senior senior multilateral diplomacy practitioner writing the daily morning intelligence brief for the Special Representative. Be precise, specific, and actionable. Apply a professional morning note standard.
@@ -192,7 +192,7 @@ Calibrate the brief to the analyst profile above (role, lens, audience). Honour 
     // Attach source metadata for deep research
     const output = result.output as Record<string, unknown>;
     if (deepResearch && sourcesUsed.length > 0 && !output.sourcesSummary) {
-      output.sourcesSummary = `Sources: ${sourcesUsed.join(', ')}${intelContext ? ', GDELT/ReliefWeb/UN News/Google Search feeds' : ''}`;
+      output.sourcesSummary = `Sources: ${sourcesUsed.join(', ')}${intelContext ? ', Google-grounded intelligence' : ''}`;
     }
 
     if (situationId && user.uid) {

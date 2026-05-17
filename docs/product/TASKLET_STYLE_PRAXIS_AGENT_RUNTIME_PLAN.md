@@ -477,12 +477,24 @@ Advanced
 
 Add runtime affordances in existing surfaces:
 
-- Home: recent agent runs, scheduled briefs, active capsule health.
+- Home: recent agent runs, scheduled briefs, active capsule health, and direct
+  `/agents/[runId]` links for active work.
 - Ask PRAXIS: "Run with active capsule", "Schedule", "Prepare memo", "Prepare handover".
 - Library: source/document changes that can trigger a run.
 - Memo Studio: outputs from runs and review receipts.
 - Canvas: timeline/graph/source gaps produced by runs.
 - Advanced: agent run logs, trigger settings, provider/model diagnostics.
+
+Canonical route behavior:
+
+- `https://praxis.tacitus.me/agents/[runId]` is the durable workspace URL for a
+  private capsule-bound run.
+- Starting a run from the cockpit should queue/dispatch it, then navigate to
+  `/agents/[runId]`.
+- The route must reuse the shared PRAXIS cockpit and focus the selected run,
+  not introduce a second agent dashboard or separate app domain.
+- `/app/agents/[runId]` is compatibility-only and redirects to the canonical
+  route.
 
 ## What Not To Build Yet
 
@@ -505,7 +517,8 @@ The first serious release is done when:
 - source receipts and gaps are visible;
 - risky actions require approval;
 - a Daily Brief trigger can run on schedule;
-- the run can be inspected, retried, or archived;
+- the run can be opened through `/agents/[runId]`, inspected, retried, or
+  archived;
 - `audit:gate` and focused Playwright smokes pass.
 
 ## Implementation Prompt For Next Coding Wave

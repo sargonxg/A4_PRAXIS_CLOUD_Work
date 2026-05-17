@@ -1,6 +1,5 @@
 import { executeWebResearch, SEARCH_FAILURE_WARNING, type WebResearchResult } from '@/lib/ai/web-research';
 import { scrapeUrl } from '@/lib/ai/grounded-research';
-import { getBattleDeaths, getConflicts, type UCDPConflict } from '@/lib/data-feeds/ucdp-client';
 import {
   buildSourceReceipts,
   formatSourceReceiptAudit,
@@ -33,11 +32,6 @@ export interface LiveSourcePack {
     success: boolean;
     error?: string;
   }>;
-  ucdp: {
-    configured: boolean;
-    conflicts: UCDPConflict[];
-    battleDeaths: Array<{ year: number; bestDeaths: number; lowDeaths: number; highDeaths: number }>;
-  };
   sourceReceipts: SourceReceipt[];
   sourceAudit: SourceReceiptAudit;
   gaps: string[];
@@ -69,44 +63,20 @@ function formatScrapes(scraped: LiveSourcePack['scraped']): string {
     .join('\n\n');
 }
 
-function formatUcdp(conflicts: UCDPConflict[], deaths: LiveSourcePack['ucdp']['battleDeaths']): string {
-  if (!conflicts.length && !deaths.length) return '';
-  const conflictLines = conflicts
-    .slice(0, 6)
-    .map((c) => `- ${c.conflict_name || `${c.side_a} / ${c.side_b}`}: ${c.location}; ${c.side_a} vs ${c.side_b}; intensity ${c.intensity_level}; start ${c.start_date}${c.ep_end_date ? `; ended ${c.ep_end_date}` : ''}.`)
-    .join('\n');
-  const deathLines = deaths
-    .slice(-6)
-    .map((d) => `- ${d.year}: best ${d.bestDeaths}, low ${d.lowDeaths}, high ${d.highDeaths}`)
-    .join('\n');
-
-  return [
-    '### UCDP Structured Corroboration',
-    'Use UCDP as historical/structured corroboration. Do not treat it as a substitute for current source-linked reporting.',
-    conflictLines ? `Conflicts:\n${conflictLines}` : '',
-    deathLines ? `Battle-related deaths trend:\n${deathLines}` : '',
-  ].filter(Boolean).join('\n');
-}
-
 export async function buildLiveSourcePack(input: LiveSourcePackInput): Promise<LiveSourcePack> {
   const generatedAt = new Date().toISOString();
-  const country = input.region || input.situationName;
   const maxResults = Math.max(3, Math.min(input.maxResults ?? 10, 20));
   const scrapeTop = Math.max(0, Math.min(input.scrapeTop ?? 2, 5));
 
-  const [results, conflicts, battleDeaths] = await Promise.all([
-    executeWebResearch(input.query, input.situationName, input.uid, {
-      toolId: input.toolId,
-      actors: input.actors,
-      description: input.description,
-      region: input.region,
-      maxResults,
-      includeContent: true,
-      timeRange: input.timeRange,
-    }).catch(() => []),
-    getConflicts(country).catch(() => []),
-    getBattleDeaths(country).catch(() => []),
-  ]);
+  const results = await executeWebResearch(input.query, input.situationName, input.uid, {
+    toolId: input.toolId,
+    actors: input.actors,
+    description: input.description,
+    region: input.region,
+    maxResults,
+    includeContent: true,
+    timeRange: input.timeRange,
+  }).catch(() => []);
 
   const scrapeCandidates = results
     .filter((r) => r.url && /^https?:\/\//i.test(r.url) && !r.url.includes('google.com/search'))
@@ -131,16 +101,10 @@ export async function buildLiveSourcePack(input: LiveSourcePackInput): Promise<L
   const gaps: string[] = [];
   if (!results.length) gaps.push('No grounded web search results were available.');
   if (!scraped.some((s) => s.success)) gaps.push('No full-page scrape text was available; using result snippets only.');
-  if (!conflicts.length && !battleDeaths.length) gaps.push('No UCDP structured records matched this region/name.');
 
   const sourceReceipts = buildSourceReceipts({
     results,
     scraped,
-    ucdp: {
-      configured: Boolean(process.env.UCDP_API_TOKEN || process.env.UCDP_ACCESS_TOKEN),
-      conflicts,
-      battleDeaths,
-    },
     gaps,
     generatedAt,
   });
@@ -148,7 +112,6 @@ export async function buildLiveSourcePack(input: LiveSourcePackInput): Promise<L
 
   const sourceBlock = formatSources(results);
   const scrapeBlock = formatScrapes(scraped);
-  const ucdpBlock = formatUcdp(conflicts, battleDeaths);
   const gapBlock = gaps.length ? `\n\n### Live Source Gaps\n${gaps.map((g) => `- ${g}`).join('\n')}` : '';
   const receiptAuditBlock = formatSourceReceiptAudit(sourceAudit);
 
@@ -159,7 +122,6 @@ Query: ${input.query}
 ### Grounded Search Results
 ${sourceBlock}
 ${scrapeBlock ? `\n\n### Scraped Source Excerpts\n${scrapeBlock}` : ''}
-${ucdpBlock ? `\n\n${ucdpBlock}` : ''}
 
 ${receiptAuditBlock}${gapBlock}
 
@@ -170,11 +132,6 @@ Instruction: Use this pack as the primary live evidence layer. Cite [S#] or [X#]
     generatedAt,
     results,
     scraped,
-    ucdp: {
-      configured: Boolean(process.env.UCDP_API_TOKEN || process.env.UCDP_ACCESS_TOKEN),
-      conflicts,
-      battleDeaths,
-    },
     sourceReceipts,
     sourceAudit,
     gaps,

@@ -39,7 +39,7 @@ export const POST = withCalibration('dashboard', 'ai_analysis', {
   const result = await callProModel({
     output: Output.object({ schema: DailyReadSchema }),
     system: `${systemPromptBlock}\n\nYou produce the "Daily read" — a 2-4 sentence situational summary written for the analyst whose profile appears above. Suggest up to 4 PRAXIS tool ids to open next (from this set: risk-monitor, early-warning, stakeholder-map, timeline, info-environment, geospatial, actor-profiles, dossier, talking-points).${audienceDirective}`,
-    prompt: `${webCtx ? `${webCtx}\n\n` : ''}Situation context:\n${sitCtx}\n\nWrite the Daily read now. Use web-grounded and UCDP evidence when available; if source coverage is weak, say so plainly.`,
+    prompt: `${webCtx ? `${webCtx}\n\n` : ''}Situation context:\n${sitCtx}\n\nWrite the Daily read now. Use web-grounded evidence when available; if source coverage is weak, say so plainly.`,
   });
 
   const output = result.output as z.infer<typeof DailyReadSchema> | undefined;

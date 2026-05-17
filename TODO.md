@@ -1,6 +1,6 @@
 # PRAXIS TODO
 
-Last updated: 2026-05-16.
+Last updated: 2026-05-17.
 
 ## Current Build Queue
 
@@ -16,6 +16,12 @@ Tasklet cleanup. New work starts from the active ledger above.
 
 ### Canonical Tasklet-Style Runtime Build
 
+0. Agent workspace deep links are now implemented: `/agents/[runId]` opens the
+   real shared PRAXIS cockpit focused on the selected capsule-bound run,
+   `/app/agents/[runId]` redirects to the canonical URL, and login/onboarding
+   preserves the target. Next hardening should add a real retry/cancel/approve
+   control set inside the focused run panel once approval APIs and retry policy
+   are fully implemented.
 0. Temporal, causal, and human-friction capsule structures are now explicit:
    Temporal and causal map, Human friction map, and Decision clock templates
    seed complex policy work with triggers, blockers, incentives, stale

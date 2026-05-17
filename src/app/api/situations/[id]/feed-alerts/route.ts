@@ -19,21 +19,6 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 const cache = new Map<string, { at: number; payload: FeedAlert[] }>();
 
 function salienceOf(item: IntelligenceItem): number {
-  if (item.source === 'event_feed') {
-    const fatalities = Number((item.metadata as { fatalities?: number }).fatalities ?? 0);
-    return fatalities * 5 + (item.severity === 'critical' ? 10 : 0);
-  }
-  if (item.source === 'gdelt') {
-    const tone = Number((item.metadata as { tone?: number }).tone ?? 0);
-    return Math.abs(tone) * 2;
-  }
-  if (item.source === 'ucdp') {
-    const intensity = Number((item.metadata as { intensityLevel?: number }).intensityLevel ?? 1);
-    return intensity === 2 ? 5 : 2.5;
-  }
-  if (item.source === 'reliefweb' || item.source === 'unnews') {
-    return item.severity === 'high' ? 3 : 1;
-  }
   if (item.source === 'grounded_search') {
     return item.severity === 'critical' ? 6 : item.severity === 'high' ? 4 : 2;
   }

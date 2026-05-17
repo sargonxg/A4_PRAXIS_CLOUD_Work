@@ -59,23 +59,13 @@ class CircuitBreaker {
   }
 }
 
-// Singleton breakers — one per external service
-export const gdeltBreaker    = new CircuitBreaker({ name: 'GDELT',    failureThreshold: 5, resetTimeoutMs: 60_000 });
-export const hdxBreaker      = new CircuitBreaker({ name: 'HDX',      failureThreshold: 3, resetTimeoutMs: 300_000 });
-export const reliefwebBreaker= new CircuitBreaker({ name: 'ReliefWeb',failureThreshold: 3, resetTimeoutMs: 300_000 });
-export const unhcrBreaker    = new CircuitBreaker({ name: 'UNHCR',    failureThreshold: 3, resetTimeoutMs: 300_000 });
-export const worldbankBreaker= new CircuitBreaker({ name: 'WorldBank',failureThreshold: 3, resetTimeoutMs: 600_000 });
+// Singleton breakers — one per supported external service
 export const geminiBreaker   = new CircuitBreaker({ name: 'Gemini',   failureThreshold: 5, resetTimeoutMs: 60_000 });
 export const groundedSearchBreaker = new CircuitBreaker({ name: 'Grounded Search', failureThreshold: 3, resetTimeoutMs: 300_000 });
 
 /** Returns simple state map — name → 'closed'|'open'|'half-open' */
 export function getAllBreakerStates(): Record<string, string> {
   return {
-    GDELT:     gdeltBreaker.getState(),
-    HDX:       hdxBreaker.getState(),
-    ReliefWeb: reliefwebBreaker.getState(),
-    UNHCR:     unhcrBreaker.getState(),
-    WorldBank: worldbankBreaker.getState(),
     Gemini:    geminiBreaker.getState(),
     GroundedSearch: groundedSearchBreaker.getState(),
   };
@@ -84,11 +74,6 @@ export function getAllBreakerStates(): Record<string, string> {
 /** Returns rich breaker details for health dashboard */
 export function getAllBreakerDetails() {
   return [
-    gdeltBreaker,
-    hdxBreaker,
-    reliefwebBreaker,
-    unhcrBreaker,
-    worldbankBreaker,
     geminiBreaker,
     groundedSearchBreaker,
   ].map((b) => b.getDetails());

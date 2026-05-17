@@ -33,7 +33,7 @@ export function inferResponseActionKinds(text: string): ResponseActionKind[] {
 
 function hasCitationSignal(text: string): boolean {
   return (
-    /\[(gdelt|reliefweb|ucdp|hdx|un news|world bank|wikipedia|web|ai analysis)\]/i.test(text) ||
+    /\[(google search|grounded search|wikipedia|web|ai analysis|receipt|source)\]/i.test(text) ||
     /\b(source|citation|receipt|provenance|according to|evidence)\b/.test(text)
   );
 }
