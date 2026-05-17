@@ -16,6 +16,13 @@ Tasklet cleanup. New work starts from the active ledger above.
 
 ### Canonical Tasklet-Style Runtime Build
 
+0. Ask PRAXIS source-rich conversation packs are now implemented: answer
+   envelopes include sourceability-aware claim grounding, richer source preview
+   cards for uploaded chunks/corpus records/grounded fetches/receipts/digests,
+   actionable follow-up chips, and Memo Studio blocks with source/provenance
+   detail. Next hardening should run the authenticated browser flow against
+   production with one uploaded PDF/DOCX, one active capsule corpus case, and
+   one grounded web/source fetch.
 0. Operational agent workspaces are now implemented: `/agents/[runId]` opens
    the real shared PRAXIS cockpit focused on the selected capsule-bound run,
    polls active run receipts, exposes retry/cancel/approve/reject controls, and

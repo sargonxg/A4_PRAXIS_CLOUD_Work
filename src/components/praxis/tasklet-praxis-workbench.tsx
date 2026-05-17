@@ -168,7 +168,7 @@ type ActiveCapsuleChip = {
 };
 
 const defaultRecentRuns = [
-  { label: 'Weekly Middle East Analysis', detail: 'Capsule discussion', status: 'active' },
+  { label: 'Open policy analysis', detail: 'Capsule discussion', status: 'active' },
   { label: 'Source check', detail: 'Evidence gaps', status: 'review' },
   { label: 'Options memo', detail: 'Drafting context', status: 'draft' },
 ];
@@ -672,7 +672,7 @@ export function TaskletPraxisWorkbench({
       if (!isAuthenticated) sendPublicToLogin(prompt.trim() || 'Connect sources to PRAXIS.');
       else {
         setCapsuleDetailTab('connect');
-        setCapsuleCategory('source-docs');
+        setCapsuleTypeFilter('all');
         setStatus('Connector lane opened for the active capsule.');
       }
       return;
@@ -993,6 +993,13 @@ export function TaskletPraxisWorkbench({
     setStatus(`${chip.label} opened. Start talking to create a shareable conversation link.`);
   }
 
+  function applyUserCapsule(capsule: PraxisCapsuleSummary) {
+    const chip = capsuleToChip(capsule);
+    setCurrentCapsuleId(chip.id);
+    setActiveCapsules((current) => [chip, ...current.filter((item) => item.id !== chip.id)].slice(0, 6));
+    setStatus(`${chip.label} added to the capsule context.`);
+  }
+
   async function archiveUserCapsule(capsule: PraxisCapsuleSummary) {
     if (!isAuthenticated) return;
     const response = await fetch(`/api/context/capsules/${encodeURIComponent(capsule.capsuleId)}`, {
@@ -1046,7 +1053,7 @@ export function TaskletPraxisWorkbench({
       setStatus(payload?.error ? `Policy team failed: ${payload.error}` : 'Policy team failed.');
       return;
     }
-    setCapsuleCategory(category.id);
+    setCapsuleDomainFilter(category.id);
     setStatus(`${capsule.label} is now categorized for ${category.label}.`);
     await refreshCapsules(capsule.capsuleId);
   }
@@ -1094,7 +1101,7 @@ export function TaskletPraxisWorkbench({
       sendPublicToLogin(prompt.trim() || 'Build a ContextCapsule Lite.');
       return null;
     }
-    const team = policyTeam ?? getPolicyTeamCategory(capsuleCategory);
+    const team = policyTeam ?? getPolicyTeamCategory(capsuleDomainFilter);
     const templateId = seed?.templateId ?? team?.templateIds[0];
     const response = await fetch('/api/context/capsules', {
       method: 'POST',
@@ -1391,16 +1398,6 @@ export function TaskletPraxisWorkbench({
               <Link href={isAuthenticated ? '/pricing' : '/login?mode=signup'} className="text-sage">Upgrade</Link>
             </div>
 
-            <CapsuleMap
-              capsule={selectedCapsule}
-              fallbackLabel={activeCapsules[0]?.label ?? activeCapsuleName}
-              agentRunCount={agentRuns.length}
-              onFilter={(filter) => {
-                setCapsuleCategory(filter);
-                setCapsuleDetailTab(filter === 'source-docs' ? 'retrieve' : filter === 'tool-capsules' ? 'build' : filter === 'agents' ? 'agents' : 'connect');
-              }}
-            />
-
             <div className="od-praxis-panel mt-6 w-full max-w-5xl rounded-xl" data-testid="praxis-main-composer">
               <div className="border-b border-black/10 px-5 py-3" data-testid="capsule-context-bar">
                 <div className="flex flex-wrap items-center gap-2">
@@ -1679,27 +1676,50 @@ export function TaskletPraxisWorkbench({
                   </label>
                   <button
                     type="button"
-                    onClick={() => void createCapsuleLite(undefined, undefined, getPolicyTeamCategory(capsuleCategory))}
+                    onClick={() => void createCapsuleLite(undefined, undefined, getPolicyTeamCategory(capsuleDomainFilter))}
                     className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
                   >
                     <Plus className="h-4 w-4" />
                     {isAuthenticated ? 'New' : 'Sign in to build'}
                   </button>
+                  <Link
+                    href={isAuthenticated ? '/app/capsules' : '/login?redirect=/app/capsules'}
+                    className="inline-flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100"
+                  >
+                    <FolderKanban className="h-4 w-4" />
+                    Repository
+                  </Link>
                 </div>
               </div>
 
-              <nav className="mt-4 flex flex-wrap gap-2" aria-label="Capsule categories">
-                {(isAuthenticated ? capsuleCategories : publicCapsuleCategories).map((category) => (
+              <nav className="mt-4 flex flex-wrap gap-2" aria-label="Capsule type filters">
+                {capsuleTypeFilters.map((category) => (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => setCapsuleTypeFilter(category.id)}
+                    className={cn(
+                      'rounded-md border px-3 py-1.5 text-xs font-semibold',
+                      capsuleTypeFilter === category.id ? 'border-sky-300 bg-sky-50 text-sky-800' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+                    )}
+                  >
+                    {category.label}
+                  </button>
+                ))}
+              </nav>
+
+              <nav className="mt-3 flex flex-wrap gap-2" aria-label="Capsule domain filters">
+                {(isAuthenticated ? capsuleDomainCategories : publicCapsuleDomainCategories).map((category) => (
                   <button
                     key={category}
                     type="button"
-                    onClick={() => setCapsuleCategory(category)}
+                    onClick={() => setCapsuleDomainFilter(category)}
                     className={cn(
                       'rounded-md border px-3 py-1.5 text-xs font-semibold',
-                      capsuleCategory === category ? 'border-[#ff714d] bg-[#fff2ed] text-[#ca4a25]' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+                      capsuleDomainFilter === category ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
                     )}
                   >
-                    {capsuleCategoryLabel(category)}
+                    {capsuleDomainLabel(category)}
                   </button>
                 ))}
               </nav>
@@ -1733,10 +1753,7 @@ export function TaskletPraxisWorkbench({
                         capsule={capsule}
                         active={capsule.capsuleId === currentCapsuleId}
                         onSelect={() => selectUserCapsule(capsule)}
-                        onAsk={() => {
-                          selectUserCapsule(capsule);
-                          setPrompt(`Ask this capsule: ${capsule.label}`);
-                        }}
+                        onApply={() => applyUserCapsule(capsule)}
                         onInspect={() => {
                           selectUserCapsule(capsule);
                           setInspectorOpen(true);
@@ -1787,7 +1804,7 @@ export function TaskletPraxisWorkbench({
                   {publicCapsules.map((capsule, index) => {
                     const category = publicCategoryForTemplate(capsule.id);
                     return (
-                      <article key={capsule.id} className="od-praxis-card group min-h-52 rounded-xl p-4 transition hover:-translate-y-0.5 hover:border-[#ff714d]/40">
+                      <article key={capsule.id} className="od-praxis-card group min-h-52 rounded-lg p-4 transition hover:-translate-y-0.5 hover:border-sky-300">
                         <div className="flex items-start justify-between gap-3">
                           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-sm font-semibold text-white">
                             {String(index + 1).padStart(2, '0')}
@@ -1811,14 +1828,14 @@ export function TaskletPraxisWorkbench({
                               setCapsulePickerQuery(capsule.label);
                               setCapsulePickerOpen(true);
                             }}
-                            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-[#ca4a25]"
+                            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-sky-700"
                           >
                             <FolderKanban className="h-3.5 w-3.5" />
-                            Explore
+                            Inspect
                           </button>
-                          <button type="button" onClick={() => addCapsule(capsule.id)} className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-black/10 hover:bg-slate-800">
+                          <button type="button" onClick={() => addCapsule(capsule.id)} className="inline-flex items-center gap-2 rounded-md bg-sky-700 px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-black/10 hover:bg-sky-800">
                             <Sparkles className="h-3.5 w-3.5" />
-                            Use after sign in
+                            Apply
                           </button>
                         </div>
                       </article>
@@ -1984,45 +2001,37 @@ function softColor(hex: string, alpha = 0.08): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function buildCapsuleCategories(capsules: PraxisCapsuleSummary[]): string[] {
+function buildCapsuleDomainCategories(capsules: PraxisCapsuleSummary[]): string[] {
   const generatedTags = Array.from(new Set(capsules.flatMap((capsule) => capsule.community?.tags ?? [])))
+    .filter((tag) => !capsuleTypeFilters.some((filter) => filter.id === tag))
     .filter((tag) => !POLICY_TEAM_CATEGORIES.some((category) => category.id === tag))
-    .slice(0, 8);
-  return [
-    ...capsuleLibraryFilters.map((filter) => filter.id),
+    .filter((tag) => !capsuleDomainFilters.some((filter) => filter.id === tag))
+    .slice(0, 5);
+  return uniqueIds([
+    ...capsuleDomainFilters.map((filter) => filter.id),
     ...POLICY_TEAM_CATEGORIES.map((category) => category.id),
     ...generatedTags,
-  ];
+  ]);
 }
 
-function buildPublicCapsuleCategories(): string[] {
-  return [
-    'all',
+function buildPublicCapsuleDomainCategories(): string[] {
+  return uniqueIds([
+    ...capsuleDomainFilters.map((filter) => filter.id),
     ...POLICY_TEAM_CATEGORIES
       .filter((category) => category.templateIds.some((templateId) => COCKPIT_CAPSULE_LIBRARY.some((capsule) => capsule.id === templateId)))
       .map((category) => category.id),
-    'source-docs',
-    'agents',
-    'outputs',
-  ];
+  ]);
 }
 
 function publicCategoryForTemplate(templateId: string): PolicyTeamCategory | null {
   return POLICY_TEAM_CATEGORIES.find((category) => category.templateIds.some((id) => id === templateId)) ?? null;
 }
 
-function filterPublicCapsules(query: string, category: string) {
+function filterPublicCapsules(query: string, typeFilter: string, domainFilter: string) {
   const clean = query.trim().toLowerCase();
   return COCKPIT_CAPSULE_LIBRARY.filter((capsule) => {
-    const team = getPolicyTeamCategory(category);
-      const matchesCategory =
-        category === 'all' ? true :
-        category === 'source-docs' ? capsule.contextCores.some((core) => core === 'source' || core === 'document') :
-        category === 'agents' ? true :
-        category === 'outputs' ? capsule.contextCores.some((core) => core === 'output' || core === 'product') :
-      team ? team.templateIds.some((id) => id === capsule.id) :
-      true;
-    if (!matchesCategory) return false;
+    if (!publicCapsuleMatchesType(capsule, typeFilter)) return false;
+    if (!publicCapsuleMatchesDomain(capsule, domainFilter)) return false;
     if (!clean) return true;
     return [
       capsule.label,
@@ -2036,27 +2045,18 @@ function filterPublicCapsules(query: string, category: string) {
   });
 }
 
-function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, category: string): PraxisCapsuleSummary[] {
+function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, typeFilter: string, domainFilter: string): PraxisCapsuleSummary[] {
   const clean = query.trim().toLowerCase();
   return capsules
     .filter((capsule) => {
       const tags = capsule.community?.tags ?? [];
-      const counts = capsuleCounts(capsule);
       const isArchived = Boolean(capsule.archivedAt);
-      const policyTeam = getPolicyTeamCategory(category);
-      const matchesCategory =
-        category === 'all' ? !isArchived :
-        category === 'archived' ? isArchived :
-        category === 'context' ? !isArchived && (capsule.scope === 'user' || capsule.scope === 'situation' || capsule.scope === 'team') :
-        category === 'situation' ? !isArchived && capsuleCategory(capsule) === 'situation' :
-        category === 'user' ? !isArchived && capsuleCategory(capsule) === 'user' :
-        category === 'tool-capsules' ? !isArchived && counts.tools > 0 :
-        category === 'agents' ? !isArchived && ((capsule.coreRefs.objectiveCoreIds?.length ?? 0) > 0 || (capsule.coreRefs.toolCoreIds?.length ?? 0) > 0) :
-        category === 'source-docs' ? !isArchived && (counts.sources + counts.documents > 0) :
-        category === 'outputs' ? !isArchived && counts.outputs > 0 :
-        policyTeam ? !isArchived && categoryMatchesPolicyTeam(tags, policyTeam) :
-        !isArchived && (capsule.scope === category || tags.includes(category));
-      if (!matchesCategory) return false;
+      if (typeFilter === 'archived') {
+        if (!isArchived) return false;
+      } else if (isArchived || !capsuleMatchesType(capsule, typeFilter)) {
+        return false;
+      }
+      if (!capsuleMatchesDomain(capsule, domainFilter)) return false;
       if (!clean) return true;
       return [
         capsule.capsuleId,
@@ -2075,8 +2075,58 @@ function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, cat
     .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
 }
 
-function capsuleCategoryLabel(category: string): string {
-  return capsuleLibraryFilters.find((filter) => filter.id === category)?.label ??
+function capsuleMatchesType(capsule: PraxisCapsuleSummary, typeFilter: string): boolean {
+  if (typeFilter === 'all') return true;
+  if (typeFilter === 'tool') return capsuleCategory(capsule) === 'tool' || capsuleCounts(capsule).tools > 0;
+  if (typeFilter === 'output') return capsuleCategory(capsule) === 'output' || capsuleCounts(capsule).outputs > 0;
+  return capsuleCategory(capsule) === typeFilter;
+}
+
+function publicCapsuleMatchesType(capsule: (typeof COCKPIT_CAPSULE_LIBRARY)[number], typeFilter: string): boolean {
+  if (typeFilter === 'all' || typeFilter === 'archived') return true;
+  if (typeFilter === 'tool') return capsule.contextCores.includes('tool');
+  if (typeFilter === 'output') return capsule.contextCores.includes('output') || capsule.contextCores.includes('product');
+  if (typeFilter === 'user') return capsule.contextCores.includes('user');
+  if (typeFilter === 'situation') return capsule.contextCores.includes('situation') || capsule.contextCores.includes('path');
+  return true;
+}
+
+function capsuleMatchesDomain(capsule: PraxisCapsuleSummary, domainFilter: string): boolean {
+  if (domainFilter === 'all') return true;
+  const tags = capsule.community?.tags ?? [];
+  const policyTeam = getPolicyTeamCategory(domainFilter);
+  if (policyTeam) return categoryMatchesPolicyTeam(tags, policyTeam);
+  if (domainFilter === 'other') {
+    return !capsuleDomainFilters
+      .filter((filter) => filter.id !== 'all' && filter.id !== 'other')
+      .some((filter) => capsuleMatchesDomain(capsule, filter.id));
+  }
+  return tags.includes(domainFilter) || capsule.scope === domainFilter;
+}
+
+function publicCapsuleMatchesDomain(capsule: (typeof COCKPIT_CAPSULE_LIBRARY)[number], domainFilter: string): boolean {
+  if (domainFilter === 'all') return true;
+  const team = getPolicyTeamCategory(domainFilter);
+  if (team) return team.templateIds.some((id) => id === capsule.id);
+  const haystack = [
+    capsule.id,
+    capsule.label,
+    capsule.prompt,
+    capsule.audience,
+    capsule.output,
+    publicCategoryForTemplate(capsule.id)?.label ?? '',
+    publicCategoryForTemplate(capsule.id)?.id ?? '',
+  ].join(' ').toLowerCase();
+  if (domainFilter === 'other') {
+    return !capsuleDomainFilters
+      .filter((filter) => filter.id !== 'all' && filter.id !== 'other')
+      .some((filter) => publicCapsuleMatchesDomain(capsule, filter.id));
+  }
+  return haystack.includes(domainFilter);
+}
+
+function capsuleDomainLabel(category: string): string {
+  return capsuleDomainFilters.find((filter) => filter.id === category)?.label ??
     getPolicyTeamCategory(category)?.shortLabel ??
     category.replaceAll('-', ' ');
 }
@@ -2225,7 +2275,7 @@ function CapsuleCard({
   capsule,
   active,
   onSelect,
-  onAsk,
+  onApply,
   onInspect,
   onImprove,
   onCombine,
@@ -2235,7 +2285,7 @@ function CapsuleCard({
   capsule: PraxisCapsuleSummary;
   active: boolean;
   onSelect: () => void;
-  onAsk: () => void;
+  onApply: () => void;
   onInspect: () => void;
   onImprove: () => void;
   onCombine: () => void;
@@ -2251,7 +2301,7 @@ function CapsuleCard({
   const [tagDraft, setTagDraft] = useState('');
   return (
     <article
-      className={cn('od-praxis-card min-h-[21rem] overflow-hidden rounded-lg p-0 transition hover:-translate-y-0.5', active ? 'border-[#ff714d]' : 'border-black/10')}
+      className={cn('od-praxis-card min-h-[21rem] overflow-hidden rounded-lg p-0 transition hover:-translate-y-0.5', active ? 'border-sky-300' : 'border-black/10')}
       style={{
         borderTopColor: meta.color,
         borderTopWidth: 4,
@@ -2307,7 +2357,7 @@ function CapsuleCard({
         <p className="truncate"><span className="font-semibold text-slate-700">Outputs:</span> {outputRefs.length ? outputRefs.slice(0, 4).join(', ') : 'open target'}</p>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <button type="button" onClick={onAsk} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Ask</button>
+        <button type="button" onClick={onApply} className="rounded-md bg-sky-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-sky-800">Apply</button>
         <button type="button" onClick={onInspect} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Inspect</button>
         <button type="button" onClick={onImprove} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Improve</button>
         <button type="button" onClick={onCombine} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Combine</button>

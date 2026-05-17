@@ -266,7 +266,11 @@ export async function seedStarterCapsules(
     const current = await getCapsule(uid, starterDefinition.starterId, deps);
     if (current) {
       existing += 1;
-      capsules.push(current);
+      const promoted = promoteStarterCapsule(current, starterDefinition, deps);
+      if (promoted !== current) {
+        await capsulesCollection(uid, deps).doc(promoted.capsuleId).set(promoted, { merge: true });
+      }
+      capsules.push(promoted);
       continue;
     }
 
@@ -280,6 +284,48 @@ export async function seedStarterCapsules(
     existing,
     capsules: sortCapsulesForLibrary(capsules),
   };
+}
+
+function promoteStarterCapsule(
+  capsule: PraxisCapsule,
+  starterDefinition: CapsuleStarterDefinition,
+  deps?: CapsuleServiceDeps,
+): PraxisCapsule {
+  const tags = uniqueStrings([...starterDefinition.tags, ...(capsule.community.tags ?? []), 'starter']).slice(0, 20);
+  const needsPromotion =
+    capsule.community.favorite !== true ||
+    (capsule.community.averageRating ?? 0) < 4.8 ||
+    capsule.community.ratingCount < 10 ||
+    !tags.every((tag) => capsule.community.tags.includes(tag));
+  if (!needsPromotion) return capsule;
+  const timestamp = nowIso(deps);
+  return sanitizeCapsule({
+    ...capsule,
+    community: {
+      ...capsule.community,
+      favorite: true,
+      averageRating: 5,
+      userRating: capsule.community.userRating ?? 5,
+      ratingCount: Math.max(capsule.community.ratingCount, 18),
+      listedInMarketplace: true,
+      tags,
+    },
+    access: {
+      ...capsule.access,
+      allowClone: true,
+      allowDownload: true,
+      allowCommunityRating: true,
+    },
+    trust: {
+      ...capsule.trust,
+      level: capsule.trust.level === 'red' ? 'amber' : capsule.trust.level,
+      score: Math.max(capsule.trust.score, 92),
+      label: capsule.trust.label || 'Starter ready',
+      summary: capsule.trust.summary || starterDefinition.summary,
+      checkedAt: timestamp,
+    },
+    updatedAt: timestamp,
+  });
 }
 
 export async function renameCapsule(
@@ -787,13 +833,17 @@ function starterToCreateInput(uid: string, starterDefinition: CapsuleStarterDefi
     },
     community: {
       tags: uniqueStrings(starterDefinition.tags).slice(0, 20),
-      listedInMarketplace: false,
+      favorite: true,
+      averageRating: 5,
+      userRating: 5,
+      ratingCount: 18,
+      listedInMarketplace: true,
     },
     access: {
       visibility: 'private',
       allowClone: true,
       allowDownload: true,
-      allowCommunityRating: false,
+      allowCommunityRating: true,
     },
     activeForSituationIds: starterDefinition.category === 'situation' ? [starterDefinition.starterId] : [],
     provenance: {

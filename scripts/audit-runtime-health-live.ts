@@ -1,8 +1,10 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 
 const PROJECT = process.env.GCP_PROJECT_ID ?? 'praxisbytacitus';
 const REGION = process.env.GCP_REGION ?? 'us-central1';
 const BASE_URL = (process.env.PRAXIS_LIVE_BASE_URL ?? 'https://praxis.tacitus.me').replace(/\/$/, '');
+const GCLOUD_BIN = resolveGcloudBin();
 
 type RuntimePayload = {
   status?: string;
@@ -33,10 +35,35 @@ async function fetchJson(path: string) {
 }
 
 function gcloud(args: string[]): string {
-  return execFileSync('gcloud', [...args, '--project', PROJECT], {
+  const fullArgs = [...args, '--project', PROJECT];
+  if (process.platform === 'win32') {
+    const command = [`"${GCLOUD_BIN}"`, ...fullArgs.map(quoteCmdArg)].join(' ');
+    return execSync(command, {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
+  }
+  return execFileSync(GCLOUD_BIN, [...args, '--project', PROJECT], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trim();
+}
+
+function quoteCmdArg(value: string): string {
+  return `"${value.replace(/"/g, '\\"')}"`;
+}
+
+function resolveGcloudBin(): string {
+  if (process.env.GCLOUD_BIN) return process.env.GCLOUD_BIN;
+  if (process.platform === 'win32') {
+    const localAppData = process.env.LOCALAPPDATA;
+    const defaultCmd = localAppData
+      ? `${localAppData}\\Google\\Cloud SDK\\google-cloud-sdk\\bin\\gcloud.cmd`
+      : '';
+    if (defaultCmd && existsSync(defaultCmd)) return defaultCmd;
+    return 'gcloud.cmd';
+  }
+  return 'gcloud';
 }
 
 function describeCloudRunService(name: string): string {

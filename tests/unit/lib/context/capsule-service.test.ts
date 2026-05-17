@@ -378,6 +378,8 @@ describe('capsule service', () => {
     expect(second.created).toBe(0);
     expect(second.existing).toBe(20);
     expect(capsules.filter((capsule) => capsule.community.tags.includes('starter'))).toHaveLength(20);
+    expect(capsules.filter((capsule) => capsule.community.favorite && (capsule.community.averageRating ?? 0) >= 4.8)).toHaveLength(20);
+    expect(capsules.filter((capsule) => capsule.community.ratingCount >= 10)).toHaveLength(20);
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-grounded-research')?.coreRefs.toolCoreIds).toContain('grounded-research');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-options-memo')?.coreRefs.outputCoreIds).toContain('options-memo');
 

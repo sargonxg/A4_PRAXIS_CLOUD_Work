@@ -1,5 +1,41 @@
 # PRAXIS — STATUS
 
+## 2026-05-17 — Ask PRAXIS Source-Rich Conversation Pack
+
+Current product checkpoint:
+
+- Central app metadata is now build `2026.05.17.06`.
+- Ask PRAXIS answer envelopes now normalize uploaded document chunks, Knowledge
+  Library corpus records, source receipts, document digests, and grounded fetch
+  results into always-visible source preview cards.
+- Claim grounding now scores each answer claim against the available source
+  preview text instead of assigning the first available sources heuristically;
+  unmatched claims stay visibly unsupported for review.
+- Ask source previews expose page/chunk locators, source receipt links, and
+  text-extraction fallback labels, and follow-up chips now repopulate the
+  composer as actionable prompts.
+- `/api/memos/from-ask-pack` accepts the richer source-card contract and
+  preserves answer text, quote previews, source receipt ids, gaps,
+  capsule/context provenance, and generated timestamps in Memo Studio blocks.
+
+## 2026-05-17 — Runtime Proof And Retired GDELT Posture
+
+Current runtime checkpoint:
+
+- Central app metadata is now build `2026.05.17.05`.
+- Public `/api/health/runtime` stays sanitized for homepage and non-admin
+  settings use: it exposes status, summary, checked time, debug href, check
+  labels, check status, and latency only.
+- Admin `/api/admin/system-health` remains admin-only and carries endpoint
+  detail plus repair guidance after auth.
+- `npm run audit:runtime-health-live` verifies production `/api/health`,
+  production `/api/health/runtime`, Cloud Run ready revisions for
+  `praxis-frontend` and `praxis-backend`, and confirms the retired
+  `gdelt-poller` worker pool is absent.
+- `pipeline/ingest-gdelt` remains an intentional compatibility no-op so old
+  callers receive an acknowledged retired response without recreating or
+  redeploying dedicated GDELT workers.
+
 ## 2026-05-17 — Operational Agent Workspaces
 
 Current product checkpoint:

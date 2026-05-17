@@ -75,7 +75,7 @@ describe('runtime health summary', () => {
         repairAction: 'Set DATABASE_URL',
       },
     ], new Date('2026-05-17T12:00:00Z'));
-    report.summary = 'Backend degraded: https://praxis-backend-abc.run.app missing DATABASE_URL';
+    report.summary = 'Backend degraded: https://praxis-backend-abc.run.app missing DATABASE_URL. Stack trace follows.';
 
     const sanitized = sanitizeRuntimeHealth(report);
     const json = JSON.stringify(sanitized);
@@ -85,10 +85,11 @@ describe('runtime health summary', () => {
     expect(json).not.toContain('DATABASE_URL');
     expect(json).not.toContain('COOKIE_SIGNING_SECRET');
     expect(json).not.toContain('PRIVATE KEY');
+    expect(json).not.toContain('Stack trace');
     expect(json).not.toContain('gserviceaccount.com');
     expect(json).not.toContain('service-account@');
     expect(sanitized.checks[0]).toMatchObject({
-      id: 'backend-redacted',
+      id: 'backend-[redacted-url]',
       label: 'Private backend at [redacted-service-account]',
       status: 'degraded',
       latencyMs: 9,

@@ -2,11 +2,24 @@
 
 ## [Unreleased]
 
+- feat(ask): make conversation packs source-rich and memo-ready.
+  Build 2026.05.17.06 expands Ask PRAXIS source previews across uploaded
+  chunks, corpus records, grounded fetches, source receipts, and document
+  digests; grounds claims by sourceability match instead of card order; makes
+  follow-up chips actionable; and preserves source/provenance/gap details in
+  `/api/memos/from-ask-pack` Memo Studio blocks.
+
 ### Removed
 
 - Dead route `api/graph/ingest` and its orphan `conflict-service` (zero callers).
 - Pub/Sub topics `praxis.pipeline`, `praxis.extract`, `praxis.ingest`, `praxis.alert` removed from `setup-gcp.sh` (zero publishers / subscribers in repo). Re-add when a real consumer lands.
 
+- feat(runtime-proof): make production readiness visibly auditable.
+  Build 2026.05.17.05 hardens public `/api/health/runtime` redaction,
+  preserves admin-only `/api/admin/system-health` repair detail, adds
+  `audit:runtime-health-live` for live health, Cloud Run revision, and retired
+  worker-pool checks, and documents `pipeline/ingest-gdelt` as an intentional
+  compatibility no-op instead of a worker redeploy path.
 - feat(agent-workspace): make focused run workspaces actionable.
   Build 2026.05.17.04 adds polling, retry, cancel, approve, and reject controls
   inside the canonical `/agents/[runId]` workspace, adds owner-only action API

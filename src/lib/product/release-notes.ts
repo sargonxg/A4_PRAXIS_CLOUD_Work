@@ -26,6 +26,34 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.17.06',
+    version: '6.4.1',
+    date: '2026-05-17',
+    title: 'Ask PRAXIS source previews become memo-ready',
+    summary: 'Ask PRAXIS now carries richer source cards, source-aware claim grounding, actionable follow-ups, and citation-preserving document packs into Memo Studio.',
+    category: 'product',
+    items: [
+      'Ask source cards now normalize uploaded chunks, Knowledge Library corpus records, grounded fetches, source receipts, and document digests.',
+      'Claim grounding now matches each answer claim against source-preview text instead of assigning the first available sources heuristically.',
+      'Source previews show locators, source receipt links, and text-extraction fallback labels before a pack is sent to Memo Studio.',
+      'Draft document packs preserve answer text, quote previews, source receipt ids, capsule/context provenance, gaps, and generated timestamps.',
+    ],
+  },
+  {
+    buildNumber: '2026.05.17.05',
+    version: '6.4.1',
+    date: '2026-05-17',
+    title: 'Runtime proof becomes deployment-grade',
+    summary: 'PRAXIS now exposes a public-safe runtime semaphore, keeps operational repair detail behind admin auth, and ships a live audit for production health, Cloud Run revisions, and retired worker posture.',
+    category: 'runtime',
+    items: [
+      'Public /api/health/runtime now redacts accidental URL, secret-name, stack, and service-account leaks while preserving only status, labels, latency, checkedAt, and the system debug path.',
+      'Admin /api/admin/system-health keeps endpoint detail and repair guidance behind the existing admin gate.',
+      'Added audit:runtime-health-live to verify praxis.tacitus.me health endpoints, frontend/backend Cloud Run ready revisions, and the absence of the retired gdelt-poller worker pool.',
+      'Kept pipeline/ingest-gdelt as an intentional no-op compatibility guard instead of recreating or deploying the retired GDELT worker.',
+    ],
+  },
+  {
     buildNumber: '2026.05.17.04',
     version: '6.4.1',
     date: '2026-05-17',
