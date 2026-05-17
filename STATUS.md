@@ -18,6 +18,12 @@ Current runtime checkpoint:
 - The Ask panel now shows compact orchestration chips for triage, capsule,
   tool-router, approval-gated tools, and queued AgentRun status without adding
   a new app page or navigation item.
+- `/app/settings` is now the canonical account/settings hub while older
+  settings subpages remain removed from the route surface.
+- Starter ContextCapsules now carry domain, source-pack, excerpt,
+  source-readiness, suggested-question, next-action, and preferred-agent
+  workflow metadata for sustainability, finance, HR, diplomacy, and
+  humanitarian-rights workflows.
 
 ## 2026-05-17 — Ask PRAXIS Source-Rich Conversation Pack
 

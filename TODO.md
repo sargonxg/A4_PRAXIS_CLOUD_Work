@@ -23,6 +23,10 @@ Tasklet cleanup. New work starts from the active ledger above.
    Ask panel shows compact orchestration chips. Next hardening should add a
    browser-authenticated production flow that proves queued run status returns
    into the same Ask thread after worker completion.
+0. Starter ContextCapsules now include richer domain/source/agent metadata for
+   sustainability, finance, HR, diplomacy, and humanitarian-rights workflows.
+   Next hardening should let Ask PRAXIS promote source-pack gaps directly into
+   the user's active capsule repository.
 0. Ask PRAXIS source-rich conversation packs are now implemented: answer
    envelopes include sourceability-aware claim grounding, richer source preview
    cards for uploaded chunks/corpus records/grounded fetches/receipts/digests,

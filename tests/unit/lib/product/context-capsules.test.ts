@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  OUTPUT_CAPSULE_TEMPLATES,
+} from '@/lib/output-capsules/templates';
+import { PRAXIS_POLICY_AGENTS } from '@/lib/product/policy-agents';
+import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
+import {
   CAPSULE_ATTACHMENT_ROLES,
   CAPSULE_SLOT_DEFINITIONS,
   CAPSULE_COMBINATION_RECIPES,
@@ -164,27 +169,78 @@ describe('context capsule product contract', () => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toMatchObject({ situation: 6, tool: 5, output: 5, user: 4 });
+    expect(categoryCounts).toMatchObject({ situation: 5, tool: 5, output: 5, user: 5 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
       expect(starter.tags).toEqual(expect.arrayContaining(['starter', starter.category]));
+      expect(starter.domain).toBeTruthy();
       expect(starter.summary.length).toBeGreaterThan(20);
       expect(starter.detail.length).toBeGreaterThan(40);
       expect(starter.colorToken).toMatch(/^#/);
       expect(starter.inspectionSections.length).toBeGreaterThanOrEqual(3);
       expect(starter.combinesWellWith.length).toBeGreaterThanOrEqual(2);
+      expect(starter.suggestedQuestions.length).toBeGreaterThanOrEqual(2);
+      expect(starter.suggestedNextActions.length).toBeGreaterThanOrEqual(2);
+      expect(starter.aiUseGuidance.length).toBeGreaterThan(40);
+      expect(starter.agentWorkflow.preferredAgentId).toBeTruthy();
+    }
+  });
+
+  it('keeps situation starters broad, source-backed, and ready for AI routing', () => {
+    const situationStarters = CAPSULE_STARTER_DEFINITIONS.filter((starter) => starter.category === 'situation');
+
+    expect(situationStarters.map((starter) => starter.domain).sort()).toEqual([
+      'diplomacy',
+      'finance',
+      'hr',
+      'humanitarian-rights',
+      'sustainability',
+    ]);
+
+    for (const starter of situationStarters) {
+      expect(starter.sourcePack.length, `${starter.starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter.excerpts.length, `${starter.starterId} excerpts`).toBeGreaterThanOrEqual(2);
+      expect(starter.readinessStars, `${starter.starterId} readiness stars`).toBeGreaterThanOrEqual(3);
+      expect(starter.readinessStars, `${starter.starterId} readiness stars`).toBeLessThanOrEqual(5);
+      expect(starter.sourcePack.every((source) => source.url.startsWith('https://'))).toBe(true);
+      expect(starter.excerpts.every((excerpt) => excerpt.sourceId && excerpt.text.length > 30)).toBe(true);
+    }
+  });
+
+  it('resolves starter tools, agents, and output templates to real registries', () => {
+    const toolIds = new Set(PRAXIS_CANONICAL_TOOLS.map((tool) => tool.id));
+    const agentIds = new Set(PRAXIS_POLICY_AGENTS.map((agent) => agent.id));
+    const outputTemplateIds = new Set(OUTPUT_CAPSULE_TEMPLATES.map((template) => template.id));
+
+    for (const starter of CAPSULE_STARTER_DEFINITIONS) {
+      expect(agentIds.has(starter.agentWorkflow.preferredAgentId), `${starter.starterId} preferred agent`).toBe(true);
+      for (const toolId of starter.recommendedToolIds) {
+        expect(toolIds.has(toolId), `${starter.starterId} tool ${toolId}`).toBe(true);
+      }
+      for (const outputId of starter.outputProductIds) {
+        expect(outputTemplateIds.has(outputId), `${starter.starterId} output ${outputId}`).toBe(true);
+      }
     }
   });
 
   it('builds model-ready starter context for Ask PRAXIS and agent runs', () => {
-    const promptBlock = buildCapsuleStarterPromptBlock('starter-tool-grounded-research');
+    const promptBlock = buildCapsuleStarterPromptBlock('starter-tool-source-pack-builder');
 
     expect(promptBlock).toContain('[starter_capsule_definition]');
     expect(promptBlock).toContain('starter_category: tool');
+    expect(promptBlock).toContain('domain: source-intake');
+    expect(promptBlock).toContain('readiness_stars:');
+    expect(promptBlock).toContain('source_pack:');
+    expect(promptBlock).toContain('suggested_questions:');
+    expect(promptBlock).toContain('suggested_next_actions:');
+    expect(promptBlock).toContain('agent_workflow:');
+    expect(promptBlock).toContain('ai_use_guidance:');
     expect(promptBlock).toContain('recommended_tools: grounded-research, sourceability, ask-praxis');
-    expect(promptBlock).toContain('output_targets: situation-brief, options-memo');
+    expect(promptBlock).toContain('output_targets: country-one-pager, options-memo');
     expect(promptBlock).toContain('runtime_rule: Treat this starter definition as reusable operating context');
+    expect(promptBlock).not.toContain('GOOGLE_APPLICATION_CREDENTIALS');
+    expect(promptBlock).not.toContain('serviceAccount');
     expect(buildCapsuleStarterPromptBlock('custom-capsule')).toBeNull();
   });
 

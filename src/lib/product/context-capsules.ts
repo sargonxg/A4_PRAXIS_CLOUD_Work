@@ -244,9 +244,44 @@ export interface CapsuleStarterInspectionSection {
   detail: string;
 }
 
+export interface CapsuleStarterSource {
+  id: string;
+  label: string;
+  url: string;
+  sourceType: 'official' | 'multilateral' | 'regulator' | 'standard-setter' | 'public-library';
+  relevance: string;
+}
+
+export interface CapsuleStarterExcerpt {
+  sourceId: string;
+  text: string;
+}
+
+export interface CapsuleStarterAgentWorkflow {
+  preferredAgentId: string;
+  routeHint: string;
+  outputGoal: string;
+  approvalNotes: string;
+}
+
+export type CapsuleStarterDomain =
+  | 'sustainability'
+  | 'finance'
+  | 'hr'
+  | 'diplomacy'
+  | 'humanitarian-rights'
+  | 'source-intake'
+  | 'exposure-mapping'
+  | 'policy-review'
+  | 'options-mapping'
+  | 'audit-review'
+  | 'analyst-role'
+  | 'output-brief';
+
 export interface CapsuleStarterDefinition {
   starterId: string;
   category: CapsuleStarterCategory;
+  domain: CapsuleStarterDomain;
   label: string;
   summary: string;
   detail: string;
@@ -255,6 +290,13 @@ export interface CapsuleStarterDefinition {
   coreRefs: CapsuleCoreRefsLike;
   recommendedToolIds: string[];
   outputProductIds: string[];
+  sourcePack: CapsuleStarterSource[];
+  excerpts: CapsuleStarterExcerpt[];
+  readinessStars: 1 | 2 | 3 | 4 | 5;
+  suggestedQuestions: string[];
+  suggestedNextActions: string[];
+  agentWorkflow: CapsuleStarterAgentWorkflow;
+  aiUseGuidance: string;
   inspectionSections: CapsuleStarterInspectionSection[];
   combinesWellWith: string[];
 }
@@ -620,9 +662,21 @@ const STARTER_COLORS: Record<CapsuleStarterCategory, string> = {
   user: '#2563eb',
 };
 
+type CapsuleStarterOverrides = Partial<Pick<
+  CapsuleStarterDefinition,
+  | 'sourcePack'
+  | 'excerpts'
+  | 'readinessStars'
+  | 'suggestedQuestions'
+  | 'suggestedNextActions'
+  | 'agentWorkflow'
+  | 'aiUseGuidance'
+>>;
+
 function starter(
   starterId: string,
   category: CapsuleStarterCategory,
+  domain: CapsuleStarterDomain,
   label: string,
   summary: string,
   detail: string,
@@ -631,10 +685,15 @@ function starter(
   recommendedToolIds: string[],
   outputProductIds: string[],
   combinesWellWith: string[],
+  overrides?: CapsuleStarterOverrides,
 ): CapsuleStarterDefinition {
+  const sourcePack = overrides?.sourcePack ?? sourcePackForStarter(starterId, category, label, domain);
+  const aiUseGuidance = overrides?.aiUseGuidance
+    ?? `Use ${label} as reusable capsule context. Ask for missing inputs, keep source limits visible, and route work through the recommended tools before drafting outputs.`;
   return {
     starterId,
     category,
+    domain,
     label,
     summary,
     detail,
@@ -644,35 +703,227 @@ function starter(
     recommendedToolIds,
     outputProductIds,
     combinesWellWith,
+    sourcePack,
+    excerpts: overrides?.excerpts ?? sourcePack.map((source) => ({
+      sourceId: source.id,
+      text: `${source.label} should be treated as starter context for ${label}; verify freshness, jurisdiction, and evidentiary limits before relying on it.`,
+    })),
+    readinessStars: overrides?.readinessStars ?? (category === 'situation' ? 4 : 3),
+    suggestedQuestions: overrides?.suggestedQuestions ?? [
+      `What is missing before ${label} can support a decision?`,
+      `Which sources, tools, or outputs should PRAXIS attach to ${label}?`,
+    ],
+    suggestedNextActions: overrides?.suggestedNextActions ?? [
+      `Inspect ${label} for source gaps.`,
+      `Improve ${label} before drafting an output.`,
+    ],
+    agentWorkflow: overrides?.agentWorkflow ?? {
+      preferredAgentId: category === 'output' ? 'output-formatter' : 'research-memo',
+      routeHint: category === 'tool' ? 'tool-router' : 'capsule-supervisor',
+      outputGoal: outputProductIds[0] ?? 'options-memo',
+      approvalNotes: 'Require approval before external export, graph mutation, or connector writes.',
+    },
+    aiUseGuidance,
     inspectionSections: [
       { label: 'Best use', detail: summary },
       { label: 'How PRAXIS should use it', detail },
+      { label: 'AI use guidance', detail: aiUseGuidance },
       { label: 'Interchange rule', detail: 'This capsule is safe to fork, combine, tag, and improve without changing the starter definition.' },
     ],
   };
 }
 
+function sourcePackForStarter(
+  starterId: string,
+  category: CapsuleStarterCategory,
+  label: string,
+  domain: CapsuleStarterDomain,
+): CapsuleStarterSource[] {
+  if (category !== 'situation') return [];
+  return [
+    {
+      id: `${starterId}-source-1`,
+      label: `${label} official source baseline`,
+      url: `https://praxis.tacitus.me/learn#${encodeURIComponent(starterId)}`,
+      sourceType: 'official',
+      relevance: `Official or primary-source baseline for ${domain} work.`,
+    },
+    {
+      id: `${starterId}-source-2`,
+      label: `${label} multilateral reference`,
+      url: `https://praxis.tacitus.me/release-notes#${encodeURIComponent(starterId)}`,
+      sourceType: 'multilateral',
+      relevance: `Secondary reference posture for ${label}.`,
+    },
+  ];
+}
+
 export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
-  starter('starter-situation-conflict-analysis', 'situation', 'Conflict analysis capsule', 'A reusable conflict-analysis situation capsule for actors, episodes, claims, source posture, and power dynamics.', 'Use this when a policy question starts with instability, contested authority, coercion, negotiation, or escalation risk. It primes PRAXIS to ask for actors, claims, events, sources, and decision windows before drafting.', ['diplomatic', 'security-defence', 'conflict-resolution'], { situationCoreId: 'starter-situation-conflict-analysis', pathCoreId: 'conflict-resolution', toolCoreIds: ['stakeholder-map', 'ach'], outputCoreIds: ['situation-brief'], productCoreIds: ['actor-power-map'] }, ['stakeholder-map', 'ach', 'scenario-projector'], ['situation-brief', 'actor-power-map'], ['starter-tool-stakeholder-map', 'starter-output-options-memo', 'starter-user-foreign-policy-analyst']),
-  starter('starter-situation-crisis-brief', 'situation', 'Crisis brief capsule', 'A fast-moving crisis capsule for updates, deadlines, stale assumptions, immediate risks, and executive briefings.', 'Use this for daily or hourly policy work where time, source freshness, and escalation gates matter. It keeps the answer focused on what changed, what is uncertain, and what decision is live.', ['crisis-ops', 'timeline', 'brief'], { situationCoreId: 'starter-situation-crisis-brief', timeCoreId: 'starter-time-crisis-clock', toolCoreIds: ['ask-praxis', 'grounded-research'], outputCoreIds: ['situation-brief'], productCoreIds: ['situation-brief'] }, ['grounded-research', 'scenario-projector', 'commitment-tracker'], ['situation-brief', 'agent-handover'], ['starter-tool-grounded-research', 'starter-output-situation-brief', 'starter-user-crisis-operator']),
-  starter('starter-situation-humanitarian-access', 'situation', 'Humanitarian access capsule', 'A humanitarian situation capsule for affected populations, access constraints, protection concerns, and operational source gaps.', 'Use this for access, needs, displacement, protection, and humanitarian coordination work. It tells PRAXIS to separate operational reporting from legal or advocacy claims.', ['humanitarian', 'ocha', 'access', 'protection'], { situationCoreId: 'starter-situation-humanitarian-access', pathCoreId: 'humanitarian-analysis', sourceCoreIds: ['humanitarian_web'], toolCoreIds: ['grounded-research', 'sourceability'], outputCoreIds: ['situation-brief'] }, ['grounded-research', 'sourceability', 'memo-drafter'], ['situation-brief', 'options-memo'], ['starter-tool-sourceability-check', 'starter-output-situation-brief', 'starter-user-crisis-operator']),
-  starter('starter-situation-economic-exposure', 'situation', 'Economic exposure capsule', 'An economic statecraft capsule for entities, sectors, sanctions posture, trade exposure, and decision-relevant risks.', 'Use this when policy analysis depends on financial exposure, sanctions, trade controls, development finance, or market effects. It keeps jurisdictions, regimes, sources, and sign-off gaps visible.', ['economic-sanctions', 'ofac', 'trade', 'finance'], { situationCoreId: 'starter-situation-economic-exposure', pathCoreId: 'economic-sanctions', sourceCoreIds: ['world-bank', 'ofac'], toolCoreIds: ['grounded-research', 'sourceability'], outputCoreIds: ['compliance-note'] }, ['grounded-research', 'sourceability', 'ach'], ['compliance-note', 'options-memo'], ['starter-tool-sourceability-check', 'starter-output-compliance-note', 'starter-user-legal-compliance-reviewer']),
-  starter('starter-situation-information-environment', 'situation', 'Information environment capsule', 'A narrative and cyber-information capsule for media posture, disinformation risk, platform scope, and response options.', 'Use this when the work turns on narratives, public communication, cyber posture, or information integrity. It prompts PRAXIS to separate observed claims from narrative interpretation.', ['information-cyber', 'media', 'narrative', 'disinformation'], { situationCoreId: 'starter-situation-information-environment', pathCoreId: 'information-cyber', sourceCoreIds: ['grounded_search'], toolCoreIds: ['grounded-research', 'frame-narrative'], outputCoreIds: ['information-environment-brief'] }, ['grounded-research', 'frame-narrative', 'contradiction-finder'], ['information-environment-brief', 'options-memo'], ['starter-tool-grounded-research', 'starter-output-options-memo', 'starter-user-foreign-policy-analyst']),
-  starter('starter-situation-decision-clock', 'situation', 'Decision clock capsule', 'A time-sensitive decision capsule for deadlines, review gates, trigger points, stale assumptions, and monitoring cadence.', 'Use this when the most important question is timing. It helps PRAXIS reason about what expires, what must be watched, and when a recommendation should be revisited.', ['crisis-ops', 'timeline', 'monitoring', 'decision-window'], { situationCoreId: 'starter-situation-decision-clock', timeCoreId: 'starter-time-decision-clock', toolCoreIds: ['scenario-projector', 'commitment-tracker'], outputCoreIds: ['situation-brief'], productCoreIds: ['agent-handover'] }, ['scenario-projector', 'commitment-tracker', 'ask-praxis'], ['situation-brief', 'agent-handover'], ['starter-situation-crisis-brief', 'starter-tool-scenario-projector', 'starter-output-agent-handover']),
-  starter('starter-tool-grounded-research', 'tool', 'Grounded research tool capsule', 'A tool capsule that routes source discovery, search posture, source receipts, and import decisions into PRAXIS runs.', 'Use this when the active capsule needs better source coverage. It marks grounded research as allowed, but keeps source promotion explicit instead of silently treating search hits as canonical.', ['grounded-search', 'source', 'research'], { toolCoreIds: ['grounded-research'], objectiveCoreIds: ['find-source-gaps'], sourceCoreIds: ['grounded_search'] }, ['grounded-research', 'sourceability', 'ask-praxis'], ['situation-brief', 'options-memo'], ['starter-situation-crisis-brief', 'starter-situation-economic-exposure', 'starter-output-situation-brief']),
-  starter('starter-tool-sourceability-check', 'tool', 'Sourceability check tool capsule', 'A tool capsule for claim support, weak evidence, citation gaps, and source reliability review.', 'Use this before exporting a memo or brief. It tells PRAXIS to mark unsupported claims, stale citations, missing receipts, and corroboration needs.', ['sourceability', 'citations', 'review'], { toolCoreIds: ['sourceability'], objectiveCoreIds: ['review-weak-claims'], outputCoreIds: ['compliance-note'] }, ['sourceability', 'contradiction-finder', 'ach'], ['compliance-note', 'options-memo'], ['starter-output-compliance-note', 'starter-output-options-memo', 'starter-user-legal-compliance-reviewer']),
-  starter('starter-tool-stakeholder-map', 'tool', 'Stakeholder map tool capsule', 'A tool capsule for actors, blockers, approvers, incentives, and relationship mapping.', 'Use this when the answer needs a power map rather than a generic summary. It routes PRAXIS toward actor relations, influence, incentives, and blockers.', ['stakeholder-map', 'graph', 'power'], { toolCoreIds: ['stakeholder-map'], graphCoreId: 'starter-graph-stakeholder-map', objectiveCoreIds: ['map-stakeholders'], productCoreIds: ['actor-power-map'] }, ['stakeholder-map', 'position-vs-interest', 'coalition-detector'], ['actor-power-map', 'options-memo'], ['starter-situation-conflict-analysis', 'starter-output-board-brief', 'starter-user-mediation-practitioner']),
-  starter('starter-tool-scenario-projector', 'tool', 'Scenario projector tool capsule', 'A tool capsule for plausible futures, indicators, triggers, and decision-branch monitoring.', 'Use this when the user needs scenarios or next-path analysis. It keeps indicators, assumptions, and uncertainty explicit in the run.', ['scenario', 'forecast', 'monitoring'], { toolCoreIds: ['scenario-projector'], timeCoreId: 'starter-time-scenario-horizon', objectiveCoreIds: ['build-scenarios'] }, ['scenario-projector', 'commitment-tracker', 'ach'], ['situation-brief', 'board-brief'], ['starter-situation-decision-clock', 'starter-output-situation-brief', 'starter-user-crisis-operator']),
-  starter('starter-tool-memo-drafter', 'tool', 'Memo drafter tool capsule', 'A tool capsule that routes capsule context into memo, brief, handover, or board-ready drafting.', 'Use this once the context is good enough to write. It keeps output target, audience, citation posture, and gaps tied to the capsule.', ['memo-drafter', 'writing', 'output'], { toolCoreIds: ['memo-drafter'], outputCoreIds: ['options-memo'], productCoreIds: ['options-memo'], objectiveCoreIds: ['draft-output'] }, ['memo-drafter', 'sourceability', 'ask-praxis'], ['options-memo', 'board-brief', 'agent-handover'], ['starter-output-options-memo', 'starter-output-board-brief', 'starter-user-foreign-policy-analyst']),
-  starter('starter-output-options-memo', 'output', 'Options memo output capsule', 'An output capsule for decision memos with options, tradeoffs, risks, evidence posture, and recommendation framing.', 'Use this when the end product is a concise policy memo. It gives PRAXIS a stable output target and asks for caveats and weak evidence instead of polished certainty.', ['options-memo', 'decision', 'writing'], { outputCoreIds: ['options-memo'], productCoreIds: ['options-memo'], objectiveCoreIds: ['decision-options'] }, ['memo-drafter', 'sourceability', 'ach'], ['options-memo'], ['starter-tool-memo-drafter', 'starter-tool-sourceability-check', 'starter-user-foreign-policy-analyst']),
-  starter('starter-output-situation-brief', 'output', 'Situation brief output capsule', 'An output capsule for compact updates on what changed, why it matters, and what decisions are live.', 'Use this for crisis, humanitarian, or monitoring work where the reader needs current posture quickly. It emphasizes change, freshness, and next action.', ['situation-brief', 'update', 'crisis'], { outputCoreIds: ['situation-brief'], productCoreIds: ['situation-brief'], timeCoreId: 'starter-time-situation-brief' }, ['ask-praxis', 'grounded-research', 'memo-drafter'], ['situation-brief'], ['starter-situation-crisis-brief', 'starter-tool-grounded-research', 'starter-user-crisis-operator']),
-  starter('starter-output-board-brief', 'output', 'Board brief output capsule', 'An output capsule for executive synthesis with risk, options, requested decision, and board-level language.', 'Use this when the reader is senior and needs the issue translated into decision, exposure, and governance terms. It suppresses unnecessary process detail.', ['board-brief', 'executive', 'strategy'], { outputCoreIds: ['board-brief'], productCoreIds: ['board-brief'], userCoreId: 'starter-user-executive-reader' }, ['memo-drafter', 'sourceability', 'scenario-projector'], ['board-brief'], ['starter-tool-memo-drafter', 'starter-tool-scenario-projector', 'starter-user-foreign-policy-analyst']),
-  starter('starter-output-compliance-note', 'output', 'Compliance note output capsule', 'An output capsule for rule checks, exposure, source receipts, contradictions, and sign-off posture.', 'Use this for legal, sanctions, rights, HR, or regulatory review. It asks PRAXIS to keep rules, evidence, and unresolved review gates separate.', ['compliance-note', 'legal', 'review'], { outputCoreIds: ['compliance-note'], productCoreIds: ['compliance-note'], pathCoreId: 'legal-compliance' }, ['sourceability', 'contradiction-finder', 'memo-drafter'], ['compliance-note'], ['starter-situation-economic-exposure', 'starter-tool-sourceability-check', 'starter-user-legal-compliance-reviewer']),
-  starter('starter-output-agent-handover', 'output', 'Agent handover output capsule', 'An output capsule for allowed actions, source scope, escalation rules, caveats, and next-run instructions.', 'Use this when another analyst or agent should inherit the work. It preserves constraints, open questions, approvals, and what not to do.', ['agent-handover', 'memory', 'handover'], { outputCoreIds: ['agent-handover'], productCoreIds: ['agent-handover'], memoryCoreId: 'starter-memory-agent-handover' }, ['ask-praxis', 'memo-drafter', 'sourceability'], ['agent-handover'], ['starter-situation-decision-clock', 'starter-tool-memo-drafter', 'starter-user-crisis-operator']),
-  starter('starter-user-foreign-policy-analyst', 'user', 'Foreign policy analyst user capsule', 'A user capsule for diplomatic analysis, source discipline, concise memo style, and policy-relevant uncertainty.', 'Use this to set the inherited voice and analytical lens for foreign policy work. It favors clear caveats, official-source posture, and decision usefulness.', ['foreign-policy', 'diplomatic', 'analyst'], { userCoreId: 'starter-user-foreign-policy-analyst', toolCoreIds: ['ask-praxis', 'sourceability'], outputCoreIds: ['options-memo'] }, ['ask-praxis', 'sourceability', 'memo-drafter'], ['options-memo', 'situation-brief'], ['starter-situation-conflict-analysis', 'starter-output-options-memo', 'starter-tool-grounded-research']),
-  starter('starter-user-mediation-practitioner', 'user', 'Mediation practitioner user capsule', 'A user capsule for negotiation, incentives, red lines, informal authority, and conflict-resolution posture.', 'Use this when recommendations must respect parties, mandates, relationships, and political timing. It asks PRAXIS to separate positions from interests.', ['mediation', 'negotiation', 'human-friction'], { userCoreId: 'starter-user-mediation-practitioner', pathCoreId: 'mediator-peace-process', toolCoreIds: ['position-vs-interest', 'stakeholder-map'], outputCoreIds: ['actor-power-map'] }, ['position-vs-interest', 'stakeholder-map', 'scenario-projector'], ['actor-power-map', 'options-memo'], ['starter-tool-stakeholder-map', 'starter-situation-conflict-analysis', 'starter-output-options-memo']),
-  starter('starter-user-crisis-operator', 'user', 'Crisis operator user capsule', 'A user capsule for operational speed, current facts, decision windows, escalation, and handover readiness.', 'Use this for time-sensitive work where the answer should be direct, current, and action-oriented. It keeps gaps visible instead of burying uncertainty.', ['crisis-ops', 'handover', 'operations'], { userCoreId: 'starter-user-crisis-operator', toolCoreIds: ['ask-praxis', 'grounded-research'], outputCoreIds: ['situation-brief'], memoryCoreId: 'starter-memory-crisis-handover' }, ['ask-praxis', 'grounded-research', 'commitment-tracker'], ['situation-brief', 'agent-handover'], ['starter-situation-crisis-brief', 'starter-situation-decision-clock', 'starter-output-situation-brief']),
-  starter('starter-user-legal-compliance-reviewer', 'user', 'Legal compliance reviewer user capsule', 'A user capsule for rules, source receipts, thresholds, sign-off gates, and cautious compliance language.', 'Use this when the reader needs a conservative review stance. It pushes PRAXIS to distinguish evidence, rule interpretation, risk, and required approval.', ['legal-compliance', 'review', 'sourceability'], { userCoreId: 'starter-user-legal-compliance-reviewer', pathCoreId: 'legal-compliance', toolCoreIds: ['sourceability', 'contradiction-finder'], outputCoreIds: ['compliance-note'] }, ['sourceability', 'contradiction-finder', 'ach'], ['compliance-note', 'options-memo'], ['starter-output-compliance-note', 'starter-tool-sourceability-check', 'starter-situation-economic-exposure']),
+  starter('starter-situation-sustainability-transition', 'situation', 'sustainability', 'Sustainability transition capsule', 'A source-backed sustainability situation capsule for CSRD/ESRS-style reporting, transition risk, supply-chain exposure, and assurance gaps.', 'Use this when the work concerns climate-transition planning, sustainability reporting, supplier risk, or board-ready ESG posture. PRAXIS should separate regulatory requirements, company claims, value-chain evidence, and confidence gaps before drafting.', ['sustainability', 'csrd', 'esrs', 'issb', 'supply-chain'], { situationCoreId: 'starter-situation-sustainability-transition', pathCoreId: 'climate-development', sourceCoreIds: ['ifrs-s1-s2', 'eu-esrs'], toolCoreIds: ['grounded-research', 'sourceability'], outputCoreIds: ['country-risk-card'] }, ['grounded-research', 'sourceability', 'memo-drafter'], ['country-risk-card', 'options-memo'], ['starter-user-esg-sustainability-lead', 'starter-tool-source-pack-builder', 'starter-output-sustainability-risk-brief'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'ifrs-s1-s2', label: 'IFRS ISSB sustainability and climate disclosure standards', url: 'https://www.ifrs.org/issued-standards/ifrs-sustainability-standards-navigator/', sourceType: 'standard-setter', relevance: 'Primary global baseline for sustainability and climate-related financial disclosure.' },
+      { id: 'eu-esrs', label: 'European Commission ESRS and CSRD reporting rules', url: 'https://finance.ec.europa.eu/capital-markets-union-and-financial-markets/company-reporting-and-auditing/company-reporting/corporate-sustainability-reporting_en', sourceType: 'regulator', relevance: 'Official EU source for CSRD/ESRS sustainability reporting obligations.' },
+    ],
+    excerpts: [
+      { sourceId: 'ifrs-s1-s2', text: 'ISSB standards are treated as baseline disclosure guidance for sustainability-related and climate-related financial risks and opportunities.' },
+      { sourceId: 'eu-esrs', text: 'CSRD/ESRS analysis should keep value-chain reporting, material impacts, risks, opportunities, and assurance posture visible.' },
+    ],
+    suggestedQuestions: ['Which reporting obligation or assurance question is live?', 'Which suppliers, geographies, and transition risks are in scope?', 'Which claims need source receipts before drafting?'],
+    suggestedNextActions: ['Attach company, supplier, and regulator sources to the capsule.', 'Run sourceability on any sustainability claim before export.', 'Draft a risk brief with evidence gaps and next data requests.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'sustainability-source-pack-to-risk-brief', outputGoal: 'Sustainability risk brief with source receipts and value-chain gaps.', approvalNotes: 'Human approval required before treating corporate claims as verified.' },
+    aiUseGuidance: 'Treat this as a reporting and transition-risk workbench. Do not infer compliance; map obligations, claims, source receipts, value-chain gaps, and recommended next checks.',
+  }),
+  starter('starter-situation-finance-country-risk', 'situation', 'finance', 'Finance and country risk capsule', 'A finance situation capsule for sovereign/country risk, debt sustainability, sanctions exposure, market-stability signals, and source confidence.', 'Use this when the analysis depends on macro-financial indicators, country exposure, public debt posture, sanctions spillovers, or regulator/IFI evidence. Keep numbers, dates, jurisdictions, and confidence separate.', ['finance', 'sovereign-risk', 'country-risk', 'sanctions', 'market-stability'], { situationCoreId: 'starter-situation-finance-country-risk', pathCoreId: 'economic-sanctions', sourceCoreIds: ['imf-dsa', 'world-bank-debt'], toolCoreIds: ['grounded-research', 'sourceability', 'ach'], outputCoreIds: ['country-risk-card'] }, ['grounded-research', 'sourceability', 'ach'], ['country-risk-card', 'options-memo'], ['starter-user-finance-risk-analyst', 'starter-tool-financial-exposure-mapper', 'starter-output-finance-exposure-note'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'imf-dsa', label: 'IMF debt sustainability analysis', url: 'https://www.imf.org/en/About/Factsheets/Sheets/2023/Debt-Sustainability-Framework-for-Low-Income-Countries', sourceType: 'multilateral', relevance: 'Primary IFI frame for debt sustainability and country risk posture.' },
+      { id: 'world-bank-debt', label: 'World Bank International Debt Statistics', url: 'https://www.worldbank.org/en/programs/debt-statistics/ids', sourceType: 'multilateral', relevance: 'Official source for public external debt and creditor exposure indicators.' },
+    ],
+    excerpts: [
+      { sourceId: 'imf-dsa', text: 'Debt-sustainability work should distinguish baseline assumptions, stress scenarios, thresholds, and the date of the assessment.' },
+      { sourceId: 'world-bank-debt', text: 'Country exposure notes should tie claims to dated debt, creditor, sector, and balance-of-payments evidence instead of generic market language.' },
+    ],
+    suggestedQuestions: ['What country, sector, or counterparty exposure is being assessed?', 'Which indicators are current as of the analysis date?', 'Which sanctions or market-stability assumptions need review?'],
+    suggestedNextActions: ['Build a source pack from IMF, World Bank, regulator, and sanctions sources.', 'Map exposure by jurisdiction, sector, and date.', 'Use ACH for alternative explanations behind financial stress signals.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'country-risk-source-pack-to-exposure-note', outputGoal: 'Finance exposure note with indicators, confidence, and unresolved data gaps.', approvalNotes: 'Do not present financial, legal, or sanctions conclusions as advice; keep review gates visible.' },
+    aiUseGuidance: 'Treat numbers as dated evidence. Ask for missing time series, regulator sources, and sanctions lists before making exposure judgments.',
+  }),
+  starter('starter-situation-hr-harassment-policy', 'situation', 'hr', 'HR harassment policy capsule', 'An HR situation capsule for workplace violence and harassment, policy response, employer duties, rollout risk, and affected-group communication.', 'Use this for public employer-guidance-grounded HR policy work. PRAXIS should distinguish prevention duties, reporting channels, investigation posture, training needs, retaliation risk, and communications sequencing.', ['hr', 'workplace-harassment', 'policy-response', 'employer-guidance'], { situationCoreId: 'starter-situation-hr-harassment-policy', pathCoreId: 'hr-policy', sourceCoreIds: ['ilo-harassment-guide'], toolCoreIds: ['sourceability', 'contradiction-finder'], outputCoreIds: ['options-memo'] }, ['sourceability', 'contradiction-finder', 'memo-drafter'], ['options-memo', 'talking-points'], ['starter-user-hr-policy-owner', 'starter-tool-hr-policy-impact-reviewer', 'starter-output-hr-rollout-recommendation'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'ilo-harassment-guide', label: 'ILO violence and harassment at work employer guide', url: 'https://www.ilo.org/publications/violence-and-harassment-work-practical-guide-employers', sourceType: 'multilateral', relevance: 'Public employer guidance for prevention, policy response, and workplace processes.' },
+      { id: 'eeoc-harassment', label: 'US EEOC harassment guidance', url: 'https://www.eeoc.gov/harassment', sourceType: 'regulator', relevance: 'US public guidance for workplace harassment definitions and employer responsibilities.' },
+    ],
+    excerpts: [
+      { sourceId: 'ilo-harassment-guide', text: 'Policy review should cover prevention, reporting, investigation, support, training, and employer accountability as separate workstreams.' },
+      { sourceId: 'eeoc-harassment', text: 'Harassment analysis should avoid naming private individuals and should frame facts, process, and remedies in a rights-preserving way.' },
+    ],
+    suggestedQuestions: ['Which policy, location, worker group, or incident pattern is in scope?', 'What reporting and anti-retaliation channels already exist?', 'Which legal review or employee-relations approval is required?'],
+    suggestedNextActions: ['Attach policy text and public employer guidance.', 'Review rollout risks and affected-group communication needs.', 'Draft a recommendation with legal-review and HR-approval gates.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'hr-policy-review-to-rollout-note', outputGoal: 'HR rollout recommendation with public-guidance support and review gates.', approvalNotes: 'Do not process private allegations or personal data in starter content.' },
+    aiUseGuidance: 'Treat this as public policy guidance, not private HR case handling. Keep named people, protected data, and legal conclusions out of the starter answer.',
+  }),
+  starter('starter-situation-diplomatic-options', 'situation', 'diplomacy', 'Diplomatic options capsule', 'A diplomacy situation capsule for mediation posture, diplomatic options, human-rights sanctions context, stakeholder incentives, and official-source caveats.', 'Use this when the user needs diplomatic pathways, mediation options, sanctions posture, or negotiation sequencing. PRAXIS should map actors, mandates, leverage, official positions, and risks without over-claiming private intent.', ['diplomacy', 'mediation', 'sanctions', 'human-rights', 'official-sources'], { situationCoreId: 'starter-situation-diplomatic-options', pathCoreId: 'foreign-policy', sourceCoreIds: ['eeas-human-rights-sanctions', 'un-peacemaker'], toolCoreIds: ['stakeholder-map', 'position-vs-interest', 'sourceability'], outputCoreIds: ['diplomatic-cable'] }, ['stakeholder-map', 'position-vs-interest', 'sourceability'], ['diplomatic-cable', 'talking-points'], ['starter-user-diplomatic-desk-officer', 'starter-tool-diplomacy-options-mapper', 'starter-output-diplomatic-options-memo'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'eeas-human-rights-sanctions', label: 'EEAS human-rights sanctions explainer', url: 'https://www.eeas.europa.eu/eeas/sanctions-defend-human-rights_en', sourceType: 'official', relevance: 'Official EU posture on sanctions used to defend human rights.' },
+      { id: 'un-peacemaker', label: 'UN Peacemaker mediation support', url: 'https://peacemaker.un.org/', sourceType: 'multilateral', relevance: 'Official UN mediation and peace process reference lane.' },
+    ],
+    excerpts: [
+      { sourceId: 'eeas-human-rights-sanctions', text: 'Sanctions posture should be separated from diplomatic options, legal basis, targets, intended pressure, and likely political effects.' },
+      { sourceId: 'un-peacemaker', text: 'Mediation analysis should distinguish parties, mandates, interests, sequencing, confidence-building measures, and implementation constraints.' },
+    ],
+    suggestedQuestions: ['Which actors, mandates, and official positions are in scope?', 'Is the user asking for sanctions posture, mediation sequencing, or talking points?', 'What would change the recommended diplomatic option?'],
+    suggestedNextActions: ['Map stakeholders and interests before drafting options.', 'Attach official statements and sanctions/legal sources.', 'Draft options with risks, sequencing, and source caveats.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'diplomatic-options-map-to-cable', outputGoal: 'Diplomatic options memo or cable with official-source caveats.', approvalNotes: 'Keep sanctions/legal judgments and private diplomatic intent review-gated.' },
+    aiUseGuidance: 'Use official-source posture first. Separate facts, positions, inferred incentives, options, and risks so the memo remains usable by a desk officer.',
+  }),
+  starter('starter-situation-humanitarian-rights-access', 'situation', 'humanitarian-rights', 'Humanitarian access and rights capsule', 'A humanitarian-rights situation capsule for access constraints, affected populations, accountability questions, OHCHR/OCHA source lanes, and evidence gaps.', 'Use this when the work concerns humanitarian access, protection, rights allegations, or crisis monitoring. PRAXIS should separate operational access reporting from rights/accountability claims and keep sourceability explicit.', ['humanitarian', 'rights', 'ocha', 'ohchr', 'access', 'accountability'], { situationCoreId: 'starter-situation-humanitarian-rights-access', pathCoreId: 'humanitarian-analysis', sourceCoreIds: ['ocha-access', 'ohchr-library'], toolCoreIds: ['grounded-research', 'sourceability'], outputCoreIds: ['humanitarian-one-pager'] }, ['grounded-research', 'sourceability', 'memo-drafter'], ['humanitarian-one-pager', 'options-memo'], ['starter-user-humanitarian-legal-investigator', 'starter-tool-sourceability-audit-reviewer', 'starter-output-humanitarian-access-brief'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'ocha-access', label: 'OCHA humanitarian access guidance', url: 'https://knowledge.base.unocha.org/wiki/spaces/imtoolbox/pages/1410072577/Humanitarian%2BAccess', sourceType: 'multilateral', relevance: 'Official humanitarian access concepts and operational constraints.' },
+      { id: 'ohchr-library', label: 'OHCHR search library', url: 'https://searchlibrary.ohchr.org/', sourceType: 'public-library', relevance: 'Public OHCHR reporting and records search lane for rights/accountability work.' },
+    ],
+    excerpts: [
+      { sourceId: 'ocha-access', text: 'Access analysis should capture constraints, affected populations, routes, controlling actors, negotiation needs, and operational risks.' },
+      { sourceId: 'ohchr-library', text: 'Rights and accountability claims should identify report type, issuing body, date, alleged conduct, evidence quality, and corroboration gaps.' },
+    ],
+    suggestedQuestions: ['Which affected population, location, and access constraint is in scope?', 'Is the output operational, advocacy, legal, or accountability-oriented?', 'Which claims require corroboration or sourceability review?'],
+    suggestedNextActions: ['Attach OCHA/OHCHR and operational source receipts.', 'Map access constraints separately from rights allegations.', 'Draft an access or accountability brief with confidence levels.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'humanitarian-access-to-accountability-brief', outputGoal: 'Humanitarian access or accountability brief with source confidence and gaps.', approvalNotes: 'Keep allegations, legal thresholds, and personal data under human review.' },
+    aiUseGuidance: 'Do not merge operational reporting with legal conclusions. Make confidence, source type, affected population, and access constraint visible before recommending action.',
+  }),
+  starter('starter-tool-source-pack-builder', 'tool', 'source-intake', 'Source pack builder tool capsule', 'A tool capsule that turns a weak capsule into a sourced public-domain source pack with receipts, excerpts, gaps, and promotion rules.', 'Use this whenever a situation lacks enough official or primary-source coverage. It routes PRAXIS toward grounded research, sourceability, and explicit source promotion decisions.', ['source-pack', 'grounded-search', 'sourceability', 'research'], { toolCoreIds: ['grounded-research', 'sourceability', 'ask-praxis'], objectiveCoreIds: ['build-source-pack'], sourceCoreIds: ['grounded_search'] }, ['grounded-research', 'sourceability', 'ask-praxis'], ['country-one-pager', 'options-memo'], ['starter-situation-sustainability-transition', 'starter-situation-finance-country-risk', 'starter-output-sustainability-risk-brief'], {
+    suggestedQuestions: ['Which claims need official or primary sources?', 'Which sources should be attached versus left as search results?', 'What is the minimum source mix before drafting?'],
+    suggestedNextActions: ['Run grounded research against official sources first.', 'Promote only sources with usable citation metadata.', 'Send weak claims to sourceability review.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'source-pack-first', outputGoal: 'Reusable source pack with excerpts, reliability notes, and remaining gaps.', approvalNotes: 'Search results are not canonical until attached to the capsule.' },
+    aiUseGuidance: 'Prioritize official, regulator, multilateral, and primary sources. Return source IDs, excerpts, reliability notes, and explicit gaps instead of a narrative-only answer.',
+  }),
+  starter('starter-tool-financial-exposure-mapper', 'tool', 'exposure-mapping', 'Financial exposure mapper tool capsule', 'A tool capsule for country, sector, entity, sanctions, and market-stability exposure mapping from dated public sources.', 'Use this to structure financial risk without pretending to provide investment or legal advice. It keeps jurisdictions, indicators, counterparties, and sanctions assumptions visible.', ['finance', 'exposure', 'sanctions', 'risk'], { toolCoreIds: ['grounded-research', 'ach', 'sourceability'], objectiveCoreIds: ['map-financial-exposure'], outputCoreIds: ['country-risk-card'] }, ['grounded-research', 'ach', 'sourceability'], ['country-risk-card', 'options-memo'], ['starter-situation-finance-country-risk', 'starter-user-finance-risk-analyst', 'starter-output-finance-exposure-note'], {
+    suggestedQuestions: ['Which exposure unit is being mapped?', 'What date and source governs each indicator?', 'Which alternative explanations could explain the risk signal?'],
+    suggestedNextActions: ['Build an exposure table by jurisdiction, sector, entity, and date.', 'Use ACH for competing risk explanations.', 'Draft a non-advice exposure note with review gates.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'financial-exposure-map', outputGoal: 'Exposure map and finance note with dated indicators and caveats.', approvalNotes: 'Financial and sanctions conclusions require expert review.' },
+    aiUseGuidance: 'Map exposure and confidence; do not recommend trades or legal actions. Every material number needs a source, date, and caveat.',
+  }),
+  starter('starter-tool-hr-policy-impact-reviewer', 'tool', 'policy-review', 'HR policy impact reviewer tool capsule', 'A tool capsule for HR policy impact, affected-group analysis, rollout sequencing, sourceability, and review gates.', 'Use this when an HR change needs practical review before announcement. It separates policy text, public guidance, affected groups, risk controls, and communications needs.', ['hr', 'policy-impact', 'rollout', 'review'], { toolCoreIds: ['sourceability', 'contradiction-finder', 'memo-drafter'], objectiveCoreIds: ['review-hr-policy-impact'], outputCoreIds: ['options-memo'] }, ['sourceability', 'contradiction-finder', 'memo-drafter'], ['options-memo', 'talking-points'], ['starter-situation-hr-harassment-policy', 'starter-user-hr-policy-owner', 'starter-output-hr-rollout-recommendation'], {
+    suggestedQuestions: ['Which policy text or rollout decision is being reviewed?', 'Which employee groups, managers, and channels are affected?', 'Which legal or HR approvals are required?'],
+    suggestedNextActions: ['Attach policy text and public guidance.', 'Review contradictions, affected groups, and rollout risks.', 'Draft recommendation and talking points with approval gates.'],
+    agentWorkflow: { preferredAgentId: 'red-team-analyst', routeHint: 'hr-policy-impact-review', outputGoal: 'HR rollout recommendation with risks, mitigations, and review gates.', approvalNotes: 'Private personnel facts and protected data should remain outside this starter.' },
+    aiUseGuidance: 'Frame HR policy operationally and cautiously. Keep private allegations out, and mark legal review requirements before drafting rollout language.',
+  }),
+  starter('starter-tool-diplomacy-options-mapper', 'tool', 'options-mapping', 'Diplomacy options mapper tool capsule', 'A tool capsule for mapping parties, interests, leverage, official positions, options, risks, and diplomatic sequencing.', 'Use this when the user needs options rather than a generic geopolitical summary. It should route through stakeholder mapping, position-versus-interest analysis, and sourceability.', ['diplomacy', 'options', 'stakeholders', 'mediation'], { toolCoreIds: ['stakeholder-map', 'position-vs-interest', 'sourceability'], graphCoreId: 'starter-graph-diplomacy-options', objectiveCoreIds: ['map-diplomatic-options'], outputCoreIds: ['diplomatic-cable'] }, ['stakeholder-map', 'position-vs-interest', 'sourceability'], ['diplomatic-cable', 'talking-points'], ['starter-situation-diplomatic-options', 'starter-user-diplomatic-desk-officer', 'starter-output-diplomatic-options-memo'], {
+    suggestedQuestions: ['What decision window and audience is the options memo serving?', 'Which actors have mandate, leverage, or veto power?', 'Which official-source caveats should limit the analysis?'],
+    suggestedNextActions: ['Map actors and interests first.', 'Separate official positions from inferred incentives.', 'Draft options with sequencing and risk controls.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'diplomatic-options-mapping', outputGoal: 'Diplomatic options memo with options, leverage, source caveats, and next moves.', approvalNotes: 'Treat inferred intent and sanctions/legal posture as review-gated.' },
+    aiUseGuidance: 'Produce a disciplined options map: actor, interest, leverage, option, risk, source support, and watch item. Avoid polished certainty.',
+  }),
+  starter('starter-tool-sourceability-audit-reviewer', 'tool', 'audit-review', 'Sourceability and audit reviewer tool capsule', 'A tool capsule for claim support, source quality, citation gaps, output approval posture, and audit-ready receipts.', 'Use this before hardening any output capsule. It marks unsupported claims, weak citations, stale evidence, missing source IDs, and human-review requirements.', ['sourceability', 'audit', 'citations', 'review'], { toolCoreIds: ['sourceability', 'contradiction-finder', 'ach'], objectiveCoreIds: ['audit-output-sourceability'], outputCoreIds: ['options-memo'] }, ['sourceability', 'contradiction-finder', 'ach'], ['options-memo', 'humanitarian-one-pager'], ['starter-situation-humanitarian-rights-access', 'starter-output-humanitarian-access-brief', 'starter-user-humanitarian-legal-investigator'], {
+    suggestedQuestions: ['Which claims are unsupported, stale, or over-confident?', 'Which source IDs and excerpts back each material statement?', 'What must remain blocked until human review?'],
+    suggestedNextActions: ['Run sourceability on material claims.', 'Mark stale or missing evidence explicitly.', 'Prepare an audit receipt before output export.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'sourceability-audit-before-export', outputGoal: 'Audit review with unsupported claims, source gaps, and approval status.', approvalNotes: 'Block approval on unsupported claims or missing source bindings.' },
+    aiUseGuidance: 'Review evidence rather than rewriting around gaps. Preserve uncertainty, mark unsupported claims, and keep approval blockers explicit.',
+  }),
+  starter('starter-output-sustainability-risk-brief', 'output', 'output-brief', 'Sustainability risk brief output capsule', 'An output capsule for sustainability transition, CSRD/ESRS/ISSB posture, supply-chain risk, and evidence gaps.', 'Use this when the final artifact should brief risks, reporting obligations, affected operations, source confidence, and next data requests.', ['sustainability', 'risk-brief', 'csrd', 'issb'], { outputCoreIds: ['country-risk-card'], productCoreIds: ['country-risk-card'], objectiveCoreIds: ['draft-sustainability-risk-brief'] }, ['memo-drafter', 'sourceability', 'grounded-research'], ['country-risk-card', 'options-memo'], ['starter-situation-sustainability-transition', 'starter-tool-source-pack-builder', 'starter-user-esg-sustainability-lead'], {
+    suggestedQuestions: ['Who is the audience for the sustainability risk brief?', 'Which reporting, operational, or supplier risks must be separated?', 'Which sources are acceptable for each claim?'],
+    suggestedNextActions: ['Draft risk sections with source IDs.', 'List evidence gaps and data-owner asks.', 'Run sourceability before export.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'sustainability-risk-brief-output', outputGoal: 'Brief with risk, obligation, source support, and next data request sections.', approvalNotes: 'Do not imply assurance or compliance certification.' },
+    aiUseGuidance: 'Keep this output structured for review: finding, source support, implication, confidence, gap, and next action.',
+  }),
+  starter('starter-output-finance-exposure-note', 'output', 'output-brief', 'Finance exposure note output capsule', 'An output capsule for country or sovereign exposure, sanctions touchpoints, market-stability indicators, and caveated risk posture.', 'Use this when the end product is a concise, non-advice finance exposure note grounded in dated public sources.', ['finance', 'exposure-note', 'country-risk', 'sanctions'], { outputCoreIds: ['country-risk-card'], productCoreIds: ['country-risk-card'], objectiveCoreIds: ['draft-finance-exposure-note'] }, ['memo-drafter', 'sourceability', 'ach'], ['country-risk-card', 'options-memo'], ['starter-situation-finance-country-risk', 'starter-tool-financial-exposure-mapper', 'starter-user-finance-risk-analyst'], {
+    suggestedQuestions: ['Which exposure dimensions and jurisdictions should the note cover?', 'Which indicators are current and source-backed?', 'What confidence or review caveats are mandatory?'],
+    suggestedNextActions: ['Build the exposure table first.', 'Separate facts, judgments, and review gates.', 'Draft a short note with dated indicators.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'finance-exposure-note-output', outputGoal: 'Exposure note with dated indicators, risk drivers, caveats, and next checks.', approvalNotes: 'Must not read as investment, sanctions, or legal advice.' },
+    aiUseGuidance: 'Use cautious language and dated indicators. Keep legal/sanctions conclusions and market recommendations out of scope.',
+  }),
+  starter('starter-output-hr-rollout-recommendation', 'output', 'output-brief', 'HR rollout recommendation output capsule', 'An output capsule for HR policy rollout decisions, affected-group communication, risk mitigations, and review gates.', 'Use this when the artifact should help an HR owner decide what to announce, pause, revise, or escalate.', ['hr', 'rollout', 'recommendation', 'communications'], { outputCoreIds: ['options-memo'], productCoreIds: ['options-memo'], objectiveCoreIds: ['draft-hr-rollout-recommendation'] }, ['memo-drafter', 'sourceability', 'contradiction-finder'], ['options-memo', 'talking-points'], ['starter-situation-hr-harassment-policy', 'starter-tool-hr-policy-impact-reviewer', 'starter-user-hr-policy-owner'], {
+    suggestedQuestions: ['What decision should HR take after reading this?', 'Which worker groups and manager actions are affected?', 'Which approval, legal, or communications gates remain open?'],
+    suggestedNextActions: ['Draft recommendation, risks, mitigations, and rollout sequence.', 'Prepare manager talking points separately.', 'Keep legal review and data constraints visible.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'hr-rollout-recommendation-output', outputGoal: 'Recommendation note with decision, impacts, mitigations, communications, and approvals.', approvalNotes: 'Private HR facts and protected data require separate handling.' },
+    aiUseGuidance: 'Write for HR decision utility. Separate recommendation, rationale, affected groups, communications, risks, and approvals.',
+  }),
+  starter('starter-output-diplomatic-options-memo', 'output', 'output-brief', 'Diplomatic options memo output capsule', 'An output capsule for diplomatic options, interests, leverage, sequencing, talking points, and official-source caveats.', 'Use this when the final artifact should give a desk officer options with tradeoffs and source discipline.', ['diplomacy', 'options-memo', 'talking-points'], { outputCoreIds: ['diplomatic-cable'], productCoreIds: ['diplomatic-cable'], objectiveCoreIds: ['draft-diplomatic-options-memo'] }, ['memo-drafter', 'stakeholder-map', 'sourceability'], ['diplomatic-cable', 'talking-points'], ['starter-situation-diplomatic-options', 'starter-tool-diplomacy-options-mapper', 'starter-user-diplomatic-desk-officer'], {
+    suggestedQuestions: ['What is the diplomatic decision or meeting this memo serves?', 'Which options are feasible within mandate and timing?', 'Which claims rely on official sources versus inference?'],
+    suggestedNextActions: ['Draft option cards with risks and source caveats.', 'Add talking points only after options are stable.', 'Review inferred intent and legal posture.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'diplomatic-options-output', outputGoal: 'Options memo or cable with source caveats, sequencing, and talking points.', approvalNotes: 'Sensitive diplomatic judgments should stay caveated.' },
+    aiUseGuidance: 'Use a desk-ready structure: context, options, leverage, risks, source confidence, recommended next move, and talking points.',
+  }),
+  starter('starter-output-humanitarian-access-brief', 'output', 'output-brief', 'Humanitarian access brief output capsule', 'An output capsule for humanitarian access, accountability posture, affected populations, constraints, and source confidence.', 'Use this when the output should brief access constraints or accountability issues without collapsing operational reporting into legal conclusions.', ['humanitarian', 'rights', 'access-brief', 'accountability'], { outputCoreIds: ['humanitarian-one-pager'], productCoreIds: ['humanitarian-one-pager'], objectiveCoreIds: ['draft-humanitarian-access-brief'] }, ['memo-drafter', 'sourceability', 'grounded-research'], ['humanitarian-one-pager', 'options-memo'], ['starter-situation-humanitarian-rights-access', 'starter-tool-sourceability-audit-reviewer', 'starter-user-humanitarian-legal-investigator'], {
+    suggestedQuestions: ['Is the brief operational, protection-focused, or accountability-focused?', 'Which affected populations and access constraints are evidenced?', 'Which allegations require corroboration?'],
+    suggestedNextActions: ['Draft access constraints separately from rights allegations.', 'Mark source confidence and evidence gaps.', 'Prepare next collection or advocacy questions.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'humanitarian-access-output', outputGoal: 'Access or accountability brief with constraints, affected populations, confidence, and gaps.', approvalNotes: 'Legal thresholds and identifiable allegations require human review.' },
+    aiUseGuidance: 'Keep source type, confidence, and claim category visible. Do not turn operational access facts into legal findings without review.',
+  }),
+  starter('starter-user-esg-sustainability-lead', 'user', 'analyst-role', 'ESG and sustainability lead user capsule', 'A user capsule for sustainability owners who need reporting posture, supplier context, board-ready risk language, and evidence discipline.', 'Use this to make PRAXIS answer like a sustainability lead preparing reviewable work for executives, assurance, legal, or operations stakeholders.', ['sustainability', 'esg-lead', 'reporting-owner'], { userCoreId: 'starter-user-esg-sustainability-lead', toolCoreIds: ['grounded-research', 'sourceability'], outputCoreIds: ['country-risk-card'] }, ['grounded-research', 'sourceability', 'memo-drafter'], ['country-risk-card', 'options-memo'], ['starter-situation-sustainability-transition', 'starter-output-sustainability-risk-brief', 'starter-tool-source-pack-builder'], {
+    suggestedQuestions: ['Which reporting, board, or operational decision does the user own?', 'What source standard should govern claims?', 'Which teams must supply missing data?'],
+    suggestedNextActions: ['Ask for reporting scope and audience.', 'Prioritize official standards and company evidence.', 'Draft concise risk language with gaps.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'esg-lead-lens', outputGoal: 'Sustainability brief with executive-ready caveats and data asks.', approvalNotes: 'Assurance and compliance conclusions remain review-gated.' },
+    aiUseGuidance: 'Adopt a sustainability-lead lens: practical, evidence-bound, risk-aware, and clear about what data must be collected next.',
+  }),
+  starter('starter-user-finance-risk-analyst', 'user', 'analyst-role', 'Finance risk analyst user capsule', 'A user capsule for analysts reviewing country, sovereign, sanctions, and financial exposure with dated indicators and confidence caveats.', 'Use this to make PRAXIS favor tables, indicator dates, alternative explanations, and non-advice risk language.', ['finance', 'risk-analyst', 'country-risk'], { userCoreId: 'starter-user-finance-risk-analyst', toolCoreIds: ['grounded-research', 'ach', 'sourceability'], outputCoreIds: ['country-risk-card'] }, ['grounded-research', 'ach', 'sourceability'], ['country-risk-card', 'options-memo'], ['starter-situation-finance-country-risk', 'starter-output-finance-exposure-note', 'starter-tool-financial-exposure-mapper'], {
+    suggestedQuestions: ['What exposure, country, or sector is the analyst accountable for?', 'Which indicator date is authoritative?', 'What alternative explanation should be tested?'],
+    suggestedNextActions: ['Request dated indicators and source priorities.', 'Map assumptions before drafting.', 'Keep recommendations non-advisory.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'finance-risk-analyst-lens', outputGoal: 'Exposure note with indicator table, caveats, and review needs.', approvalNotes: 'No investment, legal, or sanctions advice.' },
+    aiUseGuidance: 'Answer as a cautious risk analyst. Prefer structured evidence, indicator dates, confidence levels, and review gates.',
+  }),
+  starter('starter-user-hr-policy-owner', 'user', 'analyst-role', 'HR policy owner user capsule', 'A user capsule for HR policy owners managing guidance, rollout, affected groups, manager communication, and review gates.', 'Use this to make PRAXIS practical, careful with private facts, and focused on policy, process, communications, and approval sequencing.', ['hr', 'policy-owner', 'rollout'], { userCoreId: 'starter-user-hr-policy-owner', pathCoreId: 'hr-policy', toolCoreIds: ['sourceability', 'contradiction-finder'], outputCoreIds: ['options-memo'] }, ['sourceability', 'contradiction-finder', 'memo-drafter'], ['options-memo', 'talking-points'], ['starter-situation-hr-harassment-policy', 'starter-tool-hr-policy-impact-reviewer', 'starter-output-hr-rollout-recommendation'], {
+    suggestedQuestions: ['What policy decision is the HR owner trying to make?', 'Which groups and managers need guidance?', 'Which facts should remain out of the model context?'],
+    suggestedNextActions: ['Ask for policy text, public guidance, and rollout objective.', 'Separate recommendation from legal review.', 'Draft manager communication only after review gates.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'hr-policy-owner-lens', outputGoal: 'Policy recommendation with rollout risks and approval gates.', approvalNotes: 'Protect private personnel data and legal review boundaries.' },
+    aiUseGuidance: 'Use a careful HR policy-owner voice. Keep people, facts, policy text, public guidance, and approvals distinct.',
+  }),
+  starter('starter-user-diplomatic-desk-officer', 'user', 'analyst-role', 'Diplomatic desk officer user capsule', 'A user capsule for desk officers who need official-source posture, concise options, caveats, and meeting-ready next steps.', 'Use this to make PRAXIS concise, source-disciplined, and useful for diplomatic decision support rather than broad geopolitical essay writing.', ['diplomacy', 'desk-officer', 'options'], { userCoreId: 'starter-user-diplomatic-desk-officer', pathCoreId: 'foreign-policy', toolCoreIds: ['stakeholder-map', 'position-vs-interest', 'sourceability'], outputCoreIds: ['diplomatic-cable'] }, ['stakeholder-map', 'position-vs-interest', 'memo-drafter'], ['diplomatic-cable', 'talking-points'], ['starter-situation-diplomatic-options', 'starter-tool-diplomacy-options-mapper', 'starter-output-diplomatic-options-memo'], {
+    suggestedQuestions: ['What decision, meeting, or cable does the desk officer need?', 'Which official-source posture governs the answer?', 'Which claims should remain caveated?'],
+    suggestedNextActions: ['Build actor/options map before drafting.', 'Turn options into concise memo sections.', 'Prepare talking points with source caveats.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'diplomatic-desk-lens', outputGoal: 'Desk-ready options memo or cable with caveats and next actions.', approvalNotes: 'Keep inferred intent and sensitive posture explicitly caveated.' },
+    aiUseGuidance: 'Answer for a time-constrained desk officer. Start with decision utility, source caveats, and concrete next steps.',
+  }),
+  starter('starter-user-humanitarian-legal-investigator', 'user', 'analyst-role', 'Humanitarian and legal investigator user capsule', 'A user capsule for investigators reviewing access, rights, accountability, source reliability, and legal-review boundaries.', 'Use this to make PRAXIS careful about allegations, corroboration, chain-of-custody posture, and the separation between operational facts and legal judgments.', ['humanitarian', 'rights', 'legal-investigator', 'accountability'], { userCoreId: 'starter-user-humanitarian-legal-investigator', pathCoreId: 'human-rights-accountability', toolCoreIds: ['sourceability', 'grounded-research'], outputCoreIds: ['humanitarian-one-pager'] }, ['sourceability', 'grounded-research', 'memo-drafter'], ['humanitarian-one-pager', 'options-memo'], ['starter-situation-humanitarian-rights-access', 'starter-tool-sourceability-audit-reviewer', 'starter-output-humanitarian-access-brief'], {
+    suggestedQuestions: ['Is the user investigating access constraints, rights allegations, or both?', 'What source and corroboration threshold applies?', 'What must remain caveated until human review?'],
+    suggestedNextActions: ['Attach source receipts before synthesis.', 'Separate operational facts from accountability claims.', 'Draft with confidence levels and review blockers.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'humanitarian-investigator-lens', outputGoal: 'Access or accountability brief with source confidence and legal-review caveats.', approvalNotes: 'Allegations, legal thresholds, and personal data stay review-gated.' },
+    aiUseGuidance: 'Use an investigator lens: careful claim typing, corroboration status, source reliability, and explicit review requirements.',
+  }),
 ];
 
 export function getCapsuleStarterDefinition(capsuleId: string | null | undefined): CapsuleStarterDefinition | null {
@@ -687,12 +938,20 @@ export function buildCapsuleStarterPromptBlock(capsuleId: string | null | undefi
     '[starter_capsule_definition]',
     `starter_id: ${starterDefinition.starterId}`,
     `starter_category: ${starterDefinition.category}`,
+    `domain: ${starterDefinition.domain}`,
     `starter_label: ${starterDefinition.label}`,
     `starter_summary: ${starterDefinition.summary}`,
     `starter_detail: ${starterDefinition.detail}`,
     `starter_tags: ${starterDefinition.tags.join(', ')}`,
+    `readiness_stars: ${starterDefinition.readinessStars}/5 source-readiness confidence`,
+    `source_pack: ${starterDefinition.sourcePack.length ? starterDefinition.sourcePack.map((source) => `${source.id}|${source.label}|${source.url}|${source.relevance}`).join(' ; ') : 'none'}`,
+    `source_excerpts: ${starterDefinition.excerpts.length ? starterDefinition.excerpts.map((excerpt) => `${excerpt.sourceId}: ${excerpt.text}`).join(' ; ') : 'none'}`,
     `recommended_tools: ${starterDefinition.recommendedToolIds.length ? starterDefinition.recommendedToolIds.join(', ') : 'none'}`,
     `output_targets: ${starterDefinition.outputProductIds.length ? starterDefinition.outputProductIds.join(', ') : 'none'}`,
+    `suggested_questions: ${starterDefinition.suggestedQuestions.join(' | ')}`,
+    `suggested_next_actions: ${starterDefinition.suggestedNextActions.join(' | ')}`,
+    `agent_workflow: preferred_agent=${starterDefinition.agentWorkflow.preferredAgentId}; route_hint=${starterDefinition.agentWorkflow.routeHint}; output_goal=${starterDefinition.agentWorkflow.outputGoal}; approval_notes=${starterDefinition.agentWorkflow.approvalNotes}`,
+    `ai_use_guidance: ${starterDefinition.aiUseGuidance}`,
     `combines_well_with: ${starterDefinition.combinesWellWith.length ? starterDefinition.combinesWellWith.join(', ') : 'none'}`,
     ...starterDefinition.inspectionSections.map((section) => `starter_section_${stableReceiptPart(section.label)}: ${section.detail}`),
     'runtime_rule: Treat this starter definition as reusable operating context for Ask PRAXIS, tool routing, agent runs, and output drafting.',

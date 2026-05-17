@@ -37,6 +37,7 @@ export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
       'Ask answer envelopes and saved thread turns now carry orchestration receipts alongside source previews, claim grounding, and Memo Studio document-pack candidates.',
       'Deep, current, or multi-source Ask turns can auto-create and dispatch capsule-bound Research Memo agent runs while simple turns remain fast direct answers with receipts.',
       'The Ask panel now shows compact triage, capsule, tool-router, and AgentRun chips without adding a new page or top-level navigation item.',
+      'The account settings hub is canonical at /app/settings, and starter ContextCapsules now include source-pack, readiness, suggested-action, and preferred-agent workflow metadata.',
     ],
   },
   {
