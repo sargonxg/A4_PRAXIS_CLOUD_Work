@@ -16,12 +16,12 @@ Tasklet cleanup. New work starts from the active ledger above.
 
 ### Canonical Tasklet-Style Runtime Build
 
-0. Agent workspace deep links are now implemented: `/agents/[runId]` opens the
-   real shared PRAXIS cockpit focused on the selected capsule-bound run,
-   `/app/agents/[runId]` redirects to the canonical URL, and login/onboarding
-   preserves the target. Next hardening should add a real retry/cancel/approve
-   control set inside the focused run panel once approval APIs and retry policy
-   are fully implemented.
+0. Operational agent workspaces are now implemented: `/agents/[runId]` opens
+   the real shared PRAXIS cockpit focused on the selected capsule-bound run,
+   polls active run receipts, exposes retry/cancel/approve/reject controls, and
+   keeps `/app/agents/[runId]` as a compatibility redirect. Next hardening
+   should browser-smoke the authenticated production flow with a real account
+   and add one synthetic approval fixture for UI regression coverage.
 0. Temporal, causal, and human-friction capsule structures are now explicit:
    Temporal and causal map, Human friction map, and Decision clock templates
    seed complex policy work with triggers, blockers, incentives, stale

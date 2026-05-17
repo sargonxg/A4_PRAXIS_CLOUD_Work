@@ -7,6 +7,12 @@
 - Dead route `api/graph/ingest` and its orphan `conflict-service` (zero callers).
 - Pub/Sub topics `praxis.pipeline`, `praxis.extract`, `praxis.ingest`, `praxis.alert` removed from `setup-gcp.sh` (zero publishers / subscribers in repo). Re-add when a real consumer lands.
 
+- feat(agent-workspace): make focused run workspaces actionable.
+  Build 2026.05.17.04 adds polling, retry, cancel, approve, and reject controls
+  inside the canonical `/agents/[runId]` workspace, adds owner-only action API
+  routes, allows approval resumes through the existing dispatch boundary, and
+  points completed Research Memo / Output Formatter runs to direct Memo Studio
+  output URLs.
 - feat(agent-workspace): add canonical agent run deep links.
   Build 2026.05.17.03 adds private `/agents/[runId]` workspaces on
   `praxis.tacitus.me`, redirects `/app/agents/[runId]` into the canonical URL,

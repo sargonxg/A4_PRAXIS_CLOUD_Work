@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.17.04',
+    version: '6.4.1',
+    date: '2026-05-17',
+    title: 'Agent workspaces become operational',
+    summary: 'Focused /agents/[runId] workspaces now behave like live agent sessions: they refresh active runs, expose retry/cancel/approval controls, and send completed outputs straight back into the PRAXIS app.',
+    category: 'runtime',
+    items: [
+      'Focused agent workspaces poll active queued, running, and waiting-approval runs so run status and receipts update without leaving the canonical URL.',
+      'Added owner-only retry, cancel, and approval decision routes, then wired them into the focused run panel inside the existing capsule Agents lane.',
+      'Retry creates a child run for failed, cancelled, or expired sessions and re-dispatches queued/running runs through the existing Cloud Tasks boundary.',
+      'Research Memo and Output Formatter workers now return Memo Studio output links instead of generic app links.',
+    ],
+  },
+  {
     buildNumber: '2026.05.17.03',
     version: '6.4.1',
     date: '2026-05-17',

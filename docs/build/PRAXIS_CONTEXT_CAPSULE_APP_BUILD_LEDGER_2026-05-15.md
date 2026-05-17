@@ -335,17 +335,27 @@ Shipped in this wave:
   `/api/agents/runs/[runId]`, selects the run capsule, reads recent run events
   from `/api/agents/runs/[runId]/stream`, and shows the run, receipts, counts,
   and output link in the existing capsule Agents lane.
+- Focused run mode now polls non-terminal runs and exposes owner-only retry,
+  cancel, approve, and reject controls in the same run panel.
+- Added `POST /api/agents/runs/[runId]/retry`,
+  `POST /api/agents/runs/[runId]/cancel`, and
+  `POST /api/agents/runs/[runId]/approvals/[approvalId]` for the cockpit action
+  layer. Rejected approvals fail waiting runs; approved waiting runs resume
+  through the existing dispatch boundary.
+- Research Memo and Output Formatter completions now store direct Memo Studio
+  output URLs instead of a generic `/app` link.
 - Cockpit run creation now navigates to `/agents/{runId}` after queueing and
   dispatching.
 - `src/proxy.ts` protects `/agents/[runId]`, preserves login redirects, keeps
   onboarding enforcement aligned with `/app`, and redirects
   `/app/agents/[runId]` to the canonical route.
 - `scripts/audit-agent-process-contract.ts` now guards the route, middleware
-  matcher, and focused-run workbench wiring.
+  matcher, focused-run workbench wiring, and action controls.
 
 Validation:
 
 - `npx vitest run tests/unit/lib/auth/post-login-redirect.test.ts tests/unit/agent-workspace-route.test.ts`
+- `npx vitest run tests/unit/lib/agent-runtime tests/unit/agent-workspace-route.test.ts tests/unit/lib/auth/post-login-redirect.test.ts tests/unit/lib/product/policy-agents.test.ts`
 - `npx tsc --noEmit`
 - `npm run audit:agent-process-contract`
 - `npm run build`

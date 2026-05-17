@@ -1,21 +1,27 @@
 # PRAXIS — STATUS
 
-## 2026-05-17 — Agent Workspace Deep Links
+## 2026-05-17 — Operational Agent Workspaces
 
 Current product checkpoint:
 
-- Central app metadata is now build `2026.05.17.03`.
+- Central app metadata is now build `2026.05.17.04`.
 - `/agents/[runId]` is now the canonical private workspace URL for a durable
   capsule-bound agent run on `praxis.tacitus.me`.
 - Creating an agent run from the shared cockpit now queues/dispatches the run
   and opens `/agents/{runId}`, where the same PRAXIS workbench focuses the
   selected run, active capsule, run events, tool-call/approval counts, and
   output link.
+- Focused run workspaces now poll active runs, can retry failed/cancelled/
+  expired runs, can cancel queued/running/waiting-approval runs, and can approve
+  or reject pending approvals without introducing a second agent dashboard.
+- Research Memo and Output Formatter worker completions now return direct Memo
+  Studio links (`/app?panel=memo&memoId=...`) instead of a generic app target.
 - `/app/agents/[runId]` redirects to `/agents/[runId]` for compatibility, and
   login/onboarding middleware preserves the deep-link target without creating a
   second app domain or top-level navigation item.
 - `npm run audit:agent-process-contract` now guards the route, middleware
-  matcher, and focused-run workbench wiring.
+  matcher, focused-run workbench wiring, and retry/cancel/approval action
+  surface.
 
 ## 2026-05-17 — Capsule Agent Lane
 

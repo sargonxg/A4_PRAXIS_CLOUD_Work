@@ -51,7 +51,8 @@ requireIncludes('src/app/api/agents/runs/[runId]/retry/route.ts', [
 
 requireIncludes('src/app/api/agents/runs/[runId]/approvals/[approvalId]/route.ts', [
   'decideAgentApproval',
-  "decision !== 'approved'",
+  "body.decision === 'approved'",
+  "body.decision === 'rejected'",
   'enqueueAgentRunDispatch',
 ]);
 

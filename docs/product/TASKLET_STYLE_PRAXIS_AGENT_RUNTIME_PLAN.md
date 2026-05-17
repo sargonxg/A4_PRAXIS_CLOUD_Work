@@ -493,6 +493,8 @@ Canonical route behavior:
   `/agents/[runId]`.
 - The route must reuse the shared PRAXIS cockpit and focus the selected run,
   not introduce a second agent dashboard or separate app domain.
+- The focused workspace should refresh active run state and expose retry,
+  cancel, approve, and reject controls from the same capsule Agents lane.
 - `/app/agents/[runId]` is compatibility-only and redirects to the canonical
   route.
 
