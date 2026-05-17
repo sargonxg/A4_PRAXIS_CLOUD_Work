@@ -123,6 +123,41 @@ describe('agent runtime no-op worker', () => {
         expect(input.blocks.some((block) => block.id === 'gap-receipt')).toBe(true);
         return { memo: { id: 'memo-1' } };
       },
+      buildEvidencePack: async () => ({
+        packId: 'evidence-pack-1',
+        ownerUid: payload.ownerUid,
+        capsuleId: payload.capsuleId,
+        objective: 'No-op run',
+        builtAt: '2026-05-15T12:00:00.000Z',
+        activeCapsule: {
+          capsuleId: payload.capsuleId,
+          version: 1,
+          coreRefs: {
+            sourceCoreIds: ['source-1'],
+            documentCoreIds: [],
+            situationCoreId: null,
+            graphCoreId: null,
+            timeCoreId: null,
+          },
+        },
+        knowledgeDocuments: [],
+        sourceReceiptIds: ['source-1'],
+        sourcedParagraphs: [],
+        documentDigests: [],
+        outputHistory: [],
+        memories: [],
+        openGaps: ['Graph Core is thin; graph mutation must stay approval-gated.'],
+        receipts: {
+          sourcesUsed: 1,
+          paragraphsUsed: 0,
+          unsupportedGaps: ['Graph Core is thin; graph mutation must stay approval-gated.'],
+          outputHistoryCount: 0,
+          memoryCount: 0,
+        },
+      } as never),
+      appendToolCall: async (toolCall) => toolCall,
+      appendApproval: async (approval) => approval,
+      saveOutputCapsule: async () => ({ id: 'output-1' }),
     });
 
     expect(transitions).toEqual(['running', 'succeeded']);
