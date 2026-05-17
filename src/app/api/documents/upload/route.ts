@@ -383,9 +383,10 @@ export const POST = withAuth(async (request, user) => {
         documentIds: [stored.id],
       });
     }
-    const repository = requestedRepositoryId
+    const requestedRepository = requestedRepositoryId
       ? await getKnowledgeRepository(user.uid, requestedRepositoryId).catch(() => null)
-      : await ensureDefaultKnowledgeRepository(user.uid);
+      : null;
+    const repository = requestedRepository ?? await ensureDefaultKnowledgeRepository(user.uid);
     const knowledgeDocument = await upsertKnowledgeDocument(user.uid, {
       documentId: stored.id,
       situationId,

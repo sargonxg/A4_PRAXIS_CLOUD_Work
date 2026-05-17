@@ -80,6 +80,32 @@ describe('knowledge library service', () => {
     expect(capsule?.coreRefs.documentCoreIds).toContain('doc-1');
   });
 
+  it('replaces capsule bindings and removes stale capsule document refs', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: 'cap-1', label: 'Old policy capsule' }, deps(db));
+    await createCapsule('u1', { capsuleId: 'cap-2', label: 'New policy capsule' }, deps(db));
+    await upsertKnowledgeDocument('u1', {
+      documentId: 'doc-1',
+      situationId: 'sit-1',
+      repositoryIds: ['default'],
+      capsuleIds: ['cap-1'],
+    }, deps(db));
+    await attachKnowledgeDocumentToCapsules('u1', 'doc-1', {
+      capsuleIds: ['cap-1'],
+    }, deps(db));
+
+    const updated = await attachKnowledgeDocumentToCapsules('u1', 'doc-1', {
+      action: 'replace',
+      capsuleIds: ['cap-2'],
+    }, deps(db));
+    const oldCapsule = await getCapsule('u1', 'cap-1', deps(db));
+    const newCapsule = await getCapsule('u1', 'cap-2', deps(db));
+
+    expect(updated?.capsuleIds).toEqual(['cap-2']);
+    expect(oldCapsule?.coreRefs.documentCoreIds).not.toContain('doc-1');
+    expect(newCapsule?.coreRefs.documentCoreIds).toContain('doc-1');
+  });
+
   it('persists structured digests and archives repositories without deleting documents', async () => {
     const db = new FakeFirestore();
     await ensureDefaultKnowledgeRepository('u1', deps(db));

@@ -329,11 +329,20 @@ export async function attachKnowledgeDocumentToCapsules(
     if (capsule && !capsule.archivedAt) validCapsuleIds.push(capsule.capsuleId);
   }
   const action = input.action ?? 'attach';
+  const validCapsuleIdSet = new Set(validCapsuleIds);
+  const capsulesToDetach = action === 'replace'
+    ? current.capsuleIds.filter((id) => !validCapsuleIdSet.has(id))
+    : action === 'detach'
+      ? current.capsuleIds.filter((id) => validCapsuleIdSet.has(id))
+      : [];
   const nextCapsuleIds = action === 'replace'
     ? uniqueStrings(validCapsuleIds)
     : action === 'detach'
-      ? current.capsuleIds.filter((id) => !new Set(validCapsuleIds).has(id))
+      ? current.capsuleIds.filter((id) => !validCapsuleIdSet.has(id))
       : uniqueStrings([...current.capsuleIds, ...validCapsuleIds]);
+  for (const capsuleId of capsulesToDetach) {
+    await detachCapsuleRefs(uid, capsuleId, { documentIds: [current.documentId] }, deps);
+  }
   for (const capsuleId of validCapsuleIds) {
     if (action === 'detach') {
       await detachCapsuleRefs(uid, capsuleId, { documentIds: [current.documentId] }, deps);
