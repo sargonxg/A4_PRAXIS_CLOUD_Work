@@ -26,6 +26,7 @@ export default function SettingsPage() {
   const plan = user?.subscription ?? 'free';
   const nextReset = nextWeeklyResetLabel();
   const [weeklyUsage, setWeeklyUsage] = useState<{ used: number; remaining: number } | null>(null);
+  const [billingStatus, setBillingStatus] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/usage/weekly-free', { credentials: 'include' })
@@ -101,16 +102,32 @@ export default function SettingsPage() {
         ) : null}
 
         {activeTab === 'billing' ? (
-          <SettingsPanel
-            title="Billing and subscription"
-            rows={[
-              ['Current plan', `${plan} plan`],
-              ['Monthly access', plan === 'free' ? 'Upgrade required for full app access' : 'Active'],
-              ['Subscription management', 'Checkout and customer portal connect through the billing provider when configured'],
-            ]}
-            actionHref="/pricing"
-            actionLabel={plan === 'free' ? 'Buy access' : 'Manage plan'}
-          />
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-semibold text-navy-950">Billing and subscription</h2>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => void startCheckout('analyst')} className="rounded-md bg-navy-950 px-3 py-2 text-sm font-semibold text-white hover:bg-navy-800">
+                  Buy Practitioner
+                </button>
+                <button type="button" onClick={() => void openBillingPortal()} className="rounded-md border border-navy-200 bg-white px-3 py-2 text-sm font-semibold text-navy-700 hover:bg-navy-50">
+                  Manage plan
+                </button>
+              </div>
+            </div>
+            <div className="mt-5 divide-y divide-navy-100 rounded-lg border border-navy-100">
+              {[
+                ['Current plan', `${plan} plan`],
+                ['Monthly access', plan === 'free' ? 'Upgrade required for full app access' : 'Active'],
+                ['Subscription management', 'Checkout and customer portal use Polar when configured'],
+                ['Billing status', billingStatus ?? 'Ready'],
+              ].map(([label, value]) => (
+                <div key={label} className="grid gap-1 px-4 py-3 sm:grid-cols-[220px_minmax(0,1fr)]">
+                  <span className="text-sm font-semibold text-navy-500">{label}</span>
+                  <span className="min-w-0 text-sm text-navy-950">{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         ) : null}
 
         {activeTab === 'usage' ? (
@@ -154,6 +171,36 @@ export default function SettingsPage() {
       </section>
     </div>
   );
+
+  async function startCheckout(planId: 'analyst' | 'team') {
+    setBillingStatus('Opening checkout...');
+    const response = await fetch('/api/billing/checkout', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ plan: planId }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (response.ok && typeof payload.url === 'string') {
+      window.location.href = payload.url;
+      return;
+    }
+    setBillingStatus(payload?.error ?? 'Checkout is unavailable. Use pricing or contact TACITUS.');
+  }
+
+  async function openBillingPortal() {
+    setBillingStatus('Opening billing portal...');
+    const response = await fetch('/api/billing/portal', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (response.ok && typeof payload.url === 'string') {
+      window.location.href = payload.url;
+      return;
+    }
+    setBillingStatus(payload?.error ?? 'Billing portal is unavailable. Use pricing or contact TACITUS.');
+  }
 }
 
 function SettingsPanel({

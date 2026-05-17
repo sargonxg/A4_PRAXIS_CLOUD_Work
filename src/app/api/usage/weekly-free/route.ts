@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
+import { weeklyFreeUsageSummary } from '@/lib/conversations/entitlements';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
@@ -16,11 +17,10 @@ export const GET = withAuth(async (_request, user) => {
     .collection('usage').doc(`weekly-free-${weekKey}`)
     .get();
   const used = Number(snap.data()?.conversationCount ?? 0);
+  const summary = weeklyFreeUsageSummary(used, 1);
 
   return NextResponse.json({
-    allowance: 1,
-    used,
-    remaining: Math.max(0, 1 - used),
+    ...summary,
     weekKey,
     nextResetAt: nextWeeklyReset().toISOString(),
     persisted: true,

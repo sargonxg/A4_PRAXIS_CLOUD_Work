@@ -8,10 +8,11 @@ test.describe('Ask PRAXIS capsule runtime smoke', () => {
   test.setTimeout(120_000);
 
   test('loads Ask with capsule context and records a receipt-backed answer', async ({ page }) => {
-    await page.route('**/api/ai/ask-praxis', async (route) => {
+    await page.route('**/api/conversations/*/turns', async (route) => {
       const body = route.request().postDataJSON() as Record<string, unknown>;
       expect(body).toEqual(expect.objectContaining({ aiSettings: expect.any(Object) }));
       expect(body.capsuleId || body.activeContextStack || body.contextPackageId).toBeTruthy();
+      expect(body.appliedCapsules).toBeDefined();
       await route.fulfill({
         status: 200,
         contentType: 'text/plain; charset=utf-8',

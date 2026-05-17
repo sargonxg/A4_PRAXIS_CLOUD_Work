@@ -36,6 +36,7 @@ import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
 import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 import { inferResponseActionKinds } from '@/lib/assistant/response-action-kinds';
 import { listAskThreadTurns, persistAskThreadTurn, type AskThreadTurnRecord } from '@/lib/firebase/ask-thread-service';
+import { normalizeAppliedCapsules, type AppliedConversationCapsule } from '@/lib/conversations/entitlements';
 import { isAskThreadSqlConfigured, listAskThreadTurnsSql, persistAskThreadTurnSql } from '@/lib/agent-runtime/ask-thread-postgres';
 import {
   askIntentDirective,
@@ -112,6 +113,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
       currentPath: z.string().optional(),
       contextPackageId: z.string().optional(),
       capsuleId: z.string().optional(),
+      appliedCapsules: z.unknown().optional(),
       activeContextStack: z.unknown().optional(),
       threadId: z.string().optional(),
       aiSettings: aiSettingsSchema,
@@ -119,7 +121,8 @@ export const POST = withCalibration('chat', 'ai_chat', {
 
     const validation = validateAiRequest(body, requestSchema);
     if (!validation.success) return validation.response;
-    const { messages, conflictContext, situation, currentToolId, currentPath, contextPackageId, capsuleId, activeContextStack, threadId, aiSettings } = validation.data;
+    const { messages, conflictContext, situation, currentToolId, currentPath, contextPackageId, capsuleId, appliedCapsules, activeContextStack, threadId, aiSettings } = validation.data;
+    const normalizedAppliedCapsules = normalizeAppliedCapsules(appliedCapsules);
     const requestSituationId = (situation as Situation | undefined)?.id;
     const prompt = lastUserPrompt(messages);
     const askIntent = classifyAskIntent(prompt);
@@ -410,6 +413,7 @@ You have access to the user's active situation data. When answering questions:
       isDemo: _user.isDemo === true,
     });
     const tools = runAskTools({ ...baseTools, ...askPraxisExt }, toolInvocations);
+    const toolsConsidered = Object.keys(tools).sort();
     const depthDirective = aiSettings?.analysisDepth === 'deep'
       ? '\n\nANALYSIS DEPTH: Provide a more detailed answer with explicit assumptions, alternative interpretations, source/corpus gaps, and practical next actions. Keep it concise enough for an analyst to use.'
       : '\n\nANALYSIS DEPTH: Provide a concise operational answer with the most relevant assumptions and next action.';
@@ -526,6 +530,8 @@ You have access to the user's active situation data. When answering questions:
             runtime: runtimeReceipt,
             frameworkSteps,
             toolInvocations,
+            toolsConsidered,
+            appliedCapsules: normalizedAppliedCapsules,
           }).catch((err) => console.warn('[chat] persistConversationTurn failed:', err));
           if (effectiveSituationId) {
             await persistAskReadLedger({
@@ -875,6 +881,8 @@ async function persistConversationTurn(input: {
   runtime: AskRuntimeReceipt;
   frameworkSteps: AskFrameworkStepReceipt[];
   toolInvocations: AskToolInvocationReceipt[];
+  toolsConsidered: string[];
+  appliedCapsules: AppliedConversationCapsule[];
 }) {
   const cleanConversationId = cleanDocId(input.conversationId, 'default');
   if (!cleanConversationId || cleanConversationId === 'default') return;
@@ -897,6 +905,7 @@ async function persistConversationTurn(input: {
     tx.set(conversationRef, {
       conversationId: cleanConversationId,
       capsuleId: input.capsuleId,
+      appliedCapsules: input.appliedCapsules,
       situationId: input.situationId,
       title: input.prompt.slice(0, 96) || 'PRAXIS conversation',
       status: 'active',
@@ -917,11 +926,17 @@ async function persistConversationTurn(input: {
       situationId: input.situationId,
       runtime: input.runtime,
       routingReceipt: {
-        intent: input.runtime.intent ?? 'normal_answer',
+        intent: input.runtime.intent ?? 'direct_answer',
+        selectedSkill: input.runtime.intent ?? 'direct_answer',
         provider: input.runtime.provider ?? null,
         model: input.runtime.model ?? null,
+        capsulesApplied: input.appliedCapsules.map((capsule) => capsule.id),
+        contextPackageId: input.runtime.contextPackageId ?? null,
+        toolsConsidered: input.toolsConsidered,
         toolsUsed: input.toolInvocations.map((tool) => tool.toolId),
         frameworkSteps: input.frameworkSteps.map((step) => step.frameworkId),
+        outputDestination: 'conversation',
+        approvalStatus: input.toolInvocations.some((tool) => tool.status === 'error') ? 'needs_review' : 'not_required',
       },
       frameworkSteps: input.frameworkSteps,
       toolInvocations: input.toolInvocations,

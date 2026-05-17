@@ -179,13 +179,6 @@ const actionIcons = [
   { label: 'Improve prompt', icon: WandSparkles, kind: 'improve' },
 ] as const;
 
-const policyNextActions = [
-  { label: 'Ask', prompt: 'Ask the active capsule for a concise situation read.' },
-  { label: 'Source-check', prompt: 'Review the active capsule for weak claims, missing citations, and stale assumptions.' },
-  { label: 'Draft memo', prompt: 'Draft a short options memo from the active capsule with findings, caveats, and next actions.' },
-  { label: 'Handover', prompt: 'Prepare a handover note from this capsule for another policy team member.' },
-] as const;
-
 const capsuleActionPrompts = [
   { label: 'Find missing sources', prompt: 'Find missing sources for the active capsule. Return a source gap list, search plan, and priority sources to add.' },
   { label: 'Check stale claims', prompt: 'Check the active capsule for stale claims, outdated dates, old assumptions, and decision deadlines.' },
@@ -287,7 +280,6 @@ export function TaskletPraxisWorkbench({
   const [capsuleDetailTab, setCapsuleDetailTab] = useState<CapsuleDetailTab>('build');
   const [builderOpen, setBuilderOpen] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
-  const [agentDrawerOpen, setAgentDrawerOpen] = useState(false);
   const [repositoryDocuments, setRepositoryDocuments] = useState<RepositoryDocument[]>([]);
   const [repositoryLoading, setRepositoryLoading] = useState(false);
   const [agentRuns, setAgentRuns] = useState<AgentRunSummary[]>([]);
@@ -366,6 +358,12 @@ export function TaskletPraxisWorkbench({
   }, [isAuthenticated]);
 
   const recentLabel = isAuthenticated ? 'Recent' : 'Examples';
+
+  useEffect(() => {
+    if (!isAuthenticated || !conversationThreadId) return;
+    void ensureConversationRecord(conversationThreadId, currentCapsuleId, activeCapsules);
+  }, [activeCapsules, conversationThreadId, currentCapsuleId, isAuthenticated]);
+
   function sendPublicToLogin(nextPrompt: string, agent: PolicyAgentDefinition = selectedAgent) {
     window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, nextPrompt);
     window.localStorage.setItem(PENDING_POLICY_AGENT_ID_KEY, agent.id);
@@ -425,16 +423,15 @@ export function TaskletPraxisWorkbench({
     }
   }
 
-  function buildChatPrompt(agent: PolicyAgentDefinition, cleanPrompt: string, threadId: string): string {
+  function buildChatPrompt(cleanPrompt: string, threadId: string): string {
     const capsuleStack = activeCapsules
       .map((capsule) => `${capsule.role.toUpperCase()}: ${capsule.label} (${capsule.id})`)
       .join('\n');
     return [
       cleanPrompt,
       '',
-      `Selected policy tool: ${agent.label}`,
-      `Tool intent: ${policyAgentRunIntent(agent.id).replaceAll('_', ' ')}`,
-      `Tool capsules: ${availableToolIds.join(', ')}`,
+      'PRAXIS routing: choose the simplest safe answer path first. If the user needs source checking, memo drafting, handover, red-team review, capsule building, or deeper tools, route internally and record the decision.',
+      `Available tool capsules: ${availableToolIds.join(', ')}`,
       `Active ContextCapsule stack:\n${capsuleStack}`,
       `Conversation thread: ${threadId}`,
       '',
@@ -454,14 +451,15 @@ export function TaskletPraxisWorkbench({
     setIsStreaming(true);
     setStatus('PRAXIS is reading the active capsule and conversation memory...');
     const nextThreadId = ensureConversationThread();
+    await ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsules);
     const userMessage: ChatMessage = { role: 'user', text: cleanPrompt };
-    const enrichedPrompt = buildChatPrompt(agent, cleanPrompt, nextThreadId);
+    const enrichedPrompt = buildChatPrompt(cleanPrompt, nextThreadId);
     setChatMessages((current) => [...current, userMessage, { role: 'assistant', text: '' }]);
 
     try {
       const outputCapsule = activeCapsules.find((capsule) => capsule.role === 'output');
       const situationCapsule = activeCapsules.find((capsule) => capsule.role === 'situation') ?? activeCapsules[0];
-      const response = await fetch('/api/ai/ask-praxis', {
+      const response = await fetch(`/api/conversations/${encodeURIComponent(nextThreadId)}/turns`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
@@ -471,17 +469,20 @@ export function TaskletPraxisWorkbench({
             content: message.text,
           })),
           capsuleId: currentCapsuleId,
-          threadId: nextThreadId,
-          currentToolId: agent.id,
-          currentPath: '/app',
-          forceRun: true,
+          appliedCapsules: activeCapsules.map((capsule) => ({
+            id: capsule.id,
+            label: capsule.label,
+            role: capsule.role,
+          })),
+          currentToolId: 'ask-praxis',
+          currentPath: `/app/conversations/${nextThreadId}`,
           activeContextStack: {
             stackId: 'default',
             capsuleId: currentCapsuleId,
             situationId: situationCapsule?.id ?? currentCapsuleId,
             sourceIds: [],
             documentIds: [],
-            outputGoal: outputCapsule?.label ?? agent.label,
+            outputGoal: outputCapsule?.label ?? 'Routed PRAXIS answer',
             evidenceGaps: [],
             canvasLayout: {},
             schemaVersion: 1,
@@ -968,7 +969,7 @@ export function TaskletPraxisWorkbench({
     }
     if (panel === 'memo') setPrompt('Draft a memo from the active capsule.');
     if (panel === 'canvas') setInspectorOpen(true);
-    if (panel === 'advanced' || panel === 'ask') setAgentDrawerOpen(true);
+    if (panel === 'advanced' || panel === 'ask') setStatus('Advanced routing details appear in saved conversation receipts after a PRAXIS turn runs.');
     if (panel === 'account') setStatus('Account and runtime settings now live inside the PRAXIS cockpit.');
   }, [isAuthenticated, refreshRepository]);
 
@@ -1217,10 +1218,10 @@ export function TaskletPraxisWorkbench({
   }
 
   function removeCapsule(id: string) {
-    setActiveCapsules((current) => current.length <= 1 ? current : current.filter((capsule) => capsule.id !== id));
+    setActiveCapsules((current) => current.filter((capsule) => capsule.id !== id));
     if (currentCapsuleId === id) {
       const next = activeCapsules.find((capsule) => capsule.id !== id);
-      if (next) setCurrentCapsuleId(next.id);
+      setCurrentCapsuleId(next?.id ?? 'default');
     }
   }
 
@@ -1284,10 +1285,6 @@ export function TaskletPraxisWorkbench({
             if (requireAuthForAction('Open the capsule repository and attach sources.')) return;
             setRepositoryOpen(true);
             void refreshRepository();
-          }} />
-          <SidebarButton icon={Clipboard} label="Agent actions" onClick={() => {
-            if (requireAuthForAction('Run capsule-aware PRAXIS policy actions.')) return;
-            setAgentDrawerOpen(true);
           }} />
           <div className="mt-8">
             <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">{recentLabel} <ChevronDown className="h-3 w-3" /></p>
@@ -1379,58 +1376,6 @@ export function TaskletPraxisWorkbench({
               {isAuthenticated ? (user?.subscription || 'Free plan') : 'Free plan'}
               <span className="text-slate-300">·</span>
               <Link href={isAuthenticated ? '/pricing' : '/login?mode=signup'} className="text-sage">Upgrade</Link>
-            </div>
-
-            <div className="mt-5 flex w-full max-w-5xl flex-wrap items-center justify-center gap-2" data-testid="policy-team-next-actions">
-              {policyNextActions.map((action) => (
-                <button
-                  key={action.label}
-                  type="button"
-                  onClick={() => {
-                    setPrompt(action.prompt);
-                    if (!isAuthenticated) {
-                      sendPublicToLogin(action.prompt);
-                      return;
-                    }
-                    if (action.label !== 'Ask') void sendToPraxis(selectedAgent, action.prompt);
-                  }}
-                  className="od-praxis-control rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition"
-                >
-                  {action.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-3 flex w-full max-w-5xl flex-wrap items-center justify-center gap-2" data-testid="capsule-workspace-actions">
-              <button type="button" onClick={() => {
-                if (requireAuthForAction('Build a new PRAXIS ContextCapsule.')) return;
-                setBuilderOpen(true);
-              }} className="od-praxis-control inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700">
-                <Plus className="h-4 w-4" />
-                Build capsule
-              </button>
-              <button type="button" onClick={() => {
-                if (requireAuthForAction('Open the capsule repository and attach sources.')) return;
-                setRepositoryOpen(true);
-                void refreshRepository();
-              }} className="od-praxis-control inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700">
-                <Library className="h-4 w-4" />
-                Repository
-              </button>
-              <button type="button" onClick={() => {
-                if (requireAuthForAction('Inspect and improve the active PRAXIS capsule.')) return;
-                setInspectorOpen(true);
-              }} className="od-praxis-control inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700">
-                <BookOpen className="h-4 w-4" />
-                Inspect capsule
-              </button>
-              <button type="button" onClick={() => {
-                if (requireAuthForAction('Run capsule-aware PRAXIS policy actions.')) return;
-                setAgentDrawerOpen(true);
-              }} className="od-praxis-control inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700">
-                <Sparkles className="h-4 w-4" />
-                Research actions
-              </button>
             </div>
 
             <CapsuleMap
@@ -1808,14 +1753,11 @@ export function TaskletPraxisWorkbench({
                     focusedRunEvents={focusedRunEvents}
                     focusedRunLoading={focusedRunLoading}
                     focusedRunAction={focusedRunAction}
-                    selectedAgentId={selectedAgentId}
                     onUpload={() => fileInputRef.current?.click()}
                     onDetailTab={setCapsuleDetailTab}
                     onOpenRepository={() => { setRepositoryOpen(true); void refreshRepository(); }}
                     onImprove={() => improveCapsule()}
                     onRefresh={() => void refreshCapsules(currentCapsuleId)}
-                    onSelectAgent={setSelectedAgentId}
-                    onRunAgent={(agent) => void createAgentRun(agent)}
                     onRetryFocusedRun={() => void postFocusedRunAction('retry')}
                     onCancelFocusedRun={() => void postFocusedRunAction('cancel')}
                     onDecideApproval={(approvalId, decision) => void postFocusedRunAction(`approvals/${encodeURIComponent(approvalId)}`, { decision })}
@@ -1919,22 +1861,6 @@ export function TaskletPraxisWorkbench({
             setInspectorOpen(false);
             setRepositoryOpen(true);
             void refreshRepository();
-          }}
-        />
-      ) : null}
-      {agentDrawerOpen ? (
-        <AgentActionDrawer
-          selectedAgentId={selectedAgentId}
-          onClose={() => setAgentDrawerOpen(false)}
-          onSelectAgent={setSelectedAgentId}
-          onRunAgent={(agent) => {
-            setAgentDrawerOpen(false);
-            void createAgentRun(agent);
-          }}
-          onRun={(promptText) => {
-            setAgentDrawerOpen(false);
-            setPrompt(promptText);
-            void sendToPraxis(selectedAgent, promptText);
           }}
         />
       ) : null}
@@ -2408,14 +2334,11 @@ function CapsuleDetailPanel({
   focusedRunEvents,
   focusedRunLoading,
   focusedRunAction,
-  selectedAgentId,
   onUpload,
   onDetailTab,
   onOpenRepository,
   onImprove,
   onRefresh,
-  onSelectAgent,
-  onRunAgent,
   onRetryFocusedRun,
   onCancelFocusedRun,
   onDecideApproval,
@@ -2434,14 +2357,11 @@ function CapsuleDetailPanel({
   focusedRunEvents: AgentRunEventSummary[];
   focusedRunLoading: boolean;
   focusedRunAction: string | null;
-  selectedAgentId: string;
   onUpload: () => void;
   onDetailTab: (tab: CapsuleDetailTab) => void;
   onOpenRepository: () => void;
   onImprove: () => void;
   onRefresh: () => void;
-  onSelectAgent: (agentId: string) => void;
-  onRunAgent: (agent: PolicyAgentDefinition) => void;
   onRetryFocusedRun: () => void;
   onCancelFocusedRun: () => void;
   onDecideApproval: (approvalId: string, decision: 'approved' | 'rejected') => void;
@@ -2589,21 +2509,10 @@ function CapsuleDetailPanel({
                 <Sparkles className="h-4 w-4" />
               </span>
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-slate-800">Capsule agents</p>
-                <p className="mt-1 text-[11px] leading-5 text-slate-500">Agents inherit this capsule, selected cores, repository sources, approval posture, and output target.</p>
+                <p className="text-xs font-semibold text-slate-800">Conversation process</p>
+                <p className="mt-1 text-[11px] leading-5 text-slate-500">PRAXIS chooses internal skills from the main bar and saves routing, tool, approval, and output receipts here.</p>
               </div>
             </div>
-          </div>
-          <div className="space-y-2">
-            {PRAXIS_POLICY_AGENTS.map((agent) => (
-              <AgentRegistryCard
-                key={agent.id}
-                agent={agent}
-                selected={selectedAgentId === agent.id}
-                onSelect={() => onSelectAgent(agent.id)}
-                onRun={() => onRunAgent(agent)}
-              />
-            ))}
           </div>
           <div className="rounded-md border border-slate-200 p-3">
             <div className="flex items-center justify-between gap-2">
@@ -2625,7 +2534,7 @@ function CapsuleDetailPanel({
                   </div>
                 </article>
               ))}
-              {!agentRunsLoading && agentRuns.length === 0 ? <p className="text-xs text-slate-500">No durable agent runs yet. Run Research Memo or Output Formatter to create one.</p> : null}
+              {!agentRunsLoading && agentRuns.length === 0 ? <p className="text-xs text-slate-500">No process receipts yet. Submit from the main bar to let PRAXIS route the work.</p> : null}
             </div>
           </div>
         </div>

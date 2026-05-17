@@ -19,7 +19,7 @@ interface WelcomeModalProps {
 const REAL_FEATURES = [
   { icon: MessageSquare, label: 'Big prompt', description: 'Describe the policy task from the active ContextCapsule.' },
   { icon: Users, label: 'Capsule cores', description: 'Keep user, situation, sources, tools, and output visible.' },
-  { icon: Wrench, label: 'Policy agents', description: 'Run memo, review, monitoring, or handover work from one surface.' },
+  { icon: Wrench, label: 'AI routing', description: 'PRAXIS chooses memo, review, monitoring, or handover skills from one prompt.' },
   { icon: Search, label: 'Source receipts', description: 'Keep evidence and gaps attached to the output.' },
   { icon: FileText, label: 'Memo Studio', description: 'Open the draft where the run finishes.' },
   { icon: GitBranch, label: 'Canvas', description: 'Inspect actors, claims, and graph proposals when needed.' },
@@ -27,7 +27,7 @@ const REAL_FEATURES = [
 
 const WORKFLOW_STEPS = [
   { title: 'Choose capsule', description: 'Start with the active context: user, situation, sources, and output.' },
-  { title: 'Run agent', description: 'Use the big prompt or a suggested policy agent card.' },
+  { title: 'Send prompt', description: 'Use one button; PRAXIS routes simple answers and deeper agentic work.' },
   { title: 'Open output', description: 'Review the result in Memo Studio, Canvas, Library, or handover.' },
 ] as const;
 
@@ -63,7 +63,7 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
             </p>
 
             <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-navy-600">
-              PRAXIS works like a simple agent dashboard: choose a ContextCapsule, describe the policy task, run a policy agent, then review the output.
+              PRAXIS works like a simple agent cockpit: choose a ContextCapsule, describe the policy task, send once, then review the output and receipt.
             </p>
             <p className="mt-3 text-xs font-medium text-navy-500">
               Advanced tools stay behind approval gates; the main workspace stays simple.
