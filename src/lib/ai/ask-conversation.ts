@@ -1,4 +1,5 @@
 import type { AskThreadTurnRecord } from '@/lib/firebase/ask-thread-service';
+import type { AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
 
 export type AskConversationMessage = {
   role: 'user' | 'assistant' | 'system' | 'tool';
@@ -20,6 +21,7 @@ export type AskTimelineMessage = {
     frameworkSteps: unknown[];
     toolInvocations: unknown[];
   };
+  answerEnvelope?: AskAnswerEnvelope;
 };
 
 export type AskContextReceiptStageName =
@@ -179,6 +181,7 @@ export function buildAskTimelineMessages(turns: AskThreadTurnRecord[]): AskTimel
         frameworkSteps: turn.frameworkSteps,
         toolInvocations: turn.toolInvocations,
       },
+      answerEnvelope: isRecord(turn.runtime?.answerEnvelope) ? turn.runtime.answerEnvelope as AskAnswerEnvelope : undefined,
     },
   ]);
 }

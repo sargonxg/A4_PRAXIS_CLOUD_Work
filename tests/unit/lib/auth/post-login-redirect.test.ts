@@ -10,6 +10,10 @@ describe('post-login redirect', () => {
     expect(resolvePostLoginRedirect(new URLSearchParams('redirect=/app/assistant'), false, true)).toBe('/app');
   });
 
+  it('preserves the system health settings return target', () => {
+    expect(resolvePostLoginRedirect(new URLSearchParams('redirect=/app/settings?tab=system'), false, true)).toBe('/app/settings?tab=system');
+  });
+
   it('preserves safe explicit agent workspace redirects', () => {
     expect(resolvePostLoginRedirect(new URLSearchParams('redirect=/agents/run_123'), false, true)).toBe('/agents/run_123');
   });

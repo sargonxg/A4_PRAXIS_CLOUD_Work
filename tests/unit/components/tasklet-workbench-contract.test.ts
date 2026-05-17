@@ -18,4 +18,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('data-testid="capsule-workspace-actions"');
     expect(source).not.toContain('Research actions');
   });
+
+  it('renders the runtime health semaphore near the home control strip', () => {
+    expect(source).toContain('RuntimeHealthSemaphore');
+    expect(source).toContain('data-testid="runtime-health-semaphore"');
+  });
 });

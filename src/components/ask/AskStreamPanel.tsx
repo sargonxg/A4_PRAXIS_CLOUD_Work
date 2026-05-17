@@ -38,6 +38,7 @@ import { buildContextHealthReport } from '@/lib/context/context-health';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
 import { ASK_ORCHESTRATION_OPTIONS, ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
 import type { ModelPreferenceValue } from '@/lib/ai/model-preferences';
+import type { AskAnswerEnvelope, SourcePreviewCard } from '@/lib/ai/ask-answer-envelope';
 import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
 import { buildAskTimelineMessages, type AskTimelineMessage } from '@/lib/ai/ask-conversation';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -89,6 +90,7 @@ type AskThreadTurn = {
       sourceDocumentCount?: number;
       activeGapCount?: number;
     };
+    answerEnvelope?: AskAnswerEnvelope;
   };
   createdAt: string;
 };
@@ -96,6 +98,7 @@ type AskThreadTurn = {
 type AskPanelMessage = AskTimelineMessage & {
   stages?: StreamStage[];
   streaming?: boolean;
+  answerEnvelope?: AskAnswerEnvelope;
 };
 
 type AskThreadHistory = {
@@ -159,6 +162,7 @@ export function AskStreamPanel({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyTurns, setHistoryTurns] = useState<AskThreadTurn[]>([]);
+  const [packSavingId, setPackSavingId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const timelineEndRef = useRef<HTMLDivElement>(null);
   const selectedRuntime = useMemo(() => getAskRuntimeOption(selectedModel), [selectedModel]);
@@ -191,7 +195,7 @@ export function AskStreamPanel({
       const turns = json.turns ?? [];
       setHistoryTurns(turns);
       if (!thinking) {
-        setTimelineMessages(buildAskTimelineMessages(turns.map(normalizeAskTurnForTimeline)));
+        setTimelineMessages(buildAskTimelineMessages(turns.map(normalizeAskTurnForTimeline)) as AskPanelMessage[]);
       }
     } catch (err) {
       console.warn('[AskStreamPanel] history load failed', err);
@@ -299,6 +303,15 @@ export function AskStreamPanel({
         const consumeDataStreamLine = (line: string) => {
           if (line.startsWith('0:')) {
             appendSynthesisToken(parseDataStreamChunk(`${line}\n`));
+          } else if (line.startsWith('2:')) {
+            try {
+              const payload = JSON.parse(line.slice(2)) as { type?: string; answerEnvelope?: AskAnswerEnvelope };
+              if (payload.type === 'answerEnvelope' && payload.answerEnvelope) {
+                updateTimelineMessage(setTimelineMessages, assistantId, { answerEnvelope: payload.answerEnvelope });
+              }
+            } catch {
+              /* ignore malformed custom data chunks */
+            }
           } else if (line.startsWith('3:')) {
             try {
               const message = JSON.parse(line.slice(2));
@@ -342,6 +355,37 @@ export function AskStreamPanel({
     },
     [thinking, capsuleId, threadId, contextPackageId, activeContextStack, activeSituation, selectedRuntime, loadHistory],
   );
+
+  const draftDocumentPack = useCallback(async (message: AskPanelMessage) => {
+    const pack = message.answerEnvelope?.documentPackCandidate;
+    if (!pack) return;
+    setPackSavingId(message.id);
+    try {
+      const res = await fetch('/api/memos/from-ask-pack', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          pack,
+          situationId: activeSituation?.id ?? capsuleId ?? 'ask-praxis',
+          askTurnId: message.turnId ?? message.id,
+        }),
+      });
+      if (res.ok) {
+        window.location.assign('/app/write');
+      } else {
+        updateTimelineMessage(setTimelineMessages, message.id, {
+          content: `${message.content}\n\n_Document pack could not be saved (${res.status})._`,
+        });
+      }
+    } catch {
+      updateTimelineMessage(setTimelineMessages, message.id, {
+        content: `${message.content}\n\n_Document pack could not be saved because the network request failed._`,
+      });
+    } finally {
+      setPackSavingId(null);
+    }
+  }, [activeSituation?.id, capsuleId]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -463,7 +507,11 @@ export function AskStreamPanel({
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
                 transition={reduceMotion ? { duration: 0 } : { ...SPRING, delay: idx * 0.05 }}
               >
-                <AskMessageBubble message={message} />
+                <AskMessageBubble
+                  message={message}
+                  onDraftPack={draftDocumentPack}
+                  packSaving={packSavingId === message.id}
+                />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -590,6 +638,7 @@ function normalizeAskTurnForTimeline(turn: AskThreadTurn) {
     frameworkSteps: turn.frameworkSteps ?? [],
     toolInvocations: turn.toolInvocations ?? [],
     createdAt: turn.createdAt,
+    answerEnvelope: isRecord(turn.runtime?.answerEnvelope) ? turn.runtime.answerEnvelope as AskAnswerEnvelope : undefined,
   };
 }
 
@@ -611,7 +660,15 @@ function appendTimelineStage(setMessages: TimelineSetter, messageId: string, sta
   )));
 }
 
-function AskMessageBubble({ message }: { message: AskPanelMessage }) {
+function AskMessageBubble({
+  message,
+  onDraftPack,
+  packSaving,
+}: {
+  message: AskPanelMessage;
+  onDraftPack: (message: AskPanelMessage) => void;
+  packSaving: boolean;
+}) {
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
@@ -644,6 +701,7 @@ function AskMessageBubble({ message }: { message: AskPanelMessage }) {
         ) : null}
 
         <TimelineMessageReceipt message={message} />
+        <AnswerSourcePreviewPanel envelope={message.answerEnvelope} />
 
         {stages.length ? (
           <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2">
@@ -662,12 +720,84 @@ function AskMessageBubble({ message }: { message: AskPanelMessage }) {
               <FileText className="h-3.5 w-3.5" />
               Send to Memo Studio
             </Link>
+            {message.answerEnvelope?.documentPackCandidate ? (
+              <button
+                type="button"
+                onClick={() => onDraftPack(message)}
+                disabled={packSaving}
+                className="inline-flex items-center gap-2 rounded-md border border-diplomatic-blue bg-white px-3 py-1.5 text-xs font-semibold text-diplomatic-blue hover:bg-slate-50 disabled:opacity-60"
+              >
+                {packSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+                Draft document pack
+              </button>
+            ) : null}
             <Link href="/app/contexts" className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">
               Review context
             </Link>
           </div>
         ) : null}
       </article>
+    </div>
+  );
+}
+
+function AnswerSourcePreviewPanel({ envelope }: { envelope?: AskAnswerEnvelope }) {
+  const sourceCards = envelope?.sourceCards ?? [];
+  const followUps = envelope?.followUps ?? [];
+  if (sourceCards.length === 0 && followUps.length === 0) return null;
+  return (
+    <div className="mt-3 space-y-2">
+      {sourceCards.length > 0 ? (
+        <section className="rounded-md border border-slate-200 bg-slate-50 p-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Sources used</p>
+            <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
+              {sourceCards.length} preview{sourceCards.length === 1 ? '' : 's'}
+            </span>
+          </div>
+          <div className="mt-2 grid gap-2">
+            {sourceCards.map((card) => (
+              <article key={card.id} className="rounded-md border border-slate-200 bg-white p-2">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">{card.label}</p>
+                    {card.url ? (
+                      <a href={card.url} target="_blank" rel="noreferrer" className="mt-0.5 block truncate text-xs font-semibold text-diplomatic-blue hover:underline">
+                        {card.title}
+                      </a>
+                    ) : (
+                      <p className="mt-0.5 truncate text-xs font-semibold text-navy-950">{card.title}</p>
+                    )}
+                  </div>
+                  <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
+                    {Math.round((card.confidence ?? 0) * 100)}%
+                  </span>
+                </div>
+                <blockquote className="mt-2 border-l-2 border-diplomatic-blue/40 pl-2 text-xs leading-5 text-slate-700">
+                  {card.quotePreview || 'No quote preview available.'}
+                </blockquote>
+                <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-slate-500">
+                  {card.citationLabel ? <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono">{card.citationLabel}</span> : null}
+                  {card.pageRef ? <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono">{card.pageRef}</span> : null}
+                  {card.chunkId ? <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono">{card.chunkId}</span> : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      {followUps.length > 0 ? (
+        <section className="rounded-md border border-slate-200 bg-white p-2">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Follow-ups</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {followUps.map((followUp) => (
+              <span key={followUp} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700">
+                {followUp}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

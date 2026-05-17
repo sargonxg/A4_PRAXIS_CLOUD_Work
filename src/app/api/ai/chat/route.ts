@@ -45,6 +45,7 @@ import {
   classifyAskIntent,
   type AskIntent,
 } from '@/lib/ai/ask-conversation';
+import { buildAskAnswerEnvelope, buildSourcePreviewCards, type AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -132,6 +133,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
     let retrievedDocumentIds: string[] = [];
     let retrievedSourceIds: string[] = [];
     let evidencePackReceipt: { packId: string; paragraphCount: number; gapCount: number } | null = null;
+    let answerEvidencePack: Awaited<ReturnType<typeof buildCapsuleEvidencePack>> | null = null;
     const toolInvocations: AskToolInvocationReceipt[] = [];
     const frameworkSteps = buildAskFrameworkStepReceipts(
       _user.calibration.path,
@@ -200,6 +202,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
           return null;
         });
         if (evidencePack) {
+          answerEvidencePack = evidencePack;
           systemPrompt += '\n\n' + formatEvidencePackPromptBlock(evidencePack);
           retrievedDocumentIds = uniqueStrings([
             ...retrievedDocumentIds,
@@ -451,6 +454,25 @@ You have access to the user's active situation data. When answering questions:
       historyTurnCount: persistedHistory.length,
       warnings: turnCapsule?.activeGaps ?? [],
     });
+    const sourcePreviewCards = buildSourcePreviewCards({ evidencePack: answerEvidencePack });
+    const buildEnvelopeForText = (text: string): AskAnswerEnvelope => buildAskAnswerEnvelope({
+      prompt,
+      answer: text,
+      intent: askIntent,
+      sourceCards: sourcePreviewCards,
+      gaps: uniqueStrings([
+        ...(turnCapsule?.activeGaps ?? []),
+        ...(answerEvidencePack?.openGaps ?? []),
+      ]),
+      provenance: {
+        capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
+        capsuleVersion: capsuleContext?.capsule?.version ?? turnCapsule?.capsuleVersion ?? null,
+        threadId,
+        model: String(runtimeReceipt.model ?? runtime.model ?? ''),
+        provider: String(runtimeReceipt.provider ?? ''),
+        contextPackageId: contextPackageId ?? null,
+      },
+    });
     const effectiveMessages = buildAskConversationMessages(
       messages,
       persistedHistory,
@@ -465,6 +487,7 @@ You have access to the user's active situation data. When answering questions:
       stopWhen: stepCountIs(15),
       onFinish: async ({ text }) => {
         if (_user.uid && text) {
+          runtimeReceipt.answerEnvelope = buildEnvelopeForText(text);
           if (effectiveSituationId) {
             await saveToolOutput({
               uid: _user.uid,
@@ -550,7 +573,12 @@ You have access to the user's active situation data. When answering questions:
       },
     });
 
-    return toLegacyDataStreamResponse(result.textStream);
+    return toLegacyDataStreamResponse(result.textStream, undefined, {
+      onFinishData: (text) => ({
+        type: 'answerEnvelope',
+        answerEnvelope: buildEnvelopeForText(text),
+      }),
+    });
   } catch (err) {
     return handleRouteError(err, 'chat');
   }
@@ -605,6 +633,7 @@ interface AskRuntimeReceipt extends Record<string, unknown> {
   contextMode?: 'praxis_lite';
   memoryPersistence?: 'cloud-sql' | 'firestore';
   contextReceipt?: ReturnType<typeof buildAskContextReceipt>;
+  answerEnvelope?: AskAnswerEnvelope;
 }
 
 interface AskToolInvocationReceipt {

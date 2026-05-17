@@ -6,6 +6,9 @@
 export function toLegacyDataStreamResponse(
   textStream: AsyncIterable<string>,
   init?: ResponseInit,
+  opts: {
+    onFinishData?: (text: string) => unknown;
+  } = {},
 ): Response {
   const encoder = new TextEncoder();
   const headers = new Headers(init?.headers);
@@ -16,9 +19,17 @@ export function toLegacyDataStreamResponse(
   return new Response(
     new ReadableStream<Uint8Array>({
       async start(controller) {
+        let fullText = '';
         try {
           for await (const text of textStream) {
-            if (text) controller.enqueue(encoder.encode(`0:${JSON.stringify(text)}\n`));
+            if (text) {
+              fullText += text;
+              controller.enqueue(encoder.encode(`0:${JSON.stringify(text)}\n`));
+            }
+          }
+          const finishData = opts.onFinishData?.(fullText);
+          if (finishData !== undefined) {
+            controller.enqueue(encoder.encode(`2:${JSON.stringify(finishData)}\n`));
           }
           controller.enqueue(encoder.encode(`d:${JSON.stringify({ finishReason: 'stop' })}\n`));
         } catch (err) {
