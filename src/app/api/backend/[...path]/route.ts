@@ -8,7 +8,7 @@ export const maxDuration = 60;
 type RouteContext = { params: Promise<{ path: string[] }> };
 
 const ALLOWED_BACKEND_PATHS: Array<{ method: string; pattern: RegExp }> = [
-  { method: 'POST', pattern: /^pipeline\/(run|ingest-url|ingest-feeds)$/ },
+  { method: 'POST', pattern: /^pipeline\/(run|ingest-url)$/ },
   { method: 'GET', pattern: /^graph\/[^/]+$/ },
   { method: 'POST', pattern: /^graph\/[^/]+\/query$/ },
   { method: 'GET', pattern: /^graph\/[^/]+\/visualization$/ },

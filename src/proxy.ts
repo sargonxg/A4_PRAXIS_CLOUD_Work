@@ -323,7 +323,7 @@ function addSecurityHeaders(response: NextResponse, nonce?: string): NextRespons
       "style-src 'self' 'unsafe-inline' fonts.googleapis.com; " +
       "img-src 'self' data: blob: *.googleapis.com *.googleusercontent.com *.gstatic.com www.googletagmanager.com www.google-analytics.com *.google-analytics.com api.maptiler.com demotiles.maplibre.org; " +
       "font-src 'self' fonts.gstatic.com; " +
-      "connect-src 'self' *.firebaseio.com *.googleapis.com *.firebaseapp.com identitytoolkit.googleapis.com securetoken.googleapis.com firebaseappcheck.googleapis.com api.gdeltproject.org api.reliefweb.int hapi.humdata.org api.worldbank.org wss://*.firebaseio.com www.google-analytics.com *.google-analytics.com www.googletagmanager.com www.google.com api.maptiler.com demotiles.maplibre.org; " +
+      "connect-src 'self' *.firebaseio.com *.googleapis.com *.firebaseapp.com identitytoolkit.googleapis.com securetoken.googleapis.com firebaseappcheck.googleapis.com wss://*.firebaseio.com www.google-analytics.com *.google-analytics.com www.googletagmanager.com www.google.com api.maptiler.com demotiles.maplibre.org; " +
       "frame-src 'self' *.firebaseapp.com accounts.google.com *.google.com;",
   );
 

@@ -5,7 +5,7 @@ import { PraxisGlyphChip } from "@/components/brand/praxis-mark";
 /**
  * Connector strip — the trust signal layer.
  *
- * Renders the 11 data-feed and 6 MCP connector intentions as monochrome chips
+ * Renders the supported source and ingest connector intentions as monochrome chips
  * with a status dot. Status semantics:
  *   - live      : production-grade, currently reachable
  *   - candidate : credentialed but gated / pending review
@@ -20,34 +20,16 @@ type ConnectorStatus = "live" | "candidate" | "disabled";
 type Connector = {
   id: string;
   label: string;
-  category: "feed" | "mcp" | "ingest";
+  category: "source" | "ingest";
   status: ConnectorStatus;
 };
 
 const CONNECTORS: readonly Connector[] = [
-  // Live feeds (Next.js direct clients)
-  { id: "grounded-search", label: "Grounded Search", category: "feed", status: "live" },
-  { id: "gdelt", label: "GDELT", category: "feed", status: "live" },
-  { id: "gdelt-gkg", label: "GDELT-GKG", category: "feed", status: "live" },
-  { id: "ucdp", label: "UCDP", category: "feed", status: "live" },
-  { id: "reliefweb", label: "ReliefWeb", category: "feed", status: "live" },
-  { id: "hdx", label: "HDX", category: "feed", status: "live" },
-  { id: "un-news", label: "UN News", category: "feed", status: "live" },
-  { id: "unhcr", label: "UNHCR", category: "feed", status: "live" },
-  { id: "world-bank", label: "World Bank", category: "feed", status: "live" },
-  { id: "sipri", label: "SIPRI", category: "feed", status: "candidate" },
-  { id: "crisis-group", label: "Crisis Group", category: "feed", status: "candidate" },
-  // MCP servers (Codex Genkit integration plan)
-  { id: "mcp-ucdp", label: "MCP · UCDP", category: "mcp", status: "disabled" },
-  { id: "mcp-gdelt", label: "MCP · GDELT", category: "mcp", status: "disabled" },
-  { id: "mcp-reliefweb", label: "MCP · ReliefWeb", category: "mcp", status: "disabled" },
-  { id: "mcp-hdx", label: "MCP · HDX", category: "mcp", status: "disabled" },
-  { id: "mcp-un-news", label: "MCP · UN News", category: "mcp", status: "disabled" },
-  { id: "mcp-world-bank", label: "MCP · World Bank", category: "mcp", status: "disabled" },
-  // Ingest paths
+  { id: "grounded-search", label: "Grounded Search", category: "source", status: "live" },
+  { id: "web-crawler", label: "Web crawler receipts", category: "source", status: "candidate" },
+  { id: "wikipedia", label: "Wikipedia", category: "source", status: "live" },
   { id: "library-upload", label: "Library Upload", category: "ingest", status: "live" },
-  { id: "calendar-monitor", label: "Calendar", category: "ingest", status: "candidate" },
-  { id: "email-digest", label: "Email Digest", category: "ingest", status: "disabled" },
+  { id: "source-url", label: "Source URL", category: "ingest", status: "live" },
 ];
 
 const STATUS_DOT: Record<ConnectorStatus, string> = {

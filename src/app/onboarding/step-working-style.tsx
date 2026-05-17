@@ -8,13 +8,13 @@ import { cn } from '@/lib/utils/cn';
 
 const SOURCE_CATEGORIES = [
   { id: 'foundational', label: 'Foundational', desc: 'Wikipedia, CIA Factbook' },
-  { id: 'conflict-security', label: 'Conflict & Security', desc: 'UCDP, SIPRI, Crisis Group' },
-  { id: 'humanitarian', label: 'Humanitarian', desc: 'ReliefWeb, UNHCR, HRW' },
-  { id: 'diplomatic-official', label: 'Diplomatic & Official', desc: 'UN News, State, EEAS' },
+  { id: 'conflict-security', label: 'Conflict & Security', desc: 'Google Search, Reuters, AP' },
+  { id: 'humanitarian', label: 'Humanitarian', desc: 'Grounded search, user sources, HRW' },
+  { id: 'diplomatic-official', label: 'Diplomatic & Official', desc: 'Official sites, State, EEAS' },
   { id: 'news-media', label: 'News & Media', desc: 'Reuters, AP, BBC' },
   { id: 'think-tanks', label: 'Think Tanks', desc: 'RAND, Carnegie, Brookings' },
   { id: 'military-intelligence', label: 'Military & Intel', desc: 'Janes, IISS, Bellingcat' },
-  { id: 'economic-development', label: 'Economic & Development', desc: 'World Bank, IMF, UNDP' },
+  { id: 'economic-development', label: 'Economic & Development', desc: 'Grounded search, IMF, UNDP' },
 ];
 
 const LANGUAGE_LABEL: Record<Language, { flag: string; name: string }> = {
@@ -151,9 +151,8 @@ export function StepWorkingStyle({
         </p>
         <p className="mt-1 text-xs text-navy-700">
           PRAXIS runs out of the box on the included stack — Vertex AI / Gemini for
-          reasoning, Google Search grounding for live evidence, plus open-data feeds:
-          GDELT, UCDP, ReliefWeb, HDX, UNHCR, UN News, World Bank, SIPRI, and Crisis Group.
-          No additional keys required.
+          reasoning, Google Search grounding for live evidence, source-linked crawler
+          receipts, and your uploaded documents. No additional feed keys required.
         </p>
         <p className="mt-1.5 text-xs text-navy-600">
           Optional licensed feeds can be added later from

@@ -42,13 +42,6 @@ export const praxisBackend = {
       body: JSON.stringify({ situation_id: sitId, url }),
     }),
 
-  /** Pull grounded-search and public corroborating feeds for the situation region */
-  ingestFeeds: (sitId: string) =>
-    backendFetch('/pipeline/ingest-feeds', {
-      method: 'POST',
-      body: JSON.stringify({ situation_id: sitId }),
-    }),
-
   /** Get graph snapshot (nodes + edges + analysis) */
   getGraph: (sitId: string) => backendFetch(`/graph/${sitId}`),
 

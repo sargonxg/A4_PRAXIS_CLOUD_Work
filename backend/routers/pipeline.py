@@ -53,10 +53,6 @@ class IngestUrlRequest(BaseModel):
     url: str
 
 
-class IngestFeedsRequest(BaseModel):
-    situation_id: str
-
-
 async def _update_job_progress(job_id: str | None, percent: int, message: str) -> None:
     if not job_id:
         return
@@ -247,65 +243,3 @@ async def ingest_url(
         "analysis": analysis,
     }
 
-
-@router.post("/ingest-feeds")
-async def ingest_feeds(
-    req: IngestFeedsRequest,
-    token: dict = Depends(verify_firebase_token),
-):
-    """Query open-source GDELT articles for the situation and merge into graph."""
-    uid = token["uid"]
-    fs = FirestoreSync()
-    situation = await fs.read_situation(uid, req.situation_id)
-
-    region = situation.get("region", "")
-    name = situation.get("name", "")
-    keywords = [w for w in [name, region] if w]
-
-    if not keywords:
-        raise HTTPException(status_code=400, detail="Situation has no name or region")
-
-    from services.feed_clients.gdelt import query_gdelt
-
-    gdelt_articles = await query_gdelt(keywords)
-
-    # Convert GDELT articles to extraction format via Gemini
-    gemini = GeminiClient()
-    from graphify_tacitus.extract import extract_conflict_text
-
-    extractions = []
-    for article in gdelt_articles[:10]:  # Limit to avoid token overuse
-        if article.get("title"):
-            result = await extract_conflict_text(
-                article["title"] + "\n" + article.get("url", ""),
-                article.get("url", "gdelt"),
-                gemini, uid, req.situation_id,
-            )
-            if result.nodes:
-                extractions.append({
-                    "nodes": [n.model_dump() for n in result.nodes],
-                    "edges": [e.model_dump() for e in result.edges],
-                })
-
-    if not extractions:
-        return {"message": "No new data from feeds", "articles": len(gdelt_articles), "events": 0}
-
-    # Merge with existing
-    existing_snapshot = await fs.read_graph_snapshot(uid, req.situation_id)
-    if existing_snapshot.get("nodes"):
-        extractions.insert(0, existing_snapshot)
-
-    G = build(extractions)
-    communities = cluster(G)
-    analysis = _run_analysis(G, communities)
-
-    snapshot = to_json(G, communities)
-    await fs.write_graph_snapshot(uid, req.situation_id, snapshot)
-    await fs.write_analysis(uid, req.situation_id, analysis)
-
-    return {
-        "gdelt_articles": len(gdelt_articles),
-        "conflict_events": 0,
-        "new_extractions": len(extractions),
-        "total_nodes": G.number_of_nodes(),
-    }
