@@ -5,6 +5,7 @@
 ### Removed
 
 - Dead route `api/graph/ingest` and its orphan `conflict-service` (zero callers).
+- Pub/Sub topics `praxis.pipeline`, `praxis.extract`, `praxis.ingest`, `praxis.alert` removed from `setup-gcp.sh` (zero publishers / subscribers in repo). Re-add when a real consumer lands.
 
 - feat(knowledge): add user-scoped repository backend for capsule documents.
   Build 2026.05.17.01 adds Knowledge Library repositories, repository document
