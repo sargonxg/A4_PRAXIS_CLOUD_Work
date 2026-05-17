@@ -422,7 +422,7 @@ Deducted atomically via Firestore transactions. Real-time sync via onSnapshot.
 | Vertex AI | ADK Deep Research Agent | us-central1, Reasoning Engine |
 | BigQuery | Pipeline analytics | praxis_analytics dataset |
 | Cloud Storage | Document uploads | gs://praxisbytacitus-praxis-uploads |
-| Pub/Sub | Async event messaging | 5 topics (pipeline, extract, ingest, alert, profile.events) |
+| Pub/Sub | Async event fan-out | `profile.events`, `praxis.events`; Cloud Tasks remains run dispatch |
 | Cloud Functions | Event triggers | 3 functions (situation, document, GDELT) |
 | Cloud Scheduler | Cron jobs | GDELT (15min), alerts (6am), briefing (5am) |
 | Secret Manager | Sensitive config | Runtime secrets for Firebase Admin, AI, Firecrawl, Parallel, UCDP, cron/session signing, and user-key encryption; `ADMIN_ALLOWLIST` / `ADMIN_EMAIL_ALLOWLIST` gate admin access |
@@ -512,7 +512,7 @@ npx tsc --noEmit
 2026-04-25 local validation:
 - `npm run build` passed.
 - `npm run lint` passed with warnings only. React Compiler migration findings are warnings in `eslint.config.mjs` until the UI is cleaned up route-by-route.
-- `npm run audit:gcp` passed after creating Pub/Sub topic `profile.events`.
+- `npm run audit:gcp` passed after creating Pub/Sub topic `profile.events`. The current expected topic set is `profile.events` and `praxis.events`.
 - `node scripts/audit-ai-routes.mjs` passed: 53 AI routes calibrated, 4 exempt.
 - `npx vitest run` passed: 40 files, 140 tests.
 

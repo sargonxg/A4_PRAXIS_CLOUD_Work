@@ -145,6 +145,9 @@ Decision:
 
 - Keep Cloud Tasks as run dispatch.
 - Use Pub/Sub for events, fan-out, profile events, and downstream listeners.
+- The implemented topic set is intentionally small: `profile.events` for
+  profile lifecycle/embedding refresh and `praxis.events` for PRAXIS run/event
+  fan-out.
 
 ### Stripe/Clerk/Pricing Copy As Product Truth
 
@@ -194,4 +197,3 @@ Add these to the PRAXIS build direction:
 4. Browser sessions must never be the first implementation wave.
 5. Agent skills should be saved structured prompts tied to ContextCapsule
    templates before visual flow builders.
-

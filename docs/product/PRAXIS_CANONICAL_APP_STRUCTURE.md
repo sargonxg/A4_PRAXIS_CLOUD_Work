@@ -163,7 +163,7 @@ praxis.tacitus.me
   -> Cloud Tasks
        reliable per-run execution queue
   -> Pub/Sub
-       event bus for run.created, source.updated, brief.ready, profile.events
+       event bus for agent_run.*, source.updated, brief.ready, profile.events
   -> Cloud Scheduler
        daily briefs, watchlists, maintenance, drift checks
   -> Vertex AI
@@ -224,7 +224,7 @@ Initial production services:
 | `praxis-mcp-gateway` | Cloud Run | PRAXIS tool/resource MCP surface, private first |
 | `praxis-postgres` | Cloud SQL Postgres | run ledger, chunks, approvals, operational joins |
 | `agent-runs` | Cloud Tasks queue | one durable task per agent run |
-| `praxis-events` | Pub/Sub topic | async event fan-out |
+| `praxis.events` | Pub/Sub topic | async event fan-out |
 | `praxis-daily-brief` | Cloud Scheduler | recurring capsule brief trigger |
 | `praxis-uploads` / docs bucket | Cloud Storage | uploaded and generated artifacts |
 

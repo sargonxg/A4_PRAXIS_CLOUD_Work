@@ -1,5 +1,6 @@
 import { makeAgentRunEvent, normalizePointer } from '@/lib/agent-runtime/state';
 import { appendAgentRunEvent, getAgentRun } from '@/lib/agent-runtime/postgres';
+import { publishPraxisEvent } from '@/lib/events/praxis-events';
 
 type CloudTasksClientLike = {
   createTask(input: { parent: string; task: AgentRunTask }): Promise<[{ name?: string | null }, ...unknown[]]>;
@@ -146,6 +147,22 @@ export async function enqueueAgentRunDispatch(input: {
     },
     traceId: run.traceId,
   }));
+  void publishPraxisEvent({
+    eventType: 'agent_run.dispatched',
+    ownerUid: run.ownerUid,
+    capsuleId: run.capsuleId,
+    runId: run.id,
+    traceId: run.traceId,
+    source: 'agent',
+    data: {
+      mode: 'cloud-tasks',
+      queuePath,
+      taskName: created.name ?? null,
+      targetUrl,
+      dispatchId: payload.dispatchId,
+      attempt: payload.attempt,
+    },
+  });
 
   return {
     mode: 'cloud-tasks',

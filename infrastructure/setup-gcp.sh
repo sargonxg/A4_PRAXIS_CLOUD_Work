@@ -56,10 +56,10 @@ bq mk --table "${PROJECT_ID}:praxis_analytics.extractions" \
 
 # ── Pub/Sub Topics ───────────────────────────────────────────────────────────
 echo "Creating Pub/Sub topics..."
-# Pub/Sub topics. Only `profile.events` has an active publisher
-# (src/lib/firebase/profile-events.ts). Re-add other topics here when a
-# publisher or subscriber is added in code.
-for topic in profile.events; do
+# Pub/Sub topics with in-repo publishers/subscribers.
+# - profile.events: profile lifecycle + embedding refresh subscriber
+# - praxis.events: application event fan-out; Cloud Tasks remains run dispatch
+for topic in profile.events praxis.events; do
   gcloud pubsub topics create "$topic" --project="$PROJECT_ID" 2>/dev/null || true
 done
 

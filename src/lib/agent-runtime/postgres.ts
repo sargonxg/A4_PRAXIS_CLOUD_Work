@@ -8,6 +8,7 @@ import {
   type AgentToolCall,
   type CreateAgentRunInput,
 } from '@/lib/agent-runtime/types';
+import { publishPraxisEvent, type PraxisEventType } from '@/lib/events/praxis-events';
 import {
   assertAgentRunTransition,
   makeAgentRunEvent,
@@ -174,6 +175,10 @@ export async function createAgentRun(input: CreateAgentRunInput): Promise<AgentR
     message: 'Agent run queued for later dispatch.',
     traceId: run.traceId,
   }));
+  publishAgentRunEvent('agent_run.created', run, {
+    triggerType: run.triggerType,
+    agentSpecId: run.agentSpecId,
+  });
   return run;
 }
 
@@ -385,8 +390,40 @@ export async function updateAgentRunStatus(input: {
       data: input.data ?? {},
       traceId: run.traceId,
     }));
+    const eventType = statusToPraxisEvent(run.status);
+    if (eventType) {
+      publishAgentRunEvent(eventType, run, {
+        fromStatus: current.status,
+        toStatus: run.status,
+        message: input.message ?? null,
+        ...(input.data ?? {}),
+      });
+    }
   }
   return run;
+}
+
+function publishAgentRunEvent(
+  eventType: PraxisEventType,
+  run: AgentRun,
+  data: Record<string, unknown>,
+): void {
+  void publishPraxisEvent({
+    eventType,
+    ownerUid: run.ownerUid,
+    capsuleId: run.capsuleId,
+    runId: run.id,
+    traceId: run.traceId,
+    source: 'agent',
+    data,
+  });
+}
+
+function statusToPraxisEvent(status: AgentRunStatus): PraxisEventType | null {
+  if (status === 'running') return 'agent_run.running';
+  if (status === 'succeeded') return 'agent_run.completed';
+  if (status === 'failed') return 'agent_run.failed';
+  return null;
 }
 
 function rowToAgentRun(row: QueryResultRow): AgentRun {

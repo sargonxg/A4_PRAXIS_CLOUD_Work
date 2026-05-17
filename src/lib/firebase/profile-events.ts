@@ -1,16 +1,9 @@
-import { PubSub } from '@google-cloud/pubsub';
 import { getAnalystProfile, upsertAnalystProfile } from './analyst-profile-admin';
 import { generateEmbedding } from '@/lib/knowledge/embedding-service';
+import { publishPubSubJson } from '@/lib/events/pubsub';
 
 /** Module-level constant — grep target for topic name. */
 const TOPIC_NAME = 'profile.events';
-
-let client: PubSub | null = null;
-
-function getClient(): PubSub {
-  if (!client) client = new PubSub();
-  return client;
-}
 
 export type ProfileEventKind =
   | 'created'
@@ -31,24 +24,17 @@ export interface ProfileEvent {
  * Returns true on success. Never throws — callers must not block on publish success.
  */
 export async function publishProfileEvent(event: ProfileEvent): Promise<boolean> {
-  try {
-    const data = Buffer.from(
-      JSON.stringify({ ...event, publishedAt: new Date().toISOString() })
-    );
-    await getClient().topic(TOPIC_NAME).publishMessage({
-      data,
-      attributes: {
-        uid: event.uid,
-        kind: event.kind,
-        ...(event.versionId ? { versionId: event.versionId } : {}),
-        ...(event.extra ?? {}),
-      },
-    });
-    return true;
-  } catch (err) {
-    console.warn('[profile-events] publish failed (non-fatal):', err);
-    return false;
-  }
+  return publishPubSubJson({
+    topicName: TOPIC_NAME,
+    payload: { ...event, publishedAt: new Date().toISOString() },
+    attributes: {
+      uid: event.uid,
+      kind: event.kind,
+      versionId: event.versionId,
+      ...(event.extra ?? {}),
+    },
+    logPrefix: 'profile-events',
+  });
 }
 
 /**

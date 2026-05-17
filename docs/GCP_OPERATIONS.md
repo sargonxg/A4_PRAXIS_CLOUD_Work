@@ -472,11 +472,15 @@ gcloud firestore export gs://praxisbytacitus-firestore-backups/$(date +%F) \
 ## 6. Pub/Sub topics — current expected set
 
 The GCP audit script (`scripts/audit-gcp.mjs`) verifies these exist. As of
-2026-04-25:
+2026-05-17:
 
 ```
 profile.events
+praxis.events
 ```
+
+Cloud Tasks remains the durable execution queue for one task per agent run.
+Pub/Sub is only for best-effort event fan-out to downstream listeners.
 
 If a future feature adds a topic, create it with:
 

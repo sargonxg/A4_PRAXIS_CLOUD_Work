@@ -79,8 +79,10 @@ const checks = [
   { name: 'Secret: praxis-ucdp-api-token',                 category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-ucdp-api-token') },
   { name: 'Secret: praxis-vertex-adk-engine-id',           category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-vertex-adk-engine-id') },
 
-  // Pub/Sub topics (5 referenced in CLAUDE.md)
+  // Pub/Sub topics with in-repo publishers/subscribers. Cloud Tasks remains
+  // the durable per-run execution queue; Pub/Sub is event fan-out.
   { name: 'Pub/Sub topic: profile.events',                 category: 'pubsub',  run: () => gcloudDescribe('pubsub topics describe profile.events') },
+  { name: 'Pub/Sub topic: praxis.events',                  category: 'pubsub',  run: () => gcloudDescribe('pubsub topics describe praxis.events') },
 
   // Cloud Tasks queues (provisioned for the async dispatcher roadmap)
   { name: 'Cloud Tasks queue: praxis-research',             category: 'tasks',   soft: true, run: () => gcloudDescribe('tasks queues describe praxis-research --location=us-central1') },
