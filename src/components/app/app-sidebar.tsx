@@ -46,13 +46,6 @@ export function AppSidebar() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { sidebarOpen, toggleSidebar } = useAppStore();
-  const initials =
-    (user?.name || user?.email || 'DA')
-      .split(/\s|@/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join('') || 'DA';
   const isAdmin = user?.role === 'admin';
 
   const visibleGroups = useMemo(
@@ -133,26 +126,6 @@ export function AppSidebar() {
       </nav>
 
       <div className="border-t border-[var(--color-app-border)] p-2">
-        <PraxisLink
-          href="/app"
-          className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-[var(--color-app-surface-alt)]"
-          title="Open user profile"
-        >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-diplomatic-blue text-xs font-bold text-white">
-            {initials}
-          </span>
-          {sidebarOpen ? (
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-medium text-navy-900">{user?.name ?? 'Analyst'}</span>
-              <span className="block truncate text-xs text-navy-400">
-                {user?.isDemo ? 'Example session' : user?.email}
-              </span>
-              <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-gold-700">
-                Profile / User Core
-              </span>
-            </span>
-          ) : null}
-        </PraxisLink>
         <button
           type="button"
           onClick={handleLogout}

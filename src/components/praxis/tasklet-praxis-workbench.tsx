@@ -72,6 +72,8 @@ type TaskletPraxisWorkbenchProps = {
   mode: HomeSurfaceMode | 'app';
   activeCapsuleName?: string;
   capsuleId?: string;
+  initialConversationId?: string;
+  initialPanel?: 'ask' | 'capsules';
   focusedRunId?: string;
   recentRuns?: Array<{ label: string; detail: string; status: string }>;
   className?: string;
@@ -250,6 +252,8 @@ export function TaskletPraxisWorkbench({
   mode,
   activeCapsuleName = 'Weekly Middle East Analysis',
   capsuleId = 'default',
+  initialConversationId,
+  initialPanel,
   focusedRunId,
   recentRuns = defaultRecentRuns,
   className,
@@ -263,11 +267,11 @@ export function TaskletPraxisWorkbench({
   const [selectedAgentId, setSelectedAgentId] = useState(PRAXIS_POLICY_AGENTS[0]?.id ?? 'research-memo');
   const [selectedModel, setSelectedModel] = useState<ModelPreferenceValue>(ASK_RUNTIME_OPTIONS[0].id);
   const [currentCapsuleId, setCurrentCapsuleId] = useState(capsuleId);
-  const [activeCapsules, setActiveCapsules] = useState<ActiveCapsuleChip[]>([
-    { id: capsuleId, label: activeCapsuleName, code: 'SITUATION', role: 'situation' },
-  ]);
+  const [activeCapsules, setActiveCapsules] = useState<ActiveCapsuleChip[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [conversationThreadId, setConversationThreadId] = useState<string | null>(null);
+  const [conversationThreadId, setConversationThreadId] = useState<string | null>(
+    sanitizeConversationThreadId(initialConversationId),
+  );
   const [conversationLoadedFor, setConversationLoadedFor] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [status, setStatus] = useState('Ask PRAXIS can answer directly or choose the right tool from your capsule.');
@@ -332,13 +336,20 @@ export function TaskletPraxisWorkbench({
 
   useEffect(() => {
     if (focusedRunId) return;
-    setActiveCapsules((current) => {
-      const first = current[0];
-      if (first?.id === capsuleId && first.label === activeCapsuleName) return current;
-      setCurrentCapsuleId(capsuleId);
-      return [{ id: capsuleId, label: activeCapsuleName, code: 'SITUATION', role: 'situation' }, ...current.slice(1)];
-    });
-  }, [activeCapsuleName, capsuleId, focusedRunId]);
+    setCurrentCapsuleId(capsuleId);
+  }, [capsuleId, focusedRunId]);
+
+  useEffect(() => {
+    const clean = sanitizeConversationThreadId(initialConversationId);
+    if (!clean) return;
+    setConversationThreadId(clean);
+    setActiveTab('analysis');
+  }, [initialConversationId]);
+
+  useEffect(() => {
+    if (initialPanel === 'capsules') setActiveTab('capsules');
+    if (initialPanel === 'ask') setActiveTab('analysis');
+  }, [initialPanel]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -375,6 +386,7 @@ export function TaskletPraxisWorkbench({
     setConversationThreadId(nextThreadId);
     setConversationLoadedFor(`${currentCapsuleId}:${nextThreadId}`);
     pushConversationUrl(currentCapsuleId, nextThreadId);
+    void ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsules);
     return nextThreadId;
   }
 
@@ -388,6 +400,7 @@ export function TaskletPraxisWorkbench({
     setConversationLoadedFor(`${currentCapsuleId}:${nextThreadId}`);
     setChatMessages([]);
     pushConversationUrl(currentCapsuleId, nextThreadId);
+    void ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsules);
     setStatus('New conversation link ready. Start talking and PRAXIS will save the work here.');
   }
 
@@ -401,6 +414,7 @@ export function TaskletPraxisWorkbench({
       setConversationThreadId(nextThreadId);
       setConversationLoadedFor(`${currentCapsuleId}:${nextThreadId}`);
       pushConversationUrl(currentCapsuleId, nextThreadId);
+      void ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsules);
     }
     const link = buildConversationUrl(currentCapsuleId, nextThreadId);
     try {
@@ -712,7 +726,7 @@ export function TaskletPraxisWorkbench({
   useEffect(() => {
     if (!isAuthenticated) return;
     void refreshRepository();
-  }, [isAuthenticated, refreshRepository]);
+  }, [currentCapsuleId, isAuthenticated, refreshRepository]);
 
   const loadConversationHistory = useCallback(async (capsuleIdToLoad: string, threadIdToLoad: string) => {
     if (!isAuthenticated || !capsuleIdToLoad || !threadIdToLoad) return;
@@ -938,6 +952,7 @@ export function TaskletPraxisWorkbench({
     if (threadParam) {
       setConversationThreadId(threadParam);
       setActiveTab('analysis');
+      pushConversationUrl(capsuleParam ?? currentCapsuleId, threadParam);
     }
     if (importToken) {
       setRepositoryOpen(true);
@@ -1304,11 +1319,18 @@ export function TaskletPraxisWorkbench({
                   {capsule.label}
                 </button>
               ))}
+              {!activeCapsules.length ? (
+                <span className="block rounded-md border border-dashed border-black/10 px-2 py-2 text-sm font-medium text-slate-500">
+                  Add your capsules here
+                </span>
+              ) : null}
             </div>
           </div>
           <div className="mt-auto border-t border-black/10 pt-4">
             {isAuthenticated ? (
-              <AccountProfileButton />
+              <Link href="/app/settings" className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-semibold text-slate-600 hover:bg-black/5">
+                Workspace settings
+              </Link>
             ) : (
               <Link href="/login?mode=signup" className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-black/5">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-300 text-xs font-semibold text-slate-700">◳</span>
@@ -1461,6 +1483,11 @@ export function TaskletPraxisWorkbench({
                       ) : null}
                     </span>
                   ))}
+                  {!activeCapsules.length ? (
+                    <span className="inline-flex items-center gap-2 rounded-md border border-dashed border-slate-300 bg-white/60 px-2.5 py-1.5 text-xs font-semibold text-slate-500">
+                      Add your capsules here
+                    </span>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => {
@@ -1505,16 +1532,6 @@ export function TaskletPraxisWorkbench({
                 </div>
                 <div className="flex items-center gap-2">
                   <select
-                    value={selectedAgentId}
-                    onChange={(event) => setSelectedAgentId(event.target.value)}
-                    aria-label="Policy agent"
-                    className="hidden max-w-48 rounded-md border border-slate-200 bg-white px-2 py-2 text-sm font-semibold text-slate-700 outline-none sm:block"
-                  >
-                    {PRAXIS_POLICY_AGENTS.map((agent) => (
-                      <option key={agent.id} value={agent.id}>{agent.label}</option>
-                    ))}
-                  </select>
-                  <select
                     value={selectedModel}
                     onChange={(event) => setSelectedModel(event.target.value as ModelPreferenceValue)}
                     aria-label="Model"
@@ -1526,14 +1543,6 @@ export function TaskletPraxisWorkbench({
                   </select>
                   <button type="button" aria-label="Voice input" onClick={startVoiceInput} className="rounded-md p-2.5 text-slate-600 hover:bg-slate-100">
                     <Mic className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!prompt.trim() || agentRunCreating}
-                    onClick={() => void createAgentRun()}
-                    className="hidden rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300 sm:inline-flex"
-                  >
-                    {agentRunCreating ? 'Queuing...' : 'Run agent'}
                   </button>
                   <button
                     type="button"
@@ -2023,6 +2032,19 @@ function capsuleCategoryMeta(capsule: PraxisCapsuleSummary) {
   };
 }
 
+function softColor(hex: string, alpha = 0.08): string {
+  const clean = hex.replace('#', '');
+  const value = clean.length === 3
+    ? clean.split('').map((part) => `${part}${part}`).join('')
+    : clean;
+  const num = Number.parseInt(value, 16);
+  if (Number.isNaN(num)) return `rgba(71, 85, 105, ${alpha})`;
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function buildCapsuleCategories(capsules: PraxisCapsuleSummary[]): string[] {
   const generatedTags = Array.from(new Set(capsules.flatMap((capsule) => capsule.community?.tags ?? [])))
     .filter((tag) => !POLICY_TEAM_CATEGORIES.some((category) => category.id === tag))
@@ -2290,10 +2312,19 @@ function CapsuleCard({
   const [tagDraft, setTagDraft] = useState('');
   return (
     <article
-      className={cn('od-praxis-card min-h-[21rem] rounded-lg p-4 transition hover:-translate-y-0.5', active ? 'border-[#ff714d]' : 'border-black/10')}
-      style={{ borderTopColor: meta.color, borderTopWidth: 4 }}
+      className={cn('od-praxis-card min-h-[21rem] overflow-hidden rounded-lg p-0 transition hover:-translate-y-0.5', active ? 'border-[#ff714d]' : 'border-black/10')}
+      style={{
+        borderTopColor: meta.color,
+        borderTopWidth: 4,
+        boxShadow: active ? `0 16px 34px ${softColor(meta.color, 0.22)}` : undefined,
+      }}
     >
-      <button type="button" onClick={onSelect} className="block w-full text-left">
+      <button
+        type="button"
+        onClick={onSelect}
+        className="block w-full p-4 text-left"
+        style={{ background: `linear-gradient(180deg, ${softColor(meta.color, 0.12)}, rgba(255,255,255,0) 46%)` }}
+      >
         <span className="flex items-center justify-between gap-3">
           <span className="min-w-0">
             <span className="block truncate text-base font-semibold text-slate-900">{capsule.label}</span>
@@ -2314,7 +2345,8 @@ function CapsuleCard({
           <span>{counts.outputs} outputs</span>
         </span>
       </button>
-      <div className="mt-3 grid grid-cols-4 gap-1.5" aria-label={`${capsule.label} readiness`}>
+      <div className="px-4">
+      <div className="grid grid-cols-4 gap-1.5" aria-label={`${capsule.label} readiness`}>
         {[
           { label: 'Docs', active: counts.documents > 0 },
           { label: 'Sources', active: counts.sources > 0 },
@@ -2358,6 +2390,7 @@ function CapsuleCard({
         />
         <button type="submit" disabled={!tagDraft.trim()} className="rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white disabled:bg-slate-300">Save</button>
       </form>
+      </div>
     </article>
   );
 }
@@ -3066,11 +3099,10 @@ function sanitizeConversationThreadId(value: string | null | undefined): string 
 }
 
 function buildConversationUrl(capsuleId: string, threadId: string): string {
-  if (typeof window === 'undefined') return `/app?panel=ask&capsuleId=${encodeURIComponent(capsuleId)}&threadId=${encodeURIComponent(threadId)}`;
-  const url = new URL('/app', window.location.origin);
-  url.searchParams.set('panel', 'ask');
+  const path = `/app/conversations/${encodeURIComponent(threadId)}`;
+  if (typeof window === 'undefined') return `${path}?capsuleId=${encodeURIComponent(capsuleId)}`;
+  const url = new URL(path, window.location.origin);
   url.searchParams.set('capsuleId', capsuleId);
-  url.searchParams.set('threadId', threadId);
   return url.toString();
 }
 
@@ -3078,6 +3110,23 @@ function pushConversationUrl(capsuleId: string, threadId: string) {
   if (typeof window === 'undefined') return;
   const url = new URL(buildConversationUrl(capsuleId, threadId));
   window.history.pushState(null, '', `${url.pathname}?${url.searchParams.toString()}`);
+}
+
+async function ensureConversationRecord(threadId: string, capsuleId: string, activeCapsules: ActiveCapsuleChip[]) {
+  await fetch('/api/conversations', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      conversationId: threadId,
+      capsuleId,
+      appliedCapsules: activeCapsules.map((capsule) => ({
+        id: capsule.id,
+        label: capsule.label,
+        role: capsule.role,
+      })),
+    }),
+  }).catch(() => undefined);
 }
 
 function RepositorySheet({

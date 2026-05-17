@@ -3,10 +3,13 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import {
+  BarChart3,
   Building2,
   ChevronDown,
+  CreditCard,
   KeyRound,
   LogOut,
+  ShieldCheck,
   Settings,
   UserRound,
   UsersRound,
@@ -93,9 +96,12 @@ export function AccountProfileButton({ compact = false }: { compact?: boolean })
             </div>
 
             <div className="mt-2 grid gap-1">
-              <MenuLink href="/app" icon={UserRound} label="Capsule manager" onClick={() => setOpen(false)} />
-              <MenuLink href="/app" icon={KeyRound} label="Upload and connectors" onClick={() => setOpen(false)} />
-              <MenuLink href="/app" icon={Settings} label="Workspace" onClick={() => setOpen(false)} />
+              <MenuLink href="/app/settings?tab=profile" icon={UserRound} label="Profile / User Core" onClick={() => setOpen(false)} />
+              <MenuLink href="/app/settings?tab=billing" icon={CreditCard} label="Billing and subscription" onClick={() => setOpen(false)} />
+              <MenuLink href="/app/settings?tab=usage" icon={BarChart3} label="Usage and free conversation" onClick={() => setOpen(false)} />
+              <MenuLink href="/app/settings?tab=security" icon={ShieldCheck} label="Security" onClick={() => setOpen(false)} />
+              <MenuLink href="/app/settings?tab=connectors" icon={KeyRound} label="API keys and connectors" onClick={() => setOpen(false)} />
+              <MenuLink href="/app/settings?tab=workspace" icon={Settings} label="Workspace settings" onClick={() => setOpen(false)} />
               <button
                 type="button"
                 onClick={() => void signOut()}

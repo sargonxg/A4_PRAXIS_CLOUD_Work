@@ -1,4 +1,5 @@
 import { streamText, stepCountIs, type ModelMessage } from 'ai';
+import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { getModel, getModelForUser } from '@/lib/ai/providers';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
@@ -515,6 +516,17 @@ You have access to the user's active situation data. When answering questions:
             toolInvocations,
             output: text,
           }).catch((err) => console.warn('[chat] persistAskThreadTurnSql failed:', err));
+          await persistConversationTurn({
+            uid: _user.uid,
+            conversationId: threadId,
+            situationId: effectiveSituationId ?? null,
+            capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
+            prompt,
+            output: text,
+            runtime: runtimeReceipt,
+            frameworkSteps,
+            toolInvocations,
+          }).catch((err) => console.warn('[chat] persistConversationTurn failed:', err));
           if (effectiveSituationId) {
             await persistAskReadLedger({
               uid: _user.uid,
@@ -851,6 +863,94 @@ async function persistAskTurn(input: {
     output: input.output,
     ts: new Date().toISOString(),
   });
+}
+
+async function persistConversationTurn(input: {
+  uid: string;
+  conversationId?: string;
+  situationId: string | null;
+  capsuleId: string | null;
+  prompt: string;
+  output: string;
+  runtime: AskRuntimeReceipt;
+  frameworkSteps: AskFrameworkStepReceipt[];
+  toolInvocations: AskToolInvocationReceipt[];
+}) {
+  const cleanConversationId = cleanDocId(input.conversationId, 'default');
+  if (!cleanConversationId || cleanConversationId === 'default') return;
+
+  const db = getAdminDbOrThrow();
+  const now = new Date().toISOString();
+  const conversationRef = db
+    .collection('users').doc(input.uid)
+    .collection('conversations').doc(cleanConversationId);
+  const turnRef = conversationRef
+    .collection('turns')
+    .doc(`turn-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
+
+  await db.runTransaction(async (tx) => {
+    const existingConversation = await tx.get(conversationRef);
+    const isFirstTurn = !existingConversation.exists || Number(existingConversation.data()?.turnCount ?? 0) === 0;
+    const createdAt = typeof existingConversation.data()?.createdAt === 'string'
+      ? existingConversation.data()?.createdAt
+      : now;
+    tx.set(conversationRef, {
+      conversationId: cleanConversationId,
+      capsuleId: input.capsuleId,
+      situationId: input.situationId,
+      title: input.prompt.slice(0, 96) || 'PRAXIS conversation',
+      status: 'active',
+      visibility: 'private',
+      latestIntent: input.runtime.intent ?? null,
+      latestProvider: input.runtime.provider ?? null,
+      latestModel: input.runtime.model ?? null,
+      latestToolCount: input.toolInvocations.length,
+      latestFrameworkStepCount: input.frameworkSteps.length,
+      turnCount: FieldValue.increment(1),
+      createdAt,
+      updatedAt: now,
+    }, { merge: true });
+    tx.set(turnRef, {
+      prompt: input.prompt,
+      output: input.output,
+      capsuleId: input.capsuleId,
+      situationId: input.situationId,
+      runtime: input.runtime,
+      routingReceipt: {
+        intent: input.runtime.intent ?? 'normal_answer',
+        provider: input.runtime.provider ?? null,
+        model: input.runtime.model ?? null,
+        toolsUsed: input.toolInvocations.map((tool) => tool.toolId),
+        frameworkSteps: input.frameworkSteps.map((step) => step.frameworkId),
+      },
+      frameworkSteps: input.frameworkSteps,
+      toolInvocations: input.toolInvocations,
+      createdAt: now,
+    });
+    if (isFirstTurn) {
+      tx.set(
+        db.collection('users').doc(input.uid).collection('usage').doc(`weekly-free-${currentWeekKey()}`),
+        {
+          conversationCount: FieldValue.increment(1),
+          updatedAt: now,
+        },
+        { merge: true },
+      );
+    }
+  });
+}
+
+function currentWeekKey(): string {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const day = start.getUTCDay() || 7;
+  start.setUTCDate(start.getUTCDate() - day + 1);
+  start.setUTCHours(0, 0, 0, 0);
+  const yearStart = new Date(Date.UTC(start.getUTCFullYear(), 0, 4));
+  const yearStartDay = yearStart.getUTCDay() || 7;
+  yearStart.setUTCDate(yearStart.getUTCDate() - yearStartDay + 1);
+  const week = Math.floor((start.getTime() - yearStart.getTime()) / 604_800_000) + 1;
+  return `${start.getUTCFullYear()}-W${String(Math.max(1, week)).padStart(2, '0')}`;
 }
 
 async function persistAskReadLedger(input: {

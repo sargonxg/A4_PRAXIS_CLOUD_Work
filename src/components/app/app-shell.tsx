@@ -31,7 +31,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const fetchSituations = useSituationStore((state) => state.fetchSituations);
   const router = useRouter();
   const pathname = usePathname();
-  const isOnePageCockpit = pathname === '/app';
+  const isOnePageCockpit =
+    pathname === '/app' ||
+    pathname === '/app/capsules' ||
+    pathname.startsWith('/app/conversations/');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
