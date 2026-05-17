@@ -210,7 +210,7 @@ gcloud run deploy praxis-frontend `
     --allow-unauthenticated `
     --memory 1Gi `
     --cpu 1 `
-    --min-instances 0 `
+    --min-instances 1 `
     --max-instances 10 `
     --set-secrets "FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest"
 
