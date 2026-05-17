@@ -9,7 +9,9 @@ import { PraxisMark } from "@/components/brand/praxis-mark";
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "Capsules", href: "/login?mode=signup" },
+  { label: "Repository", href: "/login?mode=signup&redirect=%2Fapp%2Fcapsules" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Learn", href: "/learn" },
   { label: "Release notes", href: "/release-notes" },
 ];
 
@@ -117,7 +119,7 @@ export default function LandingLayout({
                 prefetch={false}
                 className="btn-capsule-secondary inline-flex h-9 items-center justify-center rounded-full px-4 font-serif text-[14px] font-semibold tracking-tight"
               >
-                Sign In
+                Sign in
               </Link>
               <Link
                 href="/login?mode=signup"
@@ -171,7 +173,7 @@ export default function LandingLayout({
                 onClick={() => setMobileMenuOpen(false)}
                 className="btn-capsule-secondary inline-flex h-11 items-center justify-center rounded-full px-5 font-serif text-[15px] font-semibold"
               >
-                Sign In
+                Sign in
               </Link>
               <Link
                 href="/login?mode=signup"
@@ -210,8 +212,14 @@ export default function LandingLayout({
             <Link href="/login?mode=signup" className="hover:text-[color:var(--color-ink)]">
               Capsules
             </Link>
+            <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="hover:text-[color:var(--color-ink)]">
+              Repository
+            </Link>
             <Link href="/pricing" className="hover:text-[color:var(--color-ink)]">
               Pricing
+            </Link>
+            <Link href="/learn" className="hover:text-[color:var(--color-ink)]">
+              Learn
             </Link>
             <Link href="/release-notes" className="hover:text-[color:var(--color-ink)]">
               Release notes

@@ -37,8 +37,8 @@ for (const rel of [
   expectFile(rel);
 }
 
-expectIncludes('src/app/(landing)/layout.tsx', ['Home', 'Capsules', 'Pricing', 'Release notes', 'New capsule']);
-expectExcludes('src/app/(landing)/layout.tsx', ['href="/tacitus"', 'https://tacitus.me', 'Learn']);
+expectIncludes('src/app/(landing)/layout.tsx', ['Home', 'Capsules', 'Repository', 'Pricing', 'Learn', 'Release notes', 'New capsule']);
+expectExcludes('src/app/(landing)/layout.tsx', ['href="/tacitus"', 'https://tacitus.me']);
 expectIncludes('src/components/landing/phase8-wow-landing.tsx', [
   'TaskletPraxisWorkbench',
   'mode="public"',
@@ -56,8 +56,6 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'data-testid="capsule-context-picker"',
   'data-testid="capsule-manager"',
   'data-testid="tasklet-capsule-cards"',
-  "'/api/ai/ask-praxis'",
-  'forceRun: true',
   'What can PRAXIS do for you?',
   'Describe a task or responsibility',
   'AccountProfileButton',
@@ -65,9 +63,9 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'policyAgentRunIntent',
   'refreshCapsules',
   'capsule-detail-panel',
-  'policy-team-next-actions',
+  'capsule-agent-lane',
   'praxis-answer-markdown',
-  'capsule-workspace-actions',
+  'capsule-detail-panel',
   'capsule-builder-dialog',
   'capsule-repository-sheet',
   'capsule-inspector-sheet',
@@ -75,6 +73,8 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'message-action-row',
   'text-span-core-popover',
   '/spans',
+  'showWorkbenchNavigation',
+  'PRAXIS turns your ContextCapsules, documents, and policy tools into grounded analysis',
 ]);
 expectIncludes('src/components/app/app-shell.tsx', [
   'data-testid="praxis-one-page-app-shell"',
@@ -120,8 +120,8 @@ expectExcludes('src/lib/navigation/primary-nav.ts', [
   "label: 'Canvas'",
   "label: 'Advanced'",
 ]);
-expectIncludes('src/app/sitemap.ts', ['/pricing', '/release-notes', '/login']);
-expectExcludes('src/app/sitemap.ts', ['/learn', '/tacitus', '/privacy', '/terms']);
+expectIncludes('src/app/sitemap.ts', ['/learn', '/pricing', '/release-notes', '/login']);
+expectExcludes('src/app/sitemap.ts', ['/tacitus', '/privacy', '/terms']);
 expectIncludes('docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md', [
   'ContextCapsule',
   'Tasklet',

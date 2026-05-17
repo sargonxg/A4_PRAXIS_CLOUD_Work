@@ -47,15 +47,26 @@ for (const required of [
   'What can PRAXIS do for you?',
   'Describe a task or responsibility',
   'AccountProfileButton',
-  "fetch('/api/ai/ask-praxis'",
+  "currentToolId: 'ask-praxis'",
   'data-testid="capsule-context-bar"',
   'data-testid="praxis-chat-thread"',
-  'data-testid="policy-team-next-actions"',
+  'data-testid="capsule-agent-lane"',
   'data-testid="praxis-answer-markdown"',
-  'ContextCapsule Lite',
+  'PRAXIS turns your ContextCapsules, documents, and policy tools into grounded analysis',
   'Search capsules',
+  'showWorkbenchNavigation',
 ]) {
   if (!workbench.includes(required)) failures.push(`shared cockpit missing marker: ${required}`);
+}
+
+const landingLayout = read('src/app/(landing)/layout.tsx');
+for (const required of ['Home', 'Capsules', 'Repository', 'Pricing', 'Learn', 'Release notes', 'Sign in']) {
+  if (!landingLayout.includes(required)) failures.push(`public navigation missing marker: ${required}`);
+}
+
+const sitemap = read('src/app/sitemap.ts');
+for (const required of ['/learn', '/pricing', '/release-notes', '/login']) {
+  if (!sitemap.includes(required)) failures.push(`sitemap missing public route: ${required}`);
 }
 
 for (const required of [
