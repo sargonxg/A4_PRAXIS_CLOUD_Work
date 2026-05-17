@@ -75,6 +75,11 @@ for (const stalePublicFile of ['public/sitemap.xml', 'public/robots.txt']) {
   }
 }
 
+const dockerfile = read('Dockerfile');
+if (!dockerfile.includes('rm -f public/sitemap.xml public/robots.txt')) {
+  failures.push('Dockerfile must remove stale public sitemap/robots files before serving the standalone image');
+}
+
 for (const required of [
   'data-testid="praxis-one-page-app-shell"',
   "pathname === '/app'",
