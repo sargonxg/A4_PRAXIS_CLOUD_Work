@@ -300,7 +300,10 @@ function LoginForm() {
             <h1 className="font-serif text-3xl tracking-wide text-slate-950">
               PRAXIS
             </h1>
-            <p className="mt-1.5 text-sm tracking-widest text-slate-500 uppercase">
+            <p className="mt-1.5 text-xs font-semibold tracking-[0.24em] text-[color:var(--color-rose-gold)] uppercase">
+              PRAXIS | Think Policy
+            </p>
+            <p className="mt-2 text-sm tracking-widest text-slate-500 uppercase">
               Open the app workspace
             </p>
           </motion.div>
@@ -333,6 +336,9 @@ function LoginForm() {
                 </>
               )}
             </button>
+            <p className="mt-2 text-center text-xs text-slate-500">
+              Uses secure Google sign-in in this tab. Choose the account you want tied to PRAXIS.
+            </p>
           </motion.div>
 
           {/* Divider */}

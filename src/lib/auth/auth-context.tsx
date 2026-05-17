@@ -483,6 +483,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setAuthError(null);
       const provider = new GoogleAuthProvider();
+      provider.addScope('email');
+      provider.addScope('profile');
+      provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithRedirect(auth, provider);
       // Page navigates to Google — this line is never reached
       return { success: true };
