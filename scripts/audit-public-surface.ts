@@ -69,6 +69,12 @@ for (const required of ['/learn', '/pricing', '/release-notes', '/login']) {
   if (!sitemap.includes(required)) failures.push(`sitemap missing public route: ${required}`);
 }
 
+for (const stalePublicFile of ['public/sitemap.xml', 'public/robots.txt']) {
+  if (existsSync(join(root, stalePublicFile))) {
+    failures.push(`stale public SEO file shadows App Router route: ${stalePublicFile}`);
+  }
+}
+
 for (const required of [
   'data-testid="praxis-one-page-app-shell"',
   "pathname === '/app'",
