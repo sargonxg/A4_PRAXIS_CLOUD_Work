@@ -85,7 +85,9 @@ Event-level intelligence is now served from **GDELT BigQuery**
    (There is **no separate `roles/aiplatform.reasoningEngineUser`**;
    `roles/aiplatform.user` is the canonical invoker role as of April 2026.)
 7. Keep `VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest` mounted in
-   `cloudbuild.yaml` `--set-secrets` for the frontend.
+   `cloudbuild.yaml` `--set-secrets` for the frontend, including
+   `PUBSUB_PUSH_SHARED_SECRET=praxis-pubsub-push-secret:latest` for Pub/Sub
+   push subscriber authentication.
 8. Verify: `curl -s https://praxis.tacitus.me/api/health | jq '.checks.vertex_adk'`.
 
 ### 1c. GDELT BigQuery hot slice (free <1 TB/mo, ~2 h)

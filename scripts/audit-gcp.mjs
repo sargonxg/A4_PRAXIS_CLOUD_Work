@@ -78,6 +78,7 @@ const checks = [
   { name: 'Secret: praxis-langgraph-db-password',           category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-langgraph-db-password') },
   { name: 'Secret: praxis-ucdp-api-token',                 category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-ucdp-api-token') },
   { name: 'Secret: praxis-vertex-adk-engine-id',           category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-vertex-adk-engine-id') },
+  { name: 'Secret: praxis-pubsub-push-secret',             category: 'secret',  run: () => gcloudDescribe('secrets describe praxis-pubsub-push-secret') },
 
   // Pub/Sub topics with in-repo publishers/subscribers. Cloud Tasks remains
   // the durable per-run execution queue; Pub/Sub is event fan-out.

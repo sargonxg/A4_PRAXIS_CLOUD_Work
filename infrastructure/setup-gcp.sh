@@ -142,7 +142,8 @@ for secret in \
   praxis-cookie-secret \
   praxis-cognee-db-password \
   praxis-cognee-llm-api-key \
-  praxis-cognee-encryption-key; do
+  praxis-cognee-encryption-key \
+  praxis-pubsub-push-secret; do
   gcloud secrets create "$secret" --replication-policy=automatic 2>/dev/null \
     || echo "Secret $secret already exists"
 done
@@ -160,6 +161,7 @@ echo "  printf 'my-cookie-secret-32chars' | gcloud secrets versions add praxis-c
 echo "  openssl rand -base64 24 | gcloud secrets versions add praxis-cognee-db-password --data-file=-"
 echo "  printf 'vertex-adc' | gcloud secrets versions add praxis-cognee-llm-api-key --data-file=-"
 echo "  openssl rand -base64 32 | gcloud secrets versions add praxis-cognee-encryption-key --data-file=-"
+echo "  openssl rand -base64 32 | gcloud secrets versions add praxis-pubsub-push-secret --data-file=-"
 echo ""
 
 # ── IAM Permissions ──────────────────────────────────────────────────────────

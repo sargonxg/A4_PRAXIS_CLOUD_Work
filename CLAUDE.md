@@ -468,6 +468,7 @@ See `.env.example` for complete list. Critical:
 - `CRON_SECRET` — Cron + admin auth
 - `COOKIE_SIGNING_SECRET` — Session cookie HMAC (primary; read first by `cookie-signer.ts`)
 - `SESSION_SECRET` — Alias for `COOKIE_SIGNING_SECRET`; Cloud Build mounts both from the same Secret Manager secret (`praxis-cookie-secret`) for backward compatibility
+- `PUBSUB_PUSH_SHARED_SECRET` — Secret mounted from `praxis-pubsub-push-secret`; required by production Pub/Sub push subscriber routes.
 - `UCDP_API_TOKEN` — Optional but recommended UCDP API token mounted from Secret Manager `praxis-ucdp-api-token`
 
 The `NEXT_PUBLIC_FIREBASE_*` client config values are public and have defaults in `src/lib/firebase/config.ts` for the `praxisbytacitus` project. This is intentional so clean-clone builds pass without `.env.local`; still use `.env.local` when pointing a local build at a different Firebase project.

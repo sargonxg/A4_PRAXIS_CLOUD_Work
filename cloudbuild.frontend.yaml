@@ -91,7 +91,7 @@ steps:
       - '--set-env-vars'
       - '^|^AI_PROVIDER=vertex|GOOGLE_VERTEX_PROJECT=praxisbytacitus|GOOGLE_VERTEX_LOCATION=us-central1|VERTEX_AGENT_LOCATION=us-central1|GOOGLE_CLOUD_PROJECT=praxisbytacitus|ADMIN_EMAIL_ALLOWLIST=giulio@tacitus.me,giuliocatanzariti@gmail.com'
       - '--set-secrets'
-      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,UCDP_API_TOKEN=praxis-ucdp-api-token:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest,USER_KEY_MASTER=praxis-user-key-master:latest,VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest'
+      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,UCDP_API_TOKEN=praxis-ucdp-api-token:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest,USER_KEY_MASTER=praxis-user-key-master:latest,VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest,PUBSUB_PUSH_SHARED_SECRET=praxis-pubsub-push-secret:latest'
     id: 'deploy-frontend'
     waitFor: ['push-frontend']
 
