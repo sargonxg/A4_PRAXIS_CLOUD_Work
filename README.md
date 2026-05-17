@@ -127,7 +127,6 @@ src/app/             Next.js routes for public site, auth, app shell, API
 src/components/      Shared UI for Ask PRAXIS, dashboard, workbench, tools
 src/lib/             Auth, context, tools, AI, data, graph, and utilities
 backend/             Python FastAPI backend and graph pipeline
-rust/semantica-core/ Rust validator for the context-core contract
 cloud_functions/     GCP event handlers and ingestion workers
 infrastructure/      Deploy scripts and cloud setup helpers
 docs/                Architecture, build notes, audits, and runbooks
