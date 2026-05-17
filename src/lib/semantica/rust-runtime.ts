@@ -1,5 +1,4 @@
 import { spawn } from 'node:child_process';
-import { join } from 'node:path';
 
 export interface RustSemanticaValidationResult {
   nodeCount: number;
@@ -22,14 +21,7 @@ export interface RustSemanticaCliResponse {
 export function getRustSemanticaBinaryPath(): string {
   if (process.env.PRAXIS_SEMANTICA_CORE_BIN) return process.env.PRAXIS_SEMANTICA_CORE_BIN;
   if (process.platform !== 'win32') return '/app/bin/praxis-semantica-core';
-  return join(
-    /* turbopackIgnore: true */ process.cwd(),
-    'rust',
-    'semantica-core',
-    'target-ci',
-    'debug',
-    'praxis-semantica-core.exe',
-  );
+  return 'rust\\semantica-core\\target-ci\\debug\\praxis-semantica-core.exe';
 }
 
 export async function validateWithRustSemanticaCore(graph: unknown): Promise<RustSemanticaCliResponse> {
