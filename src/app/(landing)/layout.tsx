@@ -191,7 +191,7 @@ export default function LandingLayout({
       {/* Page content */}
       <main className="relative z-10">{children}</main>
 
-      {/* Footer — glass capsule, single row, brand-anchored */}
+      {/* Footer — compact brand/contact row; public route navigation lives only in the header. */}
       <footer className="relative z-10 mt-24 px-3 pb-6 sm:px-5">
         <div className="mx-auto flex max-w-[1180px] flex-col items-center justify-between gap-3 rounded-3xl border border-[color:var(--color-rose-gold)]/25 bg-white/45 px-6 py-5 backdrop-blur-md sm:flex-row sm:gap-4">
           <Link href="/" className="group flex items-center gap-2.5">
@@ -205,25 +205,7 @@ export default function LandingLayout({
               by TACITUS · v6.4
             </span>
           </Link>
-          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[color:var(--color-ink)]/65">
-            <Link href="/" className="hover:text-[color:var(--color-ink)]">
-              Home
-            </Link>
-            <Link href="/login?mode=signup" className="hover:text-[color:var(--color-ink)]">
-              Capsules
-            </Link>
-            <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="hover:text-[color:var(--color-ink)]">
-              Repository
-            </Link>
-            <Link href="/pricing" className="hover:text-[color:var(--color-ink)]">
-              Pricing
-            </Link>
-            <Link href="/learn" className="hover:text-[color:var(--color-ink)]">
-              Learn
-            </Link>
-            <Link href="/release-notes" className="hover:text-[color:var(--color-ink)]">
-              Release notes
-            </Link>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[color:var(--color-ink)]/65">
             <a
               href="mailto:hello@tacitus.me"
               className="hover:text-[color:var(--color-ink)]"
@@ -233,7 +215,7 @@ export default function LandingLayout({
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink)]/40">
               © 2026 · TACITUS
             </span>
-          </nav>
+          </div>
         </div>
       </footer>
     </div>

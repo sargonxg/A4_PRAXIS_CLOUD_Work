@@ -63,6 +63,12 @@ const landingLayout = read('src/app/(landing)/layout.tsx');
 for (const required of ['Home', 'Capsules', 'Repository', 'Pricing', 'Learn', 'Release notes', 'Sign in']) {
   if (!landingLayout.includes(required)) failures.push(`public navigation missing marker: ${required}`);
 }
+for (const singleHeaderRoute of ['/pricing', '/learn', '/release-notes']) {
+  const routeCount = landingLayout.split(`href: "${singleHeaderRoute}"`).length - 1;
+  if (routeCount !== 1) {
+    failures.push(`public route ${singleHeaderRoute} should appear once in the landing layout header, found ${routeCount}`);
+  }
+}
 
 const sitemap = read('src/app/sitemap.ts');
 for (const required of ['/learn', '/pricing', '/release-notes', '/login']) {
