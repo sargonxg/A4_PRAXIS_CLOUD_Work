@@ -2135,6 +2135,7 @@ function CapsuleDetailPanel({
         <Metric label="Tools" value={counts.tools} />
         <Metric label="Outputs" value={counts.outputs} />
       </div>
+      <CapsuleHealthMeter counts={counts} state={state} agentRunCount={agentRuns.length} />
       <div className="mt-4 grid grid-cols-4 gap-1 rounded-md bg-slate-100 p-1" data-testid="capsule-detail-tabs">
         {(['build', 'connect', 'retrieve', 'agents'] as const).map((tab) => (
           <button
@@ -2231,14 +2232,21 @@ function CapsuleDetailPanel({
       {detailTab === 'agents' ? (
         <div className="mt-4 space-y-3" data-testid="capsule-agent-lane">
           {focusedRunLoading ? (
-            <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-500">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-500">
               Opening selected agent run...
             </div>
           ) : null}
           {focusedRun ? <FocusedAgentRunPanel detail={focusedRun} events={focusedRunEvents} /> : null}
-          <div className="rounded-md border border-slate-200 p-3">
-            <p className="text-xs font-semibold text-slate-800">Capsule agents</p>
-            <p className="mt-1 text-[11px] leading-5 text-slate-500">Agents inherit this capsule, selected cores, repository sources, approval posture, and output target.</p>
+          <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-3">
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-white shadow-sm shadow-slate-950/20">
+                <Sparkles className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-800">Capsule agents</p>
+                <p className="mt-1 text-[11px] leading-5 text-slate-500">Agents inherit this capsule, selected cores, repository sources, approval posture, and output target.</p>
+              </div>
+            </div>
           </div>
           <div className="space-y-2">
             {PRAXIS_POLICY_AGENTS.map((agent) => (
@@ -2258,11 +2266,12 @@ function CapsuleDetailPanel({
             </div>
             <div className="mt-2 space-y-2">
               {agentRuns.map((run) => (
-                <article key={run.runId} className="rounded-md bg-slate-50 px-3 py-2">
+                <article key={run.runId} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5 shadow-sm shadow-slate-950/[0.02]">
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate text-xs font-semibold text-slate-800">{run.policyAgentLabel ?? run.policyAgentId ?? 'Capsule agent'}</p>
                     <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-semibold', agentRunStatusClass(run.status))}>{run.status.replaceAll('_', ' ')}</span>
                   </div>
+                  <AgentStatusRail status={run.status} compact />
                   <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-slate-500">{run.objective}</p>
                   <div className="mt-1 flex items-center justify-between gap-2">
                     <p className="font-mono text-[10px] text-slate-400">{run.runId.slice(0, 12)} · {new Date(run.createdAt).toLocaleDateString()}</p>
@@ -2297,37 +2306,158 @@ function CapsuleDetailPanel({
 
 function FocusedAgentRunPanel({ detail, events }: { detail: AgentRunDetail; events: AgentRunEventSummary[] }) {
   const { run, toolCalls = [], approvals = [] } = detail;
+  const latestEvents = (events.length ? events : [{ id: 'empty', eventType: 'run.loaded', message: 'Run loaded. Waiting for worker receipts.', createdAt: run.updatedAt }]).slice(-5);
   return (
-    <article className="rounded-md border border-[#ff714d]/30 bg-[#fff7f3] p-3" data-testid="focused-agent-run">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-950">{run.policyAgentLabel ?? run.policyAgentId ?? 'Capsule agent workspace'}</p>
-          <p className="mt-1 font-mono text-[10px] text-slate-500">{run.runId}</p>
+    <article className="overflow-hidden rounded-xl border border-[#ff714d]/25 bg-[#fff8f5] shadow-sm shadow-[#ff714d]/10" data-testid="focused-agent-run">
+      <div className="relative border-b border-[#ff714d]/15 bg-gradient-to-br from-[#fff7f3] via-white to-[#f8fafc] p-4">
+        <div className="absolute right-4 top-4 h-16 w-16 rounded-full border border-[#ff714d]/20" aria-hidden />
+        <div className="relative flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#ca4a25]">Agent workspace</p>
+            <p className="mt-1 truncate text-sm font-semibold text-slate-950">{run.policyAgentLabel ?? run.policyAgentId ?? 'Capsule agent workspace'}</p>
+            <p className="mt-1 break-all font-mono text-[10px] leading-4 text-slate-500">{run.runId}</p>
+          </div>
+          <span className={cn('shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold', agentRunStatusClass(run.status))}>
+            {run.status.replaceAll('_', ' ')}
+          </span>
         </div>
-        <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-semibold', agentRunStatusClass(run.status))}>
-          {run.status.replaceAll('_', ' ')}
-        </span>
+        <AgentStatusRail status={run.status} />
+        <p className="relative mt-3 text-xs leading-5 text-slate-700">{run.objective}</p>
       </div>
-      <p className="mt-3 text-xs leading-5 text-slate-700">{run.objective}</p>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <Metric label="Events" value={events.length} />
-        <Metric label="Tools" value={toolCalls.length} />
-        <Metric label="Approvals" value={approvals.length} />
+      <div className="grid grid-cols-3 gap-2 p-3">
+        <ReceiptTile label="Events" value={events.length} icon={Clipboard} tone="slate" />
+        <ReceiptTile label="Tools" value={toolCalls.length} icon={WandSparkles} tone="amber" />
+        <ReceiptTile label="Approvals" value={approvals.length} icon={ShieldCheck} tone="emerald" />
       </div>
       {run.outputHref ? (
-        <Link href={run.outputHref} className="mt-3 inline-flex rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
-          Open output
-        </Link>
+        <div className="px-3 pb-3">
+          <Link href={run.outputHref} className="inline-flex rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+            Open output
+          </Link>
+        </div>
       ) : null}
-      <div className="mt-3 space-y-2">
-        {(events.length ? events : [{ id: 'empty', eventType: 'run.loaded', message: 'Run loaded. Waiting for worker receipts.', createdAt: run.updatedAt }]).slice(-5).map((event) => (
-          <div key={event.id} className="rounded-md bg-white/80 px-3 py-2">
-            <p className="text-[11px] font-semibold text-slate-800">{event.eventType}</p>
-            {event.message ? <p className="mt-1 text-[11px] leading-5 text-slate-500">{event.message}</p> : null}
+      <RunEventTimeline events={latestEvents} />
+    </article>
+  );
+}
+
+function CapsuleHealthMeter({
+  counts,
+  state,
+  agentRunCount,
+}: {
+  counts: ReturnType<typeof capsuleCounts>;
+  state: keyof typeof capsuleStateStyles;
+  agentRunCount: number;
+}) {
+  const total = counts.documents + counts.sources + counts.tools + counts.outputs + agentRunCount;
+  const slots = [
+    { label: 'Docs', active: counts.documents > 0, tone: 'bg-sky-500' },
+    { label: 'Sources', active: counts.sources > 0, tone: 'bg-emerald-500' },
+    { label: 'Tools', active: counts.tools > 0, tone: 'bg-amber-500' },
+    { label: 'Outputs', active: counts.outputs > 0, tone: 'bg-violet-500' },
+    { label: 'Runs', active: agentRunCount > 0, tone: 'bg-[#ff714d]' },
+  ];
+  const active = slots.filter((slot) => slot.active).length;
+
+  return (
+    <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Capsule health</p>
+          <p className="mt-1 text-xs font-semibold text-slate-700">{active}/5 layers active · {state.replaceAll('-', ' ')}</p>
+        </div>
+        <span className="rounded-md bg-white px-2 py-1 font-mono text-[11px] font-semibold text-slate-500">{total} refs</span>
+      </div>
+      <div className="mt-3 grid grid-cols-5 gap-1.5">
+        {slots.map((slot) => (
+          <span key={slot.label} className="h-1.5 rounded-full bg-white" title={slot.label}>
+            <span className={cn('block h-1.5 rounded-full transition', slot.active ? slot.tone : 'bg-slate-200')} />
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AgentStatusRail({ status, compact = false }: { status: AgentRunSummary['status']; compact?: boolean }) {
+  const steps: Array<{ id: AgentRunSummary['status'] | 'created'; label: string }> = [
+    { id: 'queued', label: 'Queued' },
+    { id: 'running', label: 'Running' },
+    { id: 'waiting_approval', label: 'Approval' },
+    { id: 'succeeded', label: 'Output' },
+  ];
+  const terminalFailed = status === 'failed' || status === 'cancelled' || status === 'expired';
+  const activeIndex = terminalFailed ? 1 : Math.max(0, steps.findIndex((step) => step.id === status));
+
+  return (
+    <div className={cn('grid grid-cols-4 gap-1', compact ? 'mt-2' : 'mt-4')}>
+      {steps.map((step, index) => {
+        const active = index <= activeIndex && !terminalFailed;
+        const current = step.id === status;
+        return (
+          <span key={step.id} className="min-w-0">
+            <span className={cn('block h-1 rounded-full', active ? 'bg-[#ff714d]' : terminalFailed && index === activeIndex ? 'bg-rose-400' : 'bg-slate-200')} />
+            {!compact ? (
+              <span className={cn('mt-1 block truncate text-[10px] font-semibold', current ? 'text-slate-800' : 'text-slate-400')}>{step.label}</span>
+            ) : null}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function ReceiptTile({
+  label,
+  value,
+  icon: Icon,
+  tone,
+}: {
+  label: string;
+  value: number;
+  icon: LucideIcon;
+  tone: 'slate' | 'amber' | 'emerald';
+}) {
+  const toneClass = {
+    slate: 'bg-slate-100 text-slate-600',
+    amber: 'bg-amber-50 text-amber-700',
+    emerald: 'bg-emerald-50 text-emerald-700',
+  }[tone];
+
+  return (
+    <span className="rounded-lg border border-slate-200 bg-white p-2">
+      <span className={cn('inline-flex h-6 w-6 items-center justify-center rounded-md', toneClass)}>
+        <Icon className="h-3.5 w-3.5" />
+      </span>
+      <span className="mt-2 block text-lg font-semibold leading-none text-slate-900">{value}</span>
+      <span className="mt-1 block text-[11px] font-semibold text-slate-400">{label}</span>
+    </span>
+  );
+}
+
+function RunEventTimeline({ events }: { events: AgentRunEventSummary[] }) {
+  return (
+    <div className="border-t border-[#ff714d]/15 bg-white/70 p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Run receipts</p>
+      <div className="mt-3 space-y-0">
+        {events.map((event, index) => (
+          <div key={event.id} className="grid grid-cols-[18px_minmax(0,1fr)] gap-2">
+            <span className="flex flex-col items-center">
+              <span className="mt-1 h-2 w-2 rounded-full bg-[#ff714d]" />
+              {index < events.length - 1 ? <span className="mt-1 h-full min-h-8 w-px bg-slate-200" /> : null}
+            </span>
+            <span className="pb-3">
+              <span className="flex items-center justify-between gap-2">
+                <span className="truncate text-[11px] font-semibold text-slate-800">{event.eventType.replaceAll('_', ' ')}</span>
+                <span className="shrink-0 text-[10px] font-semibold text-slate-400">{formatEventTime(event.createdAt)}</span>
+              </span>
+              {event.message ? <span className="mt-1 block text-[11px] leading-5 text-slate-500">{event.message}</span> : null}
+            </span>
           </div>
         ))}
       </div>
-    </article>
+    </div>
   );
 }
 
@@ -2434,6 +2564,12 @@ function parseAgentRunSse(text: string): AgentRunEventSummary[] {
       }
     })
     .filter((event): event is AgentRunEventSummary => Boolean(event));
+}
+
+function formatEventTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'now';
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 function MessageActionRow({

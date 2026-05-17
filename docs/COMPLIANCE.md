@@ -6,47 +6,34 @@ regulatory obligation changes.
 
 ---
 
-## 1. Data licensing — open-source-only stack
+## 1. Data licensing — Google-grounded and user-source stack
 
-**Strategic posture (2026-04-25):** PRAXIS ships exclusively on
-open-license data feeds. We do not redistribute commercially-licensed
-data to customers. This dramatically simplifies our compliance posture
-and removes per-customer license negotiation as a launch blocker.
+**Strategic posture (2026-05-17):** PRAXIS no longer ingests structured
+conflict/humanitarian feeds. Live research runs through Google Search grounding
+and source-linked crawler receipts, with user documents/URLs as primary
+analyst-provided evidence.
 
 ### 1.1 Sources actively used and their license posture
 
 | Source | License | Commercial SaaS use | Attribution required | Notes |
 |---|---|---|---|---|
-| GDELT 2.0 (BigQuery `gdelt-bq.gdeltv2.*`) | Public domain | ✅ Yes | Yes — "Source: GDELT 2.0" | Hosted free up to 1 TB/mo BigQuery query |
-| UCDP GED | CC-BY 4.0 | ✅ Yes | Yes — cite version + DOI | Free, georeferenced events |
-| ReliefWeb | Open redistribution permitted | ✅ Yes | Yes — link back | OCHA situation reports |
-| HDX HAPI | Per-dataset (mostly CC-BY-4.0) | ✅ Mostly yes | Yes — per-dataset | License field exposed by HAPI |
-| UNHCR Refugee Data Finder | Open | ✅ Yes | Yes — "Source: UNHCR" | Population stats |
-| World Bank WDI / WGI | Open data terms | ✅ Yes | Yes — "Source: World Bank" | |
-| UN News RSS | Public domain | ✅ Yes | Yes — link back | |
 | Wikipedia | CC-BY-SA 4.0 | ✅ Yes (with share-alike) | Yes — link to article | Used for actor enrichment summaries; we do not redistribute large excerpts verbatim |
 | Google Search (grounded via Gemini) | Google AI Terms | ✅ Yes | Per Google attribution rules | Built into Vertex AI |
-| Vertex AI Deep Research (Reasoning Engine) | Google Cloud Terms | ✅ Yes | n/a | Computation, not data |
-| BigQuery public datasets (GHCN, NOAA, WHO, IMF, Census) | Per-dataset (mostly open) | ✅ Mostly yes | Per-dataset | Free first 1 TB/mo |
+| Source-linked web crawler receipts | Per-source terms | Review per source | Link + timestamp required | Optional; stores metadata/excerpts, not full articles |
 
 ### 1.2 Sources we deliberately DO NOT use
 
 | Source | Why we don't use it |
 |---|---|
-| ~~ACLED~~ | ACLED's 2026 EULA forbids SaaS dashboards from redistributing event data without a per-customer Corporate License (~$5–25k/yr). Replaced with GDELT BigQuery + UCDP GED for event data. |
-| ~~Firecrawl / Bright Data / Apify~~ | Paid scrapers introduce vendor lock-in and per-page costs. Replaced with Vertex AI Deep Research + grounded Google Search. |
-| ~~Crisis Group CrisisWatch~~ | Required scraping with attribution risk. ICG content reachable via grounded search instead. |
-| ~~SIPRI Arms Transfer Database scrape~~ | Same. Macro indicators come from World Bank / UCDP. |
+| ~~ACLED, GDELT, UCDP, ReliefWeb, HDX, UN News, UNHCR, SIPRI, Crisis Group, World Bank~~ | Removed from active runtime; no dedicated clients, workers, or credentials. Use Google-grounded search or source-linked crawler receipts instead. |
+| ~~Firecrawl / Bright Data / Apify~~ | Paid scrapers introduce vendor lock-in and per-page costs. Replaced with grounded Google Search unless a crawler is explicitly receipt-backed. |
 | ~~Anthropic Claude~~ | Operational simplicity — Gemini 3.1 Pro is the single AI line. |
 | ~~Tavily / Parallel.ai~~ | Replaced with grounded Google Search. |
 
 ### 1.3 Attribution discipline (live in production)
 
-- Every page / report / API response that surfaces feed-derived
-  content carries an attribution line of the form
-  `Source: <feed-name> — <feed-url> — accessed YYYY-MM-DD`.
-- Per-dataset HDX licenses are surfaced in the Sources Library
-  whenever an HDX-derived row is rendered.
+- Every page / report / API response that surfaces live web content carries
+  source URL, title, retrieval timestamp, and receipt metadata.
 - The CC-BY-SA share-alike obligation for Wikipedia is honoured by
   treating the actor-enrichment summaries as derivative metadata,
   not redistribution; full attribution links are kept on the actor
@@ -60,9 +47,8 @@ cost-gated:
 
 - `SYRIA_LIVE_INGEST_ENABLED=false` returns the cached fallback packet
   for recording-safe demos and does not call paid providers.
-- `SYRIA_LIVE_INGEST_ENABLED=true` currently enables free ReliefWeb and
-  GDELT pulls for the last seven days, then merges with labeled cached
-  fallback material.
+- `SYRIA_LIVE_INGEST_ENABLED=true` must use grounded search or source-linked
+  crawler receipts only.
 - Local, wire, and think-tank sources are catalogued for provenance and
   grounded-search workflows, but PRAXIS stores only metadata and short
   excerpts. It does not reproduce full copyrighted articles.
@@ -122,9 +108,9 @@ of the open-source pivot.
 | Cloudflare (DNS) | DNS + CDN | Global | Yes |
 | GitHub | Source code hosting (no customer data) | US | Yes |
 
-**Removed from this list (no longer used):** ACLED, Firecrawl,
-Anthropic, Tavily, Parallel.ai. Their entries are kept in the audit
-log below for historical traceability.
+**Removed from this list (no longer used):** ACLED, GDELT, UCDP, ReliefWeb,
+HDX, UN News, UNHCR, SIPRI, Crisis Group, World Bank dedicated feeds,
+Firecrawl, Anthropic, Tavily, Parallel.ai.
 
 ---
 
@@ -136,6 +122,7 @@ log below for historical traceability.
 | 2026-04-25 (pivot) | Strategic pivot: dropped ACLED, Firecrawl, Anthropic from the dependency stack. Sub-processor list reduced to Google Cloud + Stripe + Cloudflare + GitHub. ACLED Corporate License negotiation cancelled. |
 | 2026-04-27 (LangGraph) | Added private-IP-only Cloud SQL Postgres as the approved LangGraph checkpoint store. This remains within the Google Cloud sub-processor boundary; user-visible canonical state stays in Firestore. |
 | 2026-04-28 (billing) | Began Stripe-to-Polar transition. New payments stack uses Polar hosted Checkout, Customer Portal, webhooks, and Firestore entitlement mirroring. |
+| 2026-05-17 (source cleanup) | Removed dedicated structured feed workers/clients and narrowed live research to Google Search grounding, optional receipt-backed crawlers, and user evidence. |
 
 ---
 
@@ -143,13 +130,9 @@ log below for historical traceability.
 
 - [x] Open-source-only data stance documented and reflected in
   landing page + system-health activation guide
-- [ ] Verify GDELT 2.0 attribution copy renders on every
-  GDELT-derived surface
 - [ ] Decide whether the LangGraph Cloud SQL region should move from
   `us-east4` to `us-central1` before production agent traffic, or keep
   `us-east4` because it was created there by Firebase/Cloud SQL setup
-- [ ] Deploy GDELT BigQuery hot slice per
-  `docs/implementation/gdelt-ingestion-2026-04-25.md`
 - [ ] Engage SOC 2 auditor (Drata / Vanta / Secureframe)
 - [ ] Draft public sub-processor list at
   `https://praxis.tacitus.me/legal/sub-processors`

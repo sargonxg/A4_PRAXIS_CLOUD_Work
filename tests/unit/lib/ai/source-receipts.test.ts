@@ -62,10 +62,10 @@ describe('source receipts', () => {
           reliabilityScore: 0.95,
         },
         {
-          title: 'Crisis Group source',
-          url: 'https://crisisgroup.org/example',
+          title: 'Local source',
+          url: 'https://example.org/local-update',
           content: 'Analysis content',
-          source: 'crisisgroup.org',
+          source: 'example.org',
           provider: 'google-search',
           reliabilityScore: 0.9,
         },

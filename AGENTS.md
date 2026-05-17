@@ -91,8 +91,8 @@ pass before a deploy checkpoint.
 - Do not deploy or push from a stale clone. Fetch first and preserve newer
   `main` history.
 - Keep public source/vendor claims aligned with the current stack:
-  Google Cloud/Firebase/Vertex AI, GDELT, UCDP, ReliefWeb, HDX, UN News,
-  World Bank, and grounded Google Search.
+  Google Cloud/Firebase/Vertex AI, grounded Google Search, optional
+  source-linked web crawlers, user documents, and Wikipedia background.
 - Commit coherent checkpoints and push to `main` after validation when
   credentials are available.
 

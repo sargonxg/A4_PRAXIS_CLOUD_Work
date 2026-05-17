@@ -5,7 +5,7 @@ route:
 
 - `graph-layer.ts` — Firestore canonical graph + optional Neo4j/Falkor/Spanner derived indexes.
 - `vector-layer.ts` — Firestore native KNN, 768-dim COSINE distance, `text-embedding-005`.
-- `feed-layer.ts` — TTL-cached data feeds (GDELT, UCDP, HDX, ReliefWeb, etc.).
+- `feed-layer.ts` — TTL-cached grounded-search and document evidence handles.
 - `tool-output-layer.ts` — versioned, cross-referenced tool outputs.
 
 Entry point: `new SituationKnowledgeCore(uid, situationId)` from `@/lib/knowledge`.

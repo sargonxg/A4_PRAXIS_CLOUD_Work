@@ -87,7 +87,7 @@ export type ConflictClassification =
   | 'extrastate'
   | 'other';
 
-export type UcdpIntensity = 'minor' | 'war' | 'non_state' | null;
+export type ConflictIntensity = 'minor' | 'war' | 'non_state' | null;
 
 export type AnalysisPhase = 'intake' | 'mapping' | 'assessment' | 'monitoring' | 'reporting';
 
@@ -113,7 +113,7 @@ export interface Situation {
   updatedAt: string;
   // v4.0 — all optional for backwards compatibility
   conflictClassification?: ConflictClassification;
-  ucdpIntensity?: UcdpIntensity;
+  conflictIntensity?: ConflictIntensity;
   informRiskIndex?: {
     hazard: number;
     vulnerability: number;

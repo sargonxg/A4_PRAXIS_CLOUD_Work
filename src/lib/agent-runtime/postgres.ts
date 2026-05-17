@@ -354,6 +354,46 @@ export async function listAgentApprovals(input: {
   return result.rows.map(rowToAgentApproval);
 }
 
+export async function decideAgentApproval(input: {
+  ownerUid: string;
+  runId: string;
+  approvalId: string;
+  decision: 'approved' | 'rejected';
+  decidedByUid: string;
+}): Promise<AgentApproval | null> {
+  await ensureSchema();
+  const run = await getAgentRun(input.ownerUid, input.runId);
+  if (!run) return null;
+  const result = await getPool().query(
+    `
+      UPDATE agent_approvals
+      SET status = $1, decided_at = $2, decided_by_uid = $3
+      WHERE owner_uid = $4 AND run_id = $5 AND id = $6 AND status = 'pending'
+      RETURNING *
+    `,
+    [input.decision, new Date(), input.decidedByUid, input.ownerUid, input.runId, input.approvalId],
+  );
+  const approval = result.rows[0] ? rowToAgentApproval(result.rows[0]) : null;
+  if (approval) {
+    await appendAgentRunEvent(makeAgentRunEvent({
+      runId: run.id,
+      ownerUid: run.ownerUid,
+      capsuleId: run.capsuleId,
+      eventType: `approval_${input.decision}`,
+      message: input.decision === 'approved'
+        ? 'Agent approval granted by the run owner.'
+        : 'Agent approval rejected by the run owner.',
+      data: {
+        approvalId: approval.id,
+        toolCallId: approval.toolCallId,
+        risk: approval.risk,
+      },
+      traceId: run.traceId,
+    }));
+  }
+  return approval;
+}
+
 export async function updateAgentRunStatus(input: {
   ownerUid: string;
   runId: string;

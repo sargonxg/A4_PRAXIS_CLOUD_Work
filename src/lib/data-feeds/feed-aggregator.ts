@@ -110,8 +110,7 @@ export interface ConflictProfile {
   governance: GovernanceSnapshot;
   armsFlows: ArmsFlowSnapshot;
   populationStats: PopulationSnapshot;
-  ucdpConflicts: [];
-  crisisWatchStatus?: string;
+  structuredFeedConflicts: [];
   sourceHealth: SourceHealth[];
   dataQuality: DataQuality;
   fetchedAt: string;
@@ -277,7 +276,7 @@ export async function getConflictProfile(options: {
     },
     armsFlows: { source: 'grounded_search' },
     populationStats: { source: 'grounded_search' },
-    ucdpConflicts: [],
+    structuredFeedConflicts: [],
     sourceHealth,
     dataQuality: {
       overallScore: Math.round((sourcesAvailable / sourceHealth.length) * 100),

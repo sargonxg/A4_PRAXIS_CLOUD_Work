@@ -108,8 +108,8 @@ export async function enqueueAgentRunDispatch(input: {
   if (!run) {
     throw new Error('Agent run not found for dispatch.');
   }
-  if (run.status !== 'queued') {
-    throw new Error(`Agent run dispatch requires queued status, received ${run.status}.`);
+  if (run.status !== 'queued' && run.status !== 'running') {
+    throw new Error(`Agent run dispatch requires queued or running status, received ${run.status}.`);
   }
 
   const payload = makeAgentRunDispatchPayload({

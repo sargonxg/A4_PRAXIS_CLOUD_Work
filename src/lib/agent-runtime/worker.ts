@@ -199,7 +199,7 @@ async function executeResearchMemoAgentRun(
       status: run.status,
       executionMode: 'research-memo',
       traceId: run.traceId,
-      outputHref: '/app',
+      outputHref: outputHrefFromMetadata(run.metadata, '/app?panel=memo'),
       idempotent: true,
     };
   }
@@ -367,6 +367,9 @@ async function executeResearchMemoAgentRun(
         completedAt: new Date().toISOString(),
       }));
     }
+    const outputHref = outputCapsule?.id
+      ? `/app?panel=memo&memoId=${encodeURIComponent(memoRecord.memo.id)}&outputCapsuleId=${encodeURIComponent(outputCapsule.id)}`
+      : `/app?panel=memo&memoId=${encodeURIComponent(memoRecord.memo.id)}`;
 
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
@@ -375,7 +378,7 @@ async function executeResearchMemoAgentRun(
       data: {
         memoId: memoRecord.memo.id,
         outputCapsuleId: outputCapsule?.id ?? null,
-        outputHref: '/app',
+        outputHref,
         sourceCount,
         gapCount: gapItems.length,
         evidencePackId: evidencePack.packId,
@@ -393,7 +396,7 @@ async function executeResearchMemoAgentRun(
         executionMode: 'research-memo',
         memoId: memoRecord.memo.id,
         outputCapsuleId: outputCapsule?.id ?? null,
-        outputHref: '/app',
+        outputHref,
       },
     });
 
@@ -402,7 +405,7 @@ async function executeResearchMemoAgentRun(
       status: succeeded?.status ?? 'succeeded',
       executionMode: 'research-memo',
       traceId: running.traceId,
-      outputHref: '/app',
+      outputHref,
       memoId: memoRecord.memo.id,
       outputCapsuleId: outputCapsule?.id,
     };
@@ -443,7 +446,7 @@ async function executeOutputFormatterAgentRun(
       status: run.status,
       executionMode: 'output-formatter',
       traceId: run.traceId,
-      outputHref: '/app',
+      outputHref: outputHrefFromMetadata(run.metadata, '/app?panel=memo'),
       idempotent: true,
     };
   }
@@ -575,6 +578,7 @@ async function executeOutputFormatterAgentRun(
         },
       ],
     });
+    const outputHref = `/app?panel=memo&memoId=${encodeURIComponent(memoRecord.memo.id)}`;
 
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
@@ -582,7 +586,7 @@ async function executeOutputFormatterAgentRun(
       message: 'Output Formatter created a Memo Studio draft with export readiness receipts.',
       data: {
         memoId: memoRecord.memo.id,
-        outputHref: '/app',
+        outputHref,
         sourceCount,
       },
     }, deps);
@@ -597,7 +601,7 @@ async function executeOutputFormatterAgentRun(
         attempt: payload.attempt,
         executionMode: 'output-formatter',
         memoId: memoRecord.memo.id,
-        outputHref: '/app',
+        outputHref,
       },
     });
 
@@ -606,7 +610,7 @@ async function executeOutputFormatterAgentRun(
       status: succeeded?.status ?? 'succeeded',
       executionMode: 'output-formatter',
       traceId: running.traceId,
-      outputHref: '/app',
+      outputHref,
       memoId: memoRecord.memo.id,
     };
   } catch (err) {
@@ -624,6 +628,11 @@ async function executeOutputFormatterAgentRun(
     }).catch(() => null);
     throw new AgentWorkerError('Agent run execution failed', 500);
   }
+}
+
+function outputHrefFromMetadata(metadata: Record<string, unknown>, fallback: string): string {
+  const outputHref = metadata.outputHref;
+  return typeof outputHref === 'string' && outputHref.startsWith('/app') ? outputHref : fallback;
 }
 
 function buildMemoBlocks(running: AgentRun, evidencePack: CapsuleEvidencePack): SaveMemoDraftInput['blocks'] {

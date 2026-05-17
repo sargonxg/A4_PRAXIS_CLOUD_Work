@@ -98,7 +98,7 @@ npm install
 - **Backend**: Python 3.11, FastAPI, NetworkX, Graspologic, Pydantic v2
 - **AI**: AI SDK v6 (`@ai-sdk/google`, `@ai-sdk/anthropic`), Google Genkit (backend), Vertex AI ADK
 - **Database**: Firebase Auth + Firestore, Neo4j/FalkorDB (graph), BigQuery (analytics)
-- **Data Feeds**: GDELT, UCDP, HDX, ReliefWeb, UN News, World Bank, UNHCR, grounded Google Search; Firecrawl and Parallel are optional accelerators. ACLED is withdrawn for SaaS redistribution/licensing reasons.
+- **Live Research**: Grounded Google Search is the canonical live path; optional source-linked web crawlers and user documents can add receipt-backed evidence. Structured feeds and vendor-specific ingestion workers are retired from the active stack.
 
 ## Current Executive Intelligence Slice
 
@@ -182,8 +182,7 @@ npm install
 │   └── main.py              FastAPI app entry
 ├── cloud_functions/         GCP Cloud Functions
 │   ├── on_situation_created/  Auto-trigger pipeline on new situation
-│   ├── on_document_uploaded/  Extract text + run pipeline
-│   └── gdelt_poller/         Continuous GDELT feed ingestion worker pool
+│   └── on_document_uploaded/  Extract text + run pipeline
 ├── infrastructure/
 │   ├── setup-gcp.sh         One-time project setup (APIs, BigQuery, Pub/Sub, IAM)
 │   ├── deploy.sh            Full deploy via Cloud Build
@@ -391,12 +390,12 @@ The exact mapping per task kind lives in `src/lib/ai/MODEL_MATRIX.json`.
 4-layer hybrid GraphRAG system backing the 55 registered tool surfaces:
 - **Graph Layer**: Firestore canonical graph + optional Neo4j/Falkor/Spanner derived indexes. `src/lib/knowledge/graph-layer.ts` provides the adapter; `src/lib/graph/graphops.ts` and `src/lib/graph/graphops-service.ts` provide the maintenance/readiness contract.
 - **Vector Layer**: `src/lib/knowledge/vector-layer.ts` — Firestore native KNN (768-dim, COSINE distance)
-- **Feed Layer**: `src/lib/knowledge/feed-layer.ts` — TTL-cached data feeds (ACLED, GDELT, HDX, etc.)
+- **Feed Layer**: `src/lib/knowledge/feed-layer.ts` — TTL-cached grounded-search and document evidence handles
 - **Tool Output Layer**: `src/lib/knowledge/tool-output-layer.ts` — cross-referenced versioned tool outputs
 
 Entry point: `new SituationKnowledgeCore(uid, situationId)` from `@/lib/knowledge`
 
-Zero-config fallback: Everything works with just GOOGLE_AI_API_KEY. Firestore remains the canonical graph store; Neo4j is a derived index when configured. ACLED is not a required dependency; use grounded search, GDELT, UCDP, and document evidence first. See Part 3 blueprint for full fallback matrix.
+Zero-config fallback: Everything works with just GOOGLE_AI_API_KEY. Firestore remains the canonical graph store; Neo4j is a derived index when configured. Use grounded search and document evidence first.
 
 GraphOps v0.1:
 - API: `GET /api/graph/ops?situationId=...`
@@ -423,9 +422,9 @@ Deducted atomically via Firestore transactions. Real-time sync via onSnapshot.
 | BigQuery | Pipeline analytics | praxis_analytics dataset |
 | Cloud Storage | Document uploads | gs://praxisbytacitus-praxis-uploads |
 | Pub/Sub | Async event fan-out | `profile.events`, `praxis.events`; Cloud Tasks remains run dispatch |
-| Cloud Functions | Event triggers | 3 functions (situation, document, GDELT) |
-| Cloud Scheduler | Cron jobs | GDELT (15min), alerts (6am), briefing (5am) |
-| Secret Manager | Sensitive config | Runtime secrets for Firebase Admin, AI, Firecrawl, Parallel, UCDP, cron/session signing, and user-key encryption; `ADMIN_ALLOWLIST` / `ADMIN_EMAIL_ALLOWLIST` gate admin access |
+| Cloud Functions | Event triggers | Situation and document triggers |
+| Cloud Scheduler | Cron jobs | Alerts (6am), briefing (5am) |
+| Secret Manager | Sensitive config | Runtime secrets for Firebase Admin, AI, cron/session signing, Pub/Sub, and user-key encryption; `ADMIN_ALLOWLIST` / `ADMIN_EMAIL_ALLOWLIST` gate admin access |
 
 ## Tool Categories (55 registered surfaces)
 
@@ -469,7 +468,6 @@ See `.env.example` for complete list. Critical:
 - `COOKIE_SIGNING_SECRET` — Session cookie HMAC (primary; read first by `cookie-signer.ts`)
 - `SESSION_SECRET` — Alias for `COOKIE_SIGNING_SECRET`; Cloud Build mounts both from the same Secret Manager secret (`praxis-cookie-secret`) for backward compatibility
 - `PUBSUB_PUSH_SHARED_SECRET` — Secret mounted from `praxis-pubsub-push-secret`; required by production Pub/Sub push subscriber routes.
-- `UCDP_API_TOKEN` — Optional but recommended UCDP API token mounted from Secret Manager `praxis-ucdp-api-token`
 
 The `NEXT_PUBLIC_FIREBASE_*` client config values are public and have defaults in `src/lib/firebase/config.ts` for the `praxisbytacitus` project. This is intentional so clean-clone builds pass without `.env.local`; still use `.env.local` when pointing a local build at a different Firebase project.
 

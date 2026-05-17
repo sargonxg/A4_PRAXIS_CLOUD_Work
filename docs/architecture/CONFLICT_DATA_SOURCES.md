@@ -5,18 +5,19 @@ update cadence, and citation posture affect real analyst work.
 
 ## Active Baseline
 
-- `UCDP`: conflict event baseline for active product references and source
-  credibility metadata.
-- `GDELT`: media tone and instability signal.
-- `HDX`, `ReliefWeb`, `World Bank`, `Google Grounding`: supporting contextual
-  feeds where already wired.
+- `Google Grounding`: canonical live-research path for current, source-linked
+  political and humanitarian context.
+- `Web crawler receipts`: optional future path, allowed only when each result
+  returns a checkable URL, excerpt, retrieval timestamp, and source receipt.
+- `User documents and URLs`: primary analyst-provided evidence.
+- `Wikipedia`: background and entity enrichment only.
 
-## Retired Active Source
+## Retired Active Sources
 
-ACLED client code has been removed from active `src`, `backend`, `scripts`, and
-`tests` paths. Historic documentation may still mention the data source as
-project history, but production code must not depend on it or request user
-credentials for it.
+ACLED, GDELT, UCDP, ReliefWeb, HDX, UN News, UNHCR, SIPRI, Crisis Group, and
+World Bank clients/workers are not active runtime dependencies. Historic docs
+may mention them as project history, but production code must not import their
+clients, deploy their workers, or request user credentials for them.
 
 ## Pack 30 Extraction Policy
 
