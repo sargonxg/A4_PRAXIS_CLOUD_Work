@@ -878,7 +878,7 @@ function buildCoreBricks({
       id: 'connector',
       label: 'Connector Core',
       value: evidenceCount > 0 ? 'Read-only feeds available' : 'Add source feed',
-      detail: 'GDELT, UCDP, ReliefWeb, HDX, UN News, World Bank, grounded Search, and private library sources',
+      detail: 'grounded search, source-linked event reporting, humanitarian web reporting, humanitarian data, official multilateral news, economic institution, grounded Search, and private library sources',
       href: '/app/contexts',
       version: 'v1',
       ready: evidenceCount > 0,

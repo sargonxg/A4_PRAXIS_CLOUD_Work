@@ -36,7 +36,7 @@ Enforcement: `audit:no-emoji-icons` script (planned).
 | Receipts, citations, IDs, page-spans, machine output | JetBrains Mono |
 
 Never use a sans for a heading or a serif for a button. Receipts
-(`[§4, p.12]`, `UCDP·CY-2026`) are always mono.
+(`[§4, p.12]`, `source-linked event reporting·CY-2026`) are always mono.
 
 ## Rule 4 — Empty states ≤ 6 words
 

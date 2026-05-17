@@ -76,7 +76,7 @@ provider resolution, schemas, tools, and audits:
   Genkit and marks interrupt-sensitive tools such as brief-builder and
   redline-finder.
 - `src/lib/genkit/mcp/index.ts` records disabled-first external MCP stubs for
-  UCDP, GDELT, ReliefWeb, HDX, UN News, and World Bank.
+  source-linked event reporting, grounded search, humanitarian web reporting, humanitarian data, official multilateral news, and economic institution.
 - `src/lib/genkit/dev-runner.ts` imports the current flows/tools for the Genkit
   developer runtime.
 - `package.json` includes the Genkit dependencies and runtime scripts,

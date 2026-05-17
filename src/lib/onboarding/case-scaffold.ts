@@ -43,7 +43,7 @@ const FALLBACK_ACTORS = [
   ['International mediator', 'Third party'],
 ];
 
-const SOURCE_HINTS = ['gdelt', 'reliefweb', 'ucdp', 'ucdp', 'un', 'icg', 'hdx'];
+const SOURCE_HINTS = ['grounded_search', 'humanitarian_web', 'source_linked_events', 'source_linked_events', 'un', 'icg', 'humanitarian_data'];
 
 export function buildCaseScaffoldProposal(input: {
   objective: string;
@@ -152,7 +152,7 @@ function inferSources(objective: string) {
     .filter((source) => SOURCE_HINTS.some((hint) => `${source.id} ${source.label} ${source.sources.join(' ')}`.toLowerCase().includes(hint)))
     .map((source) => source.id);
   const rights = /humanitarian|relief|darfur|sudan/i.test(objective)
-    ? SOURCE_CATEGORIES.filter((source) => /relief|humanitarian|hdx|un/i.test(`${source.id} ${source.label} ${source.sources.join(' ')}`.toLowerCase())).map((source) => source.id)
+    ? SOURCE_CATEGORIES.filter((source) => /relief|humanitarian|humanitarian_data|un/i.test(`${source.id} ${source.label} ${source.sources.join(' ')}`.toLowerCase())).map((source) => source.id)
     : [];
   return Array.from(new Set([...hits, ...rights, ...SOURCE_CATEGORIES.filter((source) => source.alwaysOn).map((source) => source.id)])).slice(0, 10);
 }

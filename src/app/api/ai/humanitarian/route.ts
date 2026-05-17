@@ -262,7 +262,7 @@ export const POST = withCalibration('humanitarian', 'ai_humanitarian', {
 
     const result = await callProModel({
       output: Output.object({ schema: HumanitarianSnapshotSchema }),
-      system: `You are a senior humanitarian analyst trained on UN OCHA, IASC cluster reporting, IPC Food Security Phase Classification, and UNHCR Refugee Data Finder methodology. You serve the analyst described below — calibrate audience, language, and red lines to their profile.
+      system: `You are a senior humanitarian analyst trained on UN OCHA, IASC cluster reporting, IPC Food Security Phase Classification, and displacement reporting Refugee Data Finder methodology. You serve the analyst described below — calibrate audience, language, and red lines to their profile.
 
 ${systemPromptBlock}
 

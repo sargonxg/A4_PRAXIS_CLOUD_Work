@@ -88,7 +88,7 @@ const DEMO_RESPONSE = {
     },
     {
       title: 'OCHA: 47,000 civilians at acute food risk as Checkpoint Bravo enters day 11',
-      outlet: 'UN News',
+      outlet: 'official multilateral news',
       country: 'International',
       significance:
         'IPC Phase 3 threshold crossed in three eastern districts. MSF 6-day supply warning now public. International pressure on GoN will intensify — creates diplomatic leverage window for humanitarian access negotiation.',
@@ -141,7 +141,7 @@ const DEMO_RESPONSE = {
       from:
         'International outlets characterised the ceasefire as "stressed but functional" through March 2026, noting back-channel maintenance and prisoner exchanges as stabilisers.',
       to:
-        'As of 8-9 April, Reuters, AP, and UN News all shifted to "on the verge of collapse" language following the Sector Bravo incursion and Commander Asante\'s Friday ultimatum. UNMN\'s formal 72-hour demand accelerated this shift.',
+        'As of 8-9 April, Reuters, AP, and official multilateral news all shifted to "on the verge of collapse" language following the Sector Bravo incursion and Commander Asante\'s Friday ultimatum. UNMN\'s formal 72-hour demand accelerated this shift.',
       evidence:
         'Reuters headline change tracked via media monitoring: 2 April "ceasefire holding despite tensions" vs. 9 April "UNMN ultimatum as ceasefire teeters." AP followed within 4 hours.',
     },
@@ -161,7 +161,7 @@ const DEMO_RESPONSE = {
       to:
         'OCHA IPC Phase 3 declaration and MSF supply warning have elevated humanitarian conditions to primary frame in UN, AP, and several European outlets. GoN blocking behaviour now explicitly named rather than passively described.',
       evidence:
-        'UN News led with humanitarian angle for first time since October 2025. BBC, Le Monde, and Der Spiegel all ran humanitarian-led pieces on 8-9 April.',
+        'official multilateral news led with humanitarian angle for first time since October 2025. BBC, Le Monde, and Der Spiegel all ran humanitarian-led pieces on 8-9 April.',
     },
   ],
   propagandaAlerts: [

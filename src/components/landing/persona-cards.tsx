@@ -35,7 +35,7 @@ const PERSONAS: readonly Persona[] = [
     title: "Humanitarian lead",
     role: "Access · Protection · Donor strategy",
     blurb:
-      "Turn HDX, ReliefWeb, and field reporting into needs-grounded, access-aware briefs.",
+      "Turn humanitarian data, humanitarian web reporting, and field reporting into needs-grounded, access-aware briefs.",
     outputs: ["Humanitarian one-pager", "Donor brief", "Access map"],
     accent: "sage",
   },

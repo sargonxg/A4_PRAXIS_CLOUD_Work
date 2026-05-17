@@ -112,7 +112,7 @@ export const CAPSULE_SLOT_DEFINITIONS: CapsuleSlotDefinition[] = [
     id: 'connector',
     label: 'Connector Core',
     shortLabel: 'Connectors',
-    description: 'Read-only feeds and integrations such as GDELT, UCDP, ReliefWeb, HDX, UN News, World Bank, grounded Google Search, and private library sources.',
+    description: 'Read-only feeds and integrations such as grounded search, source-linked event reporting, humanitarian web reporting, humanitarian data, official multilateral news, economic institution, grounded Google Search, and private library sources.',
     policyQuestions: ['Which feeds are allowed?', 'Should connector results be saved, referenced, or promoted?'],
     mappedCoreKinds: ['source', 'tool'],
   },
@@ -662,7 +662,7 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['conflict-analysis', 'regulatory-watch', 'public-sector-memo'],
     suggestedTools: ['Source Scout', 'Timeline Events', 'Power Map', 'Policy Memo'],
     suggestedOutputs: ['Diplomatic brief', 'Sourceable options memo', 'Talking points'],
-    sourceTags: ['un-news', 'gdelt', 'world-bank', 'diplomacy', 'sanctions'],
+    sourceTags: ['official-news', 'grounded_search', 'world-bank', 'diplomacy', 'sanctions'],
     missingInfoPrompts: ['Which country, institution, or negotiation track is in scope?', 'What multilateral context matters?', 'What source caveat should be explicit?'],
   },
   {
@@ -672,7 +672,7 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['conflict-analysis', 'temporal-causal-map', 'human-friction-map'],
     suggestedTools: ['Stakeholder Map', 'Mediation Design', 'Scenario Review', 'Red-team review'],
     suggestedOutputs: ['Mediation brief', 'Actor-interest map', 'Process design note'],
-    sourceTags: ['ucdp', 'gdelt', 'crisis-group', 'mediation', 'commitments'],
+    sourceTags: ['source_linked_events', 'grounded_search', 'crisis-group', 'mediation', 'commitments'],
     missingInfoPrompts: ['Which parties and spoilers are in scope?', 'What commitments or red lines are known?', 'What source gaps could distort the process read?'],
   },
   {
@@ -700,9 +700,9 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     label: 'Humanitarian analyst',
     userFrame: 'Access constraints, needs, protection risks, affected populations, operational partners, and source freshness.',
     defaultTemplates: ['humanitarian-access', 'crisis-brief', 'decision-clock'],
-    suggestedTools: ['Humanitarian Snapshot', 'ReliefWeb Search', 'Risk Indicators', 'Daily Brief'],
+    suggestedTools: ['Humanitarian Snapshot', 'Humanitarian Web Search', 'Risk Indicators', 'Daily Brief'],
     suggestedOutputs: ['Humanitarian situation brief', 'Access risk note', 'Operational handover'],
-    sourceTags: ['reliefweb', 'hdx', 'ocha', 'unhcr', 'protection'],
+    sourceTags: ['humanitarian_web', 'humanitarian_data', 'ocha', 'displacement_reporting', 'protection'],
     missingInfoPrompts: ['Which affected population and geography are in scope?', 'What access, needs, or protection constraint matters most?', 'How fresh must the operational picture be?'],
   },
   {
@@ -712,7 +712,7 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['defence-opportunity', 'conflict-analysis', 'temporal-causal-map'],
     suggestedTools: ['Power Map', 'Risk Indicators', 'Scenario Review', 'Board Brief'],
     suggestedOutputs: ['Security assessment', 'Capture brief', 'Opportunity brief'],
-    sourceTags: ['ucdp', 'sipri', 'defence', 'security', 'procurement'],
+    sourceTags: ['source_linked_events', 'security_research', 'defence', 'security', 'procurement'],
     missingInfoPrompts: ['Which capability, procurement, or force-posture question is live?', 'Which stakeholders and blockers matter?', 'What source classes are acceptable for sensitive claims?'],
   },
   {
@@ -732,7 +732,7 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['information-environment', 'regulatory-watch', 'crisis-brief'],
     suggestedTools: ['Media Compass', 'Grounded research', 'Contradiction finder', 'Talking Points'],
     suggestedOutputs: ['Information environment brief', 'Narrative risk note', 'Response options memo'],
-    sourceTags: ['gdelt', 'media', 'narrative', 'disinformation', 'cyber'],
+    sourceTags: ['grounded_search', 'media', 'narrative', 'disinformation', 'cyber'],
     missingInfoPrompts: ['Which narrative, platform, language, or geography is in scope?', 'What cyber or information posture must be assessed?', 'What response audience needs the output?'],
   },
   {
@@ -871,7 +871,7 @@ export const POLICY_TEAM_CATEGORIES: PolicyTeamCategory[] = [
     templateIds: ['conflict-analysis', 'human-friction-map', 'decision-clock'],
     toolIds: ['stakeholder-map', 'position-vs-interest', 'scenario-projector', 'memo-drafter'],
     outputProductIds: ['options-memo', 'actor-power-map', 'agent-handover'],
-    sourceTags: ['un-news', 'crisis-group', 'diplomacy', 'mediation', 'negotiation'],
+    sourceTags: ['official-news', 'crisis-group', 'diplomacy', 'mediation', 'negotiation'],
     missingInfoPrompts: ['Who is the audience for the brief?', 'Which parties or institutions must be represented?', 'What red lines or mandate limits matter?'],
   },
   {
@@ -884,7 +884,7 @@ export const POLICY_TEAM_CATEGORIES: PolicyTeamCategory[] = [
     templateIds: ['defence-opportunity', 'temporal-causal-map', 'human-friction-map'],
     toolIds: ['stakeholder-map', 'scenario-projector', 'coalition-detector', 'ach'],
     outputProductIds: ['actor-power-map', 'situation-brief', 'board-brief'],
-    sourceTags: ['ucdp', 'gdelt', 'sipri', 'defence', 'security'],
+    sourceTags: ['source_linked_events', 'grounded_search', 'security_research', 'defence', 'security'],
     missingInfoPrompts: ['Which actors and capabilities are in scope?', 'What decision window or procurement gate matters?', 'Which sources are trusted for security claims?'],
   },
   {
@@ -897,7 +897,7 @@ export const POLICY_TEAM_CATEGORIES: PolicyTeamCategory[] = [
     templateIds: ['humanitarian-access', 'crisis-brief', 'decision-clock'],
     toolIds: ['grounded-research', 'sourceability', 'scenario-projector', 'memo-drafter'],
     outputProductIds: ['situation-brief', 'agent-handover', 'options-memo'],
-    sourceTags: ['reliefweb', 'hdx', 'ocha', 'unhcr', 'protection'],
+    sourceTags: ['humanitarian_web', 'humanitarian_data', 'ocha', 'displacement_reporting', 'protection'],
     missingInfoPrompts: ['Which affected populations are in scope?', 'What access or protection constraint is decision-relevant?', 'How current must the operational picture be?'],
   },
   {
@@ -949,7 +949,7 @@ export const POLICY_TEAM_CATEGORIES: PolicyTeamCategory[] = [
     templateIds: ['information-environment', 'regulatory-watch', 'crisis-brief'],
     toolIds: ['grounded-research', 'frame-narrative', 'contradiction-finder', 'memo-drafter'],
     outputProductIds: ['situation-brief', 'options-memo', 'board-brief'],
-    sourceTags: ['gdelt', 'media', 'narrative', 'disinformation', 'cyber'],
+    sourceTags: ['grounded_search', 'media', 'narrative', 'disinformation', 'cyber'],
     missingInfoPrompts: ['Which narrative or platform is in scope?', 'What language or geography should be watched?', 'What response or memo is needed?'],
   },
   {

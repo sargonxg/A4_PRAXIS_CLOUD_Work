@@ -556,7 +556,7 @@ export const MEDIA_DATABASE: MediaOutlet[] = [
     notableFor: 'Gold standard for OSINT verification; essential for assessing battlefield claims and war crime evidence',
   },
   {
-    name: 'UCDP (Uppsala Conflict Data Program)',
+    name: 'source-linked event research',
     country: 'Sweden / Global',
     ownershipType: 'ngo',
     politicalOrientation: 0,
@@ -573,7 +573,7 @@ export const MEDIA_DATABASE: MediaOutlet[] = [
     notableFor: 'Primary quantitative source for conflict events, fatalities, and actor activity; used by UN agencies',
   },
   {
-    name: 'International Crisis Group',
+    name: 'expert conflict-analysis institution',
     country: 'Belgium / Global',
     ownershipType: 'ngo',
     politicalOrientation: -0.1,
@@ -668,7 +668,7 @@ export const MEDIA_DATABASE: MediaOutlet[] = [
     notableFor: 'Essential for arms embargo monitoring, weapons proliferation, and armed group capabilities',
   },
   {
-    name: 'Stockholm International Peace Research Institute (SIPRI)',
+    name: 'security research institute',
     country: 'Sweden',
     ownershipType: 'think_tank',
     politicalOrientation: 0,
@@ -686,7 +686,7 @@ export const MEDIA_DATABASE: MediaOutlet[] = [
 
   // ── Humanitarian / Development ────────────────────────────────────────────
   {
-    name: 'ReliefWeb',
+    name: 'humanitarian web reporting',
     country: 'United States (UN)',
     ownershipType: 'ngo',
     politicalOrientation: 0,
@@ -699,10 +699,10 @@ export const MEDIA_DATABASE: MediaOutlet[] = [
     knownLimitations: [
       'Aggregator — quality varies by source', 'Limited editorial content of its own',
     ],
-    notableFor: 'Essential humanitarian resource; aggregates OCHA, UNHCR, WFP, and NGO situation reports',
+    notableFor: 'Essential humanitarian resource; aggregates OCHA, displacement reporting, WFP, and NGO situation reports',
   },
   {
-    name: 'UN News',
+    name: 'official multilateral news',
     country: 'United States (UN)',
     ownershipType: 'state',
     politicalOrientation: 0,
@@ -710,7 +710,7 @@ export const MEDIA_DATABASE: MediaOutlet[] = [
     editorialIndependence: 0.75,
     knownStrengths: [
       'Official UN positions and statements', 'Security Council proceedings',
-      'Secretary-General statements', 'UNHCR, WFP, UNICEF official figures',
+      'Secretary-General statements', 'displacement reporting, WFP, UNICEF official figures',
     ],
     knownLimitations: [
       'Institutional bias toward UN positions', 'Diplomatically sanitized language',

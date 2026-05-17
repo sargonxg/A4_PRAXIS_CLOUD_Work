@@ -173,7 +173,7 @@ export async function conductResearch(params: ResearchParams) {
   }
 
   // Search the web for additional sources. `searchWeb` falls back to free
-  // Wikipedia/GDELT/native-fetch sources when Grounded Search is not configured, so
+  // Wikipedia/grounded search/native-fetch sources when Grounded Search is not configured, so
   // free-tier users still receive live, cited research context.
   const searchResults = await searchWeb(query, { numResults });
   webContent = [...webContent, ...searchResults];

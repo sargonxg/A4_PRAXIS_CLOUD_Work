@@ -34,7 +34,7 @@ describe('envelope crypto', () => {
   it('rejects decryption when AAD does not match', () => {
     const aad = buildAad('uid-alice', 'google_ai');
     const rec = encrypt('secret', aad);
-    const wrong = buildAad('uid-alice', 'gdelt');
+    const wrong = buildAad('uid-alice', 'grounded_search');
     expect(() => decrypt(rec, wrong)).toThrow(/AAD mismatch/);
   });
 
@@ -54,7 +54,7 @@ describe('envelope crypto', () => {
 
   it('rejects replay across providers for the same user', () => {
     const aadA = buildAad('uid-alice', 'google_ai');
-    const aadB = buildAad('uid-alice', 'gdelt');
+    const aadB = buildAad('uid-alice', 'grounded_search');
     const rec = encrypt('secret', aadA);
     expect(() => decrypt(rec, aadB)).toThrow();
   });

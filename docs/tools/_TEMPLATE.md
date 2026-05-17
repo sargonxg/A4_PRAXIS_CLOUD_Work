@@ -37,7 +37,7 @@
 
 - **Graph layer:** … (e.g. "queries `users/{uid}/situations/{sitId}/graph/main` for the actor list")
 - **Vector layer:** … (e.g. "768-dim KNN against situation embeddings")
-- **Feed layer:** … (e.g. "ACLED events for the last 90 days, GDELT tone series")
+- **Feed layer:** … (e.g. "source-linked event reporting events for the last 90 days, web tone series")
 - **Tool-output layer:** … (e.g. "previous risk-assessment + early-warning outputs")
 
 ## Outputs (persist)
@@ -53,7 +53,7 @@
 
 ## Data sources
 
-- {{ACLED|GDELT|UNHCR|HDX|ReliefWeb|UN News|World Bank|UCDP|SIPRI|Crisis Group|Firecrawl|Grounded Search}} — what this tool actually pulls from each
+- {{source-linked event reporting|grounded search|displacement reporting|humanitarian data|humanitarian web reporting|official multilateral news|economic institution|source-linked event reporting|security research|expert conflict analysis|Firecrawl|Grounded Search}} — what this tool actually pulls from each
 
 ## AI model
 
@@ -71,7 +71,7 @@
 ## Extension surface
 
 - **Add a new domain override:** edit `src/lib/constants/domains/{domain}.ts` then re-seed
-- **Add a new framework:** add entry to `src/lib/constants/frameworks.ts` and reference it from the system prompt builder
+- **Add a new framework:** add it to the relevant domain/tool configuration and reference it from the system prompt builder
 - **Add a new data source:** create client in `src/lib/data-feeds/`, register in `feed-aggregator.ts`, then call from this route's handler
 
 ## Operations

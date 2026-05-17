@@ -17,7 +17,7 @@
  * For "stakeholder-map" on the same situation:
  *   → "the selected situation conflict key actors power dynamics 2026"
  *   → "the selected situation armed groups alliances opposition government backers"
- *   → "site:crisisgroup.org the selected situation stakeholder analysis"
+ *   → "site:expert-analysis.org the selected situation stakeholder analysis"
  */
 
 import { generateText, Output } from 'ai';
@@ -79,7 +79,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} escalation de-escalation indicators',
     ],
     methodologyTerms: ['INFORM risk index', 'conflict escalation', 'early warning indicators'],
-    sourceHints: ['crisisgroup', 'ucdp', 'reliefweb', 'un'],
+    sourceHints: ['expert-analysis', 'source_linked_events', 'humanitarian_web', 'un'],
   },
   'documents': {
     purpose: 'Find primary source documents for ingestion',
@@ -101,7 +101,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} journalism media coverage quality assessment',
     ],
     methodologyTerms: ['source credibility', 'media reliability', 'CRAAP test'],
-    sourceHints: ['academic', 'crisisgroup', 'chathamhouse'],
+    sourceHints: ['academic', 'expert-analysis', 'chathamhouse'],
   },
   'timeline': {
     purpose: 'Chronological event mapping and escalation tracking',
@@ -112,7 +112,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} major developments {actors} clashes negotiations',
     ],
     methodologyTerms: ['Glasl escalation stages', 'trigger events', 'conflict chronology'],
-    sourceHints: ['ucdp', 'wikipedia', 'crisisgroup'],
+    sourceHints: ['source_linked_events', 'wikipedia', 'expert-analysis'],
   },
   'humanitarian': {
     purpose: 'Humanitarian situation assessment',
@@ -123,7 +123,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} humanitarian funding gap OCHA flash appeal',
     ],
     methodologyTerms: ['OCHA humanitarian needs', 'IPC food security', 'displacement statistics'],
-    sourceHints: ['ocha', 'unhcr', 'reliefweb'],
+    sourceHints: ['ocha', 'displacement_reporting', 'humanitarian_web'],
   },
   'calendar': {
     purpose: 'Upcoming diplomatic events and risk windows',
@@ -148,7 +148,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
     ],
     actorQueryPattern: '{actor} military capability threat assessment {country}',
     methodologyTerms: ['INFORM risk index', 'hazard exposure', 'vulnerability', 'coping capacity'],
-    sourceHints: ['ucdp', 'crisisgroup', 'worldbank'],
+    sourceHints: ['source_linked_events', 'expert-analysis', 'economic_institution'],
   },
   'early-warning': {
     purpose: 'Escalation indicators and de-escalation windows',
@@ -159,7 +159,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} de-escalation opportunity diplomatic window',
     ],
     methodologyTerms: ['Glasl 9-stage model', 'early warning', 'trigger events', 'tipping points'],
-    sourceHints: ['gdelt', 'crisisgroup', 'reuters'],
+    sourceHints: ['grounded_search', 'expert-analysis', 'reuters'],
   },
   'actor-profiles': {
     purpose: 'Deep intelligence on conflict actors',
@@ -171,7 +171,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
     ],
     actorQueryPattern: '{actor} leadership structure capabilities interests alliances {country}',
     methodologyTerms: ['Stedman spoiler theory', 'actor mapping', 'interest analysis'],
-    sourceHints: ['crisisgroup', 'isw', 'reuters', 'wikipedia'],
+    sourceHints: ['expert-analysis', 'isw', 'reuters', 'wikipedia'],
   },
   'stakeholder-map': {
     purpose: 'Power-legitimacy-urgency network mapping',
@@ -183,7 +183,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
     ],
     actorQueryPattern: '{actor} political power influence legitimacy {country}',
     methodologyTerms: ['Mitchell-Agle-Wood salience', 'power mapping', 'stakeholder quadrant'],
-    sourceHints: ['crisisgroup', 'chathamhouse', 'brookings'],
+    sourceHints: ['expert-analysis', 'chathamhouse', 'brookings'],
   },
   'power-map': {
     purpose: 'Power asymmetry analysis using Barnett-Duvall taxonomy',
@@ -195,7 +195,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
     ],
     actorQueryPattern: '{actor} military economic power resources {country}',
     methodologyTerms: ['Barnett-Duvall power taxonomy', 'compulsory structural productive institutional power'],
-    sourceHints: ['sipri', 'worldbank', 'crisisgroup'],
+    sourceHints: ['security_research', 'economic_institution', 'expert-analysis'],
   },
   'compare': {
     purpose: 'Cross-conflict comparative analysis',
@@ -206,7 +206,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       'conflicts similar to {situation} outcomes analysis',
     ],
     methodologyTerms: ['comparative conflict analysis', 'lessons learned', 'conflict typology'],
-    sourceHints: ['academic', 'crisisgroup', 'brookings'],
+    sourceHints: ['academic', 'expert-analysis', 'brookings'],
   },
   'info-environment': {
     purpose: 'Narrative mapping and disinformation assessment',
@@ -237,7 +237,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} political military humanitarian assessment',
     ],
     methodologyTerms: ['UN DPPA briefing format', 'situation reporting'],
-    sourceHints: ['un', 'reliefweb', 'crisisgroup'],
+    sourceHints: ['un', 'humanitarian_web', 'expert-analysis'],
   },
   'dossier': {
     purpose: 'Comprehensive actor or topic intelligence dossier',
@@ -249,7 +249,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
     ],
     actorQueryPattern: '{actor} biography profile activities connections background',
     methodologyTerms: ['intelligence assessment', 'biographical intelligence', 'network analysis'],
-    sourceHints: ['wikipedia', 'crisisgroup', 'reuters', 'academic'],
+    sourceHints: ['wikipedia', 'expert-analysis', 'reuters', 'academic'],
   },
   'talking-points': {
     purpose: 'Audience-tailored messaging and Q&A preparation',
@@ -271,7 +271,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} political military developments analysis',
     ],
     methodologyTerms: ['intelligence briefing', 'operational assessment'],
-    sourceHints: ['reuters', 'bbc', 'crisisgroup', 'un'],
+    sourceHints: ['reuters', 'bbc', 'expert-analysis', 'un'],
   },
   'auto-briefing': {
     purpose: 'Daily automated intelligence digest',
@@ -293,7 +293,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} sanctions peace process governance reform proposals',
     ],
     methodologyTerms: ['Putnam two-level game', 'policy analysis', 'options assessment'],
-    sourceHints: ['brookings', 'crisisgroup', 'chathamhouse', 'carnegie'],
+    sourceHints: ['brookings', 'expert-analysis', 'chathamhouse', 'carnegie'],
   },
   'un-toolkit': {
     purpose: 'UN terminology, resolution drafting, diplomatic tone',
@@ -317,7 +317,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} risk scenarios escalation de-escalation pathways',
     ],
     methodologyTerms: ['scenario planning', 'probabilistic assessment', 'futures analysis'],
-    sourceHints: ['crisisgroup', 'rand', 'chathamhouse'],
+    sourceHints: ['expert-analysis', 'rand', 'chathamhouse'],
   },
   'negotiation-prep': {
     purpose: 'ZOPA/BATNA analysis with Harvard PON framework',
@@ -329,14 +329,14 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
     ],
     actorQueryPattern: '{actor} negotiation position demands interests {situation}',
     methodologyTerms: ['Fisher-Ury principled negotiation', 'ZOPA BATNA', 'Zartman ripeness'],
-    sourceHints: ['crisisgroup', 'un', 'chathamhouse'],
+    sourceHints: ['expert-analysis', 'un', 'chathamhouse'],
   },
   'concordia': {
     purpose: 'Live AI mediation simulation',
     timeWindow: 'realtime',
     queryPatterns: ['{situation} mediation dialogue positions'],
     methodologyTerms: ['mediation simulation', 'dialogue facilitation'],
-    sourceHints: ['crisisgroup', 'un'],
+    sourceHints: ['expert-analysis', 'un'],
   },
   'mediation-design': {
     purpose: 'Full mediation process architecture with CBMs',
@@ -347,7 +347,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} peace process architecture inclusive dialogue',
     ],
     methodologyTerms: ['Lederach multi-level peacebuilding', 'Berghof mediation', 'CBMs'],
-    sourceHints: ['un', 'crisisgroup', 'chathamhouse'],
+    sourceHints: ['un', 'expert-analysis', 'chathamhouse'],
   },
   'game-theory': {
     purpose: 'Strategic interaction modeling with Nash equilibria',
@@ -367,7 +367,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
     timeWindow: 'realtime',
     queryPatterns: ['{situation} comprehensive research analysis'],
     methodologyTerms: ['deep research', 'multi-source intelligence'],
-    sourceHints: ['reuters', 'crisisgroup', 'un', 'academic'],
+    sourceHints: ['reuters', 'expert-analysis', 'un', 'academic'],
   },
   'argus': {
     purpose: 'Deep web intelligence with source triangulation',
@@ -378,7 +378,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} verified facts cross-referenced sources',
     ],
     methodologyTerms: ['OSINT', 'source triangulation', 'intelligence analysis'],
-    sourceHints: ['reuters', 'bbc', 'crisisgroup', 'academic'],
+    sourceHints: ['reuters', 'bbc', 'expert-analysis', 'academic'],
   },
   'media-compass': {
     purpose: 'Media bias and reliability spectrum analysis',
@@ -423,7 +423,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} commitment tracker verified breaches',
     ],
     methodologyTerms: ['agreement compliance', 'ceasefire monitoring', 'implementation tracking'],
-    sourceHints: ['un', 'ucdp', 'reliefweb'],
+    sourceHints: ['un', 'source_linked_events', 'humanitarian_web'],
   },
   'treaty-analyzer': {
     purpose: 'Legal clause analysis and ambiguity detection',
@@ -445,7 +445,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} emergency update critical development',
     ],
     methodologyTerms: ['anomaly detection', 'early warning alert', 'threshold monitoring'],
-    sourceHints: ['reuters', 'bbc', 'gdelt'],
+    sourceHints: ['reuters', 'bbc', 'grounded_search'],
   },
   'deep-research': {
     purpose: 'Google-grounded real-time research',
@@ -455,7 +455,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} current state comprehensive research',
     ],
     methodologyTerms: ['grounded research', 'verified information'],
-    sourceHints: ['reuters', 'crisisgroup', 'un'],
+    sourceHints: ['reuters', 'expert-analysis', 'un'],
   },
   'geospatial-monitor': {
     purpose: 'Geographic event mapping and hotspot clustering',
@@ -466,7 +466,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} regional spillover cross-border incidents',
     ],
     methodologyTerms: ['DBSCAN clustering', 'geographic spread index', 'hotspot analysis'],
-    sourceHints: ['ucdp'],
+    sourceHints: ['source_linked_events'],
   },
   'source-monitor': {
     purpose: 'Track and evaluate new intelligence sources',
@@ -476,7 +476,7 @@ const TOOL_QUERY_TEMPLATES: Record<string, ToolQueryTemplate> = {
       '{situation} research institute think tank new publication',
     ],
     methodologyTerms: ['source monitoring', 'publication tracking'],
-    sourceHints: ['crisisgroup', 'chathamhouse', 'academic'],
+    sourceHints: ['expert-analysis', 'chathamhouse', 'academic'],
   },
 };
 

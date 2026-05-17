@@ -28,7 +28,7 @@ const BriefingSchema = z.object({
   slides: z.array(
     z.object({
       title: z.string().describe('Section heading using multilateral diplomacy conventions: HEADLINE ASSESSMENT, KEY DEVELOPMENTS, POLITICAL DYNAMICS, RISK FACTORS, OPPORTUNITIES, INFORMATION GAPS, or UPCOMING DECISION POINTS'),
-      content: z.string().describe('Section body in markdown format following professional diplomatic analytical standards. Use calibrated confidence language, bracketed source tags [GDELT] [UCDP] [ReliefWeb] [UN News] [PRAXIS Graph] [Web] [AI Assessment], and formal register throughout. No contractions.'),
+      content: z.string().describe('Section body in markdown format following professional diplomatic analytical standards. Use calibrated confidence language, bracketed source tags [grounded search] [source-linked event reporting] [humanitarian web reporting] [official multilateral news] [PRAXIS Graph] [Web] [AI Assessment], and formal register throughout. No contractions.'),
       speakerNotes: z.string().optional().describe('Presenter guidance with additional analytical context, recommended emphasis, and suggested responses to anticipated questions from senior leadership'),
       sources: z.array(z.string()).optional().describe('Formal source attributions referenced in this section, using standard professional citation format'),
     })
@@ -43,7 +43,7 @@ const MORNING_DIGEST_SYSTEM_PROMPT = `You are drafting a morning political affai
 [One sentence. The single most consequential overnight development or analytical judgment. Present tense, analytical voice. Use calibrated language: "It is assessed that..." for high confidence, "Available information suggests..." for medium confidence.]
 
 ## OVERNIGHT DEVELOPMENTS
-[3-5 bullet points. Each begins with a time in brackets [HH:MM UTC], followed by a factual statement, followed by analytical significance in parentheses. Prioritize: political, then security, then humanitarian, then economic. Each bullet 2-3 sentences maximum. Append a bracketed source tag to each claim: [GDELT], [UCDP], [ReliefWeb], [UN News], [PRAXIS Graph], [Web], or [AI Assessment].]
+[3-5 bullet points. Each begins with a time in brackets [HH:MM UTC], followed by a factual statement, followed by analytical significance in parentheses. Prioritize: political, then security, then humanitarian, then economic. Each bullet 2-3 sentences maximum. Append a bracketed source tag to each claim: [grounded search], [source-linked event reporting], [humanitarian web reporting], [official multilateral news], [PRAXIS Graph], [Web], or [AI Assessment].]
 
 ## RISK ASSESSMENT UPDATE
 [Changes to risk indicators and escalation signals since previous digest. Reference the Glasl escalation model stage if available. Use numbered risk items with likelihood qualifiers: likely, possible, unlikely. Specify trigger conditions and actors involved for each risk.]
@@ -64,7 +64,7 @@ FORMAT RULES:
 - No contractions. Formal register throughout.
 - All actors referred to by their names from the situation data.
 - Hedging calibration: HIGH confidence = "it is assessed that", MEDIUM = "available information suggests", LOW = "it cannot be confirmed whether".
-- Every factual claim should have a bracketed source tag: [GDELT], [UCDP], [ReliefWeb], [UN News], [PRAXIS Graph], [Web], [AI Assessment].
+- Every factual claim should have a bracketed source tag: [grounded search], [source-linked event reporting], [humanitarian web reporting], [official multilateral news], [PRAXIS Graph], [Web], [AI Assessment].
 - Use standard diplomatic date format: DD Month YYYY.
 - Flag items by urgency where appropriate: CRITICAL / IMPORTANT / ROUTINE.`;
 
@@ -126,7 +126,7 @@ const DEMO_RESPONSE_FULL = {
 - **Journalist detentions:** Two additional NIMN journalists arrested, bringing total to five
 - **Currency:** the selected situationn krone fell 2.1%, cumulative depreciation now 36.4%`,
       speakerNotes: 'The cabinet reshuffle is the most significant political development. It signals that the hardline faction within the GoN is currently ascendant. Combined with the Karovian logistics increase, this suggests preparation for potential military escalation if the political track does not produce results.',
-      sources: ['NIMN reporting, March 2026', 'Open-source flight tracking data', 'ICG Africa Report No. 312'],
+      sources: ['NIMN reporting, March 2026', 'Open-source flight tracking data', 'expert analysis Africa Report No. 312'],
     },
     {
       title: 'Escalation Assessment',
@@ -402,7 +402,7 @@ Content: One sentence only. The single most important development or analytical 
 
 SLIDE 2 — KEY DEVELOPMENTS
 Title: "Key Developments"
-Content: 3-5 bullet points. Each begins with a date in brackets [DD Month], followed by a factual statement, followed by analytical significance in parentheses. Each bullet 2-3 sentences maximum. Prioritize: first political, then security, then humanitarian, then economic. Append a bracketed source tag to every factual claim: [GDELT], [UCDP], [ReliefWeb], [UN News], [PRAXIS Graph], [Web], or [AI Assessment].
+Content: 3-5 bullet points. Each begins with a date in brackets [DD Month], followed by a factual statement, followed by analytical significance in parentheses. Each bullet 2-3 sentences maximum. Prioritize: first political, then security, then humanitarian, then economic. Append a bracketed source tag to every factual claim: [grounded search], [source-linked event reporting], [humanitarian web reporting], [official multilateral news], [PRAXIS Graph], [Web], or [AI Assessment].
 
 SLIDE 3 — POLITICAL DYNAMICS
 Title: "Political Dynamics"
@@ -429,7 +429,7 @@ FORMAT RULES:
 - All actors referred to by their names from the situation data.
 - No contractions. Formal register throughout.
 - Hedging calibration: HIGH confidence = "it is assessed that", MEDIUM = "available information suggests", LOW = "it cannot be confirmed whether".
-- Every factual claim should have a bracketed source tag: [GDELT], [UCDP], [ReliefWeb], [UN News], [PRAXIS Graph], [Web], [AI Assessment].
+- Every factual claim should have a bracketed source tag: [grounded search], [source-linked event reporting], [humanitarian web reporting], [official multilateral news], [PRAXIS Graph], [Web], [AI Assessment].
 - Speaker notes for each slide should provide additional analytical depth, anticipated questions from senior leadership, and suggested responses.
 - Source attributions should use formal UN citation conventions where possible.`,
       system: `You are a senior political affairs officer in the multilateral diplomacy and peacebuilding practice. You produce analytically rigorous briefing content for the senior principals, envoys, and policy leaders. Your analysis follows professional diplomatic standards: calibrated confidence language, source attribution, formal register, and structured analytical judgments. Speaker notes should provide the depth, nuance, and anticipatory guidance that briefing slides cannot convey. Every assessment must distinguish between what is known, what is assessed, and what remains uncertain.

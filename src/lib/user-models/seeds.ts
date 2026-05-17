@@ -18,7 +18,7 @@ export const PUBLIC_USER_MODELS: UserModelRecord[] = [
     standingAssumptions: ['Great-power competition is the master frame for the 2020s', 'Domestic politics drive foreign policy more than foreign policy drives domestic'],
     prohibitedFrames: [],
     outputPreferences: { citationFormat: 'footnotes', briefVsLong: 'adaptive', languagePosture: 'neutral' },
-    sourcePreferences: { trusted: ['ICG', 'Foreign Affairs', 'Foreign Policy', 'Brookings', 'CFR', 'RAND', 'Reuters', 'AP', 'AFP', 'V-Dem', 'World Bank governance'], deprioritized: [], languages: ['en'] },
+    sourcePreferences: { trusted: ['expert analysis', 'Foreign Affairs', 'Foreign Policy', 'Brookings', 'CFR', 'RAND', 'Reuters', 'AP', 'AFP', 'V-Dem', 'economic institution governance'], deprioritized: [], languages: ['en'] },
     parentModelId: null,
     workOntologyId: 'foreign-policy-research',
     audienceDefaults: ['think-tank readers', 'policymaker peers', 'executive briefings', 'public-facing op-eds'],

@@ -32,7 +32,7 @@ export type DomainKey =
 const COMMON_INDICATORS: IndicatorSpec[] = [
   { id: 'inform-overall', name: 'INFORM composite risk', framework: 'INFORM Risk Index', unit: '0–10', rationale: 'Headline composite — drives heatmap colour.' },
   { id: 'glasl-stage', name: 'Glasl escalation stage', framework: 'Glasl 9-stage', unit: 'stage', rationale: 'Where the conflict sits on the 9-stage hardening → abyss model.' },
-  { id: 'incident-trend-30d', name: 'Incident trend (30d)', framework: 'GDELT/UCDP proxy', unit: '%Δ', rationale: 'Direction and magnitude of incident volume vs prior 30 days.' },
+  { id: 'incident-trend-30d', name: 'Incident trend (30d)', framework: 'grounded search/source-linked event reporting proxy', unit: '%Δ', rationale: 'Direction and magnitude of incident volume vs prior 30 days.' },
   { id: 'rhetoric-temperature', name: 'Rhetorical temperature', framework: 'Galtung Triangle (cultural)', unit: '−5 to +5', rationale: 'Tone of public statements by primary actors.' },
 ];
 
@@ -40,7 +40,7 @@ export const INDICATOR_CATALOG: Record<DomainKey, IndicatorSpec[]> = {
   'generic': COMMON_INDICATORS,
   'armed-conflict-security': [
     ...COMMON_INDICATORS,
-    { id: 'armed-clashes-7d', name: 'Armed clashes (7d)', framework: 'UCDP proxy', unit: 'count', rationale: 'Recent kinetic activity, week-over-week.' },
+    { id: 'armed-clashes-7d', name: 'Armed clashes (7d)', framework: 'source-linked event reporting proxy', unit: 'count', rationale: 'Recent kinetic activity, week-over-week.' },
     { id: 'civilian-casualties-30d', name: 'Civilian casualties (30d)', framework: 'IHL / OCHA', unit: 'count', rationale: 'Civilian harm signal.' },
     { id: 'ceasefire-violations', name: 'Ceasefire violations', framework: 'Berghof / Stedman', unit: 'count', rationale: 'Spoiler activity vs current agreements.' },
     { id: 'frontline-shift', name: 'Frontline shift', framework: 'OSINT', unit: 'km', rationale: 'Net territorial change in the last week.' },
@@ -53,8 +53,8 @@ export const INDICATOR_CATALOG: Record<DomainKey, IndicatorSpec[]> = {
   ],
   'humanitarian': [
     ...COMMON_INDICATORS,
-    { id: 'idps', name: 'IDPs in country', framework: 'UNHCR / OCHA', unit: 'count', rationale: 'Internally displaced persons load.' },
-    { id: 'refugees-cross-border', name: 'Cross-border refugees', framework: 'UNHCR', unit: 'count', rationale: 'Outflow into neighbours.' },
+    { id: 'idps', name: 'IDPs in country', framework: 'displacement reporting / OCHA', unit: 'count', rationale: 'Internally displaced persons load.' },
+    { id: 'refugees-cross-border', name: 'Cross-border refugees', framework: 'displacement reporting', unit: 'count', rationale: 'Outflow into neighbours.' },
     { id: 'ipc-phase', name: 'IPC food-security phase', framework: 'IPC', unit: 'phase 1–5', rationale: 'Highest-classification phase in scope.' },
     { id: 'hrp-funding-gap', name: 'HRP funding gap', framework: 'OCHA appeal', unit: '%', rationale: 'Underfunding signal for response capacity.' },
   ],
@@ -75,7 +75,7 @@ export const INDICATOR_CATALOG: Record<DomainKey, IndicatorSpec[]> = {
   ],
   'development-stabilization': [
     ...COMMON_INDICATORS,
-    { id: 'gdp-yoy', name: 'GDP YoY', framework: 'World Bank / IMF', unit: '%', rationale: 'Growth trajectory.' },
+    { id: 'gdp-yoy', name: 'GDP YoY', framework: 'economic institution / IMF', unit: '%', rationale: 'Growth trajectory.' },
     { id: 'unemployment-youth', name: 'Youth unemployment', framework: 'ILO', unit: '%', rationale: 'Stabilisation risk factor.' },
   ],
   'climate-environmental-security': [
@@ -90,7 +90,7 @@ export const INDICATOR_CATALOG: Record<DomainKey, IndicatorSpec[]> = {
   ],
   'transnational-threats': [
     ...COMMON_INDICATORS,
-    { id: 'terror-attacks-30d', name: 'Terror attacks (30d)', framework: 'GTD / UCDP', unit: 'count', rationale: 'Non-state armed group activity.' },
+    { id: 'terror-attacks-30d', name: 'Terror attacks (30d)', framework: 'GTD / source-linked event reporting', unit: 'count', rationale: 'Non-state armed group activity.' },
     { id: 'illicit-flows', name: 'Illicit flows', framework: 'GI-TOC', unit: 'qual', rationale: 'Trafficking, finance, smuggling signal.' },
   ],
 };

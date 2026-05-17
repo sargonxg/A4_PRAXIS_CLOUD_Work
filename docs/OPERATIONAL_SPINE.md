@@ -13,7 +13,7 @@ worker, or tool.** Every async unit of work in PRAXIS lives in the spine.
 PRAXIS is a multi-component distributed system: Next.js frontend, Python
 FastAPI backend, Cloud Run worker pools, Cloud Functions v2, Vertex AI Agent
 Engine, Cloud Scheduler, Eventarc triggers. Without a unified observability
-and lifecycle layer, debugging "why didn't that GDELT poll fire?" or "why is
+and lifecycle layer, debugging "why didn't that grounded search poll fire?" or "why is
 this user's dashboard showing stale data?" is a log-spelunking exercise.
 
 The spine fixes that with three append-only collections, one user-scoped
@@ -53,7 +53,7 @@ operator can retry, cancel, or watch progress on.
 
 ```ts
 {
-  jobId, uid, kind                     // 'gdelt.poll' | 'pipeline.run' | ...
+  jobId, uid, kind                     // 'search.refresh' | 'pipeline.run' | ...
   status: 'queued'|'running'|'completed'|'failed'|'dead_letter'
   semaphore
   payload: Record<string, unknown>
@@ -155,7 +155,7 @@ double-writes graph state.
 |---------|----------------|-------|
 | `praxis-frontend` (Cloud Run) | `praxis-frontend-sa` | datastore.user, aiplatform.user, secretmanager.secretAccessor, run.invoker (on backend) |
 | `praxis-backend` (Cloud Run) | `praxis-backend-sa` | datastore.user, aiplatform.user, bigquery.dataEditor, pubsub.publisher, pubsub.subscriber, storage.objectAdmin, secretmanager.secretAccessor |
-| `gdelt-poller` (Worker pool) | `praxis-worker-sa` | datastore.user, run.invoker (on backend) |
+| `retired-feed-poller` (Worker pool) | `praxis-worker-sa` | datastore.user, run.invoker (on backend) |
 | `on-situation-created` (Func2) | `praxis-functions-sa` | datastore.user, eventarc.eventReceiver, iam.serviceAccountTokenCreator, run.invoker (on backend AND on the function's own Cloud Run service) |
 | `on-document-uploaded` (Func2) | `praxis-functions-sa` | same as above |
 

@@ -155,7 +155,7 @@ Contradiction Finder reviews a claim, memo, or tool output for unstated assumpti
 - Output: text
 - Model tier: pro
 - Credits: 3
-- Frameworks: NATO STRATCOM taxonomy, 4D influence framework, GDELT GCAM tone analysis
+- Frameworks: NATO STRATCOM taxonomy, 4D influence framework, web media tone tone analysis
 - Limits: Narrative reads need fresh media/source coverage and should be caveated by language and platform gaps.
 
 Frame Narrative explains how actors describe the situation, which frames are gaining traction, where legitimacy claims diverge, and how a memo or briefing should avoid adopting an unexamined frame.
@@ -187,7 +187,7 @@ Coalition Detector looks for clusters, brokers, dependencies, patrons, and likel
 - Output: structured
 - Model tier: pro
 - Credits: 2
-- Frameworks: UCDP Peace Agreement Dataset, Agreement compliance monitoring, Stedman implementation analysis
+- Frameworks: peace agreement corpus, Agreement compliance monitoring, Stedman implementation analysis
 - Limits: It needs temporal anchors and source receipts; vague political statements should be marked as weak commitments.
 
 Commitment Tracker records obligations, deadlines, verification mechanisms, compliance posture, and violation type. It is the PRAXIS memory for promises that need follow-up.

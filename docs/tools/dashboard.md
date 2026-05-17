@@ -54,7 +54,7 @@
 
 ## Data sources
 
-- ACLED, GDELT, ReliefWeb, HDX HAPI for the underlying widgets via SKC
+- source-linked event reporting, grounded search, humanitarian web reporting, humanitarian data APIs for the underlying widgets via SKC
 
 ## AI model
 

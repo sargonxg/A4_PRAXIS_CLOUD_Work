@@ -71,7 +71,7 @@ const DEMO_REVIEW = {
       severity: 'high' as const,
     },
   ],
-  sourceDiversityIssues: ['All three citations come from OCHA-family sources; no Crisis Group or ICRC corroboration.'],
+  sourceDiversityIssues: ['All three citations come from OCHA-family sources; no expert conflict analysis or ICRC corroboration.'],
   motivatedReasoningRedFlags: ['Recommendation favours mediation pause, which aligns with the analyst\'s prior framing — no scenario where attribution is the better move was tested.'],
   missingIntelligenceGaps: ['No casualty verification by ICRC or local health cluster.'],
   confidenceAdjustment: {

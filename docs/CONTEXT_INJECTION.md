@@ -125,8 +125,8 @@ The Situation Knowledge Core (SKC) is a 4-layer hybrid GraphRAG system:
    commitments, events, narratives, plus the 6 extended types.
 2. **Vector layer** — Firestore native KNN (768-dim, COSINE).
    Stores document chunks, prior tool outputs, and conversation memories.
-3. **Feed layer** — TTL-cached external feeds (GDELT, UCDP, HDX,
-   ReliefWeb, UN News, World Bank, …).
+3. **Feed layer** — TTL-cached external feeds (grounded search, source-linked event reporting, humanitarian data,
+   humanitarian web reporting, official multilateral news, economic institution, …).
 4. **Tool-output layer** — every prior tool invocation's structured
    output is queryable so a Briefing tool can read what a Risk Monitor
    produced 30 minutes ago.
@@ -257,7 +257,7 @@ What the model receives (paraphrased):
 <domain-frame domain="diplomacy-negotiation">
   Frameworks (privileged): Fisher-Ury principled negotiation; Zartman
    ripeness; Berghof mediation; Putnam two-level games.
-  Preferred feeds: UN News RSS, ReliefWeb, GDELT, UCDP.
+  Preferred feeds: official multilateral news RSS, humanitarian web reporting, grounded search, source-linked event reporting.
   Prompt overrides for tool=briefing:
     • Lead with the negotiation track state, not the violence count.
     • Surface ripeness indicators where present.
@@ -270,7 +270,7 @@ What the model receives (paraphrased):
   [graph excerpts — UNMHA → monitors → ceasefire-zone-1; Houthis →
    commits-to → withdrawal-clause; …]
   [recent tool outputs — Risk Monitor v17, Early Warning v9]
-  [UCDP/GDELT — recent Hodeidah event posture and media signal summary]
+  [source-linked event reporting/grounded search — recent Hodeidah event posture and media signal summary]
 </retrieved-context>
 
 <output-constraints>
@@ -289,7 +289,7 @@ What the model receives (paraphrased):
 
 The result is *automatically* in English, uses Fisher-Ury framing, leads
 with negotiation state (because the domain says so), avoids partisan
-language (because the red lines say so), and cites UCDP/GDELT + UNMHA + Hodeidah
+language (because the red lines say so), and cites source-linked event reporting/grounded search + UNMHA + Hodeidah
 Agreement articles. None of which the user typed in their request.
 
 ---
@@ -308,7 +308,7 @@ Context isn't static. It updates through three mechanisms:
 3. **SKC retrieval is per-call** — Every AI route call retrieves fresh
    vector + graph + feed slices for the specific question being asked.
    No staleness window beyond the feed-layer TTLs (for example, 15min
-   for GDELT and route-specific freshness windows for UCDP/ReliefWeb).
+   for grounded search and route-specific freshness windows for source-linked event reporting/humanitarian web reporting).
 
 The `withCalibration` wrapper is also responsible for the **hard gate**:
 if `profile.meta.completedAt` is missing for a non-sample user, it returns

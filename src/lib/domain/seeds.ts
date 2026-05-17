@@ -14,7 +14,7 @@ type Seed = Omit<DomainConfig, 'version' | 'schemaVersion' | 'updatedAt' | 'upda
 const s = (seed: Seed): Seed => seed;
 
 // ---------------------------------------------------------------------------
-// Framework id constants (must match src/lib/constants/frameworks.ts ids)
+// Framework id constants used by domain profiles and prompt context.
 // ---------------------------------------------------------------------------
 
 const FW = {

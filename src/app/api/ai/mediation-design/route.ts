@@ -109,7 +109,7 @@ const DEMO_RESPONSE_DESIGN = {
       duration: '10-14 weeks',
       objective: 'Reach framework agreement on revenue-sharing — the issue with strongest ZOPA.',
       keyActivities: [
-        'Belara Mining revenue-sharing formula (World Bank technical support)',
+        'Belara Mining revenue-sharing formula (economic institution technical support)',
         'Eastern Provincial Development Fund establishment',
         'International investment guarantees conditional on settlement',
       ],
@@ -178,9 +178,9 @@ const DEMO_RESPONSE_DESIGN = {
     {
       title: 'Belara Mining escrow',
       type: 'economic' as const,
-      parties: ['Government of the selected situation', 'Democratic Reform Movement', 'World Bank'],
+      parties: ['Government of the selected situation', 'Democratic Reform Movement', 'economic institution'],
       timeline: 'Ongoing from Phase 1',
-      verificationMechanism: 'World Bank monthly financial transparency reports.',
+      verificationMechanism: 'economic institution monthly financial transparency reports.',
     },
   ],
   groundRules: [

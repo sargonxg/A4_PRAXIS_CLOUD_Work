@@ -146,7 +146,7 @@ const PERSPECTIVE_FALLBACK: OnboardingRationale = {
   headline: 'Your domain defaults shape every analytical lens.',
   bullets: [
     'Tool defaults adapt to the frameworks your domain typically uses.',
-    'Preferred data feeds re-rank to your domain (e.g. ReliefWeb for humanitarian).',
+    'Preferred data feeds re-rank to your domain (e.g. humanitarian web reporting for humanitarian).',
     'Per-tool prompt overrides emphasise your domain\'s priorities.',
   ],
   example: { tool: 'Risk Monitor', outcome: 'Generic INFORM scoring without domain emphasis.' },
@@ -158,7 +158,7 @@ const PERSPECTIVE_BY_DOMAIN: Record<string, OnboardingRationale> = {
     bullets: [
       'Risk Monitor weights humanitarian dimension above security.',
       'Briefing Room leads with cluster impact + funding gap.',
-      'Source Scout boosts ReliefWeb / OCHA / UNHCR / HDX.',
+      'Source Scout boosts humanitarian web reporting / OCHA / displacement reporting / humanitarian data.',
       'Humanitarian tool is your dashboard front door.',
     ],
     example: {
@@ -171,7 +171,7 @@ const PERSPECTIVE_BY_DOMAIN: Record<string, OnboardingRationale> = {
     bullets: [
       'Risk Monitor leans into Glasl 9-stage + INFORM hazard pillar.',
       'Early Warning is the front-page tool.',
-      'Source Scout boosts event-data OSINT (UCDP, Crisis Group, SIPRI).',
+      'Source Scout boosts event-data OSINT (source-linked event reporting, expert conflict analysis, security research).',
       'Brainstorming Table prioritises the Security/Risk Analyst persona.',
     ],
     example: {
@@ -204,7 +204,7 @@ const PERSPECTIVE_BY_DOMAIN: Record<string, OnboardingRationale> = {
     bullets: [
       'Briefing Room emphasises institutional context + legal track.',
       'Treaty Analyzer is the front-page legal tool.',
-      'Source Scout boosts World Bank governance + IDEA + V-Dem.',
+      'Source Scout boosts economic institution governance + IDEA + V-Dem.',
       'Risk Monitor weights political dimension above other axes.',
     ],
     example: { tool: 'Treaty Analyzer', outcome: 'Per-instrument compliance status + signatories.' },
@@ -214,7 +214,7 @@ const PERSPECTIVE_BY_DOMAIN: Record<string, OnboardingRationale> = {
     bullets: [
       'Sanctions Tracker is the front-page tool.',
       'Briefing Room leads with sanctions + trade + financial flows.',
-      'Source Scout boosts OFAC / EU / UN designations + IMF / World Bank.',
+      'Source Scout boosts OFAC / EU / UN designations + IMF / economic institution.',
       'Risk Monitor weights economic dimension above other axes.',
     ],
     example: { tool: 'Sanctions Tracker', outcome: 'Per-actor sanctions exposure + secondary effects.' },
@@ -223,7 +223,7 @@ const PERSPECTIVE_BY_DOMAIN: Record<string, OnboardingRationale> = {
     headline: 'Development and stabilisation — conflict-sensitive programming.',
     bullets: [
       'Briefing Room leads with stabilisation theory of change.',
-      'Source Scout boosts World Bank / OECD DAC / ALNAP.',
+      'Source Scout boosts economic institution / OECD DAC / ALNAP.',
       'Risk Monitor weights social + economic dimensions higher.',
     ],
     example: { tool: 'Risk Monitor', outcome: 'Stabilisation-flavoured scoring with conflict-sensitive overlays.' },

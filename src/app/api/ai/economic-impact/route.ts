@@ -81,14 +81,14 @@ const DEMO_RESPONSE = {
     },
   ],
   peaceDividend: {
-    gdpGainEstimate: 'Est. +5.8% GDP growth uplift in years 1-3 post-ceasefire consolidation (World Bank FCV comparators)',
+    gdpGainEstimate: 'Est. +5.8% GDP growth uplift in years 1-3 post-ceasefire consolidation (economic institution FCV comparators)',
     employmentCreation: 'Est. 340,000 jobs in construction, agriculture, and services over 5 years with reconstruction investment',
     timeframe: '3-5 years to return to pre-conflict GDP levels, contingent on rare earth revenue-sharing agreement',
   },
   recommendations: [
     'Negotiate rare earth revenue-sharing as core economic confidence-building measure',
     'Engage IMF on emergency financing facility for macro stabilisation',
-    'Establish joint damage and needs assessment (World Bank/UN/EU methodology) immediately',
+    'Establish joint damage and needs assessment (economic institution/UN/EU methodology) immediately',
     'Apply targeted sanctions on war economy actors profiting from rare earth extraction without expanding humanitarian restrictions',
   ],
   intelligenceGaps: [
@@ -134,7 +134,7 @@ export const POST = withCalibration('economic_impact', 'ai_analysis', {
 
     const result = await callProModel({
       output: Output.object({ schema: EconomicImpactSchema }),
-      system: `You are an economist specializing in conflict economics and post-conflict reconstruction. Apply World Bank Damage and Needs Assessment framework and IMF post-conflict methodology. Assess war economy dynamics, sanctions regimes, and reconstruction costs with quantitative rigour.
+      system: `You are an economist specializing in conflict economics and post-conflict reconstruction. Apply economic institution Damage and Needs Assessment framework and IMF post-conflict methodology. Assess war economy dynamics, sanctions regimes, and reconstruction costs with quantitative rigour.
 
 ${systemPromptBlock}
 

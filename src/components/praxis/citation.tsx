@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils/cn';
 import type { SourceSpan } from '@/lib/ai/schemas/conflict-grammar';
 
 export interface CitationProps {
-  /** Human-readable source label, e.g. "OCHA FTS", "ReliefWeb", "Doc#42:p3". */
+  /** Human-readable source label, e.g. "OCHA FTS", "humanitarian web reporting", "Doc#42:p3". */
   name: string;
   /** Stable identifier (Firestore path, URL, graph node id). */
   citation?: string;

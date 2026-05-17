@@ -124,7 +124,7 @@ const DEMO_SCOUT = {
   proposedSources: [
     {
       name: 'OCHA Situation Report (demo)',
-      url: 'https://reliefweb.int/example',
+      url: 'https://humanitarian_web.int/example',
       reason: 'OCHA publishes per-corridor access figures; closes the gap on the convoy denial pattern.',
       reliability: 'tier_a' as const,
       publishedAt: '2026-04-25',
@@ -132,9 +132,9 @@ const DEMO_SCOUT = {
       format: 'report' as const,
     },
     {
-      name: 'Crisis Group Briefing (demo)',
-      url: 'https://crisisgroup.org/example',
-      reason: 'Crisis Group has a the selected situation analyst with a recent briefing on AFN field-commander politics.',
+      name: 'expert conflict analysis Briefing (demo)',
+      url: 'https://expert-analysis.org/example',
+      reason: 'expert conflict analysis has a the selected situation analyst with a recent briefing on AFN field-commander politics.',
       reliability: 'tier_a' as const,
       corroborated: false,
       format: 'report' as const,

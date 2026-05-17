@@ -186,7 +186,7 @@ The humanitarian toll — 1.2 million IDPs, 340,000 refugees, 2.8 million food-i
   },
   scenarioOutlook: {
     mostLikelyScenario: 'Continued fragile ceasefire with creeping buffer-zone erosion (60 days probability: likely, ~60-70%). Political track stalls through June mediation round. GoN and DRM maintain formal commitment to AU Roadmap while both harden military posture. Window for meaningful progress narrows to a potential triggering event.',
-    bestCase: 'Karovian back-channel yields DRM conditionality on ceasefire verification mechanism; Belara revenue-sharing pre-negotiation launches under UNMN/World Bank auspices; June mediation round produces agreed Terms of Reference for formal talks (probability: possible, ~15-20%).',
+    bestCase: 'Karovian back-channel yields DRM conditionality on ceasefire verification mechanism; Belara revenue-sharing pre-negotiation launches under UNMN/economic institution auspices; June mediation round produces agreed Terms of Reference for formal talks (probability: possible, ~15-20%).',
     worstCase: 'DRM field commander Boateng launches offensive in Kessara corridor citing buffer violations; GoN responds with disproportionate force; ceasefire collapses; Karovian parliament forces intervention vote. Humanitarian catastrophe deepens. (probability: unlikely but possible, ~15-20%)',
     criticalVariables: [
       'Whether Karovian FM moderates can condition DRM political bureau on ceasefire verification before parliamentary hardliner pressure peaks',
@@ -210,9 +210,9 @@ The humanitarian toll — 1.2 million IDPs, 340,000 refugees, 2.8 million food-i
     },
     {
       priority: 'short-term' as const,
-      action: 'Launch Belara Mining Complex revenue-sharing pre-negotiation as confidence-building entry point under UNMN/World Bank auspices',
+      action: 'Launch Belara Mining Complex revenue-sharing pre-negotiation as confidence-building entry point under UNMN/economic institution auspices',
       rationale: 'Fisher-Ury interest analysis identifies Belara revenue as area of greatest overlapping interest without requiring compromise on contested political questions.',
-      actors: ['UNMN Special Envoy', 'World Bank Country Director', 'GoN Finance Ministry', 'DRM Political Bureau economic advisors'],
+      actors: ['UNMN Special Envoy', 'economic institution Country Director', 'GoN Finance Ministry', 'DRM Political Bureau economic advisors'],
     },
     {
       priority: 'medium-term' as const,
@@ -229,11 +229,11 @@ The humanitarian toll — 1.2 million IDPs, 340,000 refugees, 2.8 million food-i
   ],
   sources: [
     'UNMN SRSG briefing to multilateral forum, 14 Feb 2026',
-    'ICG Africa Report No. 312, March 2026',
+    'expert analysis Africa Report No. 312, March 2026',
     'OCHA Situation Report, 28 Feb 2026',
     'multilateral forum Panel of Experts interim report S/2025/892',
     'AU Roadmap for Elections, September 2025',
-    'SIPRI arms transfer database',
+    'security research arms transfer database',
   ],
   confidence: 0.72,
 };
@@ -314,9 +314,9 @@ export const POST = withCalibration('dossier', 'ai_report', {
 
     const result = await callProModel({
       output: Output.object({ schema: DossierSchema }),
-      system: `You are a senior intelligence analyst at a major international crisis monitoring organization — equivalent to multilateral diplomacy, International Crisis Group, or a G7 diplomatic service analytical unit.
+      system: `You are a senior intelligence analyst at a major international crisis monitoring organization — equivalent to multilateral diplomacy, expert conflict-analysis institution, or a G7 diplomatic service analytical unit.
 
-Produce comprehensive, classified-format dossiers that meet the analytical standards of multilateral diplomacy, ICG, and major diplomatic services. Write in authoritative, precise intelligence assessment language. Always:
+Produce comprehensive, classified-format dossiers that meet the analytical standards of multilateral diplomacy, expert analysis, and major diplomatic services. Write in authoritative, precise intelligence assessment language. Always:
 - Set classificationNote to "UNCLASSIFIED"
 - Open with a crisp BLUF (2-3 sentences, single most important finding)
 - Apply ACO analytical frameworks throughout: Glasl escalation, Fisher-Ury interests, Zartman ripeness, Stedman spoilers, Lederach multi-level

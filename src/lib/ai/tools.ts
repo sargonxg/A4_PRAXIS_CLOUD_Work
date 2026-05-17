@@ -131,7 +131,7 @@ function scoreUrlReliability(url: string): number {
   const lowerUrl = url.toLowerCase();
   if (/reuters|apnews|afp/.test(lowerUrl)) return 0.95;
   if (/bbc|guardian|nytimes|washingtonpost|ft\.com|aljazeera/.test(lowerUrl)) return 0.85;
-  if (/crisisgroup|icg|ucdp|sipri|iiss/.test(lowerUrl)) return 0.88;
+  if (/expert-analysis|icg|source_linked_events|security_research|iiss/.test(lowerUrl)) return 0.88;
   if (/un\.org|osce|europa\.eu/.test(lowerUrl)) return 0.90;
   if (/foreignpolicy|economist|foreignaffairs/.test(lowerUrl)) return 0.82;
   return 0.70;
@@ -732,7 +732,7 @@ export const checkUNTerminology = tool({
       { pattern: /\boccupied territories\b/gi, suggestion: 'occupied territory (singular per UN usage)', severity: 'info' as const },
       { pattern: /\bchild soldier/gi, suggestion: 'child associated with armed forces and armed groups (CAAFAG)', severity: 'error' as const },
       { pattern: /\bno-fly zone\b/gi, suggestion: 'flight restriction zone', severity: 'info' as const },
-      { pattern: /\brefugee camp\b/gi, suggestion: 'refugee settlement / camp (verify UNHCR designation)', severity: 'info' as const },
+      { pattern: /\brefugee camp\b/gi, suggestion: 'refugee settlement / camp (verify displacement reporting designation)', severity: 'info' as const },
       { pattern: /\billegal immigrants?\b/gi, suggestion: 'undocumented migrants / persons in an irregular situation', severity: 'error' as const },
       { pattern: /\bslums?\b/gi, suggestion: 'informal settlement', severity: 'warning' as const },
       { pattern: /\bhandicapped\b/gi, suggestion: 'persons with disabilities', severity: 'error' as const },
@@ -1768,7 +1768,7 @@ SECTORS TO COVER: ${focusSectors?.join(', ') || 'all sectors (food security, hea
 OCHA FORMATTING STANDARDS:
 - Use IPC Phase classifications for food security (Phase 1-5)
 - WHO scale for health emergencies
-- UNHCR data conventions for displacement
+- displacement reporting data conventions for displacement
 - UN OCHA format for funding (Humanitarian Response Plan)
 - Cluster system for sector coordination (Food Cluster, Health Cluster, WASH Cluster, etc.)
 
@@ -2028,7 +2028,7 @@ export const deepSourceResearch = tool({
     topic: z.string().describe('Research topic or question'),
     situationContext: z.string().optional().describe('Active situation context'),
     depth: z.enum(['quick', 'standard', 'comprehensive']).default('standard'),
-    sourcePreferences: z.array(z.string()).optional().describe('Preferred sources (e.g., "Crisis Group", "UCDP", "Reuters")'),
+    sourcePreferences: z.array(z.string()).optional().describe('Preferred sources (e.g., "expert conflict analysis", "source-linked event reporting", "Reuters")'),
     timeRange: z.enum(['week', 'month', 'quarter', 'year']).optional(),
   }),
   execute: async ({ topic, situationContext, depth, sourcePreferences, timeRange }) => {
@@ -2038,8 +2038,8 @@ export const deepSourceResearch = tool({
     // Build targeted queries for different source categories
     const queries = [
       topic, // General
-      `${topic} site:crisisgroup.org OR site:ucdp.uu.se OR site:sipri.org`, // Think tanks and conflict data
-      `${topic} site:un.org OR site:reliefweb.int`, // UN/humanitarian
+      `${topic} site:expert-analysis.org OR site:source_linked_events.uu.se OR site:security_research.org`, // Think tanks and conflict data
+      `${topic} site:un.org OR site:humanitarian_web.int`, // UN/humanitarian
       `${topic} site:reuters.com OR site:apnews.com`, // Wire services
     ];
 

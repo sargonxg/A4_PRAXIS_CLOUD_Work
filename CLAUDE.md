@@ -437,7 +437,7 @@ Deducted atomically via Firestore transactions. Real-time sync via onSnapshot.
 ## Analytical Frameworks (15)
 
 Glasl Escalation, Fisher-Ury, INFORM Risk Index, Barnett-Duvall Power, Zartman Ripeness, Stedman Spoilers, Mitchell-Agle-Wood Salience, OCHA Humanitarian, IPC Food Security, Lederach Pyramid, Galtung Triangle, UN DPPA Brief, Berghof Mediation, Putnam Two-Level, Fearon Rationalist War.
-Source: `src/lib/constants/frameworks.ts`
+Source: domain seeds, tool registry entries, and prompt context builders.
 
 ## Deployment
 

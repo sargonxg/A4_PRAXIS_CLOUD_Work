@@ -291,7 +291,6 @@ export function TaskletPraxisWorkbench({
     .filter((capsule) => capsule.role === 'tool')
     .map((capsule) => capsule.toolId ?? capsule.templateId ?? capsule.id);
   const availableToolIds = selectedToolIds.length ? selectedToolIds : ['ask-praxis'];
-  const capsules = COCKPIT_CAPSULE_LIBRARY.slice(0, 6);
   const selectedCapsule = userCapsules.find((capsule) => capsule.capsuleId === currentCapsuleId) ?? null;
   const selectedPolicyTeam = selectedCapsule ? policyTeamCategoryForTags(selectedCapsule.community?.tags) : getPolicyTeamCategory(capsuleCategory);
   const capsuleRecommendations = selectedCapsule
@@ -1144,9 +1143,9 @@ export function TaskletPraxisWorkbench({
   }
 
   return (
-    <section className={cn('min-h-screen bg-[#f3f3f2] text-[#1f1f1f]', className)} data-testid="tasklet-praxis-workbench">
+    <section className={cn('od-praxis-surface min-h-screen text-[#1f1f1f]', className)} data-testid="tasklet-praxis-workbench">
       <div className="grid min-h-screen lg:grid-cols-[250px_minmax(0,1fr)]">
-        <aside className="hidden border-r border-black/10 bg-[#e7e7e6] px-4 py-6 lg:flex lg:flex-col">
+        <aside className="od-praxis-sidebar hidden border-r px-4 py-6 lg:flex lg:flex-col">
           <Link href={isAuthenticated ? '/app' : '/'} className="mb-6 flex items-center gap-3 text-lg font-bold">
             <span className="praxis-thinking-glyph flex h-8 w-8 items-center justify-center rounded-md bg-sage text-white">◳</span>
             PRAXIS
@@ -1235,16 +1234,16 @@ export function TaskletPraxisWorkbench({
             </div>
           </header>
 
-          <div className="mx-auto mt-20 flex max-w-6xl flex-col items-center">
-            <p className="flex items-center gap-2 text-sm font-medium text-slate-500">
-              <Sparkles className="h-4 w-4 text-[#ff714d]" />
+          <div className="mx-auto mt-14 flex max-w-6xl flex-col items-center sm:mt-18">
+            <p className="od-praxis-control flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-slate-600">
+              <Sparkles className="h-4 w-4 text-[#ca4a25]" />
               PRAXIS uses your ContextCapsule Lite, documents, and policy tools
             </p>
-            <h1 className="mt-8 text-center font-serif text-5xl font-semibold tracking-tight text-[#151515] sm:text-6xl">
+            <h1 className="mt-7 max-w-4xl text-center font-serif text-5xl font-semibold tracking-tight text-[#151515] sm:text-6xl">
               What can PRAXIS do for you?
             </h1>
 
-            <div className="mt-8 inline-flex items-center gap-2 rounded-md bg-white/70 px-3 py-2 text-sm font-semibold text-slate-500">
+            <div className="od-praxis-control mt-7 inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-500">
               {isAuthenticated ? (user?.subscription || 'Free plan') : 'Free plan'}
               <span className="text-slate-300">·</span>
               <Link href={isAuthenticated ? '/pricing' : '/login?mode=signup'} className="text-sage">Upgrade</Link>
@@ -1263,7 +1262,7 @@ export function TaskletPraxisWorkbench({
                     }
                     if (action.label !== 'Ask') void sendToPraxis(selectedAgent, action.prompt);
                   }}
-                  className="rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 transition hover:border-[#ff714d]/40 hover:bg-[#fff7f3]"
+                  className="od-praxis-control rounded-md px-3 py-2 text-sm font-semibold text-slate-700 transition"
                 >
                   {action.label}
                 </button>
@@ -1274,7 +1273,7 @@ export function TaskletPraxisWorkbench({
               <button type="button" onClick={() => {
                 if (requireAuthForAction('Build a new PRAXIS ContextCapsule.')) return;
                 setBuilderOpen(true);
-              }} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
+              }} className="od-praxis-control inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700">
                 <Plus className="h-4 w-4" />
                 Build capsule
               </button>
@@ -1282,21 +1281,21 @@ export function TaskletPraxisWorkbench({
                 if (requireAuthForAction('Open the capsule repository and attach sources.')) return;
                 setRepositoryOpen(true);
                 void refreshRepository();
-              }} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
+              }} className="od-praxis-control inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700">
                 <Library className="h-4 w-4" />
                 Repository
               </button>
               <button type="button" onClick={() => {
                 if (requireAuthForAction('Inspect and improve the active PRAXIS capsule.')) return;
                 setInspectorOpen(true);
-              }} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
+              }} className="od-praxis-control inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700">
                 <BookOpen className="h-4 w-4" />
                 Inspect capsule
               </button>
               <button type="button" onClick={() => {
                 if (requireAuthForAction('Run capsule-aware PRAXIS policy actions.')) return;
                 setAgentDrawerOpen(true);
-              }} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
+              }} className="od-praxis-control inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-700">
                 <Sparkles className="h-4 w-4" />
                 Research actions
               </button>
@@ -1312,7 +1311,7 @@ export function TaskletPraxisWorkbench({
               }}
             />
 
-            <div className="mt-6 w-full max-w-5xl rounded-lg border border-black/10 bg-white shadow-sm shadow-black/5" data-testid="praxis-main-composer">
+            <div className="od-praxis-panel mt-6 w-full max-w-5xl rounded-xl" data-testid="praxis-main-composer">
               <div className="border-b border-black/10 px-5 py-3" data-testid="capsule-context-bar">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Capsule context</span>
@@ -1358,7 +1357,7 @@ export function TaskletPraxisWorkbench({
                       setCapsulePickerOpen(true);
                       setCapsulePickerRole('situation');
                     }}
-                    className="inline-flex items-center gap-2 rounded-md border border-dashed border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                    className="inline-flex items-center gap-2 rounded-md border border-dashed border-slate-300 bg-white/60 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Capsule
@@ -1370,7 +1369,7 @@ export function TaskletPraxisWorkbench({
                 onChange={(event) => setPrompt(event.target.value)}
                 rows={4}
                 placeholder="Describe a task or responsibility"
-                className="min-h-36 w-full resize-none rounded-t-lg px-6 py-6 text-xl text-slate-900 outline-none placeholder:text-slate-400"
+                className="min-h-36 w-full resize-none bg-transparent px-6 py-6 text-xl text-slate-900 outline-none placeholder:text-slate-400"
               />
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/10 px-5 py-4">
                 <div className="flex items-center gap-2">
@@ -1381,7 +1380,7 @@ export function TaskletPraxisWorkbench({
                       title={action.label}
                       aria-label={action.label}
                       onClick={() => handleAction(action.kind)}
-                      className="rounded-md border border-slate-200 p-2.5 text-slate-700 transition hover:bg-slate-50"
+                      className="od-praxis-control rounded-md p-2.5 text-slate-700 transition"
                     >
                       <action.icon className="h-4 w-4" />
                     </button>
@@ -1430,14 +1429,14 @@ export function TaskletPraxisWorkbench({
                     type="button"
                     disabled={!prompt.trim() || isStreaming}
                     onClick={() => void sendToPraxis()}
-                    className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-950 text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-950 text-white shadow-sm shadow-black/10 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                     aria-label="Send to PRAXIS"
                   >
                     {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
-              <div className="flex items-center gap-2 border-t border-black/10 bg-white px-5 py-2 text-sm text-slate-500">
+              <div className="flex items-center gap-2 border-t border-black/10 bg-white/70 px-5 py-2 text-sm text-slate-500">
                 <ShieldCheck className="h-4 w-4" />
                 <span>{status}</span>
               </div>
@@ -1551,7 +1550,7 @@ export function TaskletPraxisWorkbench({
                   <p className="mt-1 text-sm text-slate-500">Stored context, documents, and AI work.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <label className="flex min-w-64 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
+                  <label className="od-praxis-control flex min-w-64 items-center gap-2 rounded-md px-3 py-2">
                     <Search className="h-4 w-4 text-slate-400" />
                     <input
                       value={capsuleSearch}
@@ -1593,7 +1592,7 @@ export function TaskletPraxisWorkbench({
                     key={category.id}
                     type="button"
                     onClick={() => void createCapsuleLite(`${category.shortLabel} ContextCapsule`, undefined, category)}
-                    className="rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-600 hover:border-[#ff714d] hover:text-slate-950"
+                    className="od-praxis-control rounded-md px-3 py-2 text-left text-xs font-semibold text-slate-600 hover:text-slate-950"
                   >
                     <span className="block truncate">{category.shortLabel}</span>
                     <span className="mt-1 block truncate font-normal text-slate-400">{category.templateIds[0]}</span>
@@ -1663,7 +1662,7 @@ export function TaskletPraxisWorkbench({
                   {publicCapsules.map((capsule, index) => {
                     const category = publicCategoryForTemplate(capsule.id);
                     return (
-                      <article key={capsule.id} className="group min-h-52 rounded-xl border border-black/10 bg-white/75 p-4 shadow-sm shadow-black/5 transition hover:-translate-y-0.5 hover:border-[#ff714d]/40 hover:bg-white">
+                      <article key={capsule.id} className="od-praxis-card group min-h-52 rounded-xl p-4 transition hover:-translate-y-0.5 hover:border-[#ff714d]/40">
                         <div className="flex items-start justify-between gap-3">
                           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-sm font-semibold text-white">
                             {String(index + 1).padStart(2, '0')}
@@ -1692,7 +1691,7 @@ export function TaskletPraxisWorkbench({
                             <FolderKanban className="h-3.5 w-3.5" />
                             Explore
                           </button>
-                          <button type="button" onClick={() => addCapsule(capsule.id)} className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+                          <button type="button" onClick={() => addCapsule(capsule.id)} className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-black/10 hover:bg-slate-800">
                             <Sparkles className="h-3.5 w-3.5" />
                             Use after sign in
                           </button>
@@ -1950,13 +1949,13 @@ function CapsuleMap({
   ];
 
   return (
-    <section className="mt-6 w-full max-w-5xl rounded-2xl border border-black/10 bg-white/80 p-4 shadow-sm shadow-black/5" data-testid="capsule-map">
+    <section className="od-praxis-panel mt-6 w-full max-w-5xl rounded-2xl p-4" data-testid="capsule-map">
       <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
         <div className="flex items-center gap-3">
           <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-[#f8f8f6]">
             <div className="absolute inset-2 rounded-full border border-[#ff714d]/25" />
             <div className="absolute inset-5 rounded-full border border-sage/30" />
-            <span className="praxis-thinking-glyph flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white">◳</span>
+            <span className="praxis-thinking-glyph od-praxis-status-dot flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white">◳</span>
           </div>
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Active capsule</p>
@@ -1970,7 +1969,7 @@ function CapsuleMap({
               key={segment.id}
               type="button"
               onClick={() => onFilter(segment.filter)}
-              className="group rounded-lg border border-slate-200 bg-white p-3 text-left transition hover:-translate-y-0.5 hover:border-[#ff714d]/40 hover:shadow-sm"
+              className="od-praxis-card group rounded-lg p-3 text-left transition hover:-translate-y-0.5 hover:border-[#ff714d]/40"
               data-testid={`capsule-map-${segment.id}`}
             >
               <span className="flex items-center justify-between gap-2">
@@ -2072,7 +2071,7 @@ function CapsuleCard({
   const state = capsuleState(capsule);
   const [tagDraft, setTagDraft] = useState('');
   return (
-    <article className={cn('rounded-lg border bg-white p-4 shadow-sm shadow-black/5', active ? 'border-[#ff714d]' : 'border-black/10')}>
+    <article className={cn('od-praxis-card rounded-lg p-4', active ? 'border-[#ff714d]' : 'border-black/10')}>
       <button type="button" onClick={onSelect} className="block w-full text-left">
         <span className="flex items-center justify-between gap-3">
           <span className="truncate text-base font-semibold text-slate-900">{capsule.label}</span>

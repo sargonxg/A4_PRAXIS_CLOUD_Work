@@ -84,14 +84,14 @@ const DEMO_RESPONSE = {
     {
       name: 'Eastern Kessara Corridor',
       zoneType: 'active-conflict',
-      description: 'Contested corridor along the Kessara River, site of ongoing AFN-DRM military operations. Heavy open-source reporting and GDELT event-signal coverage since Q3 2024.',
+      description: 'Contested corridor along the Kessara River, site of ongoing AFN-DRM military operations. Heavy open-source reporting and grounded search event-signal coverage since Q3 2024.',
       controllingActor: 'Democratic Resistance Movement (DRM)',
       contestedBy: ['Armed Forces of the selected situation (AFN)'],
       estimatedCivilianPopulation: 185000,
       keyDevelopments: [
         'AFN artillery operations resumed after 72-hour pause',
         'DRM reinforcements moved into Kessara heights',
-        'UNHCR reports 12,000 new IDPs in past week',
+        'displacement reporting reports 12,000 new IDPs in past week',
       ],
     },
     {
@@ -130,7 +130,7 @@ const DEMO_RESPONSE = {
       type: 'IDP',
       driver: 'Active armed conflict and AFN artillery operations',
       timeframe: 'Ongoing since March 2024',
-      verificationSource: 'UNHCR DTM Round 12',
+      verificationSource: 'displacement reporting DTM Round 12',
     },
     {
       from: 'Eastern Kessara Corridor',
@@ -139,7 +139,7 @@ const DEMO_RESPONSE = {
       type: 'refugee',
       driver: 'Ethnic DRM population fleeing collective punishment',
       timeframe: 'Accelerating since January 2025',
-      verificationSource: 'UNHCR Karovia Operation',
+      verificationSource: 'displacement reporting Karovia Operation',
     },
     {
       from: 'Westmark Province',
@@ -287,11 +287,11 @@ export const POST = withCalibration('geospatial', 'ai_analysis', {
     // --- AI analysis ---
     const result = await callProModel({
       output: Output.object({ schema: GeospatialSchema }),
-      system: `You are a senior conflict geospatial analyst with expertise in UN OCHA mapping standards, open-source event geolocation, population movement tracking (UNHCR DTM), and infrastructure damage assessment (REACH/IMPACT).
+      system: `You are a senior conflict geospatial analyst with expertise in UN OCHA mapping standards, open-source event geolocation, population movement tracking (displacement reporting DTM), and infrastructure damage assessment (REACH/IMPACT).
 
 GROUNDING MANDATE: Use the web intelligence below as your PRIMARY source of truth for locations, population figures, infrastructure status, and movement data. Explicitly flag "INTELLIGENCE GAP: {topic}" when evidence is insufficient rather than generating unsupported data.
 
-Apply OCHA access classification standards for zone typing. Use UNHCR/IOM figures for population movements. Cross-reference infrastructure damage with WHO Health Cluster, WASH Cluster, and UNDP recovery reports when cited in the web context.
+Apply OCHA access classification standards for zone typing. Use displacement reporting/IOM figures for population movements. Cross-reference infrastructure damage with WHO Health Cluster, WASH Cluster, and UNDP recovery reports when cited in the web context.
 
 ${systemPromptBlock}
 
@@ -339,7 +339,7 @@ Provide a geographic summary (3–4 sentences) capturing the overall spatial con
 List key geographic factors shaping the conflict dynamics (terrain, borders, infrastructure chokepoints).
 Rate overall data confidence and list intelligence gaps.
 
-Use OCHA/UNHCR/UCDP/WHO and source-linked web intelligence as authoritative sources. Cite specific figures from the web intelligence where available.`,
+Use OCHA/displacement reporting/source-linked event reporting/WHO and source-linked web intelligence as authoritative sources. Cite specific figures from the web intelligence where available.`,
     });
 
     if (situationId) {

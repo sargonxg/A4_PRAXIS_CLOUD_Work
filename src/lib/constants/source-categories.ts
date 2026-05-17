@@ -100,7 +100,7 @@ export const SOURCE_CATEGORIES: SourceCategory[] = [
     description: 'Armed groups, violence data, conflict dynamics',
     longDescription:
       'Structured conflict datasets and security-focused monitors. Combines event-level violence data with analytical weekly briefings so you can trace both what happened and how specialists read it.',
-    sources: ['ICG CrisisWatch', 'UCDP', 'SIPRI', 'IISS', 'Geneva Academy', 'UCDP'],
+    sources: ['expert conflict monitor', 'source-linked event reporting', 'security research', 'IISS', 'Geneva Academy', 'source-linked event reporting'],
     searchTerms: ['armed conflict violence escalation', 'security forces ceasefire'],
     icon: Shield,
     color: '#E15759',
@@ -115,8 +115,8 @@ export const SOURCE_CATEGORIES: SourceCategory[] = [
     longDescription:
       'Humanitarian agencies and rights monitors covering displacement, protection and aid access. Primary signal for civilian-impact tools, IPC food security readings and OCHA-style situation reports.',
     sources: [
-      'ReliefWeb',
-      'UNHCR',
+      'humanitarian web reporting',
+      'displacement reporting',
       'OCHA',
       'Human Rights Watch',
       'Amnesty International',
@@ -137,7 +137,7 @@ export const SOURCE_CATEGORIES: SourceCategory[] = [
     longDescription:
       'Primary documents from multilateral bodies and foreign ministries. Feeds treaty tracking, Security Council monitoring and any tool that needs to cite what states or institutions formally said.',
     sources: [
-      'UN News',
+      'official multilateral news',
       'UNSC Resolutions',
       "What's In Blue",
       'US State Dept',
@@ -216,7 +216,7 @@ export const SOURCE_CATEGORIES: SourceCategory[] = [
     longDescription:
       'Macroeconomic, sanctions and development datasets. Essential whenever a situation turns on economic leverage — debt distress, sanctions design, trade dependencies or humanitarian financing gaps.',
     sources: [
-      'World Bank',
+      'economic institution',
       'IMF',
       'UNDP',
       'Oxford Analytica',

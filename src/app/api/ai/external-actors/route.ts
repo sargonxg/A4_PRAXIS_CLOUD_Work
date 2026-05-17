@@ -44,7 +44,7 @@ const DEMO_RESPONSE = {
       alignment: 'pro-party-b' as const,
       leverage: 'DRM relies on Karovian logistics and financing for 40% of operational budget',
       engagementLikelihood: 'likely' as const,
-      source: 'Crisis Group Report #347',
+      source: 'expert conflict analysis Report #347',
     },
     {
       name: 'the selected situation Diaspora (Westmark)',

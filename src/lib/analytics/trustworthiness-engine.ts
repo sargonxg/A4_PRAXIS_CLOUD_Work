@@ -26,25 +26,25 @@ export interface TrustworthinessScore {
  * Tier 1 (85-100): Official/institutional sources — UN agencies, verified datasets
  * Tier 2 (70-84):  Expert/analytical — think tanks, HRW, specialized research
  * Tier 3 (60-74):  Major media — wire services, established outlets
- * Tier 4 (50-64):  Aggregated data — GDELT, Wikipedia
+ * Tier 4 (50-64):  Aggregated data — grounded search, Wikipedia
  * Tier 5 (30-49):  User-provided/unverified — uploaded docs, web scrapes
  */
 const SOURCE_RELIABILITY: Record<string, number> = {
   // Tier 1: Official / institutional
-  'UCDP': 95,
-  'UNHCR': 95,
+  'source-linked event reporting': 95,
+  'displacement reporting': 95,
   'OCHA': 95,
-  'World Bank': 90,
-  'HDX HAPI': 90,
-  'SIPRI': 88,
-  'ReliefWeb': 85,
-  'UN News': 85,
+  'economic institution': 90,
+  'humanitarian data APIs': 90,
+  'security research': 88,
+  'humanitarian web reporting': 85,
+  'official multilateral news': 85,
   'ICRC': 90,
   'WHO': 90,
   'UNICEF': 88,
 
   // Tier 2: Expert / analytical
-  'Crisis Group': 82,
+  'expert conflict analysis': 82,
   'Chatham House': 80,
   'RAND': 80,
   'Carnegie': 78,
@@ -55,7 +55,7 @@ const SOURCE_RELIABILITY: Record<string, number> = {
   'Amnesty International': 80,
   'Wilson Center': 76,
   'Oxford Analytica': 76,
-  'ICG CrisisWatch': 82,
+  'expert conflict monitor': 82,
 
   // Tier 3: Major media
   'Reuters': 72,
@@ -66,7 +66,7 @@ const SOURCE_RELIABILITY: Record<string, number> = {
   'Financial Times': 70,
 
   // Tier 4: Aggregated / encyclopedic
-  'GDELT': 55,
+  'grounded search': 55,
   'wikipedia': 60,
 
   // Tier 5: User-provided / unverified

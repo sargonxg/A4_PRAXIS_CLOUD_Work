@@ -4,7 +4,7 @@ import { TaskletPraxisWorkbench } from "@/components/praxis/tasklet-praxis-workb
 
 export function Phase8WowLanding() {
   return (
-    <main className="min-h-screen bg-[#f3f5f1] text-[#111827]">
+    <main className="od-praxis-surface min-h-screen text-slate-900">
       <TaskletPraxisWorkbench
         mode="public"
         activeCapsuleName="Middle East policy analysis"

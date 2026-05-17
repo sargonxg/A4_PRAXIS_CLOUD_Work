@@ -28,7 +28,7 @@ def _healthy_snapshot(**overrides):
             preferredLenses=["stakeholder", "legal"],
         ),
         "feeds": [
-            FeedHealthInput(source="gdelt", lastSuccessAt=NOW - timedelta(hours=1)),
+            FeedHealthInput(source="grounded_search", lastSuccessAt=NOW - timedelta(hours=1)),
         ],
         "toolOutputs": [
             ToolOutputHealthInput(toolId="risk-monitor", generatedAt=NOW - timedelta(hours=2)),
@@ -82,8 +82,8 @@ def test_compute_situation_health_flags_stale_feeds_as_red():
     report = compute_situation_health(
         _healthy_snapshot(
             feeds=[
-                FeedHealthInput(source="gdelt", lastSuccessAt=NOW - timedelta(hours=8)),
-                FeedHealthInput(source="reliefweb", lastSuccessAt=NOW - timedelta(minutes=30), degraded=True),
+                FeedHealthInput(source="grounded_search", lastSuccessAt=NOW - timedelta(hours=8)),
+                FeedHealthInput(source="crawler_receipts", lastSuccessAt=NOW - timedelta(minutes=30), degraded=True),
             ]
         )
     )

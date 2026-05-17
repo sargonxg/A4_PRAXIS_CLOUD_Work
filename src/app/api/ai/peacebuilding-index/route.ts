@@ -99,7 +99,7 @@ const DEMO_RESPONSE = {
   recommendations: [
     'Expand UNMN ceasefire monitoring to all three high-risk contact points',
     'Establish independent judiciary access programme for DRM-held territories',
-    'Launch World Bank Fragility, Conflict and Violence (FCV) rapid economic assessment',
+    'Launch economic institution Fragility, Conflict and Violence (FCV) rapid economic assessment',
     'Prioritise CSCN engagement as social cohesion anchor for any future reconciliation track',
   ],
   intelligenceGaps: [
@@ -145,7 +145,7 @@ export const POST = withCalibration('peacebuilding_index', 'ai_analysis', {
 
     const result = await callProModel({
       output: Output.object({ schema: PeacebuildingIndexSchema }),
-      system: `You are a peacebuilding expert applying UN Peacebuilding Commission methodology and World Bank FCV framework. Score each pillar rigorously using observable indicators, not aspirational assessments.
+      system: `You are a peacebuilding expert applying UN Peacebuilding Commission methodology and economic institution FCV framework. Score each pillar rigorously using observable indicators, not aspirational assessments.
 
 ${systemPromptBlock}
 

@@ -200,7 +200,7 @@ Frame Narrative explains how actors describe the situation, which frames are gai
 ### Frameworks
 - NATO STRATCOM taxonomy
 - 4D influence framework
-- GDELT GCAM tone analysis
+- web media tone tone analysis
 
 ### Limits
 Narrative reads need fresh media/source coverage and should be caveated by language and platform gaps.
@@ -243,7 +243,7 @@ Produces structured via `/api/ai/commitment-scan`.
 Commitment Tracker records obligations, deadlines, verification mechanisms, compliance posture, and violation type. It is the PRAXIS memory for promises that need follow-up.
 
 ### Frameworks
-- UCDP Peace Agreement Dataset
+- peace agreement corpus
 - Agreement compliance monitoring
 - Stedman implementation analysis
 

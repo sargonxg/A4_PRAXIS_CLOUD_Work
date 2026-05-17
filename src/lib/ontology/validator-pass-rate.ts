@@ -106,13 +106,13 @@ export function activeOntologyIds(caseModule: CaseModule): OntologyId[] {
 
 function sourceAffinityFor(id: OntologyId): string[] {
   const map: Record<OntologyId, string[]> = {
-    conflict: ['wire reporting', 'UCDP-style event data', 'ICG analysis'],
+    conflict: ['wire reporting', 'source-linked event reporting-style event data', 'expert analysis analysis'],
     mediation: ['party statements', 'agreement texts', 'process design notes'],
     governance: ['UN documents', 'mandates', 'voting records'],
     narrative: ['local media', 'social channels', 'fact-check traces'],
     'human-rights': ['OHCHR reports', 'NGO documentation', 'legal filings'],
-    economic: ['World Bank', 'IMF', 'customs/trade data'],
-    humanitarian: ['OCHA', 'ReliefWeb', 'UNHCR/WHO field reports'],
+    economic: ['economic institution', 'IMF', 'customs/trade data'],
+    humanitarian: ['OCHA', 'humanitarian web reporting', 'displacement reporting/WHO field reports'],
     legal: ['treaties', 'court records', 'sanctions notices'],
     security: ['incident reports', 'military statements', 'maritime/aviation notices'],
   };

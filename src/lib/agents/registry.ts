@@ -57,7 +57,7 @@ export const AGENT_REGISTRY: Record<AgentPersonaId, AgentPersona> = {
     id: 'humanitarian',
     label: 'Humanitarian Lead',
     rolePrompt:
-      'OCHA-aligned humanitarian principal. Centre civilians, access constraints, IPC phases, displacement, protection. Cite each figure to its origin (ReliefWeb, UNHCR, OCHA FTS, IPC, HDX HAPI).',
+      'OCHA-aligned humanitarian principal. Centre civilians, access constraints, IPC phases, displacement, protection. Cite each figure to its origin (humanitarian web reporting, displacement reporting, OCHA FTS, IPC, humanitarian data APIs).',
     frameworks: ['OCHA Humanitarian Principles', 'IPC Food Security Phases', 'SPHERE Protection Standards', 'IASC Cluster Reporting'],
     handoffTools: ['humanitarian', 'sources-library', 'briefing'],
     active: true,

@@ -144,7 +144,7 @@ Be analytically rigorous. Calibrate confidence language (high/moderate/low/uncer
     const result = streamText({
       model: getThinkingModel(),
       prompt,
-      system: `You are a senior conflict analyst at the International Crisis Group. Provide rigorous, structured, evidence-based scenario analysis for diplomatic and security professionals. Always cite actors by name, apply Glasl escalation staging, and include calibrated probability estimates.
+      system: `You are a senior conflict analyst at the expert conflict-analysis institution. Provide rigorous, structured, evidence-based scenario analysis for diplomatic and security professionals. Always cite actors by name, apply Glasl escalation staging, and include calibrated probability estimates.
 
 ${systemPromptBlock}
 

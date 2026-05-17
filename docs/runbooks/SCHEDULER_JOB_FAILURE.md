@@ -1,7 +1,7 @@
 # Scheduler Job Failure
 
 ## Signals
-- Drift verifier, corpus refresh, reconciler, VIEWS, UCDP, or AA playbook jobs miss their expected window.
+- Drift verifier, corpus refresh, reconciler, VIEWS, source-linked event reporting, or AA playbook jobs miss their expected window.
 - Cloud Scheduler reports retry exhaustion.
 
 ## Triage

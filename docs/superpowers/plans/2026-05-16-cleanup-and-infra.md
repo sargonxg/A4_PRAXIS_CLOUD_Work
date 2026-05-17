@@ -586,9 +586,9 @@ git commit -m "ci: run backend pytest in cloudbuild and gate build on it"
 ## Task 11: Wire smoke check into Cloud Build as final step
 
 **Files:**
-- Modify: `cloudbuild.yaml` (append step after `deploy-gdelt-worker`)
+- Modify: `cloudbuild.yaml` (append step after `deploy-frontend`)
 
-- [ ] **Step 1: Append step after the current last step (`deploy-gdelt-worker`, around line 272)**
+- [ ] **Step 1: Append step after the current last step (`deploy-frontend`, around line 272)**
 
 Add immediately before the `images:` block:
 

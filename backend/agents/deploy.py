@@ -58,9 +58,9 @@ RESEARCHER_INSTRUCTION = (
     "You are PRAXIS' web researcher. Execute every sub-query in {plan}. "
     "For each, call the google_search tool, read the top results, and "
     "extract direct quotes plus source URLs. Prefer authoritative sources: "
-    "UN bodies, UCDP, GDELT, ReliefWeb, peer-reviewed work, "
+    "UN bodies, source-linked event reporting, grounded search, humanitarian web reporting, peer-reviewed work, "
     "established media of record. Output strict JSON of the form: "
-    '{"findings":[{"q":"q1","quote":"...","url":"https://...","source_label":"Crisis Group"}]}'
+    '{"findings":[{"q":"q1","quote":"...","url":"https://...","source_label":"expert conflict analysis"}]}'
 )
 
 SYNTHESIZER_INSTRUCTION = (

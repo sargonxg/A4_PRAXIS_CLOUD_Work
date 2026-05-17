@@ -95,7 +95,7 @@ export const FALLBACK_CHIPS: ChipLibrary = {
     'UNMHA (UN Mission in Hudaydah)',
     'UNRCCA (UN Regional Centre for Preventive Diplomacy for Central Asia)',
     // UN funds, programmes, agencies
-    'UNDP', 'UNHCR', 'UNICEF', 'WFP', 'UNFPA', 'WHO', 'IOM', 'UN Women',
+    'UNDP', 'displacement reporting', 'UNICEF', 'WFP', 'UNFPA', 'WHO', 'IOM', 'UN Women',
     'UNESCO', 'UNEP', 'UNODC', 'UNIDIR',
     // Regional intergovernmental
     'OSCE', 'EU EEAS', 'EU Commission DG NEAR', 'EU Commission DG INTPA',
@@ -106,12 +106,12 @@ export const FALLBACK_CHIPS: ChipLibrary = {
     'ICRC', 'IFRC', 'MSF', 'Norwegian Refugee Council', 'Save the Children',
     'Oxfam', 'Mercy Corps', 'Refugees International',
     // Conflict-prevention / mediation NGOs
-    'Crisis Group', 'Centre for Humanitarian Dialogue', 'Berghof Foundation',
+    'expert conflict analysis', 'Centre for Humanitarian Dialogue', 'Berghof Foundation',
     'Conciliation Resources', 'Inter-Mediate', 'Carter Center',
     'Community of Sant’Egidio', 'Crisis Action',
     // Think tanks (global)
     'Carnegie Endowment', 'Chatham House', 'Brookings', 'RAND',
-    'Wilson Center', 'SIPRI', 'IISS', 'Geneva Academy', 'CSIS',
+    'Wilson Center', 'security research', 'IISS', 'Geneva Academy', 'CSIS',
     'Atlantic Council', 'Council on Foreign Relations', 'USIP',
     'European Council on Foreign Relations', 'IFRI', 'IPI',
     'ODI', 'Clingendael', 'PRIO', 'GIGA Hamburg', 'IISS Manama',

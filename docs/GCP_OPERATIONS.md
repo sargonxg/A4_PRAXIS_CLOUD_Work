@@ -22,18 +22,18 @@ user value first.
 
 Current production note (2026-05-06): core Gemini/Vertex provider health and
 Vertex AI Agent Engine are active in production. Firecrawl and Parallel are
-retired from the deployed app surface; grounded Google Search, GDELT, UCDP,
-ReliefWeb, HDX, UN News, World Bank, uploaded sources, Cloud SQL, and Neo4j are
+retired from the deployed app surface; grounded Google Search, grounded search, source-linked event reporting,
+humanitarian web reporting, humanitarian data, official multilateral news, economic institution, uploaded sources, Cloud SQL, and Neo4j are
 the supported foundation. Polar remains optional until its Secret Manager values
 are mounted; `/app/settings/system-health` shows the live status for each
 integration.
 
-### 1a. ~~ACLED~~ — **withdrawn 2026-04-25**
+### 1a. ~~source-linked event reporting~~ — **withdrawn 2026-04-25**
 
-PRAXIS no longer ingests ACLED. The 2026 EULA's prohibition on SaaS
+PRAXIS no longer ingests source-linked event reporting. The 2026 EULA's prohibition on SaaS
 redistribution made it incompatible with our open-source-only stance.
-Event-level intelligence is now served from **GDELT BigQuery**
-(see §1c below) and **UCDP GED** (zero config).
+Event-level intelligence is now served from **grounded search BigQuery**
+(see §1c below) and **source-linked event reporting GED** (zero config).
 
 ### 1b. Vertex AI Agent Engine (Deep Research Agent, ~1–2 h)
 
@@ -90,23 +90,23 @@ Event-level intelligence is now served from **GDELT BigQuery**
    push subscriber authentication.
 8. Verify: `curl -s https://praxis.tacitus.me/api/health | jq '.checks.vertex_adk'`.
 
-### 1c. GDELT BigQuery hot slice (free <1 TB/mo, ~2 h)
+### 1c. Retired structured-feed ingestion
 
 Authoritative playbook:
-**`docs/implementation/gdelt-ingestion-2026-04-25.md`** (1,036 lines).
+**`retired structured-feed ingestion playbook`** (1,036 lines).
 TL;DR:
 
 ```bash
 gcloud services enable bigquery.googleapis.com bigquerydatatransfer.googleapis.com cloudscheduler.googleapis.com --project=praxisbytacitus
 
 bq query --use_legacy_sql=false --max_rows=1 \
-'SELECT GKGRECORDID FROM `gdelt-bq.gdeltv2.gkg_partitioned`
+'SELECT GKGRECORDID FROM `grounded_search-bq.grounded_searchv2.gkg_partitioned`
  WHERE _PARTITIONTIME >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 HOUR) LIMIT 1'
 ```
 
-Then create the two service accounts (`praxis-gdelt-poller`,
-`praxis-gdelt-reader`) with minimal IAM grants per playbook §2,
-apply the `praxis_analytics.gdelt_situation_events` DDL per §3, build
+Then create the two service accounts (`retired-feed-poller`,
+`retired-feed-reader`) with minimal IAM grants per playbook §2,
+apply the `praxis_analytics.grounded_search_situation_events` DDL per §3, build
 the Cloud Run Job per §4, schedule per §5. Cap at $2–5/month at MVP
 scale.
 
@@ -564,7 +564,7 @@ The following steps cannot be automated by an agent:
 - Domain DNS records (Squarespace / Cloudflare / etc.)
 - Firebase Auth provider toggles (Console UI)
 - Optional vendor signups (vendor UI) only after a scoped product decision
-- ACLED key request (vendor approves manually)
+- source-linked event reporting key request (vendor approves manually)
 
 For everything else, an agent (Codex or Claude Code) should be able to
 self-serve from the validation + deploy commands above.

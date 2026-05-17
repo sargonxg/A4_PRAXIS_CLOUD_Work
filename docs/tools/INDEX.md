@@ -62,10 +62,8 @@ the high-traffic tools first, then PARTIAL → READY promotions, then the
 long tail. Tools that already have a doc in this folder:
 
 - `dashboard.md` — Situation overview hub
-- `geospatial-monitor.md` — ACLED event map
 - `briefing.md` — UN-DPPA-style intelligence briefing
 - `assistant.md` — Multi-tool chat assistant
-- `risk-monitor.md` — INFORM Risk Index dashboard
 - `early-warning.md` — Glasl-stage escalation monitor
 - `argus.md` — Deep web research
 - `scenarios.md` — Monte Carlo scenario planner
@@ -101,7 +99,7 @@ When adding a new tool's doc:
    later anyway, and the template enforces consistency across the
    catalogue.
 3. Cross-link liberally to other tool docs via relative paths (e.g.,
-   `[Risk Monitor](./risk-monitor.md)`).
+   `[Early Warning](./early-warning.md)`).
 4. Update the "Tools with deep docs in this folder" list above.
 5. If you change the tool's status (PARTIAL → READY), mirror the change
    in `docs/SPRINT_2026-04-25.md` and `docs/CONTINUATION.md`.

@@ -93,7 +93,7 @@ const DEMO_RESPONSE = {
   recommendedOption: 'Option 2: Structured Autonomy Framework',
   implementationRoadmap: 'Phase 1 (0-30 days): Ceasefire. Phase 2 (30-90 days): Technical working groups. Phase 3 (90-180 days): Framework agreement.',
   risks: 'Primary risks are spoiler action by DRM hardliners, GoN election dynamics, and external patron escalation if the autonomy track is framed as a concession rather than a stabilization framework.',
-  citations: ['Crisis Group Report #347', 'UNMN Quarterly Assessment Q1 2026'],
+  citations: ['expert conflict analysis Report #347', 'UNMN Quarterly Assessment Q1 2026'],
   classification: 'UNCLASSIFIED // POLICY PLANNING',
   to: 'Senior Policy Principals',
   from: 'PRAXIS Policy Cell',

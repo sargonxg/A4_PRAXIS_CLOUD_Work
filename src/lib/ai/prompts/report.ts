@@ -63,7 +63,7 @@ Draft the Humanitarian Situation section for a Secretary-General's Report. This 
 - Address protection of civilians concerns
 - Note funding gaps and resource requirements
 
-Format: 3-6 paragraphs. Cite humanitarian data sources (OCHA, UNHCR, WFP, etc.) where available.`,
+Format: 3-6 paragraphs. Cite humanitarian data sources (OCHA, displacement reporting, WFP, etc.) where available.`,
 
   human_rights: `${BASE_REPORT_PROMPT}
 

@@ -39,7 +39,7 @@
 ### Live feeds (per tool)
 
 The 27 chat tools each pull their own data — `webSearch` hits Firecrawl,
-`humanitarianSnapshot` hits HDX, `sanctionsCheck` queries OFAC/EU/UN
+`humanitarianSnapshot` hits humanitarian data, `sanctionsCheck` queries OFAC/EU/UN
 designation lists, etc. See `src/lib/ai/tools.ts` for the registry.
 
 ## Outputs (persist)

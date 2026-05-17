@@ -72,9 +72,9 @@ const DEMO_RESPONSE = {
       category: 'political' as const,
       action: 'Propose a structured Track I pre-negotiation process under UNMN auspices focused on a revenue-sharing framework for the Belara Mining Complex as a confidence-building entry point.',
       rationale: 'Fisher-Ury interest analysis identifies Belara Mining revenue as the area of greatest overlapping interest: GoN needs fiscal resources to maintain urban support base; DRM needs revenue legitimacy for political bureau to maintain armed wing loyalty. Stedman spoiler theory flags AFN General Staff and BMC as likely spoilers — isolating them requires GoN civilian cabinet to see concrete economic gains from a deal.',
-      actors: ['GoN Finance Ministry', 'DRM Political Bureau economic advisors', 'UNMN Special Envoy', 'World Bank Country Director (as technical facilitator)'],
+      actors: ['GoN Finance Ministry', 'DRM Political Bureau economic advisors', 'UNMN Special Envoy', 'economic institution Country Director (as technical facilitator)'],
       risks: ['AFN hardliners will lobby against any revenue-sharing that reduces military budget priority', 'BMC may use political leverage to block transparency mechanisms that would expose profit flows'],
-      successIndicators: ['Both parties agree to technical working group on Belara revenue modalities', 'World Bank accepts facilitation role within 30 days', 'Agreed terms of reference for pre-negotiation process signed by both parties'],
+      successIndicators: ['Both parties agree to technical working group on Belara revenue modalities', 'economic institution accepts facilitation role within 30 days', 'Agreed terms of reference for pre-negotiation process signed by both parties'],
       timeframe: '2–6 weeks',
     },
     {
@@ -101,8 +101,8 @@ const DEMO_RESPONSE = {
       priority: 'medium-term' as const,
       category: 'economic' as const,
       action: 'Commission an independent economic assessment of post-conflict reconstruction costs to create a compelling "cost of continued conflict" argument for GoN urban middle class and international donors.',
-      rationale: 'Putnam\'s two-level game theory identifies domestic constituency pressure as the critical variable: GoN civilian cabinet faces electoral pressure that military does not. 36.4% currency depreciation and fiscal deterioration are creating urban middle-class disaffection. An authoritative economic analysis (ideally World Bank or IMF co-branded) quantifying the opportunity cost of conflict in fiscal, trade, and investment terms would provide GoN reformers with political cover to pursue a deal.',
-      actors: ['World Bank Country Director', 'IMF Resident Representative', 'GoN Finance Ministry technocrats', 'UNDP Country Office'],
+      rationale: 'Putnam\'s two-level game theory identifies domestic constituency pressure as the critical variable: GoN civilian cabinet faces electoral pressure that military does not. 36.4% currency depreciation and fiscal deterioration are creating urban middle-class disaffection. An authoritative economic analysis (ideally economic institution or IMF co-branded) quantifying the opportunity cost of conflict in fiscal, trade, and investment terms would provide GoN reformers with political cover to pursue a deal.',
+      actors: ['economic institution Country Director', 'IMF Resident Representative', 'GoN Finance Ministry technocrats', 'UNDP Country Office'],
       risks: ['Economic assessment may be dismissed by GoN as politically motivated if external authorship is not carefully managed', 'Prolonged assessment process may exhaust the political window before results are published'],
       successIndicators: ['GoN Finance Ministry agrees to participate in assessment within 30 days', 'Preliminary findings briefed to senior diplomatic counterparts within 60 days', 'GoN Vice-President publicly references economic cost argument in domestic speech'],
       timeframe: '6–12 weeks',
@@ -115,7 +115,7 @@ const DEMO_RESPONSE = {
       'Secure Karovian FM commitment to halt material support and condition DRM on ceasefire verification (Days 0–14)',
       'Deliver first humanitarian corridor to Kessara — establishes credibility and creates positive momentum (Days 0–7)',
       'Identify and confidentially brief senior diplomatic counterparts on AFN hardliner financial accountability measures (Days 7–21)',
-      'Launch Belara revenue-sharing pre-negotiation technical working group under UNMN/World Bank auspices (Days 14–42)',
+      'Launch Belara revenue-sharing pre-negotiation technical working group under UNMN/economic institution auspices (Days 14–42)',
       'Issue joint interfaith ceasefire statement to create public political space for compromise (Days 21–35)',
       'Convene formal Track I pre-negotiation session with agreed terms of reference (Days 42–60)',
     ],
@@ -128,7 +128,7 @@ const DEMO_RESPONSE = {
     ],
   },
   confidenceLevel: 'medium' as const,
-  analystNotes: 'Assessment confidence is medium due to three intelligence gaps: (1) DRM field commander positions are not independently verified — political bureau signals may not reflect operational command intent; (2) Karovian internal political dynamics are opaque — foreign ministry moderate signals may be tactical rather than reflecting policy shift; (3) GoN hardliner financial interests in contested mining zones are documented by Panel of Experts but specific network ties to AFN General Staff remain unconfirmed. Recommend cross-referencing with latest ICG CrisisWatch update and Panel of Experts interim report before any Track I engagement.',
+  analystNotes: 'Assessment confidence is medium due to three intelligence gaps: (1) DRM field commander positions are not independently verified — political bureau signals may not reflect operational command intent; (2) Karovian internal political dynamics are opaque — foreign ministry moderate signals may be tactical rather than reflecting policy shift; (3) GoN hardliner financial interests in contested mining zones are documented by Panel of Experts but specific network ties to AFN General Staff remain unconfirmed. Recommend cross-referencing with latest expert conflict monitor update and Panel of Experts interim report before any Track I engagement.',
 };
 
 // ---------------------------------------------------------------------------

@@ -47,10 +47,10 @@ FLOW_REGISTRY: dict[str, FlowRegistration] = {
         _placeholder_flow("red_team_analyst"),
         "Safe adversary-perspective modeling subagent for Pack 15 SAT toolkit.",
     ),
-    "gdelt_monitor": FlowRegistration(
-        "gdelt_monitor",
-        _placeholder_flow("gdelt_monitor"),
-        "Durable monitoring flow for GDELT-derived situation signals.",
+    "grounded_search_monitor": FlowRegistration(
+        "grounded_search_monitor",
+        _placeholder_flow("grounded_search_monitor"),
+        "Durable monitoring flow for grounded search-derived situation signals.",
     ),
 }
 
