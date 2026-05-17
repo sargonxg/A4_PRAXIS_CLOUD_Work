@@ -56,8 +56,11 @@ bq mk --table "${PROJECT_ID}:praxis_analytics.extractions" \
 
 # ── Pub/Sub Topics ───────────────────────────────────────────────────────────
 echo "Creating Pub/Sub topics..."
-for topic in praxis.pipeline praxis.extract praxis.ingest praxis.alert profile.events; do
-  gcloud pubsub topics create "$topic" 2>/dev/null || echo "Topic $topic already exists"
+# Pub/Sub topics. Only `profile.events` has an active publisher
+# (src/lib/firebase/profile-events.ts). Re-add other topics here when a
+# publisher or subscriber is added in code.
+for topic in profile.events; do
+  gcloud pubsub topics create "$topic" --project="$PROJECT_ID" 2>/dev/null || true
 done
 
 # ── LangGraph Cloud SQL checkpoint store ─────────────────────────────────────
