@@ -1,0 +1,120 @@
+import { describe, expect, it } from 'vitest';
+import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock } from '@/lib/agent-runtime/evidence-pack';
+import type { PraxisCapsule } from '@/lib/context/capsule-service';
+
+const capsule = {
+  capsuleId: 'cap-1',
+  ownerUid: 'user-1',
+  archivedAt: null,
+  version: 3,
+  label: 'Active capsule',
+  activeForSituationIds: [],
+  coreRefs: {
+    userCoreId: 'user-core',
+    teamCoreId: null,
+    situationCoreId: 'sit-1',
+    pathCoreId: null,
+    sourceCoreIds: ['src-1'],
+    documentCoreIds: ['doc-1'],
+    graphCoreId: null,
+    timeCoreId: null,
+    outputCoreIds: ['options-memo'],
+    toolCoreIds: [],
+    objectiveCoreIds: [],
+    productCoreIds: [],
+    memoryCoreId: null,
+  },
+} as PraxisCapsule;
+
+describe('capsule evidence pack', () => {
+  it('builds sourced paragraph records from capsule refs, knowledge docs, chunks, memories, and output history', async () => {
+    const pack = await buildCapsuleEvidencePack({
+      ownerUid: 'user-1',
+      capsuleId: 'cap-1',
+      objective: 'Draft an options memo',
+    }, {
+      now: () => new Date('2026-05-16T12:00:00.000Z'),
+      getCapsule: async () => capsule,
+      listKnowledgeDocuments: async () => [{
+        id: 'doc-1',
+        ownerUid: 'user-1',
+        documentId: 'doc-1',
+        situationId: 'sit-1',
+        title: 'UN report',
+        fileType: 'pdf',
+        size: 100,
+        bucketUri: null,
+        repositoryIds: ['default'],
+        capsuleIds: ['cap-1'],
+        categoryId: 'policy',
+        policyDomain: 'policy',
+        tags: [],
+        sourceType: 'document',
+        sourceNote: '',
+        extractionStatus: 'extracted',
+        summaryStatus: 'ready',
+        retrievalStatus: 'indexed',
+        chunkCount: 1,
+        entityCount: 0,
+        digest: {
+          shortSummary: 'Short digest.',
+          analystSummary: 'Long digest.',
+          keyClaims: ['Claim one'],
+          actors: [],
+          institutions: [],
+          dates: [],
+          causalLinks: [],
+          humanFrictionSignals: [],
+          policyRelevance: [],
+          sourceabilityWarnings: ['Needs corroboration'],
+          suggestedCapsuleIds: [],
+          suggestedTags: [],
+          followUpQuestions: [],
+          generatedAt: '2026-05-16T12:00:00.000Z',
+          model: 'test',
+        },
+        createdAt: '2026-05-16T12:00:00.000Z',
+        updatedAt: '2026-05-16T12:00:00.000Z',
+        schemaVersion: 1,
+      }],
+      retrieveRelevantChunks: async () => [{
+        id: 'chunk-1',
+        documentId: 'doc-1',
+        documentTitle: 'UN report',
+        text: 'Paragraph with evidence.',
+        index: 0,
+        charStart: 10,
+        charEnd: 34,
+        score: 0.8,
+      }],
+      listOutputCapsules: async () => [{
+        id: 'out-1',
+        templateId: 'options-memo',
+        status: 'draft',
+        quality: { blockers: [], sourceabilityStatus: 'weak' },
+        createdAt: '2026-05-16T12:00:00.000Z',
+      } as never],
+      listCapsuleMemories: async () => [{
+        id: 'mem-1',
+        summary: 'Preserve caveat.',
+      } as never],
+    });
+
+    expect(pack.packId).toMatch(/^evidence:/);
+    expect(pack.activeCapsule.capsuleId).toBe('cap-1');
+    expect(pack.sourcedParagraphs[0]).toMatchObject({
+      documentId: 'doc-1',
+      chunkId: 'chunk-1',
+      sourceReceiptId: 'src-1',
+      paragraphRef: 'para-1',
+      charStart: 10,
+      charEnd: 34,
+      excerpt: 'Paragraph with evidence.',
+    });
+    expect(pack.documentDigests[0]?.keyClaims).toEqual(['Claim one']);
+    expect(pack.outputHistory[0]?.outputCapsuleId).toBe('out-1');
+    expect(pack.memories).toHaveLength(1);
+    expect(pack.openGaps).toContain('Graph Core is thin; graph mutation must stay approval-gated.');
+    expect(formatEvidencePackPromptBlock(pack)).toContain('[D1:para-1]');
+  });
+});

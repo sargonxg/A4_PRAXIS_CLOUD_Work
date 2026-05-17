@@ -428,6 +428,7 @@ You have access to the user's active situation data. When answering questions:
       effectiveSituationId: effectiveSituationId ?? null,
       retrievedDocumentIds,
       retrievedSourceIds,
+      evidencePackReceipt,
       memoryPersistence: isAskThreadSqlConfigured() ? 'cloud-sql' : 'firestore',
     });
     const askStartedAt = Date.now();
@@ -670,6 +671,7 @@ function decorateAskRuntimeReceipt(
     effectiveSituationId: string | null;
     retrievedDocumentIds: string[];
     retrievedSourceIds: string[];
+    evidencePackReceipt: { packId: string; paragraphCount: number; gapCount: number } | null;
     memoryPersistence: 'cloud-sql' | 'firestore';
   },
 ): AskRuntimeReceipt {
@@ -717,9 +719,9 @@ function decorateAskRuntimeReceipt(
       repositorySourceReceiptIds: input.turnCapsule?.retrievalPlan.repository.sourceReceiptIds,
       repositoryChunkCount: input.turnCapsule?.retrievalPlan.repository.chunkCount,
       repositoryFreshness: input.turnCapsule?.retrievalPlan.repository.freshness,
-      evidencePackId: evidencePackReceipt?.packId,
-      evidenceParagraphCount: evidencePackReceipt?.paragraphCount,
-      evidenceGapCount: evidencePackReceipt?.gapCount,
+      evidencePackId: input.evidencePackReceipt?.packId,
+      evidenceParagraphCount: input.evidencePackReceipt?.paragraphCount,
+      evidenceGapCount: input.evidencePackReceipt?.gapCount,
     },
   };
 }
