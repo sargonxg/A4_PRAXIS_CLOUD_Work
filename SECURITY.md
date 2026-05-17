@@ -4,7 +4,7 @@ Last updated: 2026-05-16.
 
 This file summarizes the active security posture, the review checklist, and
 the incident-response procedure. It does not replace the implementation docs
-in `CLAUDE.md`, `AGENTS.md`, `docs/AUTH.md`, `docs/COMPLIANCE.md`, and
+in `CLAUDE.md`, `AGENTS.md`, `docs/COMPLIANCE.md`, and
 `docs/GCP_OPERATIONS.md`.
 
 ## Core Rules
@@ -95,7 +95,6 @@ Until then, the procedure for the four primary exposure classes is:
 
 ## Deeper References
 
-- `docs/AUTH.md`.
 - `docs/COMPLIANCE.md`.
 - `docs/GCP_OPERATIONS.md`.
 - `docs/OPERATIONAL_SPINE.md`.
