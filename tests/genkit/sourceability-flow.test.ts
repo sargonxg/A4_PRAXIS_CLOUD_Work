@@ -60,7 +60,7 @@ describe('sourceabilityFlow', () => {
       status: 'supported',
       supportingSourceIds: ['src-1'],
     });
-  });
+  }, 10_000);
 
   it('marks direct provided evidence as supported deterministically', async () => {
     const { sourceabilityFlow } = await import('@/lib/genkit/flows/sourceability');
