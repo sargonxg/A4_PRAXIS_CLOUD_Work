@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.17.02',
+    version: '6.4.1',
+    date: '2026-05-17',
+    title: 'Capsule agents become visible runnable work',
+    summary: 'The one-page cockpit now treats Research Memo and Output Formatter as capsule-bound agents with durable run metadata, visible run status, and source-aware output receipts.',
+    category: 'runtime',
+    items: [
+      'Added a capsule Agents lane with registry cards, readiness, risk, capsule slots, allowed tools, and recent run status.',
+      'The cockpit can now create capsule-bound agent runs through the agent run ledger and dispatch route instead of treating agents only as chat shortcuts.',
+      'Added a live Output Formatter agent that creates export-ready Memo Studio drafts with citation and gap-preservation receipts.',
+      'Tightened agent run DTOs so the UI receives objective, update time, readiness, risk, output destination, and policy-agent labels without exposing internal cost fields.',
+    ],
+  },
+  {
     buildNumber: '2026.05.17.01',
     version: '6.4.1',
     date: '2026-05-17',

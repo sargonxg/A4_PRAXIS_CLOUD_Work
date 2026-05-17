@@ -1,5 +1,19 @@
 # PRAXIS — STATUS
 
+## 2026-05-17 — Capsule Agent Lane
+
+Current product checkpoint:
+
+- Central app metadata is now build `2026.05.17.02`.
+- `/app` now exposes capsule-bound agents as first-class capsule contents:
+  live/queued/planned readiness, risk, slots, allowed tools, and recent durable
+  runs are visible from the capsule detail panel and Capsule Map.
+- The cockpit can queue a durable Research Memo or Output Formatter run through
+  `/api/agents/runs` and dispatch it through the existing worker route when the
+  runtime is configured.
+- Output Formatter now has a worker path that creates Memo Studio drafts with
+  export-readiness, sourceability, and gap-preservation receipts.
+
 ## 2026-05-17 — Knowledge Library Backend
 
 Current product checkpoint:

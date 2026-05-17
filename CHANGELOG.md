@@ -7,6 +7,10 @@
 - Dead route `api/graph/ingest` and its orphan `conflict-service` (zero callers).
 - Pub/Sub topics `praxis.pipeline`, `praxis.extract`, `praxis.ingest`, `praxis.alert` removed from `setup-gcp.sh` (zero publishers / subscribers in repo). Re-add when a real consumer lands.
 
+- feat(agent-runtime): make capsule agents visible and runnable.
+  Build 2026.05.17.02 adds a capsule Agents lane, policy-agent risk/tool/slot
+  metadata, cockpit-created durable agent runs, recent run status, and a live
+  Output Formatter worker path for export-ready Memo Studio drafts.
 - feat(knowledge): add user-scoped repository backend for capsule documents.
   Build 2026.05.17.01 adds Knowledge Library repositories, repository document
   records, capsule document association APIs, Vertex/Gemini document digestion,
