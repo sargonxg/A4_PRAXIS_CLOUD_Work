@@ -17,7 +17,10 @@ const SourceCardSchema = z.object({
   sourceReceiptId: z.string().max(240).optional(),
   pageRef: z.string().max(80).optional(),
   paragraphRef: z.string().max(80).optional(),
+  locatorLabel: z.string().max(240).optional(),
   citationLabel: z.string().max(80).optional(),
+  sourceReceiptHref: z.string().max(500).optional(),
+  extractionFallbackLabel: z.string().max(120).optional(),
   confidence: z.number().min(0).max(1),
 });
 

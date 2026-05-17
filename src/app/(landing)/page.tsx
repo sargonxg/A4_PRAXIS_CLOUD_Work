@@ -79,6 +79,21 @@ const organizationJsonLd = {
   ],
 };
 
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "PRAXIS by TACITUS",
+  url: siteUrl,
+  inLanguage: "en",
+  description:
+    "PRAXIS turns ContextCapsules, documents, and policy tools into grounded analysis with visible sources, gaps, and handoff-ready outputs.",
+  publisher: {
+    "@type": "Organization",
+    name: "TACITUS",
+    url: "https://tacitus.me",
+  },
+};
+
 export default async function LandingPage() {
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
@@ -93,6 +108,11 @@ export default async function LandingPage() {
         type="application/ld+json"
         nonce={nonce}
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        nonce={nonce}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
       />
       {gaMeasurementId ? (
         <>

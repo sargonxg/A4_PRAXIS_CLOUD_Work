@@ -13,7 +13,7 @@ describe('ask answer envelope', () => {
       evidencePack: evidencePack(),
     });
 
-    expect(cards).toEqual([
+    expect(cards).toContainEqual(
       expect.objectContaining({
         id: 'doc-1:chunk-1',
         title: 'Uploaded document doc-1',
@@ -25,7 +25,79 @@ describe('ask answer envelope', () => {
         pageRef: 'p.4',
         confidence: 0.82,
       }),
-    ]);
+    );
+    expect(cards).toContainEqual(expect.objectContaining({
+      id: 'receipt:receipt-1',
+      label: 'Source Receipt',
+      sourceReceiptHref: '/app/library?receiptId=receipt-1',
+    }));
+  });
+
+  it('normalizes corpus documents, source receipts, grounded fetches, and document digests into source cards', () => {
+    const cards = buildSourcePreviewCards({
+      evidencePack: {
+        ...evidencePack(),
+        knowledgeDocuments: [
+          {
+            documentId: 'doc-2',
+            title: 'Crossing access corpus note',
+            sourceType: 'briefing-note',
+            sourceNote: 'Uploaded by access team',
+            extractionStatus: 'extracted',
+            retrievalStatus: 'indexed',
+            chunkCount: 8,
+            digest: {
+              shortSummary: 'Digest says convoy access was restricted for two days.',
+              keyClaims: ['Convoy access was restricted for two days.'],
+              sourceabilityWarnings: ['Needs dated crossing log.'],
+            },
+          },
+        ],
+        sourceReceiptIds: ['receipt-1', 'receipt-2'],
+        documentDigests: [
+          {
+            documentId: 'doc-3',
+            title: 'Situation digest',
+            shortSummary: 'The field office reports a repeat verification problem.',
+            keyClaims: ['Verification remains incomplete.'],
+            sourceabilityWarnings: ['Only text extraction is available.'],
+          },
+        ],
+      } as CapsuleEvidencePack,
+      groundedFetches: [
+        {
+          id: 'fetch-1',
+          title: 'UN update',
+          url: 'https://example.org/update',
+          content: 'UN update reports renewed access restrictions near the same crossing.',
+          confidence: 0.7,
+        },
+      ],
+    });
+
+    expect(cards.map((card) => card.sourceType)).toEqual(expect.arrayContaining([
+      'uploaded-document',
+      'corpus',
+      'source-receipt',
+      'document-digest',
+      'grounded-search',
+    ]));
+    expect(cards.find((card) => card.id === 'corpus:doc-2')).toMatchObject({
+      label: 'Corpus Result',
+      documentId: 'doc-2',
+      locatorLabel: '8 chunks indexed',
+      quotePreview: 'Digest says convoy access was restricted for two days.',
+    });
+    expect(cards.find((card) => card.id === 'receipt:receipt-2')).toMatchObject({
+      label: 'Source Receipt',
+      sourceReceiptId: 'receipt-2',
+      sourceReceiptHref: '/app/library?receiptId=receipt-2',
+    });
+    expect(cards.find((card) => card.id === 'digest:doc-3')).toMatchObject({
+      label: 'Document Digest',
+      documentId: 'doc-3',
+      extractionFallbackLabel: 'Text extraction only',
+    });
   });
 
   it('builds a conversational envelope with source-backed claims and follow-ups', () => {
@@ -45,13 +117,76 @@ describe('ask answer envelope', () => {
     });
 
     expect(envelope.style.mode).toBe('claude_like_dialogue');
-    expect(envelope.sourceCards).toHaveLength(1);
+    expect(envelope.sourceCards.length).toBeGreaterThanOrEqual(1);
     expect(envelope.claimGrounding[0]).toMatchObject({
       grounding: 'source-backed',
       sourceCardIds: ['doc-1:chunk-1'],
     });
     expect(envelope.followUps).toContain('Check the weakest claim against attached sources.');
     expect(envelope.documentPackCandidate.provenance.capsuleId).toBe('cap-1');
+  });
+
+  it('grounds claims against matching source previews instead of assigning the first three cards heuristically', () => {
+    const sourceCards = buildSourcePreviewCards({
+      evidencePack: {
+        ...evidencePack(),
+        sourcedParagraphs: [
+          {
+            id: 'para-1',
+            documentId: 'doc-access',
+            chunkId: 'chunk-access',
+            sourceReceiptId: 'receipt-access',
+            pageRef: 'p.2',
+            paragraphRef: 'para-1',
+            charStart: 0,
+            charEnd: 40,
+            excerpt: 'Access restrictions affected the northern crossing.',
+            score: 0.9,
+            confidence: 0.9,
+            citationLabel: '[A:p.2]',
+          },
+          {
+            id: 'para-2',
+            documentId: 'doc-food',
+            chunkId: 'chunk-food',
+            sourceReceiptId: 'receipt-food',
+            pageRef: 'p.9',
+            paragraphRef: 'para-4',
+            charStart: 0,
+            charEnd: 40,
+            excerpt: 'Food prices rose sharply in the southern market.',
+            score: 0.88,
+            confidence: 0.88,
+            citationLabel: '[F:p.9]',
+          },
+        ],
+      } as CapsuleEvidencePack,
+    });
+
+    const envelope = buildAskAnswerEnvelope({
+      prompt: 'What changed?',
+      answer: 'Access restrictions affected the northern crossing. A separate claim about telecom outages is not in the attached sources. Food prices rose sharply in the southern market.',
+      intent: 'normal_answer',
+      sourceCards,
+    });
+
+    expect(envelope.claimGrounding).toEqual([
+      expect.objectContaining({
+        claim: 'Access restrictions affected the northern crossing.',
+        grounding: 'source-backed',
+        sourceCardIds: ['doc-access:chunk-access'],
+      }),
+      expect.objectContaining({
+        claim: 'A separate claim about telecom outages is not in the attached sources.',
+        grounding: 'unsupported',
+        sourceCardIds: [],
+      }),
+      expect.objectContaining({
+        claim: 'Food prices rose sharply in the southern market.',
+        grounding: 'source-backed',
+        sourceCardIds: ['doc-food:chunk-food'],
+      }),
+    ]);
   });
 
   it('converts a conversation document pack into citation-preserving memo blocks', () => {
@@ -81,7 +216,8 @@ describe('ask answer envelope', () => {
     ]);
     expect(blocks[1].citations[0].sourceReceiptIds).toEqual(['receipt-1']);
     expect(blocks[2].items?.[0]).toContain('p.4');
-  });
+    expect(blocks[2].items?.[0]).toContain('Source receipt: receipt-1');
+    });
 });
 
 function evidencePack(): CapsuleEvidencePack {

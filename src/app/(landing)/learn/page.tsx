@@ -6,7 +6,24 @@ import { PraxisThinking } from "@/components/brand/praxis-thinking";
 export const metadata: Metadata = {
   title: "Learn | PRAXIS by TACITUS",
   description:
-    "Learn how PRAXIS uses ContextCapsules, grounded sources, and policy agents to structure statecraft work.",
+    "Learn how PRAXIS uses ContextCapsules, grounded sources, documents, and policy tools to structure statecraft work.",
+  alternates: {
+    canonical: "/learn",
+  },
+  openGraph: {
+    title: "Learn PRAXIS ContextCapsules",
+    description:
+      "How PRAXIS turns ContextCapsules, documents, and policy tools into grounded analysis for statecraft teams.",
+    url: "/learn",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Learn PRAXIS ContextCapsules" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Learn PRAXIS ContextCapsules",
+    description:
+      "How PRAXIS turns ContextCapsules, documents, and policy tools into grounded analysis.",
+    images: ["/opengraph-image"],
+  },
 };
 
 const capsuleSteps = [

@@ -6,6 +6,21 @@ import { PraxisGlyphChip } from '@/components/brand/praxis-mark';
 export const metadata: Metadata = {
   title: 'Release Notes | PRAXIS by TACITUS',
   description: 'Current PRAXIS release notes and build history.',
+  alternates: {
+    canonical: '/release-notes',
+  },
+  openGraph: {
+    title: 'PRAXIS Release Notes',
+    description: 'Current PRAXIS release notes for the ContextCapsule cockpit, runtime, and governance layer.',
+    url: '/release-notes',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'PRAXIS release notes' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PRAXIS Release Notes',
+    description: 'Current PRAXIS release notes for the ContextCapsule cockpit and runtime.',
+    images: ['/opengraph-image'],
+  },
 };
 
 export default function ReleaseNotesPage() {
@@ -17,7 +32,15 @@ export default function ReleaseNotesPage() {
             <PraxisGlyphChip size={34} />
             <span className="font-serif text-xl font-semibold text-[color:var(--color-diplomatic-blue)]">PRAXIS</span>
           </Link>
-          <Link href="/app" className="rounded-full bg-white px-4 py-2 text-sm font-semibold">Open PRAXIS</Link>
+          <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm font-semibold text-[color:var(--color-ink)]/65">
+            <Link href="/">Home</Link>
+            <Link href="/login?mode=signup">Capsules</Link>
+            <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules">Repository</Link>
+            <Link href="/pricing">Pricing</Link>
+            <Link href="/learn">Learn</Link>
+            <Link href="/release-notes">Release notes</Link>
+            <Link href="/login" className="rounded-full bg-white px-4 py-2 text-[color:var(--color-ink)]">Sign in</Link>
+          </nav>
         </header>
         <section className="py-14">
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--color-gold-700)]">

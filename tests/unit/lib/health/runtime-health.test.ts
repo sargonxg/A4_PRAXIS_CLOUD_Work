@@ -62,4 +62,36 @@ describe('runtime health summary', () => {
       latencyMs: 12,
     });
   });
+
+  it('redacts accidental public string leaks from summary, labels, and ids', () => {
+    const report = buildRuntimeHealthSummary([
+      {
+        id: 'backend-https://praxis-backend-abc.run.app',
+        label: 'Private backend at service-account@praxisbytacitus.iam.gserviceaccount.com',
+        status: 'degraded',
+        latencyMs: 9,
+        detail: 'Stack trace referenced COOKIE_SIGNING_SECRET and -----BEGIN PRIVATE KEY-----',
+        endpoint: 'https://praxis-backend-abc.run.app',
+        repairAction: 'Set DATABASE_URL',
+      },
+    ], new Date('2026-05-17T12:00:00Z'));
+    report.summary = 'Backend degraded: https://praxis-backend-abc.run.app missing DATABASE_URL';
+
+    const sanitized = sanitizeRuntimeHealth(report);
+    const json = JSON.stringify(sanitized);
+
+    expect(json).not.toContain('https://');
+    expect(json).not.toContain('run.app');
+    expect(json).not.toContain('DATABASE_URL');
+    expect(json).not.toContain('COOKIE_SIGNING_SECRET');
+    expect(json).not.toContain('PRIVATE KEY');
+    expect(json).not.toContain('gserviceaccount.com');
+    expect(json).not.toContain('service-account@');
+    expect(sanitized.checks[0]).toMatchObject({
+      id: 'backend-redacted',
+      label: 'Private backend at [redacted-service-account]',
+      status: 'degraded',
+      latencyMs: 9,
+    });
+  });
 });

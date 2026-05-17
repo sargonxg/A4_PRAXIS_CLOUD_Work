@@ -29,13 +29,13 @@ export const viewport: Viewport = {
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
 
 const PRIMARY_TITLE = "PRAXIS by TACITUS — AI Built for Statecraft";
-const SHARE_TITLE = "PRAXIS by TACITUS · AI Built for Statecraft. Calibrated to You.";
+const SHARE_TITLE = "PRAXIS by TACITUS · ContextCapsules for Policy Work";
 const SHARE_DESCRIPTION =
-  "Agentic AI workspace for diplomats, conflict analysts, mediators, and policy officers. Calibrated to your mandate. Grounded in Google Search, source-linked web receipts, and your private corpus.";
+  "A policy AI cockpit that turns ContextCapsules, documents, and specialist tools into grounded analysis with visible sources, gaps, and handoff-ready outputs.";
 const SEARCH_DESCRIPTION =
-  "PRAXIS by TACITUS is the agentic AI workspace for statecraft. Ten consolidated tools for diplomats, conflict analysts, mediators, and policy officers, with specialist labs behind them — grounded in Google Search and your sources.";
+  "PRAXIS by TACITUS is a ContextCapsule-first AI workspace for statecraft, policy analysis, conflict intelligence, diplomacy, and institutional decision work.";
 const SHARE_IMAGE_ALT =
-  "PRAXIS by TACITUS — AI Built for Statecraft. Agentic AI for diplomats, conflict analysts, mediators, and policy officers.";
+  "PRAXIS by TACITUS — ContextCapsules for grounded policy analysis.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -50,6 +50,8 @@ export const metadata: Metadata = {
   keywords: [
     "PRAXIS",
     "TACITUS",
+    "ContextCapsule",
+    "ContextCapsules",
     "agentic AI",
     "statecraft",
     "policy AI",

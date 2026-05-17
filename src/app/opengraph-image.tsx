@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'PRAXIS by TACITUS — The policy workbench for grounded statecraft.';
+export const alt = 'PRAXIS by TACITUS — ContextCapsules for grounded policy analysis.';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -180,7 +180,7 @@ export default async function Image() {
                 fontWeight: 700,
               }}
             >
-              Policy workbench for grounded statecraft
+              ContextCapsules for grounded policy work
             </div>
           </div>
 
@@ -197,8 +197,8 @@ export default async function Image() {
               flexDirection: 'column',
             }}
           >
-            <span>The policy workbench</span>
-            <span>for <span style={{ color: GOLD_400 }}>grounded statecraft</span>.</span>
+            <span>ContextCapsules</span>
+            <span>for <span style={{ color: GOLD_400 }}>policy analysis</span>.</span>
           </div>
 
           {/* Subhead */}
@@ -213,7 +213,7 @@ export default async function Image() {
               display: 'flex',
             }}
           >
-            Frame the situation, collect receipts, build the graph, run DIALECTICA, and export decision-ready work products with cited provenance.
+            Turn documents, sources, and policy tools into grounded analysis with visible gaps, receipts, and handoff-ready outputs.
           </div>
         </div>
 
@@ -227,7 +227,7 @@ export default async function Image() {
             flexWrap: 'wrap',
           }}
         >
-          {['Frame', 'Receipts', 'Graph', 'DIALECTICA', 'Decision Product'].map((s, index) => (
+          {['Capsules', 'Documents', 'Sources', 'Policy Tools', 'Outputs'].map((s) => (
             <div
               key={s}
               style={{
@@ -262,7 +262,7 @@ export default async function Image() {
           >
             <span style={{ color: DIPLOMATIC }}>praxis.tacitus.me</span>
             <span style={{ color: NAVY_400 }}>·</span>
-            <span>Source · Claim · Evidence · Verdict</span>
+            <span>Context · Source · Gap · Handoff</span>
           </div>
         </div>
       </div>

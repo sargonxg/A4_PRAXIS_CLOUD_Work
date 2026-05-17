@@ -230,21 +230,28 @@ const connectorIconMap = {
   spark: BrainCircuit,
 } satisfies Record<CapsuleConnectorDefinition['icon'], LucideIcon>;
 
-const capsuleLibraryFilters = [
-  { id: 'all', label: 'All' },
-  { id: 'context', label: 'Context' },
-  { id: 'situation', label: 'Situations' },
-  { id: 'user', label: 'Users' },
-  { id: 'tool-capsules', label: 'Tools' },
-  { id: 'agents', label: 'Agents' },
-  { id: 'source-docs', label: 'Docs' },
-  { id: 'outputs', label: 'Outputs' },
+const capsuleTypeFilters = [
+  { id: 'all', label: 'All types' },
+  { id: 'user', label: 'User' },
+  { id: 'situation', label: 'Situation' },
+  { id: 'tool', label: 'Tool' },
+  { id: 'output', label: 'Output' },
   { id: 'archived', label: 'Archived' },
+] as const;
+
+const capsuleDomainFilters = [
+  { id: 'all', label: 'All domains' },
+  { id: 'governance', label: 'Governance' },
+  { id: 'climate', label: 'Climate' },
+  { id: 'conflict', label: 'Conflict' },
+  { id: 'humanitarian', label: 'Humanitarian' },
+  { id: 'sanctions', label: 'Sanctions' },
+  { id: 'diplomacy', label: 'Diplomacy' },
+  { id: 'other', label: 'Other' },
 ] as const;
 
 export function TaskletPraxisWorkbench({
   mode,
-  activeCapsuleName = 'Weekly Middle East Analysis',
   capsuleId = 'default',
   initialConversationId,
   initialPanel,
@@ -256,6 +263,7 @@ export function TaskletPraxisWorkbench({
   const { user } = useAuth();
   const surfaceMode: HomeSurfaceMode = mode === 'app' ? 'authenticated' : mode;
   const isAuthenticated = surfaceMode === 'authenticated';
+  const showWorkbenchNavigation = mode === 'app' || isAuthenticated;
   const [prompt, setPrompt] = useState('Draft a sourced options memo from the active capsule.');
   const [activeTab, setActiveTab] = useState<PolicyNeedTabId>('analysis');
   const [selectedAgentId, setSelectedAgentId] = useState(PRAXIS_POLICY_AGENTS[0]?.id ?? 'research-memo');
@@ -273,7 +281,8 @@ export function TaskletPraxisWorkbench({
   const [capsulePickerRole, setCapsulePickerRole] = useState<CapsuleRole>('situation');
   const [capsulePickerQuery, setCapsulePickerQuery] = useState('');
   const [capsuleSearch, setCapsuleSearch] = useState('');
-  const [capsuleCategory, setCapsuleCategory] = useState('all');
+  const [capsuleTypeFilter, setCapsuleTypeFilter] = useState('all');
+  const [capsuleDomainFilter, setCapsuleDomainFilter] = useState('all');
   const [userCapsules, setUserCapsules] = useState<PraxisCapsuleSummary[]>([]);
   const [capsulesLoading, setCapsulesLoading] = useState(false);
   const [draggingCapsuleId, setDraggingCapsuleId] = useState<string | null>(null);
@@ -305,18 +314,18 @@ export function TaskletPraxisWorkbench({
     .map((capsule) => capsule.toolId ?? capsule.templateId ?? capsule.id);
   const availableToolIds = selectedToolIds.length ? selectedToolIds : ['ask-praxis'];
   const selectedCapsule = userCapsules.find((capsule) => capsule.capsuleId === currentCapsuleId) ?? null;
-  const selectedPolicyTeam = selectedCapsule ? policyTeamCategoryForTags(selectedCapsule.community?.tags) : getPolicyTeamCategory(capsuleCategory);
+  const selectedPolicyTeam = selectedCapsule ? policyTeamCategoryForTags(selectedCapsule.community?.tags) : getPolicyTeamCategory(capsuleDomainFilter);
   const capsuleRecommendations = selectedCapsule
     ? recommendCapsuleTools({
         capsule: selectedCapsule,
-        policyTeamId: selectedPolicyTeam?.id ?? capsuleCategory,
+        policyTeamId: selectedPolicyTeam?.id ?? capsuleDomainFilter,
         recentToolIds: selectedToolIds,
       })
     : [];
-  const capsuleCategories = buildCapsuleCategories(userCapsules);
-  const publicCapsuleCategories = buildPublicCapsuleCategories();
-  const filteredUserCapsules = filterUserCapsules(userCapsules, capsuleSearch, capsuleCategory);
-  const publicCapsules = filterPublicCapsules(capsuleSearch, capsuleCategory);
+  const capsuleDomainCategories = buildCapsuleDomainCategories(userCapsules);
+  const publicCapsuleDomainCategories = buildPublicCapsuleDomainCategories();
+  const filteredUserCapsules = filterUserCapsules(userCapsules, capsuleSearch, capsuleTypeFilter, capsuleDomainFilter);
+  const publicCapsules = filterPublicCapsules(capsuleSearch, capsuleTypeFilter, capsuleDomainFilter);
   const filteredCapsules = COCKPIT_CAPSULE_LIBRARY.filter((capsule) => {
     const query = capsulePickerQuery.trim().toLowerCase();
     return !query || capsule.label.toLowerCase().includes(query) || capsule.prompt.toLowerCase().includes(query) || capsule.code.toLowerCase().includes(query);
@@ -1271,8 +1280,8 @@ export function TaskletPraxisWorkbench({
 
   return (
     <section className={cn('od-praxis-surface min-h-screen text-[#1f1f1f]', className)} data-testid="tasklet-praxis-workbench">
-      <div className="grid min-h-screen lg:grid-cols-[250px_minmax(0,1fr)]">
-        <aside className="od-praxis-sidebar hidden border-r px-4 py-6 lg:flex lg:flex-col">
+      <div className={cn('grid min-h-screen', showWorkbenchNavigation && 'lg:grid-cols-[250px_minmax(0,1fr)]')}>
+        {showWorkbenchNavigation ? <aside className="od-praxis-sidebar hidden border-r px-4 py-6 lg:flex lg:flex-col">
           <Link href={isAuthenticated ? '/app' : '/'} className="mb-6 flex items-center gap-3 text-lg font-bold">
             <span className="praxis-thinking-glyph flex h-8 w-8 items-center justify-center rounded-md bg-sage text-white">◳</span>
             PRAXIS
@@ -1339,10 +1348,10 @@ export function TaskletPraxisWorkbench({
               </Link>
             )}
           </div>
-        </aside>
+        </aside> : null}
 
         <main className="min-w-0 px-4 py-8 sm:px-6 lg:px-10">
-          <header className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+          {showWorkbenchNavigation ? <header className="mx-auto flex max-w-6xl items-center justify-between gap-4">
             <Link href={isAuthenticated ? '/app' : '/'} className="flex items-center gap-2 text-lg font-semibold lg:hidden">
               <span className="praxis-thinking-glyph flex h-8 w-8 items-center justify-center rounded-md bg-sage text-white">◳</span>
               PRAXIS
@@ -1362,12 +1371,12 @@ export function TaskletPraxisWorkbench({
             <div className="flex items-center gap-2">
               {isAuthenticated ? <AccountProfileButton compact /> : <Link href="/login" className="rounded-md px-3 py-2 text-sm font-semibold hover:bg-white">Sign in</Link>}
             </div>
-          </header>
+          </header> : null}
 
-          <div className="mx-auto mt-14 flex max-w-6xl flex-col items-center sm:mt-18">
+          <div className={cn('mx-auto flex max-w-6xl flex-col items-center', showWorkbenchNavigation ? 'mt-14 sm:mt-18' : 'mt-8 sm:mt-12')}>
             <p className="od-praxis-control flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-slate-600">
               <Sparkles className="h-4 w-4 text-[#ca4a25]" />
-              PRAXIS uses your ContextCapsule Lite, documents, and policy tools
+              PRAXIS turns your ContextCapsules, documents, and policy tools into grounded analysis
             </p>
             <div className="mt-3" data-testid="runtime-health-semaphore">
               <RuntimeHealthSemaphore isAuthenticated={isAuthenticated} />

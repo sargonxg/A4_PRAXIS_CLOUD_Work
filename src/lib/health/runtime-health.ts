@@ -44,9 +44,10 @@ export function buildRuntimeHealthSummary(
 export function sanitizeRuntimeHealth(report: RuntimeHealthSummary): RuntimeHealthSummary {
   return {
     ...report,
+    summary: redactPublicRuntimeString(report.summary),
     checks: report.checks.map((check) => ({
-      id: check.id,
-      label: check.label,
+      id: redactPublicRuntimeString(check.id),
+      label: redactPublicRuntimeString(check.label),
       status: check.status,
       latencyMs: check.latencyMs,
     })),
@@ -86,4 +87,13 @@ export async function collectRuntimeHealth(): Promise<RuntimeHealthSummary> {
 
   checks[0] = { ...checks[0], latencyMs: Date.now() - startedAt };
   return buildRuntimeHealthSummary(checks);
+}
+
+function redactPublicRuntimeString(value: string): string {
+  return value
+    .replace(/https?:\/\/[^\s"')]+/gi, '[redacted-url]')
+    .replace(/[A-Z0-9_]*(SECRET|TOKEN|KEY|PASSWORD|DATABASE_URL|SERVICE_ACCOUNT)[A-Z0-9_]*/gi, '[redacted-env]')
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]*gserviceaccount\.com/gi, '[redacted-service-account]')
+    .replace(/-----BEGIN [^-]+-----[\s\S]*?-----END [^-]+-----/gi, '[redacted-secret]')
+    .replace(/\b[a-z0-9-]+\.run\.app\b/gi, '[redacted-url]');
 }

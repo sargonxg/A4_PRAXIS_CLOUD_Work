@@ -510,6 +510,7 @@ export function AskStreamPanel({
                 <AskMessageBubble
                   message={message}
                   onDraftPack={draftDocumentPack}
+                  onFollowUp={(followUp) => setPrompt(followUp)}
                   packSaving={packSavingId === message.id}
                 />
               </motion.div>
@@ -663,10 +664,12 @@ function appendTimelineStage(setMessages: TimelineSetter, messageId: string, sta
 function AskMessageBubble({
   message,
   onDraftPack,
+  onFollowUp,
   packSaving,
 }: {
   message: AskPanelMessage;
   onDraftPack: (message: AskPanelMessage) => void;
+  onFollowUp: (followUp: string) => void;
   packSaving: boolean;
 }) {
   if (message.role === 'user') {
@@ -701,7 +704,7 @@ function AskMessageBubble({
         ) : null}
 
         <TimelineMessageReceipt message={message} />
-        <AnswerSourcePreviewPanel envelope={message.answerEnvelope} />
+        <AnswerSourcePreviewPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
 
         {stages.length ? (
           <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2">
@@ -741,7 +744,7 @@ function AskMessageBubble({
   );
 }
 
-function AnswerSourcePreviewPanel({ envelope }: { envelope?: AskAnswerEnvelope }) {
+function AnswerSourcePreviewPanel({ envelope, onFollowUp }: { envelope?: AskAnswerEnvelope; onFollowUp: (followUp: string) => void }) {
   const sourceCards = envelope?.sourceCards ?? [];
   const followUps = envelope?.followUps ?? [];
   if (sourceCards.length === 0 && followUps.length === 0) return null;
@@ -778,8 +781,15 @@ function AnswerSourcePreviewPanel({ envelope }: { envelope?: AskAnswerEnvelope }
                 </blockquote>
                 <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-slate-500">
                   {card.citationLabel ? <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono">{card.citationLabel}</span> : null}
-                  {card.pageRef ? <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono">{card.pageRef}</span> : null}
+                  {card.locatorLabel ? <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono">{card.locatorLabel}</span> : null}
+                  {!card.locatorLabel && card.pageRef ? <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono">{card.pageRef}</span> : null}
                   {card.chunkId ? <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono">{card.chunkId}</span> : null}
+                  {card.extractionFallbackLabel ? <span className="rounded-md bg-amber-50 px-1.5 py-0.5 font-mono text-amber-800">{card.extractionFallbackLabel}</span> : null}
+                  {card.sourceReceiptHref && card.sourceReceiptId ? (
+                    <a href={card.sourceReceiptHref} className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-diplomatic-blue hover:underline">
+                      Source receipt
+                    </a>
+                  ) : null}
                 </div>
               </article>
             ))}
@@ -791,9 +801,14 @@ function AnswerSourcePreviewPanel({ envelope }: { envelope?: AskAnswerEnvelope }
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Follow-ups</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {followUps.map((followUp) => (
-              <span key={followUp} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700">
+              <button
+                key={followUp}
+                type="button"
+                onClick={() => onFollowUp(followUp)}
+                className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-left text-[11px] font-semibold text-slate-700 hover:border-diplomatic-blue/30 hover:bg-white"
+              >
                 {followUp}
-              </span>
+              </button>
             ))}
           </div>
         </section>

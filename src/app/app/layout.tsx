@@ -7,6 +7,10 @@ export const metadata: Metadata = {
     template: '%s | PRAXIS by TACITUS',
     default: 'PRAXIS by TACITUS',
   },
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
