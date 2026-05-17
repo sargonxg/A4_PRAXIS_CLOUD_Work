@@ -27,8 +27,7 @@ for (const marker of [
 }
 
 for (const rel of ['src/app/app/contexts/page.tsx', 'src/app/app/tools/page.tsx', 'src/app/app/write/page.tsx']) {
-  const source = read(rel);
-  if (!source.includes("redirect('/app')")) failures.push(`${rel} must redirect into the one-page PRAXIS app`);
+  if (existsSync(path.join(root, rel))) failures.push(`${rel} must be deleted; proxy redirects into the one-page PRAXIS app`);
 }
 
 const memoDesk = read('src/components/memo/memo-desk.tsx');

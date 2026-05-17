@@ -194,6 +194,8 @@ export function proxy(request: NextRequest) {
   if (
     pathname !== '/app' &&
     (
+      pathname === '/app/admin' ||
+      pathname.startsWith('/app/admin/') ||
       pathname === '/app/dashboard' ||
       pathname === '/app/assistant' ||
       pathname === '/app/contexts' ||
@@ -213,6 +215,26 @@ export function proxy(request: NextRequest) {
     )
   ) {
     const url = new URL('/app', request.url);
+    const parts = pathname.split('/').filter(Boolean);
+    if (pathname.startsWith('/app/contexts/import/')) {
+      const token = parts.at(3);
+      if (token) url.searchParams.set('importToken', token);
+      url.searchParams.set('panel', 'library');
+    } else if (pathname.startsWith('/app/contexts/') || pathname.startsWith('/app/situations/')) {
+      const situationId = parts.at(2);
+      if (situationId && situationId !== 'new' && situationId !== 'import') url.searchParams.set('situationId', situationId);
+      url.searchParams.set('panel', 'library');
+    } else if (pathname.startsWith('/app/tools')) {
+      url.searchParams.set('panel', 'advanced');
+    } else if (pathname.startsWith('/app/write')) {
+      url.searchParams.set('panel', 'memo');
+    } else if (pathname.startsWith('/app/canvas') || pathname.startsWith('/app/cores/')) {
+      url.searchParams.set('panel', 'canvas');
+    } else if (pathname.startsWith('/app/settings') || pathname === '/app/profile' || pathname.startsWith('/app/admin')) {
+      url.searchParams.set('panel', 'account');
+    } else if (pathname === '/app/assistant') {
+      url.searchParams.set('panel', 'ask');
+    }
     request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }

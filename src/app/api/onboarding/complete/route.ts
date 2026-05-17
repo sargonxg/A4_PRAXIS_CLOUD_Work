@@ -52,7 +52,7 @@ export const POST = withAuth(async (req, user) => {
   void publishProfileEvent({ uid: user.uid, kind: 'completed', versionId }).catch(() => { /* logged inside */ });
 
   const redirectTo = createFirstSituation
-    ? '/app/situations/new?fromOnboarding=1'
+    ? '/app?panel=builder&fromOnboarding=1'
     : '/app';
 
   return NextResponse.json({ versionId, redirectTo });

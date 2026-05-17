@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTurnCapsule, compileEffectiveCapsule, persistSuggestedActionReceipt, runCapability, suggestNextActions } from '@/lib/ai/context-kernel';
+import { buildCapsuleRetrievalPlan, buildTurnCapsule, compileEffectiveCapsule, persistSuggestedActionReceipt, runCapability, suggestNextActions } from '@/lib/ai/context-kernel';
 
 describe('context kernel', () => {
   it('builds a turn capsule and excludes deleted memory from the next capsule', async () => {
@@ -33,6 +33,65 @@ describe('context kernel', () => {
     expect(capsule.memory.semantic.map((item) => item.id)).toEqual(['mem-1']);
     expect(capsule.memory.episodic).toEqual([]);
     expect(capsule.memory.procedural.map((item) => item.id)).toEqual(['mem-3']);
+    expect(capsule.retrievalPlan.layers.map((layer) => layer.id)).toEqual([
+      'capsule-core-refs',
+      'repository-documents',
+      'source-receipts',
+      'graph-core',
+      'time-core',
+      'memory-core',
+      'recent-runs',
+      'output-history',
+    ]);
+    expect(capsule.retrievalPlan.repository.documentIds).toEqual(['doc-1']);
+    expect(capsule.retrievalPlan.repository.sourceReceiptIds).toEqual(['source-1']);
+    expect(capsule.retrievalPlan.promptBlock).toContain('Answer from capsule core refs first');
+  });
+
+  it('builds an Ask PRAXIS retrieval plan from repository metadata before broader context layers', async () => {
+    const db = new FakeFirestore();
+    const capsule = await buildTurnCapsule({
+      uid: 'u1',
+      traceId: 'trace-retrieval',
+      activeContextStack: {
+        stackId: 'default',
+        situationId: 'sit-1',
+        sourceIds: ['source-core-1'],
+        documentIds: ['doc-core-1'],
+      },
+      recentToolOutputs: ['run-1'],
+      memoryItems: [{ id: 'mem-1', type: 'semantic', text: 'Prior accepted assumption.', capsuleId: 'default' }],
+    }, deps(db));
+
+    const plan = buildCapsuleRetrievalPlan(capsule, {
+      capsuleId: capsule.capsuleId,
+      ownerId: 'u1',
+      documentIds: ['doc-repo-1'],
+      sourceReceiptIds: ['receipt-1'],
+      storageObjectRefs: ['gs://bucket/doc-repo-1.pdf'],
+      chunkCount: 22,
+      embeddingStatus: 'embedded',
+      retrievalBackend: 'local-hybrid',
+      freshness: 'fresh',
+      lastIngestionRunId: 'ingest-1',
+    });
+
+    expect(plan.layers.slice(0, 3).map((layer) => layer.id)).toEqual([
+      'capsule-core-refs',
+      'repository-documents',
+      'source-receipts',
+    ]);
+    expect(plan.repository).toMatchObject({
+      documentIds: ['doc-repo-1'],
+      sourceReceiptIds: ['receipt-1'],
+      storageObjectRefs: ['gs://bucket/doc-repo-1.pdf'],
+      chunkCount: 22,
+      embeddingStatus: 'embedded',
+      freshness: 'fresh',
+      lastIngestionRunId: 'ingest-1',
+    });
+    expect(plan.layers.find((layer) => layer.id === 'memory-core')?.refIds).toContain('mem-1');
+    expect(plan.layers.find((layer) => layer.id === 'recent-runs')?.refIds).toEqual(['run-1']);
   });
 
   it('plans capability runs through canonical route families', async () => {

@@ -102,7 +102,7 @@ export function buildContextHealthReport(input: ContextHealthInput): ContextHeal
 }
 
 function buildNextActions(input: ContextHealthInput, evidenceCount: number): NextBestAction[] {
-  const situationHref = input.situationHref ?? '/app/contexts';
+  const situationHref = input.situationHref ?? '/app?panel=library';
   const actions: NextBestAction[] = [];
 
   if (!input.hasUserCore) {
@@ -110,7 +110,7 @@ function buildNextActions(input: ContextHealthInput, evidenceCount: number): Nex
       id: 'attach-user-core',
       label: 'Attach User Core',
       detail: 'Set role, audience, style, and evidence standards.',
-      href: '/app/cores/user',
+      href: '/app?panel=account',
       priority: 'primary',
     });
   }
@@ -119,7 +119,7 @@ function buildNextActions(input: ContextHealthInput, evidenceCount: number): Nex
       id: 'attach-situation-core',
       label: 'Attach Situation Core',
       detail: 'Choose the case frame before asking or drafting.',
-      href: '/app/contexts',
+      href: '/app?panel=library',
       priority: 'primary',
     });
   }
@@ -137,7 +137,7 @@ function buildNextActions(input: ContextHealthInput, evidenceCount: number): Nex
       id: 'map-actors',
       label: 'Map stakeholders',
       detail: 'Make leverage, blockers, and audiences explicit.',
-      href: '/app/tools',
+      href: '/app?panel=advanced',
       priority: 'secondary',
     });
   }
@@ -155,7 +155,7 @@ function buildNextActions(input: ContextHealthInput, evidenceCount: number): Nex
       id: 'review-gaps',
       label: 'Review evidence gaps',
       detail: 'Find sources or rewrite unsupported claims cautiously.',
-      href: '/app/write',
+      href: '/app?panel=memo',
       priority: 'secondary',
     });
   }
@@ -164,7 +164,7 @@ function buildNextActions(input: ContextHealthInput, evidenceCount: number): Nex
       id: 'draft-memo',
       label: 'Draft from context',
       detail: 'Turn the active stack into a page-like memo.',
-      href: '/app/write',
+      href: '/app?panel=memo',
       priority: evidenceCount >= 3 ? 'primary' : 'secondary',
     });
   }
@@ -173,7 +173,7 @@ function buildNextActions(input: ContextHealthInput, evidenceCount: number): Nex
     id: 'ask-context',
     label: 'Ask PRAXIS',
     detail: 'Reason over the active cores and source posture.',
-    href: '/app/assistant',
+    href: '/app?panel=ask',
     priority: 'optional',
   });
 

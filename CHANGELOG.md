@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(knowledge): add user-scoped repository backend for capsule documents.
+  Build 2026.05.17.01 adds Knowledge Library repositories, repository document
+  records, capsule document association APIs, Vertex/Gemini document digestion,
+  upload metadata wiring, retrieval digest enrichment, Firestore rules, and a
+  contract audit for the backend.
 - feat(cockpit): add capsule repository and span workflow.
   Build 2026.05.16.14 adds one-page cockpit sheets for capsule building,
   repository review, capsule inspection, research actions, assistant-message

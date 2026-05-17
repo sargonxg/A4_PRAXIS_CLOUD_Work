@@ -64,14 +64,14 @@ export function getNextMoves(ctx: NextMovesContext): NextMove[] {
   const moves = [
     candidate(domainHint, 'add_situation_core', !attached.situation ? 100 : 0, {
       detail: 'Start by selecting or creating the Situation Core so PRAXIS knows what policy context this work belongs to.',
-      href: '/app/contexts',
+      href: '/app?panel=library',
       prompt: 'Help me create the smallest useful Situation Core for this work.',
     }),
     candidate(domainHint, 'add_source_core', !attached.source ? 92 : healthScore < 55 ? 72 : 0, {
       detail: preferredFeed
         ? `Attach source receipts or documents before final drafting; start with ${preferredFeed} for this domain.`
         : 'Attach source receipts or documents before final drafting so claims can be checked.',
-      href: '/app/contexts',
+      href: '/app?panel=library',
       prompt: preferredFeed
         ? `What Source Core is missing before I draft or run analysis? Prioritize ${preferredFeed} where relevant.`
         : 'What Source Core is missing before I draft or run analysis?',
@@ -80,7 +80,7 @@ export function getNextMoves(ctx: NextMovesContext): NextMove[] {
       detail: preferredFeed
         ? `Review source coverage, freshness, and evidence gaps, with ${preferredFeed} as the first domain feed to check.`
         : 'Review source coverage, freshness, and evidence gaps before trusting the answer.',
-      href: '/app/contexts',
+      href: '/app?panel=library',
       prompt: preferredFeed
         ? `Check my source coverage against ${preferredFeed} first, then list the most important evidence gaps.`
         : 'Check my source coverage and list the most important evidence gaps.',
@@ -103,14 +103,14 @@ export function getNextMoves(ctx: NextMovesContext): NextMove[] {
       detail: preferredFramework
         ? `Challenge the strongest assumption through ${preferredFramework} before the memo or recommendation ships.`
         : 'Challenge the strongest assumption before the memo or recommendation ships.',
-      href: '/app/assistant',
+      href: '/app?panel=ask',
       prompt: preferredFramework
         ? `Stress-test my leading option through ${preferredFramework}. Show the strongest objection and what evidence would change it.`
         : 'Stress-test my leading option. Show the strongest objection and what evidence would change it.',
     }),
     candidate(domainHint, 'draft_memo', attached.situation && attached.source ? 82 : attached.situation ? 55 : 0, {
       detail: 'Move the current context into a memo outline with citations, open gaps, and next checks.',
-      href: '/app/write',
+      href: '/app?panel=memo',
       prompt: 'Draft a concise policy memo outline from the active capsule, with evidence gaps clearly marked.',
     }),
   ]
@@ -156,7 +156,7 @@ function inferHealthScore(attached: Record<CoreKind, boolean>): number {
 
 function situationHref(ctx: NextMovesContext): string {
   const situationId = ctx.situation?.id ?? ctx.capsule?.coreRefs.situationCoreId;
-  return situationId ? `/app/contexts?situationId=${encodeURIComponent(situationId)}` : '/app/contexts';
+  return situationId ? `/app?panel=library&situationId=${encodeURIComponent(situationId)}` : '/app?panel=library';
 }
 
 function domainFromContext(ctx: NextMovesContext): DomainId {

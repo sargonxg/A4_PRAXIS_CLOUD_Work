@@ -47,20 +47,6 @@ export const NAV_GROUPS: readonly PrimaryNavGroup[] = [
       { id: 'capsules', label: 'Capsules', icon: 'FolderKanban', href: '/app', shortcut: 'g c', hint: 'Manage capsule library, sources, and documents' },
     ],
   },
-  {
-    id: 'administration',
-    label: 'Administration',
-    defaultOpen: false,
-    adminOnly: true,
-    items: [
-      { id: 'admin-home', label: 'Console', icon: 'ShieldCheck', href: '/app/admin', hint: 'Operator console, audit & invariants' },
-      { id: 'admin-users', label: 'Users', icon: 'FolderKanban', href: '/app/admin/users', hint: 'Identity, plan tier, credits' },
-      { id: 'admin-advisors', label: 'Advisors', icon: 'Sparkles', href: '/app/admin/advisors', hint: 'Persona library + feed control' },
-      { id: 'admin-domains', label: 'Domains', icon: 'Boxes', href: '/app/admin/domains', hint: 'Domain taxonomy + lens weights' },
-      { id: 'admin-diag', label: 'Diagnostics', icon: 'Network', href: '/app/admin/diagnostics', hint: 'System health + invariants' },
-      { id: 'settings', label: 'Settings', icon: 'Cog', href: '/app', hint: 'Runtime settings inside the PRAXIS cockpit' },
-    ],
-  },
 ] as const;
 
 /** Flat list of every nav item — used for keyboard shortcuts + path matching. */

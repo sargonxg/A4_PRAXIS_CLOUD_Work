@@ -255,7 +255,9 @@ export function TaskletPraxisWorkbench({
       })
     : [];
   const capsuleCategories = buildCapsuleCategories(userCapsules);
+  const publicCapsuleCategories = buildPublicCapsuleCategories();
   const filteredUserCapsules = filterUserCapsules(userCapsules, capsuleSearch, capsuleCategory);
+  const publicCapsules = filterPublicCapsules(capsuleSearch, capsuleCategory);
   const filteredCapsules = COCKPIT_CAPSULE_LIBRARY.filter((capsule) => {
     const query = capsulePickerQuery.trim().toLowerCase();
     return !query || capsule.label.toLowerCase().includes(query) || capsule.prompt.toLowerCase().includes(query) || capsule.code.toLowerCase().includes(query);
@@ -294,6 +296,14 @@ export function TaskletPraxisWorkbench({
     window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, nextPrompt);
     window.localStorage.setItem(PENDING_POLICY_AGENT_ID_KEY, agent.id);
     window.location.href = policyAgentLoginHref(agent.id, nextPrompt);
+  }
+
+  function requireAuthForAction(nextPrompt: string, agent: PolicyAgentDefinition = selectedAgent) {
+    if (!isAuthenticated) {
+      sendPublicToLogin(nextPrompt, agent);
+      return true;
+    }
+    return false;
   }
 
   function buildChatPrompt(agent: PolicyAgentDefinition, cleanPrompt: string): string {
@@ -417,7 +427,8 @@ export function TaskletPraxisWorkbench({
   }
 
   async function saveAssistantMessage(message: ChatMessage, index: number, mode: 'source-note' | 'memo-draft' = 'source-note') {
-    if (!isAuthenticated || !message.text.trim()) return;
+    if (!message.text.trim()) return;
+    if (requireAuthForAction(`Save this PRAXIS response to a capsule:\n\n${message.text.slice(0, 1200)}`)) return;
     const title = mode === 'memo-draft' ? `PRAXIS memo draft ${index + 1}` : `PRAXIS saved response ${index + 1}`;
     const response = await fetch('/api/documents/upload', {
       method: 'POST',
@@ -464,7 +475,8 @@ export function TaskletPraxisWorkbench({
   }
 
   async function bindSelectedSpan(targetCore: SpanTargetCore) {
-    if (!selectedText.trim() || !isAuthenticated) return;
+    if (!selectedText.trim()) return;
+    if (requireAuthForAction(`Attach this selected text to ${targetCore}: ${selectedText}`)) return;
     const target = spanTargets.find((item) => item.id === targetCore);
     const response = await fetch(`/api/context/capsules/${encodeURIComponent(currentCapsuleId)}/spans`, {
       method: 'POST',
@@ -518,6 +530,10 @@ export function TaskletPraxisWorkbench({
 
   function handleAction(kind: (typeof actionIcons)[number]['kind']) {
     if (kind === 'upload') {
+      if (!isAuthenticated) {
+        sendPublicToLogin(prompt.trim() || 'Upload sources into a PRAXIS capsule.');
+        return;
+      }
       fileInputRef.current?.click();
       return;
     }
@@ -580,6 +596,38 @@ export function TaskletPraxisWorkbench({
   useEffect(() => {
     if (!isAuthenticated) return;
     void refreshRepository();
+  }, [isAuthenticated, refreshRepository]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const searchParams = new URLSearchParams(window.location.search);
+    const panel = searchParams.get('panel');
+    const capsuleParam = searchParams.get('capsuleId') ?? searchParams.get('situationId');
+    const importToken = searchParams.get('importToken');
+    if (capsuleParam) {
+      setCurrentCapsuleId(capsuleParam);
+      setActiveCapsules((current) => {
+        if (current.some((capsule) => capsule.id === capsuleParam)) return current;
+        const chip: ActiveCapsuleChip = { id: capsuleParam, label: capsuleParam, code: 'SITUATION', role: 'situation' };
+        return [chip, ...current].slice(0, 6);
+      });
+    }
+    if (importToken) {
+      setRepositoryOpen(true);
+      setStatus(`Shared capsule import ${importToken} opened in the cockpit.`);
+      void refreshRepository();
+      return;
+    }
+    if (panel === 'builder') setBuilderOpen(true);
+    if (panel === 'library') {
+      setActiveTab('capsules');
+      setRepositoryOpen(true);
+      void refreshRepository();
+    }
+    if (panel === 'memo') setPrompt('Draft a memo from the active capsule.');
+    if (panel === 'canvas') setInspectorOpen(true);
+    if (panel === 'advanced' || panel === 'ask') setAgentDrawerOpen(true);
+    if (panel === 'account') setStatus('Account and runtime settings now live inside the PRAXIS cockpit.');
   }, [isAuthenticated, refreshRepository]);
 
   function selectUserCapsule(capsule: PraxisCapsuleSummary) {
@@ -664,6 +712,10 @@ export function TaskletPraxisWorkbench({
   }
 
   function improveCapsule(capsule?: PraxisCapsuleSummary) {
+    if (!isAuthenticated) {
+      sendPublicToLogin(prompt.trim() || 'Improve this ContextCapsule.');
+      return;
+    }
     const target = capsule ?? selectedCapsule ?? userCapsules[0];
     if (!target) return;
     selectUserCapsule(target);
@@ -877,10 +929,20 @@ export function TaskletPraxisWorkbench({
             <span className="praxis-thinking-glyph flex h-8 w-8 items-center justify-center rounded-md bg-sage text-white">◳</span>
             PRAXIS
           </Link>
-          <SidebarButton icon={Plus} label="New capsule" onClick={() => setBuilderOpen(true)} active />
+          <SidebarButton icon={Plus} label="New capsule" onClick={() => {
+            if (requireAuthForAction('Build a new PRAXIS ContextCapsule.')) return;
+            setBuilderOpen(true);
+          }} active />
           <SidebarButton icon={Search} label="Search capsules" onClick={() => setActiveTab('capsules')} />
-          <SidebarButton icon={Library} label="Repository" onClick={() => { setRepositoryOpen(true); void refreshRepository(); }} />
-          <SidebarButton icon={Clipboard} label="Agent actions" onClick={() => setAgentDrawerOpen(true)} />
+          <SidebarButton icon={Library} label="Repository" onClick={() => {
+            if (requireAuthForAction('Open the capsule repository and attach sources.')) return;
+            setRepositoryOpen(true);
+            void refreshRepository();
+          }} />
+          <SidebarButton icon={Clipboard} label="Agent actions" onClick={() => {
+            if (requireAuthForAction('Run capsule-aware PRAXIS policy actions.')) return;
+            setAgentDrawerOpen(true);
+          }} />
           <div className="mt-8">
             <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">{recentLabel} <ChevronDown className="h-3 w-3" /></p>
             <div className="mt-3 space-y-2">
@@ -925,8 +987,13 @@ export function TaskletPraxisWorkbench({
             <nav className="ml-auto hidden items-center gap-8 text-sm font-semibold text-slate-500 md:flex">
               <Link href={isAuthenticated ? '/app' : '/'} className="hover:text-slate-900">Home</Link>
               <button type="button" onClick={() => setActiveTab('capsules')} className="hover:text-slate-900">Capsules</button>
-              <button type="button" onClick={() => { setRepositoryOpen(true); void refreshRepository(); }} className="hover:text-slate-900">Repository</button>
+              <button type="button" onClick={() => {
+                if (requireAuthForAction('Open the capsule repository and attach sources.')) return;
+                setRepositoryOpen(true);
+                void refreshRepository();
+              }} className="hover:text-slate-900">Repository</button>
               <Link href="/pricing" className="hover:text-slate-900">Pricing</Link>
+              <Link href="/learn" className="hover:text-slate-900">Learn</Link>
               <Link href="/release-notes" className="hover:text-slate-900">Release notes</Link>
             </nav>
             <div className="flex items-center gap-2">
@@ -956,6 +1023,10 @@ export function TaskletPraxisWorkbench({
                   type="button"
                   onClick={() => {
                     setPrompt(action.prompt);
+                    if (!isAuthenticated) {
+                      sendPublicToLogin(action.prompt);
+                      return;
+                    }
                     if (action.label !== 'Ask') void sendToPraxis(selectedAgent, action.prompt);
                   }}
                   className="rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 transition hover:border-[#ff714d]/40 hover:bg-[#fff7f3]"
@@ -966,19 +1037,32 @@ export function TaskletPraxisWorkbench({
             </div>
 
             <div className="mt-3 flex w-full max-w-5xl flex-wrap items-center justify-center gap-2" data-testid="capsule-workspace-actions">
-              <button type="button" onClick={() => setBuilderOpen(true)} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
+              <button type="button" onClick={() => {
+                if (requireAuthForAction('Build a new PRAXIS ContextCapsule.')) return;
+                setBuilderOpen(true);
+              }} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
                 <Plus className="h-4 w-4" />
                 Build capsule
               </button>
-              <button type="button" onClick={() => { setRepositoryOpen(true); void refreshRepository(); }} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
+              <button type="button" onClick={() => {
+                if (requireAuthForAction('Open the capsule repository and attach sources.')) return;
+                setRepositoryOpen(true);
+                void refreshRepository();
+              }} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
                 <Library className="h-4 w-4" />
                 Repository
               </button>
-              <button type="button" onClick={() => setInspectorOpen(true)} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
+              <button type="button" onClick={() => {
+                if (requireAuthForAction('Inspect and improve the active PRAXIS capsule.')) return;
+                setInspectorOpen(true);
+              }} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
                 <BookOpen className="h-4 w-4" />
                 Inspect capsule
               </button>
-              <button type="button" onClick={() => setAgentDrawerOpen(true)} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
+              <button type="button" onClick={() => {
+                if (requireAuthForAction('Run capsule-aware PRAXIS policy actions.')) return;
+                setAgentDrawerOpen(true);
+              }} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
                 <Sparkles className="h-4 w-4" />
                 Research actions
               </button>
@@ -1229,13 +1313,13 @@ export function TaskletPraxisWorkbench({
                     className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
                   >
                     <Plus className="h-4 w-4" />
-                    New
+                    {isAuthenticated ? 'New' : 'Sign in to build'}
                   </button>
                 </div>
               </div>
 
               <nav className="mt-4 flex flex-wrap gap-2" aria-label="Capsule categories">
-                {capsuleCategories.map((category) => (
+                {(isAuthenticated ? capsuleCategories : publicCapsuleCategories).map((category) => (
                   <button
                     key={category}
                     type="button"
@@ -1310,18 +1394,48 @@ export function TaskletPraxisWorkbench({
                   />
                 </div>
               ) : (
-                <div className="mt-10 grid gap-x-12 gap-y-14 md:grid-cols-3" data-testid="tasklet-capsule-cards">
-                  {capsules.map((capsule) => (
-                    <article key={capsule.id} className="min-h-40">
-                      <FolderKanban className="mb-4 h-5 w-5 text-slate-400" />
-                      <h3 className="text-lg font-semibold text-slate-800">{capsule.label}</h3>
-                      <p className="mt-4 text-sm leading-6 text-slate-500">{capsule.prompt}</p>
-                      <button type="button" onClick={() => addCapsule(capsule.id)} className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-[#ff714d]">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        Build capsule
-                      </button>
-                    </article>
-                  ))}
+                <div className="mt-6 grid gap-3 md:grid-cols-2 lg:grid-cols-3" data-testid="tasklet-capsule-cards">
+                  {publicCapsules.map((capsule, index) => {
+                    const category = publicCategoryForTemplate(capsule.id);
+                    return (
+                      <article key={capsule.id} className="group min-h-52 rounded-xl border border-black/10 bg-white/75 p-4 shadow-sm shadow-black/5 transition hover:-translate-y-0.5 hover:border-[#ff714d]/40 hover:bg-white">
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-sm font-semibold text-white">
+                            {String(index + 1).padStart(2, '0')}
+                          </span>
+                          <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-500">
+                            {category?.shortLabel ?? 'Capsule'}
+                          </span>
+                        </div>
+                        <h3 className="mt-4 text-lg font-semibold text-slate-900">{capsule.label}</h3>
+                        <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-500">{capsule.prompt}</p>
+                        <div className="mt-4 flex flex-wrap gap-1.5">
+                          {capsule.contextCores.slice(0, 3).map((core) => (
+                            <span key={core} className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">{core}</span>
+                          ))}
+                        </div>
+                        <div className="mt-5 flex items-center justify-between gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPrompt(capsule.prompt);
+                              setCapsulePickerQuery(capsule.label);
+                              setCapsulePickerOpen(true);
+                            }}
+                            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-[#ca4a25]"
+                          >
+                            <FolderKanban className="h-3.5 w-3.5" />
+                            Explore
+                          </button>
+                          <button type="button" onClick={() => addCapsule(capsule.id)} className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            Use after sign in
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                  {!publicCapsules.length ? <CapsuleEmptyState label="No public capsule examples match that search." /> : null}
                 </div>
               )}
             </section>
@@ -1445,6 +1559,45 @@ function buildCapsuleCategories(capsules: PraxisCapsuleSummary[]): string[] {
     ...POLICY_TEAM_CATEGORIES.map((category) => category.id),
     ...generatedTags,
   ];
+}
+
+function buildPublicCapsuleCategories(): string[] {
+  return [
+    'all',
+    ...POLICY_TEAM_CATEGORIES
+      .filter((category) => category.templateIds.some((templateId) => COCKPIT_CAPSULE_LIBRARY.some((capsule) => capsule.id === templateId)))
+      .map((category) => category.id),
+    'source-docs',
+    'outputs',
+  ];
+}
+
+function publicCategoryForTemplate(templateId: string): PolicyTeamCategory | null {
+  return POLICY_TEAM_CATEGORIES.find((category) => category.templateIds.some((id) => id === templateId)) ?? null;
+}
+
+function filterPublicCapsules(query: string, category: string) {
+  const clean = query.trim().toLowerCase();
+  return COCKPIT_CAPSULE_LIBRARY.filter((capsule) => {
+    const team = getPolicyTeamCategory(category);
+    const matchesCategory =
+      category === 'all' ? true :
+      category === 'source-docs' ? capsule.contextCores.some((core) => core === 'source' || core === 'document') :
+      category === 'outputs' ? capsule.contextCores.some((core) => core === 'output' || core === 'product') :
+      team ? team.templateIds.some((id) => id === capsule.id) :
+      true;
+    if (!matchesCategory) return false;
+    if (!clean) return true;
+    return [
+      capsule.label,
+      capsule.prompt,
+      capsule.audience,
+      capsule.output,
+      capsule.code,
+      ...capsule.contextCores,
+      publicCategoryForTemplate(capsule.id)?.label ?? '',
+    ].join(' ').toLowerCase().includes(clean);
+  });
 }
 
 function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, category: string): PraxisCapsuleSummary[] {

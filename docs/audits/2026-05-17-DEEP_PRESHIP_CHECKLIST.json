@@ -1,9 +1,9 @@
 {
   "date": "2026-05-17",
   "summary": {
-    "pass": 119,
+    "pass": 118,
     "warn": 4,
-    "blocked": 18,
+    "blocked": 19,
     "total": 141
   },
   "checks": [
@@ -931,9 +931,9 @@
       "id": "frontend-polish-skeleton",
       "section": "18. Frontend polish",
       "title": "frontend polish files includes Skeleton",
-      "status": "PASS",
-      "evidence": "frontend polish files contains required marker.",
-      "remediation": "None."
+      "status": "BLOCKED",
+      "evidence": "frontend polish files is missing required marker.",
+      "remediation": "Add or wire Skeleton before marking this checklist item complete."
     },
     {
       "id": "frontend-polish-permissions-policy",

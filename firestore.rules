@@ -235,6 +235,29 @@ service cloud.firestore {
                      && request.resource.data.ownerUid == uid;
       }
 
+      // User-scoped Knowledge Library. These records index existing document
+      // uploads into repositories and capsule associations; server APIs own AI
+      // digest writes through Admin SDK, while direct client access remains
+      // owner-scoped.
+      match /knowledgeRepositories/{repositoryId} {
+        allow read: if request.auth != null
+                    && request.auth.uid == uid
+                    && resource.data.ownerUid == uid;
+        allow write: if request.auth != null
+                     && request.auth.uid == uid
+                     && request.resource.data.ownerUid == uid
+                     && request.resource.data.scope == 'user';
+      }
+
+      match /knowledgeDocuments/{documentId} {
+        allow read: if request.auth != null
+                    && request.auth.uid == uid
+                    && resource.data.ownerUid == uid;
+        allow write: if request.auth != null
+                     && request.auth.uid == uid
+                     && request.resource.data.ownerUid == uid;
+      }
+
       // Structured PRAXIS cores: User Core, Situation Core, Source Core,
       // Document Core, Graph Core, and Output Core records copied or created
       // inside a user workspace. Canonical demo seeds are code-backed; user

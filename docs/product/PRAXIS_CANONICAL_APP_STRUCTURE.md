@@ -70,6 +70,31 @@ The cockpit implementation should use in-page sheets, dialogs, and popovers:
   Sourceability, Temporality, Causality, Human Friction, Rules, or Open
   Questions.
 
+## Knowledge Library Backend
+
+The capsule library and the document knowledge library are related but not the
+same object:
+
+- **Capsule library**: stores ContextCapsules, selected cores, retrieval policy,
+  readiness, trust posture, memories, spans, and output links.
+- **Knowledge library**: stores user-scoped repositories and document records
+  that point at canonical uploaded documents, chunks, embeddings, Cloud Storage
+  originals, source receipts, capsule associations, and AI digests.
+
+Implementation contract:
+
+- File ingestion remains canonical in `/api/documents/upload`.
+- Uploads may include `repositoryId`, `categoryId`, `policyDomain`, `tags`,
+  `sourceNote`, `capsuleId`, and/or `capsuleIds`.
+- Repository metadata lives under owner-scoped Knowledge Library APIs, not a new
+  top-level app page.
+- AI digestion stores summaries, claims, actors, dates, causal links, human
+  friction, sourceability warnings, and follow-up research questions as digest
+  metadata. It must not mutate the graph directly.
+- Ask PRAXIS retrieval may use Knowledge Library digests alongside document
+  chunks, but Firestore document/chunk records remain the source of truth for
+  uploaded document text.
+
 ## ContextCapsule Product Contract
 
 The code-backed product contract for public examples and future onboarding is:

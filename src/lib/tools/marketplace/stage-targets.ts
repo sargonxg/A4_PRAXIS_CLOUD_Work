@@ -381,15 +381,18 @@ export function renderMarketplaceStagePrompt(target: MarketplaceStageTarget, cas
 export function stageTargetHref(caseId: string, target: MarketplaceStageTarget): string {
   if (target.chapter === 'tools') {
     const params = new URLSearchParams({
+      panel: 'advanced',
       stagedTool: target.heroToolId,
       caseId,
     });
-    return `/app/tools?${params.toString()}`;
+    return `/app?${params.toString()}`;
   }
 
   const params = new URLSearchParams({
+    panel: 'library',
+    situationId: caseId,
     stagedTool: target.heroToolId,
     openChapter: target.chapter,
   });
-  return `/app/contexts?situationId=${encodeURIComponent(caseId)}&${params.toString()}`;
+  return `/app?${params.toString()}`;
 }

@@ -1,5 +1,20 @@
 # PRAXIS — STATUS
 
+## 2026-05-17 — Knowledge Library Backend
+
+Current product checkpoint:
+
+- Central app metadata is now build `2026.05.17.01`.
+- PRAXIS now has user-scoped Knowledge Library repositories over the existing
+  document ingestion, chunking, embedding, Cloud Storage, and capsule contracts.
+- Uploads can carry repository, category, tag, source-note, and multi-capsule
+  association metadata without adding a new top-level app page.
+- Knowledge documents can be attached to capsules and summarized through a
+  Vertex/Gemini structured digest that captures claims, actors, dates,
+  causality, human friction, sourceability warnings, and follow-up questions.
+- Ask PRAXIS retrieval can use Knowledge Library digests alongside stored
+  document chunks.
+
 ## 2026-05-16 — Capsule Cockpit Repository And Span Workflow
 
 Current product checkpoint:

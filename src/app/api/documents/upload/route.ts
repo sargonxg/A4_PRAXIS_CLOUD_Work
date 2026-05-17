@@ -16,6 +16,11 @@ import { emitTelemetrySafe } from '@/lib/telemetry/emit';
 import { localKnowledgeAdapter } from '@/lib/knowledge/context-engine';
 import { attachCapsuleRefs, getCapsule, getOrMigrateDefaultCapsule } from '@/lib/context/capsule-service';
 import { mirrorDocumentIngestionSql } from '@/lib/agent-runtime/document-postgres';
+import {
+  ensureDefaultKnowledgeRepository,
+  getKnowledgeRepository,
+  upsertKnowledgeDocument,
+} from '@/lib/knowledge/library-service';
 
 /**
  * Canonical document ingestion endpoint.
@@ -187,6 +192,12 @@ export const POST = withAuth(async (request, user) => {
     const file = formData.get('file') as File | null;
     const situationId = formData.get('situationId') as string | null;
     const requestedCapsuleId = formData.get('capsuleId') as string | null;
+    const requestedCapsuleIds = normalizeFormList(formData.getAll('capsuleIds'), requestedCapsuleId);
+    const requestedRepositoryId = cleanFormValue(formData.get('repositoryId'));
+    const requestedCategoryId = cleanFormValue(formData.get('categoryId'));
+    const requestedPolicyDomain = cleanFormValue(formData.get('policyDomain'));
+    const requestedSourceNote = cleanFormValue(formData.get('sourceNote'));
+    const requestedTags = normalizeFormList(formData.getAll('tags'));
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -357,12 +368,41 @@ export const POST = withAuth(async (request, user) => {
           linkedAt: stored.sourceCore?.linkedAt ?? new Date().toISOString(),
         },
       }, { merge: true });
-    const explicitCapsule = requestedCapsuleId ? await getCapsule(user.uid, requestedCapsuleId).catch(() => null) : null;
+    const explicitCapsules = (await Promise.all(
+      requestedCapsuleIds.map((capsuleId) => getCapsule(user.uid, capsuleId).catch(() => null)),
+    )).filter((capsule): capsule is NonNullable<typeof capsule> => Boolean(capsule && !capsule.archivedAt));
+    const explicitCapsule = explicitCapsules[0] ?? null;
     const { capsule: fallbackCapsule } = await getOrMigrateDefaultCapsule(user.uid);
     const capsule = explicitCapsule && !explicitCapsule.archivedAt ? explicitCapsule : fallbackCapsule;
-    await attachCapsuleRefs(user.uid, capsule.capsuleId, {
-      sourceIds: [sourceCoreId],
-      documentIds: [stored.id],
+    const targetCapsuleIds = uniqueStrings(explicitCapsules.length
+      ? explicitCapsules.map((item) => item.capsuleId)
+      : [capsule.capsuleId]);
+    for (const capsuleId of targetCapsuleIds) {
+      await attachCapsuleRefs(user.uid, capsuleId, {
+        sourceIds: [sourceCoreId],
+        documentIds: [stored.id],
+      });
+    }
+    const repository = requestedRepositoryId
+      ? await getKnowledgeRepository(user.uid, requestedRepositoryId).catch(() => null)
+      : await ensureDefaultKnowledgeRepository(user.uid);
+    const knowledgeDocument = await upsertKnowledgeDocument(user.uid, {
+      documentId: stored.id,
+      situationId,
+      title: stored.title,
+      fileType,
+      size: file.size,
+      bucketUri,
+      repositoryIds: [repository?.id ?? 'default'],
+      capsuleIds: targetCapsuleIds,
+      categoryId: requestedCategoryId || repository?.categoryId || structured.sourceType || 'general-policy',
+      policyDomain: requestedPolicyDomain || repository?.policyDomain || requestedCategoryId || 'general-policy',
+      tags: uniqueStrings(['library-upload', structured.sourceType, ...requestedTags]),
+      sourceType: structured.sourceType,
+      sourceNote: requestedSourceNote,
+      extractionStatus: stored.status,
+      chunkCount,
+      entityCount: structured.actors.length,
     });
     await mirrorDocumentIngestionSql({
       id: stored.id,
@@ -384,6 +424,9 @@ export const POST = withAuth(async (request, user) => {
         sourceType: structured.sourceType,
         receiptConfidence,
         capsuleId: capsule.capsuleId,
+        capsuleIds: targetCapsuleIds,
+        repositoryId: repository?.id ?? 'default',
+        knowledgeDocumentId: knowledgeDocument.id,
         parser,
       },
     }).catch((sqlErr) => console.warn('[documents/upload] SQL document mirror failed:', sqlErr));
@@ -432,7 +475,14 @@ export const POST = withAuth(async (request, user) => {
         sourceCoreIds: [sourceCoreId],
         documentCoreIds: [stored.id],
         capsuleId: capsule.capsuleId,
+        capsuleIds: targetCapsuleIds,
         capsuleVersion: capsule.version + 1,
+      },
+      knowledge: {
+        repositoryId: repository?.id ?? 'default',
+        documentId: knowledgeDocument.id,
+        summaryStatus: knowledgeDocument.summaryStatus,
+        retrievalStatus: knowledgeDocument.retrievalStatus,
       },
       message: chunkCount > 0
         ? 'Document uploaded, chunked, and indexed for retrieval.'
@@ -455,6 +505,31 @@ export const POST = withAuth(async (request, user) => {
 
 function orgIdOf(user: unknown): string | null {
   return (user as { orgId?: string }).orgId ?? null;
+}
+
+function cleanFormValue(value: FormDataEntryValue | null): string {
+  return typeof value === 'string' ? value.trim().slice(0, 240) : '';
+}
+
+function normalizeFormList(values: FormDataEntryValue[], single?: string | null): string[] {
+  const raw = [
+    ...(single ? [single] : []),
+    ...values.flatMap((value) => typeof value === 'string' ? value.split(',') : []),
+  ];
+  return uniqueStrings(raw);
+}
+
+function uniqueStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const output: string[] = [];
+  for (const value of values) {
+    const cleaned = value.trim().slice(0, 160);
+    const key = cleaned.toLowerCase();
+    if (!cleaned || seen.has(key)) continue;
+    seen.add(key);
+    output.push(cleaned);
+  }
+  return output;
 }
 
 function sourceTypeForFile(fileType: string): 'pdf' | 'docx' | 'text' {

@@ -3,13 +3,12 @@
  *
  * Operational internals (API keys, system health,
  * graph backend, model preferences, read logs, audit invariants)
- * must only appear inside the Administration NAV_GROUPS group, which
- * is admin-role gated. They must never show up in Workspace or
- * Advanced.
+ * must not appear in the visible app navigation. The cockpit is the
+ * only normal app surface; admin/settings URLs are handled by proxy
+ * redirects or backend APIs.
  *
  * Fail modes:
- *  - An internals href appears in the Workspace or Advanced groups
- *  - The Administration group is missing the adminOnly: true flag
+ *  - An internals href appears in NAV_GROUPS
  *  - A non-admin surface (header / mobile-bottom-nav / dashboard)
  *    renders a direct link to one of the internals paths
  */
@@ -60,20 +59,18 @@ const workspaceBlock = sliceGroup(navSrc, 'workspace');
 const advancedBlock = sliceGroup(navSrc, 'advanced');
 const adminBlock = sliceGroup(navSrc, 'administration');
 
-if (!adminBlock) {
-  failures.push('Administration NAV_GROUPS entry is missing');
-} else if (!adminBlock.includes('adminOnly: true')) {
-  failures.push('Administration group must declare adminOnly: true');
-}
-
 for (const internalPath of INTERNAL_PATHS) {
-  // It's fine for this to appear in adminBlock; failure is only if
-  // it leaks into workspace or advanced.
+  if (navSrc.includes(`'${internalPath}'`)) {
+    failures.push(`NAV_GROUPS exposes removed internal path ${internalPath}`);
+  }
   if (workspaceBlock.includes(`'${internalPath}'`)) {
     failures.push(`Workspace group exposes internal path ${internalPath}`);
   }
   if (advancedBlock.includes(`'${internalPath}'`)) {
     failures.push(`Advanced group exposes internal path ${internalPath}`);
+  }
+  if (adminBlock.includes(`'${internalPath}'`)) {
+    failures.push(`Administration group exposes removed internal path ${internalPath}`);
   }
 }
 

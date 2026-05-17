@@ -216,6 +216,13 @@ export type ContextCapsuleTemplateId =
   | 'public-sector-memo'
   | 'agent-handover'
   | 'sanctions-compliance'
+  | 'economic-exposure'
+  | 'human-rights-allegation-matrix'
+  | 'humanitarian-access'
+  | 'information-environment'
+  | 'climate-development-risk'
+  | 'legal-compliance-review'
+  | 'program-delivery'
   | 'board-brief'
   | 'temporal-causal-map'
   | 'human-friction-map'
@@ -235,7 +242,11 @@ export type PolicyPathId =
   | 'foreign-policy'
   | 'conflict-resolution'
   | 'mediator-peace-process'
+  | 'economic-sanctions'
   | 'humanitarian-analysis'
+  | 'security-defence'
+  | 'climate-development'
+  | 'information-cyber'
   | 'defence-capture'
   | 'public-affairs'
   | 'public-sector-policy'
@@ -255,6 +266,8 @@ export interface PolicyPathProfile {
   defaultTemplates: ContextCapsuleTemplateId[];
   suggestedTools: string[];
   suggestedOutputs: string[];
+  sourceTags: string[];
+  missingInfoPrompts: string[];
 }
 
 export type PolicyTeamCategoryId =
@@ -347,6 +360,48 @@ export interface CapsuleRepositoryMetadata {
   freshness: 'empty' | 'fresh' | 'stale' | 'needs-documents' | 'needs-sources';
   lastIngestionRunId: string | null;
   updatedAt: string;
+}
+
+export interface CapsuleRepositoryDocumentRef {
+  documentId: string;
+  title: string;
+  storageObjectRef: string | null;
+  sourceReceiptIds: string[];
+  chunkCount: number;
+  pageRefs: string[];
+  paragraphRefs: string[];
+  embeddingStatus: CapsuleEmbeddingStatus;
+  retrievalBackend: CapsuleRetrievalBackend;
+  freshness: CapsuleRepositoryMetadata['freshness'];
+}
+
+export interface CapsuleRepositorySourceRef {
+  sourceReceiptId: string;
+  label: string;
+  uri: string | null;
+  tags: string[];
+  reliabilityNote: string | null;
+  citationGaps: string[];
+  attachedDocumentIds: string[];
+}
+
+export interface CapsuleRepositorySpanRef {
+  spanId: string;
+  documentId: string;
+  chunkId: string | null;
+  pageRef: string | null;
+  paragraphRef: string | null;
+  sourceReceiptId: string | null;
+}
+
+export interface CapsuleRepositoryContract {
+  metadata: CapsuleRepositoryMetadata;
+  documentRefs: CapsuleRepositoryDocumentRef[];
+  sourceRefs: CapsuleRepositorySourceRef[];
+  spanRefs: CapsuleRepositorySpanRef[];
+  outputHistoryIds: string[];
+  evaluationIds: string[];
+  memoryIds: string[];
 }
 
 export interface CapsuleIngestionReceipt {
@@ -447,6 +502,62 @@ export const CONTEXT_CAPSULE_TEMPLATES: ContextCapsuleTemplate[] = [
     contextCores: ['situation', 'source', 'document', 'graph', 'objective', 'output'],
   },
   {
+    id: 'economic-exposure',
+    label: 'Economic exposure',
+    prompt: 'Build an economic and sanctions capsule with entities, sectors, trade flows, exposure notes, source receipts, and review gaps.',
+    audience: 'Economic or sanctions analyst',
+    output: 'Economic exposure note',
+    contextCores: ['situation', 'source', 'document', 'graph', 'time', 'objective', 'output'],
+  },
+  {
+    id: 'human-rights-allegation-matrix',
+    label: 'Human rights allegation matrix',
+    prompt: 'Structure allegations, legal thresholds, chain-of-custody notes, source reliability, contested claims, and evidence gaps.',
+    audience: 'Human rights or accountability analyst',
+    output: 'Allegation matrix',
+    contextCores: ['situation', 'source', 'document', 'graph', 'path', 'output'],
+  },
+  {
+    id: 'humanitarian-access',
+    label: 'Humanitarian access',
+    prompt: 'Map access constraints, affected populations, needs, protection concerns, operational actors, freshness windows, and source gaps.',
+    audience: 'Humanitarian analyst',
+    output: 'Humanitarian access brief',
+    contextCores: ['situation', 'source', 'document', 'time', 'graph', 'output'],
+  },
+  {
+    id: 'information-environment',
+    label: 'Information environment',
+    prompt: 'Assess narratives, media sources, platform scope, disinformation risk, cyber posture, response options, and source caveats.',
+    audience: 'Information or cyber analyst',
+    output: 'Information environment brief',
+    contextCores: ['situation', 'source', 'time', 'graph', 'objective', 'output'],
+  },
+  {
+    id: 'climate-development-risk',
+    label: 'Climate and development risk',
+    prompt: 'Build a climate and development capsule with geography, indicators, program risks, finance context, climate-security links, and monitoring needs.',
+    audience: 'Climate or development analyst',
+    output: 'Climate-development options brief',
+    contextCores: ['situation', 'source', 'document', 'time', 'graph', 'objective', 'output'],
+  },
+  {
+    id: 'legal-compliance-review',
+    label: 'Legal compliance review',
+    prompt: 'Review rules, contradictions, source receipts, treaty or regulatory posture, sign-off gates, and export limits.',
+    audience: 'Legal and compliance analyst',
+    output: 'Legal compliance review',
+    contextCores: ['user', 'situation', 'source', 'document', 'path', 'objective', 'output'],
+  },
+  {
+    id: 'program-delivery',
+    label: 'Program delivery',
+    prompt: 'Build a delivery capsule with implementation context, partners, milestones, risks, source gaps, handover notes, and monitoring cadence.',
+    audience: 'Program delivery officer',
+    output: 'Program delivery handover',
+    contextCores: ['situation', 'source', 'document', 'time', 'graph', 'memory', 'output'],
+  },
+  {
     id: 'board-brief',
     label: 'Board brief',
     prompt: 'Create a board briefing capsule that combines market, regulatory, risk, stakeholder, and decision context.',
@@ -541,6 +652,8 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['public-sector-memo', 'director-handover', 'agent-handover'],
     suggestedTools: ['Ask PRAXIS', 'Sourceability check', 'Memo drafter', 'Red-team review'],
     suggestedOutputs: ['Options memo', 'Briefing note', 'Handover packet'],
+    sourceTags: ['policy', 'sources', 'memo', 'handover'],
+    missingInfoPrompts: ['What decision or output is needed?', 'Which documents or source links should ground it?', 'Who is the audience?'],
   },
   {
     id: 'foreign-policy',
@@ -549,6 +662,8 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['conflict-analysis', 'regulatory-watch', 'public-sector-memo'],
     suggestedTools: ['Source Scout', 'Timeline Events', 'Power Map', 'Policy Memo'],
     suggestedOutputs: ['Diplomatic brief', 'Sourceable options memo', 'Talking points'],
+    sourceTags: ['un-news', 'gdelt', 'world-bank', 'diplomacy', 'sanctions'],
+    missingInfoPrompts: ['Which country, institution, or negotiation track is in scope?', 'What multilateral context matters?', 'What source caveat should be explicit?'],
   },
   {
     id: 'conflict-resolution',
@@ -557,6 +672,8 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['conflict-analysis', 'temporal-causal-map', 'human-friction-map'],
     suggestedTools: ['Stakeholder Map', 'Mediation Design', 'Scenario Review', 'Red-team review'],
     suggestedOutputs: ['Mediation brief', 'Actor-interest map', 'Process design note'],
+    sourceTags: ['ucdp', 'gdelt', 'crisis-group', 'mediation', 'commitments'],
+    missingInfoPrompts: ['Which parties and spoilers are in scope?', 'What commitments or red lines are known?', 'What source gaps could distort the process read?'],
   },
   {
     id: 'mediator-peace-process',
@@ -565,14 +682,58 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['conflict-analysis', 'human-friction-map', 'decision-clock'],
     suggestedTools: ['Mediation Design', 'Stakeholder Map', 'Commitment Scan', 'Scenario Review'],
     suggestedOutputs: ['Process design note', 'Party-position brief', 'Confidence-building memo'],
+    sourceTags: ['mediation', 'negotiation', 'commitments', 'confidence-building', 'spoilers'],
+    missingInfoPrompts: ['Which parties, red lines, and mandates bind the process?', 'What confidence-building options are politically feasible?', 'What deadline or sequencing constraint matters?'],
+  },
+  {
+    id: 'economic-sanctions',
+    label: 'Economic / sanctions analyst',
+    userFrame: 'Entities, sectors, exposure, trade flows, financial pressure, rule coverage, and compliance posture.',
+    defaultTemplates: ['economic-exposure', 'sanctions-compliance', 'legal-compliance-review'],
+    suggestedTools: ['Sanctions Check', 'Economic Impact', 'Sourceability check', 'Treaty Analyze'],
+    suggestedOutputs: ['Economic exposure note', 'Compliance note', 'Options memo'],
+    sourceTags: ['ofac', 'world-bank', 'trade', 'finance', 'sanctions'],
+    missingInfoPrompts: ['Which entities, sectors, and jurisdictions are in scope?', 'What transaction, exposure, or decision is being reviewed?', 'Which sanctions or trade-control sources must be treated as authoritative?'],
   },
   {
     id: 'humanitarian-analysis',
     label: 'Humanitarian analyst',
     userFrame: 'Access constraints, needs, protection risks, affected populations, operational partners, and source freshness.',
-    defaultTemplates: ['crisis-brief', 'decision-clock', 'temporal-causal-map'],
+    defaultTemplates: ['humanitarian-access', 'crisis-brief', 'decision-clock'],
     suggestedTools: ['Humanitarian Snapshot', 'ReliefWeb Search', 'Risk Indicators', 'Daily Brief'],
     suggestedOutputs: ['Humanitarian situation brief', 'Access risk note', 'Operational handover'],
+    sourceTags: ['reliefweb', 'hdx', 'ocha', 'unhcr', 'protection'],
+    missingInfoPrompts: ['Which affected population and geography are in scope?', 'What access, needs, or protection constraint matters most?', 'How fresh must the operational picture be?'],
+  },
+  {
+    id: 'security-defence',
+    label: 'Security / defence analyst',
+    userFrame: 'Capabilities, force posture, procurement, stakeholders, blockers, risks, and opportunity capture.',
+    defaultTemplates: ['defence-opportunity', 'conflict-analysis', 'temporal-causal-map'],
+    suggestedTools: ['Power Map', 'Risk Indicators', 'Scenario Review', 'Board Brief'],
+    suggestedOutputs: ['Security assessment', 'Capture brief', 'Opportunity brief'],
+    sourceTags: ['ucdp', 'sipri', 'defence', 'security', 'procurement'],
+    missingInfoPrompts: ['Which capability, procurement, or force-posture question is live?', 'Which stakeholders and blockers matter?', 'What source classes are acceptable for sensitive claims?'],
+  },
+  {
+    id: 'climate-development',
+    label: 'Climate / development analyst',
+    userFrame: 'Geography, indicators, program risks, development finance, climate-security links, and long-horizon monitoring.',
+    defaultTemplates: ['climate-development-risk', 'program-delivery', 'public-sector-memo'],
+    suggestedTools: ['Grounded research', 'Scenario Review', 'Risk Indicators', 'Memo Drafter'],
+    suggestedOutputs: ['Climate-development brief', 'Program risk note', 'Finance options memo'],
+    sourceTags: ['world-bank', 'undp', 'climate', 'development', 'stabilization'],
+    missingInfoPrompts: ['What geography, program, and horizon are in scope?', 'Which indicators should be watched?', 'What finance or delivery decision is being served?'],
+  },
+  {
+    id: 'information-cyber',
+    label: 'Information / cyber analyst',
+    userFrame: 'Narratives, media sources, disinformation risk, cyber posture, response options, and caveated evidence.',
+    defaultTemplates: ['information-environment', 'regulatory-watch', 'crisis-brief'],
+    suggestedTools: ['Media Compass', 'Grounded research', 'Contradiction finder', 'Talking Points'],
+    suggestedOutputs: ['Information environment brief', 'Narrative risk note', 'Response options memo'],
+    sourceTags: ['gdelt', 'media', 'narrative', 'disinformation', 'cyber'],
+    missingInfoPrompts: ['Which narrative, platform, language, or geography is in scope?', 'What cyber or information posture must be assessed?', 'What response audience needs the output?'],
   },
   {
     id: 'defence-capture',
@@ -581,6 +742,8 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['defence-opportunity', 'board-brief', 'agent-handover'],
     suggestedTools: ['Requirements map', 'Power Map', 'Timeline Events', 'Board Brief'],
     suggestedOutputs: ['Capture brief', 'Opportunity map', 'Executive decision note'],
+    sourceTags: ['defence', 'procurement', 'requirements', 'stakeholders', 'approval'],
+    missingInfoPrompts: ['Which opportunity or requirement is being pursued?', 'What approval gate or deadline matters?', 'Which competitors or blockers should be mapped?'],
   },
   {
     id: 'public-affairs',
@@ -589,6 +752,8 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['regulatory-watch', 'public-sector-memo', 'board-brief'],
     suggestedTools: ['Regulatory Watch', 'Media Compass', 'Stakeholder Map', 'Talking Points'],
     suggestedOutputs: ['Regulatory memo', 'Stakeholder brief', 'Narrative posture note'],
+    sourceTags: ['regulatory', 'consultation', 'media', 'stakeholders', 'public-affairs'],
+    missingInfoPrompts: ['What rule change or consultation window matters?', 'Which stakeholders or audiences are sensitive?', 'What narrative risk needs talking points?'],
   },
   {
     id: 'public-sector-policy',
@@ -597,6 +762,8 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['public-sector-memo', 'regulatory-watch', 'director-handover'],
     suggestedTools: ['Policy Memo', 'Stakeholder Map', 'Citation Repair', 'Red-team review'],
     suggestedOutputs: ['Options memo', 'Ministerial submission', 'Implementation note'],
+    sourceTags: ['public-sector', 'governance', 'implementation', 'rule-of-law', 'memo'],
+    missingInfoPrompts: ['What decision or submission is this serving?', 'Which statutory or institutional duties bind it?', 'Who is affected by the change?'],
   },
   {
     id: 'regulatory-public-affairs',
@@ -605,6 +772,8 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['regulatory-watch', 'board-brief', 'public-sector-memo'],
     suggestedTools: ['Regulatory Watch', 'Media Compass', 'Timeline Events', 'Talking Points'],
     suggestedOutputs: ['Regulatory update', 'Stakeholder map', 'Public affairs brief'],
+    sourceTags: ['regulatory', 'enforcement', 'consultation', 'affected-entities', 'communications'],
+    missingInfoPrompts: ['Which regulator, rule, or enforcement posture is in scope?', 'What effective date or consultation deadline matters?', 'Which entities are exposed?'],
   },
   {
     id: 'hr-policy',
@@ -613,14 +782,18 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['hr-policy-review', 'director-handover', 'agent-handover'],
     suggestedTools: ['Spec Check', 'Impact Review', 'Approval Path', 'Memo Drafter'],
     suggestedOutputs: ['Policy rollout note', 'Employee impact brief', 'Review packet'],
+    sourceTags: ['hr', 'internal-policy', 'employee-impact', 'approvals', 'legal-review'],
+    missingInfoPrompts: ['Which employee groups are affected?', 'What internal rules or approvals govern the change?', 'What rollout note or review packet is needed?'],
   },
   {
     id: 'legal-compliance',
     label: 'Legal and compliance analyst',
     userFrame: 'Rules, entity exposure, source receipts, contradictions, and sign-off posture.',
-    defaultTemplates: ['sanctions-compliance', 'regulatory-watch', 'public-sector-memo'],
+    defaultTemplates: ['legal-compliance-review', 'sanctions-compliance', 'regulatory-watch'],
     suggestedTools: ['Sanctions Check', 'Treaty Analyze', 'Citation Repair', 'Red-team review'],
     suggestedOutputs: ['Compliance note', 'Exposure memo', 'Review receipt'],
+    sourceTags: ['legal', 'compliance', 'treaty', 'regulatory', 'sign-off'],
+    missingInfoPrompts: ['Which rule, treaty, regulation, or policy controls the answer?', 'What contradictions or source receipts need review?', 'Who must sign off before export?'],
   },
   {
     id: 'crisis-management',
@@ -629,6 +802,8 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['crisis-brief', 'decision-clock', 'director-handover'],
     suggestedTools: ['Timeline Events', 'Risk Indicators', 'Daily Brief', 'Executive Intelligence'],
     suggestedOutputs: ['Situation brief', 'Decision log', 'Morning update'],
+    sourceTags: ['crisis', 'timeline', 'incident', 'decision-clock', 'handover'],
+    missingInfoPrompts: ['What changed since the last update?', 'What deadline or decision clock is live?', 'Who needs the next brief or handover?'],
   },
   {
     id: 'strategy-operations',
@@ -637,14 +812,18 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['board-brief', 'regulatory-watch', 'defence-opportunity'],
     suggestedTools: ['Scenario Review', 'Power Map', 'Board Brief', 'Red-team review'],
     suggestedOutputs: ['Board memo', 'Strategy brief', 'Decision options note'],
+    sourceTags: ['strategy', 'board', 'market', 'risk', 'decision'],
+    missingInfoPrompts: ['What strategic decision or board question is live?', 'Which risks and stakeholders matter most?', 'What output language should be board-ready?'],
   },
   {
     id: 'program-delivery',
     label: 'Program officer',
     userFrame: 'Implementation context, local actors, source gaps, delivery risks, and handover.',
-    defaultTemplates: ['public-sector-memo', 'crisis-brief', 'director-handover'],
+    defaultTemplates: ['program-delivery', 'public-sector-memo', 'director-handover'],
     suggestedTools: ['Sourceability check', 'Risk Indicators', 'Timeline Events', 'Handover Pack'],
     suggestedOutputs: ['Implementation brief', 'Risk note', 'Program handover'],
+    sourceTags: ['program-delivery', 'implementation', 'partners', 'milestones', 'risk'],
+    missingInfoPrompts: ['Which program, partners, and geography are in scope?', 'What milestones or delivery risks are live?', 'What should be handed over to the team?'],
   },
   {
     id: 'research-direction',
@@ -653,14 +832,18 @@ export const POLICY_PATH_PROFILES: PolicyPathProfile[] = [
     defaultTemplates: ['director-handover', 'board-brief', 'agent-handover'],
     suggestedTools: ['Red-team review', 'Sourceability check', 'Memo Studio', 'Agent Handover'],
     suggestedOutputs: ['Research handover', 'Quality review', 'Reusable capsule template'],
+    sourceTags: ['research', 'strategy', 'quality', 'review-standards', 'team-memory'],
+    missingInfoPrompts: ['What should become reusable team memory?', 'Which quality standard or review queue applies?', 'What board or leadership language is needed?'],
   },
   {
     id: 'human-rights-accountability',
     label: 'Human rights / accountability analyst',
     userFrame: 'Allegations, actors, legal thresholds, source reliability, chain of custody, and review gaps.',
-    defaultTemplates: ['sanctions-compliance', 'conflict-analysis', 'public-sector-memo'],
+    defaultTemplates: ['human-rights-allegation-matrix', 'legal-compliance-review', 'conflict-analysis'],
     suggestedTools: ['Human Rights Review', 'Treaty Analyze', 'Sourceability check', 'Red-team review'],
     suggestedOutputs: ['Accountability brief', 'Allegation matrix', 'Legal risk note'],
+    sourceTags: ['ohchr', 'ihl', 'accountability', 'chain-of-custody', 'human-rights'],
+    missingInfoPrompts: ['Which allegations and legal thresholds are in scope?', 'What source reliability or chain-of-custody gaps exist?', 'Which claims require corroboration before export?'],
   },
 ];
 
@@ -671,8 +854,8 @@ export const POLICY_TEAM_CATEGORIES: PolicyTeamCategory[] = [
     shortLabel: 'Economic',
     description: 'Sanctions, trade controls, financial exposure, markets, development finance, and economic statecraft.',
     domainId: 'economic-sanctions',
-    policyPathIds: ['legal-compliance', 'strategy-operations', 'public-affairs'],
-    templateIds: ['sanctions-compliance', 'regulatory-watch', 'board-brief'],
+    policyPathIds: ['economic-sanctions', 'legal-compliance', 'strategy-operations'],
+    templateIds: ['economic-exposure', 'sanctions-compliance', 'legal-compliance-review'],
     toolIds: ['grounded-research', 'sourceability', 'memo-drafter', 'ach'],
     outputProductIds: ['compliance-note', 'options-memo', 'board-brief'],
     sourceTags: ['world-bank', 'ofac', 'sanctions', 'trade', 'finance'],
@@ -697,7 +880,7 @@ export const POLICY_TEAM_CATEGORIES: PolicyTeamCategory[] = [
     shortLabel: 'Security',
     description: 'Armed conflict, defence capture, escalation, force posture, procurement, and security risk.',
     domainId: 'armed-conflict-security',
-    policyPathIds: ['defence-capture', 'conflict-resolution', 'crisis-management'],
+    policyPathIds: ['security-defence', 'defence-capture', 'conflict-resolution'],
     templateIds: ['defence-opportunity', 'temporal-causal-map', 'human-friction-map'],
     toolIds: ['stakeholder-map', 'scenario-projector', 'coalition-detector', 'ach'],
     outputProductIds: ['actor-power-map', 'situation-brief', 'board-brief'],
@@ -711,7 +894,7 @@ export const POLICY_TEAM_CATEGORIES: PolicyTeamCategory[] = [
     description: 'Needs, access, displacement, protection, operations, and humanitarian coordination.',
     domainId: 'humanitarian',
     policyPathIds: ['humanitarian-analysis', 'program-delivery', 'crisis-management'],
-    templateIds: ['crisis-brief', 'decision-clock', 'temporal-causal-map'],
+    templateIds: ['humanitarian-access', 'crisis-brief', 'decision-clock'],
     toolIds: ['grounded-research', 'sourceability', 'scenario-projector', 'memo-drafter'],
     outputProductIds: ['situation-brief', 'agent-handover', 'options-memo'],
     sourceTags: ['reliefweb', 'hdx', 'ocha', 'unhcr', 'protection'],
@@ -724,7 +907,7 @@ export const POLICY_TEAM_CATEGORIES: PolicyTeamCategory[] = [
     description: 'Rights allegations, accountability, legal thresholds, compliance, and review receipts.',
     domainId: 'human-rights',
     policyPathIds: ['human-rights-accountability', 'legal-compliance', 'public-sector-policy'],
-    templateIds: ['sanctions-compliance', 'conflict-analysis', 'public-sector-memo'],
+    templateIds: ['human-rights-allegation-matrix', 'legal-compliance-review', 'sanctions-compliance'],
     toolIds: ['sourceability', 'contradiction-finder', 'ach', 'memo-drafter'],
     outputProductIds: ['compliance-note', 'actor-power-map', 'options-memo'],
     sourceTags: ['ohchr', 'amnesty', 'hrw', 'ihl', 'accountability'],
@@ -749,8 +932,8 @@ export const POLICY_TEAM_CATEGORIES: PolicyTeamCategory[] = [
     shortLabel: 'Climate/dev',
     description: 'Development, stabilization, climate security, resource risk, and long-horizon program choices.',
     domainId: 'development-stabilization',
-    policyPathIds: ['program-delivery', 'humanitarian-analysis', 'strategy-operations'],
-    templateIds: ['public-sector-memo', 'crisis-brief', 'board-brief'],
+    policyPathIds: ['climate-development', 'program-delivery', 'humanitarian-analysis'],
+    templateIds: ['climate-development-risk', 'program-delivery', 'public-sector-memo'],
     toolIds: ['grounded-research', 'scenario-projector', 'stakeholder-map', 'memo-drafter'],
     outputProductIds: ['options-memo', 'situation-brief', 'agent-handover'],
     sourceTags: ['world-bank', 'undp', 'climate', 'development', 'stabilization'],
@@ -762,8 +945,8 @@ export const POLICY_TEAM_CATEGORIES: PolicyTeamCategory[] = [
     shortLabel: 'Info/cyber',
     description: 'Narratives, disinformation, media integrity, cyber posture, and information environment analysis.',
     domainId: 'information-cyber',
-    policyPathIds: ['public-affairs', 'foreign-policy', 'strategy-operations'],
-    templateIds: ['regulatory-watch', 'crisis-brief', 'board-brief'],
+    policyPathIds: ['information-cyber', 'public-affairs', 'foreign-policy'],
+    templateIds: ['information-environment', 'regulatory-watch', 'crisis-brief'],
     toolIds: ['grounded-research', 'frame-narrative', 'contradiction-finder', 'memo-drafter'],
     outputProductIds: ['situation-brief', 'options-memo', 'board-brief'],
     sourceTags: ['gdelt', 'media', 'narrative', 'disinformation', 'cyber'],
@@ -776,7 +959,7 @@ export const POLICY_TEAM_CATEGORIES: PolicyTeamCategory[] = [
     description: 'Fast-moving incidents, decisions, handovers, daily briefs, and operational next actions.',
     domainId: 'armed-conflict-security',
     policyPathIds: ['crisis-management', 'program-delivery', 'research-direction'],
-    templateIds: ['crisis-brief', 'decision-clock', 'human-friction-map'],
+    templateIds: ['crisis-brief', 'decision-clock', 'program-delivery'],
     toolIds: ['ask-praxis', 'grounded-research', 'scenario-projector', 'commitment-tracker'],
     outputProductIds: ['situation-brief', 'agent-handover', 'options-memo'],
     sourceTags: ['crisis', 'ops', 'timeline', 'handover', 'brief'],
@@ -802,19 +985,19 @@ export const CAPSULE_OUTPUT_PRODUCTS: CapsuleOutputProduct[] = [
     id: 'options-memo',
     label: 'Options memo',
     description: 'A sourced decision memo with choices, tradeoffs, risks, and recommendation posture.',
-    bestFor: ['generic-policy', 'foreign-policy', 'public-affairs', 'strategy-operations'],
+    bestFor: ['generic-policy', 'foreign-policy', 'public-sector-policy', 'regulatory-public-affairs', 'public-affairs', 'strategy-operations', 'climate-development'],
   },
   {
     id: 'situation-brief',
     label: 'Situation brief',
     description: 'A compact update on what changed, why it matters, and what decisions are now live.',
-    bestFor: ['foreign-policy', 'crisis-management', 'program-delivery'],
+    bestFor: ['foreign-policy', 'crisis-management', 'program-delivery', 'humanitarian-analysis'],
   },
   {
     id: 'actor-power-map',
     label: 'Actor and power map',
     description: 'A structured map of actors, approvers, blockers, incentives, claims, and influence.',
-    bestFor: ['conflict-resolution', 'defence-capture', 'public-affairs'],
+    bestFor: ['conflict-resolution', 'mediator-peace-process', 'defence-capture', 'security-defence', 'public-affairs'],
   },
   {
     id: 'board-brief',
@@ -826,13 +1009,25 @@ export const CAPSULE_OUTPUT_PRODUCTS: CapsuleOutputProduct[] = [
     id: 'compliance-note',
     label: 'Compliance note',
     description: 'Rule/specification check with source receipts, exposure, gaps, and sign-off posture.',
-    bestFor: ['legal-compliance', 'hr-policy', 'public-affairs'],
+    bestFor: ['legal-compliance', 'economic-sanctions', 'hr-policy', 'regulatory-public-affairs', 'public-affairs'],
   },
   {
     id: 'agent-handover',
     label: 'Agent handover',
     description: 'Allowed actions, prohibited actions, escalation rules, source scope, and output goals.',
     bestFor: ['generic-policy', 'research-direction', 'crisis-management', 'program-delivery'],
+  },
+  {
+    id: 'allegation-matrix',
+    label: 'Allegation matrix',
+    description: 'Rights allegations with legal thresholds, source reliability, chain-of-custody notes, and evidence gaps.',
+    bestFor: ['human-rights-accountability', 'legal-compliance'],
+  },
+  {
+    id: 'information-environment-brief',
+    label: 'Information environment brief',
+    description: 'Narratives, media/source posture, disinformation risk, cyber posture, and response options.',
+    bestFor: ['information-cyber', 'public-affairs', 'foreign-policy'],
   },
 ];
 
@@ -959,6 +1154,72 @@ export function normalizeCapsuleRepositoryMetadata(input: Partial<CapsuleReposit
     freshness,
     lastIngestionRunId: input.lastIngestionRunId ?? null,
     updatedAt: input.updatedAt ?? new Date(0).toISOString(),
+  };
+}
+
+export function normalizeCapsuleRepositoryContract(input: {
+  metadata: Partial<CapsuleRepositoryMetadata> & { capsuleId: string; ownerId: string };
+  documentRefs?: Partial<CapsuleRepositoryDocumentRef>[];
+  sourceRefs?: Partial<CapsuleRepositorySourceRef>[];
+  spanRefs?: Partial<CapsuleRepositorySpanRef>[];
+  outputHistoryIds?: string[];
+  evaluationIds?: string[];
+  memoryIds?: string[];
+}): CapsuleRepositoryContract {
+  const metadata = normalizeCapsuleRepositoryMetadata(input.metadata);
+  const documentRefs = (input.documentRefs ?? [])
+    .filter((document): document is Partial<CapsuleRepositoryDocumentRef> & { documentId: string } => Boolean(document.documentId?.trim()))
+    .map((document) => ({
+      documentId: document.documentId.trim(),
+      title: document.title?.trim() || document.documentId.trim(),
+      storageObjectRef: document.storageObjectRef?.trim() || null,
+      sourceReceiptIds: uniqueStrings(document.sourceReceiptIds),
+      chunkCount: Math.max(0, Math.floor(document.chunkCount ?? 0)),
+      pageRefs: uniqueStrings(document.pageRefs),
+      paragraphRefs: uniqueStrings(document.paragraphRefs),
+      embeddingStatus: document.embeddingStatus ?? metadata.embeddingStatus,
+      retrievalBackend: document.retrievalBackend ?? metadata.retrievalBackend,
+      freshness: document.freshness ?? metadata.freshness,
+    }));
+  const sourceRefs = (input.sourceRefs ?? [])
+    .filter((source): source is Partial<CapsuleRepositorySourceRef> & { sourceReceiptId: string } => Boolean(source.sourceReceiptId?.trim()))
+    .map((source) => ({
+      sourceReceiptId: source.sourceReceiptId.trim(),
+      label: source.label?.trim() || source.sourceReceiptId.trim(),
+      uri: source.uri?.trim() || null,
+      tags: uniqueStrings(source.tags),
+      reliabilityNote: source.reliabilityNote?.trim() || null,
+      citationGaps: uniqueStrings(source.citationGaps),
+      attachedDocumentIds: uniqueStrings(source.attachedDocumentIds),
+    }));
+  const spanRefs = (input.spanRefs ?? [])
+    .filter((span): span is Partial<CapsuleRepositorySpanRef> & { spanId: string; documentId: string } => Boolean(span.spanId?.trim() && span.documentId?.trim()))
+    .map((span) => ({
+      spanId: span.spanId.trim(),
+      documentId: span.documentId.trim(),
+      chunkId: span.chunkId?.trim() || null,
+      pageRef: span.pageRef?.trim() || null,
+      paragraphRef: span.paragraphRef?.trim() || null,
+      sourceReceiptId: span.sourceReceiptId?.trim() || null,
+    }));
+
+  return {
+    metadata: {
+      ...metadata,
+      documentIds: uniqueStrings([...metadata.documentIds, ...documentRefs.map((document) => document.documentId)]),
+      sourceReceiptIds: uniqueStrings([...metadata.sourceReceiptIds, ...sourceRefs.map((source) => source.sourceReceiptId)]),
+      storageObjectRefs: uniqueStrings([
+        ...metadata.storageObjectRefs,
+        ...documentRefs.map((document) => document.storageObjectRef ?? ''),
+      ]),
+      chunkCount: Math.max(metadata.chunkCount, documentRefs.reduce((total, document) => total + document.chunkCount, 0)),
+    },
+    documentRefs,
+    sourceRefs,
+    spanRefs,
+    outputHistoryIds: uniqueStrings(input.outputHistoryIds),
+    evaluationIds: uniqueStrings(input.evaluationIds),
+    memoryIds: uniqueStrings(input.memoryIds),
   };
 }
 
@@ -1128,7 +1389,7 @@ export function contextCapsuleLoginHref(
 ): string {
   const params = new URLSearchParams({
     mode: 'signup',
-    redirect: '/app/assistant',
+    redirect: '/app?panel=ask',
   });
   if (prompt.trim()) params.set('capsulePrompt', prompt.trim());
   if (templateId) params.set('capsuleTemplate', templateId);

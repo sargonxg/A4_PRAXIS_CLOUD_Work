@@ -18,7 +18,7 @@ describe('dashboard next moves persistence contract', () => {
           id: 'memo-drafter',
           label: 'Memo Drafter',
           detail: 'Turn the selected cores into a reviewable draft.',
-          href: '/app/write?situationId=sit-1',
+          href: '/app?panel=memo&situationId=sit-1',
           emphasis: 'primary',
         },
         {
@@ -53,8 +53,8 @@ describe('dashboard next moves persistence contract', () => {
       userModelId: 'foreign-policy-analyst',
       now: '2026-05-12T12:00:00.000Z',
       moves: [
-        { id: 'research', label: 'Research', detail: 'Pull fresh evidence.', href: '/app/tools' },
-        { id: 'memo', label: 'Memo', detail: 'Draft the memo.', href: '/app/write' },
+        { id: 'research', label: 'Research', detail: 'Pull fresh evidence.', href: '/app?panel=advanced' },
+        { id: 'memo', label: 'Memo', detail: 'Draft the memo.', href: '/app?panel=memo' },
       ],
     });
 
@@ -78,8 +78,8 @@ describe('dashboard next moves persistence contract', () => {
       userModelId: 'foreign-policy-analyst',
       now: '2026-05-12T12:00:00.000Z',
       moves: [
-        { id: 'research', label: 'Research', detail: 'Pull fresh evidence.', href: '/app/tools', status: 'done' },
-        { id: 'memo', label: 'Memo', detail: 'Draft the memo.', href: '/app/write' },
+        { id: 'research', label: 'Research', detail: 'Pull fresh evidence.', href: '/app?panel=advanced', status: 'done' },
+        { id: 'memo', label: 'Memo', detail: 'Draft the memo.', href: '/app?panel=memo' },
       ],
     });
     const next = sanitizeWorkspaceNextMoves({
@@ -87,7 +87,7 @@ describe('dashboard next moves persistence contract', () => {
       userModelId: 'foreign-policy-analyst',
       now: '2026-05-12T12:10:00.000Z',
       moves: [
-        { id: 'ask-follow-up', label: 'Ask follow-up', detail: 'Check the open question.', href: '/app/assistant' },
+        { id: 'ask-follow-up', label: 'Ask follow-up', detail: 'Check the open question.', href: '/app?panel=ask' },
       ],
     });
 

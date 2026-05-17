@@ -14,6 +14,7 @@ Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 51/
 | argus | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | assistant | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | auto-briefings | 6/7 | yes | no | yes | yes | yes | yes | yes |
+| brainstorming-table | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | brief-builder | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | briefing | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | calendar | 6/7 | yes | no | yes | yes | yes | yes | yes |
@@ -43,22 +44,21 @@ Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 51/
 | peacebuilding-index | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | policy-memo | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | power-map | 6/7 | yes | no | yes | yes | yes | yes | yes |
+| red-team-review | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | report-studio | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | sanctions | 6/7 | yes | no | yes | yes | yes | yes | yes |
+| scenarios | 6/7 | yes | no | yes | yes | yes | yes | yes |
+| settings | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | situation-intelligence | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | source-monitor | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | source-scout | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | sources-library | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | stakeholder-map | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | talking-points | 6/7 | yes | no | yes | yes | yes | yes | yes |
+| team | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | timeline | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | treaty-analyzer | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | un-toolkit | 6/7 | yes | no | yes | yes | yes | yes | yes |
-| brainstorming-table | 7/7 | yes | yes | yes | yes | yes | yes | yes |
-| red-team-review | 7/7 | yes | yes | yes | yes | yes | yes | yes |
-| scenarios | 7/7 | yes | yes | yes | yes | yes | yes | yes |
-| settings | 7/7 | yes | yes | yes | yes | yes | yes | yes |
-| team | 7/7 | yes | yes | yes | yes | yes | yes | yes |
 
 ## Gaps
 
@@ -72,6 +72,7 @@ Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 51/
 - argus: missing page
 - assistant: missing page
 - auto-briefings: missing page
+- brainstorming-table: missing page
 - brief-builder: missing page
 - briefing: missing page
 - calendar: missing page
@@ -101,14 +102,18 @@ Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 51/
 - peacebuilding-index: missing page
 - policy-memo: missing page
 - power-map: missing page
+- red-team-review: missing page
 - report-studio: missing page
 - sanctions: missing page
+- scenarios: missing page
+- settings: missing page
 - situation-intelligence: missing page
 - source-monitor: missing page
 - source-scout: missing page
 - sources-library: missing page
 - stakeholder-map: missing page
 - talking-points: missing page
+- team: missing page
 - timeline: missing page
 - treaty-analyzer: missing page
 - un-toolkit: missing page

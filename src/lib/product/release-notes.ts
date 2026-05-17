@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.17.01',
+    version: '6.4.1',
+    date: '2026-05-17',
+    title: 'Knowledge Library backend for capsule documents',
+    summary: 'PRAXIS now has a user-scoped Knowledge Library backend that organizes uploaded documents into repositories, capsule links, and AI-generated digests for better Ask PRAXIS retrieval.',
+    category: 'runtime',
+    items: [
+      'Added owner-scoped knowledge repositories and knowledge-document records over the existing document ingestion pipeline.',
+      'Document uploads can now carry repository, category, tag, and capsule association metadata while preserving the canonical upload/chunk/embed path.',
+      'Added Vertex/Gemini-backed structured document digestion for summaries, claims, dates, causal links, human-friction signals, and follow-up research questions.',
+      'Ask PRAXIS corpus retrieval now includes Knowledge Library digests alongside uploaded document chunks.',
+    ],
+  },
+  {
     buildNumber: '2026.05.16.14',
     version: '6.4.1',
     date: '2026-05-16',

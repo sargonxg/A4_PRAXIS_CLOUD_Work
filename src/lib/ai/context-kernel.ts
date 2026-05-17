@@ -9,6 +9,7 @@ import {
   type InjectableContextInput,
 } from '@/lib/context/context-injection';
 import type { CapsuleServiceDeps } from '@/lib/context/capsule-service';
+import type { CapsuleRepositoryMetadata } from '@/lib/product/context-capsules';
 
 export type MemoryType = 'semantic' | 'episodic' | 'procedural';
 
@@ -47,6 +48,42 @@ export interface TurnCapsule {
   tokenBudgetReport: { maxInputTokens: number; reservedOutputTokens: number; estimatedContextChars: number };
   injectableContext: InjectableContext;
   memory: Record<MemoryType, KernelMemoryItem[]>;
+  retrievalPlan: CapsuleRetrievalPlan;
+}
+
+export type CapsuleRetrievalLayerId =
+  | 'capsule-core-refs'
+  | 'repository-documents'
+  | 'source-receipts'
+  | 'graph-core'
+  | 'time-core'
+  | 'memory-core'
+  | 'recent-runs'
+  | 'output-history';
+
+export interface CapsuleRetrievalLayer {
+  id: CapsuleRetrievalLayerId;
+  label: string;
+  priority: number;
+  refIds: string[];
+  status: 'ready' | 'missing';
+}
+
+export interface CapsuleRetrievalPlan {
+  capsuleId: string;
+  capsuleVersion: number;
+  repository: {
+    documentIds: string[];
+    sourceReceiptIds: string[];
+    storageObjectRefs: string[];
+    chunkCount: number;
+    embeddingStatus: CapsuleRepositoryMetadata['embeddingStatus'];
+    retrievalBackend: CapsuleRepositoryMetadata['retrievalBackend'];
+    freshness: CapsuleRepositoryMetadata['freshness'];
+    lastIngestionRunId: string | null;
+  };
+  layers: CapsuleRetrievalLayer[];
+  promptBlock: string;
 }
 
 export interface EffectiveCapsuleSlotTrace {
@@ -144,7 +181,7 @@ export async function buildTurnCapsule(
     ...(input.recentToolOutputs ?? []),
   ].join('\n').length;
 
-  return {
+  const baseCapsule = {
     traceId: input.traceId ?? `turn_${Date.now().toString(36)}`,
     capsuleId: injectableContext.capsule.capsuleId,
     capsuleVersion: injectableContext.capsule.version,
@@ -178,6 +215,70 @@ export async function buildTurnCapsule(
     },
     injectableContext,
     memory,
+  } satisfies Omit<TurnCapsule, 'retrievalPlan'>;
+
+  return {
+    ...baseCapsule,
+    retrievalPlan: buildCapsuleRetrievalPlan(baseCapsule),
+  };
+}
+
+export function buildCapsuleRetrievalPlan(
+  capsule: Omit<TurnCapsule, 'retrievalPlan'>,
+  repository?: Partial<CapsuleRepositoryMetadata> | null,
+): CapsuleRetrievalPlan {
+  const refs = capsule.injectableContext.capsule.coreRefs;
+  const repositoryDocumentIds = uniqueStrings(repository?.documentIds ?? refs.documentCoreIds);
+  const sourceReceiptIds = uniqueStrings(repository?.sourceReceiptIds ?? refs.sourceCoreIds);
+  const storageObjectRefs = uniqueStrings(repository?.storageObjectRefs ?? []);
+  const chunkCount = Math.max(0, Math.floor(repository?.chunkCount ?? 0));
+  const layers: CapsuleRetrievalLayer[] = [
+    retrievalLayer('capsule-core-refs', 'Capsule core refs', 1, [
+      refs.userCoreId,
+      refs.situationCoreId,
+      refs.pathCoreId,
+      ...refs.sourceCoreIds,
+      ...refs.documentCoreIds,
+      refs.graphCoreId,
+      refs.timeCoreId,
+      refs.memoryCoreId,
+      ...refs.outputCoreIds,
+    ]),
+    retrievalLayer('repository-documents', 'Attached repository documents', 2, repositoryDocumentIds),
+    retrievalLayer('source-receipts', 'Attached source receipts', 3, sourceReceiptIds),
+    retrievalLayer('graph-core', 'Actor and graph core', 4, refs.graphCoreId ? [refs.graphCoreId] : []),
+    retrievalLayer('time-core', 'Time and watchlist core', 5, refs.timeCoreId ? [refs.timeCoreId] : []),
+    retrievalLayer('memory-core', 'Memory and handover core', 6, [
+      refs.memoryCoreId,
+      ...Object.values(capsule.memory).flat().map((item) => item.id),
+    ]),
+    retrievalLayer('recent-runs', 'Recent run receipts', 7, capsule.recentToolOutputs),
+    retrievalLayer('output-history', 'Output capsule history', 8, refs.outputCoreIds),
+  ];
+  const promptLines = [
+    '## Active Capsule Retrieval Plan',
+    `Capsule: ${capsule.capsuleId} v${capsule.capsuleVersion}`,
+    `Repository: ${repositoryDocumentIds.length} document ref(s), ${sourceReceiptIds.length} source receipt ref(s), ${chunkCount} chunk(s), ${repository?.retrievalBackend ?? 'local-hybrid'} backend, freshness ${repository?.freshness ?? inferRepositoryFreshness(repositoryDocumentIds, sourceReceiptIds)}.`,
+    'Read order:',
+    ...layers.map((layer) => `- ${layer.priority}. ${layer.label}: ${layer.status}${layer.refIds.length ? ` (${layer.refIds.slice(0, 8).join(', ')})` : ''}`),
+    'Answer from capsule core refs first, then repository documents/chunks and source receipts, then graph/time/memory/recent run/output history. Treat missing layers as explicit evidence gaps.',
+  ];
+
+  return {
+    capsuleId: capsule.capsuleId,
+    capsuleVersion: capsule.capsuleVersion,
+    repository: {
+      documentIds: repositoryDocumentIds,
+      sourceReceiptIds,
+      storageObjectRefs,
+      chunkCount,
+      embeddingStatus: repository?.embeddingStatus ?? (chunkCount > 0 ? 'queued' : 'not-started'),
+      retrievalBackend: repository?.retrievalBackend ?? 'local-hybrid',
+      freshness: repository?.freshness ?? inferRepositoryFreshness(repositoryDocumentIds, sourceReceiptIds),
+      lastIngestionRunId: repository?.lastIngestionRunId ?? null,
+    },
+    layers,
+    promptBlock: promptLines.join('\n'),
   };
 }
 
@@ -185,12 +286,12 @@ export function suggestNextActions(capsule: TurnCapsule, surface: 'ask' | 'draft
   const missingSources = capsule.sourceDocumentCore.length === 0;
   const hasGaps = capsule.activeGaps.length > 0;
   const base = [
-    action('find_sources', missingSources ? 98 : hasGaps ? 84 : 48, 'Find sources', 'Fill the most important source gaps before relying on this answer.', '/app/contexts', 'Find sources for the weakest claims in the active Context Capsule.', 'source-search'),
-    action('extract_commitments', capsule.sourceDocumentCore.length ? 86 : 52, 'Extract commitments', 'Pull commitments, obligations, claims, and dates into reviewable proposals.', '/app/canvas', 'Extract commitments and claims from the active capsule sources.', 'commitment-tracking'),
-    action('map_stakeholders', capsule.graphCore ? 62 : 80, 'Map stakeholders', 'Turn actors, claims, and relationships into reviewable graph proposals.', '/app/canvas', 'Map stakeholders, commitments, and evidence gaps from the active capsule.', 'stakeholder-mapping'),
-    action('draft_memo', surface === 'drafting' ? 92 : 68, 'Draft memo', 'Move the answer into an Output Core with citations and explicit gaps.', '/app/write', 'Draft a concise options memo from this capsule and mark weak evidence.', 'brief-generation'),
-    action('review_weak_claim', hasGaps ? 90 : 58, 'Review weak claim', 'Check weak evidence, contradictions, and stale context.', '/app/assistant', 'Review the weakest claim for evidence gaps and unresolved contradictions.', 'evidence-critique'),
-    action('build_scenario', capsule.situationCore ? 64 : 40, 'Build scenario', 'Project next plausible paths from the current capsule.', '/app/canvas', 'Build scenario branches from the active situation capsule.', 'scenario-projection'),
+    action('find_sources', missingSources ? 98 : hasGaps ? 84 : 48, 'Find sources', 'Fill the most important source gaps before relying on this answer.', '/app?panel=library', 'Find sources for the weakest claims in the active Context Capsule.', 'source-search'),
+    action('extract_commitments', capsule.sourceDocumentCore.length ? 86 : 52, 'Extract commitments', 'Pull commitments, obligations, claims, and dates into reviewable proposals.', '/app?panel=canvas', 'Extract commitments and claims from the active capsule sources.', 'commitment-tracking'),
+    action('map_stakeholders', capsule.graphCore ? 62 : 80, 'Map stakeholders', 'Turn actors, claims, and relationships into reviewable graph proposals.', '/app?panel=canvas', 'Map stakeholders, commitments, and evidence gaps from the active capsule.', 'stakeholder-mapping'),
+    action('draft_memo', surface === 'drafting' ? 92 : 68, 'Draft memo', 'Move the answer into an Output Core with citations and explicit gaps.', '/app?panel=memo', 'Draft a concise options memo from this capsule and mark weak evidence.', 'brief-generation'),
+    action('review_weak_claim', hasGaps ? 90 : 58, 'Review weak claim', 'Check weak evidence, contradictions, and stale context.', '/app?panel=ask', 'Review the weakest claim for evidence gaps and unresolved contradictions.', 'evidence-critique'),
+    action('build_scenario', capsule.situationCore ? 64 : 40, 'Build scenario', 'Project next plausible paths from the current capsule.', '/app?panel=canvas', 'Build scenario branches from the active situation capsule.', 'scenario-projection'),
   ].sort((a, b) => b.priority - a.priority);
 
   return base.slice(0, 3);
@@ -296,6 +397,36 @@ function groupVisibleMemory(items: KernelMemoryItem[], capsuleId: string): TurnC
     grouped[item.type].push(item);
   }
   return grouped;
+}
+
+function retrievalLayer(
+  id: CapsuleRetrievalLayerId,
+  label: string,
+  priority: number,
+  refIds: Array<string | null | undefined>,
+): CapsuleRetrievalLayer {
+  const ids = uniqueStrings(refIds);
+  return {
+    id,
+    label,
+    priority,
+    refIds: ids,
+    status: ids.length > 0 ? 'ready' : 'missing',
+  };
+}
+
+function inferRepositoryFreshness(
+  documentIds: string[],
+  sourceReceiptIds: string[],
+): CapsuleRepositoryMetadata['freshness'] {
+  if (documentIds.length === 0 && sourceReceiptIds.length === 0) return 'empty';
+  if (documentIds.length === 0) return 'needs-documents';
+  if (sourceReceiptIds.length === 0) return 'needs-sources';
+  return 'fresh';
+}
+
+function uniqueStrings(values: Array<string | null | undefined>): string[] {
+  return Array.from(new Set(values.map((value) => value?.trim() ?? '').filter(Boolean))).slice(0, 50);
 }
 
 function action(

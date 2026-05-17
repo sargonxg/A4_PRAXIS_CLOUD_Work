@@ -38,6 +38,7 @@ import {
   summarizeToolOutput,
   toolOutputToEvidenceEnvelope,
 } from '@/lib/knowledge/evidence-envelope';
+import { listKnowledgeDocuments } from '@/lib/knowledge/library-service';
 
 const MAX_EXCERPT_CHARS = 480;
 
@@ -230,7 +231,7 @@ async function retrieveDocuments(
 ): Promise<CorpusItem[]> {
   if (!query.trim()) return [];
   const chunks = await retrieveRelevantChunks(uid, situationId, query, { maxChunks: 6 }).catch(() => []);
-  return chunks.map(chunk => ({
+  const chunkItems = chunks.map(chunk => ({
     sourceType: 'documents' as const,
     sourceId: `${chunk.documentId}#${chunk.id}`,
     title: chunk.documentTitle,
@@ -241,6 +242,32 @@ async function retrieveDocuments(
     reason: 'Top-K hybrid match (vector + keyword) over uploaded document chunks',
     score: 1,
   }));
+  const queryTerms = tokenize(query);
+  const digestItems = (await listKnowledgeDocuments(uid, { situationId }).catch(() => []))
+    .filter((document) => document.digest)
+    .map((document): CorpusItem => {
+      const digest = document.digest!;
+      const excerpt = [
+        digest.shortSummary,
+        digest.keyClaims.length ? `Claims: ${digest.keyClaims.slice(0, 3).join('; ')}` : '',
+        digest.causalLinks.length ? `Causal links: ${digest.causalLinks.slice(0, 2).join('; ')}` : '',
+        digest.humanFrictionSignals.length ? `Human friction: ${digest.humanFrictionSignals.slice(0, 2).join('; ')}` : '',
+      ].filter(Boolean).join('\n');
+      return {
+        sourceType: 'documents' as const,
+        sourceId: `${document.documentId}#knowledge-digest`,
+        title: `${document.title} — knowledge digest`,
+        excerpt,
+        citation: `users/${uid}/knowledgeDocuments/${document.id}`,
+        confidence: 'medium' as const,
+        freshness: document.digest?.generatedAt ?? document.updatedAt,
+        reason: 'Knowledge Library digest linked to this situation',
+        score: scoreText([document.title, excerpt, document.tags.join(' ')].join(' '), queryTerms),
+      };
+    })
+    .filter((item) => (item.score ?? 0) > 0)
+    .slice(0, 4);
+  return topByScore([...digestItems, ...chunkItems], 8, false);
 }
 
 async function retrieveGraph(

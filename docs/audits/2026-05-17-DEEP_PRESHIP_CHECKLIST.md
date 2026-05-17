@@ -2,7 +2,7 @@
 
 Date: 2026-05-17
 
-Summary: 119 PASS, 4 WARN, 18 BLOCKED across 141 static pre-ship checks.
+Summary: 118 PASS, 4 WARN, 19 BLOCKED across 141 static pre-ship checks.
 
 This audit is deliberately conservative: live staging checks, Cloud SQL restore tests, load tests, browser sessions, and Vertex billing comparisons remain blocked until run against staging/production credentials and datasets.
 
@@ -160,7 +160,7 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 | BLOCKED | frontend polish files includes EmptyState | frontend polish files is missing required marker. | Add or wire EmptyState before marking this checklist item complete. |
 | BLOCKED | frontend polish files includes ErrorState | frontend polish files is missing required marker. | Add or wire ErrorState before marking this checklist item complete. |
 | BLOCKED | frontend polish files includes Retry | frontend polish files is missing required marker. | Add or wire Retry before marking this checklist item complete. |
-| PASS | frontend polish files includes Skeleton | frontend polish files contains required marker. | None. |
+| BLOCKED | frontend polish files includes Skeleton | frontend polish files is missing required marker. | Add or wire Skeleton before marking this checklist item complete. |
 | PASS | frontend polish files includes Permissions-Policy | frontend polish files contains required marker. | None. |
 
 ## 17. End-to-end product tests

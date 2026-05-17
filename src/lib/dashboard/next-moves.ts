@@ -30,7 +30,7 @@ function cleanText(value: unknown, max = MAX_TEXT): string | null {
 function cleanHref(value: unknown): string | null {
   const href = cleanText(value, 500);
   if (!href) return null;
-  if (href.startsWith('/app/') || href === '/app' || href.startsWith('#')) return href;
+  if (href.startsWith('/app/') || href === '/app' || href.startsWith('/app?') || href.startsWith('#')) return href;
   return null;
 }
 

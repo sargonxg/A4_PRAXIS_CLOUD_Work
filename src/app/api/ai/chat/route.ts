@@ -180,6 +180,9 @@ export const POST = withCalibration('chat', 'ai_chat', {
       capsule: capsuleContext?.capsule ?? null,
       injectableContext: capsuleContext,
     });
+    if (turnCapsule) {
+      systemPrompt += '\n\n' + turnCapsule.retrievalPlan.promptBlock;
+    }
     systemPrompt += '\n\n' + buildAskPraxisPathFrameworkBlock(_user.calibration.path);
 
     // Add super-agent instructions with deep platform knowledge and guardrails
@@ -525,6 +528,11 @@ interface AskRuntimeReceipt extends Record<string, unknown> {
     activeGapCount: number;
     retrievedDocumentIds: string[];
     retrievedSourceIds: string[];
+    planLayerOrder?: string[];
+    repositoryDocumentIds?: string[];
+    repositorySourceReceiptIds?: string[];
+    repositoryChunkCount?: number;
+    repositoryFreshness?: string;
   };
   effectiveSituationId?: string | null;
   resolvedCapsules?: Array<{
@@ -672,6 +680,11 @@ function decorateAskRuntimeReceipt(
       activeGapCount: input.turnCapsule?.activeGaps.length ?? 0,
       retrievedDocumentIds: input.retrievedDocumentIds,
       retrievedSourceIds: input.retrievedSourceIds,
+      planLayerOrder: input.turnCapsule?.retrievalPlan.layers.map((layer) => layer.id),
+      repositoryDocumentIds: input.turnCapsule?.retrievalPlan.repository.documentIds,
+      repositorySourceReceiptIds: input.turnCapsule?.retrievalPlan.repository.sourceReceiptIds,
+      repositoryChunkCount: input.turnCapsule?.retrievalPlan.repository.chunkCount,
+      repositoryFreshness: input.turnCapsule?.retrievalPlan.repository.freshness,
     },
   };
 }

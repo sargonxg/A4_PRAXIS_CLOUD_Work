@@ -16,6 +16,7 @@ import {
   contextCapsuleLoginHref,
   createCapsuleIngestionReceipt,
   getPolicyTeamCategory,
+  normalizeCapsuleRepositoryContract,
   normalizeCapsuleRepositoryMetadata,
   policyTeamCategoryForTags,
   resolveCapsuleRetrievalBackend,
@@ -81,11 +82,16 @@ describe('context capsule product contract', () => {
   });
 
   it('maps every policy path to existing capsule templates and usable suggestions', () => {
+    const outputPathIds = new Set(CAPSULE_OUTPUT_PRODUCTS.flatMap((product) => product.bestFor));
+
     for (const path of POLICY_PATH_PROFILES) {
       expect(path.label).toBeTruthy();
       expect(path.userFrame).toBeTruthy();
       expect(path.suggestedTools.length).toBeGreaterThanOrEqual(3);
       expect(path.suggestedOutputs.length).toBeGreaterThanOrEqual(2);
+      expect(path.sourceTags.length).toBeGreaterThanOrEqual(3);
+      expect(path.missingInfoPrompts.length).toBeGreaterThanOrEqual(3);
+      expect(outputPathIds.has(path.id), `${path.id} has no registered output product`).toBe(true);
 
       for (const templateId of path.defaultTemplates) {
         expect(templateIds.has(templateId), `${path.id} references missing template ${templateId}`).toBe(true);
@@ -129,6 +135,13 @@ describe('context capsule product contract', () => {
   it('defines temporal, causal, and human-friction capsules for complex policy reasoning', () => {
     const templates = new Map(CONTEXT_CAPSULE_TEMPLATES.map((template) => [template.id, template]));
 
+    expect(templates.get('economic-exposure')?.output).toBe('Economic exposure note');
+    expect(templates.get('human-rights-allegation-matrix')?.prompt.toLowerCase()).toContain('chain-of-custody');
+    expect(templates.get('humanitarian-access')?.contextCores).toContain('document');
+    expect(templates.get('information-environment')?.prompt.toLowerCase()).toContain('disinformation');
+    expect(templates.get('climate-development-risk')?.prompt.toLowerCase()).toContain('indicators');
+    expect(templates.get('legal-compliance-review')?.contextCores).toContain('path');
+    expect(templates.get('program-delivery')?.contextCores).toContain('memory');
     expect(templates.get('temporal-causal-map')?.contextCores).toEqual(
       expect.arrayContaining(['time', 'graph', 'objective']),
     );
@@ -193,6 +206,62 @@ describe('context capsule product contract', () => {
     });
     expect(resolveCapsuleRetrievalBackend('vertex-rag-engine', { vertexConfigured: false })).toBe('local-hybrid');
     expect(resolveCapsuleRetrievalBackend('vertex-rag-engine', { vertexConfigured: true })).toBe('vertex-rag-engine');
+  });
+
+  it('normalizes the capsule repository contract for documents, source receipts, spans, and review state', () => {
+    const contract = normalizeCapsuleRepositoryContract({
+      metadata: {
+        capsuleId: 'cap-1',
+        ownerId: 'user-1',
+        documentIds: ['doc-1'],
+        sourceReceiptIds: ['src-1'],
+      },
+      documentRefs: [{
+        documentId: 'doc-2',
+        title: 'Access brief.pdf',
+        storageObjectRef: 'gs://bucket/access-brief.pdf',
+        sourceReceiptIds: ['src-2', 'src-2'],
+        chunkCount: 9,
+        pageRefs: ['p.4'],
+        paragraphRefs: ['para-12'],
+        embeddingStatus: 'embedded',
+      }],
+      sourceRefs: [{
+        sourceReceiptId: 'src-2',
+        label: 'ReliefWeb access update',
+        uri: 'https://example.test/access',
+        tags: ['reliefweb', 'access'],
+        reliabilityNote: 'Operational update; corroborate before legal claims.',
+        citationGaps: ['Needs population figure source.'],
+        attachedDocumentIds: ['doc-2'],
+      }],
+      spanRefs: [{
+        spanId: 'span-1',
+        documentId: 'doc-2',
+        chunkId: 'chunk-4',
+        pageRef: 'p.4',
+        paragraphRef: 'para-12',
+        sourceReceiptId: 'src-2',
+      }],
+      outputHistoryIds: ['out-1'],
+      evaluationIds: ['eval-1'],
+      memoryIds: ['mem-1'],
+    });
+
+    expect(contract.metadata.documentIds).toEqual(['doc-1', 'doc-2']);
+    expect(contract.metadata.sourceReceiptIds).toEqual(['src-1', 'src-2']);
+    expect(contract.metadata.chunkCount).toBe(9);
+    expect(contract.documentRefs[0]).toMatchObject({
+      documentId: 'doc-2',
+      storageObjectRef: 'gs://bucket/access-brief.pdf',
+      embeddingStatus: 'embedded',
+      retrievalBackend: 'local-hybrid',
+    });
+    expect(contract.sourceRefs[0]?.citationGaps).toEqual(['Needs population figure source.']);
+    expect(contract.spanRefs[0]?.paragraphRef).toBe('para-12');
+    expect(contract.outputHistoryIds).toEqual(['out-1']);
+    expect(contract.evaluationIds).toEqual(['eval-1']);
+    expect(contract.memoryIds).toEqual(['mem-1']);
   });
 
   it('creates normalized ingestion receipts for uploads and planned imports', () => {

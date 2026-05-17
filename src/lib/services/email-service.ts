@@ -61,7 +61,7 @@ function baseTemplate(title: string, content: string): string {
   <p style="margin-top:12px">
     <a href="https://praxis.tacitus.me/privacy" style="color:#94A3B8;text-decoration:none">Privacy Policy</a>
     &nbsp;&middot;&nbsp;
-    <a href="https://praxis.tacitus.me/app/settings" style="color:#94A3B8;text-decoration:none">Email Preferences</a>
+    <a href="https://praxis.tacitus.me/app?panel=account" style="color:#94A3B8;text-decoration:none">Email Preferences</a>
   </p>
 </div>
 </div>
@@ -91,7 +91,7 @@ export async function sendWelcomeEmail(email: string, name: string): Promise<boo
         <li><strong>Monitor media</strong> — Track bias, sentiment, and narrative shifts across 50+ outlets</li>
       </ul>
       <div style="text-align:center;margin:24px 0">
-        <a href="https://praxis.tacitus.me/app/assistant" style="display:inline-block;background:#E8B931;color:#0F172A;font-weight:600;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:14px">Open PRAXIS</a>
+        <a href="https://praxis.tacitus.me/app?panel=ask" style="display:inline-block;background:#E8B931;color:#0F172A;font-weight:600;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:14px">Open PRAXIS</a>
       </div>
       <p style="color:#94A3B8;font-size:13px">Questions? Reply to this email or contact us at giulio@tacitus.me</p>
     `),
@@ -174,7 +174,7 @@ export async function sendWeeklySummaryEmail(
         <tbody>${rows}</tbody>
       </table>
       <div style="text-align:center;margin:24px 0">
-        <a href="https://praxis.tacitus.me/app/assistant" style="display:inline-block;background:#E8B931;color:#0F172A;font-weight:600;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:14px">Open PRAXIS</a>
+        <a href="https://praxis.tacitus.me/app?panel=ask" style="display:inline-block;background:#E8B931;color:#0F172A;font-weight:600;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:14px">Open PRAXIS</a>
       </div>
     `),
   });

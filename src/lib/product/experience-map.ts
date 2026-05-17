@@ -23,7 +23,7 @@ export const PRODUCT_EXPERIENCE_AREAS: ProductExperienceArea[] = [
     shortLabel: 'Home',
     summary: 'Choose or create context, then ask PRAXIS from that active stack.',
     mobilePriority: 'primary',
-    defaultHref: '/app/dashboard',
+    defaultHref: '/app',
   },
   {
     id: 'ask',
@@ -31,7 +31,7 @@ export const PRODUCT_EXPERIENCE_AREAS: ProductExperienceArea[] = [
     shortLabel: 'Ask',
     summary: 'Ask from the active User, Situation, Source, Graph, Memory, and Output cores.',
     mobilePriority: 'primary',
-    defaultHref: '/app/assistant',
+    defaultHref: '/app?panel=ask',
   },
   {
     id: 'situation',
@@ -39,7 +39,7 @@ export const PRODUCT_EXPERIENCE_AREAS: ProductExperienceArea[] = [
     shortLabel: 'Canvas',
     summary: 'Inspect or arrange context when the working stack needs a spatial view.',
     mobilePriority: 'primary',
-    defaultHref: '/app/canvas',
+    defaultHref: '/app?panel=canvas',
   },
   {
     id: 'sources',
@@ -47,7 +47,7 @@ export const PRODUCT_EXPERIENCE_AREAS: ProductExperienceArea[] = [
     shortLabel: 'Library',
     summary: 'Upload documents and sources into knowledge cores.',
     mobilePriority: 'primary',
-    defaultHref: '/app/contexts',
+    defaultHref: '/app?panel=library',
   },
   {
     id: 'outputs',
@@ -55,7 +55,7 @@ export const PRODUCT_EXPERIENCE_AREAS: ProductExperienceArea[] = [
     shortLabel: 'Memo',
     summary: 'Write briefs, memos, and handovers from the active context.',
     mobilePriority: 'primary',
-    defaultHref: '/app/write',
+    defaultHref: '/app?panel=memo',
   },
   {
     id: 'advanced',
@@ -63,43 +63,12 @@ export const PRODUCT_EXPERIENCE_AREAS: ProductExperienceArea[] = [
     shortLabel: 'More',
     summary: 'Deep controls, tools, graph operations, admin, and settings.',
     mobilePriority: 'advanced',
-    defaultHref: '/app/tools',
+    defaultHref: '/app?panel=advanced',
   },
 ];
 
 export const PRODUCT_EXPERIENCE_ROUTES: ProductExperienceRoute[] = [
-  { pattern: '/app', area: 'home', label: 'App redirect', mobilePriority: 'primary' },
-  { pattern: '/app/dashboard', area: 'home', label: 'Home dashboard', mobilePriority: 'primary' },
-  { pattern: '/app/assistant', area: 'ask', label: 'Ask PRAXIS workspace', mobilePriority: 'primary' },
-  // /app/cases is folded into /app/contexts via server redirect.
-  { pattern: '/app/cases', area: 'home', label: 'Contexts (legacy redirect)', mobilePriority: 'secondary' },
-  { pattern: '/app/contexts', area: 'sources', label: 'Core Library', mobilePriority: 'secondary' },
-  // /app/situations folds into /app/contexts; /app/situations/new stays live during v6 transition.
-  { pattern: '/app/situations', area: 'home', label: 'Cores (legacy redirect)', mobilePriority: 'secondary' },
-  { pattern: '/app/situations/new', area: 'home', label: 'New Situation wizard', mobilePriority: 'secondary' },
-  { pattern: '/app/cores/context', area: 'advanced', label: 'Context Core', mobilePriority: 'advanced' },
-  { pattern: '/app/cores/user', area: 'advanced', label: 'User Core', mobilePriority: 'advanced' },
-  { pattern: '/app/write', area: 'outputs', label: 'Write with PRAXIS', mobilePriority: 'primary' },
-  { pattern: '/app/canvas', area: 'situation', label: 'Canvas', mobilePriority: 'primary' },
-  { pattern: '/app/tools', area: 'advanced', label: 'Advanced tools', mobilePriority: 'advanced' },
-  { pattern: '/app/tools/archive', area: 'advanced', label: 'Tool archive', mobilePriority: 'advanced' },
-  // /app/profile is folded into /app/settings/profile via server redirect.
-  { pattern: '/app/profile', area: 'advanced', label: 'Settings · profile (legacy redirect)', mobilePriority: 'advanced' },
-  { pattern: '/app/settings', area: 'advanced', label: 'Settings', mobilePriority: 'advanced' },
-  { pattern: '/app/settings/api-keys', area: 'advanced', label: 'API keys', mobilePriority: 'advanced' },
-  { pattern: '/app/settings/graph-backend', area: 'advanced', label: 'Graph backend settings', mobilePriority: 'advanced' },
-  { pattern: '/app/settings/model-preferences', area: 'advanced', label: 'Model preferences', mobilePriority: 'advanced' },
-  { pattern: '/app/settings/notifications', area: 'advanced', label: 'Notifications', mobilePriority: 'advanced' },
-  { pattern: '/app/settings/preferences', area: 'advanced', label: 'Preferences', mobilePriority: 'advanced' },
-  { pattern: '/app/settings/profile', area: 'advanced', label: 'Profile settings', mobilePriority: 'advanced' },
-  { pattern: '/app/settings/system-health', area: 'advanced', label: 'System health', mobilePriority: 'advanced' },
-  { pattern: '/app/admin', area: 'advanced', label: 'Admin', mobilePriority: 'advanced' },
-  { pattern: '/app/admin/advisor-feed', area: 'advanced', label: 'Advisor feed admin', mobilePriority: 'advanced' },
-  { pattern: '/app/admin/advisors', area: 'advanced', label: 'Advisors admin', mobilePriority: 'advanced' },
-  { pattern: '/app/admin/diagnostics', area: 'advanced', label: 'Diagnostics', mobilePriority: 'advanced' },
-  { pattern: '/app/admin/domains', area: 'advanced', label: 'Domains admin', mobilePriority: 'advanced' },
-  { pattern: '/app/admin/operator-console', area: 'advanced', label: 'Operator console', mobilePriority: 'advanced' },
-  { pattern: '/app/admin/users', area: 'advanced', label: 'Users admin', mobilePriority: 'advanced' },
+  { pattern: '/app', area: 'home', label: 'Unified PRAXIS cockpit', mobilePriority: 'primary' },
 ];
 
 export const WORKBENCH_TAB_EXPERIENCE: Record<string, ProductExperienceAreaId> = {
