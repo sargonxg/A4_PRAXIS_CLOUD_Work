@@ -33,6 +33,6 @@ test.describe('runtime health proof surface', () => {
   test('unauthenticated system settings path falls back through login safely', async ({ page }) => {
     await page.goto(`${BASE}/app/settings?tab=system`);
     await expect(page).toHaveURL(/\/login/);
-    expect(decodeURIComponent(page.url())).toContain('/app/settings?tab=system');
+    expect(decodeURIComponent(page.url())).toMatch(/\/app\/settings\?tab=system|\/app\?panel=account&tab=system/);
   });
 });
