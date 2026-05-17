@@ -1,3 +1,11 @@
+/**
+ * Internal worker-only execution endpoint.
+ *
+ * AUTH: gated by `verifyAgentWorkerRequest` (HMAC + worker token). NOT a
+ * user-facing route. Do NOT add `withAuth` — browser sessions are rejected
+ * by design. Worker authentication contract lives in
+ * `src/lib/agent-runtime/worker-auth.ts`.
+ */
 import { NextResponse } from 'next/server';
 import { verifyAgentWorkerRequest } from '@/lib/agent-runtime/worker-auth';
 import { AgentWorkerError, executeAgentRun, type ExecuteAgentRunPayload } from '@/lib/agent-runtime/worker';
