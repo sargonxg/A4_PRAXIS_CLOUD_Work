@@ -35,6 +35,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { AccountProfileButton } from '@/components/app/account-profile-button';
+import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
 import { ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
 import type { ModelPreferenceValue } from '@/lib/ai/model-preferences';
 import {
@@ -1368,6 +1369,9 @@ export function TaskletPraxisWorkbench({
               <Sparkles className="h-4 w-4 text-[#ca4a25]" />
               PRAXIS uses your ContextCapsule Lite, documents, and policy tools
             </p>
+            <div className="mt-3" data-testid="runtime-health-semaphore">
+              <RuntimeHealthSemaphore isAuthenticated={isAuthenticated} />
+            </div>
             <h1 className="mt-7 max-w-4xl text-center font-serif text-5xl font-semibold tracking-tight text-[#151515] sm:text-6xl">
               What can PRAXIS do for you?
             </h1>

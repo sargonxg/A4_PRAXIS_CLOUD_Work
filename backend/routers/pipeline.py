@@ -53,6 +53,15 @@ class IngestUrlRequest(BaseModel):
     url: str
 
 
+def retired_gdelt_ingest_response() -> dict[str, object]:
+    return {
+        "ok": True,
+        "status": "retired",
+        "route": "pipeline/ingest-gdelt",
+        "message": "GDELT ingestion is retired; request acknowledged without work.",
+    }
+
+
 async def _update_job_progress(job_id: str | None, percent: int, message: str) -> None:
     if not job_id:
         return
@@ -242,4 +251,17 @@ async def ingest_url(
         "total_edges": G.number_of_edges(),
         "analysis": analysis,
     }
+
+
+@router.post("/ingest-gdelt")
+async def ingest_gdelt_retired(
+    token: dict = Depends(verify_firebase_token),
+):
+    """Compatibility guard for retired GDELT worker calls.
+
+    Active compliance posture retired dedicated GDELT workers and clients.
+    Keep this endpoint intentional so old callers do not produce noisy 404s.
+    """
+    _ = token["uid"]
+    return retired_gdelt_ingest_response()
 

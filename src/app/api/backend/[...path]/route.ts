@@ -53,9 +53,19 @@ const ALLOWED_BACKEND_PATHS: Array<{ method: string; pattern: RegExp }> = [
 ];
 
 export function isAllowedBackendPath(method: string, path: string): boolean {
+  if (method.toUpperCase() === 'POST' && path === 'pipeline/ingest-gdelt') return true;
   return ALLOWED_BACKEND_PATHS.some(
     (entry) => entry.method === method.toUpperCase() && entry.pattern.test(path),
   );
+}
+
+export function retiredGdeltIngestResponse(): Record<string, unknown> {
+  return {
+    ok: true,
+    status: 'retired',
+    route: 'pipeline/ingest-gdelt',
+    message: 'GDELT ingestion is retired; request acknowledged without work.',
+  };
 }
 
 async function proxyBackendRequest(req: Request, uid: string, path: string): Promise<Response> {
@@ -172,6 +182,9 @@ export const POST = withAuth<RouteContext>(async (req, user, context) => {
   const path = parts.join('/');
   if (!isAllowedBackendPath('POST', path)) {
     return NextResponse.json({ error: 'Backend path not allowed' }, { status: 404 });
+  }
+  if (path === 'pipeline/ingest-gdelt') {
+    return NextResponse.json(retiredGdeltIngestResponse());
   }
   return proxyBackendRequest(req, user.uid, path);
 });

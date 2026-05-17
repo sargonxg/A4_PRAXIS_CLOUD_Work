@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { BarChart3, CreditCard, KeyRound, ShieldCheck, UserRound, UsersRound } from 'lucide-react';
+import { Activity, BarChart3, CreditCard, KeyRound, ShieldCheck, UserRound, UsersRound } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
 import { cn } from '@/lib/utils/cn';
@@ -15,9 +15,34 @@ const tabs = [
   { id: 'usage', label: 'Usage', icon: BarChart3 },
   { id: 'security', label: 'Security', icon: ShieldCheck },
   { id: 'connectors', label: 'Connectors', icon: KeyRound },
+  { id: 'system', label: 'System', icon: Activity },
 ] as const;
 
 type SettingsTab = (typeof tabs)[number]['id'];
+type RuntimeHealthStatus = 'ok' | 'degraded' | 'down';
+type RuntimeHealthCheckStatus = RuntimeHealthStatus | 'unconfigured';
+type RuntimeHealthPayload = {
+  status: RuntimeHealthStatus;
+  checkedAt: string;
+  summary: string;
+  checks: Array<{
+    id: string;
+    label: string;
+    status: RuntimeHealthCheckStatus;
+    latencyMs?: number;
+  }>;
+};
+type AdminSystemHealthPayload = RuntimeHealthPayload & {
+  admin?: {
+    accessReason: string;
+    checks: SystemHealthCheck[];
+  };
+};
+type SystemHealthCheck = RuntimeHealthPayload['checks'][number] & {
+  endpoint?: string;
+  detail?: string;
+  repairAction?: string;
+};
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
@@ -27,6 +52,8 @@ export default function SettingsPage() {
   const nextReset = nextWeeklyResetLabel();
   const [weeklyUsage, setWeeklyUsage] = useState<{ used: number; remaining: number } | null>(null);
   const [billingStatus, setBillingStatus] = useState<string | null>(null);
+  const [systemHealth, setSystemHealth] = useState<AdminSystemHealthPayload | null>(null);
+  const [systemHealthLoading, setSystemHealthLoading] = useState(false);
 
   useEffect(() => {
     fetch('/api/usage/weekly-free', { credentials: 'include' })
@@ -38,6 +65,41 @@ export default function SettingsPage() {
       })
       .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'system') return;
+    let cancelled = false;
+
+    async function refreshSystemHealth() {
+      setSystemHealthLoading(true);
+      try {
+        const adminResponse = await fetch('/api/admin/system-health', {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        const adminPayload = await adminResponse.json().catch(() => null);
+        if (!cancelled && adminResponse.ok && isRuntimeHealthPayload(adminPayload)) {
+          setSystemHealth(adminPayload);
+          return;
+        }
+
+        const publicResponse = await fetch('/api/health/runtime', { cache: 'no-store' });
+        const publicPayload = await publicResponse.json().catch(() => null);
+        if (!cancelled && publicResponse.ok && isRuntimeHealthPayload(publicPayload)) {
+          setSystemHealth(publicPayload);
+        }
+      } finally {
+        if (!cancelled) setSystemHealthLoading(false);
+      }
+    }
+
+    void refreshSystemHealth();
+    const interval = window.setInterval(() => void refreshSystemHealth(), 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [activeTab]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -168,6 +230,13 @@ export default function SettingsPage() {
             actionLabel="Open cockpit"
           />
         ) : null}
+
+        {activeTab === 'system' ? (
+          <SystemHealthPanel
+            health={systemHealth}
+            loading={systemHealthLoading}
+          />
+        ) : null}
       </section>
     </div>
   );
@@ -201,6 +270,77 @@ export default function SettingsPage() {
     }
     setBillingStatus(payload?.error ?? 'Billing portal is unavailable. Use pricing or contact TACITUS.');
   }
+}
+
+function SystemHealthPanel({
+  health,
+  loading,
+}: {
+  health: AdminSystemHealthPayload | null;
+  loading: boolean;
+}) {
+  const checks: SystemHealthCheck[] = health?.admin?.checks ?? health?.checks ?? [];
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold text-navy-950">System health</h2>
+          <p className="mt-1 text-sm text-navy-500">
+            {loading && !health ? 'Checking PRAXIS runtime...' : health?.summary ?? 'Runtime health is unavailable.'}
+          </p>
+        </div>
+        <span className={cn(
+          'inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold',
+          health?.status === 'ok' ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+            : health?.status === 'down' ? 'border-rose-200 bg-rose-50 text-rose-800'
+              : 'border-amber-200 bg-amber-50 text-amber-800',
+        )}>
+          <span className={cn(
+            'h-2 w-2 rounded-full',
+            health?.status === 'ok' ? 'bg-emerald-500'
+              : health?.status === 'down' ? 'bg-rose-600'
+                : 'bg-amber-500',
+          )} />
+          {health?.summary ?? 'Checking systems'}
+        </span>
+      </div>
+
+      <div className="mt-5 divide-y divide-navy-100 rounded-lg border border-navy-100">
+        {checks.map((check) => (
+          <div key={check.id} className="grid gap-2 px-4 py-3 sm:grid-cols-[220px_minmax(0,1fr)]">
+            <span className="text-sm font-semibold text-navy-500">{check.label}</span>
+            <span className="min-w-0 text-sm text-navy-950">
+              <span className={cn(
+                'mr-2 inline-flex rounded px-2 py-0.5 text-xs font-semibold',
+                check.status === 'ok' ? 'bg-emerald-50 text-emerald-800'
+                  : check.status === 'down' ? 'bg-rose-50 text-rose-800'
+                    : check.status === 'unconfigured' ? 'bg-slate-100 text-slate-600'
+                      : 'bg-amber-50 text-amber-800',
+              )}>
+                {check.status}
+              </span>
+              {typeof check.latencyMs === 'number' ? `${check.latencyMs}ms` : null}
+              {check.endpoint ? (
+                <span className="ml-2 font-mono text-xs text-navy-400">{check.endpoint}</span>
+              ) : null}
+              {check.detail ? (
+                <span className="mt-2 block text-xs leading-5 text-navy-500">{check.detail}</span>
+              ) : null}
+              {check.repairAction ? (
+                <span className="mt-1 block text-xs font-semibold text-navy-600">{check.repairAction}</span>
+              ) : null}
+            </span>
+          </div>
+        ))}
+        {!checks.length ? (
+          <div className="px-4 py-3 text-sm text-navy-500">No runtime health checks returned.</div>
+        ) : null}
+      </div>
+      <p className="mt-3 text-xs leading-5 text-navy-400">
+        Admin users see endpoint details and repair guidance. Other users see the same sanitized summary shown on the homepage.
+      </p>
+    </div>
+  );
 }
 
 function SettingsPanel({
@@ -251,4 +391,15 @@ function nextWeeklyResetLabel(): string {
   next.setDate(now.getDate() + daysUntilMonday);
   next.setHours(0, 0, 0, 0);
   return next.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+function isRuntimeHealthPayload(value: unknown): value is AdminSystemHealthPayload {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<AdminSystemHealthPayload>;
+  return (
+    (candidate.status === 'ok' || candidate.status === 'degraded' || candidate.status === 'down') &&
+    typeof candidate.checkedAt === 'string' &&
+    typeof candidate.summary === 'string' &&
+    Array.isArray(candidate.checks)
+  );
 }

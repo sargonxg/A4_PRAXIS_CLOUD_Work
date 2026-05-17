@@ -181,7 +181,7 @@ export function buildAskTimelineMessages(turns: AskThreadTurnRecord[]): AskTimel
         frameworkSteps: turn.frameworkSteps,
         toolInvocations: turn.toolInvocations,
       },
-      answerEnvelope: isRecord(turn.runtime?.answerEnvelope) ? turn.runtime.answerEnvelope as AskAnswerEnvelope : undefined,
+      answerEnvelope: isRecord(turn.runtime?.answerEnvelope) ? turn.runtime.answerEnvelope as unknown as AskAnswerEnvelope : undefined,
     },
   ]);
 }

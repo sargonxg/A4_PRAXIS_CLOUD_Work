@@ -12,6 +12,7 @@ export function resolvePostLoginRedirect(
   if (!onboardingComplete) return '/onboarding';
 
   if (explicit?.startsWith('/agents/')) return explicit;
+  if (explicit === '/app/settings?tab=system') return explicit;
   if (explicit && (explicit === '/app' || explicit.startsWith('/app/'))) return '/app';
 
   return '/app';
