@@ -99,5 +99,5 @@ graphify update .
 # passed; graph.json and GRAPH_REPORT.md refreshed, graph.html skipped because the graph exceeds the HTML node limit
 
 npm run build
-# passed; Turbopack reported the existing NFT tracing warning for next.config.ts -> semantica rust runtime
+# passed
 ```

@@ -118,24 +118,13 @@ function sourceFreshness(capsule: PraxisCapsule, situation?: Partial<Situation> 
 
 function graphReadiness(capsule: PraxisCapsule, situation?: Partial<Situation> | null): TrustContributor {
   const graphNodes = situation?.graphEntities ?? 0;
-  const hasGraphCore = Boolean(capsule.coreRefs.graphCoreId || situation?.semanticaContextGraph);
-  const graphQuality = situation?.semanticaContextGraph?.quality;
-  const semanticaScore = graphQuality
-    ? clamp(average([
-      graphQuality.nodeCount ? Math.min(graphQuality.nodeCount / 25, 1) * 100 : 0,
-      graphQuality.edgeCount ? Math.min(graphQuality.edgeCount / 40, 1) * 100 : 0,
-      graphQuality.hasContextRoot ? 100 : 0,
-      graphQuality.hasFrame ? 100 : 0,
-      graphQuality.semanticaReady ? 100 : 45,
-    ]))
-    : 0;
+  const hasGraphCore = Boolean(capsule.coreRefs.graphCoreId);
   return {
     id: 'graph-readiness',
     signal: 'graph readiness',
     score: clamp(Math.max(
       hasGraphCore ? 55 : 0,
       graphNodes ? (graphNodes / 25) * 100 : 0,
-      semanticaScore,
     )),
     weight: 0.2,
     detail: hasGraphCore

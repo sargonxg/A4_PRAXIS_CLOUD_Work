@@ -1,10 +1,3 @@
-FROM rust:1-alpine AS rust-builder
-WORKDIR /app/rust/semantica-core
-RUN apk add --no-cache musl-dev
-COPY rust/semantica-core/Cargo.toml rust/semantica-core/Cargo.lock ./
-COPY rust/semantica-core/src ./src
-RUN cargo build --release --bin praxis-semantica-core
-
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -51,14 +44,11 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV PRAXIS_SEMANTICA_CORE_BIN=/app/bin/praxis-semantica-core
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs && \
-    mkdir -p /app/bin
+    adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=rust-builder --chown=nextjs:nodejs /app/rust/semantica-core/target/release/praxis-semantica-core ./bin/praxis-semantica-core
 USER nextjs
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

@@ -69,11 +69,6 @@ backend/**/__pycache__/
 *.egg-info/
 .pytest_cache/
 
-# Rust
-target/
-rust/**/target/
-rust/**/target-ci/
-
 # Docker
 docker-compose.override.yml
 

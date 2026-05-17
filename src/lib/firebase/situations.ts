@@ -499,7 +499,7 @@ export async function createSituationAdmin(
     glaslStage: typeof data.glaslStage === 'number' || data.glaslStage === null ? data.glaslStage : null,
     escalationTrend: data.escalationTrend ?? 'stable',
     actorCount: data.actors.length,
-    graphEntities: data.semanticaContextGraph?.quality.nodeCount ?? 0,
+    graphEntities: 0,
     documentCount: data.initialDocumentIds?.length ?? 0,
     ...(data.sourceUrls?.length ? { sourceUrls: data.sourceUrls } : {}),
     ...(data.contextNotes ? { contextNotes: data.contextNotes } : {}),
@@ -527,8 +527,6 @@ export async function createSituationAdmin(
     ...(data.sourceCategoryOrder?.length ? { sourceCategoryOrder: data.sourceCategoryOrder } : {}),
     ...(data.workflowPath ? { workflowPath: data.workflowPath } : {}),
     ...(data.workflowPathLabel ? { workflowPathLabel: data.workflowPathLabel } : {}),
-    ...(data.semanticaLayer ? { semanticaLayer: data.semanticaLayer } : {}),
-    ...(data.semanticaContextGraph ? { semanticaContextGraph: data.semanticaContextGraph } : {}),
     ...(data.customSources?.length ? { customSources: data.customSources } : {}),
     ...(data.domain ? { domain: data.domain } : {}),
     ...(typeof data.domainConfidence === 'number'
@@ -542,22 +540,6 @@ export async function createSituationAdmin(
     updatedAt: now,
   };
   await ref.set(situation);
-  if (data.semanticaContextGraph) {
-    await ref.collection('graph').doc('semantica-context-core').set({
-      schemaVersion: data.semanticaContextGraph.schemaVersion,
-      adapterVersion: data.semanticaContextGraph.adapterVersion,
-      targetSemanticaVersion: data.semanticaContextGraph.targetSemanticaVersion,
-      contextCoreId: data.semanticaContextGraph.contextCoreId,
-      nodes: data.semanticaContextGraph.entities,
-      edges: data.semanticaContextGraph.relationships,
-      quality: data.semanticaContextGraph.quality,
-      capabilities: data.semanticaContextGraph.intendedSemanticaCapabilities,
-      storageRole: 'owner-scoped-firestore-graph-seed',
-      postgresPromotionStatus: 'pending-worker',
-      createdAt: now,
-      updatedAt: now,
-    });
-  }
   return situation;
 }
 

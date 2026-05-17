@@ -24,7 +24,6 @@ Generated local bloat removed before source cleanup:
 | Path | Reason |
 |---|---|
 | `.code-review-graph/` | ignored local graph database, ~89.6 MB |
-| `rust/semantica-core/target-ci/` | ignored Rust CI build output, ~94 MB |
 | `test-results/` | ignored Playwright output |
 
 ## Removed From Source

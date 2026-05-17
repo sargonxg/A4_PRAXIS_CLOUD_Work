@@ -143,24 +143,5 @@ function readySituation(): Partial<Situation> {
     latestEventDate: '2026-05-12T00:00:00.000Z',
     updatedAt: '2026-05-13T00:00:00.000Z',
     dataCompleteness: 90,
-    semanticaContextGraph: {
-      schemaVersion: 'praxis-semantica-context-core.v1',
-      adapterVersion: 'praxis-semantica-adapter.2026-05-11',
-      targetSemanticaVersion: '0.5.x',
-      generatedBy: 'praxis-context-create',
-      contextCoreId: 'sit-1',
-      entities: [],
-      relationships: [],
-      quality: {
-        nodeCount: 30,
-        edgeCount: 45,
-        hasContextRoot: true,
-        hasDomainOntology: true,
-        hasWorkOntology: true,
-        hasFrame: true,
-        semanticaReady: true,
-      },
-      intendedSemanticaCapabilities: ['context_graph', 'provenance'],
-    },
   };
 }
