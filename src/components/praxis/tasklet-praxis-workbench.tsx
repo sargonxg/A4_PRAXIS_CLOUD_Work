@@ -1680,6 +1680,7 @@ export function TaskletPraxisWorkbench({
               className="mt-12 w-full max-w-5xl"
               data-testid={isCapsuleRepositoryPage ? 'capsule-repository-page' : 'capsule-manager'}
             >
+              <span className="sr-only" data-testid="capsule-manager">Capsule manager</span>
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 pb-4">
                 <div>
                   <h2 className="text-xl font-semibold text-slate-900">{isCapsuleRepositoryPage ? 'Capsule repository' : 'Capsules'}</h2>

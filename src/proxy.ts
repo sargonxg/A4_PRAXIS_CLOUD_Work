@@ -213,7 +213,6 @@ export function proxy(request: NextRequest) {
       pathname === '/app/canvas' ||
       pathname.startsWith('/app/canvas/') ||
       pathname === '/app/profile' ||
-      pathname.startsWith('/app/settings/') ||
       pathname === '/app/situations' ||
       pathname.startsWith('/app/situations/') ||
       pathname.startsWith('/app/cores/')
@@ -235,7 +234,7 @@ export function proxy(request: NextRequest) {
       url.searchParams.set('panel', 'memo');
     } else if (pathname.startsWith('/app/canvas') || pathname.startsWith('/app/cores/')) {
       url.searchParams.set('panel', 'canvas');
-    } else if (pathname.startsWith('/app/settings/') || pathname === '/app/profile' || pathname.startsWith('/app/admin')) {
+    } else if (pathname === '/app/profile' || pathname.startsWith('/app/admin')) {
       url.searchParams.set('panel', 'account');
     } else if (pathname === '/app/assistant') {
       url.searchParams.set('panel', 'ask');

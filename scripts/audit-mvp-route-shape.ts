@@ -69,7 +69,6 @@ for (const marker of [
   "pathname === '/app/tools'",
   "pathname === '/app/write'",
   "pathname === '/app/canvas'",
-  "pathname.startsWith('/app/settings/')",
 ]) {
   if (!proxy.includes(marker)) failures.push(`proxy missing one-page app redirect marker: ${marker}`);
 }

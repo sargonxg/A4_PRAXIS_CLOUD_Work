@@ -30,7 +30,6 @@ const REMOVED_ROUTE_FILES = [
   'src/app/app/cores/user/page.tsx',
   'src/app/app/canvas/page.tsx',
   'src/app/app/profile/page.tsx',
-  'src/app/app/settings/page.tsx',
   'src/app/app/settings/layout.tsx',
   'src/app/app/settings/api-keys/page.tsx',
   'src/app/app/settings/graph-backend/page.tsx',

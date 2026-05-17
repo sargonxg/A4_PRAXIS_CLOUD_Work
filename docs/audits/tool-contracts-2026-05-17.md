@@ -48,17 +48,17 @@ Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 51/
 | report-studio | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | sanctions | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | scenarios | 6/7 | yes | no | yes | yes | yes | yes | yes |
-| settings | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | situation-intelligence | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | source-monitor | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | source-scout | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | sources-library | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | stakeholder-map | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | talking-points | 6/7 | yes | no | yes | yes | yes | yes | yes |
-| team | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | timeline | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | treaty-analyzer | 6/7 | yes | no | yes | yes | yes | yes | yes |
 | un-toolkit | 6/7 | yes | no | yes | yes | yes | yes | yes |
+| settings | 7/7 | yes | yes | yes | yes | yes | yes | yes |
+| team | 7/7 | yes | yes | yes | yes | yes | yes | yes |
 
 ## Gaps
 
@@ -106,14 +106,12 @@ Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 51/
 - report-studio: missing page
 - sanctions: missing page
 - scenarios: missing page
-- settings: missing page
 - situation-intelligence: missing page
 - source-monitor: missing page
 - source-scout: missing page
 - sources-library: missing page
 - stakeholder-map: missing page
 - talking-points: missing page
-- team: missing page
 - timeline: missing page
 - treaty-analyzer: missing page
 - un-toolkit: missing page

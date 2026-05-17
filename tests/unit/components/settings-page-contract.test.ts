@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const settingsPage = readFileSync(join(process.cwd(), 'src/components/settings/account-settings-page.tsx'), 'utf8');
+const settingsRoute = readFileSync(join(process.cwd(), 'src/app/app/settings/page.tsx'), 'utf8');
 const proxy = readFileSync(join(process.cwd(), 'src/proxy.ts'), 'utf8');
 const accountApi = readFileSync(join(process.cwd(), 'src/app/api/account/route.ts'), 'utf8');
 const appShell = readFileSync(join(process.cwd(), 'src/components/app/app-shell.tsx'), 'utf8');
@@ -14,6 +15,8 @@ describe('account settings page contract', () => {
       expect(settingsPage).toContain(`id: '${tab}'`);
     }
     expect(settingsPage).toContain('router.replace(`/app/settings?tab=${tab}`');
+    expect(settingsRoute).toContain('<AccountSettingsPage />');
+    expect(settingsRoute).not.toContain('redirect(`/app?');
   });
 
   it('routes account-owned surfaces to existing API contracts', () => {
