@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- feat(cockpit): add capsule repository and span workflow.
+  Build 2026.05.16.14 adds one-page cockpit sheets for capsule building,
+  repository review, capsule inspection, research actions, assistant-message
+  actions, and selected-text binding to Sourceability, Temporality, Causality,
+  Human Friction, Rules, and Open Questions.
 - fix(public): keep Learn and TACITUS public links working.
   Build 2026.05.16.13 restores `/learn` as a concise ContextCapsule explainer
   and routes `/tacitus` to `https://tacitus.me` while keeping `/app`

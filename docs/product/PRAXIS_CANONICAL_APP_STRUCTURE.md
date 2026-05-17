@@ -56,6 +56,20 @@ inside the capsule manager, not as competing primary pages. The authenticated
 shell should always make the active capsule visible near the top of the
 workspace.
 
+The cockpit implementation should use in-page sheets, dialogs, and popovers:
+
+- Capsule builder dialog for name, policy-team preset, notes, source links, and
+  starter repository material.
+- Repository sheet for capsule-bound documents, generated artifacts, source
+  receipts, retrieval status, and missing-source actions.
+- Inspector sheet for readiness, policy-team posture, core counts, and
+  maintenance actions.
+- Agent/action drawer for source search, stale-claim review, causal mapping,
+  human-friction mapping, memo drafting, red-team review, and handover.
+- Text-selection popover for attaching specific answer/document spans to
+  Sourceability, Temporality, Causality, Human Friction, Rules, or Open
+  Questions.
+
 ## ContextCapsule Product Contract
 
 The code-backed product contract for public examples and future onboarding is:

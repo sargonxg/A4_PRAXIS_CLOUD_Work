@@ -6,20 +6,32 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
   ArrowUp,
+  BookOpen,
+  BrainCircuit,
   ChevronDown,
+  Clipboard,
   Circle,
+  Copy,
+  Database,
+  FileText,
   FolderKanban,
+  HardDrive,
+  Library,
   Loader2,
+  Mail,
   Mic,
   Monitor,
   Paperclip,
   Plus,
+  RefreshCcw,
+  Save,
   Search,
   ShieldCheck,
   Sparkles,
   Upload,
   WandSparkles,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import { AccountProfileButton } from '@/components/app/account-profile-button';
 import { ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
@@ -39,10 +51,12 @@ import {
   findCapsuleTemplate,
 } from '@/lib/product/cockpit-composition';
 import {
+  CAPSULE_CONNECTOR_REGISTRY,
   POLICY_TEAM_CATEGORIES,
   categoryTagsForPolicyTeam,
   getPolicyTeamCategory,
   policyTeamCategoryForTags,
+  type CapsuleConnectorDefinition,
   type PolicyTeamCategory,
 } from '@/lib/product/context-capsules';
 import { recommendCapsuleTools, type CapsuleToolRecommendation } from '@/lib/tools/recommend';
@@ -61,6 +75,18 @@ type TaskletPraxisWorkbenchProps = {
 type PolicyNeedTabId = (typeof POLICY_NEED_TABS)[number]['id'];
 type ChatMessage = { role: 'user' | 'assistant'; text: string };
 type CapsuleRole = 'user' | 'situation' | 'tool' | 'output';
+type CapsuleDetailTab = 'build' | 'connect' | 'retrieve';
+type RepositoryDocument = {
+  id: string;
+  title: string;
+  fileType: string;
+  size: number;
+  status: string;
+  uploadedAt: string;
+  entityCount?: number;
+  chunkCount?: number;
+};
+type SpanTargetCore = 'sourceability' | 'temporality' | 'causality' | 'human-friction' | 'rules' | 'open-question';
 type CapsuleCoreRefs = {
   sourceCoreIds?: string[];
   documentCoreIds?: string[];
@@ -110,6 +136,23 @@ const policyNextActions = [
   { label: 'Handover', prompt: 'Prepare a handover note from this capsule for another policy team member.' },
 ] as const;
 
+const capsuleActionPrompts = [
+  { label: 'Find missing sources', prompt: 'Find missing sources for the active capsule. Return a source gap list, search plan, and priority sources to add.' },
+  { label: 'Check stale claims', prompt: 'Check the active capsule for stale claims, outdated dates, old assumptions, and decision deadlines.' },
+  { label: 'Map causality', prompt: 'Map the causal claims in this capsule. Separate timeline facts, triggers, lag effects, alternatives, and indicators.' },
+  { label: 'Map human friction', prompt: 'Map the human friction in this capsule: incentives, fears, blockers, informal authority, approvals, and fatigue.' },
+  { label: 'Red-team review', prompt: 'Red-team the active capsule and draft. Identify unsupported claims, missing actors, weak assumptions, and decision risks.' },
+] as const;
+
+const spanTargets: Array<{ id: SpanTargetCore; label: string; note: string }> = [
+  { id: 'sourceability', label: 'Sourceability', note: 'Treat this selected text as a source/evidence item.' },
+  { id: 'temporality', label: 'Temporality', note: 'Attach this selected text to the timeline or stale-assumption layer.' },
+  { id: 'causality', label: 'Causality', note: 'Attach this selected text as a causal claim, trigger, or indicator.' },
+  { id: 'human-friction', label: 'Human friction', note: 'Attach this selected text to incentives, blockers, approvals, or resistance.' },
+  { id: 'rules', label: 'Rules', note: 'Attach this selected text to rules, specs, standards, or constraints.' },
+  { id: 'open-question', label: 'Open question', note: 'Track this selected text as an unresolved issue.' },
+] as const;
+
 const capsuleRoles: Array<{ id: CapsuleRole; label: string }> = [
   { id: 'situation', label: 'Situation' },
   { id: 'user', label: 'User' },
@@ -123,6 +166,25 @@ const capsuleRoleStyles: Record<CapsuleRole, string> = {
   tool: 'border-amber-200 bg-amber-50 text-amber-900',
   output: 'border-violet-200 bg-violet-50 text-violet-900',
 };
+
+const capsuleStateStyles = {
+  empty: 'border-slate-200 bg-slate-50 text-slate-600',
+  building: 'border-amber-200 bg-amber-50 text-amber-800',
+  ready: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+  stale: 'border-orange-200 bg-orange-50 text-orange-800',
+  'needs-sources': 'border-rose-200 bg-rose-50 text-rose-800',
+  'needs-documents': 'border-sky-200 bg-sky-50 text-sky-800',
+  archived: 'border-slate-200 bg-slate-100 text-slate-500',
+} as const;
+
+const connectorIconMap = {
+  upload: Upload,
+  search: Search,
+  drive: HardDrive,
+  mail: Mail,
+  bucket: Database,
+  spark: BrainCircuit,
+} satisfies Record<CapsuleConnectorDefinition['icon'], LucideIcon>;
 
 const capsuleLibraryFilters = [
   { id: 'all', label: 'All' },
@@ -162,6 +224,19 @@ export function TaskletPraxisWorkbench({
   const [userCapsules, setUserCapsules] = useState<PraxisCapsuleSummary[]>([]);
   const [capsulesLoading, setCapsulesLoading] = useState(false);
   const [draggingCapsuleId, setDraggingCapsuleId] = useState<string | null>(null);
+  const [repositoryOpen, setRepositoryOpen] = useState(false);
+  const [capsuleDetailTab, setCapsuleDetailTab] = useState<CapsuleDetailTab>('build');
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [agentDrawerOpen, setAgentDrawerOpen] = useState(false);
+  const [repositoryDocuments, setRepositoryDocuments] = useState<RepositoryDocument[]>([]);
+  const [repositoryLoading, setRepositoryLoading] = useState(false);
+  const [builderLabel, setBuilderLabel] = useState('');
+  const [builderNotes, setBuilderNotes] = useState('');
+  const [builderLinks, setBuilderLinks] = useState('');
+  const [builderCategoryId, setBuilderCategoryId] = useState<string>(POLICY_TEAM_CATEGORIES[0]?.id ?? 'research-strategy');
+  const [selectedText, setSelectedText] = useState('');
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
   const selectedRuntime = getAskRuntimeOption(selectedModel);
@@ -186,6 +261,10 @@ export function TaskletPraxisWorkbench({
     return !query || capsule.label.toLowerCase().includes(query) || capsule.prompt.toLowerCase().includes(query) || capsule.code.toLowerCase().includes(query);
   }).slice(0, 8);
   const conversationThreadId = `tasklet-${currentCapsuleId}`;
+  const repositoryDocIds = new Set(selectedCapsule?.coreRefs.documentCoreIds ?? []);
+  const visibleRepositoryDocuments = repositoryDocuments.filter((document) =>
+    repositoryDocIds.size === 0 || repositoryDocIds.has(document.id),
+  );
 
   useEffect(() => {
     setActiveCapsules((current) => {
@@ -337,6 +416,79 @@ export function TaskletPraxisWorkbench({
     }
   }
 
+  async function saveAssistantMessage(message: ChatMessage, index: number, mode: 'source-note' | 'memo-draft' = 'source-note') {
+    if (!isAuthenticated || !message.text.trim()) return;
+    const title = mode === 'memo-draft' ? `PRAXIS memo draft ${index + 1}` : `PRAXIS saved response ${index + 1}`;
+    const response = await fetch('/api/documents/upload', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        html: `<article><h1>${escapeHtml(title)}</h1><pre>${escapeHtml(message.text)}</pre></article>`,
+        situationId: currentCapsuleId,
+        toolId: mode === 'memo-draft' ? 'memo-studio' : 'ask-praxis',
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setStatus(payload?.error ? `Save failed: ${payload.error}` : 'Save failed.');
+      return;
+    }
+    const documentId = payload?.documentId as string | undefined;
+    if (documentId) {
+      await fetch(`/api/context/capsules/${encodeURIComponent(currentCapsuleId)}/attach`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ documentIds: [documentId] }),
+      }).catch(() => null);
+    }
+    setStatus(`${title} saved to the active capsule repository.`);
+    await refreshCapsules(currentCapsuleId);
+    await refreshRepository();
+  }
+
+  function retryFromMessage(index: number) {
+    const previous = [...chatMessages].slice(0, index).reverse().find((message) => message.role === 'user');
+    if (!previous) return;
+    setPrompt(previous.text);
+    void sendToPraxis(selectedAgent, previous.text);
+  }
+
+  function handleMessageSelection(messageId: string) {
+    const selection = window.getSelection()?.toString().trim() ?? '';
+    if (selection.length < 3) return;
+    setSelectedText(selection.slice(0, 2000));
+    setSelectedMessageId(messageId);
+  }
+
+  async function bindSelectedSpan(targetCore: SpanTargetCore) {
+    if (!selectedText.trim() || !isAuthenticated) return;
+    const target = spanTargets.find((item) => item.id === targetCore);
+    const response = await fetch(`/api/context/capsules/${encodeURIComponent(currentCapsuleId)}/spans`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        text: selectedText,
+        targetCore,
+        sourceType: selectedMessageId?.startsWith('assistant') ? 'assistant-message' : 'document-selection',
+        messageId: selectedMessageId,
+        note: target?.note,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setStatus(payload?.error ? `Span attach failed: ${payload.error}` : 'Span attach failed.');
+      return;
+    }
+    setSelectedText('');
+    setSelectedMessageId(null);
+    setStatus(`Selected text attached to ${target?.label ?? targetCore}.`);
+    await refreshCapsules(currentCapsuleId);
+  }
+
   async function uploadDocument(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
@@ -354,6 +506,7 @@ export function TaskletPraxisWorkbench({
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error ?? 'upload failed');
       if (payload?.coreRefs?.capsuleId) void refreshCapsules(payload.coreRefs.capsuleId as string);
+      void refreshRepository();
       setPrompt((current) => `${current.trim()}\n\nUse uploaded document "${file.name}" as context.`.trim());
       setStatus(`${file.name} attached to the active capsule.`);
     } catch (err) {
@@ -370,7 +523,11 @@ export function TaskletPraxisWorkbench({
     }
     if (kind === 'connectors') {
       if (!isAuthenticated) sendPublicToLogin(prompt.trim() || 'Connect sources to PRAXIS.');
-      else setStatus('Connectors are managed from this PRAXIS page. Add source access through the capsule bar.');
+      else {
+        setCapsuleDetailTab('connect');
+        setCapsuleCategory('source-docs');
+        setStatus('Connector lane opened for the active capsule.');
+      }
       return;
     }
     setPrompt((current) => `Improve this PRAXIS request and ask any missing context question: ${current.trim()}`);
@@ -404,6 +561,26 @@ export function TaskletPraxisWorkbench({
     if (!isAuthenticated) return;
     void refreshCapsules();
   }, [isAuthenticated, refreshCapsules]);
+
+  const refreshRepository = useCallback(async () => {
+    if (!isAuthenticated || !currentCapsuleId) return;
+    setRepositoryLoading(true);
+    try {
+      const response = await fetch(`/api/documents?situationId=${encodeURIComponent(currentCapsuleId)}`, { credentials: 'include' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error ?? 'document list failed');
+      setRepositoryDocuments(Array.isArray(payload?.documents) ? payload.documents as RepositoryDocument[] : []);
+    } catch (err) {
+      setStatus(err instanceof Error ? `Repository failed: ${err.message}` : 'Repository failed.');
+    } finally {
+      setRepositoryLoading(false);
+    }
+  }, [currentCapsuleId, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    void refreshRepository();
+  }, [isAuthenticated, refreshRepository]);
 
   function selectUserCapsule(capsule: PraxisCapsuleSummary) {
     const chip = capsuleToChip(capsule);
@@ -549,6 +726,47 @@ export function TaskletPraxisWorkbench({
     return created;
   }
 
+  async function createCapsuleFromBuilder() {
+    const team = getPolicyTeamCategory(builderCategoryId) ?? POLICY_TEAM_CATEGORIES[0] ?? null;
+    const label = builderLabel.trim() || (team ? `${team.shortLabel} ContextCapsule` : 'ContextCapsule Lite');
+    try {
+      const created = await createCapsuleLite(label, undefined, team);
+      if (!created) return;
+      const notes = [builderNotes.trim(), builderLinks.trim() ? `Links:\n${builderLinks.trim()}` : ''].filter(Boolean).join('\n\n');
+      if (notes) {
+        const response = await fetch('/api/documents/upload', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            title: `${label} starter notes`,
+            html: `<article><h1>${escapeHtml(label)} starter notes</h1><pre>${escapeHtml(notes)}</pre></article>`,
+            situationId: created.id,
+            toolId: 'capsule-builder',
+          }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (response.ok && payload?.documentId) {
+          await fetch(`/api/context/capsules/${encodeURIComponent(created.id)}/attach`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ documentIds: [payload.documentId] }),
+          }).catch(() => null);
+        }
+      }
+      setBuilderLabel('');
+      setBuilderNotes('');
+      setBuilderLinks('');
+      setBuilderOpen(false);
+      setRepositoryOpen(true);
+      await refreshCapsules(created.id);
+      await refreshRepository();
+    } catch (err) {
+      setStatus(err instanceof Error ? `Capsule builder failed: ${err.message}` : 'Capsule builder failed.');
+    }
+  }
+
   async function combineCapsuleLiteStack(capsulesToCombine: ActiveCapsuleChip[]) {
     if (!isAuthenticated || capsulesToCombine.length < 2) return;
     const response = await fetch('/api/context/capsules', {
@@ -659,8 +877,10 @@ export function TaskletPraxisWorkbench({
             <span className="praxis-thinking-glyph flex h-8 w-8 items-center justify-center rounded-md bg-sage text-white">◳</span>
             PRAXIS
           </Link>
-          <SidebarButton icon={Plus} label="New capsule" onClick={() => addCapsule(capsules[0]?.id ?? capsuleId)} active />
+          <SidebarButton icon={Plus} label="New capsule" onClick={() => setBuilderOpen(true)} active />
           <SidebarButton icon={Search} label="Search capsules" onClick={() => setActiveTab('capsules')} />
+          <SidebarButton icon={Library} label="Repository" onClick={() => { setRepositoryOpen(true); void refreshRepository(); }} />
+          <SidebarButton icon={Clipboard} label="Agent actions" onClick={() => setAgentDrawerOpen(true)} />
           <div className="mt-8">
             <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">{recentLabel} <ChevronDown className="h-3 w-3" /></p>
             <div className="mt-3 space-y-2">
@@ -705,6 +925,7 @@ export function TaskletPraxisWorkbench({
             <nav className="ml-auto hidden items-center gap-8 text-sm font-semibold text-slate-500 md:flex">
               <Link href={isAuthenticated ? '/app' : '/'} className="hover:text-slate-900">Home</Link>
               <button type="button" onClick={() => setActiveTab('capsules')} className="hover:text-slate-900">Capsules</button>
+              <button type="button" onClick={() => { setRepositoryOpen(true); void refreshRepository(); }} className="hover:text-slate-900">Repository</button>
               <Link href="/pricing" className="hover:text-slate-900">Pricing</Link>
               <Link href="/release-notes" className="hover:text-slate-900">Release notes</Link>
             </nav>
@@ -743,6 +964,34 @@ export function TaskletPraxisWorkbench({
                 </button>
               ))}
             </div>
+
+            <div className="mt-3 flex w-full max-w-5xl flex-wrap items-center justify-center gap-2" data-testid="capsule-workspace-actions">
+              <button type="button" onClick={() => setBuilderOpen(true)} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
+                <Plus className="h-4 w-4" />
+                Build capsule
+              </button>
+              <button type="button" onClick={() => { setRepositoryOpen(true); void refreshRepository(); }} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
+                <Library className="h-4 w-4" />
+                Repository
+              </button>
+              <button type="button" onClick={() => setInspectorOpen(true)} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
+                <BookOpen className="h-4 w-4" />
+                Inspect capsule
+              </button>
+              <button type="button" onClick={() => setAgentDrawerOpen(true)} className="inline-flex items-center gap-2 rounded-md border border-black/10 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm shadow-black/5 hover:bg-white">
+                <Sparkles className="h-4 w-4" />
+                Research actions
+              </button>
+            </div>
+
+            <CapsuleMap
+              capsule={selectedCapsule}
+              fallbackLabel={activeCapsules[0]?.label ?? activeCapsuleName}
+              onFilter={(filter) => {
+                setCapsuleCategory(filter);
+                setCapsuleDetailTab(filter === 'source-docs' ? 'retrieve' : filter === 'tool-capsules' ? 'build' : 'connect');
+              }}
+            />
 
             <div className="mt-6 w-full max-w-5xl rounded-lg border border-black/10 bg-white shadow-sm shadow-black/5" data-testid="praxis-main-composer">
               <div className="border-b border-black/10 px-5 py-3" data-testid="capsule-context-bar">
@@ -910,6 +1159,7 @@ export function TaskletPraxisWorkbench({
                 {chatMessages.map((message, index) => (
                   <article
                     key={`${message.role}-${index}`}
+                    onMouseUp={() => handleMessageSelection(`${message.role}-${index}`)}
                     className={cn(
                       'rounded-lg px-4 py-3 text-sm leading-6 shadow-sm',
                       message.role === 'user' ? 'ml-auto max-w-[82%] bg-slate-950 text-white shadow-black/10' : 'mr-auto max-w-[92%] border border-slate-200 bg-white text-slate-900 shadow-black/5',
@@ -919,12 +1169,41 @@ export function TaskletPraxisWorkbench({
                       {message.role === 'user' ? 'You' : 'PRAXIS'}
                     </div>
                     {message.role === 'assistant' ? (
-                      <AssistantMarkdown text={message.text || 'Reading context...'} />
+                      <>
+                        <AssistantMarkdown text={message.text || 'Reading context...'} />
+                        <MessageActionRow
+                          onCopy={() => void navigator.clipboard?.writeText(message.text)}
+                          onRetry={() => retryFromMessage(index)}
+                          onSave={() => void saveAssistantMessage(message, index)}
+                          onMemo={() => void saveAssistantMessage(message, index, 'memo-draft')}
+                          onSourceCheck={() => void sendToPraxis(selectedAgent, `Source-check this PRAXIS answer against the active capsule. Identify weak claims, missing citations, and stale assumptions.\n\n${message.text}`)}
+                        />
+                      </>
                     ) : (
                       <p className="whitespace-pre-wrap">{message.text}</p>
                     )}
                   </article>
                 ))}
+                {selectedText ? (
+                  <div className="rounded-lg border border-[#ff714d]/30 bg-[#fff7f3] p-3 shadow-sm" data-testid="text-span-core-popover">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[#ca4a25]">Attach selected text</p>
+                        <p className="mt-1 line-clamp-2 text-sm text-slate-700">{selectedText}</p>
+                      </div>
+                      <button type="button" aria-label="Clear selected text" onClick={() => setSelectedText('')} className="rounded p-1 text-slate-500 hover:bg-white">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {spanTargets.map((target) => (
+                        <button key={target.id} type="button" onClick={() => void bindSelectedSpan(target.id)} className="rounded-md bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:text-[#ca4a25]">
+                          {target.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </section>
             ) : null}
 
@@ -1014,7 +1293,12 @@ export function TaskletPraxisWorkbench({
                     capsule={selectedCapsule}
                     policyTeam={selectedPolicyTeam}
                     recommendations={capsuleRecommendations}
+                    detailTab={capsuleDetailTab}
+                    repositoryDocuments={visibleRepositoryDocuments}
+                    repositoryLoading={repositoryLoading}
                     onUpload={() => fileInputRef.current?.click()}
+                    onDetailTab={setCapsuleDetailTab}
+                    onOpenRepository={() => { setRepositoryOpen(true); void refreshRepository(); }}
                     onImprove={() => improveCapsule()}
                     onRefresh={() => void refreshCapsules(currentCapsuleId)}
                     onAssignPolicyTeam={(category) => {
@@ -1044,6 +1328,62 @@ export function TaskletPraxisWorkbench({
           </div>
         </main>
       </div>
+      {builderOpen ? (
+        <CapsuleBuilderDialog
+          label={builderLabel}
+          notes={builderNotes}
+          links={builderLinks}
+          categoryId={builderCategoryId}
+          onLabel={setBuilderLabel}
+          onNotes={setBuilderNotes}
+          onLinks={setBuilderLinks}
+          onCategory={setBuilderCategoryId}
+          onClose={() => setBuilderOpen(false)}
+          onCreate={() => void createCapsuleFromBuilder()}
+        />
+      ) : null}
+      {repositoryOpen ? (
+        <RepositorySheet
+          capsule={selectedCapsule}
+          documents={visibleRepositoryDocuments}
+          documentRefs={Array.from(repositoryDocIds)}
+          loading={repositoryLoading}
+          onClose={() => setRepositoryOpen(false)}
+          onRefresh={() => void refreshRepository()}
+          onUpload={() => fileInputRef.current?.click()}
+          onRun={(promptText) => {
+            setRepositoryOpen(false);
+            setPrompt(promptText);
+            void sendToPraxis(selectedAgent, promptText);
+          }}
+        />
+      ) : null}
+      {inspectorOpen ? (
+        <CapsuleInspectorSheet
+          capsule={selectedCapsule}
+          policyTeam={selectedPolicyTeam}
+          onClose={() => setInspectorOpen(false)}
+          onImprove={() => {
+            setInspectorOpen(false);
+            improveCapsule();
+          }}
+          onRepository={() => {
+            setInspectorOpen(false);
+            setRepositoryOpen(true);
+            void refreshRepository();
+          }}
+        />
+      ) : null}
+      {agentDrawerOpen ? (
+        <AgentActionDrawer
+          onClose={() => setAgentDrawerOpen(false)}
+          onRun={(promptText) => {
+            setAgentDrawerOpen(false);
+            setPrompt(promptText);
+            void sendToPraxis(selectedAgent, promptText);
+          }}
+        />
+      ) : null}
     </section>
   );
 }
@@ -1076,6 +1416,15 @@ function AssistantMarkdown({ text }: { text: string }) {
 
 function uniqueIds(values: string[]): string[] {
   return Array.from(new Set(values.filter(Boolean)));
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 function capsuleToChip(capsule: PraxisCapsuleSummary): ActiveCapsuleChip {
@@ -1151,6 +1500,119 @@ function capsuleCounts(capsule: PraxisCapsuleSummary) {
   };
 }
 
+function CapsuleMap({
+  capsule,
+  fallbackLabel,
+  onFilter,
+}: {
+  capsule: PraxisCapsuleSummary | null;
+  fallbackLabel: string;
+  onFilter: (filter: string) => void;
+}) {
+  const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
+  const state = capsule ? capsuleState(capsule) : 'building';
+  const segments = [
+    { id: 'documents', label: 'Documents', value: counts.documents, filter: 'source-docs', icon: FileText },
+    { id: 'sources', label: 'Sources', value: counts.sources, filter: 'source-docs', icon: Search },
+    { id: 'tools', label: 'Tools', value: counts.tools, filter: 'tool-capsules', icon: WandSparkles },
+    { id: 'outputs', label: 'Outputs', value: counts.outputs, filter: 'outputs', icon: Clipboard },
+    { id: 'team', label: 'Policy team', value: capsule?.community?.tags?.length ?? 0, filter: 'all', icon: ShieldCheck },
+  ];
+
+  return (
+    <section className="mt-6 w-full max-w-5xl rounded-2xl border border-black/10 bg-white/80 p-4 shadow-sm shadow-black/5" data-testid="capsule-map">
+      <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-[#f8f8f6]">
+            <div className="absolute inset-2 rounded-full border border-[#ff714d]/25" />
+            <div className="absolute inset-5 rounded-full border border-sage/30" />
+            <span className="praxis-thinking-glyph flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white">◳</span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Active capsule</p>
+            <p className="mt-1 truncate text-sm font-semibold text-slate-900">{capsule?.label ?? fallbackLabel}</p>
+            <CapsuleStateBadge state={state} />
+          </div>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-5">
+          {segments.map((segment) => (
+            <button
+              key={segment.id}
+              type="button"
+              onClick={() => onFilter(segment.filter)}
+              className="group rounded-lg border border-slate-200 bg-white p-3 text-left transition hover:-translate-y-0.5 hover:border-[#ff714d]/40 hover:shadow-sm"
+              data-testid={`capsule-map-${segment.id}`}
+            >
+              <span className="flex items-center justify-between gap-2">
+                <segment.icon className="h-4 w-4 text-slate-400 group-hover:text-[#ca4a25]" />
+                <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500">{segment.value}</span>
+              </span>
+              <span className="mt-4 block text-xs font-semibold text-slate-800">{segment.label}</span>
+              <span className="mt-1 block h-1 rounded-full bg-slate-100">
+                <span className="block h-1 rounded-full bg-[#ff714d]" style={{ width: `${Math.min(100, Math.max(12, segment.value * 24))}%` }} />
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function capsuleState(capsule: PraxisCapsuleSummary): keyof typeof capsuleStateStyles {
+  if (capsule.archivedAt) return 'archived';
+  const counts = capsuleCounts(capsule);
+  const updatedAt = Date.parse(capsule.updatedAt);
+  if (counts.documents + counts.sources + counts.tools + counts.outputs === 0) return 'empty';
+  if (counts.documents === 0) return 'needs-documents';
+  if (counts.sources === 0) return 'needs-sources';
+  if (Number.isFinite(updatedAt) && Date.now() - updatedAt > 1000 * 60 * 60 * 24 * 14) return 'stale';
+  if (counts.tools === 0 || counts.outputs === 0) return 'building';
+  return 'ready';
+}
+
+function CapsuleStateBadge({ state }: { state: keyof typeof capsuleStateStyles }) {
+  return (
+    <span className={cn('mt-2 inline-flex rounded-md border px-2 py-1 text-[11px] font-semibold', capsuleStateStyles[state])}>
+      {state.replaceAll('-', ' ')}
+    </span>
+  );
+}
+
+function ConnectorCard({ connector, onUpload }: { connector: CapsuleConnectorDefinition; onUpload?: () => void }) {
+  const Icon = connectorIconMap[connector.icon];
+  const live = connector.status === 'live';
+  return (
+    <article className="rounded-md border border-slate-200 p-3" data-testid={`connector-card-${connector.id}`}>
+      <div className="flex items-start gap-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+          <Icon className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate text-xs font-semibold text-slate-900">{connector.label}</p>
+            <span className={cn('shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold', live ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500')}>
+              {connector.status.replaceAll('-', ' ')}
+            </span>
+          </div>
+          <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-slate-500">{connector.description}</p>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {connector.fillsSlots.slice(0, 3).map((slot) => (
+              <span key={slot} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{slot}</span>
+            ))}
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">risk {connector.riskLevel}</span>
+          </div>
+        </div>
+      </div>
+      {onUpload ? (
+        <button type="button" onClick={onUpload} className="mt-3 w-full rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">
+          Upload file
+        </button>
+      ) : null}
+    </article>
+  );
+}
+
 function CapsuleEmptyState({ label }: { label: string }) {
   return (
     <div className="rounded-lg border border-dashed border-slate-300 bg-white/70 p-6 text-sm font-semibold text-slate-500">
@@ -1177,6 +1639,7 @@ function CapsuleCard({
   onTag: (tag: string) => void;
 }) {
   const counts = capsuleCounts(capsule);
+  const state = capsuleState(capsule);
   const [tagDraft, setTagDraft] = useState('');
   return (
     <article className={cn('rounded-lg border bg-white p-4 shadow-sm shadow-black/5', active ? 'border-[#ff714d]' : 'border-black/10')}>
@@ -1185,6 +1648,7 @@ function CapsuleCard({
           <span className="truncate text-base font-semibold text-slate-900">{capsule.label}</span>
           <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">v{capsule.version}</span>
         </span>
+        <CapsuleStateBadge state={state} />
         <span className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
           <span className="inline-flex items-center gap-1"><Circle className="h-2 w-2 fill-current" /> {capsule.scope}</span>
           <span>{counts.documents} docs</span>
@@ -1226,7 +1690,12 @@ function CapsuleDetailPanel({
   capsule,
   policyTeam,
   recommendations,
+  detailTab,
+  repositoryDocuments,
+  repositoryLoading,
   onUpload,
+  onDetailTab,
+  onOpenRepository,
   onImprove,
   onRefresh,
   onAssignPolicyTeam,
@@ -1235,7 +1704,12 @@ function CapsuleDetailPanel({
   capsule: PraxisCapsuleSummary | null;
   policyTeam: PolicyTeamCategory | null;
   recommendations: CapsuleToolRecommendation[];
+  detailTab: CapsuleDetailTab;
+  repositoryDocuments: RepositoryDocument[];
+  repositoryLoading: boolean;
   onUpload: () => void;
+  onDetailTab: (tab: CapsuleDetailTab) => void;
+  onOpenRepository: () => void;
   onImprove: () => void;
   onRefresh: () => void;
   onAssignPolicyTeam: (category: PolicyTeamCategory) => void;
@@ -1249,6 +1723,7 @@ function CapsuleDetailPanel({
     );
   }
   const counts = capsuleCounts(capsule);
+  const state = capsuleState(capsule);
   return (
     <aside className="rounded-lg border border-black/10 bg-white p-4 shadow-sm shadow-black/5" data-testid="capsule-detail-panel">
       <div className="flex items-start justify-between gap-3">
@@ -1256,7 +1731,7 @@ function CapsuleDetailPanel({
           <p className="truncate text-sm font-semibold text-slate-900">{capsule.label}</p>
           <p className="mt-1 truncate text-xs text-slate-400">{capsule.capsuleId}</p>
         </div>
-        <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">{capsule.trust?.label ?? capsule.scope}</span>
+        <CapsuleStateBadge state={state} />
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Metric label="Docs" value={counts.documents} />
@@ -1264,7 +1739,22 @@ function CapsuleDetailPanel({
         <Metric label="Tools" value={counts.tools} />
         <Metric label="Outputs" value={counts.outputs} />
       </div>
-      <div className="mt-4">
+      <div className="mt-4 grid grid-cols-3 gap-1 rounded-md bg-slate-100 p-1" data-testid="capsule-detail-tabs">
+        {(['build', 'connect', 'retrieve'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => onDetailTab(tab)}
+            className={cn(
+              'rounded px-2 py-1.5 text-xs font-semibold capitalize',
+              detailTab === tab ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800',
+            )}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+      {detailTab === 'build' ? <div className="mt-4">
         <p className="text-[11px] font-semibold uppercase text-slate-400">Policy team</p>
         <div className="mt-2 grid grid-cols-2 gap-1.5">
           {POLICY_TEAM_CATEGORIES.map((category) => (
@@ -1281,8 +1771,16 @@ function CapsuleDetailPanel({
             </button>
           ))}
         </div>
-      </div>
-      <div className="mt-4">
+      </div> : null}
+      {detailTab === 'build' ? <div className="mt-4">
+        <p className="text-[11px] font-semibold uppercase text-slate-400">Missing questions</p>
+        <div className="mt-2 space-y-1.5">
+          {(policyTeam?.missingInfoPrompts ?? ['What decision is this serving?', 'Which sources should travel with the answer?', 'What output should PRAXIS prepare?']).slice(0, 3).map((question) => (
+            <p key={question} className="rounded-md border border-slate-200 px-3 py-2 text-xs leading-5 text-slate-600">{question}</p>
+          ))}
+        </div>
+      </div> : null}
+      {detailTab === 'build' ? <div className="mt-4">
         <p className="text-[11px] font-semibold uppercase text-slate-400">Tool suggestions</p>
         <div className="mt-2 space-y-2">
           {recommendations.map((recommendation) => {
@@ -1304,11 +1802,44 @@ function CapsuleDetailPanel({
             );
           })}
         </div>
-      </div>
+      </div> : null}
+      {detailTab === 'connect' ? (
+        <div className="mt-4 space-y-2" data-testid="capsule-connector-cards">
+          {CAPSULE_CONNECTOR_REGISTRY.map((connector) => (
+            <ConnectorCard key={connector.id} connector={connector} onUpload={connector.id === 'upload' ? onUpload : undefined} />
+          ))}
+        </div>
+      ) : null}
+      {detailTab === 'retrieve' ? (
+        <div className="mt-4 space-y-3" data-testid="capsule-retrieve-status">
+          <div className="rounded-md border border-slate-200 p-3">
+            <p className="text-xs font-semibold text-slate-800">Local hybrid retrieval</p>
+            <p className="mt-1 text-[11px] leading-5 text-slate-500">
+              {counts.documents > 0 ? `${counts.documents} document ref(s), ${counts.sources} source ref(s), using the current chunk and embedding path.` : 'Upload or import documents before retrieval can ground answers.'}
+            </p>
+          </div>
+          <div className="rounded-md border border-dashed border-slate-200 p-3">
+            <p className="text-xs font-semibold text-slate-800">Vertex/Gemini RAG</p>
+            <p className="mt-1 text-[11px] leading-5 text-slate-500">Advanced optional mirror. The default retrieval path still works without Vertex configuration.</p>
+          </div>
+          {repositoryLoading ? <p className="text-xs text-slate-500">Loading repository...</p> : null}
+          {repositoryDocuments.slice(0, 4).map((document) => (
+            <div key={document.id} className="rounded-md border border-slate-200 px-3 py-2">
+              <p className="truncate text-xs font-semibold text-slate-800">{document.title}</p>
+              <p className="mt-1 text-[11px] text-slate-400">{document.status} · {document.chunkCount ?? 0} chunks · {document.fileType}</p>
+            </div>
+          ))}
+          {!repositoryLoading && repositoryDocuments.length === 0 ? <p className="text-xs text-slate-500">No repository documents loaded for this capsule.</p> : null}
+        </div>
+      ) : null}
       <div className="mt-4 flex flex-col gap-2">
         <button type="button" onClick={onUpload} className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">
           <Upload className="h-4 w-4" />
           Upload
+        </button>
+        <button type="button" onClick={onOpenRepository} className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <Library className="h-4 w-4" />
+          Repository
         </button>
         <button type="button" onClick={onImprove} className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
           <WandSparkles className="h-4 w-4" />
@@ -1321,6 +1852,260 @@ function CapsuleDetailPanel({
   );
 }
 
+function MessageActionRow({
+  onCopy,
+  onRetry,
+  onSave,
+  onMemo,
+  onSourceCheck,
+}: {
+  onCopy: () => void;
+  onRetry: () => void;
+  onSave: () => void;
+  onMemo: () => void;
+  onSourceCheck: () => void;
+}) {
+  return (
+    <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3" data-testid="message-action-row">
+      <IconTextButton icon={Copy} label="Copy" onClick={onCopy} />
+      <IconTextButton icon={RefreshCcw} label="Retry" onClick={onRetry} />
+      <IconTextButton icon={Save} label="Save to capsule" onClick={onSave} />
+      <IconTextButton icon={FileText} label="Create memo" onClick={onMemo} />
+      <IconTextButton icon={ShieldCheck} label="Source-check" onClick={onSourceCheck} />
+    </div>
+  );
+}
+
+function CapsuleBuilderDialog({
+  label,
+  notes,
+  links,
+  categoryId,
+  onLabel,
+  onNotes,
+  onLinks,
+  onCategory,
+  onClose,
+  onCreate,
+}: {
+  label: string;
+  notes: string;
+  links: string;
+  categoryId: string;
+  onLabel: (value: string) => void;
+  onNotes: (value: string) => void;
+  onLinks: (value: string) => void;
+  onCategory: (value: string) => void;
+  onClose: () => void;
+  onCreate: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-3 sm:items-center" data-testid="capsule-builder-dialog">
+      <section className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ca4a25]">New ContextCapsule</p>
+            <h2 className="mt-1 text-2xl font-semibold text-slate-950">Build a capsule around the work.</h2>
+          </div>
+          <button type="button" aria-label="Close capsule builder" onClick={onClose} className="rounded-md p-2 text-slate-500 hover:bg-slate-100">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="mt-5 grid gap-4">
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold uppercase text-slate-500">Capsule name</span>
+            <input value={label} onChange={(event) => onLabel(event.target.value)} placeholder="Director handover, Syria access brief, HR policy review..." className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#ff714d]" />
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold uppercase text-slate-500">Policy team preset</span>
+            <select value={categoryId} onChange={(event) => onCategory(event.target.value)} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#ff714d]">
+              {POLICY_TEAM_CATEGORIES.map((category) => (
+                <option key={category.id} value={category.id}>{category.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold uppercase text-slate-500">What should PRAXIS remember?</span>
+            <textarea value={notes} onChange={(event) => onNotes(event.target.value)} rows={5} placeholder="Paste brief context, assumptions, stakeholders, deadlines, rules, and open questions." className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#ff714d]" />
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-xs font-semibold uppercase text-slate-500">Source links or repositories</span>
+            <textarea value={links} onChange={(event) => onLinks(event.target.value)} rows={3} placeholder="Paste URLs, Drive folders, source lists, or internal repository notes." className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#ff714d]" />
+          </label>
+        </div>
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100">Cancel</button>
+          <button type="button" onClick={onCreate} className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Create capsule</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function RepositorySheet({
+  capsule,
+  documents,
+  documentRefs,
+  loading,
+  onClose,
+  onRefresh,
+  onUpload,
+  onRun,
+}: {
+  capsule: PraxisCapsuleSummary | null;
+  documents: RepositoryDocument[];
+  documentRefs: string[];
+  loading: boolean;
+  onClose: () => void;
+  onRefresh: () => void;
+  onUpload: () => void;
+  onRun: (prompt: string) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-40 bg-black/25" data-testid="capsule-repository-sheet">
+      <aside className="ml-auto flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
+        <div className="border-b border-slate-200 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ca4a25]">Capsule repository</p>
+              <h2 className="mt-1 truncate text-xl font-semibold text-slate-950">{capsule?.label ?? 'No capsule selected'}</h2>
+              <p className="mt-1 text-sm text-slate-500">Documents, generated outputs, source receipts, and reusable context attached to this capsule.</p>
+            </div>
+            <button type="button" aria-label="Close repository" onClick={onClose} className="rounded-md p-2 text-slate-500 hover:bg-slate-100">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <IconTextButton icon={Upload} label="Upload" onClick={onUpload} />
+            <IconTextButton icon={RefreshCcw} label="Refresh" onClick={onRefresh} />
+            <IconTextButton icon={Search} label="Find missing sources" onClick={() => onRun('Find missing sources for the active capsule repository. Return the missing source list and search plan.')} />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-5">
+          <div className="grid grid-cols-3 gap-2">
+            <Metric label="Documents" value={documents.length || documentRefs.length} />
+            <Metric label="Source refs" value={capsule?.coreRefs.sourceCoreIds?.length ?? 0} />
+            <Metric label="Outputs" value={(capsule?.coreRefs.outputCoreIds?.length ?? 0) + (capsule?.coreRefs.productCoreIds?.length ?? 0)} />
+          </div>
+          <div className="mt-5 space-y-2">
+            {loading ? <CapsuleEmptyState label="Loading repository..." /> : null}
+            {!loading && documents.length === 0 && documentRefs.length === 0 ? <CapsuleEmptyState label="No documents are attached yet." /> : null}
+            {documents.map((document) => (
+              <article key={document.id} className="rounded-lg border border-slate-200 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900">{document.title}</p>
+                    <p className="mt-1 text-xs text-slate-500">{document.fileType} · {document.status} · {document.chunkCount ?? 0} chunks</p>
+                  </div>
+                  <FileText className="h-4 w-4 shrink-0 text-slate-400" />
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => onRun(`Summarize the document "${document.title}" for the active capsule. Include source posture, key claims, dates, actors, and gaps.`)} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Summarize</button>
+                  <button type="button" onClick={() => onRun(`Extract temporal, causal, and human-friction signals from "${document.title}" for the active capsule.`)} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Extract signals</button>
+                </div>
+              </article>
+            ))}
+            {!loading && documents.length === 0 ? documentRefs.map((documentId) => (
+              <article key={documentId} className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-500">
+                Attached document ref: <span className="font-mono text-xs">{documentId}</span>
+              </article>
+            )) : null}
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function CapsuleInspectorSheet({
+  capsule,
+  policyTeam,
+  onClose,
+  onImprove,
+  onRepository,
+}: {
+  capsule: PraxisCapsuleSummary | null;
+  policyTeam: PolicyTeamCategory | null;
+  onClose: () => void;
+  onImprove: () => void;
+  onRepository: () => void;
+}) {
+  const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
+  return (
+    <div className="fixed inset-0 z-40 bg-black/25" data-testid="capsule-inspector-sheet">
+      <aside className="ml-auto flex h-full w-full max-w-md flex-col bg-white p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ca4a25]">Capsule inspector</p>
+            <h2 className="mt-1 truncate text-xl font-semibold text-slate-950">{capsule?.label ?? 'No capsule selected'}</h2>
+          </div>
+          <button type="button" aria-label="Close inspector" onClick={onClose} className="rounded-md p-2 text-slate-500 hover:bg-slate-100">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <Metric label="Documents" value={counts.documents} />
+          <Metric label="Sources" value={counts.sources} />
+          <Metric label="Tools" value={counts.tools} />
+          <Metric label="Outputs" value={counts.outputs} />
+        </div>
+        <div className="mt-5 rounded-lg border border-slate-200 p-4">
+          <p className="text-xs font-semibold uppercase text-slate-400">Reasoning posture</p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+            {['Sourceability', 'Temporality', 'Causality', 'Human friction', 'Rules', 'Handover'].map((item) => (
+              <span key={item} className="rounded-md bg-slate-100 px-2 py-1 text-slate-600">{item}</span>
+            ))}
+          </div>
+          <p className="mt-3 text-sm leading-6 text-slate-500">
+            {policyTeam ? `${policyTeam.label} preset active.` : 'Assign a policy-team preset to improve tool recommendations and output defaults.'}
+          </p>
+        </div>
+        <div className="mt-5 space-y-2">
+          <button type="button" onClick={onRepository} className="w-full rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">Open repository</button>
+          <button type="button" onClick={onImprove} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Improve capsule</button>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function AgentActionDrawer({ onClose, onRun }: { onClose: () => void; onRun: (prompt: string) => void }) {
+  return (
+    <div className="fixed inset-0 z-40 bg-black/25" data-testid="agent-action-drawer">
+      <aside className="ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-2xl">
+        <div className="border-b border-slate-200 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ca4a25]">Policy actions</p>
+              <h2 className="mt-1 text-xl font-semibold text-slate-950">Run capsule-aware research.</h2>
+            </div>
+            <button type="button" aria-label="Close agent actions" onClick={onClose} className="rounded-md p-2 text-slate-500 hover:bg-slate-100">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <div className="grid gap-3 overflow-y-auto p-5">
+          {capsuleActionPrompts.map((action) => (
+            <button key={action.label} type="button" onClick={() => onRun(action.prompt)} className="rounded-lg border border-slate-200 p-4 text-left hover:border-[#ff714d]/50 hover:bg-[#fff7f3]">
+              <span className="block text-sm font-semibold text-slate-950">{action.label}</span>
+              <span className="mt-2 block text-xs leading-5 text-slate-500">{action.prompt}</span>
+            </button>
+          ))}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function IconTextButton({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </button>
+  );
+}
+
 function Metric({ label, value }: { label: string; value: number }) {
   return (
     <span className="rounded-md border border-slate-200 p-2">
@@ -1330,7 +2115,7 @@ function Metric({ label, value }: { label: string; value: number }) {
   );
 }
 
-function SidebarButton({ icon: Icon, label, onClick, active = false }: { icon: typeof Search; label: string; onClick: () => void; active?: boolean }) {
+function SidebarButton({ icon: Icon, label, onClick, active = false }: { icon: LucideIcon; label: string; onClick: () => void; active?: boolean }) {
   return (
     <button
       type="button"

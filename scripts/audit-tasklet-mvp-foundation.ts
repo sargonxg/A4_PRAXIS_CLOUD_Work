@@ -67,6 +67,14 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'capsule-detail-panel',
   'policy-team-next-actions',
   'praxis-answer-markdown',
+  'capsule-workspace-actions',
+  'capsule-builder-dialog',
+  'capsule-repository-sheet',
+  'capsule-inspector-sheet',
+  'agent-action-drawer',
+  'message-action-row',
+  'text-span-core-popover',
+  '/spans',
 ]);
 expectIncludes('src/components/app/app-shell.tsx', [
   'data-testid="praxis-one-page-app-shell"',

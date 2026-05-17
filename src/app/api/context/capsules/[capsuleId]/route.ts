@@ -217,9 +217,9 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
       return NextResponse.json({ archived: true, capsule });
     }
     if (parsed.data.action === 'delete') {
-      const result = await deleteCapsule(user.uid, capsuleId);
-      if (!result.deleted) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
-      return NextResponse.json({ deleted: true });
+      const capsule = await archiveCapsule(user.uid, capsuleId);
+      if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return NextResponse.json({ archived: true, capsule });
     }
     if (parsed.data.action === 'set-visibility') {
       const capsule = await setCapsuleAccessPolicy(user.uid, capsuleId, {

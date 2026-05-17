@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.16.14',
+    version: '6.4.1',
+    date: '2026-05-16',
+    title: 'Capsule cockpit repository and span workflow',
+    summary: 'The one-page cockpit now exposes capsule building, repository review, message actions, research actions, and text-span binding without adding new app pages.',
+    category: 'product',
+    items: [
+      'Added cockpit sheets/dialogs for the capsule builder, repository, capsule inspector, and capsule-aware research actions.',
+      'Assistant messages now expose copy, retry, save-to-capsule, memo, and source-check actions.',
+      'Selected text in a PRAXIS answer can now be attached to Sourceability, Temporality, Causality, Human Friction, Rules, or Open Questions.',
+      'Added capsule span persistence under the owner-scoped capsule API and Firestore rules.',
+    ],
+  },
+  {
     buildNumber: '2026.05.16.13',
     version: '6.4.1',
     date: '2026-05-16',

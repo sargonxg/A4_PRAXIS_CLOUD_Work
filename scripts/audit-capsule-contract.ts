@@ -10,7 +10,11 @@ const REQUIRED_FILES = [
   'src/app/api/context/trust-posture/route.ts',
   'src/app/api/cores/library/route.ts',
   'src/app/api/context/capsules/[capsuleId]/swap/route.ts',
+  'src/app/api/context/capsules/[capsuleId]/notes/route.ts',
+  'src/app/api/context/capsules/[capsuleId]/evaluations/route.ts',
+  'src/app/api/context/capsules/[capsuleId]/memories/route.ts',
   'src/lib/context/context-injection.ts',
+  'src/lib/context/capsule-details-service.ts',
   'src/lib/cores/core-library.ts',
   'src/lib/assistant/next-moves.ts',
 ];

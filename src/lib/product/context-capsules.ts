@@ -298,6 +298,73 @@ export interface CapsuleConnectorIdea {
   description: string;
 }
 
+export type CapsuleConnectorId =
+  | 'upload'
+  | 'grounded-search'
+  | 'google-drive'
+  | 'gmail'
+  | 'cloud-storage'
+  | 'vertex-gemini-rag';
+
+export type CapsuleConnectorStatus = 'live' | 'planned-readonly' | 'advanced-configured' | 'advanced-planned';
+export type CapsuleConnectorRiskLevel = 'low' | 'medium' | 'high';
+export type CapsuleConnectorAction =
+  | 'upload-original'
+  | 'import-selected'
+  | 'search-grounded'
+  | 'read-thread'
+  | 'store-original'
+  | 'store-export'
+  | 'retrieve'
+  | 'mirror-to-rag';
+
+export interface CapsuleConnectorDefinition {
+  id: CapsuleConnectorId;
+  label: string;
+  icon: 'upload' | 'search' | 'drive' | 'mail' | 'bucket' | 'spark';
+  status: CapsuleConnectorStatus;
+  description: string;
+  requiredScopes: string[];
+  allowedActions: CapsuleConnectorAction[];
+  fillsSlots: CapsuleSlotId[];
+  riskLevel: CapsuleConnectorRiskLevel;
+  advancedOnly?: boolean;
+}
+
+export type CapsuleRetrievalBackend = 'local-hybrid' | 'vertex-rag-engine' | 'vertex-vector-search';
+export type CapsuleEmbeddingStatus = 'not-started' | 'queued' | 'embedded' | 'failed' | 'unavailable';
+
+export interface CapsuleRepositoryMetadata {
+  capsuleId: string;
+  ownerId: string;
+  storageBucket: string | null;
+  storageObjectRefs: string[];
+  documentIds: string[];
+  sourceReceiptIds: string[];
+  chunkCount: number;
+  embeddingStatus: CapsuleEmbeddingStatus;
+  retrievalBackend: CapsuleRetrievalBackend;
+  freshness: 'empty' | 'fresh' | 'stale' | 'needs-documents' | 'needs-sources';
+  lastIngestionRunId: string | null;
+  updatedAt: string;
+}
+
+export interface CapsuleIngestionReceipt {
+  receiptId: string;
+  capsuleId: string;
+  ownerId: string;
+  sourceConnectorId: CapsuleConnectorId;
+  originalUri: string;
+  storedObjectPath: string | null;
+  parserStatus: 'queued' | 'parsed' | 'failed' | 'not-applicable';
+  documentId: string | null;
+  sourceReceiptId: string | null;
+  chunkCount: number;
+  embeddingStatus: CapsuleEmbeddingStatus;
+  attachedAt: string;
+  retrievalBackend: CapsuleRetrievalBackend;
+}
+
 export interface CapsuleCombinationRecipe {
   id: string;
   label: string;
@@ -786,6 +853,140 @@ export function policyTeamCategoryForTags(tags: string[] | null | undefined): Po
     null;
 }
 
+export const CAPSULE_CONNECTOR_REGISTRY: CapsuleConnectorDefinition[] = [
+  {
+    id: 'upload',
+    label: 'Upload',
+    icon: 'upload',
+    status: 'live',
+    description: 'Attach PDFs, DOCX, text, Markdown, and HTML originals to the active capsule repository.',
+    requiredScopes: ['firebase-auth:user'],
+    allowedActions: ['upload-original', 'store-original'],
+    fillsSlots: ['document', 'source'],
+    riskLevel: 'low',
+  },
+  {
+    id: 'grounded-search',
+    label: 'Grounded search',
+    icon: 'search',
+    status: 'live',
+    description: 'Collect current source receipts from grounded search without making them canonical until attached.',
+    requiredScopes: ['google-search-grounding'],
+    allowedActions: ['search-grounded', 'import-selected'],
+    fillsSlots: ['source', 'connector'],
+    riskLevel: 'medium',
+  },
+  {
+    id: 'google-drive',
+    label: 'Google Drive',
+    icon: 'drive',
+    status: 'planned-readonly',
+    description: 'Import selected Docs, PDFs, Slides, and Sheets exports into a capsule repository.',
+    requiredScopes: ['https://www.googleapis.com/auth/drive.readonly'],
+    allowedActions: ['import-selected', 'store-original'],
+    fillsSlots: ['document', 'source', 'connector'],
+    riskLevel: 'medium',
+  },
+  {
+    id: 'gmail',
+    label: 'Gmail',
+    icon: 'mail',
+    status: 'planned-readonly',
+    description: 'Import selected threads or newsletters as source receipts. Outbound send is out of scope.',
+    requiredScopes: ['https://www.googleapis.com/auth/gmail.readonly'],
+    allowedActions: ['read-thread', 'import-selected'],
+    fillsSlots: ['source', 'connector', 'memory'],
+    riskLevel: 'high',
+  },
+  {
+    id: 'cloud-storage',
+    label: 'Cloud Storage',
+    icon: 'bucket',
+    status: 'live',
+    description: 'Durable home for uploaded originals, generated exports, and ingestion artifacts.',
+    requiredScopes: ['firebase-storage:user-owned-objects'],
+    allowedActions: ['store-original', 'store-export'],
+    fillsSlots: ['document', 'output'],
+    riskLevel: 'low',
+    advancedOnly: true,
+  },
+  {
+    id: 'vertex-gemini-rag',
+    label: 'Vertex/Gemini RAG',
+    icon: 'spark',
+    status: 'advanced-planned',
+    description: 'Optional advanced retrieval mirror for eligible files; local hybrid retrieval remains the default.',
+    requiredScopes: ['vertex-ai:rag-corpora', 'vertex-ai:vector-search'],
+    allowedActions: ['retrieve', 'mirror-to-rag'],
+    fillsSlots: ['document', 'source', 'tool'],
+    riskLevel: 'medium',
+    advancedOnly: true,
+  },
+];
+
+export function getCapsuleConnector(id: string | null | undefined): CapsuleConnectorDefinition | null {
+  if (!id) return null;
+  return CAPSULE_CONNECTOR_REGISTRY.find((connector) => connector.id === id) ?? null;
+}
+
+export function resolveCapsuleRetrievalBackend(
+  requested: CapsuleRetrievalBackend | null | undefined,
+  options: { vertexConfigured?: boolean } = {},
+): CapsuleRetrievalBackend {
+  if (!requested || requested === 'local-hybrid') return 'local-hybrid';
+  return options.vertexConfigured ? requested : 'local-hybrid';
+}
+
+export function normalizeCapsuleRepositoryMetadata(input: Partial<CapsuleRepositoryMetadata> & {
+  capsuleId: string;
+  ownerId: string;
+}): CapsuleRepositoryMetadata {
+  const documentIds = uniqueStrings(input.documentIds);
+  const sourceReceiptIds = uniqueStrings(input.sourceReceiptIds);
+  const chunkCount = Math.max(0, Math.floor(input.chunkCount ?? 0));
+  const freshness = input.freshness ??
+    (documentIds.length === 0 ? 'needs-documents' : sourceReceiptIds.length === 0 ? 'needs-sources' : 'fresh');
+  return {
+    capsuleId: input.capsuleId,
+    ownerId: input.ownerId,
+    storageBucket: input.storageBucket ?? null,
+    storageObjectRefs: uniqueStrings(input.storageObjectRefs),
+    documentIds,
+    sourceReceiptIds,
+    chunkCount,
+    embeddingStatus: input.embeddingStatus ?? (chunkCount > 0 ? 'queued' : 'not-started'),
+    retrievalBackend: input.retrievalBackend ?? 'local-hybrid',
+    freshness,
+    lastIngestionRunId: input.lastIngestionRunId ?? null,
+    updatedAt: input.updatedAt ?? new Date(0).toISOString(),
+  };
+}
+
+export function createCapsuleIngestionReceipt(input: Omit<Partial<CapsuleIngestionReceipt>, 'receiptId' | 'sourceConnectorId'> & {
+  capsuleId: string;
+  ownerId: string;
+  sourceConnectorId: CapsuleConnectorId;
+  originalUri: string;
+}): CapsuleIngestionReceipt {
+  const connector = getCapsuleConnector(input.sourceConnectorId);
+  const safeUri = input.originalUri.trim();
+  return {
+    receiptId: `ingest:${input.capsuleId}:${input.sourceConnectorId}:${stableReceiptPart(safeUri)}`,
+    capsuleId: input.capsuleId,
+    ownerId: input.ownerId,
+    sourceConnectorId: input.sourceConnectorId,
+    originalUri: safeUri,
+    storedObjectPath: input.storedObjectPath ?? null,
+    parserStatus: input.parserStatus ?? (connector?.allowedActions.includes('import-selected') || connector?.fillsSlots.includes('document') ? 'queued' : 'not-applicable'),
+    documentId: input.documentId ?? null,
+    sourceReceiptId: input.sourceReceiptId ?? null,
+    chunkCount: Math.max(0, Math.floor(input.chunkCount ?? 0)),
+    embeddingStatus: input.embeddingStatus ?? 'queued',
+    attachedAt: input.attachedAt ?? new Date(0).toISOString(),
+    retrievalBackend: input.retrievalBackend ?? 'local-hybrid',
+  };
+}
+
 export const CAPSULE_CONNECTOR_IDEAS: CapsuleConnectorIdea[] = [
   {
     id: 'library-upload',
@@ -830,6 +1031,14 @@ export const CAPSULE_CONNECTOR_IDEAS: CapsuleConnectorIdea[] = [
     description: 'Read-only browser-use plus Steel.dev lane for pages that cannot be reached through APIs.',
   },
 ];
+
+function uniqueStrings(values: string[] | null | undefined): string[] {
+  return Array.from(new Set((values ?? []).map((value) => value.trim()).filter(Boolean)));
+}
+
+function stableReceiptPart(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64) || 'source';
+}
 
 export const CAPSULE_COMBINATION_RECIPES: CapsuleCombinationRecipe[] = [
   {

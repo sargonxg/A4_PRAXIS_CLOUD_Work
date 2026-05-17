@@ -1,5 +1,4 @@
 import { spawn } from 'node:child_process';
-import path from 'node:path';
 
 export interface RustSemanticaValidationResult {
   nodeCount: number;
@@ -20,7 +19,7 @@ export interface RustSemanticaCliResponse {
 }
 
 const DEFAULT_BINARY_PATH = process.platform === 'win32'
-  ? path.join(/*turbopackIgnore: true*/ process.cwd(), 'rust', 'semantica-core', 'target-ci', 'debug', 'praxis-semantica-core.exe')
+  ? `${process.cwd()}\\rust\\semantica-core\\target-ci\\debug\\praxis-semantica-core.exe`
   : '/app/bin/praxis-semantica-core';
 
 export function getRustSemanticaBinaryPath(): string {

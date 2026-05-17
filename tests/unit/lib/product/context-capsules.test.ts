@@ -4,6 +4,7 @@ import {
   CAPSULE_ATTACHMENT_ROLES,
   CAPSULE_SLOT_DEFINITIONS,
   CAPSULE_COMBINATION_RECIPES,
+  CAPSULE_CONNECTOR_REGISTRY,
   CAPSULE_CONNECTOR_IDEAS,
   CAPSULE_OUTPUT_PRODUCTS,
   CONTEXT_CAPSULE_TEMPLATES,
@@ -13,8 +14,11 @@ import {
   capsuleSlotReadiness,
   categoryTagsForPolicyTeam,
   contextCapsuleLoginHref,
+  createCapsuleIngestionReceipt,
   getPolicyTeamCategory,
+  normalizeCapsuleRepositoryMetadata,
   policyTeamCategoryForTags,
+  resolveCapsuleRetrievalBackend,
 } from '@/lib/product/context-capsules';
 
 describe('context capsule product contract', () => {
@@ -146,6 +150,83 @@ describe('context capsule product contract', () => {
     expect(postures.has('candidate')).toBe(true);
     expect(postures.has('deferred')).toBe(true);
     expect(CAPSULE_CONNECTOR_IDEAS.some((connector) => connector.id === 'browser-session')).toBe(true);
+  });
+
+  it('defines a code-backed connector registry with scopes, actions, slots, and risk', () => {
+    const ids = new Set(CAPSULE_CONNECTOR_REGISTRY.map((connector) => connector.id));
+
+    expect(ids.size).toBe(CAPSULE_CONNECTOR_REGISTRY.length);
+    expect(ids).toEqual(new Set(['upload', 'grounded-search', 'google-drive', 'gmail', 'cloud-storage', 'vertex-gemini-rag']));
+    expect(CAPSULE_CONNECTOR_REGISTRY.find((connector) => connector.id === 'upload')?.status).toBe('live');
+    expect(CAPSULE_CONNECTOR_REGISTRY.find((connector) => connector.id === 'gmail')?.allowedActions).not.toContain('send');
+    expect(CAPSULE_CONNECTOR_REGISTRY.find((connector) => connector.id === 'vertex-gemini-rag')?.advancedOnly).toBe(true);
+
+    for (const connector of CAPSULE_CONNECTOR_REGISTRY) {
+      expect(connector.requiredScopes.length, `${connector.id} is missing scopes`).toBeGreaterThan(0);
+      expect(connector.allowedActions.length, `${connector.id} is missing allowed actions`).toBeGreaterThan(0);
+      expect(connector.fillsSlots.length, `${connector.id} is missing capsule slots`).toBeGreaterThan(0);
+      expect(['low', 'medium', 'high']).toContain(connector.riskLevel);
+    }
+  });
+
+  it('normalizes capsule repository metadata and keeps local retrieval as fallback', () => {
+    const repository = normalizeCapsuleRepositoryMetadata({
+      capsuleId: 'cap-1',
+      ownerId: 'user-1',
+      documentIds: ['doc-1', 'doc-1', ''],
+      sourceReceiptIds: [],
+      storageObjectRefs: ['gs://bucket/doc-1.pdf', 'gs://bucket/doc-1.pdf'],
+      chunkCount: 4.8,
+      retrievalBackend: 'local-hybrid',
+    });
+
+    expect(repository).toMatchObject({
+      capsuleId: 'cap-1',
+      ownerId: 'user-1',
+      documentIds: ['doc-1'],
+      sourceReceiptIds: [],
+      storageObjectRefs: ['gs://bucket/doc-1.pdf'],
+      chunkCount: 4,
+      embeddingStatus: 'queued',
+      freshness: 'needs-sources',
+      retrievalBackend: 'local-hybrid',
+    });
+    expect(resolveCapsuleRetrievalBackend('vertex-rag-engine', { vertexConfigured: false })).toBe('local-hybrid');
+    expect(resolveCapsuleRetrievalBackend('vertex-rag-engine', { vertexConfigured: true })).toBe('vertex-rag-engine');
+  });
+
+  it('creates normalized ingestion receipts for uploads and planned imports', () => {
+    const uploadReceipt = createCapsuleIngestionReceipt({
+      capsuleId: 'cap-1',
+      ownerId: 'user-1',
+      sourceConnectorId: 'upload',
+      originalUri: 'gs://bucket/raw.pdf',
+      storedObjectPath: 'users/user-1/capsules/cap-1/raw.pdf',
+      documentId: 'doc-1',
+      sourceReceiptId: 'source-1',
+      chunkCount: 12,
+      embeddingStatus: 'embedded',
+      parserStatus: 'parsed',
+    });
+
+    expect(uploadReceipt).toMatchObject({
+      receiptId: 'ingest:cap-1:upload:gs-bucket-raw-pdf',
+      parserStatus: 'parsed',
+      chunkCount: 12,
+      embeddingStatus: 'embedded',
+      retrievalBackend: 'local-hybrid',
+    });
+
+    const gmailReceipt = createCapsuleIngestionReceipt({
+      capsuleId: 'cap-1',
+      ownerId: 'user-1',
+      sourceConnectorId: 'gmail',
+      originalUri: 'gmail://thread/abc',
+    });
+
+    expect(gmailReceipt.parserStatus).toBe('queued');
+    expect(gmailReceipt.documentId).toBeNull();
+    expect(gmailReceipt.sourceReceiptId).toBeNull();
   });
 
   it('combines only known capsule templates and preserves merge rules', () => {

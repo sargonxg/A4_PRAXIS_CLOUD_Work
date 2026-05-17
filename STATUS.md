@@ -1,5 +1,17 @@
 # PRAXIS — STATUS
 
+## 2026-05-16 — Capsule Cockpit Repository And Span Workflow
+
+Current product checkpoint:
+
+- Central app metadata is now build `2026.05.16.14`.
+- `/app` now has cockpit sheets/dialogs for capsule building, repository review,
+  capsule inspection, and capsule-aware research actions.
+- Ask PRAXIS assistant messages expose copy, retry, save-to-capsule, memo, and
+  source-check actions.
+- Selected text can be attached to Sourceability, Temporality, Causality, Human
+  Friction, Rules, or Open Questions through a capsule span API.
+
 ## 2026-05-16 — Public Learn And TACITUS Links
 
 Current product checkpoint:
