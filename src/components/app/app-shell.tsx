@@ -108,7 +108,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     goWrite: () => router.push('/app'),
     goCanvas: () => router.push('/app'),
     goTools: () => router.push('/app'),
-    goSettings: () => router.push('/app'),
+    goSettings: () => router.push('/app/settings'),
     closeModal: closeOverlay,
   });
 

@@ -1164,8 +1164,8 @@
     "hash": "b10a915f4966e85753d4c3f3229cd64c"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-public-surface.ts": {
-    "mtime": 1779043198.8633428,
-    "hash": "4621e42b934e64e3a7b62a91b628e95b"
+    "mtime": 1779056288.551608,
+    "hash": "b3d795be8a5685b2e347084b57053db0"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-purpose-surface.ts": {
     "mtime": 1778985428.940656,
@@ -1192,8 +1192,8 @@
     "hash": "c9188e67b4aecce24193118ff96864e1"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-tasklet-mvp-foundation.ts": {
-    "mtime": 1779038729.8475523,
-    "hash": "8e9ce3f06f8012e0658ec76098eac9d0"
+    "mtime": 1779056527.7526312,
+    "hash": "56accc75c5f0eec4aa31d907eacc9a9c"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-tasklet-policy-workbench.ts": {
     "mtime": 1778957692.4694526,
@@ -1316,8 +1316,8 @@
     "hash": "e3c8cdcbc58300719bef4b3f92d90e2e"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\proxy.ts": {
-    "mtime": 1778998003.2591472,
-    "hash": "91a953eff54601f51bd29740f6364ebd"
+    "mtime": 1779055903.8745525,
+    "hash": "9a2eac2d5bfc92b278092b56d7b5443d"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\error.tsx": {
     "mtime": 1778429929.8257904,
@@ -1352,8 +1352,8 @@
     "hash": "30ca66bb8c2f931c73ca884d2dfcb78f"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\(auth)\\login\\page.tsx": {
-    "mtime": 1779000930.8819757,
-    "hash": "27a59ff8340d64de4a3d2df296501389"
+    "mtime": 1779055880.848483,
+    "hash": "555a7602953423ef4cdf5d25f00b6a9b"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\(auth)\\login\\callback\\page.tsx": {
     "mtime": 1778429929.3712564,
@@ -1376,8 +1376,8 @@
     "hash": "cf9c229e3d7862cda5f418dcec57bfef"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\api\\account\\route.ts": {
-    "mtime": 1778429929.3786716,
-    "hash": "82751c3eeacc1fcc2711a22a7511121b"
+    "mtime": 1779055922.5629108,
+    "hash": "497c8ad67b2c320dbafe1725f0c3a543"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\api\\admin\\system-health\\route.ts": {
     "mtime": 1779037119.2403853,
@@ -1468,8 +1468,8 @@
     "hash": "1e6b572588256bb30c89aae19d4ae302"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\api\\ai\\chat\\route.ts": {
-    "mtime": 1779036915.3610988,
-    "hash": "b141a80f2d81c140146324fc84514349"
+    "mtime": 1779056152.013495,
+    "hash": "3d40fee1283b63dab20b88cbab865f20"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\api\\ai\\commitment-scan\\route.ts": {
     "mtime": 1778998264.1524527,
@@ -2219,6 +2219,10 @@
     "mtime": 1779034527.44979,
     "hash": "ec08fa6aaecd8924cacdc2cc7b5ed5db"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\app\\settings\\page.tsx": {
+    "mtime": 1779056066.4984176,
+    "hash": "42d8cc55d9b87d0ac8a9539c8279c707"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\app\\onboarding\\chip-stack.tsx": {
     "mtime": 1778429929.8375359,
     "hash": "19df00159fb6571d401eb009e1cd14ae"
@@ -2280,12 +2284,12 @@
     "hash": "9be0ebd3271d8406f2df599dfa958d55"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\app-shell.tsx": {
-    "mtime": 1779034535.5088122,
-    "hash": "df211d00c9bd1d7cdf7b8fe74548bd8b"
+    "mtime": 1779056342.478368,
+    "hash": "9c42997f3c417026ca282e17daf62bd3"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\app-sidebar.tsx": {
-    "mtime": 1779034621.8453813,
-    "hash": "c14ebb5fc969f989130571c21e948150"
+    "mtime": 1779055765.70777,
+    "hash": "f271d18f54c8530130ac3431332756aa"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\calibration-transparency-modal.tsx": {
     "mtime": 1778771765.595001,
@@ -2324,8 +2328,8 @@
     "hash": "035c5332496151ee8cd1d3bed05c9b85"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\ask\\AskStreamPanel.tsx": {
-    "mtime": 1779040133.4198759,
-    "hash": "d75f960df48937b9fc78f25c6a4a5b58"
+    "mtime": 1779056182.559297,
+    "hash": "4ab46aa2998ca4d8a763245a9a218430"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\ask\\AskWorkspacePage.tsx": {
     "mtime": 1778998264.0011685,
@@ -2346,6 +2350,10 @@
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\assistant\\suggested-prompts.tsx": {
     "mtime": 1778945784.965388,
     "hash": "3392365a63ce508409fbd51a0139712e"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\brand\\praxis-brand-chip.tsx": {
+    "mtime": 1779055752.3673966,
+    "hash": "2ed458ed9f43a88fb46592c737feb86a"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\brand\\praxis-mark.tsx": {
     "mtime": 1778950681.7079127,
@@ -2516,12 +2524,16 @@
     "hash": "1b67a28d073f45e74674cdfe3fd1e76a"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tasklet-praxis-workbench.tsx": {
-    "mtime": 1779039204.060413,
-    "hash": "a34c2090e35b75e7e1fa6bdc1645b647"
+    "mtime": 1779055852.0854843,
+    "hash": "cf4fea4ea57791b3edac9d4e671d2da9"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tool-error-boundary.tsx": {
     "mtime": 1778940588.7607915,
     "hash": "99ce6cf7d3abaa2194ba2060dea94235"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\settings\\account-settings-page.tsx": {
+    "mtime": 1779056126.0271993,
+    "hash": "d3f1fa5ad812de2163742021579927f7"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\settings\\danger-zone.tsx": {
     "mtime": 1778429930.0101295,
@@ -2636,8 +2648,8 @@
     "hash": "bb370076286a063dd52fcc6a40743639"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\agent-runtime\\tool-registry.ts": {
-    "mtime": 1778987890.9249692,
-    "hash": "b01ee2f3b18ae2fe0188b891b745277b"
+    "mtime": 1779056095.1807451,
+    "hash": "4da67be84356445904ed4fc931b2998d"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\agent-runtime\\tool-risk.ts": {
     "mtime": 1778941798.4721131,
@@ -2672,12 +2684,16 @@
     "hash": "feb01eb1f9cae82aa13845854d2722e1"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\ai\\ask-answer-envelope.ts": {
-    "mtime": 1779038977.053615,
-    "hash": "4a790af381c1030d94ede42e3e113c95"
+    "mtime": 1779056101.3717968,
+    "hash": "dfb18aa0e87504095e3343457274d52c"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\ai\\ask-conversation.ts": {
     "mtime": 1779037122.069479,
     "hash": "4189853329559ea3544ce5ec0fca31e7"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\ai\\ask-orchestrator.ts": {
+    "mtime": 1779056282.0823996,
+    "hash": "51d145d9ad3021f2e6955bab5a245ae5"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\ai\\ask-praxis-context.ts": {
     "mtime": 1778772448.8283336,
@@ -2988,8 +3004,8 @@
     "hash": "2daea50fbb6c202012196bcc836fe4fe"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\constants\\app-version.ts": {
-    "mtime": 1779039084.3107474,
-    "hash": "3504f802e80f480559789459abf50c7a"
+    "mtime": 1779056304.7438443,
+    "hash": "e37a32fb698a4c71fcdb9aeaba46f96c"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\constants\\calendar-events.ts": {
     "mtime": 1778429930.218253,
@@ -3728,8 +3744,8 @@
     "hash": "3abcc5a857cd1fd20d9e187754940ad9"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\product\\release-notes.ts": {
-    "mtime": 1779039091.3641071,
-    "hash": "862208f72d2843a0653517ea6ac3f9c6"
+    "mtime": 1779056311.9273076,
+    "hash": "c22f3fbda241c4824ebe549028c0a907"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\product\\tasklet-style-runtime.ts": {
     "mtime": 1778945012.3887665,
@@ -4396,12 +4412,16 @@
     "hash": "5108e1137edd2a113e506a893cd3bde3"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\ask-source-preview-contract.test.ts": {
-    "mtime": 1779038832.8802652,
-    "hash": "7285b9f37b5709fed5279c62d545712f"
+    "mtime": 1779056010.4747455,
+    "hash": "d9cae702c197a6da93bbda6379f0d258"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\settings-page-contract.test.ts": {
+    "mtime": 1779056349.5847101,
+    "hash": "b9246c071e77a33b7dd07170faab5c85"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\tasklet-workbench-contract.test.ts": {
-    "mtime": 1779039114.4339252,
-    "hash": "655bfb7500331899970df5c22e0470b4"
+    "mtime": 1779055864.4804914,
+    "hash": "ab5637d9e3ed47c496940ec776ef946d"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\assistant\\suggested-prompts.test.ts": {
     "mtime": 1778946000.734394,
@@ -4448,8 +4468,8 @@
     "hash": "833f5c01d1a06589935261156b1bd083"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\agent-runtime\\tool-registry.test.ts": {
-    "mtime": 1778988186.3903947,
-    "hash": "a296a49e087a458c91831acc693050be"
+    "mtime": 1779056004.197988,
+    "hash": "b44db902aab9a04c5f7438a51bb98f4b"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\agent-runtime\\worker.test.ts": {
     "mtime": 1778997581.900649,
@@ -4462,6 +4482,10 @@
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\ai\\ask-conversation.test.ts": {
     "mtime": 1779000827.697524,
     "hash": "63bf2e89fb97f21afd45657a1d51d649"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\ai\\ask-orchestrator.test.ts": {
+    "mtime": 1779055997.1871066,
+    "hash": "59a90f95137a51280ddc74ca2657a9d4"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\ai\\ask-praxis-clean-routing.test.ts": {
     "mtime": 1778957511.4019632,
@@ -4868,8 +4892,8 @@
     "hash": "61bfabaaf69bc4639b321049139479a6"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\CHANGELOG.md": {
-    "mtime": 1779039117.3189564,
-    "hash": "41adbf5ad9670022a47f48f133658f25"
+    "mtime": 1779056327.5762706,
+    "hash": "61ebefd628a91700cf3bff752f80511d"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\CLAUDE.md": {
     "mtime": 1778998344.2078803,
@@ -4904,16 +4928,16 @@
     "hash": "5084e485b310d296815f911762574c80"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\STATUS.md": {
-    "mtime": 1779039282.1342783,
-    "hash": "dface3d0e1a9ab71ccf2ac4cfeb8d024"
+    "mtime": 1779056318.3181624,
+    "hash": "6027b821e08534c4c10e00d319d8d446"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\TESTING.md": {
     "mtime": 1778429928.5607307,
     "hash": "4480eec3f1c2e0555ad88d1b65411d4e"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\TODO.md": {
-    "mtime": 1779039112.087015,
-    "hash": "29841807be164d61192e89730cd76c9c"
+    "mtime": 1779056322.8948207,
+    "hash": "248183a3e345783d04d77624037729ba"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\backend\\agents\\README.md": {
     "mtime": 1778429928.5706878,

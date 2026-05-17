@@ -38,4 +38,20 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('onApply={() => applyUserCapsule(capsule)}');
     expect(source).toContain('Apply</button>');
   });
+
+  it('uses the login-matched shared brand treatment in the app workbench', () => {
+    expect(source).toContain("import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip'");
+    expect(source).toContain('<PraxisBrandChip');
+    expect(source).not.toContain('bg-sage text-white">◳');
+  });
+
+  it('renders app capsules as a first-class dense repository surface', () => {
+    expect(source).toContain('const isCapsuleRepositoryPage = initialPanel ===');
+    expect(source).toContain('Capsule repository');
+    expect(source).toContain("'capsule-repository-page'");
+    expect(source).toContain('lg:grid-cols-3');
+    expect(source).toContain('data-testid="document-repository-section"');
+    expect(source).toContain('Attach</button>');
+    expect(source).toContain('Detach</button>');
+  });
 });

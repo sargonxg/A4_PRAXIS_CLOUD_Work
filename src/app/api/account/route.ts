@@ -12,6 +12,7 @@
 
 import { getAuth } from 'firebase-admin/auth';
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { handleRouteError } from '@/lib/api/standard-error';
@@ -21,6 +22,27 @@ const SITUATION_SUBCOLLECTIONS = [
   'tool-data', 'briefings', 'dossiers', 'talking-points',
   'risk-assessments', 'conflict-grammar',
 ];
+
+const ACCOUNT_PATCH_FIELDS = new Set(['displayName', 'role', 'orgId', 'orgName', 'marketingConsent']);
+
+function cleanAccountPatch(input: unknown): Record<string, string | boolean> | null {
+  if (!input || typeof input !== 'object') return null;
+  const patch: Record<string, string | boolean> = {};
+  for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+    if (!ACCOUNT_PATCH_FIELDS.has(key)) continue;
+    if (key === 'marketingConsent') {
+      if (typeof value === 'boolean') patch[key] = value;
+      continue;
+    }
+    if (typeof value === 'string') patch[key] = value.trim().slice(0, 160);
+  }
+  return patch;
+}
+
+function serializeFirestoreData(data: Record<string, unknown> | undefined): Record<string, unknown> {
+  if (!data) return {};
+  return JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
+}
 
 async function purgeCollection(
   colRef: FirebaseFirestore.CollectionReference,
@@ -35,6 +57,78 @@ async function purgeCollection(
     snap = await colRef.limit(200).get();
   }
 }
+
+export const GET = withAuth(async (_request: Request, user) => {
+  try {
+    if (user.isDemo) {
+      return NextResponse.json({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.name,
+        role: 'analyst',
+        orgId: 'demo',
+        orgName: 'TACITUS demo workspace',
+        credits: 0,
+        totalCreditsUsed: 0,
+        subscription: 'free',
+        isDemo: true,
+      });
+    }
+
+    const db = getAdminDbOrThrow();
+    const snap = await db.collection('users').doc(user.uid).get();
+    if (!snap.exists) {
+      return NextResponse.json({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.name,
+        role: 'analyst',
+        orgId: 'org-default',
+        orgName: '',
+        credits: 0,
+        totalCreditsUsed: 0,
+        subscription: 'free',
+        isDemo: false,
+      });
+    }
+
+    return NextResponse.json({
+      uid: user.uid,
+      email: user.email,
+      ...serializeFirestoreData(snap.data()),
+    });
+  } catch (err) {
+    return handleRouteError(err, 'account-read');
+  }
+});
+
+export const PATCH = withAuth(async (request: Request, user) => {
+  try {
+    if (user.isDemo) {
+      return NextResponse.json({ ok: true, demo: true });
+    }
+
+    const raw = await request.json().catch(() => null);
+    const patch = cleanAccountPatch(raw);
+    if (!patch || Object.keys(patch).length === 0) {
+      return NextResponse.json({ error: 'No supported account fields provided.' }, { status: 400 });
+    }
+
+    const db = getAdminDbOrThrow();
+    await db.collection('users').doc(user.uid).set(patch, { merge: true });
+    const snap = await db.collection('users').doc(user.uid).get();
+    return NextResponse.json({
+      ok: true,
+      account: {
+        uid: user.uid,
+        email: user.email,
+        ...serializeFirestoreData(snap.data()),
+      },
+    });
+  } catch (err) {
+    return handleRouteError(err, 'account-update');
+  }
+});
 
 export const DELETE = withAuth(async (_request: Request, user) => {
   try {

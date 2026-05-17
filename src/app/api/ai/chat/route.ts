@@ -46,6 +46,14 @@ import {
   type AskIntent,
 } from '@/lib/ai/ask-conversation';
 import { buildAskAnswerEnvelope, buildSourcePreviewCards, type AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
+import {
+  buildAskConversationOrchestrationReceipt,
+  markAskOrchestrationRunQueued,
+  type AskConversationOrchestrationReceipt,
+} from '@/lib/ai/ask-orchestrator';
+import { createAgentRun } from '@/lib/agent-runtime/postgres';
+import { enqueueAgentRunDispatch } from '@/lib/agent-runtime/cloud-tasks';
+import { destinationHref } from '@/lib/product/policy-agents';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -455,6 +463,26 @@ You have access to the user's active situation data. When answering questions:
       warnings: turnCapsule?.activeGaps ?? [],
     });
     const sourcePreviewCards = buildSourcePreviewCards({ evidencePack: answerEvidencePack });
+    let orchestrationReceipt = buildAskConversationOrchestrationReceipt({
+      prompt,
+      intent: askIntent,
+      contextReceipt: runtimeReceipt.contextReceipt,
+      sourcePreviewCount: sourcePreviewCards.length,
+      activeGapCount: uniqueStrings([
+        ...(turnCapsule?.activeGaps ?? []),
+        ...(answerEvidencePack?.openGaps ?? []),
+      ]).length,
+      contextPackageId,
+    });
+    orchestrationReceipt = await maybeQueueAskAgentRun({
+      uid: _user.uid,
+      prompt,
+      threadId,
+      capsule: capsuleContext?.capsule ?? null,
+      contextPackageId,
+      orchestrationReceipt,
+    });
+    runtimeReceipt.orchestrationReceipt = orchestrationReceipt;
     const buildEnvelopeForText = (text: string): AskAnswerEnvelope => buildAskAnswerEnvelope({
       prompt,
       answer: text,
@@ -472,6 +500,7 @@ You have access to the user's active situation data. When answering questions:
         provider: String(runtimeReceipt.provider ?? ''),
         contextPackageId: contextPackageId ?? null,
       },
+      orchestrationReceipt,
     });
     const effectiveMessages = buildAskConversationMessages(
       messages,
@@ -633,6 +662,7 @@ interface AskRuntimeReceipt extends Record<string, unknown> {
   contextMode?: 'praxis_lite';
   memoryPersistence?: 'cloud-sql' | 'firestore';
   contextReceipt?: ReturnType<typeof buildAskContextReceipt>;
+  orchestrationReceipt?: AskConversationOrchestrationReceipt;
   answerEnvelope?: AskAnswerEnvelope;
 }
 
@@ -781,6 +811,87 @@ function decorateAskRuntimeReceipt(
       evidenceGapCount: input.evidencePackReceipt?.gapCount,
     },
   };
+}
+
+async function maybeQueueAskAgentRun(input: {
+  uid?: string | null;
+  prompt: string;
+  threadId?: string | null;
+  capsule: PraxisCapsule | null;
+  contextPackageId?: string | null;
+  orchestrationReceipt: AskConversationOrchestrationReceipt;
+}): Promise<AskConversationOrchestrationReceipt> {
+  const receipt = input.orchestrationReceipt;
+  if (!input.uid || !input.capsule || receipt.supervisor.action !== 'queue_agent_run' || !receipt.supervisor.policyAgentId) {
+    return receipt;
+  }
+
+  try {
+    const run = await createAgentRun({
+      ownerUid: input.uid,
+      capsuleId: input.capsule.capsuleId,
+      contextStackId: input.capsule.capsuleId,
+      contextPackageId: input.contextPackageId ?? null,
+      selectedCoreIds: input.capsule.coreRefs,
+      agentSpecId: null,
+      triggerType: 'manual',
+      objective: input.prompt,
+      traceId: receipt.traceId ?? `ask-${Date.now().toString(36)}`,
+      parentRunId: null,
+      idempotencyKey: buildAskAgentRunIdempotencyKey(input.threadId, receipt.traceId, input.prompt),
+      maxStep: receipt.triage.complexity === 'deep' ? 8 : 4,
+      maxSessionMinutes: receipt.triage.complexity === 'deep' ? 45 : 20,
+      internalEstimatedCostCents: null,
+      metadata: {
+        policyAgentId: receipt.supervisor.policyAgentId,
+        outputDestination: receipt.supervisor.outputDestination,
+        executionMode: 'ask-orchestrated',
+        sourceAskThreadId: input.threadId ?? null,
+        sourceAskTurnId: null,
+        orchestrationTraceId: receipt.traceId,
+        triageIntent: receipt.triage.intent,
+        triageComplexity: receipt.triage.complexity,
+        selectedToolIds: receipt.toolRouting.selectedToolIds,
+      },
+    });
+
+    let queued = markAskOrchestrationRunQueued(receipt, {
+      runId: run.id,
+      status: 'queued',
+      outputHref: receipt.supervisor.outputDestination ? destinationHref(receipt.supervisor.outputDestination) : null,
+    });
+
+    try {
+      const dispatch = await enqueueAgentRunDispatch({ ownerUid: input.uid, runId: run.id });
+      queued = markAskOrchestrationRunQueued(queued, {
+        runId: run.id,
+        status: 'dispatch_enqueued',
+        outputHref: receipt.supervisor.outputDestination ? destinationHref(receipt.supervisor.outputDestination) : null,
+        dispatchId: dispatch.payload.dispatchId,
+      });
+    } catch (err) {
+      queued = markAskOrchestrationRunQueued(queued, {
+        runId: run.id,
+        status: 'dispatch_failed',
+        outputHref: receipt.supervisor.outputDestination ? destinationHref(receipt.supervisor.outputDestination) : null,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      console.warn('[chat] Ask orchestration dispatch failed; run remains queued:', err);
+    }
+    return queued;
+  } catch (err) {
+    console.warn('[chat] Ask orchestration AgentRun creation failed:', err);
+    return markAskOrchestrationRunQueued(receipt, {
+      runId: 'unavailable',
+      status: 'ledger_failed',
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
+function buildAskAgentRunIdempotencyKey(threadId: string | null | undefined, traceId: string | null | undefined, prompt: string): string {
+  const basis = `${threadId ?? 'ask'}:${traceId ?? prompt}`;
+  return `ask:${basis}`.replace(/\s+/g, '-').slice(0, 220);
 }
 
 async function loadServerAskHistory(input: {

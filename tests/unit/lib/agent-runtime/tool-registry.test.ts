@@ -25,6 +25,16 @@ describe('agent tool registry', () => {
       persistenceTarget: 'memo',
       approvalPolicy: 'auto',
     });
+    expect(getAgentToolDefinition('deep-search-agent')).toMatchObject({
+      risk: 'medium',
+      persistenceTarget: 'source_receipt',
+      approvalPolicy: 'auto',
+    });
+    expect(getAgentToolDefinition('document-retrieve')).toMatchObject({
+      risk: 'low',
+      persistenceTarget: 'run_event',
+      approvalPolicy: 'auto',
+    });
     expect(agentToolRequiresApproval('graph-mutation')).toBe(true);
     expect(agentToolRequiresApproval('capsule-evidence-pack')).toBe(false);
   });

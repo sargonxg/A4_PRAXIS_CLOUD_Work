@@ -22,6 +22,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
+import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { NAV_GROUPS, type PrimaryNavGroup, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
@@ -92,13 +93,7 @@ export function AppSidebar() {
     >
       <div className="flex h-16 items-center gap-3 border-b border-[var(--color-app-border)] px-3">
         <PraxisLink href="/app" className="flex min-w-0 flex-1 items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-diplomatic-blue text-sm font-bold text-white">P</span>
-          {sidebarOpen ? (
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold text-navy-950">PRAXIS</span>
-              <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-400">by TACITUS</span>
-            </span>
-          ) : null}
+          <PraxisBrandChip compact className={sidebarOpen ? '' : '[&>span:last-child]:hidden'} />
         </PraxisLink>
         <button
           type="button"

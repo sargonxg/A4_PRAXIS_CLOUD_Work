@@ -18,4 +18,11 @@ describe('Ask source preview panel contract', () => {
     expect(source).toContain('<button');
     expect(source).not.toContain('<span key={followUp}');
   });
+
+  it('renders compact orchestration receipts from the Ask answer envelope', () => {
+    expect(source).toContain('OrchestrationReceiptPanel');
+    expect(source).toContain('orchestrationReceipt');
+    expect(source).toContain('Agent run');
+    expect(source).toContain('Tool router');
+  });
 });

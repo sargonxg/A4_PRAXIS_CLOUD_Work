@@ -1,5 +1,6 @@
 import type { CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
 import type { AskIntent } from '@/lib/ai/ask-conversation';
+import type { AskConversationOrchestrationReceipt } from '@/lib/ai/ask-orchestrator';
 import type { MemoBlock } from '@/types/memo';
 
 export type SourcePreviewType =
@@ -47,6 +48,7 @@ export interface AskAnswerEnvelope {
   claimGrounding: ClaimGrounding[];
   followUps: string[];
   documentPackCandidate: ConversationDocumentPack;
+  orchestrationReceipt?: AskConversationOrchestrationReceipt;
 }
 
 export interface ConversationDocumentPack {
@@ -170,6 +172,7 @@ export function buildAskAnswerEnvelope(input: {
   sourceCards: SourcePreviewCard[];
   gaps?: string[];
   provenance?: ConversationPackProvenance;
+  orchestrationReceipt?: AskConversationOrchestrationReceipt;
 }): AskAnswerEnvelope {
   const pack = buildConversationDocumentPack({
     title: titleForPrompt(input.prompt),
@@ -190,6 +193,7 @@ export function buildAskAnswerEnvelope(input: {
     claimGrounding: groundClaims(input.answer, input.sourceCards),
     followUps: followUpsFor(input.intent, input.sourceCards.length),
     documentPackCandidate: pack,
+    orchestrationReceipt: input.orchestrationReceipt,
   };
 }
 

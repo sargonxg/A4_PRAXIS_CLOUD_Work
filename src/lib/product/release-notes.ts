@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.17.07',
+    version: '6.4.1',
+    date: '2026-05-17',
+    title: 'Ask PRAXIS gets agentic orchestration receipts',
+    summary: 'Every Ask PRAXIS turn now runs through triage, ContextCapsule, tool-router, and supervisor receipts, with deep/current research automatically queued into the durable agent runtime when configured.',
+    category: 'runtime',
+    items: [
+      'Added a deterministic conversation orchestrator that classifies intent, complexity, context health, tool routes, approval gates, and the selected answer/run path before streaming.',
+      'Ask answer envelopes and saved thread turns now carry orchestration receipts alongside source previews, claim grounding, and Memo Studio document-pack candidates.',
+      'Deep, current, or multi-source Ask turns can auto-create and dispatch capsule-bound Research Memo agent runs while simple turns remain fast direct answers with receipts.',
+      'The Ask panel now shows compact triage, capsule, tool-router, and AgentRun chips without adding a new page or top-level navigation item.',
+    ],
+  },
+  {
     buildNumber: '2026.05.17.06',
     version: '6.4.1',
     date: '2026-05-17',

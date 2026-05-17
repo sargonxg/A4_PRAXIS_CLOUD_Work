@@ -704,6 +704,7 @@ function AskMessageBubble({
         ) : null}
 
         <TimelineMessageReceipt message={message} />
+        <OrchestrationReceiptPanel envelope={message.answerEnvelope} />
         <AnswerSourcePreviewPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
 
         {stages.length ? (
@@ -741,6 +742,69 @@ function AskMessageBubble({
         ) : null}
       </article>
     </div>
+  );
+}
+
+function OrchestrationReceiptPanel({ envelope }: { envelope?: AskAnswerEnvelope }) {
+  const receipt = envelope?.orchestrationReceipt;
+  if (!receipt) return null;
+  const queuedRun = receipt.supervisor.queuedRun;
+  return (
+    <section className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Agentic orchestration</p>
+        <span className={cn(
+          'rounded-md border px-1.5 py-0.5 font-mono text-[10px]',
+          receipt.supervisor.action === 'queue_agent_run'
+            ? 'border-diplomatic-blue/20 bg-white text-diplomatic-blue'
+            : 'border-slate-200 bg-white text-slate-500',
+        )}>
+          {receipt.triage.agenticMode.replace(/_/g, ' ')}
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
+        <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-slate-600">
+          Triage: {receipt.triage.intent.replace(/_/g, ' ')}
+        </span>
+        <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-slate-600">
+          Capsule: {receipt.capsule.contextHealth}
+        </span>
+        <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-slate-600">
+          Tool router: {receipt.toolRouting.selectedToolIds.length}
+        </span>
+        {receipt.toolRouting.approvalRequiredToolIds.length ? (
+          <span className="rounded-md border border-gold-200 bg-gold-50 px-1.5 py-0.5 font-semibold text-gold-900">
+            {receipt.toolRouting.approvalRequiredToolIds.length} approval gated
+          </span>
+        ) : null}
+        {queuedRun ? (
+          <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-semibold text-emerald-900">
+            Agent run: {queuedRun.runId === 'unavailable' ? queuedRun.status.replace(/_/g, ' ') : queuedRun.runId}
+          </span>
+        ) : null}
+      </div>
+      <details className="mt-2">
+        <summary className="cursor-pointer text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+          Runtime receipt
+        </summary>
+        <div className="mt-2 grid gap-1 sm:grid-cols-2">
+          {receipt.stages.map((stage) => (
+            <div
+              key={stage.stage}
+              className={cn(
+                'rounded-md border px-2 py-1 text-[10px]',
+                stage.status === 'ok'
+                  ? 'border-emerald-100 bg-emerald-50 text-emerald-950'
+                  : 'border-gold-100 bg-gold-50 text-gold-950',
+              )}
+            >
+              <p className="font-mono font-semibold">{stage.stage.replace(/_/g, ' ')}</p>
+              <p className="mt-0.5 leading-4">{stage.detail}</p>
+            </div>
+          ))}
+        </div>
+      </details>
+    </section>
   );
 }
 

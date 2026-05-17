@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils/cn';
 import { ArrowRight, Loader2, Mail, Chrome, Paperclip, Upload, Monitor, Mic } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
-import { PraxisGlyphChip } from '@/components/brand/praxis-mark';
+import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import {
   PENDING_POLICY_AGENT_ID_KEY,
   PENDING_TASKLET_PROMPT_KEY,
@@ -221,13 +221,7 @@ function LoginForm() {
           <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.035)_1px,transparent_1px)] bg-[size:28px_28px]" />
           <div className="relative flex min-h-screen flex-col p-8">
             <div className="flex items-center justify-between border-b border-slate-200 pb-5">
-              <div className="flex items-center gap-3">
-                <PraxisGlyphChip size={42} rotateOnHover={false} className="rounded-xl bg-white shadow-sm" />
-                <div>
-                  <p className="text-sm font-semibold text-slate-950">PRAXIS by TACITUS</p>
-                  <p className="text-xs text-slate-500">Private ContextCapsule workspace</p>
-                </div>
-              </div>
+              <PraxisBrandChip subtitle="Private ContextCapsule workspace" />
               <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
                 praxis.tacitus.me/app
               </span>
@@ -296,7 +290,7 @@ function LoginForm() {
             transition={{ delay: 0.15, duration: 0.5 }}
             className="mb-6 text-center"
           >
-            <PraxisGlyphChip size={54} rotateOnHover={false} className="mx-auto mb-4 rounded-xl bg-[color:var(--color-app-bg)]" />
+            <PraxisBrandChip subtitle="Think Policy" className="mb-4 justify-center" />
             <h1 className="font-serif text-3xl tracking-wide text-slate-950">
               PRAXIS
             </h1>

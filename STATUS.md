@@ -1,5 +1,24 @@
 # PRAXIS — STATUS
 
+## 2026-05-17 — Ask PRAXIS Agentic Conversation Runtime
+
+Current runtime checkpoint:
+
+- Central app metadata is now build `2026.05.17.07`.
+- Every live Ask PRAXIS turn now builds a deterministic orchestration receipt
+  before streaming: triage, ContextCapsule posture, tool routing, approval
+  gates, and supervisor decision.
+- Ask answer envelopes and persisted thread turns now preserve the
+  orchestration receipt alongside source previews, claim grounding, context
+  receipt, and Memo Studio document-pack candidate.
+- Deep/current/multi-source Ask turns can automatically create and dispatch a
+  capsule-bound Research Memo agent run through the existing Cloud SQL/Cloud
+  Tasks runtime when the runtime is configured; failures are receipt-visible
+  and do not block the direct answer.
+- The Ask panel now shows compact orchestration chips for triage, capsule,
+  tool-router, approval-gated tools, and queued AgentRun status without adding
+  a new app page or navigation item.
+
 ## 2026-05-17 — Ask PRAXIS Source-Rich Conversation Pack
 
 Current product checkpoint:

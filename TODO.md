@@ -16,6 +16,13 @@ Tasklet cleanup. New work starts from the active ledger above.
 
 ### Canonical Tasklet-Style Runtime Build
 
+0. Ask PRAXIS agentic conversation runtime is now implemented: each turn
+   records triage, ContextCapsule, tool-router, approval-gate, and supervisor
+   receipts; deep/current/multi-source prompts auto-queue a capsule-bound
+   Research Memo Agent run when Cloud SQL/Cloud Tasks are configured; and the
+   Ask panel shows compact orchestration chips. Next hardening should add a
+   browser-authenticated production flow that proves queued run status returns
+   into the same Ask thread after worker completion.
 0. Ask PRAXIS source-rich conversation packs are now implemented: answer
    envelopes include sourceability-aware claim grounding, richer source preview
    cards for uploaded chunks/corpus records/grounded fetches/receipts/digests,

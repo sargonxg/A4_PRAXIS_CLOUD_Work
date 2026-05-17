@@ -54,7 +54,7 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'data-testid="praxis-main-composer"',
   'data-testid="capsule-context-bar"',
   'data-testid="capsule-context-picker"',
-  'data-testid="capsule-manager"',
+  "'capsule-manager'",
   'data-testid="tasklet-capsule-cards"',
   'What can PRAXIS do for you?',
   'Describe a task or responsibility',

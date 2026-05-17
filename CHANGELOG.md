@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- feat(ask): add agentic conversation orchestration receipts.
+  Build 2026.05.17.07 runs every Ask PRAXIS turn through deterministic
+  triage, ContextCapsule, tool-router, and supervisor receipts; persists those
+  receipts in Ask answer envelopes/history; auto-queues deep/current research
+  into capsule-bound agent runs when configured; and shows compact
+  orchestration chips in the existing Ask panel.
+
 - feat(ask): make conversation packs source-rich and memo-ready.
   Build 2026.05.17.06 expands Ask PRAXIS source previews across uploaded
   chunks, corpus records, grounded fetches, source receipts, and document

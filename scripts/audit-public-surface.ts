@@ -42,7 +42,7 @@ for (const required of [
 
 for (const required of [
   'data-testid="praxis-main-composer"',
-  'data-testid="capsule-manager"',
+  "'capsule-manager'",
   'data-testid="tasklet-capsule-cards"',
   'What can PRAXIS do for you?',
   'Describe a task or responsibility',
