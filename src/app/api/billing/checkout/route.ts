@@ -31,8 +31,8 @@ export const POST = withAuth(async (request, user) => {
     externalCustomerId: user.uid,
     customerEmail: user.email,
     customerName: user.name,
-    successUrl: `${origin}/app/settings?tab=billing&checkoutId={CHECKOUT_ID}`,
-    returnUrl: `${origin}/app/settings?tab=billing`,
+    successUrl: `${origin}/app/settings?tab=billing&checkout=success&checkoutId={CHECKOUT_ID}`,
+    returnUrl: `${origin}/app/settings?tab=billing&checkout=cancelled`,
     metadata: {
       uid: user.uid,
       plan: parsed.data.plan,

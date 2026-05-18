@@ -18,7 +18,7 @@ export type RuntimeHealthSummary = {
   checks: RuntimeHealthCheck[];
 };
 
-const CRITICAL_CHECK_IDS = new Set(['frontend', 'firestore', 'backend', 'database', 'agent_ledger']);
+const CRITICAL_CHECK_IDS = new Set(['frontend', 'firestore', 'backend', 'database', 'agent_ledger', 'agent_queue']);
 
 export function buildRuntimeHealthSummary(
   checks: RuntimeHealthCheck[],
@@ -56,6 +56,7 @@ export function sanitizeRuntimeHealth(report: RuntimeHealthSummary): RuntimeHeal
 
 export async function collectRuntimeHealth(): Promise<RuntimeHealthSummary> {
   const startedAt = Date.now();
+  const queueCheck = await checkAgentTaskQueue();
   const checks: RuntimeHealthCheck[] = [
     { id: 'frontend', label: 'Frontend runtime', status: 'ok', latencyMs: 0 },
     {
@@ -77,6 +78,7 @@ export async function collectRuntimeHealth(): Promise<RuntimeHealthSummary> {
       status: process.env.AGENT_RUNTIME_DATABASE_URL || process.env.PRAXIS_DATABASE_URL || process.env.DATABASE_URL ? 'ok' : 'unconfigured',
       repairAction: 'Set an agent runtime database URL for durable queued-agent ledgers.',
     },
+    queueCheck,
     {
       id: 'agent_platform',
       label: 'Agent platform',
@@ -87,6 +89,73 @@ export async function collectRuntimeHealth(): Promise<RuntimeHealthSummary> {
 
   checks[0] = { ...checks[0], latencyMs: Date.now() - startedAt };
   return buildRuntimeHealthSummary(checks);
+}
+
+async function checkAgentTaskQueue(): Promise<RuntimeHealthCheck> {
+  const project = process.env.AGENT_RUN_TASKS_PROJECT
+    || process.env.GOOGLE_CLOUD_PROJECT
+    || process.env.GCLOUD_PROJECT
+    || 'praxisbytacitus';
+  const location = process.env.AGENT_RUN_TASKS_LOCATION
+    || process.env.GOOGLE_CLOUD_LOCATION
+    || process.env.GCP_REGION
+    || 'us-central1';
+  const queue = process.env.AGENT_RUN_TASKS_QUEUE || 'agent-runs';
+  const queuePath = `projects/${project}/locations/${location}/queues/${queue}`;
+  const startedAt = Date.now();
+
+  try {
+    const { CloudTasksClient } = await import('@google-cloud/tasks');
+    const client = new CloudTasksClient();
+    await client.getQueue({ name: queuePath });
+    return {
+      id: 'agent_queue',
+      label: 'Agent task queue',
+      status: 'ok',
+      latencyMs: Date.now() - startedAt,
+      detail: queuePath,
+    };
+  } catch (error) {
+    const restCheck = await checkAgentTaskQueueViaMetadata(queuePath, startedAt);
+    if (restCheck) return restCheck;
+
+    return {
+      id: 'agent_queue',
+      label: 'Agent task queue',
+      status: 'down',
+      latencyMs: Date.now() - startedAt,
+      detail: error instanceof Error ? error.message : String(error),
+      repairAction: `Create or grant access to ${queuePath}.`,
+    };
+  }
+}
+
+async function checkAgentTaskQueueViaMetadata(queuePath: string, startedAt: number): Promise<RuntimeHealthCheck | null> {
+  try {
+    const tokenResponse = await fetch('http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token', {
+      headers: { 'Metadata-Flavor': 'Google' },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(1500),
+    });
+    if (!tokenResponse.ok) return null;
+    const tokenPayload = await tokenResponse.json() as { access_token?: string };
+    if (!tokenPayload.access_token) return null;
+    const queueResponse = await fetch(`https://cloudtasks.googleapis.com/v2/${queuePath}`, {
+      headers: { Authorization: `Bearer ${tokenPayload.access_token}` },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(2500),
+    });
+    if (!queueResponse.ok) return null;
+    return {
+      id: 'agent_queue',
+      label: 'Agent task queue',
+      status: 'ok',
+      latencyMs: Date.now() - startedAt,
+      detail: queuePath,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function redactPublicRuntimeString(value: string): string {

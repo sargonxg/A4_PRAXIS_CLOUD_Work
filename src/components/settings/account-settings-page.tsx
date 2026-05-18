@@ -13,8 +13,10 @@ import {
   LogOut,
   RefreshCcw,
   Save,
+  ServerCog,
   ShieldCheck,
   SlidersHorizontal,
+  TerminalSquare,
   UserRound,
   Wrench,
   type LucideIcon,
@@ -44,6 +46,11 @@ type AccountRecord = {
   credits?: number;
   totalCreditsUsed?: number;
   subscription?: string;
+  subscriptionStatus?: string;
+  subscriptionPlanId?: string;
+  subscriptionExpiresAt?: string | null;
+  subscriptionProvider?: string;
+  polarCustomerId?: string | null;
   marketingConsent?: boolean;
   isDemo?: boolean;
 };
@@ -111,6 +118,59 @@ type ProviderPayload = {
   statuses: Record<string, ProviderStatus>;
 };
 
+type RuntimeHealthStatus = 'ok' | 'degraded' | 'down' | 'unconfigured';
+
+type RuntimeHealthPayload = {
+  status: RuntimeHealthStatus;
+  summary: string;
+  checkedAt: string;
+  checks: Array<{
+    id: string;
+    label: string;
+    status: RuntimeHealthStatus;
+    latencyMs?: number;
+  }>;
+};
+
+type AdminRuntimeHealthPayload = RuntimeHealthPayload & {
+  admin?: {
+    checks?: Array<{
+      id: string;
+      label: string;
+      status: RuntimeHealthStatus;
+      latencyMs?: number;
+      detail?: string;
+      repairAction?: string;
+    }>;
+  };
+};
+
+type MemoryCandidate = {
+  id?: string;
+  candidateId?: string;
+  title?: string;
+  text?: string;
+  type?: string;
+  confidence?: number;
+  sourceId?: string;
+  runId?: string;
+  capsuleId?: string;
+};
+
+type MemoryHealthPayload = {
+  enabled?: boolean;
+  ready?: boolean;
+  status?: string;
+  reason?: string;
+  lastRememberReceipt?: string;
+  lastRecallReceipt?: string;
+};
+
+type MemoryCandidatesPayload = {
+  candidates?: MemoryCandidate[];
+  status?: string;
+};
+
 const DEFAULT_AI_SETTINGS: AiSettings = {
   preferredModel: MODEL_PREFERENCE_VALUES[0],
   temperature: 0.4,
@@ -120,6 +180,18 @@ const DEFAULT_AI_SETTINGS: AiSettings = {
 };
 
 const DEFAULT_USAGE: WeeklyUsage = { allowance: 1, used: 0, remaining: 1 };
+
+const PLAN_SIGNUP_HREFS = {
+  analyst: '/login?mode=signup&plan=analyst',
+  team: '/login?mode=signup&plan=team',
+} as const;
+
+const MEMORY_ENDPOINTS = {
+  health: '/api/memory/health',
+  candidates: '/api/memory/candidates',
+  promote: '/api/memory/promote',
+  reject: '/api/memory/reject',
+} as const;
 
 const TABS: Array<{ id: SettingsTab; label: string; icon: LucideIcon; detail: string }> = [
   { id: 'profile', label: 'Profile', icon: UserRound, detail: 'User Core and analyst posture' },
@@ -153,6 +225,8 @@ export function AccountSettingsPage() {
   const [connectorDrafts, setConnectorDrafts] = useState<Record<string, Record<string, string>>>({});
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const checkoutPlan = searchParams.get('checkoutPlan');
+  const checkoutStatus = searchParams.get('checkout');
 
   const activeMeta = useMemo(() => TABS.find((tab) => tab.id === activeTab) ?? TABS[0], [activeTab]);
 
@@ -277,6 +351,13 @@ export function AccountSettingsPage() {
     if (result.data?.fallbackHref) router.push(result.data.fallbackHref);
     else setStatus(result.ok ? 'Billing is not configured.' : result.error);
   }
+
+  useEffect(() => {
+    if ((checkoutPlan === 'analyst' || checkoutPlan === 'team') && !busyAction && !loading) {
+      void startCheckout(checkoutPlan);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkoutPlan, loading]);
 
   async function saveConnector(provider: ProviderSpec) {
     setBusyAction(`connector-${provider.id}`);
@@ -414,6 +495,11 @@ export function AccountSettingsPage() {
           {activeTab === 'billing' ? (
             <BillingTab
               plan={plan}
+              subscriptionStatus={account?.subscriptionStatus}
+              subscriptionPlanId={account?.subscriptionPlanId}
+              subscriptionProvider={account?.subscriptionProvider}
+              subscriptionExpiresAt={account?.subscriptionExpiresAt}
+              checkoutStatus={checkoutStatus}
               credits={credits}
               totalCreditsUsed={totalCreditsUsed}
               busyAction={busyAction}
@@ -513,6 +599,11 @@ function ProfileTab({
 
 function BillingTab({
   plan,
+  subscriptionStatus,
+  subscriptionPlanId,
+  subscriptionProvider,
+  subscriptionExpiresAt,
+  checkoutStatus,
   credits,
   totalCreditsUsed,
   busyAction,
@@ -520,6 +611,11 @@ function BillingTab({
   onCheckout,
 }: {
   plan: string;
+  subscriptionStatus?: string;
+  subscriptionPlanId?: string;
+  subscriptionProvider?: string;
+  subscriptionExpiresAt?: string | null;
+  checkoutStatus?: string | null;
   credits: number;
   totalCreditsUsed: number;
   busyAction: string | null;
@@ -528,8 +624,24 @@ function BillingTab({
 }) {
   return (
     <div className="space-y-5">
+      {checkoutStatus === 'success' ? (
+        <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+          Checkout completed. The Polar webhook will update this plan as soon as the subscription event arrives.
+        </p>
+      ) : null}
+      {checkoutStatus === 'cancelled' ? (
+        <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          Checkout was cancelled. Your current plan is unchanged.
+        </p>
+      ) : null}
       <div className="grid gap-3 md:grid-cols-3">
         <Metric label="Current plan" value={plan} />
+        <Metric label="Subscription status" value={subscriptionStatus ?? 'not active'} />
+        <Metric label="Billing provider" value={subscriptionProvider ?? 'none'} />
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        <Metric label="Plan id" value={subscriptionPlanId ?? plan} />
+        <Metric label="Period end" value={subscriptionExpiresAt ? new Date(subscriptionExpiresAt).toLocaleDateString() : 'not set'} />
         <Metric label="Credits remaining" value={credits} />
         <Metric label="Credits used" value={totalCreditsUsed} />
       </div>
@@ -541,6 +653,10 @@ function BillingTab({
       <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
         If Polar billing is not configured in this environment, PRAXIS sends users to the public pricing page instead of failing silently.
       </p>
+      <div className="flex flex-wrap gap-2 text-sm">
+        <Link href={PLAN_SIGNUP_HREFS.analyst} className="font-semibold text-diplomatic-blue hover:underline">Practitioner signup</Link>
+        <Link href={PLAN_SIGNUP_HREFS.team} className="font-semibold text-diplomatic-blue hover:underline">Team signup</Link>
+      </div>
     </div>
   );
 }
@@ -726,6 +842,61 @@ function SystemTab({
   busy: boolean;
   onSave: () => void;
 }) {
+  const [runtimeHealth, setRuntimeHealth] = useState<RuntimeHealthPayload | null>(null);
+  const [coreHealth, setCoreHealth] = useState<Record<string, unknown> | null>(null);
+  const [adminHealth, setAdminHealth] = useState<AdminRuntimeHealthPayload | null>(null);
+  const [memoryHealth, setMemoryHealth] = useState<MemoryHealthPayload | null>(null);
+  const [memoryCandidates, setMemoryCandidates] = useState<MemoryCandidate[]>([]);
+  const [memoryAction, setMemoryAction] = useState<string | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
+  const [refreshingHealth, setRefreshingHealth] = useState(false);
+
+  async function refreshHealth() {
+    setRefreshingHealth(true);
+    setHealthError(null);
+    const [runtimeRes, coreRes, adminRes, memoryHealthRes, memoryCandidatesRes] = await Promise.all([
+      fetchJson<RuntimeHealthPayload>('/api/health/runtime'),
+      fetchJson<Record<string, unknown>>('/api/health'),
+      fetchJson<AdminRuntimeHealthPayload>('/api/admin/system-health'),
+      fetchJson<MemoryHealthPayload>(MEMORY_ENDPOINTS.health),
+      fetchJson<MemoryCandidatesPayload>(MEMORY_ENDPOINTS.candidates),
+    ]);
+    if (runtimeRes.ok) setRuntimeHealth(runtimeRes.data);
+    if (coreRes.ok) setCoreHealth(coreRes.data);
+    if (adminRes.ok) setAdminHealth(adminRes.data);
+    if (memoryHealthRes.ok) setMemoryHealth(memoryHealthRes.data);
+    if (memoryCandidatesRes.ok) setMemoryCandidates(memoryCandidatesRes.data.candidates ?? []);
+    if (!runtimeRes.ok) setHealthError(runtimeRes.error);
+    else if (!coreRes.ok) setHealthError(coreRes.error);
+    setRefreshingHealth(false);
+  }
+
+  useEffect(() => {
+    void refreshHealth();
+  }, []);
+
+  const visibleChecks = adminHealth?.admin?.checks ?? runtimeHealth?.checks ?? [];
+  const coreChecks = typeof coreHealth?.checks === 'object' && coreHealth?.checks !== null
+    ? Object.entries(coreHealth.checks as Record<string, unknown>)
+    : [];
+
+  async function decideMemoryCandidate(candidate: MemoryCandidate, decision: 'promote' | 'reject') {
+    const candidateId = candidate.candidateId ?? candidate.id;
+    if (!candidateId) return;
+    setMemoryAction(`${decision}-${candidateId}`);
+    const result = await fetchJson<{ ok?: boolean }>(decision === 'promote' ? MEMORY_ENDPOINTS.promote : MEMORY_ENDPOINTS.reject, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ candidateId, capsuleId: candidate.capsuleId, sourceId: candidate.sourceId, runId: candidate.runId }),
+    });
+    if (result.ok) {
+      setMemoryCandidates((current) => current.filter((item) => (item.candidateId ?? item.id) !== candidateId));
+    } else {
+      setHealthError(result.error);
+    }
+    setMemoryAction(null);
+  }
+
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2">
@@ -759,8 +930,138 @@ function SystemTab({
           Open health JSON
         </Link>
       </div>
+      <section data-testid="system-doctor-panel" className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-400">Developer checks</p>
+            <h3 className="mt-1 text-base font-semibold text-navy-950">PRAXIS runtime doctor</h3>
+            <p className="mt-1 text-sm leading-6 text-navy-500">
+              {runtimeHealth ? `${runtimeHealth.summary} at ${new Date(runtimeHealth.checkedAt).toLocaleString()}` : 'Runtime status is loading.'}
+            </p>
+          </div>
+          <ActionButton icon={RefreshCcw} label={refreshingHealth ? 'Refreshing...' : 'Refresh checks'} onClick={refreshHealth} disabled={refreshingHealth} variant="secondary" />
+        </div>
+
+        {healthError ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">{healthError}</p> : null}
+
+        <div className="grid gap-3 md:grid-cols-2">
+          {visibleChecks.map((check) => (
+            <div key={check.id} className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-navy-950">{check.label}</p>
+                  <p className="mt-1 text-xs text-navy-500">{check.id}{typeof check.latencyMs === 'number' ? ` · ${check.latencyMs} ms` : ''}</p>
+                </div>
+                <StatusPill status={check.status} />
+              </div>
+              {repairActionFor(check) ? (
+                <p className="mt-2 text-xs leading-5 text-amber-700">{repairActionFor(check)}</p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+
+        {coreChecks.length > 0 ? (
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <p className="text-sm font-semibold text-navy-950">Core health</p>
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              {coreChecks.map(([key, value]) => (
+                <div key={key} className="flex items-center justify-between gap-3 text-xs">
+                  <span className="font-semibold text-navy-600">{key}</span>
+                  <span className="text-navy-500">{String(value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <InfoPanel title="Doctor commands">
+            <p className="font-mono text-xs">npm run doctor:praxis -- --mode=full --base-url=https://praxis.tacitus.me</p>
+            <p className="mt-2 font-mono text-xs">npm run doctor:praxis:canary -- --base-url=https://praxis.tacitus.me</p>
+          </InfoPanel>
+          <InfoPanel title="Diagnostic endpoints">
+            <div className="flex flex-wrap gap-2">
+              <Link href="/api/health/runtime" target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-700 hover:bg-white">
+                <ServerCog className="h-4 w-4" />
+                Runtime JSON
+              </Link>
+              <Link href="/api/admin/system-health" target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-700 hover:bg-white">
+                <TerminalSquare className="h-4 w-4" />
+                Admin JSON
+              </Link>
+            </div>
+          </InfoPanel>
+        </div>
+      </section>
+      <section data-testid="advanced-memory-review-panel" className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-400">Advanced memory</p>
+            <h3 className="mt-1 text-base font-semibold text-navy-950">Cognee memory review</h3>
+            <p className="mt-1 text-sm leading-6 text-navy-500">
+              {memoryHealth?.status ?? (memoryHealth?.enabled ? 'configured' : 'memory_layer_disabled')}
+              {memoryHealth?.reason ? ` - ${memoryHealth.reason}` : ''}
+            </p>
+          </div>
+          <StatusPill status={memoryHealth?.ready ? 'ok' : memoryHealth?.enabled ? 'degraded' : 'unconfigured'} />
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <Metric label="Last recall" value={memoryHealth?.lastRecallReceipt ?? 'none'} />
+          <Metric label="Last remember" value={memoryHealth?.lastRememberReceipt ?? 'none'} />
+          <Metric label="Candidates" value={memoryCandidates.length} />
+        </div>
+
+        <div className="space-y-2">
+          {memoryCandidates.slice(0, 5).map((candidate) => {
+            const candidateId = candidate.candidateId ?? candidate.id ?? 'candidate';
+            return (
+              <article key={candidateId} className="rounded-lg border border-slate-200 bg-white p-3">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-navy-950">{candidate.title ?? candidate.type ?? candidateId}</p>
+                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-navy-500">{candidate.text ?? 'Review candidate provenance before promotion.'}</p>
+                    <p className="mt-1 text-[11px] text-navy-400">
+                      {[candidate.capsuleId, candidate.sourceId, candidate.runId].filter(Boolean).join(' / ') || 'capsule/source/run provenance pending'}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <ActionButton icon={CheckCircle2} label="Promote" onClick={() => decideMemoryCandidate(candidate, 'promote')} disabled={memoryAction !== null} variant="secondary" />
+                    <ActionButton icon={RefreshCcw} label="Reject" onClick={() => decideMemoryCandidate(candidate, 'reject')} disabled={memoryAction !== null} variant="secondary" />
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+          {memoryCandidates.length === 0 ? (
+            <p className="rounded-lg border border-slate-200 bg-white p-3 text-sm text-navy-500">
+              No Cognee candidates are waiting for review. Candidate promotion remains gated through the memory review endpoints.
+            </p>
+          ) : null}
+        </div>
+      </section>
     </div>
   );
+}
+
+function StatusPill({ status }: { status: RuntimeHealthStatus }) {
+  const className = status === 'ok'
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    : status === 'degraded' || status === 'unconfigured'
+      ? 'border-amber-200 bg-amber-50 text-amber-700'
+      : 'border-red-200 bg-red-50 text-red-700';
+  return (
+    <span className={cn('rounded-md border px-2 py-1 text-[11px] font-bold uppercase tracking-[0.12em]', className)}>
+      {status}
+    </span>
+  );
+}
+
+function repairActionFor(check: unknown): string | null {
+  if (!check || typeof check !== 'object' || !('repairAction' in check)) return null;
+  const value = check.repairAction;
+  return typeof value === 'string' ? value : null;
 }
 
 function TextField({

@@ -10,6 +10,7 @@ interface FeatureFlagState {
 
 interface FeatureFlags {
   cognee: FeatureFlagState;
+  polar: FeatureFlagState;
   postgresKg: FeatureFlagState;
   agentEngineSubagents: FeatureFlagState;
 }
@@ -20,6 +21,8 @@ export async function GET() {
   const kgBackend = (process.env.KG_BACKEND ?? 'firestore').toLowerCase();
   const postgresKgEnabled = kgBackend === 'postgres' || kgBackend === 'both';
   const agentEngineConfigured = Boolean(process.env.VERTEX_AGENT_ENGINE_ID);
+  const polarMissing = ['POLAR_ACCESS_TOKEN', 'POLAR_WEBHOOK_SECRET', 'POLAR_PRODUCT_ANALYST', 'POLAR_PRODUCT_TEAM']
+    .filter((name) => !process.env[name]);
 
   const flags: FeatureFlags = {
       cognee: {
@@ -28,6 +31,13 @@ export async function GET() {
         reason: cogneeEnabled
           ? 'COGNEE_ENABLED=true and COGNEE_BACKEND_URL is set'
           : 'COGNEE_ENABLED is not "true" or COGNEE_BACKEND_URL is missing',
+      },
+      polar: {
+        enabled: polarMissing.length === 0,
+        mode: polarMissing.length === 0 ? process.env.POLAR_SERVER || 'production' : 'unconfigured',
+        reason: polarMissing.length === 0
+          ? 'Polar token, webhook secret, and monthly product IDs are set'
+          : `Missing ${polarMissing.join(', ')}`,
       },
       postgresKg: {
         enabled: postgresKgEnabled,

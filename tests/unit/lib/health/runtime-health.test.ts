@@ -10,6 +10,7 @@ const okChecks: RuntimeHealthCheck[] = [
   { id: 'firestore', label: 'Firestore', status: 'ok', latencyMs: 2 },
   { id: 'backend', label: 'Private backend', status: 'ok', latencyMs: 3 },
   { id: 'agent_ledger', label: 'Deep work queue', status: 'ok', latencyMs: 4 },
+  { id: 'agent_queue', label: 'Agent task queue', status: 'ok', latencyMs: 5 },
   { id: 'agent_platform', label: 'Agent platform', status: 'unconfigured' },
 ];
 
@@ -41,6 +42,17 @@ describe('runtime health summary', () => {
   it('treats the durable agent ledger as a critical Ask runtime dependency and ADK as optional', () => {
     const checks = okChecks.map((check) =>
       check.id === 'agent_ledger' ? { ...check, status: 'down' as const } : check,
+    );
+
+    expect(buildRuntimeHealthSummary(checks, new Date('2026-05-17T12:00:00Z'))).toMatchObject({
+      status: 'degraded',
+      summary: 'Some systems degraded',
+    });
+  });
+
+  it('treats the Cloud Tasks agent queue as a critical agent runtime dependency', () => {
+    const checks = okChecks.map((check) =>
+      check.id === 'agent_queue' ? { ...check, status: 'down' as const } : check,
     );
 
     expect(buildRuntimeHealthSummary(checks, new Date('2026-05-17T12:00:00Z'))).toMatchObject({

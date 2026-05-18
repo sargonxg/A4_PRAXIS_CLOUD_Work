@@ -77,8 +77,9 @@ function redirectWithSearch(request: NextRequest, nonce: string, target: string)
  */
 function parseSessionForRouting(cookieValue: string): { demo?: boolean; token?: string; onboarded?: boolean; onboardingComplete?: boolean } | null {
   try {
-    const idx = cookieValue.lastIndexOf('.');
-    const jsonPart = idx !== -1 ? cookieValue.slice(0, idx) : cookieValue;
+    const decoded = decodeURIComponent(cookieValue);
+    const idx = decoded.lastIndexOf('.');
+    const jsonPart = idx !== -1 ? decoded.slice(0, idx) : decoded;
     const parsed = JSON.parse(jsonPart);
     if (typeof parsed === 'object' && parsed !== null) {
       return parsed as { demo?: boolean; token?: string; onboarded?: boolean; onboardingComplete?: boolean };

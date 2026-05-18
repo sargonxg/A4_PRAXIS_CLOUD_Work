@@ -41,8 +41,13 @@ export async function GET() {
 
   // --- Optional integrations (warn but don't fail) ---
   checks.vertex_adk = process.env.VERTEX_AGENT_ENGINE_ID ? 'ok' : 'unconfigured';
-  checks.cognee_memory = process.env.COGNEE_ENABLED === 'true' ? 'ok' : 'unconfigured';
-  checks.polar = (process.env.POLAR_ACCESS_TOKEN && process.env.POLAR_WEBHOOK_SECRET) ? 'ok' : 'unconfigured';
+  checks.cognee_memory = (process.env.COGNEE_ENABLED === 'true' && process.env.COGNEE_BACKEND_URL) ? 'ok' : 'unconfigured';
+  checks.polar = (
+    process.env.POLAR_ACCESS_TOKEN
+    && process.env.POLAR_WEBHOOK_SECRET
+    && process.env.POLAR_PRODUCT_ANALYST
+    && process.env.POLAR_PRODUCT_TEAM
+  ) ? 'ok' : 'unconfigured';
 
   const status = healthy ? 200 : 503;
 
@@ -58,7 +63,7 @@ export async function GET() {
         calibratedAiRoutesStartToolRuns: true,
         genkitProvider: genkitProvider.kind,
         genkitLocation: genkitProvider.location,
-        cogneeMemoryEnabled: process.env.COGNEE_ENABLED === 'true',
+        cogneeMemoryEnabled: process.env.COGNEE_ENABLED === 'true' && Boolean(process.env.COGNEE_BACKEND_URL),
         cogneeMode: process.env.COGNEE_MODE || 'disabled',
       },
     },

@@ -45,8 +45,8 @@ function LoginForm() {
   const capsulePathParam = searchParams.get('capsulePath');
   const capsuleOutputParam = searchParams.get('capsuleOutput');
   const policyAgentParam = searchParams.get('policyAgentId');
-  const appRedirect = planParam
-    ? `/pricing?upgrade=${planParam}`
+  const appRedirect = planParam === 'analyst' || planParam === 'team'
+    ? `/app/settings?tab=billing&checkoutPlan=${planParam}`
     : resolvePostLoginRedirect(searchParams, false);
   const {
     user,

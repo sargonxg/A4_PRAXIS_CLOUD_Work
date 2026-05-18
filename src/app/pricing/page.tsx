@@ -62,7 +62,7 @@ export default function PricingPage() {
                 ))}
               </ul>
               <Link
-                href={tier.id === 'enterprise' ? 'mailto:hello@tacitus.me' : '/login?mode=signup'}
+                href={tier.id === 'enterprise' ? 'mailto:hello@tacitus.me' : `/login?mode=signup${tier.id === 'analyst' || tier.id === 'team' ? `&plan=${tier.id}` : ''}`}
                 className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-full bg-[color:var(--color-diplomatic-blue)] px-4 text-sm font-semibold text-white"
               >
                 {tier.cta}

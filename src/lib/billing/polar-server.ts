@@ -11,8 +11,9 @@ export function polarProductIdForPlan(plan: string | null | undefined): string |
 
 export function isPolarBillingConfigured(plan?: string | null): boolean {
   if (!process.env.POLAR_ACCESS_TOKEN) return false;
+  if (!process.env.POLAR_WEBHOOK_SECRET) return false;
   if (plan) return Boolean(polarProductIdForPlan(plan));
-  return Boolean(process.env.POLAR_PRODUCT_ANALYST || process.env.POLAR_PRODUCT_TEAM);
+  return Boolean(process.env.POLAR_PRODUCT_ANALYST && process.env.POLAR_PRODUCT_TEAM);
 }
 
 export function createPolarClient(): Polar {
