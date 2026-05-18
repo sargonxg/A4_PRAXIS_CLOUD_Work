@@ -102,6 +102,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('capsuleDomainFilters');
     expect(source).toContain('data-testid="capsule-taxonomy-surface"');
     expect(source).toContain('data-testid="capsule-tool-output-lanes"');
+    expect(source).toContain('id="capsule-repository-section"');
     expect(source).toContain('Source pack');
     expect(source).toContain('Starter excerpts');
     expect(source).toContain('AI use guidance');
@@ -119,6 +120,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Use as situation</button>');
     expect(source).toContain('Use as output</button>');
     expect(source).toContain('Add as reference</button>');
+    expect(source).not.toContain('data-testid="capsule-context-picker"');
+    expect(source).not.toContain('capsulePickerQuery');
+    expect((source.match(/placeholder="Search capsules"/g) ?? []).length).toBe(1);
   });
 
   it('renders the live stack inside the composer instead of a separate rail above it', () => {
