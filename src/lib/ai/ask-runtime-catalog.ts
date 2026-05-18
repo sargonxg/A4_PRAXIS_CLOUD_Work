@@ -97,8 +97,10 @@ export function buildAskRuntimeFallbackCandidates(input: {
   selectedModelId: string | null | undefined;
   analysisDepth?: string | null;
 }): ModelPreferenceValue[] {
-  const selected = getAskRuntimeOption(input.selectedModelId).id;
-  const deep = input.analysisDepth === 'deep' || getAskRuntimeOption(selected).mode === 'research_memo';
+  const deep = input.analysisDepth === 'deep';
+  const selected = deep
+    ? ASK_MODEL_POLICY.frontierPrimary.deepModelId
+    : getAskRuntimeOption(input.selectedModelId).id;
   return buildModelFallbackCandidates({
     selectedModelId: selected,
     depth: deep ? 'deep' : 'chat',

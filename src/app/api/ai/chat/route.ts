@@ -435,8 +435,9 @@ You have access to the user's active situation data. When answering questions:
     systemPrompt += depthDirective;
     systemPrompt += '\n\n' + askIntentDirective(askIntent);
 
-    // Select model based on user preferences. The default comes from
-    // MODEL_MATRIX.json so the app follows the single provider/matrix contract.
+    // TACITUS owns model routing for Ask PRAXIS. Legacy client settings are
+    // tolerated for compatibility, but the selected provider model is derived
+    // from the server-side routing receipt.
     const modelRuntimePolicy = getAskPraxisModelRuntimePolicy();
     const runtime = selectAskRuntime(aiSettings, modelRuntimePolicy);
     let runtimeReceipt = decorateAskRuntimeReceipt(runtime.receipt, {
@@ -478,7 +479,15 @@ You have access to the user's active situation data. When answering questions:
         ...(answerEvidencePack?.openGaps ?? []),
       ]).length,
       contextPackageId,
+      userSelectedModelId: aiSettings?.model ?? null,
     });
+    runtimeReceipt = {
+      ...runtimeReceipt,
+      model: orchestrationReceipt.routingDecision.selectedModelId,
+      selectedModel: orchestrationReceipt.routingDecision.selectedModelId,
+      modelLifecycleTier: getAskRuntimeOption(orchestrationReceipt.routingDecision.selectedModelId).lifecycleTier,
+      analysisDepth: orchestrationReceipt.routingDecision.modelTier === 'deep' || orchestrationReceipt.routingDecision.modelTier === 'sourceability' ? 'deep' : 'standard',
+    };
     orchestrationReceipt = await maybeQueueAskAgentRun({
       uid: _user.uid,
       prompt,
@@ -838,7 +847,9 @@ function buildAskPrompt(input: {
 }
 
 function selectAskRuntime(aiSettings: AiSettings, policy: ModelRuntimePolicy) {
-  const selectedModel = aiSettings?.model ?? policy.frontierPrimary.chatModelId;
+  const selectedModel = aiSettings?.analysisDepth === 'deep'
+    ? policy.frontierPrimary.deepModelId
+    : policy.frontierPrimary.chatModelId;
   const selectedOption = getAskRuntimeOption(selectedModel);
   return {
     receipt: {

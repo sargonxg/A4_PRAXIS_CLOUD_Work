@@ -423,7 +423,7 @@ describe('capsule service', () => {
     const second = await seedStarterCapsules('u1', deps(db));
     const capsules = await listCapsules('u1', { includeArchived: true }, deps(db));
 
-    expect(first.created).toBeGreaterThanOrEqual(39);
+    expect(first.created).toBeGreaterThanOrEqual(44);
     expect(first.existing).toBe(0);
     expect(second.created).toBe(0);
     expect(second.existing).toBe(first.created);
@@ -436,6 +436,11 @@ describe('capsule service', () => {
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-mediation-track')?.community.tags).toContain('team:diplomatic');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-diplomatic-options-memo')?.coreRefs.outputCoreIds).toContain('diplomatic-cable');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-ai-governance-procurement')?.starterSnapshot?.domain).toBe('ai-governance');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-statistical-baseline-builder')?.community.tags).toEqual(expect.arrayContaining(['type:tool', 'domain:exposure-mapping']));
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-indicator-shift-detector')?.coreRefs.toolCoreIds).toEqual(expect.arrayContaining(['scenario-projector', 'sourceability']));
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-statistical-annex')?.coreRefs.outputCoreIds).toContain('governance-index');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-evidence-dashboard-brief')?.coreRefs.productCoreIds).toContain('risk-monitor-card');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-data-quality-statistics')?.community.tags).toContain('team:research-strategy');
     expect(db.data.has('users/u1/capsules/starter-situation-ai-governance-procurement/sources/nist-ai-rmf')).toBe(true);
     expect(db.data.has('users/u1/capsules/starter-situation-ai-governance-procurement/evaluations/starter-readiness')).toBe(true);
 
@@ -458,7 +463,7 @@ describe('capsule service', () => {
     const capsule = await getCapsule('u1', 'starter-situation-diplomatic-options', deps(db));
 
     expect(result.created).toBe(0);
-    expect(result.existing).toBeGreaterThanOrEqual(39);
+    expect(result.existing).toBeGreaterThanOrEqual(44);
     expect(capsule?.label).toBe('Edited diplomatic options capsule');
     expect(capsule?.community.tags).toContain('custom-tag');
     expect(capsule?.community.tags).toContain('type:situation');

@@ -22,10 +22,13 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       'capsule-evidence-pack',
     ]);
     expect(receipt.stages.map((stage) => stage.stage)).toEqual([
-      'triage',
       'capsule',
+      'triage',
+      'agent_router',
+      'model_tier',
       'tool_router',
-      'supervisor',
+      'worker',
+      'draft',
     ]);
   });
 
@@ -53,6 +56,38 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       action: 'queue_agent_run',
       status: 'planned',
       policyAgentId: 'research-memo',
+    });
+    expect(receipt.routingDecision).toMatchObject({
+      policyAgentId: 'research-memo',
+      modelTier: 'deep',
+      workerMode: 'research-memo',
+    });
+    expect(receipt.routingDecision.userSafeLabels.modelTier).toBe('TACITUS selected deep reasoning');
+  });
+
+  it('routes capsule-building and formatting prompts to concrete worker modes', () => {
+    const capsule = buildAskConversationOrchestrationReceipt({
+      prompt: 'Build a ContextCapsule from these attached sources.',
+      intent: 'normal_answer',
+      contextReceipt: contextReceipt({ health: 'thin', evidenceCount: 1 }),
+      sourcePreviewCount: 1,
+      activeGapCount: 2,
+    });
+    const formatter = buildAskConversationOrchestrationReceipt({
+      prompt: 'Format this answer into an export-ready memo.',
+      intent: 'normal_answer',
+      contextReceipt: contextReceipt({ health: 'ready', evidenceCount: 4 }),
+      sourcePreviewCount: 2,
+      activeGapCount: 0,
+    });
+
+    expect(capsule.routingDecision).toMatchObject({
+      policyAgentId: 'capsule-factory',
+      workerMode: 'capsule-factory',
+    });
+    expect(formatter.routingDecision).toMatchObject({
+      policyAgentId: 'output-formatter',
+      workerMode: 'output-formatter',
     });
   });
 
@@ -104,22 +139,24 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     const events = buildAskOrchestrationStatusEvents(receipt);
 
     expect(events.map((event) => event.label)).toEqual([
-      'Triage',
-      'Context',
-      'Tools',
-      'Sources',
-      'Agent run',
-      'Draft',
+      'TACITUS reads the capsule',
+      'TACITUS classifies the task',
+      'TACITUS routes the agent',
+      'TACITUS selects model tier',
+      'TACITUS checks tools',
+      'TACITUS queues worker',
+      'TACITUS drafts answer',
     ]);
     expect(events.map((event) => event.status)).toEqual([
-      'complete',
       'warn',
+      'complete',
+      'complete',
       'complete',
       'complete',
       'queued',
       'active',
     ]);
-    expect(events.find((event) => event.id === 'agent-run')).toMatchObject({
+    expect(events.find((event) => event.id === 'worker')).toMatchObject({
       detail: 'Durable agent run queued for deeper work.',
     });
     const serialized = JSON.stringify(events);
@@ -137,7 +174,7 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       activeGapCount: 0,
     });
 
-    expect(buildAskOrchestrationStatusEvents(receipt).find((event) => event.id === 'agent-run')).toMatchObject({
+    expect(buildAskOrchestrationStatusEvents(receipt).find((event) => event.id === 'worker')).toMatchObject({
       status: 'skipped',
       detail: 'No durable run needed for this answer.',
     });

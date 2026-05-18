@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { DangerZone } from '@/components/settings/danger-zone';
 import { useAuth } from '@/lib/auth/auth-context';
-import { MODEL_PREFERENCE_VALUES, modelPreferenceLabel, type ModelPreferenceValue } from '@/lib/ai/model-preferences';
+import { MODEL_PREFERENCE_VALUES } from '@/lib/ai/model-preferences';
 import { cn } from '@/lib/utils/cn';
 import {
   CITATION_STYLES,
@@ -931,13 +931,10 @@ function SystemTab({
   return (
     <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2">
-        <SelectField
-          label="Preferred model"
-          value={aiSettings.preferredModel}
-          options={MODEL_PREFERENCE_VALUES}
-          format={(value) => modelPreferenceLabel(value as ModelPreferenceValue)}
-          onChange={(value) => setAiSettings((settings) => ({ ...settings, preferredModel: value }))}
-        />
+        <InfoPanel title="TACITUS routing policy">
+          <p>Ask PRAXIS ignores saved model preferences and routes each turn by capsule health, task intent, source posture, risk, and output target.</p>
+          <p>Saved legacy model values are still accepted by the API for compatibility, but TACITUS selects the model tier at runtime.</p>
+        </InfoPanel>
         <SelectField
           label="Research depth"
           value={aiSettings.researchDepth}

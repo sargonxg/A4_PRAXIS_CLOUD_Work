@@ -36,8 +36,7 @@ import { CoreSwapDrawer } from '@/components/cores/CoreSwapDrawer';
 import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
 import { buildContextHealthReport } from '@/lib/context/context-health';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
-import { ASK_ORCHESTRATION_OPTIONS, ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
-import type { ModelPreferenceValue } from '@/lib/ai/model-preferences';
+import { ASK_ORCHESTRATION_OPTIONS } from '@/lib/ai/ask-runtime-catalog';
 import type { AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
 import type { AskOrchestrationStatusEvent } from '@/lib/ai/ask-orchestrator';
 import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
@@ -175,14 +174,12 @@ export function AskStreamPanel({
   const [thinking, setThinking] = useState(false);
   const [interrupt, setInterrupt] = useState<InterruptRequest | null>(null);
   const [swapTarget, setSwapTarget] = useState<CoreSpecimenKind | null>(null);
-  const [selectedModel, setSelectedModel] = useState<ModelPreferenceValue>(ASK_RUNTIME_OPTIONS[0].id);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyTurns, setHistoryTurns] = useState<AskThreadTurn[]>([]);
   const [packSavingId, setPackSavingId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const timelineEndRef = useRef<HTMLDivElement>(null);
-  const selectedRuntime = useMemo(() => getAskRuntimeOption(selectedModel), [selectedModel]);
   const threadId = useMemo(() => (capsuleId ? `ask-${capsuleId}` : null), [capsuleId]);
   const contextHealth = useMemo(() => buildContextHealthReport({
     hasUserCore: true,
@@ -266,8 +263,7 @@ export function AskStreamPanel({
           ...(activeContextStack ? { activeContextStack } : {}),
           aiSettings: {
             provider: 'vertex',
-            model: selectedRuntime.id,
-            analysisDepth: selectedRuntime.mode === 'research_memo' ? 'deep' as const : 'standard' as const,
+            analysisDepth: 'standard' as const,
           },
         };
 
@@ -373,7 +369,7 @@ export function AskStreamPanel({
         updateTimelineMessage(setTimelineMessages, assistantId, { streaming: false });
       }
     },
-    [thinking, capsuleId, threadId, contextPackageId, activeContextStack, activeSituation, selectedRuntime, loadHistory],
+    [thinking, capsuleId, threadId, contextPackageId, activeContextStack, activeSituation, loadHistory],
   );
 
   const draftDocumentPack = useCallback(async (message: AskPanelMessage) => {
@@ -450,20 +446,11 @@ export function AskStreamPanel({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600">
-          <label className="inline-flex min-w-0 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1">
+          <span className="inline-flex min-w-0 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1">
             <Cpu className="h-3.5 w-3.5 text-slate-500" />
-            <span className="font-bold uppercase tracking-[0.12em] text-slate-500">Model</span>
-            <select
-              value={selectedModel}
-              onChange={(event) => setSelectedModel(event.target.value as ModelPreferenceValue)}
-              className="max-w-[13rem] bg-transparent font-mono text-[11px] font-semibold text-slate-900 focus:outline-none"
-              aria-label="Ask PRAXIS model"
-            >
-              {ASK_RUNTIME_OPTIONS.map((option) => (
-                <option key={option.id} value={option.id}>{option.label}</option>
-              ))}
-            </select>
-          </label>
+            <span className="font-bold uppercase tracking-[0.12em] text-slate-500">TACITUS routing</span>
+            <span className="font-semibold text-slate-900">TACITUS chooses model tier</span>
+          </span>
           <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono">
             {user?.isDemo ? 'demo account' : `${credits.toLocaleString()} tokens`}
           </span>
@@ -471,7 +458,7 @@ export function AskStreamPanel({
             {PRAXIS_USAGE_COPY.askCost}
           </span>
           <span className="min-w-0 flex-1 truncate text-slate-500">
-            {selectedRuntime.summary}
+            Users choose the task and capsule; TACITUS selects model, worker, tools, and depth.
           </span>
           <button
             type="button"
@@ -687,19 +674,20 @@ function appendOrchestrationEvent(setMessages: TimelineSetter, messageId: string
     if (message.id !== messageId) return message;
     const existing = message.orchestrationEvents ?? initialAskWorkingTimeline();
     const nextEvents = existing.map((item) => (item.id === event.id ? event : item));
-    const queuedRun = event.id === 'agent-run' && event.runId ? event : message.queuedRun ?? null;
+    const queuedRun = event.id === 'worker' && event.runId ? event : message.queuedRun ?? null;
     return { ...message, orchestrationEvents: nextEvents, queuedRun };
   }));
 }
 
 function initialAskWorkingTimeline(): AskOrchestrationStatusEvent[] {
   return [
-    { type: 'orchestrationStatus', id: 'triage', label: 'Triage', status: 'active', detail: 'Classifying the request.' },
-    { type: 'orchestrationStatus', id: 'context', label: 'Context', status: 'pending', detail: 'Checking the active capsule.' },
-    { type: 'orchestrationStatus', id: 'tools', label: 'Tools', status: 'pending', detail: 'Selecting safe tool routes.' },
-    { type: 'orchestrationStatus', id: 'sources', label: 'Sources', status: 'pending', detail: 'Checking source previews and gaps.' },
-    { type: 'orchestrationStatus', id: 'agent-run', label: 'Agent run', status: 'pending', detail: 'Deciding whether durable work is needed.' },
-    { type: 'orchestrationStatus', id: 'draft', label: 'Draft', status: 'pending', detail: 'Waiting to draft the answer.' },
+    { type: 'orchestrationStatus', id: 'context', label: 'TACITUS reads the capsule', status: 'active', detail: 'Checking the active capsule.' },
+    { type: 'orchestrationStatus', id: 'triage', label: 'TACITUS classifies the task', status: 'pending', detail: 'Classifying the request.' },
+    { type: 'orchestrationStatus', id: 'agent', label: 'TACITUS routes the agent', status: 'pending', detail: 'Choosing the policy agent path.' },
+    { type: 'orchestrationStatus', id: 'model-tier', label: 'TACITUS selects model tier', status: 'pending', detail: 'Choosing the reasoning tier.' },
+    { type: 'orchestrationStatus', id: 'tools', label: 'TACITUS checks tools', status: 'pending', detail: 'Selecting safe tool routes.' },
+    { type: 'orchestrationStatus', id: 'worker', label: 'TACITUS queues worker', status: 'pending', detail: 'Deciding whether durable work is needed.' },
+    { type: 'orchestrationStatus', id: 'draft', label: 'TACITUS drafts answer', status: 'pending', detail: 'Waiting to draft the answer.' },
   ];
 }
 
@@ -757,7 +745,7 @@ function AskMessageBubble({
 
         <TimelineMessageReceipt message={message} />
         <AskWorkingTimeline events={workingTimeline} />
-        <AskQueuedAgentRunPanel queuedRun={message.queuedRun ?? workingTimeline.find((event) => event.id === 'agent-run' && Boolean(event.runId)) ?? null} />
+        <AskQueuedAgentRunPanel queuedRun={message.queuedRun ?? workingTimeline.find((event) => event.id === 'worker' && Boolean(event.runId)) ?? null} />
         <OrchestrationReceiptPanel envelope={message.answerEnvelope} />
         <AnswerSourcePreviewPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
 
@@ -809,36 +797,43 @@ function mergeWorkingTimeline(
   const timeline = events?.length ? base : [
     {
       type: 'orchestrationStatus' as const,
-      id: 'triage' as const,
-      label: 'Triage',
-      status: 'complete' as const,
-      detail: `${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}.`,
-    },
-    {
-      type: 'orchestrationStatus' as const,
       id: 'context' as const,
-      label: 'Context',
+      label: 'TACITUS reads the capsule',
       status: receipt.capsule.contextHealth === 'ready' ? 'complete' as const : 'warn' as const,
       detail: `${receipt.capsule.contextHealth} capsule checked with ${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'}.`,
     },
     {
       type: 'orchestrationStatus' as const,
+      id: 'triage' as const,
+      label: 'TACITUS classifies the task',
+      status: 'complete' as const,
+      detail: `${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}.`,
+    },
+    {
+      type: 'orchestrationStatus' as const,
+      id: 'agent' as const,
+      label: 'TACITUS routes the agent',
+      status: 'complete' as const,
+      detail: `${receipt.routingDecision.userSafeLabels.policyAgent} selected.`,
+    },
+    {
+      type: 'orchestrationStatus' as const,
+      id: 'model-tier' as const,
+      label: 'TACITUS selects model tier',
+      status: 'complete' as const,
+      detail: `${receipt.routingDecision.userSafeLabels.modelTier}. ${receipt.routingDecision.userSafeLabels.fallbackPosture}.`,
+    },
+    {
+      type: 'orchestrationStatus' as const,
       id: 'tools' as const,
-      label: 'Tools',
+      label: 'TACITUS checks tools',
       status: receipt.toolRouting.blockedToolIds.length ? 'warn' as const : 'complete' as const,
       detail: `${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`,
     },
     {
       type: 'orchestrationStatus' as const,
-      id: 'sources' as const,
-      label: 'Sources',
-      status: receipt.capsule.sourcePreviewCount || receipt.capsule.evidenceCount ? 'complete' as const : 'warn' as const,
-      detail: receipt.capsule.sourcePreviewCount ? `${receipt.capsule.sourcePreviewCount} source previews attached.` : 'No source previews attached yet; answer marked gaps.',
-    },
-    {
-      type: 'orchestrationStatus' as const,
-      id: 'agent-run' as const,
-      label: 'Agent run',
+      id: 'worker' as const,
+      label: 'TACITUS queues worker',
       status: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'queued' as const : receipt.supervisor.action === 'queue_agent_run' ? 'warn' as const : 'skipped' as const,
       detail: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'Durable agent run queued for deeper work.' : receipt.supervisor.action === 'queue_agent_run' ? 'Durable run could not be queued; Ask continued synchronously.' : 'No durable run needed for this answer.',
       runId: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? receipt.supervisor.queuedRun.runId : null,
@@ -850,7 +845,7 @@ function mergeWorkingTimeline(
     {
       type: 'orchestrationStatus' as const,
       id: 'draft' as const,
-      label: 'Draft',
+      label: 'TACITUS drafts answer',
       status: 'complete' as const,
       detail: 'Answer drafted with source and memo handoff metadata.',
     },
@@ -866,8 +861,8 @@ function AskWorkingTimeline({ events }: { events: AskOrchestrationStatusEvent[] 
   return (
     <section className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2" data-testid="ask-working-timeline">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">PRAXIS is working</p>
-        <span className="font-mono text-[10px] text-slate-500">plain timeline</span>
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">TACITUS routing</p>
+        <span className="font-mono text-[10px] text-slate-500">live route</span>
       </div>
       <ol className="mt-2 grid gap-1.5 sm:grid-cols-2">
         {events.map((event) => (
@@ -1003,7 +998,7 @@ function OrchestrationReceiptPanel({ envelope }: { envelope?: AskAnswerEnvelope 
   return (
     <section className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Agentic orchestration</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">TACITUS routing receipt</p>
         <span className={cn(
           'rounded-md border px-1.5 py-0.5 font-mono text-[10px]',
           receipt.supervisor.action === 'queue_agent_run'
@@ -1022,6 +1017,9 @@ function OrchestrationReceiptPanel({ envelope }: { envelope?: AskAnswerEnvelope 
         </span>
         <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-slate-600">
           Tool router: {receipt.toolRouting.selectedToolIds.length}
+        </span>
+        <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-slate-600">
+          {receipt.routingDecision.userSafeLabels.modelTier}
         </span>
         {receipt.toolRouting.approvalRequiredToolIds.length ? (
           <span className="rounded-md border border-gold-200 bg-gold-50 px-1.5 py-0.5 font-semibold text-gold-900">

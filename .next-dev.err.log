@@ -11,3 +11,97 @@ React will never use eval() in production mode
 [browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
 [browser] eval() is not supported in this environment. If this page was served with a `Content-Security-Policy` header, make sure that `unsafe-eval` is included. React requires eval() in development mode for various debugging features like reconstructing callstacks from a different environment.
 React will never use eval() in production mode 
+[browser] eval() is not supported in this environment. If this page was served with a `Content-Security-Policy` header, make sure that `unsafe-eval` is included. React requires eval() in development mode for various debugging features like reconstructing callstacks from a different environment.
+React will never use eval() in production mode 
+[browser] eval() is not supported in this environment. If this page was served with a `Content-Security-Policy` header, make sure that `unsafe-eval` is included. React requires eval() in development mode for various debugging features like reconstructing callstacks from a different environment.
+React will never use eval() in production mode 
+[browser] eval() is not supported in this environment. If this page was served with a `Content-Security-Policy` header, make sure that `unsafe-eval` is included. React requires eval() in development mode for various debugging features like reconstructing callstacks from a different environment.
+React will never use eval() in production mode 
+[browser] React does not recognize the `asChild` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `aschild` instead. If you accidentally passed it from a parent component, remove it from the DOM element. 
+    at Set.forEach (<anonymous>) (<anonymous>)
+[browser] Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template). 
+    at Set.forEach (<anonymous>) (<anonymous>)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <RedirectBoundary>
+      <RedirectErrorBoundary router={{...}}>
+        <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+          <SegmentViewNode type="page" pagePath="(landing)/...">
+            <SegmentTrieNode>
+            <LandingPage>
+              <script>
+              <script>
+              <script>
+              <script>
+              <script>
+              <Phase8WowLanding>
+                <main className="od-praxis-...">
+                  <TaskletPraxisWorkbench mode="public" activeCapsuleName="Middle Eas...">
+                    <section className="od-praxis-..." data-testid="tasklet-pr...">
+                      <div className="grid min-h...">
+                        <main className="min-w-0 px...">
+                          <div className="mx-auto fl...">
+                            <p>
+                            <div>
+                            <h1>
+                            <div>
+                            <div className="od-praxis-..." data-testid="praxis-mai...">
+                              <div>
+                              <textarea
+                                value="Draft a sourced options memo from the active capsule."
+                                onChange={function onChange}
+                                rows={4}
+                                placeholder="Describe a task or responsibility"
+                                className="min-h-36 w-full resize-none bg-transparent px-6 py-6 text-xl text-slate-900..."
+-                               style={{caret-color:"transparent"}}
+                              >
+                              <div className="flex flex-...">
+                                <div className="flex items...">
+                                  <button>
+                                  <button>
+                                  <button>
+                                  <button>
+                                  <input
+                                    ref={{current:null}}
+                                    type="file"
+                                    accept=".pdf,.docx,.txt,.md,.html"
+                                    className="hidden"
+                                    onChange={function onChange}
+-                                   style={{caret-color:"transparent"}}
+                                  >
+                                ...
+                              ...
+                            <section className="mt-12 w-fu..." data-testid="capsule-ma...">
+                              <span>
+                              <div className="flex flex-...">
+                                <div>
+                                <div className="flex flex-...">
+                                  <label className="od-praxis-...">
+                                    <Search>
+                                    <input
+                                      value=""
+                                      onChange={function onChange}
+                                      placeholder="Search capsules"
+                                      className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-s..."
+-                                     style={{caret-color:"transparent"}}
+                                    >
+                                  ...
+                              ...
+          ...
+        ...
+ 
+[browser] eval() is not supported in this environment. If this page was served with a `Content-Security-Policy` header, make sure that `unsafe-eval` is included. React requires eval() in development mode for various debugging features like reconstructing callstacks from a different environment.
+React will never use eval() in production mode 
+[browser] eval() is not supported in this environment. If this page was served with a `Content-Security-Policy` header, make sure that `unsafe-eval` is included. React requires eval() in development mode for various debugging features like reconstructing callstacks from a different environment.
+React will never use eval() in production mode 

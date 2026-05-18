@@ -44,6 +44,12 @@ describe('account settings page contract', () => {
     expect(settingsPage).toContain('doctor:praxis:canary');
   });
 
+  it('shows TACITUS routing policy status instead of a preferred model selector', () => {
+    expect(settingsPage).toContain('TACITUS routing policy');
+    expect(settingsPage).toContain('Ask PRAXIS ignores saved model preferences');
+    expect(settingsPage).not.toContain('label="Preferred model"');
+  });
+
   it('keeps Cognee memory review inside the existing advanced/system surface', () => {
     expect(settingsPage).toContain('data-testid="advanced-memory-review-panel"');
     expect(settingsPage).toContain('/api/memory/health');

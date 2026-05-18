@@ -1,11 +1,12 @@
 import type { AskContextReceipt, AskIntent } from '@/lib/ai/ask-conversation';
 import { agentToolRequiresApproval, getAgentToolDefinition, type AgentToolId } from '@/lib/agent-runtime/tool-registry';
 import { policyAgentRunIntent, type PolicyAgentOutputDestination, type PolicyAgentRunIntent } from '@/lib/product/policy-agents';
+import { buildTacitusRoutingDecision, type TacitusRoutingDecision } from '@/lib/ai/tacitus-routing-policy';
 
 export type AskAgenticMode = 'direct_with_receipts' | 'queue_agent_run';
 export type AskOrchestrationComplexity = 'simple' | 'standard' | 'deep';
 export type AskSupervisorAction = 'direct_answer' | 'queue_agent_run';
-export type AskOrchestrationStageName = 'triage' | 'capsule' | 'tool_router' | 'supervisor';
+export type AskOrchestrationStageName = 'capsule' | 'triage' | 'agent_router' | 'model_tier' | 'tool_router' | 'worker' | 'draft';
 
 export interface AskOrchestrationStage {
   stage: AskOrchestrationStageName;
@@ -47,6 +48,7 @@ export interface AskConversationOrchestrationReceipt {
     approvalRequiredToolIds: string[];
     blockedToolIds: string[];
   };
+  routingDecision: TacitusRoutingDecision;
   supervisor: {
     action: AskSupervisorAction;
     status: 'planned' | 'queued' | 'dispatch_enqueued' | 'failed' | 'not_required';
@@ -58,11 +60,12 @@ export interface AskConversationOrchestrationReceipt {
 }
 
 export type AskOrchestrationStatusId =
-  | 'triage'
   | 'context'
+  | 'triage'
+  | 'agent'
+  | 'model-tier'
   | 'tools'
-  | 'sources'
-  | 'agent-run'
+  | 'worker'
   | 'draft';
 
 export type AskOrchestrationStatus = 'pending' | 'active' | 'complete' | 'warn' | 'queued' | 'skipped' | 'failed';
@@ -87,10 +90,23 @@ export function buildAskConversationOrchestrationReceipt(input: {
   sourcePreviewCount: number;
   activeGapCount?: number;
   contextPackageId?: string | null;
+  selectedPolicyAgentId?: string | null;
+  userSelectedModelId?: string | null;
+  requestedOutputType?: string | null;
 }): AskConversationOrchestrationReceipt {
   const complexity = classifyComplexity(input.prompt, input.intent, input.contextReceipt, input.activeGapCount ?? 0);
-  const policyAgentId = selectPolicyAgent(input.prompt, input.intent, complexity);
-  const selectedToolIds = selectTools(input.prompt, input.intent, complexity);
+  const routingDecision = buildTacitusRoutingDecision({
+    prompt: input.prompt,
+    intent: input.intent,
+    selectedPolicyAgentId: input.selectedPolicyAgentId,
+    userSelectedModelId: input.userSelectedModelId,
+    capsuleHealth: input.contextReceipt.health,
+    sourcePreviewCount: input.sourcePreviewCount,
+    activeGapCount: input.activeGapCount ?? input.contextReceipt.warnings.length,
+    requestedOutputType: input.requestedOutputType,
+  });
+  const policyAgentId = routingDecision.policyAgentId;
+  const selectedToolIds = routingDecision.toolRoute.selectedToolIds;
   const approvalRequiredToolIds = selectedToolIds.filter((toolId) => {
     try {
       return agentToolRequiresApproval(toolId);
@@ -99,11 +115,7 @@ export function buildAskConversationOrchestrationReceipt(input: {
     }
   });
   const blockedToolIds = approvalRequiredToolIds;
-  const shouldQueue = complexity === 'deep'
-    || input.intent === 'research_memo'
-    || input.intent === 'sourceability_review'
-    || input.intent === 'red_team_review'
-    || input.intent === 'handover';
+  const shouldQueue = routingDecision.workerMode !== 'direct-answer';
   const activeGapCount = input.activeGapCount ?? input.contextReceipt.warnings.length;
   const reasons = buildTriageReasons({
     prompt: input.prompt,
@@ -139,30 +151,39 @@ export function buildAskConversationOrchestrationReceipt(input: {
       activeGapCount,
       warnings: input.contextReceipt.warnings,
     },
-    toolRouting: {
+      toolRouting: {
       selectedToolIds,
       approvalRequiredToolIds,
       blockedToolIds,
     },
+    routingDecision,
     supervisor: {
       action: shouldQueue ? 'queue_agent_run' : 'direct_answer',
       status: shouldQueue ? 'planned' : 'not_required',
       policyAgentId,
-      outputDestination: policyAgentId === 'research-memo' ? 'memo_studio' : null,
+      outputDestination: routingDecision.outputDestination,
       queuedRun: null,
     },
     stages: [
       {
-        stage: 'triage',
-        status: 'ok',
-        detail: shouldQueue
-          ? `Queued path selected for ${policyAgentId ?? 'agent'} work.`
-          : 'Direct answer selected with orchestration receipts.',
-      },
-      {
         stage: 'capsule',
         status: input.contextReceipt.health === 'ready' ? 'ok' : 'warn',
         detail: `${input.contextReceipt.health} context with ${input.contextReceipt.evidenceCount} evidence paragraph${input.contextReceipt.evidenceCount === 1 ? '' : 's'}.`,
+      },
+      {
+        stage: 'triage',
+        status: 'ok',
+        detail: `${input.intent.replace(/_/g, ' ')} request classified as ${complexity}.`,
+      },
+      {
+        stage: 'agent_router',
+        status: 'ok',
+        detail: `${routingDecision.userSafeLabels.policyAgent} selected.`,
+      },
+      {
+        stage: 'model_tier',
+        status: 'ok',
+        detail: `${routingDecision.userSafeLabels.modelTier}; ${routingDecision.userSafeLabels.fallbackPosture.toLowerCase()}.`,
       },
       {
         stage: 'tool_router',
@@ -170,11 +191,16 @@ export function buildAskConversationOrchestrationReceipt(input: {
         detail: `${selectedToolIds.length} tool route${selectedToolIds.length === 1 ? '' : 's'} selected; ${blockedToolIds.length} approval-gated.`,
       },
       {
-        stage: 'supervisor',
+        stage: 'worker',
         status: shouldQueue ? 'warn' : 'ok',
         detail: shouldQueue
           ? 'Supervisor will create a durable AgentRun before streaming the answer.'
           : 'Supervisor keeps this turn synchronous and source-receipted.',
+      },
+      {
+        stage: 'draft',
+        status: 'ok',
+        detail: 'Answer drafting can begin after routing receipts are attached.',
       },
     ],
   };
@@ -200,38 +226,43 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
   return [
     {
       type: 'orchestrationStatus',
-      id: 'triage',
-      label: 'Triage',
-      status: 'complete',
-      detail: safeStatusDetail(`${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}.`),
-    },
-    {
-      type: 'orchestrationStatus',
       id: 'context',
-      label: 'Context',
+      label: 'TACITUS reads the capsule',
       status: receipt.capsule.contextHealth === 'ready' ? 'complete' : 'warn',
       detail: safeStatusDetail(`${receipt.capsule.contextHealth} capsule checked with ${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'}.`),
     },
     {
       type: 'orchestrationStatus',
+      id: 'triage',
+      label: 'TACITUS classifies the task',
+      status: 'complete',
+      detail: safeStatusDetail(`${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}.`),
+    },
+    {
+      type: 'orchestrationStatus',
+      id: 'agent',
+      label: 'TACITUS routes the agent',
+      status: 'complete',
+      detail: safeStatusDetail(`${receipt.routingDecision.userSafeLabels.policyAgent} selected.`),
+    },
+    {
+      type: 'orchestrationStatus',
+      id: 'model-tier',
+      label: 'TACITUS selects model tier',
+      status: 'complete',
+      detail: safeStatusDetail(`${receipt.routingDecision.userSafeLabels.modelTier}. ${receipt.routingDecision.userSafeLabels.fallbackPosture}.`),
+    },
+    {
+      type: 'orchestrationStatus',
       id: 'tools',
-      label: 'Tools',
+      label: 'TACITUS checks tools',
       status: receipt.toolRouting.blockedToolIds.length ? 'warn' : 'complete',
       detail: safeStatusDetail(`${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`),
     },
     {
       type: 'orchestrationStatus',
-      id: 'sources',
-      label: 'Sources',
-      status: receipt.capsule.sourcePreviewCount || receipt.capsule.evidenceCount ? 'complete' : 'warn',
-      detail: safeStatusDetail(receipt.capsule.sourcePreviewCount
-        ? `${receipt.capsule.sourcePreviewCount} source preview${receipt.capsule.sourcePreviewCount === 1 ? '' : 's'} attached.`
-        : 'No source previews attached yet; answer will mark gaps.'),
-    },
-    {
-      type: 'orchestrationStatus',
-      id: 'agent-run',
-      label: 'Agent run',
+      id: 'worker',
+      label: 'TACITUS queues worker',
       status: agentStatus,
       detail: safeStatusDetail(agentDetail),
       runId: queuedRun?.runId && queuedRun.runId !== 'unavailable' ? queuedRun.runId : null,
@@ -243,7 +274,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     {
       type: 'orchestrationStatus',
       id: 'draft',
-      label: 'Draft',
+      label: 'TACITUS drafts answer',
       status: 'active',
       detail: 'Answer drafting started.',
     },
@@ -261,7 +292,7 @@ export function markAskOrchestrationRunQueued(
       status: queuedRun.status === 'dispatch_enqueued' ? 'dispatch_enqueued' : queuedRun.status === 'ledger_failed' ? 'failed' : 'queued',
       queuedRun,
     },
-    stages: receipt.stages.map((stage) => stage.stage === 'supervisor'
+    stages: receipt.stages.map((stage) => stage.stage === 'worker'
       ? {
           ...stage,
           status: queuedRun.status === 'ledger_failed' || queuedRun.status === 'dispatch_failed' ? 'warn' : 'ok',

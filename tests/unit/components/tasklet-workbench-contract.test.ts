@@ -5,6 +5,12 @@ import { describe, expect, it } from 'vitest';
 const source = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
 
 describe('Tasklet PRAXIS workbench contract', () => {
+  it('keeps model routing TACITUS-owned in the main composer', () => {
+    expect(source).toContain('TACITUS routes model, worker, and tools');
+    expect(source).not.toContain('aria-label="Model"');
+    expect(source).not.toContain('setSelectedModel');
+  });
+
   it('uses the canonical conversation turn endpoint from the one-bar composer', () => {
     expect(source).toContain('/api/conversations/${encodeURIComponent(nextThreadId)}/turns');
     expect(source).not.toContain("fetch('/api/ai/ask-praxis'");
@@ -93,6 +99,18 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('/app/capsules');
     expect(source).toContain('onApply={() => applyUserCapsule(capsule)}');
     expect(source).toContain('Apply</button>');
+  });
+
+  it('drives taxonomy buttons from the shared statistics contract', () => {
+    expect(source).toContain('buildCapsuleTaxonomyStats');
+    expect(source).toContain('userCapsuleTaxonomyStats');
+    expect(source).toContain('publicCapsuleTaxonomyStats');
+    expect(source).toContain('onSelect={setCapsuleTypeFilter}');
+    expect(source).toContain('onSelect={setCapsuleDomainFilter}');
+    expect(source).toContain("showRepairStates={isRepositoryPage}");
+    expect(source).toContain('Source refs');
+    expect(source).toContain('Document refs');
+    expect(source).not.toContain('function capsuleTypeCount(');
   });
 
   it('uses the login-matched shared brand treatment in the app workbench', () => {

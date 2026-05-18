@@ -17,6 +17,7 @@ import {
   CONTEXT_CAPSULE_TEMPLATES,
   POLICY_PATH_PROFILES,
   POLICY_TEAM_CATEGORIES,
+  buildCapsuleTaxonomyStats,
   buildCapsuleStarterPromptBlock,
   capsuleAttachmentCounts,
   capsuleSlotReadiness,
@@ -164,7 +165,7 @@ describe('context capsule product contract', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS.length).toBeGreaterThanOrEqual(39);
+    expect(CAPSULE_STARTER_DEFINITIONS.length).toBeGreaterThanOrEqual(44);
     expect(starterIds.size).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
@@ -172,7 +173,7 @@ describe('context capsule product contract', () => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toMatchObject({ situation: 14, tool: 8, output: 12, user: 5 });
+    expect(categoryCounts).toMatchObject({ situation: 15, tool: 10, output: 14, user: 5 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
@@ -212,6 +213,58 @@ describe('context capsule product contract', () => {
       expect(taxonomy.outputs).toEqual(expect.arrayContaining(starter.outputProductIds));
       expect(new Set(taxonomy.tools)).not.toEqual(new Set(taxonomy.outputs));
     }
+  });
+
+  it('builds live taxonomy statistics from resolved capsule taxonomy', () => {
+    const baseCapsules = CAPSULE_STARTER_DEFINITIONS.slice(0, 3).map((starter) => ({
+      capsuleId: starter.starterId,
+      label: starter.label,
+      scope: starter.category === 'user' ? 'user' : 'situation',
+      community: { tags: starter.tags },
+      coreRefs: starter.coreRefs,
+      starterSnapshot: {
+        catalogVersion: 'test',
+        ...starter,
+      },
+    }));
+    const baseStats = buildCapsuleTaxonomyStats(baseCapsules);
+
+    const customCapsule = {
+      capsuleId: 'custom-statistics-watch',
+      label: 'Custom statistics watch',
+      scope: 'situation',
+      community: { tags: ['type:situation', 'domain:custom-statistics', 'team:unknown-statistics-team'] },
+      coreRefs: {
+        sourceCoreIds: ['src-1', 'src-2'],
+        documentCoreIds: ['doc-1'],
+        toolCoreIds: ['ach'],
+        outputCoreIds: ['options-memo'],
+      },
+      health: { warnings: ['Unknown taxonomy tag needs repair.'] },
+    };
+    const archivedCapsule = {
+      ...customCapsule,
+      capsuleId: 'archived-statistics-watch',
+      archivedAt: '2026-05-18T00:00:00.000Z',
+      community: { tags: ['type:tool', 'domain:audit-review', 'team:research-strategy'] },
+      coreRefs: { ...customCapsule.coreRefs, sourceCoreIds: ['src-3'], documentCoreIds: [] },
+    };
+
+    const nextStats = buildCapsuleTaxonomyStats([...baseCapsules, customCapsule, archivedCapsule]);
+
+    expect(nextStats.totalCapsules).toBe(baseStats.totalCapsules + 2);
+    expect(nextStats.visibleCapsules).toBe(baseStats.visibleCapsules + 1);
+    expect(nextStats.archivedCapsules).toBe(baseStats.archivedCapsules + 1);
+    expect(nextStats.sourceReferences).toBe(baseStats.sourceReferences + 3);
+    expect(nextStats.documentReferences).toBe(baseStats.documentReferences + 1);
+    expect(nextStats.types.find((facet) => facet.id === 'situation')?.count).toBeGreaterThan(baseStats.types.find((facet) => facet.id === 'situation')?.count ?? 0);
+    expect(nextStats.thinkingDevices.find((item) => item.id === 'ach')?.count)
+      .toBe((baseStats.thinkingDevices.find((item) => item.id === 'ach')?.count ?? 0) + 1);
+    expect(nextStats.artifacts.find((item) => item.id === 'options-memo')?.count)
+      .toBe((baseStats.artifacts.find((item) => item.id === 'options-memo')?.count ?? 0) + 1);
+    expect(nextStats.repairStates).toEqual(expect.arrayContaining([
+      expect.objectContaining({ axis: 'policy-teams', id: 'unknown-statistics-team', repairState: 'unknown', count: 1 }),
+    ]));
   });
 
   it('normalizes prefixed taxonomy tags while keeping legacy tags readable', () => {
@@ -255,6 +308,7 @@ describe('context capsule product contract', () => {
       'cyber-resilience',
       'diplomacy',
       'election-integrity',
+      'exposure-mapping',
       'finance',
       'hr',
       'humanitarian-rights',

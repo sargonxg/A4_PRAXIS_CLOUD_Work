@@ -49,6 +49,17 @@ describe('Ask PRAXIS runtime catalog', () => {
     ]);
   });
 
+  it('lets TACITUS depth override stale user-selected Ask model choices', () => {
+    expect(buildAskRuntimeFallbackCandidates({
+      selectedModelId: 'gemini-2.5-flash',
+      analysisDepth: 'deep',
+    })).toEqual([
+      getModelMatrixEntry('complex_reasoning').model,
+      'gemini-2.5-pro',
+      'gemini-2.5-flash',
+    ]);
+  });
+
   it('builds Pro then Flash GA fallback candidates for deep preview selections', () => {
     expect(buildAskRuntimeFallbackCandidates({
       selectedModelId: getModelMatrixEntry('complex_reasoning').model,
@@ -60,7 +71,7 @@ describe('Ask PRAXIS runtime catalog', () => {
     ]);
   });
 
-  it('does not duplicate GA candidates when a GA model is already selected', () => {
+  it('does not duplicate GA candidates for standard GA runtime choices', () => {
     expect(buildAskRuntimeFallbackCandidates({
       selectedModelId: 'gemini-2.5-flash',
       analysisDepth: 'standard',

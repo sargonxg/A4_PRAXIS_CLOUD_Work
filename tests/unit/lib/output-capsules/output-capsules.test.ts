@@ -10,6 +10,7 @@ import {
   planOutputCapsuleRun,
   validateOutputCapsulePayload,
 } from '@/lib/output-capsules';
+import { CAPSULE_STARTER_DEFINITIONS } from '@/lib/product/context-capsules';
 
 const basePayload = {
   title: 'Sudan country one-pager',
@@ -57,6 +58,24 @@ describe('OutputCapsules', () => {
       'country-pack',
     ]) {
       expect(ids.has(id), `${id} missing from OutputCapsule catalog`).toBe(true);
+    }
+  });
+
+  it('keeps statistics starter artifacts resolved to output templates only', () => {
+    const outputIds = new Set(OUTPUT_CAPSULE_TEMPLATES.map((template) => template.id));
+    const statisticsOutputs = CAPSULE_STARTER_DEFINITIONS.filter((starter) =>
+      starter.starterId === 'starter-output-statistical-annex' ||
+      starter.starterId === 'starter-output-evidence-dashboard-brief'
+    );
+
+    expect(statisticsOutputs).toHaveLength(2);
+    expect(statisticsOutputs.every((starter) => starter.category === 'output')).toBe(true);
+    for (const starter of statisticsOutputs) {
+      expect(starter.tags).toContain('type:output');
+      expect(starter.tags).not.toContain('type:tool');
+      for (const outputId of starter.outputProductIds) {
+        expect(outputIds.has(outputId), `${starter.starterId} output ${outputId}`).toBe(true);
+      }
     }
   });
 

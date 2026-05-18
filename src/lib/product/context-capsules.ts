@@ -287,6 +287,39 @@ export interface CapsuleResolvedTaxonomy {
   outputs: string[];
 }
 
+export interface CapsuleTaxonomyStatItem {
+  id: string;
+  label: string;
+  tag?: string;
+  count: number;
+  repairState?: 'custom' | 'unknown';
+  value?: string;
+}
+
+export interface CapsuleTaxonomyRepairStat extends CapsuleTaxonomyStatItem {
+  axis: CapsuleTaxonomyAxisId;
+  repairState: 'custom' | 'unknown';
+}
+
+export interface CapsuleTaxonomyStatsInput extends CapsuleTaxonomyInput {
+  archivedAt?: string | null;
+  health?: { warnings?: string[] | null; blockers?: string[] | null } | null;
+}
+
+export interface CapsuleTaxonomyStats {
+  totalCapsules: number;
+  visibleCapsules: number;
+  archivedCapsules: number;
+  sourceReferences: number;
+  documentReferences: number;
+  types: CapsuleTaxonomyStatItem[];
+  domains: CapsuleTaxonomyStatItem[];
+  policyTeams: CapsuleTaxonomyStatItem[];
+  thinkingDevices: CapsuleTaxonomyStatItem[];
+  artifacts: CapsuleTaxonomyStatItem[];
+  repairStates: CapsuleTaxonomyRepairStat[];
+}
+
 export const CAPSULE_TAXONOMY_AXES: CapsuleTaxonomyAxis[] = [
   {
     id: 'types',
@@ -1284,6 +1317,56 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     suggestedQuestions: ['What deadline or trigger changes the recommendation?', 'Which facts expire soon?', 'Who needs the next update?'],
     suggestedNextActions: ['Add the current as-of date.', 'List trigger indicators and review gates.', 'Prepare a short update cadence for the team.'],
   }),
+  starter('starter-tool-statistical-baseline-builder', 'tool', 'exposure-mapping', 'Statistical baseline builder thinking device', 'A thinking-device capsule for baselines, denominators, time series starts, and trend sanity checks before a policy claim becomes a finding.', 'Use this when figures need a defensible baseline. PRAXIS should separate numerator, denominator, source date, comparison period, uncertainty, and the claim that the statistic can actually support.', ['statistics', 'baseline', 'denominator', 'trend-check', 'thinking-device', 'team:research-strategy'], { toolCoreIds: ['grounded-research', 'sourceability', 'ach'], sourceCoreIds: ['world-bank-data', 'imf-data'], objectiveCoreIds: ['build-statistical-baseline'], outputCoreIds: ['governance-index'] }, ['grounded-research', 'sourceability', 'ach'], ['governance-index', 'country-risk-card'], ['starter-output-statistical-annex', 'starter-situation-data-quality-statistics', 'starter-user-finance-risk-analyst'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'world-bank-data', label: 'World Bank DataBank', url: 'https://databank.worldbank.org/', sourceType: 'multilateral', relevance: 'Country indicator, denominator, and historical series baseline for public-policy statistics.', publisher: 'World Bank', date: '2026', reliabilityTier: 1 },
+      { id: 'imf-data', label: 'IMF Data portal', url: 'https://www.imf.org/en/Data', sourceType: 'multilateral', relevance: 'Macro-financial series and metadata for baseline and comparability checks.', publisher: 'International Monetary Fund', date: '2026', reliabilityTier: 1 },
+    ],
+    suggestedQuestions: ['What is the correct denominator for this statistic?', 'Which base year or comparison period is defensible?', 'Does the source metadata permit the trend claim?'],
+    suggestedNextActions: ['Attach the indicator source and metadata.', 'State numerator, denominator, date, and base period.', 'Run sourceability before turning a number into a recommendation.'],
+    aiUseGuidance: 'Use this as a statistical sanity-check device. Do not let PRAXIS infer trends without denominators, dates, and comparable source series.',
+  }),
+  starter('starter-tool-indicator-shift-detector', 'tool', 'audit-review', 'Indicator shift detector thinking device', 'A thinking-device capsule for spotting movement in indicators, source series, thresholds, and warning signs without overstating statistical significance.', 'Use this when an analyst asks what changed. PRAXIS should compare as-of dates, threshold crossings, source definitions, and plausible noise before calling movement meaningful.', ['statistics', 'indicator-shift', 'thresholds', 'warning-signs', 'thinking-device', 'team:research-strategy'], { toolCoreIds: ['scenario-projector', 'sourceability', 'contradiction-finder'], timeCoreId: 'starter-time-indicator-shift', sourceCoreIds: ['world-bank-data', 'humanitarian-data-exchange'], objectiveCoreIds: ['detect-indicator-shifts'], outputCoreIds: ['risk-monitor-card'] }, ['scenario-projector', 'sourceability', 'contradiction-finder'], ['risk-monitor-card', 'governance-index'], ['starter-tool-statistical-baseline-builder', 'starter-output-evidence-dashboard-brief', 'starter-situation-data-quality-statistics'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'humanitarian-data-exchange', label: 'Humanitarian Data Exchange', url: 'https://data.humdata.org/', sourceType: 'multilateral', relevance: 'Operational humanitarian datasets where source series and update cadence affect indicator interpretation.', publisher: 'OCHA Centre for Humanitarian Data', date: '2026', reliabilityTier: 1 },
+      { id: 'world-bank-data', label: 'World Bank DataBank', url: 'https://databank.worldbank.org/', sourceType: 'multilateral', relevance: 'Comparable public indicator series with metadata and country coverage.', publisher: 'World Bank', date: '2026', reliabilityTier: 1 },
+    ],
+    suggestedQuestions: ['Which indicator moved, by how much, and since when?', 'Did the source definition or reporting cadence change?', 'What threshold would make this movement decision-relevant?'],
+    suggestedNextActions: ['Compare current value against the baseline period.', 'Check source metadata before naming a trend.', 'Attach the shift to a risk card or dashboard brief.'],
+    aiUseGuidance: 'Use this for cautious movement detection. Treat changed indicators as prompts for verification, not as automatic evidence of causation.',
+  }),
+  starter('starter-output-statistical-annex', 'output', 'output-brief', 'Statistical annex artifact capsule', 'An artifact capsule for tables, methods notes, indicator appendices, metadata caveats, and count-backed evidence annexes.', 'Use this when the main memo needs a compact annex that keeps numbers reviewable. PRAXIS should preserve source, date, denominator, method note, caveat, and citation for each figure.', ['statistics', 'annex', 'tables', 'methods-note', 'artifact', 'team:research-strategy'], { outputCoreIds: ['governance-index'], productCoreIds: ['governance-index'], objectiveCoreIds: ['draft-statistical-annex'] }, ['memo-drafter', 'sourceability', 'grounded-research'], ['governance-index', 'options-memo'], ['starter-tool-statistical-baseline-builder', 'starter-tool-indicator-shift-detector', 'starter-output-evidence-dashboard-brief'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'world-bank-data', label: 'World Bank DataBank', url: 'https://databank.worldbank.org/', sourceType: 'multilateral', relevance: 'Indicator tables, country series, and metadata for statistical annexes.', publisher: 'World Bank', date: '2026', reliabilityTier: 1 },
+      { id: 'oecd-data', label: 'OECD Data Explorer', url: 'https://data-explorer.oecd.org/', sourceType: 'multilateral', relevance: 'Comparable country indicators and metadata for policy annexes.', publisher: 'OECD', date: '2026', reliabilityTier: 1 },
+    ],
+    suggestedQuestions: ['Which figures belong in the annex rather than the main memo?', 'What method note and caveat should travel with each figure?', 'Which table needs sourceability review before export?'],
+    suggestedNextActions: ['Create a table with source, date, denominator, and caveat columns.', 'Run sourceability on each headline statistic.', 'Link annex figures back to memo claims.'],
+    aiUseGuidance: 'Use this as an artifact contract for statistical appendices. Keep figures structured and cited; do not bury caveats in prose.',
+  }),
+  starter('starter-output-evidence-dashboard-brief', 'output', 'output-brief', 'Evidence dashboard brief artifact capsule', 'An artifact capsule for count-backed dashboard summaries, indicator cards, source coverage notes, and executive evidence snapshots.', 'Use this when a user needs a dashboard-style brief rather than a long memo. PRAXIS should show counts, coverage, latest movement, missing denominators, and source gaps separately.', ['statistics', 'dashboard', 'evidence-coverage', 'indicator-brief', 'artifact', 'team:research-strategy'], { outputCoreIds: ['risk-monitor-card'], productCoreIds: ['risk-monitor-card'], objectiveCoreIds: ['draft-evidence-dashboard-brief'] }, ['memo-drafter', 'scenario-projector', 'sourceability'], ['risk-monitor-card', 'country-risk-card'], ['starter-tool-indicator-shift-detector', 'starter-tool-statistical-baseline-builder', 'starter-situation-data-quality-statistics'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'humanitarian-data-exchange', label: 'Humanitarian Data Exchange', url: 'https://data.humdata.org/', sourceType: 'multilateral', relevance: 'Operational datasets and update cadence for dashboard evidence coverage.', publisher: 'OCHA Centre for Humanitarian Data', date: '2026', reliabilityTier: 1 },
+      { id: 'world-bank-data', label: 'World Bank DataBank', url: 'https://databank.worldbank.org/', sourceType: 'multilateral', relevance: 'Country indicator series and metadata for count-backed dashboard summaries.', publisher: 'World Bank', date: '2026', reliabilityTier: 1 },
+    ],
+    suggestedQuestions: ['Which dashboard counts are decision-relevant?', 'Which indicators changed since the last snapshot?', 'Which source or denominator gap should be shown as a warning?'],
+    suggestedNextActions: ['Draft metric cards with source and as-of date.', 'Separate coverage count from substantive trend.', 'Add missing-source warnings before export.'],
+    aiUseGuidance: 'Use this as a concise artifact contract for evidence dashboards. Counts should support scanning and review, not replace sourced analysis.',
+  }),
+  starter('starter-situation-data-quality-statistics', 'situation', 'exposure-mapping', 'Data quality and statistics situation capsule', 'A situation capsule for missing denominators, stale figures, incomparable source series, and data quality risks in policy analysis.', 'Use this when the core issue is whether numbers can be trusted. PRAXIS should identify stale figures, missing denominators, changed definitions, source coverage gaps, and comparability risks before drafting.', ['statistics', 'data-quality', 'missing-denominators', 'comparability', 'stale-figures', 'team:research-strategy'], { situationCoreId: 'starter-situation-data-quality-statistics', pathCoreId: 'research-direction', sourceCoreIds: ['world-bank-data', 'imf-data', 'humanitarian-data-exchange'], toolCoreIds: ['grounded-research', 'sourceability', 'ach'], outputCoreIds: ['governance-index'] }, ['grounded-research', 'sourceability', 'ach'], ['governance-index', 'risk-monitor-card'], ['starter-tool-statistical-baseline-builder', 'starter-tool-indicator-shift-detector', 'starter-output-statistical-annex'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'world-bank-data', label: 'World Bank DataBank', url: 'https://databank.worldbank.org/', sourceType: 'multilateral', relevance: 'Comparable indicator series and metadata for denominator and freshness checks.', publisher: 'World Bank', date: '2026', reliabilityTier: 1 },
+      { id: 'imf-data', label: 'IMF Data portal', url: 'https://www.imf.org/en/Data', sourceType: 'multilateral', relevance: 'Macro-financial series, release dates, and metadata for comparability checks.', publisher: 'International Monetary Fund', date: '2026', reliabilityTier: 1 },
+    ],
+    suggestedQuestions: ['Which figure is stale, missing a denominator, or not comparable?', 'What source definition controls the statistic?', 'What decision would change if the data quality warning is material?'],
+    suggestedNextActions: ['List data quality risks before drafting.', 'Attach metadata and source release dates.', 'Use a statistical annex or dashboard brief for the output.'],
+    aiUseGuidance: 'Use this situation capsule when data quality is the case. PRAXIS should downgrade confidence until denominators, freshness, and comparability are explicit.',
+  }),
   starter('starter-output-two-page-brief', 'output', 'output-brief', 'Two-page brief artifact capsule', 'An artifact capsule for a concise two-page policy brief with BLUF, context, options, risks, and source gaps.', 'Use this when the practical output should be short, sourced, and decision-ready. PRAXIS should keep evidence gaps and approval posture visible.', ['two-page-brief', 'brief', 'artifact', 'decision'], { outputCoreIds: ['options-memo'], productCoreIds: ['options-memo'], objectiveCoreIds: ['draft-two-page-brief'] }, ['memo-drafter', 'sourceability', 'contradiction-finder'], ['options-memo', 'country-one-pager'], ['starter-tool-assumption-audit', 'starter-tool-source-gap-triage', 'starter-situation-mediation-track'], {
     readinessStars: 4,
     suggestedQuestions: ['Who is the audience for the two-page brief?', 'What decision should the brief support?', 'Which source gaps must be visible?'],
@@ -1887,6 +1970,97 @@ export function resolveCapsuleTaxonomy(input: CapsuleTaxonomyInput): CapsuleReso
   };
 }
 
+export function buildCapsuleTaxonomyStats(capsules: CapsuleTaxonomyStatsInput[]): CapsuleTaxonomyStats {
+  const typeCounts = new Map<string, CapsuleTaxonomyStatItem>();
+  const domainCounts = new Map<string, CapsuleTaxonomyStatItem>();
+  const teamCounts = new Map<string, CapsuleTaxonomyStatItem>();
+  const toolCounts = new Map<string, CapsuleTaxonomyStatItem>();
+  const outputCounts = new Map<string, CapsuleTaxonomyStatItem>();
+  const repairCounts = new Map<string, CapsuleTaxonomyRepairStat>();
+  let archivedCapsules = 0;
+  let sourceReferences = 0;
+  let documentReferences = 0;
+
+  const addFacet = (
+    map: Map<string, CapsuleTaxonomyStatItem>,
+    facet: CapsuleTaxonomyFacet,
+  ) => {
+    const key = facet.repairState ? `${facet.repairState}:${facet.value ?? facet.id}` : facet.id;
+    const current = map.get(key);
+    map.set(key, {
+      id: facet.id,
+      label: facet.label,
+      tag: facet.tag,
+      repairState: facet.repairState,
+      value: facet.value,
+      count: (current?.count ?? 0) + 1,
+    });
+  };
+  const addId = (map: Map<string, CapsuleTaxonomyStatItem>, id: string, label = id.replaceAll('-', ' ')) => {
+    const clean = id.trim();
+    if (!clean) return;
+    const current = map.get(clean);
+    map.set(clean, {
+      id: clean,
+      label,
+      count: (current?.count ?? 0) + 1,
+    });
+  };
+  const addRepair = (axis: CapsuleTaxonomyAxisId, facet: CapsuleTaxonomyFacet) => {
+    if (!facet.repairState) return;
+    const key = `${axis}:${facet.repairState}:${facet.value ?? facet.id}`;
+    const current = repairCounts.get(key);
+    repairCounts.set(key, {
+      axis,
+      id: facet.value ?? facet.id,
+      label: facet.label,
+      tag: facet.tag,
+      repairState: facet.repairState,
+      value: facet.value,
+      count: (current?.count ?? 0) + 1,
+    });
+  };
+
+  for (const capsule of capsules) {
+    const taxonomy = resolveCapsuleTaxonomy(capsule);
+    const isArchived = Boolean(capsule.archivedAt);
+    if (isArchived) archivedCapsules += 1;
+    sourceReferences += capsule.coreRefs?.sourceCoreIds?.length ?? 0;
+    documentReferences += capsule.coreRefs?.documentCoreIds?.length ?? 0;
+
+    if (isArchived) continue;
+
+    for (const facet of taxonomy.types) {
+      addFacet(typeCounts, facet);
+      addRepair('types', facet);
+    }
+    for (const facet of taxonomy.domains) {
+      addFacet(domainCounts, facet);
+      addRepair('domains', facet);
+    }
+    for (const facet of taxonomy.policyTeams) {
+      addFacet(teamCounts, facet);
+      addRepair('policy-teams', facet);
+    }
+    for (const toolId of taxonomy.tools) addId(toolCounts, toolId);
+    for (const outputId of taxonomy.outputs) addId(outputCounts, outputId);
+  }
+
+  return {
+    totalCapsules: capsules.length,
+    visibleCapsules: capsules.length - archivedCapsules,
+    archivedCapsules,
+    sourceReferences,
+    documentReferences,
+    types: sortStatItems(typeCounts),
+    domains: sortStatItems(domainCounts),
+    policyTeams: sortStatItems(teamCounts),
+    thinkingDevices: sortStatItems(toolCounts),
+    artifacts: sortStatItems(outputCounts),
+    repairStates: sortStatItems(repairCounts) as CapsuleTaxonomyRepairStat[],
+  };
+}
+
 export const CAPSULE_OUTPUT_PRODUCTS: CapsuleOutputProduct[] = [
   {
     id: 'options-memo',
@@ -2287,6 +2461,10 @@ export const CAPSULE_CONNECTOR_IDEAS: CapsuleConnectorIdea[] = [
 
 function uniqueStrings(values: string[] | null | undefined): string[] {
   return Array.from(new Set((values ?? []).map((value) => value.trim()).filter(Boolean)));
+}
+
+function sortStatItems<T extends CapsuleTaxonomyStatItem>(items: Map<string, T>): T[] {
+  return Array.from(items.values()).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
 
 function stableReceiptPart(value: string): string {

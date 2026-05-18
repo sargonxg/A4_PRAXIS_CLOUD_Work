@@ -53,15 +53,14 @@ expectIncludes('src/lib/ai/model-runtime-policy.ts', [
 ]);
 
 expectIncludes('src/components/ask/AskStreamPanel.tsx', [
-  'ASK_RUNTIME_OPTIONS',
   'PRAXIS_USAGE_COPY.askCost',
-  'model: selectedRuntime.id',
+  'TACITUS chooses model tier',
+  'TACITUS routing',
   'activeContextStack',
 ]);
 
 expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
-  'ASK_RUNTIME_OPTIONS',
-  'model: selectedRuntime.id',
+  'TACITUS routes model, worker, and tools',
   'data-testid="praxis-main-composer"',
   'data-testid="praxis-chat-thread"',
   'data-testid="praxis-answer-markdown"',

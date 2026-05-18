@@ -37,8 +37,6 @@ import {
 import { AccountProfileButton } from '@/components/app/account-profile-button';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
-import { ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
-import type { ModelPreferenceValue } from '@/lib/ai/model-preferences';
 import {
   PENDING_POLICY_AGENT_ID_KEY,
   PENDING_TASKLET_PROMPT_KEY,
@@ -57,6 +55,7 @@ import {
   CAPSULE_STARTER_DEFINITIONS,
   CAPSULE_CONNECTOR_REGISTRY,
   POLICY_TEAM_CATEGORIES,
+  buildCapsuleTaxonomyStats,
   categoryTagsForPolicyTeam,
   getPolicyTeamCategory,
   normalizeCapsuleTaxonomyTags,
@@ -65,6 +64,7 @@ import {
   type CapsuleStarterCategory,
   type CapsuleStarterDefinition,
   type CapsuleConnectorDefinition,
+  type CapsuleTaxonomyStats,
   type PolicyTeamCategory,
 } from '@/lib/product/context-capsules';
 import { recommendCapsuleTools, type CapsuleToolRecommendation } from '@/lib/tools/recommend';
@@ -338,7 +338,6 @@ export function TaskletPraxisWorkbench({
   const [prompt, setPrompt] = useState('Draft a sourced options memo from the active capsule.');
   const [activeTab, setActiveTab] = useState<PolicyNeedTabId>('analysis');
   const [selectedAgentId, setSelectedAgentId] = useState(PRAXIS_POLICY_AGENTS[0]?.id ?? 'research-memo');
-  const [selectedModel, setSelectedModel] = useState<ModelPreferenceValue>(ASK_RUNTIME_OPTIONS[0].id);
   const [currentCapsuleId, setCurrentCapsuleId] = useState(capsuleId);
   const [activeCapsules, setActiveCapsules] = useState<ActiveCapsuleChip[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -382,7 +381,6 @@ export function TaskletPraxisWorkbench({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const starterSeededRef = useRef(false);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
-  const selectedRuntime = getAskRuntimeOption(selectedModel);
   const selectedToolIds = activeCapsules
     .filter((capsule) => capsule.role === 'tool')
     .map((capsule) => capsule.toolId ?? capsule.templateId ?? capsule.id);
@@ -396,8 +394,11 @@ export function TaskletPraxisWorkbench({
         recentToolIds: selectedToolIds,
       })
     : [];
-  const capsuleDomainCategories = buildCapsuleDomainCategories(userCapsules);
-  const publicCapsuleDomainCategories = buildPublicCapsuleDomainCategories();
+  const userCapsuleTaxonomyStats = buildCapsuleTaxonomyStats(userCapsules);
+  const publicCapsuleTaxonomyStats = buildCapsuleTaxonomyStats(CAPSULE_STARTER_DEFINITIONS);
+  const activeCapsuleTaxonomyStats = isAuthenticated ? userCapsuleTaxonomyStats : publicCapsuleTaxonomyStats;
+  const capsuleDomainCategories = buildCapsuleDomainCategories(userCapsuleTaxonomyStats);
+  const publicCapsuleDomainCategories = buildPublicCapsuleDomainCategories(publicCapsuleTaxonomyStats);
   const filteredUserCapsules = filterUserCapsules(userCapsules, capsuleSearch, capsuleTypeFilter, capsuleDomainFilter);
   const publicCapsules = filterPublicCapsules(capsuleSearch, capsuleTypeFilter, capsuleDomainFilter);
   const filteredCapsules = COCKPIT_CAPSULE_LIBRARY.filter((capsule) => {
@@ -582,8 +583,7 @@ export function TaskletPraxisWorkbench({
           },
           aiSettings: {
             provider: 'vertex',
-            model: selectedRuntime.id,
-            analysisDepth: selectedRuntime.mode === 'research_memo' ? 'deep' : 'standard',
+            analysisDepth: selectedAgent.id === 'research-memo' || selectedAgent.id === 'capsule-factory' ? 'deep' : 'standard',
           },
         }),
       });
@@ -1684,16 +1684,9 @@ export function TaskletPraxisWorkbench({
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <select
-                    value={selectedModel}
-                    onChange={(event) => setSelectedModel(event.target.value as ModelPreferenceValue)}
-                    aria-label="Model"
-                    className="hidden max-w-44 rounded-md border border-slate-200 bg-white px-2 py-2 text-sm font-semibold text-slate-700 outline-none sm:block"
-                  >
-                    {ASK_RUNTIME_OPTIONS.map((option) => (
-                      <option key={option.id} value={option.id}>{option.label}</option>
-                    ))}
-                  </select>
+                  <span className="hidden rounded-md border border-slate-200 bg-white px-2 py-2 text-xs font-semibold text-slate-600 sm:inline-flex">
+                    TACITUS routes model, worker, and tools
+                  </span>
                   <button type="button" aria-label="Voice input" onClick={startVoiceInput} className="rounded-md p-2.5 text-slate-600 hover:bg-slate-100">
                     <Mic className="h-4 w-4" />
                   </button>
@@ -1958,6 +1951,7 @@ export function TaskletPraxisWorkbench({
                     )}
                   >
                     {category.label}
+                    <span className="ml-1 font-mono text-[10px] text-slate-400">{taxonomyTypeFilterCount(activeCapsuleTaxonomyStats, category.id)}</span>
                   </button>
                 ))}
               </nav>
@@ -1965,33 +1959,34 @@ export function TaskletPraxisWorkbench({
               <div className="mt-4 grid gap-3 md:grid-cols-3" data-testid="capsule-taxonomy-surface">
                 <CategoryAxisPanel
                   label="Types"
-                  items={capsuleTypeFilters.filter((item) => item.id !== 'all').map((item) => ({
-                    id: item.id,
-                    label: item.label === 'Tool' ? 'Thinking devices' : item.label === 'Output' ? 'Artifacts' : item.label,
-                    count: capsuleTypeCount(isAuthenticated ? userCapsules : [], item.id, isAuthenticated ? undefined : publicCapsules),
-                  }))}
+                  items={taxonomyTypeItems(activeCapsuleTaxonomyStats)}
+                  selectedId={capsuleTypeFilter}
+                  onSelect={setCapsuleTypeFilter}
+                  showRepairStates={isRepositoryPage}
                 />
                 <CategoryAxisPanel
                   label="Domains"
-                  items={(isAuthenticated ? capsuleDomainCategories : publicCapsuleDomainCategories).filter((id) => id !== 'all').slice(0, 6).map((id) => ({
-                    id,
-                    label: capsuleDomainLabel(id),
-                    count: isAuthenticated
-                      ? userCapsules.filter((capsule) => capsuleMatchesDomain(capsule, id)).length
-                      : publicCapsules.filter((capsule) => publicCapsuleMatchesDomain(capsule, id)).length,
-                  }))}
+                  items={taxonomyDomainItems(activeCapsuleTaxonomyStats, isRepositoryPage)}
+                  selectedId={capsuleDomainFilter}
+                  onSelect={setCapsuleDomainFilter}
+                  showRepairStates={isRepositoryPage}
                 />
                 <CategoryAxisPanel
                   label="Policy Teams"
-                  items={POLICY_TEAM_CATEGORIES.slice(0, 6).map((team) => ({
-                    id: team.id,
-                    label: team.shortLabel,
-                    count: isAuthenticated
-                      ? userCapsules.filter((capsule) => resolveCapsuleTaxonomy(capsule).policyTeams.some((facet) => facet.id === team.id)).length
-                      : publicCapsules.filter((capsule) => publicCategoryForTemplate(capsule.id)?.id === team.id).length,
-                  }))}
+                  items={taxonomyPolicyTeamItems(activeCapsuleTaxonomyStats, isRepositoryPage)}
+                  selectedId={capsuleDomainFilter}
+                  onSelect={setCapsuleDomainFilter}
+                  showRepairStates={isRepositoryPage}
                 />
               </div>
+              {isRepositoryPage ? (
+                <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                  <Metric label="Source refs" value={userCapsuleTaxonomyStats.sourceReferences} />
+                  <Metric label="Document refs" value={userCapsuleTaxonomyStats.documentReferences} />
+                  <Metric label="Archived" value={userCapsuleTaxonomyStats.archivedCapsules} />
+                  <Metric label="Repair states" value={userCapsuleTaxonomyStats.repairStates.length} />
+                </div>
+              ) : null}
 
               <div className="mt-4 grid gap-3 md:grid-cols-2" data-testid="capsule-tool-output-lanes">
                 <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
@@ -2016,6 +2011,7 @@ export function TaskletPraxisWorkbench({
                     )}
                   >
                     {capsuleDomainLabel(category)}
+                    <span className="ml-1 font-mono text-[10px] text-slate-400">{taxonomyDomainFilterCount(activeCapsuleTaxonomyStats, category)}</span>
                   </button>
                 ))}
               </nav>
@@ -2341,14 +2337,11 @@ function softColor(hex: string, alpha = 0.08): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function buildCapsuleDomainCategories(capsules: PraxisCapsuleSummary[]): string[] {
-  const generatedTags = Array.from(new Set(capsules.flatMap((capsule) => {
-    const taxonomy = resolveCapsuleTaxonomy(capsule);
-    return [
-      ...taxonomy.domains.map((facet) => facet.id),
-      ...taxonomy.policyTeams.map((facet) => facet.id),
-    ];
-  })))
+function buildCapsuleDomainCategories(stats: CapsuleTaxonomyStats): string[] {
+  const generatedTags = [
+    ...stats.domains.map((facet) => facet.id),
+    ...stats.policyTeams.map((facet) => facet.id),
+  ]
     .filter((tag) => !capsuleTypeFilters.some((filter) => filter.id === tag))
     .filter((tag) => !POLICY_TEAM_CATEGORIES.some((category) => category.id === tag))
     .filter((tag) => !capsuleDomainFilters.some((filter) => filter.id === tag))
@@ -2360,13 +2353,65 @@ function buildCapsuleDomainCategories(capsules: PraxisCapsuleSummary[]): string[
   ]);
 }
 
-function buildPublicCapsuleDomainCategories(): string[] {
+function buildPublicCapsuleDomainCategories(stats: CapsuleTaxonomyStats): string[] {
   return uniqueIds([
     ...capsuleDomainFilters.map((filter) => filter.id),
-    ...POLICY_TEAM_CATEGORIES
-      .filter((category) => category.templateIds.some((templateId) => COCKPIT_CAPSULE_LIBRARY.some((capsule) => capsule.id === templateId)))
-      .map((category) => category.id),
+    ...stats.policyTeams.map((category) => category.id),
   ]);
+}
+
+function taxonomyTypeItems(stats: CapsuleTaxonomyStats) {
+  return [
+    ...capsuleTypeFilters
+      .filter((item) => item.id !== 'all')
+      .map((item) => ({
+        id: item.id,
+        label: item.label === 'Tool' ? 'Thinking devices' : item.label === 'Output' ? 'Artifacts' : item.label,
+        count: taxonomyTypeFilterCount(stats, item.id),
+      })),
+    ...stats.types.filter((item) => item.repairState),
+  ];
+}
+
+function taxonomyDomainItems(stats: CapsuleTaxonomyStats, includeRepairStates: boolean) {
+  const items = stats.domains
+    .filter((item) => includeRepairStates || !item.repairState)
+    .slice(0, 8);
+  return items.length ? items : capsuleDomainFilters
+    .filter((item) => item.id !== 'all')
+    .slice(0, 6)
+    .map((item) => ({ id: item.id, label: item.label, count: taxonomyDomainFilterCount(stats, item.id) }));
+}
+
+function taxonomyPolicyTeamItems(stats: CapsuleTaxonomyStats, includeRepairStates: boolean) {
+  const items = stats.policyTeams
+    .filter((item) => includeRepairStates || !item.repairState)
+    .slice(0, 8);
+  return items.length ? items : POLICY_TEAM_CATEGORIES.slice(0, 6).map((team) => ({
+    id: team.id,
+    label: team.shortLabel,
+    count: taxonomyDomainFilterCount(stats, team.id),
+  }));
+}
+
+function taxonomyTypeFilterCount(stats: CapsuleTaxonomyStats, typeFilter: string): number {
+  if (typeFilter === 'all') return stats.visibleCapsules;
+  if (typeFilter === 'archived') return stats.archivedCapsules;
+  return stats.types.find((item) => item.id === typeFilter)?.count ?? 0;
+}
+
+function taxonomyDomainFilterCount(stats: CapsuleTaxonomyStats, domainFilter: string): number {
+  if (domainFilter === 'all') return stats.visibleCapsules;
+  const policyTeam = getPolicyTeamCategory(domainFilter);
+  if (policyTeam) return stats.policyTeams.find((item) => item.id === policyTeam.id)?.count ?? 0;
+  if (domainFilter === 'other') {
+    const knownCount = capsuleDomainFilters
+      .filter((filter) => filter.id !== 'all' && filter.id !== 'other')
+      .reduce((sum, filter) => sum + taxonomyDomainFilterCount(stats, filter.id), 0);
+    return Math.max(0, stats.visibleCapsules - knownCount);
+  }
+  return (stats.domains.find((item) => item.id === domainFilter)?.count ?? 0) +
+    (stats.policyTeams.find((item) => item.id === domainFilter)?.count ?? 0);
 }
 
 function publicCategoryForTemplate(templateId: string): PolicyTeamCategory | null {
@@ -2421,19 +2466,6 @@ function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, typ
     .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
 }
 
-function capsuleTypeCount(
-  capsules: PraxisCapsuleSummary[],
-  typeFilter: string,
-  publicCapsulesForCount?: Array<(typeof COCKPIT_CAPSULE_LIBRARY)[number]>,
-): number {
-  if (publicCapsulesForCount) {
-    if (typeFilter === 'archived') return 0;
-    return publicCapsulesForCount.filter((capsule) => publicCapsuleMatchesType(capsule, typeFilter)).length;
-  }
-  if (typeFilter === 'archived') return capsules.filter((capsule) => Boolean(capsule.archivedAt)).length;
-  return capsules.filter((capsule) => capsuleMatchesType(capsule, typeFilter)).length;
-}
-
 function capsuleMatchesType(capsule: PraxisCapsuleSummary, typeFilter: string): boolean {
   if (typeFilter === 'all') return true;
   const taxonomy = resolveCapsuleTaxonomy(capsule);
@@ -2441,7 +2473,8 @@ function capsuleMatchesType(capsule: PraxisCapsuleSummary, typeFilter: string): 
 }
 
 function publicCapsuleMatchesType(capsule: (typeof COCKPIT_CAPSULE_LIBRARY)[number], typeFilter: string): boolean {
-  if (typeFilter === 'all' || typeFilter === 'archived') return true;
+  if (typeFilter === 'all') return true;
+  if (typeFilter === 'archived') return false;
   if (typeFilter === 'tool') return capsule.contextCores.includes('tool');
   if (typeFilter === 'output') return capsule.contextCores.includes('output') || capsule.contextCores.includes('product');
   if (typeFilter === 'user') return capsule.contextCores.includes('user');
@@ -2632,19 +2665,40 @@ function CapsuleEmptyState({ label }: { label: string }) {
   );
 }
 
-function CategoryAxisPanel({ label, items }: { label: string; items: Array<{ id: string; label: string; count: number }> }) {
+function CategoryAxisPanel({
+  label,
+  items,
+  selectedId,
+  onSelect,
+  showRepairStates,
+}: {
+  label: string;
+  items: Array<{ id: string; label: string; count: number; repairState?: 'custom' | 'unknown' }>;
+  selectedId?: string;
+  onSelect: (id: string) => void;
+  showRepairStates: boolean;
+}) {
+  const visibleItems = showRepairStates ? items : items.filter((item) => !item.repairState);
   return (
     <section className="rounded-lg border border-slate-200 bg-white/80 p-3" aria-label={`${label} category map`}>
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-slate-900">{label}</p>
-        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{items.reduce((sum, item) => sum + item.count, 0)}</span>
+        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{visibleItems.reduce((sum, item) => sum + item.count, 0)}</span>
       </div>
       <div className="mt-2 flex flex-wrap gap-1.5">
-        {items.map((item) => (
-          <span key={item.id} className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">
+        {visibleItems.map((item) => (
+          <button
+            key={`${item.id}:${item.repairState ?? 'ok'}`}
+            type="button"
+            onClick={() => onSelect(item.id)}
+            className={cn(
+              'inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold',
+              selectedId === item.id ? 'bg-slate-950 text-white' : item.repairState ? 'bg-amber-50 text-amber-800 hover:bg-amber-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+            )}
+          >
             {item.label}
-            <span className="font-mono text-[10px] text-slate-400">{item.count}</span>
-          </span>
+            <span className={cn('font-mono text-[10px]', selectedId === item.id ? 'text-white/70' : 'text-slate-400')}>{item.count}</span>
+          </button>
         ))}
       </div>
     </section>
@@ -3700,6 +3754,7 @@ function RepositorySheet({
         <div className="flex-1 overflow-y-auto p-5">
           <div className="grid grid-cols-3 gap-2">
             <Metric label="Documents" value={documents.length || documentRefs.length} />
+            <Metric label="Document refs" value={capsule?.coreRefs.documentCoreIds?.length ?? 0} />
             <Metric label="Source refs" value={capsule?.coreRefs.sourceCoreIds?.length ?? 0} />
             <Metric label="Outputs" value={(capsule?.coreRefs.outputCoreIds?.length ?? 0) + (capsule?.coreRefs.productCoreIds?.length ?? 0)} />
           </div>

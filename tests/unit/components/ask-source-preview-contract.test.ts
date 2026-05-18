@@ -25,4 +25,12 @@ describe('Ask source preview panel contract', () => {
     expect(source).toContain('Agent run');
     expect(source).toContain('Tool router');
   });
+
+  it('shows TACITUS routing stages without a normal model picker', () => {
+    expect(source).toContain('TACITUS reads the capsule');
+    expect(source).toContain('TACITUS selects model tier');
+    expect(source).toContain('TACITUS routing');
+    expect(source).not.toContain('aria-label="Ask PRAXIS model"');
+    expect(source).not.toContain('setSelectedModel');
+  });
 });

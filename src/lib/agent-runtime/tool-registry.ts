@@ -62,6 +62,15 @@ export const AGENT_TOOL_REGISTRY = {
     persistenceTarget: 'run_event',
     approvalPolicy: 'auto',
   }),
+  'capsule-repository-read': tool({
+    id: 'capsule-repository-read',
+    label: 'Read capsule repository',
+    description: 'Reads reusable ContextCapsule cores, starter definitions, repository documents, and source gaps before building a capsule draft.',
+    risk: 'low',
+    requiredCores: [],
+    persistenceTarget: 'run_event',
+    approvalPolicy: 'auto',
+  }),
   'grounded-search': tool({
     id: 'grounded-search',
     label: 'Grounded source search',
