@@ -16,7 +16,9 @@ export const GET = withAuth<{ params: Promise<{ runId: string }> }>(async (reque
   }
 
   const url = new URL(request.url);
-  const after = url.searchParams.get('after');
+  const after = url.searchParams.get('after')
+    ?? url.searchParams.get('lastEventId')
+    ?? request.headers.get('Last-Event-ID');
   const limit = Number(url.searchParams.get('limit') ?? 100);
 
   try {

@@ -29,10 +29,12 @@ describe('ask conversation continuity', () => {
           corpusSearch: true,
           groundedSearch: false,
           sourceDocumentCount: 2,
+          referenceCapsuleIds: ['cap-ref-1', 'cap-ref-2'],
+          missingReferenceCapsuleIds: ['cap-missing'],
           activeGapCount: 1,
           retrievedDocumentIds: ['doc-1'],
           retrievedSourceIds: ['source-1'],
-          planLayerOrder: ['capsule-core-refs', 'source-receipts'],
+          planLayerOrder: ['capsule-core-refs', 'associated-capsules', 'source-receipts'],
           evidencePackId: 'pack-1',
           evidenceParagraphCount: 4,
           evidenceGapCount: 1,
@@ -53,7 +55,11 @@ describe('ask conversation continuity', () => {
       memoryPersistence: 'cloud-sql',
     });
     expect(receipt.coreRefs.sourceDocumentCoreIds).toEqual(['doc-1', 'source-1']);
-    expect(receipt.retrievalLayers).toEqual(['capsule-core-refs', 'source-receipts']);
+    expect(receipt.referenceCapsuleIds).toEqual(['cap-ref-1', 'cap-ref-2']);
+    expect(receipt.referenceCapsuleCount).toBe(2);
+    expect(receipt.missingReferenceCapsuleIds).toEqual(['cap-missing']);
+    expect(receipt.warnings).toContain('1 saved reference capsule is missing or archived.');
+    expect(receipt.retrievalLayers).toEqual(['capsule-core-refs', 'associated-capsules', 'source-receipts']);
     expect(receipt.stages.map((stage) => stage.stage)).toEqual([
       'capsule_resolved',
       'history_loaded',

@@ -35,6 +35,7 @@ describe('context kernel', () => {
     expect(capsule.memory.procedural.map((item) => item.id)).toEqual(['mem-3']);
     expect(capsule.retrievalPlan.layers.map((layer) => layer.id)).toEqual([
       'capsule-core-refs',
+      'associated-capsules',
       'repository-documents',
       'source-receipts',
       'graph-core',
@@ -78,6 +79,12 @@ describe('context kernel', () => {
 
     expect(plan.layers.slice(0, 3).map((layer) => layer.id)).toEqual([
       'capsule-core-refs',
+      'associated-capsules',
+      'repository-documents',
+    ]);
+    expect(plan.layers.slice(0, 4).map((layer) => layer.id)).toEqual([
+      'capsule-core-refs',
+      'associated-capsules',
       'repository-documents',
       'source-receipts',
     ]);
@@ -174,6 +181,49 @@ describe('context kernel', () => {
     expect(effective.readiness.missingSlots).toContain('graph');
     expect(effective.contentHash).toMatch(/^fnv1a_[a-f0-9]{8}$/);
     expect(effective.promptBlock).toContain('<praxis-context-capsule>');
+  });
+
+  it('keeps associated capsules as reference context in retrieval and effective capsule metadata', async () => {
+    const db = new FakeFirestore();
+    await buildTurnCapsule({
+      uid: 'u1',
+      activeContextStack: { stackId: 'default', situationId: 'sit-primary', sourceIds: ['src-primary'] },
+    }, deps(db));
+    await db.collection('users').doc('u1').collection('capsules').doc('cap-reference').set({
+      capsuleId: 'cap-reference',
+      ownerUid: 'u1',
+      label: 'Reference capsule',
+      scope: 'situation',
+      version: 4,
+      parentCapsuleId: null,
+      forkedFromVersion: null,
+      activeForSituationIds: [],
+      associatedCapsuleIds: [],
+      lockedCoreKinds: [],
+      coreRefs: { sourceCoreIds: ['src-reference'], documentCoreIds: ['doc-reference'] },
+      retrievalPolicy: { layers: ['sources'], limit: 8, checkFreshness: true },
+      health: { score: 77, status: 'usable', warnings: [] },
+      provenance: { source: 'manual', createdFrom: null, notes: [] },
+      access: { visibility: 'private', sharedWithUserIds: [], sharedWithOrgIds: [], allowClone: false, allowDownload: false, allowCommunityRating: false },
+      community: { favorite: false, userRating: null, averageRating: null, ratingCount: 0, tags: ['reference'], listedInMarketplace: false },
+      trust: { status: 'review', summary: '', checkedAt: '2026-05-14T00:00:00.000Z' },
+      createdAt: '2026-05-14T00:00:00.000Z',
+      updatedAt: '2026-05-14T00:00:00.000Z',
+      archivedAt: null,
+    });
+    await db.collection('users').doc('u1').collection('capsules').doc('default').set({
+      associatedCapsuleIds: ['cap-reference'],
+    }, { merge: true });
+
+    const capsule = await buildTurnCapsule({ uid: 'u1', capsuleId: 'default', traceId: 'trace-associated' }, deps(db));
+    const effective = compileEffectiveCapsule(capsule);
+
+    expect(capsule.injectableContext.associatedCapsules.map((item) => item.capsuleId)).toEqual(['cap-reference']);
+    expect(capsule.retrievalPlan.layers.map((layer) => layer.id).slice(0, 2)).toEqual(['capsule-core-refs', 'associated-capsules']);
+    expect(capsule.retrievalPlan.layers.find((layer) => layer.id === 'associated-capsules')?.refIds).toEqual(['cap-reference', 'src-reference', 'doc-reference']);
+    expect(effective.referenceCapsuleIds).toEqual(['cap-reference']);
+    expect(effective.selectedConnectors).toEqual(['src-primary']);
+    expect(effective.promptBlock).toContain('[associated_capsules]');
   });
 
   it('persists suggested action receipts under the owner scope', async () => {

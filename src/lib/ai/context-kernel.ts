@@ -53,6 +53,7 @@ export interface TurnCapsule {
 
 export type CapsuleRetrievalLayerId =
   | 'capsule-core-refs'
+  | 'associated-capsules'
   | 'repository-documents'
   | 'source-receipts'
   | 'graph-core'
@@ -244,16 +245,17 @@ export function buildCapsuleRetrievalPlan(
       refs.memoryCoreId,
       ...refs.outputCoreIds,
     ]),
-    retrievalLayer('repository-documents', 'Attached repository documents', 2, repositoryDocumentIds),
-    retrievalLayer('source-receipts', 'Attached source receipts', 3, sourceReceiptIds),
-    retrievalLayer('graph-core', 'Actor and graph core', 4, refs.graphCoreId ? [refs.graphCoreId] : []),
-    retrievalLayer('time-core', 'Time and watchlist core', 5, refs.timeCoreId ? [refs.timeCoreId] : []),
-    retrievalLayer('memory-core', 'Memory and handover core', 6, [
+    retrievalLayer('associated-capsules', 'Reference capsules', 2, referenceCapsuleRefs(capsule.injectableContext.associatedCapsules)),
+    retrievalLayer('repository-documents', 'Attached repository documents', 3, repositoryDocumentIds),
+    retrievalLayer('source-receipts', 'Attached source receipts', 4, sourceReceiptIds),
+    retrievalLayer('graph-core', 'Actor and graph core', 5, refs.graphCoreId ? [refs.graphCoreId] : []),
+    retrievalLayer('time-core', 'Time and watchlist core', 6, refs.timeCoreId ? [refs.timeCoreId] : []),
+    retrievalLayer('memory-core', 'Memory and handover core', 7, [
       refs.memoryCoreId,
       ...Object.values(capsule.memory).flat().map((item) => item.id),
     ]),
-    retrievalLayer('recent-runs', 'Recent run receipts', 7, capsule.recentToolOutputs),
-    retrievalLayer('output-history', 'Output capsule history', 8, refs.outputCoreIds),
+    retrievalLayer('recent-runs', 'Recent run receipts', 8, capsule.recentToolOutputs),
+    retrievalLayer('output-history', 'Output capsule history', 9, refs.outputCoreIds),
   ];
   const promptLines = [
     '## Active Capsule Retrieval Plan',
@@ -261,7 +263,7 @@ export function buildCapsuleRetrievalPlan(
     `Repository: ${repositoryDocumentIds.length} document ref(s), ${sourceReceiptIds.length} source receipt ref(s), ${chunkCount} chunk(s), ${repository?.retrievalBackend ?? 'local-hybrid'} backend, freshness ${repository?.freshness ?? inferRepositoryFreshness(repositoryDocumentIds, sourceReceiptIds)}.`,
     'Read order:',
     ...layers.map((layer) => `- ${layer.priority}. ${layer.label}: ${layer.status}${layer.refIds.length ? ` (${layer.refIds.slice(0, 8).join(', ')})` : ''}`),
-    'Answer from capsule core refs first, then repository documents/chunks and source receipts, then graph/time/memory/recent run/output history. Treat missing layers as explicit evidence gaps.',
+    'Answer from capsule core refs first, then associated reference capsule summaries, then repository documents/chunks and source receipts, then graph/time/memory/recent run/output history. Treat missing layers as explicit evidence gaps.',
   ];
 
   return {
@@ -324,7 +326,7 @@ export function compileEffectiveCapsule(capsule: TurnCapsule, objective?: string
     capsuleVersion: capsule.capsuleVersion,
     objective: objective?.trim() ? objective.trim().slice(0, 500) : null,
     primaryCapsuleId: capsule.capsuleId,
-    referenceCapsuleIds: [],
+    referenceCapsuleIds: capsule.injectableContext.associatedCapsules.map((reference) => reference.capsuleId),
     comparisonCapsuleIds: [],
     slotTrace,
     selectedFiles: refs.documentCoreIds,
@@ -338,6 +340,24 @@ export function compileEffectiveCapsule(capsule: TurnCapsule, objective?: string
     contentHash: stableHash(hashInput),
     promptBlock: capsule.injectableContext.promptBlock,
   };
+}
+
+function referenceCapsuleRefs(capsules: InjectableContext['associatedCapsules']): string[] {
+  return uniqueStrings(capsules.flatMap((capsule) => [
+    capsule.capsuleId,
+    capsule.coreRefs.userCoreId,
+    capsule.coreRefs.situationCoreId,
+    capsule.coreRefs.pathCoreId,
+    ...capsule.coreRefs.sourceCoreIds,
+    ...capsule.coreRefs.documentCoreIds,
+    capsule.coreRefs.graphCoreId,
+    capsule.coreRefs.timeCoreId,
+    capsule.coreRefs.memoryCoreId,
+    ...capsule.coreRefs.outputCoreIds,
+    ...(capsule.coreRefs.toolCoreIds ?? []),
+    ...(capsule.coreRefs.objectiveCoreIds ?? []),
+    ...(capsule.coreRefs.productCoreIds ?? []),
+  ]));
 }
 
 export function runCapability(input: RunCapabilityInput): CapabilityRunPlan {

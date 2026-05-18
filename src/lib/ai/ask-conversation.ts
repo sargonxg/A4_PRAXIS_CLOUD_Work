@@ -52,6 +52,9 @@ export type AskContextReceipt = {
     memoryCoreId: string | null;
     outputCoreIds: string[];
   };
+  referenceCapsuleIds: string[];
+  referenceCapsuleCount: number;
+  missingReferenceCapsuleIds: string[];
   retrievalLayers: string[];
   evidenceCount: number;
   historyTurnCount: number;
@@ -89,11 +92,16 @@ export function buildAskContextReceipt(input: BuildAskContextReceiptInput): AskC
   const sourceDocumentCoreIds = stringArray(cores.sourceDocumentCoreIds);
   const retrievedDocumentIds = stringArray(retrieval.retrievedDocumentIds);
   const retrievedSourceIds = stringArray(retrieval.retrievedSourceIds);
+  const referenceCapsuleIds = stringArray(retrieval.referenceCapsuleIds);
+  const missingReferenceCapsuleIds = stringArray(retrieval.missingReferenceCapsuleIds);
   const evidenceCount = numberValue(retrieval.evidenceParagraphCount)
     ?? retrievedDocumentIds.length + retrievedSourceIds.length;
   const activeGapCount = numberValue(retrieval.activeGapCount) ?? numberValue(retrieval.evidenceGapCount) ?? 0;
   const warnings = [
     ...(input.warnings ?? []),
+    ...missingReferenceCapsuleIds.length > 0
+      ? [`${missingReferenceCapsuleIds.length} saved reference capsule${missingReferenceCapsuleIds.length === 1 ? ' is' : 's are'} missing or archived.`]
+      : [],
     ...activeGapCount > 0 ? [`${activeGapCount} active context gap${activeGapCount === 1 ? '' : 's'}.`] : [],
     ...sourceDocumentCoreIds.length === 0 ? ['No source/document cores attached.'] : [],
   ];
@@ -117,6 +125,9 @@ export function buildAskContextReceipt(input: BuildAskContextReceiptInput): AskC
       memoryCoreId: stringValue(cores.memoryCoreId),
       outputCoreIds: stringArray(cores.outputCoreIds),
     },
+    referenceCapsuleIds,
+    referenceCapsuleCount: referenceCapsuleIds.length,
+    missingReferenceCapsuleIds,
     retrievalLayers,
     evidenceCount,
     historyTurnCount,

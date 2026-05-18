@@ -640,6 +640,8 @@ interface AskRuntimeReceipt extends Record<string, unknown> {
     groundedSearch: boolean;
     sourceDocumentCount: number;
     activeGapCount: number;
+    referenceCapsuleIds?: string[];
+    missingReferenceCapsuleIds?: string[];
     retrievedDocumentIds: string[];
     retrievedSourceIds: string[];
     planLayerOrder?: string[];
@@ -799,6 +801,8 @@ function decorateAskRuntimeReceipt(
       groundedSearch: input.groundedSearch,
       sourceDocumentCount: input.turnCapsule?.sourceDocumentCore.length ?? 0,
       activeGapCount: input.turnCapsule?.activeGaps.length ?? 0,
+      referenceCapsuleIds: input.turnCapsule?.injectableContext.associatedCapsules.map((capsule) => capsule.capsuleId),
+      missingReferenceCapsuleIds: input.turnCapsule?.injectableContext.missingAssociatedCapsuleIds,
       retrievedDocumentIds: input.retrievedDocumentIds,
       retrievedSourceIds: input.retrievedSourceIds,
       planLayerOrder: input.turnCapsule?.retrievalPlan.layers.map((layer) => layer.id),

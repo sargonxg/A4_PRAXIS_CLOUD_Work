@@ -157,19 +157,19 @@ describe('context capsule product contract', () => {
     expect(CAPSULE_COMBINATION_RECIPES.some((recipe) => recipe.id === 'temporal-friction-decision')).toBe(true);
   });
 
-  it('defines exactly twenty rich starter capsules across situation, tool, output, and user categories', () => {
+  it('defines exactly thirty rich starter capsules across situation, tool, output, and user categories', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS).toHaveLength(20);
-    expect(starterIds.size).toBe(20);
+    expect(CAPSULE_STARTER_DEFINITIONS).toHaveLength(30);
+    expect(starterIds.size).toBe(30);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
     const categoryCounts = CAPSULE_STARTER_DEFINITIONS.reduce<Record<string, number>>((counts, starter) => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toMatchObject({ situation: 5, tool: 5, output: 5, user: 5 });
+    expect(categoryCounts).toMatchObject({ situation: 11, tool: 5, output: 9, user: 5 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
@@ -184,6 +184,15 @@ describe('context capsule product contract', () => {
       expect(starter.suggestedNextActions.length).toBeGreaterThanOrEqual(2);
       expect(starter.aiUseGuidance.length).toBeGreaterThan(40);
       expect(starter.agentWorkflow.preferredAgentId).toBeTruthy();
+      expect(starter.sourcePack.length, `${starter.starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter.excerpts.length, `${starter.starterId} excerpts`).toBeGreaterThanOrEqual(2);
+      for (const source of starter.sourcePack) {
+        expect(source.id, `${starter.starterId} source id`).toBeTruthy();
+        expect(source.publisher, `${starter.starterId} source publisher`).toBeTruthy();
+        expect(source.date, `${starter.starterId} source date`).toBeTruthy();
+        expect([1, 2, 3]).toContain(source.reliabilityTier);
+        expect(source.url).toMatch(/^https:\/\//);
+      }
     }
   });
 
@@ -191,10 +200,16 @@ describe('context capsule product contract', () => {
     const situationStarters = CAPSULE_STARTER_DEFINITIONS.filter((starter) => starter.category === 'situation');
 
     expect(situationStarters.map((starter) => starter.domain).sort()).toEqual([
+      'ai-governance',
+      'critical-minerals',
+      'cyber-resilience',
       'diplomacy',
+      'election-integrity',
       'finance',
       'hr',
       'humanitarian-rights',
+      'migration-displacement',
+      'public-health',
       'sustainability',
     ]);
 

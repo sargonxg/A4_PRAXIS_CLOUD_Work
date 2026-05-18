@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Archive, Check, FileUp, LibraryBig, PanelTopOpen, Plus, RotateCcw, Search, ShieldCheck, Wrench, X } from 'lucide-react';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
+import {
+  MAX_ASSOCIATED_REFERENCE_CAPSULES,
+  buildCapsuleAssociationRows,
+  normalizeAssociatedCapsuleIds,
+} from '@/lib/context/capsule-associations';
 import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
 import { cn } from '@/lib/utils/cn';
 import {
@@ -104,28 +109,19 @@ export function CapsuleStripHeader() {
   }, []);
 
   useEffect(() => {
-    setSelectedIds(new Set(capsule?.associatedCapsuleIds ?? []));
+    setSelectedIds(new Set(normalizeAssociatedCapsuleIds(capsule?.associatedCapsuleIds ?? [], capsule?.capsuleId)));
     setError(null);
   }, [capsule?.capsuleId, capsule?.associatedCapsuleIds]);
 
   const readiness = capsuleSlotReadiness(capsule?.coreRefs);
   const counts = capsuleAttachmentCounts(capsule?.coreRefs);
   const associatedCount = capsule?.associatedCapsuleIds.length ?? 0;
-  const searchableCapsules = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    return capsules
-      .filter((item) => item.capsuleId !== capsule?.capsuleId)
-      .filter((item) => {
-        if (!term) return true;
-        return [
-          item.label,
-          item.capsuleId,
-          item.scope,
-          item.community.tags.join(' '),
-        ].some((value) => value.toLowerCase().includes(term));
-      })
-      .slice(0, 30);
-  }, [capsule?.capsuleId, capsules, query]);
+  const associationRows = useMemo(() => buildCapsuleAssociationRows({
+    capsules,
+    activeCapsuleId: capsule?.capsuleId,
+    selectedIds,
+    query,
+  }), [capsule?.capsuleId, capsules, query, selectedIds]);
   const readySlotCount = CAPSULE_SLOT_DEFINITIONS.filter((slot) => readiness[slot.id]).length;
   const outputTarget = capsule?.coreRefs.outputCoreIds.length
     ? `${capsule.coreRefs.outputCoreIds.length} output core${capsule.coreRefs.outputCoreIds.length === 1 ? '' : 's'}`
@@ -263,13 +259,14 @@ export function CapsuleStripHeader() {
               </label>
 
               <div className="mt-3 max-h-64 overflow-y-auto rounded-md border border-slate-200">
-                {searchableCapsules.length ? searchableCapsules.map((item) => {
-                  const selected = selectedIds.has(item.capsuleId);
+                {associationRows.length ? associationRows.map(({ capsule: item, selected, disabled, disabledReason }) => {
                   return (
                     <button
                       key={item.capsuleId}
                       type="button"
+                      disabled={disabled}
                       onClick={() => {
+                        if (disabled) return;
                         setSelectedIds((current) => {
                           const next = new Set(current);
                           if (next.has(item.capsuleId)) next.delete(item.capsuleId);
@@ -277,7 +274,7 @@ export function CapsuleStripHeader() {
                           return next;
                         });
                       }}
-                      className="flex w-full items-start justify-between gap-3 border-b border-slate-100 px-3 py-2 text-left last:border-b-0 hover:bg-slate-50"
+                      className="flex w-full items-start justify-between gap-3 border-b border-slate-100 px-3 py-2 text-left last:border-b-0 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60"
                       aria-pressed={selected}
                     >
                       <span className="min-w-0">
@@ -285,6 +282,11 @@ export function CapsuleStripHeader() {
                         <span className="mt-0.5 block truncate font-mono text-[11px] text-slate-500">
                           {item.scope} / v{item.version} / {item.health.score}/100 / {item.community.tags.slice(0, 3).join(', ') || 'untagged'}
                         </span>
+                        {disabledReason ? (
+                          <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            {disabledReason === 'self' ? 'Active capsule' : disabledReason === 'archived' ? 'Archived' : 'Reference limit'}
+                          </span>
+                        ) : null}
                       </span>
                       <span className={cn(
                         'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border',
@@ -299,10 +301,33 @@ export function CapsuleStripHeader() {
                 )}
               </div>
 
+              {selectedIds.size ? (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {Array.from(selectedIds).map((id) => {
+                    const selectedCapsule = capsules.find((item) => item.capsuleId === id);
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => setSelectedIds((current) => {
+                          const next = new Set(current);
+                          next.delete(id);
+                          return next;
+                        })}
+                        className="inline-flex max-w-full items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-950 hover:bg-emerald-100"
+                      >
+                        <span className="truncate">{selectedCapsule?.label ?? id}</span>
+                        <X className="h-3 w-3" />
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+
               {error ? <p className="mt-2 text-xs font-semibold text-red-700">{error}</p> : null}
 
               <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="text-xs text-slate-600">{selectedIds.size} selected</p>
+                <p className="text-xs text-slate-600">{selectedIds.size} / {MAX_ASSOCIATED_REFERENCE_CAPSULES} selected</p>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -342,7 +367,7 @@ export function CapsuleStripHeader() {
     if (!capsule) return;
     setSaving(true);
     setError(null);
-    const selected = Array.from(selectedIds).filter((id) => id !== capsule.capsuleId).slice(0, 20);
+    const selected = normalizeAssociatedCapsuleIds(selectedIds, capsule.capsuleId);
     const res = await fetch(`/api/context/capsules/${encodeURIComponent(capsule.capsuleId)}`, {
       method: 'PATCH',
       credentials: 'include',

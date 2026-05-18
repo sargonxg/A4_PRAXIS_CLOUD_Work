@@ -151,6 +151,42 @@ describe('capsule service', () => {
     expect(updated?.version).toBe(2);
   });
 
+  it('resolves owned reference capsules and reports missing or archived references', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', {
+      capsuleId: 'cap-main',
+      label: 'Primary capsule',
+      coreRefs: { situationCoreId: 'sit-1', sourceCoreIds: ['src-primary'] },
+      associatedCapsuleIds: ['cap-ref', 'cap-archived', 'cap-missing'],
+    }, deps(db));
+    await createCapsule('u1', {
+      capsuleId: 'cap-ref',
+      label: 'Reference capsule',
+      coreRefs: { sourceCoreIds: ['src-reference'], documentCoreIds: ['doc-reference'] },
+    }, deps(db));
+    await createCapsule('u1', {
+      capsuleId: 'cap-archived',
+      label: 'Archived capsule',
+      coreRefs: { sourceCoreIds: ['src-archived'] },
+    }, deps(db));
+    await archiveCapsule('u1', 'cap-archived', deps(db));
+    await createCapsule('u2', {
+      capsuleId: 'cap-ref',
+      label: 'Other owner capsule',
+      coreRefs: { sourceCoreIds: ['src-other-owner'] },
+    }, deps(db));
+
+    const resolved = await resolveInjectableContext({ uid: 'u1', capsuleId: 'cap-main' }, deps(db));
+
+    expect(resolved.associatedCapsules.map((capsule) => capsule.capsuleId)).toEqual(['cap-ref']);
+    expect(resolved.missingAssociatedCapsuleIds).toEqual(['cap-archived', 'cap-missing']);
+    expect(resolved.promptBlock).toContain('[associated_capsules]');
+    expect(resolved.promptBlock).toContain('id: cap-ref');
+    expect(resolved.promptBlock).toContain('label: Reference capsule');
+    expect(resolved.promptBlock).toContain('role: reference');
+    expect(resolved.promptBlock).not.toContain('src-archived');
+  });
+
   it('keeps the context-stack compatibility adapter capsule-backed', async () => {
     const db = new FakeFirestore();
     const result = await saveContextStackCompat('u1', {
@@ -387,15 +423,18 @@ describe('capsule service', () => {
     const second = await seedStarterCapsules('u1', deps(db));
     const capsules = await listCapsules('u1', { includeArchived: true }, deps(db));
 
-    expect(first.created).toBe(20);
+    expect(first.created).toBe(30);
     expect(first.existing).toBe(0);
     expect(second.created).toBe(0);
-    expect(second.existing).toBe(20);
-    expect(capsules.filter((capsule) => capsule.community.tags.includes('starter'))).toHaveLength(20);
-    expect(capsules.filter((capsule) => capsule.community.favorite && (capsule.community.averageRating ?? 0) >= 4.8)).toHaveLength(20);
-    expect(capsules.filter((capsule) => capsule.community.ratingCount >= 10)).toHaveLength(20);
+    expect(second.existing).toBe(30);
+    expect(capsules.filter((capsule) => capsule.community.tags.includes('starter'))).toHaveLength(30);
+    expect(capsules.filter((capsule) => capsule.community.favorite && (capsule.community.averageRating ?? 0) >= 4.8)).toHaveLength(30);
+    expect(capsules.filter((capsule) => capsule.community.ratingCount >= 10)).toHaveLength(30);
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-source-pack-builder')?.coreRefs.toolCoreIds).toContain('grounded-research');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-diplomatic-options-memo')?.coreRefs.outputCoreIds).toContain('diplomatic-cable');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-ai-governance-procurement')?.starterSnapshot?.domain).toBe('ai-governance');
+    expect(db.data.has('users/u1/capsules/starter-situation-ai-governance-procurement/sources/nist-ai-rmf')).toBe(true);
+    expect(db.data.has('users/u1/capsules/starter-situation-ai-governance-procurement/evaluations/starter-readiness')).toBe(true);
 
     const resolved = await resolveInjectableContext({ uid: 'u1', capsuleId: 'starter-tool-source-pack-builder' }, deps(db));
     expect(resolved.promptBlock).toContain('[starter_capsule_definition]');
@@ -416,10 +455,11 @@ describe('capsule service', () => {
     const capsule = await getCapsule('u1', 'starter-situation-diplomatic-options', deps(db));
 
     expect(result.created).toBe(0);
-    expect(result.existing).toBe(20);
+    expect(result.existing).toBe(30);
     expect(capsule?.label).toBe('Edited diplomatic options capsule');
     expect(capsule?.community.tags).toContain('custom-tag');
     expect(capsule?.version).toBe(2);
+    expect(capsule?.starterSnapshot?.starterId).toBe('starter-situation-diplomatic-options');
   });
 });
 

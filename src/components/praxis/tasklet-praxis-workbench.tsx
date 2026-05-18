@@ -67,6 +67,7 @@ import {
 } from '@/lib/product/context-capsules';
 import { recommendCapsuleTools, type CapsuleToolRecommendation } from '@/lib/tools/recommend';
 import { useAuth } from '@/lib/auth/auth-context';
+import { useOrchestratorEvents, type OrchestratorEvent, type OrchestratorEventState } from '@/hooks/useOrchestratorEvents';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 
@@ -337,6 +338,13 @@ export function TaskletPraxisWorkbench({
     repositoryDocIds.size === 0 || repositoryDocIds.has(document.id),
   );
   const conversationUrl = conversationThreadId ? buildConversationUrl(currentCapsuleId, conversationThreadId) : null;
+  const focusedRunStream = useOrchestratorEvents(
+    focusedRunId ? `/api/agents/runs/${encodeURIComponent(focusedRunId)}/stream` : null,
+    {
+      enabled: isAuthenticated && Boolean(focusedRunId) && !isTerminalAgentRunStatus(focusedRun?.run.status ?? 'queued'),
+      limit: 30,
+    },
+  );
 
   useEffect(() => {
     if (focusedRunId) return;
@@ -856,6 +864,19 @@ export function TaskletPraxisWorkbench({
     }, 5000);
     return () => window.clearInterval(interval);
   }, [focusedRun, focusedRunId, isAuthenticated, loadFocusedRunDetails]);
+
+  useEffect(() => {
+    if (!focusedRunId || !focusedRunStream.events.length) return;
+    setFocusedRunEvents((current) => mergeRunEvents(current, focusedRunStream.events.map(orchestratorEventToSummary)));
+    const terminal = focusedRunStream.terminalEvent;
+    if (!terminal) return;
+    const nextStatus = agentRunStatusFromEvent(terminal.data);
+    if (!nextStatus) return;
+    setFocusedRun((current) => current
+      ? { ...current, run: { ...current.run, status: nextStatus, updatedAt: terminal.createdAt } }
+      : current);
+    setAgentRuns((current) => current.map((run) => run.runId === focusedRunId ? { ...run, status: nextStatus, updatedAt: terminal.createdAt } : run));
+  }, [focusedRunId, focusedRunStream.events, focusedRunStream.terminalEvent]);
 
   async function postFocusedRunAction(path: string, body?: Record<string, unknown>) {
     if (!focusedRunId || focusedRunAction) return;
@@ -1827,6 +1848,7 @@ export function TaskletPraxisWorkbench({
                       agentRunsLoading={agentRunsLoading}
                       focusedRun={focusedRun}
                       focusedRunEvents={focusedRunEvents}
+                      focusedRunStream={focusedRunStream}
                       focusedRunLoading={focusedRunLoading}
                       focusedRunAction={focusedRunAction}
                       onUpload={() => fileInputRef.current?.click()}
@@ -2442,6 +2464,7 @@ function CapsuleDetailPanel({
   agentRunsLoading,
   focusedRun,
   focusedRunEvents,
+  focusedRunStream,
   focusedRunLoading,
   focusedRunAction,
   onUpload,
@@ -2465,6 +2488,7 @@ function CapsuleDetailPanel({
   agentRunsLoading: boolean;
   focusedRun: AgentRunDetail | null;
   focusedRunEvents: AgentRunEventSummary[];
+  focusedRunStream: OrchestratorEventState;
   focusedRunLoading: boolean;
   focusedRunAction: string | null;
   onUpload: () => void;
@@ -2607,6 +2631,7 @@ function CapsuleDetailPanel({
             <FocusedAgentRunPanel
               detail={focusedRun}
               events={focusedRunEvents}
+              stream={focusedRunStream}
               action={focusedRunAction}
               onRetry={onRetryFocusedRun}
               onCancel={onCancelFocusedRun}
@@ -2672,6 +2697,7 @@ function CapsuleDetailPanel({
 function FocusedAgentRunPanel({
   detail,
   events,
+  stream,
   action,
   onRetry,
   onCancel,
@@ -2679,6 +2705,7 @@ function FocusedAgentRunPanel({
 }: {
   detail: AgentRunDetail;
   events: AgentRunEventSummary[];
+  stream: OrchestratorEventState;
   action: string | null;
   onRetry: () => void;
   onCancel: () => void;
@@ -2711,6 +2738,11 @@ function FocusedAgentRunPanel({
         <ReceiptTile label="Events" value={events.length} icon={Clipboard} tone="slate" />
         <ReceiptTile label="Tools" value={toolCalls.length} icon={WandSparkles} tone="amber" />
         <ReceiptTile label="Approvals" value={approvals.length} icon={ShieldCheck} tone="emerald" />
+      </div>
+      <div className="border-t border-[#ff714d]/15 bg-white/75 px-3 py-2 text-[11px] font-semibold text-slate-500" data-testid="agent-run-stream-state">
+        {stream.isReconnecting ? 'Live receipts reconnecting' : stream.isConnected ? 'Live receipts connected' : 'Live receipts ready'}
+        {stream.lastEventAt ? ` · last event ${formatEventTime(stream.lastEventAt)}` : ''}
+        {stream.lastEventId ? ` · ${stream.lastEventId.slice(0, 12)}` : ''}
       </div>
       {run.outputHref ? (
         <div className="px-3 pb-3">
@@ -3008,6 +3040,37 @@ function parseAgentRunSse(text: string): AgentRunEventSummary[] {
       }
     })
     .filter((event): event is AgentRunEventSummary => Boolean(event));
+}
+
+function orchestratorEventToSummary(event: OrchestratorEvent): AgentRunEventSummary {
+  return {
+    id: event.id,
+    eventType: event.rawType,
+    message: event.message,
+    createdAt: event.createdAt,
+    data: event.data,
+  };
+}
+
+function mergeRunEvents(current: AgentRunEventSummary[], incoming: AgentRunEventSummary[]): AgentRunEventSummary[] {
+  const byId = new Map<string, AgentRunEventSummary>();
+  for (const event of [...current, ...incoming]) byId.set(event.id, event);
+  return Array.from(byId.values())
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
+    .slice(-50);
+}
+
+function agentRunStatusFromEvent(data: Record<string, unknown>): AgentRunSummary['status'] | null {
+  const status = typeof data.toStatus === 'string' ? data.toStatus : null;
+  return status === 'queued' ||
+    status === 'running' ||
+    status === 'waiting_approval' ||
+    status === 'succeeded' ||
+    status === 'failed' ||
+    status === 'cancelled' ||
+    status === 'expired'
+    ? status
+    : null;
 }
 
 function formatEventTime(value: string): string {

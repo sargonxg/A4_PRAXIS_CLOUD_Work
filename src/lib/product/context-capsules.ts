@@ -250,6 +250,9 @@ export interface CapsuleStarterSource {
   url: string;
   sourceType: 'official' | 'multilateral' | 'regulator' | 'standard-setter' | 'public-library';
   relevance: string;
+  publisher?: string;
+  date?: string;
+  reliabilityTier?: 1 | 2 | 3;
 }
 
 export interface CapsuleStarterExcerpt {
@@ -270,6 +273,12 @@ export type CapsuleStarterDomain =
   | 'hr'
   | 'diplomacy'
   | 'humanitarian-rights'
+  | 'ai-governance'
+  | 'public-health'
+  | 'critical-minerals'
+  | 'cyber-resilience'
+  | 'migration-displacement'
+  | 'election-integrity'
   | 'source-intake'
   | 'exposure-mapping'
   | 'policy-review'
@@ -300,6 +309,31 @@ export interface CapsuleStarterDefinition {
   inspectionSections: CapsuleStarterInspectionSection[];
   combinesWellWith: string[];
 }
+
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-18-domain-capsules-v2';
+
+export type CapsuleStarterSnapshot = Pick<
+  CapsuleStarterDefinition,
+  | 'starterId'
+  | 'category'
+  | 'domain'
+  | 'label'
+  | 'summary'
+  | 'detail'
+  | 'tags'
+  | 'recommendedToolIds'
+  | 'outputProductIds'
+  | 'sourcePack'
+  | 'excerpts'
+  | 'readinessStars'
+  | 'suggestedQuestions'
+  | 'suggestedNextActions'
+  | 'agentWorkflow'
+  | 'aiUseGuidance'
+  | 'combinesWellWith'
+> & {
+  catalogVersion: string;
+};
 
 export type PolicyPathId =
   | 'generic-policy'
@@ -687,7 +721,7 @@ function starter(
   combinesWellWith: string[],
   overrides?: CapsuleStarterOverrides,
 ): CapsuleStarterDefinition {
-  const sourcePack = overrides?.sourcePack ?? sourcePackForStarter(starterId, category, label, domain);
+  const sourcePack = normalizeStarterSourcePack(overrides?.sourcePack ?? sourcePackForStarter(starterId, category, label, domain));
   const aiUseGuidance = overrides?.aiUseGuidance
     ?? `Use ${label} as reusable capsule context. Ask for missing inputs, keep source limits visible, and route work through the recommended tools before drafting outputs.`;
   return {
@@ -739,14 +773,18 @@ function sourcePackForStarter(
   label: string,
   domain: CapsuleStarterDomain,
 ): CapsuleStarterSource[] {
-  if (category !== 'situation') return [];
-  return [
+  const domainSources = sourcePackForDomain(domain);
+  if (domainSources.length) return domainSources;
+  return normalizeStarterSourcePack([
     {
       id: `${starterId}-source-1`,
       label: `${label} official source baseline`,
       url: `https://praxis.tacitus.me/learn#${encodeURIComponent(starterId)}`,
       sourceType: 'official',
       relevance: `Official or primary-source baseline for ${domain} work.`,
+      publisher: 'PRAXIS starter catalog',
+      date: CAPSULE_STARTER_CATALOG_VERSION,
+      reliabilityTier: category === 'situation' ? 2 : 3,
     },
     {
       id: `${starterId}-source-2`,
@@ -754,8 +792,125 @@ function sourcePackForStarter(
       url: `https://praxis.tacitus.me/release-notes#${encodeURIComponent(starterId)}`,
       sourceType: 'multilateral',
       relevance: `Secondary reference posture for ${label}.`,
+      publisher: 'PRAXIS starter catalog',
+      date: CAPSULE_STARTER_CATALOG_VERSION,
+      reliabilityTier: category === 'situation' ? 2 : 3,
     },
-  ];
+  ]);
+}
+
+function normalizeStarterSourcePack(sources: CapsuleStarterSource[]): CapsuleStarterSource[] {
+  return sources.map((source) => ({
+    ...source,
+    publisher: source.publisher ?? publisherFromSource(source),
+    date: source.date ?? CAPSULE_STARTER_CATALOG_VERSION,
+    reliabilityTier: source.reliabilityTier ?? reliabilityTierFromSource(source.sourceType),
+  }));
+}
+
+function publisherFromSource(source: CapsuleStarterSource): string {
+  if (source.publisher) return source.publisher;
+  if (source.url.includes('ifrs.org')) return 'IFRS Foundation';
+  if (source.url.includes('europa.eu')) return 'European Union';
+  if (source.url.includes('imf.org')) return 'International Monetary Fund';
+  if (source.url.includes('worldbank.org')) return 'World Bank';
+  if (source.url.includes('ilo.org')) return 'International Labour Organization';
+  if (source.url.includes('un.org')) return 'United Nations';
+  if (source.url.includes('unocha.org')) return 'UN OCHA';
+  if (source.url.includes('ohchr.org')) return 'OHCHR';
+  if (source.url.includes('nist.gov')) return 'NIST';
+  if (source.url.includes('oecd.ai') || source.url.includes('oecd.org')) return 'OECD';
+  if (source.url.includes('who.int')) return 'World Health Organization';
+  if (source.url.includes('iea.org')) return 'International Energy Agency';
+  if (source.url.includes('cisa.gov')) return 'CISA';
+  if (source.url.includes('unhcr.org')) return 'UNHCR';
+  if (source.url.includes('osce.org')) return 'OSCE';
+  if (source.url.includes('idea.int')) return 'International IDEA';
+  return 'Public source';
+}
+
+function reliabilityTierFromSource(sourceType: CapsuleStarterSource['sourceType']): 1 | 2 | 3 {
+  if (sourceType === 'official' || sourceType === 'regulator' || sourceType === 'standard-setter') return 1;
+  if (sourceType === 'multilateral') return 1;
+  return 2;
+}
+
+function sourcePackForDomain(domain: CapsuleStarterDomain): CapsuleStarterSource[] {
+  const byDomain: Partial<Record<CapsuleStarterDomain, CapsuleStarterSource[]>> = {
+    sustainability: [
+      { id: 'ifrs-s1-s2', label: 'IFRS ISSB sustainability and climate disclosure standards', url: 'https://www.ifrs.org/issued-standards/ifrs-sustainability-standards-navigator/', sourceType: 'standard-setter', relevance: 'Global sustainability and climate disclosure baseline.', publisher: 'IFRS Foundation', date: '2026', reliabilityTier: 1 },
+      { id: 'eu-esrs', label: 'European Commission CSRD and ESRS reporting rules', url: 'https://finance.ec.europa.eu/capital-markets-union-and-financial-markets/company-reporting-and-auditing/company-reporting/corporate-sustainability-reporting_en', sourceType: 'regulator', relevance: 'EU sustainability reporting and assurance obligations.', publisher: 'European Commission', date: '2026', reliabilityTier: 1 },
+    ],
+    finance: [
+      { id: 'imf-dsa', label: 'IMF debt sustainability analysis resources', url: 'https://www.imf.org/en/Publications/DSA', sourceType: 'multilateral', relevance: 'Sovereign debt and macro-financial risk baseline.', publisher: 'International Monetary Fund', date: '2026', reliabilityTier: 1 },
+      { id: 'world-bank-debt', label: 'World Bank international debt statistics', url: 'https://www.worldbank.org/en/programs/debt-statistics', sourceType: 'multilateral', relevance: 'Public debt and country-exposure data lane.', publisher: 'World Bank', date: '2026', reliabilityTier: 1 },
+    ],
+    hr: [
+      { id: 'ilo-harassment-guide', label: 'ILO violence and harassment at work employer guide', url: 'https://www.ilo.org/publications/violence-and-harassment-work-practical-guide-employers', sourceType: 'multilateral', relevance: 'Employer-facing guidance for workplace violence and harassment policy.', publisher: 'International Labour Organization', date: '2022', reliabilityTier: 1 },
+      { id: 'eeoc-harassment-guidance', label: 'EEOC harassment guidance and resources', url: 'https://www.eeoc.gov/harassment', sourceType: 'regulator', relevance: 'US public employer guidance lane for harassment policy and training posture.', publisher: 'U.S. Equal Employment Opportunity Commission', date: '2026', reliabilityTier: 1 },
+    ],
+    diplomacy: [
+      { id: 'un-peacemaker', label: 'UN Peacemaker mediation resources', url: 'https://peacemaker.un.org/', sourceType: 'multilateral', relevance: 'UN mediation and diplomatic option design resources.', publisher: 'United Nations', date: '2026', reliabilityTier: 1 },
+      { id: 'eeas-human-rights-sanctions', label: 'EEAS human-rights sanctions explainer', url: 'https://www.eeas.europa.eu/eeas/sanctions-defend-human-rights_en', sourceType: 'official', relevance: 'EU official posture for human-rights sanctions and diplomatic pressure tools.', publisher: 'European External Action Service', date: '2026', reliabilityTier: 1 },
+    ],
+    'humanitarian-rights': [
+      { id: 'ocha-access', label: 'OCHA humanitarian access guidance', url: 'https://knowledge.base.unocha.org/wiki/spaces/imtoolbox/pages/1410072577/Humanitarian%2BAccess', sourceType: 'multilateral', relevance: 'Humanitarian access concepts and operational constraint analysis.', publisher: 'UN OCHA', date: '2026', reliabilityTier: 1 },
+      { id: 'ohchr-library', label: 'OHCHR search library', url: 'https://searchlibrary.ohchr.org/', sourceType: 'public-library', relevance: 'Public OHCHR reporting and rights/accountability records search lane.', publisher: 'OHCHR', date: '2026', reliabilityTier: 2 },
+    ],
+    'ai-governance': [
+      { id: 'nist-ai-rmf', label: 'NIST AI Risk Management Framework', url: 'https://www.nist.gov/itl/ai-risk-management-framework', sourceType: 'official', relevance: 'Primary US framework for AI risk governance and controls.', publisher: 'NIST', date: '2023', reliabilityTier: 1 },
+      { id: 'eu-ai-act', label: 'European Commission AI Act overview', url: 'https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai', sourceType: 'regulator', relevance: 'Official EU risk-based AI regulation posture.', publisher: 'European Commission', date: '2026', reliabilityTier: 1 },
+    ],
+    'public-health': [
+      { id: 'who-ercc', label: 'WHO emergency risk communication guidance', url: 'https://www.who.int/emergencies/risk-communications', sourceType: 'multilateral', relevance: 'Emergency communication, uncertainty, and public trust guidance.', publisher: 'World Health Organization', date: '2026', reliabilityTier: 1 },
+      { id: 'who-rcce', label: 'WHO risk communication and community engagement resources', url: 'https://www.who.int/teams/risk-communication', sourceType: 'multilateral', relevance: 'Community engagement and feedback loop guidance.', publisher: 'World Health Organization', date: '2026', reliabilityTier: 1 },
+    ],
+    'critical-minerals': [
+      { id: 'iea-critical-minerals', label: 'IEA critical minerals analysis', url: 'https://www.iea.org/topics/critical-minerals', sourceType: 'multilateral', relevance: 'Energy-transition mineral demand and supply concentration baseline.', publisher: 'International Energy Agency', date: '2026', reliabilityTier: 1 },
+      { id: 'usgs-mineral-commodities', label: 'USGS mineral commodity summaries', url: 'https://www.usgs.gov/centers/national-minerals-information-center/mineral-commodity-summaries', sourceType: 'official', relevance: 'Production, reserve, and import reliance data lane.', publisher: 'U.S. Geological Survey', date: '2026', reliabilityTier: 1 },
+    ],
+    'cyber-resilience': [
+      { id: 'cisa-cpg', label: 'CISA Cross-Sector Cybersecurity Performance Goals', url: 'https://www.cisa.gov/cross-sector-cybersecurity-performance-goals', sourceType: 'official', relevance: 'Critical infrastructure cyber resilience and hygiene baseline.', publisher: 'CISA', date: '2026', reliabilityTier: 1 },
+      { id: 'nist-csf', label: 'NIST Cybersecurity Framework', url: 'https://www.nist.gov/cyberframework', sourceType: 'official', relevance: 'Cyber risk, response, recovery, and governance vocabulary.', publisher: 'NIST', date: '2026', reliabilityTier: 1 },
+    ],
+    'migration-displacement': [
+      { id: 'unhcr-global-trends', label: 'UNHCR Global Trends forced displacement', url: 'https://www.unhcr.org/global-trends', sourceType: 'multilateral', relevance: 'Forced displacement trends, categories, and definitions.', publisher: 'UNHCR', date: '2026', reliabilityTier: 1 },
+      { id: 'iom-displacement', label: 'IOM Displacement Tracking Matrix', url: 'https://dtm.iom.int/', sourceType: 'multilateral', relevance: 'Operational displacement and mobility data source.', publisher: 'International Organization for Migration', date: '2026', reliabilityTier: 1 },
+    ],
+    'election-integrity': [
+      { id: 'osce-odihr-handbook', label: 'OSCE/ODIHR election observation handbook', url: 'https://www.osce.org/odihr/elections/68439', sourceType: 'multilateral', relevance: 'Election observation method and assessment baseline.', publisher: 'OSCE/ODIHR', date: '2010', reliabilityTier: 1 },
+      { id: 'idea-electoral-integrity', label: 'International IDEA electoral processes resources', url: 'https://www.idea.int/theme/electoral-processes', sourceType: 'multilateral', relevance: 'Comparative election process and democratic resilience context.', publisher: 'International IDEA', date: '2026', reliabilityTier: 2 },
+    ],
+    'source-intake': [
+      { id: 'google-grounded-search-docs', label: 'Google Search grounding overview', url: 'https://cloud.google.com/vertex-ai/generative-ai/docs/grounding/overview', sourceType: 'official', relevance: 'Grounding lane for source discovery and citation-backed answers.', publisher: 'Google Cloud', date: '2026', reliabilityTier: 1 },
+      { id: 'praxis-sourceability-method', label: 'PRAXIS sourceability method', url: 'https://praxis.tacitus.me/learn#sourceability', sourceType: 'public-library', relevance: 'Starter method for turning source packs into reviewable capsule receipts.', publisher: 'PRAXIS starter catalog', date: CAPSULE_STARTER_CATALOG_VERSION, reliabilityTier: 3 },
+    ],
+    'exposure-mapping': [
+      { id: 'imf-dsa', label: 'IMF debt sustainability analysis resources', url: 'https://www.imf.org/en/Publications/DSA', sourceType: 'multilateral', relevance: 'Primary IMF lane for sovereign debt and macro-financial exposure posture.', publisher: 'International Monetary Fund', date: '2026', reliabilityTier: 1 },
+      { id: 'fatf-risk-based-approach', label: 'FATF risk-based approach guidance', url: 'https://www.fatf-gafi.org/en/topics/risk-based-approach.html', sourceType: 'standard-setter', relevance: 'Financial crime and sanctions-exposure review context.', publisher: 'FATF', date: '2026', reliabilityTier: 1 },
+    ],
+    'policy-review': [
+      { id: 'ilo-harassment-guide', label: 'ILO violence and harassment at work employer guide', url: 'https://www.ilo.org/publications/violence-and-harassment-work-practical-guide-employers', sourceType: 'multilateral', relevance: 'Employer-facing public guidance for prevention, policy, reporting, and rollout review.', publisher: 'International Labour Organization', date: '2022', reliabilityTier: 1 },
+      { id: 'eeoc-harassment-guidance', label: 'EEOC harassment guidance and resources', url: 'https://www.eeoc.gov/harassment', sourceType: 'regulator', relevance: 'US public employer guidance lane for harassment policy and training posture.', publisher: 'U.S. Equal Employment Opportunity Commission', date: '2026', reliabilityTier: 1 },
+    ],
+    'options-mapping': [
+      { id: 'un-peacemaker', label: 'UN Peacemaker mediation resources', url: 'https://peacemaker.un.org/', sourceType: 'multilateral', relevance: 'Official UN lane for mediation concepts, agreements, and diplomatic option design.', publisher: 'United Nations', date: '2026', reliabilityTier: 1 },
+      { id: 'eeas-human-rights-sanctions', label: 'EEAS human-rights sanctions explainer', url: 'https://www.eeas.europa.eu/eeas/sanctions-defend-human-rights_en', sourceType: 'official', relevance: 'EU official posture for human-rights sanctions and diplomatic pressure tools.', publisher: 'European External Action Service', date: '2026', reliabilityTier: 1 },
+    ],
+    'audit-review': [
+      { id: 'ohchr-library-search', label: 'OHCHR public reporting library', url: 'https://searchlibrary.ohchr.org/', sourceType: 'public-library', relevance: 'Public human-rights source search lane for claim support and citation repair.', publisher: 'OHCHR', date: '2026', reliabilityTier: 2 },
+      { id: 'praxis-claim-source-alignment', label: 'PRAXIS claim-source alignment method', url: 'https://praxis.tacitus.me/learn#claim-source-alignment', sourceType: 'public-library', relevance: 'Review pattern for supported, weak, unsupported, and stale claims.', publisher: 'PRAXIS starter catalog', date: CAPSULE_STARTER_CATALOG_VERSION, reliabilityTier: 3 },
+    ],
+    'analyst-role': [
+      { id: 'oecd-policy-toolkit', label: 'OECD policy analysis and governance resources', url: 'https://www.oecd.org/governance/', sourceType: 'multilateral', relevance: 'General public-policy analysis context for analyst role capsules.', publisher: 'OECD', date: '2026', reliabilityTier: 1 },
+      { id: 'praxis-role-operating-context', label: 'PRAXIS role operating context', url: 'https://praxis.tacitus.me/learn#role-capsules', sourceType: 'public-library', relevance: 'Starter guidance for role lenses, review gates, and output tone.', publisher: 'PRAXIS starter catalog', date: CAPSULE_STARTER_CATALOG_VERSION, reliabilityTier: 3 },
+    ],
+    'output-brief': [
+      { id: 'praxis-output-quality-policy', label: 'PRAXIS output quality policy', url: 'https://praxis.tacitus.me/learn#output-quality', sourceType: 'public-library', relevance: 'Review lane for citation coverage, sourceability, and human approval before export.', publisher: 'PRAXIS starter catalog', date: CAPSULE_STARTER_CATALOG_VERSION, reliabilityTier: 3 },
+      { id: 'plain-language-gov', label: 'Plain language government guidance', url: 'https://www.plainlanguage.gov/guidelines/', sourceType: 'official', relevance: 'Public guidance for concise, usable government-facing writing.', publisher: 'U.S. Plain Language Action and Information Network', date: '2026', reliabilityTier: 1 },
+    ],
+  };
+  return normalizeStarterSourcePack(byDomain[domain] ?? []);
 }
 
 export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
@@ -834,6 +989,98 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'humanitarian-access-to-accountability-brief', outputGoal: 'Humanitarian access or accountability brief with source confidence and gaps.', approvalNotes: 'Keep allegations, legal thresholds, and personal data under human review.' },
     aiUseGuidance: 'Do not merge operational reporting with legal conclusions. Make confidence, source type, affected population, and access constraint visible before recommending action.',
   }),
+  starter('starter-situation-ai-governance-procurement', 'situation', 'ai-governance', 'AI governance procurement capsule', 'A public-sector AI governance capsule for model-risk posture, procurement controls, impact assessment, vendor claims, and oversight gaps.', 'Use this when a team is buying, deploying, or reviewing AI systems. PRAXIS should separate law, risk framework, procurement evidence, model claims, human oversight, and monitoring obligations before drafting advice.', ['ai-governance', 'procurement', 'model-risk', 'public-sector', 'oversight'], { situationCoreId: 'starter-situation-ai-governance-procurement', pathCoreId: 'governance-public-sector', sourceCoreIds: ['nist-ai-rmf', 'eu-ai-act', 'oecd-ai-principles'], toolCoreIds: ['grounded-research', 'sourceability', 'contradiction-finder'], outputCoreIds: ['options-memo'] }, ['grounded-research', 'sourceability', 'contradiction-finder'], ['options-memo', 'country-risk-card'], ['starter-tool-source-pack-builder', 'starter-output-ai-governance-risk-brief', 'starter-user-finance-risk-analyst'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'nist-ai-rmf', label: 'NIST AI Risk Management Framework', url: 'https://www.nist.gov/itl/ai-risk-management-framework', sourceType: 'official', relevance: 'Primary US framework for mapping, measuring, managing, and governing AI risks.', publisher: 'NIST', date: '2023', reliabilityTier: 1 },
+      { id: 'eu-ai-act', label: 'European Commission AI Act overview', url: 'https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai', sourceType: 'regulator', relevance: 'Official EU posture for risk-based AI regulation and obligations.', publisher: 'European Commission', date: '2026', reliabilityTier: 1 },
+      { id: 'oecd-ai-principles', label: 'OECD AI Principles', url: 'https://oecd.ai/en/ai-principles', sourceType: 'multilateral', relevance: 'International principles for trustworthy AI and governance posture.', publisher: 'OECD.AI', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'nist-ai-rmf', text: 'Use the NIST AI RMF as the control vocabulary for govern, map, measure, and manage questions.' },
+      { sourceId: 'eu-ai-act', text: 'AI Act analysis should mark whether obligations are legal requirements, implementation guidance, or unresolved jurisdiction questions.' },
+      { sourceId: 'oecd-ai-principles', text: 'OECD principles provide a cross-border lens for trustworthy AI, accountability, transparency, and human-centered deployment.' },
+    ],
+    suggestedQuestions: ['What AI system, procurement stage, and deployment context are in scope?', 'Which obligations are legal, policy, contractual, or risk-framework controls?', 'What evidence supports vendor claims about safety, data, accuracy, and human oversight?'],
+    suggestedNextActions: ['Build an AI source pack with law, framework, procurement, and vendor-evidence lanes.', 'Map each risk to an owner, control, source, and unresolved decision.', 'Draft an AI governance risk brief with non-compliance claims review-gated.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'ai-governance-procurement', outputGoal: 'AI governance risk brief with obligations, controls, evidence gaps, and review gates.', approvalNotes: 'Do not certify compliance or model safety; keep legal and technical assurance review-gated.' },
+    aiUseGuidance: 'Be strict about claim type. Separate official obligations, best-practice frameworks, vendor assertions, local policy choices, and evidence gaps.',
+  }),
+  starter('starter-situation-public-health-risk-communication', 'situation', 'public-health', 'Public health risk communication capsule', 'A crisis communication capsule for public health emergencies, misinformation pressure, community engagement, and operational message discipline.', 'Use this when leaders need a source-backed public health communication plan. PRAXIS should separate what is known, what is uncertain, who is affected, trusted channels, message risks, and monitoring feedback loops.', ['public-health', 'risk-communication', 'emergency', 'misinformation', 'community-engagement'], { situationCoreId: 'starter-situation-public-health-risk-communication', pathCoreId: 'crisis-management', sourceCoreIds: ['who-ercc', 'who-rcce'], toolCoreIds: ['grounded-research', 'sourceability', 'memo-drafter'], outputCoreIds: ['options-memo'] }, ['grounded-research', 'sourceability', 'memo-drafter'], ['options-memo', 'talking-points'], ['starter-tool-source-pack-builder', 'starter-output-health-risk-communications-plan', 'starter-output-diplomatic-options-memo'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'who-ercc', label: 'WHO emergency risk communication guidance', url: 'https://www.who.int/emergencies/risk-communications', sourceType: 'multilateral', relevance: 'WHO lane for emergency communication principles, uncertainty, and public trust.', publisher: 'World Health Organization', date: '2026', reliabilityTier: 1 },
+      { id: 'who-rcce', label: 'WHO risk communication and community engagement resources', url: 'https://www.who.int/teams/risk-communication', sourceType: 'multilateral', relevance: 'Community engagement and feedback loop guidance for emergency response.', publisher: 'World Health Organization', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'who-ercc', text: 'Emergency communication should state what is known, what is unknown, what is being done, and what people should do next.' },
+      { sourceId: 'who-rcce', text: 'Community engagement is treated as an operating channel, not only a broadcast or press function.' },
+    ],
+    suggestedQuestions: ['Who needs to act after reading the message?', 'Which uncertainty must be stated plainly rather than hidden?', 'What rumor, channel, or trust gap could derail the response?'],
+    suggestedNextActions: ['Build a message map with known, unknown, action, and source fields.', 'Draft talking points and community feedback checks.', 'Run sourceability on claims before public release.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'health-risk-communication', outputGoal: 'Risk communication plan with audience, message, uncertainty, channels, monitoring, and approval gates.', approvalNotes: 'Public health advice and emergency instructions require authorized human review.' },
+    aiUseGuidance: 'Use plain language, visible uncertainty, and action-oriented phrasing. Do not invent medical guidance or operational instructions.',
+  }),
+  starter('starter-situation-critical-minerals-supply-chain', 'situation', 'critical-minerals', 'Critical minerals supply-chain capsule', 'A strategic supply-chain capsule for critical minerals, industrial policy, energy-transition exposure, supplier concentration, and resilience options.', 'Use this when the analysis concerns mineral dependency, battery or clean-tech supply chains, geopolitical exposure, or resilience planning. PRAXIS should map material, jurisdiction, supplier, policy lever, and evidence confidence.', ['critical-minerals', 'supply-chain', 'industrial-policy', 'energy-transition', 'resilience'], { situationCoreId: 'starter-situation-critical-minerals-supply-chain', pathCoreId: 'strategy-operations', sourceCoreIds: ['iea-critical-minerals', 'usgs-mineral-commodities'], toolCoreIds: ['grounded-research', 'sourceability', 'ach'], outputCoreIds: ['country-risk-card'] }, ['grounded-research', 'sourceability', 'ach'], ['country-risk-card', 'options-memo'], ['starter-tool-financial-exposure-mapper', 'starter-output-critical-minerals-exposure-map', 'starter-output-sustainability-risk-brief'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'iea-critical-minerals', label: 'IEA critical minerals analysis', url: 'https://www.iea.org/topics/critical-minerals', sourceType: 'multilateral', relevance: 'Energy-transition mineral demand, supply concentration, and market-risk baseline.', publisher: 'International Energy Agency', date: '2026', reliabilityTier: 1 },
+      { id: 'usgs-mineral-commodities', label: 'USGS mineral commodity summaries', url: 'https://www.usgs.gov/centers/national-minerals-information-center/mineral-commodity-summaries', sourceType: 'official', relevance: 'Primary data lane for mineral production, reserves, and import reliance.', publisher: 'U.S. Geological Survey', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'iea-critical-minerals', text: 'IEA material should anchor demand, concentration, refining, and transition-risk assumptions.' },
+      { sourceId: 'usgs-mineral-commodities', text: 'USGS summaries should anchor material-specific production, reserves, and import reliance claims.' },
+    ],
+    suggestedQuestions: ['Which mineral, technology, geography, and decision window are in scope?', 'Where are extraction, processing, refining, logistics, and substitution risks concentrated?', 'Which resilience options are policy, procurement, stockpile, recycling, or substitution choices?'],
+    suggestedNextActions: ['Create an exposure map by mineral, jurisdiction, supplier, and chokepoint.', 'Separate data-backed exposure from strategic judgment.', 'Draft resilience options with evidence confidence and tradeoffs.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'critical-minerals-exposure', outputGoal: 'Exposure map and options memo for supply-chain resilience.', approvalNotes: 'Market forecasts and procurement decisions require dated sources and human review.' },
+    aiUseGuidance: 'Keep quantities, jurisdictions, chokepoints, and policy levers explicit. Treat market forecasts as dated assumptions.',
+  }),
+  starter('starter-situation-cyber-infrastructure-resilience', 'situation', 'cyber-resilience', 'Cyber infrastructure resilience capsule', 'A cyber-public-risk capsule for critical infrastructure incidents, service continuity, vulnerability posture, public communication, and recovery priorities.', 'Use this when cyber or digital infrastructure risk intersects with public operations, utilities, government services, or crisis response. PRAXIS should separate incident facts, indicators, mitigations, public risk, and communication boundaries.', ['cyber', 'critical-infrastructure', 'resilience', 'public-risk', 'incident-response'], { situationCoreId: 'starter-situation-cyber-infrastructure-resilience', pathCoreId: 'information-cyber', sourceCoreIds: ['cisa-cpg', 'nist-csf'], toolCoreIds: ['grounded-research', 'sourceability', 'contradiction-finder'], outputCoreIds: ['risk-monitor-card'] }, ['grounded-research', 'sourceability', 'contradiction-finder'], ['risk-monitor-card', 'options-memo'], ['starter-tool-sourceability-audit-reviewer', 'starter-output-cyber-resilience-action-memo', 'starter-output-health-risk-communications-plan'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'cisa-cpg', label: 'CISA Cross-Sector Cybersecurity Performance Goals', url: 'https://www.cisa.gov/cross-sector-cybersecurity-performance-goals', sourceType: 'official', relevance: 'US critical infrastructure baseline for cyber performance goals and operational resilience.', publisher: 'CISA', date: '2026', reliabilityTier: 1 },
+      { id: 'nist-csf', label: 'NIST Cybersecurity Framework', url: 'https://www.nist.gov/cyberframework', sourceType: 'official', relevance: 'Control vocabulary for identify, protect, detect, respond, recover, and govern posture.', publisher: 'NIST', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'cisa-cpg', text: 'CISA goals should anchor practical cyber hygiene, resilience, and cross-sector critical infrastructure checks.' },
+      { sourceId: 'nist-csf', text: 'NIST CSF functions provide the organizing language for cyber risk, response, and recovery posture.' },
+    ],
+    suggestedQuestions: ['Which service, asset class, or incident phase is in scope?', 'What is known, suspected, unresolved, and sensitive?', 'Which mitigation, communication, or recovery decision must be made next?'],
+    suggestedNextActions: ['Map incident facts against identify/protect/detect/respond/recover controls.', 'Draft a resilience action memo with public communication caveats.', 'Escalate sensitive indicators, attribution, and operational security claims.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'cyber-infrastructure-resilience', outputGoal: 'Cyber resilience action memo with controls, gaps, communications, and recovery priorities.', approvalNotes: 'Do not disclose sensitive indicators, vulnerabilities, credentials, or attribution claims without authorized review.' },
+    aiUseGuidance: 'Use public-risk and resilience language. Avoid operational exploit details, unsupported attribution, or instructions that could enable abuse.',
+  }),
+  starter('starter-situation-displacement-border-protection', 'situation', 'migration-displacement', 'Displacement and protection capsule', 'A migration and protection capsule for forced displacement, border pressure, humanitarian needs, host-community strain, and rights safeguards.', 'Use this when the situation involves refugees, internally displaced people, border operations, or protection risks. PRAXIS should separate displacement data, legal status, humanitarian needs, access, host-community impacts, and contested narratives.', ['migration', 'displacement', 'protection', 'border-policy', 'unhcr'], { situationCoreId: 'starter-situation-displacement-border-protection', pathCoreId: 'humanitarian-analysis', sourceCoreIds: ['unhcr-global-trends', 'iom-displacement'], toolCoreIds: ['grounded-research', 'sourceability', 'stakeholder-map'], outputCoreIds: ['humanitarian-one-pager'] }, ['grounded-research', 'sourceability', 'stakeholder-map'], ['humanitarian-one-pager', 'options-memo'], ['starter-user-humanitarian-legal-investigator', 'starter-output-humanitarian-access-brief', 'starter-tool-sourceability-audit-reviewer'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'unhcr-global-trends', label: 'UNHCR Global Trends forced displacement', url: 'https://www.unhcr.org/global-trends', sourceType: 'multilateral', relevance: 'Primary global lane for forced displacement trends and definitions.', publisher: 'UNHCR', date: '2026', reliabilityTier: 1 },
+      { id: 'iom-displacement', label: 'IOM Displacement Tracking Matrix', url: 'https://dtm.iom.int/', sourceType: 'multilateral', relevance: 'Operational displacement and mobility data source for affected populations and movements.', publisher: 'International Organization for Migration', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'unhcr-global-trends', text: 'UNHCR trend data should anchor global displacement categories, definitions, and scale claims.' },
+      { sourceId: 'iom-displacement', text: 'IOM DTM should anchor mobility, site, route, and affected-population claims where available.' },
+    ],
+    suggestedQuestions: ['Which affected groups, geography, route, and time window are in scope?', 'What legal or protection categories are known versus inferred?', 'Which needs, access constraints, or host-community pressures are evidenced?'],
+    suggestedNextActions: ['Build a population, route, need, and protection matrix.', 'Separate operational facts from rights or legal claims.', 'Draft options with source confidence and safeguards.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'displacement-protection', outputGoal: 'Protection or humanitarian brief with population data, constraints, safeguards, and evidence gaps.', approvalNotes: 'Personal data, legal status, and protection-risk claims require careful handling and human review.' },
+    aiUseGuidance: 'Use protective, evidence-bound language. Do not reduce people to flows; preserve uncertainty, categories, and safeguards.',
+  }),
+  starter('starter-situation-election-integrity-information', 'situation', 'election-integrity', 'Election integrity information capsule', 'An election-integrity capsule for observation posture, information risks, institutional trust, violence risk, and democratic-resilience options.', 'Use this when the work concerns an election, referendum, democratic process, or information environment around public trust. PRAXIS should separate official rules, observer findings, misinformation claims, security incidents, and confidence judgments.', ['election-integrity', 'democracy', 'information-risk', 'observation', 'public-trust'], { situationCoreId: 'starter-situation-election-integrity-information', pathCoreId: 'public-sector-policy', sourceCoreIds: ['osce-odihr-handbook', 'idea-electoral-integrity'], toolCoreIds: ['grounded-research', 'sourceability', 'stakeholder-map'], outputCoreIds: ['electoral-risk-card'] }, ['grounded-research', 'sourceability', 'stakeholder-map'], ['electoral-risk-card', 'options-memo'], ['starter-tool-diplomacy-options-mapper', 'starter-output-diplomatic-options-memo', 'starter-tool-sourceability-audit-reviewer'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'osce-odihr-handbook', label: 'OSCE/ODIHR election observation handbook', url: 'https://www.osce.org/odihr/elections/68439', sourceType: 'multilateral', relevance: 'Official election observation method and integrity assessment baseline.', publisher: 'OSCE/ODIHR', date: '2010', reliabilityTier: 1 },
+      { id: 'idea-electoral-integrity', label: 'International IDEA electoral processes resources', url: 'https://www.idea.int/theme/electoral-processes', sourceType: 'multilateral', relevance: 'Comparative electoral process and democratic-resilience reference lane.', publisher: 'International IDEA', date: '2026', reliabilityTier: 2 },
+    ],
+    excerpts: [
+      { sourceId: 'osce-odihr-handbook', text: 'Observation-method sources should anchor what can be assessed, observed, inferred, or left unverified.' },
+      { sourceId: 'idea-electoral-integrity', text: 'IDEA resources provide comparative context for electoral processes, institutions, and democratic resilience.' },
+    ],
+    suggestedQuestions: ['Which phase of the electoral cycle is in scope?', 'Which claims are official results, observer findings, media reports, or unverified allegations?', 'What information, violence, institutional, or legal risk should be monitored next?'],
+    suggestedNextActions: ['Build a phase-based risk card with sources and confidence.', 'Separate observer evidence from narrative claims.', 'Draft options that avoid unsupported legitimacy judgments.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'election-integrity-information', outputGoal: 'Electoral risk card or options memo with source confidence and observation limits.', approvalNotes: 'Legitimacy, fraud, violence, and attribution claims require strong sourcing and human review.' },
+    aiUseGuidance: 'Keep election language precise. Distinguish official results, observer findings, allegations, narratives, and analytic judgment.',
+  }),
   starter('starter-tool-source-pack-builder', 'tool', 'source-intake', 'Source pack builder tool capsule', 'A tool capsule that turns a weak capsule into a sourced public-domain source pack with receipts, excerpts, gaps, and promotion rules.', 'Use this whenever a situation lacks enough official or primary-source coverage. It routes PRAXIS toward grounded research, sourceability, and explicit source promotion decisions.', ['source-pack', 'grounded-search', 'sourceability', 'research'], { toolCoreIds: ['grounded-research', 'sourceability', 'ask-praxis'], objectiveCoreIds: ['build-source-pack'], sourceCoreIds: ['grounded_search'] }, ['grounded-research', 'sourceability', 'ask-praxis'], ['country-one-pager', 'options-memo'], ['starter-situation-sustainability-transition', 'starter-situation-finance-country-risk', 'starter-output-sustainability-risk-brief'], {
     suggestedQuestions: ['Which claims need official or primary sources?', 'Which sources should be attached versus left as search results?', 'What is the minimum source mix before drafting?'],
     suggestedNextActions: ['Run grounded research against official sources first.', 'Promote only sources with usable citation metadata.', 'Send weak claims to sourceability review.'],
@@ -894,6 +1141,30 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'humanitarian-access-output', outputGoal: 'Access or accountability brief with constraints, affected populations, confidence, and gaps.', approvalNotes: 'Legal thresholds and identifiable allegations require human review.' },
     aiUseGuidance: 'Keep source type, confidence, and claim category visible. Do not turn operational access facts into legal findings without review.',
   }),
+  starter('starter-output-ai-governance-risk-brief', 'output', 'ai-governance', 'AI governance risk brief output capsule', 'An output capsule for AI procurement risk, model controls, oversight questions, vendor evidence, and review gates.', 'Use this when the final artifact should turn AI governance sources into a decision-ready risk brief without pretending to certify legal compliance or technical safety.', ['ai-governance', 'risk-brief', 'procurement', 'model-risk'], { outputCoreIds: ['options-memo'], productCoreIds: ['options-memo'], objectiveCoreIds: ['draft-ai-governance-risk-brief'] }, ['memo-drafter', 'sourceability', 'contradiction-finder'], ['options-memo', 'country-risk-card'], ['starter-situation-ai-governance-procurement', 'starter-tool-source-pack-builder', 'starter-tool-sourceability-audit-reviewer'], {
+    suggestedQuestions: ['Which AI decision does the brief support?', 'Which controls, vendor claims, and human oversight questions are unresolved?', 'Which legal or technical claims need review before circulation?'],
+    suggestedNextActions: ['Draft obligations, risks, controls, evidence gaps, and owner asks.', 'Run sourceability on compliance and safety claims.', 'Prepare review gates for legal, procurement, and technical owners.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'ai-governance-risk-output', outputGoal: 'AI governance risk brief with controls, source support, unresolved questions, and review gates.', approvalNotes: 'Do not certify compliance, fairness, accuracy, or safety.' },
+    aiUseGuidance: 'Write as a governance artifact: decision, system, risks, controls, evidence, owner, gap, and review status.',
+  }),
+  starter('starter-output-health-risk-communications-plan', 'output', 'public-health', 'Health risk communications plan output capsule', 'An output capsule for public health messages, audience segmentation, uncertainty language, rumor risk, channels, and approval gates.', 'Use this when the work product should become a practical risk-communication plan or talking-points pack grounded in public health emergency guidance.', ['public-health', 'communications-plan', 'risk-communication', 'talking-points'], { outputCoreIds: ['talking-points'], productCoreIds: ['talking-points'], objectiveCoreIds: ['draft-health-risk-communications-plan'] }, ['memo-drafter', 'sourceability', 'grounded-research'], ['talking-points', 'options-memo'], ['starter-situation-public-health-risk-communication', 'starter-tool-source-pack-builder', 'starter-output-cyber-resilience-action-memo'], {
+    suggestedQuestions: ['Who is the audience and what action should they take?', 'What uncertainty must be named clearly?', 'Which claims require source or public health authority review?'],
+    suggestedNextActions: ['Draft message map, channel plan, approval gates, and monitoring checks.', 'Separate public message from internal operational assumptions.', 'Run sourceability before public release.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'health-risk-communications-output', outputGoal: 'Communications plan with audience, message, uncertainty, channels, monitoring, and approvals.', approvalNotes: 'Public health instructions require authorized review before release.' },
+    aiUseGuidance: 'Use plain, action-oriented language and preserve uncertainty. Do not invent medical advice, case data, or emergency instructions.',
+  }),
+  starter('starter-output-critical-minerals-exposure-map', 'output', 'critical-minerals', 'Critical minerals exposure map output capsule', 'An output capsule for material dependency, supplier concentration, jurisdiction risk, chokepoints, substitutes, and resilience options.', 'Use this when the product should let a team compare critical mineral exposure across materials, geographies, suppliers, and policy levers.', ['critical-minerals', 'exposure-map', 'supply-chain', 'resilience'], { outputCoreIds: ['country-risk-card'], productCoreIds: ['country-risk-card'], objectiveCoreIds: ['draft-critical-minerals-exposure-map'] }, ['memo-drafter', 'sourceability', 'ach'], ['country-risk-card', 'options-memo'], ['starter-situation-critical-minerals-supply-chain', 'starter-tool-financial-exposure-mapper', 'starter-output-sustainability-risk-brief'], {
+    suggestedQuestions: ['Which mineral and technology chain is being mapped?', 'Which chokepoints and supplier dependencies are source-backed?', 'Which resilience options are feasible in the decision window?'],
+    suggestedNextActions: ['Build a table by material, geography, supplier, chokepoint, confidence, and option.', 'Separate measured exposure from inferred strategic risk.', 'Draft recommendations as options, not forecasts.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'critical-minerals-exposure-output', outputGoal: 'Exposure map with source-backed chokepoints, confidence, options, and next data asks.', approvalNotes: 'Procurement, forecast, and market claims require dated source review.' },
+    aiUseGuidance: 'Keep the artifact comparative and evidence-bound. Show material, geography, source, confidence, risk driver, and option.',
+  }),
+  starter('starter-output-cyber-resilience-action-memo', 'output', 'cyber-resilience', 'Cyber resilience action memo output capsule', 'An output capsule for cyber resilience priorities, critical service continuity, control gaps, communication caveats, and recovery sequencing.', 'Use this when the final artifact should guide non-sensitive cyber resilience decisions without exposing exploit details, credentials, or unsupported attribution.', ['cyber', 'resilience', 'critical-infrastructure', 'action-memo'], { outputCoreIds: ['risk-monitor-card'], productCoreIds: ['risk-monitor-card'], objectiveCoreIds: ['draft-cyber-resilience-action-memo'] }, ['memo-drafter', 'sourceability', 'contradiction-finder'], ['risk-monitor-card', 'options-memo'], ['starter-situation-cyber-infrastructure-resilience', 'starter-tool-sourceability-audit-reviewer', 'starter-output-health-risk-communications-plan'], {
+    suggestedQuestions: ['Which service or asset is the memo protecting?', 'Which controls are verified, missing, or unknown?', 'Which facts are too sensitive for the memo?'],
+    suggestedNextActions: ['Draft actions by control area, owner, urgency, and evidence.', 'Remove sensitive indicators and unsupported attribution.', 'Prepare executive and technical review gates.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'cyber-resilience-output', outputGoal: 'Action memo with resilience priorities, control gaps, communications posture, and recovery sequencing.', approvalNotes: 'Sensitive indicators, vulnerabilities, credentials, and attribution stay out of generated public-facing text.' },
+    aiUseGuidance: 'Write defensively and cautiously. Prioritize continuity, control gaps, ownership, communications boundaries, and review status.',
+  }),
   starter('starter-user-esg-sustainability-lead', 'user', 'analyst-role', 'ESG and sustainability lead user capsule', 'A user capsule for sustainability owners who need reporting posture, supplier context, board-ready risk language, and evidence discipline.', 'Use this to make PRAXIS answer like a sustainability lead preparing reviewable work for executives, assurance, legal, or operations stakeholders.', ['sustainability', 'esg-lead', 'reporting-owner'], { userCoreId: 'starter-user-esg-sustainability-lead', toolCoreIds: ['grounded-research', 'sourceability'], outputCoreIds: ['country-risk-card'] }, ['grounded-research', 'sourceability', 'memo-drafter'], ['country-risk-card', 'options-memo'], ['starter-situation-sustainability-transition', 'starter-output-sustainability-risk-brief', 'starter-tool-source-pack-builder'], {
     suggestedQuestions: ['Which reporting, board, or operational decision does the user own?', 'What source standard should govern claims?', 'Which teams must supply missing data?'],
     suggestedNextActions: ['Ask for reporting scope and audience.', 'Prioritize official standards and company evidence.', 'Draft concise risk language with gaps.'],
@@ -931,8 +1202,13 @@ export function getCapsuleStarterDefinition(capsuleId: string | null | undefined
   return CAPSULE_STARTER_DEFINITIONS.find((starterDefinition) => starterDefinition.starterId === capsuleId) ?? null;
 }
 
-export function buildCapsuleStarterPromptBlock(capsuleId: string | null | undefined): string | null {
-  const starterDefinition = getCapsuleStarterDefinition(capsuleId);
+export function buildCapsuleStarterPromptBlock(
+  capsuleId: string | null | undefined,
+  starterSnapshot?: CapsuleStarterSnapshot | null,
+): string | null {
+  const starterDefinition = starterSnapshot?.starterId === capsuleId
+    ? starterSnapshot
+    : getCapsuleStarterDefinition(capsuleId);
   if (!starterDefinition) return null;
   return [
     '[starter_capsule_definition]',
@@ -944,7 +1220,7 @@ export function buildCapsuleStarterPromptBlock(capsuleId: string | null | undefi
     `starter_detail: ${starterDefinition.detail}`,
     `starter_tags: ${starterDefinition.tags.join(', ')}`,
     `readiness_stars: ${starterDefinition.readinessStars}/5 source-readiness confidence`,
-    `source_pack: ${starterDefinition.sourcePack.length ? starterDefinition.sourcePack.map((source) => `${source.id}|${source.label}|${source.url}|${source.relevance}`).join(' ; ') : 'none'}`,
+    `source_pack: ${starterDefinition.sourcePack.length ? starterDefinition.sourcePack.map((source) => `${source.id}|${source.label}|${source.publisher ?? 'unknown publisher'}|${source.date ?? 'unknown date'}|tier${source.reliabilityTier ?? 'unknown'}|${source.url}|${source.relevance}`).join(' ; ') : 'none'}`,
     `source_excerpts: ${starterDefinition.excerpts.length ? starterDefinition.excerpts.map((excerpt) => `${excerpt.sourceId}: ${excerpt.text}`).join(' ; ') : 'none'}`,
     `recommended_tools: ${starterDefinition.recommendedToolIds.length ? starterDefinition.recommendedToolIds.join(', ') : 'none'}`,
     `output_targets: ${starterDefinition.outputProductIds.length ? starterDefinition.outputProductIds.join(', ') : 'none'}`,
@@ -953,7 +1229,7 @@ export function buildCapsuleStarterPromptBlock(capsuleId: string | null | undefi
     `agent_workflow: preferred_agent=${starterDefinition.agentWorkflow.preferredAgentId}; route_hint=${starterDefinition.agentWorkflow.routeHint}; output_goal=${starterDefinition.agentWorkflow.outputGoal}; approval_notes=${starterDefinition.agentWorkflow.approvalNotes}`,
     `ai_use_guidance: ${starterDefinition.aiUseGuidance}`,
     `combines_well_with: ${starterDefinition.combinesWellWith.length ? starterDefinition.combinesWellWith.join(', ') : 'none'}`,
-    ...starterDefinition.inspectionSections.map((section) => `starter_section_${stableReceiptPart(section.label)}: ${section.detail}`),
+    ...('inspectionSections' in starterDefinition ? starterDefinition.inspectionSections.map((section) => `starter_section_${stableReceiptPart(section.label)}: ${section.detail}`) : []),
     'runtime_rule: Treat this starter definition as reusable operating context for Ask PRAXIS, tool routing, agent runs, and output drafting.',
     'runtime_rule: Preserve user edits on the persisted capsule, but use this starter definition to explain what the capsule is for and how to improve it.',
     '',

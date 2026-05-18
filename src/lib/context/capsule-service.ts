@@ -9,7 +9,12 @@ import {
 } from '@/lib/context/active-context-stack';
 import type { ContextHealth, ContextRetrievalPolicy } from '@/types/context-engine';
 import { DEFAULT_CORPUS_LAYERS, DEFAULT_CORPUS_LIMIT } from '@/types/corpus';
-import { CAPSULE_STARTER_DEFINITIONS, type CapsuleStarterDefinition } from '@/lib/product/context-capsules';
+import {
+  CAPSULE_STARTER_CATALOG_VERSION,
+  CAPSULE_STARTER_DEFINITIONS,
+  type CapsuleStarterDefinition,
+  type CapsuleStarterSnapshot,
+} from '@/lib/product/context-capsules';
 
 export type CapsuleScope = 'user' | 'situation' | 'team';
 export type CapsuleVisibility = 'private' | 'organization' | 'shared' | 'public' | 'unlisted';
@@ -111,6 +116,7 @@ export interface PraxisCapsule {
   access: CapsuleAccessPolicy;
   community: CapsuleCommunityProfile;
   trust: CapsuleTrustSemaphore;
+  starterSnapshot?: CapsuleStarterSnapshot | null;
   createdAt: string;
   updatedAt: string;
   archivedAt?: string | null;
@@ -130,6 +136,7 @@ export interface CreateCapsuleInput {
   provenance?: Partial<CapsuleProvenance>;
   access?: Partial<CapsuleAccessPolicy>;
   community?: Partial<CapsuleCommunityProfile>;
+  starterSnapshot?: CapsuleStarterSnapshot | null;
 }
 
 export interface CapsuleCombineConflict {
@@ -222,6 +229,7 @@ export async function createCapsule(
     },
     access: normalizeAccessPolicy(input.access),
     community: normalizeCommunityProfile(input.community),
+    starterSnapshot: input.starterSnapshot ?? null,
     createdAt: timestamp,
     updatedAt: timestamp,
     archivedAt: null,
@@ -273,11 +281,13 @@ export async function seedStarterCapsules(
       if (promoted !== current) {
         await capsulesCollection(uid, deps).doc(promoted.capsuleId).set(promoted, { merge: true });
       }
+      await writeStarterDetailRecords(uid, promoted.capsuleId, starterDefinition, deps);
       capsules.push(promoted);
       continue;
     }
 
     const capsule = await createCapsule(uid, starterToCreateInput(uid, starterDefinition), deps);
+    await writeStarterDetailRecords(uid, capsule.capsuleId, starterDefinition, deps);
     created += 1;
     capsules.push(capsule);
   }
@@ -295,11 +305,13 @@ function promoteStarterCapsule(
   deps?: CapsuleServiceDeps,
 ): PraxisCapsule {
   const tags = uniqueStrings([...starterDefinition.tags, ...(capsule.community.tags ?? []), 'starter']).slice(0, 20);
+  const starterSnapshot = buildStarterSnapshot(starterDefinition);
   const needsPromotion =
     capsule.community.favorite !== true ||
     (capsule.community.averageRating ?? 0) < 4.8 ||
     capsule.community.ratingCount < 10 ||
-    !tags.every((tag) => capsule.community.tags.includes(tag));
+    !tags.every((tag) => capsule.community.tags.includes(tag)) ||
+    capsule.starterSnapshot?.catalogVersion !== CAPSULE_STARTER_CATALOG_VERSION;
   if (!needsPromotion) return capsule;
   const timestamp = nowIso(deps);
   return sanitizeCapsule({
@@ -327,6 +339,7 @@ function promoteStarterCapsule(
       summary: capsule.trust.summary || starterDefinition.summary,
       checkedAt: timestamp,
     },
+    starterSnapshot,
     updatedAt: timestamp,
   });
 }
@@ -797,6 +810,7 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     provenance,
     access: normalizeAccessPolicy(isRecord(body.access) ? body.access : {}),
     community: normalizeCommunityProfile(isRecord(body.community) ? body.community : {}),
+    starterSnapshot: normalizeStarterSnapshot(body.starterSnapshot),
     createdAt,
     updatedAt: stringOrNull(body.updatedAt) ?? createdAt,
     archivedAt: stringOrNull(body.archivedAt),
@@ -815,6 +829,7 @@ function starterToCreateInput(uid: string, starterDefinition: CapsuleStarterDefi
     capsuleId: starterDefinition.starterId,
     label: starterDefinition.label,
     scope: starterDefinition.category === 'user' ? 'user' : 'situation',
+    starterSnapshot: buildStarterSnapshot(starterDefinition),
     coreRefs: {
       userCoreId: starterDefinition.coreRefs.userCoreId,
       situationCoreId: starterDefinition.coreRefs.situationCoreId,
@@ -859,6 +874,91 @@ function starterToCreateInput(uid: string, starterDefinition: CapsuleStarterDefi
       notes: starterDefinition.summary,
     },
   };
+}
+
+function buildStarterSnapshot(starterDefinition: CapsuleStarterDefinition): CapsuleStarterSnapshot {
+  return {
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+    starterId: starterDefinition.starterId,
+    category: starterDefinition.category,
+    domain: starterDefinition.domain,
+    label: starterDefinition.label,
+    summary: starterDefinition.summary,
+    detail: starterDefinition.detail,
+    tags: [...starterDefinition.tags],
+    recommendedToolIds: [...starterDefinition.recommendedToolIds],
+    outputProductIds: [...starterDefinition.outputProductIds],
+    sourcePack: starterDefinition.sourcePack.map((source) => ({ ...source })),
+    excerpts: starterDefinition.excerpts.map((excerpt) => ({ ...excerpt })),
+    readinessStars: starterDefinition.readinessStars,
+    suggestedQuestions: [...starterDefinition.suggestedQuestions],
+    suggestedNextActions: [...starterDefinition.suggestedNextActions],
+    agentWorkflow: { ...starterDefinition.agentWorkflow },
+    aiUseGuidance: starterDefinition.aiUseGuidance,
+    combinesWellWith: [...starterDefinition.combinesWellWith],
+  };
+}
+
+async function writeStarterDetailRecords(
+  uid: string,
+  capsuleId: string,
+  starterDefinition: CapsuleStarterDefinition,
+  deps?: CapsuleServiceDeps,
+): Promise<void> {
+  const ref = capsulesCollection(uid, deps).doc(capsuleId);
+  const timestamp = nowIso(deps);
+  const batch = dbOf(deps).batch();
+  for (const source of starterDefinition.sourcePack) {
+    batch.set(ref.collection('sources').doc(cleanId(source.id, 'starter-source')), {
+      sourceId: source.id,
+      capsuleId,
+      title: source.label,
+      publisher: source.publisher ?? null,
+      url: source.url,
+      sourceType: source.sourceType,
+      date: source.date ?? null,
+      reliabilityTier: source.reliabilityTier ?? null,
+      relevance: source.relevance,
+      starterDefinitionId: starterDefinition.starterId,
+      catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+      seededAt: timestamp,
+    }, { merge: true });
+  }
+  batch.set(ref.collection('evaluations').doc('starter-readiness'), {
+    evaluationId: 'starter-readiness',
+    capsuleId,
+    type: 'starter-readiness',
+    stars: starterDefinition.readinessStars,
+    summary: starterDefinition.summary,
+    rubric: 'Source-readiness confidence for seeded starter capsule metadata.',
+    links: {
+      sourceIds: starterDefinition.sourcePack.map((source) => source.id),
+      documentIds: [],
+      outputCapsuleId: null,
+      runId: null,
+    },
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+    updatedAt: timestamp,
+  }, { merge: true });
+  batch.set(ref.collection('notes').doc('starter-guidance'), {
+    noteId: 'starter-guidance',
+    capsuleId,
+    type: 'source_note',
+    title: `${starterDefinition.label} starter guidance`,
+    body: starterDefinition.aiUseGuidance,
+    tags: starterDefinition.tags,
+    pinned: true,
+    starred: true,
+    links: {
+      sourceIds: starterDefinition.sourcePack.map((source) => source.id),
+      documentIds: [],
+      outputCapsuleId: null,
+      runId: null,
+    },
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+    updatedAt: timestamp,
+  }, { merge: true });
+  await batch.commit();
 }
 
 function sortCapsulesForLibrary(capsules: PraxisCapsule[]): PraxisCapsule[] {
@@ -1192,6 +1292,72 @@ function uniqueLockKinds(values: string[]): CapsuleLockKind[] {
     'memory',
   ]);
   return Array.from(new Set(values.filter((item): item is CapsuleLockKind => allowed.has(item as CapsuleLockKind)))).slice(0, 20);
+}
+
+function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null {
+  if (!isRecord(value)) return null;
+  const starterId = stringOrNull(value.starterId);
+  const category = stringOrNull(value.category);
+  const domain = stringOrNull(value.domain);
+  const label = stringOrNull(value.label);
+  if (!starterId || !category || !domain || !label) return null;
+  const sourcePack = Array.isArray(value.sourcePack)
+    ? value.sourcePack.filter(isRecord).map((source) => {
+      const sourceType: CapsuleStarterSnapshot['sourcePack'][number]['sourceType'] =
+        source.sourceType === 'multilateral' ||
+        source.sourceType === 'regulator' ||
+        source.sourceType === 'standard-setter' ||
+        source.sourceType === 'public-library'
+          ? source.sourceType
+          : 'official';
+      const reliabilityTier: 1 | 2 | 3 | undefined =
+        source.reliabilityTier === 1 || source.reliabilityTier === 2 || source.reliabilityTier === 3
+          ? source.reliabilityTier
+          : undefined;
+      return {
+        id: stringOrNull(source.id) ?? 'source',
+        label: stringOrNull(source.label) ?? 'Source',
+        url: stringOrNull(source.url) ?? '',
+        sourceType,
+        relevance: stringOrNull(source.relevance) ?? '',
+        publisher: stringOrNull(source.publisher) ?? undefined,
+        date: stringOrNull(source.date) ?? undefined,
+        reliabilityTier,
+      };
+    }).filter((source) => source.url.startsWith('https://')).slice(0, 20)
+    : [];
+  const excerpts = Array.isArray(value.excerpts)
+    ? value.excerpts.filter(isRecord).map((excerpt) => ({
+      sourceId: stringOrNull(excerpt.sourceId) ?? '',
+      text: stringOrNull(excerpt.text) ?? '',
+    })).filter((excerpt) => excerpt.sourceId && excerpt.text).slice(0, 20)
+    : [];
+  const workflow = isRecord(value.agentWorkflow) ? value.agentWorkflow : {};
+  return {
+    catalogVersion: stringOrNull(value.catalogVersion) ?? 'unknown',
+    starterId,
+    category: category as CapsuleStarterSnapshot['category'],
+    domain: domain as CapsuleStarterSnapshot['domain'],
+    label,
+    summary: stringOrNull(value.summary) ?? label,
+    detail: stringOrNull(value.detail) ?? label,
+    tags: cleanStringArray(value.tags).slice(0, 30),
+    recommendedToolIds: cleanStringArray(value.recommendedToolIds).slice(0, 20),
+    outputProductIds: cleanStringArray(value.outputProductIds).slice(0, 20),
+    sourcePack,
+    excerpts,
+    readinessStars: value.readinessStars === 1 || value.readinessStars === 2 || value.readinessStars === 3 || value.readinessStars === 4 || value.readinessStars === 5 ? value.readinessStars : 3,
+    suggestedQuestions: cleanStringArray(value.suggestedQuestions).slice(0, 12),
+    suggestedNextActions: cleanStringArray(value.suggestedNextActions).slice(0, 12),
+    agentWorkflow: {
+      preferredAgentId: stringOrNull(workflow.preferredAgentId) ?? 'research-memo',
+      routeHint: stringOrNull(workflow.routeHint) ?? 'starter-capsule',
+      outputGoal: stringOrNull(workflow.outputGoal) ?? 'options-memo',
+      approvalNotes: stringOrNull(workflow.approvalNotes) ?? 'Require human review before external export.',
+    },
+    aiUseGuidance: stringOrNull(value.aiUseGuidance) ?? '',
+    combinesWellWith: cleanStringArray(value.combinesWellWith).slice(0, 20),
+  };
 }
 
 function cleanStringArray(value: unknown): string[] {

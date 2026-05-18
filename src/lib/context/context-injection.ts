@@ -23,6 +23,8 @@ export interface InjectableContextInput {
 
 export interface InjectableContext {
   capsule: PraxisCapsule;
+  associatedCapsules: PraxisCapsule[];
+  missingAssociatedCapsuleIds: string[];
   stack: ActiveContextStackState;
   injectionKey: string;
   promptBlock: string;
@@ -54,11 +56,19 @@ export async function resolveInjectableContext(
 
   const stack = capsuleToStack(capsule);
   const resolvedAt = new Date().toISOString();
+  const associated = await resolveAssociatedCapsules(input.uid, capsule, deps);
   return {
     capsule,
+    associatedCapsules: associated.capsules,
+    missingAssociatedCapsuleIds: associated.missingIds,
     stack,
     injectionKey: buildCapsuleInjectionKey(capsule),
-    promptBlock: buildCapsulePromptBlock(capsule, { resolvedAt, situationId: input.situationId }),
+    promptBlock: buildCapsulePromptBlock(capsule, {
+      resolvedAt,
+      situationId: input.situationId,
+      associatedCapsules: associated.capsules,
+      missingAssociatedCapsuleIds: associated.missingIds,
+    }),
     sharePath: `/app?capsuleId=${encodeURIComponent(capsule.capsuleId)}`,
     resolvedAt,
   };
@@ -77,7 +87,12 @@ export function buildCapsuleInjectionKey(capsule: PraxisCapsule): string {
 
 export function buildCapsulePromptBlock(
   capsule: PraxisCapsule,
-  input: { resolvedAt?: string; situationId?: string | null } = {},
+  input: {
+    resolvedAt?: string;
+    situationId?: string | null;
+    associatedCapsules?: PraxisCapsule[];
+    missingAssociatedCapsuleIds?: string[];
+  } = {},
 ): string {
   const refs = capsule.coreRefs;
   const lines = [
@@ -108,7 +123,8 @@ export function buildCapsulePromptBlock(
     `product_cores: ${refs.productCoreIds?.length ? refs.productCoreIds.join(', ') : 'none'}`,
     `memory_core: ${refs.memoryCoreId ?? 'none'}`,
     '',
-    buildCapsuleStarterPromptBlock(capsule.capsuleId),
+    buildCapsuleStarterPromptBlock(capsule.capsuleId, capsule.starterSnapshot),
+    buildAssociatedCapsulesPromptBlock(input.associatedCapsules ?? [], input.missingAssociatedCapsuleIds ?? []),
     '[retrieval_policy]',
     `layers: ${capsule.retrievalPolicy.layers.join(', ')}`,
     `limit: ${capsule.retrievalPolicy.limit}`,
@@ -117,6 +133,7 @@ export function buildCapsulePromptBlock(
     '',
     '[rules]',
     'Use this ContextCapsule Lite as the inherited working context for the answer.',
+    'Treat associated capsules as reference-only context. Do not merge their cores, documents, tools, or outputs into the primary capsule.',
     'Treat ContextCapsule Lite as the current PRAXIS-built lightweight institutional-memory object; full DIALECTICA-built capsules may arrive through the adapter later.',
     'Respect locked cores as fixed context. Do not suggest swapping them unless the user asks to unlock.',
     'Treat missing cores and warnings as constraints; do not invent their contents.',
@@ -138,8 +155,72 @@ export function buildCapsulePromptBlock(
   return lines.join('\n');
 }
 
+async function resolveAssociatedCapsules(
+  uid: string,
+  capsule: PraxisCapsule,
+  deps?: CapsuleServiceDeps,
+): Promise<{ capsules: PraxisCapsule[]; missingIds: string[] }> {
+  const candidateIds = uniqueStrings(capsule.associatedCapsuleIds)
+    .filter((capsuleId) => capsuleId !== capsule.capsuleId)
+    .slice(0, 5);
+  const capsules: PraxisCapsule[] = [];
+  const missingIds: string[] = [];
+  for (const capsuleId of candidateIds) {
+    const associated = await getCapsule(uid, capsuleId, deps);
+    if (!associated || associated.archivedAt) {
+      missingIds.push(capsuleId);
+      continue;
+    }
+    capsules.push(associated);
+  }
+  return { capsules, missingIds };
+}
+
+function buildAssociatedCapsulesPromptBlock(capsules: PraxisCapsule[], missingIds: string[]): string {
+  return [
+    '[associated_capsules]',
+    capsules.length ? capsules.slice(0, 5).map(formatAssociatedCapsuleSummary).join('\n---\n') : 'none',
+    missingIds.length ? `missing_or_archived: ${missingIds.join(', ')}` : 'missing_or_archived: none',
+    '',
+  ].join('\n');
+}
+
+function formatAssociatedCapsuleSummary(capsule: PraxisCapsule): string {
+  return [
+    `id: ${capsule.capsuleId}`,
+    `label: ${capsule.label}`,
+    'role: reference',
+    `version: ${capsule.version}`,
+    `scope: ${capsule.scope}`,
+    `health: ${capsule.health.score} (${capsule.health.semaphore ?? 'not-checked'})`,
+    `core_refs: ${formatReferenceCoreRefs(capsule.coreRefs)}`,
+  ].join('\n');
+}
+
+function formatReferenceCoreRefs(refs: PraxisCapsule['coreRefs']): string {
+  const values = [
+    refs.userCoreId ? `user=${refs.userCoreId}` : null,
+    refs.situationCoreId ? `situation=${refs.situationCoreId}` : null,
+    refs.pathCoreId ? `path=${refs.pathCoreId}` : null,
+    refs.sourceCoreIds.length ? `sources=${refs.sourceCoreIds.join('|')}` : null,
+    refs.documentCoreIds.length ? `documents=${refs.documentCoreIds.join('|')}` : null,
+    refs.graphCoreId ? `graph=${refs.graphCoreId}` : null,
+    refs.timeCoreId ? `time=${refs.timeCoreId}` : null,
+    refs.memoryCoreId ? `memory=${refs.memoryCoreId}` : null,
+    refs.outputCoreIds.length ? `outputs=${refs.outputCoreIds.join('|')}` : null,
+    refs.toolCoreIds?.length ? `tools=${refs.toolCoreIds.join('|')}` : null,
+    refs.objectiveCoreIds?.length ? `objectives=${refs.objectiveCoreIds.join('|')}` : null,
+    refs.productCoreIds?.length ? `products=${refs.productCoreIds.join('|')}` : null,
+  ].filter(Boolean);
+  return values.length ? values.join('; ') : 'none';
+}
+
 function cleanPointer(value: string | null | undefined): string | null {
   if (!value) return null;
   const cleaned = value.trim();
   return cleaned.length > 0 ? cleaned.slice(0, 120) : null;
+}
+
+function uniqueStrings(values: Array<string | null | undefined>): string[] {
+  return Array.from(new Set(values.map((value) => value?.trim() ?? '').filter(Boolean)));
 }
