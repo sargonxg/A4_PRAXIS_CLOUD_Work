@@ -89,8 +89,17 @@ function OnboardingWizard() {
   }, [user?.id]);
 
   const skipForLater = useCallback(async () => {
-    await fetch('/api/onboarding/skip', { method: 'POST' });
-    router.push('/app');
+    setSaveError(null);
+    try {
+      const res = await fetch('/api/onboarding/skip', { method: 'POST' });
+      if (!res.ok) {
+        setSaveError('Could not save this reminder - please try again.');
+        return;
+      }
+      router.push('/app');
+    } catch {
+      setSaveError('Network error saving the reminder - please try again.');
+    }
   }, [router]);
 
   const complete = useCallback(async (createFirstSituation: boolean) => {
@@ -207,7 +216,7 @@ function Header({ step, onSkip, resumeMode }: { step: Step; onSkip: () => void; 
           {resumeMode ? 'Review your analyst profile' : 'Set up your analyst profile'}
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-navy-500">
-          PRAXIS calibrates every tool output to this profile. Changes made here are reflected in the next analysis run.
+          First sign-in may ask for analyst calibration. Finish later opens the workspace now and keeps profile reminders visible.
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-medium uppercase tracking-wider">
           {steps.map((s, i) => (

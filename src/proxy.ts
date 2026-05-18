@@ -75,14 +75,14 @@ function redirectWithSearch(request: NextRequest, nonce: string, target: string)
  * We extract the JSON payload before the last dot for routing decisions.
  * A forged cookie that gets past this check will still fail in with-auth.ts.
  */
-function parseSessionForRouting(cookieValue: string): { demo?: boolean; token?: string; onboarded?: boolean; onboardingComplete?: boolean } | null {
+function parseSessionForRouting(cookieValue: string): { demo?: boolean; token?: string; onboarded?: boolean; onboardingComplete?: boolean; onboardingSkipped?: boolean } | null {
   try {
     const decoded = decodeURIComponent(cookieValue);
     const idx = decoded.lastIndexOf('.');
     const jsonPart = idx !== -1 ? decoded.slice(0, idx) : decoded;
     const parsed = JSON.parse(jsonPart);
     if (typeof parsed === 'object' && parsed !== null) {
-      return parsed as { demo?: boolean; token?: string; onboarded?: boolean; onboardingComplete?: boolean };
+      return parsed as { demo?: boolean; token?: string; onboarded?: boolean; onboardingComplete?: boolean; onboardingSkipped?: boolean };
     }
     return null;
   } catch {
@@ -257,6 +257,7 @@ export function proxy(request: NextRequest) {
     hasFirebaseToken &&
     sessionData?.onboardingComplete !== true &&
     sessionData?.onboarded !== true &&
+    sessionData?.onboardingSkipped !== true &&
     pathname !== '/onboarding'
   ) {
     return addSecurityHeaders(NextResponse.redirect(new URL('/onboarding', request.url)), nonce);

@@ -236,7 +236,7 @@ function LoginForm() {
             </div>
 
             <div className="flex flex-1 flex-col justify-center py-10">
-              <p className="text-center text-sm font-medium text-slate-500">Same cockpit before and after sign-in</p>
+              <p className="text-center text-sm font-medium text-slate-500">Sign in, calibrate if needed, then open the workspace</p>
               <h1 className="mx-auto mt-6 max-w-3xl text-center font-serif text-5xl font-semibold tracking-tight text-slate-950">
                 What can PRAXIS do for you?
               </h1>

@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const cookieSet = vi.fn();
+
 vi.mock('@/lib/api/with-auth', () => ({
   withAuth: (h: unknown) => (req: Request) =>
     (h as (r: Request, u: { uid: string; email: string; name: string; isDemo: boolean }) => Promise<Response>)(req, {
@@ -18,6 +20,23 @@ vi.mock('@/lib/firebase/analyst-profile-admin', () => ({
 vi.mock('@/lib/firebase/profile-events', () => ({
   publishProfileEvent: vi.fn().mockResolvedValue(true),
   refreshProfileEmbedding: vi.fn().mockResolvedValue(true),
+}));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({
+    get: () => ({
+      value: JSON.stringify({
+        token: 'firebase-token',
+        onboarded: false,
+        onboardingComplete: false,
+        onboardingSkipped: true,
+      }),
+    }),
+    set: cookieSet,
+  }),
+}));
+vi.mock('@/lib/auth/cookie-signer', () => ({
+  verifyCookie: (value: string) => value,
+  signCookie: (value: string) => `signed:${value}`,
 }));
 
 import { POST } from '@/app/api/onboarding/complete/route';
@@ -45,5 +64,21 @@ describe('POST /api/onboarding/complete', () => {
     const res = await POST(req);
     const data = await res.json();
     expect(data.redirectTo).toBe('/app?panel=builder&fromOnboarding=1');
+  });
+
+  it('refreshes the session cookie as completed onboarding', async () => {
+    const req = new Request('http://x/api/onboarding/complete', {
+      method: 'POST',
+      body: JSON.stringify({ createFirstSituation: false }),
+    });
+
+    await POST(req);
+
+    expect(cookieSet).toHaveBeenCalledWith(
+      'tacitus-auth-session',
+      expect.stringContaining('"onboardingComplete":true'),
+      expect.objectContaining({ httpOnly: true, sameSite: 'lax', path: '/' }),
+    );
+    expect(cookieSet.mock.calls.at(-1)?.[1]).toContain('"onboarded":true');
   });
 });
