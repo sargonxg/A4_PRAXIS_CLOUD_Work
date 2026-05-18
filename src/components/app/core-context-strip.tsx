@@ -1,7 +1,5 @@
 'use client';
 
-import Link from 'next/link';
-import type { ComponentType } from 'react';
 import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { Brain, Clock3, FileText, Gauge, LibraryBig, Network, ShieldCheck, Target, Wrench } from 'lucide-react';
@@ -9,7 +7,7 @@ import { listExampleCases } from '@/lib/cases/registry';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { buildContextHealthReport } from '@/lib/context/context-health';
-import { cn } from '@/lib/utils/cn';
+import { LivingContextRail } from '@/components/ui/instrument';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
 
@@ -64,129 +62,94 @@ export function CoreContextStrip() {
     situationHref: context?.href,
   });
 
-  return (
-    <div className="border-b border-[var(--color-app-border)] bg-white/80 px-4 py-2 backdrop-blur-md md:px-6">
-      <div className="-mx-1 flex min-w-0 flex-nowrap items-stretch gap-2 overflow-x-auto px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden xl:-mx-0 xl:overflow-visible xl:px-0">
-        <ContextCell
-          href="/app/cores/user"
-          icon={Brain}
-          label="User"
-          title={`${role} - ${audience}`}
-          detail={`${org} - ${lenses}`}
-        />
-        <ContextCell
-          href={context?.href ?? '/app/contexts'}
-          icon={Target}
-          label="Situation"
-          title={context?.name ?? 'No context selected'}
-          detail={context?.meta ?? 'Create or open a context to ground Ask PRAXIS'}
-          muted={!context}
-        />
-        <ContextCell
-          href={context?.href ?? '/app/contexts'}
-          icon={LibraryBig}
-          label="Sourceability"
-          title={`${attachedCount} attached`}
-          detail={attachedCount > 0 ? 'Receipts and documents travel with context' : 'Attach sources before final drafting'}
-          muted={attachedCount === 0}
-        />
-        <ContextCell
-          href={context?.href ?? '/app/contexts'}
-          icon={Clock3}
-          label="Temporality"
-          title={health.signals.find((item) => item.id === 'timeline')?.status === 'ready' ? 'Episodes ready' : 'Needs episodes'}
-          detail={selectedSituation?.latestEventDate ?? selectedSituation?.conflictOnsetDate ?? 'Set dates and what changed'}
-          muted={!selectedSituation?.keyDates?.length && !selectedSituation?.latestEventDate && !selectedSituation?.conflictOnsetDate}
-        />
-        <ContextCell
-          href="/app/canvas"
-          icon={Network}
-          label="Power"
-          title={actorCount > 0 ? `${actorCount} actor${actorCount === 1 ? '' : 's'}` : 'Actor map thin'}
-          detail={actorCount > 0 ? 'Approvers, blockers, claims, relationships' : 'Map who decides, blocks, checks, and is affected'}
-          muted={actorCount === 0}
-        />
-        <ContextCell
-          href="/app/tools"
-          icon={Wrench}
-          label="Tools"
-          title="Capsule-aware"
-          detail="Source, time, power, analysis, writing, governance"
-        />
-        <ContextCell
-          href="/app/write"
-          icon={FileText}
-          label="Output"
-          title={stack.outputGoal ?? 'Memo posture'}
-          detail={stack.outputGoal ? 'Draft target saved in stack' : 'Set the output in Memo Studio'}
-          muted={!stack.outputGoal}
-        />
-        <ContextCell
-          href="/app/contexts"
-          icon={ShieldCheck}
-          label="Handover"
-          title={health.score >= 80 ? 'Ready to share' : 'Review gates open'}
-          detail={health.score >= 80 ? 'Fork, lock, or brief an agent' : 'Resolve gaps before final export'}
-          muted={health.score < 80}
-        />
-        <ContextCell
-          href="/app/dashboard"
-          icon={Gauge}
-          label="Readiness"
-          title={`${health.score}/100 - ${health.label}`}
-          detail={health.nextActions[0]?.label ?? 'Ready for next action'}
-          muted={health.score < 55}
-        />
-        <Link
-          href="/app/contexts"
-          className="ml-auto flex shrink-0 items-center rounded-md border border-gold-200 bg-gold-50 px-3 py-2 text-xs font-semibold text-gold-900 transition hover:bg-gold-100"
-        >
-          Change context
-        </Link>
-      </div>
-    </div>
-  );
-}
+  const cells = [
+    {
+      id: 'user',
+      href: '/app/cores/user',
+      icon: Brain,
+      label: 'User',
+      value: `${role} - ${audience}`,
+      detail: `${org} - ${lenses}`,
+      state: 'ready' as const,
+    },
+    {
+      id: 'situation',
+      href: context?.href ?? '/app/contexts',
+      icon: Target,
+      label: 'Situation',
+      value: context?.name ?? 'No context selected',
+      detail: context?.meta ?? 'Create or open context',
+      state: context ? 'active' as const : 'review' as const,
+    },
+    {
+      id: 'sourceability',
+      href: context?.href ?? '/app/contexts',
+      icon: LibraryBig,
+      label: 'Source',
+      value: `${attachedCount} attached`,
+      detail: attachedCount > 0 ? 'Receipts travel with context' : 'Attach before final draft',
+      state: attachedCount > 0 ? 'ready' as const : 'review' as const,
+    },
+    {
+      id: 'temporality',
+      href: context?.href ?? '/app/contexts',
+      icon: Clock3,
+      label: 'Time',
+      value: health.signals.find((item) => item.id === 'timeline')?.status === 'ready' ? 'Episodes ready' : 'Needs episodes',
+      detail: selectedSituation?.latestEventDate ?? selectedSituation?.conflictOnsetDate ?? 'Set dates',
+      state: selectedSituation?.keyDates?.length || selectedSituation?.latestEventDate || selectedSituation?.conflictOnsetDate ? 'ready' as const : 'review' as const,
+    },
+    {
+      id: 'power',
+      href: '/app/canvas',
+      icon: Network,
+      label: 'Power',
+      value: actorCount > 0 ? `${actorCount} actor${actorCount === 1 ? '' : 's'}` : 'Actor map thin',
+      detail: actorCount > 0 ? 'Approvers, blockers, claims' : 'Map decision structure',
+      state: actorCount > 0 ? 'ready' as const : 'quiet' as const,
+    },
+    {
+      id: 'tools',
+      href: '/app/tools',
+      icon: Wrench,
+      label: 'Tools',
+      value: 'Capsule-aware',
+      detail: 'Source, time, power, writing',
+      state: 'active' as const,
+    },
+    {
+      id: 'output',
+      href: '/app/write',
+      icon: FileText,
+      label: 'Output',
+      value: stack.outputGoal ?? 'Memo posture',
+      detail: stack.outputGoal ? 'Draft target saved' : 'Set in Memo Studio',
+      state: stack.outputGoal ? 'ready' as const : 'quiet' as const,
+    },
+    {
+      id: 'handover',
+      href: '/app/contexts',
+      icon: ShieldCheck,
+      label: 'Handover',
+      value: health.score >= 80 ? 'Ready to share' : 'Review gates',
+      detail: health.score >= 80 ? 'Fork, lock, or brief' : 'Resolve gaps first',
+      state: health.score >= 80 ? 'ready' as const : 'review' as const,
+    },
+    {
+      id: 'readiness',
+      href: '/app/dashboard',
+      icon: Gauge,
+      label: 'Readiness',
+      value: `${health.score}/100 - ${health.label}`,
+      detail: health.nextActions[0]?.label ?? 'Ready for next action',
+      state: health.score >= 80 ? 'ready' as const : health.score < 55 ? 'review' as const : 'active' as const,
+    },
+  ];
 
-function ContextCell({
-  href,
-  icon: Icon,
-  label,
-  title,
-  detail,
-  muted = false,
-}: {
-  href: string;
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  title: string;
-  detail: string;
-  muted?: boolean;
-}) {
   return (
-    <Link
-      href={href}
-      className={cn(
-        'group flex min-w-[11.5rem] max-w-[18rem] shrink-0 items-center gap-2 rounded-md border px-3 py-2 transition xl:min-w-0 xl:flex-1',
-        muted
-          ? 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-          : 'border-navy-200/80 bg-white text-navy-900 hover:border-gold-300',
-      )}
-      draggable
-      onDragStart={(event) => {
-        event.dataTransfer.setData('application/x-praxis-core', JSON.stringify({ label, title, detail, href }));
-        event.dataTransfer.effectAllowed = 'copy';
-      }}
-    >
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-navy-950 text-white group-hover:bg-gold-700">
-        <Icon className="h-3.5 w-3.5" />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-400">{label}</span>
-        <span className="block truncate text-xs font-semibold text-navy-950">{title}</span>
-        <span className="block truncate text-[11px] text-navy-500">{detail}</span>
-      </span>
-    </Link>
+    <div className="border-b border-[var(--color-app-border)] bg-white/72 px-4 py-2 backdrop-blur-md md:px-6">
+      <LivingContextRail cells={cells} actionHref="/app/contexts" actionLabel="Change context" compact />
+    </div>
   );
 }
 

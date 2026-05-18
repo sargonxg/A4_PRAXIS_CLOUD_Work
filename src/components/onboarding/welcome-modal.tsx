@@ -10,6 +10,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { LivingContextRail } from '@/components/ui/instrument';
 
 interface WelcomeModalProps {
   onStartTour: () => void;
@@ -32,6 +33,14 @@ const WORKFLOW_STEPS = [
 ] as const;
 
 export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) {
+  const welcomeRailCells = [
+    { id: 'profile', label: 'Profile', value: 'User Core', detail: 'Role and mandate', state: 'ready' as const },
+    { id: 'context', label: 'Context', value: 'Situation Core', detail: 'Policy problem', state: 'active' as const },
+    { id: 'source', label: 'Sources', value: 'Receipts', detail: 'Evidence follows output', state: 'review' as const },
+    { id: 'output', label: 'Output', value: 'Memo', detail: 'Reviewable draft', state: 'quiet' as const },
+    { id: 'readiness', label: 'Readiness', value: 'Guided', detail: 'One cockpit', state: 'active' as const },
+  ];
+
   return (
     <AnimatePresence>
       <motion.div
@@ -68,6 +77,10 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
             <p className="mt-3 text-xs font-medium text-navy-500">
               Advanced tools stay behind approval gates; the main workspace stays simple.
             </p>
+          </div>
+
+          <div className="px-5 pt-5">
+            <LivingContextRail cells={welcomeRailCells} compact />
           </div>
 
           <div className="px-8 py-5">

@@ -8,6 +8,7 @@ import { ArrowRight, Loader2, Mail, Chrome, Paperclip, Upload, Monitor, Mic } fr
 import { useAuth } from '@/lib/auth/auth-context';
 import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
+import { LivingContextRail } from '@/components/ui/instrument';
 import {
   PENDING_POLICY_AGENT_ID_KEY,
   PENDING_TASKLET_PROMPT_KEY,
@@ -94,6 +95,13 @@ function LoginForm() {
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
+  const previewRailCells = [
+    { id: 'profile', label: 'Profile', value: mode === 'signup' ? 'New analyst' : 'Returning analyst', detail: 'Private posture', state: 'ready' as const },
+    { id: 'context', label: 'Context', value: capsuleTemplateParam ?? 'Policy capsule', detail: capsulePromptParam ? 'Prompt carried forward' : 'Starter context', state: capsulePromptParam ? 'active' as const : 'quiet' as const },
+    { id: 'source', label: 'Sources', value: capsulePathParam ? 'Path attached' : 'Ready to attach', detail: 'Receipts after sign-in', state: capsulePathParam ? 'ready' as const : 'review' as const },
+    { id: 'output', label: 'Output', value: capsuleOutputParam ?? planParam ?? 'Memo', detail: 'Intent preserved', state: capsuleOutputParam || planParam ? 'active' as const : 'quiet' as const },
+    { id: 'readiness', label: 'Readiness', value: 'Secure handoff', detail: 'Redirect preserved', state: 'ready' as const },
+  ];
 
   useEffect(() => {
     const prompt = capsulePromptParam?.trim();
@@ -232,7 +240,8 @@ function LoginForm() {
               <h1 className="mx-auto mt-6 max-w-3xl text-center font-serif text-5xl font-semibold tracking-tight text-slate-950">
                 What can PRAXIS do for you?
               </h1>
-              <div className="mx-auto mt-8 w-full max-w-3xl rounded-lg border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70">
+              <LivingContextRail cells={previewRailCells} compact className="mx-auto mt-8 max-w-3xl" />
+              <div className="mx-auto mt-5 w-full max-w-3xl rounded-[10px] border border-[color:var(--color-rose-gold)]/25 bg-white/90 p-5 shadow-[0_20px_70px_rgba(15,23,42,0.10)]">
                 <span className="sr-only">PRAXIS run queued</span>
                 <p className="px-1 py-2 text-xl text-slate-400">Describe a task or responsibility</p>
                 <div className="mt-10 flex items-center justify-between border-t border-slate-100 pt-4">

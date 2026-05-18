@@ -7,6 +7,7 @@ import { DEFAULT_USER_PREFERENCES } from '@/types/preferences';
 import type { AnalystProfile } from '@/types/analyst-profile';
 import { recommendToolsForRole } from '@/lib/dashboard/role-recommendations';
 import { cn } from '@/lib/utils/cn';
+import { LivingContextRail } from '@/components/ui/instrument';
 
 const LANGUAGE_LABEL: Record<string, string> = {
   en: 'English',
@@ -46,6 +47,13 @@ export function LivePreview({ profile }: { profile: AnalystProfile }) {
   const lenses = profile.perspective.lenses.slice(0, 3);
   const regions = profile.perspective.regions.slice(0, 4);
   const redLines = profile.workingStyle.redLines.slice(0, 4);
+  const previewRailCells = [
+    { id: 'profile', label: 'Profile', value: profile.identity.role || 'Analyst', detail: profile.identity.org || 'Organization pending', state: 'ready' as const },
+    { id: 'context', label: 'Context', value: profile.perspective.primaryDomain || 'Policy domain', detail: audience, state: profile.perspective.primaryDomain ? 'active' as const : 'review' as const },
+    { id: 'source', label: 'Sources', value: regions.length ? `${regions.length} regions` : 'Open', detail: language, state: regions.length ? 'ready' as const : 'quiet' as const },
+    { id: 'output', label: 'Output', value: profile.workingStyle.analyticalStyle || 'Memo', detail: lenses[0]?.replace(/_/g, ' ') ?? 'Lens pending', state: 'quiet' as const },
+    { id: 'readiness', label: 'Readiness', value: redLines.length ? 'Guardrails set' : 'Drafting', detail: 'Updates live', state: redLines.length ? 'ready' as const : 'active' as const },
+  ];
 
   return (
     <div className="sticky top-6 space-y-3">
@@ -57,6 +65,8 @@ export function LivePreview({ profile }: { profile: AnalystProfile }) {
           What every PRAXIS tool will know about you. Updates live.
         </p>
       </div>
+
+      <LivingContextRail cells={previewRailCells} compact />
 
       <div className="space-y-3 rounded-lg border border-navy-200 bg-white p-4">
         <PreviewRow label="Audience tone" value={audience} />

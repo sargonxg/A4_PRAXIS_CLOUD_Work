@@ -36,6 +36,7 @@ import {
 import { AccountProfileButton } from '@/components/app/account-profile-button';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
+import { LivingContextRail, SourcePostureChip, WorkActionMenu } from '@/components/ui/instrument';
 import {
   PENDING_POLICY_AGENT_ID_KEY,
   PENDING_TASKLET_PROMPT_KEY,
@@ -418,6 +419,43 @@ export function TaskletPraxisWorkbench({
   const visibleRepositoryDocuments = repositoryDocuments.filter((document) =>
     repositoryDocIds.size === 0 || repositoryDocIds.has(document.id),
   );
+  const livingRailCells = [
+    {
+      id: 'profile',
+      label: 'Profile',
+      value: isAuthenticated ? (user?.role ?? 'Analyst') : 'Preview analyst',
+      detail: isAuthenticated ? (user?.orgName ?? 'Private workspace') : 'Sign in to save posture',
+      state: 'ready' as const,
+    },
+    {
+      id: 'context',
+      label: 'Context',
+      value: selectedCapsule?.label ?? activeCapsules[0]?.label ?? 'Starter capsule',
+      detail: activeCapsules.length ? `${activeCapsules.length} active core${activeCapsules.length === 1 ? '' : 's'}` : 'Compose from policy cores',
+      state: activeCapsules.length || selectedCapsule ? 'active' as const : 'review' as const,
+    },
+    {
+      id: 'sources',
+      label: 'Sources',
+      value: `${repositoryDocuments.length} repository item${repositoryDocuments.length === 1 ? '' : 's'}`,
+      detail: repositoryDocuments.length ? 'Source receipts available' : 'Attach documents for proof',
+      state: repositoryDocuments.length ? 'ready' as const : 'review' as const,
+    },
+    {
+      id: 'output',
+      label: 'Output',
+      value: selectedAgent?.outputDestination?.replace(/_/g, ' ') ?? 'Memo posture',
+      detail: selectedAgent?.label ?? 'Ask PRAXIS routes the work',
+      state: 'quiet' as const,
+    },
+    {
+      id: 'readiness',
+      label: 'Readiness',
+      value: selectedCapsule?.health?.score ? `${selectedCapsule.health.score}/100` : selectedAgent?.readiness ?? 'Review',
+      detail: selectedCapsule?.health?.warnings?.[0] ?? status,
+      state: selectedCapsule?.health?.score && selectedCapsule.health.score >= 80 ? 'ready' as const : 'active' as const,
+    },
+  ];
   const conversationUrl = conversationThreadId ? buildConversationUrl(currentCapsuleId, conversationThreadId) : null;
   const focusedRunStream = useOrchestratorEvents(
     focusedRunId ? `/api/agents/runs/${encodeURIComponent(focusedRunId)}/stream` : null,
@@ -1667,6 +1705,13 @@ export function TaskletPraxisWorkbench({
           </header> : null}
 
           <div className={cn('mx-auto flex max-w-6xl flex-col items-center', showWorkbenchNavigation ? 'mt-14 sm:mt-18' : 'mt-8 sm:mt-12')}>
+            <LivingContextRail
+              cells={livingRailCells}
+              actionHref={isAuthenticated ? '/app/capsules' : '/login?mode=signup&redirect=%2Fapp%2Fcapsules'}
+              actionLabel={isAuthenticated ? 'Adjust context' : 'Save context'}
+              compact
+              className="mb-5"
+            />
             <p className="od-praxis-control flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-slate-600">
               <Sparkles className="h-4 w-4 text-[#ca4a25]" />
               Compose your reasoning and policy products from expert ContextCapsules.
@@ -1688,6 +1733,10 @@ export function TaskletPraxisWorkbench({
               <div className="border-b border-black/10 px-5 py-3" data-testid="capsule-context-bar">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Capsule context</span>
+                  <SourcePostureChip
+                    label={repositoryDocuments.length ? 'Sources ready' : 'Sources needed'}
+                    state={repositoryDocuments.length ? 'ready' : 'review'}
+                  />
                   {activeCapsules.map((capsule, index) => (
                     <span
                       key={capsule.id}
@@ -1775,6 +1824,7 @@ export function TaskletPraxisWorkbench({
                   <span className="hidden rounded-md border border-slate-200 bg-white px-2 py-2 text-xs font-semibold text-slate-600 sm:inline-flex">
                     TACITUS routes model, worker, and tools
                   </span>
+                  <WorkActionMenu label="Work on this" />
                   <button type="button" aria-label="Voice input" onClick={startVoiceInput} className="rounded-md p-2.5 text-slate-600 hover:bg-slate-100">
                     <Mic className="h-4 w-4" />
                   </button>

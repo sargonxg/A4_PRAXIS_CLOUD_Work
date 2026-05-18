@@ -2,15 +2,15 @@
 version: alpha
 name: PRAXIS by TACITUS
 description: >-
-  Institutional intelligence aesthetic for a policy, diplomacy, and
-  conflict-analysis workspace. Pairs a deep navy "operations room"
-  surface with a warm cream broadsheet surface, anchored by a single
-  burnished-gold accent for action and authority. Headlines are set
-  in a transitional serif (EB Garamond) to evoke briefing-room
-  gravitas; body and UI are in Inter for forensic legibility; data
-  and source IDs are in JetBrains Mono. The system reads like a
-  modern foreign-affairs publication that happens to be a software
-  product — quiet, dense, citable.
+  Instrument Pro visual language for a policy, diplomacy, and
+  conflict-analysis workspace. PRAXIS should feel like a quiet
+  diplomatic instrument: paper and vellum work surfaces, brushed
+  hairlines, disciplined 6-12px radii, tactile controls, and one
+  burnished-gold accent for primary action and active state. Headlines
+  are set in EB Garamond for briefing-room gravity; body and UI are in
+  Inter for forensic legibility; data and source IDs are in JetBrains
+  Mono. The product reads as a premium policy workbench, not a generic
+  AI dashboard.
 product_contract:
   principle: >-
     Context is always visible, tools are mostly invisible, and the next
@@ -47,6 +47,8 @@ product_contract:
     - Advanced: inspect machinery, traces, audits, and raw tools only
   visible_context_bar:
     required: true
+    canonical_component: LivingContextRail
+    visual_name: Living Context Rail
     fields:
       - active User Core
       - active Situation Core
@@ -54,6 +56,11 @@ product_contract:
       - current output or draft posture
       - context health score
       - quick action to change context
+    rule: >-
+      Use compact labeled cells with subtle readiness states. The rail
+      appears where context matters: cockpit, login preview, onboarding
+      preview, repository/capsules, and Settings/System. Do not make it a
+      busy dashboard or expose provider/cost machinery in the cells.
   screen_actions:
     rule: one dominant action per screen
     home: Assemble context
@@ -102,12 +109,28 @@ product_contract:
         - evidence gaps
         - raw tool traces
   visual_rules:
-    layout: dense but breathable, with neutral app background and white work surfaces
-    radius: max 8px for app panels and controls unless a legacy component requires otherwise
-    borders: subtle 1px borders over heavy shadows
+    layout: dense but breathable, with neutral paper background and white/vellum work surfaces
+    radius: 6-12px for app panels and controls unless a legacy component requires otherwise
+    borders: brushed 1px hairlines over heavy shadows
     typography: 14-16px body text, compact toolbars, no viewport-scaled font sizes
     icons: lucide icons for actions where available
     memo_studio: page-like document canvas with outline and provenance sidebars
+  instrument_primitives:
+    source: src/components/ui/instrument.tsx
+    components:
+      - InstrumentSurface
+      - InstrumentWindow
+      - InstrumentToolbar
+      - InstrumentButton
+      - LivingContextRail
+      - StatusCell
+      - SourcePostureChip
+      - WorkActionMenu
+      - PublicPageShell
+    rule: >-
+      Route-level redesigns should compose these primitives before adding
+      bespoke card styles. Use app/public tokens from globals.css before
+      adding route-local colors or shadows.
   app_shell_rules:
     navigation: sidebar and mobile nav expose only primary surfaces plus Advanced
     header: command input opens the command palette and never becomes a second nav

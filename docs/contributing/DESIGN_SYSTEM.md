@@ -4,8 +4,8 @@
 > app shell. The app surface inherits the same tokens, shadows, and component
 > primitives so the brand reads identically on both sides of authentication.
 
-Aesthetic north star: **diplomatic instrument, not SaaS dashboard.** Think
-Swiss watch face, Bloomberg Terminal Pro, Linear marketing. Tactile,
+Aesthetic north star: **Instrument Pro: diplomatic instrument, not SaaS dashboard.**
+Think Swiss watch face, Bloomberg Terminal Pro, Linear marketing. Tactile,
 museum-grade, deliberate. No generic AI gradients.
 
 ---
@@ -48,10 +48,11 @@ diplomatic-blue → gold-600`). Do not gradient whole headlines.
 
 Everything rounded:
 
-- Buttons / pills / chips → `rounded-full`
-- Cards / surfaces → `rounded-2xl`
-- Hero / capsule containers → `rounded-3xl`
-- Dividers / table cells → `rounded-md` (only place sharp edges are allowed)
+- Capsule pills → `rounded-full`
+- Instrument controls / rail cells / windows → `rounded-md` through `rounded-[10px]`
+- Repeated marketing cards → `rounded-2xl`
+- Hero / capsule containers → `rounded-3xl` only when genuinely focal
+- Dividers / table cells → `rounded-md`
 
 ### Elevation
 
@@ -93,6 +94,37 @@ Preset durations:
 ---
 
 ## 2. Component primitives
+
+### Instrument primitives (`src/components/ui/instrument.tsx`)
+
+Use these before adding route-local card systems:
+
+```tsx
+<InstrumentWindow eyebrow="Repository" title="Source posture">
+  ...
+</InstrumentWindow>
+
+<LivingContextRail
+  cells={[
+    { id: "profile", label: "Profile", value: "Analyst", state: "ready" },
+    { id: "context", label: "Context", value: "Syria policy", state: "active" },
+  ]}
+  actionHref="/app/capsules"
+/>
+```
+
+- `LivingContextRail` is the signature motif. It belongs in the cockpit,
+  login preview, onboarding preview, repository/capsules, and Settings/System
+  when context/readiness posture matters.
+- Rail cells show profile, context, source posture, output posture, and
+  readiness. Keep labels compact; never expose provider names, internal costs,
+  or raw debug details in normal cells.
+- `InstrumentSurface`, `InstrumentWindow`, `InstrumentToolbar`, and
+  `InstrumentButton` carry the shared paper/vellum treatment, 6-12px radii,
+  focus rings, pressed states, and two-layer shadows.
+- `SourcePostureChip` is for evidence/risk readiness, not decoration.
+- `WorkActionMenu` is the default overflow affordance for "work on this"
+  actions when more than two commands would crowd a panel.
 
 ### Capsule buttons (`src/components/ui/button.tsx`)
 
@@ -210,3 +242,7 @@ into the visual identity. When rendering a capsule in the UI:
 
 Keep landing + app shell visually identical. If a change improves the
 landing, port it to the app shell in the same PR.
+
+Instrument Pro guardrail: if a route needs a new visible surface, first try
+`PublicPageShell`, `InstrumentWindow`, or `LivingContextRail`. Add bespoke
+Tailwind surface classes only when the primitive cannot express the state.

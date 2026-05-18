@@ -23,6 +23,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { DangerZone } from '@/components/settings/danger-zone';
+import { LivingContextRail } from '@/components/ui/instrument';
 import { useAuth } from '@/lib/auth/auth-context';
 import { MODEL_PREFERENCE_VALUES } from '@/lib/ai/model-preferences';
 import { cn } from '@/lib/utils/cn';
@@ -458,6 +459,43 @@ export function AccountSettingsPage() {
   const plan = account?.subscription ?? user?.subscription ?? 'free';
   const credits = typeof account?.credits === 'number' ? account.credits : user?.credits ?? 0;
   const totalCreditsUsed = typeof account?.totalCreditsUsed === 'number' ? account.totalCreditsUsed : 0;
+  const settingsRailCells = [
+    {
+      id: 'profile',
+      label: 'Profile',
+      value: account?.displayName ?? user?.name ?? 'Analyst',
+      detail: accountDraft.role || 'Role pending',
+      state: 'ready' as const,
+    },
+    {
+      id: 'context',
+      label: 'Workspace',
+      value: accountDraft.orgName || user?.orgName || 'Private workspace',
+      detail: profile?.domain?.label ?? 'Context preferences',
+      state: profile ? 'active' as const : 'review' as const,
+    },
+    {
+      id: 'source',
+      label: 'Connectors',
+      value: `${Object.values(providers.statuses).filter((provider) => provider.effective).length} effective`,
+      detail: 'Keys stay in Settings',
+      state: Object.values(providers.statuses).some((provider) => provider.effective) ? 'ready' as const : 'quiet' as const,
+    },
+    {
+      id: 'output',
+      label: 'Output',
+      value: preferences.defaultReportLength ?? 'Standard',
+      detail: preferences.citationStyle ?? 'Citations configurable',
+      state: 'quiet' as const,
+    },
+    {
+      id: 'readiness',
+      label: 'Readiness',
+      value: activeMeta.label,
+      detail: loading ? 'Loading settings' : 'Settings available',
+      state: loading ? 'review' as const : 'active' as const,
+    },
+  ];
 
   return (
     <section className="od-praxis-surface min-h-screen px-4 py-6 text-[#1f1f1f] md:px-8 lg:px-10" data-testid="account-settings-page">
@@ -491,6 +529,14 @@ export function AccountSettingsPage() {
             {loading ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> : null}
           </div>
         </div>
+
+        <LivingContextRail
+          cells={settingsRailCells}
+          actionHref="/app"
+          actionLabel="Back to cockpit"
+          compact
+          className="mt-4"
+        />
 
         {status ? (
           <p role="status" className="mt-4 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800">

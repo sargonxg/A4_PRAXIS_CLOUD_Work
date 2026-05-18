@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { CURRENT_PRAXIS_RELEASE, PRAXIS_RELEASE_NOTES } from '@/lib/product/release-notes';
 import { PraxisGlyphChip } from '@/components/brand/praxis-mark';
+import { LivingContextRail, PublicPageShell } from '@/components/ui/instrument';
 
 export const metadata: Metadata = {
   title: 'Release Notes | PRAXIS by TACITUS',
@@ -24,9 +25,16 @@ export const metadata: Metadata = {
 };
 
 export default function ReleaseNotesPage() {
+  const releaseRailCells = [
+    { id: 'profile', label: 'Profile', value: 'All users', detail: 'Public release record', state: 'ready' as const },
+    { id: 'context', label: 'Context', value: CURRENT_PRAXIS_RELEASE.releaseLabel, detail: `Build ${CURRENT_PRAXIS_RELEASE.buildNumber}`, state: 'active' as const },
+    { id: 'source', label: 'Source', value: 'Changelog', detail: 'Product and runtime notes', state: 'ready' as const },
+    { id: 'output', label: 'Output', value: 'Release notes', detail: 'Reviewable history', state: 'quiet' as const },
+    { id: 'readiness', label: 'Readiness', value: 'Current', detail: CURRENT_PRAXIS_RELEASE.buildDate, state: 'active' as const },
+  ];
+
   return (
-    <main className="landing-light min-h-screen bg-[var(--color-cream-100)] px-5 py-10 text-[color:var(--color-ink)]">
-      <div className="mx-auto max-w-4xl">
+    <PublicPageShell maxWidth="max-w-4xl">
         <header className="flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3">
             <PraxisGlyphChip size={34} />
@@ -34,11 +42,11 @@ export default function ReleaseNotesPage() {
           </Link>
           <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm font-semibold text-[color:var(--color-ink)]/65">
             <Link href="/">Home</Link>
-            <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules">Capsules</Link>
-            <Link href="/login?mode=signup&redirect=%2Fapp%2Frepository">Repository</Link>
-            <Link href="/pricing">Pricing</Link>
-            <Link href="/learn">Learn</Link>
-            <Link href="/release-notes">Release notes</Link>
+            <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="hidden md:inline">Capsules</Link>
+            <Link href="/login?mode=signup&redirect=%2Fapp%2Frepository" className="hidden md:inline">Repository</Link>
+            <Link href="/pricing" className="hidden md:inline">Pricing</Link>
+            <Link href="/learn" className="hidden md:inline">Learn</Link>
+            <Link href="/release-notes" className="hidden md:inline">Release notes</Link>
             <Link href="/login" className="rounded-full bg-white px-4 py-2 text-[color:var(--color-ink)]">Sign in</Link>
           </nav>
         </header>
@@ -46,12 +54,13 @@ export default function ReleaseNotesPage() {
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--color-gold-700)]">
             {CURRENT_PRAXIS_RELEASE.releaseLabel} · Build {CURRENT_PRAXIS_RELEASE.buildNumber}
           </p>
-          <h1 className="mt-4 font-serif text-5xl font-semibold tracking-normal text-[color:var(--color-diplomatic-blue)]">
+          <h1 className="mt-4 font-serif text-4xl font-semibold leading-tight tracking-normal text-[color:var(--color-diplomatic-blue)] sm:text-5xl">
             Release notes
           </h1>
           <p className="mt-5 text-lg leading-8 text-[color:var(--color-ink)]/70">
             The public record of what changed in the PRAXIS ContextCapsule cockpit, runtime, and governance layer.
           </p>
+          <LivingContextRail cells={releaseRailCells} compact className="mt-8" />
         </section>
         <section className="space-y-5">
           {PRAXIS_RELEASE_NOTES.map((note) => (
@@ -77,7 +86,6 @@ export default function ReleaseNotesPage() {
             </article>
           ))}
         </section>
-      </div>
-    </main>
+    </PublicPageShell>
   );
 }

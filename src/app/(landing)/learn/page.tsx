@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PraxisGlyphChip } from "@/components/brand/praxis-mark";
 import { PraxisThinking } from "@/components/brand/praxis-thinking";
+import { LivingContextRail, PublicPageShell } from "@/components/ui/instrument";
 
 export const metadata: Metadata = {
   title: "Learn how PRAXIS works | PRAXIS by TACITUS",
@@ -124,8 +125,16 @@ const contributionPaths = [
 ];
 
 export default function LearnPage() {
+  const learnRailCells = [
+    { id: "profile", label: "Profile", value: "Policy user", detail: "Role-aware answers", state: "ready" as const },
+    { id: "context", label: "Context", value: "ContextCapsule", detail: "Reusable cores", state: "active" as const },
+    { id: "source", label: "Sources", value: "Receipts", detail: "Documents and provenance", state: "ready" as const },
+    { id: "output", label: "Output", value: "Memo or handover", detail: "Reviewable work", state: "quiet" as const },
+    { id: "readiness", label: "Readiness", value: "Visible gates", detail: "Source, time, graph", state: "active" as const },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#f7f4ec] text-slate-950">
+    <PublicPageShell>
       <section className="mx-auto grid w-full max-w-6xl gap-10 px-5 pb-14 pt-10 sm:px-8 sm:pb-20 sm:pt-16 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
         <div>
           <div className="inline-flex items-center gap-3">
@@ -138,6 +147,7 @@ export default function LearnPage() {
           <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:text-lg">
             PRAXIS is the visible workbench where users ask questions, attach sources, build ContextCapsules, run policy tools, draft memos, and preserve provenance. The surface stays simple: one place to turn a situation, document, or policy question into reviewable work.
           </p>
+          <LivingContextRail cells={learnRailCells} compact className="mt-7" />
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="/login?mode=signup"
@@ -167,7 +177,7 @@ export default function LearnPage() {
                 <span className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-200 bg-amber-50 font-mono text-xs font-semibold text-amber-800">
                   {index + 1}
                 </span>
-                <span className="rounded-2xl border border-slate-200 bg-[#fbfaf6] px-4 py-3 text-sm font-medium text-slate-800">
+                <span className="rounded-2xl border border-slate-200 bg-[color:var(--color-cream-50)] px-4 py-3 text-sm font-medium text-slate-800">
                   {step}
                 </span>
               </li>
@@ -271,6 +281,6 @@ export default function LearnPage() {
           </p>
         </div>
       </section>
-    </div>
+    </PublicPageShell>
   );
 }

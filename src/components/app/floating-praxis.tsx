@@ -595,7 +595,7 @@ export function FloatingPraxis({ hideLauncher = false }: { hideLauncher?: boolea
             exit={{ scale: 0.85, opacity: 0, y: 8 }}
             transition={{ type: 'spring', stiffness: 240, damping: 28 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-24 right-4 z-[60] flex items-center gap-2 rounded-full bg-diplomatic-blue px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-diplomatic-blue/40 ring-2 ring-gold-400/30 transition-transform hover:scale-105 hover:shadow-2xl hover:ring-gold-400/60 active:scale-95 md:bottom-6 md:right-6"
+            className="fixed bottom-24 right-4 z-[60] flex min-h-11 items-center gap-2 rounded-[10px] border border-[color:var(--color-rose-gold)]/30 bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-[0_16px_40px_rgba(15,23,42,0.24)] ring-1 ring-white/10 transition-transform hover:-translate-y-0.5 hover:border-gold-400/50 active:translate-y-0 md:bottom-6 md:right-6"
             aria-label="Ask PRAXIS"
           >
             <Sparkles className="h-4 w-4 text-gold-300" />
@@ -623,7 +623,7 @@ export function FloatingPraxis({ hideLauncher = false }: { hideLauncher?: boolea
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 right-0 top-0 z-50 flex w-full flex-col border-l border-navy-700 bg-navy-900 shadow-2xl md:bottom-6 md:right-6 md:top-auto md:w-[420px] md:rounded-2xl md:border md:h-[600px] md:max-h-[80vh]"
+              className="fixed bottom-0 right-0 top-0 z-50 flex w-full flex-col border-l border-[color:var(--color-rose-gold)]/25 bg-navy-900 shadow-2xl md:bottom-6 md:right-6 md:top-auto md:h-[600px] md:max-h-[80vh] md:w-[420px] md:rounded-[10px] md:border"
             >
               {/* Header */}
               <div className="flex items-center justify-between border-b border-navy-700 px-4 py-3">

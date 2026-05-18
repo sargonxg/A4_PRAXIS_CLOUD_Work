@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { PRICING_TIERS, PLAN_USAGE_BUCKETS, INTERNAL_COST_DISCLOSURE_NOTICE } from '@/lib/constants/pricing';
 import { PraxisGlyphChip } from '@/components/brand/praxis-mark';
+import { LivingContextRail, PublicPageShell } from '@/components/ui/instrument';
 
 export const metadata: Metadata = {
   title: 'Pricing | PRAXIS by TACITUS',
@@ -24,18 +25,26 @@ export const metadata: Metadata = {
 };
 
 export default function PricingPage() {
+  const pricingRailCells = [
+    { id: 'profile', label: 'Profile', value: 'Analyst or team', detail: 'Workspace-owned', state: 'ready' as const },
+    { id: 'context', label: 'Context', value: 'One capsule first', detail: 'Upgrade when work travels', state: 'active' as const },
+    { id: 'source', label: 'Sources', value: 'Included', detail: 'Receipts and documents', state: 'ready' as const },
+    { id: 'output', label: 'Output', value: 'Memos and handovers', detail: 'Reviewable products', state: 'quiet' as const },
+    { id: 'readiness', label: 'Readiness', value: 'Monthly plan', detail: 'No tool marketplace', state: 'active' as const },
+  ];
+
   return (
-    <main className="landing-light min-h-screen bg-[var(--color-cream-100)] px-5 py-10 text-[color:var(--color-ink)]">
-      <div className="mx-auto max-w-6xl">
+    <PublicPageShell>
         <PublicHeader />
         <section className="py-16">
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--color-gold-700)]">Pricing</p>
-          <h1 className="mt-4 max-w-3xl font-serif text-5xl font-semibold tracking-normal text-[color:var(--color-diplomatic-blue)]">
+          <h1 className="mt-4 max-w-3xl font-serif text-4xl font-semibold leading-tight tracking-normal text-[color:var(--color-diplomatic-blue)] sm:text-5xl">
             Monthly plans for one ContextCapsule workspace.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-[color:var(--color-ink)]/70">
             PRAXIS is priced as a workspace, not as a menu of tool charges. Start with one capsule and upgrade when capsules, sources, and handovers need to move across people.
           </p>
+          <LivingContextRail cells={pricingRailCells} compact className="mt-8" />
         </section>
         <section className="grid gap-4 lg:grid-cols-4">
           {PRICING_TIERS.map((tier) => (
@@ -82,8 +91,7 @@ export default function PricingPage() {
           </div>
           <p className="mt-6 text-sm text-[color:var(--color-ink)]/60">{INTERNAL_COST_DISCLOSURE_NOTICE}</p>
         </section>
-      </div>
-    </main>
+    </PublicPageShell>
   );
 }
 
@@ -96,11 +104,11 @@ function PublicHeader() {
       </Link>
       <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm font-semibold text-[color:var(--color-ink)]/65">
         <Link href="/">Home</Link>
-        <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules">Capsules</Link>
-        <Link href="/login?mode=signup&redirect=%2Fapp%2Frepository">Repository</Link>
-        <Link href="/pricing">Pricing</Link>
-        <Link href="/learn">Learn</Link>
-        <Link href="/release-notes">Release notes</Link>
+        <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="hidden md:inline">Capsules</Link>
+        <Link href="/login?mode=signup&redirect=%2Fapp%2Frepository" className="hidden md:inline">Repository</Link>
+        <Link href="/pricing" className="hidden md:inline">Pricing</Link>
+        <Link href="/learn" className="hidden md:inline">Learn</Link>
+        <Link href="/release-notes" className="hidden md:inline">Release notes</Link>
         <Link href="/login" className="rounded-full bg-white px-4 py-2 text-[color:var(--color-ink)]">Sign in</Link>
       </nav>
     </header>

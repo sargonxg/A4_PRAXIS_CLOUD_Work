@@ -168,17 +168,19 @@ body {
    surfaces, whisper borders, low-shadow depth, and a single restrained accent.
    Keep these tokens scoped to the simple PRAXIS cockpit. */
 .od-praxis-surface {
-  --od-paper: #f7f6f2;
+  --od-paper: #f6f4ef;
   --od-panel: rgba(255, 255, 255, 0.86);
   --od-panel-strong: #ffffff;
   --od-ink: #1f1f1f;
   --od-muted: #66615b;
   --od-line: rgba(31, 31, 31, 0.1);
-  --od-accent: #ca4a25;
+  --od-accent: var(--color-rose-gold);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 280px),
-    radial-gradient(circle at top left, rgba(202, 74, 37, 0.07), transparent 320px),
+    linear-gradient(rgba(15, 23, 42, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.022) 1px, transparent 1px),
     var(--od-paper);
+  background-size: auto, 28px 28px, 28px 28px, auto;
   color: var(--od-ink);
 }
 
@@ -192,6 +194,7 @@ body {
   background: var(--od-panel);
   border: 1px solid var(--od-line);
   box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.78) inset,
     0 18px 48px rgba(31, 31, 31, 0.05),
     0 2px 8px rgba(31, 31, 31, 0.035);
   backdrop-filter: blur(10px);
@@ -210,8 +213,8 @@ body {
 }
 
 .od-praxis-control:hover {
-  border-color: rgba(202, 74, 37, 0.34);
-  background: #fffaf7;
+  border-color: color-mix(in srgb, var(--color-rose-gold) 48%, transparent);
+  background: color-mix(in srgb, white 86%, var(--color-vellum));
 }
 
 .od-praxis-status-dot {
@@ -523,6 +526,264 @@ body {
     var(--color-rose-gold-soft) 70%,
     transparent 100%
   );
+}
+
+/* Instrument Pro primitives — tactile workbench surfaces shared by public and app routes. */
+.instrument-public-shell {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 300px),
+    linear-gradient(rgba(10, 22, 40, 0.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 22, 40, 0.026) 1px, transparent 1px),
+    var(--color-cream-100);
+  background-size: auto, 30px 30px, 30px 30px, auto;
+}
+
+.instrument-surface,
+.instrument-window {
+  border: 1px solid color-mix(in srgb, var(--color-rose-gold) 22%, var(--color-app-border));
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    0 16px 46px rgba(15, 23, 42, 0.055),
+    0 2px 8px rgba(15, 23, 42, 0.04);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.instrument-surface-vellum {
+  background: color-mix(in srgb, var(--color-vellum) 76%, white);
+}
+
+.instrument-surface-dark {
+  background: color-mix(in srgb, var(--color-navy-950) 88%, var(--color-diplomatic-blue));
+  border-color: color-mix(in srgb, var(--color-rose-gold) 28%, transparent);
+  color: var(--color-navy-50);
+}
+
+.instrument-window {
+  overflow: hidden;
+}
+
+.instrument-window-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-rose-gold) 18%, transparent);
+  background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.58));
+}
+
+.instrument-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-diplomatic-blue) 62%, var(--color-rose-gold));
+}
+
+.instrument-toolbar {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  padding: 6px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+}
+
+.instrument-button,
+.work-action-menu {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255,255,255,0.78);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-navy-700);
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.instrument-button:hover,
+.work-action-menu:hover,
+.instrument-button:focus-visible,
+.work-action-menu:focus-visible {
+  border-color: color-mix(in srgb, var(--color-rose-gold) 44%, transparent);
+  background: white;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+}
+
+.instrument-button:active,
+.work-action-menu:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.instrument-button-active {
+  border-color: color-mix(in srgb, var(--color-gold-500) 58%, var(--color-rose-gold));
+  background: color-mix(in srgb, var(--color-gold-300) 20%, white);
+  color: var(--color-navy-950);
+}
+
+.living-context-rail {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--color-rose-gold) 22%, var(--color-app-border));
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.86), rgba(250,251,253,0.84)),
+    var(--color-app-surface);
+  padding: 8px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.82),
+    0 10px 30px rgba(15, 23, 42, 0.045);
+}
+
+.living-context-rail-compact {
+  padding: 6px;
+}
+
+.living-context-rail-compact .living-context-cell {
+  min-width: 132px;
+  flex-basis: 132px;
+  padding: 7px 8px;
+}
+
+.living-context-cell {
+  position: relative;
+  display: flex;
+  min-width: 156px;
+  max-width: 220px;
+  flex: 1 0 156px;
+  align-items: center;
+  gap: 9px;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.74);
+  padding: 8px 10px 8px 12px;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.living-context-cell:hover,
+.living-context-cell:focus-visible {
+  border-color: color-mix(in srgb, var(--color-rose-gold) 42%, transparent);
+  background: white;
+}
+
+.living-context-cell-active,
+.living-context-cell-ready {
+  border-color: color-mix(in srgb, var(--color-sage) 34%, var(--color-app-border));
+}
+
+.living-context-cell-review {
+  border-color: color-mix(in srgb, var(--color-terracotta) 28%, var(--color-app-border));
+}
+
+.living-context-cell-blocked {
+  border-color: color-mix(in srgb, var(--color-crimson) 30%, var(--color-app-border));
+}
+
+.living-context-pulse {
+  width: 6px;
+  height: 26px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--color-rose-gold-soft);
+}
+
+.living-context-pulse-ready,
+.source-posture-chip-ready {
+  background: color-mix(in srgb, var(--color-sage) 76%, white);
+}
+
+.living-context-pulse-active,
+.source-posture-chip-active {
+  background: var(--color-gold-500);
+  box-shadow: 0 0 0 4px rgba(232, 185, 49, 0.14);
+}
+
+.living-context-pulse-review,
+.source-posture-chip-review {
+  background: color-mix(in srgb, var(--color-terracotta) 72%, white);
+}
+
+.living-context-pulse-blocked,
+.source-posture-chip-blocked {
+  background: color-mix(in srgb, var(--color-crimson) 78%, white);
+}
+
+.living-context-icon {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: var(--color-navy-950);
+  color: white;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+}
+
+.living-context-action {
+  display: inline-flex;
+  min-height: 44px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--color-gold-500) 34%, transparent);
+  background: color-mix(in srgb, var(--color-gold-300) 18%, white);
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--color-navy-950);
+}
+
+.source-posture-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--color-navy-800);
+}
+
+@media (max-width: 720px) {
+  .living-context-rail {
+    flex-direction: column;
+  }
+  .living-context-rail > div {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+  .living-context-cell {
+    min-width: 0;
+    max-width: none;
+    flex: initial;
+  }
+  .living-context-action {
+    width: 100%;
+  }
+  .living-context-icon {
+    display: none;
+  }
 }
 
 /* Section rhythm */

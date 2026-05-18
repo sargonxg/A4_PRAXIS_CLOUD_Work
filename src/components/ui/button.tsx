@@ -28,6 +28,12 @@ const buttonVariants = cva(
           "btn-capsule-secondary rounded-full font-serif font-semibold tracking-tight",
         "capsule-ghost":
           "btn-capsule-ghost rounded-full font-sans font-medium",
+        instrument:
+          "instrument-button rounded-lg font-sans font-semibold",
+        "instrument-primary":
+          "rounded-lg bg-gold-500 text-navy-950 shadow-gold-halo hover:bg-gold-400 active:bg-gold-600 font-semibold",
+        "instrument-ghost":
+          "rounded-lg border border-transparent text-navy-600 hover:border-rose-gold/30 hover:bg-white/75 hover:text-navy-950",
       },
       size: {
         sm: "h-8 px-3 text-xs rounded-md",
