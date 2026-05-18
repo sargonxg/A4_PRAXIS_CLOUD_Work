@@ -27,7 +27,7 @@ const REAL_FEATURES = [
 
 const WORKFLOW_STEPS = [
   { title: 'Choose capsule', description: 'Start with the active context: user, situation, sources, and output.' },
-  { title: 'Send prompt', description: 'Use one button; PRAXIS routes simple answers and deeper agentic work.' },
+  { title: 'Run agent', description: 'Use one button; PRAXIS routes simple answers and deeper agentic work.' },
   { title: 'Open output', description: 'Review the result in Memo Studio, Canvas, Library, or handover.' },
 ] as const;
 

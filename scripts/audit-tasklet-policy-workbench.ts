@@ -59,7 +59,7 @@ for (const claim of FORBIDDEN_MVP_INTEGRATION_CLAIMS) {
 
 const workerText = readFileSync(resolve(root, 'src/lib/agent-runtime/worker.ts'), 'utf8');
 assert(workerText.includes('executeResearchMemoAgentRun'), 'Research Memo Agent worker is not wired');
-assert(workerText.includes('memo_draft_created'), 'Research Memo Agent does not mirror memo draft output');
+assert(workerText.includes('memo_output_created'), 'Research Memo Agent does not mirror memo output creation');
 
 console.log('Tasklet policy workbench audit passed.');
 

@@ -1,12 +1,12 @@
 {
-  "runId": "doctor-20260518T171554627Z",
-  "timestamp": "2026-05-18T17:15:54.627Z",
-  "commit": "218f2aa1a1e3f99bbcc92708656d713efd9969e1",
+  "runId": "doctor-20260518T180518313Z",
+  "timestamp": "2026-05-18T18:05:18.313Z",
+  "commit": "f4c7710c4d9d10b3ad4902071731ceda45ba1b5f",
   "branch": "main",
   "baseUrl": "https://praxis.tacitus.me",
   "project": "praxisbytacitus",
   "region": "us-central1",
-  "cloudRunRevision": "praxis-frontend-00587-sn4",
+  "cloudRunRevision": "praxis-frontend-00591-k7l",
   "checks": [
     {
       "id": "repo-branch",
@@ -23,7 +23,7 @@
       "status": "PASS",
       "summary": "Commit SHA resolved",
       "evidence": [
-        "218f2aa1a1e3f99bbcc92708656d713efd9969e1\n"
+        "f4c7710c4d9d10b3ad4902071731ceda45ba1b5f\n"
       ]
     },
     {
@@ -32,25 +32,16 @@
       "status": "WARN",
       "summary": "Working tree has uncommitted changes",
       "evidence": [
-        "M .next-dev.log"
+        "M scripts/audit-tasklet-policy-workbench.ts\n M src/components/onboarding/welcome-modal.tsx"
       ]
     },
     {
       "id": "repo-origin-sync",
       "lane": "repo-and-deployability",
-      "status": "PASS",
-      "summary": "origin/main...HEAD = 0\t0",
+      "status": "WARN",
+      "summary": "origin/main...HEAD = 0\t1",
       "evidence": [
-        "0\t0\n"
-      ]
-    },
-    {
-      "id": "typecheck",
-      "lane": "repo-and-deployability",
-      "status": "PASS",
-      "summary": "npm run typecheck passed",
-      "evidence": [
-        "\n> tacitus-app@6.4.1 typecheck\n> tsc --noEmit\n\n"
+        "0\t1\n"
       ]
     },
     {
@@ -66,19 +57,46 @@
       "id": "cloud-run-praxis-frontend",
       "lane": "gcp-firebase-infrastructure",
       "status": "PASS",
-      "summary": "praxis-frontend serving praxis-frontend-00587-sn4",
+      "summary": "praxis-frontend serving praxis-frontend-00591-k7l",
       "evidence": [
         {
           "service": "praxis-frontend",
-          "latestReadyRevisionName": "praxis-frontend-00587-sn4",
+          "latestReadyRevisionName": "praxis-frontend-00591-k7l",
           "traffic": [
             {
-              "revisionName": "praxis-frontend-00587-sn4",
+              "revisionName": "praxis-frontend-00591-k7l",
               "percent": 100,
               "latestRevision": true
             }
           ],
           "ready": "True"
+        }
+      ]
+    },
+    {
+      "id": "cloud-run-private-sql-networking",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "Cloud Run has private networking for the attached Cloud SQL instance",
+      "evidence": [
+        {
+          "cloudSqlAttached": true,
+          "directVpcEgress": true,
+          "connectorEgress": false,
+          "vpcEgress": "private-ranges-only"
+        }
+      ]
+    },
+    {
+      "id": "agent-worker-runtime-env",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "Agent worker dispatch URL and auth env are configured",
+      "evidence": [
+        {
+          "workerBaseUrl": true,
+          "workerOidc": true,
+          "workerSecretFallback": false
         }
       ]
     },
@@ -106,7 +124,7 @@
       "status": "PASS",
       "summary": "gcloud firestore databases describe --database=\"(default)\" --project=praxisbytacitus passed",
       "evidence": [
-        "appEngineIntegrationMode: DISABLED\r\nconcurrencyMode: PESSIMISTIC\r\ncreateTime: '2026-03-22T15:19:16.119019Z'\r\ndatabaseEdition: STANDARD\r\ndeleteProtectionState: DELETE_PROTECTION_DISABLED\r\nearliestVersionTime: '2026-05-18T16:16:31.658434Z'\r\netag: IPGAsMqrw5QDMPSV+ZPz+pMD\r\nfreeTier: true\r\nkeyPrefix: s\r\nlocationId: nam5\r\nname: projects/praxisbytacitus/databases/(default)\r\npointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED\r\nrealtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED\r\ntype: FIRESTORE_NATIVE\r\nuid: fb7e3f38-b5f6-402d-9f42-97881107da45\r\nupdateTime: '2026-03-22T15:19:16.119019Z'\r\nversionRetentionPeriod: 3600s\r\n"
+        "appEngineIntegrationMode: DISABLED\r\nconcurrencyMode: PESSIMISTIC\r\ncreateTime: '2026-03-22T15:19:16.119019Z'\r\ndatabaseEdition: STANDARD\r\ndeleteProtectionState: DELETE_PROTECTION_DISABLED\r\nearliestVersionTime: '2026-05-18T17:07:01.429339Z'\r\netag: IMzNiu+2w5QDMPSV+ZPz+pMD\r\nfreeTier: true\r\nkeyPrefix: s\r\nlocationId: nam5\r\nname: projects/praxisbytacitus/databases/(default)\r\npointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED\r\nrealtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED\r\ntype: FIRESTORE_NATIVE\r\nuid: fb7e3f38-b5f6-402d-9f42-97881107da45\r\nupdateTime: '2026-03-22T15:19:16.119019Z'\r\nversionRetentionPeriod: 3600s\r\n"
       ]
     },
     {
@@ -193,7 +211,7 @@
       "evidence": [
         {
           "status": "ok",
-          "timestamp": "2026-05-18T17:16:45.330Z",
+          "timestamp": "2026-05-18T18:07:36.696Z",
           "checks": {
             "firestore": "ok",
             "ai_provider": "ok",
@@ -228,14 +246,14 @@
         {
           "status": "ok",
           "summary": "Systems ready",
-          "checkedAt": "2026-05-18T17:16:45.564Z",
+          "checkedAt": "2026-05-18T18:07:36.870Z",
           "debugHref": "/app/settings?tab=system",
           "checks": [
             {
               "id": "frontend",
               "label": "Frontend runtime",
               "status": "ok",
-              "latencyMs": 98
+              "latencyMs": 57
             },
             {
               "id": "firestore",
@@ -256,7 +274,12 @@
               "id": "agent_queue",
               "label": "Agent task queue",
               "status": "ok",
-              "latencyMs": 98
+              "latencyMs": 55
+            },
+            {
+              "id": "agent_worker",
+              "label": "Agent worker dispatch",
+              "status": "ok"
             },
             {
               "id": "agent_platform",
@@ -274,7 +297,7 @@
       "summary": "Canary writes disabled: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD",
       "evidence": [
         {
-          "tag": "praxis-doctor-canary-20260518T171554627Z",
+          "tag": "praxis-doctor-canary-20260518T180518313Z",
           "email": null
         }
       ],
@@ -286,9 +309,9 @@
   ],
   "artifacts": [
     {
-      "tag": "praxis-doctor-canary-20260518T171554627Z",
+      "tag": "praxis-doctor-canary-20260518T180518313Z",
       "kind": "doctor-canary-workflow",
-      "id": "praxis-doctor-canary-20260518T171554627Z",
+      "id": "praxis-doctor-canary-20260518T180518313Z",
       "cleanupStatus": "blocked",
       "detail": "Canary write gate is disabled or missing credentials: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD"
     }
