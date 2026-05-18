@@ -31,11 +31,11 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
 const PRIMARY_TITLE = "PRAXIS by TACITUS — AI Built for Statecraft";
 const SHARE_TITLE = "PRAXIS by TACITUS · ContextCapsules for Policy Work";
 const SHARE_DESCRIPTION =
-  "A policy AI cockpit that turns ContextCapsules, documents, and specialist tools into grounded analysis with visible sources, gaps, and handoff-ready outputs.";
+  "PRAXIS lets you compose reasoning and policy products from expert ContextCapsules: reusable blocks that capture how analysts think, frame issues, and structure decisions.";
 const SEARCH_DESCRIPTION =
   "PRAXIS by TACITUS is a ContextCapsule-first AI workspace for statecraft, policy analysis, conflict intelligence, diplomacy, and institutional decision work.";
 const SHARE_IMAGE_ALT =
-  "PRAXIS by TACITUS — ContextCapsules for grounded policy analysis.";
+  "PRAXIS by TACITUS — reasoning and policy products from expert ContextCapsules.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

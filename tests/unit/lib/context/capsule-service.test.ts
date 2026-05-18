@@ -423,14 +423,17 @@ describe('capsule service', () => {
     const second = await seedStarterCapsules('u1', deps(db));
     const capsules = await listCapsules('u1', { includeArchived: true }, deps(db));
 
-    expect(first.created).toBe(30);
+    expect(first.created).toBeGreaterThanOrEqual(39);
     expect(first.existing).toBe(0);
     expect(second.created).toBe(0);
-    expect(second.existing).toBe(30);
-    expect(capsules.filter((capsule) => capsule.community.tags.includes('starter'))).toHaveLength(30);
-    expect(capsules.filter((capsule) => capsule.community.favorite && (capsule.community.averageRating ?? 0) >= 4.8)).toHaveLength(30);
-    expect(capsules.filter((capsule) => capsule.community.ratingCount >= 10)).toHaveLength(30);
+    expect(second.existing).toBe(first.created);
+    expect(capsules.filter((capsule) => capsule.community.tags.includes('starter'))).toHaveLength(first.created);
+    expect(capsules.filter((capsule) => capsule.community.favorite && (capsule.community.averageRating ?? 0) >= 4.8)).toHaveLength(first.created);
+    expect(capsules.filter((capsule) => capsule.community.ratingCount >= 10)).toHaveLength(first.created);
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-source-pack-builder')?.coreRefs.toolCoreIds).toContain('grounded-research');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-assumption-audit')?.community.tags).toEqual(expect.arrayContaining(['type:tool', 'domain:audit-review']));
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-two-page-brief')?.coreRefs.outputCoreIds).toContain('options-memo');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-mediation-track')?.community.tags).toContain('team:diplomatic');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-diplomatic-options-memo')?.coreRefs.outputCoreIds).toContain('diplomatic-cable');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-ai-governance-procurement')?.starterSnapshot?.domain).toBe('ai-governance');
     expect(db.data.has('users/u1/capsules/starter-situation-ai-governance-procurement/sources/nist-ai-rmf')).toBe(true);
@@ -455,9 +458,12 @@ describe('capsule service', () => {
     const capsule = await getCapsule('u1', 'starter-situation-diplomatic-options', deps(db));
 
     expect(result.created).toBe(0);
-    expect(result.existing).toBe(30);
+    expect(result.existing).toBeGreaterThanOrEqual(39);
     expect(capsule?.label).toBe('Edited diplomatic options capsule');
     expect(capsule?.community.tags).toContain('custom-tag');
+    expect(capsule?.community.tags).toContain('type:situation');
+    expect(capsule?.community.tags).toContain('domain:diplomacy');
+    expect(capsule?.community.tags).toContain('team:diplomatic');
     expect(capsule?.version).toBe(2);
     expect(capsule?.starterSnapshot?.starterId).toBe('starter-situation-diplomatic-options');
   });

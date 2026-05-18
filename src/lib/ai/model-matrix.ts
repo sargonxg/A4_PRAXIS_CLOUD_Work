@@ -40,3 +40,19 @@ export function getTaskKinds(): TaskKind[] {
 export function isTaskKind(value: string): value is TaskKind {
   return Object.prototype.hasOwnProperty.call(matrix.taskKinds, value);
 }
+
+export type AskRuntimeDepth = 'chat' | 'deep' | 'cheap';
+
+export interface AskPraxisRuntimePolicyMatrix {
+  frontierPrimary: Record<'chat' | 'deep', TaskKind>;
+  stableFallback: Record<AskRuntimeDepth, string[]>;
+  stableModelLabels: Record<string, string>;
+  vertexLocationPolicy: {
+    frontierGemini3Location: string;
+    stableFallbackLocation: string;
+  };
+}
+
+export function getAskPraxisRuntimePolicyMatrix(): AskPraxisRuntimePolicyMatrix {
+  return matrix.runtimePolicies.askPraxis as AskPraxisRuntimePolicyMatrix;
+}

@@ -59,7 +59,9 @@ import {
   POLICY_TEAM_CATEGORIES,
   categoryTagsForPolicyTeam,
   getPolicyTeamCategory,
+  normalizeCapsuleTaxonomyTags,
   policyTeamCategoryForTags,
+  resolveCapsuleTaxonomy,
   type CapsuleStarterCategory,
   type CapsuleStarterDefinition,
   type CapsuleConnectorDefinition,
@@ -1203,7 +1205,12 @@ export function TaskletPraxisWorkbench({
   async function tagUserCapsule(capsule: PraxisCapsuleSummary, tag: string) {
     const clean = tag.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
     if (!clean) return;
-    const tags = uniqueIds([...(capsule.community?.tags ?? []), clean]).slice(0, 20);
+    const taxonomy = resolveCapsuleTaxonomy(capsule);
+    const tags = normalizeCapsuleTaxonomyTags([...(capsule.community?.tags ?? []), clean], {
+      type: taxonomy.types[0]?.id,
+      domain: taxonomy.domains[0]?.id,
+      policyTeamIds: taxonomy.policyTeams.map((team) => team.id),
+    }).slice(0, 20);
     const response = await fetch(`/api/context/capsules/${encodeURIComponent(capsule.capsuleId)}`, {
       method: 'PATCH',
       credentials: 'include',
@@ -1221,9 +1228,14 @@ export function TaskletPraxisWorkbench({
 
   async function assignPolicyTeam(capsule: PraxisCapsuleSummary, category: PolicyTeamCategory) {
     const currentTags = capsule.community?.tags ?? [];
+    const taxonomy = resolveCapsuleTaxonomy(capsule);
     const tags = uniqueIds([
-      ...currentTags.filter((tag) => !POLICY_TEAM_CATEGORIES.some((item) => item.id === tag)),
-      ...categoryTagsForPolicyTeam(category),
+      ...currentTags.filter((tag) => !POLICY_TEAM_CATEGORIES.some((item) => item.id === tag || tag === `team:${item.id}`)),
+      ...normalizeCapsuleTaxonomyTags(categoryTagsForPolicyTeam(category), {
+        type: taxonomy.types[0]?.id,
+        domain: category.domainId,
+        policyTeamIds: [category.id],
+      }),
     ]).slice(0, 20);
     const response = await fetch(`/api/context/capsules/${encodeURIComponent(capsule.capsuleId)}`, {
       method: 'PATCH',
@@ -1286,6 +1298,7 @@ export function TaskletPraxisWorkbench({
     }
     const team = policyTeam ?? getPolicyTeamCategory(capsuleDomainFilter);
     const templateId = seed?.templateId ?? team?.templateIds[0];
+    const capsuleType = seed?.role ?? 'situation';
     const response = await fetch('/api/context/capsules', {
       method: 'POST',
       credentials: 'include',
@@ -1302,7 +1315,12 @@ export function TaskletPraxisWorkbench({
           objectiveCoreIds: [selectedAgent.id],
           productCoreIds: uniqueIds([activeTab, ...(team?.outputProductIds.slice(0, 2) ?? [])]),
         },
-        community: team ? { tags: categoryTagsForPolicyTeam(team).slice(0, 12) } : undefined,
+        community: {
+          tags: normalizeCapsuleTaxonomyTags(
+            team ? categoryTagsForPolicyTeam(team) : [],
+            { type: capsuleType, domain: team?.domainId ?? null, policyTeamIds: team ? [team.id] : [] },
+          ).slice(0, 20),
+        },
         activeForSituationIds: [currentCapsuleId],
       }),
     });
@@ -1943,6 +1961,48 @@ export function TaskletPraxisWorkbench({
                 ))}
               </nav>
 
+              <div className="mt-4 grid gap-3 md:grid-cols-3" data-testid="capsule-taxonomy-surface">
+                <CategoryAxisPanel
+                  label="Types"
+                  items={capsuleTypeFilters.filter((item) => item.id !== 'all').map((item) => ({
+                    id: item.id,
+                    label: item.label === 'Tool' ? 'Thinking devices' : item.label === 'Output' ? 'Artifacts' : item.label,
+                    count: capsuleTypeCount(isAuthenticated ? userCapsules : [], item.id, isAuthenticated ? undefined : publicCapsules),
+                  }))}
+                />
+                <CategoryAxisPanel
+                  label="Domains"
+                  items={(isAuthenticated ? capsuleDomainCategories : publicCapsuleDomainCategories).filter((id) => id !== 'all').slice(0, 6).map((id) => ({
+                    id,
+                    label: capsuleDomainLabel(id),
+                    count: isAuthenticated
+                      ? userCapsules.filter((capsule) => capsuleMatchesDomain(capsule, id)).length
+                      : publicCapsules.filter((capsule) => publicCapsuleMatchesDomain(capsule, id)).length,
+                  }))}
+                />
+                <CategoryAxisPanel
+                  label="Policy Teams"
+                  items={POLICY_TEAM_CATEGORIES.slice(0, 6).map((team) => ({
+                    id: team.id,
+                    label: team.shortLabel,
+                    count: isAuthenticated
+                      ? userCapsules.filter((capsule) => resolveCapsuleTaxonomy(capsule).policyTeams.some((facet) => facet.id === team.id)).length
+                      : publicCapsules.filter((capsule) => publicCategoryForTemplate(capsule.id)?.id === team.id).length,
+                  }))}
+                />
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2" data-testid="capsule-tool-output-lanes">
+                <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+                  <p className="text-xs font-semibold text-amber-900">Thinking devices</p>
+                  <p className="mt-1 text-[11px] leading-5 text-amber-800">Assumption checks, source checks, reasoning tools.</p>
+                </div>
+                <div className="rounded-lg border border-violet-200 bg-violet-50/60 p-3">
+                  <p className="text-xs font-semibold text-violet-900">Artifacts</p>
+                  <p className="mt-1 text-[11px] leading-5 text-violet-800">Two-pagers, diplomatic notes, briefs, handovers.</p>
+                </div>
+              </div>
+
               <nav className="mt-3 flex flex-wrap gap-2" aria-label="Capsule domain filters">
                 {(isAuthenticated ? capsuleDomainCategories : publicCapsuleDomainCategories).map((category) => (
                   <button
@@ -2241,11 +2301,9 @@ function starterDefinitionForCapsule(capsule: PraxisCapsuleSummary | null): Caps
 function capsuleCategory(capsule: PraxisCapsuleSummary): CapsuleStarterCategory | 'custom' {
   const starterDefinition = starterDefinitionForCapsule(capsule);
   if (starterDefinition) return starterDefinition.category;
-  const tags = new Set(capsule.community?.tags ?? []);
-  if (tags.has('tool') || (capsule.coreRefs.toolCoreIds?.length ?? 0) > 0) return 'tool';
-  if (tags.has('output') || (capsule.coreRefs.outputCoreIds?.length ?? 0) + (capsule.coreRefs.productCoreIds?.length ?? 0) > 0) return 'output';
-  if (tags.has('user') || capsule.scope === 'user') return 'user';
-  if (tags.has('situation') || capsule.scope === 'situation') return 'situation';
+  const taxonomy = resolveCapsuleTaxonomy(capsule);
+  const type = taxonomy.types.find((facet) => ['situation', 'tool', 'output', 'user'].includes(facet.id));
+  if (type?.id === 'situation' || type?.id === 'tool' || type?.id === 'output' || type?.id === 'user') return type.id;
   return 'custom';
 }
 
@@ -2265,6 +2323,7 @@ function capsuleCategoryMeta(capsule: PraxisCapsuleSummary) {
     detail: starterDefinition?.detail ?? 'This capsule can be improved, combined, inspected, and used by Ask PRAXIS through the existing context resolver.',
     starterDefinition,
     category,
+    taxonomy: resolveCapsuleTaxonomy(capsule),
   };
 }
 
@@ -2282,7 +2341,13 @@ function softColor(hex: string, alpha = 0.08): string {
 }
 
 function buildCapsuleDomainCategories(capsules: PraxisCapsuleSummary[]): string[] {
-  const generatedTags = Array.from(new Set(capsules.flatMap((capsule) => capsule.community?.tags ?? [])))
+  const generatedTags = Array.from(new Set(capsules.flatMap((capsule) => {
+    const taxonomy = resolveCapsuleTaxonomy(capsule);
+    return [
+      ...taxonomy.domains.map((facet) => facet.id),
+      ...taxonomy.policyTeams.map((facet) => facet.id),
+    ];
+  })))
     .filter((tag) => !capsuleTypeFilters.some((filter) => filter.id === tag))
     .filter((tag) => !POLICY_TEAM_CATEGORIES.some((category) => category.id === tag))
     .filter((tag) => !capsuleDomainFilters.some((filter) => filter.id === tag))
@@ -2355,11 +2420,23 @@ function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, typ
     .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
 }
 
+function capsuleTypeCount(
+  capsules: PraxisCapsuleSummary[],
+  typeFilter: string,
+  publicCapsulesForCount?: Array<(typeof COCKPIT_CAPSULE_LIBRARY)[number]>,
+): number {
+  if (publicCapsulesForCount) {
+    if (typeFilter === 'archived') return 0;
+    return publicCapsulesForCount.filter((capsule) => publicCapsuleMatchesType(capsule, typeFilter)).length;
+  }
+  if (typeFilter === 'archived') return capsules.filter((capsule) => Boolean(capsule.archivedAt)).length;
+  return capsules.filter((capsule) => capsuleMatchesType(capsule, typeFilter)).length;
+}
+
 function capsuleMatchesType(capsule: PraxisCapsuleSummary, typeFilter: string): boolean {
   if (typeFilter === 'all') return true;
-  if (typeFilter === 'tool') return capsuleCategory(capsule) === 'tool' || capsuleCounts(capsule).tools > 0;
-  if (typeFilter === 'output') return capsuleCategory(capsule) === 'output' || capsuleCounts(capsule).outputs > 0;
-  return capsuleCategory(capsule) === typeFilter;
+  const taxonomy = resolveCapsuleTaxonomy(capsule);
+  return taxonomy.types.some((type) => type.id === typeFilter);
 }
 
 function publicCapsuleMatchesType(capsule: (typeof COCKPIT_CAPSULE_LIBRARY)[number], typeFilter: string): boolean {
@@ -2373,15 +2450,18 @@ function publicCapsuleMatchesType(capsule: (typeof COCKPIT_CAPSULE_LIBRARY)[numb
 
 function capsuleMatchesDomain(capsule: PraxisCapsuleSummary, domainFilter: string): boolean {
   if (domainFilter === 'all') return true;
-  const tags = capsule.community?.tags ?? [];
+  const taxonomy = resolveCapsuleTaxonomy(capsule);
   const policyTeam = getPolicyTeamCategory(domainFilter);
-  if (policyTeam) return categoryMatchesPolicyTeam(tags, policyTeam);
+  if (policyTeam) return taxonomy.policyTeams.some((team) => team.id === policyTeam.id);
   if (domainFilter === 'other') {
     return !capsuleDomainFilters
       .filter((filter) => filter.id !== 'all' && filter.id !== 'other')
       .some((filter) => capsuleMatchesDomain(capsule, filter.id));
   }
-  return tags.includes(domainFilter) || capsule.scope === domainFilter;
+  return taxonomy.domains.some((domain) => domain.id === domainFilter) ||
+    taxonomy.policyTeams.some((team) => team.id === domainFilter) ||
+    (capsule.community?.tags ?? []).includes(domainFilter) ||
+    capsule.scope === domainFilter;
 }
 
 function publicCapsuleMatchesDomain(capsule: (typeof COCKPIT_CAPSULE_LIBRARY)[number], domainFilter: string): boolean {
@@ -2551,6 +2631,25 @@ function CapsuleEmptyState({ label }: { label: string }) {
   );
 }
 
+function CategoryAxisPanel({ label, items }: { label: string; items: Array<{ id: string; label: string; count: number }> }) {
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white/80 p-3" aria-label={`${label} category map`}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-slate-900">{label}</p>
+        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{items.reduce((sum, item) => sum + item.count, 0)}</span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {items.map((item) => (
+          <span key={item.id} className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">
+            {item.label}
+            <span className="font-mono text-[10px] text-slate-400">{item.count}</span>
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function CapsuleCard({
   capsule,
   active,
@@ -2578,6 +2677,11 @@ function CapsuleCard({
   const score = capsule.trust?.score ?? capsule.health?.score ?? 0;
   const toolRefs = capsule.coreRefs.toolCoreIds ?? [];
   const outputRefs = [...(capsule.coreRefs.outputCoreIds ?? []), ...(capsule.coreRefs.productCoreIds ?? [])];
+  const taxonomyChips = [
+    ...meta.taxonomy.types.slice(0, 2).map((facet) => ({ key: `type:${facet.id}:${facet.value ?? ''}`, label: facet.label })),
+    ...meta.taxonomy.domains.slice(0, 2).map((facet) => ({ key: `domain:${facet.id}`, label: facet.label })),
+    ...meta.taxonomy.policyTeams.slice(0, 2).map((facet) => ({ key: `team:${facet.id}`, label: facet.label })),
+  ];
   const [tagDraft, setTagDraft] = useState('');
   return (
     <article
@@ -2602,7 +2706,11 @@ function CapsuleCard({
           <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">v{capsule.version}</span>
         </span>
         <span className="mt-3 flex flex-wrap items-center gap-2">
-          <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', meta.soft)}>{meta.label}</span>
+          {taxonomyChips.map((chip, index) => (
+            <span key={`${chip.key}-${index}`} className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', index === 0 ? meta.soft : 'border-slate-200 bg-white text-slate-600')}>
+              {chip.label}
+            </span>
+          ))}
           <CapsuleStateBadge state={state} />
           <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-[11px] font-semibold text-slate-500">{score}/100</span>
         </span>

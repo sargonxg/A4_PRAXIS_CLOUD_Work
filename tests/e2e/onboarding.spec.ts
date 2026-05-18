@@ -10,7 +10,7 @@ import { test, expect } from '@playwright/test';
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 test.describe('onboarding first-login flow', () => {
-  test.skip(!process.env.TEST_FIREBASE_EMAIL, 'TEST_FIREBASE_EMAIL not set');
+  test.skip(!process.env.TEST_FIREBASE_EMAIL || !process.env.TEST_FIREBASE_PASSWORD, 'TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set');
 
   test('redirects to /onboarding and completes all 3 steps', async ({ page }) => {
     // login

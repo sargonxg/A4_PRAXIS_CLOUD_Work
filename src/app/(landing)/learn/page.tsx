@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "How PRAXIS works",
     description:
-      "Learn how PRAXIS turns questions, documents, ContextCapsules, policy tools, and upstream TACITUS systems into usable analysis.",
+      "Learn how PRAXIS lets you compose reasoning and policy products from expert ContextCapsules and upstream TACITUS systems.",
     url: "/learn",
     images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "How PRAXIS works" }],
   },

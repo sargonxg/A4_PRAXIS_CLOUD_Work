@@ -159,7 +159,13 @@ npm run audit:repo-shape
 npm run audit:gate
 npm run smoke:app-usability
 npm run smoke:core-flows
+npm run auth-runtime:preflight
+npm run test:auth-runtime
 ```
+
+Authenticated browser/runtime testing needs a disposable Firebase test account.
+See `docs/testing/AUTHENTICATED_RUNTIME_TEST_LANE.md` for the PowerShell setup
+and the local, product, agentic, and live cloud lanes.
 
 ---
 

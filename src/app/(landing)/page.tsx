@@ -86,7 +86,7 @@ const websiteJsonLd = {
   url: siteUrl,
   inLanguage: "en",
   description:
-    "PRAXIS turns ContextCapsules, documents, and policy tools into grounded analysis with visible sources, gaps, and handoff-ready outputs.",
+    "PRAXIS lets you compose reasoning and policy products from expert ContextCapsules: reusable blocks that capture how analysts think, frame issues, and structure decisions.",
   publisher: {
     "@type": "Organization",
     name: "TACITUS",

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- test(auth-runtime): add a repeatable authenticated runtime lane.
+  Adds preflight checks for disposable Firebase test credentials, gcloud,
+  Firebase CLI, and ADC readiness; exposes local, product-surface, agentic, and
+  live cloud runtime package scripts; and documents the engineer test flow for
+  logged-in PRAXIS capsule/repository/agent checks.
+
 - feat(ask): add agentic conversation orchestration receipts.
   Build 2026.05.17.07 runs every Ask PRAXIS turn through deterministic
   triage, ContextCapsule, tool-router, and supervisor receipts; persists those

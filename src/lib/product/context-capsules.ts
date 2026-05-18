@@ -238,6 +238,72 @@ export interface ContextCapsuleTemplate {
 }
 
 export type CapsuleStarterCategory = 'situation' | 'tool' | 'output' | 'user';
+export type CapsuleTaxonomyAxisId = 'types' | 'domains' | 'policy-teams';
+export type CapsuleTypeFacetId = CapsuleStarterCategory | 'custom' | 'unknown';
+export type CapsuleTaxonomyFacetSource =
+  | 'starter'
+  | 'starter-snapshot'
+  | 'prefixed-tag'
+  | 'legacy-tag'
+  | 'core-ref'
+  | 'policy-team'
+  | 'scope'
+  | 'repair';
+
+export interface CapsuleTaxonomyAxis {
+  id: CapsuleTaxonomyAxisId;
+  label: string;
+  description: string;
+}
+
+export interface CapsuleTaxonomyFacet {
+  id: string;
+  label: string;
+  tag: string;
+  source: CapsuleTaxonomyFacetSource;
+  value?: string;
+  repairState?: 'custom' | 'unknown';
+}
+
+export interface CapsuleTaxonomyInput {
+  capsuleId?: string | null;
+  starterId?: string | null;
+  category?: CapsuleStarterCategory | null;
+  domain?: string | null;
+  scope?: 'user' | 'situation' | 'team' | string | null;
+  tags?: string[] | null;
+  community?: { tags?: string[] | null } | null;
+  starterSnapshot?: Partial<CapsuleStarterDefinition> | CapsuleStarterSnapshot | null;
+  coreRefs?: CapsuleCoreRefsLike | null;
+  recommendedToolIds?: string[] | null;
+  outputProductIds?: string[] | null;
+}
+
+export interface CapsuleResolvedTaxonomy {
+  types: CapsuleTaxonomyFacet[];
+  domains: CapsuleTaxonomyFacet[];
+  policyTeams: CapsuleTaxonomyFacet[];
+  tools: string[];
+  outputs: string[];
+}
+
+export const CAPSULE_TAXONOMY_AXES: CapsuleTaxonomyAxis[] = [
+  {
+    id: 'types',
+    label: 'Types',
+    description: 'What kind of context the capsule contributes: user, situation, thinking device, or output artifact.',
+  },
+  {
+    id: 'domains',
+    label: 'Domains',
+    description: 'The substantive policy domain or operating context the capsule is about.',
+  },
+  {
+    id: 'policy-teams',
+    label: 'Policy Teams',
+    description: 'The team lanes that can inherit, own, or reuse the capsule.',
+  },
+];
 
 export interface CapsuleStarterInspectionSection {
   label: string;
@@ -707,6 +773,14 @@ type CapsuleStarterOverrides = Partial<Pick<
   | 'aiUseGuidance'
 >>;
 
+function normalizeStarterTags(
+  category: CapsuleStarterCategory,
+  domain: CapsuleStarterDomain,
+  tags: string[],
+): string[] {
+  return uniqueStrings(['starter', category, `type:${category}`, domain, `domain:${domain}`, ...tags]);
+}
+
 function starter(
   starterId: string,
   category: CapsuleStarterCategory,
@@ -731,7 +805,7 @@ function starter(
     label,
     summary,
     detail,
-    tags: ['starter', category, ...tags],
+    tags: normalizeStarterTags(category, domain, tags),
     colorToken: STARTER_COLORS[category],
     coreRefs,
     recommendedToolIds,
@@ -1195,6 +1269,51 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'humanitarian-investigator-lens', outputGoal: 'Access or accountability brief with source confidence and legal-review caveats.', approvalNotes: 'Allegations, legal thresholds, and personal data stay review-gated.' },
     aiUseGuidance: 'Use an investigator lens: careful claim typing, corroboration status, source reliability, and explicit review requirements.',
   }),
+  starter('starter-tool-assumption-audit', 'tool', 'audit-review', 'Assumption audit thinking device', 'A thinking-device capsule for surfacing weak assumptions, missing alternatives, confidence language, and red-team review needs before drafting.', 'Use this when a situation or output feels too confident. PRAXIS should separate assumptions, evidence, alternatives, implications, and review gates before recommending action.', ['assumption-audit', 'red-team', 'confidence', 'thinking-device'], { toolCoreIds: ['ach', 'contradiction-finder', 'sourceability'], objectiveCoreIds: ['audit-assumptions'], outputCoreIds: ['options-memo'] }, ['ach', 'contradiction-finder', 'sourceability'], ['options-memo', 'risk-monitor-card'], ['starter-tool-sourceability-audit-reviewer', 'starter-output-two-page-brief', 'starter-situation-sanctions-exposure'], {
+    readinessStars: 4,
+    suggestedQuestions: ['Which judgment depends on the weakest assumption?', 'What evidence would change the current answer?', 'Which alternative explanation has not been tested?'],
+    suggestedNextActions: ['Run ACH on the top judgment.', 'Mark unsupported or stale claims before drafting.', 'Add a review note for assumptions that need human sign-off.'],
+  }),
+  starter('starter-tool-source-gap-triage', 'tool', 'source-intake', 'Source-gap triage thinking device', 'A thinking-device capsule for ranking missing sources, weak citations, stale evidence, and collection next steps.', 'Use this before asking PRAXIS to draft from thin context. It should produce a practical source gap list and decide which receipts must be attached first.', ['source-gap', 'triage', 'citations', 'thinking-device'], { toolCoreIds: ['grounded-research', 'sourceability', 'ask-praxis'], objectiveCoreIds: ['triage-source-gaps'], sourceCoreIds: ['grounded_search'] }, ['grounded-research', 'sourceability', 'ask-praxis'], ['country-one-pager', 'options-memo'], ['starter-tool-source-pack-builder', 'starter-output-two-page-brief', 'starter-situation-humanitarian-access-update'], {
+    readinessStars: 4,
+    suggestedQuestions: ['Which claims have no receipts?', 'Which source gaps block the next output?', 'Which sources are nice-to-have rather than required?'],
+    suggestedNextActions: ['Rank source gaps by decision impact.', 'Search for official or primary receipts first.', 'Attach usable documents before drafting.'],
+  }),
+  starter('starter-tool-decision-clock-monitor', 'tool', 'options-mapping', 'Decision-clock monitor thinking device', 'A thinking-device capsule for deadlines, review gates, stale assumptions, trigger events, and monitoring cadence.', 'Use this when the answer depends on timing. PRAXIS should make the decision window explicit and show what must be refreshed before reuse.', ['decision-clock', 'deadline', 'stale-claims', 'thinking-device'], { toolCoreIds: ['scenario-projector', 'commitment-tracker', 'sourceability'], timeCoreId: 'starter-time-decision-clock', objectiveCoreIds: ['monitor-decision-clock'], outputCoreIds: ['risk-monitor-card'] }, ['scenario-projector', 'commitment-tracker', 'sourceability'], ['risk-monitor-card', 'talking-points'], ['starter-situation-mediation-track', 'starter-situation-humanitarian-access-update', 'starter-output-meeting-talking-points'], {
+    readinessStars: 4,
+    suggestedQuestions: ['What deadline or trigger changes the recommendation?', 'Which facts expire soon?', 'Who needs the next update?'],
+    suggestedNextActions: ['Add the current as-of date.', 'List trigger indicators and review gates.', 'Prepare a short update cadence for the team.'],
+  }),
+  starter('starter-output-two-page-brief', 'output', 'output-brief', 'Two-page brief artifact capsule', 'An artifact capsule for a concise two-page policy brief with BLUF, context, options, risks, and source gaps.', 'Use this when the practical output should be short, sourced, and decision-ready. PRAXIS should keep evidence gaps and approval posture visible.', ['two-page-brief', 'brief', 'artifact', 'decision'], { outputCoreIds: ['options-memo'], productCoreIds: ['options-memo'], objectiveCoreIds: ['draft-two-page-brief'] }, ['memo-drafter', 'sourceability', 'contradiction-finder'], ['options-memo', 'country-one-pager'], ['starter-tool-assumption-audit', 'starter-tool-source-gap-triage', 'starter-situation-mediation-track'], {
+    readinessStars: 4,
+    suggestedQuestions: ['Who is the audience for the two-page brief?', 'What decision should the brief support?', 'Which source gaps must be visible?'],
+    suggestedNextActions: ['Draft BLUF and decision question first.', 'Run sourceability on key claims.', 'Keep annex-level detail out of the brief.'],
+  }),
+  starter('starter-output-diplomatic-note', 'output', 'output-brief', 'Diplomatic note artifact capsule', 'An artifact capsule for diplomatic notes with official-source posture, asks, caveats, and concise meeting language.', 'Use this when the output is a practical diplomatic note rather than a broad options memo. PRAXIS should keep tone, mandate, and source caveats tight.', ['diplomatic-note', 'artifact', 'diplomacy', 'official-sources'], { outputCoreIds: ['diplomatic-cable'], productCoreIds: ['diplomatic-cable'], objectiveCoreIds: ['draft-diplomatic-note'] }, ['memo-drafter', 'stakeholder-map', 'sourceability'], ['diplomatic-cable', 'talking-points'], ['starter-situation-mediation-track', 'starter-tool-diplomacy-options-mapper', 'starter-user-diplomatic-desk-officer'], {
+    readinessStars: 4,
+    suggestedQuestions: ['What is the diplomatic ask?', 'Which official positions must be reflected?', 'What language should be avoided?'],
+    suggestedNextActions: ['Attach official statements before drafting.', 'Separate ask, rationale, and caveats.', 'Convert into talking points if a meeting is imminent.'],
+  }),
+  starter('starter-output-meeting-talking-points', 'output', 'output-brief', 'Meeting talking points artifact capsule', 'An artifact capsule for concise meeting talking points, anticipated objections, source caveats, and next asks.', 'Use this when the end product is spoken or meeting-facing. PRAXIS should produce crisp points, not long memo prose.', ['talking-points', 'artifact', 'meeting', 'briefing'], { outputCoreIds: ['talking-points'], productCoreIds: ['talking-points'], objectiveCoreIds: ['draft-meeting-talking-points'] }, ['memo-drafter', 'sourceability', 'stakeholder-map'], ['talking-points', 'diplomatic-cable'], ['starter-output-diplomatic-note', 'starter-situation-mediation-track', 'starter-tool-decision-clock-monitor'], {
+    readinessStars: 4,
+    suggestedQuestions: ['Who is in the meeting?', 'What must the speaker ask for?', 'Which objections need prepared answers?'],
+    suggestedNextActions: ['Draft five points and three likely objections.', 'Check sourceable claims.', 'Add follow-up actions for after the meeting.'],
+  }),
+  starter('starter-situation-mediation-track', 'situation', 'diplomacy', 'Mediation track situation capsule', 'A situation capsule for mediation tracks, parties, mandates, spoilers, confidence-building measures, and process sequencing.', 'Use this when the core situation is a negotiation or peace-process track. PRAXIS should distinguish stated positions, interests, leverage, blockers, and decision windows.', ['mediation', 'peace-process', 'diplomacy', 'negotiation', 'team:diplomatic'], { situationCoreId: 'starter-situation-mediation-track', pathCoreId: 'mediator-peace-process', sourceCoreIds: ['un-peacemaker', 'crisisgroup'], toolCoreIds: ['stakeholder-map', 'position-vs-interest', 'scenario-projector'], outputCoreIds: ['diplomatic-cable'] }, ['stakeholder-map', 'position-vs-interest', 'scenario-projector'], ['diplomatic-cable', 'talking-points'], ['starter-tool-diplomacy-options-mapper', 'starter-output-diplomatic-note', 'starter-tool-decision-clock-monitor'], {
+    readinessStars: 4,
+    suggestedQuestions: ['Which parties and mediators are in scope?', 'What mandates or red lines bind the process?', 'What confidence-building measure is realistic next?'],
+    suggestedNextActions: ['Map parties, interests, leverage, and blockers.', 'Attach official process documents and statements.', 'Prepare a diplomatic note or talking points.'],
+  }),
+  starter('starter-situation-sanctions-exposure', 'situation', 'finance', 'Sanctions exposure situation capsule', 'A situation capsule for entities, sectors, jurisdictions, sanctions exposure, compliance posture, and review boundaries.', 'Use this when the question involves sanctions exposure or economic statecraft. PRAXIS should keep jurisdiction, list source, date, exposure type, and legal-review caveats separate.', ['sanctions', 'exposure', 'finance', 'compliance', 'team:economic-sanctions'], { situationCoreId: 'starter-situation-sanctions-exposure', pathCoreId: 'economic-sanctions', sourceCoreIds: ['fatf-risk-based-approach', 'eeas-human-rights-sanctions'], toolCoreIds: ['grounded-research', 'sourceability', 'ach'], outputCoreIds: ['options-memo'] }, ['grounded-research', 'sourceability', 'ach'], ['options-memo', 'country-risk-card'], ['starter-tool-financial-exposure-mapper', 'starter-output-finance-exposure-note', 'starter-tool-assumption-audit'], {
+    readinessStars: 4,
+    suggestedQuestions: ['Which entity, sector, or jurisdiction is in scope?', 'Which sanctions source controls the review?', 'What exposure claim needs a receipt?'],
+    suggestedNextActions: ['Attach official list or regulator sources.', 'Map exposure by entity, sector, and date.', 'Draft a compliance note with review gates.'],
+  }),
+  starter('starter-situation-humanitarian-access-update', 'situation', 'humanitarian-rights', 'Humanitarian access update situation capsule', 'A situation capsule for fast humanitarian access updates, affected populations, constraints, operational risks, and source freshness.', 'Use this when the user needs a current humanitarian access update. PRAXIS should separate operational facts, protection concerns, source freshness, and unresolved gaps.', ['humanitarian', 'access-update', 'ocha', 'protection', 'team:humanitarian'], { situationCoreId: 'starter-situation-humanitarian-access-update', pathCoreId: 'humanitarian-analysis', sourceCoreIds: ['ocha-access', 'reliefweb'], toolCoreIds: ['grounded-research', 'sourceability', 'scenario-projector'], outputCoreIds: ['humanitarian-one-pager'] }, ['grounded-research', 'sourceability', 'scenario-projector'], ['humanitarian-one-pager', 'risk-monitor-card'], ['starter-situation-humanitarian-rights-access', 'starter-output-humanitarian-access-brief', 'starter-tool-source-gap-triage'], {
+    readinessStars: 4,
+    suggestedQuestions: ['Which location and affected population are in scope?', 'What changed since the last access update?', 'Which claims are operational versus legal?'],
+    suggestedNextActions: ['Attach current OCHA/ReliefWeb-style sources.', 'Mark stale access claims.', 'Draft a short access update with source gaps.'],
+  }),
 ];
 
 export function getCapsuleStarterDefinition(capsuleId: string | null | undefined): CapsuleStarterDefinition | null {
@@ -1625,6 +1744,149 @@ export const POLICY_TEAM_CATEGORIES: PolicyTeamCategory[] = [
   },
 ];
 
+export function normalizeCapsuleTaxonomyTags(
+  tags: string[] | null | undefined,
+  context: {
+    type?: CapsuleStarterCategory | CapsuleTypeFacetId | string | null;
+    domain?: string | null;
+    policyTeamIds?: string[] | null;
+  } = {},
+): string[] {
+  const cleanTags = uniqueStrings(tags);
+  const normalized = [...cleanTags];
+  const type = context.type?.trim();
+  const domain = context.domain?.trim();
+  const teamIds = context.policyTeamIds ?? [];
+  if (type) normalized.push(`type:${type}`);
+  if (domain) normalized.push(`domain:${domain}`);
+  for (const teamId of teamIds) {
+    if (teamId.trim()) normalized.push(`team:${teamId.trim()}`);
+  }
+  return uniqueStrings(normalized);
+}
+
+export function resolveCapsuleTaxonomy(input: CapsuleTaxonomyInput): CapsuleResolvedTaxonomy {
+  const starter = resolveStarterForTaxonomy(input);
+  const tags = uniqueStrings([
+    ...(input.tags ?? []),
+    ...(input.community?.tags ?? []),
+    ...(input.starterSnapshot?.tags ?? []),
+    ...(starter?.tags ?? []),
+  ]);
+  const rawStarterSnapshot: unknown = input.starterSnapshot;
+  const snapshotRecord = isPlainObject(rawStarterSnapshot) ? rawStarterSnapshot : null;
+  const snapshotCoreRefs = isPlainObject(snapshotRecord?.coreRefs)
+    ? snapshotRecord.coreRefs as CapsuleCoreRefsLike
+    : null;
+  const coreRefs = input.coreRefs ?? starter?.coreRefs ?? snapshotCoreRefs ?? {};
+  const typeFacets = new Map<string, CapsuleTaxonomyFacet>();
+  const domainFacets = new Map<string, CapsuleTaxonomyFacet>();
+  const teamFacets = new Map<string, CapsuleTaxonomyFacet>();
+
+  const addType = (value: string | null | undefined, source: CapsuleTaxonomyFacetSource) => {
+    if (!value) return;
+    const clean = value.trim().toLowerCase();
+    if (!clean) return;
+    if (isCapsuleStarterCategory(clean)) {
+      typeFacets.set(clean, {
+        id: clean,
+        label: capsuleTypeLabel(clean),
+        tag: `type:${clean}`,
+        source,
+      });
+      return;
+    }
+    const repairState = clean === 'custom' ? 'custom' : 'unknown';
+    typeFacets.set(`${repairState}:${clean}`, {
+      id: repairState,
+      value: clean,
+      label: repairState === 'custom' ? 'Custom' : `Unknown type: ${clean}`,
+      tag: `type:${clean}`,
+      source: 'repair',
+      repairState,
+    });
+  };
+  const addDomain = (value: string | null | undefined, source: CapsuleTaxonomyFacetSource) => {
+    if (!value) return;
+    const clean = value.trim().toLowerCase();
+    if (!clean) return;
+    domainFacets.set(clean, {
+      id: clean,
+      label: capsuleDomainFacetLabel(clean),
+      tag: `domain:${clean}`,
+      source,
+    });
+  };
+  const addTeam = (value: string | null | undefined, source: CapsuleTaxonomyFacetSource) => {
+    if (!value) return;
+    const clean = value.trim().toLowerCase();
+    if (!clean) return;
+    const team = getPolicyTeamCategory(clean);
+    teamFacets.set(clean, {
+      id: clean,
+      label: team?.shortLabel ?? clean.replaceAll('-', ' '),
+      tag: `team:${clean}`,
+      source: team ? source : 'repair',
+      repairState: team ? undefined : 'unknown',
+    });
+    if (team) addDomain(team.domainId, 'policy-team');
+  };
+
+  addType(input.category ?? starter?.category ?? input.starterSnapshot?.category, starter ? 'starter' : 'starter-snapshot');
+  addDomain(input.domain ?? starter?.domain ?? input.starterSnapshot?.domain, starter ? 'starter' : 'starter-snapshot');
+  if (!typeFacets.size) {
+    if (input.scope === 'user') addType('user', 'scope');
+    if (input.scope === 'situation' || input.scope === 'team') addType('situation', 'scope');
+  }
+  if ((coreRefs.toolCoreIds?.length ?? 0) > 0) addType('tool', 'core-ref');
+  if (((coreRefs.outputCoreIds?.length ?? 0) + (coreRefs.productCoreIds?.length ?? 0)) > 0) addType('output', 'core-ref');
+  if ((coreRefs.situationCoreId || coreRefs.pathCoreId) && !typeFacets.has('situation')) addType('situation', 'core-ref');
+  if (coreRefs.userCoreId && !typeFacets.has('user')) addType('user', 'core-ref');
+
+  for (const tag of tags) {
+    const lower = tag.toLowerCase();
+    if (lower.startsWith('type:')) addType(lower.slice(5), 'prefixed-tag');
+    else if (lower.startsWith('domain:')) addDomain(lower.slice(7), 'prefixed-tag');
+    else if (lower.startsWith('team:')) addTeam(lower.slice(5), 'prefixed-tag');
+    else {
+      if (isCapsuleStarterCategory(lower)) addType(lower, 'legacy-tag');
+      if (starterDomainValues.has(lower)) addDomain(lower, 'legacy-tag');
+    }
+  }
+
+  for (const team of policyTeamCategoriesForTags(tags)) {
+    addTeam(team.id, 'legacy-tag');
+  }
+  if (starter) {
+    for (const team of policyTeamCategoriesForStarter(starter)) addTeam(team.id, 'starter');
+  }
+
+  if (!typeFacets.size) addType('custom', 'repair');
+  if (!domainFacets.size) addDomain('custom', 'repair');
+
+  const tools = uniqueStrings([
+    ...(coreRefs.toolCoreIds ?? []),
+    ...(input.recommendedToolIds ?? []),
+    ...(starter?.recommendedToolIds ?? []),
+    ...(input.starterSnapshot?.recommendedToolIds ?? []),
+  ]);
+  const outputs = uniqueStrings([
+    ...(coreRefs.outputCoreIds ?? []),
+    ...(coreRefs.productCoreIds ?? []),
+    ...(input.outputProductIds ?? []),
+    ...(starter?.outputProductIds ?? []),
+    ...(input.starterSnapshot?.outputProductIds ?? []),
+  ]);
+
+  return {
+    types: Array.from(typeFacets.values()),
+    domains: Array.from(domainFacets.values()),
+    policyTeams: Array.from(teamFacets.values()),
+    tools,
+    outputs,
+  };
+}
+
 export const CAPSULE_OUTPUT_PRODUCTS: CapsuleOutputProduct[] = [
   {
     id: 'options-memo',
@@ -1682,16 +1944,101 @@ export function getPolicyTeamCategory(id: string | null | undefined): PolicyTeam
 }
 
 export function categoryTagsForPolicyTeam(category: PolicyTeamCategory): string[] {
-  return [category.id, ...category.policyPathIds, ...category.sourceTags];
+  return normalizeCapsuleTaxonomyTags(
+    [category.id, ...category.policyPathIds, ...category.sourceTags],
+    { domain: category.domainId, policyTeamIds: [category.id] },
+  );
 }
 
 export function policyTeamCategoryForTags(tags: string[] | null | undefined): PolicyTeamCategory | null {
-  const normalized = new Set((tags ?? []).map((tag) => tag.toLowerCase()));
-  return POLICY_TEAM_CATEGORIES.find((category) => normalized.has(category.id)) ??
-    POLICY_TEAM_CATEGORIES.find((category) => category.sourceTags.some((tag) => normalized.has(tag))) ??
-    POLICY_TEAM_CATEGORIES.find((category) => category.policyPathIds.some((pathId) => normalized.has(pathId))) ??
-    null;
+  return policyTeamCategoriesForTags(tags)[0] ?? null;
 }
+
+function policyTeamCategoriesForTags(tags: string[] | null | undefined): PolicyTeamCategory[] {
+  const normalized = new Set((tags ?? []).map((tag) => tag.toLowerCase()));
+  return POLICY_TEAM_CATEGORIES.filter((category) =>
+    normalized.has(category.id) ||
+    normalized.has(`team:${category.id}`) ||
+    normalized.has(`domain:${category.domainId}`) ||
+    category.sourceTags.some((tag) => normalized.has(tag)) ||
+    category.policyPathIds.some((pathId) => normalized.has(pathId)),
+  );
+}
+
+function policyTeamCategoriesForStarter(starter: CapsuleStarterDefinition): PolicyTeamCategory[] {
+  const tags = [
+    ...starter.tags,
+    starter.domain,
+    starter.coreRefs.pathCoreId ?? '',
+    ...(starter.coreRefs.sourceCoreIds ?? []),
+    ...(starter.recommendedToolIds ?? []),
+    ...(starter.outputProductIds ?? []),
+  ];
+  const tagMatches = policyTeamCategoriesForTags(tags);
+  const directMatches = POLICY_TEAM_CATEGORIES.filter((category) =>
+    category.policyPathIds.includes(starter.coreRefs.pathCoreId as PolicyPathId) ||
+    category.toolIds.some((toolId) => starter.recommendedToolIds.includes(toolId)) ||
+    category.outputProductIds.some((outputId) => starter.outputProductIds.includes(outputId)),
+  );
+  return uniquePolicyTeams([...tagMatches, ...directMatches]);
+}
+
+function uniquePolicyTeams(values: PolicyTeamCategory[]): PolicyTeamCategory[] {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    if (seen.has(value.id)) return false;
+    seen.add(value.id);
+    return true;
+  });
+}
+
+function resolveStarterForTaxonomy(input: CapsuleTaxonomyInput): CapsuleStarterDefinition | null {
+  if (isStarterDefinition(input)) return input;
+  return getCapsuleStarterDefinition(input.starterId ?? input.capsuleId ?? input.starterSnapshot?.starterId);
+}
+
+function isStarterDefinition(value: CapsuleTaxonomyInput): value is CapsuleStarterDefinition {
+  return typeof value.starterId === 'string' &&
+    typeof value.category === 'string' &&
+    typeof value.domain === 'string' &&
+    Array.isArray(value.recommendedToolIds) &&
+    Array.isArray(value.outputProductIds);
+}
+
+function isCapsuleStarterCategory(value: string): value is CapsuleStarterCategory {
+  return value === 'user' || value === 'situation' || value === 'tool' || value === 'output';
+}
+
+function capsuleTypeLabel(value: CapsuleStarterCategory): string {
+  return value === 'tool' ? 'Thinking device' : value === 'output' ? 'Artifact' : `${value[0]?.toUpperCase() ?? ''}${value.slice(1)}`;
+}
+
+function capsuleDomainFacetLabel(value: string): string {
+  return getPolicyTeamCategory(value)?.shortLabel ??
+    POLICY_TEAM_CATEGORIES.find((category) => category.domainId === value)?.shortLabel ??
+    value.replaceAll('-', ' ');
+}
+
+const starterDomainValues = new Set<string>([
+  'sustainability',
+  'finance',
+  'hr',
+  'diplomacy',
+  'humanitarian-rights',
+  'ai-governance',
+  'public-health',
+  'critical-minerals',
+  'cyber-resilience',
+  'migration-displacement',
+  'election-integrity',
+  'source-intake',
+  'exposure-mapping',
+  'policy-review',
+  'options-mapping',
+  'audit-review',
+  'analyst-role',
+  'output-brief',
+]);
 
 export const CAPSULE_CONNECTOR_REGISTRY: CapsuleConnectorDefinition[] = [
   {
@@ -1944,6 +2291,10 @@ function uniqueStrings(values: string[] | null | undefined): string[] {
 
 function stableReceiptPart(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64) || 'source';
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 export const CAPSULE_COMBINATION_RECIPES: CapsuleCombinationRecipe[] = [

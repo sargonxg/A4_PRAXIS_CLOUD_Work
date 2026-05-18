@@ -22,7 +22,8 @@ import type { ActiveContextStackState } from '@/lib/context/active-context-stack
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import { writeReadAuditEvents } from '@/lib/audit/read-ledger';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
-import { buildAskRuntimeFallbackCandidates, isAskRuntimeModelAccessError } from '@/lib/ai/ask-runtime-catalog';
+import { buildAskRuntimeFallbackCandidates, getAskRuntimeOption, isAskRuntimeModelAccessError } from '@/lib/ai/ask-runtime-catalog';
+import { getAskPraxisModelRuntimePolicy, type ModelRuntimePolicy } from '@/lib/ai/model-runtime-policy';
 import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock } from '@/lib/agent-runtime/evidence-pack';
 import { buildTurnCapsule, suggestNextActions, type TurnCapsule } from '@/lib/ai/context-kernel';
 import {
@@ -56,6 +57,7 @@ import {
 import { createAgentRun } from '@/lib/agent-runtime/postgres';
 import { enqueueAgentRunDispatch } from '@/lib/agent-runtime/cloud-tasks';
 import { destinationHref } from '@/lib/product/policy-agents';
+import { DEFAULT_SELECTED_CORE_IDS, type CapsuleAgentExecutionContext, type SelectedCoreIds } from '@/lib/agent-runtime/types';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -435,7 +437,8 @@ You have access to the user's active situation data. When answering questions:
 
     // Select model based on user preferences. The default comes from
     // MODEL_MATRIX.json so the app follows the single provider/matrix contract.
-    const runtime = selectAskRuntime(aiSettings);
+    const modelRuntimePolicy = getAskPraxisModelRuntimePolicy();
+    const runtime = selectAskRuntime(aiSettings, modelRuntimePolicy);
     let runtimeReceipt = decorateAskRuntimeReceipt(runtime.receipt, {
       intent: askIntent,
       contextPackageId,
@@ -463,6 +466,7 @@ You have access to the user's active situation data. When answering questions:
       historyTurnCount: persistedHistory.length,
       warnings: turnCapsule?.activeGaps ?? [],
     });
+    runtimeReceipt.capsuleHealth = runtimeReceipt.contextReceipt.health;
     const sourcePreviewCards = buildSourcePreviewCards({ evidencePack: answerEvidencePack });
     let orchestrationReceipt = buildAskConversationOrchestrationReceipt({
       prompt,
@@ -480,10 +484,14 @@ You have access to the user's active situation data. When answering questions:
       prompt,
       threadId,
       capsule: capsuleContext?.capsule ?? null,
+      turnCapsule,
       contextPackageId,
+      runtime: runtimeReceipt,
+      evidencePackReceipt,
       orchestrationReceipt,
     });
     runtimeReceipt.orchestrationReceipt = orchestrationReceipt;
+    runtimeReceipt.routeDecision = buildAskRouteDecisionReceipt(orchestrationReceipt);
     const buildEnvelopeForText = (text: string): AskAnswerEnvelope => buildAskAnswerEnvelope({
       prompt,
       answer: text,
@@ -602,6 +610,11 @@ You have access to the user's active situation data. When answering questions:
         status: 'error',
         error: message,
         fallbackCandidates: candidates,
+        failureReceipt: {
+          attemptedModels: candidates,
+          failedAt: new Date().toISOString(),
+          message,
+        },
       };
       await persistConversationTurn({
         uid: _user.uid,
@@ -634,6 +647,9 @@ You have access to the user's active situation data. When answering questions:
             model: candidateModelId,
             fallbackCandidates: candidateModelIds,
             fallbackFrom: candidateModelId === candidateModelIds[0] ? null : candidateModelIds[0],
+            selectedModel: candidateModelIds[0],
+            actualModel: candidateModelId,
+            modelLifecycleTier: getAskRuntimeOption(candidateModelId).lifecycleTier,
           };
           const result = streamText({
             model: getModel(candidateModelId),
@@ -677,12 +693,36 @@ You have access to the user's active situation data. When answering questions:
 interface AskRuntimeReceipt extends Record<string, unknown> {
   provider?: string;
   model?: string;
+  selectedModel?: string | null;
+  actualModel?: string | null;
+  fallbackCandidates?: string[];
+  fallbackFrom?: string | null;
+  modelLifecycleTier?: 'frontier_primary' | 'stable_fallback';
+  runtimePolicy?: {
+    name: string;
+    frontierPrimary: string[];
+    stableFallback: string[];
+  };
   analysisDepth?: string;
   selectedAt: string;
+  status?: 'ok' | 'error';
+  error?: string;
+  failureReceipt?: {
+    attemptedModels: string[];
+    failedAt: string;
+    message: string;
+  };
   intent?: AskIntent;
+  routeDecision?: {
+    stageOrder: string[];
+    supervisorAction: AskConversationOrchestrationReceipt['supervisor']['action'];
+    agenticMode: AskConversationOrchestrationReceipt['triage']['agenticMode'];
+    queuedRunId: string | null;
+  };
   contextPackageId?: string | null;
   capsuleId?: string | null;
   capsuleVersion?: number | null;
+  capsuleHealth?: ReturnType<typeof buildAskContextReceipt>['health'] | null;
   traceId?: string | null;
   tokenPosture?: {
     operation: 'ai_chat';
@@ -797,13 +837,30 @@ function buildAskPrompt(input: {
   return `${input.systemPromptBlock}\n\n${DIPLOMATIC_SYSTEM_PROMPT}${langDirective}${redLineDirective}${capsuleDirective}`;
 }
 
-function selectAskRuntime(aiSettings: AiSettings) {
+function selectAskRuntime(aiSettings: AiSettings, policy: ModelRuntimePolicy) {
+  const selectedModel = aiSettings?.model ?? policy.frontierPrimary.chatModelId;
+  const selectedOption = getAskRuntimeOption(selectedModel);
   return {
     receipt: {
       provider: aiSettings?.provider,
-      model: aiSettings?.model,
+      model: selectedOption.id,
+      selectedModel: selectedOption.id,
+      actualModel: null,
+      modelLifecycleTier: selectedOption.lifecycleTier,
       analysisDepth: aiSettings?.analysisDepth ?? 'standard',
       selectedAt: new Date().toISOString(),
+      status: 'ok',
+      runtimePolicy: {
+        name: policy.name,
+        frontierPrimary: [
+          policy.frontierPrimary.chatModelId,
+          policy.frontierPrimary.deepModelId,
+        ],
+        stableFallback: [
+          ...policy.stableFallback.chat,
+          ...policy.stableFallback.deep,
+        ],
+      },
     } satisfies AskRuntimeReceipt,
   };
 }
@@ -840,6 +897,7 @@ function decorateAskRuntimeReceipt(
     contextPackageId: input.contextPackageId ?? null,
     capsuleId: resolvedCapsule?.capsuleId ?? input.turnCapsule?.capsuleId ?? null,
     capsuleVersion: resolvedCapsule?.version ?? input.turnCapsule?.capsuleVersion ?? null,
+    capsuleHealth: null,
     traceId: input.turnCapsule?.traceId ?? null,
     effectiveSituationId: input.effectiveSituationId,
     contextMode: 'praxis_lite',
@@ -891,7 +949,10 @@ async function maybeQueueAskAgentRun(input: {
   prompt: string;
   threadId?: string | null;
   capsule: PraxisCapsule | null;
+  turnCapsule: TurnCapsule | null;
   contextPackageId?: string | null;
+  runtime: AskRuntimeReceipt;
+  evidencePackReceipt: { packId: string; paragraphCount: number; gapCount: number } | null;
   orchestrationReceipt: AskConversationOrchestrationReceipt;
 }): Promise<AskConversationOrchestrationReceipt> {
   const receipt = input.orchestrationReceipt;
@@ -920,8 +981,19 @@ async function maybeQueueAskAgentRun(input: {
         outputDestination: receipt.supervisor.outputDestination,
         executionMode: 'ask-orchestrated',
         sourceAskThreadId: input.threadId ?? null,
+        conversationThreadId: input.threadId ?? null,
         sourceAskTurnId: null,
         orchestrationTraceId: receipt.traceId,
+        capsuleAgentExecutionContext: buildCapsuleAgentExecutionContext({
+          prompt: input.prompt,
+          threadId: input.threadId,
+          capsule: input.capsule,
+          turnCapsule: input.turnCapsule,
+          contextPackageId: input.contextPackageId,
+          runtime: input.runtime,
+          evidencePackReceipt: input.evidencePackReceipt,
+          orchestrationReceipt: receipt,
+        }),
         triageIntent: receipt.triage.intent,
         triageComplexity: receipt.triage.complexity,
         selectedToolIds: receipt.toolRouting.selectedToolIds,
@@ -960,6 +1032,77 @@ async function maybeQueueAskAgentRun(input: {
       error: err instanceof Error ? err.message : String(err),
     });
   }
+}
+
+function buildAskRouteDecisionReceipt(receipt: AskConversationOrchestrationReceipt): AskRuntimeReceipt['routeDecision'] {
+  return {
+    stageOrder: receipt.stages.map((stage) => stage.stage),
+    supervisorAction: receipt.supervisor.action,
+    agenticMode: receipt.triage.agenticMode,
+    queuedRunId: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable'
+      ? receipt.supervisor.queuedRun.runId
+      : null,
+  };
+}
+
+function buildCapsuleAgentExecutionContext(input: {
+  prompt: string;
+  threadId?: string | null;
+  capsule: PraxisCapsule;
+  turnCapsule: TurnCapsule | null;
+  contextPackageId?: string | null;
+  runtime: AskRuntimeReceipt;
+  evidencePackReceipt: { packId: string; paragraphCount: number; gapCount: number } | null;
+  orchestrationReceipt: AskConversationOrchestrationReceipt;
+}): CapsuleAgentExecutionContext {
+  const retrievalPlan = input.turnCapsule?.retrievalPlan;
+  return {
+    version: 1,
+    capsuleId: input.capsule.capsuleId,
+    capsuleVersion: input.capsule.version,
+    contextPackageId: input.contextPackageId ?? null,
+    traceId: input.turnCapsule?.traceId ?? input.orchestrationReceipt.traceId,
+    conversationThreadId: input.threadId ?? null,
+    objectivePreview: input.prompt.slice(0, 800),
+    selectedCoreIds: normalizeSelectedCoreIds(input.capsule.coreRefs),
+    retrievalPlan: {
+      layerIds: retrievalPlan?.layers.map((layer) => layer.id) ?? [],
+      repositoryDocumentIds: retrievalPlan?.repository.documentIds ?? [],
+      repositorySourceReceiptIds: retrievalPlan?.repository.sourceReceiptIds ?? [],
+      repositoryChunkCount: retrievalPlan?.repository.chunkCount ?? 0,
+      repositoryFreshness: retrievalPlan?.repository.freshness ?? null,
+    },
+    evidencePack: {
+      packId: input.evidencePackReceipt?.packId ?? null,
+      paragraphCount: input.evidencePackReceipt?.paragraphCount ?? 0,
+      gapCount: input.evidencePackReceipt?.gapCount ?? 0,
+    },
+    modelRuntime: {
+      selectedModel: input.runtime.selectedModel ?? input.runtime.model ?? null,
+      actualModel: input.runtime.actualModel ?? null,
+      fallbackCandidates: input.runtime.fallbackCandidates ?? [],
+    },
+    orchestration: {
+      agenticMode: input.orchestrationReceipt.triage.agenticMode,
+      supervisorAction: input.orchestrationReceipt.supervisor.action,
+      policyAgentId: input.orchestrationReceipt.supervisor.policyAgentId,
+      selectedToolIds: input.orchestrationReceipt.toolRouting.selectedToolIds,
+      approvalRequiredToolIds: input.orchestrationReceipt.toolRouting.approvalRequiredToolIds,
+    },
+  };
+}
+
+function normalizeSelectedCoreIds(coreRefs: Partial<SelectedCoreIds>): SelectedCoreIds {
+  return {
+    ...DEFAULT_SELECTED_CORE_IDS,
+    ...coreRefs,
+    sourceCoreIds: coreRefs.sourceCoreIds ?? [],
+    documentCoreIds: coreRefs.documentCoreIds ?? [],
+    outputCoreIds: coreRefs.outputCoreIds ?? [],
+    toolCoreIds: coreRefs.toolCoreIds ?? [],
+    objectiveCoreIds: coreRefs.objectiveCoreIds ?? [],
+    productCoreIds: coreRefs.productCoreIds ?? [],
+  };
 }
 
 function buildAskAgentRunIdempotencyKey(threadId: string | null | undefined, traceId: string | null | undefined, prompt: string): string {

@@ -31,7 +31,7 @@ export type ExecuteAgentRunPayload = {
 export type ExecuteAgentRunResult = {
   runId: string;
   status: AgentRun['status'];
-  executionMode: 'noop' | 'research-memo' | 'output-formatter';
+  executionMode: 'noop' | 'research-memo' | 'output-formatter' | 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder';
   traceId: string;
   idempotent?: boolean;
   outputHref?: string;
@@ -66,6 +66,9 @@ export async function executeAgentRun(
   }
   if (policyAgent?.id === 'output-formatter') {
     return executeOutputFormatterAgentRun(payload, { ...deps, getRun: async () => run });
+  }
+  if (policyAgent?.id === 'sourceability-reviewer' || policyAgent?.id === 'red-team-analyst' || policyAgent?.id === 'handover-builder') {
+    return executeReviewAgentRun(payload, policyAgent.id, { ...deps, getRun: async () => run });
   }
   return executeNoopAgentRun(payload, { ...deps, getRun: async () => run });
 }
@@ -630,6 +633,142 @@ async function executeOutputFormatterAgentRun(
   }
 }
 
+async function executeReviewAgentRun(
+  payload: ExecuteAgentRunPayload,
+  executionMode: 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder',
+  deps: WorkerDeps = {},
+): Promise<ExecuteAgentRunResult> {
+  const getRun = deps.getRun ?? getAgentRun;
+  const updateStatus = deps.updateStatus ?? updateAgentRunStatus;
+  const persistMemo = deps.saveMemoDraft ?? saveMemoDraft;
+  const persistToolCall = deps.appendToolCall ?? appendAgentToolCall;
+  const run = await getRun(payload.ownerUid, payload.runId);
+  if (!run) {
+    throw new AgentWorkerError('Agent run not found', 404);
+  }
+  if (run.traceId !== payload.traceId || run.capsuleId !== payload.capsuleId) {
+    throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
+  }
+  if (run.status === 'succeeded') {
+    return {
+      runId: run.id,
+      status: run.status,
+      executionMode,
+      traceId: run.traceId,
+      outputHref: outputHrefFromMetadata(run.metadata, executionMode === 'handover-builder' ? '/app?panel=handover' : '/app?panel=memo'),
+      idempotent: true,
+    };
+  }
+  if (run.status !== 'queued' && run.status !== 'running') {
+    throw new AgentWorkerError(`Agent run cannot be executed from ${run.status}`, 409);
+  }
+
+  let running = run;
+  try {
+    if (run.status !== 'running') {
+      const next = await updateStatus({
+        ownerUid: run.ownerUid,
+        runId: run.id,
+        toStatus: 'running',
+        message: `${reviewAgentLabel(executionMode)} accepted the queued capsule run.`,
+        data: {
+          dispatchId: payload.dispatchId,
+          attempt: payload.attempt,
+          requestedAt: payload.requestedAt,
+        },
+      });
+      if (!next) throw new AgentWorkerError('Agent run disappeared before execution', 404);
+      running = next;
+    }
+
+    const toolId = reviewAgentToolId(executionMode);
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'context_resolved',
+      message: `${reviewAgentLabel(executionMode)} resolved the active ContextCapsule.`,
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        workerContext: buildCapsuleWorkerContext(running),
+        executionMode,
+      },
+    }, deps);
+
+    await persistToolCall(makeAgentToolCall({
+      runId: running.id,
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      toolId,
+      risk: getAgentToolDefinition(toolId).risk,
+      status: 'succeeded',
+      input: { objective: running.objective, capsuleId: running.capsuleId },
+      output: { receiptKind: executionMode, traceId: running.traceId },
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    }));
+
+    const memoRecord = await persistMemo(running.ownerUid, {
+      caseId: running.selectedCoreIds.situationCoreId ?? running.capsuleId,
+      templateId: 'policy-memo',
+      title: `${reviewAgentLabel(executionMode)} - ${running.objective.slice(0, 72)}`,
+      graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:${executionMode}`,
+      changeNote: `Created by ${reviewAgentLabel(executionMode)} run ${running.id}.`,
+      blocks: buildReviewMemoBlocks(running, executionMode),
+    });
+    const outputHref = executionMode === 'handover-builder'
+      ? `/app?panel=handover&memoId=${encodeURIComponent(memoRecord.memo.id)}`
+      : `/app?panel=memo&memoId=${encodeURIComponent(memoRecord.memo.id)}`;
+
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: `${executionMode}_receipt_created`,
+      message: `${reviewAgentLabel(executionMode)} created a reviewable capsule receipt.`,
+      data: {
+        memoId: memoRecord.memo.id,
+        outputHref,
+        toolId,
+      },
+    }, deps);
+
+    const succeeded = await updateStatus({
+      ownerUid: running.ownerUid,
+      runId: running.id,
+      toStatus: 'succeeded',
+      message: `${reviewAgentLabel(executionMode)} completed the capsule-aware receipt.`,
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        executionMode,
+        memoId: memoRecord.memo.id,
+        outputHref,
+      },
+    });
+
+    return {
+      runId: succeeded?.id ?? running.id,
+      status: succeeded?.status ?? 'succeeded',
+      executionMode,
+      traceId: running.traceId,
+      outputHref,
+      memoId: memoRecord.memo.id,
+    };
+  } catch (err) {
+    if (err instanceof AgentWorkerError) throw err;
+    await updateStatus({
+      ownerUid: running.ownerUid,
+      runId: running.id,
+      toStatus: 'failed',
+      message: `${reviewAgentLabel(executionMode)} failed before creating a receipt.`,
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        error: err instanceof Error ? err.message : String(err),
+      },
+    }).catch(() => null);
+    throw new AgentWorkerError('Agent run execution failed', 500);
+  }
+}
+
 function outputHrefFromMetadata(metadata: Record<string, unknown>, fallback: string): string {
   const outputHref = metadata.outputHref;
   return typeof outputHref === 'string' && outputHref.startsWith('/app') ? outputHref : fallback;
@@ -768,6 +907,103 @@ function buildOutputCapsuleInput(
       traceId: running.traceId,
     },
   };
+}
+
+function reviewAgentLabel(mode: 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder'): string {
+  switch (mode) {
+    case 'sourceability-reviewer':
+      return 'Sourceability Reviewer';
+    case 'red-team-analyst':
+      return 'Red-Team Analyst';
+    case 'handover-builder':
+      return 'Handover Builder';
+  }
+}
+
+function reviewAgentToolId(mode: 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder') {
+  switch (mode) {
+    case 'sourceability-reviewer':
+      return 'sourceability-reviewer';
+    case 'red-team-analyst':
+      return 'red-team-review';
+    case 'handover-builder':
+      return 'handover-package';
+  }
+}
+
+function buildReviewMemoBlocks(
+  running: AgentRun,
+  mode: 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder',
+): SaveMemoDraftInput['blocks'] {
+  const sourceCount = running.selectedCoreIds.sourceCoreIds.length + running.selectedCoreIds.documentCoreIds.length;
+  const baseMetadata = {
+    runId: running.id,
+    policyAgentId: mode,
+    capsuleId: running.capsuleId,
+    traceId: running.traceId,
+  };
+  const modeItems = mode === 'sourceability-reviewer'
+    ? [
+        sourceCount > 0 ? `${sourceCount} source/document core(s) available for claim support review.` : 'No source/document cores are attached; preserve unsupported-claim gaps.',
+        'Mark claims as supported, weak, contradicted, or unsourced before hardening the output.',
+        'Escalate missing citations back to Library or the capsule evidence pack.',
+      ]
+    : mode === 'red-team-analyst'
+      ? [
+          'Challenge assumptions, incentives, feasibility, and second-order effects.',
+          'Separate adversarial critique from policy recommendation.',
+          'Keep safety boundaries intact; do not produce operational targeting advice.',
+        ]
+      : [
+          'Package the objective, capsule pointer, open gaps, receipts, and next moves.',
+          'Preserve thread/run IDs so another analyst or agent can resume the work.',
+          'Review sensitive material before sharing externally.',
+        ];
+
+  return [
+    {
+      id: 'review-title',
+      type: 'heading',
+      title: reviewAgentLabel(mode),
+      content: 'Capsule-grounded agent receipt',
+      citations: [],
+      metadata: baseMetadata,
+    },
+    {
+      id: 'objective',
+      type: 'paragraph',
+      title: 'Objective',
+      content: running.objective,
+      citations: [],
+      metadata: baseMetadata,
+    },
+    {
+      id: 'receipt',
+      type: 'bullets',
+      title: 'Receipt',
+      content: '',
+      items: modeItems,
+      citations: [],
+      metadata: {
+        ...baseMetadata,
+        sourceCount,
+        outputDestination: mode === 'handover-builder' ? 'handover' : 'memo_studio',
+      },
+    },
+    {
+      id: 'next-actions',
+      type: 'bullets',
+      title: 'Next actions',
+      content: '',
+      items: [
+        'Open this draft in Memo Studio for human review.',
+        'Resolve flagged gaps before final export or sharing.',
+        'Keep the AgentRun stream attached as the runtime proof.',
+      ],
+      citations: [],
+      metadata: baseMetadata,
+    },
+  ];
 }
 
 export class AgentWorkerError extends Error {

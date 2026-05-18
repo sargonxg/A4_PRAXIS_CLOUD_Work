@@ -217,4 +217,37 @@ describe('agent runtime no-op worker', () => {
     expect(result).toMatchObject({ status: 'succeeded', executionMode: 'output-formatter', memoId: 'memo-format-1', outputHref: '/app?panel=memo&memoId=memo-format-1' });
     expect(mirrored).toContain('formatted_output_created');
   });
+
+  it('routes sourceability, red-team, and handover agents into reviewable receipts', async () => {
+    for (const policyAgentId of ['sourceability-reviewer', 'red-team-analyst', 'handover-builder'] as const) {
+      const transitions: AgentRun['status'][] = [];
+      const toolCalls: string[] = [];
+      const mirrored: string[] = [];
+      const result = await executeAgentRun(payload, {
+        getRun: async () => makeRun('queued', { policyAgentId }),
+        updateStatus: async (input) => {
+          transitions.push(input.toStatus);
+          return makeRun(input.toStatus, { policyAgentId });
+        },
+        appendToolCall: async (toolCall) => {
+          toolCalls.push(`${toolCall.toolId}:${toolCall.status}`);
+          return toolCall;
+        },
+        appendEvent: async (event) => {
+          mirrored.push(String(event.data.phase ?? event.eventType));
+          return event;
+        },
+        saveMemoDraft: async (_uid, input) => {
+          expect(input.blocks.some((block) => block.id === 'receipt')).toBe(true);
+          return { memo: { id: `memo-${policyAgentId}` } };
+        },
+      });
+
+      expect(transitions).toEqual(['running', 'succeeded']);
+      expect(result.status).toBe('succeeded');
+      expect(result.executionMode).toBe(policyAgentId);
+      expect(toolCalls.length).toBe(1);
+      expect(mirrored).toContain(`${policyAgentId}_receipt_created`);
+    }
+  });
 });

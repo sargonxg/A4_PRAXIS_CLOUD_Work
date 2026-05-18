@@ -99,7 +99,11 @@ export function buildAskConversationOrchestrationReceipt(input: {
     }
   });
   const blockedToolIds = approvalRequiredToolIds;
-  const shouldQueue = complexity === 'deep' || input.intent === 'research_memo';
+  const shouldQueue = complexity === 'deep'
+    || input.intent === 'research_memo'
+    || input.intent === 'sourceability_review'
+    || input.intent === 'red_team_review'
+    || input.intent === 'handover';
   const activeGapCount = input.activeGapCount ?? input.contextReceipt.warnings.length;
   const reasons = buildTriageReasons({
     prompt: input.prompt,

@@ -12,6 +12,8 @@ import { DEFAULT_CORPUS_LAYERS, DEFAULT_CORPUS_LIMIT } from '@/types/corpus';
 import {
   CAPSULE_STARTER_CATALOG_VERSION,
   CAPSULE_STARTER_DEFINITIONS,
+  normalizeCapsuleTaxonomyTags,
+  resolveCapsuleTaxonomy,
   type CapsuleStarterDefinition,
   type CapsuleStarterSnapshot,
 } from '@/lib/product/context-capsules';
@@ -304,7 +306,15 @@ function promoteStarterCapsule(
   starterDefinition: CapsuleStarterDefinition,
   deps?: CapsuleServiceDeps,
 ): PraxisCapsule {
-  const tags = uniqueStrings([...starterDefinition.tags, ...(capsule.community.tags ?? []), 'starter']).slice(0, 20);
+  const taxonomy = resolveCapsuleTaxonomy(starterDefinition);
+  const tags = normalizeCapsuleTaxonomyTags(
+    [...starterDefinition.tags, ...(capsule.community.tags ?? []), 'starter'],
+    {
+      type: starterDefinition.category,
+      domain: starterDefinition.domain,
+      policyTeamIds: taxonomy.policyTeams.map((team) => team.id),
+    },
+  ).slice(0, 20);
   const starterSnapshot = buildStarterSnapshot(starterDefinition);
   const needsPromotion =
     capsule.community.favorite !== true ||
@@ -854,7 +864,11 @@ function starterToCreateInput(uid: string, starterDefinition: CapsuleStarterDefi
       memoryCoreId: starterDefinition.coreRefs.memoryCoreId,
     },
     community: {
-      tags: uniqueStrings(starterDefinition.tags).slice(0, 20),
+      tags: normalizeCapsuleTaxonomyTags(starterDefinition.tags, {
+        type: starterDefinition.category,
+        domain: starterDefinition.domain,
+        policyTeamIds: resolveCapsuleTaxonomy(starterDefinition).policyTeams.map((team) => team.id),
+      }).slice(0, 20),
       favorite: true,
       averageRating: 5,
       userRating: 5,

@@ -14,6 +14,7 @@
     "check:landing-bundle": "tsx scripts/check-landing-bundle.ts",
     "check-landing-bundle": "tsx scripts/check-landing-bundle.ts",
     "auth:doctor": "tsx scripts/auth-doctor.ts",
+    "auth-runtime:preflight": "tsx scripts/run-authenticated-runtime-lane.ts --lane=preflight",
     "seed:onboarding": "tsx scripts/seed-onboarding-config.ts",
     "generate:tool-backlog": "tsx scripts/generate-tool-sprint-backlog.ts",
     "generate:tool-docs": "tsx scripts/generate-tool-docs.ts",
@@ -30,6 +31,8 @@
     "audit:public-surface": "tsx scripts/audit-public-surface.ts",
     "audit:release-notes": "tsx scripts/audit-release-notes.ts",
     "audit:ai-functionality": "tsx scripts/audit-ai-functionality.ts",
+    "audit:ai-provider-isolation": "tsx scripts/audit-ai-provider-isolation.ts",
+    "audit:ai-provider-vertex-default": "tsx scripts/audit-ai-provider-vertex-default.ts",
     "audit:ask-cockpit-runtime": "tsx scripts/audit-ask-cockpit-runtime.ts",
     "audit:tasklet-mvp-foundation": "tsx scripts/audit-tasklet-mvp-foundation.ts",
     "audit:tasklet-policy-workbench": "tsx scripts/audit-tasklet-policy-workbench.ts",
@@ -82,6 +85,11 @@
     "smoke:app-core-stack": "npm run smoke:tasklet-app",
     "smoke:public": "playwright test tests/e2e/capabilities-api.spec.ts",
     "smoke:golden-path": "playwright test tests/e2e/golden-path.spec.ts",
+    "test:auth-runtime": "tsx scripts/run-authenticated-runtime-lane.ts --lane=all",
+    "test:auth-runtime:local": "tsx scripts/run-authenticated-runtime-lane.ts --lane=local",
+    "test:auth-runtime:product": "tsx scripts/run-authenticated-runtime-lane.ts --lane=product",
+    "test:auth-runtime:agent": "tsx scripts/run-authenticated-runtime-lane.ts --lane=agent",
+    "test:auth-runtime:live": "tsx scripts/run-authenticated-runtime-lane.ts --lane=live",
     "migrate:user-api-keys": "node scripts/migrate-user-api-keys.mjs"
   },
   "dependencies": {

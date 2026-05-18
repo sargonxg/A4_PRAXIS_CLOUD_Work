@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'PRAXIS by TACITUS — ContextCapsules for grounded policy analysis.';
+export const alt = 'PRAXIS by TACITUS — reasoning and policy products from expert ContextCapsules.';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -180,7 +180,7 @@ export default async function Image() {
                 fontWeight: 700,
               }}
             >
-              ContextCapsules for grounded policy work
+              Expert ContextCapsules for policy work
             </div>
           </div>
 
@@ -213,7 +213,7 @@ export default async function Image() {
               display: 'flex',
             }}
           >
-            Turn documents, sources, and policy tools into grounded analysis with visible gaps, receipts, and handoff-ready outputs.
+            Compose reasoning and policy products from reusable blocks that capture how analysts think, frame issues, and structure decisions.
           </div>
         </div>
 

@@ -1,4 +1,8 @@
-import { getModelMatrixEntry } from '@/lib/ai/model-matrix';
+import {
+  buildModelFallbackCandidates,
+  getAskPraxisModelLabel,
+  getAskPraxisModelRuntimePolicy,
+} from '@/lib/ai/model-runtime-policy';
 import type { ModelPreferenceValue } from '@/lib/ai/model-preferences';
 
 export type AskRuntimeMode = 'chat' | 'research_memo' | 'sourceability_review' | 'handover';
@@ -8,48 +12,56 @@ export interface AskRuntimeOption {
   id: ModelPreferenceValue;
   label: string;
   provider: 'vertex';
+  lifecycleTier: 'frontier_primary' | 'stable_fallback';
   mode: AskRuntimeMode;
   status: AskRuntimeStatus;
   summary: string;
 }
 
+const ASK_MODEL_POLICY = getAskPraxisModelRuntimePolicy();
+
 export const ASK_RUNTIME_OPTIONS = [
   {
-    id: getModelMatrixEntry('balanced').model,
-    label: 'Gemini 3 Flash Preview',
+    id: ASK_MODEL_POLICY.frontierPrimary.chatModelId,
+    label: getAskPraxisModelLabel(ASK_MODEL_POLICY.frontierPrimary.chatModelId),
     provider: 'vertex',
+    lifecycleTier: 'frontier_primary',
     mode: 'chat',
     status: 'live',
     summary: 'Fast capsule-aware answers, source triage, and everyday workspace questions.',
   },
   {
-    id: getModelMatrixEntry('complex_reasoning').model,
-    label: 'Gemini 3.1 Pro Preview',
+    id: ASK_MODEL_POLICY.frontierPrimary.deepModelId,
+    label: getAskPraxisModelLabel(ASK_MODEL_POLICY.frontierPrimary.deepModelId),
     provider: 'vertex',
+    lifecycleTier: 'frontier_primary',
     mode: 'research_memo',
     status: 'live',
     summary: 'Deeper reasoning for memos, long context synthesis, and high-stakes review.',
   },
   {
-    id: 'gemini-2.5-pro',
-    label: 'Gemini 2.5 Pro',
+    id: ASK_MODEL_POLICY.stableFallback.deep[0],
+    label: getAskPraxisModelLabel(ASK_MODEL_POLICY.stableFallback.deep[0]),
     provider: 'vertex',
+    lifecycleTier: 'stable_fallback',
     mode: 'research_memo',
     status: 'live',
     summary: 'Stable GA reasoning fallback for long policy synthesis when preview access is constrained.',
   },
   {
-    id: 'gemini-2.5-flash',
-    label: 'Gemini 2.5 Flash',
+    id: ASK_MODEL_POLICY.stableFallback.chat[0],
+    label: getAskPraxisModelLabel(ASK_MODEL_POLICY.stableFallback.chat[0]),
     provider: 'vertex',
+    lifecycleTier: 'stable_fallback',
     mode: 'chat',
     status: 'live',
     summary: 'Balanced GA model for everyday capsule discussion, source triage, and tool routing.',
   },
   {
-    id: 'gemini-2.5-flash-lite',
-    label: 'Gemini 2.5 Flash-Lite',
+    id: ASK_MODEL_POLICY.stableFallback.cheap[0],
+    label: getAskPraxisModelLabel(ASK_MODEL_POLICY.stableFallback.cheap[0]),
     provider: 'vertex',
+    lifecycleTier: 'stable_fallback',
     mode: 'chat',
     status: 'live',
     summary: 'High-throughput GA fallback for quick classification, drafting, and lightweight checks.',
@@ -86,16 +98,11 @@ export function buildAskRuntimeFallbackCandidates(input: {
   analysisDepth?: string | null;
 }): ModelPreferenceValue[] {
   const selected = getAskRuntimeOption(input.selectedModelId).id;
-  const candidates: ModelPreferenceValue[] = [selected];
   const deep = input.analysisDepth === 'deep' || getAskRuntimeOption(selected).mode === 'research_memo';
-
-  if (deep) {
-    candidates.push('gemini-2.5-pro', 'gemini-2.5-flash');
-  } else {
-    candidates.push('gemini-2.5-flash');
-  }
-
-  return [...new Set(candidates)];
+  return buildModelFallbackCandidates({
+    selectedModelId: selected,
+    depth: deep ? 'deep' : 'chat',
+  }).map((candidate) => candidate.modelId);
 }
 
 export function isAskRuntimeModelAccessError(error: unknown): boolean {

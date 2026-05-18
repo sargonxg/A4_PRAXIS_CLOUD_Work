@@ -21,6 +21,7 @@
 import { generateText as aiGenerateText, type GenerateTextResult } from 'ai';
 import type { LanguageModel } from 'ai';
 import { AI_PLATFORM_POSTURE, getModelMatrixEntry } from './model-matrix';
+import { getAskPraxisModelRuntimePolicy } from './model-runtime-policy';
 
 export type ProviderName = 'google' | 'vertex';
 
@@ -211,8 +212,9 @@ export function getGroundedModel(_modelId?: string): LanguageModel {
 /** User-preference model — routes to the model the user selected in settings. */
 export function getModelForUser(settings?: { preferredModel?: string; model?: string }): LanguageModel {
   const selected = settings?.preferredModel ?? settings?.model;
-  if (selected === MODEL_PRO || selected === 'gemini-2.5-pro') return getProModel();
-  if (selected === MODEL_FLASH || selected === 'gemini-2.5-flash') return getModel();
+  const runtimePolicy = getAskPraxisModelRuntimePolicy();
+  if (selected === MODEL_PRO || selected === runtimePolicy.stableFallback.deep[0]) return getProModel();
+  if (selected === MODEL_FLASH || selected === runtimePolicy.stableFallback.chat[0]) return getModel();
   return getModel();
 }
 

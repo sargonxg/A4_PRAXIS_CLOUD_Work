@@ -158,6 +158,41 @@ export interface AgentReasoningLoopResult {
   nextApprovalReason: string | null;
 }
 
+export interface CapsuleAgentExecutionContext {
+  version: 1;
+  capsuleId: string;
+  capsuleVersion: number;
+  contextPackageId: string | null;
+  traceId: string | null;
+  conversationThreadId: string | null;
+  objectivePreview: string;
+  selectedCoreIds: SelectedCoreIds;
+  retrievalPlan: {
+    layerIds: string[];
+    repositoryDocumentIds: string[];
+    repositorySourceReceiptIds: string[];
+    repositoryChunkCount: number;
+    repositoryFreshness: string | null;
+  };
+  evidencePack: {
+    packId: string | null;
+    paragraphCount: number;
+    gapCount: number;
+  };
+  modelRuntime: {
+    selectedModel: string | null;
+    actualModel: string | null;
+    fallbackCandidates: string[];
+  };
+  orchestration: {
+    agenticMode: string;
+    supervisorAction: string;
+    policyAgentId: string | null;
+    selectedToolIds: string[];
+    approvalRequiredToolIds: string[];
+  };
+}
+
 export type CreateAgentRunInput = {
   ownerUid: string;
   capsuleId: string;

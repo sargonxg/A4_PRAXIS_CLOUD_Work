@@ -13,6 +13,7 @@ import {
   CAPSULE_CONNECTOR_IDEAS,
   CAPSULE_OUTPUT_PRODUCTS,
   CAPSULE_STARTER_DEFINITIONS,
+  CAPSULE_TAXONOMY_AXES,
   CONTEXT_CAPSULE_TEMPLATES,
   POLICY_PATH_PROFILES,
   POLICY_TEAM_CATEGORIES,
@@ -23,9 +24,11 @@ import {
   contextCapsuleLoginHref,
   createCapsuleIngestionReceipt,
   getPolicyTeamCategory,
+  normalizeCapsuleTaxonomyTags,
   normalizeCapsuleRepositoryContract,
   normalizeCapsuleRepositoryMetadata,
   policyTeamCategoryForTags,
+  resolveCapsuleTaxonomy,
   resolveCapsuleRetrievalBackend,
 } from '@/lib/product/context-capsules';
 
@@ -157,23 +160,23 @@ describe('context capsule product contract', () => {
     expect(CAPSULE_COMBINATION_RECIPES.some((recipe) => recipe.id === 'temporal-friction-decision')).toBe(true);
   });
 
-  it('defines exactly thirty rich starter capsules across situation, tool, output, and user categories', () => {
+  it('defines rich starter capsules across situation, tool, output, and user categories', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS).toHaveLength(30);
-    expect(starterIds.size).toBe(30);
+    expect(CAPSULE_STARTER_DEFINITIONS.length).toBeGreaterThanOrEqual(39);
+    expect(starterIds.size).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
     const categoryCounts = CAPSULE_STARTER_DEFINITIONS.reduce<Record<string, number>>((counts, starter) => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toMatchObject({ situation: 11, tool: 5, output: 9, user: 5 });
+    expect(categoryCounts).toMatchObject({ situation: 14, tool: 8, output: 12, user: 5 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
-      expect(starter.tags).toEqual(expect.arrayContaining(['starter', starter.category]));
+      expect(starter.tags).toEqual(expect.arrayContaining(['starter', starter.category, `type:${starter.category}`, `domain:${starter.domain}`]));
       expect(starter.domain).toBeTruthy();
       expect(starter.summary.length).toBeGreaterThan(20);
       expect(starter.detail.length).toBeGreaterThan(40);
@@ -196,10 +199,57 @@ describe('context capsule product contract', () => {
     }
   });
 
+  it('resolves every starter into the Types, Domains, and Policy Teams taxonomy', () => {
+    expect(CAPSULE_TAXONOMY_AXES.map((axis) => axis.id)).toEqual(['types', 'domains', 'policy-teams']);
+
+    for (const starter of CAPSULE_STARTER_DEFINITIONS) {
+      const taxonomy = resolveCapsuleTaxonomy(starter);
+
+      expect(taxonomy.types.map((facet) => facet.id)).toContain(starter.category);
+      expect(taxonomy.domains.map((facet) => facet.id)).toContain(starter.domain);
+      expect(taxonomy.policyTeams.length, `${starter.starterId} policy teams`).toBeGreaterThanOrEqual(1);
+      expect(taxonomy.tools).toEqual(expect.arrayContaining(starter.recommendedToolIds));
+      expect(taxonomy.outputs).toEqual(expect.arrayContaining(starter.outputProductIds));
+      expect(new Set(taxonomy.tools)).not.toEqual(new Set(taxonomy.outputs));
+    }
+  });
+
+  it('normalizes prefixed taxonomy tags while keeping legacy tags readable', () => {
+    const normalized = normalizeCapsuleTaxonomyTags(
+      ['starter', 'situation', 'type:situation', 'domain:diplomacy', 'team:diplomatic', 'diplomacy'],
+      { type: 'situation', domain: 'diplomacy', policyTeamIds: ['diplomatic'] },
+    );
+
+    expect(normalized).toEqual(expect.arrayContaining([
+      'starter',
+      'situation',
+      'diplomacy',
+      'type:situation',
+      'domain:diplomacy',
+      'team:diplomatic',
+    ]));
+
+    const taxonomy = resolveCapsuleTaxonomy({
+      capsuleId: 'custom',
+      scope: 'team',
+      community: { tags: ['type:experimental', 'domain:custom-region', 'team:unknown-team'] },
+      coreRefs: { toolCoreIds: ['ach'], outputCoreIds: ['options-memo'] },
+    });
+
+    expect(taxonomy.types).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'unknown', repairState: 'unknown', value: 'experimental' }),
+    ]));
+    expect(taxonomy.policyTeams).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'unknown-team', repairState: 'unknown' }),
+    ]));
+    expect(taxonomy.tools).toEqual(['ach']);
+    expect(taxonomy.outputs).toEqual(['options-memo']);
+  });
+
   it('keeps situation starters broad, source-backed, and ready for AI routing', () => {
     const situationStarters = CAPSULE_STARTER_DEFINITIONS.filter((starter) => starter.category === 'situation');
 
-    expect(situationStarters.map((starter) => starter.domain).sort()).toEqual([
+    expect(Array.from(new Set(situationStarters.map((starter) => starter.domain))).sort()).toEqual([
       'ai-governance',
       'critical-minerals',
       'cyber-resilience',
@@ -212,6 +262,11 @@ describe('context capsule product contract', () => {
       'public-health',
       'sustainability',
     ]);
+    expect(situationStarters.map((starter) => starter.starterId)).toEqual(expect.arrayContaining([
+      'starter-situation-mediation-track',
+      'starter-situation-sanctions-exposure',
+      'starter-situation-humanitarian-access-update',
+    ]));
 
     for (const starter of situationStarters) {
       expect(starter.sourcePack.length, `${starter.starterId} source pack`).toBeGreaterThanOrEqual(2);

@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test';
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 test.describe('golden path — free tier smoke', () => {
-  test.skip(!process.env.TEST_FIREBASE_EMAIL, 'TEST_FIREBASE_EMAIL not set — skipping authenticated golden path');
+  test.skip(!process.env.TEST_FIREBASE_EMAIL || !process.env.TEST_FIREBASE_PASSWORD, 'TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set — skipping authenticated golden path');
 
   test.setTimeout(120_000);
 

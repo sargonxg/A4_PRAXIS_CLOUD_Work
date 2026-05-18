@@ -1,0 +1,61 @@
+⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
+Failed to prepare server Error: An error occurred while loading instrumentation hook: Failed to load external module @google-cloud/opentelemetry-cloud-trace-exporter-de79b1836ac1abad: Error: Cannot find module '@google-cloud/opentelemetry-cloud-trace-exporter-de79b1836ac1abad'
+Require stack:
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[root-of-the-server]__0-pu5hm._.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\instrumentation.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\server\lib\router-utils\instrumentation-globals.external.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\server\next-server.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\server\next.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\server\lib\start-server.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\cli\next-start.js
+    at Context.externalRequire [as x] (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:624:15)
+    at module evaluation (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[root-of-the-server]__0-pu5hm._.js:1:46)
+    at instantiateModule (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:853:9)
+    at getOrInstantiateModuleFromParent (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:877:12)
+    at Context.esmImport [as i] (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:281:20)
+    at module evaluation (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[root-of-the-server]__0-pu5hm._.js:1:545)
+    at instantiateModule (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:853:9)
+    at getOrInstantiateModuleFromParent (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:877:12)
+    at Context.esmImport [as i] (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:281:20)
+    at <unknown> (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\src_0-2cehv._.js:1:234)
+Error: An error occurred while loading instrumentation hook: Failed to load external module @google-cloud/opentelemetry-cloud-trace-exporter-de79b1836ac1abad: Error: Cannot find module '@google-cloud/opentelemetry-cloud-trace-exporter-de79b1836ac1abad'
+Require stack:
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[root-of-the-server]__0-pu5hm._.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\instrumentation.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\server\lib\router-utils\instrumentation-globals.external.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\server\next-server.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\server\next.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\server\lib\start-server.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\cli\next-start.js
+    at Context.externalRequire [as x] (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:624:15)
+    at module evaluation (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[root-of-the-server]__0-pu5hm._.js:1:46)
+    at instantiateModule (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:853:9)
+    at getOrInstantiateModuleFromParent (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:877:12)
+    at Context.esmImport [as i] (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:281:20)
+    at module evaluation (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[root-of-the-server]__0-pu5hm._.js:1:545)
+    at instantiateModule (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:853:9)
+    at getOrInstantiateModuleFromParent (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:877:12)
+    at Context.esmImport [as i] (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:281:20)
+    at <unknown> (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\src_0-2cehv._.js:1:234)
+⨯ unhandledRejection:  Error: An error occurred while loading instrumentation hook: Failed to load external module @google-cloud/opentelemetry-cloud-trace-exporter-de79b1836ac1abad: Error: Cannot find module '@google-cloud/opentelemetry-cloud-trace-exporter-de79b1836ac1abad'
+Require stack:
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[root-of-the-server]__0-pu5hm._.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\instrumentation.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\server\lib\router-utils\instrumentation-globals.external.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\server\next-server.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\server\next.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\server\lib\start-server.js
+- C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\node_modules\next\dist\cli\next-start.js
+    at Context.externalRequire [as x] (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:624:15)
+    at module evaluation (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[root-of-the-server]__0-pu5hm._.js:1:46)
+    at instantiateModule (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:853:9)
+    at getOrInstantiateModuleFromParent (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:877:12)
+    at Context.esmImport [as i] (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:281:20)
+    at module evaluation (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[root-of-the-server]__0-pu5hm._.js:1:545)
+    at instantiateModule (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:853:9)
+    at getOrInstantiateModuleFromParent (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:877:12)
+    at Context.esmImport [as i] (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\[turbopack]_runtime.js:281:20)
+    at <unknown> (C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\.next\server\chunks\src_0-2cehv._.js:1:234)

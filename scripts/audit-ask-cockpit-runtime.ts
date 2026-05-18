@@ -37,13 +37,19 @@ expectIncludes('src/lib/firebase/firestore.ts', [
 ]);
 
 expectIncludes('src/lib/ai/ask-runtime-catalog.ts', [
-  'Gemini 3 Flash Preview',
-  'Gemini 3.1 Pro Preview',
-  'Gemini 2.5 Pro',
-  'Gemini 2.5 Flash',
-  'Gemini 2.5 Flash-Lite',
+  'getAskPraxisModelRuntimePolicy',
+  'getAskPraxisModelLabel',
+  'frontier_primary',
+  'stable_fallback',
   'Genkit flow',
   'Agent Engine memory',
+]);
+
+expectIncludes('src/lib/ai/model-runtime-policy.ts', [
+  'ModelRuntimePolicy',
+  'frontierPrimary',
+  'stableFallback',
+  'buildModelRuntimeHealthCheck',
 ]);
 
 expectIncludes('src/components/ask/AskStreamPanel.tsx', [
@@ -84,11 +90,13 @@ expectIncludes('src/lib/product/cockpit-composition.ts', [
 ]);
 
 expectIncludes('src/app/api/ai/chat/route.ts', [
-  'if (_user.uid && text)',
+  'persistSuccessfulAskOutput',
   'persistAskThreadTurn',
   'effectiveSituationId',
   'situationId: effectiveSituationId',
   'contextMode: \'praxis_lite\'',
+  'routeDecision',
+  'capsuleAgentExecutionContext',
 ]);
 
 if (failures.length) {

@@ -84,6 +84,10 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Add your capsules here');
     expect(source).toContain('capsuleTypeFilters');
     expect(source).toContain('capsuleDomainFilters');
+    expect(source).toContain('data-testid="capsule-taxonomy-surface"');
+    expect(source).toContain('data-testid="capsule-tool-output-lanes"');
+    expect(source).toContain('Thinking devices');
+    expect(source).toContain('Artifacts');
     expect(source).toContain('All types');
     expect(source).toContain('Governance');
     expect(source).toContain('/app/capsules');

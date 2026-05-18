@@ -76,6 +76,21 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     ]));
   });
 
+  it('queues specialist sourceability, red-team, and handover asks even when the prompt is short', () => {
+    for (const intent of ['sourceability_review', 'red_team_review', 'handover'] as const) {
+      const receipt = buildAskConversationOrchestrationReceipt({
+        prompt: 'Review this.',
+        intent,
+        contextReceipt: contextReceipt({ health: 'ready', evidenceCount: 3 }),
+        sourcePreviewCount: 1,
+        activeGapCount: 0,
+      });
+
+      expect(receipt.supervisor.action).toBe('queue_agent_run');
+      expect(receipt.triage.agenticMode).toBe('queue_agent_run');
+    }
+  });
+
   it('maps receipt stages to safe user-facing Ask working timeline events', () => {
     const receipt = buildAskConversationOrchestrationReceipt({
       prompt: 'Do a deep sourceability review and prepare a memo with current sources.',

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ASK_RUNTIME_OPTIONS, buildAskRuntimeFallbackCandidates, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
 import { getModelMatrixEntry } from '@/lib/ai/model-matrix';
+import { buildModelRuntimeHealthCheck, getAskPraxisModelRuntimePolicy } from '@/lib/ai/model-runtime-policy';
 import { MODEL_PREFERENCE_VALUES, isModelPreferenceValue, modelPreferenceLabel } from '@/lib/ai/model-preferences';
 
 describe('Ask PRAXIS runtime catalog', () => {
@@ -16,6 +17,15 @@ describe('Ask PRAXIS runtime catalog', () => {
       'gemini-2.5-flash-lite',
     ]);
     expect(MODEL_PREFERENCE_VALUES).toEqual(ids);
+  });
+
+  it('centralizes frontier and stable fallback policy in the model matrix', () => {
+    const policy = getAskPraxisModelRuntimePolicy();
+
+    expect(policy.frontierPrimary.chatModelId).toBe(getModelMatrixEntry('balanced').model);
+    expect(policy.frontierPrimary.deepModelId).toBe(getModelMatrixEntry('complex_reasoning').model);
+    expect(policy.stableFallback.deep).toEqual(['gemini-2.5-pro', 'gemini-2.5-flash']);
+    expect(policy.vertexLocationPolicy.frontierGemini3Location).toBe('global');
   });
 
   it('validates and labels selectable model preferences', () => {
@@ -55,5 +65,23 @@ describe('Ask PRAXIS runtime catalog', () => {
       selectedModelId: 'gemini-2.5-flash',
       analysisDepth: 'standard',
     })).toEqual(['gemini-2.5-flash']);
+  });
+
+  it('reports Vertex runtime health posture from env and policy coverage', () => {
+    const health = buildModelRuntimeHealthCheck({
+      GOOGLE_VERTEX_PROJECT: 'praxis-test',
+      GOOGLE_VERTEX_GEMINI_LOCATION: 'global',
+    } as unknown as NodeJS.ProcessEnv);
+
+    expect(health.ok).toBe(true);
+    expect(health.frontierPrimaryModels).toEqual([
+      getModelMatrixEntry('balanced').model,
+      getModelMatrixEntry('complex_reasoning').model,
+    ]);
+    expect(health.stableFallbackModels).toEqual([
+      'gemini-2.5-flash',
+      'gemini-2.5-pro',
+      'gemini-2.5-flash-lite',
+    ]);
   });
 });
