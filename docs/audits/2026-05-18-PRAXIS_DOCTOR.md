@@ -1,12 +1,12 @@
 # PRAXIS Doctor - 2026-05-18
 
-- Run ID: `doctor-20260518T170008853Z`
+- Run ID: `doctor-20260518T171554627Z`
 - Base URL: `https://praxis.tacitus.me`
 - Project: `praxisbytacitus`
 - Region: `us-central1`
 - Branch: `main`
-- Commit: `61946e2f8a44d8f121cddf8d8061f7c74ab3306f`
-- Cloud Run revision: `praxis-frontend-00585-2t2`
+- Commit: `218f2aa1a1e3f99bbcc92708656d713efd9969e1`
+- Cloud Run revision: `praxis-frontend-00587-sn4`
 - Summary: PASS=18, WARN=3, FAIL=0, BLOCKED=0
 
 ## Checks
@@ -19,7 +19,7 @@
 | PASS | repo-and-deployability | repo-origin-sync | origin/main...HEAD = 0	0 |
 | PASS | repo-and-deployability | typecheck | npm run typecheck passed |
 | PASS | local-cloud-auth | auth-doctor | npm run auth:doctor passed |
-| PASS | gcp-firebase-infrastructure | cloud-run-praxis-frontend | praxis-frontend serving praxis-frontend-00585-2t2 |
+| PASS | gcp-firebase-infrastructure | cloud-run-praxis-frontend | praxis-frontend serving praxis-frontend-00587-sn4 |
 | PASS | gcp-firebase-infrastructure | agent-run-queue | gcloud tasks queues describe agent-runs --location=us-central1 --project=praxisbytacitus passed |
 | PASS | gcp-firebase-infrastructure | cloud-sql-instance | gcloud sql instances describe praxisbytacitus-instance --project=praxisbytacitus passed |
 | PASS | gcp-firebase-infrastructure | firestore-database | gcloud firestore databases describe --database="(default)" --project=praxisbytacitus passed |
@@ -47,13 +47,13 @@ Evidence:
 
 Evidence:
 
-- `61946e2f8a44d8f121cddf8d8061f7c74ab3306f`
+- `218f2aa1a1e3f99bbcc92708656d713efd9969e1`
 
 ### WARN repo-dirty-state
 
 Evidence:
 
-- `M .next-dev.log M graphify-out/GRAPH_REPORT.md M graphify-out/graph.json M graphify-out/manifest.json M package.json ?? docs/audits/2026-05-18-runtime-data-plane-diagnostic.json ?? docs/audits/2026-05-18-runtime-data-plane-diagnostic.md ?? scripts/audit-runtime-data-plane.ts ?? src/lib/audits/ ?? tests/unit/lib/audits/`
+- `M .next-dev.log`
 
 ### PASS repo-origin-sync
 
@@ -77,7 +77,7 @@ Evidence:
 
 Evidence:
 
-- `{"service":"praxis-frontend","latestReadyRevisionName":"praxis-frontend-00585-2t2","traffic":[{"revisionName":"praxis-frontend-00585-2t2","percent":100,"latestRevision":true}],"ready":"True"}`
+- `{"service":"praxis-frontend","latestReadyRevisionName":"praxis-frontend-00587-sn4","traffic":[{"revisionName":"praxis-frontend-00587-sn4","percent":100,"latestRevision":true}],"ready":"True"}`
 
 ### PASS agent-run-queue
 
@@ -95,7 +95,7 @@ Evidence:
 
 Evidence:
 
-- `appEngineIntegrationMode: DISABLED concurrencyMode: PESSIMISTIC createTime: '2026-03-22T15:19:16.119019Z' databaseEdition: STANDARD deleteProtectionState: DELETE_PROTECTION_DISABLED earliestVersionTime: '2026-05-18T16:00:52.204910Z' etag: IOGttIqow5QDMPSV+ZPz+pMD freeTier: true keyPrefix: s locationId: nam5 name: projects/praxisbytacitus/databases/(default) pointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED realtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED type: FIRESTORE_NATIVE uid`
+- `appEngineIntegrationMode: DISABLED concurrencyMode: PESSIMISTIC createTime: '2026-03-22T15:19:16.119019Z' databaseEdition: STANDARD deleteProtectionState: DELETE_PROTECTION_DISABLED earliestVersionTime: '2026-05-18T16:16:31.658434Z' etag: IPGAsMqrw5QDMPSV+ZPz+pMD freeTier: true keyPrefix: s locationId: nam5 name: projects/praxisbytacitus/databases/(default) pointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED realtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED type: FIRESTORE_NATIVE uid`
 
 ### PASS secret-manager-cookie
 
@@ -149,19 +149,19 @@ Evidence:
 
 Evidence:
 
-- `{"status":"ok","timestamp":"2026-05-18T17:01:07.943Z","checks":{"firestore":"ok","ai_provider":"ok","cookie_secret":"ok","vertex_adk":"ok","cognee_memory":"unconfigured","polar":"unconfigured"},"safeguards":{"authenticatedRateLimitPerMinute":100,"aiRequestLimits":{"maxBytes":750000,"maxMessages":50,"maxTextChars":250000},"highCostAiRoutesRequireAuth":true,"calibratedAiRoutesStartToolRuns":true,"genkitProvider":"vertex","genkitLocation":"us-central1","cogneeMemoryEnabled":false,"cogneeMode":"disa`
+- `{"status":"ok","timestamp":"2026-05-18T17:16:45.330Z","checks":{"firestore":"ok","ai_provider":"ok","cookie_secret":"ok","vertex_adk":"ok","cognee_memory":"unconfigured","polar":"unconfigured"},"safeguards":{"authenticatedRateLimitPerMinute":100,"aiRequestLimits":{"maxBytes":750000,"maxMessages":50,"maxTextChars":250000},"highCostAiRoutesRequireAuth":true,"calibratedAiRoutesStartToolRuns":true,"genkitProvider":"vertex","genkitLocation":"us-central1","cogneeMemoryEnabled":false,"cogneeMode":"disa`
 
 ### PASS health-runtime
 
 Evidence:
 
-- `{"status":"ok","summary":"Systems ready","checkedAt":"2026-05-18T17:01:08.138Z","debugHref":"/app/settings?tab=system","checks":[{"id":"frontend","label":"Frontend runtime","status":"ok","latencyMs":55},{"id":"firestore","label":"Firestore","status":"ok"},{"id":"backend","label":"Private backend","status":"ok"},{"id":"agent_ledger","label":"Deep work queue","status":"ok"},{"id":"agent_queue","label":"Agent task queue","status":"ok","latencyMs":55},{"id":"agent_platform","label":"Agent platform",`
+- `{"status":"ok","summary":"Systems ready","checkedAt":"2026-05-18T17:16:45.564Z","debugHref":"/app/settings?tab=system","checks":[{"id":"frontend","label":"Frontend runtime","status":"ok","latencyMs":98},{"id":"firestore","label":"Firestore","status":"ok"},{"id":"backend","label":"Private backend","status":"ok"},{"id":"agent_ledger","label":"Deep work queue","status":"ok"},{"id":"agent_queue","label":"Agent task queue","status":"ok","latencyMs":98},{"id":"agent_platform","label":"Agent platform",`
 
 ### WARN canary-write-gate
 
 Evidence:
 
-- `{"tag":"praxis-doctor-canary-20260518T170008853Z","email":null}`
+- `{"tag":"praxis-doctor-canary-20260518T171554627Z","email":null}`
 
 Remediation:
 
@@ -170,4 +170,4 @@ Remediation:
 
 ## Canary Artifacts
 
-- blocked: doctor-canary-workflow `praxis-doctor-canary-20260518T170008853Z`
+- blocked: doctor-canary-workflow `praxis-doctor-canary-20260518T171554627Z`
