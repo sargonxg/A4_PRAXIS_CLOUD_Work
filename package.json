@@ -64,6 +64,8 @@
     "audit:gate": "npm run typecheck && npm run build && npm run audit:routes && npm run audit:capsule-contract && npm run audit:capsule-memory-contract && npm run audit:output-capsule-storage && npm run audit:agent-process-contract && npm run audit:agent-runtime-proof && npm run audit:knowledge-library-contract && npm run audit:named-stack-contract && npm run audit:graph-proposal-review-contract && npm run audit:architecture-chain && npm run audit:repo-shape && npm run audit:architecture-reference && npm run audit:mvp-route-shape && npm run audit:tool-contracts && npm run audit:purpose-surface && npm run audit:public-surface && npm run audit:release-notes && npm run audit:ask-cockpit-runtime && npm run audit:deep-preship && npm run audit:cognee && npm run audit:simplification && npm run audit:single-h1 && npm run audit:gcp",
     "audit:all": "npm run audit:gate && npm run audit:genkit-coverage",
     "canary:monitor": "tsx scripts/canary-monitor.ts",
+    "doctor:praxis": "tsx scripts/praxis-doctor.ts",
+    "doctor:praxis:canary": "tsx scripts/praxis-doctor.ts --mode=canary",
     "loadtest:smoke": "node infrastructure/loadtest/loadtest.mjs --mode=smoke --requests=24 --concurrency=4",
     "audit:calibration": "node scripts/audit-ai-routes.mjs",
     "admin:check": "tsx scripts/check-admin-access.ts",
