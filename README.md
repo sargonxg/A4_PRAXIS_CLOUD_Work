@@ -12,6 +12,17 @@ Live app:
 - Authenticated workspace: `/app/*`
 - Current frontend service: `praxis-frontend` on GCP Cloud Run
 
+Business / funding snapshot:
+
+- Funder-facing pack: `docs/product/PRAXIS_FUNDING_AND_PITCH_PACK.md`
+- Product: ContextCapsule-native policy workspace by TACITUS.
+- Buyers: individual policy practitioners, mediation teams, research desks,
+  public-interest organizations, and institutions that need governed AI work.
+- Revenue: Free starter workspace, Practitioner at `$49/month`, Team at
+  `$199/month per seat`, and custom Institution deployments.
+- Funding focus: finish the sourceable policy-workflow loop, harden trusted
+  agent runs, expand institutional controls, and support responsible pilots.
+
 Current product direction:
 
 - One shared workspace shell for dashboard and workbench
@@ -38,6 +49,8 @@ Current build control files:
   structure.
 - `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md` - policy capsule
   anatomy, personas, paths, connectors, outputs, and combination rules.
+- `docs/product/PRAXIS_FUNDING_AND_PITCH_PACK.md` - funder-facing elevator
+  pitch, business model, funding needs, and textual pitch deck.
 - `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md` - active
   implementation ledger and queue.
 - `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` - paste-ready Codex and

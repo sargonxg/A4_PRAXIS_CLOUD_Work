@@ -31,6 +31,9 @@ Status: canonical index for the current app structure
      Genkit as the typed flow/tool/eval substrate while keeping
      ContextCapsules, Firestore app state, and the Cloud SQL run ledger
      PRAXIS-owned.
+8. [`PRAXIS_FUNDING_AND_PITCH_PACK.md`](./PRAXIS_FUNDING_AND_PITCH_PACK.md)
+   - Funder-facing PRAXIS explanation pack with the 300-character elevator
+     pitch, business model, funding needs, and textual pitch deck.
 
 ## Build Queue
 

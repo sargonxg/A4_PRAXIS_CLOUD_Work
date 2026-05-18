@@ -13,6 +13,7 @@ import {
   LogOut,
   RefreshCcw,
   Save,
+  Search,
   ServerCog,
   ShieldCheck,
   SlidersHorizontal,
@@ -226,7 +227,7 @@ const AUTHENTICATED_TEST_LANES = [
 ] as const;
 
 const TABS: Array<{ id: SettingsTab; label: string; icon: LucideIcon; detail: string }> = [
-  { id: 'profile', label: 'Profile', icon: UserRound, detail: 'User Core and analyst posture' },
+  { id: 'profile', label: 'Profile', icon: UserRound, detail: 'Analyst profile and account basics' },
   { id: 'billing', label: 'Billing', icon: CreditCard, detail: 'Plan, checkout, portal' },
   { id: 'usage', label: 'Usage', icon: BarChart3, detail: 'Credits and monthly allowance' },
   { id: 'security', label: 'Security', icon: ShieldCheck, detail: 'Password, sign out, data controls' },
@@ -257,10 +258,16 @@ export function AccountSettingsPage() {
   const [connectorDrafts, setConnectorDrafts] = useState<Record<string, Record<string, string>>>({});
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [settingsSearch, setSettingsSearch] = useState('');
   const checkoutPlan = searchParams.get('checkoutPlan');
   const checkoutStatus = searchParams.get('checkout');
 
   const activeMeta = useMemo(() => TABS.find((tab) => tab.id === activeTab) ?? TABS[0], [activeTab]);
+  const visibleTabs = useMemo(() => {
+    const query = settingsSearch.trim().toLowerCase();
+    if (!query) return TABS;
+    return TABS.filter((tab) => `${tab.label} ${tab.detail} ${tab.id}`.toLowerCase().includes(query));
+  }, [settingsSearch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -453,35 +460,46 @@ export function AccountSettingsPage() {
   const totalCreditsUsed = typeof account?.totalCreditsUsed === 'number' ? account.totalCreditsUsed : 0;
 
   return (
-    <div className="space-y-6" data-testid="account-settings-page">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <section className="od-praxis-surface min-h-screen px-4 py-6 text-[#1f1f1f] md:px-8 lg:px-10" data-testid="account-settings-page">
+      <div className="mx-auto w-full max-w-6xl">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-black/10 pb-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">Settings</p>
-            <h1 className="mt-2 text-2xl font-semibold text-navy-950">Account and workspace settings</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-navy-500">
-              Manage the user profile, billing, usage, security, connectors, workspace preferences, and AI runtime from one place.
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ca4a25]">Settings</p>
+            <h1 className="mt-2 text-2xl font-semibold text-slate-950">Account and workspace settings</h1>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+              Manage profile, billing, usage, security, connectors, workspace preferences, and runtime diagnostics.
             </p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-            <p className="font-semibold text-navy-950">{account?.displayName ?? user?.name ?? 'Analyst'}</p>
-            <p className="mt-1 text-xs text-navy-500">{accountEmail}</p>
-            <p className="mt-2 inline-flex rounded-md border border-gold-200 bg-gold-50 px-2 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-gold-800">
-              {plan} plan
-            </p>
+          <div className="od-praxis-control rounded-md px-3 py-2 text-sm text-slate-700">
+            <p className="font-semibold text-slate-950">{account?.displayName ?? user?.name ?? 'Analyst'}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{accountEmail}</p>
           </div>
         </div>
+
+        <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <label className="od-praxis-control flex w-full min-w-0 items-center gap-2 rounded-md px-3 py-2 lg:max-w-md" data-testid="settings-search-bar">
+            <Search className="h-4 w-4 shrink-0 text-slate-400" />
+            <input
+              value={settingsSearch}
+              onChange={(event) => setSettingsSearch(event.target.value)}
+              placeholder="Search settings"
+              className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+            />
+          </label>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            <span className="rounded-md border border-black/10 bg-white/75 px-2 py-1 font-semibold text-slate-700">{plan} plan</span>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> : null}
+          </div>
+        </div>
+
         {status ? (
-          <p role="status" className="mt-4 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800">
+          <p role="status" className="mt-4 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800">
             {status}
           </p>
         ) : null}
-      </section>
 
-      <div className="grid gap-6 lg:grid-cols-[290px_minmax(0,1fr)]">
-        <aside className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
-          <nav className="space-y-1" aria-label="Account settings sections">
-            {TABS.map((tab) => {
+        <nav className="mt-4 flex flex-wrap gap-2" aria-label="Account settings sections" data-testid="settings-section-tabs">
+            {visibleTabs.map((tab) => {
               const Icon = tab.icon;
               const active = tab.id === activeTab;
               return (
@@ -490,28 +508,23 @@ export function AccountSettingsPage() {
                   type="button"
                   onClick={() => selectTab(tab.id)}
                   className={cn(
-                    'flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition',
-                    active ? 'bg-diplomatic-blue text-white' : 'text-navy-700 hover:bg-slate-50',
+                    'inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition',
+                    active ? 'border-sky-300 bg-sky-50 text-sky-800' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
                   )}
                 >
-                  <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', active ? 'text-white' : 'text-navy-400')} />
-                  <span>
-                    <span className="block text-sm font-semibold">{tab.label}</span>
-                    <span className={cn('mt-0.5 block text-xs', active ? 'text-white/75' : 'text-navy-400')}>{tab.detail}</span>
-                  </span>
+                  <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-sky-700' : 'text-slate-400')} />
+                  {tab.label}
                 </button>
               );
             })}
           </nav>
-        </aside>
 
-        <main className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-5 flex items-center justify-between gap-3 border-b border-slate-200 pb-4">
+        <main className="od-praxis-card mt-5 min-w-0 rounded-lg p-5">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-black/10 pb-4">
             <div>
-              <h2 className="text-lg font-semibold text-navy-950">{activeMeta.label}</h2>
-              <p className="text-sm text-navy-500">{activeMeta.detail}</p>
+              <h2 className="text-lg font-semibold text-slate-950">{activeMeta.label}</h2>
+              <p className="text-sm text-slate-500">{activeMeta.detail}</p>
             </div>
-            {loading ? <Loader2 className="h-5 w-5 animate-spin text-navy-400" /> : null}
           </div>
 
           {activeTab === 'profile' ? (
@@ -574,7 +587,7 @@ export function AccountSettingsPage() {
           ) : null}
         </main>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -611,7 +624,7 @@ function ProfileTab({
       <div className="flex flex-wrap gap-2">
         <ActionButton icon={Save} label={busy ? 'Saving...' : 'Save account'} onClick={onSave} disabled={busy} />
         <Link href="/onboarding?resume=1" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-navy-700 hover:bg-slate-50">
-          Review User Core
+          Review profile
         </Link>
       </div>
       <div className="grid gap-3 md:grid-cols-3">
@@ -619,7 +632,7 @@ function ProfileTab({
         <Metric label="Primary domain" value={analyst?.perspective?.primaryDomain ?? 'generic'} />
         <Metric label="Audience" value={analyst?.perspective?.audience ?? 'not set'} />
       </div>
-      <InfoPanel title="User Core summary">
+      <InfoPanel title="Analyst profile">
         <p>Role: {analyst?.identity?.role ?? 'not set'}</p>
         <p>Team: {analyst?.identity?.team || 'not set'}</p>
         <p>Lenses: {analyst?.perspective?.lenses?.join(', ') || 'not set'}</p>

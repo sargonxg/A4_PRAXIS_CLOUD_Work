@@ -12,6 +12,8 @@ const checkoutRoute = readFileSync(join(process.cwd(), 'src/app/api/billing/chec
 describe('account settings page contract', () => {
   it('renders one canonical user settings destination with the expected tabs', () => {
     expect(settingsPage).toContain('data-testid="account-settings-page"');
+    expect(settingsPage).toContain('data-testid="settings-search-bar"');
+    expect(settingsPage).toContain('data-testid="settings-section-tabs"');
     for (const tab of ['profile', 'billing', 'usage', 'security', 'connectors', 'workspace', 'system']) {
       expect(settingsPage).toContain(`id: '${tab}'`);
     }
@@ -79,6 +81,15 @@ describe('account settings page contract', () => {
     expect(proxy).not.toContain("pathname.startsWith('/app/settings/')");
     expect(proxy).not.toContain("pathname.startsWith('/app/settings') || pathname === '/app/profile'");
     expect(appShell).toContain("goSettings: () => router.push('/app/settings')");
+    expect(appShell).toContain("pathname === '/app/settings'");
+  });
+
+  it('renders settings as a quiet workbench without legacy settings chrome copy', () => {
+    expect(settingsPage).toContain('od-praxis-surface');
+    expect(settingsPage).toContain('Search settings');
+    expect(settingsPage).not.toContain('Active ContextCapsule');
+    expect(settingsPage).not.toContain('User Core summary');
+    expect(settingsPage).not.toContain('Review User Core');
   });
 
   it('lets encoded demo sessions reach private settings routes for smoke checks', () => {
