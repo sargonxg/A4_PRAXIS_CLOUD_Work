@@ -91,13 +91,16 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="runtime-health-semaphore"');
   });
 
-  it('keeps one capsule context strip and exposes repository-backed type and domain filters', () => {
-    expect(source).toContain('data-testid="capsule-context-bar"');
+  it('keeps one category-native context chain and exposes repository-backed type and domain filters', () => {
+    expect((source.match(/data-testid="capsule-context-bar"/g) ?? []).length).toBe(1);
     expect(source).toContain('data-testid="active-capsule-strip"');
     expect(source).toContain('data-testid="active-capsule-open-details"');
     expect(source).toContain('data-testid="capsule-context-composer"');
-    expect(source).toContain('Generic policy starter capsule');
-    expect(source).toContain('Starter analyst user capsule');
+    expect(source).toContain('Context Chain');
+    expect(source).toContain('Generic analyst');
+    expect(source).toContain('capsuleChainSlots');
+    expect(source).toContain('Sources/References');
+    expect(source).toContain('capsuleDefaultRole(capsule)');
     expect(source).toContain('capsuleTypeFilters');
     expect(source).toContain('capsuleDomainFilters');
     expect(source).toContain('data-testid="capsule-taxonomy-surface"');
@@ -112,17 +115,16 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('All types');
     expect(source).toContain('Governance');
     expect(source).toContain('/app/capsules');
-    expect(source).toContain("onUseAsUser={() => applyCapsuleCard(capsule, 'user')}");
-    expect(source).toContain("onUseAsSituation={() => applyCapsuleCard(capsule, 'situation')}");
-    expect(source).toContain("onUseAsOutput={() => applyCapsuleCard(capsule, 'output')}");
-    expect(source).toContain("onAddReference={() => applyCapsuleCard(capsule, 'reference')}");
-    expect(source).toContain('Use as user</button>');
-    expect(source).toContain('Use as situation</button>');
-    expect(source).toContain('Use as output</button>');
-    expect(source).toContain('Add as reference</button>');
+    expect(source).toContain('onAdd={() => applyCapsuleCard(capsule)}');
+    expect(source).toContain('Add</button>');
+    expect(source).toContain('Review its category before relying on it.');
+    expect(source).not.toContain('Use as user</button>');
+    expect(source).not.toContain('Use as situation</button>');
+    expect(source).not.toContain('Use as output</button>');
+    expect(source).not.toContain('Add as reference</button>');
     expect(source).not.toContain('data-testid="capsule-context-picker"');
     expect(source).not.toContain('capsulePickerQuery');
-    expect((source.match(/placeholder="Search capsules"/g) ?? []).length).toBe(1);
+    expect(source).toContain('placeholder="Search capsule titles"');
   });
 
   it('renders the live stack inside the composer instead of a separate rail above it', () => {
@@ -136,7 +138,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Sources');
     expect(source).toContain('Output');
     expect(source).toContain('Readiness');
-    expect(source).toContain('Save / fork context');
+    expect(source).toContain('Save context capsule');
+    expect(source).toContain('onRemove={() => removeCapsule(capsule.id)}');
   });
 
   it('sends ordered live capsule stacks without automatic combine persistence', () => {
@@ -147,8 +150,22 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('userModelId: userCapsule?.id ?? null');
     expect(source).toContain('saveCombinedCapsuleStack');
     expect(source).toContain('Save as combined capsule');
+    expect(source).toContain('Add at least two capsules before saving a retrievable context capsule.');
     expect(source).not.toContain('if (next.length >= 2) await combineCapsuleLiteStack(next);');
     expect(source).not.toContain('void combineCapsuleLiteStack(current.slice(0, 5));');
+  });
+
+  it('uses dnd-kit for composer reordering and modal capsule browsing', () => {
+    expect(source).toContain("from '@dnd-kit/core'");
+    expect(source).toContain("from '@dnd-kit/sortable'");
+    expect(source).toContain('DndContext');
+    expect(source).toContain('SortableContext');
+    expect(source).toContain('useDraggable');
+    expect(source).toContain('useDroppable');
+    expect(source).toContain('data-testid="capsule-context-dropzone"');
+    expect(source).toContain('data-testid="capsule-browser-modal"');
+    expect(source).toContain('setCapsuleBrowserOpen(true)');
+    expect(source).toContain('handleCapsuleDragEnd');
   });
 
   it('drives taxonomy buttons from the shared statistics contract', () => {

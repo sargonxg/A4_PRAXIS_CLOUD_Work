@@ -1,0 +1,10 @@
+
+> tacitus-app@6.4.1 start
+> next start --port 3000
+
+▲ Next.js 16.2.4
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.160:3000
+✓ Ready in 1313ms
+[tracing] GCP_PROJECT_ID not set, skipping Cloud Trace init
+[firebase-admin] Initialized successfully with service account from FIREBASE_SERVICE_ACCOUNT_KEY

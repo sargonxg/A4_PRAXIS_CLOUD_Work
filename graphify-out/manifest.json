@@ -2556,8 +2556,8 @@
     "hash": "ca0257f971b99dbb43ee1b549f855b10"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tasklet-praxis-workbench.tsx": {
-    "mtime": 1779138924.8641956,
-    "hash": "2068e183858863454b879d8b249fcbff"
+    "mtime": 1779141133.3207548,
+    "hash": "0230c6b96c451ecd5e8796aca85b483a"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tool-error-boundary.tsx": {
     "mtime": 1778940588.7607915,
@@ -4528,16 +4528,16 @@
     "hash": "8ac3163fb2467ae664fa194eb53bb7fb"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\instrument-visual-contract.test.ts": {
-    "mtime": 1779136803.936082,
-    "hash": "9c9d5fd08ea5974141bd3ff799d50271"
+    "mtime": 1779141176.5167396,
+    "hash": "e957995da694c65f898aa131381a2165"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\settings-page-contract.test.ts": {
     "mtime": 1779129247.9327564,
     "hash": "eee40dffb279a4d42b24d5eff22b3030"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\tasklet-workbench-contract.test.ts": {
-    "mtime": 1779138753.7964528,
-    "hash": "5a5b8d50f14d9e59d5df4a3059ee6d21"
+    "mtime": 1779141169.3568287,
+    "hash": "28408bb55676e1904a94260a73cfa579"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\assistant\\suggested-prompts.test.ts": {
     "mtime": 1778946000.734394,
@@ -6094,6 +6094,10 @@
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\knowledge\\README.md": {
     "mtime": 1778997108.3234196,
     "hash": "54c0e64dd21d113acfd62df962ea7c20"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\artifacts\\screenshots\\praxis-homepage-live-2026-05-18.png": {
+    "mtime": 1779139917.2940092,
+    "hash": "6eaa05178a8ee45f39092ecd4b19457d"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\public\\favicon.svg": {
     "mtime": 1778429929.103981,

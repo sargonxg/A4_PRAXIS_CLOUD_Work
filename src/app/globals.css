@@ -182,6 +182,22 @@ body {
     var(--od-paper);
   background-size: auto, 28px 28px, 28px 28px, auto;
   color: var(--od-ink);
+  animation: praxis-vellum-drift 24s ease-in-out infinite alternate;
+}
+
+@keyframes praxis-vellum-drift {
+  from {
+    background-position: 0 0, 0 0, 0 0, 0 0;
+  }
+  to {
+    background-position: 0 0, 18px 10px, 10px 18px, 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .od-praxis-surface {
+    animation: none;
+  }
 }
 
 .od-praxis-sidebar {

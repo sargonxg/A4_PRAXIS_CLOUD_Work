@@ -55,6 +55,8 @@ describe('Instrument Pro visual contract', () => {
     expect(contextStrip).toContain('LivingContextRail');
     expect(instrument).toContain('data-testid="living-context-rail"');
     expect(workbench).toContain('data-testid="capsule-context-composer"');
+    expect(workbench).toContain('Context Chain');
+    expect(workbench).toContain('data-testid="capsule-browser-modal"');
     expect(workbench).not.toContain('<LivingContextRail');
     expect(workbench).not.toContain('livingRailCells');
     expect(workbench).toContain('SourcePostureChip');
@@ -65,6 +67,8 @@ describe('Instrument Pro visual contract', () => {
     expect(settings).toContain('<LivingContextRail');
     expect(onboardingPreview).toContain('previewRailCells');
     expect(onboardingPreview).toContain('<LivingContextRail');
+    expect(globals).toContain('@keyframes praxis-vellum-drift');
+    expect(globals).toContain('prefers-reduced-motion: reduce');
   });
 
   it('documents Instrument Pro and the Living Context Rail as the visual contract', () => {

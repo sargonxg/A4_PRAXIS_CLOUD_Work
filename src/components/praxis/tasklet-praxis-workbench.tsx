@@ -2,9 +2,28 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  horizontalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   ArrowUp,
   BookOpen,
@@ -15,6 +34,7 @@ import {
   Copy,
   Database,
   FileText,
+  GripVertical,
   HardDrive,
   Library,
   Loader2,
@@ -276,9 +296,9 @@ const capsuleRoles: Array<{ id: CapsuleRole; label: string }> = [
 
 const capsuleRoleStyles: Record<CapsuleRole, string> = {
   user: 'border-sky-200 bg-sky-50 text-sky-900',
-  situation: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+  situation: 'border-teal-200 bg-teal-50 text-teal-900',
   tool: 'border-amber-200 bg-amber-50 text-amber-900',
-  output: 'border-violet-200 bg-violet-50 text-violet-900',
+  output: 'border-indigo-200 bg-indigo-50 text-indigo-900',
   reference: 'border-slate-200 bg-slate-50 text-slate-700',
 };
 
@@ -323,18 +343,19 @@ const capsuleDomainFilters = [
 
 const STARTER_CAPSULE_UPDATED_AT = '2026-05-18T00:00:00.000Z';
 const starterCapsuleSummaries = CAPSULE_STARTER_DEFINITIONS.map(starterDefinitionToCapsuleSummary);
-const GENERIC_POLICY_STARTER_CHIP: ActiveCapsuleChip = {
-  id: 'starter-situation-generic-policy',
-  label: 'Generic policy starter capsule',
-  code: 'GENERIC',
-  role: 'situation',
-};
 const STARTER_USER_CAPSULE_CHIP: ActiveCapsuleChip = {
   id: 'starter-user-generic-analyst',
-  label: 'Starter analyst user capsule',
+  label: 'Generic analyst',
   code: 'USER',
   role: 'user',
 };
+
+const capsuleChainSlots: Array<{ role: CapsuleRole; label: string; helper: string }> = [
+  { role: 'situation', label: 'Situation', helper: 'Add the case, issue, or operating context.' },
+  { role: 'reference', label: 'Sources/References', helper: 'Attach source packs, documents, or related capsules.' },
+  { role: 'tool', label: 'Tools', helper: 'Add reasoning tools and checks.' },
+  { role: 'output', label: 'Output', helper: 'Choose the memo, brief, handover, or artifact goal.' },
+];
 
 export function TaskletPraxisWorkbench({
   mode,
@@ -356,7 +377,7 @@ export function TaskletPraxisWorkbench({
   const [activeTab, setActiveTab] = useState<PolicyNeedTabId>('analysis');
   const [selectedAgentId, setSelectedAgentId] = useState(PRAXIS_POLICY_AGENTS[0]?.id ?? 'research-memo');
   const [currentCapsuleId, setCurrentCapsuleId] = useState(capsuleId);
-  const [activeCapsules, setActiveCapsules] = useState<ActiveCapsuleChip[]>([]);
+  const [activeCapsules, setActiveCapsules] = useState<ActiveCapsuleChip[]>([STARTER_USER_CAPSULE_CHIP]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [conversationThreadId, setConversationThreadId] = useState<string | null>(
     sanitizeConversationThreadId(initialConversationId),
@@ -369,7 +390,8 @@ export function TaskletPraxisWorkbench({
   const [capsuleDomainFilter, setCapsuleDomainFilter] = useState('all');
   const [userCapsules, setUserCapsules] = useState<PraxisCapsuleSummary[]>([]);
   const [capsulesLoading, setCapsulesLoading] = useState(false);
-  const [draggingCapsuleId, setDraggingCapsuleId] = useState<string | null>(null);
+  const [capsuleBrowserOpen, setCapsuleBrowserOpen] = useState(false);
+  const [contextComposerCollapsed, setContextComposerCollapsed] = useState(false);
   const [repositoryOpen, setRepositoryOpen] = useState(false);
   const [capsuleDetailTab, setCapsuleDetailTab] = useState<CapsuleDetailTab>('build');
   const [builderOpen, setBuilderOpen] = useState(false);
@@ -395,6 +417,10 @@ export function TaskletPraxisWorkbench({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const starterSeededRef = useRef(false);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   const selectedCapsule = userCapsules.find((capsule) => capsule.capsuleId === currentCapsuleId)
     ?? starterCapsuleSummaries.find((capsule) => capsule.capsuleId === currentCapsuleId)
     ?? null;
@@ -436,6 +462,9 @@ export function TaskletPraxisWorkbench({
   const situationCapsuleForHeader = activeCapsuleStack.find((capsule) => capsule.role === 'situation');
   const outputCapsuleForHeader = activeCapsuleStack.find((capsule) => capsule.role === 'output');
   const referenceCapsulesForHeader = activeCapsuleStack.filter((capsule) => capsule.role === 'reference' || capsule.role === 'tool');
+  const activeCapsuleIds = activeCapsuleStack.map((capsule) => capsule.id);
+  const filledChainRoles = new Set(activeCapsuleStack.map((capsule) => capsule.role));
+  const openChainSlots = capsuleChainSlots.filter((slot) => !filledChainRoles.has(slot.role));
   const activeCapsuleForStrip = selectedCapsule ?? userCapsules[0] ?? starterCapsuleSummaries[0] ?? null;
   const activeStarterForStrip = starterDefinitionForCapsule(activeCapsuleForStrip);
   const activeCapsuleSourceCount = activeStarterForStrip?.sourcePack.length
@@ -898,7 +927,7 @@ export function TaskletPraxisWorkbench({
       const selected = selectCapsuleId
         ? next.find((capsule) => capsule.capsuleId === selectCapsuleId)
         : next.find((capsule) => capsule.capsuleId === currentCapsuleId && !capsule.archivedAt) ?? next.find((capsule) => !capsule.archivedAt);
-      if (selected) {
+      if (selected && selectCapsuleId) {
         const chip = capsuleToChip(selected);
         setCurrentCapsuleId(chip.id);
         setActiveCapsules((current) => [chip, ...current.filter((item) => item.id !== chip.id)].slice(0, 6));
@@ -1206,11 +1235,12 @@ export function TaskletPraxisWorkbench({
     setStatus(`${chip.label} opened. Start talking to create a shareable conversation link.`);
   }
 
-  function applyUserCapsule(capsule: PraxisCapsuleSummary, role: CapsuleRole = 'user') {
+  function applyUserCapsule(capsule: PraxisCapsuleSummary, role: CapsuleRole = capsuleDefaultRole(capsule)) {
     const chip = { ...capsuleToChip(capsule), role };
     if (role === 'situation') setCurrentCapsuleId(chip.id);
     setActiveCapsules((current) => applyCapsuleToStack(current, chip));
-    setStatus(`${chip.label} added to the capsule context as ${role}.`);
+    const categoryReview = capsuleCategory(capsule) === 'custom' ? ' Review its category before relying on it.' : '';
+    setStatus(`${chip.label} added to the context chain as ${capsuleRoleLabel(role)}.${categoryReview}`);
   }
 
   function selectCapsuleCard(capsule: PraxisCapsuleSummary) {
@@ -1238,7 +1268,9 @@ export function TaskletPraxisWorkbench({
     const chip = { ...capsuleToChip(capsule), role };
     if (role === 'situation') setCurrentCapsuleId(chip.id);
     setActiveCapsules((current) => applyCapsuleToStack(current, chip));
-    setStatus(`${chip.label} added as ${role} capsule context.`);
+    const categoryReview = capsuleCategory(capsule) === 'custom' ? ' Review its category before relying on it.' : '';
+    setStatus(`${chip.label} added to the context chain as ${capsuleRoleLabel(role)}.${categoryReview}`);
+    if (capsuleBrowserOpen) setCapsuleBrowserOpen(false);
   }
 
   function improveCapsuleCard(capsule: PraxisCapsuleSummary) {
@@ -1506,7 +1538,14 @@ export function TaskletPraxisWorkbench({
   }
 
   async function saveCombinedCapsuleStack(capsulesToCombine: ActiveCapsuleChip[]) {
-    if (!isAuthenticated || capsulesToCombine.length < 2) return;
+    if (!isAuthenticated) {
+      sendPublicToLogin('Save this assembled PRAXIS context capsule.');
+      return;
+    }
+    if (capsulesToCombine.length < 2) {
+      setStatus('Add at least two capsules before saving a retrievable context capsule.');
+      return;
+    }
     const response = await fetch('/api/context/capsules', {
       method: 'POST',
       credentials: 'include',
@@ -1530,7 +1569,7 @@ export function TaskletPraxisWorkbench({
     setCurrentCapsuleId(combined.id);
     setActiveCapsules([combined, ...capsulesToCombine.slice(0, 4)]);
     void refreshCapsules(combined.id);
-    setStatus(`${combined.label} saved as a combined ContextCapsule Lite.`);
+    setStatus(`${combined.label} saved as a retrievable context capsule.`);
   }
 
   function removeCapsule(id: string) {
@@ -1544,18 +1583,27 @@ export function TaskletPraxisWorkbench({
     });
   }
 
-  function reorderCapsules(targetId: string) {
-    if (!draggingCapsuleId || draggingCapsuleId === targetId) return;
+  function handleCapsuleDragEnd(event: DragEndEvent) {
+    const activeId = String(event.active.id);
+    const overId = event.over?.id ? String(event.over.id) : null;
+    if (!overId) return;
+
+    if (activeId.startsWith('capsule-card:')) {
+      const capsuleIdFromCard = activeId.replace('capsule-card:', '');
+      const capsule = visibleCapsuleCards.find((item) => item.capsuleId === capsuleIdFromCard);
+      if (capsule && (overId === 'capsule-context-dropzone' || activeCapsuleIds.includes(overId))) {
+        applyCapsuleCard(capsule, capsuleDefaultRole(capsule));
+      }
+      return;
+    }
+
+    if (activeId === overId || !activeCapsuleIds.includes(activeId) || !activeCapsuleIds.includes(overId)) return;
     setActiveCapsules((current) => {
-      const from = current.findIndex((capsule) => capsule.id === draggingCapsuleId);
-      const to = current.findIndex((capsule) => capsule.id === targetId);
-      if (from < 0 || to < 0) return current;
-      const next = [...current];
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      return next;
+      const oldIndex = current.findIndex((capsule) => capsule.id === activeId);
+      const newIndex = current.findIndex((capsule) => capsule.id === overId);
+      if (oldIndex < 0 || newIndex < 0) return current;
+      return arrayMove(current, oldIndex, newIndex);
     });
-    setDraggingCapsuleId(null);
   }
 
   function startVoiceInput() {
@@ -1589,6 +1637,7 @@ export function TaskletPraxisWorkbench({
 
   return (
     <section className={cn('od-praxis-surface min-h-screen text-[#1f1f1f]', className)} data-testid="tasklet-praxis-workbench">
+      <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleCapsuleDragEnd}>
       <div className={cn('grid min-h-screen', showWorkbenchNavigation && 'lg:grid-cols-[250px_minmax(0,1fr)]')}>
         {showWorkbenchNavigation ? <aside className="od-praxis-sidebar hidden border-r px-4 py-6 lg:flex lg:flex-col">
           <Link href={isAuthenticated ? '/app' : '/'} className="mb-6 flex items-center gap-3 text-lg font-bold">
@@ -1698,20 +1747,20 @@ export function TaskletPraxisWorkbench({
 
             <div className="od-praxis-panel mt-6 w-full max-w-5xl rounded-xl" data-testid="praxis-main-composer">
               <div className="border-b border-black/10 px-5 py-4" data-testid="capsule-context-bar">
-                <div className="flex flex-wrap items-center justify-between gap-3" data-testid="capsule-context-composer">
+                <div className="flex flex-wrap items-start justify-between gap-3" data-testid="capsule-context-composer">
                   <div className="min-w-0 flex-1" data-testid="active-capsule-strip">
                     <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
-                      <span className="rounded-md bg-slate-950 px-2 py-1 text-white">Active capsule</span>
+                      <span className="rounded-md bg-slate-950 px-2 py-1 text-white">Context Chain</span>
                       <span className="max-w-full truncate rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-900">
-                        {activeCapsuleForStrip?.label ?? 'Starter capsule'}
+                        {activeCapsuleForStrip?.label ?? 'No capsule opened'}
                       </span>
                       <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-800">
-                        Trust {activeCapsuleReadiness}
+                        Readiness {activeCapsuleReadiness}
                       </span>
                       <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1">
                         {activeCapsuleSourceCount} source{activeCapsuleSourceCount === 1 ? '' : 's'}
                       </span>
-                      <span className="rounded-md border border-violet-200 bg-violet-50 px-2 py-1 text-violet-800">
+                      <span className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1 text-indigo-800">
                         Output {activeCapsuleOutputGoal}
                       </span>
                       <button
@@ -1726,85 +1775,78 @@ export function TaskletPraxisWorkbench({
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-slate-500">
                       <span>Profile / user: {userCapsule?.label ?? 'Open'}</span>
-                      <span className="text-slate-300">·</span>
+                      <span className="text-slate-300">/</span>
                       <span>Situation / context: {situationCapsuleForHeader?.label ?? 'Open'}</span>
-                      <span className="text-slate-300">·</span>
+                      <span className="text-slate-300">/</span>
                       <span>Sources: {repositoryDocuments.length ? `${repositoryDocuments.length} repository` : `${referenceCapsulesForHeader.length} reference`}</span>
-                      <span className="text-slate-300">·</span>
+                      <span className="text-slate-300">/</span>
                       <span>Output: {outputCapsuleForHeader?.label ?? selectedAgent.label}</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => void saveCombinedCapsuleStack(activeCapsuleStack)}
+                      onClick={() => setContextComposerCollapsed((current) => !current)}
                       className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                     >
-                      <Save className="h-3.5 w-3.5" />
-                      Save / fork context
+                      <ChevronDown className={cn('h-3.5 w-3.5 transition', contextComposerCollapsed && '-rotate-90')} />
+                      {contextComposerCollapsed ? 'Expand' : 'Collapse'}
                     </button>
                     <button
                       type="button"
                       onClick={() => void saveCombinedCapsuleStack(activeCapsuleStack)}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-slate-300 bg-white/60 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
                     >
-                      Save as combined capsule
+                      <Save className="h-3.5 w-3.5" />
+                      Save context capsule
                     </button>
                   </div>
                 </div>
+                {!contextComposerCollapsed ? (
+                  <ContextChainDropzone>
+                    <div className="relative mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white/78 p-3 shadow-sm shadow-black/5">
+                      <div className="pointer-events-none absolute left-7 right-7 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-[#c9a961]/45 via-[#4b92db]/45 to-[#c9a961]/30" aria-hidden />
+                      <SortableContext items={activeCapsuleIds} strategy={horizontalListSortingStrategy}>
+                        <div className="relative flex min-w-full items-stretch gap-3">
+                          {activeCapsuleStack.map((capsule, index) => (
+                            <SortableCapsuleBlock
+                              key={capsule.id}
+                              capsule={capsule}
+                              index={index}
+                              reviewCategory={capsuleNeedsCategoryReview(capsule, userCapsules)}
+                              onOpen={() => {
+                                setCurrentCapsuleId(capsule.id);
+                                setActiveTab('capsules');
+                                setInspectorOpen(true);
+                              }}
+                              onRemove={() => removeCapsule(capsule.id)}
+                            />
+                          ))}
+                          {openChainSlots.map((slot) => (
+                            <button
+                              key={slot.role}
+                              type="button"
+                              onClick={() => setCapsuleBrowserOpen(true)}
+                              className="relative min-w-[168px] flex-1 rounded-lg border border-dashed border-slate-300 bg-white/70 p-3 text-left text-xs text-slate-500 transition hover:border-[#c9a961] hover:bg-white"
+                            >
+                              <span className="block font-semibold text-slate-700">{slot.label}</span>
+                              <span className="mt-1 block leading-5">{slot.helper}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </div>
+                  </ContextChainDropzone>
+                ) : null}
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <SourcePostureChip
                     label={repositoryDocuments.length ? 'Sources ready' : 'Sources needed'}
                     state={repositoryDocuments.length ? 'ready' : 'review'}
                   />
-                  {activeCapsuleStack.map((capsule, index) => (
-                    <span
-                      key={capsule.id}
-                      draggable
-                      onDragStart={() => setDraggingCapsuleId(capsule.id)}
-                      onDragOver={(event) => event.preventDefault()}
-                      onDrop={() => reorderCapsules(capsule.id)}
-                      className={cn(
-                        'inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold',
-                        capsuleRoleStyles[capsule.role],
-                      )}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCurrentCapsuleId(capsule.id);
-                          setActiveTab('capsules');
-                          document.getElementById('capsule-repository-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }}
-                        className="inline-flex min-w-0 items-center gap-2"
-                      >
-                        <span>{index === 0 ? 'Active' : capsuleRoles.find((role) => role.id === capsule.role)?.label}</span>
-                        <span className="max-w-44 truncate text-slate-800">{capsule.label}</span>
-                      </button>
-                      {activeCapsuleStack.length > 1 ? (
-                        <button
-                          type="button"
-                          aria-label={`Remove ${capsule.label}`}
-                          onClick={() => removeCapsule(capsule.id)}
-                          className="rounded p-0.5 text-slate-500 hover:bg-black/10"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      ) : null}
-                    </span>
-                  ))}
-                  {!activeCapsuleStack.length ? (
-                    <span className="inline-flex items-center gap-2 rounded-md border border-dashed border-slate-300 bg-white/60 px-2.5 py-1.5 text-xs font-semibold text-slate-500">
-                      Add your capsules here
-                    </span>
-                  ) : null}
                   <button
                     type="button"
-                    onClick={() => {
-                      setActiveTab('capsules');
-                      document.getElementById('capsule-repository-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }}
-                    className="inline-flex items-center gap-2 rounded-md border border-dashed border-slate-300 bg-white/60 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white"
+                    onClick={() => setCapsuleBrowserOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-md border border-dashed border-slate-300 bg-white/70 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Browse capsules
@@ -2154,10 +2196,7 @@ export function TaskletPraxisWorkbench({
                         active={capsule.capsuleId === currentCapsuleId}
                         mutable={!showingStarterFallback}
                         onSelect={() => selectCapsuleCard(capsule)}
-                        onUseAsUser={() => applyCapsuleCard(capsule, 'user')}
-                        onUseAsSituation={() => applyCapsuleCard(capsule, 'situation')}
-                        onUseAsOutput={() => applyCapsuleCard(capsule, 'output')}
-                        onAddReference={() => applyCapsuleCard(capsule, 'reference')}
+                        onAdd={() => applyCapsuleCard(capsule)}
                         onInspect={() => {
                           selectCapsuleCard(capsule);
                           setInspectorOpen(true);
@@ -2232,10 +2271,7 @@ export function TaskletPraxisWorkbench({
                       active={capsule.capsuleId === currentCapsuleId}
                       mutable={false}
                       onSelect={() => selectCapsuleCard(capsule)}
-                      onUseAsUser={() => applyCapsuleCard(capsule, 'user')}
-                      onUseAsSituation={() => applyCapsuleCard(capsule, 'situation')}
-                      onUseAsOutput={() => applyCapsuleCard(capsule, 'output')}
-                      onAddReference={() => applyCapsuleCard(capsule, 'reference')}
+                      onAdd={() => applyCapsuleCard(capsule)}
                       onInspect={() => {
                         selectCapsuleCard(capsule);
                         setInspectorOpen(true);
@@ -2299,6 +2335,21 @@ export function TaskletPraxisWorkbench({
           }}
         />
       ) : null}
+      {capsuleBrowserOpen ? (
+        <CapsuleBrowserDialog
+          capsules={visibleCapsuleCards}
+          loading={capsulesLoading}
+          typeFilter={capsuleTypeFilter}
+          domainFilter={capsuleDomainFilter}
+          query={capsuleSearch}
+          onQuery={setCapsuleSearch}
+          onTypeFilter={setCapsuleTypeFilter}
+          onDomainFilter={setCapsuleDomainFilter}
+          onClose={() => setCapsuleBrowserOpen(false)}
+          onSelect={(capsule) => applyCapsuleCard(capsule)}
+        />
+      ) : null}
+      </DndContext>
     </section>
   );
 }
@@ -2325,6 +2376,195 @@ function AssistantMarkdown({ text }: { text: string }) {
       >
         {text}
       </ReactMarkdown>
+    </div>
+  );
+}
+
+function ContextChainDropzone({ children }: { children: ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: 'capsule-context-dropzone' });
+  return (
+    <div
+      ref={setNodeRef}
+      data-testid="capsule-context-dropzone"
+      className={cn(
+        'rounded-xl transition',
+        isOver ? 'ring-2 ring-[#c9a961]/50 ring-offset-2 ring-offset-white' : '',
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SortableCapsuleBlock({
+  capsule,
+  index,
+  reviewCategory,
+  onOpen,
+  onRemove,
+}: {
+  capsule: ActiveCapsuleChip;
+  index: number;
+  reviewCategory: boolean;
+  onOpen: () => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: capsule.id });
+  const roleLabel = capsuleRoleLabel(capsule.role);
+  return (
+    <article
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn(
+        'relative min-w-[190px] flex-1 rounded-lg border p-3 shadow-sm transition',
+        capsuleRoleStyles[capsule.role],
+        isDragging && 'z-10 opacity-80 shadow-lg',
+      )}
+      data-testid={`context-capsule-block-${capsule.role}`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <button
+          type="button"
+          className="min-w-0 text-left"
+          onClick={onOpen}
+        >
+          <span className="block text-[11px] font-semibold uppercase text-current/70">{index === 0 ? 'Active' : roleLabel}</span>
+          <span className="mt-1 block truncate text-sm font-semibold">{capsule.label}</span>
+        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            aria-label={`Reorder ${capsule.label}`}
+            className="rounded p-1 text-current/60 hover:bg-white/50"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label={`Remove ${capsule.label}`}
+            onClick={onRemove}
+            className="rounded p-1 text-current/60 hover:bg-white/50"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-1.5 text-[10px] font-semibold">
+        <span className="rounded bg-white/60 px-1.5 py-0.5">{capsule.code}</span>
+        {reviewCategory ? <span className="rounded bg-white/60 px-1.5 py-0.5">review category</span> : null}
+      </div>
+    </article>
+  );
+}
+
+function CapsuleBrowserDialog({
+  capsules,
+  loading,
+  typeFilter,
+  domainFilter,
+  query,
+  onQuery,
+  onTypeFilter,
+  onDomainFilter,
+  onClose,
+  onSelect,
+}: {
+  capsules: PraxisCapsuleSummary[];
+  loading: boolean;
+  typeFilter: string;
+  domainFilter: string;
+  query: string;
+  onQuery: (query: string) => void;
+  onTypeFilter: (filter: string) => void;
+  onDomainFilter: (filter: string) => void;
+  onClose: () => void;
+  onSelect: (capsule: PraxisCapsuleSummary) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Browse capsules">
+      <section className="max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20" data-testid="capsule-browser-modal">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div>
+            <p className="text-sm font-semibold text-slate-950">Browse capsules</p>
+            <p className="mt-1 text-xs text-slate-500">Select a capsule to add it by its saved category.</p>
+          </div>
+          <button type="button" aria-label="Close capsule browser" onClick={onClose} className="rounded p-1 text-slate-500 hover:bg-slate-100">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-3">
+          <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
+            <Search className="h-4 w-4 text-slate-400" />
+            <input
+              value={query}
+              onChange={(event) => onQuery(event.target.value)}
+              placeholder="Search capsule titles"
+              className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+              autoFocus
+            />
+          </label>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {capsuleTypeFilters.map((filter) => (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => onTypeFilter(filter.id)}
+                className={cn(
+                  'rounded-md border px-2.5 py-1.5 text-xs font-semibold',
+                  typeFilter === filter.id ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100',
+                )}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {capsuleDomainFilters.map((filter) => (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => onDomainFilter(filter.id)}
+                className={cn(
+                  'rounded-md border px-2.5 py-1.5 text-xs font-semibold',
+                  domainFilter === filter.id ? 'border-[#c9a961] bg-[#fff8e8] text-slate-900' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100',
+                )}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="max-h-[52vh] overflow-y-auto p-4">
+          {loading ? <CapsuleEmptyState label="Loading capsules..." /> : null}
+          <div className="grid gap-3 md:grid-cols-2">
+            {capsules.map((capsule) => {
+              const meta = capsuleCategoryMeta(capsule);
+              const role = capsuleDefaultRole(capsule);
+              return (
+                <button
+                  key={capsule.capsuleId}
+                  type="button"
+                  onClick={() => onSelect(capsule)}
+                  className="rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-[#c9a961] hover:shadow-md"
+                >
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-slate-950">{capsule.label}</span>
+                      <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">{meta.summary}</span>
+                    </span>
+                    <span className={cn('shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold', meta.soft)}>
+                      {capsuleRoleLabel(role)}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {!loading && !capsules.length ? <CapsuleEmptyState label="No capsules match that search." /> : null}
+        </div>
+      </section>
     </div>
   );
 }
@@ -2362,25 +2602,8 @@ function ensureDefaultCapsuleStack(
   activeStack: ActiveCapsuleChip[],
   input: { userCapsules: PraxisCapsuleSummary[]; selectedCapsule: PraxisCapsuleSummary | null },
 ): ActiveCapsuleChip[] {
-  const ownedUserCapsule = input.userCapsules.find((capsule) => !capsule.archivedAt && capsuleCategory(capsule) === 'user');
-  const starterUserCapsule = starterCapsuleSummaries.find((capsule) => capsuleCategory(capsule) === 'user');
-  const userChip = activeStack.find((capsule) => capsule.role === 'user')
-    ?? (ownedUserCapsule
-      ? { ...capsuleToChip(ownedUserCapsule), role: 'user' as const }
-      : starterUserCapsule
-        ? { ...capsuleToChip(starterUserCapsule), role: 'user' as const }
-        : STARTER_USER_CAPSULE_CHIP);
-  const situationChip = activeStack.find((capsule) => capsule.role === 'situation')
-    ?? (input.selectedCapsule ? { ...capsuleToChip(input.selectedCapsule), role: 'situation' as const } : GENERIC_POLICY_STARTER_CHIP);
-
-  let next = activeStack;
-  if (!next.some((capsule) => capsule.role === 'user')) next = [userChip, ...next];
-  if (!next.some((capsule) => capsule.role === 'situation')) {
-    const userIndex = next.findIndex((capsule) => capsule.role === 'user');
-    const insertAt = userIndex >= 0 ? userIndex + 1 : 0;
-    next = [...next.slice(0, insertAt), situationChip, ...next.slice(insertAt)];
-  }
-  return uniqueCapsuleStack(next).slice(0, 8);
+  void input;
+  return uniqueCapsuleStack(activeStack).slice(0, 8);
 }
 
 function applyCapsuleToStack(current: ActiveCapsuleChip[], chip: ActiveCapsuleChip): ActiveCapsuleChip[] {
@@ -2464,6 +2687,16 @@ function capsuleCategory(capsule: PraxisCapsuleSummary): CapsuleStarterCategory 
 function capsuleDefaultRole(capsule: PraxisCapsuleSummary): CapsuleRole {
   const category = capsuleCategory(capsule);
   return category === 'custom' ? 'reference' : category;
+}
+
+function capsuleRoleLabel(role: CapsuleRole): string {
+  return capsuleRoles.find((item) => item.id === role)?.label ?? role;
+}
+
+function capsuleNeedsCategoryReview(chip: ActiveCapsuleChip, userCapsules: PraxisCapsuleSummary[]): boolean {
+  const capsule = userCapsules.find((item) => item.capsuleId === chip.id)
+    ?? starterCapsuleSummaries.find((item) => item.capsuleId === chip.id);
+  return capsule ? capsuleCategory(capsule) === 'custom' : chip.role === 'reference' && !chip.id.startsWith('starter-');
 }
 
 function capsuleCategoryMeta(capsule: PraxisCapsuleSummary) {
@@ -2876,10 +3109,7 @@ function CapsuleCard({
   active,
   mutable = true,
   onSelect,
-  onUseAsUser,
-  onUseAsSituation,
-  onUseAsOutput,
-  onAddReference,
+  onAdd,
   onInspect,
   onImprove,
   onCombine,
@@ -2890,19 +3120,18 @@ function CapsuleCard({
   active: boolean;
   mutable?: boolean;
   onSelect: () => void;
-  onUseAsUser: () => void;
-  onUseAsSituation: () => void;
-  onUseAsOutput: () => void;
-  onAddReference: () => void;
+  onAdd: () => void;
   onInspect: () => void;
   onImprove: () => void;
   onCombine: () => void;
   onArchive: () => void;
   onTag: (tag: string) => void;
 }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `capsule-card:${capsule.capsuleId}` });
   const counts = capsuleCounts(capsule);
   const state = capsuleState(capsule);
   const meta = capsuleCategoryMeta(capsule);
+  const defaultRole = capsuleDefaultRole(capsule);
   const score = capsule.trust?.score ?? capsule.health?.score ?? 0;
   const toolRefs = capsule.coreRefs.toolCoreIds ?? [];
   const outputRefs = [...(capsule.coreRefs.outputCoreIds ?? []), ...(capsule.coreRefs.productCoreIds ?? [])];
@@ -2914,7 +3143,12 @@ function CapsuleCard({
   const [tagDraft, setTagDraft] = useState('');
   return (
     <article
-      className={cn('od-praxis-card min-h-[16.5rem] overflow-hidden rounded-lg p-0 transition hover:-translate-y-0.5', active ? 'border-sky-300' : 'border-black/10')}
+      ref={setNodeRef}
+      className={cn(
+        'od-praxis-card min-h-[16.5rem] overflow-hidden rounded-lg p-0 transition hover:-translate-y-0.5',
+        active ? 'border-sky-300' : 'border-black/10',
+        isDragging && 'opacity-70',
+      )}
       style={{
         borderTopColor: meta.color,
         borderTopWidth: 4,
@@ -2932,7 +3166,10 @@ function CapsuleCard({
             <span className="block truncate text-base font-semibold text-slate-900">{capsule.label}</span>
             <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">{meta.summary}</span>
           </span>
-          <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">v{capsule.version}</span>
+          <span className="flex shrink-0 items-center gap-1">
+            <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', meta.soft)}>{capsuleRoleLabel(defaultRole)}</span>
+            <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">v{capsule.version}</span>
+          </span>
         </span>
         <span className="mt-3 flex flex-wrap items-center gap-2">
           {taxonomyChips.map((chip, index) => (
@@ -2974,10 +3211,17 @@ function CapsuleCard({
         <p className="truncate"><span className="font-semibold text-slate-700">Outputs:</span> {outputRefs.length ? outputRefs.slice(0, 4).join(', ') : 'open target'}</p>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button type="button" onClick={onUseAsUser} className="rounded-md bg-sky-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-sky-800">Use as user</button>
-        <button type="button" onClick={onUseAsSituation} className="rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50">Use as situation</button>
-        <button type="button" onClick={onUseAsOutput} className="rounded-md border border-violet-200 px-2.5 py-1.5 text-xs font-semibold text-violet-800 hover:bg-violet-50">Use as output</button>
-        <button type="button" onClick={onAddReference} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Add as reference</button>
+        <button type="button" onClick={onAdd} className="rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">Add</button>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          aria-label={`Drag ${capsule.label} into context chain`}
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+          Drag
+        </button>
         <button type="button" onClick={onInspect} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Inspect</button>
         <button type="button" onClick={onImprove} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Improve</button>
         <button type="button" onClick={onCombine} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Save as combined capsule</button>

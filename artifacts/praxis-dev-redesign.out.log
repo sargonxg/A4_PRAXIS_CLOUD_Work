@@ -1,0 +1,38 @@
+
+> tacitus-app@6.4.1 dev
+> next dev --port 3000
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.160:3000
+- Environments: .env.local
+✓ Ready in 870ms
+[tracing] GCP_PROJECT_ID not set, skipping Cloud Trace init
+- Experiments (use with caution):
+  · serverActions
+
+ GET / 200 in 3.6s (next.js: 822ms, application-code: 2.8s)
+ GET /api/health/runtime 200 in 3.4s (next.js: 559ms, application-code: 2.8s)
+ GET /login?redirect=%2Fapp 200 in 1204ms (next.js: 124ms, proxy.ts: 43ms, application-code: 1038ms)
+[firebase-admin] Initialized successfully with service account from FIREBASE_SERVICE_ACCOUNT_KEY
+ GET /api/auth/session 200 in 2.8s (next.js: 2.7s, application-code: 26ms)
+ GET /login?redirect=%2Fapp%2Fcapsules 200 in 854ms (next.js: 522ms, proxy.ts: 21ms, application-code: 312ms)
+ GET /api/auth/session 200 in 61ms (next.js: 26ms, application-code: 36ms)
+ GET /login?redirect=%2Fapp%2Frepository 200 in 797ms (next.js: 567ms, proxy.ts: 38ms, application-code: 192ms)
+ GET /api/auth/session 200 in 37ms (next.js: 6ms, application-code: 31ms)
+ GET / 200 in 1965ms (next.js: 850ms, application-code: 1114ms)
+ GET /api/health/runtime 200 in 83ms (next.js: 18ms, application-code: 64ms)
+ GET / 200 in 1114ms (next.js: 16ms, application-code: 1098ms)
+ GET /api/health/runtime 200 in 190ms (next.js: 59ms, application-code: 131ms)
+ GET /login?redirect=%2Fapp 200 in 1219ms (next.js: 718ms, proxy.ts: 41ms, application-code: 460ms)
+ GET /api/auth/session 200 in 28ms (next.js: 13ms, application-code: 15ms)
+ GET /login?redirect=%2Fapp%2Fcapsules 200 in 1202ms (next.js: 828ms, proxy.ts: 64ms, application-code: 310ms)
+ GET /api/auth/session 200 in 46ms (next.js: 10ms, application-code: 36ms)
+ GET /login?redirect=%2Fapp%2Frepository 200 in 1133ms (next.js: 839ms, proxy.ts: 55ms, application-code: 238ms)
+ GET /api/auth/session 200 in 33ms (next.js: 5ms, application-code: 28ms)
+ GET / 200 in 1618ms (next.js: 15ms, application-code: 1604ms)
+ GET /api/health/runtime 200 in 33ms (next.js: 5ms, application-code: 27ms)
+ GET /login 200 in 992ms (next.js: 7ms, proxy.ts: 6ms, application-code: 979ms)
+ GET / 200 in 1028ms (next.js: 10ms, application-code: 1017ms)
+ GET /api/auth/session 200 in 21ms (next.js: 5ms, application-code: 16ms)
+ GET /api/health/runtime 200 in 25ms (next.js: 5ms, application-code: 20ms)
