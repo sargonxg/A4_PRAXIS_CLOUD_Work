@@ -165,7 +165,7 @@ describe('context capsule product contract', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS.length).toBeGreaterThanOrEqual(44);
+    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(59);
     expect(starterIds.size).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
@@ -173,7 +173,7 @@ describe('context capsule product contract', () => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toMatchObject({ situation: 15, tool: 10, output: 14, user: 5 });
+    expect(categoryCounts).toEqual({ situation: 20, tool: 15, output: 19, user: 5 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
@@ -320,6 +320,11 @@ describe('context capsule product contract', () => {
       'starter-situation-mediation-track',
       'starter-situation-sanctions-exposure',
       'starter-situation-humanitarian-access-update',
+      'starter-situation-sudan-darfur-atrocity-access',
+      'starter-situation-eastern-drc-m23-mandate-watch',
+      'starter-situation-gaza-ceasefire-aid-reconstruction',
+      'starter-situation-red-sea-houthi-shipping-risk',
+      'starter-situation-essequibo-legal-diplomatic-dispute',
     ]));
 
     for (const starter of situationStarters) {
@@ -329,6 +334,44 @@ describe('context capsule product contract', () => {
       expect(starter.readinessStars, `${starter.starterId} readiness stars`).toBeLessThanOrEqual(5);
       expect(starter.sourcePack.every((source) => source.url.startsWith('https://'))).toBe(true);
       expect(starter.excerpts.every((excerpt) => excerpt.sourceId && excerpt.text.length > 30)).toBe(true);
+    }
+  });
+
+  it('adds the capsule data and inspection starter wave without weakening metadata', () => {
+    const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
+    const expectedNewStarters = [
+      'starter-situation-sudan-darfur-atrocity-access',
+      'starter-situation-eastern-drc-m23-mandate-watch',
+      'starter-situation-gaza-ceasefire-aid-reconstruction',
+      'starter-situation-red-sea-houthi-shipping-risk',
+      'starter-situation-essequibo-legal-diplomatic-dispute',
+      'starter-tool-sourceability-matrix',
+      'starter-tool-temporal-causal-map',
+      'starter-tool-actor-leverage-veto-map',
+      'starter-tool-legal-mandate-compliance-lens',
+      'starter-tool-negotiation-ripeness-decision-clock',
+      'starter-output-principals-decision-memo',
+      'starter-output-negotiation-prep-book',
+      'starter-output-legal-mandate-compliance-note',
+      'starter-output-evidence-sourceability-annex',
+      'starter-output-scenario-risk-dashboard-card',
+    ];
+
+    for (const starterId of expectedNewStarters) {
+      expect(starterIds.has(starterId), `${starterId} missing`).toBe(true);
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId)!;
+      expect(starter.tags.length, `${starterId} tags`).toBeGreaterThanOrEqual(6);
+      expect(starter.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter.excerpts.length, `${starterId} excerpts`).toBeGreaterThanOrEqual(2);
+      expect(starter.inspectionSections.map((section) => section.label)).toEqual(expect.arrayContaining([
+        'Best use',
+        'AI use guidance',
+      ]));
+      expect(starter.suggestedQuestions.length, `${starterId} questions`).toBeGreaterThanOrEqual(3);
+      expect(starter.suggestedNextActions.length, `${starterId} actions`).toBeGreaterThanOrEqual(3);
+      expect(starter.aiUseGuidance, `${starterId} guidance`).toMatch(/source|citation|approval|verify/i);
+      expect(starter.recommendedToolIds.length, `${starterId} tools`).toBeGreaterThanOrEqual(2);
+      expect(starter.outputProductIds.length, `${starterId} outputs`).toBeGreaterThanOrEqual(1);
     }
   });
 

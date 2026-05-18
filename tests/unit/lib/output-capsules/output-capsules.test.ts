@@ -56,8 +56,37 @@ describe('OutputCapsules', () => {
       'diplomatic-cable',
       'talking-points',
       'country-pack',
+      'principals-decision-memo',
+      'negotiation-prep-book',
+      'legal-mandate-compliance-note',
+      'evidence-sourceability-annex',
+      'scenario-risk-dashboard-card',
     ]) {
       expect(ids.has(id), `${id} missing from OutputCapsule catalog`).toBe(true);
+    }
+  });
+
+  it('registers the five capsule inspection output templates with complete contracts', () => {
+    const expectedIds = [
+      'principals-decision-memo',
+      'negotiation-prep-book',
+      'legal-mandate-compliance-note',
+      'evidence-sourceability-annex',
+      'scenario-risk-dashboard-card',
+    ];
+    const coreKinds = new Set(['user', 'situation', 'path', 'source', 'document', 'time', 'graph', 'tool', 'objective', 'product', 'output', 'memory']);
+
+    for (const id of expectedIds) {
+      const template = OUTPUT_CAPSULE_TEMPLATES.find((item) => item.id === id);
+      expect(template, `${id} missing`).toBeTruthy();
+      expect(template?.requiredCores.every((core) => coreKinds.has(core)), `${id} required cores`).toBe(true);
+      expect(template?.optionalCores.every((core) => coreKinds.has(core)), `${id} optional cores`).toBe(true);
+      expect(template?.renderer, `${id} renderer`).toBeTruthy();
+      expect(template?.exporters.length, `${id} exporters`).toBeGreaterThanOrEqual(3);
+      expect(template?.producibleBy.length, `${id} producers`).toBeGreaterThanOrEqual(1);
+      expect(template?.composableWith.length, `${id} composability`).toBeGreaterThanOrEqual(2);
+      expect(template?.qualityPolicy.requireSourceabilityForApproval, `${id} sourceability policy`).toBe(true);
+      expect(template?.qualityPolicy.requireHumanApprovalForShipping, `${id} approval policy`).toBe(true);
     }
   });
 

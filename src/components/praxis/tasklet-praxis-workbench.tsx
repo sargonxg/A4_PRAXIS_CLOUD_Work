@@ -36,7 +36,7 @@ import {
 import { AccountProfileButton } from '@/components/app/account-profile-button';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
-import { LivingContextRail, SourcePostureChip, WorkActionMenu } from '@/components/ui/instrument';
+import { SourcePostureChip, WorkActionMenu } from '@/components/ui/instrument';
 import {
   PENDING_POLICY_AGENT_ID_KEY,
   PENDING_TASKLET_PROMPT_KEY,
@@ -444,43 +444,19 @@ export function TaskletPraxisWorkbench({
   const situationCapsuleForHeader = activeCapsuleStack.find((capsule) => capsule.role === 'situation');
   const outputCapsuleForHeader = activeCapsuleStack.find((capsule) => capsule.role === 'output');
   const referenceCapsulesForHeader = activeCapsuleStack.filter((capsule) => capsule.role === 'reference' || capsule.role === 'tool');
-  const livingRailCells = [
-    {
-      id: 'profile',
-      label: 'Profile',
-      value: userCapsule?.label ?? (isAuthenticated ? (user?.role ?? 'Analyst') : 'Preview analyst'),
-      detail: isAuthenticated ? (user?.orgName ?? 'Private workspace') : 'Sign in to save posture',
-      state: 'ready' as const,
-    },
-    {
-      id: 'context',
-      label: 'Context',
-      value: situationCapsuleForHeader?.label ?? selectedCapsule?.label ?? 'Starter capsule',
-      detail: `${activeCapsuleStack.length} live core${activeCapsuleStack.length === 1 ? '' : 's'}`,
-      state: activeCapsuleStack.length || selectedCapsule ? 'active' as const : 'review' as const,
-    },
-    {
-      id: 'sources',
-      label: 'Sources',
-      value: repositoryDocuments.length ? `${repositoryDocuments.length} repository item${repositoryDocuments.length === 1 ? '' : 's'}` : `${referenceCapsulesForHeader.length} reference${referenceCapsulesForHeader.length === 1 ? '' : 's'}`,
-      detail: repositoryDocuments.length || referenceCapsulesForHeader.length ? 'Source posture visible' : 'Attach documents for proof',
-      state: repositoryDocuments.length || referenceCapsulesForHeader.length ? 'ready' as const : 'review' as const,
-    },
-    {
-      id: 'output',
-      label: 'Output',
-      value: outputCapsuleForHeader?.label ?? selectedAgent.outputDestination?.replace(/_/g, ' ') ?? 'Memo posture',
-      detail: selectedAgent.label,
-      state: outputCapsuleForHeader ? 'ready' as const : 'quiet' as const,
-    },
-    {
-      id: 'readiness',
-      label: 'Readiness',
-      value: selectedCapsule?.health?.score ? `${selectedCapsule.health.score}/100` : selectedAgent.readiness ?? 'Review',
-      detail: selectedCapsule?.health?.warnings?.[0] ?? status,
-      state: selectedCapsule?.health?.score && selectedCapsule.health.score >= 80 ? 'ready' as const : 'active' as const,
-    },
-  ];
+  const activeCapsuleForStrip = selectedCapsule ?? userCapsules[0] ?? starterCapsuleSummaries[0] ?? null;
+  const activeStarterForStrip = starterDefinitionForCapsule(activeCapsuleForStrip);
+  const activeCapsuleSourceCount = activeStarterForStrip?.sourcePack.length
+    ?? ((activeCapsuleForStrip?.coreRefs.sourceCoreIds?.length ?? 0) + (activeCapsuleForStrip?.coreRefs.documentCoreIds?.length ?? 0));
+  const activeCapsuleReadiness = activeStarterForStrip
+    ? `${activeStarterForStrip.readinessStars}/5`
+    : activeCapsuleForStrip?.health?.score
+      ? `${activeCapsuleForStrip.health.score}/100`
+      : activeCapsuleForStrip?.trust?.label ?? 'Review';
+  const activeCapsuleOutputGoal = outputCapsuleForHeader?.label
+    ?? activeStarterForStrip?.outputProductIds[0]?.replace(/-/g, ' ')
+    ?? selectedAgent.outputDestination?.replace(/_/g, ' ')
+    ?? 'Memo posture';
   const conversationUrl = conversationThreadId ? buildConversationUrl(currentCapsuleId, conversationThreadId) : null;
   const focusedRunStream = useOrchestratorEvents(
     focusedRunId ? `/api/agents/runs/${encodeURIComponent(focusedRunId)}/stream` : null,
@@ -1734,13 +1710,6 @@ export function TaskletPraxisWorkbench({
           </header> : null}
 
           <div className={cn('mx-auto flex max-w-6xl flex-col items-center', showWorkbenchNavigation ? 'mt-14 sm:mt-18' : 'mt-8 sm:mt-12')}>
-            <LivingContextRail
-              cells={livingRailCells}
-              actionHref={isAuthenticated ? '/app/capsules' : '/login?mode=signup&redirect=%2Fapp%2Fcapsules'}
-              actionLabel={isAuthenticated ? 'Adjust context' : 'Save context'}
-              compact
-              className="mb-5"
-            />
             <p className="od-praxis-control flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-slate-600">
               <Sparkles className="h-4 w-4 text-[#ca4a25]" />
               Compose your reasoning and policy products from expert ContextCapsules.
@@ -1760,21 +1729,40 @@ export function TaskletPraxisWorkbench({
 
             <div className="od-praxis-panel mt-6 w-full max-w-5xl rounded-xl" data-testid="praxis-main-composer">
               <div className="border-b border-black/10 px-5 py-4" data-testid="capsule-context-bar">
-                <div className="flex flex-wrap items-start justify-between gap-3" data-testid="capsule-context-composer">
-                  <div className="min-w-0">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Capsule context</span>
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
-                      <SourcePostureChip label={`Profile / user: ${userCapsule?.label ?? 'Open'}`} state="ready" />
-                      <SourcePostureChip label={`Situation / context: ${situationCapsuleForHeader?.label ?? 'Open'}`} state="active" />
-                      <SourcePostureChip
-                        label={`Sources: ${repositoryDocuments.length ? `${repositoryDocuments.length} ready` : `${referenceCapsulesForHeader.length} references`}`}
-                        state={repositoryDocuments.length || referenceCapsulesForHeader.length ? 'ready' : 'review'}
-                      />
-                      <SourcePostureChip label={`Output: ${outputCapsuleForHeader?.label ?? selectedAgent.label}`} state={outputCapsuleForHeader ? 'ready' : 'quiet'} />
-                      <SourcePostureChip
-                        label={`Readiness: ${selectedCapsule?.health?.score ? `${selectedCapsule.health.score}/100` : selectedAgent.readiness ?? 'Review'}`}
-                        state={selectedCapsule?.health?.score && selectedCapsule.health.score >= 80 ? 'ready' : 'active'}
-                      />
+                <div className="flex flex-wrap items-center justify-between gap-3" data-testid="capsule-context-composer">
+                  <div className="min-w-0 flex-1" data-testid="active-capsule-strip">
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
+                      <span className="rounded-md bg-slate-950 px-2 py-1 text-white">Active capsule</span>
+                      <span className="max-w-full truncate rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-900">
+                        {activeCapsuleForStrip?.label ?? 'Starter capsule'}
+                      </span>
+                      <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-800">
+                        Trust {activeCapsuleReadiness}
+                      </span>
+                      <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1">
+                        {activeCapsuleSourceCount} source{activeCapsuleSourceCount === 1 ? '' : 's'}
+                      </span>
+                      <span className="rounded-md border border-violet-200 bg-violet-50 px-2 py-1 text-violet-800">
+                        Output {activeCapsuleOutputGoal}
+                      </span>
+                      <button
+                        type="button"
+                        data-testid="active-capsule-open-details"
+                        onClick={() => setInspectorOpen(true)}
+                        className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        <BookOpen className="h-3.5 w-3.5" />
+                        Details
+                      </button>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+                      <span>Profile / user: {userCapsule?.label ?? 'Open'}</span>
+                      <span className="text-slate-300">·</span>
+                      <span>Situation / context: {situationCapsuleForHeader?.label ?? 'Open'}</span>
+                      <span className="text-slate-300">·</span>
+                      <span>Sources: {repositoryDocuments.length ? `${repositoryDocuments.length} repository` : `${referenceCapsulesForHeader.length} reference`}</span>
+                      <span className="text-slate-300">·</span>
+                      <span>Output: {outputCapsuleForHeader?.label ?? selectedAgent.label}</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -4068,6 +4056,12 @@ function CapsuleInspectorSheet({
   const starterSections = meta?.starterDefinition?.inspectionSections ?? [];
   const starterTools = meta?.starterDefinition?.recommendedToolIds ?? [];
   const starterOutputs = meta?.starterDefinition?.outputProductIds ?? [];
+  const starterSourcePack = meta?.starterDefinition?.sourcePack ?? [];
+  const starterExcerpts = meta?.starterDefinition?.excerpts ?? [];
+  const starterQuestions = meta?.starterDefinition?.suggestedQuestions ?? [];
+  const starterActions = meta?.starterDefinition?.suggestedNextActions ?? [];
+  const starterGuidance = meta?.starterDefinition?.aiUseGuidance ?? null;
+  const starterReadiness = meta?.starterDefinition?.readinessStars ?? null;
   const compatible = meta?.starterDefinition?.combinesWellWith
     .map((id) => CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === id)?.label ?? id)
     .slice(0, 4) ?? [];
@@ -4123,6 +4117,58 @@ function CapsuleInspectorSheet({
                 <p className="mt-1 text-xs leading-5 text-slate-500">{section.detail}</p>
               </section>
             ))}
+          </div>
+        ) : null}
+        {starterSourcePack.length ? (
+          <div className="mt-5 rounded-lg border border-slate-200 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase text-slate-400">Source pack</p>
+              {starterReadiness ? <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800">Readiness {starterReadiness}/5</span> : null}
+            </div>
+            <div className="mt-3 grid gap-2">
+              {starterSourcePack.slice(0, 5).map((source) => (
+                <a key={source.id} href={source.url} target="_blank" rel="noreferrer" className="rounded-md border border-slate-200 p-2 text-xs hover:bg-slate-50">
+                  <span className="block font-semibold text-slate-800">{source.label}</span>
+                  <span className="mt-1 block leading-5 text-slate-500">{source.publisher ?? 'Public source'} · tier {source.reliabilityTier ?? 'review'} · {source.relevance}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {starterExcerpts.length ? (
+          <div className="mt-5 rounded-lg border border-slate-200 p-4">
+            <p className="text-xs font-semibold uppercase text-slate-400">Starter excerpts</p>
+            <div className="mt-3 space-y-2">
+              {starterExcerpts.slice(0, 4).map((excerpt, index) => (
+                <p key={`${excerpt.sourceId}-${index}`} className="rounded-md bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+                  <span className="font-mono text-[11px] font-semibold text-slate-400">{excerpt.sourceId}</span> {excerpt.text}
+                </p>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {(starterGuidance || starterQuestions.length || starterActions.length) ? (
+          <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 p-4">
+            <div>
+              <p className="text-xs font-semibold uppercase text-slate-400">AI use guidance</p>
+              {starterGuidance ? <p className="mt-1 text-xs leading-5 text-slate-500">{starterGuidance}</p> : null}
+            </div>
+            {starterQuestions.length ? (
+              <div>
+                <p className="text-xs font-semibold text-slate-800">Suggested questions</p>
+                <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-5 text-slate-500">
+                  {starterQuestions.slice(0, 4).map((question) => <li key={question}>{question}</li>)}
+                </ul>
+              </div>
+            ) : null}
+            {starterActions.length ? (
+              <div>
+                <p className="text-xs font-semibold text-slate-800">Suggested next actions</p>
+                <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-5 text-slate-500">
+                  {starterActions.slice(0, 4).map((action) => <li key={action}>{action}</li>)}
+                </ul>
+              </div>
+            ) : null}
           </div>
         ) : null}
         {(starterTools.length || starterOutputs.length) ? (

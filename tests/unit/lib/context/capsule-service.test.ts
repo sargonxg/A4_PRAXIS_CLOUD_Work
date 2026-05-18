@@ -423,7 +423,7 @@ describe('capsule service', () => {
     const second = await seedStarterCapsules('u1', deps(db));
     const capsules = await listCapsules('u1', { includeArchived: true }, deps(db));
 
-    expect(first.created).toBeGreaterThanOrEqual(44);
+    expect(first.created).toBe(59);
     expect(first.existing).toBe(0);
     expect(second.created).toBe(0);
     expect(second.existing).toBe(first.created);
@@ -441,8 +441,18 @@ describe('capsule service', () => {
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-statistical-annex')?.coreRefs.outputCoreIds).toContain('governance-index');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-evidence-dashboard-brief')?.coreRefs.productCoreIds).toContain('risk-monitor-card');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-data-quality-statistics')?.community.tags).toContain('team:research-strategy');
+    const sudanStarter = capsules.find((capsule) => capsule.capsuleId === 'starter-situation-sudan-darfur-atrocity-access');
+    expect(sudanStarter?.starterSnapshot?.sourcePack?.some((source) => source.id === 'un-sudan-atrocity-famine-risk')).toBe(true);
+    expect(sudanStarter?.starterSnapshot?.excerpts?.length).toBeGreaterThanOrEqual(2);
+    expect(sudanStarter?.starterSnapshot?.aiUseGuidance).toMatch(/verify|source/i);
+    expect(sudanStarter?.starterSnapshot?.agentWorkflow?.outputGoal).toBe('scenario-risk-dashboard-card');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-sourceability-matrix')?.starterSnapshot?.outputProductIds).toContain('evidence-sourceability-annex');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-principals-decision-memo')?.starterSnapshot?.outputProductIds).toContain('principals-decision-memo');
     expect(db.data.has('users/u1/capsules/starter-situation-ai-governance-procurement/sources/nist-ai-rmf')).toBe(true);
     expect(db.data.has('users/u1/capsules/starter-situation-ai-governance-procurement/evaluations/starter-readiness')).toBe(true);
+    expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/sources/un-sudan-atrocity-famine-risk')).toBe(true);
+    expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/evaluations/starter-readiness')).toBe(true);
+    expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/notes/starter-guidance')).toBe(true);
 
     const resolved = await resolveInjectableContext({ uid: 'u1', capsuleId: 'starter-tool-source-pack-builder' }, deps(db));
     expect(resolved.promptBlock).toContain('[starter_capsule_definition]');
@@ -463,7 +473,7 @@ describe('capsule service', () => {
     const capsule = await getCapsule('u1', 'starter-situation-diplomatic-options', deps(db));
 
     expect(result.created).toBe(0);
-    expect(result.existing).toBeGreaterThanOrEqual(44);
+    expect(result.existing).toBe(59);
     expect(capsule?.label).toBe('Edited diplomatic options capsule');
     expect(capsule?.community.tags).toContain('custom-tag');
     expect(capsule?.community.tags).toContain('type:situation');

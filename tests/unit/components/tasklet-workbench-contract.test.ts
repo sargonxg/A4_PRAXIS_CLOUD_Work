@@ -93,6 +93,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
 
   it('keeps one capsule context strip and exposes repository-backed type and domain filters', () => {
     expect(source).toContain('data-testid="capsule-context-bar"');
+    expect(source).toContain('data-testid="active-capsule-strip"');
+    expect(source).toContain('data-testid="active-capsule-open-details"');
     expect(source).toContain('data-testid="capsule-context-composer"');
     expect(source).toContain('Generic policy starter capsule');
     expect(source).toContain('Starter analyst user capsule');
@@ -100,6 +102,10 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('capsuleDomainFilters');
     expect(source).toContain('data-testid="capsule-taxonomy-surface"');
     expect(source).toContain('data-testid="capsule-tool-output-lanes"');
+    expect(source).toContain('Source pack');
+    expect(source).toContain('Starter excerpts');
+    expect(source).toContain('AI use guidance');
+    expect(source).toContain('Suggested next actions');
     expect(source).toContain('Thinking devices');
     expect(source).toContain('Artifacts');
     expect(source).toContain('All types');
@@ -115,9 +121,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Add as reference</button>');
   });
 
-  it('renders the live stack in the Living Context Rail and inside the composer', () => {
-    expect(source).toContain('<LivingContextRail');
-    expect(source).toContain('livingRailCells');
+  it('renders the live stack inside the composer instead of a separate rail above it', () => {
+    expect(source).not.toContain('<LivingContextRail');
+    expect(source).not.toContain('livingRailCells');
     expect(source).toContain('const activeCapsuleStack = useMemo');
     expect(source).toContain('ensureDefaultCapsuleStack(activeCapsules');
     expect(source).toContain("data-testid=\"capsule-context-composer\"");
