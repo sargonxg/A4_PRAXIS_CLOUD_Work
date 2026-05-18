@@ -9,8 +9,8 @@ const okChecks: RuntimeHealthCheck[] = [
   { id: 'frontend', label: 'Frontend runtime', status: 'ok', latencyMs: 1 },
   { id: 'firestore', label: 'Firestore', status: 'ok', latencyMs: 2 },
   { id: 'backend', label: 'Private backend', status: 'ok', latencyMs: 3 },
-  { id: 'database', label: 'Backend checkpoint store', status: 'ok', latencyMs: 4 },
-  { id: 'agent_platform', label: 'Vertex ADK', status: 'unconfigured' },
+  { id: 'agent_ledger', label: 'Deep work queue', status: 'ok', latencyMs: 4 },
+  { id: 'agent_platform', label: 'Agent platform', status: 'unconfigured' },
 ];
 
 describe('runtime health summary', () => {
@@ -36,6 +36,17 @@ describe('runtime health summary', () => {
     );
 
     expect(buildRuntimeHealthSummary(checks, new Date('2026-05-17T12:00:00Z')).status).toBe('down');
+  });
+
+  it('treats the durable agent ledger as a critical Ask runtime dependency and ADK as optional', () => {
+    const checks = okChecks.map((check) =>
+      check.id === 'agent_ledger' ? { ...check, status: 'down' as const } : check,
+    );
+
+    expect(buildRuntimeHealthSummary(checks, new Date('2026-05-17T12:00:00Z'))).toMatchObject({
+      status: 'degraded',
+      summary: 'Some systems degraded',
+    });
   });
 
   it('sanitizes public output by removing details, raw URLs, and environment names', () => {

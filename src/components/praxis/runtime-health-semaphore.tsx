@@ -51,7 +51,11 @@ export function RuntimeHealthSemaphore({ isAuthenticated }: { isAuthenticated: b
   }, []);
 
   const status = fetchFailed ? 'degraded' : payload?.status ?? 'loading';
-  const label = fetchFailed ? 'Some systems degraded' : payload?.summary ?? 'Checking systems';
+  const label = fetchFailed
+    ? 'Ask, agents, memory, and exports degraded'
+    : payload?.summary
+      ? `${payload.summary} for Ask, agents, memory, and exports`
+      : 'Checking Ask, agents, memory, and exports';
   const href = useMemo(() => {
     const target = '/app/settings?tab=system';
     return isAuthenticated ? target : `/login?redirect=${encodeURIComponent(target)}`;

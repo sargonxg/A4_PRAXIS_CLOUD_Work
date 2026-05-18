@@ -39,8 +39,10 @@ import type { ActiveContextStackState } from '@/lib/context/active-context-stack
 import { ASK_ORCHESTRATION_OPTIONS, ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
 import type { ModelPreferenceValue } from '@/lib/ai/model-preferences';
 import type { AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
+import type { AskOrchestrationStatusEvent } from '@/lib/ai/ask-orchestrator';
 import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
 import { buildAskTimelineMessages, type AskTimelineMessage } from '@/lib/ai/ask-conversation';
+import { useOrchestratorEvents } from '@/hooks/useOrchestratorEvents';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
@@ -99,11 +101,26 @@ type AskPanelMessage = AskTimelineMessage & {
   stages?: StreamStage[];
   streaming?: boolean;
   answerEnvelope?: AskAnswerEnvelope;
+  orchestrationEvents?: AskOrchestrationStatusEvent[];
+  queuedRun?: AskOrchestrationStatusEvent | null;
 };
 
 type AskThreadHistory = {
   persistence?: string;
   turns?: AskThreadTurn[];
+};
+
+type RuntimeHealthStatus = 'ok' | 'degraded' | 'down' | 'unconfigured';
+type RuntimeHealthPayload = {
+  status: 'ok' | 'degraded' | 'down';
+  summary: string;
+  checkedAt: string;
+  checks?: Array<{
+    id: string;
+    label: string;
+    status: RuntimeHealthStatus;
+    latencyMs?: number;
+  }>;
 };
 
 export interface AskCoreBrick {
@@ -236,6 +253,7 @@ export function AskStreamPanel({
           createdAt: new Date(timestamp).toISOString(),
           streaming: true,
           stages: [],
+          orchestrationEvents: initialAskWorkingTimeline(),
         },
       ]);
 
@@ -308,6 +326,8 @@ export function AskStreamPanel({
               const payload = JSON.parse(line.slice(2)) as { type?: string; answerEnvelope?: AskAnswerEnvelope };
               if (payload.type === 'answerEnvelope' && payload.answerEnvelope) {
                 updateTimelineMessage(setTimelineMessages, assistantId, { answerEnvelope: payload.answerEnvelope });
+              } else if (isAskOrchestrationStatusEvent(payload)) {
+                appendOrchestrationEvent(setTimelineMessages, assistantId, payload);
               }
             } catch {
               /* ignore malformed custom data chunks */
@@ -473,6 +493,7 @@ export function AskStreamPanel({
           contextPackageId={contextPackageId}
           outputGoal={outputGoal}
         />
+        <AskRuntimeReadinessCard />
         <CapsuleSoftGate coreBricks={coreBricks} healthScore={activeHealthScore} onOpenComposer={onOpenComposer} />
 
         <div className="min-h-[22rem] flex-1 space-y-3 overflow-y-auto p-3">
@@ -661,6 +682,36 @@ function appendTimelineStage(setMessages: TimelineSetter, messageId: string, sta
   )));
 }
 
+function appendOrchestrationEvent(setMessages: TimelineSetter, messageId: string, event: AskOrchestrationStatusEvent) {
+  setMessages((current) => current.map((message) => {
+    if (message.id !== messageId) return message;
+    const existing = message.orchestrationEvents ?? initialAskWorkingTimeline();
+    const nextEvents = existing.map((item) => (item.id === event.id ? event : item));
+    const queuedRun = event.id === 'agent-run' && event.runId ? event : message.queuedRun ?? null;
+    return { ...message, orchestrationEvents: nextEvents, queuedRun };
+  }));
+}
+
+function initialAskWorkingTimeline(): AskOrchestrationStatusEvent[] {
+  return [
+    { type: 'orchestrationStatus', id: 'triage', label: 'Triage', status: 'active', detail: 'Classifying the request.' },
+    { type: 'orchestrationStatus', id: 'context', label: 'Context', status: 'pending', detail: 'Checking the active capsule.' },
+    { type: 'orchestrationStatus', id: 'tools', label: 'Tools', status: 'pending', detail: 'Selecting safe tool routes.' },
+    { type: 'orchestrationStatus', id: 'sources', label: 'Sources', status: 'pending', detail: 'Checking source previews and gaps.' },
+    { type: 'orchestrationStatus', id: 'agent-run', label: 'Agent run', status: 'pending', detail: 'Deciding whether durable work is needed.' },
+    { type: 'orchestrationStatus', id: 'draft', label: 'Draft', status: 'pending', detail: 'Waiting to draft the answer.' },
+  ];
+}
+
+function isAskOrchestrationStatusEvent(value: unknown): value is AskOrchestrationStatusEvent {
+  if (!isRecord(value)) return false;
+  return value.type === 'orchestrationStatus'
+    && typeof value.id === 'string'
+    && typeof value.label === 'string'
+    && typeof value.status === 'string'
+    && typeof value.detail === 'string';
+}
+
 function AskMessageBubble({
   message,
   onDraftPack,
@@ -683,6 +734,7 @@ function AskMessageBubble({
   }
 
   const stages = message.stages?.filter((stage) => stage.stage !== 'synthesis' && stage.stage !== 'interrupt') ?? [];
+  const workingTimeline = mergeWorkingTimeline(message.orchestrationEvents, message.answerEnvelope);
   return (
     <div className="flex justify-start">
       <article className="max-w-[88%] rounded-2xl rounded-bl-md border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm">
@@ -704,6 +756,8 @@ function AskMessageBubble({
         ) : null}
 
         <TimelineMessageReceipt message={message} />
+        <AskWorkingTimeline events={workingTimeline} />
+        <AskQueuedAgentRunPanel queuedRun={message.queuedRun ?? workingTimeline.find((event) => event.id === 'agent-run' && Boolean(event.runId)) ?? null} />
         <OrchestrationReceiptPanel envelope={message.answerEnvelope} />
         <AnswerSourcePreviewPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
 
@@ -742,6 +796,203 @@ function AskMessageBubble({
         ) : null}
       </article>
     </div>
+  );
+}
+
+function mergeWorkingTimeline(
+  events: AskOrchestrationStatusEvent[] | undefined,
+  envelope: AskAnswerEnvelope | undefined,
+): AskOrchestrationStatusEvent[] {
+  const base = events?.length ? events : initialAskWorkingTimeline();
+  const receipt = envelope?.orchestrationReceipt;
+  if (!receipt) return base;
+  const timeline = events?.length ? base : [
+    {
+      type: 'orchestrationStatus' as const,
+      id: 'triage' as const,
+      label: 'Triage',
+      status: 'complete' as const,
+      detail: `${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}.`,
+    },
+    {
+      type: 'orchestrationStatus' as const,
+      id: 'context' as const,
+      label: 'Context',
+      status: receipt.capsule.contextHealth === 'ready' ? 'complete' as const : 'warn' as const,
+      detail: `${receipt.capsule.contextHealth} capsule checked with ${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'}.`,
+    },
+    {
+      type: 'orchestrationStatus' as const,
+      id: 'tools' as const,
+      label: 'Tools',
+      status: receipt.toolRouting.blockedToolIds.length ? 'warn' as const : 'complete' as const,
+      detail: `${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`,
+    },
+    {
+      type: 'orchestrationStatus' as const,
+      id: 'sources' as const,
+      label: 'Sources',
+      status: receipt.capsule.sourcePreviewCount || receipt.capsule.evidenceCount ? 'complete' as const : 'warn' as const,
+      detail: receipt.capsule.sourcePreviewCount ? `${receipt.capsule.sourcePreviewCount} source previews attached.` : 'No source previews attached yet; answer marked gaps.',
+    },
+    {
+      type: 'orchestrationStatus' as const,
+      id: 'agent-run' as const,
+      label: 'Agent run',
+      status: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'queued' as const : receipt.supervisor.action === 'queue_agent_run' ? 'warn' as const : 'skipped' as const,
+      detail: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'Durable agent run queued for deeper work.' : receipt.supervisor.action === 'queue_agent_run' ? 'Durable run could not be queued; Ask continued synchronously.' : 'No durable run needed for this answer.',
+      runId: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? receipt.supervisor.queuedRun.runId : null,
+      outputHref: receipt.supervisor.queuedRun?.outputHref ?? null,
+      canOpen: Boolean(receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable'),
+      canRetry: receipt.supervisor.queuedRun?.status === 'dispatch_failed',
+      canCancel: receipt.supervisor.queuedRun?.status === 'queued' || receipt.supervisor.queuedRun?.status === 'dispatch_enqueued',
+    },
+    {
+      type: 'orchestrationStatus' as const,
+      id: 'draft' as const,
+      label: 'Draft',
+      status: 'complete' as const,
+      detail: 'Answer drafted with source and memo handoff metadata.',
+    },
+  ];
+  return timeline.map((event) => {
+    if (event.id !== 'draft') return event;
+    return { ...event, status: 'complete', detail: 'Answer drafted with source and memo handoff metadata.' };
+  });
+}
+
+function AskWorkingTimeline({ events }: { events: AskOrchestrationStatusEvent[] }) {
+  if (!events.length) return null;
+  return (
+    <section className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2" data-testid="ask-working-timeline">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">PRAXIS is working</p>
+        <span className="font-mono text-[10px] text-slate-500">plain timeline</span>
+      </div>
+      <ol className="mt-2 grid gap-1.5 sm:grid-cols-2">
+        {events.map((event) => (
+          <li key={event.id} className="flex min-w-0 items-start gap-2 rounded-md border border-slate-200 bg-white px-2 py-1.5">
+            <span className={cn(
+              'mt-1 h-2 w-2 shrink-0 rounded-full',
+              event.status === 'complete' ? 'bg-emerald-500'
+                : event.status === 'active' || event.status === 'queued' ? 'bg-diplomatic-blue'
+                  : event.status === 'warn' ? 'bg-gold-500'
+                    : event.status === 'failed' ? 'bg-rose-600'
+                      : event.status === 'skipped' ? 'bg-slate-400'
+                        : 'bg-slate-300',
+            )} aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-slate-900">{event.label}</p>
+              <p className="mt-0.5 text-[11px] leading-4 text-slate-600">{event.detail}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrationStatusEvent | null }) {
+  const runId = queuedRun?.runId ?? null;
+  const [run, setRun] = useState<{ runId: string; status: string; outputHref?: string | null } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [actionPending, setActionPending] = useState<string | null>(null);
+  const eventState = useOrchestratorEvents(runId ? `/api/agents/runs/${encodeURIComponent(runId)}/stream` : null, {
+    enabled: Boolean(runId),
+    limit: 20,
+    maxEvents: 8,
+  });
+
+  const refresh = useCallback(async () => {
+    if (!runId) return;
+    try {
+      const response = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}`, { credentials: 'include', cache: 'no-store' });
+      const payload = await response.json().catch(() => ({})) as { run?: { runId: string; status: string; outputHref?: string | null }; error?: string };
+      if (!response.ok) {
+        setError(response.status === 503 ? 'Deep work queue is not configured in this environment.' : payload.error ?? `Agent run lookup failed (${response.status}).`);
+        return;
+      }
+      setRun(payload.run ?? null);
+      setError(null);
+    } catch {
+      setError('Agent run status could not be refreshed.');
+    }
+  }, [runId]);
+
+  useEffect(() => {
+    if (!runId) return;
+    void refresh();
+    const interval = window.setInterval(() => void refresh(), 10_000);
+    return () => window.clearInterval(interval);
+  }, [refresh, runId]);
+
+  const runAction = useCallback(async (action: 'retry' | 'cancel') => {
+    if (!runId) return;
+    setActionPending(action);
+    try {
+      const response = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}/${action}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const payload = await response.json().catch(() => ({})) as { run?: { runId: string; status: string; outputHref?: string | null }; error?: string };
+      if (!response.ok) {
+        setError(payload.error ?? `${action} failed (${response.status}).`);
+        return;
+      }
+      setRun(payload.run ?? run);
+      setError(null);
+      void refresh();
+    } catch {
+      setError(`${action} could not reach the deep work queue.`);
+    } finally {
+      setActionPending(null);
+    }
+  }, [refresh, run, runId]);
+
+  if (!queuedRun || (!runId && queuedRun.status !== 'failed')) return null;
+
+  const status = run?.status ?? queuedRun.status;
+  const recentEvents = eventState.events.slice(-4).reverse();
+  const canCancel = queuedRun.canCancel && ['queued', 'running', 'waiting_approval', 'dispatch_enqueued', 'queued'].includes(status);
+  const canRetry = queuedRun.canRetry || ['failed', 'cancelled', 'expired'].includes(status);
+
+  return (
+    <section className="mt-3 rounded-md border border-diplomatic-blue/20 bg-blue-50 p-2" data-testid="ask-agent-run-panel">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-diplomatic-blue">Deep work queue</p>
+          <p className="truncate text-xs text-slate-700">{runId ? `${runId} / ${status.replace(/_/g, ' ')}` : queuedRun.detail}</p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {runId ? (
+            <Link href={`/app?agentRunId=${encodeURIComponent(runId)}`} className="rounded-md border border-diplomatic-blue/30 bg-white px-2 py-1 text-[11px] font-semibold text-diplomatic-blue hover:bg-slate-50">
+              Open run
+            </Link>
+          ) : null}
+          {canRetry ? (
+            <button type="button" onClick={() => void runAction('retry')} disabled={Boolean(actionPending)} className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60">
+              {actionPending === 'retry' ? 'Retrying...' : 'Retry'}
+            </button>
+          ) : null}
+          {canCancel ? (
+            <button type="button" onClick={() => void runAction('cancel')} disabled={Boolean(actionPending)} className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60">
+              {actionPending === 'cancel' ? 'Cancelling...' : 'Cancel'}
+            </button>
+          ) : null}
+        </div>
+      </div>
+      {error ? <p className="mt-2 rounded-md border border-gold-200 bg-white px-2 py-1 text-xs text-gold-900">{error}</p> : null}
+      {recentEvents.length ? (
+        <div className="mt-2 space-y-1">
+          {recentEvents.map((event) => (
+            <p key={event.id} className="rounded-md border border-blue-100 bg-white px-2 py-1 text-[11px] text-slate-600">
+              <span className="font-semibold text-slate-800">{event.rawType.replace(/_/g, ' ')}</span>
+              {event.message ? ` / ${event.message}` : null}
+            </p>
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -785,7 +1036,7 @@ function OrchestrationReceiptPanel({ envelope }: { envelope?: AskAnswerEnvelope 
       </div>
       <details className="mt-2">
         <summary className="cursor-pointer text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-          Runtime receipt
+          Advanced receipt
         </summary>
         <div className="mt-2 grid gap-1 sm:grid-cols-2">
           {receipt.stages.map((stage) => (
@@ -992,6 +1243,94 @@ function ChatContextReceipt({
       <span className="min-w-0 flex-1 truncate">Output: {outputGoal}</span>
     </div>
   );
+}
+
+function AskRuntimeReadinessCard() {
+  const [payload, setPayload] = useState<RuntimeHealthPayload | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function refresh() {
+      try {
+        const response = await fetch('/api/health/runtime', { cache: 'no-store' });
+        const next = await response.json() as RuntimeHealthPayload;
+        if (cancelled) return;
+        if (!response.ok || !isRuntimeHealthPayload(next)) {
+          setFailed(true);
+          return;
+        }
+        setPayload(next);
+        setFailed(false);
+      } catch {
+        if (!cancelled) setFailed(true);
+      }
+    }
+    void refresh();
+    const interval = window.setInterval(() => void refresh(), 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const checks = payload?.checks ?? [];
+  const summary = failed ? 'Runtime check failed' : payload?.summary ?? 'Checking Ask runtime';
+  const status = failed ? 'degraded' : payload?.status ?? 'degraded';
+  const selected = ['frontend', 'firestore', 'backend', 'agent_ledger', 'database', 'agent_platform']
+    .map((id) => checks.find((check) => check.id === id))
+    .filter(Boolean) as NonNullable<RuntimeHealthPayload['checks']>;
+
+  return (
+    <section className="border-b border-slate-200 bg-white px-3 py-2" data-testid="ask-runtime-readiness-card">
+      <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-600">
+        <span className={cn(
+          'inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-bold uppercase tracking-[0.12em]',
+          status === 'ok' ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+            : status === 'down' ? 'border-rose-200 bg-rose-50 text-rose-900'
+              : 'border-gold-200 bg-gold-50 text-gold-900',
+        )}>
+          <span className={cn('h-1.5 w-1.5 rounded-full', status === 'ok' ? 'bg-emerald-500' : status === 'down' ? 'bg-rose-600' : 'bg-gold-500')} />
+          Runtime
+        </span>
+        <span className="font-semibold text-slate-800">{summary}</span>
+        <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+          {(selected.length ? selected : fallbackRuntimeChecks()).map((check) => (
+            <span key={check.id} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono">
+              {runtimeCheckLabel(check.id, check.label)}: {check.status}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function fallbackRuntimeChecks(): NonNullable<RuntimeHealthPayload['checks']> {
+  return [
+    { id: 'frontend', label: 'Frontend runtime', status: 'unconfigured' },
+    { id: 'firestore', label: 'Firestore', status: 'unconfigured' },
+    { id: 'backend', label: 'Private backend', status: 'unconfigured' },
+    { id: 'agent_ledger', label: 'Deep work queue', status: 'unconfigured' },
+    { id: 'agent_platform', label: 'Agent platform', status: 'unconfigured' },
+  ];
+}
+
+function runtimeCheckLabel(id: string, label: string): string {
+  if (id === 'frontend') return 'Frontend';
+  if (id === 'firestore') return 'Firestore';
+  if (id === 'backend') return 'Backend';
+  if (id === 'agent_ledger' || id === 'database') return 'Deep work';
+  if (id === 'agent_platform') return 'Agents';
+  return label;
+}
+
+function isRuntimeHealthPayload(value: unknown): value is RuntimeHealthPayload {
+  if (!isRecord(value)) return false;
+  return (value.status === 'ok' || value.status === 'degraded' || value.status === 'down')
+    && typeof value.summary === 'string'
+    && typeof value.checkedAt === 'string'
+    && (value.checks === undefined || Array.isArray(value.checks));
 }
 
 function CapsuleSoftGate({

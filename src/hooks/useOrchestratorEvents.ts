@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export type OrchestratorEventKind = 'start' | 'step' | 'progress' | 'complete' | 'fail';
 
@@ -68,8 +68,16 @@ export function useOrchestratorEvents(
   const lastEventIdRef = useRef<string | null>(null);
   const terminalRef = useRef(false);
 
-  const normalizedUrl = useMemo(() => {
-    if (!streamUrl || !enabled) return null;
+  useEffect(() => {
+    terminalRef.current = false;
+    lastEventIdRef.current = null;
+    setState(initialState);
+  }, [streamUrl]);
+
+  useEffect(() => {
+    if (!streamUrl || !enabled || terminalRef.current || typeof EventSource === 'undefined') return;
+
+    let normalizedUrl = streamUrl;
     try {
       const origin = typeof window === 'undefined' ? 'http://localhost' : window.location.origin;
       const url = new URL(streamUrl, origin);
@@ -78,20 +86,10 @@ export function useOrchestratorEvents(
         url.searchParams.set('after', lastEventIdRef.current);
         url.searchParams.set('lastEventId', lastEventIdRef.current);
       }
-      return `${url.pathname}${url.search}`;
+      normalizedUrl = `${url.pathname}${url.search}`;
     } catch {
-      return streamUrl;
+      normalizedUrl = streamUrl;
     }
-  }, [enabled, limit, streamUrl]);
-
-  useEffect(() => {
-    terminalRef.current = false;
-    lastEventIdRef.current = null;
-    setState(initialState);
-  }, [streamUrl]);
-
-  useEffect(() => {
-    if (!normalizedUrl || terminalRef.current || typeof EventSource === 'undefined') return;
 
     setState((current) => ({
       ...current,
@@ -147,7 +145,7 @@ export function useOrchestratorEvents(
       }
       source.close();
     };
-  }, [maxEvents, normalizedUrl]);
+  }, [enabled, limit, maxEvents, streamUrl]);
 
   return state;
 }

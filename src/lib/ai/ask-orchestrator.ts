@@ -57,6 +57,29 @@ export interface AskConversationOrchestrationReceipt {
   stages: AskOrchestrationStage[];
 }
 
+export type AskOrchestrationStatusId =
+  | 'triage'
+  | 'context'
+  | 'tools'
+  | 'sources'
+  | 'agent-run'
+  | 'draft';
+
+export type AskOrchestrationStatus = 'pending' | 'active' | 'complete' | 'warn' | 'queued' | 'skipped' | 'failed';
+
+export interface AskOrchestrationStatusEvent {
+  type: 'orchestrationStatus';
+  id: AskOrchestrationStatusId;
+  label: string;
+  status: AskOrchestrationStatus;
+  detail: string;
+  runId?: string | null;
+  outputHref?: string | null;
+  canOpen?: boolean;
+  canRetry?: boolean;
+  canCancel?: boolean;
+}
+
 export function buildAskConversationOrchestrationReceipt(input: {
   prompt: string;
   intent: AskIntent;
@@ -153,6 +176,76 @@ export function buildAskConversationOrchestrationReceipt(input: {
   };
 }
 
+export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrchestrationReceipt): AskOrchestrationStatusEvent[] {
+  const queuedRun = receipt.supervisor.queuedRun ?? null;
+  const agentStatus = queuedRun?.status === 'ledger_failed'
+    ? 'failed'
+    : queuedRun?.status === 'dispatch_failed'
+      ? 'warn'
+      : receipt.supervisor.action === 'queue_agent_run'
+        ? 'queued'
+        : 'skipped';
+  const agentDetail = queuedRun?.status === 'ledger_failed'
+    ? 'Deep work queue is unavailable; Ask will continue synchronously.'
+    : queuedRun?.status === 'dispatch_failed'
+      ? 'Durable run was created, but dispatch needs retry.'
+      : receipt.supervisor.action === 'queue_agent_run'
+        ? 'Durable agent run queued for deeper work.'
+        : 'No durable run needed for this answer.';
+
+  return [
+    {
+      type: 'orchestrationStatus',
+      id: 'triage',
+      label: 'Triage',
+      status: 'complete',
+      detail: safeStatusDetail(`${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}.`),
+    },
+    {
+      type: 'orchestrationStatus',
+      id: 'context',
+      label: 'Context',
+      status: receipt.capsule.contextHealth === 'ready' ? 'complete' : 'warn',
+      detail: safeStatusDetail(`${receipt.capsule.contextHealth} capsule checked with ${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'}.`),
+    },
+    {
+      type: 'orchestrationStatus',
+      id: 'tools',
+      label: 'Tools',
+      status: receipt.toolRouting.blockedToolIds.length ? 'warn' : 'complete',
+      detail: safeStatusDetail(`${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`),
+    },
+    {
+      type: 'orchestrationStatus',
+      id: 'sources',
+      label: 'Sources',
+      status: receipt.capsule.sourcePreviewCount || receipt.capsule.evidenceCount ? 'complete' : 'warn',
+      detail: safeStatusDetail(receipt.capsule.sourcePreviewCount
+        ? `${receipt.capsule.sourcePreviewCount} source preview${receipt.capsule.sourcePreviewCount === 1 ? '' : 's'} attached.`
+        : 'No source previews attached yet; answer will mark gaps.'),
+    },
+    {
+      type: 'orchestrationStatus',
+      id: 'agent-run',
+      label: 'Agent run',
+      status: agentStatus,
+      detail: safeStatusDetail(agentDetail),
+      runId: queuedRun?.runId && queuedRun.runId !== 'unavailable' ? queuedRun.runId : null,
+      outputHref: queuedRun?.outputHref ?? null,
+      canOpen: Boolean(queuedRun?.runId && queuedRun.runId !== 'unavailable'),
+      canRetry: queuedRun?.status === 'dispatch_failed',
+      canCancel: queuedRun?.status === 'queued' || queuedRun?.status === 'dispatch_enqueued',
+    },
+    {
+      type: 'orchestrationStatus',
+      id: 'draft',
+      label: 'Draft',
+      status: 'active',
+      detail: 'Answer drafting started.',
+    },
+  ];
+}
+
 export function markAskOrchestrationRunQueued(
   receipt: AskConversationOrchestrationReceipt,
   queuedRun: AskQueuedAgentRunReceipt,
@@ -174,6 +267,16 @@ export function markAskOrchestrationRunQueued(
         }
       : stage),
   };
+}
+
+function safeStatusDetail(value: string): string {
+  return value
+    .replace(/https?:\/\/[^\s"')]+/gi, '[redacted-url]')
+    .replace(/[A-Z0-9_]*(SECRET|TOKEN|KEY|PASSWORD|DATABASE_URL|SERVICE_ACCOUNT)[A-Z0-9_]*/gi, '[redacted-env]')
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]*gserviceaccount\.com/gi, '[redacted-service-account]')
+    .replace(/-----BEGIN [^-]+-----[\s\S]*?-----END [^-]+-----/gi, '[redacted-secret]')
+    .replace(/\b(stack\s+trace|traceback|exception)\b/gi, '[redacted-runtime-detail]')
+    .replace(/\b[a-z0-9-]+\.run\.app\b/gi, '[redacted-url]');
 }
 
 function classifyComplexity(

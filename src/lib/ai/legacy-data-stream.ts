@@ -7,6 +7,7 @@ export function toLegacyDataStreamResponse(
   textStream: AsyncIterable<string>,
   init?: ResponseInit,
   opts: {
+    startData?: unknown[];
     onFinishData?: (text: string) => unknown;
   } = {},
 ): Response {
@@ -21,6 +22,9 @@ export function toLegacyDataStreamResponse(
       async start(controller) {
         let fullText = '';
         try {
+          for (const data of opts.startData ?? []) {
+            controller.enqueue(encoder.encode(`2:${JSON.stringify(data)}\n`));
+          }
           for await (const text of textStream) {
             if (text) {
               fullText += text;

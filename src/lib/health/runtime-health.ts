@@ -18,7 +18,7 @@ export type RuntimeHealthSummary = {
   checks: RuntimeHealthCheck[];
 };
 
-const CRITICAL_CHECK_IDS = new Set(['frontend', 'firestore', 'backend', 'database']);
+const CRITICAL_CHECK_IDS = new Set(['frontend', 'firestore', 'backend', 'database', 'agent_ledger']);
 
 export function buildRuntimeHealthSummary(
   checks: RuntimeHealthCheck[],
@@ -72,14 +72,14 @@ export async function collectRuntimeHealth(): Promise<RuntimeHealthSummary> {
       repairAction: 'Set NEXT_PUBLIC_PRAXIS_BACKEND_URL when the private backend is required.',
     },
     {
-      id: 'database',
-      label: 'Backend checkpoint store',
+      id: 'agent_ledger',
+      label: 'Deep work queue',
       status: process.env.AGENT_RUNTIME_DATABASE_URL || process.env.PRAXIS_DATABASE_URL || process.env.DATABASE_URL ? 'ok' : 'unconfigured',
       repairAction: 'Set an agent runtime database URL for durable queued-agent ledgers.',
     },
     {
       id: 'agent_platform',
-      label: 'Vertex ADK',
+      label: 'Agent platform',
       status: process.env.GOOGLE_VERTEX_PROJECT ? 'ok' : 'unconfigured',
       repairAction: 'Configure Vertex project and ADK worker credentials for queued agent execution.',
     },

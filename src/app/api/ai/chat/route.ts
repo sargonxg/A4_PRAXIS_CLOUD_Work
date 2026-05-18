@@ -48,6 +48,7 @@ import {
 import { buildAskAnswerEnvelope, buildSourcePreviewCards, type AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
 import {
   buildAskConversationOrchestrationReceipt,
+  buildAskOrchestrationStatusEvents,
   markAskOrchestrationRunQueued,
   type AskConversationOrchestrationReceipt,
 } from '@/lib/ai/ask-orchestrator';
@@ -603,6 +604,7 @@ You have access to the user's active situation data. When answering questions:
     });
 
     return toLegacyDataStreamResponse(result.textStream, undefined, {
+      startData: buildAskOrchestrationStatusEvents(orchestrationReceipt),
       onFinishData: (text) => ({
         type: 'answerEnvelope',
         answerEnvelope: buildEnvelopeForText(text),

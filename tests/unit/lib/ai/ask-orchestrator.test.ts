@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildAskConversationOrchestrationReceipt } from '@/lib/ai/ask-orchestrator';
+import {
+  buildAskConversationOrchestrationReceipt,
+  buildAskOrchestrationStatusEvents,
+} from '@/lib/ai/ask-orchestrator';
 import type { AskContextReceipt } from '@/lib/ai/ask-conversation';
 
 describe('Ask PRAXIS conversation orchestrator', () => {
@@ -71,6 +74,58 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       'graph-mutation',
       'external-export',
     ]));
+  });
+
+  it('maps receipt stages to safe user-facing Ask working timeline events', () => {
+    const receipt = buildAskConversationOrchestrationReceipt({
+      prompt: 'Do a deep sourceability review and prepare a memo with current sources.',
+      intent: 'sourceability_review',
+      contextReceipt: contextReceipt({ health: 'thin', evidenceCount: 1, warnings: ['DATABASE_URL missing at https://internal.run.app'] }),
+      sourcePreviewCount: 2,
+      activeGapCount: 3,
+      contextPackageId: 'pack-1',
+    });
+
+    const events = buildAskOrchestrationStatusEvents(receipt);
+
+    expect(events.map((event) => event.label)).toEqual([
+      'Triage',
+      'Context',
+      'Tools',
+      'Sources',
+      'Agent run',
+      'Draft',
+    ]);
+    expect(events.map((event) => event.status)).toEqual([
+      'complete',
+      'warn',
+      'complete',
+      'complete',
+      'queued',
+      'active',
+    ]);
+    expect(events.find((event) => event.id === 'agent-run')).toMatchObject({
+      detail: 'Durable agent run queued for deeper work.',
+    });
+    const serialized = JSON.stringify(events);
+    expect(serialized).not.toContain('DATABASE_URL');
+    expect(serialized).not.toContain('https://');
+    expect(serialized).not.toContain('run.app');
+  });
+
+  it('marks skipped agent runs plainly for simple synchronous answers', () => {
+    const receipt = buildAskConversationOrchestrationReceipt({
+      prompt: 'Summarize this capsule.',
+      intent: 'normal_answer',
+      contextReceipt: contextReceipt({ health: 'ready', evidenceCount: 4 }),
+      sourcePreviewCount: 0,
+      activeGapCount: 0,
+    });
+
+    expect(buildAskOrchestrationStatusEvents(receipt).find((event) => event.id === 'agent-run')).toMatchObject({
+      status: 'skipped',
+      detail: 'No durable run needed for this answer.',
+    });
   });
 });
 
