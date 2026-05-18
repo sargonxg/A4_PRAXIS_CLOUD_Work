@@ -3,7 +3,14 @@ import { z } from 'zod';
 import { POST as askPraxisPost } from '@/app/api/ai/ask-praxis/route';
 import { resolveTier } from '@/lib/api/tier';
 import { withAuth } from '@/lib/api/with-auth';
-import { canStartConversationThisWeek, normalizeAppliedCapsules } from '@/lib/conversations/entitlements';
+import {
+  PRAXIS_ASK_TOKEN_COST,
+  PRAXIS_FREE_MONTHLY_CREDIT_ALLOWANCE,
+  monthlyUsageDocId,
+  currentMonthlyUsageKey,
+} from '@/lib/billing/usage-policy';
+import { hasConversationCapsuleSignal } from '@/lib/conversations/capsule-signal';
+import { canStartConversationThisMonth, normalizeAppliedCapsules } from '@/lib/conversations/entitlements';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
@@ -47,29 +54,51 @@ export const POST = withAuth<ConversationTurnRouteContext>(async (request, user,
   const conversationRef = db
     .collection('users').doc(user.uid)
     .collection('conversations').doc(cleanConversationId);
+  const monthKey = currentMonthlyUsageKey();
   const usageRef = db
     .collection('users').doc(user.uid)
-    .collection('usage').doc(`weekly-free-${currentWeekKey()}`);
+    .collection('usage').doc(monthlyUsageDocId(monthKey));
   const [conversationSnap, usageSnap, tier] = await Promise.all([
     conversationRef.get(),
     usageRef.get(),
     resolveTier(user.uid, false),
   ]);
   const existingTurnCount = Number(conversationSnap.data()?.turnCount ?? 0);
-  const used = Number(usageSnap.data()?.conversationCount ?? 0);
-  const gate = canStartConversationThisWeek({ tier, used, existingTurnCount });
+  const creditsUsed = Number(usageSnap.data()?.creditsUsed ?? 0);
+  const gate = canStartConversationThisMonth({
+    tier,
+    creditsUsed,
+    requestedCredits: PRAXIS_ASK_TOKEN_COST,
+    existingTurnCount,
+    user,
+  });
   if (!gate.allowed) {
     return NextResponse.json({
-      error: 'Weekly free conversation used',
+      error: 'Monthly PRAXIS credit allowance used',
       code: gate.reason,
-      allowance: 1,
-      used,
+      allowance: PRAXIS_FREE_MONTHLY_CREDIT_ALLOWANCE,
+      used: creditsUsed,
+      creditsUsed,
       remaining: gate.remaining,
+      monthKey,
       upgradeHref: '/pricing',
     }, { status: 402 });
   }
 
   const appliedCapsules = normalizeAppliedCapsules(parsed.data.appliedCapsules);
+  if (!hasConversationCapsuleSignal({
+    capsuleId: parsed.data.capsuleId,
+    contextPackageId: parsed.data.contextPackageId,
+    appliedCapsules,
+    activeContextStack: parsed.data.activeContextStack,
+  })) {
+    return NextResponse.json({
+      error: 'Active ContextCapsule is required before Ask PRAXIS can answer this logged-in conversation.',
+      code: 'capsule_context_required',
+      category: 'capsule_resolution',
+    }, { status: 412 });
+  }
+
   const now = new Date().toISOString();
   await conversationRef.set({
     conversationId: cleanConversationId,
@@ -107,17 +136,4 @@ export const POST = withAuth<ConversationTurnRouteContext>(async (request, user,
 
 function cleanDocId(value: string): string {
   return value.trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 96);
-}
-
-function currentWeekKey(): string {
-  const now = new Date();
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const day = start.getUTCDay() || 7;
-  start.setUTCDate(start.getUTCDate() - day + 1);
-  start.setUTCHours(0, 0, 0, 0);
-  const yearStart = new Date(Date.UTC(start.getUTCFullYear(), 0, 4));
-  const yearStartDay = yearStart.getUTCDay() || 7;
-  yearStart.setUTCDate(yearStart.getUTCDate() - yearStartDay + 1);
-  const week = Math.floor((start.getTime() - yearStart.getTime()) / 604_800_000) + 1;
-  return `${start.getUTCFullYear()}-W${String(Math.max(1, week)).padStart(2, '0')}`;
 }

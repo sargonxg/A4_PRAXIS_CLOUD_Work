@@ -15,17 +15,18 @@ describe('Auth Security Contracts', () => {
     expect(SESSION_COOKIE).toBe('tacitus-auth-session');
   });
 
-  it('rate limit constants are reasonable', () => {
-    const RATE_LIMIT = 100;
+  it('rate limit constants are reasonable for active streaming workflows', () => {
+    const RATE_LIMIT = 300;
     const RATE_WINDOW_MS = 60_000;
-    expect(RATE_LIMIT).toBeGreaterThanOrEqual(50);
+    expect(RATE_LIMIT).toBeGreaterThanOrEqual(200);
     expect(RATE_LIMIT).toBeLessThanOrEqual(500);
     expect(RATE_WINDOW_MS).toBe(60_000); // 1 minute
   });
 
-  it('initial PRAXIS token allowance is 1000 on signup', () => {
-    const INITIAL_CREDITS = 1000;
-    expect(INITIAL_CREDITS).toBe(1000);
+  it('free monthly PRAXIS credit allowance supports ten deep conversations per day', async () => {
+    const { PRAXIS_FREE_MONTHLY_CREDIT_ALLOWANCE, PRAXIS_ASK_TOKEN_COST } = await import('../lib/billing/usage-policy');
+    expect(PRAXIS_ASK_TOKEN_COST).toBe(10);
+    expect(PRAXIS_FREE_MONTHLY_CREDIT_ALLOWANCE).toBe(31_000);
   });
 
   it('JWT has exactly 3 parts separated by dots', () => {
@@ -123,6 +124,16 @@ describe('Credit Cost Validation', () => {
   it('Ask PRAXIS chat costs 10 starter tokens per question', async () => {
     const { AI_CREDIT_COSTS } = await import('../lib/firebase/firestore');
     expect(AI_CREDIT_COSTS['ai_chat']).toBe(10);
+  });
+
+  it('verified unlimited usage admins bypass product and minute gates by email only when verified', async () => {
+    const { isUnlimitedUsagePrincipal, shouldBypassMinuteRateLimit } = await import('../lib/billing/usage-policy');
+
+    expect(isUnlimitedUsagePrincipal({ email: 'giulio@tacitus.me', emailVerified: true })).toBe(true);
+    expect(isUnlimitedUsagePrincipal({ email: 'giuliocatanzariti@gmail.com', emailVerified: true })).toBe(true);
+    expect(isUnlimitedUsagePrincipal({ email: 'giulio@tacitus.me', emailVerified: false })).toBe(false);
+    expect(shouldBypassMinuteRateLimit({ email: 'giulio@tacitus.me', emailVerified: true, isDemo: false })).toBe(true);
+    expect(shouldBypassMinuteRateLimit({ email: 'analyst@example.com', emailVerified: true, isDemo: false })).toBe(false);
   });
 
   it('no operation costs more than 10 credits', async () => {

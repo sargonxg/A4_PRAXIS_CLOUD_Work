@@ -18,17 +18,17 @@ export type RuntimeHealthSummary = {
   checks: RuntimeHealthCheck[];
 };
 
-const CRITICAL_CHECK_IDS = new Set(['frontend', 'firestore', 'backend', 'database', 'agent_ledger', 'agent_queue']);
+const CRITICAL_CHECK_IDS = new Set(['frontend', 'firestore', 'backend', 'database', 'agent_ledger', 'agent_queue', 'agent_worker']);
 
 export function buildRuntimeHealthSummary(
   checks: RuntimeHealthCheck[],
   checkedAt: Date = new Date(),
 ): RuntimeHealthSummary {
   const criticalChecks = checks.filter((check) => CRITICAL_CHECK_IDS.has(check.id));
-  const criticalDown = criticalChecks.some((check) => check.status === 'down');
+  const criticalUnavailable = criticalChecks.some((check) => check.status === 'down' || check.status === 'unconfigured');
   const anyDown = checks.some((check) => check.status === 'down');
   const anyDegraded = checks.some((check) => check.status === 'degraded');
-  const status = criticalDown
+  const status = criticalUnavailable
     ? checks.some((check) => check.id === 'firestore' && check.status === 'down') ? 'down' : 'degraded'
     : anyDown || anyDegraded ? 'degraded' : 'ok';
 
@@ -79,6 +79,7 @@ export async function collectRuntimeHealth(): Promise<RuntimeHealthSummary> {
       repairAction: 'Set an agent runtime database URL for durable queued-agent ledgers.',
     },
     queueCheck,
+    checkAgentWorkerDispatch(),
     {
       id: 'agent_platform',
       label: 'Agent platform',
@@ -89,6 +90,24 @@ export async function collectRuntimeHealth(): Promise<RuntimeHealthSummary> {
 
   checks[0] = { ...checks[0], latencyMs: Date.now() - startedAt };
   return buildRuntimeHealthSummary(checks);
+}
+
+function checkAgentWorkerDispatch(): RuntimeHealthCheck {
+  const hasBaseUrl = Boolean(
+    process.env.AGENT_RUN_WORKER_BASE_URL
+      || process.env.NEXT_PUBLIC_APP_URL
+      || process.env.APP_URL
+      || process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  );
+  const hasOidc = Boolean(process.env.AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL && process.env.AGENT_RUN_WORKER_OIDC_AUDIENCE);
+  const hasSharedSecretFallback = Boolean(process.env.AGENT_RUN_WORKER_SHARED_SECRET);
+  const configured = hasBaseUrl && (hasOidc || hasSharedSecretFallback);
+  return {
+    id: 'agent_worker',
+    label: 'Agent worker dispatch',
+    status: configured ? 'ok' : 'unconfigured',
+    repairAction: 'Set AGENT_RUN_WORKER_BASE_URL plus AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL and AGENT_RUN_WORKER_OIDC_AUDIENCE for Cloud Tasks dispatch.',
+  };
 }
 
 async function checkAgentTaskQueue(): Promise<RuntimeHealthCheck> {

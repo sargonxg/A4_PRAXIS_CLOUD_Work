@@ -98,5 +98,22 @@ function ledgerError(err: unknown): Response {
       detail: 'Set AGENT_RUNTIME_DATABASE_URL, PRAXIS_DATABASE_URL, or DATABASE_URL for Cloud SQL Postgres.',
     }, { status: 503 });
   }
+  if (isCloudSqlConnectivityError(err)) {
+    return NextResponse.json({
+      error: 'Agent run ledger unavailable',
+      persisted: false,
+      degraded: true,
+      detail: 'The durable agent ledger is temporarily unavailable. Agent run history and queue actions are degraded.',
+    }, { status: 503 });
+  }
   return NextResponse.json({ error: 'Agent run ledger error' }, { status: 500 });
+}
+
+function isCloudSqlConnectivityError(err: unknown): boolean {
+  const code = typeof err === 'object' && err && 'code' in err ? String((err as { code?: unknown }).code) : '';
+  const message = err instanceof Error ? err.message : String(err);
+  return [
+    code,
+    message,
+  ].some((value) => /ETIMEDOUT|ECONNREFUSED|ENETUNREACH|connection timeout|connect timeout|timeout expired|Cloud SQL/i.test(value));
 }

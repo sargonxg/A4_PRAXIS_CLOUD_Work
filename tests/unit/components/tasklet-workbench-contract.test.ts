@@ -65,9 +65,15 @@ describe('Tasklet PRAXIS workbench contract', () => {
 
   it('uses specific Ask PRAXIS failure guidance instead of a generic dead end', () => {
     expect(source).toContain('describeAskFailure');
-    expect(source).toContain('Your prompt is still in the composer');
-    expect(source).toContain('network');
+    expect(source).toContain('@/lib/ai/tasklet-stream');
     expect(source).not.toContain('I could not complete that request. Check authentication and model access, then try again.');
+  });
+
+  it('forwards capsule package context and preserves real stream error details', () => {
+    expect(source).toContain('contextPackageId: selectedCapsule?.capsuleId');
+    expect(source).toContain('parseDataStreamError(line)');
+    expect(source).toContain('Conversation saved at this link with');
+    expect(source).not.toContain("return typeof parsed === 'string' ? parsed : 'Ask PRAXIS stream failed.'");
   });
 
   it('does not render old manual action rows above the composer', () => {

@@ -105,3 +105,944 @@ https://react.dev/link/hydration-mismatch
 React will never use eval() in production mode 
 [browser] eval() is not supported in this environment. If this page was served with a `Content-Security-Policy` header, make sure that `unsafe-eval` is included. React requires eval() in development mode for various debugging features like reconstructing callstacks from a different environment.
 React will never use eval() in production mode 
+⨯ ./src/components/praxis/tasklet-praxis-workbench.tsx:2268:10
+the name `describeAskFailure` is defined multiple times
+  [90m2266 |[0m }
+  [90m2267 |[0m
+[31m[1m>[0m [90m2268 |[0m [36mfunction[0m describeAskFailure(message: string): string {
+  [90m     |[0m          [31m[1m^^^^^^^^^^^^^^^^^^[0m
+  [90m2269 |[0m   [36mconst[0m lower = message.toLowerCase();
+  [90m2270 |[0m   [36mif[0m (lower.includes([32m'401'[0m) || lower.includes([32m'403'[0m) || lower.includes([32m'auth'[0m) || lower....
+  [90m2271 |[0m     [36mreturn[0m [32m`Ask PRAXIS could not use your current session. Sign in again or refresh the ...[0m
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+
+
+./src/components/praxis/tasklet-praxis-workbench.tsx:3615:10
+the name `parseDataStreamError` is defined multiple times
+  [90m3613 |[0m }
+  [90m3614 |[0m
+[31m[1m>[0m [90m3615 |[0m [36mfunction[0m parseDataStreamError(line: string): string | [36mnull[0m {
+  [90m     |[0m          [31m[1m^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3616 |[0m   [36mif[0m (!line.startsWith([32m'3:'[0m)) [36mreturn[0m [36mnull[0m;
+  [90m3617 |[0m   [36mtry[0m {
+  [90m3618 |[0m     [36mconst[0m parsed = [33mJSON[0m.parse(line.slice([35m2[0m));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:2264:10
+the name `describeAskFailure` is defined multiple times
+  2262 | }
+  2263 |
+> 2264 | function describeAskFailure(message: string): string {
+       |          ^^^^^^^^^^^^^^^^^^
+  2265 |   const lower = message.toLowerCase();
+  2266 |   if (lower.includes('401') || lower.includes('403') || lower.includes('auth') || lower....
+  2267 |     return `Ask PRAXIS could not use your current session. Sign in again or refresh the ...
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3611:10
+the name `parseDataStreamError` is defined multiple times
+  3609 | }
+  3610 |
+> 3611 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3612 |   if (!line.startsWith('3:')) return null;
+  3613 |   try {
+  3614 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:2264:10
+the name `describeAskFailure` is defined multiple times
+  2262 | }
+  2263 |
+> 2264 | function describeAskFailure(message: string): string {
+       |          ^^^^^^^^^^^^^^^^^^
+  2265 |   const lower = message.toLowerCase();
+  2266 |   if (lower.includes('401') || lower.includes('403') || lower.includes('auth') || lower....
+  2267 |     return `Ask PRAXIS could not use your current session. Sign in again or refresh the ...
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3611:10
+the name `parseDataStreamError` is defined multiple times
+  3609 | }
+  3610 |
+> 3611 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3612 |   if (!line.startsWith('3:')) return null;
+  3613 |   try {
+  3614 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:2264:10
+the name `describeAskFailure` is defined multiple times
+  2262 | }
+  2263 |
+> 2264 | function describeAskFailure(message: string): string {
+       |          ^^^^^^^^^^^^^^^^^^
+  2265 |   const lower = message.toLowerCase();
+  2266 |   if (lower.includes('401') || lower.includes('403') || lower.includes('auth') || lower....
+  2267 |     return `Ask PRAXIS could not use your current session. Sign in again or refresh the ...
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3611:10
+the name `parseDataStreamError` is defined multiple times
+  3609 | }
+  3610 |
+> 3611 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3612 |   if (!line.startsWith('3:')) return null;
+  3613 |   try {
+  3614 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:2264:10
+the name `describeAskFailure` is defined multiple times
+  2262 | }
+  2263 |
+> 2264 | function describeAskFailure(message: string): string {
+       |          ^^^^^^^^^^^^^^^^^^
+  2265 |   const lower = message.toLowerCase();
+  2266 |   if (lower.includes('401') || lower.includes('403') || lower.includes('auth') || lower....
+  2267 |     return `Ask PRAXIS could not use your current session. Sign in again or refresh the ...
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3611:10
+the name `parseDataStreamError` is defined multiple times
+  3609 | }
+  3610 |
+> 3611 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3612 |   if (!line.startsWith('3:')) return null;
+  3613 |   try {
+  3614 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:2268:10
+the name `describeAskFailure` is defined multiple times
+  2266 | }
+  2267 |
+> 2268 | function describeAskFailure(message: string): string {
+       |          ^^^^^^^^^^^^^^^^^^
+  2269 |   const lower = message.toLowerCase();
+  2270 |   if (lower.includes('401') || lower.includes('403') || lower.includes('auth') || lower....
+  2271 |     return `Ask PRAXIS could not use your current session. Sign in again or refresh the ...
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3615:10
+the name `parseDataStreamError` is defined multiple times
+  3613 | }
+  3614 |
+> 3615 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3616 |   if (!line.startsWith('3:')) return null;
+  3617 |   try {
+  3618 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:2268:10
+the name `describeAskFailure` is defined multiple times
+  2266 | }
+  2267 |
+> 2268 | function describeAskFailure(message: string): string {
+       |          ^^^^^^^^^^^^^^^^^^
+  2269 |   const lower = message.toLowerCase();
+  2270 |   if (lower.includes('401') || lower.includes('403') || lower.includes('auth') || lower....
+  2271 |     return `Ask PRAXIS could not use your current session. Sign in again or refresh the ...
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3615:10
+the name `parseDataStreamError` is defined multiple times
+  3613 | }
+  3614 |
+> 3615 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3616 |   if (!line.startsWith('3:')) return null;
+  3617 |   try {
+  3618 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:2268:10
+the name `describeAskFailure` is defined multiple times
+  2266 | }
+  2267 |
+> 2268 | function describeAskFailure(message: string): string {
+       |          ^^^^^^^^^^^^^^^^^^
+  2269 |   const lower = message.toLowerCase();
+  2270 |   if (lower.includes('401') || lower.includes('403') || lower.includes('auth') || lower....
+  2271 |     return `Ask PRAXIS could not use your current session. Sign in again or refresh the ...
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3615:10
+the name `parseDataStreamError` is defined multiple times
+  3613 | }
+  3614 |
+> 3615 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3616 |   if (!line.startsWith('3:')) return null;
+  3617 |   try {
+  3618 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:2268:10
+the name `describeAskFailure` is defined multiple times
+  2266 | }
+  2267 |
+> 2268 | function describeAskFailure(message: string): string {
+       |          ^^^^^^^^^^^^^^^^^^
+  2269 |   const lower = message.toLowerCase();
+  2270 |   if (lower.includes('401') || lower.includes('403') || lower.includes('auth') || lower....
+  2271 |     return `Ask PRAXIS could not use your current session. Sign in again or refresh the ...
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3615:10
+the name `parseDataStreamError` is defined multiple times
+  3613 | }
+  3614 |
+> 3615 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3616 |   if (!line.startsWith('3:')) return null;
+  3617 |   try {
+  3618 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+⨯ ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  [90m3599 |[0m }
+  [90m3600 |[0m
+[31m[1m>[0m [90m3601 |[0m [36mfunction[0m parseDataStreamError(line: string): string | [36mnull[0m {
+  [90m     |[0m          [31m[1m^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3602 |[0m   [36mif[0m (!line.startsWith([32m'3:'[0m)) [36mreturn[0m [36mnull[0m;
+  [90m3603 |[0m   [36mtry[0m {
+  [90m3604 |[0m     [36mconst[0m parsed = [33mJSON[0m.parse(line.slice([35m2[0m));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+⨯ ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  [90m3599 |[0m }
+  [90m3600 |[0m
+[31m[1m>[0m [90m3601 |[0m [36mfunction[0m parseDataStreamError(line: string): string | [36mnull[0m {
+  [90m     |[0m          [31m[1m^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3602 |[0m   [36mif[0m (!line.startsWith([32m'3:'[0m)) [36mreturn[0m [36mnull[0m;
+  [90m3603 |[0m   [36mtry[0m {
+  [90m3604 |[0m     [36mconst[0m parsed = [33mJSON[0m.parse(line.slice([35m2[0m));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+⨯ ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  [90m3599 |[0m }
+  [90m3600 |[0m
+[31m[1m>[0m [90m3601 |[0m [36mfunction[0m parseDataStreamError(line: string): string | [36mnull[0m {
+  [90m     |[0m          [31m[1m^^^^^^^^^^^^^^^^^^^^[0m
+  [90m3602 |[0m   [36mif[0m (!line.startsWith([32m'3:'[0m)) [36mreturn[0m [36mnull[0m;
+  [90m3603 |[0m   [36mtry[0m {
+  [90m3604 |[0m     [36mconst[0m parsed = [33mJSON[0m.parse(line.slice([35m2[0m));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] Uncaught Error: ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+
+    at <unknown> (Error: ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10)
+    at <unknown> (Error: (./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10)
+[browser] Uncaught Error: ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+
+    at <unknown> (Error: ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10)
+    at <unknown> (Error: (./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10)
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx
+    ./src/app/app/repository/page.tsx 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import traces:
+  Client Component Browser:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component Browser]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Client Component SSR]
+    ./src/components/landing/phase8-wow-landing.tsx [Server Component]
+    ./src/app/(landing)/page.tsx [Server Component] 
+[browser] ./src/components/praxis/tasklet-praxis-workbench.tsx:3601:10
+the name `parseDataStreamError` is defined multiple times
+  3599 | }
+  3600 |
+> 3601 | function parseDataStreamError(line: string): string | null {
+       |          ^^^^^^^^^^^^^^^^^^^^
+  3602 |   if (!line.startsWith('3:')) return null;
+  3603 |   try {
+  3604 |     const parsed = JSON.parse(line.slice(2));
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./src/components/praxis/tasklet-praxis-workbench.tsx
+    ./src/app/app/repository/page.tsx 
+[browser] eval() is not supported in this environment. If this page was served with a `Content-Security-Policy` header, make sure that `unsafe-eval` is included. React requires eval() in development mode for various debugging features like reconstructing callstacks from a different environment.
+React will never use eval() in production mode 

@@ -160,4 +160,60 @@ describe('runPraxisDoctor', () => {
     expect(report.checks.some((check) => check.id === 'agent-run-queue' && check.status === 'PASS')).toBe(true);
     expect(report.artifacts?.some((artifact) => artifact.tag === 'praxis-doctor-canary-20260517T120000000Z')).toBe(true);
   });
+
+  it('warns when the deployed frontend lacks Direct VPC egress or worker OIDC env', async () => {
+    const cloudRunService = {
+      status: { latestReadyRevisionName: 'praxis-frontend-00001-abc' },
+      spec: {
+        template: {
+          metadata: {
+            annotations: {
+              'run.googleapis.com/cloudsql-instances': 'praxisbytacitus:us-east4:praxisbytacitus-instance',
+            },
+          },
+          spec: {
+            containers: [
+              {
+                env: [
+                  { name: 'AGENT_RUNTIME_DATABASE_URL', valueFrom: { secretKeyRef: { name: 'praxis-agent-runtime-database-url' } } },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    };
+    const exec = vi.fn(async (command: string) => {
+      if (command === 'git branch --show-current') return { code: 0, stdout: 'main\n', stderr: '' };
+      if (command === 'git rev-parse HEAD') return { code: 0, stdout: 'abc123\n', stderr: '' };
+      if (command === 'git status --short') return { code: 0, stdout: '', stderr: '' };
+      if (command === 'git rev-list --left-right --count origin/main...HEAD') return { code: 0, stdout: '0\t0\n', stderr: '' };
+      if (command.includes('run services describe praxis-frontend')) return { code: 0, stdout: JSON.stringify(cloudRunService), stderr: '' };
+      return { code: 0, stdout: 'ok', stderr: '' };
+    });
+    const fetch = vi.fn(async (url: string) => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: 'ok', url }),
+      text: async () => 'ok',
+    }));
+
+    const report = await runPraxisDoctor({
+      options: parseDoctorArgs(['--skip-build']),
+      exec,
+      fetch,
+      now: new Date('2026-05-17T12:00:00.000Z'),
+      env: {},
+      writeArtifacts: false,
+    });
+
+    expect(report.checks).toContainEqual(expect.objectContaining({
+      id: 'cloud-run-private-sql-networking',
+      status: 'WARN',
+    }));
+    expect(report.checks).toContainEqual(expect.objectContaining({
+      id: 'agent-worker-runtime-env',
+      status: 'WARN',
+    }));
+  });
 });

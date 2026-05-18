@@ -55,12 +55,16 @@ type AccountRecord = {
   isDemo?: boolean;
 };
 
-type WeeklyUsage = {
+type MonthlyUsage = {
   allowance: number;
   used: number;
+  creditsUsed?: number;
   remaining: number;
-  weekKey?: string;
+  conversationStarts?: number;
+  monthKey?: string;
   nextResetAt?: string;
+  resetAt?: string;
+  unlimited?: boolean;
   persisted?: boolean;
 };
 
@@ -179,7 +183,7 @@ const DEFAULT_AI_SETTINGS: AiSettings = {
   maxTokens: 4096,
 };
 
-const DEFAULT_USAGE: WeeklyUsage = { allowance: 1, used: 0, remaining: 1 };
+const DEFAULT_USAGE: MonthlyUsage = { allowance: 31_000, used: 0, remaining: 31_000, conversationStarts: 0 };
 
 const PLAN_SIGNUP_HREFS = {
   analyst: '/login?mode=signup&plan=analyst',
@@ -224,7 +228,7 @@ const AUTHENTICATED_TEST_LANES = [
 const TABS: Array<{ id: SettingsTab; label: string; icon: LucideIcon; detail: string }> = [
   { id: 'profile', label: 'Profile', icon: UserRound, detail: 'User Core and analyst posture' },
   { id: 'billing', label: 'Billing', icon: CreditCard, detail: 'Plan, checkout, portal' },
-  { id: 'usage', label: 'Usage', icon: BarChart3, detail: 'Credits and weekly allowance' },
+  { id: 'usage', label: 'Usage', icon: BarChart3, detail: 'Credits and monthly allowance' },
   { id: 'security', label: 'Security', icon: ShieldCheck, detail: 'Password, sign out, data controls' },
   { id: 'connectors', label: 'Connectors', icon: KeyRound, detail: 'API keys and provider status' },
   { id: 'workspace', label: 'Workspace', icon: SlidersHorizontal, detail: 'Output defaults and preferences' },
@@ -245,7 +249,7 @@ export function AccountSettingsPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [account, setAccount] = useState<AccountRecord | null>(null);
   const [profile, setProfile] = useState<ResolvedProfile | null>(null);
-  const [usage, setUsage] = useState<WeeklyUsage>(DEFAULT_USAGE);
+  const [usage, setUsage] = useState<MonthlyUsage>(DEFAULT_USAGE);
   const [preferences, setPreferences] = useState<Partial<UserPreferences>>({});
   const [aiSettings, setAiSettings] = useState<AiSettings>(DEFAULT_AI_SETTINGS);
   const [providers, setProviders] = useState<ProviderPayload>({ providers: {}, statuses: {} });
@@ -266,7 +270,7 @@ export function AccountSettingsPage() {
       const [accountRes, profileRes, usageRes, prefsRes, aiRes, providersRes] = await Promise.all([
         fetchJson<AccountRecord>('/api/account'),
         fetchJson<ResolvedProfile>('/api/profile/resolved'),
-        fetchJson<WeeklyUsage>('/api/usage/weekly-free'),
+        fetchJson<MonthlyUsage>('/api/usage/monthly-free'),
         fetchJson<UserPreferences>('/api/preferences'),
         fetchJson<{ settings: AiSettings }>('/api/settings/ai'),
         fetchJson<ProviderPayload>('/api/settings/api-keys'),
@@ -536,7 +540,7 @@ export function AccountSettingsPage() {
             />
           ) : null}
 
-          {activeTab === 'usage' ? <UsageTab usage={usage} credits={credits} totalCreditsUsed={totalCreditsUsed} /> : null}
+          {activeTab === 'usage' ? <UsageTab usage={usage} /> : null}
 
           {activeTab === 'security' ? (
             <SecurityTab
@@ -689,18 +693,20 @@ function BillingTab({
   );
 }
 
-function UsageTab({ usage, credits, totalCreditsUsed }: { usage: WeeklyUsage; credits: number; totalCreditsUsed: number }) {
+function UsageTab({ usage }: { usage: MonthlyUsage }) {
+  const used = usage.creditsUsed ?? usage.used;
   return (
     <div className="space-y-5">
       <div className="grid gap-3 md:grid-cols-3">
-        <Metric label="Credits remaining" value={credits} />
-        <Metric label="Total credits used" value={totalCreditsUsed} />
-        <Metric label="Free conversations left" value={usage.remaining} />
+        <Metric label="Monthly PRAXIS credits left" value={usage.unlimited ? 'unlimited' : usage.remaining} />
+        <Metric label="Monthly PRAXIS credits used" value={used} />
+        <Metric label="Monthly PRAXIS allowance" value={usage.unlimited ? 'unlimited' : usage.allowance} />
       </div>
-      <InfoPanel title="Weekly free conversation">
-        <p>Week: {usage.weekKey ?? 'current'}</p>
-        <p>Used: {usage.used} of {usage.allowance}</p>
-        <p>Next reset: {usage.nextResetAt ? new Date(usage.nextResetAt).toLocaleString() : 'not available'}</p>
+      <InfoPanel title="Monthly free allowance">
+        <p>Month: {usage.monthKey ?? 'current'}</p>
+        <p>Used: {used} of {usage.allowance} PRAXIS credits</p>
+        <p>Conversation starts: {usage.conversationStarts ?? 0}</p>
+        <p>Next reset: {usage.nextResetAt || usage.resetAt ? new Date(usage.nextResetAt ?? usage.resetAt ?? '').toLocaleString() : 'not available'}</p>
       </InfoPanel>
     </div>
   );

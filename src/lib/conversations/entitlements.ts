@@ -1,4 +1,9 @@
 import type { SubscriptionTier } from '@/lib/api/tier';
+import {
+  PRAXIS_FREE_MONTHLY_CREDIT_ALLOWANCE,
+  isUnlimitedUsagePrincipal,
+  type UsagePrincipal,
+} from '@/lib/billing/usage-policy';
 
 export type AppliedConversationCapsule = {
   id: string;
@@ -6,21 +11,22 @@ export type AppliedConversationCapsule = {
   role: 'user' | 'situation' | 'tool' | 'output';
 };
 
-export type WeeklyConversationGateReason =
+export type MonthlyConversationGateReason =
+  | 'unlimited_admin'
   | 'paid_plan'
   | 'free_allowance_available'
   | 'existing_conversation'
-  | 'weekly_free_limit';
+  | 'monthly_free_limit';
 
-export type WeeklyConversationGateResult = {
+export type MonthlyConversationGateResult = {
   allowed: boolean;
-  reason: WeeklyConversationGateReason;
+  reason: MonthlyConversationGateReason;
   remaining: number;
 };
 
 const CAPSULE_ROLES = new Set(['user', 'situation', 'tool', 'output']);
 
-export function weeklyFreeUsageSummary(used: number, allowance = 1) {
+export function monthlyFreeUsageSummary(used: number, allowance = PRAXIS_FREE_MONTHLY_CREDIT_ALLOWANCE) {
   const normalizedAllowance = Math.max(0, Math.floor(allowance));
   const normalizedUsed = Math.max(0, Math.floor(used));
   return {
@@ -30,13 +36,18 @@ export function weeklyFreeUsageSummary(used: number, allowance = 1) {
   };
 }
 
-export function canStartConversationThisWeek(input: {
+export function canStartConversationThisMonth(input: {
   tier: SubscriptionTier;
-  used: number;
+  creditsUsed: number;
+  requestedCredits: number;
   allowance?: number;
   existingTurnCount: number;
-}): WeeklyConversationGateResult {
-  const summary = weeklyFreeUsageSummary(input.used, input.allowance ?? 1);
+  user?: UsagePrincipal | null;
+}): MonthlyConversationGateResult {
+  const summary = monthlyFreeUsageSummary(input.creditsUsed, input.allowance);
+  if (isUnlimitedUsagePrincipal(input.user)) {
+    return { allowed: true, reason: 'unlimited_admin', remaining: Number.POSITIVE_INFINITY };
+  }
   if (input.tier !== 'free') {
     return { allowed: true, reason: 'paid_plan', remaining: summary.remaining };
   }
@@ -44,10 +55,27 @@ export function canStartConversationThisWeek(input: {
     return { allowed: true, reason: 'existing_conversation', remaining: summary.remaining };
   }
   if (summary.remaining > 0) {
-    return { allowed: true, reason: 'free_allowance_available', remaining: summary.remaining };
+    const requestedCredits = Math.max(1, Math.floor(input.requestedCredits));
+    if (summary.remaining >= requestedCredits) {
+      return { allowed: true, reason: 'free_allowance_available', remaining: summary.remaining - requestedCredits };
+    }
   }
-  return { allowed: false, reason: 'weekly_free_limit', remaining: 0 };
+  return { allowed: false, reason: 'monthly_free_limit', remaining: 0 };
 }
+
+export const weeklyFreeUsageSummary = monthlyFreeUsageSummary;
+export const canStartConversationThisWeek = (input: {
+  tier: SubscriptionTier;
+  used: number;
+  allowance?: number;
+  existingTurnCount: number;
+}): MonthlyConversationGateResult => canStartConversationThisMonth({
+  tier: input.tier,
+  creditsUsed: input.used,
+  requestedCredits: 1,
+  allowance: input.allowance,
+  existingTurnCount: input.existingTurnCount,
+});
 
 export function normalizeAppliedCapsules(input: unknown): AppliedConversationCapsule[] {
   if (!Array.isArray(input)) return [];

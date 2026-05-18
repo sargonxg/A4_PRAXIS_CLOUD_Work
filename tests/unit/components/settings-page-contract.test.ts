@@ -24,7 +24,7 @@ describe('account settings page contract', () => {
     for (const route of [
       '/api/account',
       '/api/profile/resolved',
-      '/api/usage/weekly-free',
+      '/api/usage/monthly-free',
       '/api/preferences',
       '/api/settings/ai',
       '/api/settings/api-keys',
@@ -33,6 +33,13 @@ describe('account settings page contract', () => {
     ]) {
       expect(settingsPage).toContain(route);
     }
+  });
+
+  it('describes monthly PRAXIS credit usage instead of a weekly free conversation', () => {
+    expect(settingsPage).toContain('Monthly PRAXIS credits left');
+    expect(settingsPage).toContain('Monthly free allowance');
+    expect(settingsPage).not.toContain('Weekly free conversation');
+    expect(settingsPage).not.toContain('Free conversations left');
   });
 
   it('exposes a developer system check surface without adding another top-level page', () => {

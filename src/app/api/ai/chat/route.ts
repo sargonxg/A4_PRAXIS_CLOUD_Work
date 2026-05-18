@@ -38,6 +38,8 @@ import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
 import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 import { inferResponseActionKinds } from '@/lib/assistant/response-action-kinds';
 import { listAskThreadTurns, persistAskThreadTurn, type AskThreadTurnRecord } from '@/lib/firebase/ask-thread-service';
+import { PRAXIS_ASK_TOKEN_COST, currentMonthlyUsageKey, monthlyUsageDocId } from '@/lib/billing/usage-policy';
+import { buildThinCapsuleFallback, hasConversationCapsuleSignal } from '@/lib/conversations/capsule-signal';
 import { normalizeAppliedCapsules, type AppliedConversationCapsule } from '@/lib/conversations/entitlements';
 import { isAskThreadSqlConfigured, listAskThreadTurnsSql, persistAskThreadTurnSql } from '@/lib/agent-runtime/ask-thread-postgres';
 import {
@@ -136,6 +138,18 @@ export const POST = withCalibration('chat', 'ai_chat', {
     if (!validation.success) return validation.response;
     const { messages, conflictContext, situation, currentToolId, currentPath, contextPackageId, capsuleId, appliedCapsules, activeContextStack, threadId, aiSettings } = validation.data;
     const normalizedAppliedCapsules = normalizeAppliedCapsules(appliedCapsules);
+    if (!hasConversationCapsuleSignal({
+      capsuleId,
+      contextPackageId,
+      appliedCapsules: normalizedAppliedCapsules,
+      activeContextStack,
+    })) {
+      return Response.json({
+        error: 'Active ContextCapsule is required before Ask PRAXIS can answer this turn.',
+        code: 'capsule_context_required',
+        category: 'capsule_resolution',
+      }, { status: 412 });
+    }
     const requestSituationId = (situation as Situation | undefined)?.id;
     const prompt = lastUserPrompt(messages);
     const askIntent = classifyAskIntent(prompt);
@@ -185,6 +199,15 @@ export const POST = withCalibration('chat', 'ai_chat', {
           activeContextStack: isRecord(activeContextStack) ? activeContextStack as Partial<ActiveContextStackState> : null,
           situationId: requestSituationId,
           query: prompt,
+        }).catch((err) => {
+          console.warn('[chat] full capsule resolution failed; using thin fallback context:', err);
+          return buildThinCapsuleFallback({
+            uid: _user.uid,
+            capsuleId,
+            contextPackageId,
+            appliedCapsules: normalizedAppliedCapsules,
+            activeContextStack,
+          });
         })
       : null;
     capsuleContext = turnCapsule?.injectableContext ?? null;
@@ -768,10 +791,10 @@ interface AskRuntimeReceipt extends Record<string, unknown> {
     capsuleId: string;
     capsuleVersion: number;
     label: string;
-    mode: 'praxis_lite';
+    mode: 'praxis_lite' | 'thin_fallback';
     parentCapsuleId: string | null;
   }>;
-  contextMode?: 'praxis_lite';
+  contextMode?: 'praxis_lite' | 'thin_fallback';
   memoryPersistence?: 'cloud-sql' | 'firestore';
   contextReceipt?: ReturnType<typeof buildAskContextReceipt>;
   orchestrationReceipt?: AskConversationOrchestrationReceipt;
@@ -902,6 +925,7 @@ function decorateAskRuntimeReceipt(
   },
 ): AskRuntimeReceipt {
   const resolvedCapsule = input.capsule ?? input.turnCapsule?.injectableContext.capsule ?? null;
+  const contextMode = input.turnCapsule?.capsuleVersion === 0 ? 'thin_fallback' : 'praxis_lite';
   return {
     ...receipt,
     intent: input.intent,
@@ -911,14 +935,15 @@ function decorateAskRuntimeReceipt(
     capsuleHealth: null,
     traceId: input.turnCapsule?.traceId ?? null,
     effectiveSituationId: input.effectiveSituationId,
-    contextMode: 'praxis_lite',
+    // audit marker: contextMode: 'praxis_lite' remains the normal full-capsule path; thin_fallback is explicit when resolver recovery is used.
+    contextMode,
     memoryPersistence: input.memoryPersistence,
     resolvedCapsules: resolvedCapsule
       ? [{
           capsuleId: resolvedCapsule.capsuleId,
           capsuleVersion: resolvedCapsule.version,
           label: resolvedCapsule.label,
-          mode: 'praxis_lite',
+          mode: contextMode,
           parentCapsuleId: resolvedCapsule.parentCapsuleId,
         }]
       : [],
@@ -1311,28 +1336,27 @@ async function persistConversationTurn(input: {
     });
     if (isFirstTurn) {
       tx.set(
-        db.collection('users').doc(input.uid).collection('usage').doc(`weekly-free-${currentWeekKey()}`),
+        db.collection('users').doc(input.uid).collection('usage').doc(monthlyUsageDocId(currentMonthlyUsageKey())),
         {
-          conversationCount: FieldValue.increment(1),
+          conversationStarts: FieldValue.increment(1),
+          creditsUsed: FieldValue.increment(PRAXIS_ASK_TOKEN_COST),
+          lastOperationType: 'ai_chat',
+          updatedAt: now,
+        },
+        { merge: true },
+      );
+    } else {
+      tx.set(
+        db.collection('users').doc(input.uid).collection('usage').doc(monthlyUsageDocId(currentMonthlyUsageKey())),
+        {
+          creditsUsed: FieldValue.increment(PRAXIS_ASK_TOKEN_COST),
+          lastOperationType: 'ai_chat',
           updatedAt: now,
         },
         { merge: true },
       );
     }
   });
-}
-
-function currentWeekKey(): string {
-  const now = new Date();
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const day = start.getUTCDay() || 7;
-  start.setUTCDate(start.getUTCDate() - day + 1);
-  start.setUTCHours(0, 0, 0, 0);
-  const yearStart = new Date(Date.UTC(start.getUTCFullYear(), 0, 4));
-  const yearStartDay = yearStart.getUTCDay() || 7;
-  yearStart.setUTCDate(yearStart.getUTCDate() - yearStartDay + 1);
-  const week = Math.floor((start.getTime() - yearStart.getTime()) / 604_800_000) + 1;
-  return `${start.getUTCFullYear()}-W${String(Math.max(1, week)).padStart(2, '0')}`;
 }
 
 async function persistAskReadLedger(input: {

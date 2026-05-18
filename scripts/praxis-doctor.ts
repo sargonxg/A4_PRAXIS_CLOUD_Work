@@ -346,6 +346,9 @@ export async function runPraxisDoctor(deps: RunDeps): Promise<DoctorReport> {
         ? undefined
         : [`gcloud run services describe praxis-frontend --region=${options.region} --project=${options.project}`],
     });
+    if (cloudRun.code === 0) {
+      checks.push(...cloudRunRuntimeConfigChecks(cloudRun.stdout, options));
+    }
 
     for (const check of infrastructureCommandChecks(options, env)) {
       checks.push(await commandCheck(exec, check.id, 'gcp-firebase-infrastructure', check.command, {
@@ -491,6 +494,72 @@ function infrastructureCommandChecks(
     {
       id: 'agent-service-account',
       command: `gcloud iam service-accounts describe praxis-agents-sa@${options.project}.iam.gserviceaccount.com --project=${options.project}`,
+    },
+  ];
+}
+
+function cloudRunRuntimeConfigChecks(output: string, options: DoctorOptions): DoctorCheckResult[] {
+  const parsed = parseCloudRunService(output);
+  if (!parsed) {
+    return [{
+      id: 'cloud-run-runtime-config',
+      lane: 'gcp-firebase-infrastructure',
+      status: 'WARN',
+      summary: 'Could not parse Cloud Run service config for runtime networking checks',
+      evidence: [output.slice(0, 500)],
+      remediation: [`gcloud run services describe praxis-frontend --region=${options.region} --project=${options.project} --format=json`],
+    }];
+  }
+
+  const annotations = parsed.spec?.template?.metadata?.annotations ?? {};
+  const containers = parsed.spec?.template?.spec?.containers ?? [];
+  const envNames = new Set(containers.flatMap((container) => (container.env ?? []).map((env) => env.name).filter(Boolean)));
+  const cloudSqlInstances = annotations['run.googleapis.com/cloudsql-instances'] ?? '';
+  const hasCloudSql = cloudSqlInstances.includes('praxisbytacitus:us-east4:praxisbytacitus-instance');
+  const networkInterfaces = annotations['run.googleapis.com/network-interfaces'] ?? '';
+  const vpcConnector = annotations['run.googleapis.com/vpc-access-connector'] ?? '';
+  const vpcEgress = annotations['run.googleapis.com/vpc-access-egress'] ?? '';
+  const hasDirectVpc = networkInterfaces.includes('default') && vpcEgress === 'private-ranges-only';
+  const hasVpcConnector = Boolean(vpcConnector) && vpcEgress === 'private-ranges-only';
+  const hasPrivateSqlNetworking = !hasCloudSql || hasDirectVpc || hasVpcConnector;
+  const hasWorkerBase = envNames.has('AGENT_RUN_WORKER_BASE_URL');
+  const hasWorkerOidc = envNames.has('AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL') && envNames.has('AGENT_RUN_WORKER_OIDC_AUDIENCE');
+  const hasWorkerSecretFallback = envNames.has('AGENT_RUN_WORKER_SHARED_SECRET');
+  const hasWorkerRuntimeEnv = hasWorkerBase && (hasWorkerOidc || hasWorkerSecretFallback);
+
+  return [
+    {
+      id: 'cloud-run-private-sql-networking',
+      lane: 'gcp-firebase-infrastructure',
+      status: hasPrivateSqlNetworking ? 'PASS' : 'WARN',
+      summary: hasPrivateSqlNetworking
+        ? 'Cloud Run has private networking for the attached Cloud SQL instance'
+        : 'Cloud Run has Cloud SQL attached but no private VPC egress path',
+      evidence: [{
+        cloudSqlAttached: hasCloudSql,
+        directVpcEgress: hasDirectVpc,
+        connectorEgress: hasVpcConnector,
+        vpcEgress: vpcEgress || null,
+      }],
+      remediation: hasPrivateSqlNetworking ? undefined : [
+        'Deploy praxis-frontend with --network=default --subnet=default --vpc-egress=private-ranges-only',
+      ],
+    },
+    {
+      id: 'agent-worker-runtime-env',
+      lane: 'gcp-firebase-infrastructure',
+      status: hasWorkerRuntimeEnv ? 'PASS' : 'WARN',
+      summary: hasWorkerRuntimeEnv
+        ? 'Agent worker dispatch URL and auth env are configured'
+        : 'Agent worker dispatch URL or worker auth env is missing',
+      evidence: [{
+        workerBaseUrl: hasWorkerBase,
+        workerOidc: hasWorkerOidc,
+        workerSecretFallback: hasWorkerSecretFallback,
+      }],
+      remediation: hasWorkerRuntimeEnv ? undefined : [
+        'Set AGENT_RUN_WORKER_BASE_URL, AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL, and AGENT_RUN_WORKER_OIDC_AUDIENCE on praxis-frontend.',
+      ],
     },
   ];
 }
@@ -656,15 +725,8 @@ function extractCloudRunRevision(output: string): string | null {
 }
 
 function summarizeCloudRunService(output: string): unknown {
-  try {
-    const parsed = JSON.parse(output) as {
-      metadata?: { name?: string };
-      status?: {
-        latestReadyRevisionName?: string;
-        traffic?: Array<{ revisionName?: string; percent?: number; latestRevision?: boolean }>;
-        conditions?: Array<{ type?: string; status?: string }>;
-      };
-    };
+  const parsed = parseCloudRunService(output);
+  if (parsed) {
     return {
       service: parsed.metadata?.name ?? 'praxis-frontend',
       latestReadyRevisionName: parsed.status?.latestReadyRevisionName ?? null,
@@ -675,8 +737,28 @@ function summarizeCloudRunService(output: string): unknown {
       })) ?? [],
       ready: parsed.status?.conditions?.find((item) => item.type === 'Ready')?.status ?? null,
     };
+  }
+  return output;
+}
+
+function parseCloudRunService(output: string): {
+  metadata?: { name?: string };
+  spec?: {
+    template?: {
+      metadata?: { annotations?: Record<string, string> };
+      spec?: { containers?: Array<{ env?: Array<{ name?: string }> }> };
+    };
+  };
+  status?: {
+    latestReadyRevisionName?: string;
+    traffic?: Array<{ revisionName?: string; percent?: number; latestRevision?: boolean }>;
+    conditions?: Array<{ type?: string; status?: string }>;
+  };
+} | null {
+  try {
+    return JSON.parse(output);
   } catch {
-    return output;
+    return null;
   }
 }
 

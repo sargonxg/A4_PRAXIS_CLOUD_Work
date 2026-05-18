@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { verifyIdToken, adminDb } from '@/lib/firebase/admin';
 import { verifyCookie } from '@/lib/auth/cookie-signer';
+import { shouldBypassMinuteRateLimit } from '@/lib/billing/usage-policy';
 import { logApiCall } from '@/lib/observability/logger';
 
 export interface AuthenticatedUser {
@@ -25,7 +26,7 @@ interface AuthSessionPayload {
   user?: SessionUserSnapshot;
 }
 
-const RATE_LIMIT = 100;
+export const RATE_LIMIT = 300;
 
 function userFromSessionSnapshot(snapshot: SessionUserSnapshot | undefined): AuthenticatedUser | null {
   if (!snapshot || typeof snapshot.uid !== 'string' || typeof snapshot.email !== 'string') {
@@ -118,7 +119,7 @@ export function withAuth<TContext>(
         userUid = demoUser.uid;
         if (!(await checkRateLimit(demoUser.uid))) {
           status = 429;
-          return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+          return minuteRateLimitResponse();
         }
         const response = await handler(req, demoUser, ctx);
         status = response.status;
@@ -132,9 +133,9 @@ export function withAuth<TContext>(
           const user: AuthenticatedUser = { ...verified, isDemo: false };
           userUid = user.uid;
 
-          if (!(await checkRateLimit(user.uid))) {
+          if (!shouldBypassMinuteRateLimit(user) && !(await checkRateLimit(user.uid))) {
             status = 429;
-            return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+            return minuteRateLimitResponse();
           }
 
           const response = await handler(req, user, ctx);
@@ -148,9 +149,9 @@ export function withAuth<TContext>(
           if (snapshotUser) {
             userUid = snapshotUser.uid;
 
-            if (!(await checkRateLimit(snapshotUser.uid))) {
+            if (!shouldBypassMinuteRateLimit(snapshotUser) && !(await checkRateLimit(snapshotUser.uid))) {
               status = 429;
-              return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+              return minuteRateLimitResponse();
             }
 
             const response = await handler(req, snapshotUser, ctx);
@@ -179,4 +180,12 @@ export function withAuth<TContext>(
       });
     }
   };
+}
+
+function minuteRateLimitResponse(): Response {
+  return NextResponse.json({
+    error: 'Minute rate limit exceeded',
+    code: 'minute_rate_limit',
+    message: 'Too many requests in one minute. Wait briefly and try again.',
+  }, { status: 429 });
 }

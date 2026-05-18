@@ -103,6 +103,45 @@ test.describe('Ask PRAXIS capsule runtime smoke', () => {
     }));
   });
 
+  test('shows real AI SDK stream error details and keeps the prompt for retry', async ({ page }) => {
+    const conversationId = 'ask-stream-error-proof';
+    const capsuleId = 'starter-user-humanitarian-legal-investigator';
+
+    await page.route(`**/api/conversations/${conversationId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persisted: true, conversation: { conversationId, capsuleId, turnCount: 0 }, turns: [] }),
+      });
+    });
+    await page.route(`**/api/conversations/${conversationId}/turns`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/plain; charset=utf-8',
+        body: '3:{"error":"model unavailable"}\n',
+      });
+    });
+    await page.route('**/api/conversations', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+    });
+
+    await page.goto(`${BASE}/login?redirect=/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
+    await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
+    await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
+    await page.click('button:has-text("Sign in")');
+    await page.waitForURL(/\/app|\/onboarding/, { timeout: 20_000 });
+    if (page.url().includes('/onboarding')) test.skip(true, 'Fixture account still needs onboarding before conversation smoke can run.');
+
+    await page.goto(`${BASE}/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
+    const composer = page.locator('textarea[placeholder*="Describe"]').first();
+    await composer.fill('check the capsule failure path');
+    await page.getByRole('button', { name: /Send to PRAXIS/i }).click();
+
+    await expect(page.getByText(/model unavailable/i)).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText(/model\/API layer/i)).toBeVisible();
+    await expect(composer).toHaveValue('check the capsule failure path');
+  });
+
   test('proves the capsule document Ask and agent receipt return loop', async ({ page }) => {
     const capsule = capsuleFixture('runtime-proof-capsule', ['doc-runtime-proof']);
     const run = {

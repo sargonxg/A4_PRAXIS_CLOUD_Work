@@ -70,6 +70,7 @@ import {
 import { recommendCapsuleTools, type CapsuleToolRecommendation } from '@/lib/tools/recommend';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useOrchestratorEvents, type OrchestratorEvent, type OrchestratorEventState } from '@/hooks/useOrchestratorEvents';
+import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-stream';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 
@@ -562,6 +563,7 @@ export function TaskletPraxisWorkbench({
             content: message.text,
           })),
           capsuleId: currentCapsuleId,
+          contextPackageId: selectedCapsule?.capsuleId ? `capsule:${selectedCapsule.capsuleId}:v${selectedCapsule.version}` : undefined,
           appliedCapsules: activeCapsules.map((capsule) => ({
             id: capsule.id,
             label: capsule.label,
@@ -620,7 +622,10 @@ export function TaskletPraxisWorkbench({
         }
       }
       if (!answer.trim()) throw new Error('Ask PRAXIS returned no answer text.');
-      setStatus('Conversation saved at this link.');
+      const contextLabel = answer.toLowerCase().includes('thin capsule fallback')
+        ? 'thin capsule fallback'
+        : `capsule ${currentCapsuleId}`;
+      setStatus(`Conversation saved at this link with ${contextLabel}.`);
       void refreshCapsules();
       try {
         window.localStorage.removeItem(PENDING_TASKLET_PROMPT_KEY);
@@ -2260,20 +2265,6 @@ function buildSelectedSpanNote(target: SpanTargetDefinition, text: string): stri
   ].join('\n');
 }
 
-function describeAskFailure(message: string): string {
-  const lower = message.toLowerCase();
-  if (lower.includes('401') || lower.includes('403') || lower.includes('auth') || lower.includes('session') || lower.includes('token')) {
-    return `Ask PRAXIS could not use your current session. Sign in again or refresh the workspace, then retry. Your prompt is still in the composer.\n\nFailure detail: ${message}`;
-  }
-  if (lower.includes('network') || lower.includes('fetch') || lower.includes('body') || lower.includes('timeout')) {
-    return `Ask PRAXIS hit a network or streaming interruption before the answer completed. Your prompt is still in the composer for retry.\n\nFailure detail: ${message}`;
-  }
-  if (lower.includes('model') || lower.includes('api') || lower.includes('vertex') || lower.includes('gemini') || lower.includes('generate')) {
-    return `Ask PRAXIS reached the model/API layer but the answer failed. Try again, or switch runtime depth if the model is unavailable. Your prompt is still in the composer.\n\nFailure detail: ${message}`;
-  }
-  return `Ask PRAXIS could not finish the answer. Your prompt is still in the composer, and the active capsule context was not changed.\n\nFailure detail: ${message}`;
-}
-
 async function fetchCapsuleLibrary(): Promise<PraxisCapsuleSummary[]> {
   const response = await fetch('/api/context/capsules?includeArchived=true', { credentials: 'include' });
   const payload = await response.json().catch(() => ({}));
@@ -3605,16 +3596,6 @@ async function loadLegacyAskThreadHistory(capsuleId: string, threadId: string): 
     { role: 'user' as const, text: turn.prompt ?? '' },
     { role: 'assistant' as const, text: turn.output ?? '' },
   ]).filter((message) => message.text.trim().length > 0);
-}
-
-function parseDataStreamError(line: string): string | null {
-  if (!line.startsWith('3:')) return null;
-  try {
-    const parsed = JSON.parse(line.slice(2));
-    return typeof parsed === 'string' ? parsed : 'Ask PRAXIS stream failed.';
-  } catch {
-    return 'Ask PRAXIS stream failed.';
-  }
 }
 
 async function ensureConversationRecord(threadId: string, capsuleId: string, activeCapsules: ActiveCapsuleChip[]) {

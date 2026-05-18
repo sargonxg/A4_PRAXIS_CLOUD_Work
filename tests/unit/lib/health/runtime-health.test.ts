@@ -11,6 +11,7 @@ const okChecks: RuntimeHealthCheck[] = [
   { id: 'backend', label: 'Private backend', status: 'ok', latencyMs: 3 },
   { id: 'agent_ledger', label: 'Deep work queue', status: 'ok', latencyMs: 4 },
   { id: 'agent_queue', label: 'Agent task queue', status: 'ok', latencyMs: 5 },
+  { id: 'agent_worker', label: 'Agent worker dispatch', status: 'ok', latencyMs: 6 },
   { id: 'agent_platform', label: 'Agent platform', status: 'unconfigured' },
 ];
 
@@ -53,6 +54,17 @@ describe('runtime health summary', () => {
   it('treats the Cloud Tasks agent queue as a critical agent runtime dependency', () => {
     const checks = okChecks.map((check) =>
       check.id === 'agent_queue' ? { ...check, status: 'down' as const } : check,
+    );
+
+    expect(buildRuntimeHealthSummary(checks, new Date('2026-05-17T12:00:00Z'))).toMatchObject({
+      status: 'degraded',
+      summary: 'Some systems degraded',
+    });
+  });
+
+  it('treats missing worker dispatch auth as a critical agent runtime dependency', () => {
+    const checks = okChecks.map((check) =>
+      check.id === 'agent_worker' ? { ...check, status: 'unconfigured' as const } : check,
     );
 
     expect(buildRuntimeHealthSummary(checks, new Date('2026-05-17T12:00:00Z'))).toMatchObject({

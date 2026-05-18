@@ -1,51 +1,57 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
-import { weeklyFreeUsageSummary } from '@/lib/conversations/entitlements';
+import {
+  PRAXIS_FREE_MONTHLY_CREDIT_ALLOWANCE,
+  currentMonthlyUsageKey,
+  isUnlimitedUsagePrincipal,
+  monthlyUsageDocId,
+  nextMonthlyReset,
+} from '@/lib/billing/usage-policy';
+import { monthlyFreeUsageSummary } from '@/lib/conversations/entitlements';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = withAuth(async (_request, user) => {
-  if (user.isDemo) {
-    return NextResponse.json({ allowance: 1, used: 0, remaining: 1, weekKey: currentWeekKey(), persisted: false });
+  const monthKey = currentMonthlyUsageKey();
+  const resetAt = nextMonthlyReset().toISOString();
+
+  if (user.isDemo || isUnlimitedUsagePrincipal(user)) {
+    return NextResponse.json({
+      allowance: PRAXIS_FREE_MONTHLY_CREDIT_ALLOWANCE,
+      used: 0,
+      creditsUsed: 0,
+      remaining: PRAXIS_FREE_MONTHLY_CREDIT_ALLOWANCE,
+      conversationStarts: 0,
+      monthKey,
+      weekKey: monthKey,
+      nextResetAt: resetAt,
+      resetAt,
+      unlimited: !user.isDemo,
+      persisted: !user.isDemo,
+      compatibility: 'monthly-free',
+    });
   }
 
   const db = getAdminDbOrThrow();
-  const weekKey = currentWeekKey();
   const snap = await db
     .collection('users').doc(user.uid)
-    .collection('usage').doc(`weekly-free-${weekKey}`)
+    .collection('usage').doc(monthlyUsageDocId(monthKey))
     .get();
-  const used = Number(snap.data()?.conversationCount ?? 0);
-  const summary = weeklyFreeUsageSummary(used, 1);
+  const creditsUsed = Number(snap.data()?.creditsUsed ?? 0);
+  const summary = monthlyFreeUsageSummary(creditsUsed);
 
   return NextResponse.json({
     ...summary,
-    weekKey,
-    nextResetAt: nextWeeklyReset().toISOString(),
+    creditsUsed: summary.used,
+    conversationStarts: Number(snap.data()?.conversationStarts ?? 0),
+    lastOperationType: typeof snap.data()?.lastOperationType === 'string' ? snap.data()?.lastOperationType : null,
+    monthKey,
+    weekKey: monthKey,
+    nextResetAt: resetAt,
+    resetAt,
+    unlimited: false,
     persisted: true,
+    compatibility: 'monthly-free',
   });
 });
-
-function currentWeekKey(): string {
-  const now = new Date();
-  const firstThursday = new Date(Date.UTC(now.getUTCFullYear(), 0, 4));
-  const weekStart = startOfIsoWeek(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())));
-  const yearStart = startOfIsoWeek(firstThursday);
-  const week = Math.floor((weekStart.getTime() - yearStart.getTime()) / 604_800_000) + 1;
-  return `${weekStart.getUTCFullYear()}-W${String(Math.max(1, week)).padStart(2, '0')}`;
-}
-
-function startOfIsoWeek(date: Date): Date {
-  const day = date.getUTCDay() || 7;
-  const start = new Date(date);
-  start.setUTCDate(date.getUTCDate() - day + 1);
-  start.setUTCHours(0, 0, 0, 0);
-  return start;
-}
-
-function nextWeeklyReset(): Date {
-  const start = startOfIsoWeek(new Date());
-  start.setUTCDate(start.getUTCDate() + 7);
-  return start;
-}
