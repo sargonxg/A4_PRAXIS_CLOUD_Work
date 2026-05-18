@@ -22,6 +22,7 @@ export type HomeSurfaceMode = 'public' | 'authenticated';
 
 export type PolicyAgentRunIntent =
   | 'normal_answer'
+  | 'capsule_factory'
   | 'research_memo'
   | 'sourceability_review'
   | 'format_output'
@@ -76,6 +77,21 @@ export interface PolicyAgentDefinition {
 }
 
 export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
+  {
+    id: 'capsule-factory',
+    label: 'Capsule Factory',
+    category: 'analysis',
+    description: 'Builds or improves draft ContextCapsule cores as reusable expert-thinking blocks with provenance, source gaps, suggested tools, and confirmation gates.',
+    requiredCores: ['User Core', 'Situation Core', 'Source Core', 'Tool Core', 'Output Core'],
+    inputTypes: ['prompt', 'capsule', 'documents', 'source receipts'],
+    outputDestination: 'library',
+    approvalLevel: 'confirm',
+    readiness: 'live',
+    riskLevel: 'medium',
+    allowedTools: ['context-resolve', 'capsule-repository-read', 'grounded-search', 'sourceability-reviewer'],
+    capsuleSlots: ['user', 'situation', 'sources', 'documents', 'tools', 'outputs'],
+    actionLabel: 'Build capsule',
+  },
   {
     id: 'research-memo',
     label: 'Research Memo Agent',
@@ -198,6 +214,8 @@ export function getPolicyAgent(id: string | null | undefined): PolicyAgentDefini
 
 export function policyAgentRunIntent(agentId: string | null | undefined): PolicyAgentRunIntent {
   switch (agentId) {
+    case 'capsule-factory':
+      return 'capsule_factory';
     case 'research-memo':
       return 'research_memo';
     case 'sourceability-reviewer':

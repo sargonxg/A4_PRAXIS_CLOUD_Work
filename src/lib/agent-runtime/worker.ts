@@ -17,6 +17,7 @@ import {
   mirrorWorkerEvent,
   type AgentRuntimeMirrorDeps,
 } from '@/lib/agent-runtime/mirror';
+import { runCapsuleFactoryDraft, type CapsuleFactoryDeps } from '@/lib/agent-runtime/capsule-factory';
 
 export type ExecuteAgentRunPayload = {
   runId: string;
@@ -31,7 +32,7 @@ export type ExecuteAgentRunPayload = {
 export type ExecuteAgentRunResult = {
   runId: string;
   status: AgentRun['status'];
-  executionMode: 'noop' | 'research-memo' | 'output-formatter' | 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder';
+  executionMode: 'noop' | 'capsule-factory' | 'research-memo' | 'output-formatter' | 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder';
   traceId: string;
   idempotent?: boolean;
   outputHref?: string;
@@ -48,7 +49,7 @@ type WorkerDeps = {
   buildEvidencePack?: typeof buildCapsuleEvidencePack;
   appendToolCall?: typeof appendAgentToolCall;
   appendApproval?: typeof appendAgentApproval;
-} & AgentRuntimeMirrorDeps;
+} & AgentRuntimeMirrorDeps & CapsuleFactoryDeps;
 
 export async function executeAgentRun(
   payload: ExecuteAgentRunPayload,
@@ -61,6 +62,9 @@ export async function executeAgentRun(
   }
   const policyAgentId = typeof run.metadata?.policyAgentId === 'string' ? run.metadata.policyAgentId : null;
   const policyAgent = getPolicyAgent(policyAgentId);
+  if (policyAgent?.id === 'capsule-factory') {
+    return executeCapsuleFactoryAgentRun(payload, { ...deps, getRun: async () => run });
+  }
   if (policyAgent?.id === 'research-memo') {
     return executeResearchMemoAgentRun(payload, { ...deps, getRun: async () => run });
   }
@@ -171,6 +175,106 @@ export async function executeNoopAgentRun(
       data: {
         dispatchId: payload.dispatchId,
         attempt: payload.attempt,
+        error: err instanceof Error ? err.message : String(err),
+      },
+    }).catch(() => null);
+    throw new AgentWorkerError('Agent run execution failed', 500);
+  }
+}
+
+async function executeCapsuleFactoryAgentRun(
+  payload: ExecuteAgentRunPayload,
+  deps: WorkerDeps = {},
+): Promise<ExecuteAgentRunResult> {
+  const getRun = deps.getRun ?? getAgentRun;
+  const updateStatus = deps.updateStatus ?? updateAgentRunStatus;
+  const run = await getRun(payload.ownerUid, payload.runId);
+  if (!run) {
+    throw new AgentWorkerError('Agent run not found', 404);
+  }
+  if (run.traceId !== payload.traceId || run.capsuleId !== payload.capsuleId) {
+    throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
+  }
+  if (run.status === 'succeeded') {
+    return {
+      runId: run.id,
+      status: run.status,
+      executionMode: 'capsule-factory',
+      traceId: run.traceId,
+      outputHref: outputHrefFromMetadata(run.metadata, '/app/capsules'),
+      idempotent: true,
+    };
+  }
+  if (run.status !== 'queued' && run.status !== 'running') {
+    throw new AgentWorkerError(`Agent run cannot be executed from ${run.status}`, 409);
+  }
+
+  let running = run;
+  try {
+    if (run.status !== 'running') {
+      const next = await updateStatus({
+        ownerUid: run.ownerUid,
+        runId: run.id,
+        toStatus: 'running',
+        message: 'Capsule Factory accepted the queued capsule build.',
+        data: {
+          dispatchId: payload.dispatchId,
+          attempt: payload.attempt,
+          requestedAt: payload.requestedAt,
+          executionMode: 'capsule-factory',
+        },
+      });
+      if (!next) throw new AgentWorkerError('Agent run disappeared before execution', 404);
+      running = next;
+    }
+
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'context_resolved',
+      message: 'Capsule Factory resolved PRAXIS-owned capsule pointers before Genkit flow execution.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        workerContext: buildCapsuleWorkerContext(running),
+        executionMode: 'capsule-factory',
+      },
+    }, deps);
+
+    const draftOutput = await runCapsuleFactoryDraft(running, deps);
+    const outputHref = '/app/capsules';
+
+    const succeeded = await updateStatus({
+      ownerUid: running.ownerUid,
+      runId: running.id,
+      toStatus: 'succeeded',
+      message: 'Capsule Factory completed reviewable draft capsule proposals.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        executionMode: 'capsule-factory',
+        outputHref,
+        draftOutput,
+      },
+    });
+
+    return {
+      runId: succeeded?.id ?? running.id,
+      status: succeeded?.status ?? 'succeeded',
+      executionMode: 'capsule-factory',
+      traceId: running.traceId,
+      outputHref,
+    };
+  } catch (err) {
+    if (err instanceof AgentWorkerError) throw err;
+    await updateStatus({
+      ownerUid: running.ownerUid,
+      runId: running.id,
+      toStatus: 'failed',
+      message: 'Capsule Factory failed before draft capsule persistence.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        executionMode: 'capsule-factory',
         error: err instanceof Error ? err.message : String(err),
       },
     }).catch(() => null);

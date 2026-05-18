@@ -1,7 +1,7 @@
 # PRAXIS ADK + Genkit Integration Plan
 
 Date: 2026-05-15  
-Status: architecture audit and next-build plan
+Status: Hybrid Stable architecture and Capsule Factory build plan
 
 ## Executive Position
 
@@ -15,12 +15,38 @@ ContextCapsule runtime, not as new canonical state systems.
 - Cloud SQL remains the agent run ledger.
 - ADK/Genkit state is not canonical product state.
 - Every ADK/Genkit event/tool call must be mirrored into the PRAXIS run ledger.
+- Hybrid Stable posture: Genkit is the default substrate for bounded capsule
+  building, research planning, synthesis, and writing-profile flows; ADK and
+  Google Agent Runtime are reserved for heavier long-running research agents.
 
 The practical direction is to keep the user-facing app simple: PRAXIS resolves
 an active ContextCapsule, creates a queued run in the Cloud SQL ledger, then
 dispatches worker execution. Workers may call Genkit flows or ADK agents, but
 run status, step events, tool calls, approvals, artifacts, and user-visible
 receipts belong to PRAXIS.
+
+## Capsule Factory Decision
+
+The next wave is the Capsule Factory inside the existing Ask PRAXIS /
+ContextCapsule workbench flow, not a new top-level product. The live
+`capsule-factory` policy agent queues a PRAXIS run and executes four typed
+Genkit flows:
+
+- `capsuleIntakeFlow`: turns prompt, document, and source intent into draft
+  User, Situation, Source, Tool, and Output core proposals.
+- `capsuleResearchPlanFlow`: proposes source gaps, search queries, read-only
+  corpus/MCP checks, and freshness needs.
+- `capsuleSynthesisFlow`: composes a draft ContextCapsule with provenance,
+  assumptions, open questions, suggested tools, and apply/fork actions.
+- `capsuleWritingProfileFlow`: derives memo, brief, talking-points, or
+  handover defaults with tone, audience, citation posture, and export gates.
+
+Every material flow step is mirrored to the Cloud SQL run ledger as
+`genkit.flow.started`, `genkit.flow.tool_call`, and
+`genkit.flow.succeeded|failed` style events. Generated capsule/core changes are
+draft review payloads only; user confirmation is required before replacing,
+forking, or applying active capsule state. MCP-style source, corpus, capsule,
+and search tools remain private and read-first until approval gates are proven.
 
 ## Current ADK State
 
@@ -71,6 +97,8 @@ provider resolution, schemas, tools, and audits:
   `classifyPathFlow`.
 - `src/lib/genkit/flows/situation-intelligence.ts` defines the typed
   `situationIntelligenceFlow`.
+- `src/lib/genkit/flows/capsule-factory.ts` defines the Capsule Factory typed
+  intake, research-plan, synthesis, and writing-profile flows.
 - `src/lib/genkit/schemas/*` holds the Zod schemas used by those flows.
 - `src/lib/genkit/tools/registry.ts` registers PRAXIS path-bundle tools with
   Genkit and marks interrupt-sensitive tools such as brief-builder and

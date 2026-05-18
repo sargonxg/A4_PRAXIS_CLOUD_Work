@@ -74,7 +74,7 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'text-span-core-popover',
   '/spans',
   'showWorkbenchNavigation',
-  'PRAXIS turns your ContextCapsules, documents, and policy tools into grounded analysis',
+  'Compose your reasoning and policy products from expert ContextCapsules.',
 ]);
 expectIncludes('src/components/app/app-shell.tsx', [
   'data-testid="praxis-one-page-app-shell"',

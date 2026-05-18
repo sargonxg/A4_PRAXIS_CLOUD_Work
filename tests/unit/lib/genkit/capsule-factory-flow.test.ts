@@ -55,8 +55,8 @@ describe('capsule factory Genkit flows', () => {
     const result = await capsuleSynthesisFlow({
       objective: 'Prepare an options memo for humanitarian access negotiations.',
       draftCores: [
-        { kind: 'situation', label: 'Sudan access', summary: 'Access corridors are contested.' },
-        { kind: 'source', label: 'OCHA note', summary: 'OCHA reports access constraints.', provenanceIds: ['src-ocha'] },
+        { kind: 'situation', label: 'Sudan access', summary: 'Access corridors are contested.', provenanceIds: [], confidence: 'medium' },
+        { kind: 'source', label: 'OCHA note', summary: 'OCHA reports access constraints.', provenanceIds: ['src-ocha'], confidence: 'medium' },
       ],
       researchPlan: {
         sourceGaps: ['Need dated crossing-status evidence.'],

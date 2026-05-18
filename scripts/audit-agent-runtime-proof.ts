@@ -61,6 +61,7 @@ requireMarkers('src/lib/agent-runtime/postgres.ts', [
   'publishAgentRunEvent',
 ]);
 requireMarkers('src/lib/agent-runtime/worker.ts', [
+  'executeCapsuleFactoryAgentRun',
   'executeResearchMemoAgentRun',
   'saveMemoDraft',
   'saveOutputCapsule',
@@ -80,6 +81,12 @@ requireMarkers('src/lib/agent-runtime/adk-bridge.ts', [
 requireMarkers('src/lib/genkit/index.ts', [
   'resolveGenkitGoogleProvider',
   'genkit',
+]);
+requireMarkers('src/lib/genkit/flows/capsule-factory.ts', [
+  'capsuleIntakeFlow',
+  'capsuleResearchPlanFlow',
+  'capsuleSynthesisFlow',
+  'capsuleWritingProfileFlow',
 ]);
 requireMarkers('tests/unit/lib/agent-runtime/runtime-proof.test.ts', [
   'create -> dispatch -> execute -> stream -> output receipt path',

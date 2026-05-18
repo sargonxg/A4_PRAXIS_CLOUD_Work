@@ -52,7 +52,7 @@ for (const required of [
   'data-testid="praxis-chat-thread"',
   'data-testid="capsule-agent-lane"',
   'data-testid="praxis-answer-markdown"',
-  'PRAXIS turns your ContextCapsules, documents, and policy tools into grounded analysis',
+  'Compose your reasoning and policy products from expert ContextCapsules.',
   'Search capsules',
   'showWorkbenchNavigation',
 ]) {

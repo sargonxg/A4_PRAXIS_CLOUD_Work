@@ -206,6 +206,7 @@ const actionIcons = [
 ] as const;
 
 const capsuleActionPrompts = [
+  { label: 'Build capsule', prompt: 'Build a draft ContextCapsule from this prompt. Propose User, Situation, Source, Tool, and Output cores, source gaps, suggested tools, and apply/fork gates.' },
   { label: 'Find missing sources', prompt: 'Find missing sources for the active capsule. Return a source gap list, search plan, and priority sources to add.' },
   { label: 'Check stale claims', prompt: 'Check the active capsule for stale claims, outdated dates, old assumptions, and decision deadlines.' },
   { label: 'Map causality', prompt: 'Map the causal claims in this capsule. Separate timeline facts, triggers, lag effects, alternatives, and indicators.' },
@@ -1580,7 +1581,7 @@ export function TaskletPraxisWorkbench({
           <div className={cn('mx-auto flex max-w-6xl flex-col items-center', showWorkbenchNavigation ? 'mt-14 sm:mt-18' : 'mt-8 sm:mt-12')}>
             <p className="od-praxis-control flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-slate-600">
               <Sparkles className="h-4 w-4 text-[#ca4a25]" />
-              PRAXIS turns your ContextCapsules, documents, and policy tools into grounded analysis
+              Compose your reasoning and policy products from expert ContextCapsules.
             </p>
             <div className="mt-3" data-testid="runtime-health-semaphore">
               <RuntimeHealthSemaphore isAuthenticated={isAuthenticated} />
@@ -3886,7 +3887,7 @@ function AgentActionDrawer({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ca4a25]">Policy actions</p>
-              <h2 className="mt-1 text-xl font-semibold text-slate-950">Run capsule-aware research.</h2>
+              <h2 className="mt-1 text-xl font-semibold text-slate-950">Build or run capsule work.</h2>
             </div>
             <button type="button" aria-label="Close agent actions" onClick={onClose} className="rounded-md p-2 text-slate-500 hover:bg-slate-100">
               <X className="h-4 w-4" />

@@ -53,13 +53,19 @@ const expectedFlows = [
     promptFile: 'prompts/sourceability.prompt',
     routeFile: 'src/app/api/ai/sourceability/route.ts',
   },
+  {
+    name: 'capsule-factory',
+    flowFile: 'src/lib/genkit/flows/capsule-factory.ts',
+    promptFile: 'prompts/capsule-factory.prompt',
+    routeFile: null,
+  },
 ];
 
 for (const flow of expectedFlows) {
   requireFile(flow.flowFile);
   requireFile(flow.promptFile);
-  const routePath = requireFile(flow.routeFile);
-  if (existsSync(routePath) && !read(flow.routeFile).includes('@/lib/genkit/flows/')) {
+  const routePath = flow.routeFile ? requireFile(flow.routeFile) : null;
+  if (flow.routeFile && routePath && existsSync(routePath) && !read(flow.routeFile).includes('@/lib/genkit/flows/')) {
     failures.push(`${flow.routeFile} does not import a Genkit flow`);
   }
 }
