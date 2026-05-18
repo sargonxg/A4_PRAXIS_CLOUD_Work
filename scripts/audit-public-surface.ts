@@ -15,6 +15,8 @@ function read(rel: string): string {
 
 const landing = read('src/components/landing/phase8-wow-landing.tsx');
 const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
+const appHome = read('src/components/dashboard/ask-praxis-home.tsx');
+const appIndex = read('src/app/app/page.tsx');
 const appShell = read('src/components/app/app-shell.tsx');
 
 for (const forbidden of [
@@ -41,6 +43,15 @@ for (const required of [
 }
 
 for (const required of [
+  'mode="app"',
+  'TaskletPraxisWorkbench',
+]) {
+  if (!appHome.includes(required)) failures.push(`app home missing marker: ${required}`);
+}
+
+if (!appIndex.includes('AskPraxisHome')) failures.push('app index must render the Ask PRAXIS workbench home');
+
+for (const required of [
   'data-testid="praxis-main-composer"',
   "'capsule-manager'",
   'data-testid="tasklet-capsule-cards"',
@@ -55,6 +66,9 @@ for (const required of [
   'Compose your reasoning and policy products from expert ContextCapsules.',
   'Search capsules',
   'showWorkbenchNavigation',
+  'starterCapsuleSummaries',
+  'visibleCapsuleCards',
+  'showingStarterFallback',
 ]) {
   if (!workbench.includes(required)) failures.push(`shared cockpit missing marker: ${required}`);
 }

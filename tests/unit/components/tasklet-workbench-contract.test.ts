@@ -103,7 +103,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('All types');
     expect(source).toContain('Governance');
     expect(source).toContain('/app/capsules');
-    expect(source).toContain('onApply={() => applyUserCapsule(capsule)}');
+    expect(source).toContain('onApply={() => applyCapsuleCard(capsule)}');
     expect(source).toContain('Apply</button>');
   });
 
@@ -133,6 +133,15 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="document-repository-section"');
     expect(source).toContain('Attach</button>');
     expect(source).toContain('Detach</button>');
+  });
+
+  it('uses one capsule-card contract for public starters and authenticated fallback cards', () => {
+    expect(source).toContain('starterCapsuleSummaries');
+    expect(source).toContain('visibleCapsuleCards');
+    expect(source).toContain('starterDefinitionToCapsuleSummary');
+    expect(source).toContain('const showingStarterFallback = isAuthenticated && !filteredUserCapsules.length');
+    expect(source).toContain("CapsuleEmptyState label=\"Loading capsules...\"");
+    expect(source).not.toContain("CapsuleEmptyState label=\"No capsules found.\"");
   });
 
   it('renders repository as its own cockpit page state instead of a sheet-only action', () => {

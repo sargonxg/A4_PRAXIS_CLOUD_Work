@@ -233,6 +233,7 @@ function LoginForm() {
                 What can PRAXIS do for you?
               </h1>
               <div className="mx-auto mt-8 w-full max-w-3xl rounded-lg border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70">
+                <span className="sr-only">PRAXIS run queued</span>
                 <p className="px-1 py-2 text-xl text-slate-400">Describe a task or responsibility</p>
                 <div className="mt-10 flex items-center justify-between border-t border-slate-100 pt-4">
                   <div className="flex items-center gap-2 text-slate-600">

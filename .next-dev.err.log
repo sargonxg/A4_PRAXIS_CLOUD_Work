@@ -1046,3 +1046,52 @@ Import trace:
     ./src/app/app/repository/page.tsx 
 [browser] eval() is not supported in this environment. If this page was served with a `Content-Security-Policy` header, make sure that `unsafe-eval` is included. React requires eval() in development mode for various debugging features like reconstructing callstacks from a different environment.
 React will never use eval() in production mode 
+[browser] eval() is not supported in this environment. If this page was served with a `Content-Security-Policy` header, make sure that `unsafe-eval` is included. React requires eval() in development mode for various debugging features like reconstructing callstacks from a different environment.
+React will never use eval() in production mode 
+⨯ ReferenceError: starterDefinitionToCapsuleSummary is not defined
+    at module evaluation (src\components\praxis\tasklet-praxis-workbench.tsx:324:65)
+    at module evaluation (src\components\landing\phase8-wow-landing.tsx:3:1)
+  322 | ...
+  323 | ..._UPDATED_AT = '2026-05-18T00:00:00.000Z';
+> 324 | ...ummaries = CAPSULE_STARTER_DEFINITIONS.map(starterDefinitionToCapsuleSummary);
+      |                                               ^
+  325 | ...
+  326 | ...etPraxisWorkbench({
+  327 | ... {
+  digest: '942021155'
+}
+[browser] Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template). 
+[browser] React does not recognize the `asChild` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `aschild` instead. If you accidentally passed it from a parent component, remove it from the DOM element. 
+⚠ Fast Refresh had to perform a full reload when ./src/components/praxis/tasklet-praxis-workbench.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⨯ ReferenceError: starterDefinitionToCapsuleSummary is not defined
+    at module evaluation (src\components\praxis\tasklet-praxis-workbench.tsx:324:65)
+    at module evaluation (src\components\landing\phase8-wow-landing.tsx:3:1)
+  322 | ...
+  323 | ..._UPDATED_AT = '2026-05-18T00:00:00.000Z';
+> 324 | ...ummaries = CAPSULE_STARTER_DEFINITIONS.map(starterDefinitionToCapsuleSummary);
+      |                                               ^
+  325 | ...
+  326 | ...etPraxisWorkbench({
+  327 | ... {
+  digest: '942021155'
+}
+[browser] Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template). 
+[browser] React does not recognize the `asChild` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `aschild` instead. If you accidentally passed it from a parent component, remove it from the DOM element. 
+⚠ Fast Refresh had to perform a full reload when ./src/components/praxis/tasklet-praxis-workbench.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⨯ ReferenceError: starterDefinitionToCapsuleSummary is not defined
+    at module evaluation (src\components\praxis\tasklet-praxis-workbench.tsx:324:65)
+    at module evaluation (src\components\landing\phase8-wow-landing.tsx:3:1)
+  322 | ...
+  323 | ..._UPDATED_AT = '2026-05-18T00:00:00.000Z';
+> 324 | ...ummaries = CAPSULE_STARTER_DEFINITIONS.map(starterDefinitionToCapsuleSummary);
+      |                                               ^
+  325 | ...
+  326 | ...etPraxisWorkbench({
+  327 | ... {
+  digest: '942021155'
+}
+[browser] Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template). 
+[browser] React does not recognize the `asChild` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `aschild` instead. If you accidentally passed it from a parent component, remove it from the DOM element. 
+⚠ Fast Refresh had to perform a full reload when ./src/components/praxis/tasklet-praxis-workbench.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[browser] eval() is not supported in this environment. If this page was served with a `Content-Security-Policy` header, make sure that `unsafe-eval` is included. React requires eval() in development mode for various debugging features like reconstructing callstacks from a different environment.
+React will never use eval() in production mode 

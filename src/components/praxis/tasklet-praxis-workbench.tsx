@@ -15,7 +15,6 @@ import {
   Copy,
   Database,
   FileText,
-  FolderKanban,
   HardDrive,
   Library,
   Loader2,
@@ -320,6 +319,9 @@ const capsuleDomainFilters = [
   { id: 'other', label: 'Other' },
 ] as const;
 
+const STARTER_CAPSULE_UPDATED_AT = '2026-05-18T00:00:00.000Z';
+const starterCapsuleSummaries = CAPSULE_STARTER_DEFINITIONS.map(starterDefinitionToCapsuleSummary);
+
 export function TaskletPraxisWorkbench({
   mode,
   capsuleId = 'default',
@@ -386,7 +388,9 @@ export function TaskletPraxisWorkbench({
     .filter((capsule) => capsule.role === 'tool')
     .map((capsule) => capsule.toolId ?? capsule.templateId ?? capsule.id);
   const availableToolIds = selectedToolIds.length ? selectedToolIds : ['ask-praxis'];
-  const selectedCapsule = userCapsules.find((capsule) => capsule.capsuleId === currentCapsuleId) ?? null;
+  const selectedCapsule = userCapsules.find((capsule) => capsule.capsuleId === currentCapsuleId)
+    ?? starterCapsuleSummaries.find((capsule) => capsule.capsuleId === currentCapsuleId)
+    ?? null;
   const selectedPolicyTeam = selectedCapsule ? policyTeamCategoryForTags(selectedCapsule.community?.tags) : getPolicyTeamCategory(capsuleDomainFilter);
   const capsuleRecommendations = selectedCapsule
     ? recommendCapsuleTools({
@@ -396,12 +400,16 @@ export function TaskletPraxisWorkbench({
       })
     : [];
   const userCapsuleTaxonomyStats = buildCapsuleTaxonomyStats(userCapsules);
-  const publicCapsuleTaxonomyStats = buildCapsuleTaxonomyStats(CAPSULE_STARTER_DEFINITIONS);
-  const activeCapsuleTaxonomyStats = isAuthenticated ? userCapsuleTaxonomyStats : publicCapsuleTaxonomyStats;
+  const publicCapsuleTaxonomyStats = buildCapsuleTaxonomyStats(starterCapsuleSummaries);
   const capsuleDomainCategories = buildCapsuleDomainCategories(userCapsuleTaxonomyStats);
   const publicCapsuleDomainCategories = buildPublicCapsuleDomainCategories(publicCapsuleTaxonomyStats);
   const filteredUserCapsules = filterUserCapsules(userCapsules, capsuleSearch, capsuleTypeFilter, capsuleDomainFilter);
-  const publicCapsules = filterPublicCapsules(capsuleSearch, capsuleTypeFilter, capsuleDomainFilter);
+  const filteredStarterCapsules = filterStarterCapsules(capsuleSearch, capsuleTypeFilter, capsuleDomainFilter);
+  const showingStarterFallback = isAuthenticated && !filteredUserCapsules.length;
+  const visibleCapsuleCards = isAuthenticated && !showingStarterFallback ? filteredUserCapsules : filteredStarterCapsules;
+  const activeCapsuleTaxonomyStats = isAuthenticated && !showingStarterFallback
+    ? userCapsuleTaxonomyStats
+    : publicCapsuleTaxonomyStats;
   const filteredCapsules = COCKPIT_CAPSULE_LIBRARY.filter((capsule) => {
     const query = capsulePickerQuery.trim().toLowerCase();
     return !query || capsule.label.toLowerCase().includes(query) || capsule.prompt.toLowerCase().includes(query) || capsule.code.toLowerCase().includes(query);
@@ -1171,6 +1179,81 @@ export function TaskletPraxisWorkbench({
     setCurrentCapsuleId(chip.id);
     setActiveCapsules((current) => [chip, ...current.filter((item) => item.id !== chip.id)].slice(0, 6));
     setStatus(`${chip.label} added to the capsule context.`);
+  }
+
+  function selectCapsuleCard(capsule: PraxisCapsuleSummary) {
+    const persisted = userCapsules.find((item) => item.capsuleId === capsule.capsuleId);
+    if (persisted) {
+      selectUserCapsule(persisted);
+      return;
+    }
+    const chip = capsuleToChip(capsule);
+    setCurrentCapsuleId(chip.id);
+    setActiveCapsules((current) => [chip, ...current.filter((item) => item.id !== chip.id)].slice(0, 6));
+    setConversationThreadId(null);
+    setConversationLoadedFor(null);
+    setChatMessages([]);
+    setPrompt(`Use the starter ContextCapsule "${capsule.label}" as the policy context. ${capsuleCategoryMeta(capsule).summary}`);
+    setStatus(`${chip.label} opened as starter context. Sign in to save a private fork.`);
+  }
+
+  function applyCapsuleCard(capsule: PraxisCapsuleSummary) {
+    const persisted = userCapsules.find((item) => item.capsuleId === capsule.capsuleId);
+    if (persisted) {
+      applyUserCapsule(persisted);
+      return;
+    }
+    const chip = capsuleToChip(capsule);
+    setCurrentCapsuleId(chip.id);
+    setActiveCapsules((current) => [chip, ...current.filter((item) => item.id !== chip.id)].slice(0, 6));
+    setStatus(`${chip.label} added as starter capsule context.`);
+  }
+
+  function improveCapsuleCard(capsule: PraxisCapsuleSummary) {
+    const persisted = userCapsules.find((item) => item.capsuleId === capsule.capsuleId);
+    if (persisted) {
+      improveCapsule(persisted);
+      return;
+    }
+    selectCapsuleCard(capsule);
+    const nextPrompt = [
+      `Improve the starter ContextCapsule "${capsule.label}".`,
+      capsuleCategoryMeta(capsule).detail,
+      'Ask what is missing, recommend source receipts, name useful tools, and explain what should be forked before drafting.',
+    ].join('\n');
+    setPrompt(nextPrompt);
+    if (isAuthenticated) void sendToPraxis(selectedAgent, nextPrompt);
+  }
+
+  function combineCapsuleCard(capsule: PraxisCapsuleSummary) {
+    const chip = capsuleToChip(capsule);
+    const current = selectedCapsule && selectedCapsule.capsuleId !== capsule.capsuleId
+      ? [capsuleToChip(selectedCapsule), chip]
+      : [chip, ...activeCapsules.filter((item) => item.id !== capsule.capsuleId)];
+    if (!isAuthenticated) {
+      setActiveCapsules(current.slice(0, 6));
+      sendPublicToLogin(`Combine ${current.slice(0, 2).map((item) => item.label).join(' with ')} into a PRAXIS ContextCapsule.`);
+      return;
+    }
+    void combineCapsuleLiteStack(current.slice(0, 5));
+  }
+
+  async function archiveCapsuleCard(capsule: PraxisCapsuleSummary) {
+    const persisted = userCapsules.find((item) => item.capsuleId === capsule.capsuleId);
+    if (persisted) {
+      await archiveUserCapsule(persisted);
+      return;
+    }
+    setStatus('Starter capsules are read-only. Sign in to save and archive a private fork.');
+  }
+
+  async function tagCapsuleCard(capsule: PraxisCapsuleSummary, tag: string) {
+    const persisted = userCapsules.find((item) => item.capsuleId === capsule.capsuleId);
+    if (persisted) {
+      await tagUserCapsule(persisted, tag);
+      return;
+    }
+    setStatus(`Starter capsules are read-only. "${tag.trim()}" can be saved after you fork this capsule.`);
   }
 
   async function archiveUserCapsule(capsule: PraxisCapsuleSummary) {
@@ -2041,31 +2124,27 @@ export function TaskletPraxisWorkbench({
                     {capsulesLoading && !filteredUserCapsules.length ? (
                       <CapsuleEmptyState label="Loading capsules..." />
                     ) : null}
-                    {!capsulesLoading && !filteredUserCapsules.length ? (
-                      <CapsuleEmptyState label="No capsules found." />
-                    ) : null}
-                    {filteredUserCapsules.map((capsule) => (
+                    {visibleCapsuleCards.map((capsule) => (
                       <CapsuleCard
                         key={capsule.capsuleId}
                         capsule={capsule}
                         active={capsule.capsuleId === currentCapsuleId}
-                        onSelect={() => selectUserCapsule(capsule)}
-                        onApply={() => applyUserCapsule(capsule)}
+                        mutable={!showingStarterFallback}
+                        onSelect={() => selectCapsuleCard(capsule)}
+                        onApply={() => applyCapsuleCard(capsule)}
                         onInspect={() => {
-                          selectUserCapsule(capsule);
+                          selectCapsuleCard(capsule);
                           setInspectorOpen(true);
                         }}
-                        onImprove={() => improveCapsule(capsule)}
-                        onCombine={() => {
-                          const current = selectedCapsule && selectedCapsule.capsuleId !== capsule.capsuleId
-                            ? [capsuleToChip(selectedCapsule), capsuleToChip(capsule)]
-                            : [capsuleToChip(capsule), ...activeCapsules.filter((item) => item.id !== capsule.capsuleId)];
-                          void combineCapsuleLiteStack(current.slice(0, 5));
-                        }}
-                        onArchive={() => void archiveUserCapsule(capsule)}
-                        onTag={(tag) => void tagUserCapsule(capsule, tag)}
+                        onImprove={() => improveCapsuleCard(capsule)}
+                        onCombine={() => combineCapsuleCard(capsule)}
+                        onArchive={() => void archiveCapsuleCard(capsule)}
+                        onTag={(tag) => void tagCapsuleCard(capsule, tag)}
                       />
                     ))}
+                    {!capsulesLoading && !visibleCapsuleCards.length ? (
+                      <CapsuleEmptyState label="No starter capsules match that search." />
+                    ) : null}
                   </div>
                   {isRepositoryPage ? (
                     <DocumentRepositorySection
@@ -2120,47 +2199,25 @@ export function TaskletPraxisWorkbench({
                 </div>
               ) : (
                 <div className="mt-6 grid gap-3 md:grid-cols-2 lg:grid-cols-3" data-testid="tasklet-capsule-cards">
-                  {publicCapsules.map((capsule, index) => {
-                    const category = publicCategoryForTemplate(capsule.id);
-                    return (
-                      <article key={capsule.id} className="od-praxis-card group min-h-52 rounded-lg p-4 transition hover:-translate-y-0.5 hover:border-sky-300">
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-sm font-semibold text-white">
-                            {String(index + 1).padStart(2, '0')}
-                          </span>
-                          <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-500">
-                            {category?.shortLabel ?? 'Capsule'}
-                          </span>
-                        </div>
-                        <h3 className="mt-4 text-lg font-semibold text-slate-900">{capsule.label}</h3>
-                        <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-500">{capsule.prompt}</p>
-                        <div className="mt-4 flex flex-wrap gap-1.5">
-                          {capsule.contextCores.slice(0, 3).map((core) => (
-                            <span key={core} className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">{core}</span>
-                          ))}
-                        </div>
-                        <div className="mt-5 flex items-center justify-between gap-3">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPrompt(capsule.prompt);
-                              setCapsulePickerQuery(capsule.label);
-                              setCapsulePickerOpen(true);
-                            }}
-                            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-sky-700"
-                          >
-                            <FolderKanban className="h-3.5 w-3.5" />
-                            Inspect
-                          </button>
-                          <button type="button" onClick={() => addCapsule(capsule.id)} className="inline-flex items-center gap-2 rounded-md bg-sky-700 px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-black/10 hover:bg-sky-800">
-                            <Sparkles className="h-3.5 w-3.5" />
-                            Apply
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  })}
-                  {!publicCapsules.length ? <CapsuleEmptyState label="No public capsule examples match that search." /> : null}
+                  {visibleCapsuleCards.map((capsule) => (
+                    <CapsuleCard
+                      key={capsule.capsuleId}
+                      capsule={capsule}
+                      active={capsule.capsuleId === currentCapsuleId}
+                      mutable={false}
+                      onSelect={() => selectCapsuleCard(capsule)}
+                      onApply={() => applyCapsuleCard(capsule)}
+                      onInspect={() => {
+                        selectCapsuleCard(capsule);
+                        setInspectorOpen(true);
+                      }}
+                      onImprove={() => improveCapsuleCard(capsule)}
+                      onCombine={() => combineCapsuleCard(capsule)}
+                      onArchive={() => void archiveCapsuleCard(capsule)}
+                      onTag={(tag) => void tagCapsuleCard(capsule, tag)}
+                    />
+                  ))}
+                  {!visibleCapsuleCards.length ? <CapsuleEmptyState label="No starter capsules match that search." /> : null}
                 </div>
               )}
             </section>
@@ -2273,11 +2330,55 @@ async function fetchCapsuleLibrary(): Promise<PraxisCapsuleSummary[]> {
 }
 
 function capsuleToChip(capsule: PraxisCapsuleSummary): ActiveCapsuleChip {
+  const starterDefinition = starterDefinitionForCapsule(capsule);
+  const starterRole = starterDefinition?.category === 'tool' || starterDefinition?.category === 'output' || starterDefinition?.category === 'user'
+    ? starterDefinition.category
+    : 'situation';
   return {
     id: capsule.capsuleId,
     label: capsule.label,
-    code: capsule.scope.toUpperCase(),
-    role: capsule.scope === 'user' ? 'user' : 'situation',
+    code: starterDefinition?.category.toUpperCase() ?? capsule.scope.toUpperCase(),
+    role: capsule.scope === 'user' ? 'user' : starterRole,
+  };
+}
+
+function starterDefinitionToCapsuleSummary(starter: CapsuleStarterDefinition): PraxisCapsuleSummary {
+  const sourceCoreIds = uniqueIds([...(starter.coreRefs.sourceCoreIds ?? []), ...starter.sourcePack.map((source) => source.id)]);
+  return {
+    capsuleId: starter.starterId,
+    label: starter.label,
+    scope: starter.category === 'user' ? 'user' : starter.category === 'tool' ? 'team' : 'situation',
+    version: 1,
+    updatedAt: STARTER_CAPSULE_UPDATED_AT,
+    archivedAt: null,
+    coreRefs: {
+      userCoreId: starter.coreRefs.userCoreId ?? null,
+      situationCoreId: starter.coreRefs.situationCoreId ?? null,
+      pathCoreId: starter.coreRefs.pathCoreId ?? null,
+      sourceCoreIds,
+      documentCoreIds: starter.coreRefs.documentCoreIds ?? [],
+      graphCoreId: starter.coreRefs.graphCoreId ?? null,
+      timeCoreId: starter.coreRefs.timeCoreId ?? null,
+      toolCoreIds: uniqueIds([...(starter.coreRefs.toolCoreIds ?? []), ...starter.recommendedToolIds]),
+      objectiveCoreIds: starter.coreRefs.objectiveCoreIds ?? [],
+      outputCoreIds: uniqueIds([...(starter.coreRefs.outputCoreIds ?? []), ...starter.outputProductIds]),
+      productCoreIds: starter.coreRefs.productCoreIds ?? [],
+      memoryCoreId: starter.coreRefs.memoryCoreId ?? null,
+    },
+    health: {
+      score: starter.readinessStars * 20,
+      warnings: starter.suggestedQuestions.slice(0, 3),
+      blockers: [],
+    },
+    community: {
+      tags: starter.tags,
+      favorite: false,
+    },
+    trust: {
+      level: 'starter',
+      score: starter.readinessStars * 20,
+      label: 'Starter capsule',
+    },
   };
 }
 
@@ -2455,6 +2556,10 @@ function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, typ
       ].join(' ').toLowerCase().includes(clean);
     })
     .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+}
+
+function filterStarterCapsules(query: string, typeFilter: string, domainFilter: string): PraxisCapsuleSummary[] {
+  return filterUserCapsules(starterCapsuleSummaries, query, typeFilter, domainFilter);
 }
 
 function capsuleMatchesType(capsule: PraxisCapsuleSummary, typeFilter: string): boolean {
@@ -2699,6 +2804,7 @@ function CategoryAxisPanel({
 function CapsuleCard({
   capsule,
   active,
+  mutable = true,
   onSelect,
   onApply,
   onInspect,
@@ -2709,6 +2815,7 @@ function CapsuleCard({
 }: {
   capsule: PraxisCapsuleSummary;
   active: boolean;
+  mutable?: boolean;
   onSelect: () => void;
   onApply: () => void;
   onInspect: () => void;
@@ -2795,24 +2902,28 @@ function CapsuleCard({
         <button type="button" onClick={onInspect} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Inspect</button>
         <button type="button" onClick={onImprove} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Improve</button>
         <button type="button" onClick={onCombine} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Combine</button>
-        <button type="button" onClick={onArchive} className="ml-auto rounded-md px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-50 hover:text-slate-700">Archive</button>
+        {mutable ? (
+          <button type="button" onClick={onArchive} className="ml-auto rounded-md px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-50 hover:text-slate-700">Archive</button>
+        ) : null}
       </div>
-      <form
-        className="mt-2 flex gap-2"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onTag(tagDraft);
-          setTagDraft('');
-        }}
-      >
-        <input
-          value={tagDraft}
-          onChange={(event) => setTagDraft(event.target.value)}
-          placeholder="Add category"
-          className="min-w-0 flex-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs outline-none placeholder:text-slate-400 focus:border-[#ff714d]"
-        />
-        <button type="submit" disabled={!tagDraft.trim()} className="rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white disabled:bg-slate-300">Save</button>
-      </form>
+      {mutable ? (
+        <form
+          className="mt-2 flex gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onTag(tagDraft);
+            setTagDraft('');
+          }}
+        >
+          <input
+            value={tagDraft}
+            onChange={(event) => setTagDraft(event.target.value)}
+            placeholder="Add category"
+            className="min-w-0 flex-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs outline-none placeholder:text-slate-400 focus:border-[#ff714d]"
+          />
+          <button type="submit" disabled={!tagDraft.trim()} className="rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white disabled:bg-slate-300">Save</button>
+        </form>
+      ) : null}
       </div>
     </article>
   );
