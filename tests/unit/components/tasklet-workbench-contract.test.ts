@@ -93,7 +93,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
 
   it('keeps one capsule context strip and exposes repository-backed type and domain filters', () => {
     expect(source).toContain('data-testid="capsule-context-bar"');
-    expect(source).toContain('Add your capsules here');
+    expect(source).toContain('data-testid="capsule-context-composer"');
+    expect(source).toContain('Generic policy starter capsule');
+    expect(source).toContain('Starter analyst user capsule');
     expect(source).toContain('capsuleTypeFilters');
     expect(source).toContain('capsuleDomainFilters');
     expect(source).toContain('data-testid="capsule-taxonomy-surface"');
@@ -103,8 +105,40 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('All types');
     expect(source).toContain('Governance');
     expect(source).toContain('/app/capsules');
-    expect(source).toContain('onApply={() => applyCapsuleCard(capsule)}');
-    expect(source).toContain('Apply</button>');
+    expect(source).toContain("onUseAsUser={() => applyCapsuleCard(capsule, 'user')}");
+    expect(source).toContain("onUseAsSituation={() => applyCapsuleCard(capsule, 'situation')}");
+    expect(source).toContain("onUseAsOutput={() => applyCapsuleCard(capsule, 'output')}");
+    expect(source).toContain("onAddReference={() => applyCapsuleCard(capsule, 'reference')}");
+    expect(source).toContain('Use as user</button>');
+    expect(source).toContain('Use as situation</button>');
+    expect(source).toContain('Use as output</button>');
+    expect(source).toContain('Add as reference</button>');
+  });
+
+  it('renders the live stack in the Living Context Rail and inside the composer', () => {
+    expect(source).toContain('<LivingContextRail');
+    expect(source).toContain('livingRailCells');
+    expect(source).toContain('const activeCapsuleStack = useMemo');
+    expect(source).toContain('ensureDefaultCapsuleStack(activeCapsules');
+    expect(source).toContain("data-testid=\"capsule-context-composer\"");
+    expect(source).toContain('Profile / user');
+    expect(source).toContain('Situation / context');
+    expect(source).toContain('Sources');
+    expect(source).toContain('Output');
+    expect(source).toContain('Readiness');
+    expect(source).toContain('Save / fork context');
+  });
+
+  it('sends ordered live capsule stacks without automatic combine persistence', () => {
+    expect(source).toContain('appliedCapsules: activeCapsuleStack.map');
+    expect(source).toContain('const outputCapsule = activeCapsuleStack.find');
+    expect(source).toContain('const situationCapsule = activeCapsuleStack.find');
+    expect(source).toContain('sourceIds: activeCapsuleStack.filter((capsule) => capsule.role ===');
+    expect(source).toContain('userModelId: userCapsule?.id ?? null');
+    expect(source).toContain('saveCombinedCapsuleStack');
+    expect(source).toContain('Save as combined capsule');
+    expect(source).not.toContain('if (next.length >= 2) await combineCapsuleLiteStack(next);');
+    expect(source).not.toContain('void combineCapsuleLiteStack(current.slice(0, 5));');
   });
 
   it('drives taxonomy buttons from the shared statistics contract', () => {

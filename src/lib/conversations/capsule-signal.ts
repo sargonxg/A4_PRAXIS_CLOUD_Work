@@ -190,7 +190,7 @@ function buildFallbackCoreRefs(stack: ActiveContextStackState, appliedCapsules: 
     teamCoreId: null,
     situationCoreId: byRole('situation')[0] ?? stack.situationId ?? stack.capsuleId ?? null,
     pathCoreId: null,
-    sourceCoreIds: uniqueStrings([...stack.sourceIds, ...byRole('source')]),
+    sourceCoreIds: uniqueStrings([...stack.sourceIds, ...byRole('source'), ...byRole('reference')]),
     documentCoreIds: uniqueStrings(stack.documentIds),
     graphCoreId: byRole('graph')[0] ?? null,
     timeCoreId: null,

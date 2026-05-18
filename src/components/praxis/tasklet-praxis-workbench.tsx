@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -95,7 +95,7 @@ type SavedConversationTurn = {
   routingReceipt?: unknown;
   createdAt?: string;
 };
-type CapsuleRole = 'user' | 'situation' | 'tool' | 'output';
+type CapsuleRole = 'user' | 'situation' | 'tool' | 'output' | 'reference';
 type CapsuleDetailTab = 'build' | 'connect' | 'retrieve' | 'agents';
 type RepositoryDocument = {
   id: string;
@@ -268,10 +268,11 @@ const spanTargets: SpanTargetDefinition[] = [
 ] satisfies SpanTargetDefinition[];
 
 const capsuleRoles: Array<{ id: CapsuleRole; label: string }> = [
-  { id: 'situation', label: 'Situation' },
   { id: 'user', label: 'User' },
-  { id: 'tool', label: 'Tool' },
+  { id: 'situation', label: 'Situation' },
   { id: 'output', label: 'Output' },
+  { id: 'reference', label: 'Reference' },
+  { id: 'tool', label: 'Tool' },
 ];
 
 const capsuleRoleStyles: Record<CapsuleRole, string> = {
@@ -279,6 +280,7 @@ const capsuleRoleStyles: Record<CapsuleRole, string> = {
   situation: 'border-emerald-200 bg-emerald-50 text-emerald-900',
   tool: 'border-amber-200 bg-amber-50 text-amber-900',
   output: 'border-violet-200 bg-violet-50 text-violet-900',
+  reference: 'border-slate-200 bg-slate-50 text-slate-700',
 };
 
 const capsuleStateStyles = {
@@ -322,6 +324,18 @@ const capsuleDomainFilters = [
 
 const STARTER_CAPSULE_UPDATED_AT = '2026-05-18T00:00:00.000Z';
 const starterCapsuleSummaries = CAPSULE_STARTER_DEFINITIONS.map(starterDefinitionToCapsuleSummary);
+const GENERIC_POLICY_STARTER_CHIP: ActiveCapsuleChip = {
+  id: 'starter-situation-generic-policy',
+  label: 'Generic policy starter capsule',
+  code: 'GENERIC',
+  role: 'situation',
+};
+const STARTER_USER_CAPSULE_CHIP: ActiveCapsuleChip = {
+  id: 'starter-user-generic-analyst',
+  label: 'Starter analyst user capsule',
+  code: 'USER',
+  role: 'user',
+};
 
 export function TaskletPraxisWorkbench({
   mode,
@@ -385,13 +399,20 @@ export function TaskletPraxisWorkbench({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const starterSeededRef = useRef(false);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
-  const selectedToolIds = activeCapsules
-    .filter((capsule) => capsule.role === 'tool')
-    .map((capsule) => capsule.toolId ?? capsule.templateId ?? capsule.id);
-  const availableToolIds = selectedToolIds.length ? selectedToolIds : ['ask-praxis'];
   const selectedCapsule = userCapsules.find((capsule) => capsule.capsuleId === currentCapsuleId)
     ?? starterCapsuleSummaries.find((capsule) => capsule.capsuleId === currentCapsuleId)
     ?? null;
+  const activeCapsuleStack = useMemo(
+    () => ensureDefaultCapsuleStack(activeCapsules, {
+      userCapsules,
+      selectedCapsule,
+    }),
+    [activeCapsules, selectedCapsule, userCapsules],
+  );
+  const selectedToolIds = activeCapsuleStack
+    .filter((capsule) => capsule.role === 'tool')
+    .map((capsule) => capsule.toolId ?? capsule.templateId ?? capsule.id);
+  const availableToolIds = selectedToolIds.length ? selectedToolIds : ['ask-praxis'];
   const selectedPolicyTeam = selectedCapsule ? policyTeamCategoryForTags(selectedCapsule.community?.tags) : getPolicyTeamCategory(capsuleDomainFilter);
   const capsuleRecommendations = selectedCapsule
     ? recommendCapsuleTools({
@@ -419,39 +440,43 @@ export function TaskletPraxisWorkbench({
   const visibleRepositoryDocuments = repositoryDocuments.filter((document) =>
     repositoryDocIds.size === 0 || repositoryDocIds.has(document.id),
   );
+  const userCapsule = activeCapsuleStack.find((capsule) => capsule.role === 'user');
+  const situationCapsuleForHeader = activeCapsuleStack.find((capsule) => capsule.role === 'situation');
+  const outputCapsuleForHeader = activeCapsuleStack.find((capsule) => capsule.role === 'output');
+  const referenceCapsulesForHeader = activeCapsuleStack.filter((capsule) => capsule.role === 'reference' || capsule.role === 'tool');
   const livingRailCells = [
     {
       id: 'profile',
       label: 'Profile',
-      value: isAuthenticated ? (user?.role ?? 'Analyst') : 'Preview analyst',
+      value: userCapsule?.label ?? (isAuthenticated ? (user?.role ?? 'Analyst') : 'Preview analyst'),
       detail: isAuthenticated ? (user?.orgName ?? 'Private workspace') : 'Sign in to save posture',
       state: 'ready' as const,
     },
     {
       id: 'context',
       label: 'Context',
-      value: selectedCapsule?.label ?? activeCapsules[0]?.label ?? 'Starter capsule',
-      detail: activeCapsules.length ? `${activeCapsules.length} active core${activeCapsules.length === 1 ? '' : 's'}` : 'Compose from policy cores',
-      state: activeCapsules.length || selectedCapsule ? 'active' as const : 'review' as const,
+      value: situationCapsuleForHeader?.label ?? selectedCapsule?.label ?? 'Starter capsule',
+      detail: `${activeCapsuleStack.length} live core${activeCapsuleStack.length === 1 ? '' : 's'}`,
+      state: activeCapsuleStack.length || selectedCapsule ? 'active' as const : 'review' as const,
     },
     {
       id: 'sources',
       label: 'Sources',
-      value: `${repositoryDocuments.length} repository item${repositoryDocuments.length === 1 ? '' : 's'}`,
-      detail: repositoryDocuments.length ? 'Source receipts available' : 'Attach documents for proof',
-      state: repositoryDocuments.length ? 'ready' as const : 'review' as const,
+      value: repositoryDocuments.length ? `${repositoryDocuments.length} repository item${repositoryDocuments.length === 1 ? '' : 's'}` : `${referenceCapsulesForHeader.length} reference${referenceCapsulesForHeader.length === 1 ? '' : 's'}`,
+      detail: repositoryDocuments.length || referenceCapsulesForHeader.length ? 'Source posture visible' : 'Attach documents for proof',
+      state: repositoryDocuments.length || referenceCapsulesForHeader.length ? 'ready' as const : 'review' as const,
     },
     {
       id: 'output',
       label: 'Output',
-      value: selectedAgent?.outputDestination?.replace(/_/g, ' ') ?? 'Memo posture',
-      detail: selectedAgent?.label ?? 'Ask PRAXIS routes the work',
-      state: 'quiet' as const,
+      value: outputCapsuleForHeader?.label ?? selectedAgent.outputDestination?.replace(/_/g, ' ') ?? 'Memo posture',
+      detail: selectedAgent.label,
+      state: outputCapsuleForHeader ? 'ready' as const : 'quiet' as const,
     },
     {
       id: 'readiness',
       label: 'Readiness',
-      value: selectedCapsule?.health?.score ? `${selectedCapsule.health.score}/100` : selectedAgent?.readiness ?? 'Review',
+      value: selectedCapsule?.health?.score ? `${selectedCapsule.health.score}/100` : selectedAgent.readiness ?? 'Review',
       detail: selectedCapsule?.health?.warnings?.[0] ?? status,
       state: selectedCapsule?.health?.score && selectedCapsule.health.score >= 80 ? 'ready' as const : 'active' as const,
     },
@@ -500,8 +525,8 @@ export function TaskletPraxisWorkbench({
 
   useEffect(() => {
     if (!isAuthenticated || !conversationThreadId) return;
-    void ensureConversationRecord(conversationThreadId, currentCapsuleId, activeCapsules);
-  }, [activeCapsules, conversationThreadId, currentCapsuleId, isAuthenticated]);
+    void ensureConversationRecord(conversationThreadId, currentCapsuleId, activeCapsuleStack);
+  }, [activeCapsuleStack, conversationThreadId, currentCapsuleId, isAuthenticated]);
 
   function sendPublicToLogin(nextPrompt: string, agent: PolicyAgentDefinition = selectedAgent) {
     window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, nextPrompt);
@@ -523,7 +548,7 @@ export function TaskletPraxisWorkbench({
     setConversationThreadId(nextThreadId);
     setConversationLoadedFor(`${currentCapsuleId}:${nextThreadId}`);
     pushConversationUrl(currentCapsuleId, nextThreadId);
-    void ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsules);
+    void ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsuleStack);
     return nextThreadId;
   }
 
@@ -537,7 +562,7 @@ export function TaskletPraxisWorkbench({
     setConversationLoadedFor(`${currentCapsuleId}:${nextThreadId}`);
     setChatMessages([]);
     pushConversationUrl(currentCapsuleId, nextThreadId);
-    void ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsules);
+    void ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsuleStack);
     setStatus('New conversation link ready. Start talking and PRAXIS will save the work here.');
   }
 
@@ -551,7 +576,7 @@ export function TaskletPraxisWorkbench({
       setConversationThreadId(nextThreadId);
       setConversationLoadedFor(`${currentCapsuleId}:${nextThreadId}`);
       pushConversationUrl(currentCapsuleId, nextThreadId);
-      void ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsules);
+      void ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsuleStack);
     }
     const link = buildConversationUrl(currentCapsuleId, nextThreadId);
     try {
@@ -563,7 +588,7 @@ export function TaskletPraxisWorkbench({
   }
 
   function buildChatPrompt(cleanPrompt: string, threadId: string): string {
-    const capsuleStack = activeCapsules
+    const capsuleStack = activeCapsuleStack
       .map((capsule) => `${capsule.role.toUpperCase()}: ${capsule.label} (${capsule.id})`)
       .join('\n');
     return [
@@ -590,14 +615,14 @@ export function TaskletPraxisWorkbench({
     setIsStreaming(true);
     setStatus('PRAXIS is reading the active capsule and conversation memory...');
     const nextThreadId = ensureConversationThread();
-    await ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsules);
+    await ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsuleStack);
     const userMessage: ChatMessage = { role: 'user', text: cleanPrompt };
     const enrichedPrompt = buildChatPrompt(cleanPrompt, nextThreadId);
     setChatMessages((current) => [...current, userMessage, { role: 'assistant', text: '' }]);
 
     try {
-      const outputCapsule = activeCapsules.find((capsule) => capsule.role === 'output');
-      const situationCapsule = activeCapsules.find((capsule) => capsule.role === 'situation') ?? activeCapsules[0];
+      const outputCapsule = activeCapsuleStack.find((capsule) => capsule.role === 'output');
+      const situationCapsule = activeCapsuleStack.find((capsule) => capsule.role === 'situation') ?? activeCapsuleStack[0];
       const currentConversationPath = buildConversationPath(currentCapsuleId, nextThreadId);
       const response = await fetch(`/api/conversations/${encodeURIComponent(nextThreadId)}/turns`, {
         method: 'POST',
@@ -610,7 +635,7 @@ export function TaskletPraxisWorkbench({
           })),
           capsuleId: currentCapsuleId,
           contextPackageId: selectedCapsule?.capsuleId ? `capsule:${selectedCapsule.capsuleId}:v${selectedCapsule.version}` : undefined,
-          appliedCapsules: activeCapsules.map((capsule) => ({
+          appliedCapsules: activeCapsuleStack.map((capsule) => ({
             id: capsule.id,
             label: capsule.label,
             role: capsule.role,
@@ -620,8 +645,9 @@ export function TaskletPraxisWorkbench({
           activeContextStack: {
             stackId: 'default',
             capsuleId: currentCapsuleId,
+            userModelId: userCapsule?.id ?? null,
             situationId: situationCapsule?.id ?? currentCapsuleId,
-            sourceIds: [],
+            sourceIds: activeCapsuleStack.filter((capsule) => capsule.role === 'reference').map((capsule) => capsule.id),
             documentIds: [],
             outputGoal: outputCapsule?.label ?? 'Routed PRAXIS answer',
             evidenceGaps: [],
@@ -1212,11 +1238,11 @@ export function TaskletPraxisWorkbench({
     setStatus(`${chip.label} opened. Start talking to create a shareable conversation link.`);
   }
 
-  function applyUserCapsule(capsule: PraxisCapsuleSummary) {
-    const chip = capsuleToChip(capsule);
-    setCurrentCapsuleId(chip.id);
-    setActiveCapsules((current) => [chip, ...current.filter((item) => item.id !== chip.id)].slice(0, 6));
-    setStatus(`${chip.label} added to the capsule context.`);
+  function applyUserCapsule(capsule: PraxisCapsuleSummary, role: CapsuleRole = 'user') {
+    const chip = { ...capsuleToChip(capsule), role };
+    if (role === 'situation') setCurrentCapsuleId(chip.id);
+    setActiveCapsules((current) => applyCapsuleToStack(current, chip));
+    setStatus(`${chip.label} added to the capsule context as ${role}.`);
   }
 
   function selectCapsuleCard(capsule: PraxisCapsuleSummary) {
@@ -1235,16 +1261,16 @@ export function TaskletPraxisWorkbench({
     setStatus(`${chip.label} opened as starter context. Sign in to save a private fork.`);
   }
 
-  function applyCapsuleCard(capsule: PraxisCapsuleSummary) {
+  function applyCapsuleCard(capsule: PraxisCapsuleSummary, role: CapsuleRole = capsuleDefaultRole(capsule)) {
     const persisted = userCapsules.find((item) => item.capsuleId === capsule.capsuleId);
     if (persisted) {
-      applyUserCapsule(persisted);
+      applyUserCapsule(persisted, role);
       return;
     }
-    const chip = capsuleToChip(capsule);
-    setCurrentCapsuleId(chip.id);
-    setActiveCapsules((current) => [chip, ...current.filter((item) => item.id !== chip.id)].slice(0, 6));
-    setStatus(`${chip.label} added as starter capsule context.`);
+    const chip = { ...capsuleToChip(capsule), role };
+    if (role === 'situation') setCurrentCapsuleId(chip.id);
+    setActiveCapsules((current) => applyCapsuleToStack(current, chip));
+    setStatus(`${chip.label} added as ${role} capsule context.`);
   }
 
   function improveCapsuleCard(capsule: PraxisCapsuleSummary) {
@@ -1273,7 +1299,7 @@ export function TaskletPraxisWorkbench({
       sendPublicToLogin(`Combine ${current.slice(0, 2).map((item) => item.label).join(' with ')} into a PRAXIS ContextCapsule.`);
       return;
     }
-    void combineCapsuleLiteStack(current.slice(0, 5));
+    void saveCombinedCapsuleStack(current.slice(0, 5));
   }
 
   async function archiveCapsuleCard(capsule: PraxisCapsuleSummary) {
@@ -1511,7 +1537,7 @@ export function TaskletPraxisWorkbench({
     }
   }
 
-  async function combineCapsuleLiteStack(capsulesToCombine: ActiveCapsuleChip[]) {
+  async function saveCombinedCapsuleStack(capsulesToCombine: ActiveCapsuleChip[]) {
     if (!isAuthenticated || capsulesToCombine.length < 2) return;
     const response = await fetch('/api/context/capsules', {
       method: 'POST',
@@ -1536,7 +1562,7 @@ export function TaskletPraxisWorkbench({
     setCurrentCapsuleId(combined.id);
     setActiveCapsules([combined, ...capsulesToCombine.slice(0, 4)]);
     void refreshCapsules(combined.id);
-    setStatus(`${combined.label} is now the active ContextCapsule Lite.`);
+    setStatus(`${combined.label} saved as a combined ContextCapsule Lite.`);
   }
 
   async function addCapsule(id: string, role: CapsuleRole = capsulePickerRole) {
@@ -1547,27 +1573,30 @@ export function TaskletPraxisWorkbench({
       return;
     }
     try {
-      const created = await createCapsuleLite(`ContextCapsule Lite: ${capsule.label}`, {
+      const created: ActiveCapsuleChip = {
+        id: capsule.id,
+        label: capsule.label,
         code: capsule.code,
         role,
         templateId: capsule.id,
-      });
-      if (!created) return;
-      const next = [...activeCapsules, created].filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index).slice(0, 5);
-      setActiveCapsules(next);
-      if (next.length >= 2) await combineCapsuleLiteStack(next);
+      };
+      setActiveCapsules((current) => applyCapsuleToStack(current, created));
       setCapsulePickerOpen(false);
+      setStatus(`${created.label} plugged into the live stack as ${role}. Save/fork when you want to persist this context.`);
     } catch (err) {
       setStatus(err instanceof Error ? `Capsule failed: ${err.message}` : 'Capsule failed.');
     }
   }
 
   function removeCapsule(id: string) {
-    setActiveCapsules((current) => current.filter((capsule) => capsule.id !== id));
-    if (currentCapsuleId === id) {
-      const next = activeCapsules.find((capsule) => capsule.id !== id);
-      setCurrentCapsuleId(next?.id ?? 'default');
-    }
+    setActiveCapsules((current) => {
+      const nextStack = current.filter((capsule) => capsule.id !== id);
+      if (currentCapsuleId === id) {
+        const nextSituation = nextStack.find((capsule) => capsule.role === 'situation') ?? nextStack[0];
+        setCurrentCapsuleId(nextSituation?.id ?? 'default');
+      }
+      return nextStack;
+    });
   }
 
   function reorderCapsules(targetId: string) {
@@ -1657,12 +1686,12 @@ export function TaskletPraxisWorkbench({
           <div className="mt-8">
             <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">Capsules <ChevronDown className="h-3 w-3" /></p>
             <div className="mt-3 space-y-2">
-              {activeCapsules.map((capsule) => (
+              {activeCapsuleStack.map((capsule) => (
                 <button key={capsule.id} type="button" className="block w-full truncate rounded-md px-1 py-1.5 text-left text-sm font-medium text-slate-700 hover:bg-black/5">
                   {capsule.label}
                 </button>
               ))}
-              {!activeCapsules.length ? (
+              {!activeCapsuleStack.length ? (
                 <span className="block rounded-md border border-dashed border-black/10 px-2 py-2 text-sm font-medium text-slate-500">
                   Add your capsules here
                 </span>
@@ -1730,14 +1759,48 @@ export function TaskletPraxisWorkbench({
             </div>
 
             <div className="od-praxis-panel mt-6 w-full max-w-5xl rounded-xl" data-testid="praxis-main-composer">
-              <div className="border-b border-black/10 px-5 py-3" data-testid="capsule-context-bar">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Capsule context</span>
+              <div className="border-b border-black/10 px-5 py-4" data-testid="capsule-context-bar">
+                <div className="flex flex-wrap items-start justify-between gap-3" data-testid="capsule-context-composer">
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Capsule context</span>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
+                      <SourcePostureChip label={`Profile / user: ${userCapsule?.label ?? 'Open'}`} state="ready" />
+                      <SourcePostureChip label={`Situation / context: ${situationCapsuleForHeader?.label ?? 'Open'}`} state="active" />
+                      <SourcePostureChip
+                        label={`Sources: ${repositoryDocuments.length ? `${repositoryDocuments.length} ready` : `${referenceCapsulesForHeader.length} references`}`}
+                        state={repositoryDocuments.length || referenceCapsulesForHeader.length ? 'ready' : 'review'}
+                      />
+                      <SourcePostureChip label={`Output: ${outputCapsuleForHeader?.label ?? selectedAgent.label}`} state={outputCapsuleForHeader ? 'ready' : 'quiet'} />
+                      <SourcePostureChip
+                        label={`Readiness: ${selectedCapsule?.health?.score ? `${selectedCapsule.health.score}/100` : selectedAgent.readiness ?? 'Review'}`}
+                        state={selectedCapsule?.health?.score && selectedCapsule.health.score >= 80 ? 'ready' : 'active'}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void saveCombinedCapsuleStack(activeCapsuleStack)}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      <Save className="h-3.5 w-3.5" />
+                      Save / fork context
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void saveCombinedCapsuleStack(activeCapsuleStack)}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-slate-300 bg-white/60 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white"
+                    >
+                      Save as combined capsule
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <SourcePostureChip
                     label={repositoryDocuments.length ? 'Sources ready' : 'Sources needed'}
                     state={repositoryDocuments.length ? 'ready' : 'review'}
                   />
-                  {activeCapsules.map((capsule, index) => (
+                  {activeCapsuleStack.map((capsule, index) => (
                     <span
                       key={capsule.id}
                       draggable
@@ -1761,7 +1824,7 @@ export function TaskletPraxisWorkbench({
                         <span>{index === 0 ? 'Active' : capsuleRoles.find((role) => role.id === capsule.role)?.label}</span>
                         <span className="max-w-44 truncate text-slate-800">{capsule.label}</span>
                       </button>
-                      {activeCapsules.length > 1 ? (
+                      {activeCapsuleStack.length > 1 ? (
                         <button
                           type="button"
                           aria-label={`Remove ${capsule.label}`}
@@ -1773,7 +1836,7 @@ export function TaskletPraxisWorkbench({
                       ) : null}
                     </span>
                   ))}
-                  {!activeCapsules.length ? (
+                  {!activeCapsuleStack.length ? (
                     <span className="inline-flex items-center gap-2 rounded-md border border-dashed border-slate-300 bg-white/60 px-2.5 py-1.5 text-xs font-semibold text-slate-500">
                       Add your capsules here
                     </span>
@@ -2181,7 +2244,10 @@ export function TaskletPraxisWorkbench({
                         active={capsule.capsuleId === currentCapsuleId}
                         mutable={!showingStarterFallback}
                         onSelect={() => selectCapsuleCard(capsule)}
-                        onApply={() => applyCapsuleCard(capsule)}
+                        onUseAsUser={() => applyCapsuleCard(capsule, 'user')}
+                        onUseAsSituation={() => applyCapsuleCard(capsule, 'situation')}
+                        onUseAsOutput={() => applyCapsuleCard(capsule, 'output')}
+                        onAddReference={() => applyCapsuleCard(capsule, 'reference')}
                         onInspect={() => {
                           selectCapsuleCard(capsule);
                           setInspectorOpen(true);
@@ -2256,7 +2322,10 @@ export function TaskletPraxisWorkbench({
                       active={capsule.capsuleId === currentCapsuleId}
                       mutable={false}
                       onSelect={() => selectCapsuleCard(capsule)}
-                      onApply={() => applyCapsuleCard(capsule)}
+                      onUseAsUser={() => applyCapsuleCard(capsule, 'user')}
+                      onUseAsSituation={() => applyCapsuleCard(capsule, 'situation')}
+                      onUseAsOutput={() => applyCapsuleCard(capsule, 'output')}
+                      onAddReference={() => applyCapsuleCard(capsule, 'reference')}
                       onInspect={() => {
                         selectCapsuleCard(capsule);
                         setInspectorOpen(true);
@@ -2379,6 +2448,42 @@ async function fetchCapsuleLibrary(): Promise<PraxisCapsuleSummary[]> {
   return Array.isArray(payload?.capsules) ? payload.capsules as PraxisCapsuleSummary[] : [];
 }
 
+function ensureDefaultCapsuleStack(
+  activeStack: ActiveCapsuleChip[],
+  input: { userCapsules: PraxisCapsuleSummary[]; selectedCapsule: PraxisCapsuleSummary | null },
+): ActiveCapsuleChip[] {
+  const ownedUserCapsule = input.userCapsules.find((capsule) => !capsule.archivedAt && capsuleCategory(capsule) === 'user');
+  const starterUserCapsule = starterCapsuleSummaries.find((capsule) => capsuleCategory(capsule) === 'user');
+  const userChip = activeStack.find((capsule) => capsule.role === 'user')
+    ?? (ownedUserCapsule
+      ? { ...capsuleToChip(ownedUserCapsule), role: 'user' as const }
+      : starterUserCapsule
+        ? { ...capsuleToChip(starterUserCapsule), role: 'user' as const }
+        : STARTER_USER_CAPSULE_CHIP);
+  const situationChip = activeStack.find((capsule) => capsule.role === 'situation')
+    ?? (input.selectedCapsule ? { ...capsuleToChip(input.selectedCapsule), role: 'situation' as const } : GENERIC_POLICY_STARTER_CHIP);
+
+  let next = activeStack;
+  if (!next.some((capsule) => capsule.role === 'user')) next = [userChip, ...next];
+  if (!next.some((capsule) => capsule.role === 'situation')) {
+    const userIndex = next.findIndex((capsule) => capsule.role === 'user');
+    const insertAt = userIndex >= 0 ? userIndex + 1 : 0;
+    next = [...next.slice(0, insertAt), situationChip, ...next.slice(insertAt)];
+  }
+  return uniqueCapsuleStack(next).slice(0, 8);
+}
+
+function applyCapsuleToStack(current: ActiveCapsuleChip[], chip: ActiveCapsuleChip): ActiveCapsuleChip[] {
+  const next = chip.role === 'reference' || chip.role === 'tool'
+    ? [...current.filter((item) => item.id !== chip.id), chip]
+    : [chip, ...current.filter((item) => item.id !== chip.id && item.role !== chip.role)];
+  return uniqueCapsuleStack(next).slice(0, 8);
+}
+
+function uniqueCapsuleStack(stack: ActiveCapsuleChip[]): ActiveCapsuleChip[] {
+  return stack.filter((item, index, all) => all.findIndex((candidate) => candidate.id === item.id) === index);
+}
+
 function capsuleToChip(capsule: PraxisCapsuleSummary): ActiveCapsuleChip {
   const starterDefinition = starterDefinitionForCapsule(capsule);
   const starterRole = starterDefinition?.category === 'tool' || starterDefinition?.category === 'output' || starterDefinition?.category === 'user'
@@ -2444,6 +2549,11 @@ function capsuleCategory(capsule: PraxisCapsuleSummary): CapsuleStarterCategory 
   const type = taxonomy.types.find((facet) => ['situation', 'tool', 'output', 'user'].includes(facet.id));
   if (type?.id === 'situation' || type?.id === 'tool' || type?.id === 'output' || type?.id === 'user') return type.id;
   return 'custom';
+}
+
+function capsuleDefaultRole(capsule: PraxisCapsuleSummary): CapsuleRole {
+  const category = capsuleCategory(capsule);
+  return category === 'custom' ? 'reference' : category;
 }
 
 function capsuleCategoryMeta(capsule: PraxisCapsuleSummary) {
@@ -2856,7 +2966,10 @@ function CapsuleCard({
   active,
   mutable = true,
   onSelect,
-  onApply,
+  onUseAsUser,
+  onUseAsSituation,
+  onUseAsOutput,
+  onAddReference,
   onInspect,
   onImprove,
   onCombine,
@@ -2867,7 +2980,10 @@ function CapsuleCard({
   active: boolean;
   mutable?: boolean;
   onSelect: () => void;
-  onApply: () => void;
+  onUseAsUser: () => void;
+  onUseAsSituation: () => void;
+  onUseAsOutput: () => void;
+  onAddReference: () => void;
   onInspect: () => void;
   onImprove: () => void;
   onCombine: () => void;
@@ -2948,10 +3064,13 @@ function CapsuleCard({
         <p className="truncate"><span className="font-semibold text-slate-700">Outputs:</span> {outputRefs.length ? outputRefs.slice(0, 4).join(', ') : 'open target'}</p>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button type="button" onClick={onApply} className="rounded-md bg-sky-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-sky-800">Apply</button>
+        <button type="button" onClick={onUseAsUser} className="rounded-md bg-sky-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-sky-800">Use as user</button>
+        <button type="button" onClick={onUseAsSituation} className="rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50">Use as situation</button>
+        <button type="button" onClick={onUseAsOutput} className="rounded-md border border-violet-200 px-2.5 py-1.5 text-xs font-semibold text-violet-800 hover:bg-violet-50">Use as output</button>
+        <button type="button" onClick={onAddReference} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Add as reference</button>
         <button type="button" onClick={onInspect} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Inspect</button>
         <button type="button" onClick={onImprove} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Improve</button>
-        <button type="button" onClick={onCombine} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Combine</button>
+        <button type="button" onClick={onCombine} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Save as combined capsule</button>
         {mutable ? (
           <button type="button" onClick={onArchive} className="ml-auto rounded-md px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-50 hover:text-slate-700">Archive</button>
         ) : null}

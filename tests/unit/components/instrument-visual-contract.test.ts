@@ -51,11 +51,12 @@ describe('Instrument Pro visual contract', () => {
     expect(button).toContain('"capsule-secondary"');
   });
 
-  it('uses the Living Context Rail on app, public, login, onboarding, and settings surfaces', () => {
+  it('uses the Living Context Rail on public/login/onboarding/settings and the app cockpit composer', () => {
     expect(contextStrip).toContain('LivingContextRail');
     expect(instrument).toContain('data-testid="living-context-rail"');
-    expect(workbench).toContain('livingRailCells');
+    expect(workbench).toContain('data-testid="capsule-context-composer"');
     expect(workbench).toContain('<LivingContextRail');
+    expect(workbench).toContain('livingRailCells');
     expect(workbench).toContain('SourcePostureChip');
     expect(workbench).toContain('WorkActionMenu');
     expect(login).toContain('previewRailCells');

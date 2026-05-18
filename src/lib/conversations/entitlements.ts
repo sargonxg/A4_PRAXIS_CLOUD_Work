@@ -8,7 +8,7 @@ import {
 export type AppliedConversationCapsule = {
   id: string;
   label: string;
-  role: 'user' | 'situation' | 'tool' | 'output';
+  role: 'user' | 'situation' | 'tool' | 'output' | 'reference';
 };
 
 export type MonthlyConversationGateReason =
@@ -24,7 +24,7 @@ export type MonthlyConversationGateResult = {
   remaining: number;
 };
 
-const CAPSULE_ROLES = new Set(['user', 'situation', 'tool', 'output']);
+const CAPSULE_ROLES = new Set(['user', 'situation', 'tool', 'output', 'reference']);
 
 export function monthlyFreeUsageSummary(used: number, allowance = PRAXIS_FREE_MONTHLY_CREDIT_ALLOWANCE) {
   const normalizedAllowance = Math.max(0, Math.floor(allowance));

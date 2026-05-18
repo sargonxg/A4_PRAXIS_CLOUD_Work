@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 const AppliedCapsuleSchema = z.object({
   id: z.string().min(1).max(160),
   label: z.string().min(1).max(200),
-  role: z.enum(['user', 'situation', 'tool', 'output']),
+  role: z.enum(['user', 'situation', 'tool', 'output', 'reference']),
 });
 
 const UpsertConversationSchema = z.object({
