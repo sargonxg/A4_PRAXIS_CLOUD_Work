@@ -247,7 +247,37 @@ describe('agent runtime no-op worker', () => {
       expect(result.status).toBe('succeeded');
       expect(result.executionMode).toBe(policyAgentId);
       expect(toolCalls.length).toBe(1);
-      expect(mirrored).toContain(`${policyAgentId}_receipt_created`);
+    expect(mirrored).toContain(`${policyAgentId}_receipt_created`);
     }
+  });
+
+  it('routes capsule-factory runs through Genkit flow events and draft output persistence', async () => {
+    const transitions: AgentRun['status'][] = [];
+    const mirrored: { eventType: string; data: Record<string, unknown> }[] = [];
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', { policyAgentId: 'capsule-factory' }),
+      updateStatus: async (input) => {
+        transitions.push(input.toStatus);
+        return makeRun(input.toStatus, { policyAgentId: 'capsule-factory' });
+      },
+      appendEvent: async (event) => {
+        mirrored.push({ eventType: event.eventType, data: event.data });
+        return event;
+      },
+    });
+
+    expect(transitions).toEqual(['running', 'succeeded']);
+    expect(result).toMatchObject({
+      status: 'succeeded',
+      executionMode: 'capsule-factory',
+      outputHref: '/app/capsules',
+    });
+    expect(mirrored.map((event) => event.eventType)).toEqual(expect.arrayContaining([
+      'genkit.flow.started',
+      'genkit.flow.tool_call',
+      'genkit.flow.succeeded',
+    ]));
+    expect(mirrored.some((event) => event.data.flowName === 'capsuleSynthesisFlow')).toBe(true);
+    expect(mirrored.some((event) => event.data.draftOutput)).toBe(true);
   });
 });

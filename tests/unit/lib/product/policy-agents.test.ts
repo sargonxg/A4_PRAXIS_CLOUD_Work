@@ -13,6 +13,7 @@ import {
 describe('PRAXIS policy agent registry', () => {
   it('defines the MVP Tasklet-style policy agents with concrete output destinations', () => {
     expect(PRAXIS_POLICY_AGENTS.map((agent) => agent.id)).toEqual([
+      'capsule-factory',
       'research-memo',
       'output-formatter',
       'daily-brief',
@@ -75,6 +76,7 @@ describe('PRAXIS policy agent registry', () => {
     expect(launcher.outputDestination).toBe('memo_studio');
     expect(gate.status).toBe('required');
     expect(policyAgentRunIntent('research-memo')).toBe('research_memo');
+    expect(policyAgentRunIntent('capsule-factory')).toBe('capsule_factory');
     expect(policyAgentRunIntent('output-formatter')).toBe('format_output');
     expect(policyAgentRunIntent('red-team-analyst')).toBe('red_team_review');
     expect(policyAgentRunIntent('unknown')).toBe('normal_answer');
