@@ -1,7 +1,7 @@
 import { streamText, stepCountIs, type ModelMessage } from 'ai';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { getModel, getModelForUser } from '@/lib/ai/providers';
+import { getModel } from '@/lib/ai/providers';
 import { DIPLOMATIC_SYSTEM_PROMPT } from '@/lib/ai/prompts/system';
 import { createSituationBoundTools, type SituationToolContext, type ConflictGraphSnapshot } from '@/lib/ai/tools';
 import { getConflictGraphAdmin } from '@/lib/firebase/situations';
@@ -22,6 +22,7 @@ import type { ActiveContextStackState } from '@/lib/context/active-context-stack
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import { writeReadAuditEvents } from '@/lib/audit/read-ledger';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
+import { buildAskRuntimeFallbackCandidates, isAskRuntimeModelAccessError } from '@/lib/ai/ask-runtime-catalog';
 import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock } from '@/lib/agent-runtime/evidence-pack';
 import { buildTurnCapsule, suggestNextActions, type TurnCapsule } from '@/lib/ai/context-kernel';
 import {
@@ -435,8 +436,7 @@ You have access to the user's active situation data. When answering questions:
     // Select model based on user preferences. The default comes from
     // MODEL_MATRIX.json so the app follows the single provider/matrix contract.
     const runtime = selectAskRuntime(aiSettings);
-    const model = runtime.model;
-    const runtimeReceipt = decorateAskRuntimeReceipt(runtime.receipt, {
+    let runtimeReceipt = decorateAskRuntimeReceipt(runtime.receipt, {
       intent: askIntent,
       contextPackageId,
       capsule: capsuleContext?.capsule ?? null,
@@ -497,7 +497,7 @@ You have access to the user's active situation data. When answering questions:
         capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
         capsuleVersion: capsuleContext?.capsule?.version ?? turnCapsule?.capsuleVersion ?? null,
         threadId,
-        model: String(runtimeReceipt.model ?? runtime.model ?? ''),
+        model: String(runtimeReceipt.model ?? ''),
         provider: String(runtimeReceipt.provider ?? ''),
         contextPackageId: contextPackageId ?? null,
       },
@@ -509,101 +509,160 @@ You have access to the user's active situation data. When answering questions:
     );
 
     const { provenance } = _user.calibration;
-    const result = streamText({
-      model,
-      system: systemPrompt,
-      messages: effectiveMessages as unknown as ModelMessage[],
-      tools,
-      stopWhen: stepCountIs(15),
-      onFinish: async ({ text }) => {
-        if (_user.uid && text) {
-          runtimeReceipt.answerEnvelope = buildEnvelopeForText(text);
-          if (effectiveSituationId) {
-            await saveToolOutput({
-              uid: _user.uid,
-              situationId: effectiveSituationId,
-              toolId: 'chat',
-              profileVersion: provenance.profileVersion,
-              output: {
-                lastMessage: text.slice(0, 4000),
-                availableActions: inferResponseActionKinds(text),
-                suggestedNextActions: turnCapsule ? suggestNextActions(turnCapsule, 'ask') : [],
-                at: new Date().toISOString(),
-              },
-            }).catch((err) => console.warn('[chat] saveToolOutput failed:', err));
-            await persistAskTurn({
-              uid: _user.uid,
-              situationId: effectiveSituationId,
-              threadId,
-              prompt,
-              capsule: capsuleContext?.capsule ?? null,
-              runtime: runtimeReceipt,
-              pathId: _user.calibration.path?.id ?? null,
-              pathVersion: _user.calibration.path?.version ?? null,
-              frameworkSteps,
-              toolInvocations,
-              output: text,
-            }).catch((err) => console.warn('[chat] persistAskTurn failed:', err));
-          }
-          await persistAskThreadTurn({
-            uid: _user.uid,
-            situationId: effectiveSituationId,
-            capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
-            threadId,
-            prompt,
-            capsuleVersion: capsuleContext?.capsule?.version ?? null,
-            runtime: runtimeReceipt,
-            pathId: _user.calibration.path?.id ?? null,
-            pathVersion: _user.calibration.path?.version ?? null,
-            frameworkSteps,
-            toolInvocations,
-            output: text,
-          }).catch((err) => console.warn('[chat] persistAskThreadTurn failed:', err));
-          await persistAskThreadTurnSql({
-            uid: _user.uid,
-            situationId: effectiveSituationId,
-            capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
-            threadId,
-            prompt,
-            capsuleVersion: capsuleContext?.capsule?.version ?? null,
-            runtime: runtimeReceipt,
-            pathId: _user.calibration.path?.id ?? null,
-            pathVersion: _user.calibration.path?.version ?? null,
-            frameworkSteps,
-            toolInvocations,
-            output: text,
-          }).catch((err) => console.warn('[chat] persistAskThreadTurnSql failed:', err));
-          await persistConversationTurn({
-            uid: _user.uid,
-            conversationId: threadId,
-            situationId: effectiveSituationId ?? null,
-            capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
-            prompt,
-            output: text,
-            runtime: runtimeReceipt,
-            frameworkSteps,
-            toolInvocations,
-            toolsConsidered,
-            appliedCapsules: normalizedAppliedCapsules,
-          }).catch((err) => console.warn('[chat] persistConversationTurn failed:', err));
-          if (effectiveSituationId) {
-            await persistAskReadLedger({
-              uid: _user.uid,
-              situationId: effectiveSituationId,
-              threadId,
-              capsule: capsuleContext?.capsule ?? null,
-              runtime: runtimeReceipt,
-              pathId: _user.calibration.path?.id ?? null,
-              frameworkSteps,
-              toolInvocations,
-              askLatencyMs: Date.now() - askStartedAt,
-            }).catch((err) => console.warn('[chat] audit ledger write failed:', err));
-          }
-        }
-      },
-    });
+    const persistSuccessfulAskOutput = async (text: string) => {
+      if (!_user.uid || !text) return;
+      runtimeReceipt.answerEnvelope = buildEnvelopeForText(text);
+      if (effectiveSituationId) {
+        await saveToolOutput({
+          uid: _user.uid,
+          situationId: effectiveSituationId,
+          toolId: 'chat',
+          profileVersion: provenance.profileVersion,
+          output: {
+            lastMessage: text.slice(0, 4000),
+            availableActions: inferResponseActionKinds(text),
+            suggestedNextActions: turnCapsule ? suggestNextActions(turnCapsule, 'ask') : [],
+            at: new Date().toISOString(),
+          },
+        }).catch((err) => console.warn('[chat] saveToolOutput failed:', err));
+        await persistAskTurn({
+          uid: _user.uid,
+          situationId: effectiveSituationId,
+          threadId,
+          prompt,
+          capsule: capsuleContext?.capsule ?? null,
+          runtime: runtimeReceipt,
+          pathId: _user.calibration.path?.id ?? null,
+          pathVersion: _user.calibration.path?.version ?? null,
+          frameworkSteps,
+          toolInvocations,
+          output: text,
+        }).catch((err) => console.warn('[chat] persistAskTurn failed:', err));
+      }
+      await persistAskThreadTurn({
+        uid: _user.uid,
+        situationId: effectiveSituationId,
+        capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
+        threadId,
+        prompt,
+        capsuleVersion: capsuleContext?.capsule?.version ?? null,
+        runtime: runtimeReceipt,
+        pathId: _user.calibration.path?.id ?? null,
+        pathVersion: _user.calibration.path?.version ?? null,
+        frameworkSteps,
+        toolInvocations,
+        output: text,
+      }).catch((err) => console.warn('[chat] persistAskThreadTurn failed:', err));
+      await persistAskThreadTurnSql({
+        uid: _user.uid,
+        situationId: effectiveSituationId,
+        capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
+        threadId,
+        prompt,
+        capsuleVersion: capsuleContext?.capsule?.version ?? null,
+        runtime: runtimeReceipt,
+        pathId: _user.calibration.path?.id ?? null,
+        pathVersion: _user.calibration.path?.version ?? null,
+        frameworkSteps,
+        toolInvocations,
+        output: text,
+      }).catch((err) => console.warn('[chat] persistAskThreadTurnSql failed:', err));
+      await persistConversationTurn({
+        uid: _user.uid,
+        conversationId: threadId,
+        situationId: effectiveSituationId ?? null,
+        capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
+        prompt,
+        output: text,
+        runtime: runtimeReceipt,
+        frameworkSteps,
+        toolInvocations,
+        toolsConsidered,
+        appliedCapsules: normalizedAppliedCapsules,
+      }).catch((err) => console.warn('[chat] persistConversationTurn failed:', err));
+      if (effectiveSituationId) {
+        await persistAskReadLedger({
+          uid: _user.uid,
+          situationId: effectiveSituationId,
+          threadId,
+          capsule: capsuleContext?.capsule ?? null,
+          runtime: runtimeReceipt,
+          pathId: _user.calibration.path?.id ?? null,
+          frameworkSteps,
+          toolInvocations,
+          askLatencyMs: Date.now() - askStartedAt,
+        }).catch((err) => console.warn('[chat] audit ledger write failed:', err));
+      }
+    };
 
-    return toLegacyDataStreamResponse(result.textStream, undefined, {
+    const persistFailedAskOutput = async (message: string, candidates: string[]) => {
+      if (!_user.uid) return;
+      runtimeReceipt = {
+        ...runtimeReceipt,
+        status: 'error',
+        error: message,
+        fallbackCandidates: candidates,
+      };
+      await persistConversationTurn({
+        uid: _user.uid,
+        conversationId: threadId,
+        situationId: effectiveSituationId ?? null,
+        capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
+        prompt,
+        output: `Ask PRAXIS could not complete this turn. ${message}`,
+        runtime: runtimeReceipt,
+        frameworkSteps,
+        toolInvocations,
+        toolsConsidered,
+        appliedCapsules: normalizedAppliedCapsules,
+      }).catch((err) => console.warn('[chat] persist failed conversation turn failed:', err));
+    };
+
+    const candidateModelIds = buildAskRuntimeFallbackCandidates({
+      selectedModelId: runtimeReceipt.model,
+      analysisDepth: runtimeReceipt.analysisDepth,
+    });
+    async function* textStreamWithFallback(): AsyncGenerator<string> {
+      let lastError: unknown = null;
+      const attempted: string[] = [];
+      for (const candidateModelId of candidateModelIds) {
+        attempted.push(candidateModelId);
+        let candidateText = '';
+        try {
+          const selectedReceipt: AskRuntimeReceipt = {
+            ...runtimeReceipt,
+            model: candidateModelId,
+            fallbackCandidates: candidateModelIds,
+            fallbackFrom: candidateModelId === candidateModelIds[0] ? null : candidateModelIds[0],
+          };
+          const result = streamText({
+            model: getModel(candidateModelId),
+            system: systemPrompt,
+            messages: effectiveMessages as unknown as ModelMessage[],
+            tools,
+            stopWhen: stepCountIs(15),
+          });
+          for await (const text of result.textStream) {
+            candidateText += text;
+            yield text;
+          }
+          runtimeReceipt = selectedReceipt;
+          await persistSuccessfulAskOutput(candidateText);
+          return;
+        } catch (err) {
+          lastError = err;
+          if (candidateText.trim() || !isAskRuntimeModelAccessError(err) || candidateModelId === candidateModelIds.at(-1)) {
+            break;
+          }
+          console.warn(`[chat] Ask runtime ${candidateModelId} failed; retrying with GA fallback:`, err);
+        }
+      }
+      const message = formatAskRuntimeFailureMessage(lastError, attempted);
+      await persistFailedAskOutput(message, attempted);
+      throw new Error(message);
+    }
+
+    return toLegacyDataStreamResponse(textStreamWithFallback(), undefined, {
       startData: buildAskOrchestrationStatusEvents(orchestrationReceipt),
       onFinishData: (text) => ({
         type: 'answerEnvelope',
@@ -740,7 +799,6 @@ function buildAskPrompt(input: {
 
 function selectAskRuntime(aiSettings: AiSettings) {
   return {
-    model: aiSettings ? getModelForUser(aiSettings) : getModel(),
     receipt: {
       provider: aiSettings?.provider,
       model: aiSettings?.model,
@@ -748,6 +806,15 @@ function selectAskRuntime(aiSettings: AiSettings) {
       selectedAt: new Date().toISOString(),
     } satisfies AskRuntimeReceipt,
   };
+}
+
+function formatAskRuntimeFailureMessage(error: unknown, attemptedModels: string[]): string {
+  const detail = error instanceof Error ? error.message : String(error || 'Unknown model error');
+  const models = attemptedModels.length ? attemptedModels.join(' -> ') : 'configured model';
+  if (isAskRuntimeModelAccessError(error)) {
+    return `The selected model runtime and GA fallbacks were not accessible for this request (${models}). Last provider response: ${detail}`;
+  }
+  return `The Ask PRAXIS runtime failed after trying ${models}. Last error: ${detail}`;
 }
 
 function decorateAskRuntimeReceipt(

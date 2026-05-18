@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ASK_RUNTIME_OPTIONS, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
+import { ASK_RUNTIME_OPTIONS, buildAskRuntimeFallbackCandidates, getAskRuntimeOption } from '@/lib/ai/ask-runtime-catalog';
 import { getModelMatrixEntry } from '@/lib/ai/model-matrix';
 import { MODEL_PREFERENCE_VALUES, isModelPreferenceValue, modelPreferenceLabel } from '@/lib/ai/model-preferences';
 
@@ -27,5 +27,33 @@ describe('Ask PRAXIS runtime catalog', () => {
 
   it('falls back to the first runtime option for unknown selections', () => {
     expect(getAskRuntimeOption('unknown-model').id).toBe(getModelMatrixEntry('balanced').model);
+  });
+
+  it('builds GA fallback candidates for preview chat selections', () => {
+    expect(buildAskRuntimeFallbackCandidates({
+      selectedModelId: getModelMatrixEntry('balanced').model,
+      analysisDepth: 'standard',
+    })).toEqual([
+      getModelMatrixEntry('balanced').model,
+      'gemini-2.5-flash',
+    ]);
+  });
+
+  it('builds Pro then Flash GA fallback candidates for deep preview selections', () => {
+    expect(buildAskRuntimeFallbackCandidates({
+      selectedModelId: getModelMatrixEntry('complex_reasoning').model,
+      analysisDepth: 'deep',
+    })).toEqual([
+      getModelMatrixEntry('complex_reasoning').model,
+      'gemini-2.5-pro',
+      'gemini-2.5-flash',
+    ]);
+  });
+
+  it('does not duplicate GA candidates when a GA model is already selected', () => {
+    expect(buildAskRuntimeFallbackCandidates({
+      selectedModelId: 'gemini-2.5-flash',
+      analysisDepth: 'standard',
+    })).toEqual(['gemini-2.5-flash']);
   });
 });

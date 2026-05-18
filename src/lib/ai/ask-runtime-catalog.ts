@@ -80,3 +80,25 @@ export const ASK_ORCHESTRATION_OPTIONS = [
 export function getAskRuntimeOption(id: string | null | undefined): AskRuntimeOption {
   return ASK_RUNTIME_OPTIONS.find((option) => option.id === id) ?? ASK_RUNTIME_OPTIONS[0];
 }
+
+export function buildAskRuntimeFallbackCandidates(input: {
+  selectedModelId: string | null | undefined;
+  analysisDepth?: string | null;
+}): ModelPreferenceValue[] {
+  const selected = getAskRuntimeOption(input.selectedModelId).id;
+  const candidates: ModelPreferenceValue[] = [selected];
+  const deep = input.analysisDepth === 'deep' || getAskRuntimeOption(selected).mode === 'research_memo';
+
+  if (deep) {
+    candidates.push('gemini-2.5-pro', 'gemini-2.5-flash');
+  } else {
+    candidates.push('gemini-2.5-flash');
+  }
+
+  return [...new Set(candidates)];
+}
+
+export function isAskRuntimeModelAccessError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /model|quota|permission|not found|unavailable|access|tier|API|forbidden|unauthorized|denied|404|403|429/i.test(message);
+}

@@ -41,6 +41,68 @@ test.describe('Ask PRAXIS capsule runtime smoke', () => {
     await expect(page.getByText(/capsule v|context/i)).toBeVisible();
   });
 
+  test('keeps an opened conversation workspace on the same thread route', async ({ page }) => {
+    const conversationId = 'ask-mpbb73s5-ct5smb';
+    const capsuleId = 'starter-user-humanitarian-legal-investigator';
+    let turnPostUrl = '';
+    let turnPostBody: Record<string, unknown> | null = null;
+
+    await page.route(`**/api/conversations/${conversationId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          persisted: true,
+          conversation: { conversationId, capsuleId, turnCount: 1 },
+          turns: [
+            {
+              turnId: 'turn-existing',
+              prompt: 'Previous question',
+              output: 'Previous answer in this conversation workspace.',
+              runtime: { model: 'gemini-2.5-flash' },
+              createdAt: '2026-05-18T10:00:00.000Z',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/api/conversations/${conversationId}/turns`, async (route) => {
+      turnPostUrl = route.request().url();
+      turnPostBody = route.request().postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/plain; charset=utf-8',
+        body: '0:"Sudan answer returned in the same Conversation workspace."\\n',
+      });
+    });
+    await page.route('**/api/conversations', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+    });
+
+    await page.goto(`${BASE}/login?redirect=/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
+    await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
+    await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
+    await page.click('button:has-text("Sign in")');
+    await page.waitForURL(/\/app|\/onboarding/, { timeout: 20_000 });
+    if (page.url().includes('/onboarding')) test.skip(true, 'Fixture account still needs onboarding before conversation smoke can run.');
+
+    await page.goto(`${BASE}/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
+    await expect(page.getByText(/Conversation workspace/i)).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText(/Previous answer in this conversation workspace/i)).toBeVisible({ timeout: 20_000 });
+
+    const composer = page.locator('textarea[placeholder*="Describe"]').first();
+    await composer.fill('tell me about sudan');
+    await page.getByRole('button', { name: /Send to PRAXIS/i }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/app/conversations/${conversationId}\\?capsuleId=${capsuleId}`));
+    await expect(page.getByText(/Sudan answer returned in the same Conversation workspace/i)).toBeVisible({ timeout: 20_000 });
+    expect(turnPostUrl).toContain(`/api/conversations/${conversationId}/turns`);
+    expect(turnPostBody).toEqual(expect.objectContaining({
+      capsuleId,
+      currentPath: `/app/conversations/${conversationId}?capsuleId=${capsuleId}`,
+    }));
+  });
+
   test('proves the capsule document Ask and agent receipt return loop', async ({ page }) => {
     const capsule = capsuleFixture('runtime-proof-capsule', ['doc-runtime-proof']);
     const run = {

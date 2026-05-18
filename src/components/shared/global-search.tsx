@@ -7,6 +7,7 @@ import {
   BookOpenCheck,
   FolderKanban,
   Home,
+  LibraryBig,
   Plus,
   Search,
   ShieldAlert,
@@ -28,7 +29,8 @@ type PraxisCommand = {
 
 const COMMANDS: PraxisCommand[] = [
   { id: 'open-home', label: 'Open PRAXIS', description: 'Ask from the active capsule.', href: '/app', icon: Home, group: 'Primary surfaces' },
-  { id: 'open-capsules', label: 'Open Capsules', description: 'Search, build, and update capsule context.', href: '/app', icon: FolderKanban, group: 'Primary surfaces' },
+  { id: 'open-capsules', label: 'Open Capsules', description: 'Search, build, and update capsule context.', href: '/app/capsules', icon: FolderKanban, group: 'Primary surfaces' },
+  { id: 'open-repository', label: 'Open Repository', description: 'Inspect uploaded sources and capsule document attachments.', href: '/app/repository', icon: LibraryBig, group: 'Primary surfaces' },
   { id: 'attach-source', label: 'Attach source', description: 'Upload or attach a source to the active capsule.', href: '/app', icon: Upload, group: 'Context actions' },
   { id: 'find-gaps', label: 'Find evidence gaps', description: 'Review evidence gaps from the active capsule.', href: '/app', icon: ShieldAlert, group: 'Context actions' },
   { id: 'create-capsule', label: 'Create capsule', description: 'Start reusable context from the manager.', href: '/app', icon: Plus, group: 'Context actions' },

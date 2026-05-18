@@ -92,7 +92,7 @@ export const POST = withAuth<ConversationTurnRouteContext>(async (request, user,
     threadId: cleanConversationId,
     capsuleId: parsed.data.capsuleId,
     appliedCapsules,
-    currentPath: parsed.data.currentPath ?? `/app/conversations/${cleanConversationId}`,
+    currentPath: parsed.data.currentPath ?? `/app/conversations/${cleanConversationId}?capsuleId=${encodeURIComponent(parsed.data.capsuleId)}`,
     currentToolId: parsed.data.currentToolId ?? 'ask-praxis',
   };
 

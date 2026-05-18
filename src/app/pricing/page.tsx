@@ -96,8 +96,8 @@ function PublicHeader() {
       </Link>
       <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm font-semibold text-[color:var(--color-ink)]/65">
         <Link href="/">Home</Link>
-        <Link href="/login?mode=signup">Capsules</Link>
-        <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules">Repository</Link>
+        <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules">Capsules</Link>
+        <Link href="/login?mode=signup&redirect=%2Fapp%2Frepository">Repository</Link>
         <Link href="/pricing">Pricing</Link>
         <Link href="/learn">Learn</Link>
         <Link href="/release-notes">Release notes</Link>

@@ -76,7 +76,7 @@ type TaskletPraxisWorkbenchProps = {
   activeCapsuleName?: string;
   capsuleId?: string;
   initialConversationId?: string;
-  initialPanel?: 'ask' | 'capsules';
+  initialPanel?: 'ask' | 'capsules' | 'repository';
   focusedRunId?: string;
   recentRuns?: Array<{ label: string; detail: string; status: string }>;
   className?: string;
@@ -85,6 +85,13 @@ type TaskletPraxisWorkbenchProps = {
 type PolicyNeedTabId = (typeof POLICY_NEED_TABS)[number]['id'];
 type ChatMessage = { role: 'user' | 'assistant'; text: string };
 type ThreadHistoryTurn = { prompt?: string; output?: string; createdAt?: string };
+type SavedConversationTurn = {
+  prompt?: string;
+  output?: string;
+  runtime?: { status?: string; error?: string } | null;
+  routingReceipt?: unknown;
+  createdAt?: string;
+};
 type CapsuleRole = 'user' | 'situation' | 'tool' | 'output';
 type CapsuleDetailTab = 'build' | 'connect' | 'retrieve' | 'agents';
 type RepositoryDocument = {
@@ -133,6 +140,20 @@ type AgentRunDetail = {
   approvals?: AgentApprovalSummary[];
 };
 type SpanTargetCore = 'sourceability' | 'temporality' | 'causality' | 'human-friction' | 'rules' | 'open-question';
+type SpanAttachStatus = 'idle' | 'pending' | 'success' | 'error';
+type SpanTargetDefinition = {
+  id: SpanTargetCore;
+  label: string;
+  note: string;
+  helper: string;
+  askPrompt: string;
+  sourceCheckPrompt?: string;
+  memoNote: string;
+};
+type AttachedSpanState = {
+  target: SpanTargetDefinition;
+  text: string;
+};
 type CapsuleCoreRefs = {
   userCoreId?: string | null;
   situationCoreId?: string | null;
@@ -190,14 +211,57 @@ const capsuleActionPrompts = [
   { label: 'Red-team review', prompt: 'Red-team the active capsule and draft. Identify unsupported claims, missing actors, weak assumptions, and decision risks.' },
 ] as const;
 
-const spanTargets: Array<{ id: SpanTargetCore; label: string; note: string }> = [
-  { id: 'sourceability', label: 'Sourceability', note: 'Treat this selected text as a source/evidence item.' },
-  { id: 'temporality', label: 'Temporality', note: 'Attach this selected text to the timeline or stale-assumption layer.' },
-  { id: 'causality', label: 'Causality', note: 'Attach this selected text as a causal claim, trigger, or indicator.' },
-  { id: 'human-friction', label: 'Human friction', note: 'Attach this selected text to incentives, blockers, approvals, or resistance.' },
-  { id: 'rules', label: 'Rules', note: 'Attach this selected text to rules, specs, standards, or constraints.' },
-  { id: 'open-question', label: 'Open question', note: 'Track this selected text as an unresolved issue.' },
-] as const;
+const spanTargets: SpanTargetDefinition[] = [
+  {
+    id: 'sourceability',
+    label: 'Sourceability',
+    note: 'Mark claim/evidence needing support check.',
+    helper: 'Use for claims, quotes, or evidence that need source verification.',
+    askPrompt: 'Explain the source posture of this selected span. Separate supported claims, unsupported claims, and the next sources to add.',
+    sourceCheckPrompt: 'Source-check this span against the active capsule. Identify missing citations, weak evidence, and the exact support needed.',
+    memoNote: 'Sourceability note: claim/evidence needing support check.',
+  },
+  {
+    id: 'temporality',
+    label: 'Temporality',
+    note: 'Extract date, sequence, stale assumption, or decision horizon.',
+    helper: 'Use for dates, timelines, stale assumptions, deadlines, and decision horizons.',
+    askPrompt: 'Analyze the temporality of this selected span. Extract dates, sequence, stale assumptions, and decision horizons.',
+    memoNote: 'Temporality note: date, sequence, stale assumption, or decision horizon.',
+  },
+  {
+    id: 'causality',
+    label: 'Causality',
+    note: 'Mark cause/effect, trigger, indicator, or alternative explanation.',
+    helper: 'Use for causal claims, triggers, indicators, effects, and alternative explanations.',
+    askPrompt: 'Map the causal logic in this selected span. Separate triggers, effects, indicators, lags, and alternative explanations.',
+    memoNote: 'Causality note: cause/effect, trigger, indicator, or alternative explanation.',
+  },
+  {
+    id: 'human-friction',
+    label: 'Human friction',
+    note: 'Mark incentives, resistance, approvals, fatigue, or informal power.',
+    helper: 'Use for incentives, resistance, approvals, fatigue, informal power, and implementation blockers.',
+    askPrompt: 'Analyze the human friction in this selected span. Identify incentives, resistance, approvals, fatigue, informal power, and likely blockers.',
+    memoNote: 'Human friction note: incentives, resistance, approvals, fatigue, or informal power.',
+  },
+  {
+    id: 'rules',
+    label: 'Rules',
+    note: 'Mark legal, policy, mandate, standard, or constraint text.',
+    helper: 'Use for legal text, policy rules, mandates, standards, constraints, and compliance boundaries.',
+    askPrompt: 'Interpret the rule posture of this selected span. Name legal, policy, mandate, standard, and constraint implications.',
+    memoNote: 'Rules note: legal, policy, mandate, standard, or constraint text.',
+  },
+  {
+    id: 'open-question',
+    label: 'Open question',
+    note: 'Mark unresolved issue, missing source, or decision question.',
+    helper: 'Use for unresolved issues, missing sources, decision questions, and follow-up research needs.',
+    askPrompt: 'Turn this selected span into an answerable policy research question. State what is unresolved, what evidence is missing, and how to decide.',
+    memoNote: 'Open question note: unresolved issue, missing source, or decision question.',
+  },
+] satisfies SpanTargetDefinition[];
 
 const capsuleRoles: Array<{ id: CapsuleRole; label: string }> = [
   { id: 'situation', label: 'Situation' },
@@ -266,6 +330,7 @@ export function TaskletPraxisWorkbench({
   const surfaceMode: HomeSurfaceMode = mode === 'app' ? 'authenticated' : mode;
   const isAuthenticated = surfaceMode === 'authenticated';
   const showWorkbenchNavigation = mode === 'app' || isAuthenticated;
+  const isRepositoryPage = initialPanel === 'repository' && mode === 'app';
   const isCapsuleRepositoryPage = initialPanel === 'capsules' && mode === 'app';
   const [prompt, setPrompt] = useState('Draft a sourced options memo from the active capsule.');
   const [activeTab, setActiveTab] = useState<PolicyNeedTabId>('analysis');
@@ -308,6 +373,9 @@ export function TaskletPraxisWorkbench({
   const [builderCategoryId, setBuilderCategoryId] = useState<string>(POLICY_TEAM_CATEGORIES[0]?.id ?? 'research-strategy');
   const [selectedText, setSelectedText] = useState('');
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [selectedSpanStatus, setSelectedSpanStatus] = useState<SpanAttachStatus>('idle');
+  const [selectedSpanMessage, setSelectedSpanMessage] = useState('');
+  const [attachedSpan, setAttachedSpan] = useState<AttachedSpanState | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const starterSeededRef = useRef(false);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
@@ -359,7 +427,7 @@ export function TaskletPraxisWorkbench({
   }, [initialConversationId]);
 
   useEffect(() => {
-    if (initialPanel === 'capsules') setActiveTab('capsules');
+    if (initialPanel === 'capsules' || initialPanel === 'repository') setActiveTab('capsules');
     if (initialPanel === 'ask') setActiveTab('analysis');
   }, [initialPanel]);
 
@@ -479,6 +547,7 @@ export function TaskletPraxisWorkbench({
     try {
       const outputCapsule = activeCapsules.find((capsule) => capsule.role === 'output');
       const situationCapsule = activeCapsules.find((capsule) => capsule.role === 'situation') ?? activeCapsules[0];
+      const currentConversationPath = buildConversationPath(currentCapsuleId, nextThreadId);
       const response = await fetch(`/api/conversations/${encodeURIComponent(nextThreadId)}/turns`, {
         method: 'POST',
         credentials: 'include',
@@ -495,7 +564,7 @@ export function TaskletPraxisWorkbench({
             role: capsule.role,
           })),
           currentToolId: 'ask-praxis',
-          currentPath: `/app/conversations/${nextThreadId}`,
+          currentPath: currentConversationPath,
           activeContextStack: {
             stackId: 'default',
             capsuleId: currentCapsuleId,
@@ -534,6 +603,8 @@ export function TaskletPraxisWorkbench({
         if (done) break;
         const chunk = decoder.decode(value);
         for (const line of chunk.split('\n')) {
+          const streamError = parseDataStreamError(line);
+          if (streamError) throw new Error(streamError);
           const parsed = parseDataStreamChunk(line);
           if (!parsed) continue;
           answer += parsed;
@@ -545,6 +616,7 @@ export function TaskletPraxisWorkbench({
           });
         }
       }
+      if (!answer.trim()) throw new Error('Ask PRAXIS returned no answer text.');
       setStatus('Conversation saved at this link.');
       void refreshCapsules();
       try {
@@ -555,11 +627,13 @@ export function TaskletPraxisWorkbench({
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'unknown error';
+      const guidance = describeAskFailure(message);
+      setPrompt(cleanPrompt);
       setStatus(`Ask PRAXIS failed: ${message}`);
       setChatMessages((current) => {
         const next = [...current];
         const last = next[next.length - 1];
-        if (last?.role === 'assistant') next[next.length - 1] = { ...last, text: 'I could not complete that request. Check authentication and model access, then try again.' };
+        if (last?.role === 'assistant') next[next.length - 1] = { ...last, text: guidance };
         return next;
       });
     } finally {
@@ -613,33 +687,97 @@ export function TaskletPraxisWorkbench({
     if (selection.length < 3) return;
     setSelectedText(selection.slice(0, 2000));
     setSelectedMessageId(messageId);
+    setSelectedSpanStatus('idle');
+    setSelectedSpanMessage('');
+    setAttachedSpan(null);
   }
 
   async function bindSelectedSpan(targetCore: SpanTargetCore) {
     if (!selectedText.trim()) return;
     if (requireAuthForAction(`Attach this selected text to ${targetCore}: ${selectedText}`)) return;
     const target = spanTargets.find((item) => item.id === targetCore);
+    if (!target || selectedSpanStatus === 'pending') return;
+    const cleanText = selectedText.trim();
+    const note = buildSelectedSpanNote(target, cleanText);
+    setSelectedSpanStatus('pending');
+    setSelectedSpanMessage(`Attaching selected text to ${target.label}...`);
+    setAttachedSpan(null);
     const response = await fetch(`/api/context/capsules/${encodeURIComponent(currentCapsuleId)}/spans`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        text: selectedText,
+        text: cleanText,
         targetCore,
         sourceType: selectedMessageId?.startsWith('assistant') ? 'assistant-message' : 'document-selection',
         messageId: selectedMessageId,
-        note: target?.note,
+        note,
       }),
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      setStatus(payload?.error ? `Span attach failed: ${payload.error}` : 'Span attach failed.');
+      const detail = payload?.error ? String(payload.error) : `${response.status} ${response.statusText}`;
+      setSelectedSpanStatus('error');
+      setSelectedSpanMessage(`Span attach failed: ${detail}. The selected text is still here so you can retry.`);
+      setStatus(`Span attach failed: ${detail}`);
       return;
     }
+    setAttachedSpan({ target, text: cleanText });
+    setSelectedSpanStatus('success');
+    setSelectedSpanMessage(`Attached to ${target.label}. Ask PRAXIS, source-check it, turn it into a memo note, or clear the selection.`);
+    setStatus(`Selected text attached to ${target.label}.`);
+    await refreshCapsules(currentCapsuleId);
+  }
+
+  function clearSelectedSpan() {
     setSelectedText('');
     setSelectedMessageId(null);
-    setStatus(`Selected text attached to ${target?.label ?? targetCore}.`);
-    await refreshCapsules(currentCapsuleId);
+    setSelectedSpanStatus('idle');
+    setSelectedSpanMessage('');
+    setAttachedSpan(null);
+  }
+
+  function askAboutAttachedSpan(mode: 'ask' | 'source-check') {
+    const span = attachedSpan;
+    if (!span) return;
+    const promptText = [
+      mode === 'source-check' && span.target.sourceCheckPrompt ? span.target.sourceCheckPrompt : span.target.askPrompt,
+      '',
+      `Selected span (${span.target.label}):`,
+      span.text,
+    ].join('\n');
+    setPrompt(promptText);
+    void sendToPraxis(selectedAgent, promptText);
+  }
+
+  async function turnAttachedSpanIntoMemoNote() {
+    const span = attachedSpan;
+    if (!span) return;
+    if (requireAuthForAction(`Turn this selected span into a memo note:\n\n${span.text}`)) return;
+    setSelectedSpanStatus('pending');
+    setSelectedSpanMessage('Writing a memo note into the active capsule...');
+    const response = await fetch(`/api/context/capsules/${encodeURIComponent(currentCapsuleId)}/notes`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        type: span.target.id === 'sourceability' ? 'source_note' : 'analyst_note',
+        title: `${span.target.label} span note`,
+        body: `${span.target.memoNote}\n\n${span.text}`,
+        tags: ['selected-span', span.target.id],
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = payload?.error ? String(payload.error) : `${response.status} ${response.statusText}`;
+      setSelectedSpanStatus('error');
+      setSelectedSpanMessage(`Memo note failed: ${detail}. The selected text is still here so you can retry.`);
+      setStatus(`Memo note failed: ${detail}`);
+      return;
+    }
+    setSelectedSpanStatus('success');
+    setSelectedSpanMessage(`Memo note saved from the ${span.target.label} span.`);
+    setStatus('Memo note saved to the active capsule.');
   }
 
   async function uploadDocument(files: FileList | null) {
@@ -754,23 +892,27 @@ export function TaskletPraxisWorkbench({
     const loadKey = `${capsuleIdToLoad}:${threadIdToLoad}`;
     setConversationLoadedFor(loadKey);
     try {
-      const params = new URLSearchParams({
-        capsuleId: capsuleIdToLoad,
-        threadId: threadIdToLoad,
-        limit: '12',
-      });
-      const response = await fetch(`/api/ai/chat?${params.toString()}`, { credentials: 'include' });
+      const response = await fetch(`/api/conversations/${encodeURIComponent(threadIdToLoad)}`, { credentials: 'include' });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error ?? 'conversation history failed');
-      const turns = Array.isArray(payload?.turns) ? payload.turns as ThreadHistoryTurn[] : [];
-      const historyMessages = turns.flatMap((turn) => [
-        { role: 'user' as const, text: turn.prompt ?? '' },
-        { role: 'assistant' as const, text: turn.output ?? '' },
-      ]).filter((message) => message.text.trim().length > 0);
-      setChatMessages(historyMessages);
-      setStatus(turns.length ? `Conversation link loaded (${turns.length} turns).` : 'New conversation link ready.');
+      const turns = Array.isArray(payload?.turns) ? payload.turns as SavedConversationTurn[] : [];
+      if (turns.length) {
+        const historyMessages = savedConversationTurnsToMessages(turns);
+        setChatMessages(historyMessages);
+        setStatus(`Conversation link loaded (${turns.length} turns).`);
+        return;
+      }
+      const legacyMessages = await loadLegacyAskThreadHistory(capsuleIdToLoad, threadIdToLoad);
+      setChatMessages(legacyMessages);
+      setStatus(legacyMessages.length ? `Conversation link loaded (${legacyMessages.length / 2} turns).` : 'New conversation link ready.');
     } catch (err) {
-      setStatus(err instanceof Error ? `Conversation link could not load: ${err.message}` : 'Conversation link could not load.');
+      try {
+        const legacyMessages = await loadLegacyAskThreadHistory(capsuleIdToLoad, threadIdToLoad);
+        setChatMessages(legacyMessages);
+        setStatus(legacyMessages.length ? `Conversation link loaded (${legacyMessages.length / 2} turns).` : 'New conversation link ready.');
+      } catch {
+        setStatus(err instanceof Error ? `Conversation link could not load: ${err.message}` : 'Conversation link could not load.');
+      }
     }
   }, [isAuthenticated]);
 
@@ -1337,12 +1479,14 @@ export function TaskletPraxisWorkbench({
             if (requireAuthForAction('Build a new PRAXIS ContextCapsule.')) return;
             setBuilderOpen(true);
           }} active />
-          <SidebarButton icon={Search} label="Search capsules" onClick={() => setActiveTab('capsules')} />
-          <SidebarButton icon={Library} label="Repository" onClick={() => {
-            if (requireAuthForAction('Open the capsule repository and attach sources.')) return;
-            setRepositoryOpen(true);
-            void refreshRepository();
-          }} />
+          <Link href={isAuthenticated ? '/app/capsules' : '/login?mode=signup&redirect=%2Fapp%2Fcapsules'} className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5">
+            <Search className="h-5 w-5 text-slate-500" />
+            Search capsules
+          </Link>
+          <Link href={isAuthenticated ? '/app/repository' : '/login?mode=signup&redirect=%2Fapp%2Frepository'} className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5">
+            <Library className="h-5 w-5 text-slate-500" />
+            Repository
+          </Link>
           <div className="mt-8">
             <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">{recentLabel} <ChevronDown className="h-3 w-3" /></p>
             <div className="mt-3 space-y-2">
@@ -1404,12 +1548,8 @@ export function TaskletPraxisWorkbench({
             </Link>
             <nav className="ml-auto hidden items-center gap-8 text-sm font-semibold text-slate-500 md:flex">
               <Link href={isAuthenticated ? '/app' : '/'} className="hover:text-slate-900">Home</Link>
-              <button type="button" onClick={() => setActiveTab('capsules')} className="hover:text-slate-900">Capsules</button>
-              <button type="button" onClick={() => {
-                if (requireAuthForAction('Open the capsule repository and attach sources.')) return;
-                setRepositoryOpen(true);
-                void refreshRepository();
-              }} className="hover:text-slate-900">Repository</button>
+              <Link href={isAuthenticated ? '/app/capsules' : '/login?mode=signup&redirect=%2Fapp%2Fcapsules'} className="hover:text-slate-900">Capsules</Link>
+              <Link href={isAuthenticated ? '/app/repository' : '/login?mode=signup&redirect=%2Fapp%2Frepository'} className="hover:text-slate-900">Repository</Link>
               <Link href="/pricing" className="hover:text-slate-900">Pricing</Link>
               <Link href="/learn" className="hover:text-slate-900">Learn</Link>
               <Link href="/release-notes" className="hover:text-slate-900">Release notes</Link>
@@ -1666,7 +1806,7 @@ export function TaskletPraxisWorkbench({
                           onRetry={() => retryFromMessage(index)}
                           onSave={() => void saveAssistantMessage(message, index)}
                           onMemo={() => void saveAssistantMessage(message, index, 'memo-draft')}
-                          onSourceCheck={() => void sendToPraxis(selectedAgent, `Source-check this PRAXIS answer against the active capsule. Identify weak claims, missing citations, and stale assumptions.\n\n${message.text}`)}
+                          onSourceCheck={() => void sendToPraxis(selectedAgent, `Source-check this answer in the active conversation against the active capsule. Identify weak claims, missing citations, and stale assumptions.\n\n${message.text}`)}
                         />
                       </>
                     ) : (
@@ -1679,19 +1819,65 @@ export function TaskletPraxisWorkbench({
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-xs font-semibold uppercase tracking-wide text-[#ca4a25]">Attach selected text</p>
-                        <p className="mt-1 line-clamp-2 text-sm text-slate-700">{selectedText}</p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">Attach to active capsule: {selectedCapsule?.label ?? currentCapsuleId}</p>
+                        <blockquote className="mt-2 max-h-24 overflow-y-auto rounded-md border border-[#ff714d]/20 bg-white px-3 py-2 text-sm leading-6 text-slate-700">
+                          {selectedText}
+                        </blockquote>
                       </div>
-                      <button type="button" aria-label="Clear selected text" onClick={() => setSelectedText('')} className="rounded p-1 text-slate-500 hover:bg-white">
+                      <button type="button" aria-label="Clear selected text" onClick={clearSelectedSpan} className="rounded p-1 text-slate-500 hover:bg-white">
                         <X className="h-4 w-4" />
                       </button>
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                       {spanTargets.map((target) => (
-                        <button key={target.id} type="button" onClick={() => void bindSelectedSpan(target.id)} className="rounded-md bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:text-[#ca4a25]">
-                          {target.label}
+                        <button
+                          key={target.id}
+                          type="button"
+                          disabled={selectedSpanStatus === 'pending'}
+                          onClick={() => void bindSelectedSpan(target.id)}
+                          className={cn(
+                            'rounded-md bg-white px-3 py-2 text-left text-xs shadow-sm ring-1 ring-slate-200 hover:ring-[#ff714d]/50',
+                            attachedSpan?.target.id === target.id ? 'ring-[#ff714d] text-[#ca4a25]' : 'text-slate-700',
+                            selectedSpanStatus === 'pending' ? 'cursor-wait opacity-70' : '',
+                          )}
+                        >
+                          <span className="block font-semibold">{target.label}</span>
+                          <span className="mt-1 block leading-5 text-slate-500">{target.helper}</span>
                         </button>
                       ))}
                     </div>
+                    {selectedSpanMessage ? (
+                      <p
+                        className={cn(
+                          'mt-3 rounded-md px-3 py-2 text-xs font-medium',
+                          selectedSpanStatus === 'error' ? 'bg-rose-50 text-rose-700' : selectedSpanStatus === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-white text-slate-600',
+                        )}
+                      >
+                        {selectedSpanMessage}
+                      </p>
+                    ) : (
+                      <p className="mt-3 text-xs leading-5 text-slate-500">
+                        Attaching saves this excerpt to the active capsule. It will not run AI until you choose a follow-up.
+                      </p>
+                    )}
+                    {attachedSpan ? (
+                      <div className="mt-3 flex flex-wrap gap-2 border-t border-[#ff714d]/20 pt-3">
+                        <button type="button" onClick={() => askAboutAttachedSpan('ask')} className="rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+                          Ask PRAXIS about this span
+                        </button>
+                        {attachedSpan.target.id === 'sourceability' ? (
+                          <button type="button" onClick={() => askAboutAttachedSpan('source-check')} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                            Source-check this span
+                          </button>
+                        ) : null}
+                        <button type="button" onClick={() => void turnAttachedSpanIntoMemoNote()} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                          Turn into memo note
+                        </button>
+                        <button type="button" onClick={clearSelectedSpan} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50">
+                          Clear selection
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </section>
@@ -1699,15 +1885,17 @@ export function TaskletPraxisWorkbench({
 
             <section
               className="mt-12 w-full max-w-5xl"
-              data-testid={isCapsuleRepositoryPage ? 'capsule-repository-page' : 'capsule-manager'}
+              data-testid={isRepositoryPage ? 'capsule-repository-page' : 'capsule-manager'}
             >
               <span className="sr-only" data-testid="capsule-manager">Capsule manager</span>
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 pb-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900">{isCapsuleRepositoryPage ? 'Capsule repository' : 'Capsules'}</h2>
+                  <h2 className="text-xl font-semibold text-slate-900">{isRepositoryPage ? 'Repository' : isCapsuleRepositoryPage ? 'Capsule repository' : 'Capsules'}</h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    {isCapsuleRepositoryPage
-                      ? 'Search, inspect, combine, archive, and attach documents to stored ContextCapsules.'
+                    {isRepositoryPage
+                      ? 'Inspect uploaded documents, source attachment state, summaries, refreshes, and missing-source actions for the active capsule.'
+                      : isCapsuleRepositoryPage
+                        ? 'Search, inspect, combine, and archive stored ContextCapsules.'
                       : 'Stored context, documents, and AI work.'}
                   </p>
                 </div>
@@ -1730,10 +1918,10 @@ export function TaskletPraxisWorkbench({
                     {isAuthenticated ? 'New' : 'Sign in to build'}
                   </button>
                   <Link
-                    href={isAuthenticated ? '/app/capsules' : '/login?redirect=/app/capsules'}
+                    href={isAuthenticated ? '/app/repository' : '/login?mode=signup&redirect=%2Fapp%2Frepository'}
                     className="inline-flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100"
                   >
-                    <FolderKanban className="h-4 w-4" />
+                    <Library className="h-4 w-4" />
                     Repository
                   </Link>
                 </div>
@@ -1786,8 +1974,8 @@ export function TaskletPraxisWorkbench({
               </div>
 
               {isAuthenticated ? (
-                <div className={cn('mt-6 grid gap-4', !isCapsuleRepositoryPage && 'lg:grid-cols-[minmax(0,1fr)_320px]')}>
-                  <div className={cn('grid gap-3 md:grid-cols-2', isCapsuleRepositoryPage && 'lg:grid-cols-3')} data-testid="tasklet-capsule-cards">
+                <div className={cn('mt-6 grid gap-4', !isRepositoryPage && !isCapsuleRepositoryPage && 'lg:grid-cols-[minmax(0,1fr)_320px]', isRepositoryPage && 'lg:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]')}>
+                  <div className={cn('grid gap-3 md:grid-cols-2', isCapsuleRepositoryPage && 'lg:grid-cols-3', isRepositoryPage && 'md:grid-cols-1')} data-testid="tasklet-capsule-cards">
                     {capsulesLoading && !filteredUserCapsules.length ? (
                       <CapsuleEmptyState label="Loading capsules..." />
                     ) : null}
@@ -1817,7 +2005,7 @@ export function TaskletPraxisWorkbench({
                       />
                     ))}
                   </div>
-                  {isCapsuleRepositoryPage ? (
+                  {isRepositoryPage ? (
                     <DocumentRepositorySection
                       capsule={selectedCapsule}
                       documents={repositoryDocuments}
@@ -1836,7 +2024,7 @@ export function TaskletPraxisWorkbench({
                         void sendToPraxis(selectedAgent, `Inspect "${document.title}" for the active capsule. Return source posture, chunks, entities, key claims, and gaps.`);
                       }}
                     />
-                  ) : (
+                  ) : isCapsuleRepositoryPage ? null : (
                     <CapsuleDetailPanel
                       capsule={selectedCapsule}
                       policyTeam={selectedPolicyTeam}
@@ -2004,6 +2192,29 @@ function escapeHtml(value: string): string {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function buildSelectedSpanNote(target: SpanTargetDefinition, text: string): string {
+  return [
+    `${target.label}: ${target.note}`,
+    target.helper,
+    `Follow-up: ${target.askPrompt}`,
+    `Excerpt: ${text.slice(0, 520)}`,
+  ].join('\n');
+}
+
+function describeAskFailure(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes('401') || lower.includes('403') || lower.includes('auth') || lower.includes('session') || lower.includes('token')) {
+    return `Ask PRAXIS could not use your current session. Sign in again or refresh the workspace, then retry. Your prompt is still in the composer.\n\nFailure detail: ${message}`;
+  }
+  if (lower.includes('network') || lower.includes('fetch') || lower.includes('body') || lower.includes('timeout')) {
+    return `Ask PRAXIS hit a network or streaming interruption before the answer completed. Your prompt is still in the composer for retry.\n\nFailure detail: ${message}`;
+  }
+  if (lower.includes('model') || lower.includes('api') || lower.includes('vertex') || lower.includes('gemini') || lower.includes('generate')) {
+    return `Ask PRAXIS reached the model/API layer but the answer failed. Try again, or switch runtime depth if the model is unavailable. Your prompt is still in the composer.\n\nFailure detail: ${message}`;
+  }
+  return `Ask PRAXIS could not finish the answer. Your prompt is still in the composer, and the active capsule context was not changed.\n\nFailure detail: ${message}`;
 }
 
 async function fetchCapsuleLibrary(): Promise<PraxisCapsuleSummary[]> {
@@ -3181,17 +3392,66 @@ function sanitizeConversationThreadId(value: string | null | undefined): string 
 }
 
 function buildConversationUrl(capsuleId: string, threadId: string): string {
-  const path = `/app/conversations/${encodeURIComponent(threadId)}`;
-  if (typeof window === 'undefined') return `${path}?capsuleId=${encodeURIComponent(capsuleId)}`;
+  const path = buildConversationPath(capsuleId, threadId);
+  if (typeof window === 'undefined') return path;
   const url = new URL(path, window.location.origin);
   url.searchParams.set('capsuleId', capsuleId);
   return url.toString();
+}
+
+function buildConversationPath(capsuleId: string, threadId: string): string {
+  return `/app/conversations/${encodeURIComponent(threadId)}?capsuleId=${encodeURIComponent(capsuleId)}`;
 }
 
 function pushConversationUrl(capsuleId: string, threadId: string) {
   if (typeof window === 'undefined') return;
   const url = new URL(buildConversationUrl(capsuleId, threadId));
   window.history.pushState(null, '', `${url.pathname}?${url.searchParams.toString()}`);
+}
+
+function savedConversationTurnsToMessages(turns: SavedConversationTurn[]): ChatMessage[] {
+  return turns.flatMap((turn) => {
+    const prompt = typeof turn.prompt === 'string' ? turn.prompt : '';
+    const output = typeof turn.output === 'string' && turn.output.trim()
+      ? turn.output
+      : failedTurnText(turn);
+    return [
+      { role: 'user' as const, text: prompt },
+      { role: 'assistant' as const, text: output },
+    ];
+  }).filter((message) => message.text.trim().length > 0);
+}
+
+function failedTurnText(turn: SavedConversationTurn): string {
+  const error = typeof turn.runtime?.error === 'string' ? turn.runtime.error : '';
+  if (!error) return '';
+  return `This Ask PRAXIS turn did not complete. ${error}`;
+}
+
+async function loadLegacyAskThreadHistory(capsuleId: string, threadId: string): Promise<ChatMessage[]> {
+  const params = new URLSearchParams({
+    capsuleId,
+    threadId,
+    limit: '12',
+  });
+  const response = await fetch(`/api/ai/chat?${params.toString()}`, { credentials: 'include' });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload?.error ?? 'legacy conversation history failed');
+  const turns = Array.isArray(payload?.turns) ? payload.turns as ThreadHistoryTurn[] : [];
+  return turns.flatMap((turn) => [
+    { role: 'user' as const, text: turn.prompt ?? '' },
+    { role: 'assistant' as const, text: turn.output ?? '' },
+  ]).filter((message) => message.text.trim().length > 0);
+}
+
+function parseDataStreamError(line: string): string | null {
+  if (!line.startsWith('3:')) return null;
+  try {
+    const parsed = JSON.parse(line.slice(2));
+    return typeof parsed === 'string' ? parsed : 'Ask PRAXIS stream failed.';
+  } catch {
+    return 'Ask PRAXIS stream failed.';
+  }
 }
 
 async function ensureConversationRecord(threadId: string, capsuleId: string, activeCapsules: ActiveCapsuleChip[]) {

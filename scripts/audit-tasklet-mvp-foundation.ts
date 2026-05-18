@@ -112,6 +112,8 @@ expectExcludes('src/components/cores/ContextBuilderRoom.tsx', [
 expectIncludes('src/lib/navigation/primary-nav.ts', [
   "label: 'Home'",
   "label: 'Capsules'",
+  "label: 'Repository'",
+  "href: '/app/repository'",
 ]);
 expectExcludes('src/lib/navigation/primary-nav.ts', [
   "label: 'Ask PRAXIS'",

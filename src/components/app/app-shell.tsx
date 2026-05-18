@@ -34,6 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isOnePageCockpit =
     pathname === '/app' ||
     pathname === '/app/capsules' ||
+    pathname === '/app/repository' ||
     pathname.startsWith('/app/conversations/');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');

@@ -21,7 +21,9 @@ const primaryNav = read('src/lib/navigation/primary-nav.ts');
 for (const marker of [
   "label: 'Home'",
   "label: 'Capsules'",
+  "label: 'Repository'",
   "href: '/app'",
+  "href: '/app/repository'",
 ]) {
   if (!primaryNav.includes(marker)) failures.push(`PRIMARY_NAV missing canonical marker: ${marker}`);
 }
