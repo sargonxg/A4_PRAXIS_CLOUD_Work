@@ -193,6 +193,34 @@ const MEMORY_ENDPOINTS = {
   reject: '/api/memory/reject',
 } as const;
 
+const AUTHENTICATED_TEST_LANES = [
+  {
+    label: 'Preflight',
+    command: 'npm run auth-runtime:preflight',
+    detail: 'Checks Firebase test credentials, gcloud project, Firebase CLI login, and local ADC.',
+  },
+  {
+    label: 'Local app smoke',
+    command: 'npm run test:auth-runtime:local',
+    detail: 'Runs typecheck, build, logged-in golden path, Tasklet app smoke, and Ask capsule runtime smoke.',
+  },
+  {
+    label: 'Product surface',
+    command: 'npm run test:auth-runtime:product',
+    detail: 'Runs route, public surface, Tasklet foundation, and Ask cockpit runtime audits.',
+  },
+  {
+    label: 'Agent runtime',
+    command: 'npm run test:auth-runtime:agent',
+    detail: 'Runs agent process, runtime proof, and Genkit/agent-runtime unit checks.',
+  },
+  {
+    label: 'Live cloud posture',
+    command: 'npm run test:auth-runtime:live',
+    detail: 'Runs production runtime health and GCP posture audits.',
+  },
+] as const;
+
 const TABS: Array<{ id: SettingsTab; label: string; icon: LucideIcon; detail: string }> = [
   { id: 'profile', label: 'Profile', icon: UserRound, detail: 'User Core and analyst posture' },
   { id: 'billing', label: 'Billing', icon: CreditCard, detail: 'Plan, checkout, portal' },
@@ -872,7 +900,10 @@ function SystemTab({
   }
 
   useEffect(() => {
-    void refreshHealth();
+    const timer = window.setTimeout(() => {
+      void refreshHealth();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const visibleChecks = adminHealth?.admin?.checks ?? runtimeHealth?.checks ?? [];
@@ -1039,6 +1070,65 @@ function SystemTab({
               No Cognee candidates are waiting for review. Candidate promotion remains gated through the memory review endpoints.
             </p>
           ) : null}
+        </div>
+      </section>
+      <section data-testid="authenticated-runtime-test-lane" className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-400">Authenticated testing</p>
+            <h3 className="mt-1 text-base font-semibold text-navy-950">Runtime and app test lane</h3>
+            <p className="mt-1 text-sm leading-6 text-navy-500">
+              Agents can run these checks from the repo terminal after the disposable Firebase test user and ADC are available in the shell.
+            </p>
+          </div>
+          <Link
+            href="/api/health/runtime"
+            target="_blank"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-navy-700 hover:bg-slate-50"
+          >
+            <ServerCog className="h-4 w-4" />
+            Runtime JSON
+          </Link>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <Metric label="Test account" value="required" />
+          <Metric label="Base URL" value="localhost or live" />
+          <Metric label="ADC" value="required" />
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-3">
+          <p className="text-sm font-semibold text-navy-950">PowerShell setup</p>
+          <div className="mt-3 space-y-2 rounded-lg bg-navy-950 p-3 font-mono text-xs leading-5 text-white">
+            <p>$env:TEST_FIREBASE_EMAIL=&quot;&lt;test-user@example.com&gt;&quot;</p>
+            <p>$env:TEST_FIREBASE_PASSWORD=&quot;&lt;test-password&gt;&quot;</p>
+            <p>$env:PLAYWRIGHT_BASE_URL=&quot;http://localhost:3000&quot;</p>
+            <p>gcloud auth application-default login --project=praxisbytacitus</p>
+          </div>
+        </div>
+
+        <div className="grid gap-3">
+          {AUTHENTICATED_TEST_LANES.map((lane) => (
+            <div key={lane.command} className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-navy-950">{lane.label}</p>
+                  <p className="mt-1 text-xs leading-5 text-navy-500">{lane.detail}</p>
+                </div>
+                <p className="rounded-md bg-slate-100 px-2 py-1 font-mono text-xs text-navy-700">{lane.command}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <InfoPanel title="Full lane">
+            <p className="font-mono text-xs">npm run test:auth-runtime</p>
+            <p className="mt-2 font-mono text-xs">npm run test:auth-runtime -- --continue-on-failure</p>
+          </InfoPanel>
+          <InfoPanel title="Runbook">
+            <p className="font-mono text-xs">docs/testing/AUTHENTICATED_RUNTIME_TEST_LANE.md</p>
+          </InfoPanel>
         </div>
       </section>
     </div>

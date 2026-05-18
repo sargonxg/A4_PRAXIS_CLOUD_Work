@@ -1,0 +1,20 @@
+
+> tacitus-app@6.4.1 dev
+> next dev -p 3000
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.160:3000
+- Environments: .env.local
+✓ Ready in 1723ms
+[tracing] GCP_PROJECT_ID not set, skipping Cloud Trace init
+- Experiments (use with caution):
+  · serverActions
+
+○ Compiling / ...
+ GET / 200 in 18.1s (next.js: 14.6s, application-code: 3.6s)
+○ Compiling /api/health/runtime ...
+ GET /api/health/runtime 200 in 6.5s (next.js: 4.8s, application-code: 1720ms)
+ GET / 200 in 1173ms (next.js: 14ms, application-code: 1159ms)
+ GET /api/health/runtime 200 in 37ms (next.js: 7ms, application-code: 30ms)
+ GET /api/health/runtime 200 in 28ms (next.js: 9ms, application-code: 19ms)
