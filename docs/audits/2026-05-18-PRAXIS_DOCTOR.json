@@ -1,7 +1,7 @@
 {
-  "runId": "doctor-20260518T034916164Z",
-  "timestamp": "2026-05-18T03:49:16.164Z",
-  "commit": "ec0819545ac947736e3871a40445f62c67485e1b",
+  "runId": "doctor-20260518T170008853Z",
+  "timestamp": "2026-05-18T17:00:08.853Z",
+  "commit": "61946e2f8a44d8f121cddf8d8061f7c74ab3306f",
   "branch": "main",
   "baseUrl": "https://praxis.tacitus.me",
   "project": "praxisbytacitus",
@@ -23,7 +23,7 @@
       "status": "PASS",
       "summary": "Commit SHA resolved",
       "evidence": [
-        "ec0819545ac947736e3871a40445f62c67485e1b\n"
+        "61946e2f8a44d8f121cddf8d8061f7c74ab3306f\n"
       ]
     },
     {
@@ -32,7 +32,7 @@
       "status": "WARN",
       "summary": "Working tree has uncommitted changes",
       "evidence": [
-        "M docs/audits/2026-05-18-PRAXIS_DOCTOR.json\n M docs/audits/2026-05-18-PRAXIS_DOCTOR.md\n M graphify-out/GRAPH_REPORT.md\n M graphify-out/graph.json\n M graphify-out/manifest.json\n M src/app/(auth)/login/page.tsx\n M src/app/api/billing/checkout/route.ts\n M src/app/api/health/features/route.ts\n M src/app/api/health/route.ts\n M src/app/api/memory/[...slug]/route.ts\n M src/app/pricing/page.tsx\n M src/components/settings/account-settings-page.tsx\n M src/lib/auth/post-login-redirect.ts\n M src/lib/billing/polar-server.ts\n M src/lib/health/runtime-health.ts\n M src/proxy.ts\n M tests/unit/components/settings-page-contract.test.ts\n M tests/unit/lib/health/runtime-health.test.ts\n?? docs/audits/2026-05-18-production-canary-proof.md\n?? src/app/api/billing/webhook/\n?? src/lib/billing/polar-webhook.ts\n?? tests/unit/api/memory-proxy-contract.test.ts\n?? tests/unit/lib/billing/"
+        "M .next-dev.log\n M graphify-out/GRAPH_REPORT.md\n M graphify-out/graph.json\n M graphify-out/manifest.json\n M package.json\n?? docs/audits/2026-05-18-runtime-data-plane-diagnostic.json\n?? docs/audits/2026-05-18-runtime-data-plane-diagnostic.md\n?? scripts/audit-runtime-data-plane.ts\n?? src/lib/audits/\n?? tests/unit/lib/audits/"
       ]
     },
     {
@@ -42,6 +42,15 @@
       "summary": "origin/main...HEAD = 0\t0",
       "evidence": [
         "0\t0\n"
+      ]
+    },
+    {
+      "id": "typecheck",
+      "lane": "repo-and-deployability",
+      "status": "PASS",
+      "summary": "npm run typecheck passed",
+      "evidence": [
+        "\n> tacitus-app@6.4.1 typecheck\n> tsc --noEmit\n\n"
       ]
     },
     {
@@ -88,7 +97,7 @@
       "status": "PASS",
       "summary": "gcloud sql instances describe praxisbytacitus-instance --project=praxisbytacitus passed",
       "evidence": [
-        "availableMaintenanceVersions:\r\n- POSTGRES_16_13.R20260319.00_11\r\nbackendType: SECOND_GEN\r\nconnectionName: praxisbytacitus:us-east4:praxisbytacitus-instance\r\ncreateTime: '2026-04-27T01:27:56.130Z'\r\ndatabaseInstalledVersion: POSTGRES_16_13\r\ndatabaseVersion: POSTGRES_16\r\netag: 8dd5d40df519e406216775859bd6528a01cc6aebe140c08da6316848093b2c42\r\ngceZone: us-east4-a\r\ngeminiConfig:\r\n  activeQueryEnabled: false\r\n  entitled: false\r\n  googleVacuumMgmtEnabled: false\r\n  indexAdvisorEnabled: false\r\n  oomSessionCancelEnabled: true\r\nincludeReplicasForMajorVersionUpgrade: false\r\ninstanceType: CLOUD_SQL_INSTANCE\r\nipAddresses:\r\n- ipAddress: 10.101.0.3\r\n  type: PRIVATE\r\nkind: sql#instance\r\nmaintenanceVersion: POSTGRES_16_13.R20260319.00_02\r\nname: praxisbytacitus-instance\r\nproject: praxisbytacitus\r\nregion: us-east4\r\nsatisfiesPzi: true\r\nselfLink: https://sqladmin.googleapis.com/sql/v1beta4/projects/praxisbytacitus/instances/praxisbytacitus-instance\r\nserverCaCert:\r\n  cert: |-\r\n    -----BEGIN CERTIFICATE-----\r\n    MIIDcTCCAlmgAwIBAgIBADANBgkqhkiG9w0BAQsFADBwMS0wKwYDVQQuEyQ3MTgw\r\n    MjM5NS0yY2EzLTQxMWMtYjc5ZS02NTczY2QyNDA1NWQxHDAaBgNVBAMTE0Nsb3Vk\r\n    IFNRTCBTZXJ2ZXIgQ0ExFDASBgNVBAoTC0dvb2dsZSwgSW5jMQswCQYDVQQGEwJV\r\n    UzAeFw0yNjA0MjcwMTMwMzRaFw0zNjA0MjQwMTMxMzRaMHAxLTArBgNVBC4TJDcx\r\n    ODAyMzk1LTJjYTMtNDExYy1iNzllLTY1NzNjZDI0MDU1ZDEcMBoGA1UEAxMTQ2xv\r\n    dWQgU1FMIFNlcnZlciBDQTEUMBIGA1UEChMLR29vZ2xlLCBJbmMxCzAJBgNVBAYT\r\n    AlVTMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsgP4rDtdSZ9o8f2d\r\n    to2BC3duUQQkt9ge0rtvnKrjh7Ew9nX/PGKzNLLEbNkbhw3nDlqG4C41Ja3M2kgD\r\n    vMgte3O8BG868UkfJjWIwOudX4yMVCryYLV81VAQMw3+wo29coUduwUZVlszSM1l\r\n    nUU+d053YysFY0V16Qx1R6JM7g8///HwKOcez3O2HTxDjSRiV+3HEtUmO9KQxMv1\r\n    rHl6NjJBNVZ/lu8hrwftOyFTk4TgEwzwJPlXAiuzjYGxxxAbQSvYWLcL7L595VdN\r\n    p6G+gzTjPc+NS/1ugpOvHBDUjrhz1ScaS6+OE9stBS14kpE/Pa7aQg6ut0SQeSG0\r\n    32iqyQIDAQABoxYwFDASBgNVHRMBAf8ECDAGAQH/AgEAMA0GCSqGSIb3DQEBCwUA\r\n    A4IBAQCPmoKuenhw3WlmcsoUO/ZEV9COxUZBQLsPnd7w3kZ02iXfb+hHbQcc3r8f\r\n    4+Fk7z0h7kzlDtSLD//BoTC1IZV2sDd0pHUNGOaNaj8FyrKqrzfOzJxrT+uwp9a3\r\n    aJOPWD/GvPwuP/GA3cpZO6/TLIE/TTz7kZhutAuuzrb1Lk5YZ+TshBW5Aqg5Ldes\r\n    XrbQxSoLXwABEvBq87lcvmlbcbhMsYZFg/4RkGTm9Ds4nbi2hmkb35L0RMgAG+W/\r\n    cqn1ADvob/bcN8bhF8YM6VwmPTflq4U/86gVPsteiNm74qJ1B69UxgQOQHOPJTyk\r\n    M8ZZqRF4y6+/68xkm/GL/1TDNRYu\r\n    -----END CERTIFICATE-----\r\n  certSerialNumber: '0'\r\n  commonName: C=US,O=Google\\, Inc,CN=Cloud SQL Server CA,dnQualifier=71802395-2ca3-411c-b79e-6573cd24055d\r\n  createTime: '2026-04-27T01:30:34.795Z'\r\n  expirationTime: '2036-04-24T01:31:34.795Z'\r\n  instance: praxisbytacitus-instance\r\n  kind: sql#sslCert\r\n  sha1Fingerprint: 11b4e5c537f0ba128df764913a58a9162e800dd3\r\nserviceAccountEmailAddress: [REDACTED_SERVICE_ACCOUNT]\r\nsettings:\r\n  activationPolicy: ALWAYS\r\n  availabilityType: ZONAL\r\n  backupConfiguration:\r\n    backupRetentionSettings:\r\n      retainedBackups: 7\r\n      retentionUnit: COUNT\r\n    backupTier: STANDARD\r\n    enabled: true\r\n    kind: sql#backupConfiguration\r\n    startTime: 03:00\r\n    transactionLogRetentionDays: 7\r\n    transactionalLogStorageState: TRANSACTIONAL_LOG_STORAGE_STATE_UNSPECIFIED\r\n  connectorEnforcement: NOT_REQUIRED\r\n  dataDiskSizeGb: '10'\r\n  dataDiskType: PD_SSD\r\n  databaseFlags:\r\n  - name: cloudsql.iam_authentication\r\n    value: on\r\n  deletionProtectionEnabled: false\r\n  edition: ENTERPRISE\r\n  enableDataplexIntegration: true\r\n  ipConfiguration:\r\n    ipv4Enabled: false\r\n    privateNetwork: projects/praxisbytacitus/global/networks/default\r\n    requireSsl: false\r\n    serverCaMode: GOOGLE_MANAGED_INTERNAL_CA\r\n    serverCertificateRotationMode: SERVER_CERTIFICATE_ROTATION_MODE_UNSPECIFIED\r\n    sslMode: ALLOW_UNENCRYPTED_AND_ENCRYPTED\r\n  kind: sql#settings\r\n  locationPreference:\r\n    kind: sql#locationPreference\r\n    zone: us-east4-a\r\n  pricingPlan: PER_USE\r\n  replicationLagMaxSeconds: 31536000\r\n  replicationType: SYNCHRONOUS\r\n  settingsVersion: '27'\r\n  storageAutoResize: true\r\n  storageAutoResizeLimit: '0'\r\n  tier: db-f1-micro\r\nsqlNetworkArchitecture: NEW_NETWORK_ARCHITECTURE\r\nstate: RUNNABLE\r\nupgradableDatabaseVersions:\r\n- displayName: PostgreSQL 17\r\n  majorVersion: POSTGRES_17\r\n  name: POSTGRES_17\r\n- displayName: PostgreSQL 18\r\n  majorVersion: POSTGRES_18\r\n  name: POSTGRES_18\r\n"
+        "availableMaintenanceVersions:\r\n- POSTGRES_16_13.R20260319.00_11\r\nbackendType: SECOND_GEN\r\nconnectionName: praxisbytacitus:us-east4:praxisbytacitus-instance\r\ncreateTime: '2026-04-27T01:27:56.130Z'\r\ndatabaseInstalledVersion: POSTGRES_16_13\r\ndatabaseVersion: POSTGRES_16\r\netag: 40c0d7cd7b17343dcf70a5d37e42593ccfeb9d8f8e159af098106c75ad50a68e\r\ngceZone: us-east4-a\r\ngeminiConfig:\r\n  activeQueryEnabled: false\r\n  entitled: false\r\n  googleVacuumMgmtEnabled: false\r\n  indexAdvisorEnabled: false\r\n  oomSessionCancelEnabled: true\r\nincludeReplicasForMajorVersionUpgrade: false\r\ninstanceType: CLOUD_SQL_INSTANCE\r\nipAddresses:\r\n- ipAddress: 10.101.0.3\r\n  type: PRIVATE\r\nkind: sql#instance\r\nmaintenanceVersion: POSTGRES_16_13.R20260319.00_02\r\nname: praxisbytacitus-instance\r\nproject: praxisbytacitus\r\nregion: us-east4\r\nsatisfiesPzi: true\r\nselfLink: https://sqladmin.googleapis.com/sql/v1beta4/projects/praxisbytacitus/instances/praxisbytacitus-instance\r\nserverCaCert:\r\n  cert: |-\r\n    -----BEGIN CERTIFICATE-----\r\n    MIIDcTCCAlmgAwIBAgIBADANBgkqhkiG9w0BAQsFADBwMS0wKwYDVQQuEyQ3MTgw\r\n    MjM5NS0yY2EzLTQxMWMtYjc5ZS02NTczY2QyNDA1NWQxHDAaBgNVBAMTE0Nsb3Vk\r\n    IFNRTCBTZXJ2ZXIgQ0ExFDASBgNVBAoTC0dvb2dsZSwgSW5jMQswCQYDVQQGEwJV\r\n    UzAeFw0yNjA0MjcwMTMwMzRaFw0zNjA0MjQwMTMxMzRaMHAxLTArBgNVBC4TJDcx\r\n    ODAyMzk1LTJjYTMtNDExYy1iNzllLTY1NzNjZDI0MDU1ZDEcMBoGA1UEAxMTQ2xv\r\n    dWQgU1FMIFNlcnZlciBDQTEUMBIGA1UEChMLR29vZ2xlLCBJbmMxCzAJBgNVBAYT\r\n    AlVTMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsgP4rDtdSZ9o8f2d\r\n    to2BC3duUQQkt9ge0rtvnKrjh7Ew9nX/PGKzNLLEbNkbhw3nDlqG4C41Ja3M2kgD\r\n    vMgte3O8BG868UkfJjWIwOudX4yMVCryYLV81VAQMw3+wo29coUduwUZVlszSM1l\r\n    nUU+d053YysFY0V16Qx1R6JM7g8///HwKOcez3O2HTxDjSRiV+3HEtUmO9KQxMv1\r\n    rHl6NjJBNVZ/lu8hrwftOyFTk4TgEwzwJPlXAiuzjYGxxxAbQSvYWLcL7L595VdN\r\n    p6G+gzTjPc+NS/1ugpOvHBDUjrhz1ScaS6+OE9stBS14kpE/Pa7aQg6ut0SQeSG0\r\n    32iqyQIDAQABoxYwFDASBgNVHRMBAf8ECDAGAQH/AgEAMA0GCSqGSIb3DQEBCwUA\r\n    A4IBAQCPmoKuenhw3WlmcsoUO/ZEV9COxUZBQLsPnd7w3kZ02iXfb+hHbQcc3r8f\r\n    4+Fk7z0h7kzlDtSLD//BoTC1IZV2sDd0pHUNGOaNaj8FyrKqrzfOzJxrT+uwp9a3\r\n    aJOPWD/GvPwuP/GA3cpZO6/TLIE/TTz7kZhutAuuzrb1Lk5YZ+TshBW5Aqg5Ldes\r\n    XrbQxSoLXwABEvBq87lcvmlbcbhMsYZFg/4RkGTm9Ds4nbi2hmkb35L0RMgAG+W/\r\n    cqn1ADvob/bcN8bhF8YM6VwmPTflq4U/86gVPsteiNm74qJ1B69UxgQOQHOPJTyk\r\n    M8ZZqRF4y6+/68xkm/GL/1TDNRYu\r\n    -----END CERTIFICATE-----\r\n  certSerialNumber: '0'\r\n  commonName: C=US,O=Google\\, Inc,CN=Cloud SQL Server CA,dnQualifier=71802395-2ca3-411c-b79e-6573cd24055d\r\n  createTime: '2026-04-27T01:30:34.795Z'\r\n  expirationTime: '2036-04-24T01:31:34.795Z'\r\n  instance: praxisbytacitus-instance\r\n  kind: sql#sslCert\r\n  sha1Fingerprint: 11b4e5c537f0ba128df764913a58a9162e800dd3\r\nserviceAccountEmailAddress: [REDACTED_SERVICE_ACCOUNT]\r\nsettings:\r\n  activationPolicy: ALWAYS\r\n  availabilityType: ZONAL\r\n  backupConfiguration:\r\n    backupRetentionSettings:\r\n      retainedBackups: 7\r\n      retentionUnit: COUNT\r\n    backupTier: STANDARD\r\n    enabled: true\r\n    kind: sql#backupConfiguration\r\n    startTime: 03:00\r\n    transactionLogRetentionDays: 7\r\n    transactionalLogStorageState: TRANSACTIONAL_LOG_STORAGE_STATE_UNSPECIFIED\r\n  connectorEnforcement: NOT_REQUIRED\r\n  dataDiskSizeGb: '10'\r\n  dataDiskType: PD_SSD\r\n  databaseFlags:\r\n  - name: cloudsql.iam_authentication\r\n    value: on\r\n  deletionProtectionEnabled: false\r\n  edition: ENTERPRISE\r\n  enableDataplexIntegration: true\r\n  ipConfiguration:\r\n    ipv4Enabled: false\r\n    privateNetwork: projects/praxisbytacitus/global/networks/default\r\n    requireSsl: false\r\n    serverCaMode: GOOGLE_MANAGED_INTERNAL_CA\r\n    serverCertificateRotationMode: SERVER_CERTIFICATE_ROTATION_MODE_UNSPECIFIED\r\n    sslMode: ALLOW_UNENCRYPTED_AND_ENCRYPTED\r\n  kind: sql#settings\r\n  locationPreference:\r\n    kind: sql#locationPreference\r\n    zone: us-east4-a\r\n  pricingPlan: PER_USE\r\n  replicationLagMaxSeconds: 31536000\r\n  replicationType: SYNCHRONOUS\r\n  settingsVersion: '28'\r\n  storageAutoResize: true\r\n  storageAutoResizeLimit: '0'\r\n  tier: db-f1-micro\r\nsqlNetworkArchitecture: NEW_NETWORK_ARCHITECTURE\r\nstate: RUNNABLE\r\nupgradableDatabaseVersions:\r\n- displayName: PostgreSQL 17\r\n  majorVersion: POSTGRES_17\r\n  name: POSTGRES_17\r\n- displayName: PostgreSQL 18\r\n  majorVersion: POSTGRES_18\r\n  name: POSTGRES_18\r\n"
       ]
     },
     {
@@ -97,7 +106,7 @@
       "status": "PASS",
       "summary": "gcloud firestore databases describe --database=\"(default)\" --project=praxisbytacitus passed",
       "evidence": [
-        "appEngineIntegrationMode: DISABLED\r\nconcurrencyMode: PESSIMISTIC\r\ncreateTime: '2026-03-22T15:19:16.119019Z'\r\ndatabaseEdition: STANDARD\r\ndeleteProtectionState: DELETE_PROTECTION_DISABLED\r\nearliestVersionTime: '2026-05-18T02:49:33.749431Z'\r\netag: IIm09Zr3wZQDMPSV+ZPz+pMD\r\nfreeTier: true\r\nkeyPrefix: s\r\nlocationId: nam5\r\nname: projects/praxisbytacitus/databases/(default)\r\npointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED\r\nrealtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED\r\ntype: FIRESTORE_NATIVE\r\nuid: fb7e3f38-b5f6-402d-9f42-97881107da45\r\nupdateTime: '2026-03-22T15:19:16.119019Z'\r\nversionRetentionPeriod: 3600s\r\n"
+        "appEngineIntegrationMode: DISABLED\r\nconcurrencyMode: PESSIMISTIC\r\ncreateTime: '2026-03-22T15:19:16.119019Z'\r\ndatabaseEdition: STANDARD\r\ndeleteProtectionState: DELETE_PROTECTION_DISABLED\r\nearliestVersionTime: '2026-05-18T16:00:52.204910Z'\r\netag: IOGttIqow5QDMPSV+ZPz+pMD\r\nfreeTier: true\r\nkeyPrefix: s\r\nlocationId: nam5\r\nname: projects/praxisbytacitus/databases/(default)\r\npointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED\r\nrealtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED\r\ntype: FIRESTORE_NATIVE\r\nuid: fb7e3f38-b5f6-402d-9f42-97881107da45\r\nupdateTime: '2026-03-22T15:19:16.119019Z'\r\nversionRetentionPeriod: 3600s\r\n"
       ]
     },
     {
@@ -184,7 +193,7 @@
       "evidence": [
         {
           "status": "ok",
-          "timestamp": "2026-05-18T03:49:44.106Z",
+          "timestamp": "2026-05-18T17:01:07.943Z",
           "checks": {
             "firestore": "ok",
             "ai_provider": "ok",
@@ -219,7 +228,7 @@
         {
           "status": "ok",
           "summary": "Systems ready",
-          "checkedAt": "2026-05-18T03:49:44.276Z",
+          "checkedAt": "2026-05-18T17:01:08.138Z",
           "debugHref": "/app/settings?tab=system",
           "checks": [
             {
@@ -265,7 +274,7 @@
       "summary": "Canary writes disabled: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD",
       "evidence": [
         {
-          "tag": "praxis-doctor-canary-20260518T034916164Z",
+          "tag": "praxis-doctor-canary-20260518T170008853Z",
           "email": null
         }
       ],
@@ -277,9 +286,9 @@
   ],
   "artifacts": [
     {
-      "tag": "praxis-doctor-canary-20260518T034916164Z",
+      "tag": "praxis-doctor-canary-20260518T170008853Z",
       "kind": "doctor-canary-workflow",
-      "id": "praxis-doctor-canary-20260518T034916164Z",
+      "id": "praxis-doctor-canary-20260518T170008853Z",
       "cleanupStatus": "blocked",
       "detail": "Canary write gate is disabled or missing credentials: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD"
     }

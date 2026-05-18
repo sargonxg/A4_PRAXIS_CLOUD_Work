@@ -44,6 +44,7 @@
     "audit:no-normal-user-archive": "tsx scripts/audit-no-normal-user-archive.ts",
     "audit:admin-only-internals": "tsx scripts/audit-admin-only-internals.ts",
     "audit:runtime-health-live": "tsx scripts/audit-runtime-health-live.ts",
+    "audit:runtime-data-plane": "tsx scripts/audit-runtime-data-plane.ts",
     "audit:next-moves": "tsx scripts/audit-next-moves.ts",
     "audit:context-health": "tsx scripts/audit-context-health.ts",
     "audit:capsule-contract": "tsx scripts/audit-capsule-contract.ts",

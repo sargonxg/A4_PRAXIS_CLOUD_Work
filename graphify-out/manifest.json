@@ -1191,6 +1191,10 @@
     "mtime": 1779057413.531048,
     "hash": "a8a543f07280dc76307904c6f9784861"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-runtime-data-plane.ts": {
+    "mtime": 1779122686.5043287,
+    "hash": "ea508a7e880f0a58179777036446e92b"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-runtime-health-live.ts": {
     "mtime": 1779039376.621967,
     "hash": "71e4483bda792d4301f79f42b94cb214"
@@ -2979,6 +2983,10 @@
     "mtime": 1778739253.1915905,
     "hash": "371130045971756179118a3177c220a0"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\audits\\runtime-data-plane.ts": {
+    "mtime": 1779122896.305226,
+    "hash": "d85f4afdd3f941b4d8953f1e380f7150"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\auth\\admin-gate.ts": {
     "mtime": 1778429930.1874373,
     "hash": "0dfc1a9ebc29b98bcbce93f16c37a9a1"
@@ -4639,6 +4647,10 @@
     "mtime": 1778739295.5105526,
     "hash": "149923f537466f365149d7d800f67d1f"
   },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\audits\\runtime-data-plane.test.ts": {
+    "mtime": 1779122782.1240242,
+    "hash": "e3ad923b0341027c5edc01c3e10fffde"
+  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\auth\\cookie-signer.test.ts": {
     "mtime": 1778621748.616073,
     "hash": "1630ff4af290d2eb209525857668c78e"
@@ -5374,6 +5386,10 @@
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-18-production-canary-proof.md": {
     "mtime": 1779072993.369323,
     "hash": "d3d73665357f0f99d1590424694d235a"
+  },
+  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-18-runtime-data-plane-diagnostic.md": {
+    "mtime": 1779122922.9099977,
+    "hash": "79a2bc5833bdca1230b9dfc52f835bd1"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\tool-contracts-2026-05-16.md": {
     "mtime": 1778962490.8568892,
