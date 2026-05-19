@@ -221,8 +221,23 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('KAIROS lane');
     expect(source).toContain('AGON lane');
     expect(source).toContain('Review draft');
+    expect(source).toContain("type CapsuleFactoryReviewState = 'draft' | 'reviewed' | 'applied' | 'rejected'");
+    expect(source).toContain('factoryReviewDiffs');
+    expect(source).toContain('Apply reviewed diff');
+    expect(source).toContain('Reject');
     expect(source).toContain('reviewable capsule improvements');
     expect(source).toContain('Do not silently mutate the capsule');
+  });
+
+  it('shows sanitized runtime proof inside the active capsule/run area', () => {
+    expect(source).toContain('RuntimeProofStrip');
+    expect(source).toContain('data-testid="runtime-proof-strip"');
+    expect(source).toContain('active capsule');
+    expect(source).toContain('last Ask receipt');
+    expect(source).toContain('latest mirrored event');
+    expect(source).toContain('memo/output link');
+    expect(source).not.toContain('internalEstimatedCostCents');
+    expect(source).not.toContain('internalSpendCents');
   });
 
   it('uses one capsule-card contract for public starters and authenticated fallback cards', () => {

@@ -75,7 +75,7 @@ describe('capsule factory Genkit flows', () => {
   });
 
   it('accepts DIALECTICA, KAIROS, and AGON lanes as reviewable draft improvements', async () => {
-    const { CapsuleSynthesisOutputSchema } = await import('@/lib/genkit/schemas/capsule-factory');
+    const { CapsuleFactoryReviewDiffSchema, CapsuleSynthesisOutputSchema } = await import('@/lib/genkit/schemas/capsule-factory');
     const parsed = CapsuleSynthesisOutputSchema.parse({
       contextCapsuleDraft: {
         label: 'Access negotiation capsule',
@@ -100,6 +100,24 @@ describe('capsule factory Genkit flows', () => {
 
     expect(parsed.laneImprovements.map((lane) => lane.laneId)).toEqual(['dialectica', 'kairos', 'agon']);
     expect(parsed.laneImprovements.every((lane) => lane.requiresConfirmation)).toBe(true);
+
+    const diff = CapsuleFactoryReviewDiffSchema.parse({
+      diffId: 'diff-access-1',
+      capsuleId: 'cap-access',
+      reviewState: 'reviewed',
+      proposedCapsule: parsed.contextCapsuleDraft,
+      proposedCores: parsed.proposedCores,
+      sourceGaps: ['Need dated crossing-status evidence.'],
+      openQuestions: parsed.openQuestions,
+      laneImprovements: parsed.laneImprovements,
+      applyActions: parsed.applyActions,
+      provenanceIds: ['run-123', 'src-1'],
+      confirmation: { required: true, confirmedAt: '2026-05-19T12:00:00.000Z', confirmedBy: 'user' },
+    });
+
+    expect(diff.reviewState).toBe('reviewed');
+    expect(diff.confirmation.required).toBe(true);
+    expect(diff.applyActions.every((action) => action.requiresConfirmation)).toBe(true);
   });
 
   it('derives writing defaults without generic document-automation framing', async () => {

@@ -8,6 +8,19 @@ type Step = {
   args: string[];
 };
 
+export type AuthRuntimePreflightCheck = {
+  name: string;
+  status: 'pass' | 'blocked';
+  detail: string;
+  remediation?: string;
+};
+
+export type AuthRuntimePreflightResult = {
+  status: 'pass' | 'blocked';
+  checks: AuthRuntimePreflightCheck[];
+  missingEnvVars: string[];
+};
+
 const EXPECTED_PROJECT = process.env.GCP_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || 'praxisbytacitus';
 const DEFAULT_BASE_URL = 'http://localhost:3000';
 
@@ -85,28 +98,50 @@ function printHeader() {
 }
 
 function runPreflight(): boolean {
-  const checks: Array<{ name: string; ok: boolean; detail: string; remediation?: string }> = [];
+  const result = evaluateAuthenticatedRuntimePreflight({
+    env: process.env,
+    capture,
+  });
+
+  for (const check of result.checks) {
+    const marker = check.status === 'pass' ? 'OK' : 'FAIL';
+    console.log(`${marker.padEnd(4)} ${check.name}: ${check.detail}`);
+    if (check.status === 'blocked' && check.remediation) console.log(`     fix: ${check.remediation}`);
+  }
+  if (result.status === 'blocked') {
+    console.log(`BLOCKED authenticated runtime preflight: ${result.missingEnvVars.length ? `missing ${result.missingEnvVars.join(', ')}` : 'credential/runtime prerequisite failed'}`);
+  }
+  return result.status === 'pass';
+}
+
+export function evaluateAuthenticatedRuntimePreflight(input: {
+  env: NodeJS.ProcessEnv | Record<string, string | undefined>;
+  capture: (command: string, commandArgs: string[]) => { ok: boolean; output: string };
+}): AuthRuntimePreflightResult {
+  const checks: Array<{ name: string; ok: boolean; detail: string; remediation?: string; envVar?: string }> = [];
 
   checks.push({
     name: 'TEST_FIREBASE_EMAIL',
-    ok: Boolean(process.env.TEST_FIREBASE_EMAIL),
-    detail: process.env.TEST_FIREBASE_EMAIL ? 'present' : 'missing',
+    ok: Boolean(input.env.TEST_FIREBASE_EMAIL),
+    detail: input.env.TEST_FIREBASE_EMAIL ? 'present' : 'missing',
     remediation: '$env:TEST_FIREBASE_EMAIL="<already-onboarded-test-user@example.com>"',
+    envVar: 'TEST_FIREBASE_EMAIL',
   });
   checks.push({
     name: 'TEST_FIREBASE_PASSWORD',
-    ok: Boolean(process.env.TEST_FIREBASE_PASSWORD),
-    detail: process.env.TEST_FIREBASE_PASSWORD ? 'present' : 'missing',
+    ok: Boolean(input.env.TEST_FIREBASE_PASSWORD),
+    detail: input.env.TEST_FIREBASE_PASSWORD ? 'present' : 'missing',
     remediation: '$env:TEST_FIREBASE_PASSWORD="<test-user-password>"',
+    envVar: 'TEST_FIREBASE_PASSWORD',
   });
   checks.push({
     name: 'PLAYWRIGHT_BASE_URL',
     ok: true,
-    detail: process.env.PLAYWRIGHT_BASE_URL || `${DEFAULT_BASE_URL} (default)`,
+    detail: input.env.PLAYWRIGHT_BASE_URL || `${DEFAULT_BASE_URL} (default)`,
     remediation: '$env:PLAYWRIGHT_BASE_URL="http://localhost:3000"',
   });
 
-  const activeAccount = capture('gcloud', ['auth', 'list', '--filter=status:ACTIVE', '--format=value(account)']);
+  const activeAccount = input.capture('gcloud', ['auth', 'list', '--filter=status:ACTIVE', '--format=value(account)']);
   checks.push({
     name: 'gcloud active account',
     ok: activeAccount.ok && activeAccount.output.length > 0,
@@ -114,15 +149,16 @@ function runPreflight(): boolean {
     remediation: 'gcloud auth login',
   });
 
-  const project = capture('gcloud', ['config', 'get-value', 'project']);
+  const expectedProject = input.env.GCP_PROJECT_ID || input.env.GOOGLE_CLOUD_PROJECT || EXPECTED_PROJECT;
+  const project = input.capture('gcloud', ['config', 'get-value', 'project']);
   checks.push({
     name: 'gcloud project',
-    ok: project.ok && project.output === EXPECTED_PROJECT,
+    ok: project.ok && project.output === expectedProject,
     detail: project.ok ? project.output || 'unset' : project.output,
-    remediation: `gcloud config set project ${EXPECTED_PROJECT}`,
+    remediation: `gcloud config set project ${expectedProject}`,
   });
 
-  const firebaseLogin = capture('firebase', ['login:list']);
+  const firebaseLogin = input.capture('firebase', ['login:list']);
   checks.push({
     name: 'Firebase CLI login',
     ok: firebaseLogin.ok && firebaseLogin.output.length > 0,
@@ -130,24 +166,28 @@ function runPreflight(): boolean {
     remediation: 'firebase login --reauth',
   });
 
-  const adc = capture('gcloud', ['auth', 'application-default', 'print-access-token', '--quiet']);
+  const adc = input.capture('gcloud', ['auth', 'application-default', 'print-access-token', '--quiet']);
   checks.push({
     name: 'Application Default Credentials',
     ok: adc.ok && adc.output.length > 0,
     detail: adc.ok ? 'valid access token' : adc.output,
-    remediation: `gcloud auth application-default login --project=${EXPECTED_PROJECT}`,
+    remediation: `gcloud auth application-default login --project=${expectedProject}`,
   });
 
-  let ok = true;
-  for (const check of checks) {
-    const marker = check.ok ? 'OK' : 'FAIL';
-    console.log(`${marker.padEnd(4)} ${check.name}: ${check.detail}`);
-    if (!check.ok) {
-      ok = false;
-      if (check.remediation) console.log(`     fix: ${check.remediation}`);
-    }
-  }
-  return ok;
+  const normalized = checks.map((check): AuthRuntimePreflightCheck => ({
+    name: check.name,
+    status: check.ok ? 'pass' : 'blocked',
+    detail: check.detail,
+    remediation: check.remediation,
+  }));
+  const missingEnvVars = checks
+    .filter((check) => !check.ok && check.envVar)
+    .map((check) => check.envVar!);
+  return {
+    status: normalized.every((check) => check.status === 'pass') ? 'pass' : 'blocked',
+    checks: normalized,
+    missingEnvVars,
+  };
 }
 
 function stepsForLane(selected: Lane): Step[] {
@@ -217,4 +257,6 @@ function oneLine(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
-void main();
+if (process.argv[1]?.replace(/\\/g, '/').endsWith('/run-authenticated-runtime-lane.ts')) {
+  void main();
+}

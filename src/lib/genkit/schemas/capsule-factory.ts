@@ -2,6 +2,7 @@ import { z } from 'genkit';
 
 export const CapsuleFactoryCoreKindSchema = z.enum(['user', 'situation', 'source', 'tool', 'output']);
 export const CapsuleFactoryLaneIdSchema = z.enum(['dialectica', 'kairos', 'agon']);
+export const CapsuleFactoryReviewStateSchema = z.enum(['draft', 'reviewed', 'applied', 'rejected']);
 
 export const CapsuleFactorySourceSnippetSchema = z.object({
   id: z.string().min(1).max(160),
@@ -104,6 +105,28 @@ export const CapsuleSynthesisOutputSchema = z.object({
   laneImprovements: z.array(CapsuleFactoryLaneImprovementSchema).max(8).default([]),
 });
 
+export const CapsuleFactoryReviewDiffSchema = z.object({
+  diffId: z.string().min(1).max(160),
+  capsuleId: z.string().min(1).max(160),
+  reviewState: CapsuleFactoryReviewStateSchema,
+  proposedCapsule: ContextCapsuleDraftSchema,
+  proposedCores: z.array(CapsuleFactoryDraftCoreSchema).max(12).default([]),
+  sourceGaps: z.array(z.string().min(1).max(240)).max(12).default([]),
+  openQuestions: z.array(z.string().min(1).max(240)).max(12).default([]),
+  laneImprovements: z.array(CapsuleFactoryLaneImprovementSchema).max(8).default([]),
+  applyActions: z.array(z.object({
+    label: z.string().min(1).max(120),
+    target: z.enum(['user_core', 'situation_core', 'source_core', 'tool_core', 'output_core', 'context_capsule']),
+    requiresConfirmation: z.literal(true),
+  })).max(10).default([]),
+  provenanceIds: z.array(z.string().min(1).max(160)).max(30).default([]),
+  confirmation: z.object({
+    required: z.literal(true),
+    confirmedAt: z.string().datetime().nullable().default(null),
+    confirmedBy: z.string().max(160).nullable().default(null),
+  }),
+});
+
 export const CapsuleWritingProfileInputSchema = z.object({
   objective: z.string().min(1).max(2000),
   audience: z.string().max(240).optional(),
@@ -123,6 +146,8 @@ export type CapsuleIntakeInput = z.infer<typeof CapsuleIntakeInputSchema>;
 export type CapsuleIntakeOutput = z.infer<typeof CapsuleIntakeOutputSchema>;
 export type CapsuleFactoryLaneId = z.infer<typeof CapsuleFactoryLaneIdSchema>;
 export type CapsuleFactoryLaneImprovement = z.infer<typeof CapsuleFactoryLaneImprovementSchema>;
+export type CapsuleFactoryReviewState = z.infer<typeof CapsuleFactoryReviewStateSchema>;
+export type CapsuleFactoryReviewDiff = z.infer<typeof CapsuleFactoryReviewDiffSchema>;
 export type CapsuleResearchPlanInput = z.infer<typeof CapsuleResearchPlanInputSchema>;
 export type CapsuleResearchPlanOutput = z.infer<typeof CapsuleResearchPlanOutputSchema>;
 export type CapsuleSynthesisInput = z.infer<typeof CapsuleSynthesisInputSchema>;
