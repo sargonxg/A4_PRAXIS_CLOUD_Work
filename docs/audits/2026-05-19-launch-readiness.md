@@ -1,9 +1,9 @@
 # PRAXIS Launch Readiness Audit
 
-Generated: 2026-05-19T01:06:24.475Z
+Generated: 2026-05-19T01:20:03.037Z
 Status: **PASS**
 
-Summary: 40 PASS, 1 WARN, 0 FAIL.
+Summary: 41 PASS, 0 WARN, 0 FAIL.
 
 ## Failures
 
@@ -11,7 +11,7 @@ Summary: 40 PASS, 1 WARN, 0 FAIL.
 
 ## Warnings
 
-- live header probe skipped; set PRAXIS_LAUNCH_LIVE_HEADERS=1 to enable
+- None.
 
 ## Checks
 
@@ -57,4 +57,4 @@ Summary: 40 PASS, 1 WARN, 0 FAIL.
 | PASS | compliance-doc-GDPR | contract satisfied |
 | PASS | compliance-doc-Sub-processor inventory | contract satisfied |
 | PASS | compliance-doc-Data Processing Agreement | contract satisfied |
-| WARN | live-header-probe | live header probe skipped; set PRAXIS_LAUNCH_LIVE_HEADERS=1 to enable |
+| PASS | live-header-probe | 8 live routes probed |
