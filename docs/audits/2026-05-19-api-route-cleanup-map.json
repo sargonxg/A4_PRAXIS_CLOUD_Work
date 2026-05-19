@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T17:39:55.224Z",
+  "generatedAt": "2026-05-19T20:14:08.977Z",
   "totalRoutes": 208,
   "routeMap": [
     {
@@ -7431,18 +7431,6 @@
   ],
   "obsoleteCandidates": [
     {
-      "file": "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
-      "kind": "doc",
-      "references": 0,
-      "markers": [
-        "deprecated",
-        "obsolete-or-retired",
-        "compatibility"
-      ],
-      "disposition": "archive candidate",
-      "deletionGate": "Confirm no imports, no graph references, no active route use, then archive before deletion."
-    },
-    {
       "file": "scripts/audit-route-cleanup-map.ts",
       "kind": "script",
       "references": 3,
@@ -7452,6 +7440,18 @@
         "obsolete-or-retired",
         "compatibility",
         "archive-state-field"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
+      "file": "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
+      "kind": "doc",
+      "references": 2,
+      "markers": [
+        "deprecated",
+        "obsolete-or-retired",
+        "compatibility"
       ],
       "disposition": "keep",
       "deletionGate": "Keep until compatibility/runtime use is removed."

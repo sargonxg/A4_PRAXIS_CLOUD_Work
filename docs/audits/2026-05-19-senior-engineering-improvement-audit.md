@@ -66,8 +66,8 @@ Follow-up:
 ### P1-2 Route/API Surface Remains Large
 
 Severity: P1  
-Evidence: `Get-ChildItem src\app\api -Recurse -Filter route.ts` reports 207
-API routes. `node scripts/audit-ai-routes.mjs` reports 60 AI routes.
+Evidence: generated route inventory artifacts now report 208 API routes.
+`node scripts/audit-ai-routes.mjs` reports 60 AI routes.
 
 Evidence table:
 
@@ -85,9 +85,9 @@ Action taken:
 
 Follow-up:
 
-- Add a generated route inventory artifact before the next deletion pass, with
-  each route classified as canonical, compatibility, admin/internal, staged, or
-  deletion candidate.
+- Use the generated route inventory and cleanup map before the next deletion
+  pass. Each route is classified as canonical, compatibility, admin/internal,
+  staged, or deletion candidate.
 
 ## P2 Findings
 
@@ -148,7 +148,7 @@ Follow-up:
 | Removed legacy app page files | Already deleted | `npm run audit:route-consolidation` verifies 25 missing route files | Keep guarded |
 | Hidden archive `assistant` alias | Keep for compatibility | Registry id remains referenced by tool docs, taxonomy, and compatibility routes | Rename only |
 | Hidden archive `commitments` alias | Keep for compatibility | Legacy id appears in taxonomy, evidence envelopes, and route compatibility | Rename only |
-| Staged/compatibility API routes | Migrate later | 60 routes outside clear AI/admin/canonical buckets | Build route inventory first |
+| Staged/compatibility API routes | Migrate later | 60 AI routes plus non-AI compatibility/staged routes require case-by-case evidence | Use route inventory and cleanup map first |
 
 ## Product Simplification Notes
 
@@ -215,8 +215,8 @@ Generated audit artifacts:
 
 ## Follow-Up Queue
 
-1. Add a generated API route inventory report with owner/status/category before
-   attempting the next deletion pass.
+1. Use the generated API route inventory and cleanup map before attempting the
+   next deletion pass.
 2. Run a credentialed production browser flow that proves upload -> capsule
    repository -> Ask source cards -> memo handoff -> queued agent workspace.
 3. Run full `doctor:praxis` from a shell with Cloud SQL, Cloud Tasks, worker

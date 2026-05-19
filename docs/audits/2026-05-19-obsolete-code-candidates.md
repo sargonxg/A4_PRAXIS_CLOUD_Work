@@ -1,13 +1,13 @@
 # Obsolete Code Candidate Audit
 
-Generated: 2026-05-19T17:39:55.232Z
+Generated: 2026-05-19T20:14:08.987Z
 
 No file in this ledger is approved for immediate deletion. Candidates require the listed gate first.
 
 | File | Kind | Disposition | References | Markers | Gate |
 | --- | --- | --- | ---: | --- | --- |
-| `docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md` | doc | archive candidate | 0 | deprecated, obsolete-or-retired, compatibility | Confirm no imports, no graph references, no active route use, then archive before deletion. |
 | `scripts/audit-route-cleanup-map.ts` | script | keep | 3 | deprecated, legacy, obsolete-or-retired, compatibility, archive-state-field | Keep until compatibility/runtime use is removed. |
+| `docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md` | doc | keep | 2 | deprecated, obsolete-or-retired, compatibility | Keep until compatibility/runtime use is removed. |
 | `docs/superpowers/specs/2026-05-16-cleanup-and-infra-design.md` | doc | keep | 3 | deprecated, legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `scripts/audit-api-route-inventory.ts` | script | keep | 4 | deprecated, legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `docs/GCP_OPERATIONS.md` | doc | keep | 5 | legacy, obsolete-or-retired, compatibility | Keep until compatibility/runtime use is removed. |

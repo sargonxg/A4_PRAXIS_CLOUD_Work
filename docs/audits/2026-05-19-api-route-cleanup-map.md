@@ -1,6 +1,6 @@
 # API Route Cleanup Map
 
-Generated: 2026-05-19T17:39:55.224Z
+Generated: 2026-05-19T20:14:08.977Z
 Total routes: 208
 
 | Disposition | Count |

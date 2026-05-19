@@ -19,8 +19,9 @@ Tasklet cleanup. New work starts from the active ledger above.
 0. Senior engineering cleanup is now in progress: launch-readiness live header
    probes pass, canonical-name warnings are fixed and regression-tested, and
    `docs/audits/2026-05-19-senior-engineering-improvement-audit.md` records the
-   current route/API/runtime proof posture. Next hardening should generate a
-   route inventory artifact for the 207 API routes before any deletion pass.
+   current route/API/runtime proof posture. The route inventory and cleanup
+   map artifacts now cover 208 API routes; next hardening should use those
+   artifacts before any deletion pass.
 0. Ask PRAXIS agentic conversation runtime is now implemented: each turn
    records triage, ContextCapsule, tool-router, approval-gate, and supervisor
    receipts; deep/current/multi-source prompts auto-queue a capsule-bound

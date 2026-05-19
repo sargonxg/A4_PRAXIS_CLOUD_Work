@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- chore(cleanup): complete the API route inventory checkpoint.
+  Regenerates the May 19 API route inventory and cleanup map for 208 routes,
+  records 0 deletion candidates, preserves the agentic runtime lanes, and
+  updates the cleanup/readiness docs so future deletion work starts from the
+  generated artifacts.
+
 - chore(cleanup): harden canonical tool naming and launch audit evidence.
   Adds a senior-engineering audit ledger for the May 19 cleanup round,
   regenerates launch readiness with live header probes enabled, distinguishes

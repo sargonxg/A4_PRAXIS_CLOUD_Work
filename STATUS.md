@@ -15,6 +15,9 @@ Current cleanup checkpoint:
   collisions in `src/__tests__/consolidated-tools.test.ts`.
 - The senior-engineering audit ledger for this pass is
   `docs/audits/2026-05-19-senior-engineering-improvement-audit.md`.
+- API route inventory and cleanup-map artifacts now cover 208 routes, classify
+  compatibility/staged/admin/runtime posture, preserve agentic runtime lanes,
+  and keep deletion candidates at 0 pending stronger evidence.
 - Runtime proof remains structurally guarded, but full live worker proof still
   requires a credentialed shell with Cloud SQL, Cloud Tasks worker URL/auth, and
   Genkit/Vertex runtime configuration.

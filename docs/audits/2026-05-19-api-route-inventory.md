@@ -1,6 +1,6 @@
 # API Route Inventory
 
-Generated: 2026-05-19T14:08:13.202Z
+Generated: 2026-05-19T20:14:04.986Z
 Total routes: 208
 
 | Category | Count |
