@@ -1,7 +1,7 @@
 {
-  "runId": "doctor-20260519T210425255Z",
-  "timestamp": "2026-05-19T21:04:25.255Z",
-  "commit": "ae680786f412b77f01d679ebb1211b812fd31e2e",
+  "runId": "doctor-20260519T213524880Z",
+  "timestamp": "2026-05-19T21:35:24.880Z",
+  "commit": "435510d979554cd86d4868d953e0d8f2b8beb281",
   "branch": "main",
   "baseUrl": "https://praxis.tacitus.me",
   "project": "praxisbytacitus",
@@ -23,7 +23,7 @@
       "status": "PASS",
       "summary": "Commit SHA resolved",
       "evidence": [
-        "ae680786f412b77f01d679ebb1211b812fd31e2e\n"
+        "435510d979554cd86d4868d953e0d8f2b8beb281\n"
       ]
     },
     {
@@ -56,15 +56,10 @@
     {
       "id": "auth-doctor",
       "lane": "local-cloud-auth",
-      "status": "BLOCKED",
-      "summary": "npm run auth:doctor exited 1",
+      "status": "PASS",
+      "summary": "npm run auth:doctor passed",
       "evidence": [
-        "\n> tacitus-app@6.4.1 auth:doctor\n> tsx scripts/auth-doctor.ts\n\nOK   gcloud CLI: installed\nOK   gcloud active account: giulio@tacitus.me\nOK   gcloud project config: praxisbytacitus\nOK   gcloud project access: praxisbytacitus\nFAIL Application Default Credentials: ERROR: (gcloud.auth.application-default.print-access-token) There was a problem refreshing your current auth tokens: Reauthentication failed. cannot prompt during non-interactive execution.\nOK   Firebase CLI login: Logged in as giulio@tacitus.me\nOK   Firebase project binding: praxisbytacitus\n\nRepair commands that require a human browser login:\n  gcloud auth login --update-adc\n  gcloud auth application-default login --project=praxisbytacitus\n  gcloud auth application-default set-quota-project praxisbytacitus\n  firebase login --reauth\n\nThen run:\n  npm run auth:doctor -- --fix\n"
-      ],
-      "remediation": [
-        "gcloud auth application-default login --project=praxisbytacitus",
-        "firebase login --reauth",
-        "npm run auth:doctor -- --fix"
+        "\n> tacitus-app@6.4.1 auth:doctor\n> tsx scripts/auth-doctor.ts\n\nOK   gcloud CLI: installed\nOK   gcloud active account: giulio@tacitus.me\nOK   gcloud project config: praxisbytacitus\nOK   gcloud project access: praxisbytacitus\nOK   Application Default Credentials: valid\nOK   Firebase CLI login: Logged in as giulio@tacitus.me\nOK   Firebase project binding: praxisbytacitus\n"
       ]
     },
     {
@@ -138,7 +133,7 @@
       "status": "PASS",
       "summary": "gcloud firestore databases describe --database=\"(default)\" --project=praxisbytacitus passed",
       "evidence": [
-        "appEngineIntegrationMode: DISABLED\r\nconcurrencyMode: PESSIMISTIC\r\ncreateTime: '2026-03-22T15:19:16.119019Z'\r\ndatabaseEdition: STANDARD\r\ndeleteProtectionState: DELETE_PROTECTION_DISABLED\r\nearliestVersionTime: '2026-05-19T20:04:57.663460Z'\r\netag: IMnY0cCgxpQDMPSV+ZPz+pMD\r\nfreeTier: true\r\nkeyPrefix: s\r\nlocationId: nam5\r\nname: projects/praxisbytacitus/databases/(default)\r\npointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED\r\nrealtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED\r\ntype: FIRESTORE_NATIVE\r\nuid: fb7e3f38-b5f6-402d-9f42-97881107da45\r\nupdateTime: '2026-03-22T15:19:16.119019Z'\r\nversionRetentionPeriod: 3600s\r\n"
+        "appEngineIntegrationMode: DISABLED\r\nconcurrencyMode: PESSIMISTIC\r\ncreateTime: '2026-03-22T15:19:16.119019Z'\r\ndatabaseEdition: STANDARD\r\ndeleteProtectionState: DELETE_PROTECTION_DISABLED\r\nearliestVersionTime: '2026-05-19T20:35:58.463836Z'\r\netag: INH797enxpQDMPSV+ZPz+pMD\r\nfreeTier: true\r\nkeyPrefix: s\r\nlocationId: nam5\r\nname: projects/praxisbytacitus/databases/(default)\r\npointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED\r\nrealtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED\r\ntype: FIRESTORE_NATIVE\r\nuid: fb7e3f38-b5f6-402d-9f42-97881107da45\r\nupdateTime: '2026-03-22T15:19:16.119019Z'\r\nversionRetentionPeriod: 3600s\r\n"
       ]
     },
     {
@@ -225,7 +220,7 @@
       "evidence": [
         {
           "status": "ok",
-          "timestamp": "2026-05-19T21:05:08.493Z",
+          "timestamp": "2026-05-19T21:36:12.075Z",
           "checks": {
             "firestore": "ok",
             "ai_provider": "ok",
@@ -260,14 +255,14 @@
         {
           "status": "ok",
           "summary": "Systems ready",
-          "checkedAt": "2026-05-19T21:05:08.674Z",
+          "checkedAt": "2026-05-19T21:36:12.248Z",
           "debugHref": "/app/settings?tab=system",
           "checks": [
             {
               "id": "frontend",
               "label": "Frontend runtime",
               "status": "ok",
-              "latencyMs": 65
+              "latencyMs": 53
             },
             {
               "id": "firestore",
@@ -288,7 +283,7 @@
               "id": "agent_queue",
               "label": "Agent task queue",
               "status": "ok",
-              "latencyMs": 65
+              "latencyMs": 53
             },
             {
               "id": "agent_worker",
@@ -308,30 +303,26 @@
       "id": "canary-write-gate",
       "lane": "authenticated-full-canary",
       "status": "WARN",
-      "summary": "Canary writes disabled: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD",
+      "summary": "Canary writes enabled for praxis-canary-20260519211729@tacitus.test",
       "evidence": [
         {
-          "tag": "praxis-doctor-canary-20260519T210425255Z",
-          "email": null
+          "tag": "praxis-doctor-canary-20260519T213524880Z",
+          "email": "praxis-canary-20260519211729@tacitus.test"
         }
-      ],
-      "remediation": [
-        "Set PRAXIS_DOCTOR_WRITE_CANARY=1",
-        "Set PRAXIS_CANARY_EMAIL and PRAXIS_CANARY_PASSWORD for the isolated canary account"
       ]
     }
   ],
   "artifacts": [
     {
-      "tag": "praxis-doctor-canary-20260519T210425255Z",
+      "tag": "praxis-doctor-canary-20260519T213524880Z",
       "kind": "doctor-canary-workflow",
-      "id": "praxis-doctor-canary-20260519T210425255Z",
-      "cleanupStatus": "blocked",
-      "detail": "Canary write gate is disabled or missing credentials: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD"
+      "id": "praxis-doctor-canary-20260519T213524880Z",
+      "cleanupStatus": "planned",
+      "detail": "Canary write gate is enabled. Generated artifacts must be tagged and cleaned."
     }
   ],
   "cleanup": {
-    "status": "blocked",
+    "status": "planned",
     "leftovers": []
   }
 }
