@@ -91,8 +91,10 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="runtime-health-semaphore"');
   });
 
-  it('keeps one category-native context chain and exposes repository-backed type and domain filters', () => {
+  it('keeps one category-native context chain and exposes one canonical taxonomy filter surface', () => {
     expect((source.match(/data-testid="capsule-context-bar"/g) ?? []).length).toBe(1);
+    expect((source.match(/data-testid="capsule-taxonomy-filter-bar"/g) ?? []).length).toBe(1);
+    expect(source).toContain('function CapsuleTaxonomyFilterBar');
     expect(source).toContain('data-testid="active-capsule-strip"');
     expect(source).toContain('data-testid="active-capsule-open-details"');
     expect(source).toContain('data-testid="capsule-context-composer"');
@@ -101,8 +103,6 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('capsuleChainSlots');
     expect(source).toContain('Sources/References');
     expect(source).toContain('capsuleDefaultRole(capsule)');
-    expect(source).toContain('capsuleTypeFilters');
-    expect(source).toContain('capsuleDomainFilters');
     expect(source).toContain('data-testid="capsule-taxonomy-surface"');
     expect(source).toContain('data-testid="capsule-tool-output-lanes"');
     expect(source).toContain('id="capsule-repository-section"');
@@ -114,6 +114,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Artifacts');
     expect(source).toContain('All types');
     expect(source).toContain('Governance');
+    expect(source).toContain('Policy Teams');
+    expect(source).toContain('policyTeamId');
     expect(source).toContain('/app/capsules');
     expect(source).toContain('onAdd={() => applyCapsuleCard(capsule)}');
     expect(source).toContain('Add</button>');
@@ -124,6 +126,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('Add as reference</button>');
     expect(source).not.toContain('data-testid="capsule-context-picker"');
     expect(source).not.toContain('capsulePickerQuery');
+    expect(source).not.toContain('aria-label="Capsule type filters"');
+    expect(source).not.toContain('aria-label="New context capsule presets"');
     expect(source).toContain('placeholder="Search capsule titles"');
   });
 
@@ -149,7 +153,6 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('sourceIds: activeCapsuleStack.filter((capsule) => capsule.role ===');
     expect(source).toContain('userModelId: userCapsule?.id ?? null');
     expect(source).toContain('saveCombinedCapsuleStack');
-    expect(source).toContain('Save as combined capsule');
     expect(source).toContain('Add at least two capsules before saving a retrievable context capsule.');
     expect(source).not.toContain('if (next.length >= 2) await combineCapsuleLiteStack(next);');
     expect(source).not.toContain('void combineCapsuleLiteStack(current.slice(0, 5));');
@@ -164,16 +167,22 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('useDroppable');
     expect(source).toContain('data-testid="capsule-context-dropzone"');
     expect(source).toContain('data-testid="capsule-browser-modal"');
+    expect(source).toContain('filterBar={');
     expect(source).toContain('setCapsuleBrowserOpen(true)');
     expect(source).toContain('handleCapsuleDragEnd');
   });
 
-  it('drives taxonomy buttons from the shared statistics contract', () => {
+  it('drives taxonomy filters from the shared statistics contract', () => {
     expect(source).toContain('buildCapsuleTaxonomyStats');
     expect(source).toContain('userCapsuleTaxonomyStats');
     expect(source).toContain('publicCapsuleTaxonomyStats');
-    expect(source).toContain('onSelect={setCapsuleTypeFilter}');
-    expect(source).toContain('onSelect={setCapsuleDomainFilter}');
+    expect(source).toContain('setCapsuleTypeFilter');
+    expect(source).toContain('setCapsuleDomainFilter');
+    expect(source).toContain('setCapsulePolicyTeamFilter');
+    expect(source).toContain('policyTeamFilter');
+    expect(source).toContain('typeId={capsuleTypeFilter}');
+    expect(source).toContain('domainId={capsuleDomainFilter}');
+    expect(source).toContain('policyTeamId={capsulePolicyTeamFilter}');
     expect(source).toContain("showRepairStates={isRepositoryPage}");
     expect(source).toContain('Source refs');
     expect(source).toContain('Document refs');
@@ -222,6 +231,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('starterDefinitionToCapsuleSummary');
     expect(source).toContain('const showingStarterFallback = isAuthenticated && !filteredUserCapsules.length');
     expect(source).toContain("CapsuleEmptyState label=\"Loading capsules...\"");
+    expect(source).toContain('compact={isCapsuleRepositoryPage || !isRepositoryPage}');
+    expect(source).toContain('title={`Drag ${capsule.label} into context chain`}');
+    expect(source).not.toContain('Add category');
     expect(source).not.toContain("CapsuleEmptyState label=\"No capsules found.\"");
   });
 
