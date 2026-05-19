@@ -30,7 +30,7 @@ test.describe('golden path — free tier smoke', () => {
     await page.goto(`${BASE}/login`);
     await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
     await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
-    await page.click('button:has-text("Sign in")');
+    await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
 
     // ── 2. Onboarding (3 steps) ───────────────────────────────────────────
     // If the user already has a profile we land on /app directly; skip the wizard.

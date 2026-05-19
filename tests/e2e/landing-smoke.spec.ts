@@ -57,6 +57,29 @@ test('landing page renders without console errors and every nav anchor resolves'
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });
 
+test('landing capsule type filters strictly constrain visible capsule cards', async ({ page, baseURL }) => {
+  await page.goto(baseURL ?? '/');
+  await expect(page.getByTestId('capsule-taxonomy-filter-bar')).toBeVisible();
+
+  await page.getByTestId('capsule-taxonomy-filter-bar').getByRole('button', { name: /^Situation\b/i }).click();
+  await expect(page.getByTestId('tasklet-capsule-cards').getByTestId(/capsule-card-/).first()).toBeVisible();
+  const situationTypes = await page
+    .getByTestId('tasklet-capsule-cards')
+    .getByTestId(/capsule-card-/)
+    .evaluateAll((cards) => cards.map((card) => card.getAttribute('data-capsule-type')));
+  expect(situationTypes.length).toBeGreaterThan(0);
+  expect(situationTypes.every((type) => type === 'situation')).toBe(true);
+
+  await page.getByTestId('capsule-taxonomy-filter-bar').getByRole('button', { name: /^Thinking devices\b/i }).click();
+  await expect(page.getByTestId('tasklet-capsule-cards').getByTestId(/capsule-card-/).first()).toBeVisible();
+  const toolTypes = await page
+    .getByTestId('tasklet-capsule-cards')
+    .getByTestId(/capsule-card-/)
+    .evaluateAll((cards) => cards.map((card) => card.getAttribute('data-capsule-type')));
+  expect(toolTypes.length).toBeGreaterThan(0);
+  expect(toolTypes.every((type) => type === 'tool')).toBe(true);
+});
+
 function cssEscape(id: string): string {
   return id.replace(/([\.:#\[\]\(\)\s])/g, '\\$1');
 }

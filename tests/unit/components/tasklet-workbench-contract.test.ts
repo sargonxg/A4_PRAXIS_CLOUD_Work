@@ -318,13 +318,48 @@ describe('Tasklet PRAXIS workbench contract', () => {
   it('uses one capsule-card contract for public starters and authenticated fallback cards', () => {
     expect(source).toContain('starterCapsuleSummaries');
     expect(source).toContain('visibleCapsuleCards');
+    expect(source).toContain('filteredFeaturedCapsuleCards');
+    expect(source).toContain('buildVisibleCapsuleCards');
     expect(source).toContain('starterDefinitionToCapsuleSummary');
     expect(source).toContain('const showingStarterFallback = isAuthenticated && !filteredUserCapsules.length');
+    expect(source).toContain('selectedCapsuleTypeFilter: capsuleTypeFilter');
+    expect(source).toContain('strictCapsuleTypeFilter(capsule, typeFilter)');
+    expect(source).toContain("capsuleCategory(capsule) === 'situation'");
+    expect(source).toContain("capsuleCategory(capsule) === 'tool'");
+    expect(source).toContain("capsuleCategory(capsule) === 'output'");
+    expect(source).toContain("capsuleCategory(capsule) === 'user'");
     expect(source).toContain("CapsuleEmptyState label=\"Loading capsules...\"");
     expect(source).toContain('compact={isCapsuleRepositoryPage || !isRepositoryPage}');
     expect(source).toContain('title={`Drag ${capsule.label} into context chain`}');
     expect(source).not.toContain('Add category');
     expect(source).not.toContain("CapsuleEmptyState label=\"No capsules found.\"");
+  });
+
+  it('renders a filter-aware Featured Expert Picks shelf and build-your-own CTA', () => {
+    expect(source).toContain('FEATURED_EXPERT_PICK_CAPSULE_IDS');
+    for (const expectedId of [
+      'starter-situation-ai-governance-procurement',
+      'starter-situation-humanitarian-rights-access',
+      'starter-situation-mediation-track',
+      'starter-tool-sourceability-matrix',
+      'starter-tool-actor-leverage-veto-map',
+      'starter-output-principals-decision-memo',
+    ]) {
+      expect(source).toContain(expectedId);
+    }
+
+    expect(source).toContain('Featured Expert Picks');
+    expect(source).toContain('data-testid="featured-expert-picks-shelf"');
+    expect(source).toContain('data-testid={`featured-expert-pick-${capsule.capsuleId}`}');
+    expect(source).toContain('data-testid="build-your-own-knowledge-cta"');
+    expect(source).toContain('Build your own inheritable knowledge for your team or agents');
+    expect(source).toContain("sendPublicToLogin('Build your own inheritable knowledge for your team or agents.')");
+    expect(source).toContain('setBuilderOpen(true)');
+    expect(source).toContain('Expert pick');
+    expect(source).toContain('Source posture');
+    expect(source).toContain('Reasoning style');
+    expect(source).toContain('Best next action');
+    expect(source).toContain('readiness signals');
   });
 
   it('keeps repository compatibility as a Capsule Factory lane instead of a separate page model', () => {

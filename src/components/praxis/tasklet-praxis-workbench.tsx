@@ -38,6 +38,7 @@ import {
   Library,
   Loader2,
   Mail,
+  Map as MapIcon,
   Mic,
   Monitor,
   Paperclip,
@@ -448,6 +449,14 @@ const factoryBuilderLanes = [
 
 const STARTER_CAPSULE_UPDATED_AT = '2026-05-18T00:00:00.000Z';
 const starterCapsuleSummaries = CAPSULE_STARTER_DEFINITIONS.map(starterDefinitionToCapsuleSummary);
+const FEATURED_EXPERT_PICK_CAPSULE_IDS = [
+  'starter-situation-ai-governance-procurement',
+  'starter-situation-humanitarian-rights-access',
+  'starter-situation-mediation-track',
+  'starter-tool-sourceability-matrix',
+  'starter-tool-actor-leverage-veto-map',
+  'starter-output-principals-decision-memo',
+] as const;
 const STARTER_USER_CAPSULE_CHIP: ActiveCapsuleChip = {
   id: 'starter-user-generic-analyst',
   label: 'Generic analyst',
@@ -631,8 +640,15 @@ export function TaskletPraxisWorkbench({
   const publicCapsuleTaxonomyStats = buildCapsuleTaxonomyStats(starterCapsuleSummaries);
   const filteredUserCapsules = filterUserCapsules(userCapsules, capsuleSearch, capsuleTypeFilter, capsuleDomainFilter, capsulePolicyTeamFilter);
   const filteredStarterCapsules = filterStarterCapsules(capsuleSearch, capsuleTypeFilter, capsuleDomainFilter, capsulePolicyTeamFilter);
-  const showingStarterFallback = isAuthenticated && !filteredUserCapsules.length;
-  const visibleCapsuleCards = isAuthenticated && !showingStarterFallback ? filteredUserCapsules : filteredStarterCapsules;
+  const filteredFeaturedCapsuleCards = filterStarterCapsules(capsuleSearch, capsuleTypeFilter, capsuleDomainFilter, capsulePolicyTeamFilter)
+    .filter((capsule) => FEATURED_EXPERT_PICK_CAPSULE_IDS.some((id) => id === capsule.capsuleId))
+    .sort((a, b) => FEATURED_EXPERT_PICK_CAPSULE_IDS.indexOf(a.capsuleId as (typeof FEATURED_EXPERT_PICK_CAPSULE_IDS)[number]) - FEATURED_EXPERT_PICK_CAPSULE_IDS.indexOf(b.capsuleId as (typeof FEATURED_EXPERT_PICK_CAPSULE_IDS)[number]));
+  const { showingStarterFallback, visibleCapsuleCards } = buildVisibleCapsuleCards({
+    isAuthenticated,
+    filteredUserCapsules,
+    filteredStarterCapsules,
+    selectedCapsuleTypeFilter: capsuleTypeFilter,
+  });
   const activeCapsuleTaxonomyStats = isAuthenticated && !showingStarterFallback
     ? userCapsuleTaxonomyStats
     : publicCapsuleTaxonomyStats;
@@ -1614,6 +1630,14 @@ export function TaskletPraxisWorkbench({
     void sendToPraxis(selectedAgent, nextPrompt);
   }
 
+  function openBuildYourOwnKnowledge() {
+    if (!isAuthenticated) {
+      sendPublicToLogin('Build your own inheritable knowledge for your team or agents.');
+      return;
+    }
+    setBuilderOpen(true);
+  }
+
   function reviewFactoryLane(lane: (typeof factoryBuilderLanes)[number]) {
     const capsuleFactoryAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === 'capsule-factory') ?? selectedAgent;
     const target = selectedCapsule ?? userCapsules[0] ?? starterCapsuleSummaries[0];
@@ -2501,7 +2525,22 @@ export function TaskletPraxisWorkbench({
                         onReject={rejectFactoryReviewDiff}
                       />
                     ) : null}
-                  {!isRepositoryLane ? <div className={cn('grid gap-3 md:grid-cols-2', isCapsuleRepositoryPage && 'mt-4 lg:grid-cols-3', isRepositoryPage && 'md:grid-cols-1')} data-testid="tasklet-capsule-cards">
+                  {!isRepositoryLane ? (
+                    <FeaturedExpertPicksShelf
+                      capsules={filteredFeaturedCapsuleCards}
+                      isAuthenticated={isAuthenticated}
+                      onBuildOwn={openBuildYourOwnKnowledge}
+                      onSelect={selectCapsuleCard}
+                      onAdd={applyCapsuleCard}
+                      onInspect={(capsule) => {
+                        selectCapsuleCard(capsule);
+                        setInspectorOpen(true);
+                      }}
+                      onImprove={improveCapsuleCard}
+                      onArchive={(capsule) => void archiveCapsuleCard(capsule)}
+                    />
+                  ) : null}
+                  {!isRepositoryLane ? <div className={cn('mt-4 grid gap-3 md:grid-cols-2', isCapsuleRepositoryPage && 'lg:grid-cols-3', isRepositoryPage && 'md:grid-cols-1')} data-testid="tasklet-capsule-cards">
                     {capsulesLoading && !filteredUserCapsules.length ? (
                       <CapsuleEmptyState label="Loading capsules..." />
                     ) : null}
@@ -2602,7 +2641,21 @@ export function TaskletPraxisWorkbench({
                   )}
                 </div>
               ) : (
-                <div className="mt-6 grid gap-3 md:grid-cols-2 lg:grid-cols-3" data-testid="tasklet-capsule-cards">
+                <>
+                <FeaturedExpertPicksShelf
+                  capsules={filteredFeaturedCapsuleCards}
+                  isAuthenticated={isAuthenticated}
+                  onBuildOwn={openBuildYourOwnKnowledge}
+                  onSelect={selectCapsuleCard}
+                  onAdd={applyCapsuleCard}
+                  onInspect={(capsule) => {
+                    selectCapsuleCard(capsule);
+                    setInspectorOpen(true);
+                  }}
+                  onImprove={improveCapsuleCard}
+                  onArchive={(capsule) => void archiveCapsuleCard(capsule)}
+                />
+                <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3" data-testid="tasklet-capsule-cards">
                   {visibleCapsuleCards.map((capsule) => (
                     <CapsuleCard
                       key={capsule.capsuleId}
@@ -2622,6 +2675,7 @@ export function TaskletPraxisWorkbench({
                   ))}
                   {!visibleCapsuleCards.length ? <CapsuleEmptyState label="No starter capsules match that search." /> : null}
                 </div>
+                </>
               )}
             </section>
           </div>
@@ -3097,6 +3151,33 @@ function capsuleCategoryMeta(capsule: PraxisCapsuleSummary) {
   };
 }
 
+function capsuleCategoryIcon(category: CapsuleStarterCategory | 'custom'): LucideIcon {
+  if (category === 'situation') return MapIcon;
+  if (category === 'tool') return BrainCircuit;
+  if (category === 'output') return Clipboard;
+  if (category === 'user') return ShieldCheck;
+  return FileText;
+}
+
+function capsuleSourcePosture(capsule: PraxisCapsuleSummary): string {
+  const counts = capsuleCounts(capsule);
+  if (counts.sources && counts.documents) return `${counts.sources} source refs and ${counts.documents} document refs`;
+  if (counts.sources) return `${counts.sources} source refs`;
+  if (counts.documents) return `${counts.documents} document refs`;
+  return capsule.trust?.label ?? 'starter source posture, review before export';
+}
+
+function capsuleReasoningStyle(capsule: PraxisCapsuleSummary): string {
+  const category = capsuleCategory(capsule);
+  const starter = starterDefinitionForCapsule(capsule);
+  if (starter?.recommendedToolIds.length) return starter.recommendedToolIds.slice(0, 3).join(', ');
+  if (category === 'situation') return 'context mapping, actor posture, source gaps';
+  if (category === 'tool') return 'thinking device, sourceability, review gates';
+  if (category === 'output') return 'artifact structure, caveats, handover';
+  if (category === 'user') return 'persona, mandate, tone, red lines';
+  return 'reference context with category review';
+}
+
 function softColor(hex: string, alpha = 0.08): string {
   const clean = hex.replace('#', '');
   const value = clean.length === 3
@@ -3195,7 +3276,7 @@ function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, typ
       const isArchived = Boolean(capsule.archivedAt);
       if (typeFilter === 'archived') {
         if (!isArchived) return false;
-      } else if (isArchived || !capsuleMatchesType(capsule, typeFilter)) {
+      } else if (isArchived || !strictCapsuleTypeFilter(capsule, typeFilter)) {
         return false;
       }
       if (!capsuleMatchesDomain(capsule, domainFilter)) return false;
@@ -3229,10 +3310,39 @@ function filterStarterCapsules(query: string, typeFilter: string, domainFilter: 
   return filterUserCapsules(starterCapsuleSummaries, query, typeFilter, domainFilter, policyTeamFilter);
 }
 
+function buildVisibleCapsuleCards({
+  isAuthenticated,
+  filteredUserCapsules,
+  filteredStarterCapsules,
+  selectedCapsuleTypeFilter,
+}: {
+  isAuthenticated: boolean;
+  filteredUserCapsules: PraxisCapsuleSummary[];
+  filteredStarterCapsules: PraxisCapsuleSummary[];
+  selectedCapsuleTypeFilter: string;
+}) {
+  void selectedCapsuleTypeFilter;
+  const showingStarterFallback = isAuthenticated && !filteredUserCapsules.length;
+  return {
+    showingStarterFallback,
+    visibleCapsuleCards: isAuthenticated && !showingStarterFallback ? filteredUserCapsules : filteredStarterCapsules,
+  };
+}
+
 function capsuleMatchesType(capsule: PraxisCapsuleSummary, typeFilter: string): boolean {
   if (typeFilter === 'all') return true;
   const taxonomy = resolveCapsuleTaxonomy(capsule);
   return taxonomy.types.some((type) => type.id === typeFilter);
+}
+
+function strictCapsuleTypeFilter(capsule: PraxisCapsuleSummary, typeFilter: string): boolean {
+  if (typeFilter === 'all') return true;
+  if (typeFilter === 'archived') return Boolean(capsule.archivedAt);
+  if (typeFilter === 'situation') return capsuleCategory(capsule) === 'situation';
+  if (typeFilter === 'tool') return capsuleCategory(capsule) === 'tool';
+  if (typeFilter === 'output') return capsuleCategory(capsule) === 'output';
+  if (typeFilter === 'user') return capsuleCategory(capsule) === 'user';
+  return capsuleMatchesType(capsule, typeFilter);
 }
 
 function publicCapsuleMatchesType(capsule: (typeof COCKPIT_CAPSULE_LIBRARY)[number], typeFilter: string): boolean {
@@ -3818,11 +3928,88 @@ function FactoryDiffBucket({ label, values }: { label: string; values: string[] 
   );
 }
 
+function FeaturedExpertPicksShelf({
+  capsules,
+  isAuthenticated,
+  onBuildOwn,
+  onSelect,
+  onAdd,
+  onInspect,
+  onImprove,
+  onArchive,
+}: {
+  capsules: PraxisCapsuleSummary[];
+  isAuthenticated: boolean;
+  onBuildOwn: () => void;
+  onSelect: (capsule: PraxisCapsuleSummary) => void;
+  onAdd: (capsule: PraxisCapsuleSummary) => void;
+  onInspect: (capsule: PraxisCapsuleSummary) => void;
+  onImprove: (capsule: PraxisCapsuleSummary) => void;
+  onArchive: (capsule: PraxisCapsuleSummary) => void;
+}) {
+  return (
+    <section className="mt-6 rounded-xl border border-slate-200 bg-white/80 p-3 shadow-sm shadow-slate-950/[0.03]" data-testid="featured-expert-picks-shelf">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#ca4a25]">Featured Expert Picks</p>
+          <h3 className="mt-1 text-base font-semibold text-slate-950">Handpicked knowledge capsules for serious policy work.</h3>
+        </div>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-500">
+          {capsules.length} visible under current filter
+        </span>
+      </div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {capsules.map((capsule) => (
+          <div key={capsule.capsuleId} data-testid={`featured-expert-pick-${capsule.capsuleId}`}>
+            <CapsuleCard
+              capsule={capsule}
+              active={false}
+              mutable={false}
+              compact
+              expertPick
+              onSelect={() => onSelect(capsule)}
+              onAdd={() => onAdd(capsule)}
+              onInspect={() => onInspect(capsule)}
+              onImprove={() => onImprove(capsule)}
+              onArchive={() => onArchive(capsule)}
+            />
+          </div>
+        ))}
+        <BuildYourOwnKnowledgeCta isAuthenticated={isAuthenticated} onBuildOwn={onBuildOwn} />
+      </div>
+    </section>
+  );
+}
+
+function BuildYourOwnKnowledgeCta({ isAuthenticated, onBuildOwn }: { isAuthenticated: boolean; onBuildOwn: () => void }) {
+  return (
+    <article
+      className="flex min-h-[15rem] flex-col justify-between rounded-lg border border-dashed border-[#ff714d]/40 bg-[#fff8f5] p-4"
+      data-testid="build-your-own-knowledge-cta"
+    >
+      <div>
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-[#ca4a25] shadow-sm">
+          <Plus className="h-4 w-4" />
+        </span>
+        <p className="mt-3 text-sm font-semibold text-slate-950">Build your own inheritable knowledge for your team or agents</p>
+        <p className="mt-2 text-xs leading-5 text-slate-600">
+          Start a private ContextCapsule with your source posture, decision frame, reasoning tools, and output expectations. Nothing is created until you submit the builder.
+        </p>
+      </div>
+      <button type="button" onClick={onBuildOwn} className="mt-4 inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+        <WandSparkles className="h-3.5 w-3.5" />
+        {isAuthenticated ? 'Open Capsule Builder' : 'Sign in to build'}
+      </button>
+    </article>
+  );
+}
+
 function CapsuleCard({
   capsule,
   active,
   mutable = true,
   compact = false,
+  expertPick = false,
   onSelect,
   onAdd,
   onInspect,
@@ -3833,6 +4020,7 @@ function CapsuleCard({
   active: boolean;
   mutable?: boolean;
   compact?: boolean;
+  expertPick?: boolean;
   onSelect: () => void;
   onAdd: () => void;
   onInspect: () => void;
@@ -3851,9 +4039,14 @@ function CapsuleCard({
   const richProfile = meta.starterDefinition?.richProfile;
   const purposeLine = richProfile?.purpose ?? meta.summary;
   const bestNextAction = richProfile?.nextIdeas[0] ?? capsule.health?.warnings?.[0] ?? 'Inspect source gaps before relying on this capsule.';
+  const CategoryIcon = capsuleCategoryIcon(meta.category);
+  const sourcePosture = capsuleSourcePosture(capsule);
+  const reasoningStyle = capsuleReasoningStyle(capsule);
   return (
     <article
       ref={setNodeRef}
+      data-testid={`capsule-card-${capsule.capsuleId}`}
+      data-capsule-type={meta.category}
       className={cn(
         'od-praxis-card overflow-hidden rounded-lg p-0 transition hover:-translate-y-0.5',
         compact ? 'min-h-[9.5rem]' : 'min-h-[11rem]',
@@ -3873,11 +4066,17 @@ function CapsuleCard({
         style={{ background: `linear-gradient(180deg, ${softColor(meta.color, 0.12)}, rgba(255,255,255,0) 46%)` }}
       >
         <span className="flex items-center justify-between gap-3">
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-semibold text-slate-900">{capsule.label}</span>
-            <span className="mt-1 block truncate text-[11px] font-semibold text-slate-500">{typeChip}</span>
+          <span className="flex min-w-0 items-start gap-2">
+            <span className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border', meta.soft)}>
+              <CategoryIcon className="h-4 w-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-slate-900">{capsule.label}</span>
+              <span className="mt-1 block truncate text-[11px] font-semibold text-slate-500">{typeChip}</span>
+            </span>
           </span>
-          <span className="flex shrink-0 items-center gap-1">
+          <span className="flex shrink-0 flex-col items-end gap-1">
+            {expertPick ? <span className="rounded-md bg-slate-950 px-2 py-1 text-[10px] font-semibold text-white">Expert pick</span> : null}
             <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', meta.soft)}>{capsuleRoleLabel(defaultRole)}</span>
           </span>
         </span>
@@ -3892,12 +4091,17 @@ function CapsuleCard({
           <span>{counts.sources} sources</span>
         </span>
         <span className="mt-3 block line-clamp-2 text-xs leading-5 text-slate-600">{purposeLine}</span>
+        <span className="mt-3 grid gap-1.5 text-[11px] leading-5 text-slate-600">
+          <span className="rounded-md bg-white/80 px-2 py-1"><strong className="text-slate-700">Source posture:</strong> {sourcePosture}</span>
+          <span className="rounded-md bg-white/80 px-2 py-1"><strong className="text-slate-700">Reasoning style:</strong> {reasoningStyle}</span>
+        </span>
         <span className="mt-2 block truncate rounded-md bg-white/80 px-2 py-1.5 text-[11px] font-semibold text-slate-700">
-          Next: {bestNextAction}
+          Best next action: {bestNextAction}
+          <span className="sr-only">Next: {bestNextAction}</span>
         </span>
       </button>
       <div className="px-3 pb-3">
-      <div className="grid grid-cols-4 gap-1.5" aria-label={`${capsule.label} readiness`}>
+      <div className="grid grid-cols-4 gap-1.5" aria-label={`${capsule.label} readiness signals`}>
         {[
           { label: 'Docs', active: counts.documents > 0 },
           { label: 'Sources', active: counts.sources > 0 },

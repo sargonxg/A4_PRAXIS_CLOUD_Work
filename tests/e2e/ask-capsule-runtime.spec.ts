@@ -23,7 +23,7 @@ test.describe('Ask PRAXIS capsule runtime smoke', () => {
     await page.goto(`${BASE}/login`);
     await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
     await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
-    await page.click('button:has-text("Sign in")');
+    await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
     await page.waitForURL(/\/app|\/onboarding/, { timeout: 20_000 });
     if (page.url().includes('/onboarding')) {
       test.skip(true, 'Fixture account still needs onboarding before Ask runtime smoke can run.');
@@ -82,7 +82,7 @@ test.describe('Ask PRAXIS capsule runtime smoke', () => {
     await page.goto(`${BASE}/login?redirect=/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
     await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
     await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
-    await page.click('button:has-text("Sign in")');
+    await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
     await page.waitForURL(/\/app|\/onboarding/, { timeout: 20_000 });
     if (page.url().includes('/onboarding')) test.skip(true, 'Fixture account still needs onboarding before conversation smoke can run.');
 
@@ -128,7 +128,7 @@ test.describe('Ask PRAXIS capsule runtime smoke', () => {
     await page.goto(`${BASE}/login?redirect=/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
     await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
     await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
-    await page.click('button:has-text("Sign in")');
+    await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
     await page.waitForURL(/\/app|\/onboarding/, { timeout: 20_000 });
     if (page.url().includes('/onboarding')) test.skip(true, 'Fixture account still needs onboarding before conversation smoke can run.');
 
@@ -242,7 +242,7 @@ test.describe('Ask PRAXIS capsule runtime smoke', () => {
     await page.goto(`${BASE}/login?redirect=/app`);
     await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
     await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
-    await page.click('button:has-text("Sign in")');
+    await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
     await page.waitForURL(/\/app|\/onboarding/, { timeout: 20_000 });
     if (page.url().includes('/onboarding')) test.skip(true, 'Fixture account still needs onboarding before runtime proof can run.');
 

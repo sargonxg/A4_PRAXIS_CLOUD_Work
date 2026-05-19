@@ -1,21 +1,22 @@
 # Obsolete Code Candidate Audit
 
-Generated: 2026-05-19T16:01:50.198Z
+Generated: 2026-05-19T17:39:55.232Z
 
 No file in this ledger is approved for immediate deletion. Candidates require the listed gate first.
 
 | File | Kind | Disposition | References | Markers | Gate |
 | --- | --- | --- | ---: | --- | --- |
+| `docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md` | doc | archive candidate | 0 | deprecated, obsolete-or-retired, compatibility | Confirm no imports, no graph references, no active route use, then archive before deletion. |
 | `scripts/audit-route-cleanup-map.ts` | script | keep | 3 | deprecated, legacy, obsolete-or-retired, compatibility, archive-state-field | Keep until compatibility/runtime use is removed. |
 | `docs/superpowers/specs/2026-05-16-cleanup-and-infra-design.md` | doc | keep | 3 | deprecated, legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `scripts/audit-api-route-inventory.ts` | script | keep | 4 | deprecated, legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `docs/GCP_OPERATIONS.md` | doc | keep | 5 | legacy, obsolete-or-retired, compatibility | Keep until compatibility/runtime use is removed. |
 | `docs/architecture/PRAXIS_ARCHITECTURE.md` | doc | keep | 7 | legacy, obsolete-or-retired, compatibility | Keep until compatibility/runtime use is removed. |
-| `docs/architecture/DEEP_RESEARCH.md` | doc | keep | 2 | deprecated, compatibility | Keep until compatibility/runtime use is removed. |
-| `docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md` | doc | keep | 2 | legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `docs/runbooks/POSTGRES_OPERATIONS.md` | doc | keep | 2 | legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `scripts/generate-tool-docs.ts` | script | keep | 2 | legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `src/lib/auth/mock-auth.ts` | library | keep | 2 | deprecated, compatibility | Keep until compatibility/runtime use is removed. |
+| `docs/architecture/DEEP_RESEARCH.md` | doc | keep | 3 | deprecated, compatibility | Keep until compatibility/runtime use is removed. |
+| `docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md` | doc | keep | 3 | legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `scripts/audit-named-stack-contract.ts` | script | keep | 3 | compatibility, archive-state-field | Keep until compatibility/runtime use is removed. |
 | `scripts/audit-route-consolidation.ts` | script | keep | 3 | legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `scripts/audit-mvp-route-shape.ts` | script | keep | 4 | legacy, obsolete-or-retired | Keep until compatibility/runtime use is removed. |
@@ -61,17 +62,17 @@ No file in this ledger is approved for immediate deletion. Candidates require th
 | `src/lib/dashboard/role-recommendations.ts` | library | keep | 6 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/navigation/product-surfaces.ts` | library | keep | 6 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/tools/tool-navigation.ts` | library | keep | 6 | legacy | Keep until compatibility/runtime use is removed. |
-| `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md` | doc | keep | 7 | compatibility | Keep until compatibility/runtime use is removed. |
-| `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md` | doc | keep | 7 | compatibility | Keep until compatibility/runtime use is removed. |
 | `src/lib/cores/core-library.ts` | library | keep | 7 | archive-state-field | Keep until compatibility/runtime use is removed. |
 | `src/lib/knowledge/tool-output-layer.ts` | library | keep | 7 | legacy | Keep until compatibility/runtime use is removed. |
+| `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md` | doc | keep | 8 | compatibility | Keep until compatibility/runtime use is removed. |
+| `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md` | doc | keep | 8 | compatibility | Keep until compatibility/runtime use is removed. |
 | `src/lib/context/context-injection.ts` | library | keep | 8 | archive-state-field | Keep until compatibility/runtime use is removed. |
 | `src/lib/api/with-credits.ts` | library | keep | 10 | compatibility | Keep until compatibility/runtime use is removed. |
 | `src/lib/constants/consolidated-tools.ts` | library | keep | 11 | legacy | Keep until compatibility/runtime use is removed. |
-| `docs/adr/README.md` | doc | keep | 13 | obsolete-or-retired | Keep until compatibility/runtime use is removed. |
 | `src/lib/intelligence/corpus-search.ts` | library | keep | 13 | legacy | Keep until compatibility/runtime use is removed. |
+| `docs/adr/README.md` | doc | keep | 14 | obsolete-or-retired | Keep until compatibility/runtime use is removed. |
+| `src/components/praxis/tasklet-praxis-workbench.tsx` | component | keep | 24 | legacy, archive-state-field | Keep until compatibility/runtime use is removed. |
 | `src/lib/knowledge/library-service.ts` | library | keep | 14 | archive-state-field | Keep until compatibility/runtime use is removed. |
-| `src/components/praxis/tasklet-praxis-workbench.tsx` | component | keep | 25 | legacy, archive-state-field | Keep until compatibility/runtime use is removed. |
 | `src/lib/product/context-capsules.ts` | library | keep | 25 | legacy, archive-state-field | Keep until compatibility/runtime use is removed. |
 | `src/lib/agent-runtime/evidence-pack.ts` | library | keep | 17 | archive-state-field | Keep until compatibility/runtime use is removed. |
 | `src/lib/firebase/tool-data-service.ts` | library | keep | 17 | legacy | Keep until compatibility/runtime use is removed. |
@@ -83,6 +84,5 @@ No file in this ledger is approved for immediate deletion. Candidates require th
 | `src/proxy.ts` | library | keep | 44 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/api/save-tool-output.ts` | library | keep | 58 | legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `docs/tools/assistant.md` | doc | keep | 72 | legacy | Keep until compatibility/runtime use is removed. |
-| `src/lib/ai/providers.ts` | library | keep | 99 | deprecated, legacy, compatibility | Keep until compatibility/runtime use is removed. |
+| `src/lib/ai/providers.ts` | library | keep | 100 | deprecated, legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `src/lib/firebase/firestore.ts` | library | keep | 110 | legacy, compatibility | Keep until compatibility/runtime use is removed. |
-| `docs/tools/dashboard.md` | doc | keep | 114 | legacy | Keep until compatibility/runtime use is removed. |

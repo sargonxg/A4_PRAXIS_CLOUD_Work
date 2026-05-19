@@ -17,7 +17,7 @@ test.describe('onboarding first-login flow', () => {
     await page.goto(`${BASE}/login`);
     await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
     await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
-    await page.click('button:has-text("Sign in")');
+    await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
 
     // should land on /onboarding because onboardingCompletedAt is null
     await page.waitForURL(/\/onboarding/);

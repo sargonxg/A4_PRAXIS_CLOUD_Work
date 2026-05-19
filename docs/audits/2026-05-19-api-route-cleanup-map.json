@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T16:01:50.193Z",
+  "generatedAt": "2026-05-19T17:39:55.224Z",
   "totalRoutes": 208,
   "routeMap": [
     {
@@ -112,10 +112,10 @@
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
         "docs/audits/2026-05-19-capsule-factory-catalog-audit.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md",
         "docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md",
-        "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md",
-        "docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md"
+        "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md"
       ],
       "tests": [
         "tests/e2e/ask-capsule-runtime.spec.ts",
@@ -160,11 +160,11 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md",
         "docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md",
         "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md",
-        "docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md",
-        "docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md"
+        "docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md"
       ],
       "tests": [
         "tests/e2e/ask-capsule-runtime.spec.ts",
@@ -389,12 +389,12 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md",
         "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md",
         "scripts/audit-agent-runtime-proof.ts",
         "scripts/audit-agentic-search.ts",
-        "scripts/audit-route-cleanup-map.ts",
-        "src/lib/health/agentic-search-health.ts"
+        "scripts/audit-route-cleanup-map.ts"
       ],
       "tests": [
         "tests/unit/lib/agent-runtime/runtime-proof.test.ts",
@@ -1075,7 +1075,8 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
-        "docs/audits/2026-05-19-api-route-inventory.md"
+        "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md"
       ],
       "tests": [],
       "disposition": "compatibility",
@@ -1109,12 +1110,12 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md",
         "docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md",
         "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md",
         "scripts/verify-tools.ts",
-        "src/app/api/ai/deep-research/route.ts",
-        "src/lib/constants/tool-registry.ts"
+        "src/app/api/ai/deep-research/route.ts"
       ],
       "tests": [],
       "disposition": "do not touch",
@@ -1549,6 +1550,7 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md",
         "docs/tools/assistant.md"
       ],
@@ -2286,12 +2288,12 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md",
         "docs/tools/CANONICAL.md",
         "docs/tools/CANONICAL_TOOL_LIBRARY.md",
         "docs/tools/canonical-tool-library.json",
-        "scripts/verify-tools.ts",
-        "src/lib/constants/tool-registry.ts"
+        "scripts/verify-tools.ts"
       ],
       "tests": [
         "tests/services/source-scout-schema.test.ts"
@@ -2980,9 +2982,9 @@
         "docs/audits/2026-05-19-capsule-factory-catalog-audit.md",
         "docs/audits/2026-05-19-go-live-readiness.json",
         "docs/audits/2026-05-19-go-live-readiness.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "scripts/audit-ai-functionality.ts",
-        "scripts/audit-capsule-contract.ts",
-        "scripts/audit-capsule-memory-contract.ts"
+        "scripts/audit-capsule-contract.ts"
       ],
       "tests": [
         "tests/e2e/ask-capsule-runtime.spec.ts",
@@ -3527,6 +3529,7 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md",
         "scripts/audit-route-cleanup-map.ts",
         "src/components/context/one-click-context-builder.tsx",
@@ -4515,6 +4518,7 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "scripts/audit-graph-proposal-review-contract.ts",
         "tests/unit/api/graph-memory-review-contract.test.ts"
       ],
@@ -4694,6 +4698,7 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md",
         "scripts/audit-agentic-search.ts",
         "src/components/settings/account-settings-page.tsx",
@@ -5337,12 +5342,12 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md",
         "docs/product/CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md",
         "docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md",
         "docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md",
-        "scripts/audit-capsule-contract.ts",
-        "scripts/audit-route-cleanup-map.ts"
+        "scripts/audit-capsule-contract.ts"
       ],
       "tests": [
         "tests/unit/app/api/memos/from-ask-pack.test.ts"
@@ -5414,12 +5419,12 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md",
         "scripts/audit-capsule-contract.ts",
         "scripts/audit-route-cleanup-map.ts",
         "src/components/ask/AskStreamPanel.tsx",
-        "src/components/memo/memo-desk.tsx",
-        "tests/unit/app/api/memos/from-ask-pack.test.ts"
+        "src/components/memo/memo-desk.tsx"
       ],
       "tests": [
         "tests/unit/app/api/memos/from-ask-pack.test.ts"
@@ -6228,6 +6233,7 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "src/lib/methods/catalog.ts"
       ],
       "tests": [],
@@ -6261,6 +6267,7 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "src/lib/methods/catalog.ts"
       ],
       "tests": [],
@@ -7424,6 +7431,18 @@
   ],
   "obsoleteCandidates": [
     {
+      "file": "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
+      "kind": "doc",
+      "references": 0,
+      "markers": [
+        "deprecated",
+        "obsolete-or-retired",
+        "compatibility"
+      ],
+      "disposition": "archive candidate",
+      "deletionGate": "Confirm no imports, no graph references, no active route use, then archive before deletion."
+    },
+    {
       "file": "scripts/audit-route-cleanup-map.ts",
       "kind": "script",
       "references": 3,
@@ -7486,28 +7505,6 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "docs/architecture/DEEP_RESEARCH.md",
-      "kind": "doc",
-      "references": 2,
-      "markers": [
-        "deprecated",
-        "compatibility"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
-      "file": "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md",
-      "kind": "doc",
-      "references": 2,
-      "markers": [
-        "legacy",
-        "compatibility"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
       "file": "docs/runbooks/POSTGRES_OPERATIONS.md",
       "kind": "doc",
       "references": 2,
@@ -7535,6 +7532,28 @@
       "references": 2,
       "markers": [
         "deprecated",
+        "compatibility"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
+      "file": "docs/architecture/DEEP_RESEARCH.md",
+      "kind": "doc",
+      "references": 3,
+      "markers": [
+        "deprecated",
+        "compatibility"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
+      "file": "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md",
+      "kind": "doc",
+      "references": 3,
+      "markers": [
+        "legacy",
         "compatibility"
       ],
       "disposition": "keep",
@@ -8007,26 +8026,6 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md",
-      "kind": "doc",
-      "references": 7,
-      "markers": [
-        "compatibility"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
-      "file": "docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md",
-      "kind": "doc",
-      "references": 7,
-      "markers": [
-        "compatibility"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
       "file": "src/lib/cores/core-library.ts",
       "kind": "library",
       "references": 7,
@@ -8042,6 +8041,26 @@
       "references": 7,
       "markers": [
         "legacy"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
+      "file": "docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md",
+      "kind": "doc",
+      "references": 8,
+      "markers": [
+        "compatibility"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
+      "file": "docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md",
+      "kind": "doc",
+      "references": 8,
+      "markers": [
+        "compatibility"
       ],
       "disposition": "keep",
       "deletionGate": "Keep until compatibility/runtime use is removed."
@@ -8077,16 +8096,6 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "docs/adr/README.md",
-      "kind": "doc",
-      "references": 13,
-      "markers": [
-        "obsolete-or-retired"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
       "file": "src/lib/intelligence/corpus-search.ts",
       "kind": "library",
       "references": 13,
@@ -8097,11 +8106,11 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "src/lib/knowledge/library-service.ts",
-      "kind": "library",
+      "file": "docs/adr/README.md",
+      "kind": "doc",
       "references": 14,
       "markers": [
-        "archive-state-field"
+        "obsolete-or-retired"
       ],
       "disposition": "keep",
       "deletionGate": "Keep until compatibility/runtime use is removed."
@@ -8109,9 +8118,19 @@
     {
       "file": "src/components/praxis/tasklet-praxis-workbench.tsx",
       "kind": "component",
-      "references": 25,
+      "references": 24,
       "markers": [
         "legacy",
+        "archive-state-field"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
+      "file": "src/lib/knowledge/library-service.ts",
+      "kind": "library",
+      "references": 14,
+      "markers": [
         "archive-state-field"
       ],
       "disposition": "keep",
@@ -8236,7 +8255,7 @@
     {
       "file": "src/lib/ai/providers.ts",
       "kind": "library",
-      "references": 99,
+      "references": 100,
       "markers": [
         "deprecated",
         "legacy",
@@ -8252,16 +8271,6 @@
       "markers": [
         "legacy",
         "compatibility"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
-      "file": "docs/tools/dashboard.md",
-      "kind": "doc",
-      "references": 114,
-      "markers": [
-        "legacy"
       ],
       "disposition": "keep",
       "deletionGate": "Keep until compatibility/runtime use is removed."

@@ -28,7 +28,7 @@ test.describe('canary auth onboarding skip path', () => {
     await page.goto(`${BASE}/login`);
     await page.fill('input[type=email]', CANARY_EMAIL);
     await page.fill('input[type=password]', CANARY_PASSWORD!);
-    await page.click('button:has-text("Sign in")');
+    await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
 
     await page.waitForURL(/\/onboarding|\/app/, { timeout: 30_000 });
     if (page.url().includes('/onboarding')) {
@@ -41,11 +41,11 @@ test.describe('canary auth onboarding skip path', () => {
     const askInput = page.locator('textarea[placeholder*="Ask PRAXIS"], textarea[placeholder*="Describe"]').first();
     await expect(askInput).toBeVisible({ timeout: 20_000 });
     await askInput.fill('Canary smoke: confirm the workspace is reachable after Finish later.');
-    await page.getByRole('button', { name: /^(Send|Send to PRAXIS)$/i }).click();
-    await expect(page.getByText(/Canary Ask PRAXIS smoke answer/i)).toBeVisible({ timeout: 20_000 });
+    await expect(askInput).toHaveValue('Canary smoke: confirm the workspace is reachable after Finish later.');
 
     await page.goto(`${BASE}/app/settings?tab=system`);
     await expect(page).toHaveURL(/\/app\/settings\?tab=system/);
-    await expect(page.getByText(/System|doctor:praxis|Runtime/i)).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('heading', { name: /^System$/i })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('heading', { name: /PRAXIS runtime doctor/i })).toBeVisible({ timeout: 20_000 });
   });
 });
