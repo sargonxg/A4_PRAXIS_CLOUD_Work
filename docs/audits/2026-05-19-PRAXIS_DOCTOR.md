@@ -1,13 +1,13 @@
 # PRAXIS Doctor - 2026-05-19
 
-- Run ID: `doctor-20260519T051239730Z`
+- Run ID: `doctor-20260519T150209088Z`
 - Base URL: `https://praxis.tacitus.me`
 - Project: `praxisbytacitus`
 - Region: `us-central1`
 - Branch: `main`
-- Commit: `3616be79b1e5d4999506c51f3b74147b1a6de21e`
-- Cloud Run revision: `praxis-frontend-00611-9sg`
-- Summary: PASS=26, WARN=3, FAIL=1, BLOCKED=0
+- Commit: `d193df4ef1a048fce40f14ee3d345e061b502aa4`
+- Cloud Run revision: `praxis-frontend-00618-vkf`
+- Summary: PASS=26, WARN=2, FAIL=0, BLOCKED=2
 
 ## Checks
 
@@ -18,15 +18,15 @@
 | WARN | repo-and-deployability | repo-dirty-state | Working tree has uncommitted changes |
 | PASS | repo-and-deployability | repo-origin-sync | origin/main...HEAD = 0	0 |
 | PASS | repo-and-deployability | typecheck | npm run typecheck passed |
-| FAIL | repo-and-deployability | build | npm run build exited 1 |
+| PASS | repo-and-deployability | build | npm run build passed |
 | PASS | repo-and-deployability | lint | npm run lint passed |
 | PASS | repo-and-deployability | vitest-run-tests-unit-lib-agent-runtime-tests-unit-lib-health | npx vitest run tests/unit/lib/agent-runtime tests/unit/lib/health passed |
 | PASS | repo-and-deployability | audit-ai-routes-mjs | node scripts/audit-ai-routes.mjs passed |
 | PASS | repo-and-deployability | audit-repo-shape | npm run audit:repo-shape passed |
 | PASS | repo-and-deployability | audit-gcp | npm run audit:gcp passed |
 | PASS | repo-and-deployability | audit-gate | npm run audit:gate passed |
-| PASS | local-cloud-auth | auth-doctor | npm run auth:doctor passed |
-| PASS | gcp-firebase-infrastructure | cloud-run-praxis-frontend | praxis-frontend serving praxis-frontend-00611-9sg |
+| BLOCKED | local-cloud-auth | auth-doctor | npm run auth:doctor exited 1 |
+| PASS | gcp-firebase-infrastructure | cloud-run-praxis-frontend | praxis-frontend serving praxis-frontend-00618-vkf |
 | PASS | gcp-firebase-infrastructure | cloud-run-private-sql-networking | Cloud Run has private networking for the attached Cloud SQL instance |
 | PASS | gcp-firebase-infrastructure | agent-worker-runtime-env | Agent worker dispatch URL and auth env are configured |
 | PASS | gcp-firebase-infrastructure | agent-run-queue | gcloud tasks queues describe agent-runs --location=us-central1 --project=praxisbytacitus passed |
@@ -42,7 +42,7 @@
 | PASS | live-production-health | production-login | HTTP 200 from https://praxis.tacitus.me/login |
 | WARN | live-production-health | health-core | HTTP 200 from https://praxis.tacitus.me/api/health |
 | PASS | live-production-health | health-runtime | HTTP 200 from https://praxis.tacitus.me/api/health/runtime |
-| WARN | authenticated-full-canary | canary-write-gate | Canary writes disabled: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD |
+| BLOCKED | authenticated-full-canary | canary-write-gate | Canary writes disabled: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD |
 
 ## Evidence And Remediation
 
@@ -56,13 +56,13 @@ Evidence:
 
 Evidence:
 
-- `3616be79b1e5d4999506c51f3b74147b1a6de21e`
+- `d193df4ef1a048fce40f14ee3d345e061b502aa4`
 
 ### WARN repo-dirty-state
 
 Evidence:
 
-- `M docs/audits/2026-05-19-launch-readiness.json M docs/audits/2026-05-19-launch-readiness.md M scripts/audit-capsule-contract.ts M src/app/api/ai/chat/route.ts M src/app/api/context/resolve/route.ts M src/app/api/health/features/route.ts M src/components/praxis/tasklet-praxis-workbench.tsx M src/lib/ai/context-kernel.ts M src/lib/genkit/flows/capsule-factory.ts M src/lib/genkit/schemas/capsule-factory.ts M tests/unit/lib/genkit/capsule-factory-flow.test.ts ?? docs/audits/2026-05-19-database-seren`
+- `M docs/audits/2026-05-19-PRAXIS_DOCTOR.json M docs/audits/2026-05-19-PRAXIS_DOCTOR.md`
 
 ### PASS repo-origin-sync
 
@@ -76,15 +76,11 @@ Evidence:
 
 - `> tacitus-app@6.4.1 typecheck > tsc --noEmit`
 
-### FAIL build
+### PASS build
 
 Evidence:
 
-- `> tacitus-app@6.4.1 build > next build Suggestion: Wait for the build to complete.`
-
-Remediation:
-
-- `npm run build`
+- `> tacitus-app@6.4.1 build > next build ▲ Next.js 16.2.4 (Turbopack) - Environments: .env.local - Experiments (use with caution): · serverActions Creating an optimized production build ... ✓ Compiled successfully in 46s Running TypeScript ... Finished TypeScript in 29.4s ... Collecting page data using 7 workers ... [firebase-admin] Initialized successfully with service account from FIREBASE_SERVICE_ACCOUNT_KEY [firebase-admin] Initialized successfully with service account from FIREBASE_SERVICE_AC`
 
 ### PASS lint
 
@@ -96,7 +92,7 @@ Evidence:
 
 Evidence:
 
-- `[1m[46m RUN [49m[22m [36mv4.1.1 [39m[90mC:/Users/giuli/ANTIGRAVITY/PRAXISMAY2026/A4_PRAXIS_CLOUD_Work[39m [2m Test Files [22m [1m[32m13 passed[39m[22m[90m (13)[39m [2m Tests [22m [1m[32m47 passed[39m[22m[90m (47)[39m [2m Start at [22m 01:15:38 [2m Duration [22m 12.92s[2m (transform 4.87s, setup 711ms, import 33.77s, tests 1.35s, environment 5ms)[22m`
+- `[1m[46m RUN [49m[22m [36mv4.1.1 [39m[90mC:/Users/giuli/ANTIGRAVITY/PRAXISMAY2026/A4_PRAXIS_CLOUD_Work[39m [2m Test Files [22m [1m[32m15 passed[39m[22m[90m (15)[39m [2m Tests [22m [1m[32m53 passed[39m[22m[90m (53)[39m [2m Start at [22m 11:04:51 [2m Duration [22m 6.30s[2m (transform 2.58s, setup 409ms, import 18.95s, tests 472ms, environment 5ms)[22m`
 
 ### PASS audit-ai-routes-mjs
 
@@ -122,17 +118,23 @@ Evidence:
 
 - `> tacitus-app@6.4.1 audit:gate > npm run typecheck && npm run build && npm run audit:routes && npm run audit:capsule-contract && npm run audit:capsule-memory-contract && npm run audit:output-capsule-storage && npm run audit:agent-process-contract && npm run audit:agent-runtime-proof && npm run audit:knowledge-library-contract && npm run audit:named-stack-contract && npm run audit:graph-proposal-review-contract && npm run audit:architecture-chain && npm run audit:repo-shape && npm run audit:archi`
 
-### PASS auth-doctor
+### BLOCKED auth-doctor
 
 Evidence:
 
-- `> tacitus-app@6.4.1 auth:doctor > tsx scripts/auth-doctor.ts OK gcloud CLI: installed OK gcloud active account: giulio@tacitus.me OK gcloud project config: praxisbytacitus OK gcloud project access: praxisbytacitus OK Application Default Credentials: valid OK Firebase CLI login: Logged in as giulio@tacitus.me OK Firebase project binding: praxisbytacitus`
+- `> tacitus-app@6.4.1 auth:doctor > tsx scripts/auth-doctor.ts OK gcloud CLI: installed OK gcloud active account: giulio@tacitus.me OK gcloud project config: praxisbytacitus OK gcloud project access: praxisbytacitus FAIL Application Default Credentials: ERROR: (gcloud.auth.application-default.print-access-token) There was a problem refreshing your current auth tokens: Reauthentication failed. cannot prompt during non-interactive execution. OK Firebase CLI login: Logged in as giulio@tacitus.me OK F`
+
+Remediation:
+
+- `gcloud auth application-default login --project=praxisbytacitus`
+- `firebase login --reauth`
+- `npm run auth:doctor -- --fix`
 
 ### PASS cloud-run-praxis-frontend
 
 Evidence:
 
-- `{"service":"praxis-frontend","latestReadyRevisionName":"praxis-frontend-00611-9sg","traffic":[{"revisionName":"praxis-frontend-00611-9sg","percent":100,"latestRevision":true}],"ready":"True"}`
+- `{"service":"praxis-frontend","latestReadyRevisionName":"praxis-frontend-00618-vkf","traffic":[{"revisionName":"praxis-frontend-00618-vkf","percent":100,"latestRevision":true}],"ready":"True"}`
 
 ### PASS cloud-run-private-sql-networking
 
@@ -156,13 +158,13 @@ Evidence:
 
 Evidence:
 
-- `availableMaintenanceVersions: - POSTGRES_16_13.R20260319.00_11 backendType: SECOND_GEN connectionName: praxisbytacitus:us-east4:praxisbytacitus-instance createTime: '2026-04-27T01:27:56.130Z' databaseInstalledVersion: POSTGRES_16_13 databaseVersion: POSTGRES_16 etag: 40c0d7cd7b17343dcf70a5d37e42593ccfeb9d8f8e159af098106c75ad50a68e gceZone: us-east4-a geminiConfig: activeQueryEnabled: false entitled: false googleVacuumMgmtEnabled: false indexAdvisorEnabled: false oomSessionCancelEnabled: true inc`
+- `availableMaintenanceVersions: - POSTGRES_16_13.R20260319.00_11 backendType: SECOND_GEN connectionName: praxisbytacitus:us-east4:praxisbytacitus-instance createTime: '2026-04-27T01:27:56.130Z' databaseInstalledVersion: POSTGRES_16_13 databaseVersion: POSTGRES_16 etag: b044073a21f20e6759f834952854d1cec8a5eac91d0e0514018d8cdb48fe370f gceZone: us-east4-a geminiConfig: activeQueryEnabled: false entitled: false googleVacuumMgmtEnabled: false indexAdvisorEnabled: false oomSessionCancelEnabled: true inc`
 
 ### PASS firestore-database
 
 Evidence:
 
-- `appEngineIntegrationMode: DISABLED concurrencyMode: PESSIMISTIC createTime: '2026-03-22T15:19:16.119019Z' databaseEdition: STANDARD deleteProtectionState: DELETE_PROTECTION_DISABLED earliestVersionTime: '2026-05-19T04:28:32.174933Z' etag: INrQp5nPxJQDMPSV+ZPz+pMD freeTier: true keyPrefix: s locationId: nam5 name: projects/praxisbytacitus/databases/(default) pointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED realtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED type: FIRESTORE_NATIVE uid`
+- `appEngineIntegrationMode: DISABLED concurrencyMode: PESSIMISTIC createTime: '2026-03-22T15:19:16.119019Z' databaseEdition: STANDARD deleteProtectionState: DELETE_PROTECTION_DISABLED earliestVersionTime: '2026-05-19T14:10:52.874161Z' etag: IP7Xqq7RxZQDMPSV+ZPz+pMD freeTier: true keyPrefix: s locationId: nam5 name: projects/praxisbytacitus/databases/(default) pointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED realtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED type: FIRESTORE_NATIVE uid`
 
 ### PASS secret-manager-cookie
 
@@ -216,19 +218,19 @@ Evidence:
 
 Evidence:
 
-- `{"status":"ok","timestamp":"2026-05-19T05:28:48.189Z","checks":{"firestore":"ok","ai_provider":"ok","cookie_secret":"ok","vertex_adk":"ok","cognee_memory":"unconfigured","polar":"unconfigured"},"safeguards":{"authenticatedRateLimitPerMinute":100,"aiRequestLimits":{"maxBytes":750000,"maxMessages":50,"maxTextChars":250000},"highCostAiRoutesRequireAuth":true,"calibratedAiRoutesStartToolRuns":true,"genkitProvider":"vertex","genkitLocation":"us-central1","cogneeMemoryEnabled":false,"cogneeMode":"disa`
+- `{"status":"ok","timestamp":"2026-05-19T15:11:03.353Z","checks":{"firestore":"ok","ai_provider":"ok","cookie_secret":"ok","vertex_adk":"ok","cognee_memory":"unconfigured","polar":"unconfigured"},"safeguards":{"authenticatedRateLimitPerMinute":100,"aiRequestLimits":{"maxBytes":750000,"maxMessages":50,"maxTextChars":250000},"highCostAiRoutesRequireAuth":true,"calibratedAiRoutesStartToolRuns":true,"genkitProvider":"vertex","genkitLocation":"us-central1","cogneeMemoryEnabled":false,"cogneeMode":"disa`
 
 ### PASS health-runtime
 
 Evidence:
 
-- `{"status":"ok","summary":"Systems ready","checkedAt":"2026-05-19T05:28:48.377Z","debugHref":"/app/settings?tab=system","checks":[{"id":"frontend","label":"Frontend runtime","status":"ok","latencyMs":65},{"id":"firestore","label":"Firestore","status":"ok"},{"id":"backend","label":"Private backend","status":"ok"},{"id":"agent_ledger","label":"Deep work queue","status":"ok"},{"id":"agent_queue","label":"Agent task queue","status":"ok","latencyMs":65},{"id":"agent_worker","label":"Agent worker dispa`
+- `{"status":"ok","summary":"Systems ready","checkedAt":"2026-05-19T15:11:03.540Z","debugHref":"/app/settings?tab=system","checks":[{"id":"frontend","label":"Frontend runtime","status":"ok","latencyMs":56},{"id":"firestore","label":"Firestore","status":"ok"},{"id":"backend","label":"Private backend","status":"ok"},{"id":"agent_ledger","label":"Deep work queue","status":"ok"},{"id":"agent_queue","label":"Agent task queue","status":"ok","latencyMs":56},{"id":"agent_worker","label":"Agent worker dispa`
 
-### WARN canary-write-gate
+### BLOCKED canary-write-gate
 
 Evidence:
 
-- `{"tag":"praxis-doctor-canary-20260519T051239730Z","email":null}`
+- `{"tag":"praxis-doctor-canary-20260519T150209088Z","email":null}`
 
 Remediation:
 
@@ -237,4 +239,4 @@ Remediation:
 
 ## Canary Artifacts
 
-- blocked: doctor-canary-workflow `praxis-doctor-canary-20260519T051239730Z`
+- blocked: doctor-canary-workflow `praxis-doctor-canary-20260519T150209088Z`
