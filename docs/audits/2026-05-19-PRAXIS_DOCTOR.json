@@ -1,12 +1,12 @@
 {
-  "runId": "doctor-20260519T213524880Z",
-  "timestamp": "2026-05-19T21:35:24.880Z",
-  "commit": "435510d979554cd86d4868d953e0d8f2b8beb281",
+  "runId": "doctor-20260519T214657367Z",
+  "timestamp": "2026-05-19T21:46:57.367Z",
+  "commit": "ad4933655c33c655b1952f4f9d6d1cb99ba3e120",
   "branch": "main",
   "baseUrl": "https://praxis.tacitus.me",
   "project": "praxisbytacitus",
   "region": "us-central1",
-  "cloudRunRevision": "praxis-frontend-00636-qp6",
+  "cloudRunRevision": "praxis-frontend-00638-2hn",
   "checks": [
     {
       "id": "repo-branch",
@@ -23,7 +23,7 @@
       "status": "PASS",
       "summary": "Commit SHA resolved",
       "evidence": [
-        "435510d979554cd86d4868d953e0d8f2b8beb281\n"
+        "ad4933655c33c655b1952f4f9d6d1cb99ba3e120\n"
       ]
     },
     {
@@ -66,14 +66,14 @@
       "id": "cloud-run-praxis-frontend",
       "lane": "gcp-firebase-infrastructure",
       "status": "PASS",
-      "summary": "praxis-frontend serving praxis-frontend-00636-qp6",
+      "summary": "praxis-frontend serving praxis-frontend-00638-2hn",
       "evidence": [
         {
           "service": "praxis-frontend",
-          "latestReadyRevisionName": "praxis-frontend-00636-qp6",
+          "latestReadyRevisionName": "praxis-frontend-00638-2hn",
           "traffic": [
             {
-              "revisionName": "praxis-frontend-00636-qp6",
+              "revisionName": "praxis-frontend-00638-2hn",
               "percent": 100,
               "latestRevision": true
             }
@@ -133,7 +133,7 @@
       "status": "PASS",
       "summary": "gcloud firestore databases describe --database=\"(default)\" --project=praxisbytacitus passed",
       "evidence": [
-        "appEngineIntegrationMode: DISABLED\r\nconcurrencyMode: PESSIMISTIC\r\ncreateTime: '2026-03-22T15:19:16.119019Z'\r\ndatabaseEdition: STANDARD\r\ndeleteProtectionState: DELETE_PROTECTION_DISABLED\r\nearliestVersionTime: '2026-05-19T20:35:58.463836Z'\r\netag: INH797enxpQDMPSV+ZPz+pMD\r\nfreeTier: true\r\nkeyPrefix: s\r\nlocationId: nam5\r\nname: projects/praxisbytacitus/databases/(default)\r\npointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED\r\nrealtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED\r\ntype: FIRESTORE_NATIVE\r\nuid: fb7e3f38-b5f6-402d-9f42-97881107da45\r\nupdateTime: '2026-03-22T15:19:16.119019Z'\r\nversionRetentionPeriod: 3600s\r\n"
+        "appEngineIntegrationMode: DISABLED\r\nconcurrencyMode: PESSIMISTIC\r\ncreateTime: '2026-03-22T15:19:16.119019Z'\r\ndatabaseEdition: STANDARD\r\ndeleteProtectionState: DELETE_PROTECTION_DISABLED\r\nearliestVersionTime: '2026-05-19T20:47:20.183327Z'\r\netag: IMzngP2pxpQDMPSV+ZPz+pMD\r\nfreeTier: true\r\nkeyPrefix: s\r\nlocationId: nam5\r\nname: projects/praxisbytacitus/databases/(default)\r\npointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED\r\nrealtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED\r\ntype: FIRESTORE_NATIVE\r\nuid: fb7e3f38-b5f6-402d-9f42-97881107da45\r\nupdateTime: '2026-03-22T15:19:16.119019Z'\r\nversionRetentionPeriod: 3600s\r\n"
       ]
     },
     {
@@ -220,7 +220,7 @@
       "evidence": [
         {
           "status": "ok",
-          "timestamp": "2026-05-19T21:36:12.075Z",
+          "timestamp": "2026-05-19T21:47:30.974Z",
           "checks": {
             "firestore": "ok",
             "ai_provider": "ok",
@@ -255,14 +255,14 @@
         {
           "status": "ok",
           "summary": "Systems ready",
-          "checkedAt": "2026-05-19T21:36:12.248Z",
+          "checkedAt": "2026-05-19T21:47:31.169Z",
           "debugHref": "/app/settings?tab=system",
           "checks": [
             {
               "id": "frontend",
               "label": "Frontend runtime",
               "status": "ok",
-              "latencyMs": 53
+              "latencyMs": 52
             },
             {
               "id": "firestore",
@@ -283,7 +283,7 @@
               "id": "agent_queue",
               "label": "Agent task queue",
               "status": "ok",
-              "latencyMs": 53
+              "latencyMs": 52
             },
             {
               "id": "agent_worker",
@@ -306,7 +306,7 @@
       "summary": "Canary writes enabled for praxis-canary-20260519211729@tacitus.test",
       "evidence": [
         {
-          "tag": "praxis-doctor-canary-20260519T213524880Z",
+          "tag": "praxis-doctor-canary-20260519T214657367Z",
           "email": "praxis-canary-20260519211729@tacitus.test"
         }
       ]
@@ -314,9 +314,9 @@
   ],
   "artifacts": [
     {
-      "tag": "praxis-doctor-canary-20260519T213524880Z",
+      "tag": "praxis-doctor-canary-20260519T214657367Z",
       "kind": "doctor-canary-workflow",
-      "id": "praxis-doctor-canary-20260519T213524880Z",
+      "id": "praxis-doctor-canary-20260519T214657367Z",
       "cleanupStatus": "planned",
       "detail": "Canary write gate is enabled. Generated artifacts must be tagged and cleaned."
     }
