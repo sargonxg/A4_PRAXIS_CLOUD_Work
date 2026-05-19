@@ -96,11 +96,11 @@ function OnboardingWizard() {
         setSaveError('Could not save this reminder - please try again.');
         return;
       }
-      router.push('/app');
+      window.location.assign('/app');
     } catch {
       setSaveError('Network error saving the reminder - please try again.');
     }
-  }, [router]);
+  }, []);
 
   const complete = useCallback(async (createFirstSituation: boolean) => {
     setSaveError(null);
