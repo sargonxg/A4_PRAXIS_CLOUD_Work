@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyOrchestratorEvent,
+  buildOrchestratorStreamUrl,
   normalizeOrchestratorEvent,
   type OrchestratorEventState,
 } from '@/hooks/useOrchestratorEvents';
@@ -91,5 +92,13 @@ describe('useOrchestratorEvents state helpers', () => {
     expect(reconnecting.events).toHaveLength(1);
     expect(reconnecting.lastEventId).toBe('evt-4');
     expect(reconnecting.isReconnecting).toBe(true);
+  });
+
+  it('builds a resumable stream URL from the last SSE event id', () => {
+    expect(buildOrchestratorStreamUrl('/api/agents/runs/run-1/stream', {
+      origin: 'https://praxis.tacitus.me',
+      limit: 25,
+      lastEventId: 'evt-9',
+    })).toBe('/api/agents/runs/run-1/stream?limit=25&after=evt-9&lastEventId=evt-9');
   });
 });
