@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildApiRouteInventory, formatApiRouteInventoryMarkdown } from '../../..//scripts/audit-api-route-inventory';
+import { buildApiRouteInventory, formatApiRouteInventoryMarkdown } from '../../../scripts/audit-api-route-inventory';
 
 describe('API route inventory', () => {
   it('categorizes every API route with auth, calibration, caller evidence, and action', () => {

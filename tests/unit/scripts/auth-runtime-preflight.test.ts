@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateAuthenticatedRuntimePreflight } from '../../..//scripts/run-authenticated-runtime-lane';
+import { evaluateAuthenticatedRuntimePreflight } from '../../../scripts/run-authenticated-runtime-lane';
 
 describe('authenticated runtime preflight', () => {
   it('reports missing browser credentials as blocked with exact env var names', () => {

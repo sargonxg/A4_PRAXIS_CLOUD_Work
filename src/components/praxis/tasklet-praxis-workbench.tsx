@@ -116,6 +116,31 @@ type SavedConversationTurn = {
 type CapsuleRole = 'user' | 'situation' | 'tool' | 'output' | 'reference';
 type CapsuleDetailTab = 'build' | 'connect' | 'retrieve' | 'agents';
 type CapsuleFactoryLaneId = 'catalog' | 'ontology' | 'sources' | 'temporality' | 'conflict' | 'output' | 'runs';
+type CapsuleFactoryReviewState = 'draft' | 'reviewed' | 'applied' | 'rejected';
+type CapsuleFactoryReviewDiff = {
+  diffId: string;
+  capsuleId: string;
+  laneId: 'dialectica' | 'kairos' | 'agon';
+  laneTitle: string;
+  reviewState: CapsuleFactoryReviewState;
+  proposedCapsule: { label: string; summary: string; coreIds: string[]; provenance: { sourceIds: string[]; documentIds: string[] }; assumptions: string[]; status: 'draft' };
+  proposedCores: Array<{ kind: 'user' | 'situation' | 'source' | 'tool' | 'output'; label: string; summary: string; provenanceIds: string[]; confidence: 'low' | 'medium' | 'high' }>;
+  sourceGaps: string[];
+  openQuestions: string[];
+  laneImprovements: Array<{ laneId: 'dialectica' | 'kairos' | 'agon'; title: string; summary: string; proposedTags: string[]; evidenceIds: string[]; requiresConfirmation: true }>;
+  applyActions: Array<{ label: string; target: 'user_core' | 'situation_core' | 'source_core' | 'tool_core' | 'output_core' | 'context_capsule'; requiresConfirmation: true }>;
+  provenanceIds: string[];
+  confirmation: { required: true; confirmedAt: string | null; confirmedBy: string | null };
+};
+type RuntimeProof = {
+  activeCapsule: string;
+  sourceCount: number;
+  lastAskReceipt: string;
+  queuedRunId: string | null;
+  workerStatus: string;
+  latestMirroredEvent: string;
+  memoOutputHref: string | null;
+};
 type RepositoryDocument = {
   id: string;
   title: string;
@@ -391,6 +416,75 @@ const capsuleChainSlots: Array<{ role: CapsuleRole; label: string; helper: strin
   { role: 'output', label: 'Output', helper: 'Choose the memo, brief, handover, or artifact goal.' },
 ];
 
+function buildFactoryReviewDiff(
+  lane: (typeof factoryBuilderLanes)[number],
+  capsule: PraxisCapsuleSummary | null,
+): CapsuleFactoryReviewDiff {
+  const capsuleId = capsule?.capsuleId ?? 'starter-capsule';
+  const refs = capsule?.coreRefs;
+  const sourceIds = refs?.sourceCoreIds ?? [];
+  const documentIds = refs?.documentCoreIds ?? [];
+  const timestamp = new Date().toISOString();
+  const laneTag = lane.id === 'dialectica' ? 'ontology' : lane.id === 'kairos' ? 'temporality' : 'conflict-actors';
+  return {
+    diffId: `factory-${lane.id}-${capsuleId}-${Date.now()}`,
+    capsuleId,
+    laneId: lane.id,
+    laneTitle: lane.title,
+    reviewState: 'reviewed',
+    proposedCapsule: {
+      label: capsule?.label ?? 'Draft ContextCapsule',
+      summary: `${lane.title} review proposes confirmation-gated changes before any capsule mutation.`,
+      coreIds: [
+        refs?.userCoreId,
+        refs?.situationCoreId,
+        refs?.graphCoreId,
+        refs?.timeCoreId,
+        ...(refs?.sourceCoreIds ?? []),
+        ...(refs?.documentCoreIds ?? []),
+        ...(refs?.toolCoreIds ?? []),
+        ...(refs?.outputCoreIds ?? []),
+      ].filter((id): id is string => Boolean(id)),
+      provenance: { sourceIds, documentIds },
+      assumptions: ['Human review is required before applying these factory lane changes.'],
+      status: 'draft',
+    },
+    proposedCores: [
+      {
+        kind: 'situation',
+        label: `${lane.title} capsule delta`,
+        summary: lane.body,
+        provenanceIds: [...sourceIds, ...documentIds].slice(0, 8),
+        confidence: sourceIds.length || documentIds.length ? 'medium' : 'low',
+      },
+      {
+        kind: lane.id === 'agon' ? 'tool' : lane.id === 'kairos' ? 'source' : 'output',
+        label: lane.subtitle,
+        summary: lane.prompt,
+        provenanceIds: [...sourceIds, ...documentIds].slice(0, 8),
+        confidence: 'medium',
+      },
+    ],
+    sourceGaps: sourceIds.length ? [] : ['No source receipts are attached to this capsule diff yet.'],
+    openQuestions: ['Which proposed lane changes should become durable capsule state?'],
+    laneImprovements: [{
+      laneId: lane.id,
+      title: lane.title,
+      summary: lane.body,
+      proposedTags: [laneTag],
+      evidenceIds: [...sourceIds, ...documentIds].slice(0, 8),
+      requiresConfirmation: true,
+    }],
+    applyActions: [{
+      label: `Apply reviewed ${lane.title} delta`,
+      target: 'context_capsule',
+      requiresConfirmation: true,
+    }],
+    provenanceIds: [`ui:${timestamp}`, ...sourceIds, ...documentIds].slice(0, 20),
+    confirmation: { required: true, confirmedAt: null, confirmedBy: null },
+  };
+}
+
 export function TaskletPraxisWorkbench({
   mode,
   capsuleId = 'default',
@@ -424,6 +518,7 @@ export function TaskletPraxisWorkbench({
   const [capsuleDomainFilter, setCapsuleDomainFilter] = useState('all');
   const [capsulePolicyTeamFilter, setCapsulePolicyTeamFilter] = useState('all');
   const [factoryLane, setFactoryLane] = useState<CapsuleFactoryLaneId>('catalog');
+  const [factoryReviewDiffs, setFactoryReviewDiffs] = useState<CapsuleFactoryReviewDiff[]>([]);
   const [userCapsules, setUserCapsules] = useState<PraxisCapsuleSummary[]>([]);
   const [capsulesLoading, setCapsulesLoading] = useState(false);
   const [capsuleBrowserOpen, setCapsuleBrowserOpen] = useState(false);
@@ -513,6 +608,17 @@ export function TaskletPraxisWorkbench({
     ?? selectedAgent.outputDestination?.replace(/_/g, ' ')
     ?? 'Memo posture';
   const conversationUrl = conversationThreadId ? buildConversationUrl(currentCapsuleId, conversationThreadId) : null;
+  const latestRun = focusedRun?.run ?? agentRuns[0] ?? null;
+  const latestEvent = focusedRunEvents.at(-1);
+  const runtimeProof: RuntimeProof = {
+    activeCapsule: activeCapsuleForStrip?.label ?? currentCapsuleId,
+    sourceCount: activeCapsuleSourceCount,
+    lastAskReceipt: conversationUrl ? `conversation ${conversationThreadId?.slice(0, 12)}` : chatMessages.some((message) => message.role === 'assistant' && message.text.trim()) ? 'local assistant receipt' : 'none yet',
+    queuedRunId: latestRun?.runId ?? null,
+    workerStatus: latestRun?.status ?? 'not queued',
+    latestMirroredEvent: latestEvent?.message ?? latestEvent?.eventType ?? focusedRunStream.lastEventId ?? 'no mirrored event',
+    memoOutputHref: latestRun?.outputHref ?? null,
+  };
   const focusedRunStream = useOrchestratorEvents(
     focusedRunId ? `/api/agents/runs/${encodeURIComponent(focusedRunId)}/stream` : null,
     {
@@ -1444,7 +1550,51 @@ export function TaskletPraxisWorkbench({
     ].join('\n');
     setPrompt(nextPrompt);
     setStatus(`${lane.title} prepared reviewable capsule improvements. Run Ask PRAXIS to inspect before applying anything.`);
+    const diff = buildFactoryReviewDiff(lane, target);
+    setFactoryReviewDiffs((current) => [diff, ...current.filter((item) => item.diffId !== diff.diffId)].slice(0, 6));
+    if (isAuthenticated && target) void persistFactoryReviewDiff(diff, 'create-review-diff');
     if (isAuthenticated) void sendToPraxis(capsuleFactoryAgent, nextPrompt);
+  }
+
+  async function persistFactoryReviewDiff(diff: CapsuleFactoryReviewDiff, action: 'create-review-diff' | 'apply' | 'reject') {
+    const response = await fetch(`/api/context/capsules/${encodeURIComponent(diff.capsuleId)}/diff`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action, diff }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload?.error ?? 'factory diff update failed');
+    return payload;
+  }
+
+  async function applyFactoryReviewDiff(diff: CapsuleFactoryReviewDiff) {
+    const confirmed: CapsuleFactoryReviewDiff = {
+      ...diff,
+      reviewState: 'applied',
+      confirmation: { required: true, confirmedAt: new Date().toISOString(), confirmedBy: 'current-user' },
+    };
+    setFactoryReviewDiffs((current) => current.map((item) => item.diffId === diff.diffId ? confirmed : item));
+    try {
+      if (isAuthenticated) await persistFactoryReviewDiff(confirmed, 'apply');
+      setStatus(`Applied reviewed Capsule Factory diff ${diff.diffId.slice(0, 10)}.`);
+      void refreshCapsules(currentCapsuleId);
+    } catch (err) {
+      setFactoryReviewDiffs((current) => current.map((item) => item.diffId === diff.diffId ? diff : item));
+      setStatus(err instanceof Error ? `Factory diff apply failed: ${err.message}` : 'Factory diff apply failed.');
+    }
+  }
+
+  async function rejectFactoryReviewDiff(diff: CapsuleFactoryReviewDiff) {
+    const rejected: CapsuleFactoryReviewDiff = { ...diff, reviewState: 'rejected' };
+    setFactoryReviewDiffs((current) => current.map((item) => item.diffId === diff.diffId ? rejected : item));
+    try {
+      if (isAuthenticated) await persistFactoryReviewDiff(rejected, 'reject');
+      setStatus(`Rejected Capsule Factory diff ${diff.diffId.slice(0, 10)}.`);
+    } catch (err) {
+      setFactoryReviewDiffs((current) => current.map((item) => item.diffId === diff.diffId ? diff : item));
+      setStatus(err instanceof Error ? `Factory diff reject failed: ${err.message}` : 'Factory diff reject failed.');
+    }
   }
 
   async function createCapsuleLite(label?: string, seed?: Partial<ActiveCapsuleChip>, policyTeam?: PolicyTeamCategory | null) {
@@ -2149,7 +2299,11 @@ export function TaskletPraxisWorkbench({
                         activeLane={factoryLane}
                         capsule={selectedCapsule}
                         agentRunCount={agentRuns.length}
+                        reviewDiffs={factoryReviewDiffs}
+                        runtimeProof={runtimeProof}
                         onReview={reviewFactoryLane}
+                        onApply={applyFactoryReviewDiff}
+                        onReject={rejectFactoryReviewDiff}
                       />
                     ) : null}
                   <div className={cn('grid gap-3 md:grid-cols-2', isCapsuleRepositoryPage && 'mt-4 lg:grid-cols-3', isRepositoryPage && 'md:grid-cols-1')} data-testid="tasklet-capsule-cards">
@@ -2212,6 +2366,7 @@ export function TaskletPraxisWorkbench({
                       focusedRunStream={focusedRunStream}
                       focusedRunLoading={focusedRunLoading}
                       focusedRunAction={focusedRunAction}
+                      runtimeProof={runtimeProof}
                       onUpload={() => fileInputRef.current?.click()}
                       onDetailTab={setCapsuleDetailTab}
                       onOpenRepository={() => { setRepositoryOpen(true); void refreshRepository(); }}
@@ -3122,15 +3277,24 @@ function CapsuleFactoryLanePanel({
   activeLane,
   capsule,
   agentRunCount,
+  reviewDiffs,
+  runtimeProof,
   onReview,
+  onApply,
+  onReject,
 }: {
   activeLane: CapsuleFactoryLaneId;
   capsule: PraxisCapsuleSummary | null;
   agentRunCount: number;
+  reviewDiffs: CapsuleFactoryReviewDiff[];
+  runtimeProof: RuntimeProof;
   onReview: (lane: (typeof factoryBuilderLanes)[number]) => void;
+  onApply: (diff: CapsuleFactoryReviewDiff) => void;
+  onReject: (diff: CapsuleFactoryReviewDiff) => void;
 }) {
   const laneLabel = factorySidebarItems.find((item) => item.id === activeLane)?.label ?? 'Catalog';
   const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
+  const openDiffs = reviewDiffs.filter((diff) => diff.reviewState !== 'rejected').slice(0, 3);
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-slate-950/[0.03]" data-testid="capsule-factory-workshop">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -3148,6 +3312,7 @@ function CapsuleFactoryLanePanel({
           <Metric label="Runs" value={agentRunCount} />
         </div>
       </div>
+      <RuntimeProofStrip proof={runtimeProof} />
       <div className="mt-4 grid gap-2 md:grid-cols-3">
         {factoryBuilderLanes.map((lane) => (
           <article key={lane.id} className="rounded-lg border border-slate-200 p-3">
@@ -3164,7 +3329,75 @@ function CapsuleFactoryLanePanel({
           </article>
         ))}
       </div>
+      {openDiffs.length ? (
+        <div className="mt-4 grid gap-2" data-testid="capsule-factory-review-diffs">
+          {openDiffs.map((diff) => (
+            <article key={diff.diffId} className="rounded-lg border border-[#ff714d]/20 bg-[#fff8f5] p-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-900">{diff.laneTitle}</p>
+                  <p className="mt-1 text-[11px] leading-5 text-slate-500">{diff.proposedCapsule.summary}</p>
+                </div>
+                <span className={cn('rounded-md px-2 py-1 text-[11px] font-semibold', factoryReviewStateClass(diff.reviewState))}>{diff.reviewState}</span>
+              </div>
+              <div className="mt-3 grid gap-2 md:grid-cols-3">
+                <FactoryDiffBucket label="Ontology/graph" values={diff.proposedCores.filter((core) => core.kind === 'situation').map((core) => core.label)} />
+                <FactoryDiffBucket label="Sources" values={[...diff.proposedCores.filter((core) => core.kind === 'source').map((core) => core.label), ...diff.sourceGaps]} />
+                <FactoryDiffBucket label="Temporality" values={diff.laneImprovements.filter((lane) => lane.laneId === 'kairos').map((lane) => lane.title)} />
+                <FactoryDiffBucket label="Conflict/actors" values={diff.laneImprovements.filter((lane) => lane.laneId === 'agon').map((lane) => lane.title)} />
+                <FactoryDiffBucket label="Output/handover" values={diff.proposedCores.filter((core) => core.kind === 'output').map((core) => core.label)} />
+                <FactoryDiffBucket label="Run receipts" values={diff.provenanceIds} />
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" disabled={diff.reviewState === 'applied'} onClick={() => onApply(diff)} className="rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-default disabled:bg-slate-300">
+                  Apply reviewed diff
+                </button>
+                <button type="button" disabled={diff.reviewState === 'applied'} onClick={() => onReject(diff)} className="rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-white disabled:cursor-default disabled:text-slate-300">
+                  Reject
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
     </section>
+  );
+}
+
+function RuntimeProofStrip({ proof }: { proof: RuntimeProof }) {
+  return (
+    <div className="mt-4 grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-[11px]" data-testid="runtime-proof-strip">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-semibold uppercase tracking-[0.16em] text-slate-400">Runtime proof</p>
+        {proof.memoOutputHref ? <Link href={proof.memoOutputHref} className="font-semibold text-[#ca4a25] hover:underline">memo/output link</Link> : <span className="font-semibold text-slate-400">memo/output link pending</span>}
+      </div>
+      <div className="grid gap-2 md:grid-cols-3">
+        <ProofCell label="active capsule" value={proof.activeCapsule} />
+        <ProofCell label="source count" value={String(proof.sourceCount)} />
+        <ProofCell label="last Ask receipt" value={proof.lastAskReceipt} />
+        <ProofCell label="queued agent run id" value={proof.queuedRunId?.slice(0, 12) ?? 'not queued'} />
+        <ProofCell label="worker/run status" value={proof.workerStatus.replaceAll('_', ' ')} />
+        <ProofCell label="latest mirrored event" value={proof.latestMirroredEvent} />
+      </div>
+    </div>
+  );
+}
+
+function ProofCell({ label, value }: { label: string; value: string }) {
+  return (
+    <p className="min-w-0 rounded-md bg-white px-2 py-1.5">
+      <span className="block font-semibold text-slate-400">{label}</span>
+      <span className="block truncate font-semibold text-slate-700">{value}</span>
+    </p>
+  );
+}
+
+function FactoryDiffBucket({ label, values }: { label: string; values: string[] }) {
+  return (
+    <p className="min-w-0 rounded-md bg-white px-2 py-1.5 text-[11px]">
+      <span className="block font-semibold text-slate-500">{label}</span>
+      <span className="mt-1 block truncate text-slate-700">{values.filter(Boolean).slice(0, 3).join(', ') || 'no proposed change'}</span>
+    </p>
   );
 }
 
@@ -3289,6 +3522,7 @@ function CapsuleDetailPanel({
   focusedRunStream,
   focusedRunLoading,
   focusedRunAction,
+  runtimeProof,
   onUpload,
   onDetailTab,
   onOpenRepository,
@@ -3313,6 +3547,7 @@ function CapsuleDetailPanel({
   focusedRunStream: OrchestratorEventState;
   focusedRunLoading: boolean;
   focusedRunAction: string | null;
+  runtimeProof: RuntimeProof;
   onUpload: () => void;
   onDetailTab: (tab: CapsuleDetailTab) => void;
   onOpenRepository: () => void;
@@ -3349,6 +3584,7 @@ function CapsuleDetailPanel({
         <Metric label="Outputs" value={counts.outputs} />
       </div>
       <CapsuleHealthMeter counts={counts} state={state} agentRunCount={agentRuns.length} />
+      <RuntimeProofStrip proof={runtimeProof} />
       <div className="mt-4 grid grid-cols-4 gap-1 rounded-md bg-slate-100 p-1" data-testid="capsule-detail-tabs">
         {(['build', 'connect', 'retrieve', 'agents'] as const).map((tab) => (
           <button
@@ -3839,6 +4075,19 @@ function agentRunStatusClass(status: AgentRunSummary['status']): string {
     case 'failed':
     case 'cancelled':
     case 'expired':
+      return 'bg-rose-100 text-rose-700';
+  }
+}
+
+function factoryReviewStateClass(state: CapsuleFactoryReviewState): string {
+  switch (state) {
+    case 'draft':
+      return 'bg-slate-100 text-slate-600';
+    case 'reviewed':
+      return 'bg-sky-100 text-sky-700';
+    case 'applied':
+      return 'bg-emerald-100 text-emerald-700';
+    case 'rejected':
       return 'bg-rose-100 text-rose-700';
   }
 }
