@@ -2,7 +2,7 @@
   "generatedAt": "2026-05-19T05:20:00.000Z",
   "repo": "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work",
   "branch": "main",
-  "localHead": "3616be79",
+  "localHead": "a0a83be6",
   "items": [
     { "area": "public pages", "status": "pass", "evidence": "npm run build completed; PRAXIS Doctor HTTP 200 for production home and login" },
     { "area": "authenticated browser flow", "status": "blocked", "evidence": "npm run test:auth-runtime:live missing TEST_FIREBASE_EMAIL and TEST_FIREBASE_PASSWORD" },
