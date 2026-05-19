@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T14:30:56.126Z",
+  "generatedAt": "2026-05-19T16:01:50.193Z",
   "totalRoutes": 208,
   "routeMap": [
     {
@@ -893,7 +893,6 @@
       "sourceCallers": [
         "docs/audits/2026-05-17-agentic-workflow-capsule-conversation-audit.md",
         "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -902,7 +901,8 @@
         "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md",
         "docs/product/PRAXIS_ASK_CONTEXT_CAPSULE_COCKPIT_PLAN_2026-05-16.md",
         "docs/tools/assistant.md",
-        "scripts/audit-agentic-search.ts"
+        "scripts/audit-agentic-search.ts",
+        "scripts/audit-ai-functionality.ts"
       ],
       "tests": [
         "tests/e2e/canary-auth-skip.spec.ts",
@@ -3522,7 +3522,6 @@
       "graphReferences": 9,
       "sourceCallers": [
         "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.md",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -4690,6 +4689,7 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
+        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4790,7 +4790,6 @@
       "graphReferences": 3,
       "sourceCallers": [
         "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -8108,9 +8107,9 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "src/lib/product/context-capsules.ts",
-      "kind": "library",
-      "references": 24,
+      "file": "src/components/praxis/tasklet-praxis-workbench.tsx",
+      "kind": "component",
+      "references": 25,
       "markers": [
         "legacy",
         "archive-state-field"
@@ -8119,9 +8118,9 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "src/components/praxis/tasklet-praxis-workbench.tsx",
-      "kind": "component",
-      "references": 26,
+      "file": "src/lib/product/context-capsules.ts",
+      "kind": "library",
+      "references": 25,
       "markers": [
         "legacy",
         "archive-state-field"
@@ -8227,7 +8226,7 @@
     {
       "file": "docs/tools/assistant.md",
       "kind": "doc",
-      "references": 71,
+      "references": 72,
       "markers": [
         "legacy"
       ],
@@ -8260,7 +8259,7 @@
     {
       "file": "docs/tools/dashboard.md",
       "kind": "doc",
-      "references": 112,
+      "references": 114,
       "markers": [
         "legacy"
       ],

@@ -366,6 +366,21 @@ export interface CapsuleStarterAgentWorkflow {
   approvalNotes: string;
 }
 
+export interface CapsuleStarterRichProfile {
+  purpose: string;
+  userJob: string;
+  whenToUse: string[];
+  whenNotToUse: string[];
+  improves: string[];
+  sourceIndications: string[];
+  evidenceRequirements: string[];
+  riskCaveats: string[];
+  decisionPrompts: string[];
+  nextIdeas: string[];
+  qualityRubric: string[];
+  agentInstructions: string;
+}
+
 export type CapsuleStarterDomain =
   | 'sustainability'
   | 'finance'
@@ -405,11 +420,12 @@ export interface CapsuleStarterDefinition {
   suggestedNextActions: string[];
   agentWorkflow: CapsuleStarterAgentWorkflow;
   aiUseGuidance: string;
+  richProfile: CapsuleStarterRichProfile;
   inspectionSections: CapsuleStarterInspectionSection[];
   combinesWellWith: string[];
 }
 
-export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-18-capsule-inspection-v3';
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-19-capsule-depth-v4';
 
 export type CapsuleStarterSnapshot = Pick<
   CapsuleStarterDefinition,
@@ -429,6 +445,7 @@ export type CapsuleStarterSnapshot = Pick<
   | 'suggestedNextActions'
   | 'agentWorkflow'
   | 'aiUseGuidance'
+  | 'richProfile'
   | 'combinesWellWith'
 > & {
   catalogVersion: string;
@@ -804,6 +821,7 @@ type CapsuleStarterOverrides = Partial<Pick<
   | 'suggestedNextActions'
   | 'agentWorkflow'
   | 'aiUseGuidance'
+  | 'richProfile'
 >>;
 
 function normalizeStarterTags(
@@ -831,6 +849,17 @@ function starter(
   const sourcePack = normalizeStarterSourcePack(overrides?.sourcePack ?? sourcePackForStarter(starterId, category, label, domain));
   const aiUseGuidance = overrides?.aiUseGuidance
     ?? `Use ${label} as reusable capsule context. Ask for missing inputs, keep source limits visible, and route work through the recommended tools before drafting outputs.`;
+  const richProfile = overrides?.richProfile ?? buildStarterRichProfile({
+    starterId,
+    category,
+    domain,
+    label,
+    summary,
+    detail,
+    sourcePack,
+    recommendedToolIds,
+    outputProductIds,
+  });
   return {
     starterId,
     category,
@@ -857,6 +886,7 @@ function starter(
     suggestedNextActions: overrides?.suggestedNextActions ?? [
       `Inspect ${label} for source gaps.`,
       `Improve ${label} before drafting an output.`,
+      `Route ${label} through ${recommendedToolIds[0] ?? 'Ask PRAXIS'} and record the review result.`,
     ],
     agentWorkflow: overrides?.agentWorkflow ?? {
       preferredAgentId: category === 'output' ? 'output-formatter' : 'research-memo',
@@ -865,12 +895,139 @@ function starter(
       approvalNotes: 'Require approval before external export, graph mutation, or connector writes.',
     },
     aiUseGuidance,
+    richProfile,
     inspectionSections: [
-      { label: 'Best use', detail: summary },
-      { label: 'How PRAXIS should use it', detail },
-      { label: 'AI use guidance', detail: aiUseGuidance },
-      { label: 'Interchange rule', detail: 'This capsule is safe to fork, combine, tag, and improve without changing the starter definition.' },
+      { label: 'Purpose', detail: richProfile.purpose },
+      { label: 'Sources', detail: richProfile.sourceIndications.slice(0, 3).join(' ') },
+      { label: 'Decision Use', detail: richProfile.decisionPrompts.slice(0, 2).join(' ') },
+      { label: 'Improvement Ideas', detail: richProfile.nextIdeas.slice(0, 2).join(' ') },
+      { label: 'Gaps/Risks', detail: richProfile.riskCaveats.slice(0, 2).join(' ') },
+      { label: 'Run Recipe', detail: richProfile.agentInstructions },
+      { label: 'Compatible Capsules', detail: combinesWellWith.length ? combinesWellWith.join(', ') : 'Attach a user capsule, a tool capsule, and an output capsule before external handoff.' },
     ],
+  };
+}
+
+function buildStarterRichProfile(input: {
+  starterId: string;
+  category: CapsuleStarterCategory;
+  domain: CapsuleStarterDomain;
+  label: string;
+  summary: string;
+  detail: string;
+  sourcePack: CapsuleStarterSource[];
+  recommendedToolIds: string[];
+  outputProductIds: string[];
+}): CapsuleStarterRichProfile {
+  const {
+    category,
+    domain,
+    label,
+    summary,
+    detail,
+    sourcePack,
+    recommendedToolIds,
+    outputProductIds,
+  } = input;
+  const domainLabel = domain.replace(/-/g, ' ');
+  const primaryTool = recommendedToolIds[0] ?? 'ask-praxis';
+  const secondaryTool = recommendedToolIds[1] ?? primaryTool;
+  const primaryOutput = outputProductIds[0] ?? 'options-memo';
+  const firstSource = sourcePack[0]?.label ?? `${label} source pack`;
+  const secondSource = sourcePack[1]?.label ?? `${label} corroborating source`;
+  const categoryPurpose: Record<CapsuleStarterCategory, string> = {
+    situation: `Use ${label} to frame the policy situation, actors, operating constraints, uncertainty, and decision horizon for ${domainLabel} work.`,
+    tool: `Use ${label} as a repeatable analytical check that converts capsule inputs into reviewable findings before PRAXIS drafts ${primaryOutput}.`,
+    output: `Use ${label} to shape the audience, sections, citation posture, approval gate, and handoff quality for ${primaryOutput}.`,
+    user: `Use ${label} to encode the user's mandate, tone, red lines, evidentiary threshold, and preferred PRAXIS outputs.`,
+  };
+  const categoryJob: Record<CapsuleStarterCategory, string> = {
+    situation: `Help the user understand what is happening in ${domainLabel}, what changed, who can act, and which decision should be made next.`,
+    tool: `Help the user run ${primaryTool} or ${secondaryTool} against a known capsule instead of relying on unstructured reasoning.`,
+    output: `Help the user turn grounded context into a finished ${primaryOutput} with enough structure for review and reuse.`,
+    user: `Help PRAXIS adapt answers to a role-specific operating style while keeping evidence standards and boundaries explicit.`,
+  };
+  const categoryUse: Record<CapsuleStarterCategory, string[]> = {
+    situation: [
+      `Use when a ${domainLabel} question needs actor mapping, facts, dates, and source limits before advice.`,
+      `Use when the user needs PRAXIS to compare plausible options or escalation paths for ${label}.`,
+      `Use when a brief, dashboard, or memo should inherit this situation context across turns.`,
+    ],
+    tool: [
+      `Use when ${label} should perform a defined check before drafting or recommendation.`,
+      `Use when inputs are available but claims, assumptions, chronology, or sourceability need review.`,
+      `Use when PRAXIS should produce an auditable intermediate finding with ${primaryTool}.`,
+    ],
+    output: [
+      `Use when the target artifact is ${primaryOutput} and the audience needs a clean decision product.`,
+      `Use when sections, citations, assumptions, and approval notes should be stable across drafts.`,
+      `Use when handoff quality matters more than open-ended exploration.`,
+    ],
+    user: [
+      `Use when PRAXIS should answer as ${label} rather than as a generic assistant.`,
+      `Use when tone, mandate, red lines, or evidentiary thresholds should persist across work.`,
+      `Use when routing decisions should reflect the user's preferred outputs and review style.`,
+    ],
+  };
+  const categoryAvoid: Record<CapsuleStarterCategory, string[]> = {
+    situation: [
+      `Do not use ${label} as a final authority when recent events or jurisdiction-specific rules are missing.`,
+      `Do not use it alone for external publication without source refresh and human approval.`,
+    ],
+    tool: [
+      `Do not run ${label} when the needed inputs are absent or the user is asking for a finished output directly.`,
+      `Do not treat the check as dispositive without review of weak evidence and counterexamples.`,
+    ],
+    output: [
+      `Do not use ${label} when the user still needs discovery, intake, or source collection first.`,
+      `Do not export the artifact until citations, caveats, and approval notes have been checked.`,
+    ],
+    user: [
+      `Do not let ${label} override explicit user instructions in the current turn.`,
+      `Do not use role style to soften legal, safety, or evidentiary caveats.`,
+    ],
+  };
+  return {
+    purpose: `${categoryPurpose[category]} ${summary}`,
+    userJob: categoryJob[category],
+    whenToUse: categoryUse[category],
+    whenNotToUse: categoryAvoid[category],
+    improves: [
+      `${label} improves retrieval by anchoring ${domainLabel} work to named sources, tools, and outputs instead of generic chat context.`,
+      `${label} improves reviewability by carrying explicit evidence needs, caveats, and approval posture into Ask PRAXIS.`,
+      `${label} improves reuse by making ${primaryOutput} and ${primaryTool} routing available to future turns and combined capsules.`,
+    ],
+    sourceIndications: [
+      `${firstSource} is the first baseline to refresh for ${label}.`,
+      `${secondSource} should be used to corroborate or challenge the first baseline.`,
+      `Treat the source pack as indications for ${domainLabel}, not as a complete bibliography.`,
+    ],
+    evidenceRequirements: [
+      `Attach at least one current source that directly supports the main claim or recommendation in ${label}.`,
+      `Record dates, jurisdiction, actor names, and confidence limits before using ${label} for ${primaryOutput}.`,
+      `Flag unsupported claims and route them through ${primaryTool} or sourceability review before handoff.`,
+    ],
+    riskCaveats: [
+      `${label} can become stale if the source pack is not refreshed before time-sensitive decisions.`,
+      `${label} may hide contested assumptions unless PRAXIS asks for counterevidence and dissenting actor incentives.`,
+    ],
+    decisionPrompts: [
+      `What decision does ${label} support, and what would change that decision?`,
+      `Which actors, constraints, or mandates matter most for ${label} right now?`,
+      `Which claim in ${label} is weakest, newest, or most dependent on a single source?`,
+    ],
+    nextIdeas: [
+      `Run ${primaryTool} on ${label} and save the finding as a capsule note.`,
+      `Attach a fresh source or document that tests the strongest assumption in ${label}.`,
+      `Pair ${label} with ${primaryOutput} so the next PRAXIS response has a concrete handoff target.`,
+    ],
+    qualityRubric: [
+      `Specificity: names the relevant ${domainLabel} actors, claims, and decision horizon.`,
+      `Sourceability: every material claim can be traced to a source, document, or explicit uncertainty note.`,
+      `Actionability: the next PRAXIS step, tool route, and output target are clear.`,
+      `Review posture: risks, caveats, and approval gates are visible before export.`,
+    ],
+    agentInstructions: `When ${label} is active, start by restating its purpose in one line, inspect ${firstSource} and ${secondSource}, run ${primaryTool}${secondaryTool !== primaryTool ? ` or ${secondaryTool}` : ''} for gaps, produce ${primaryOutput}, and stop for approval before external export or connector writes. Context detail: ${detail}`,
   };
 }
 
@@ -1565,6 +1722,17 @@ export function buildCapsuleStarterPromptBlock(
     `suggested_next_actions: ${starterDefinition.suggestedNextActions.join(' | ')}`,
     `agent_workflow: preferred_agent=${starterDefinition.agentWorkflow.preferredAgentId}; route_hint=${starterDefinition.agentWorkflow.routeHint}; output_goal=${starterDefinition.agentWorkflow.outputGoal}; approval_notes=${starterDefinition.agentWorkflow.approvalNotes}`,
     `ai_use_guidance: ${starterDefinition.aiUseGuidance}`,
+    `rich_purpose: ${starterDefinition.richProfile.purpose}`,
+    `rich_user_job: ${starterDefinition.richProfile.userJob}`,
+    `rich_when_to_use: ${starterDefinition.richProfile.whenToUse.join(' | ')}`,
+    `rich_when_not_to_use: ${starterDefinition.richProfile.whenNotToUse.join(' | ')}`,
+    `rich_improves: ${starterDefinition.richProfile.improves.join(' | ')}`,
+    `rich_evidence_requirements: ${starterDefinition.richProfile.evidenceRequirements.join(' | ')}`,
+    `rich_risk_caveats: ${starterDefinition.richProfile.riskCaveats.join(' | ')}`,
+    `rich_decision_prompts: ${starterDefinition.richProfile.decisionPrompts.join(' | ')}`,
+    `rich_next_ideas: ${starterDefinition.richProfile.nextIdeas.join(' | ')}`,
+    `rich_quality_rubric: ${starterDefinition.richProfile.qualityRubric.join(' | ')}`,
+    `rich_agent_instructions: ${starterDefinition.richProfile.agentInstructions}`,
     `combines_well_with: ${starterDefinition.combinesWellWith.length ? starterDefinition.combinesWellWith.join(', ') : 'none'}`,
     ...('inspectionSections' in starterDefinition ? starterDefinition.inspectionSections.map((section) => `starter_section_${stableReceiptPart(section.label)}: ${section.detail}`) : []),
     'runtime_rule: Treat this starter definition as reusable operating context for Ask PRAXIS, tool routing, agent runs, and output drafting.',

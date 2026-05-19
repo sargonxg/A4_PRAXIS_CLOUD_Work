@@ -1,0 +1,73 @@
+# Capsule Depth Audit
+
+- Date: 2026-05-19
+- Catalog version: 2026-05-19-capsule-depth-v4
+- Result: pass
+- Total starters: 59
+- Category counts: situation 20, tool 15, output 19, user 5
+
+## Failures
+
+- None
+
+## Coverage
+
+- starter-situation-sustainability-transition: situation, sustainability, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-finance-country-risk: situation, finance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-hr-harassment-policy: situation, hr, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-diplomatic-options: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-humanitarian-rights-access: situation, humanitarian-rights, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-ai-governance-procurement: situation, ai-governance, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-situation-public-health-risk-communication: situation, public-health, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-critical-minerals-supply-chain: situation, critical-minerals, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-cyber-infrastructure-resilience: situation, cyber-resilience, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-displacement-border-protection: situation, migration-displacement, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-election-integrity-information: situation, election-integrity, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-source-pack-builder: tool, source-intake, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-financial-exposure-mapper: tool, exposure-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-hr-policy-impact-reviewer: tool, policy-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-diplomacy-options-mapper: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-sourceability-audit-reviewer: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-sustainability-risk-brief: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-finance-exposure-note: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-hr-rollout-recommendation: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-diplomatic-options-memo: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-humanitarian-access-brief: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-ai-governance-risk-brief: output, ai-governance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-health-risk-communications-plan: output, public-health, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-critical-minerals-exposure-map: output, critical-minerals, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-cyber-resilience-action-memo: output, cyber-resilience, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-user-esg-sustainability-lead: user, analyst-role, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-user-finance-risk-analyst: user, analyst-role, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-user-hr-policy-owner: user, analyst-role, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-user-diplomatic-desk-officer: user, analyst-role, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-user-humanitarian-legal-investigator: user, analyst-role, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-assumption-audit: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-source-gap-triage: tool, source-intake, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-decision-clock-monitor: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-statistical-baseline-builder: tool, exposure-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-indicator-shift-detector: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-statistical-annex: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-evidence-dashboard-brief: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-data-quality-statistics: situation, exposure-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-two-page-brief: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-diplomatic-note: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-meeting-talking-points: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-mediation-track: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-sanctions-exposure: situation, finance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-humanitarian-access-update: situation, humanitarian-rights, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-sudan-darfur-atrocity-access: situation, humanitarian-rights, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-eastern-drc-m23-mandate-watch: situation, humanitarian-rights, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-gaza-ceasefire-aid-reconstruction: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-red-sea-houthi-shipping-risk: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-essequibo-legal-diplomatic-dispute: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-sourceability-matrix: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-temporal-causal-map: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-actor-leverage-veto-map: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-legal-mandate-compliance-lens: tool, policy-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-negotiation-ripeness-decision-clock: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-principals-decision-memo: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-negotiation-prep-book: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-legal-mandate-compliance-note: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-evidence-sourceability-annex: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-scenario-risk-dashboard-card: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes

@@ -324,6 +324,7 @@ function promoteStarterCapsule(
     capsule.starterSnapshot?.catalogVersion !== CAPSULE_STARTER_CATALOG_VERSION;
   if (!needsPromotion) return capsule;
   const timestamp = nowIso(deps);
+  const shouldBumpVersion = capsule.starterSnapshot?.catalogVersion !== CAPSULE_STARTER_CATALOG_VERSION;
   return sanitizeCapsule({
     ...capsule,
     community: {
@@ -350,6 +351,7 @@ function promoteStarterCapsule(
       checkedAt: timestamp,
     },
     starterSnapshot,
+    version: shouldBumpVersion ? capsule.version + 1 : capsule.version,
     updatedAt: timestamp,
   });
 }
@@ -909,6 +911,18 @@ function buildStarterSnapshot(starterDefinition: CapsuleStarterDefinition): Caps
     suggestedNextActions: [...starterDefinition.suggestedNextActions],
     agentWorkflow: { ...starterDefinition.agentWorkflow },
     aiUseGuidance: starterDefinition.aiUseGuidance,
+    richProfile: {
+      ...starterDefinition.richProfile,
+      whenToUse: [...starterDefinition.richProfile.whenToUse],
+      whenNotToUse: [...starterDefinition.richProfile.whenNotToUse],
+      improves: [...starterDefinition.richProfile.improves],
+      sourceIndications: [...starterDefinition.richProfile.sourceIndications],
+      evidenceRequirements: [...starterDefinition.richProfile.evidenceRequirements],
+      riskCaveats: [...starterDefinition.richProfile.riskCaveats],
+      decisionPrompts: [...starterDefinition.richProfile.decisionPrompts],
+      nextIdeas: [...starterDefinition.richProfile.nextIdeas],
+      qualityRubric: [...starterDefinition.richProfile.qualityRubric],
+    },
     combinesWellWith: [...starterDefinition.combinesWellWith],
   };
 }
@@ -944,7 +958,9 @@ async function writeStarterDetailRecords(
     type: 'starter-readiness',
     stars: starterDefinition.readinessStars,
     summary: starterDefinition.summary,
-    rubric: 'Source-readiness confidence for seeded starter capsule metadata.',
+    rubric: starterDefinition.richProfile.qualityRubric.join(' '),
+    evidenceRequirements: starterDefinition.richProfile.evidenceRequirements,
+    riskCaveats: starterDefinition.richProfile.riskCaveats,
     links: {
       sourceIds: starterDefinition.sourcePack.map((source) => source.id),
       documentIds: [],
@@ -959,7 +975,13 @@ async function writeStarterDetailRecords(
     capsuleId,
     type: 'source_note',
     title: `${starterDefinition.label} starter guidance`,
-    body: starterDefinition.aiUseGuidance,
+    body: [
+      starterDefinition.aiUseGuidance,
+      '',
+      `Purpose: ${starterDefinition.richProfile.purpose}`,
+      `Best next action: ${starterDefinition.richProfile.nextIdeas[0]}`,
+      `Agent recipe: ${starterDefinition.richProfile.agentInstructions}`,
+    ].join('\n'),
     tags: starterDefinition.tags,
     pinned: true,
     starred: true,
@@ -1347,6 +1369,21 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     })).filter((excerpt) => excerpt.sourceId && excerpt.text).slice(0, 20)
     : [];
   const workflow = isRecord(value.agentWorkflow) ? value.agentWorkflow : {};
+  const richProfileRecord = isRecord(value.richProfile) ? value.richProfile : {};
+  const richProfile = {
+    purpose: longStringOrNull(richProfileRecord.purpose) ?? stringOrNull(value.summary) ?? label,
+    userJob: longStringOrNull(richProfileRecord.userJob) ?? stringOrNull(value.detail) ?? label,
+    whenToUse: cleanLongStringArray(richProfileRecord.whenToUse).slice(0, 8),
+    whenNotToUse: cleanLongStringArray(richProfileRecord.whenNotToUse).slice(0, 8),
+    improves: cleanLongStringArray(richProfileRecord.improves).slice(0, 8),
+    sourceIndications: cleanLongStringArray(richProfileRecord.sourceIndications).slice(0, 8),
+    evidenceRequirements: cleanLongStringArray(richProfileRecord.evidenceRequirements).slice(0, 8),
+    riskCaveats: cleanLongStringArray(richProfileRecord.riskCaveats).slice(0, 8),
+    decisionPrompts: cleanLongStringArray(richProfileRecord.decisionPrompts).slice(0, 8),
+    nextIdeas: cleanLongStringArray(richProfileRecord.nextIdeas).slice(0, 8),
+    qualityRubric: cleanLongStringArray(richProfileRecord.qualityRubric).slice(0, 8),
+    agentInstructions: longStringOrNull(richProfileRecord.agentInstructions) ?? stringOrNull(value.aiUseGuidance) ?? '',
+  };
   return {
     catalogVersion: stringOrNull(value.catalogVersion) ?? 'unknown',
     starterId,
@@ -1370,6 +1407,7 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
       approvalNotes: stringOrNull(workflow.approvalNotes) ?? 'Require human review before external export.',
     },
     aiUseGuidance: stringOrNull(value.aiUseGuidance) ?? '',
+    richProfile,
     combinesWellWith: cleanStringArray(value.combinesWellWith).slice(0, 20),
   };
 }
@@ -1380,8 +1418,18 @@ function cleanStringArray(value: unknown): string[] {
     : [];
 }
 
+function cleanLongStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).map((item) => item.trim().slice(0, 600))
+    : [];
+}
+
 function stringOrNull(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim().slice(0, 240) : null;
+}
+
+function longStringOrNull(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim().slice(0, 1200) : null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -3747,6 +3747,9 @@ function CapsuleCard({
   const typeChip = meta.taxonomy.types[0]?.label ?? capsuleRoleLabel(defaultRole);
   const domainChip = meta.taxonomy.domains[0]?.label ?? capsule.scope;
   const policyTeamChip = meta.taxonomy.policyTeams[0]?.label ?? 'Review team';
+  const richProfile = meta.starterDefinition?.richProfile;
+  const purposeLine = richProfile?.purpose ?? meta.summary;
+  const bestNextAction = richProfile?.nextIdeas[0] ?? capsule.health?.warnings?.[0] ?? 'Inspect source gaps before relying on this capsule.';
   return (
     <article
       ref={setNodeRef}
@@ -3786,6 +3789,10 @@ function CapsuleCard({
           <span>health {score}/100</span>
           <span>{counts.documents} docs</span>
           <span>{counts.sources} sources</span>
+        </span>
+        <span className="mt-3 block line-clamp-2 text-xs leading-5 text-slate-600">{purposeLine}</span>
+        <span className="mt-2 block truncate rounded-md bg-white/80 px-2 py-1.5 text-[11px] font-semibold text-slate-700">
+          Next: {bestNextAction}
         </span>
       </button>
       <div className="px-3 pb-3">
@@ -4830,6 +4837,7 @@ function CapsuleInspectorSheet({
   const starterActions = meta?.starterDefinition?.suggestedNextActions ?? [];
   const starterGuidance = meta?.starterDefinition?.aiUseGuidance ?? null;
   const starterReadiness = meta?.starterDefinition?.readinessStars ?? null;
+  const richProfile = meta?.starterDefinition?.richProfile ?? null;
   const compatible = meta?.starterDefinition?.combinesWellWith
     .map((id) => CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === id)?.label ?? id)
     .slice(0, 4) ?? [];
@@ -4862,6 +4870,17 @@ function CapsuleInspectorSheet({
           <Metric label="Tools" value={counts.tools} />
           <Metric label="Outputs" value={counts.outputs} />
         </div>
+        {richProfile ? (
+          <div className="mt-5 space-y-2" data-testid="capsule-rich-profile">
+            <InspectorTextSection label="Purpose" detail={`${richProfile.purpose} ${richProfile.userJob}`} />
+            <InspectorTextSection label="Sources" detail={richProfile.sourceIndications.join(' ')} />
+            <InspectorTextSection label="Decision Use" detail={[...richProfile.whenToUse, ...richProfile.decisionPrompts].slice(0, 5).join(' ')} />
+            <InspectorTextSection label="Improvement Ideas" detail={[...richProfile.improves, ...richProfile.nextIdeas].slice(0, 6).join(' ')} />
+            <InspectorTextSection label="Gaps/Risks" detail={[...richProfile.whenNotToUse, ...richProfile.riskCaveats, ...richProfile.evidenceRequirements].slice(0, 6).join(' ')} />
+            <InspectorTextSection label="Run Recipe" detail={richProfile.agentInstructions} />
+            <InspectorTextSection label="Compatible Capsules" detail={(compatible.length ? compatible : ['Any user capsule', 'Any tool capsule', 'Any output capsule']).join(', ')} />
+          </div>
+        ) : null}
         {capsule ? (
           <div className="mt-5 rounded-lg border border-slate-200 p-4">
             <p className="text-xs font-semibold uppercase text-slate-400">Capsule anatomy</p>
@@ -5010,6 +5029,15 @@ function InspectorRef({ label, value }: { label: string; value?: string | null }
       <span className="font-semibold text-slate-500">{label}</span>
       <span className="min-w-0 truncate text-right font-mono text-[11px] text-slate-700">{value || 'open'}</span>
     </p>
+  );
+}
+
+function InspectorTextSection({ label, detail }: { label: string; detail: string }) {
+  return (
+    <section className="rounded-lg border border-slate-200 p-3">
+      <p className="text-xs font-semibold text-slate-800">{label}</p>
+      <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
+    </section>
   );
 }
 

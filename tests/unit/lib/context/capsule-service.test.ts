@@ -482,6 +482,62 @@ describe('capsule service', () => {
     expect(capsule?.version).toBe(2);
     expect(capsule?.starterSnapshot?.starterId).toBe('starter-situation-diplomatic-options');
   });
+
+  it('backfills old starter snapshots while preserving user edits and detail records', async () => {
+    const db = new FakeFirestore();
+    await seedStarterCapsules('u1', deps(db));
+    const path = 'users/u1/capsules/starter-situation-diplomatic-options';
+    const existing = db.data.get(path) ?? {};
+    db.data.set(path, {
+      ...existing,
+      version: 7,
+      label: 'Custom diplomatic label',
+      archivedAt: '2026-05-13T00:00:00.000Z',
+      associatedCapsuleIds: ['user-added-related-capsule'],
+      coreRefs: {
+        ...((existing.coreRefs ?? {}) as Record<string, unknown>),
+        sourceCoreIds: ['user-added-source'],
+        documentCoreIds: ['user-added-document'],
+      },
+      community: {
+        ...((existing.community ?? {}) as Record<string, unknown>),
+        userRating: 2,
+        tags: ['starter', 'situation', 'user-added-tag'],
+      },
+      starterSnapshot: {
+        ...((existing.starterSnapshot ?? {}) as Record<string, unknown>),
+        catalogVersion: '2026-05-18-capsule-inspection-v3',
+        richProfile: undefined,
+      },
+    });
+
+    const result = await seedStarterCapsules('u1', deps(db));
+    const capsule = await getCapsule('u1', 'starter-situation-diplomatic-options', deps(db));
+    const sourceRecords = Array.from(db.data.keys()).filter((key) => key.startsWith(`${path}/sources/`));
+
+    expect(result.created).toBe(0);
+    expect(result.existing).toBe(59);
+    expect(capsule?.label).toBe('Custom diplomatic label');
+    expect(capsule?.archivedAt).toBe('2026-05-13T00:00:00.000Z');
+    expect(capsule?.associatedCapsuleIds).toContain('user-added-related-capsule');
+    expect(capsule?.coreRefs.sourceCoreIds).toContain('user-added-source');
+    expect(capsule?.coreRefs.documentCoreIds).toContain('user-added-document');
+    expect(capsule?.community.userRating).toBe(2);
+    expect(capsule?.community.tags).toEqual(expect.arrayContaining(['user-added-tag', 'type:situation', 'domain:diplomacy']));
+    expect(capsule?.starterSnapshot?.catalogVersion).toBe('2026-05-19-capsule-depth-v4');
+    expect(capsule?.starterSnapshot?.richProfile?.decisionPrompts.length).toBeGreaterThanOrEqual(3);
+    expect(capsule?.version).toBe(8);
+    expect(db.data.get(`${path}/evaluations/starter-readiness`)?.evidenceRequirements).toEqual(expect.arrayContaining([
+      expect.stringContaining('Attach at least one current source'),
+    ]));
+    expect(db.data.get(`${path}/notes/starter-guidance`)?.body).toEqual(expect.stringContaining('Best next action:'));
+
+    await seedStarterCapsules('u1', deps(db));
+    const afterSecondRun = await getCapsule('u1', 'starter-situation-diplomatic-options', deps(db));
+    const sourceRecordsAfterSecondRun = Array.from(db.data.keys()).filter((key) => key.startsWith(`${path}/sources/`));
+    expect(afterSecondRun?.version).toBe(8);
+    expect(sourceRecordsAfterSecondRun).toEqual(sourceRecords);
+  });
 });
 
 function deps(db: FakeFirestore) {

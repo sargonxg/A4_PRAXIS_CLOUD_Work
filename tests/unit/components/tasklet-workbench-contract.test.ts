@@ -111,6 +111,15 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Starter excerpts');
     expect(source).toContain('AI use guidance');
     expect(source).toContain('Suggested next actions');
+    expect(source).toContain('data-testid="capsule-rich-profile"');
+    expect(source).toContain('Purpose');
+    expect(source).toContain('Decision Use');
+    expect(source).toContain('Improvement Ideas');
+    expect(source).toContain('Gaps/Risks');
+    expect(source).toContain('Run Recipe');
+    expect(source).toContain('Compatible Capsules');
+    expect(source).toContain('Next: {bestNextAction}');
+    expect(source).toContain('const purposeLine = richProfile?.purpose');
     expect(source).toContain('Thinking devices');
     expect(source).toContain('Artifacts');
     expect(source).toContain('All types');

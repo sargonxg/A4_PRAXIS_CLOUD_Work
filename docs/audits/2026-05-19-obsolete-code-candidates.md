@@ -1,6 +1,6 @@
 # Obsolete Code Candidate Audit
 
-Generated: 2026-05-19T14:30:56.132Z
+Generated: 2026-05-19T16:01:50.198Z
 
 No file in this ledger is approved for immediate deletion. Candidates require the listed gate first.
 
@@ -71,8 +71,8 @@ No file in this ledger is approved for immediate deletion. Candidates require th
 | `docs/adr/README.md` | doc | keep | 13 | obsolete-or-retired | Keep until compatibility/runtime use is removed. |
 | `src/lib/intelligence/corpus-search.ts` | library | keep | 13 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/knowledge/library-service.ts` | library | keep | 14 | archive-state-field | Keep until compatibility/runtime use is removed. |
-| `src/lib/product/context-capsules.ts` | library | keep | 24 | legacy, archive-state-field | Keep until compatibility/runtime use is removed. |
-| `src/components/praxis/tasklet-praxis-workbench.tsx` | component | keep | 26 | legacy, archive-state-field | Keep until compatibility/runtime use is removed. |
+| `src/components/praxis/tasklet-praxis-workbench.tsx` | component | keep | 25 | legacy, archive-state-field | Keep until compatibility/runtime use is removed. |
+| `src/lib/product/context-capsules.ts` | library | keep | 25 | legacy, archive-state-field | Keep until compatibility/runtime use is removed. |
 | `src/lib/agent-runtime/evidence-pack.ts` | library | keep | 17 | archive-state-field | Keep until compatibility/runtime use is removed. |
 | `src/lib/firebase/tool-data-service.ts` | library | keep | 17 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/compat/sample-mode.ts` | library | keep | 46 | legacy, obsolete-or-retired, compatibility | Keep until compatibility/runtime use is removed. |
@@ -82,7 +82,7 @@ No file in this ledger is approved for immediate deletion. Candidates require th
 | `src/lib/ai/situation-context.ts` | library | keep | 44 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/proxy.ts` | library | keep | 44 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/api/save-tool-output.ts` | library | keep | 58 | legacy, compatibility | Keep until compatibility/runtime use is removed. |
-| `docs/tools/assistant.md` | doc | keep | 71 | legacy | Keep until compatibility/runtime use is removed. |
+| `docs/tools/assistant.md` | doc | keep | 72 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/ai/providers.ts` | library | keep | 99 | deprecated, legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `src/lib/firebase/firestore.ts` | library | keep | 110 | legacy, compatibility | Keep until compatibility/runtime use is removed. |
-| `docs/tools/dashboard.md` | doc | keep | 112 | legacy | Keep until compatibility/runtime use is removed. |
+| `docs/tools/dashboard.md` | doc | keep | 114 | legacy | Keep until compatibility/runtime use is removed. |

@@ -1,0 +1,545 @@
+{
+  "ok": true,
+  "catalogVersion": "2026-05-19-capsule-depth-v4",
+  "total": 59,
+  "counts": {
+    "situation": 20,
+    "tool": 15,
+    "output": 19,
+    "user": 5
+  },
+  "failures": [],
+  "capsules": [
+    {
+      "starterId": "starter-situation-sustainability-transition",
+      "category": "situation",
+      "domain": "sustainability",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-finance-country-risk",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-hr-harassment-policy",
+      "category": "situation",
+      "domain": "hr",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-diplomatic-options",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-humanitarian-rights-access",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-ai-governance-procurement",
+      "category": "situation",
+      "domain": "ai-governance",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-public-health-risk-communication",
+      "category": "situation",
+      "domain": "public-health",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-critical-minerals-supply-chain",
+      "category": "situation",
+      "domain": "critical-minerals",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-cyber-infrastructure-resilience",
+      "category": "situation",
+      "domain": "cyber-resilience",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-displacement-border-protection",
+      "category": "situation",
+      "domain": "migration-displacement",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-election-integrity-information",
+      "category": "situation",
+      "domain": "election-integrity",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-source-pack-builder",
+      "category": "tool",
+      "domain": "source-intake",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-financial-exposure-mapper",
+      "category": "tool",
+      "domain": "exposure-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-hr-policy-impact-reviewer",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-diplomacy-options-mapper",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-sourceability-audit-reviewer",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-sustainability-risk-brief",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-finance-exposure-note",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-hr-rollout-recommendation",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-diplomatic-options-memo",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-humanitarian-access-brief",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-ai-governance-risk-brief",
+      "category": "output",
+      "domain": "ai-governance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-health-risk-communications-plan",
+      "category": "output",
+      "domain": "public-health",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-critical-minerals-exposure-map",
+      "category": "output",
+      "domain": "critical-minerals",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-cyber-resilience-action-memo",
+      "category": "output",
+      "domain": "cyber-resilience",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-user-esg-sustainability-lead",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-user-finance-risk-analyst",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-user-hr-policy-owner",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-user-diplomatic-desk-officer",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-user-humanitarian-legal-investigator",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-assumption-audit",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-source-gap-triage",
+      "category": "tool",
+      "domain": "source-intake",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-decision-clock-monitor",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-statistical-baseline-builder",
+      "category": "tool",
+      "domain": "exposure-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-indicator-shift-detector",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-statistical-annex",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-evidence-dashboard-brief",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-data-quality-statistics",
+      "category": "situation",
+      "domain": "exposure-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-two-page-brief",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-diplomatic-note",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-meeting-talking-points",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-mediation-track",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-sanctions-exposure",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-humanitarian-access-update",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-sudan-darfur-atrocity-access",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-eastern-drc-m23-mandate-watch",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-gaza-ceasefire-aid-reconstruction",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-red-sea-houthi-shipping-risk",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-essequibo-legal-diplomatic-dispute",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-sourceability-matrix",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-temporal-causal-map",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-actor-leverage-veto-map",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-legal-mandate-compliance-lens",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-negotiation-ripeness-decision-clock",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-principals-decision-memo",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-negotiation-prep-book",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-legal-mandate-compliance-note",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-evidence-sourceability-annex",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-scenario-risk-dashboard-card",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    }
+  ]
+}

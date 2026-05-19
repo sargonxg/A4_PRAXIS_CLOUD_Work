@@ -185,7 +185,7 @@ describe('context capsule product contract', () => {
       expect(starter.inspectionSections.length).toBeGreaterThanOrEqual(3);
       expect(starter.combinesWellWith.length).toBeGreaterThanOrEqual(2);
       expect(starter.suggestedQuestions.length).toBeGreaterThanOrEqual(2);
-      expect(starter.suggestedNextActions.length).toBeGreaterThanOrEqual(2);
+      expect(starter.suggestedNextActions.length).toBeGreaterThanOrEqual(3);
       expect(starter.aiUseGuidance.length).toBeGreaterThan(40);
       expect(starter.agentWorkflow.preferredAgentId).toBeTruthy();
       expect(starter.sourcePack.length, `${starter.starterId} source pack`).toBeGreaterThanOrEqual(2);
@@ -196,6 +196,67 @@ describe('context capsule product contract', () => {
         expect(source.date, `${starter.starterId} source date`).toBeTruthy();
         expect([1, 2, 3]).toContain(source.reliabilityTier);
         expect(source.url).toMatch(/^https:\/\//);
+      }
+    }
+  });
+
+  it('requires every starter capsule to carry a complete non-generic rich profile', () => {
+    const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
+    const genericFragments = [
+      'lorem ipsum',
+      'todo',
+      'tbd',
+      'generic fallback',
+      'placeholder',
+      'coming soon',
+    ];
+
+    for (const starter of CAPSULE_STARTER_DEFINITIONS) {
+      const profile = starter.richProfile;
+      const allText = [
+        profile.purpose,
+        profile.userJob,
+        profile.agentInstructions,
+        ...profile.whenToUse,
+        ...profile.whenNotToUse,
+        ...profile.improves,
+        ...profile.sourceIndications,
+        ...profile.evidenceRequirements,
+        ...profile.riskCaveats,
+        ...profile.decisionPrompts,
+        ...profile.nextIdeas,
+        ...profile.qualityRubric,
+      ].join(' ').toLowerCase();
+
+      expect(profile.purpose, `${starter.starterId} purpose`).toContain(starter.label);
+      expect(profile.userJob.length, `${starter.starterId} user job`).toBeGreaterThan(40);
+      expect(profile.whenToUse.length, `${starter.starterId} whenToUse`).toBeGreaterThanOrEqual(3);
+      expect(profile.whenNotToUse.length, `${starter.starterId} whenNotToUse`).toBeGreaterThanOrEqual(2);
+      expect(profile.improves.length, `${starter.starterId} improves`).toBeGreaterThanOrEqual(3);
+      expect(profile.sourceIndications.length, `${starter.starterId} source indications`).toBeGreaterThanOrEqual(3);
+      expect(profile.evidenceRequirements.length, `${starter.starterId} evidence requirements`).toBeGreaterThanOrEqual(2);
+      expect(profile.riskCaveats.length, `${starter.starterId} risk caveats`).toBeGreaterThanOrEqual(2);
+      expect(profile.decisionPrompts.length, `${starter.starterId} decision prompts`).toBeGreaterThanOrEqual(3);
+      expect(profile.nextIdeas.length, `${starter.starterId} next ideas`).toBeGreaterThanOrEqual(3);
+      expect(profile.qualityRubric.length, `${starter.starterId} quality rubric`).toBeGreaterThanOrEqual(4);
+      expect(profile.agentInstructions, `${starter.starterId} agent instructions`).toContain(starter.label);
+      for (const text of [
+        ...profile.whenToUse,
+        ...profile.improves,
+        ...profile.decisionPrompts,
+        ...profile.nextIdeas,
+      ]) {
+        expect(text.length, `${starter.starterId} rich text length`).toBeGreaterThan(35);
+      }
+      for (const bad of genericFragments) {
+        expect(allText, `${starter.starterId} generic fragment ${bad}`).not.toContain(bad);
+      }
+      for (const relatedStarterId of starter.combinesWellWith) {
+        expect(starterIds.has(relatedStarterId), `${starter.starterId} combines with missing ${relatedStarterId}`).toBe(true);
+      }
+      const sourceIds = new Set(starter.sourcePack.map((source) => source.id));
+      for (const excerpt of starter.excerpts) {
+        expect(sourceIds.has(excerpt.sourceId), `${starter.starterId} excerpt source ${excerpt.sourceId}`).toBe(true);
       }
     }
   });
@@ -382,8 +443,9 @@ describe('context capsule product contract', () => {
       expect(starter.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
       expect(starter.excerpts.length, `${starterId} excerpts`).toBeGreaterThanOrEqual(2);
       expect(starter.inspectionSections.map((section) => section.label)).toEqual(expect.arrayContaining([
-        'Best use',
-        'AI use guidance',
+        'Purpose',
+        'Decision Use',
+        'Run Recipe',
       ]));
       expect(starter.suggestedQuestions.length, `${starterId} questions`).toBeGreaterThanOrEqual(3);
       expect(starter.suggestedNextActions.length, `${starterId} actions`).toBeGreaterThanOrEqual(3);
