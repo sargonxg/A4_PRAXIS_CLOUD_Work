@@ -15,9 +15,15 @@ Current cleanup checkpoint:
   collisions in `src/__tests__/consolidated-tools.test.ts`.
 - The senior-engineering audit ledger for this pass is
   `docs/audits/2026-05-19-senior-engineering-improvement-audit.md`.
-- API route inventory and cleanup-map artifacts now cover 208 routes, classify
+- API route inventory and cleanup-map artifacts now cover 210 routes, classify
   compatibility/staged/admin/runtime posture, preserve agentic runtime lanes,
   and keep deletion candidates at 0 pending stronger evidence.
+- Build `2026.05.19.01` closes the static deep pre-ship blockers: 140 PASS,
+  1 WARN, 0 BLOCKED. The remaining warning is the allowed Gemini 2.5 fallback
+  marker in the central model policy/tests.
+- The two retired graph staging endpoints now return archived 410 responses
+  with `/api/graph/proposals` as the replacement, so the cleanup map reports 0
+  archive candidates and 0 deletion candidates.
 - Runtime proof remains structurally guarded, but full live worker proof still
   requires a credentialed shell with Cloud SQL, Cloud Tasks worker URL/auth, and
   Genkit/Vertex runtime configuration.

@@ -1,6 +1,6 @@
 # Obsolete Code Candidate Audit
 
-Generated: 2026-05-19T20:14:08.987Z
+Generated: 2026-05-19T20:49:00.333Z
 
 No file in this ledger is approved for immediate deletion. Candidates require the listed gate first.
 
@@ -23,7 +23,7 @@ No file in this ledger is approved for immediate deletion. Candidates require th
 | `src/lib/ai/deep-research-envelope.ts` | library | keep | 4 | deprecated, legacy | Keep until compatibility/runtime use is removed. |
 | `src/components/settings/account-settings-page.tsx` | component | keep | 5 | legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `src/lib/ai/legacy-data-stream.ts` | library | keep | 6 | legacy, compatibility | Keep until compatibility/runtime use is removed. |
-| `docs/tools/INDEX.md` | doc | keep | 9 | legacy, obsolete-or-retired | Keep until compatibility/runtime use is removed. |
+| `docs/tools/INDEX.md` | doc | keep | 10 | legacy, obsolete-or-retired | Keep until compatibility/runtime use is removed. |
 | `src/lib/product/release-notes.ts` | library | keep | 20 | legacy, obsolete-or-retired, compatibility | Keep until compatibility/runtime use is removed. |
 | `docs/architecture/CONFLICT_DATA_SOURCES.md` | doc | keep | 2 | obsolete-or-retired | Keep until compatibility/runtime use is removed. |
 | `docs/architecture/GRAFEO_CONTEXT_GRAPH_EXPERIMENT.md` | doc | keep | 2 | compatibility | Keep until compatibility/runtime use is removed. |
@@ -53,10 +53,10 @@ No file in this ledger is approved for immediate deletion. Candidates require th
 | `src/lib/constants/tool-registry.ts` | library | keep | 34 | deprecated, legacy, compatibility, archive | Keep until compatibility/runtime use is removed. |
 | `src/lib/context/capsule-associations.ts` | library | keep | 4 | archive-state-field | Keep until compatibility/runtime use is removed. |
 | `src/lib/navigation/tool-preferences.ts` | library | keep | 4 | legacy | Keep until compatibility/runtime use is removed. |
+| `src/lib/services/graph-populate.ts` | library | keep | 4 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/tools/canonical-tool-library.ts` | library | keep | 4 | archive-state-field | Keep until compatibility/runtime use is removed. |
 | `docs/runbooks/MEMORY_LAYER_RUNBOOK.md` | doc | keep | 5 | compatibility | Keep until compatibility/runtime use is removed. |
 | `src/lib/conversations/capsule-signal.ts` | library | keep | 5 | archive-state-field | Keep until compatibility/runtime use is removed. |
-| `src/lib/services/graph-populate.ts` | library | keep | 5 | legacy | Keep until compatibility/runtime use is removed. |
 | `docs/architecture/KG_BACKEND.md` | doc | keep | 6 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/ai/capability-registry.ts` | library | keep | 6 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/dashboard/role-recommendations.ts` | library | keep | 6 | legacy | Keep until compatibility/runtime use is removed. |
@@ -70,18 +70,18 @@ No file in this ledger is approved for immediate deletion. Candidates require th
 | `src/lib/api/with-credits.ts` | library | keep | 10 | compatibility | Keep until compatibility/runtime use is removed. |
 | `src/lib/constants/consolidated-tools.ts` | library | keep | 11 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/intelligence/corpus-search.ts` | library | keep | 13 | legacy | Keep until compatibility/runtime use is removed. |
-| `docs/adr/README.md` | doc | keep | 14 | obsolete-or-retired | Keep until compatibility/runtime use is removed. |
-| `src/components/praxis/tasklet-praxis-workbench.tsx` | component | keep | 24 | legacy, archive-state-field | Keep until compatibility/runtime use is removed. |
 | `src/lib/knowledge/library-service.ts` | library | keep | 14 | archive-state-field | Keep until compatibility/runtime use is removed. |
+| `src/components/praxis/tasklet-praxis-workbench.tsx` | component | keep | 25 | legacy, archive-state-field | Keep until compatibility/runtime use is removed. |
 | `src/lib/product/context-capsules.ts` | library | keep | 25 | legacy, archive-state-field | Keep until compatibility/runtime use is removed. |
+| `docs/adr/README.md` | doc | keep | 16 | obsolete-or-retired | Keep until compatibility/runtime use is removed. |
 | `src/lib/agent-runtime/evidence-pack.ts` | library | keep | 17 | archive-state-field | Keep until compatibility/runtime use is removed. |
 | `src/lib/firebase/tool-data-service.ts` | library | keep | 17 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/compat/sample-mode.ts` | library | keep | 46 | legacy, obsolete-or-retired, compatibility | Keep until compatibility/runtime use is removed. |
 | `src/lib/firebase/analyst-profile-admin.ts` | library | keep | 26 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/ai/context-builder-server.ts` | library | keep | 37 | legacy | Keep until compatibility/runtime use is removed. |
-| `src/lib/context/capsule-service.ts` | library | keep | 60 | legacy, compatibility, archive-state-field | Keep until compatibility/runtime use is removed. |
+| `src/lib/context/capsule-service.ts` | library | keep | 62 | legacy, compatibility, archive-state-field | Keep until compatibility/runtime use is removed. |
 | `src/lib/ai/situation-context.ts` | library | keep | 44 | legacy | Keep until compatibility/runtime use is removed. |
-| `src/proxy.ts` | library | keep | 44 | legacy | Keep until compatibility/runtime use is removed. |
+| `src/proxy.ts` | library | keep | 45 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/api/save-tool-output.ts` | library | keep | 58 | legacy, compatibility | Keep until compatibility/runtime use is removed. |
 | `docs/tools/assistant.md` | doc | keep | 72 | legacy | Keep until compatibility/runtime use is removed. |
 | `src/lib/ai/providers.ts` | library | keep | 100 | deprecated, legacy, compatibility | Keep until compatibility/runtime use is removed. |

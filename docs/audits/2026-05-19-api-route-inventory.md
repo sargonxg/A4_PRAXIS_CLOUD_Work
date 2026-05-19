@@ -1,14 +1,14 @@
 # API Route Inventory
 
-Generated: 2026-05-19T20:14:04.986Z
-Total routes: 208
+Generated: 2026-05-19T20:48:58.613Z
+Total routes: 210
 
 | Category | Count |
 | --- | ---: |
-| canonical | 101 |
+| canonical | 105 |
 | compatibility | 37 |
 | admin/internal | 68 |
-| staged | 2 |
+| staged | 0 |
 | deletion-candidate | 0 |
 
 | Route | Category | Auth posture | Calibration | Caller evidence | Recommended action |
@@ -99,6 +99,7 @@ Total routes: 208
 | `/api/context/capsules` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler<br>ContextCapsule cockpit/repository family | Keep canonical. |
 | `/api/context/capsules/[capsuleId]` | admin/internal | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler<br>PATCH handler<br>DELETE handler<br>ContextCapsule cockpit/repository family | Keep sanitized/admin-gated and exclude from normal-user UI. |
 | `/api/context/capsules/[capsuleId]/attach` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler<br>ContextCapsule cockpit/repository family | Keep canonical. |
+| `/api/context/capsules/[capsuleId]/capsule-plus` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>ContextCapsule cockpit/repository family | Keep canonical. |
 | `/api/context/capsules/[capsuleId]/diff` | admin/internal | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler<br>ContextCapsule cockpit/repository family | Keep sanitized/admin-gated and exclude from normal-user UI. |
 | `/api/context/capsules/[capsuleId]/evaluations` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler<br>ContextCapsule cockpit/repository family | Keep canonical. |
 | `/api/context/capsules/[capsuleId]/history` | admin/internal | user authenticated | not AI route | server auth boundary<br>GET handler<br>ContextCapsule cockpit/repository family | Keep sanitized/admin-gated and exclude from normal-user UI. |
@@ -106,6 +107,7 @@ Total routes: 208
 | `/api/context/capsules/[capsuleId]/notes` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler<br>ContextCapsule cockpit/repository family | Keep canonical. |
 | `/api/context/capsules/[capsuleId]/spans` | admin/internal | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler<br>ContextCapsule cockpit/repository family | Keep sanitized/admin-gated and exclude from normal-user UI. |
 | `/api/context/capsules/[capsuleId]/swap` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler<br>ContextCapsule cockpit/repository family | Keep canonical. |
+| `/api/context/capsules/capsule-plus/import` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler<br>ContextCapsule cockpit/repository family | Keep canonical. |
 | `/api/context/capsules/shared/[token]` | admin/internal | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler<br>ContextCapsule cockpit/repository family | Keep sanitized/admin-gated and exclude from normal-user UI. |
 | `/api/context/check-claim` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler | Keep canonical. |
 | `/api/context/packages` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler | Keep canonical. |
@@ -132,7 +134,7 @@ Total routes: 208
 | `/api/entities/enrich` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler | Keep canonical. |
 | `/api/events/pubsub/profile` | canonical | public or route-local | not AI route | static route export | Keep canonical. |
 | `/api/export` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler | Keep canonical. |
-| `/api/graph/approve-staged` | staged | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler | Block launch claims until implemented or hidden. |
+| `/api/graph/approve-staged` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler | Keep canonical. |
 | `/api/graph/changes` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler | Keep canonical. |
 | `/api/graph/context` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler | Keep canonical. |
 | `/api/graph/cypher` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler | Keep canonical. |
@@ -142,7 +144,7 @@ Total routes: 208
 | `/api/graph/proposals` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler | Keep canonical. |
 | `/api/graph/proposals/[id]/approve` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler | Keep canonical. |
 | `/api/graph/proposals/[id]/reject` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler | Keep canonical. |
-| `/api/graph/staging-stream` | staged | user authenticated | not AI route | server auth boundary<br>GET handler | Block launch claims until implemented or hidden. |
+| `/api/graph/staging-stream` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler | Keep canonical. |
 | `/api/health` | admin/internal | public/sanitized | not AI route | runtime health diagnostics | Keep sanitized/admin-gated and exclude from normal-user UI. |
 | `/api/health/agentic-search` | canonical | public/sanitized | not AI route | runtime health diagnostics | Keep canonical. |
 | `/api/health/breakers` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>runtime health diagnostics | Keep canonical. |

@@ -2,7 +2,7 @@
 
 Date: 2026-05-19
 
-Summary: 128 PASS, 4 WARN, 9 BLOCKED across 141 static pre-ship checks.
+Summary: 140 PASS, 1 WARN, 0 BLOCKED across 141 static pre-ship checks.
 
 This audit is deliberately conservative: live staging checks, Cloud SQL restore tests, load tests, browser sessions, and Vertex billing comparisons remain blocked until run against staging/production credentials and datasets.
 
@@ -131,7 +131,7 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 | PASS | src/hooks/useOrchestratorEvents.ts includes EventSource | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
 | PASS | src/hooks/useOrchestratorEvents.ts includes addEventListener | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
 | PASS | src/hooks/useOrchestratorEvents.ts includes removeEventListener | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
-| BLOCKED | src/hooks/useOrchestratorEvents.ts includes Last-Event-ID | src/hooks/useOrchestratorEvents.ts is missing required marker. | Add or wire Last-Event-ID before marking this checklist item complete. |
+| PASS | src/hooks/useOrchestratorEvents.ts includes Last-Event-ID | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
 | PASS | src/hooks/useOrchestratorEvents.ts includes isReconnecting | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
 | PASS | src/hooks/useOrchestratorEvents.ts includes lastEventAt | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
 | PASS | src/hooks/useOrchestratorEvents.ts includes 'start' | src/hooks/useOrchestratorEvents.ts contains required marker. | None. |
@@ -157,10 +157,10 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 
 | Status | Check | Evidence | Remediation |
 |---|---|---|---|
-| BLOCKED | frontend polish files includes EmptyState | frontend polish files is missing required marker. | Add or wire EmptyState before marking this checklist item complete. |
-| BLOCKED | frontend polish files includes ErrorState | frontend polish files is missing required marker. | Add or wire ErrorState before marking this checklist item complete. |
-| BLOCKED | frontend polish files includes Retry | frontend polish files is missing required marker. | Add or wire Retry before marking this checklist item complete. |
-| BLOCKED | frontend polish files includes Skeleton | frontend polish files is missing required marker. | Add or wire Skeleton before marking this checklist item complete. |
+| PASS | frontend polish files includes EmptyState | frontend polish files contains required marker. | None. |
+| PASS | frontend polish files includes ErrorState | frontend polish files contains required marker. | None. |
+| PASS | frontend polish files includes Retry | frontend polish files contains required marker. | None. |
+| PASS | frontend polish files includes Skeleton | frontend polish files contains required marker. | None. |
 | PASS | frontend polish files includes Permissions-Policy | frontend polish files contains required marker. | None. |
 
 ## 17. End-to-end product tests
@@ -169,9 +169,9 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 |---|---|---|---|
 | PASS | tests/e2e/golden-path.spec.ts exists | tests/e2e/golden-path.spec.ts found. | None. |
 | PASS | tests/e2e/golden-path.spec.ts exists | tests/e2e/golden-path.spec.ts found. | None. |
-| WARN | tests/e2e/workbench/draft-briefing-assembly.spec.ts exists | tests/e2e/workbench/draft-briefing-assembly.spec.ts missing from tests/e2e. | Add or rename an E2E covering tests/e2e/workbench/draft-briefing-assembly.spec.ts. |
-| WARN | tests/e2e/workbench/desk-command-center.spec.ts exists | tests/e2e/workbench/desk-command-center.spec.ts missing from tests/e2e. | Add or rename an E2E covering tests/e2e/workbench/desk-command-center.spec.ts. |
-| WARN | tests/e2e/visualization/timeline-display.spec.ts exists | tests/e2e/visualization/timeline-display.spec.ts missing from tests/e2e. | Add or rename an E2E covering tests/e2e/visualization/timeline-display.spec.ts. |
+| PASS | tests/e2e/workbench/draft-briefing-assembly.spec.ts exists | tests/e2e/workbench/draft-briefing-assembly.spec.ts found. | None. |
+| PASS | tests/e2e/workbench/desk-command-center.spec.ts exists | tests/e2e/workbench/desk-command-center.spec.ts found. | None. |
+| PASS | tests/e2e/visualization/timeline-display.spec.ts exists | tests/e2e/visualization/timeline-display.spec.ts found. | None. |
 
 ## 19. Performance and latency targets
 
@@ -207,8 +207,8 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 | Status | Check | Evidence | Remediation |
 |---|---|---|---|
 | PASS | audit:cognee script exists | audit:cognee is in package.json. | Add package script audit:cognee. |
-| BLOCKED | audit:workspace-tabs-chapters script exists | audit:workspace-tabs-chapters is missing from package.json. | Add package script audit:workspace-tabs-chapters. |
-| BLOCKED | audit:substrate-writers script exists | audit:substrate-writers is missing from package.json. | Add package script audit:substrate-writers. |
-| BLOCKED | audit:orchestrator-writes script exists | audit:orchestrator-writes is missing from package.json. | Add package script audit:orchestrator-writes. |
-| BLOCKED | audit:ontology-system script exists | audit:ontology-system is missing from package.json. | Add package script audit:ontology-system. |
+| PASS | audit:workspace-tabs-chapters script exists | audit:workspace-tabs-chapters is in package.json. | Add package script audit:workspace-tabs-chapters. |
+| PASS | audit:substrate-writers script exists | audit:substrate-writers is in package.json. | Add package script audit:substrate-writers. |
+| PASS | audit:orchestrator-writes script exists | audit:orchestrator-writes is in package.json. | Add package script audit:orchestrator-writes. |
+| PASS | audit:ontology-system script exists | audit:ontology-system is in package.json. | Add package script audit:ontology-system. |
 

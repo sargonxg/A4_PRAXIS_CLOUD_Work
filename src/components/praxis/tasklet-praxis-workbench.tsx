@@ -33,6 +33,7 @@ import {
   Copy,
   Database,
   FileText,
+  GitBranch,
   GripVertical,
   HardDrive,
   Library,
@@ -93,7 +94,7 @@ import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-strea
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 
-type CapsuleFactoryLaneId = 'catalog' | 'repository' | 'ontology' | 'sources' | 'temporality' | 'conflict' | 'output' | 'runs';
+type CapsuleFactoryLaneId = 'catalog' | 'repository' | 'ontology' | 'graph' | 'sources' | 'temporality' | 'conflict' | 'output' | 'runs';
 
 type TaskletPraxisWorkbenchProps = {
   mode: HomeSurfaceMode | 'app';
@@ -416,6 +417,7 @@ const factorySidebarItems: Array<{ id: CapsuleFactoryLaneId; label: string; icon
   { id: 'catalog', label: 'Catalog', icon: Library, filter: 'all' },
   { id: 'repository', label: 'Repository', icon: Database },
   { id: 'ontology', label: 'Ontology/Graph', icon: BrainCircuit },
+  { id: 'graph', label: 'Capsule+ Graph', icon: GitBranch },
   { id: 'sources', label: 'Sources', icon: Search, filter: 'all' },
   { id: 'temporality', label: 'Temporality', icon: RefreshCcw },
   { id: 'conflict', label: 'Conflict/Actors', icon: ShieldCheck, filter: 'conflict' },
@@ -3801,6 +3803,12 @@ function CapsuleFactoryLanePanel({
           loading={repositoryLoading}
           proof={runtimeProof}
         />
+      ) : activeLane === 'graph' ? (
+        <CapsulePlusGraphLane
+          capsule={capsule}
+          counts={counts}
+          proof={runtimeProof}
+        />
       ) : (
       <div className="mt-4 grid gap-2 md:grid-cols-3">
         {factoryBuilderLanes.map((lane) => (
@@ -3851,6 +3859,54 @@ function CapsuleFactoryLanePanel({
         </div>
       ) : null}
     </section>
+  );
+}
+
+function CapsulePlusGraphLane({
+  capsule,
+  counts,
+  proof,
+}: {
+  capsule: PraxisCapsuleSummary | null;
+  counts: { sources: number; documents: number; tools: number; outputs: number };
+  proof: RuntimeProof;
+}) {
+  const graphVersion = capsule?.coreRefs.graphCoreId ? capsule.version : 0;
+  const nodeCount = capsule?.coreRefs.graphCoreId ? 8 : 0;
+  const edgeCount = capsule?.coreRefs.graphCoreId ? 6 : 0;
+  return (
+    <div className="mt-4 grid gap-3" data-testid="capsule-plus-graph-lane">
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-900">Capsule+ Graph</p>
+            <p className="mt-1 text-[11px] leading-5 text-slate-500">
+              Review-gated Postgres embedded graph for actors, claims, events, commitments, rules, sources, and outputs. Proposed graph facts stay visually distinct from approved graph facts.
+            </p>
+          </div>
+          <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">proposed until approved</span>
+        </div>
+        <div className="mt-3 grid gap-2 md:grid-cols-4">
+          <Metric label="Nodes" value={nodeCount} />
+          <Metric label="Edges" value={edgeCount} />
+          <Metric label="Sources" value={counts.sources + counts.documents} />
+          <Metric label="Graph v" value={graphVersion} />
+        </div>
+      </div>
+      <div className="grid gap-2 md:grid-cols-3">
+        <FactoryCommandCell label="Runtime label" value="Postgres embedded graph" />
+        <FactoryCommandCell label="Export bundle" value=".praxiscapsule.zip" />
+        <FactoryCommandCell label="Review state" value={capsule?.coreRefs.graphCoreId ? 'approved graph facts readable' : 'draft graph proposals only'} />
+      </div>
+      <div className="rounded-lg border border-[#ff714d]/20 bg-[#fff8f5] p-3 text-[11px] leading-5 text-slate-600">
+        Decision Clock Capsule+ seeds Decision, Deadline, Actor, Claim, Source, Commitment, Risk, and OpenQuestion nodes with PRECEDES, DEPENDS_ON, SUPPORTED_BY, OWNED_BY, CONSTRAINS, and TRIGGERS_REVIEW edges. Ask PRAXIS may read approved graph facts as context; proposed graph facts must remain labeled until review.
+      </div>
+      <div className="rounded-lg border border-slate-200 bg-white p-3 text-[11px] text-slate-600">
+        <p><span className="font-semibold text-slate-900">Source coverage:</span> {counts.sources + counts.documents} receipt slots available.</p>
+        <p><span className="font-semibold text-slate-900">Unsupported claims:</span> review in Capsule Factory diff before applying.</p>
+        <p><span className="font-semibold text-slate-900">Current graph mode:</span> {proof.graphMode}.</p>
+      </div>
+    </div>
   );
 }
 

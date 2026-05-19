@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-19T20:14:08.977Z",
-  "totalRoutes": 208,
+  "generatedAt": "2026-05-19T20:49:00.329Z",
+  "totalRoutes": 210,
   "routeMap": [
     {
       "route": "/api/account",
@@ -101,7 +101,7 @@
       ],
       "visibleCallerCount": 2,
       "serverCallerCount": 2,
-      "testCallerCount": 8,
+      "testCallerCount": 9,
       "graphReferences": 68,
       "sourceCallers": [
         "docs/GCP_OPERATIONS.md",
@@ -121,6 +121,7 @@
         "tests/e2e/ask-capsule-runtime.spec.ts",
         "tests/unit/agent-workspace-route.test.ts",
         "tests/unit/app/api/agents-runs-route.test.ts",
+        "tests/unit/hooks/use-orchestrator-events.test.ts",
         "tests/unit/lib/agent-runtime/cloud-tasks.test.ts",
         "tests/unit/lib/agent-runtime/runtime-proof.test.ts",
         "tests/unit/lib/agent-runtime/stream-route.test.ts",
@@ -150,7 +151,7 @@
       ],
       "visibleCallerCount": 2,
       "serverCallerCount": 2,
-      "testCallerCount": 6,
+      "testCallerCount": 7,
       "graphReferences": 115,
       "sourceCallers": [
         "docs/GCP_OPERATIONS.md",
@@ -170,6 +171,7 @@
         "tests/e2e/ask-capsule-runtime.spec.ts",
         "tests/unit/agent-workspace-route.test.ts",
         "tests/unit/app/api/agents-runs-route.test.ts",
+        "tests/unit/hooks/use-orchestrator-events.test.ts",
         "tests/unit/lib/agent-runtime/cloud-tasks.test.ts",
         "tests/unit/lib/agent-runtime/runtime-proof.test.ts",
         "tests/unit/lib/agent-runtime/stream-route.test.ts"
@@ -2971,7 +2973,7 @@
       "visibleCallerCount": 13,
       "serverCallerCount": 0,
       "testCallerCount": 3,
-      "graphReferences": 98,
+      "graphReferences": 110,
       "sourceCallers": [
         "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
@@ -3021,7 +3023,7 @@
       "visibleCallerCount": 9,
       "serverCallerCount": 0,
       "testCallerCount": 2,
-      "graphReferences": 174,
+      "graphReferences": 191,
       "sourceCallers": [
         "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
@@ -3072,6 +3074,38 @@
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
         "scripts/audit-named-stack-contract.ts"
+      ],
+      "tests": [],
+      "disposition": "do not touch",
+      "deletionGate": "Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution."
+    },
+    {
+      "route": "/api/context/capsules/[capsuleId]/capsule-plus",
+      "file": "src/app/api/context/capsules/[capsuleId]/capsule-plus/route.ts",
+      "category": "canonical",
+      "authPosture": "user authenticated",
+      "calibrationStatus": "not AI route",
+      "callerEvidence": [
+        "server auth boundary",
+        "GET handler",
+        "ContextCapsule cockpit/repository family"
+      ],
+      "recommendedAction": "Keep canonical.",
+      "methods": [
+        "GET"
+      ],
+      "dataStores": [
+        "Cloud SQL/Postgres"
+      ],
+      "visibleCallerCount": 0,
+      "serverCallerCount": 0,
+      "testCallerCount": 0,
+      "graphReferences": 12,
+      "sourceCallers": [
+        "docs/audits/2026-05-19-api-route-cleanup-map.json",
+        "docs/audits/2026-05-19-api-route-cleanup-map.md",
+        "docs/audits/2026-05-19-api-route-inventory.json",
+        "docs/audits/2026-05-19-api-route-inventory.md"
       ],
       "tests": [],
       "disposition": "do not touch",
@@ -3322,6 +3356,38 @@
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
         "scripts/audit-capsule-contract.ts"
+      ],
+      "tests": [],
+      "disposition": "do not touch",
+      "deletionGate": "Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution."
+    },
+    {
+      "route": "/api/context/capsules/capsule-plus/import",
+      "file": "src/app/api/context/capsules/capsule-plus/import/route.ts",
+      "category": "canonical",
+      "authPosture": "user authenticated",
+      "calibrationStatus": "not AI route",
+      "callerEvidence": [
+        "server auth boundary",
+        "POST handler",
+        "ContextCapsule cockpit/repository family"
+      ],
+      "recommendedAction": "Keep canonical.",
+      "methods": [
+        "POST"
+      ],
+      "dataStores": [
+        "Cloud SQL/Postgres"
+      ],
+      "visibleCallerCount": 0,
+      "serverCallerCount": 0,
+      "testCallerCount": 0,
+      "graphReferences": 7,
+      "sourceCallers": [
+        "docs/audits/2026-05-19-api-route-cleanup-map.json",
+        "docs/audits/2026-05-19-api-route-cleanup-map.md",
+        "docs/audits/2026-05-19-api-route-inventory.json",
+        "docs/audits/2026-05-19-api-route-inventory.md"
       ],
       "tests": [],
       "disposition": "do not touch",
@@ -4262,7 +4328,7 @@
     {
       "route": "/api/graph/approve-staged",
       "file": "src/app/api/graph/approve-staged/route.ts",
-      "category": "staged",
+      "category": "canonical",
       "authPosture": "user authenticated",
       "calibrationStatus": "not AI route",
       "callerEvidence": [
@@ -4270,7 +4336,7 @@
         "GET handler",
         "POST handler"
       ],
-      "recommendedAction": "Block launch claims until implemented or hidden.",
+      "recommendedAction": "Keep canonical.",
       "methods": [
         "GET",
         "POST"
@@ -4280,18 +4346,22 @@
       ],
       "visibleCallerCount": 0,
       "serverCallerCount": 0,
-      "testCallerCount": 0,
+      "testCallerCount": 1,
       "graphReferences": 5,
       "sourceCallers": [
         "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
-        "docs/audits/2026-05-19-api-route-inventory.md"
+        "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/audits/2026-05-19-go-live-readiness.md",
+        "tests/unit/app/graph-staged-archive-routes.test.ts"
       ],
-      "tests": [],
-      "disposition": "archive candidate",
-      "deletionGate": "Archive or hide first; delete in a later wave only after no caller/test/graph evidence remains."
+      "tests": [
+        "tests/unit/app/graph-staged-archive-routes.test.ts"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep as active or canonical route."
     },
     {
       "route": "/api/graph/changes",
@@ -4508,8 +4578,8 @@
       "dataStores": [
         "Firestore/Firebase"
       ],
-      "visibleCallerCount": 0,
-      "serverCallerCount": 0,
+      "visibleCallerCount": 2,
+      "serverCallerCount": 2,
       "testCallerCount": 1,
       "graphReferences": 13,
       "sourceCallers": [
@@ -4518,8 +4588,11 @@
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
         "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/audits/2026-05-19-go-live-readiness.md",
         "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "scripts/audit-graph-proposal-review-contract.ts",
+        "src/app/api/graph/approve-staged/route.ts",
+        "src/app/api/graph/staging-stream/route.ts",
         "tests/unit/api/graph-memory-review-contract.test.ts"
       ],
       "tests": [
@@ -4603,14 +4676,14 @@
     {
       "route": "/api/graph/staging-stream",
       "file": "src/app/api/graph/staging-stream/route.ts",
-      "category": "staged",
+      "category": "canonical",
       "authPosture": "user authenticated",
       "calibrationStatus": "not AI route",
       "callerEvidence": [
         "server auth boundary",
         "GET handler"
       ],
-      "recommendedAction": "Block launch claims until implemented or hidden.",
+      "recommendedAction": "Keep canonical.",
       "methods": [
         "GET"
       ],
@@ -4619,18 +4692,22 @@
       ],
       "visibleCallerCount": 0,
       "serverCallerCount": 0,
-      "testCallerCount": 0,
+      "testCallerCount": 1,
       "graphReferences": 4,
       "sourceCallers": [
         "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
-        "docs/audits/2026-05-19-api-route-inventory.md"
+        "docs/audits/2026-05-19-api-route-inventory.md",
+        "docs/audits/2026-05-19-go-live-readiness.md",
+        "tests/unit/app/graph-staged-archive-routes.test.ts"
       ],
-      "tests": [],
-      "disposition": "archive candidate",
-      "deletionGate": "Archive or hide first; delete in a later wave only after no caller/test/graph evidence remains."
+      "tests": [
+        "tests/unit/app/graph-staged-archive-routes.test.ts"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep as active or canonical route."
     },
     {
       "route": "/api/health",
@@ -7628,7 +7705,7 @@
     {
       "file": "docs/tools/INDEX.md",
       "kind": "doc",
-      "references": 9,
+      "references": 10,
       "markers": [
         "legacy",
         "obsolete-or-retired"
@@ -7936,6 +8013,16 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
+      "file": "src/lib/services/graph-populate.ts",
+      "kind": "library",
+      "references": 4,
+      "markers": [
+        "legacy"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
       "file": "src/lib/tools/canonical-tool-library.ts",
       "kind": "library",
       "references": 4,
@@ -7961,16 +8048,6 @@
       "references": 5,
       "markers": [
         "archive-state-field"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
-      "file": "src/lib/services/graph-populate.ts",
-      "kind": "library",
-      "references": 5,
-      "markers": [
-        "legacy"
       ],
       "disposition": "keep",
       "deletionGate": "Keep until compatibility/runtime use is removed."
@@ -8106,11 +8183,11 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "docs/adr/README.md",
-      "kind": "doc",
+      "file": "src/lib/knowledge/library-service.ts",
+      "kind": "library",
       "references": 14,
       "markers": [
-        "obsolete-or-retired"
+        "archive-state-field"
       ],
       "disposition": "keep",
       "deletionGate": "Keep until compatibility/runtime use is removed."
@@ -8118,19 +8195,9 @@
     {
       "file": "src/components/praxis/tasklet-praxis-workbench.tsx",
       "kind": "component",
-      "references": 24,
+      "references": 25,
       "markers": [
         "legacy",
-        "archive-state-field"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
-      "file": "src/lib/knowledge/library-service.ts",
-      "kind": "library",
-      "references": 14,
-      "markers": [
         "archive-state-field"
       ],
       "disposition": "keep",
@@ -8143,6 +8210,16 @@
       "markers": [
         "legacy",
         "archive-state-field"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
+      "file": "docs/adr/README.md",
+      "kind": "doc",
+      "references": 16,
+      "markers": [
+        "obsolete-or-retired"
       ],
       "disposition": "keep",
       "deletionGate": "Keep until compatibility/runtime use is removed."
@@ -8202,7 +8279,7 @@
     {
       "file": "src/lib/context/capsule-service.ts",
       "kind": "library",
-      "references": 60,
+      "references": 62,
       "markers": [
         "legacy",
         "compatibility",
@@ -8224,7 +8301,7 @@
     {
       "file": "src/proxy.ts",
       "kind": "library",
-      "references": 44,
+      "references": 45,
       "markers": [
         "legacy"
       ],
@@ -8347,10 +8424,10 @@
     }
   ],
   "summary": {
-    "keep": 59,
+    "keep": 61,
     "compatibility": 37,
-    "archive candidate": 2,
+    "archive candidate": 0,
     "delete candidate": 0,
-    "do not touch": 110
+    "do not touch": 112
   }
 }

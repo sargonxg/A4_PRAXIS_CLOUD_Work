@@ -26,6 +26,21 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.19.01',
+    version: '6.4.1',
+    date: '2026-05-19',
+    title: 'Pre-ship runtime proof and cleanup readiness harden',
+    summary: 'PRAXIS now closes the May 19 static pre-ship blockers, preserves resumable agent run streams, and archives retired graph staging endpoints before production deployment.',
+    category: 'runtime',
+    items: [
+      'Agent run stream clients now build deterministic resume URLs from the last event id while keeping the server-side Last-Event-ID contract explicit.',
+      'The authenticated app loading surface uses the shared Skeleton primitive and carries explicit empty, error, and retry state contracts for pre-ship coverage.',
+      'The deep pre-ship checklist now has package scripts for workspace tabs, substrate writers, orchestrator writes, and ontology-system audits.',
+      'Retired graph staging endpoints now return archived 410 responses that point callers to the graph proposals API instead of exposing stale staged mutations.',
+      'Added named E2E smoke specs for briefing assembly, desk command center, and temporal/timeline display flows.',
+    ],
+  },
+  {
     buildNumber: '2026.05.17.07',
     version: '6.4.1',
     date: '2026-05-17',

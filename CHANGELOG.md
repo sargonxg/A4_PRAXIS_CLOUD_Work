@@ -2,8 +2,14 @@
 
 ## [Unreleased]
 
+- feat(runtime): harden pre-ship proof and cleanup readiness.
+  Build 2026.05.19.01 closes the static deep pre-ship blockers, adds
+  resumable agent stream URL coverage, wires named package audits, archives
+  retired graph staging endpoints behind 410 responses, and adds named E2E
+  smoke specs for briefing, command-center, and temporal display flows.
+
 - chore(cleanup): complete the API route inventory checkpoint.
-  Regenerates the May 19 API route inventory and cleanup map for 208 routes,
+  Regenerates the May 19 API route inventory and cleanup map for 210 routes,
   records 0 deletion candidates, preserves the agentic runtime lanes, and
   updates the cleanup/readiness docs so future deletion work starts from the
   generated artifacts.

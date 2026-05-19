@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-19T20:14:04.988Z",
-  "totalRoutes": 208,
+  "generatedAt": "2026-05-19T20:48:58.614Z",
+  "totalRoutes": 210,
   "entries": [
     {
       "route": "/api/account",
@@ -991,6 +991,19 @@
       "recommendedAction": "Keep canonical."
     },
     {
+      "route": "/api/context/capsules/[capsuleId]/capsule-plus",
+      "file": "src/app/api/context/capsules/[capsuleId]/capsule-plus/route.ts",
+      "category": "canonical",
+      "authPosture": "user authenticated",
+      "calibrationStatus": "not AI route",
+      "callerEvidence": [
+        "server auth boundary",
+        "GET handler",
+        "ContextCapsule cockpit/repository family"
+      ],
+      "recommendedAction": "Keep canonical."
+    },
+    {
       "route": "/api/context/capsules/[capsuleId]/diff",
       "file": "src/app/api/context/capsules/[capsuleId]/diff/route.ts",
       "category": "admin/internal",
@@ -1076,6 +1089,19 @@
     {
       "route": "/api/context/capsules/[capsuleId]/swap",
       "file": "src/app/api/context/capsules/[capsuleId]/swap/route.ts",
+      "category": "canonical",
+      "authPosture": "user authenticated",
+      "calibrationStatus": "not AI route",
+      "callerEvidence": [
+        "server auth boundary",
+        "POST handler",
+        "ContextCapsule cockpit/repository family"
+      ],
+      "recommendedAction": "Keep canonical."
+    },
+    {
+      "route": "/api/context/capsules/capsule-plus/import",
+      "file": "src/app/api/context/capsules/capsule-plus/import/route.ts",
       "category": "canonical",
       "authPosture": "user authenticated",
       "calibrationStatus": "not AI route",
@@ -1399,7 +1425,7 @@
     {
       "route": "/api/graph/approve-staged",
       "file": "src/app/api/graph/approve-staged/route.ts",
-      "category": "staged",
+      "category": "canonical",
       "authPosture": "user authenticated",
       "calibrationStatus": "not AI route",
       "callerEvidence": [
@@ -1407,7 +1433,7 @@
         "GET handler",
         "POST handler"
       ],
-      "recommendedAction": "Block launch claims until implemented or hidden."
+      "recommendedAction": "Keep canonical."
     },
     {
       "route": "/api/graph/changes",
@@ -1521,14 +1547,14 @@
     {
       "route": "/api/graph/staging-stream",
       "file": "src/app/api/graph/staging-stream/route.ts",
-      "category": "staged",
+      "category": "canonical",
       "authPosture": "user authenticated",
       "calibrationStatus": "not AI route",
       "callerEvidence": [
         "server auth boundary",
         "GET handler"
       ],
-      "recommendedAction": "Block launch claims until implemented or hidden."
+      "recommendedAction": "Keep canonical."
     },
     {
       "route": "/api/health",

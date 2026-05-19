@@ -1,15 +1,15 @@
 # API Route Cleanup Map
 
-Generated: 2026-05-19T20:14:08.977Z
-Total routes: 208
+Generated: 2026-05-19T20:49:00.329Z
+Total routes: 210
 
 | Disposition | Count |
 | --- | ---: |
-| keep | 59 |
+| keep | 61 |
 | compatibility | 37 |
-| archive candidate | 2 |
+| archive candidate | 0 |
 | delete candidate | 0 |
-| do not touch | 110 |
+| do not touch | 112 |
 
 ## Interpretation
 
@@ -21,8 +21,8 @@ Total routes: 208
 | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- |
 | `/api/account` | do not touch | admin/internal | GET, PATCH, DELETE | Firestore/Firebase | 1 | 0 | 1 | 10 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/admin/system-health` | do not touch | admin/internal | GET | none detected | 1 | 1 | 1 | 5 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
-| `/api/agents/runs` | do not touch | canonical | GET, POST | Cloud SQL/Postgres | 2 | 2 | 8 | 68 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
-| `/api/agents/runs/[runId]` | do not touch | canonical | GET | Cloud SQL/Postgres | 2 | 2 | 6 | 115 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
+| `/api/agents/runs` | do not touch | canonical | GET, POST | Cloud SQL/Postgres | 2 | 2 | 9 | 68 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
+| `/api/agents/runs/[runId]` | do not touch | canonical | GET | Cloud SQL/Postgres | 2 | 2 | 7 | 115 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/agents/runs/[runId]/approvals/[approvalId]` | do not touch | canonical | POST | Cloud SQL/Postgres<br>Cloud Tasks | 0 | 0 | 0 | 7 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/agents/runs/[runId]/cancel` | do not touch | canonical | POST | Cloud SQL/Postgres | 0 | 0 | 0 | 5 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/agents/runs/[runId]/dispatch` | do not touch | canonical | POST | Cloud Tasks | 0 | 0 | 0 | 3 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
@@ -102,9 +102,10 @@ Total routes: 208
 | `/api/billing/portal` | do not touch | canonical | POST | Secrets/Billing | 1 | 0 | 1 | 4 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/billing/webhook` | do not touch | admin/internal | none | Firestore/Firebase<br>Secrets/Billing | 0 | 0 | 0 | 11 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/capabilities` | keep | canonical | GET | none detected | 0 | 0 | 1 | 3 | Keep as active or canonical route. |
-| `/api/context/capsules` | do not touch | canonical | GET, POST | none detected | 13 | 0 | 3 | 98 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
-| `/api/context/capsules/[capsuleId]` | do not touch | admin/internal | GET, POST, PATCH, DELETE | Firestore/Firebase | 9 | 0 | 2 | 174 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
+| `/api/context/capsules` | do not touch | canonical | GET, POST | none detected | 13 | 0 | 3 | 110 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
+| `/api/context/capsules/[capsuleId]` | do not touch | admin/internal | GET, POST, PATCH, DELETE | Firestore/Firebase | 9 | 0 | 2 | 191 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/capsules/[capsuleId]/attach` | do not touch | canonical | POST | none detected | 0 | 0 | 0 | 5 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
+| `/api/context/capsules/[capsuleId]/capsule-plus` | do not touch | canonical | GET | Cloud SQL/Postgres | 0 | 0 | 0 | 12 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/capsules/[capsuleId]/diff` | do not touch | admin/internal | GET, POST | Firestore/Firebase | 0 | 0 | 0 | 21 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/capsules/[capsuleId]/evaluations` | do not touch | canonical | GET, POST | none detected | 0 | 0 | 0 | 5 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/capsules/[capsuleId]/history` | do not touch | admin/internal | GET | Firestore/Firebase | 0 | 0 | 0 | 5 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
@@ -112,6 +113,7 @@ Total routes: 208
 | `/api/context/capsules/[capsuleId]/notes` | do not touch | canonical | GET, POST | none detected | 0 | 0 | 0 | 5 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/capsules/[capsuleId]/spans` | do not touch | admin/internal | GET, POST | Firestore/Firebase | 0 | 0 | 1 | 6 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/capsules/[capsuleId]/swap` | do not touch | canonical | POST | none detected | 0 | 0 | 0 | 8 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
+| `/api/context/capsules/capsule-plus/import` | do not touch | canonical | POST | Cloud SQL/Postgres | 0 | 0 | 0 | 7 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/capsules/shared/[token]` | do not touch | admin/internal | GET, POST | Firestore/Firebase | 0 | 0 | 0 | 22 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/check-claim` | do not touch | canonical | POST | none detected | 0 | 1 | 0 | 3 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/packages` | do not touch | canonical | GET, POST | none detected | 1 | 0 | 1 | 6 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
@@ -138,17 +140,17 @@ Total routes: 208
 | `/api/entities/enrich` | keep | canonical | POST | none detected | 0 | 0 | 0 | 3 | Keep as active or canonical route. |
 | `/api/events/pubsub/profile` | keep | canonical | none | Firestore/Firebase<br>Pub/Sub<br>Secrets/Billing | 0 | 0 | 1 | 12 | Keep as active or canonical route. |
 | `/api/export` | keep | canonical | POST | none detected | 0 | 0 | 0 | 10 | Keep as active or canonical route. |
-| `/api/graph/approve-staged` | archive candidate | staged | GET, POST | none detected | 0 | 0 | 0 | 5 | Archive or hide first; delete in a later wave only after no caller/test/graph evidence remains. |
+| `/api/graph/approve-staged` | keep | canonical | GET, POST | none detected | 0 | 0 | 1 | 5 | Keep as active or canonical route. |
 | `/api/graph/changes` | keep | canonical | GET | none detected | 0 | 0 | 0 | 6 | Keep as active or canonical route. |
 | `/api/graph/context` | keep | canonical | GET | none detected | 0 | 0 | 0 | 4 | Keep as active or canonical route. |
 | `/api/graph/cypher` | keep | canonical | POST | none detected | 0 | 0 | 0 | 8 | Keep as active or canonical route. |
 | `/api/graph/evolution` | keep | canonical | GET, POST | Firestore/Firebase | 0 | 0 | 0 | 8 | Keep as active or canonical route. |
 | `/api/graph/ops` | keep | canonical | GET | none detected | 0 | 1 | 1 | 4 | Keep as active or canonical route. |
 | `/api/graph/populate` | do not touch | admin/internal | POST | Cloud Storage/documents | 0 | 0 | 0 | 6 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
-| `/api/graph/proposals` | keep | canonical | GET | Firestore/Firebase | 0 | 0 | 1 | 13 | Keep as active or canonical route. |
+| `/api/graph/proposals` | keep | canonical | GET | Firestore/Firebase | 2 | 2 | 1 | 13 | Keep as active or canonical route. |
 | `/api/graph/proposals/[id]/approve` | keep | canonical | POST | Firestore/Firebase | 0 | 0 | 1 | 5 | Keep as active or canonical route. |
 | `/api/graph/proposals/[id]/reject` | keep | canonical | POST | Firestore/Firebase | 0 | 0 | 1 | 4 | Keep as active or canonical route. |
-| `/api/graph/staging-stream` | archive candidate | staged | GET | none detected | 0 | 0 | 0 | 4 | Archive or hide first; delete in a later wave only after no caller/test/graph evidence remains. |
+| `/api/graph/staging-stream` | keep | canonical | GET | none detected | 0 | 0 | 1 | 4 | Keep as active or canonical route. |
 | `/api/health` | do not touch | admin/internal | none | Firestore/Firebase<br>Secrets/Billing | 7 | 9 | 4 | 50 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/health/agentic-search` | do not touch | canonical | none | none detected | 1 | 1 | 0 | 5 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/health/breakers` | do not touch | canonical | GET | none detected | 0 | 0 | 0 | 3 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |

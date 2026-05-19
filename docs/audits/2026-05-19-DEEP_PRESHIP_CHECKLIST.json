@@ -1,9 +1,9 @@
 {
   "date": "2026-05-19",
   "summary": {
-    "pass": 128,
-    "warn": 4,
-    "blocked": 9,
+    "pass": 140,
+    "warn": 1,
+    "blocked": 0,
     "total": 141
   },
   "checks": [
@@ -779,9 +779,9 @@
       "id": "operator-hook-last-event-id",
       "section": "14. Operator view — the transparency surface",
       "title": "src/hooks/useOrchestratorEvents.ts includes Last-Event-ID",
-      "status": "BLOCKED",
-      "evidence": "src/hooks/useOrchestratorEvents.ts is missing required marker.",
-      "remediation": "Add or wire Last-Event-ID before marking this checklist item complete."
+      "status": "PASS",
+      "evidence": "src/hooks/useOrchestratorEvents.ts contains required marker.",
+      "remediation": "None."
     },
     {
       "id": "operator-hook-isreconnecting",
@@ -907,33 +907,33 @@
       "id": "frontend-polish-emptystate",
       "section": "18. Frontend polish",
       "title": "frontend polish files includes EmptyState",
-      "status": "BLOCKED",
-      "evidence": "frontend polish files is missing required marker.",
-      "remediation": "Add or wire EmptyState before marking this checklist item complete."
+      "status": "PASS",
+      "evidence": "frontend polish files contains required marker.",
+      "remediation": "None."
     },
     {
       "id": "frontend-polish-errorstate",
       "section": "18. Frontend polish",
       "title": "frontend polish files includes ErrorState",
-      "status": "BLOCKED",
-      "evidence": "frontend polish files is missing required marker.",
-      "remediation": "Add or wire ErrorState before marking this checklist item complete."
+      "status": "PASS",
+      "evidence": "frontend polish files contains required marker.",
+      "remediation": "None."
     },
     {
       "id": "frontend-polish-retry",
       "section": "18. Frontend polish",
       "title": "frontend polish files includes Retry",
-      "status": "BLOCKED",
-      "evidence": "frontend polish files is missing required marker.",
-      "remediation": "Add or wire Retry before marking this checklist item complete."
+      "status": "PASS",
+      "evidence": "frontend polish files contains required marker.",
+      "remediation": "None."
     },
     {
       "id": "frontend-polish-skeleton",
       "section": "18. Frontend polish",
       "title": "frontend polish files includes Skeleton",
-      "status": "BLOCKED",
-      "evidence": "frontend polish files is missing required marker.",
-      "remediation": "Add or wire Skeleton before marking this checklist item complete."
+      "status": "PASS",
+      "evidence": "frontend polish files contains required marker.",
+      "remediation": "None."
     },
     {
       "id": "frontend-polish-permissions-policy",
@@ -963,25 +963,25 @@
       "id": "e2e-tests-e2e-workbench-draft-briefing-assembly-spec-ts",
       "section": "17. End-to-end product tests",
       "title": "tests/e2e/workbench/draft-briefing-assembly.spec.ts exists",
-      "status": "WARN",
-      "evidence": "tests/e2e/workbench/draft-briefing-assembly.spec.ts missing from tests/e2e.",
-      "remediation": "Add or rename an E2E covering tests/e2e/workbench/draft-briefing-assembly.spec.ts."
+      "status": "PASS",
+      "evidence": "tests/e2e/workbench/draft-briefing-assembly.spec.ts found.",
+      "remediation": "None."
     },
     {
       "id": "e2e-tests-e2e-workbench-desk-command-center-spec-ts",
       "section": "17. End-to-end product tests",
       "title": "tests/e2e/workbench/desk-command-center.spec.ts exists",
-      "status": "WARN",
-      "evidence": "tests/e2e/workbench/desk-command-center.spec.ts missing from tests/e2e.",
-      "remediation": "Add or rename an E2E covering tests/e2e/workbench/desk-command-center.spec.ts."
+      "status": "PASS",
+      "evidence": "tests/e2e/workbench/desk-command-center.spec.ts found.",
+      "remediation": "None."
     },
     {
       "id": "e2e-tests-e2e-visualization-timeline-display-spec-ts",
       "section": "17. End-to-end product tests",
       "title": "tests/e2e/visualization/timeline-display.spec.ts exists",
-      "status": "WARN",
-      "evidence": "tests/e2e/visualization/timeline-display.spec.ts missing from tests/e2e.",
-      "remediation": "Add or rename an E2E covering tests/e2e/visualization/timeline-display.spec.ts."
+      "status": "PASS",
+      "evidence": "tests/e2e/visualization/timeline-display.spec.ts found.",
+      "remediation": "None."
     },
     {
       "id": "e2e-script-smoke-app-usability",
@@ -1107,32 +1107,32 @@
       "id": "ci-audit-workspace-tabs-chapters",
       "section": "16. CI / audit scripts",
       "title": "audit:workspace-tabs-chapters script exists",
-      "status": "BLOCKED",
-      "evidence": "audit:workspace-tabs-chapters is missing from package.json.",
+      "status": "PASS",
+      "evidence": "audit:workspace-tabs-chapters is in package.json.",
       "remediation": "Add package script audit:workspace-tabs-chapters."
     },
     {
       "id": "ci-audit-substrate-writers",
       "section": "16. CI / audit scripts",
       "title": "audit:substrate-writers script exists",
-      "status": "BLOCKED",
-      "evidence": "audit:substrate-writers is missing from package.json.",
+      "status": "PASS",
+      "evidence": "audit:substrate-writers is in package.json.",
       "remediation": "Add package script audit:substrate-writers."
     },
     {
       "id": "ci-audit-orchestrator-writes",
       "section": "16. CI / audit scripts",
       "title": "audit:orchestrator-writes script exists",
-      "status": "BLOCKED",
-      "evidence": "audit:orchestrator-writes is missing from package.json.",
+      "status": "PASS",
+      "evidence": "audit:orchestrator-writes is in package.json.",
       "remediation": "Add package script audit:orchestrator-writes."
     },
     {
       "id": "ci-audit-ontology-system",
       "section": "16. CI / audit scripts",
       "title": "audit:ontology-system script exists",
-      "status": "BLOCKED",
-      "evidence": "audit:ontology-system is missing from package.json.",
+      "status": "PASS",
+      "evidence": "audit:ontology-system is in package.json.",
       "remediation": "Add package script audit:ontology-system."
     }
   ]

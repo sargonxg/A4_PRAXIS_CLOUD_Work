@@ -137,7 +137,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-function normalizeFactoryMetadata(metadata: Record<string, unknown>): AgentRunOutput['factoryMetadata'] | null {
+function normalizeFactoryMetadata(metadata: Record<string, unknown> | undefined): AgentRunOutput['factoryMetadata'] | null {
+  if (!metadata) return null;
   const hasFactoryMetadata = [
     'factoryLane',
     'ontologyStack',

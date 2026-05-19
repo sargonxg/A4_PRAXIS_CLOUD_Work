@@ -137,7 +137,7 @@ export const CapsuleFactoryReceiptsSchema = z.object({
 });
 
 export const CapsuleFactoryRunMetadataSchema = z.object({
-  factoryLane: z.enum(['catalog', 'repository', 'ontology', 'sources', 'temporality', 'conflict', 'output', 'runs']).optional(),
+  factoryLane: z.enum(['catalog', 'repository', 'ontology', 'graph', 'sources', 'temporality', 'conflict', 'output', 'runs']).optional(),
   ontologyStack: z.array(z.string().min(1).max(120)).max(12).default([]),
   graphMode: CapsuleFactoryGraphModeSchema.default('embedded_proposal'),
   cogneeMode: CapsuleFactoryCogneeModeSchema.default('disabled'),
