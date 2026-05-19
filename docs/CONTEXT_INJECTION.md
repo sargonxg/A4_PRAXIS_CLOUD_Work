@@ -312,9 +312,9 @@ Context isn't static. It updates through three mechanisms:
 
 The `withCalibration` wrapper is also responsible for the **hard gate**:
 if `profile.meta.completedAt` is missing for a non-sample user, it returns
-HTTP 403, and the client renders `<OnboardingRequiredState />`. Tools
-cannot be called without a complete profile. This is what guarantees the
-contract is non-empty.
+HTTP 403, and the client keeps the user in the onboarding/profile completion
+path. Tools cannot be called without a complete profile. This is what
+guarantees the contract is non-empty.
 
 ---
 

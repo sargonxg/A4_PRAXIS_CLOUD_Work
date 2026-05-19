@@ -49,10 +49,10 @@ jobs:
           cat persona-smoke.log
           exit 1
 
-      - name: Run persona smoke suite
+      - name: Run Tasklet app smoke suite
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
-        run: npm run smoke:personas
+        run: npm run smoke:tasklet-app
 
       - name: Upload server log
         if: always()

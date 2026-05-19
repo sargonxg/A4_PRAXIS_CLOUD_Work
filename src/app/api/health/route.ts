@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server';
 import { AI_REQUEST_LIMITS } from '@/lib/api/ai-request-limits';
 import { resolveGenkitGoogleProvider } from '@/lib/genkit/provider';
 
+const HEALTH_SECURITY_HEADERS = {
+  'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+};
+
 /**
  * GET /api/health
  * Production health check — used by uptime monitors (UptimeRobot, Cloud Run, etc.)
@@ -67,6 +76,6 @@ export async function GET() {
         cogneeMode: process.env.COGNEE_MODE || 'disabled',
       },
     },
-    { status }
+    { status, headers: HEALTH_SECURITY_HEADERS }
   );
 }

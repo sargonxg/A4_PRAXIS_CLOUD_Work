@@ -15,6 +15,14 @@ const navLinks = [
   { label: "Release notes", href: "/release-notes" },
 ];
 
+const legalLinks = [
+  { label: "Privacy", href: "/legal/privacy" },
+  { label: "Terms", href: "/legal/terms" },
+  { label: "Security", href: "/legal/security" },
+  { label: "Sub-processors", href: "/legal/sub-processors" },
+  { label: "Data retention", href: "/legal/data-retention" },
+];
+
 export default function LandingLayout({
   children,
 }: {
@@ -212,6 +220,15 @@ export default function LandingLayout({
             >
               Contact
             </a>
+            {legalLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="hover:text-[color:var(--color-ink)]"
+              >
+                {link.label}
+              </Link>
+            ))}
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--color-ink)]/40">
               © 2026 · TACITUS
             </span>

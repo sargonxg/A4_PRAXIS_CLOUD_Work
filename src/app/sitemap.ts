@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { legalPages } from '@/lib/legal/pages';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://praxis.tacitus.me';
@@ -35,5 +36,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.5,
     },
+    ...legalPages.map((page) => ({
+      url: `${baseUrl}/legal/${page.slug}`,
+      lastModified,
+      changeFrequency: 'monthly' as const,
+      priority: 0.4,
+    })),
   ];
 }

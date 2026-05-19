@@ -64,7 +64,7 @@
 ## UX behaviour
 
 - Hot read on mount via `usePersistedToolData('{{tool-id}}', situationId)` — yes/no
-- `useSituationGuard` — yes (renders `<NoSituationState />` / `<OnboardingRequiredState />` as needed)
+- `useSituationGuard` — yes (guards missing situations and incomplete onboarding as needed)
 - Empty state — what the user sees before first generation
 - Re-generation — manual button / auto on situation change / cron-driven
 

@@ -63,8 +63,8 @@
 
 ## UX behaviour
 
-- `useSituationGuard()` at top: if no situation → `<NoSituationState />`,
-  if onboarding incomplete → `<OnboardingRequiredState />`.
+- `useSituationGuard()` at top: guard missing situations and incomplete
+  onboarding before rendering dashboard actions.
 - Sample mode shows the rich legacy SituationDashboard with the selected situation data.
 - Recommended-for-you widget reorders for the user — domain boost when the
   active situation has a non-generic domain.

@@ -332,8 +332,14 @@ function addSecurityHeaders(response: NextResponse, nonce?: string): NextRespons
 
 export const config = {
   matcher: [
+    '/',
+    '/pricing',
+    '/learn',
+    '/release-notes',
     '/app/:path*',
     '/agents/:path*',
+    '/api/health',
+    '/api/health/:path*',
     '/contexts/:path*',
     '/methods/:path*',
     '/ontologies/:path*',

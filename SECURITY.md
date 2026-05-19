@@ -50,6 +50,26 @@ in `CLAUDE.md`, `AGENTS.md`, `docs/COMPLIANCE.md`, and
 - [ ] User API keys are encrypted with envelope encryption.
 - [ ] Local secrets have a rotation procedure.
 
+## Launch Acceptance Criteria
+
+Do not approve a public launch unless:
+
+- Public legal pages exist for privacy, terms, security, sub-processors, and
+  data retention.
+- Primary public, authenticated, health, and API routes carry the centralized
+  security-header suite from `src/proxy.ts`.
+- AI routes that call model providers are wrapped with `withCalibration` or are
+  explicitly documented as exempt by `scripts/audit-ai-routes.mjs`.
+- User API-key routes return provider status and masked metadata only, never
+  plaintext key payloads.
+- Launch audit artifacts redact secrets, bearer tokens, service-account emails,
+  private keys, and provider credentials before they are saved.
+- The final launch checkpoint records `npm run audit:gate`,
+  `npm run audit:launch-readiness`, `npm run audit:runtime-health-live`,
+  `npm run audit:gcp`, and `npm run doctor:praxis` evidence. Write-enabled
+  production canary proof is required once dedicated canary credentials are
+  available.
+
 ## Incident Response
 
 **Report channel.** Suspected security issues go to `security@tacitus.me`.

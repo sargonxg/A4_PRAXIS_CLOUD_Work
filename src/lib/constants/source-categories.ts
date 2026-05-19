@@ -1,12 +1,10 @@
 /**
  * SOURCE_CATEGORIES — single source of truth for research source category metadata.
  *
- * This module is the ONLY place where category definitions live. Both the
- * situation-creation wizard (`src/app/app/situations/new/page.tsx`) and the
- * per-situation settings page (`src/app/app/situations/[id]/settings/page.tsx`)
- * import from here via the shared <SourcePicker> component. Adding, renaming
- * or re-colouring a category only requires editing this file — no other
- * component owns a parallel list.
+ * This module is the ONLY place where category definitions live for runtime
+ * scaffolding and persistence contracts. Adding, renaming or re-colouring a
+ * category only requires editing this file; no current Tasklet component owns a
+ * parallel list.
  *
  * IDs are stable: never rename an existing `id` without a migration of the
  * `situation.sourceCategoriesEnabled` Firestore field, because enabled flags
@@ -76,8 +74,7 @@ export interface SourceCategory {
 
 /**
  * The eight canonical source categories PRAXIS ships with. Order is the
- * default display order — users can re-order locally via <SourcePicker>, and
- * that ordering is persisted separately as `sourceCategoryOrder: string[]`.
+ * default display order, persisted separately as `sourceCategoryOrder: string[]`.
  */
 export const SOURCE_CATEGORIES: SourceCategory[] = [
   {

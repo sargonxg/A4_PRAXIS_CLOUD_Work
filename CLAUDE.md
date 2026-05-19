@@ -235,7 +235,7 @@ Every authenticated user has an `AnalystProfile` stored at `users/{uid}/profile/
 
 **Consumption** — `withCalibration(toolId, creditOpType)(handler)` is the middleware factory that every AI route wraps. It chains `withAuth → credits check → buildCalibratedContext → handler`. The resulting `CalibrationCtx` carries a `calibration.systemPromptBlock` string (rendered `<analyst-profile>` + `<situation-frame>` + `<output-constraints>` XML block) ready to prepend to any AI system prompt.
 
-**Gate** — `withCalibration` returns HTTP 403 when a non-user-owned user has no `profile.meta.completedAt`. Client-side, `useSituationGuard()` returns `needsOnboarding: true` and `ToolPageShell` renders `<OnboardingRequiredState />` in place of the tool UI.
+**Gate** — `withCalibration` returns HTTP 403 when a non-user-owned user has no `profile.meta.completedAt`. Client-side, `useSituationGuard()` returns `needsOnboarding: true` so the app keeps the user in the onboarding/profile completion path instead of rendering calibrated tool UI.
 
 **11 calibration dimensions** the audit script scores each AI route on:
 1. Reads AnalystProfile via `withCalibration`  2. Reads current situation  3. Uses `buildCalibratedContext`  4. Applies output language  5. Applies red-line constraints  6. Applies audience tone  7. Uses SKC retrieval (lens-weighted)  8. Persists output via `saveToolOutput`  9. Writes Memory Bank trace  10. Validates output schema (Zod)  11. Deducts credits correctly
@@ -487,7 +487,7 @@ The `NEXT_PUBLIC_FIREBASE_*` client config values are public and have defaults i
 - `withCalibration(toolId, creditOpType)` wraps every AI route that should use calibrated context — factory returning `(handler) => withAuth(...)` with credit deduction and profile gate
 - `buildCalibratedContext({uid, situationId, toolId, retrievalQuery})` is the single module that composes profile + situation + SKC retrieval into a `ContextBlock`
 - `saveToolOutput({uid, situationId, toolId, profileVersion, output})` persists tool outputs to `users/{uid}/situations/{sitId}/tools/{toolId}` with profile-version provenance
-- `ToolPageShell` consumes `useSituationGuard()` which now also returns `needsOnboarding`; tools render `<OnboardingRequiredState />` when the gate triggers
+- `ToolPageShell` consumes `useSituationGuard()` which now also returns `needsOnboarding`; tools must not render calibrated outputs while that gate is active
 - Server-side: `withCalibration` returns 403 when a non-user-owned user has no `profile.meta.completedAt`
 - `renderSystemPromptBlock()` from `@/lib/context/system-prompt-block` renders the `<analyst-profile>` + `<situation-frame>` + `<output-constraints>` XML block injected into AI system prompts
 

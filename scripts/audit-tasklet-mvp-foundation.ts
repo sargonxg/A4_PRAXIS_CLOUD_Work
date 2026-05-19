@@ -53,7 +53,8 @@ expectExcludes('src/components/landing/phase8-wow-landing.tsx', [
 expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'data-testid="praxis-main-composer"',
   'data-testid="capsule-context-bar"',
-  'data-testid="capsule-context-picker"',
+  'data-testid="capsule-context-dropzone"',
+  'data-testid="capsule-browser-modal"',
   "'capsule-manager'",
   'data-testid="tasklet-capsule-cards"',
   'What can PRAXIS do for you?',

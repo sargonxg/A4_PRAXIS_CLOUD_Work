@@ -190,9 +190,8 @@ export interface Situation {
   workflowPath?: string;
   workflowPathLabel?: string;
   /**
-   * Custom per-situation source URLs the user attached via the SourcePicker
-   * "Add custom source" dialog. These are scraped alongside the built-in
-   * feeds for this situation.
+   * Custom per-situation source URLs attached by older source-management
+   * surfaces. These remain in the data contract for backward compatibility.
    */
   customSources?: Array<{
     id: string;
