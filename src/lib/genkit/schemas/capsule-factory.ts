@@ -1,6 +1,7 @@
 import { z } from 'genkit';
 
 export const CapsuleFactoryCoreKindSchema = z.enum(['user', 'situation', 'source', 'tool', 'output']);
+export const CapsuleFactoryLaneIdSchema = z.enum(['dialectica', 'kairos', 'agon']);
 
 export const CapsuleFactorySourceSnippetSchema = z.object({
   id: z.string().min(1).max(160),
@@ -81,6 +82,15 @@ export const ContextCapsuleDraftSchema = z.object({
   status: z.literal('draft'),
 });
 
+export const CapsuleFactoryLaneImprovementSchema = z.object({
+  laneId: CapsuleFactoryLaneIdSchema,
+  title: z.string().min(1).max(160),
+  summary: z.string().min(1).max(1200),
+  proposedTags: z.array(z.string().min(1).max(80)).max(12).default([]),
+  evidenceIds: z.array(z.string().min(1).max(160)).max(20).default([]),
+  requiresConfirmation: z.literal(true),
+});
+
 export const CapsuleSynthesisOutputSchema = z.object({
   contextCapsuleDraft: ContextCapsuleDraftSchema,
   proposedCores: z.array(CapsuleFactoryDraftCoreSchema).max(12),
@@ -91,6 +101,7 @@ export const CapsuleSynthesisOutputSchema = z.object({
     target: z.enum(['user_core', 'situation_core', 'source_core', 'tool_core', 'output_core', 'context_capsule']),
     requiresConfirmation: z.literal(true),
   })).max(10),
+  laneImprovements: z.array(CapsuleFactoryLaneImprovementSchema).max(8).default([]),
 });
 
 export const CapsuleWritingProfileInputSchema = z.object({
@@ -110,6 +121,8 @@ export const CapsuleWritingProfileOutputSchema = z.object({
 
 export type CapsuleIntakeInput = z.infer<typeof CapsuleIntakeInputSchema>;
 export type CapsuleIntakeOutput = z.infer<typeof CapsuleIntakeOutputSchema>;
+export type CapsuleFactoryLaneId = z.infer<typeof CapsuleFactoryLaneIdSchema>;
+export type CapsuleFactoryLaneImprovement = z.infer<typeof CapsuleFactoryLaneImprovementSchema>;
 export type CapsuleResearchPlanInput = z.infer<typeof CapsuleResearchPlanInputSchema>;
 export type CapsuleResearchPlanOutput = z.infer<typeof CapsuleResearchPlanOutputSchema>;
 export type CapsuleSynthesisInput = z.infer<typeof CapsuleSynthesisInputSchema>;

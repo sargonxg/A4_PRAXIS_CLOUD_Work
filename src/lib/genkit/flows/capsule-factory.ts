@@ -192,6 +192,32 @@ function deterministicSynthesis(input: CapsuleSynthesisInput): CapsuleSynthesisO
       { label: 'Fork active capsule with proposed cores', target: 'context_capsule', requiresConfirmation: true },
       { label: 'Attach source posture as Source Core draft', target: 'source_core', requiresConfirmation: true },
     ],
+    laneImprovements: [
+      {
+        laneId: 'dialectica',
+        title: 'Ontology and claim graph delta',
+        summary: 'Review entities, claims, provenance ids, and graph-ready relationships before applying any capsule core changes.',
+        proposedTags: ['ontology', 'claims', 'graph-delta'],
+        evidenceIds: sourceIds,
+        requiresConfirmation: true,
+      },
+      {
+        laneId: 'kairos',
+        title: 'Temporal freshness delta',
+        summary: 'Review stale claims, event sequence, indicators, and decision-window assumptions before hardening current language.',
+        proposedTags: ['temporality', 'freshness', 'indicators'],
+        evidenceIds: sourceIds,
+        requiresConfirmation: true,
+      },
+      {
+        laneId: 'agon',
+        title: 'Actor and human-friction delta',
+        summary: 'Review actors, incentives, commitments, blockers, and mediation/legal posture before changing the active capsule.',
+        proposedTags: ['actors', 'friction', 'commitments'],
+        evidenceIds: sourceIds,
+        requiresConfirmation: true,
+      },
+    ],
   };
 }
 
