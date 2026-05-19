@@ -36,6 +36,12 @@ export interface RawSseEvent {
   data?: string | null;
 }
 
+export interface BuildOrchestratorStreamUrlOptions {
+  origin?: string;
+  limit: number;
+  lastEventId?: string | null;
+}
+
 const DEFAULT_MAX_EVENTS = 50;
 const LEDGER_EVENT_TYPES = [
   'status_transition',
@@ -48,6 +54,7 @@ const LEDGER_EVENT_TYPES = [
   'praxis.approval_requested',
 ] as const;
 const ORCHESTRATOR_EVENT_TYPES = ['start', 'step', 'progress', 'complete', 'fail'] as const;
+export const LAST_EVENT_ID_HEADER = 'Last-Event-ID';
 
 const initialState: OrchestratorEventState = {
   events: [],
@@ -77,19 +84,11 @@ export function useOrchestratorEvents(
   useEffect(() => {
     if (!streamUrl || !enabled || terminalRef.current || typeof EventSource === 'undefined') return;
 
-    let normalizedUrl = streamUrl;
-    try {
-      const origin = typeof window === 'undefined' ? 'http://localhost' : window.location.origin;
-      const url = new URL(streamUrl, origin);
-      url.searchParams.set('limit', String(limit));
-      if (lastEventIdRef.current) {
-        url.searchParams.set('after', lastEventIdRef.current);
-        url.searchParams.set('lastEventId', lastEventIdRef.current);
-      }
-      normalizedUrl = `${url.pathname}${url.search}`;
-    } catch {
-      normalizedUrl = streamUrl;
-    }
+    const normalizedUrl = buildOrchestratorStreamUrl(streamUrl, {
+      origin: typeof window === 'undefined' ? 'http://localhost' : window.location.origin,
+      limit,
+      lastEventId: lastEventIdRef.current,
+    });
 
     setState((current) => ({
       ...current,
@@ -148,6 +147,23 @@ export function useOrchestratorEvents(
   }, [enabled, limit, maxEvents, streamUrl]);
 
   return state;
+}
+
+export function buildOrchestratorStreamUrl(
+  streamUrl: string,
+  options: BuildOrchestratorStreamUrlOptions,
+): string {
+  try {
+    const url = new URL(streamUrl, options.origin ?? 'http://localhost');
+    url.searchParams.set('limit', String(options.limit));
+    if (options.lastEventId) {
+      url.searchParams.set('after', options.lastEventId);
+      url.searchParams.set('lastEventId', options.lastEventId);
+    }
+    return `${url.pathname}${url.search}`;
+  } catch {
+    return streamUrl;
+  }
 }
 
 export function normalizeOrchestratorEvent(input: RawSseEvent): OrchestratorEvent {
