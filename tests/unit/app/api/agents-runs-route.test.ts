@@ -69,6 +69,13 @@ describe('/api/agents/runs route', () => {
       metadata: {
         policyAgentId: 'research-memo',
         outputDestination: 'memo_studio',
+        factoryLane: 'repository',
+        ontologyStack: ['policy-core', 'source-to-claim'],
+        graphMode: 'embedded_proposal',
+        cogneeMode: 'disabled',
+        sourceReceiptIds: ['src-1'],
+        embeddedGraphArtifactId: 'graph-artifact-1',
+        ecosystemContributors: ['dialectica', 'kairos', 'agon'],
       },
     });
     const { POST } = await import('@/app/api/agents/runs/route');
@@ -113,11 +120,26 @@ describe('/api/agents/runs route', () => {
           selectedTools: ['sourceability-check'],
           outputDestination: 'memo_studio',
           sourcePosture: 'Operational',
+          factoryLane: 'repository',
+          ontologyStack: ['policy-core', 'source-to-claim'],
+          graphMode: 'embedded_proposal',
+          cogneeMode: 'disabled',
+          sourceReceiptIds: ['src-1'],
+          embeddedGraphArtifactId: 'graph-artifact-1',
+          ecosystemContributors: ['dialectica', 'kairos', 'agon'],
         },
       }),
     }));
+    const body = await response.json();
 
     expect(response.status).toBe(201);
+    expect(body.factoryMetadata).toMatchObject({
+      factoryLane: 'repository',
+      graphMode: 'embedded_proposal',
+      cogneeMode: 'disabled',
+      sourceReceiptIds: ['src-1'],
+      ecosystemContributors: ['dialectica', 'kairos', 'agon'],
+    });
     expect(mocks.createAgentRun).toHaveBeenCalledWith(expect.objectContaining({
       ownerUid: 'user-1',
       capsuleId: 'cap-1',
@@ -138,6 +160,10 @@ describe('/api/agents/runs route', () => {
         }),
         selectedTools: ['sourceability-check'],
         sourcePosture: 'Operational',
+        factoryLane: 'repository',
+        graphMode: 'embedded_proposal',
+        cogneeMode: 'disabled',
+        ecosystemContributors: ['dialectica', 'kairos', 'agon'],
         executionMode: 'queued-only',
       }),
     }));

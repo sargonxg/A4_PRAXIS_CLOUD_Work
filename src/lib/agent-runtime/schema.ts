@@ -74,6 +74,15 @@ export const AgentRunOutputSchema = z.object({
     outputDestination: z.string().nullable(),
     sourcePosture: z.string().nullable(),
   }).optional(),
+  factoryMetadata: z.object({
+    factoryLane: z.string().nullable(),
+    ontologyStack: z.array(z.string()),
+    graphMode: z.string().nullable(),
+    cogneeMode: z.string().nullable(),
+    sourceReceiptIds: z.array(z.string()),
+    embeddedGraphArtifactId: z.string().nullable(),
+    ecosystemContributors: z.array(z.string()),
+  }).optional(),
 });
 
 export type CreateManualAgentRunRequest = z.infer<typeof CreateManualAgentRunRequestSchema>;
@@ -91,6 +100,7 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
   const selectedTools = Array.isArray(run.metadata?.selectedTools)
     ? run.metadata.selectedTools.filter((item): item is string => typeof item === 'string')
     : [];
+  const factoryMetadata = normalizeFactoryMetadata(run.metadata);
   return AgentRunOutputSchema.parse({
     runId: run.id,
     status: run.status,
@@ -113,6 +123,7 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
       outputDestination: outputDestination ?? null,
       sourcePosture: typeof run.metadata?.sourcePosture === 'string' ? run.metadata.sourcePosture : null,
     },
+    ...(factoryMetadata ? { factoryMetadata } : {}),
   });
 }
 
@@ -124,4 +135,31 @@ function normalizeOutputDestination(value: unknown): PolicyAgentOutputDestinatio
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeFactoryMetadata(metadata: Record<string, unknown>): AgentRunOutput['factoryMetadata'] | null {
+  const hasFactoryMetadata = [
+    'factoryLane',
+    'ontologyStack',
+    'graphMode',
+    'cogneeMode',
+    'sourceReceiptIds',
+    'embeddedGraphArtifactId',
+    'ecosystemContributors',
+  ].some((key) => key in metadata);
+  if (!hasFactoryMetadata) return null;
+
+  return {
+    factoryLane: typeof metadata.factoryLane === 'string' ? metadata.factoryLane : null,
+    ontologyStack: stringArray(metadata.ontologyStack),
+    graphMode: typeof metadata.graphMode === 'string' ? metadata.graphMode : null,
+    cogneeMode: typeof metadata.cogneeMode === 'string' ? metadata.cogneeMode : null,
+    sourceReceiptIds: stringArray(metadata.sourceReceiptIds),
+    embeddedGraphArtifactId: typeof metadata.embeddedGraphArtifactId === 'string' ? metadata.embeddedGraphArtifactId : null,
+    ecosystemContributors: stringArray(metadata.ecosystemContributors),
+  };
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 }

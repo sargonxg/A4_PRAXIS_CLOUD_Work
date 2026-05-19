@@ -64,7 +64,7 @@ for (const required of [
   'data-testid="capsule-agent-lane"',
   'data-testid="praxis-answer-markdown"',
   'Compose your reasoning and policy products from expert ContextCapsules.',
-  'Search capsules',
+  'Capsule Factory',
   'showWorkbenchNavigation',
   'starterCapsuleSummaries',
   'visibleCapsuleCards',
@@ -74,9 +74,10 @@ for (const required of [
 }
 
 const landingLayout = read('src/app/(landing)/layout.tsx');
-for (const required of ['Home', 'Capsules', 'Repository', 'Pricing', 'Learn', 'Release notes', 'Sign in']) {
+for (const required of ['Home', 'Capsule Factory', 'Pricing', 'Learn', 'Release notes', 'Sign in']) {
   if (!landingLayout.includes(required)) failures.push(`public navigation missing marker: ${required}`);
 }
+if (landingLayout.includes('Repository')) failures.push('public navigation still exposes Repository as a separate primary route');
 for (const singleHeaderRoute of ['/pricing', '/learn', '/release-notes']) {
   const routeCount = landingLayout.split(`href: "${singleHeaderRoute}"`).length - 1;
   if (routeCount !== 1) {

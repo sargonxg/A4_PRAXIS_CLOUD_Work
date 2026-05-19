@@ -20,12 +20,14 @@ function expectMissing(rel: string): void {
 const primaryNav = read('src/lib/navigation/primary-nav.ts');
 for (const marker of [
   "label: 'Home'",
-  "label: 'Capsules'",
-  "label: 'Repository'",
+  "label: 'Capsule Factory'",
   "href: '/app'",
-  "href: '/app/repository'",
+  "href: '/app/capsules'",
 ]) {
   if (!primaryNav.includes(marker)) failures.push(`PRIMARY_NAV missing canonical marker: ${marker}`);
+}
+for (const removedPrimary of ["label: 'Repository'", "href: '/app/repository'"]) {
+  if (primaryNav.includes(removedPrimary)) failures.push(`PRIMARY_NAV still exposes repository as a separate primary item: ${removedPrimary}`);
 }
 for (const oldLabel of ["label: 'Ask PRAXIS'", "label: 'Library'", "label: 'Memo Studio'", "label: 'Canvas'", "label: 'Advanced'"]) {
   if (primaryNav.includes(oldLabel)) failures.push(`PRIMARY_NAV still exposes old app label: ${oldLabel}`);

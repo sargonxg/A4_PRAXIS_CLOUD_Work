@@ -1,5 +1,5 @@
-import { TaskletPraxisWorkbench } from '@/components/praxis/tasklet-praxis-workbench';
+import { redirect } from 'next/navigation';
 
 export default function RepositoryPage() {
-  return <TaskletPraxisWorkbench mode="app" initialPanel="repository" />;
+  redirect('/app/capsules?lane=repository');
 }

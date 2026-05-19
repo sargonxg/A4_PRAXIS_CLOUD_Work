@@ -8,8 +8,7 @@ import { PraxisMark } from "@/components/brand/praxis-mark";
 
 const navLinks = [
   { label: "Home", href: "/" },
-  { label: "Capsules", href: "/login?mode=signup&redirect=%2Fapp%2Fcapsules" },
-  { label: "Repository", href: "/login?mode=signup&redirect=%2Fapp%2Frepository" },
+  { label: "Capsule Factory", href: "/login?mode=signup&redirect=%2Fapp%2Fcapsules" },
   { label: "Pricing", href: "/pricing" },
   { label: "Learn", href: "/learn" },
   { label: "Release notes", href: "/release-notes" },

@@ -1,5 +1,12 @@
 import { TaskletPraxisWorkbench } from '@/components/praxis/tasklet-praxis-workbench';
 
-export default function CapsulesPage() {
-  return <TaskletPraxisWorkbench mode="app" initialPanel="capsules" />;
+type CapsulesPageProps = {
+  searchParams: Promise<{ lane?: string }>;
+};
+
+export default async function CapsulesPage({ searchParams }: CapsulesPageProps) {
+  const { lane } = await searchParams;
+  const initialFactoryLane = lane === 'repository' ? 'repository' : undefined;
+
+  return <TaskletPraxisWorkbench mode="app" initialPanel="capsules" initialFactoryLane={initialFactoryLane} />;
 }

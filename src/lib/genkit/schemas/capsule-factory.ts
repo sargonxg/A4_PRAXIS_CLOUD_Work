@@ -1,9 +1,40 @@
 import { z } from 'genkit';
 
-export const CapsuleFactoryCoreKindSchema = z.enum(['user', 'situation', 'source', 'tool', 'output']);
+export const CapsuleFactoryCoreKindSchema = z.enum([
+  'user',
+  'situation',
+  'source',
+  'document',
+  'graph',
+  'time',
+  'tool',
+  'objective',
+  'product',
+  'output',
+  'memory',
+  'handover',
+]);
 export const CapsuleFactoryLaneIdSchema = z.enum(['dialectica', 'kairos', 'agon']);
 export const CapsuleFactoryReviewStateSchema = z.enum(['draft', 'reviewed', 'applied', 'rejected']);
 export const CapsuleFactoryProposalSourceSchema = z.enum(['firestore', 'cognee', 'future_graphiti']);
+export const CapsuleFactoryApplyTargetSchema = z.enum([
+  'user_core',
+  'situation_core',
+  'source_core',
+  'document_core',
+  'graph_core',
+  'time_core',
+  'tool_core',
+  'objective_core',
+  'product_core',
+  'output_core',
+  'memory_core',
+  'handover_core',
+  'context_capsule',
+]);
+export const CapsuleFactoryGraphModeSchema = z.enum(['none', 'embedded_proposal', 'approved_postgres_kg']);
+export const CapsuleFactoryCogneeModeSchema = z.enum(['disabled', 'recall_only', 'write_candidates']);
+export const CapsuleFactoryEcosystemContributorSchema = z.enum(['dialectica', 'kairos', 'agon']);
 
 export const CapsuleFactorySourceSnippetSchema = z.object({
   id: z.string().min(1).max(160),
@@ -95,6 +126,26 @@ export const CapsuleFactoryLaneImprovementSchema = z.object({
   requiresConfirmation: z.literal(true),
 });
 
+export const CapsuleFactoryReceiptsSchema = z.object({
+  selectedOntologyStack: z.array(z.string().min(1).max(120)).max(12).default([]),
+  sourceCount: z.number().int().nonnegative().default(0),
+  graphCandidateCount: z.number().int().nonnegative().default(0),
+  graphMode: CapsuleFactoryGraphModeSchema.default('embedded_proposal'),
+  cogneeMode: CapsuleFactoryCogneeModeSchema.default('disabled'),
+  ecosystemContributors: z.array(CapsuleFactoryEcosystemContributorSchema).max(3).default([]),
+  approvalState: CapsuleFactoryReviewStateSchema.default('draft'),
+});
+
+export const CapsuleFactoryRunMetadataSchema = z.object({
+  factoryLane: z.enum(['catalog', 'repository', 'ontology', 'sources', 'temporality', 'conflict', 'output', 'runs']).optional(),
+  ontologyStack: z.array(z.string().min(1).max(120)).max(12).default([]),
+  graphMode: CapsuleFactoryGraphModeSchema.default('embedded_proposal'),
+  cogneeMode: CapsuleFactoryCogneeModeSchema.default('disabled'),
+  sourceReceiptIds: z.array(z.string().min(1).max(160)).max(30).default([]),
+  embeddedGraphArtifactId: z.string().min(1).max(160).nullable().default(null),
+  ecosystemContributors: z.array(CapsuleFactoryEcosystemContributorSchema).max(3).default([]),
+});
+
 export const CapsuleSynthesisOutputSchema = z.object({
   contextCapsuleDraft: ContextCapsuleDraftSchema,
   proposedCores: z.array(CapsuleFactoryDraftCoreSchema).max(12),
@@ -102,10 +153,11 @@ export const CapsuleSynthesisOutputSchema = z.object({
   suggestedTools: z.array(z.string().min(1).max(120)).max(10),
   applyActions: z.array(z.object({
     label: z.string().min(1).max(120),
-    target: z.enum(['user_core', 'situation_core', 'source_core', 'tool_core', 'output_core', 'context_capsule']),
+    target: CapsuleFactoryApplyTargetSchema,
     requiresConfirmation: z.literal(true),
   })).max(10),
   laneImprovements: z.array(CapsuleFactoryLaneImprovementSchema).max(8).default([]),
+  factoryReceipts: CapsuleFactoryReceiptsSchema.optional(),
 });
 
 export const CapsuleFactoryReviewDiffSchema = z.object({
@@ -119,10 +171,11 @@ export const CapsuleFactoryReviewDiffSchema = z.object({
   laneImprovements: z.array(CapsuleFactoryLaneImprovementSchema).max(8).default([]),
   applyActions: z.array(z.object({
     label: z.string().min(1).max(120),
-    target: z.enum(['user_core', 'situation_core', 'source_core', 'tool_core', 'output_core', 'context_capsule']),
+    target: CapsuleFactoryApplyTargetSchema,
     requiresConfirmation: z.literal(true),
   })).max(10).default([]),
   provenanceIds: z.array(z.string().min(1).max(160)).max(30).default([]),
+  factoryReceipts: CapsuleFactoryReceiptsSchema.optional(),
   confirmation: z.object({
     required: z.literal(true),
     confirmedAt: z.string().datetime().nullable().default(null),
@@ -151,6 +204,7 @@ export type CapsuleFactoryLaneId = z.infer<typeof CapsuleFactoryLaneIdSchema>;
 export type CapsuleFactoryLaneImprovement = z.infer<typeof CapsuleFactoryLaneImprovementSchema>;
 export type CapsuleFactoryReviewState = z.infer<typeof CapsuleFactoryReviewStateSchema>;
 export type CapsuleFactoryReviewDiff = z.infer<typeof CapsuleFactoryReviewDiffSchema>;
+export type CapsuleFactoryRunMetadata = z.infer<typeof CapsuleFactoryRunMetadataSchema>;
 export type CapsuleResearchPlanInput = z.infer<typeof CapsuleResearchPlanInputSchema>;
 export type CapsuleResearchPlanOutput = z.infer<typeof CapsuleResearchPlanOutputSchema>;
 export type CapsuleSynthesisInput = z.infer<typeof CapsuleSynthesisInputSchema>;

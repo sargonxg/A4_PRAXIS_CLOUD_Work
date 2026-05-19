@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const source = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
 const sidebarSource = readFileSync(join(process.cwd(), 'src/components/app/app-sidebar.tsx'), 'utf8');
+const repositoryPageSource = readFileSync(join(process.cwd(), 'src/app/app/repository/page.tsx'), 'utf8');
 
 describe('Tasklet PRAXIS workbench contract', () => {
   it('keeps model routing TACITUS-owned in the main composer', () => {
@@ -233,7 +234,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('typeId={capsuleTypeFilter}');
     expect(source).toContain('domainId={capsuleDomainFilter}');
     expect(source).toContain('policyTeamId={capsulePolicyTeamFilter}');
-    expect(source).toContain("showRepairStates={isRepositoryPage}");
+    expect(source).toContain('{!isRepositoryLane ? <CapsuleTaxonomyFilterBar');
     expect(source).toContain('Source refs');
     expect(source).toContain('Document refs');
     expect(source).not.toContain('function capsuleTypeCount(');
@@ -259,9 +260,10 @@ describe('Tasklet PRAXIS workbench contract', () => {
 
   it('renders app capsules as a first-class dense repository surface', () => {
     expect(source).toContain('const isCapsuleRepositoryPage = initialPanel ===');
-    expect(source).toContain('Capsule repository');
-    expect(source).toContain("'capsule-repository-page'");
-    expect(source).toContain('lg:grid-cols-3');
+    expect(source).toContain('Capsule Factory & Repository');
+    expect(source).toContain("id: 'repository', label: 'Repository'");
+    expect(source).toContain('data-testid="capsule-factory-repository-lane"');
+    expect(source).toContain("href={isAuthenticated ? '/app/capsules?lane=repository'");
     expect(source).toContain('data-testid="document-repository-section"');
     expect(source).toContain('Attach</button>');
     expect(source).toContain('Detach</button>');
@@ -277,6 +279,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('factorySidebarItems');
     expect(source).toContain('Capsule Factory');
     expect(source).toContain('Catalog');
+    expect(source).toContain('Repository');
     expect(source).toContain('Ontology/Graph');
     expect(source).toContain('Sources');
     expect(source).toContain('Temporality');
@@ -303,6 +306,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('RuntimeProofStrip');
     expect(source).toContain('data-testid="runtime-proof-strip"');
     expect(source).toContain('active capsule');
+    expect(source).toContain('graph mode');
+    expect(source).toContain('Cognee mode');
     expect(source).toContain('last Ask receipt');
     expect(source).toContain('latest mirrored event');
     expect(source).toContain('memo/output link');
@@ -322,11 +327,12 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain("CapsuleEmptyState label=\"No capsules found.\"");
   });
 
-  it('renders repository as its own cockpit page state instead of a sheet-only action', () => {
+  it('keeps repository compatibility as a Capsule Factory lane instead of a separate page model', () => {
+    expect(repositoryPageSource).toContain("redirect('/app/capsules?lane=repository')");
     expect(source).toContain("initialPanel?: 'ask' | 'capsules' | 'repository'");
-    expect(source).toContain("const isRepositoryPage = initialPanel === 'repository' && mode === 'app'");
-    expect(source).toContain("href={isAuthenticated ? '/app/repository' : '/login?mode=signup&redirect=%2Fapp%2Frepository'}");
-    expect(source).toContain("data-testid={isRepositoryPage ? 'capsule-repository-page' : 'capsule-manager'}");
+    expect(source).toContain("const isRepositoryLane = isCapsuleRepositoryPage && factoryLane === 'repository'");
+    expect(source).toContain('initialFactoryLane?: CapsuleFactoryLaneId');
+    expect(source).toContain("href={isAuthenticated ? '/app/capsules?lane=repository'");
     expect(source).toContain('Find missing sources');
   });
 });

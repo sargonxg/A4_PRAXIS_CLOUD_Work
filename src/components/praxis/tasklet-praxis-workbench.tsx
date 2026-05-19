@@ -92,12 +92,15 @@ import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-strea
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 
+type CapsuleFactoryLaneId = 'catalog' | 'repository' | 'ontology' | 'sources' | 'temporality' | 'conflict' | 'output' | 'runs';
+
 type TaskletPraxisWorkbenchProps = {
   mode: HomeSurfaceMode | 'app';
   activeCapsuleName?: string;
   capsuleId?: string;
   initialConversationId?: string;
   initialPanel?: 'ask' | 'capsules' | 'repository';
+  initialFactoryLane?: CapsuleFactoryLaneId;
   focusedRunId?: string;
   recentRuns?: Array<{ label: string; detail: string; status: string }>;
   className?: string;
@@ -115,7 +118,6 @@ type SavedConversationTurn = {
 };
 type CapsuleRole = 'user' | 'situation' | 'tool' | 'output' | 'reference';
 type CapsuleDetailTab = 'build' | 'connect' | 'retrieve' | 'agents';
-type CapsuleFactoryLaneId = 'catalog' | 'ontology' | 'sources' | 'temporality' | 'conflict' | 'output' | 'runs';
 type CapsuleFactoryReviewState = 'draft' | 'reviewed' | 'applied' | 'rejected';
 type CapsuleFactoryReviewDiff = {
   diffId: string;
@@ -124,7 +126,7 @@ type CapsuleFactoryReviewDiff = {
   laneTitle: string;
   reviewState: CapsuleFactoryReviewState;
   proposedCapsule: { label: string; summary: string; coreIds: string[]; provenance: { sourceIds: string[]; documentIds: string[] }; assumptions: string[]; status: 'draft' };
-  proposedCores: Array<{ kind: 'user' | 'situation' | 'source' | 'tool' | 'output'; label: string; summary: string; provenanceIds: string[]; confidence: 'low' | 'medium' | 'high' }>;
+  proposedCores: Array<{ kind: 'user' | 'situation' | 'source' | 'document' | 'graph' | 'time' | 'tool' | 'objective' | 'product' | 'output' | 'memory' | 'handover'; label: string; summary: string; provenanceIds: string[]; confidence: 'low' | 'medium' | 'high' }>;
   sourceGaps: string[];
   openQuestions: string[];
   laneImprovements: Array<{ laneId: 'dialectica' | 'kairos' | 'agon'; title: string; summary: string; proposedTags: string[]; evidenceIds: string[]; requiresConfirmation: true }>;
@@ -135,6 +137,8 @@ type CapsuleFactoryReviewDiff = {
 type RuntimeProof = {
   activeCapsule: string;
   sourceCount: number;
+  graphMode: string;
+  cogneeMode: string;
   lastAskReceipt: string;
   queuedRunId: string | null;
   workerStatus: string;
@@ -169,6 +173,15 @@ type AgentRunSummary = {
     selectedTools: string[];
     outputDestination: string | null;
     sourcePosture: string | null;
+  };
+  factoryMetadata?: {
+    factoryLane: string | null;
+    ontologyStack: string[];
+    graphMode: string | null;
+    cogneeMode: string | null;
+    sourceReceiptIds: string[];
+    embeddedGraphArtifactId: string | null;
+    ecosystemContributors: string[];
   };
 };
 type AgentRunEventSummary = {
@@ -400,6 +413,7 @@ const capsuleDomainFilters = [
 
 const factorySidebarItems: Array<{ id: CapsuleFactoryLaneId; label: string; icon: LucideIcon; filter?: string }> = [
   { id: 'catalog', label: 'Catalog', icon: Library, filter: 'all' },
+  { id: 'repository', label: 'Repository', icon: Database },
   { id: 'ontology', label: 'Ontology/Graph', icon: BrainCircuit },
   { id: 'sources', label: 'Sources', icon: Search, filter: 'all' },
   { id: 'temporality', label: 'Temporality', icon: RefreshCcw },
@@ -522,6 +536,7 @@ export function TaskletPraxisWorkbench({
   capsuleId = 'default',
   initialConversationId,
   initialPanel,
+  initialFactoryLane,
   focusedRunId,
   recentRuns = defaultRecentRuns,
   className,
@@ -534,6 +549,7 @@ export function TaskletPraxisWorkbench({
   const isRepositoryPage = initialPanel === 'repository' && mode === 'app';
   const isCapsuleRepositoryPage = initialPanel === 'capsules' && mode === 'app';
   const showHomepageFactoryCta = !initialPanel && mode === 'app';
+  const resolvedInitialFactoryLane: CapsuleFactoryLaneId = initialFactoryLane ?? 'catalog';
   const [prompt, setPrompt] = useState('Draft a sourced options memo from the active capsule.');
   const [activeTab, setActiveTab] = useState<PolicyNeedTabId>('analysis');
   const [selectedAgentId, setSelectedAgentId] = useState(PRAXIS_POLICY_AGENTS[0]?.id ?? 'research-memo');
@@ -550,7 +566,8 @@ export function TaskletPraxisWorkbench({
   const [capsuleTypeFilter, setCapsuleTypeFilter] = useState('all');
   const [capsuleDomainFilter, setCapsuleDomainFilter] = useState('all');
   const [capsulePolicyTeamFilter, setCapsulePolicyTeamFilter] = useState('all');
-  const [factoryLane, setFactoryLane] = useState<CapsuleFactoryLaneId>('catalog');
+  const [factoryLane, setFactoryLane] = useState<CapsuleFactoryLaneId>(resolvedInitialFactoryLane);
+  const isRepositoryLane = isCapsuleRepositoryPage && factoryLane === 'repository';
   const [factoryReviewDiffs, setFactoryReviewDiffs] = useState<CapsuleFactoryReviewDiff[]>([]);
   const [userCapsules, setUserCapsules] = useState<PraxisCapsuleSummary[]>([]);
   const [capsulesLoading, setCapsulesLoading] = useState(false);
@@ -657,6 +674,8 @@ export function TaskletPraxisWorkbench({
   const runtimeProof: RuntimeProof = {
     activeCapsule: activeCapsuleForStrip?.label ?? currentCapsuleId,
     sourceCount: activeCapsuleSourceCount,
+    graphMode: latestRun?.factoryMetadata?.graphMode ?? (activeCapsuleSummaryForStrip?.coreRefs.graphCoreId ? 'approved graph ref' : 'embedded proposal'),
+    cogneeMode: latestRun?.factoryMetadata?.cogneeMode ?? 'Cognee disabled',
     lastAskReceipt: conversationUrl ? `conversation ${conversationThreadId?.slice(0, 12)}` : chatMessages.some((message) => message.role === 'assistant' && message.text.trim()) ? 'local assistant receipt' : 'none yet',
     queuedRunId: latestRun?.runId ?? null,
     workerStatus: latestRun?.status ?? 'not queued',
@@ -1334,6 +1353,15 @@ export function TaskletPraxisWorkbench({
             capsuleSlots: agent.capsuleSlots,
             allowedTools: agent.allowedTools,
             riskLevel: agent.riskLevel,
+            ...(agent.id === 'capsule-factory' ? {
+              factoryLane,
+              ontologyStack: ['policy-core', 'source-to-claim'],
+              graphMode: activeCapsuleSummaryForStrip?.coreRefs.graphCoreId ? 'approved_postgres_kg' : 'embedded_proposal',
+              cogneeMode: 'disabled',
+              sourceReceiptIds: activeCapsuleSummaryForStrip?.coreRefs.sourceCoreIds ?? [],
+              embeddedGraphArtifactId: activeCapsuleSummaryForStrip?.coreRefs.graphCoreId ?? null,
+              ecosystemContributors: ['dialectica', 'kairos', 'agon'],
+            } : {}),
             appliedCapsules: activeCapsuleStack.map((capsule) => ({
               id: capsule.id,
               label: capsule.label,
@@ -1902,11 +1930,11 @@ export function TaskletPraxisWorkbench({
           }} active />
           <Link href={isAuthenticated ? '/app/capsules' : '/login?mode=signup&redirect=%2Fapp%2Fcapsules'} className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5">
             <Search className="h-5 w-5 text-slate-500" />
-            Search capsules
+            Capsule Factory
           </Link>
-          <Link href={isAuthenticated ? '/app/repository' : '/login?mode=signup&redirect=%2Fapp%2Frepository'} className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5">
+          <Link href={isAuthenticated ? '/app/capsules?lane=repository' : '/login?mode=signup&redirect=%2Fapp%2Fcapsules%3Flane%3Drepository'} className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5">
             <Library className="h-5 w-5 text-slate-500" />
-            Repository
+            Factory repository lane
           </Link>
           <div className="mt-8">
             <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">{recentLabel} <ChevronDown className="h-3 w-3" /></p>
@@ -1969,8 +1997,7 @@ export function TaskletPraxisWorkbench({
             </Link>
             <nav className="ml-auto hidden items-center gap-8 text-sm font-semibold text-slate-500 md:flex">
               <Link href={isAuthenticated ? '/app' : '/'} className="hover:text-slate-900">Home</Link>
-              <Link href={isAuthenticated ? '/app/capsules' : '/login?mode=signup&redirect=%2Fapp%2Fcapsules'} className="hover:text-slate-900">Capsules</Link>
-              <Link href={isAuthenticated ? '/app/repository' : '/login?mode=signup&redirect=%2Fapp%2Frepository'} className="hover:text-slate-900">Repository</Link>
+              <Link href={isAuthenticated ? '/app/capsules' : '/login?mode=signup&redirect=%2Fapp%2Fcapsules'} className="hover:text-slate-900">Capsule Factory</Link>
               <Link href="/pricing" className="hover:text-slate-900">Pricing</Link>
               <Link href="/learn" className="hover:text-slate-900">Learn</Link>
               <Link href="/release-notes" className="hover:text-slate-900">Release notes</Link>
@@ -2356,12 +2383,12 @@ export function TaskletPraxisWorkbench({
               <span className="sr-only" data-testid="capsule-manager">Capsule manager</span>
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 pb-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900">{isRepositoryPage ? 'Repository' : isCapsuleRepositoryPage ? 'Capsule Factory' : 'Capsules'}</h2>
+                  <h2 className="text-xl font-semibold text-slate-900">{isCapsuleRepositoryPage ? 'Capsule Factory & Repository' : isRepositoryPage ? 'Repository' : 'Capsules'}</h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    {isRepositoryPage
-                      ? 'Inspect uploaded documents, source attachment state, summaries, refreshes, and missing-source actions for the active capsule.'
-                      : isCapsuleRepositoryPage
-                        ? 'Build, categorize, inspect, and improve ContextCapsules while Ask PRAXIS remains the daily cockpit.'
+                    {isCapsuleRepositoryPage
+                      ? 'Build, inspect, enrich, and maintain ContextCapsules with repository receipts and review-gated graph/source changes.'
+                      : isRepositoryPage
+                        ? 'Inspect uploaded documents, source attachment state, summaries, refreshes, and missing-source actions for the active capsule.'
                       : 'Stored context, documents, and AI work.'}
                   </p>
                 </div>
@@ -2375,11 +2402,11 @@ export function TaskletPraxisWorkbench({
                     {isAuthenticated ? 'New capsule' : 'Sign in to build'}
                   </button>
                   <Link
-                    href={isAuthenticated ? '/app/repository' : '/login?mode=signup&redirect=%2Fapp%2Frepository'}
+                    href={isAuthenticated ? '/app/capsules?lane=repository' : '/login?mode=signup&redirect=%2Fapp%2Fcapsules%3Flane%3Drepository'}
                     className="inline-flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100"
                   >
                     <Library className="h-4 w-4" />
-                    Repository
+                    Repository lane
                   </Link>
                 </div>
               </div>
@@ -2402,7 +2429,7 @@ export function TaskletPraxisWorkbench({
                 />
               ) : null}
 
-              <CapsuleTaxonomyFilterBar
+              {!isRepositoryLane ? <CapsuleTaxonomyFilterBar
                 stats={activeCapsuleTaxonomyStats}
                 query={capsuleSearch}
                 onQuery={setCapsuleSearch}
@@ -2419,13 +2446,13 @@ export function TaskletPraxisWorkbench({
                   setCapsuleDomainFilter('all');
                   setCapsulePolicyTeamFilter('all');
                 }}
-              />
-              {isRepositoryPage ? (
+              /> : null}
+              {isRepositoryLane ? (
                 <div className="mt-3 grid gap-2 sm:grid-cols-4">
                   <Metric label="Source refs" value={userCapsuleTaxonomyStats.sourceReferences} />
                   <Metric label="Document refs" value={userCapsuleTaxonomyStats.documentReferences} />
-                  <Metric label="Archived" value={userCapsuleTaxonomyStats.archivedCapsules} />
-                  <Metric label="Repair states" value={userCapsuleTaxonomyStats.repairStates.length} />
+                  <Metric label="Graph mode" value={runtimeProof.graphMode} />
+                  <Metric label="Memory" value={runtimeProof.cogneeMode} />
                 </div>
               ) : null}
 
@@ -2467,12 +2494,14 @@ export function TaskletPraxisWorkbench({
                         agentRunCount={agentRuns.length}
                         reviewDiffs={factoryReviewDiffs}
                         runtimeProof={runtimeProof}
+                        repositoryDocuments={visibleRepositoryDocuments}
+                        repositoryLoading={repositoryLoading}
                         onReview={reviewFactoryLane}
                         onApply={applyFactoryReviewDiff}
                         onReject={rejectFactoryReviewDiff}
                       />
                     ) : null}
-                  <div className={cn('grid gap-3 md:grid-cols-2', isCapsuleRepositoryPage && 'mt-4 lg:grid-cols-3', isRepositoryPage && 'md:grid-cols-1')} data-testid="tasklet-capsule-cards">
+                  {!isRepositoryLane ? <div className={cn('grid gap-3 md:grid-cols-2', isCapsuleRepositoryPage && 'mt-4 lg:grid-cols-3', isRepositoryPage && 'md:grid-cols-1')} data-testid="tasklet-capsule-cards">
                     {capsulesLoading && !filteredUserCapsules.length ? (
                       <CapsuleEmptyState label="Loading capsules..." />
                     ) : null}
@@ -2496,7 +2525,29 @@ export function TaskletPraxisWorkbench({
                     {!capsulesLoading && !visibleCapsuleCards.length ? (
                       <CapsuleEmptyState label="No starter capsules match that search." />
                     ) : null}
-                  </div>
+                  </div> : null}
+                  {isRepositoryLane ? (
+                    <div className="mt-4">
+                      <DocumentRepositorySection
+                        capsule={selectedCapsule}
+                        documents={repositoryDocuments}
+                        documentRefs={Array.from(repositoryDocIds)}
+                        loading={repositoryLoading}
+                        onUpload={() => fileInputRef.current?.click()}
+                        onRefresh={() => void refreshRepository()}
+                        onAttach={(documentId) => {
+                          if (selectedCapsule) void updateCapsuleDocumentRef(selectedCapsule, documentId, 'attach');
+                        }}
+                        onDetach={(documentId) => {
+                          if (selectedCapsule) void updateCapsuleDocumentRef(selectedCapsule, documentId, 'detach');
+                        }}
+                        onInspect={(document) => {
+                          setPrompt(`Inspect "${document.title}" for the active capsule. Return source posture, chunks, entities, key claims, and gaps.`);
+                          void sendToPraxis(selectedAgent, `Inspect "${document.title}" for the active capsule. Return source posture, chunks, entities, key claims, and gaps.`);
+                        }}
+                      />
+                    </div>
+                  ) : null}
                   </div>
                   {isRepositoryPage ? (
                     <DocumentRepositorySection
@@ -3595,6 +3646,8 @@ function CapsuleFactoryLanePanel({
   agentRunCount,
   reviewDiffs,
   runtimeProof,
+  repositoryDocuments,
+  repositoryLoading,
   onReview,
   onApply,
   onReject,
@@ -3604,6 +3657,8 @@ function CapsuleFactoryLanePanel({
   agentRunCount: number;
   reviewDiffs: CapsuleFactoryReviewDiff[];
   runtimeProof: RuntimeProof;
+  repositoryDocuments: RepositoryDocument[];
+  repositoryLoading: boolean;
   onReview: (lane: (typeof factoryBuilderLanes)[number]) => void;
   onApply: (diff: CapsuleFactoryReviewDiff) => void;
   onReject: (diff: CapsuleFactoryReviewDiff) => void;
@@ -3629,6 +3684,14 @@ function CapsuleFactoryLanePanel({
         </div>
       </div>
       <RuntimeProofStrip proof={runtimeProof} />
+      {activeLane === 'repository' ? (
+        <CapsuleFactoryRepositoryLane
+          capsule={capsule}
+          documents={repositoryDocuments}
+          loading={repositoryLoading}
+          proof={runtimeProof}
+        />
+      ) : (
       <div className="mt-4 grid gap-2 md:grid-cols-3">
         {factoryBuilderLanes.map((lane) => (
           <article key={lane.id} className="rounded-lg border border-slate-200 p-3">
@@ -3645,6 +3708,7 @@ function CapsuleFactoryLanePanel({
           </article>
         ))}
       </div>
+      )}
       {openDiffs.length ? (
         <div className="mt-4 grid gap-2" data-testid="capsule-factory-review-diffs">
           {openDiffs.map((diff) => (
@@ -3690,10 +3754,47 @@ function RuntimeProofStrip({ proof }: { proof: RuntimeProof }) {
       <div className="grid gap-2 md:grid-cols-3">
         <ProofCell label="active capsule" value={proof.activeCapsule} />
         <ProofCell label="source count" value={String(proof.sourceCount)} />
+        <ProofCell label="graph mode" value={proof.graphMode} />
+        <ProofCell label="Cognee mode" value={proof.cogneeMode} />
         <ProofCell label="last Ask receipt" value={proof.lastAskReceipt} />
         <ProofCell label="queued agent run id" value={proof.queuedRunId?.slice(0, 12) ?? 'not queued'} />
         <ProofCell label="worker/run status" value={proof.workerStatus.replaceAll('_', ' ')} />
         <ProofCell label="latest mirrored event" value={proof.latestMirroredEvent} />
+      </div>
+    </div>
+  );
+}
+
+function CapsuleFactoryRepositoryLane({
+  capsule,
+  documents,
+  loading,
+  proof,
+}: {
+  capsule: PraxisCapsuleSummary | null;
+  documents: RepositoryDocument[];
+  loading: boolean;
+  proof: RuntimeProof;
+}) {
+  const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
+  return (
+    <div className="mt-4 grid gap-3" data-testid="capsule-factory-repository-lane">
+      <div className="grid gap-2 md:grid-cols-4">
+        <Metric label="Attached docs" value={counts.documents} />
+        <Metric label="Source receipts" value={counts.sources} />
+        <Metric label="Graph candidates" value={capsule?.coreRefs.graphCoreId ? 1 : 0} />
+        <Metric label="Memory" value={proof.cogneeMode} />
+      </div>
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <p className="text-xs font-semibold text-slate-900">Repository posture</p>
+        <p className="mt-1 text-[11px] leading-5 text-slate-500">
+          Firestore capsule state and the AgentRun ledger are canonical. Graph changes remain embedded proposals until reviewed and applied; {proof.cogneeMode}.
+        </p>
+        <div className="mt-3 grid gap-2 md:grid-cols-3">
+          <FactoryCommandCell label="Source-to-claim map" value={`${proof.sourceCount} source or document refs`} />
+          <FactoryCommandCell label="Graph/source posture" value={proof.graphMode} />
+          <FactoryCommandCell label="Ingestion state" value={loading ? 'loading repository' : `${documents.length} document receipts visible`} />
+        </div>
       </div>
     </div>
   );
@@ -5107,7 +5208,7 @@ function IconTextButton({ icon: Icon, label, onClick }: { icon: LucideIcon; labe
   );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({ label, value }: { label: string; value: number | string }) {
   return (
     <span className="rounded-md border border-slate-200 p-2">
       <span className="block text-lg font-semibold text-slate-900">{value}</span>

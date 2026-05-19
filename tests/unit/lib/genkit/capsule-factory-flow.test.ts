@@ -161,6 +161,68 @@ describe('capsule factory Genkit flows', () => {
     expect(diff.applyActions.every((action) => action.requiresConfirmation)).toBe(true);
   });
 
+  it('accepts mature capsule core proposals and factory receipts without canonical Cognee writes', async () => {
+    const {
+      CapsuleFactoryDraftCoreSchema,
+      CapsuleFactoryRunMetadataSchema,
+      CapsuleSynthesisOutputSchema,
+    } = await import('@/lib/genkit/schemas/capsule-factory');
+
+    const matureKinds = ['user', 'situation', 'source', 'document', 'graph', 'time', 'tool', 'objective', 'product', 'output', 'memory', 'handover'] as const;
+    const cores = matureKinds.map((kind) => CapsuleFactoryDraftCoreSchema.parse({
+      kind,
+      label: `${kind} proposal`,
+      summary: `Reviewable ${kind} proposal.`,
+      provenanceIds: kind === 'memory' ? ['cognee:recall-1'] : ['src-1'],
+      confidence: 'medium',
+      source: kind === 'memory' ? 'cognee' : 'firestore',
+    }));
+
+    const output = CapsuleSynthesisOutputSchema.parse({
+      contextCapsuleDraft: {
+        label: 'Mature capsule',
+        summary: 'A graph-aware capsule draft with review gates.',
+        coreIds: ['cap-1'],
+        provenance: { sourceIds: ['src-1'], documentIds: ['doc-1'] },
+        assumptions: ['Cognee recall is advisory only.'],
+        status: 'draft',
+      },
+      proposedCores: cores,
+      openQuestions: ['Which memory hints are source-backed?'],
+      suggestedTools: ['sourceability-reviewer'],
+      applyActions: [{ label: 'Review and apply mature capsule diff', target: 'context_capsule', requiresConfirmation: true }],
+      laneImprovements: [
+        { laneId: 'dialectica', title: 'Graph proposal', summary: 'Candidate graph nodes only.', proposedTags: ['graph'], evidenceIds: ['src-1'], requiresConfirmation: true },
+      ],
+      factoryReceipts: {
+        selectedOntologyStack: ['policy-core', 'source-to-claim'],
+        sourceCount: 1,
+        graphCandidateCount: 3,
+        graphMode: 'embedded_proposal',
+        cogneeMode: 'disabled',
+        ecosystemContributors: ['dialectica', 'kairos', 'agon'],
+        approvalState: 'reviewed',
+      },
+    });
+
+    expect(output.proposedCores.map((core) => core.kind)).toEqual(matureKinds);
+    expect(output.factoryReceipts?.cogneeMode).toBe('disabled');
+    expect(output.factoryReceipts?.ecosystemContributors).toEqual(['dialectica', 'kairos', 'agon']);
+
+    const metadata = CapsuleFactoryRunMetadataSchema.parse({
+      factoryLane: 'repository',
+      ontologyStack: ['policy-core', 'source-to-claim'],
+      graphMode: 'embedded_proposal',
+      cogneeMode: 'disabled',
+      sourceReceiptIds: ['src-1'],
+      embeddedGraphArtifactId: 'graph-artifact-1',
+      ecosystemContributors: ['dialectica', 'kairos', 'agon'],
+    });
+
+    expect(metadata.cogneeMode).toBe('disabled');
+    expect(metadata.ecosystemContributors).toContain('agon');
+  });
+
   it('derives writing defaults without generic document-automation framing', async () => {
     const { capsuleWritingProfileFlow } = await import('@/lib/genkit/flows/capsule-factory');
     const result = await capsuleWritingProfileFlow({

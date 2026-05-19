@@ -42,8 +42,7 @@ export default function ReleaseNotesPage() {
           </Link>
           <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm font-semibold text-[color:var(--color-ink)]/65">
             <Link href="/">Home</Link>
-            <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="hidden md:inline">Capsules</Link>
-            <Link href="/login?mode=signup&redirect=%2Fapp%2Frepository" className="hidden md:inline">Repository</Link>
+            <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="hidden md:inline">Capsule Factory</Link>
             <Link href="/pricing" className="hidden md:inline">Pricing</Link>
             <Link href="/learn" className="hidden md:inline">Learn</Link>
             <Link href="/release-notes" className="hidden md:inline">Release notes</Link>
