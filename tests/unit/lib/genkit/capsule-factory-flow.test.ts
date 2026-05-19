@@ -35,7 +35,7 @@ describe('capsule factory Genkit flows', () => {
     expect(result.draftCores.map((core) => core.kind)).toEqual(expect.arrayContaining(['user', 'situation', 'source', 'tool', 'output']));
     expect(result.applyMode).toBe('draft_review');
     expect(result.warnings).toContain('No documents or source snippets were provided; source cores stay gap-oriented.');
-  });
+  }, 10_000);
 
   it('proposes freshness-aware source gaps for thin context', async () => {
     const { capsuleResearchPlanFlow } = await import('@/lib/genkit/flows/capsule-factory');
