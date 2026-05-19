@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-19T05:19:20.493Z",
-  "totalRoutes": 207,
+  "generatedAt": "2026-05-19T14:08:13.205Z",
+  "totalRoutes": 208,
   "entries": [
     {
       "route": "/api/account",
@@ -1540,6 +1540,17 @@
         "runtime health diagnostics"
       ],
       "recommendedAction": "Keep sanitized/admin-gated and exclude from normal-user UI."
+    },
+    {
+      "route": "/api/health/agentic-search",
+      "file": "src/app/api/health/agentic-search/route.ts",
+      "category": "canonical",
+      "authPosture": "public/sanitized",
+      "calibrationStatus": "not AI route",
+      "callerEvidence": [
+        "runtime health diagnostics"
+      ],
+      "recommendedAction": "Keep canonical."
     },
     {
       "route": "/api/health/breakers",

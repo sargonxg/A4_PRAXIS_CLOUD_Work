@@ -681,13 +681,13 @@ function appendOrchestrationEvent(setMessages: TimelineSetter, messageId: string
 
 function initialAskWorkingTimeline(): AskOrchestrationStatusEvent[] {
   return [
-    { type: 'orchestrationStatus', id: 'context', label: 'TACITUS reads the capsule', status: 'active', detail: 'Checking the active capsule.' },
-    { type: 'orchestrationStatus', id: 'triage', label: 'TACITUS classifies the task', status: 'pending', detail: 'Classifying the request.' },
-    { type: 'orchestrationStatus', id: 'agent', label: 'TACITUS routes the agent', status: 'pending', detail: 'Choosing the policy agent path.' },
-    { type: 'orchestrationStatus', id: 'model-tier', label: 'TACITUS selects model tier', status: 'pending', detail: 'Choosing the reasoning tier.' },
-    { type: 'orchestrationStatus', id: 'tools', label: 'TACITUS checks tools', status: 'pending', detail: 'Selecting safe tool routes.' },
-    { type: 'orchestrationStatus', id: 'worker', label: 'TACITUS queues worker', status: 'pending', detail: 'Deciding whether durable work is needed.' },
-    { type: 'orchestrationStatus', id: 'draft', label: 'TACITUS drafts answer', status: 'pending', detail: 'Waiting to draft the answer.' },
+    { type: 'orchestrationStatus', id: 'context', label: 'Reading capsule', status: 'active', detail: 'Checking the active capsule.' },
+    { type: 'orchestrationStatus', id: 'triage', label: 'Planning searches', status: 'pending', detail: 'Classifying the research path.' },
+    { type: 'orchestrationStatus', id: 'agent', label: 'Checking sources', status: 'pending', detail: 'Choosing the source and policy agent path.' },
+    { type: 'orchestrationStatus', id: 'model-tier', label: 'Retrieving documents', status: 'pending', detail: 'Preparing the retrieval and model tier.' },
+    { type: 'orchestrationStatus', id: 'tools', label: 'Reviewing gaps', status: 'pending', detail: 'Selecting safe tool routes and evidence checks.' },
+    { type: 'orchestrationStatus', id: 'worker', label: 'Synthesizing memo', status: 'pending', detail: 'Deciding whether durable work is needed.' },
+    { type: 'orchestrationStatus', id: 'draft', label: 'Saving output', status: 'pending', detail: 'Waiting to draft and save the answer.' },
   ];
 }
 
@@ -798,42 +798,42 @@ function mergeWorkingTimeline(
     {
       type: 'orchestrationStatus' as const,
       id: 'context' as const,
-      label: 'TACITUS reads the capsule',
+      label: 'Reading capsule',
       status: receipt.capsule.contextHealth === 'ready' ? 'complete' as const : 'warn' as const,
       detail: `${receipt.capsule.contextHealth} capsule checked with ${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'}.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'triage' as const,
-      label: 'TACITUS classifies the task',
+      label: 'Planning searches',
       status: 'complete' as const,
       detail: `${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'agent' as const,
-      label: 'TACITUS routes the agent',
+      label: 'Checking sources',
       status: 'complete' as const,
       detail: `${receipt.routingDecision.userSafeLabels.policyAgent} selected.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'model-tier' as const,
-      label: 'TACITUS selects model tier',
+      label: 'Retrieving documents',
       status: 'complete' as const,
       detail: `${receipt.routingDecision.userSafeLabels.modelTier}. ${receipt.routingDecision.userSafeLabels.fallbackPosture}.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'tools' as const,
-      label: 'TACITUS checks tools',
+      label: 'Reviewing gaps',
       status: receipt.toolRouting.blockedToolIds.length ? 'warn' as const : 'complete' as const,
       detail: `${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'worker' as const,
-      label: 'TACITUS queues worker',
+      label: 'Synthesizing memo',
       status: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'queued' as const : receipt.supervisor.action === 'queue_agent_run' ? 'warn' as const : 'skipped' as const,
       detail: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'Durable agent run queued for deeper work.' : receipt.supervisor.action === 'queue_agent_run' ? 'Durable run could not be queued; Ask continued synchronously.' : 'No durable run needed for this answer.',
       runId: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? receipt.supervisor.queuedRun.runId : null,
@@ -845,7 +845,7 @@ function mergeWorkingTimeline(
     {
       type: 'orchestrationStatus' as const,
       id: 'draft' as const,
-      label: 'TACITUS drafts answer',
+      label: 'Saving output',
       status: 'complete' as const,
       detail: 'Answer drafted with source and memo handoff metadata.',
     },

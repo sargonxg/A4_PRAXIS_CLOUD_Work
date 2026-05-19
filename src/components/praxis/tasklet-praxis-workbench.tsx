@@ -164,6 +164,12 @@ type AgentRunSummary = {
   outputHref?: string | null;
   readiness?: PolicyAgentDefinition['readiness'] | null;
   riskLevel?: PolicyAgentDefinition['riskLevel'] | null;
+  contextReceipt?: {
+    activeCapsuleOrChain: string | null;
+    selectedTools: string[];
+    outputDestination: string | null;
+    sourcePosture: string | null;
+  };
 };
 type AgentRunEventSummary = {
   id: string;
@@ -235,6 +241,32 @@ type ActiveCapsuleChip = {
   role: CapsuleRole;
   toolId?: string;
   templateId?: string;
+};
+type ActiveContextStackPayload = {
+  stackId: 'default';
+  capsuleId: string;
+  userModelId: string | null;
+  situationId: string | null;
+  sourceIds: string[];
+  documentIds: string[];
+  outputGoal: string | null;
+  evidenceGaps: [];
+  canvasLayout: Record<string, never>;
+  schemaVersion: 1;
+  updatedAt: string;
+};
+type SelectedContextCoreIds = {
+  userCoreId: string | null;
+  situationCoreId: string | null;
+  sourceCoreIds: string[];
+  documentCoreIds: string[];
+  toolCoreIds: string[];
+  outputCoreIds: string[];
+};
+type ContextHealth = {
+  label: 'Baseline' | 'Ready' | 'Grounded' | 'Operational';
+  detail: string;
+  tone: string;
 };
 
 const defaultRecentRuns = [
@@ -409,11 +441,11 @@ const STARTER_USER_CAPSULE_CHIP: ActiveCapsuleChip = {
   role: 'user',
 };
 
-const capsuleChainSlots: Array<{ role: CapsuleRole; label: string; helper: string }> = [
-  { role: 'situation', label: 'Situation', helper: 'Add the case, issue, or operating context.' },
-  { role: 'reference', label: 'Sources/References', helper: 'Attach source packs, documents, or related capsules.' },
-  { role: 'tool', label: 'Tools', helper: 'Add reasoning tools and checks.' },
-  { role: 'output', label: 'Output', helper: 'Choose the memo, brief, handover, or artifact goal.' },
+const capsuleChainSlots: Array<{ role: CapsuleRole; label: string; helper: string; action: string }> = [
+  { role: 'situation', label: 'Situation', helper: 'Add the case, issue, or operating context.', action: 'Add context' },
+  { role: 'reference', label: 'Sources/References', helper: 'Attach source packs, documents, or related capsules.', action: 'Attach sources' },
+  { role: 'tool', label: 'Tools', helper: 'Add reasoning tools and checks.', action: 'Add checks' },
+  { role: 'output', label: 'Output', helper: 'Choose the memo, brief, handover, or artifact goal.', action: 'Choose output' },
 ];
 
 function buildFactoryReviewDiff(
@@ -501,6 +533,7 @@ export function TaskletPraxisWorkbench({
   const showWorkbenchNavigation = mode === 'app' || isAuthenticated;
   const isRepositoryPage = initialPanel === 'repository' && mode === 'app';
   const isCapsuleRepositoryPage = initialPanel === 'capsules' && mode === 'app';
+  const showHomepageFactoryCta = !initialPanel && mode === 'app';
   const [prompt, setPrompt] = useState('Draft a sourced options memo from the active capsule.');
   const [activeTab, setActiveTab] = useState<PolicyNeedTabId>('analysis');
   const [selectedAgentId, setSelectedAgentId] = useState(PRAXIS_POLICY_AGENTS[0]?.id ?? 'research-memo');
@@ -536,6 +569,7 @@ export function TaskletPraxisWorkbench({
   const [focusedRunEvents, setFocusedRunEvents] = useState<AgentRunEventSummary[]>([]);
   const [focusedRunLoading, setFocusedRunLoading] = useState(false);
   const [focusedRunAction, setFocusedRunAction] = useState<string | null>(null);
+  const [recentlyAppliedCapsuleId, setRecentlyAppliedCapsuleId] = useState<string | null>(null);
   const [builderLabel, setBuilderLabel] = useState('');
   const [builderNotes, setBuilderNotes] = useState('');
   const [builderLinks, setBuilderLinks] = useState('');
@@ -562,6 +596,8 @@ export function TaskletPraxisWorkbench({
     }),
     [activeCapsules, selectedCapsule, userCapsules],
   );
+  const activeContextStack = buildActiveContextStack(currentCapsuleId, activeCapsuleStack);
+  const contextHealth = getContextHealth(activeCapsuleStack);
   const selectedToolIds = activeCapsuleStack
     .filter((capsule) => capsule.role === 'tool')
     .map((capsule) => capsule.toolId ?? capsule.templateId ?? capsule.id);
@@ -594,15 +630,16 @@ export function TaskletPraxisWorkbench({
   const activeCapsuleIds = activeCapsuleStack.map((capsule) => capsule.id);
   const filledChainRoles = new Set(activeCapsuleStack.map((capsule) => capsule.role));
   const openChainSlots = capsuleChainSlots.filter((slot) => !filledChainRoles.has(slot.role));
-  const activeCapsuleForStrip = selectedCapsule ?? userCapsules[0] ?? starterCapsuleSummaries[0] ?? null;
-  const activeStarterForStrip = starterDefinitionForCapsule(activeCapsuleForStrip);
+  const activeCapsuleForStrip = selectedCapsule ?? activeCapsuleStack[0] ?? null;
+  const activeCapsuleSummaryForStrip = selectedCapsule ?? capsuleSummaryForChip(activeCapsuleStack[0], userCapsules);
+  const activeStarterForStrip = starterDefinitionForCapsule(activeCapsuleSummaryForStrip);
   const activeCapsuleSourceCount = activeStarterForStrip?.sourcePack.length
-    ?? ((activeCapsuleForStrip?.coreRefs.sourceCoreIds?.length ?? 0) + (activeCapsuleForStrip?.coreRefs.documentCoreIds?.length ?? 0));
+    ?? ((activeCapsuleSummaryForStrip?.coreRefs.sourceCoreIds?.length ?? 0) + (activeCapsuleSummaryForStrip?.coreRefs.documentCoreIds?.length ?? 0));
   const activeCapsuleReadiness = activeStarterForStrip
     ? `${activeStarterForStrip.readinessStars}/5`
-    : activeCapsuleForStrip?.health?.score
-      ? `${activeCapsuleForStrip.health.score}/100`
-      : activeCapsuleForStrip?.trust?.label ?? 'Review';
+    : activeCapsuleSummaryForStrip?.health?.score
+      ? `${activeCapsuleSummaryForStrip.health.score}/100`
+      : activeCapsuleSummaryForStrip?.trust?.label ?? contextHealth.label;
   const activeCapsuleOutputGoal = outputCapsuleForHeader?.label
     ?? activeStarterForStrip?.outputProductIds[0]?.replace(/-/g, ' ')
     ?? selectedAgent.outputDestination?.replace(/_/g, ' ')
@@ -665,6 +702,12 @@ export function TaskletPraxisWorkbench({
     void ensureConversationRecord(conversationThreadId, currentCapsuleId, activeCapsuleStack);
   }, [activeCapsuleStack, conversationThreadId, currentCapsuleId, isAuthenticated]);
 
+  useEffect(() => {
+    if (!recentlyAppliedCapsuleId) return;
+    const timeout = window.setTimeout(() => setRecentlyAppliedCapsuleId(null), 900);
+    return () => window.clearTimeout(timeout);
+  }, [recentlyAppliedCapsuleId]);
+
   function sendPublicToLogin(nextPrompt: string, agent: PolicyAgentDefinition = selectedAgent) {
     window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, nextPrompt);
     window.localStorage.setItem(PENDING_POLICY_AGENT_ID_KEY, agent.id);
@@ -677,6 +720,10 @@ export function TaskletPraxisWorkbench({
       return true;
     }
     return false;
+  }
+
+  function markContextApplied(capsuleIdToMark: string) {
+    setRecentlyAppliedCapsuleId(capsuleIdToMark);
   }
 
   function ensureConversationThread(): string {
@@ -758,8 +805,6 @@ export function TaskletPraxisWorkbench({
     setChatMessages((current) => [...current, userMessage, { role: 'assistant', text: '' }]);
 
     try {
-      const outputCapsule = activeCapsuleStack.find((capsule) => capsule.role === 'output');
-      const situationCapsule = activeCapsuleStack.find((capsule) => capsule.role === 'situation') ?? activeCapsuleStack[0];
       const currentConversationPath = buildConversationPath(currentCapsuleId, nextThreadId);
       const response = await fetch(`/api/conversations/${encodeURIComponent(nextThreadId)}/turns`, {
         method: 'POST',
@@ -779,19 +824,7 @@ export function TaskletPraxisWorkbench({
           })),
           currentToolId: 'ask-praxis',
           currentPath: currentConversationPath,
-          activeContextStack: {
-            stackId: 'default',
-            capsuleId: currentCapsuleId,
-            userModelId: userCapsule?.id ?? null,
-            situationId: situationCapsule?.id ?? currentCapsuleId,
-            sourceIds: activeCapsuleStack.filter((capsule) => capsule.role === 'reference').map((capsule) => capsule.id),
-            documentIds: [],
-            outputGoal: outputCapsule?.label ?? 'Routed PRAXIS answer',
-            evidenceGaps: [],
-            canvasLayout: {},
-            schemaVersion: 1,
-            updatedAt: new Date().toISOString(),
-          },
+          activeContextStack,
           aiSettings: {
             provider: 'vertex',
             analysisDepth: selectedAgent.id === 'research-memo' || selectedAgent.id === 'capsule-factory' ? 'deep' : 'standard',
@@ -1282,6 +1315,11 @@ export function TaskletPraxisWorkbench({
         body: JSON.stringify({
           capsuleId: currentCapsuleId,
           contextStackId: 'default',
+          contextPackageId: selectedCapsule?.capsuleId ? `capsule:${selectedCapsule.capsuleId}:v${selectedCapsule.version}` : undefined,
+          selectedCoreIds: {
+            ...selectedCoreIdsFromContextStack(activeContextStack),
+            toolCoreIds: selectedToolIds,
+          },
           policyAgentId: agent.id,
           outputDestination: agent.outputDestination,
           objective: cleanPrompt,
@@ -1296,6 +1334,14 @@ export function TaskletPraxisWorkbench({
             capsuleSlots: agent.capsuleSlots,
             allowedTools: agent.allowedTools,
             riskLevel: agent.riskLevel,
+            appliedCapsules: activeCapsuleStack.map((capsule) => ({
+              id: capsule.id,
+              label: capsule.label,
+              role: capsule.role,
+            })),
+            activeContextStack,
+            selectedTools: selectedToolIds,
+            sourcePosture: contextHealth.label,
             source: 'tasklet-cockpit',
           },
         }),
@@ -1379,6 +1425,7 @@ export function TaskletPraxisWorkbench({
     const chip = { ...capsuleToChip(capsule), role };
     if (role === 'situation') setCurrentCapsuleId(chip.id);
     setActiveCapsules((current) => applyCapsuleToStack(current, chip));
+    markContextApplied(chip.id);
     const categoryReview = capsuleCategory(capsule) === 'custom' ? ' Review its category before relying on it.' : '';
     setStatus(`${chip.label} added to the context chain as ${capsuleRoleLabel(role)}.${categoryReview}`);
   }
@@ -1408,6 +1455,7 @@ export function TaskletPraxisWorkbench({
     const chip = { ...capsuleToChip(capsule), role };
     if (role === 'situation') setCurrentCapsuleId(chip.id);
     setActiveCapsules((current) => applyCapsuleToStack(current, chip));
+    markContextApplied(chip.id);
     const categoryReview = capsuleCategory(capsule) === 'custom' ? ' Review its category before relying on it.' : '';
     setStatus(`${chip.label} added to the context chain as ${capsuleRoleLabel(role)}.${categoryReview}`);
     if (capsuleBrowserOpen) setCapsuleBrowserOpen(false);
@@ -1726,6 +1774,7 @@ export function TaskletPraxisWorkbench({
   }
 
   function removeCapsule(id: string) {
+    markContextApplied(id);
     setActiveCapsules((current) => {
       const nextStack = current.filter((capsule) => capsule.id !== id);
       if (currentCapsuleId === id) {
@@ -1755,6 +1804,7 @@ export function TaskletPraxisWorkbench({
       const oldIndex = current.findIndex((capsule) => capsule.id === activeId);
       const newIndex = current.findIndex((capsule) => capsule.id === overId);
       if (oldIndex < 0 || newIndex < 0) return current;
+      markContextApplied(activeId);
       return arrayMove(current, oldIndex, newIndex);
     });
   }
@@ -1786,6 +1836,56 @@ export function TaskletPraxisWorkbench({
     recognition.onerror = () => setStatus('Voice input could not start. Check microphone permissions.');
     recognition.start();
     setStatus('Listening...');
+  }
+
+  function shareActiveContextChain() {
+    const labels = activeCapsuleStack.map((capsule) => `${capsuleRoleLabel(capsule.role)}: ${capsule.label}`).join(' / ');
+    const shareText = labels || 'Model knowledge baseline';
+    const write = navigator.clipboard?.writeText(shareText);
+    if (!write) {
+      setStatus(shareText);
+      return;
+    }
+    void write.then(
+      () => setStatus('Context chain summary copied.'),
+      () => setStatus(shareText),
+    );
+  }
+
+  function downloadActiveContextChain() {
+    const body = JSON.stringify({
+      activeContextStack,
+      appliedCapsules: activeCapsuleStack.map((capsule) => ({
+        id: capsule.id,
+        label: capsule.label,
+        role: capsule.role,
+      })),
+      contextHealth: contextHealth.label,
+    }, null, 2);
+    const blob = new Blob([body], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'praxis-context-chain.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    setStatus('Context chain downloaded.');
+  }
+
+  function improveActiveContextChain() {
+    const missing = openChainSlots.map((slot) => slot.label).join(', ') || 'no required blocks';
+    setPrompt(`Improve this PRAXIS context chain. Missing or optional blocks: ${missing}. Recommend the next capsule, source, check, or output refinement.`);
+    setStatus('Improve prompt prepared for the active context chain.');
+  }
+
+  function runCapsuleFactoryAgent() {
+    const capsuleFactoryAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === 'capsule-factory') ?? selectedAgent;
+    setSelectedAgentId(capsuleFactoryAgent.id);
+    const target = selectedCapsule?.label ?? activeCapsuleStack[0]?.label ?? 'the active ContextCapsule';
+    const nextPrompt = `Run Capsule Factory on ${target}. Build, inspect, improve, and maintain it as a reviewable modular ContextCapsule. Include ontology/graph, sources, temporality, conflict/actors, outputs, tools, open gaps, and apply gates.`;
+    setPrompt(nextPrompt);
+    if (isAuthenticated) void sendToPraxis(capsuleFactoryAgent, nextPrompt);
+    else sendPublicToLogin(nextPrompt, capsuleFactoryAgent);
   }
 
   return (
@@ -1898,6 +1998,17 @@ export function TaskletPraxisWorkbench({
               <Link href={isAuthenticated ? '/pricing' : '/login?mode=signup'} className="text-sage">Upgrade</Link>
             </div>
 
+            {showHomepageFactoryCta ? (
+              <Link
+                href="/app/capsules"
+                data-testid="open-capsule-factory-cta"
+                className="mt-4 inline-flex items-center gap-2 rounded-md border border-[#ff714d]/25 bg-[#fff7f3] px-4 py-2 text-sm font-semibold text-[#9f341c] shadow-sm shadow-[#ff714d]/10 hover:border-[#ff714d]/45 hover:bg-[#fff0e8]"
+              >
+                <WandSparkles className="h-4 w-4" />
+                Open Capsule Factory
+              </Link>
+            ) : null}
+
             <div className="od-praxis-panel mt-6 w-full max-w-5xl rounded-xl" data-testid="praxis-main-composer">
               <div className="border-b border-black/10 px-5 py-4" data-testid="capsule-context-bar">
                 <div className="flex flex-wrap items-start justify-between gap-3" data-testid="capsule-context-composer">
@@ -1915,6 +2026,13 @@ export function TaskletPraxisWorkbench({
                       </span>
                       <span className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1 text-indigo-800">
                         Output {activeCapsuleOutputGoal}
+                      </span>
+                      <span
+                        data-testid="context-health-indicator"
+                        className={cn('rounded-md border px-2 py-1', contextHealth.tone)}
+                        title={contextHealth.detail}
+                      >
+                        Context health: {contextHealth.label}
                       </span>
                       <button
                         type="button"
@@ -1935,6 +2053,9 @@ export function TaskletPraxisWorkbench({
                       <span className="text-slate-300">/</span>
                       <span>Output: {outputCapsuleForHeader?.label ?? selectedAgent.label}</span>
                     </div>
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      Model knowledge is the default baseline. Add capsules, sources, or web search to make PRAXIS more specific, current, and reusable.
+                    </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <button
@@ -1947,11 +2068,36 @@ export function TaskletPraxisWorkbench({
                     </button>
                     <button
                       type="button"
+                      aria-label="Save context capsule"
                       onClick={() => void saveCombinedCapsuleStack(activeCapsuleStack)}
                       className="inline-flex items-center gap-1.5 rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
                     >
                       <Save className="h-3.5 w-3.5" />
-                      Save context capsule
+                      Save capsule
+                    </button>
+                    <button
+                      type="button"
+                      onClick={shareActiveContextChain}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      Share
+                    </button>
+                    <button
+                      type="button"
+                      onClick={downloadActiveContextChain}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      <HardDrive className="h-3.5 w-3.5" />
+                      Download
+                    </button>
+                    <button
+                      type="button"
+                      onClick={improveActiveContextChain}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      <WandSparkles className="h-3.5 w-3.5" />
+                      Improve
                     </button>
                   </div>
                 </div>
@@ -1973,6 +2119,7 @@ export function TaskletPraxisWorkbench({
                                 setInspectorOpen(true);
                               }}
                               onRemove={() => removeCapsule(capsule.id)}
+                              isRecentlyApplied={recentlyAppliedCapsuleId === capsule.id}
                             />
                           ))}
                           {openChainSlots.map((slot) => (
@@ -1984,6 +2131,7 @@ export function TaskletPraxisWorkbench({
                             >
                               <span className="block font-semibold text-slate-700">{slot.label}</span>
                               <span className="mt-1 block leading-5">{slot.helper}</span>
+                              <span className="mt-3 inline-flex rounded-md bg-slate-950 px-2 py-1 text-[11px] font-semibold text-white">{slot.action}</span>
                             </button>
                           ))}
                         </div>
@@ -2235,6 +2383,24 @@ export function TaskletPraxisWorkbench({
                   </Link>
                 </div>
               </div>
+
+              {isCapsuleRepositoryPage ? (
+                <CapsuleFactoryCommandBand
+                  capsule={selectedCapsule}
+                  visibleCount={visibleCapsuleCards.length}
+                  userCapsuleCount={userCapsuleTaxonomyStats.visibleCapsules}
+                  archivedCount={userCapsuleTaxonomyStats.archivedCapsules}
+                  reviewDiffCount={factoryReviewDiffs.filter((diff) => diff.reviewState === 'reviewed').length}
+                  onCreate={() => {
+                    if (requireAuthForAction('Build a new PRAXIS ContextCapsule.')) return;
+                    setBuilderOpen(true);
+                  }}
+                  onInspect={() => {
+                    setInspectorOpen(true);
+                  }}
+                  onRunFactory={runCapsuleFactoryAgent}
+                />
+              ) : null}
 
               <CapsuleTaxonomyFilterBar
                 stats={activeCapsuleTaxonomyStats}
@@ -2535,12 +2701,14 @@ function SortableCapsuleBlock({
   capsule,
   index,
   reviewCategory,
+  isRecentlyApplied,
   onOpen,
   onRemove,
 }: {
   capsule: ActiveCapsuleChip;
   index: number;
   reviewCategory: boolean;
+  isRecentlyApplied: boolean;
   onOpen: () => void;
   onRemove: () => void;
 }) {
@@ -2553,8 +2721,10 @@ function SortableCapsuleBlock({
       className={cn(
         'relative min-w-[190px] flex-1 rounded-lg border p-3 shadow-sm transition',
         capsuleRoleStyles[capsule.role],
+        isRecentlyApplied && 'context-apply-pulse ring-2 ring-emerald-300 ring-offset-2 ring-offset-white',
         isDragging && 'z-10 opacity-80 shadow-lg',
       )}
+      data-context-apply-state={isRecentlyApplied ? 'applied' : 'idle'}
       data-testid={`context-capsule-block-${capsule.role}`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -2692,6 +2862,70 @@ function ensureDefaultCapsuleStack(
   return uniqueCapsuleStack(activeStack).slice(0, 8);
 }
 
+function buildActiveContextStack(currentCapsuleId: string, activeCapsuleStack: ActiveCapsuleChip[]): ActiveContextStackPayload {
+  const userCapsule = activeCapsuleStack.find((capsule) => capsule.role === 'user');
+  const situationCapsule = activeCapsuleStack.find((capsule) => capsule.role === 'situation');
+  const outputCapsule = activeCapsuleStack.find((capsule) => capsule.role === 'output');
+  return {
+    stackId: 'default',
+    capsuleId: currentCapsuleId,
+    userModelId: userCapsule?.id ?? null,
+    situationId: situationCapsule?.id ?? null,
+    sourceIds: activeCapsuleStack.filter((capsule) => capsule.role === 'reference').map((capsule) => capsule.id),
+    documentIds: [],
+    outputGoal: outputCapsule?.label ?? null,
+    evidenceGaps: [],
+    canvasLayout: {},
+    schemaVersion: 1,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function selectedCoreIdsFromContextStack(activeContextStack: ActiveContextStackPayload): SelectedContextCoreIds {
+  return {
+    userCoreId: activeContextStack.userModelId,
+    situationCoreId: activeContextStack.situationId,
+    sourceCoreIds: activeContextStack.sourceIds,
+    documentCoreIds: activeContextStack.documentIds,
+    toolCoreIds: [],
+    outputCoreIds: activeContextStack.outputGoal ? [activeContextStack.outputGoal] : [],
+  };
+}
+
+function getContextHealth(activeCapsuleStack: ActiveCapsuleChip[]): ContextHealth {
+  const roles = new Set(activeCapsuleStack.map((capsule) => capsule.role));
+  const hasSituation = roles.has('situation');
+  const hasSources = roles.has('reference');
+  const hasTools = roles.has('tool');
+  const hasOutput = roles.has('output');
+  if (hasSituation && hasSources && hasTools && hasOutput) {
+    return {
+      label: 'Operational',
+      detail: 'Situation, references, checks, and output are set for agentic work.',
+      tone: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    };
+  }
+  if (hasSituation && hasSources && hasOutput) {
+    return {
+      label: 'Grounded',
+      detail: 'Situation, references, and output are set for sourced Ask PRAXIS work.',
+      tone: 'border-sky-200 bg-sky-50 text-sky-800',
+    };
+  }
+  if (hasSituation && hasOutput) {
+    return {
+      label: 'Ready',
+      detail: 'Situation and output are set. Add sources or checks for more specific work.',
+      tone: 'border-amber-200 bg-amber-50 text-amber-800',
+    };
+  }
+  return {
+    label: 'Baseline',
+    detail: 'Only model knowledge and the user profile are active.',
+    tone: 'border-slate-200 bg-slate-50 text-slate-700',
+  };
+}
+
 function applyCapsuleToStack(current: ActiveCapsuleChip[], chip: ActiveCapsuleChip): ActiveCapsuleChip[] {
   const next = chip.role === 'reference' || chip.role === 'tool'
     ? [...current.filter((item) => item.id !== chip.id), chip]
@@ -2759,6 +2993,13 @@ function starterDefinitionToCapsuleSummary(starter: CapsuleStarterDefinition): P
 function starterDefinitionForCapsule(capsule: PraxisCapsuleSummary | null): CapsuleStarterDefinition | null {
   if (!capsule) return null;
   return CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === capsule.capsuleId) ?? null;
+}
+
+function capsuleSummaryForChip(chip: ActiveCapsuleChip | undefined, userCapsules: PraxisCapsuleSummary[]): PraxisCapsuleSummary | null {
+  if (!chip) return null;
+  return userCapsules.find((capsule) => capsule.capsuleId === chip.id)
+    ?? starterCapsuleSummaries.find((capsule) => capsule.capsuleId === chip.id)
+    ?? null;
 }
 
 function capsuleCategory(capsule: PraxisCapsuleSummary): CapsuleStarterCategory | 'custom' {
@@ -3240,6 +3481,81 @@ function CategoryAxisPanel({
         ))}
       </div>
     </section>
+  );
+}
+
+function CapsuleFactoryCommandBand({
+  capsule,
+  visibleCount,
+  userCapsuleCount,
+  archivedCount,
+  reviewDiffCount,
+  onCreate,
+  onInspect,
+  onRunFactory,
+}: {
+  capsule: PraxisCapsuleSummary | null;
+  visibleCount: number;
+  userCapsuleCount: number;
+  archivedCount: number;
+  reviewDiffCount: number;
+  onCreate: () => void;
+  onInspect: () => void;
+  onRunFactory: () => void;
+}) {
+  const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
+  return (
+    <section
+      className="mt-4 overflow-hidden rounded-xl border border-[#ff714d]/20 bg-[#fff8f5] shadow-sm shadow-[#ff714d]/10"
+      data-testid="capsule-factory-command-band"
+    >
+      <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#ca4a25]">Capsule Factory</p>
+          <h3 className="mt-1 text-lg font-semibold text-slate-950">
+            Build, inspect, improve, and maintain reusable ContextCapsules.
+          </h3>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            Create modular capsules now, then grow them into graph-aware knowledge tools with reviewable sources, ontology, temporality, actors, outputs, and handover state.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={onCreate} className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+              <Plus className="h-4 w-4" />
+              Create capsule
+            </button>
+            <button type="button" onClick={onInspect} className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              <BookOpen className="h-4 w-4" />
+              Inspect availability
+            </button>
+            <button type="button" onClick={onRunFactory} className="inline-flex items-center gap-2 rounded-md border border-[#ff714d]/30 bg-white px-3 py-2 text-sm font-semibold text-[#9f341c] hover:bg-[#fff0e8]">
+              <Sparkles className="h-4 w-4" />
+              Run factory agent
+            </button>
+          </div>
+        </div>
+        <div className="grid min-w-[260px] grid-cols-2 gap-2 text-center">
+          <Metric label="Available" value={visibleCount} />
+          <Metric label="Workspace" value={userCapsuleCount} />
+          <Metric label="Review diffs" value={reviewDiffCount} />
+          <Metric label="Archived" value={archivedCount} />
+        </div>
+      </div>
+      <div className="grid border-t border-[#ff714d]/15 bg-white/65 text-[11px] font-semibold text-slate-600 sm:grid-cols-4">
+        <FactoryCommandCell label="Source-to-claim map" value={`${counts.sources + counts.documents} evidence refs`} />
+        <FactoryCommandCell label="Graph/ontology" value={capsule?.coreRefs.graphCoreId ?? 'review lane open'} />
+        <FactoryCommandCell label="Share/export readiness" value={counts.outputs ? `${counts.outputs} output refs` : 'output lane open'} />
+        <FactoryCommandCell label="Marketplace readiness" value={capsule?.trust?.label ?? 'private by default'} />
+      </div>
+    </section>
+  );
+}
+
+function FactoryCommandCell({ label, value }: { label: string; value: string }) {
+  return (
+    <p className="min-w-0 border-t border-[#ff714d]/10 px-3 py-2 sm:border-l sm:border-t-0 first:sm:border-l-0">
+      <span className="block text-slate-400">{label}</span>
+      <span className="mt-1 block truncate text-slate-700">{value}</span>
+    </p>
   );
 }
 
@@ -3797,6 +4113,20 @@ function FocusedAgentRunPanel({
         <ReceiptTile label="Tools" value={toolCalls.length} icon={WandSparkles} tone="amber" />
         <ReceiptTile label="Approvals" value={approvals.length} icon={ShieldCheck} tone="emerald" />
       </div>
+      {run.contextReceipt ? (
+        <div className="grid gap-2 border-t border-[#ff714d]/15 bg-white/75 p-3 text-[11px]" data-testid="agent-context-receipt">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-semibold uppercase tracking-[0.16em] text-slate-400">Context read by agent</p>
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-600">{run.contextReceipt.sourcePosture ?? 'Baseline'}</span>
+          </div>
+          <div className="grid gap-2 md:grid-cols-4">
+            <ProofCell label="active capsule/chain" value={run.contextReceipt.activeCapsuleOrChain ?? run.capsuleId} />
+            <ProofCell label="selected tools" value={run.contextReceipt.selectedTools.length ? run.contextReceipt.selectedTools.join(', ') : 'ask-praxis'} />
+            <ProofCell label="output destination" value={run.contextReceipt.outputDestination?.replaceAll('_', ' ') ?? 'not selected'} />
+            <ProofCell label="source posture" value={run.contextReceipt.sourcePosture ?? 'Baseline'} />
+          </div>
+        </div>
+      ) : null}
       <div className="border-t border-[#ff714d]/15 bg-white/75 px-3 py-2 text-[11px] font-semibold text-slate-500" data-testid="agent-run-stream-state">
         {stream.isReconnecting ? 'Live receipts reconnecting' : stream.isConnected ? 'Live receipts connected' : 'Live receipts ready'}
         {stream.lastEventAt ? ` · last event ${formatEventTime(stream.lastEventAt)}` : ''}
@@ -4552,11 +4882,14 @@ function CapsuleInspectorSheet({
             <p className="text-xs font-semibold uppercase text-slate-400">Factory inspection map</p>
             <div className="mt-3 grid gap-2">
               <InspectorRef label="Ontology/Graph" value={refs?.graphCoreId ?? meta?.taxonomy.domains.map((facet) => facet.id).join(', ')} />
+              <InspectorRef label="Source-to-claim map" value={[...(refs?.sourceCoreIds ?? []), ...(refs?.documentCoreIds ?? [])].join(', ')} />
               <InspectorRef label="Sources" value={refs?.sourceCoreIds?.join(', ')} />
               <InspectorRef label="Temporality" value={refs?.timeCoreId ?? 'stale-claim check open'} />
               <InspectorRef label="Conflict/Actors" value={meta?.taxonomy.policyTeams.map((facet) => facet.id).join(', ')} />
               <InspectorRef label="Tools" value={refs?.toolCoreIds?.join(', ')} />
               <InspectorRef label="Outputs" value={[...(refs?.outputCoreIds ?? []), ...(refs?.productCoreIds ?? [])].join(', ')} />
+              <InspectorRef label="Share/export readiness" value={refs?.outputCoreIds?.length ? 'output refs available' : 'handover/export review open'} />
+              <InspectorRef label="Marketplace readiness" value={capsule.trust?.label ?? 'private by default'} />
               <InspectorRef label="Open gaps" value={warnings.join(', ') || starterQuestions.slice(0, 2).join(', ')} />
             </div>
           </div>

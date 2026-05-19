@@ -151,6 +151,20 @@ type AdminRuntimeHealthPayload = RuntimeHealthPayload & {
   };
 };
 
+type AgenticSearchPayload = {
+  status: 'ready' | 'degraded' | 'blocked';
+  summary: string;
+  checkedAt: string;
+  missing: string[];
+  checks: Array<{
+    id: string;
+    label: string;
+    status: 'ready' | 'degraded' | 'blocked';
+    names: string[];
+    detail: string;
+  }>;
+};
+
 type MemoryCandidate = {
   id?: string;
   candidateId?: string;
@@ -936,6 +950,7 @@ function SystemTab({
   onSave: () => void;
 }) {
   const [runtimeHealth, setRuntimeHealth] = useState<RuntimeHealthPayload | null>(null);
+  const [agenticSearchHealth, setAgenticSearchHealth] = useState<AgenticSearchPayload | null>(null);
   const [coreHealth, setCoreHealth] = useState<Record<string, unknown> | null>(null);
   const [adminHealth, setAdminHealth] = useState<AdminRuntimeHealthPayload | null>(null);
   const [memoryHealth, setMemoryHealth] = useState<MemoryHealthPayload | null>(null);
@@ -947,14 +962,16 @@ function SystemTab({
   async function refreshHealth() {
     setRefreshingHealth(true);
     setHealthError(null);
-    const [runtimeRes, coreRes, adminRes, memoryHealthRes, memoryCandidatesRes] = await Promise.all([
+    const [runtimeRes, agenticSearchRes, coreRes, adminRes, memoryHealthRes, memoryCandidatesRes] = await Promise.all([
       fetchJson<RuntimeHealthPayload>('/api/health/runtime'),
+      fetchJson<AgenticSearchPayload>('/api/health/agentic-search'),
       fetchJson<Record<string, unknown>>('/api/health'),
       fetchJson<AdminRuntimeHealthPayload>('/api/admin/system-health'),
       fetchJson<MemoryHealthPayload>(MEMORY_ENDPOINTS.health),
       fetchJson<MemoryCandidatesPayload>(MEMORY_ENDPOINTS.candidates),
     ]);
     if (runtimeRes.ok) setRuntimeHealth(runtimeRes.data);
+    if (agenticSearchRes.ok) setAgenticSearchHealth(agenticSearchRes.data);
     if (coreRes.ok) setCoreHealth(coreRes.data);
     if (adminRes.ok) setAdminHealth(adminRes.data);
     if (memoryHealthRes.ok) setMemoryHealth(memoryHealthRes.data);
@@ -1038,6 +1055,26 @@ function SystemTab({
         {healthError ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">{healthError}</p> : null}
 
         <div className="grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-navy-950">Research runtime</p>
+                <p className="mt-1 text-xs text-navy-500">
+                  {agenticSearchHealth
+                    ? `${agenticSearchHealth.summary} at ${new Date(agenticSearchHealth.checkedAt).toLocaleString()}`
+                    : 'Agentic-search status is loading.'}
+                </p>
+              </div>
+              <StatusPill status={agenticSearchHealth?.status === 'ready' ? 'ok' : agenticSearchHealth?.status === 'blocked' ? 'down' : 'degraded'} />
+            </div>
+            {agenticSearchHealth?.missing.length ? (
+              <p className="mt-2 text-xs leading-5 text-amber-700">
+                Missing: {agenticSearchHealth.missing.slice(0, 3).join('; ')}
+              </p>
+            ) : (
+              <p className="mt-2 text-xs leading-5 text-navy-500">Run ledger, queue, worker, grounding, and ADK posture are visible.</p>
+            )}
+          </div>
           {visibleChecks.map((check) => (
             <div key={check.id} className="rounded-lg border border-slate-200 bg-white p-3">
               <div className="flex items-start justify-between gap-3">
@@ -1078,6 +1115,10 @@ function SystemTab({
               <Link href="/api/health/runtime" target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-700 hover:bg-white">
                 <ServerCog className="h-4 w-4" />
                 Runtime JSON
+              </Link>
+              <Link href="/api/health/agentic-search" target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-700 hover:bg-white">
+                <Search className="h-4 w-4" />
+                Research JSON
               </Link>
               <Link href="/api/admin/system-health" target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-700 hover:bg-white">
                 <TerminalSquare className="h-4 w-4" />

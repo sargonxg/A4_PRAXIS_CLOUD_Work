@@ -139,13 +139,13 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     const events = buildAskOrchestrationStatusEvents(receipt);
 
     expect(events.map((event) => event.label)).toEqual([
-      'TACITUS reads the capsule',
-      'TACITUS classifies the task',
-      'TACITUS routes the agent',
-      'TACITUS selects model tier',
-      'TACITUS checks tools',
-      'TACITUS queues worker',
-      'TACITUS drafts answer',
+      'Reading capsule',
+      'Planning searches',
+      'Checking sources',
+      'Retrieving documents',
+      'Reviewing gaps',
+      'Synthesizing memo',
+      'Saving output',
     ]);
     expect(events.map((event) => event.status)).toEqual([
       'warn',

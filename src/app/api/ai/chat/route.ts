@@ -61,6 +61,7 @@ import { createAgentRun } from '@/lib/agent-runtime/postgres';
 import { enqueueAgentRunDispatch } from '@/lib/agent-runtime/cloud-tasks';
 import { destinationHref } from '@/lib/product/policy-agents';
 import { DEFAULT_SELECTED_CORE_IDS, type CapsuleAgentExecutionContext, type SelectedCoreIds } from '@/lib/agent-runtime/types';
+import { resolveGroundingPlan } from '@/lib/agent-runtime/grounding-adapter';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -1006,6 +1007,15 @@ async function maybeQueueAskAgentRun(input: {
   }
 
   try {
+    const groundingPlan = resolveGroundingPlan({
+      selectedToolIds: receipt.toolRouting.selectedToolIds,
+      documentCount: input.turnCapsule?.retrievalPlan.repository.documentIds.length
+        ?? input.capsule.coreRefs.documentCoreIds?.length
+        ?? 0,
+      sourceReceiptCount: input.turnCapsule?.retrievalPlan.repository.sourceReceiptIds.length
+        ?? input.evidencePackReceipt?.paragraphCount
+        ?? 0,
+    });
     const run = await createAgentRun({
       ownerUid: input.uid,
       capsuleId: input.capsule.capsuleId,
@@ -1042,6 +1052,8 @@ async function maybeQueueAskAgentRun(input: {
         triageIntent: receipt.triage.intent,
         triageComplexity: receipt.triage.complexity,
         selectedToolIds: receipt.toolRouting.selectedToolIds,
+        deepSearch: receipt.toolRouting.selectedToolIds.includes('deep-search-agent'),
+        groundingPlan,
       },
     });
 

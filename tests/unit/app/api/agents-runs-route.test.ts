@@ -57,4 +57,89 @@ describe('/api/agents/runs route', () => {
     expect(json).not.toContain('praxisbytacitus-instance');
     expect(json).not.toContain('ETIMEDOUT');
   });
+
+  it('passes selected context-chain cores and receipt metadata into run creation', async () => {
+    mocks.createAgentRun.mockResolvedValue({
+      id: 'run-1',
+      status: 'queued',
+      capsuleId: 'cap-1',
+      createdAt: '2026-05-19T12:00:00.000Z',
+      updatedAt: '2026-05-19T12:00:00.000Z',
+      objective: 'Draft the memo from this active context chain.',
+      metadata: {
+        policyAgentId: 'research-memo',
+        outputDestination: 'memo_studio',
+      },
+    });
+    const { POST } = await import('@/app/api/agents/runs/route');
+
+    const response = await POST(new Request('https://praxis.tacitus.me/api/agents/runs', {
+      method: 'POST',
+      body: JSON.stringify({
+        capsuleId: 'cap-1',
+        contextStackId: 'default',
+        contextPackageId: 'capsule:cap-1:v1',
+        policyAgentId: 'research-memo',
+        outputDestination: 'memo_studio',
+        objective: 'Draft the memo from this active context chain.',
+        selectedCoreIds: {
+          userCoreId: 'starter-user-generic-analyst',
+          situationCoreId: 'situation-cap',
+          sourceCoreIds: ['reference-cap'],
+          toolCoreIds: ['sourceability-check'],
+          outputCoreIds: ['options memo'],
+        },
+        metadata: {
+          appliedCapsules: [
+            { id: 'starter-user-generic-analyst', label: 'Generic analyst', role: 'user' },
+            { id: 'situation-cap', label: 'Situation', role: 'situation' },
+            { id: 'reference-cap', label: 'References', role: 'reference' },
+            { id: 'sourceability-check', label: 'Sourceability', role: 'tool' },
+            { id: 'output-cap', label: 'Options memo', role: 'output' },
+          ],
+          activeContextStack: {
+            stackId: 'default',
+            capsuleId: 'cap-1',
+            userModelId: 'starter-user-generic-analyst',
+            situationId: 'situation-cap',
+            sourceIds: ['reference-cap'],
+            documentIds: [],
+            outputGoal: 'Options memo',
+            evidenceGaps: [],
+            canvasLayout: {},
+            schemaVersion: 1,
+            updatedAt: '2026-05-19T12:00:00.000Z',
+          },
+          selectedTools: ['sourceability-check'],
+          outputDestination: 'memo_studio',
+          sourcePosture: 'Operational',
+        },
+      }),
+    }));
+
+    expect(response.status).toBe(201);
+    expect(mocks.createAgentRun).toHaveBeenCalledWith(expect.objectContaining({
+      ownerUid: 'user-1',
+      capsuleId: 'cap-1',
+      contextStackId: 'default',
+      contextPackageId: 'capsule:cap-1:v1',
+      selectedCoreIds: expect.objectContaining({
+        userCoreId: 'starter-user-generic-analyst',
+        situationCoreId: 'situation-cap',
+        sourceCoreIds: ['reference-cap'],
+        toolCoreIds: ['sourceability-check'],
+        outputCoreIds: ['options memo'],
+      }),
+      metadata: expect.objectContaining({
+        activeContextStack: expect.objectContaining({
+          situationId: 'situation-cap',
+          sourceIds: ['reference-cap'],
+          outputGoal: 'Options memo',
+        }),
+        selectedTools: ['sourceability-check'],
+        sourcePosture: 'Operational',
+        executionMode: 'queued-only',
+      }),
+    }));
+  });
 });

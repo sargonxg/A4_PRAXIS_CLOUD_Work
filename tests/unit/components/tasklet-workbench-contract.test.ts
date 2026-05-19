@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const source = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
+const sidebarSource = readFileSync(join(process.cwd(), 'src/components/app/app-sidebar.tsx'), 'utf8');
 
 describe('Tasklet PRAXIS workbench contract', () => {
   it('keeps model routing TACITUS-owned in the main composer', () => {
@@ -148,6 +149,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
 
   it('sends ordered live capsule stacks without automatic combine persistence', () => {
     expect(source).toContain('appliedCapsules: activeCapsuleStack.map');
+    expect(source).toContain('const activeContextStack = buildActiveContextStack(');
     expect(source).toContain('const outputCapsule = activeCapsuleStack.find');
     expect(source).toContain('const situationCapsule = activeCapsuleStack.find');
     expect(source).toContain('sourceIds: activeCapsuleStack.filter((capsule) => capsule.role ===');
@@ -156,6 +158,45 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Add at least two capsules before saving a retrievable context capsule.');
     expect(source).not.toContain('if (next.length >= 2) await combineCapsuleLiteStack(next);');
     expect(source).not.toContain('void combineCapsuleLiteStack(current.slice(0, 5));');
+  });
+
+  it('keeps the default context chain empty except for the user model baseline', () => {
+    expect(source).toContain('Model knowledge is the default baseline. Add capsules, sources, or web search to make PRAXIS more specific, current, and reusable.');
+    expect(source).toContain("const activeCapsuleForStrip = selectedCapsule ?? activeCapsuleStack[0] ?? null");
+    expect(source).not.toContain('?? starterCapsuleSummaries[0] ?? null');
+    expect(source).toContain("id: 'starter-user-generic-analyst'");
+    expect(source).toContain("label: 'Generic analyst'");
+    expect(source).toContain("const [activeCapsules, setActiveCapsules] = useState<ActiveCapsuleChip[]>([STARTER_USER_CAPSULE_CHIP])");
+    expect(source).toContain("action: 'Add context'");
+    expect(source).toContain("action: 'Attach sources'");
+    expect(source).toContain("action: 'Add checks'");
+    expect(source).toContain("action: 'Choose output'");
+  });
+
+  it('shows context health, utility actions, and apply feedback on the chain', () => {
+    expect(source).toContain('function getContextHealth');
+    expect(source).toContain("label: 'Baseline'");
+    expect(source).toContain("label: 'Ready'");
+    expect(source).toContain("label: 'Grounded'");
+    expect(source).toContain("label: 'Operational'");
+    expect(source).toContain('data-testid="context-health-indicator"');
+    expect(source).toContain('data-context-apply-state');
+    expect(source).toContain('context-apply-pulse');
+    expect(source).toContain('Share');
+    expect(source).toContain('Download');
+    expect(source).toContain('Improve');
+  });
+
+  it('sends the active context chain into manual agent-run creation', () => {
+    expect(source).toContain('selectedCoreIdsFromContextStack(activeContextStack)');
+    expect(source).toContain('toolCoreIds: selectedToolIds');
+    expect(source).toContain('appliedCapsules: activeCapsuleStack.map((capsule) => ({');
+    expect(source).toContain('activeContextStack');
+    expect(source).toContain('selectedTools: selectedToolIds');
+    expect(source).toContain('sourcePosture: contextHealth.label');
+    expect(source).toContain('data-testid="agent-context-receipt"');
+    expect(source).toContain('Context read by agent');
+    expect(source).not.toContain('selectedCoreIds: capsule.coreRefs');
   });
 
   it('uses dnd-kit for composer reordering and modal capsule browsing', () => {
@@ -195,6 +236,18 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('bg-sage text-white">◳');
   });
 
+  it('gives the authenticated homepage one clear Capsule Factory launch button', () => {
+    expect(source).toContain('data-testid="open-capsule-factory-cta"');
+    expect(source).toContain('Open Capsule Factory');
+    expect(source).toContain("!initialPanel && mode === 'app'");
+  });
+
+  it('marks the canonical Capsules sidebar link as the Capsule Factory without changing route identity', () => {
+    expect(sidebarSource).toContain("item.id === 'capsules'");
+    expect(sidebarSource).toContain('Factory');
+    expect(sidebarSource).toContain('item.hint');
+  });
+
   it('renders app capsules as a first-class dense repository surface', () => {
     expect(source).toContain('const isCapsuleRepositoryPage = initialPanel ===');
     expect(source).toContain('Capsule repository');
@@ -207,6 +260,11 @@ describe('Tasklet PRAXIS workbench contract', () => {
 
   it('reframes /app/capsules as a Capsule Factory with reviewable specialist lanes', () => {
     expect(source).toContain('Capsule Factory');
+    expect(source).toContain('data-testid="capsule-factory-command-band"');
+    expect(source).toContain('Build, inspect, improve, and maintain reusable ContextCapsules');
+    expect(source).toContain('Create capsule');
+    expect(source).toContain('Inspect availability');
+    expect(source).toContain('Run factory agent');
     expect(source).toContain('factorySidebarItems');
     expect(source).toContain('Capsule Factory');
     expect(source).toContain('Catalog');
@@ -227,6 +285,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Reject');
     expect(source).toContain('reviewable capsule improvements');
     expect(source).toContain('Do not silently mutate the capsule');
+    expect(source).toContain('Share/export readiness');
+    expect(source).toContain('Marketplace readiness');
+    expect(source).toContain('Source-to-claim map');
   });
 
   it('shows sanitized runtime proof inside the active capsule/run area', () => {

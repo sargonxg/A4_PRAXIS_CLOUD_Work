@@ -68,6 +68,12 @@ export const AgentRunOutputSchema = z.object({
   outputHref: z.string().nullable().optional(),
   readiness: z.enum(['live', 'queued', 'planned', 'gated']).nullable().optional(),
   riskLevel: z.enum(['low', 'medium', 'high']).nullable().optional(),
+  contextReceipt: z.object({
+    activeCapsuleOrChain: z.string().nullable(),
+    selectedTools: z.array(z.string()),
+    outputDestination: z.string().nullable(),
+    sourcePosture: z.string().nullable(),
+  }).optional(),
 });
 
 export type CreateManualAgentRunRequest = z.infer<typeof CreateManualAgentRunRequestSchema>;
@@ -80,6 +86,11 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
   const policyAgent = getPolicyAgent(policyAgentId);
   const metadataDestination = normalizeOutputDestination(run.metadata?.outputDestination);
   const outputDestination = policyAgent?.outputDestination ?? metadataDestination;
+  const activeContextStack = isRecord(run.metadata?.activeContextStack) ? run.metadata.activeContextStack : null;
+  const appliedCapsules = Array.isArray(run.metadata?.appliedCapsules) ? run.metadata.appliedCapsules : [];
+  const selectedTools = Array.isArray(run.metadata?.selectedTools)
+    ? run.metadata.selectedTools.filter((item): item is string => typeof item === 'string')
+    : [];
   return AgentRunOutputSchema.parse({
     runId: run.id,
     status: run.status,
@@ -93,6 +104,15 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
     outputHref: outputDestination ? destinationHref(outputDestination) : null,
     readiness: policyAgent?.readiness ?? null,
     riskLevel: policyAgent?.riskLevel ?? null,
+    contextReceipt: {
+      activeCapsuleOrChain: appliedCapsules
+        .flatMap((item) => isRecord(item) && typeof item.label === 'string' ? [item.label] : [])
+        .slice(0, 4)
+        .join(' + ') || (typeof activeContextStack?.capsuleId === 'string' ? activeContextStack.capsuleId : run.capsuleId),
+      selectedTools,
+      outputDestination: outputDestination ?? null,
+      sourcePosture: typeof run.metadata?.sourcePosture === 'string' ? run.metadata.sourcePosture : null,
+    },
   });
 }
 
@@ -100,4 +120,8 @@ function normalizeOutputDestination(value: unknown): PolicyAgentOutputDestinatio
   return value === 'memo_studio' || value === 'canvas' || value === 'library' || value === 'handover'
     ? value
     : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

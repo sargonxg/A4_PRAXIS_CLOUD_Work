@@ -79,8 +79,42 @@ describe('agent run API validation schema', () => {
       outputHref: null,
       readiness: null,
       riskLevel: null,
+      contextReceipt: {
+        activeCapsuleOrChain: 'cap-1',
+        selectedTools: [],
+        outputDestination: null,
+        sourcePosture: null,
+      },
     });
     expect(AgentRunOutputSchema.safeParse(dto).success).toBe(true);
     expect('internalSpendCents' in dto).toBe(false);
+  });
+
+  it('exposes a sanitized context receipt for agent workspaces', () => {
+    const dto = toAgentRunOutput({
+      id: 'run-1',
+      status: 'queued',
+      capsuleId: 'cap-1',
+      createdAt: '2026-05-19T12:00:00.000Z',
+      updatedAt: '2026-05-19T12:00:00.000Z',
+      objective: 'Prepare memo',
+      metadata: {
+        policyAgentId: 'research-memo',
+        outputDestination: 'memo_studio',
+        appliedCapsules: [
+          { id: 'starter-user-generic-analyst', label: 'Generic analyst', role: 'user' },
+          { id: 'situation-cap', label: 'Situation core', role: 'situation' },
+        ],
+        selectedTools: ['sourceability-check'],
+        sourcePosture: 'Grounded',
+      },
+    } as never);
+
+    expect(dto.contextReceipt).toEqual({
+      activeCapsuleOrChain: 'Generic analyst + Situation core',
+      selectedTools: ['sourceability-check'],
+      outputDestination: 'memo_studio',
+      sourcePosture: 'Grounded',
+    });
   });
 });

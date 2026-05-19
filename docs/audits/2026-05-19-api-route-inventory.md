@@ -1,11 +1,11 @@
 # API Route Inventory
 
-Generated: 2026-05-19T05:19:20.489Z
-Total routes: 207
+Generated: 2026-05-19T14:08:13.202Z
+Total routes: 208
 
 | Category | Count |
 | --- | ---: |
-| canonical | 100 |
+| canonical | 101 |
 | compatibility | 37 |
 | admin/internal | 68 |
 | staged | 2 |
@@ -144,6 +144,7 @@ Total routes: 207
 | `/api/graph/proposals/[id]/reject` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler | Keep canonical. |
 | `/api/graph/staging-stream` | staged | user authenticated | not AI route | server auth boundary<br>GET handler | Block launch claims until implemented or hidden. |
 | `/api/health` | admin/internal | public/sanitized | not AI route | runtime health diagnostics | Keep sanitized/admin-gated and exclude from normal-user UI. |
+| `/api/health/agentic-search` | canonical | public/sanitized | not AI route | runtime health diagnostics | Keep canonical. |
 | `/api/health/breakers` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>runtime health diagnostics | Keep canonical. |
 | `/api/health/diagnostics` | admin/internal | public/sanitized | not AI route | runtime health diagnostics | Keep sanitized/admin-gated and exclude from normal-user UI. |
 | `/api/health/features` | canonical | public/sanitized | not AI route | runtime health diagnostics | Keep canonical. |
