@@ -392,7 +392,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
   // ── DRAFTING ──────────────────────────────────────────────────────────────
   {
     id: 'assistant',
-    name: 'Ask PRAXIS',
+    name: 'Legacy Assistant Chat',
     category: 'drafting',
     surface: 'archive',
     visible: false,
@@ -852,7 +852,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
   },
   {
     id: 'commitments',
-    name: 'Commitment Tracker',
+    name: 'Legacy Commitments Monitor',
     category: 'intelligence',
     surface: 'archive',
     visible: false,

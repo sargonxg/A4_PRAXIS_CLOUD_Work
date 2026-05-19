@@ -1,10 +1,11 @@
-# PRAXIS Assistant
+# PRAXIS Legacy Assistant Chat
 
 **ID:** `assistant`  ·  **Category:** drafting  ·  **Status:** PARTIAL
 
-> Multi-tool conversational interface backed by 27 AI chat tools. Drafts,
+> Hidden legacy multi-tool conversational interface backed by 27 AI chat tools. Drafts,
 > researches, analyses, queries the conflict graph, and runs grounded web
-> search — all inside the active situation's context.
+> search inside the active situation's context. The canonical live product
+> surface is Ask PRAXIS (`ask-praxis`).
 
 ## Route
 

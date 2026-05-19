@@ -15,6 +15,7 @@ import {
   getDashboardToolPackageSummaries,
   getToolIdsForPath,
 } from '@/lib/tools/tool-path-taxonomy';
+import { TOOL_REGISTRY } from '@/lib/constants/tool-registry';
 
 describe('consolidated PRAXIS tool model', () => {
   it('keeps the primary workspace within the ten-tool cap', () => {
@@ -87,5 +88,21 @@ describe('consolidated PRAXIS tool model', () => {
       expect(tool.readinessDetail.length, tool.id).toBeGreaterThan(40);
       expect(tool.readinessDetail, tool.id).not.toMatch(/credit|provider|model/i);
     }
+  });
+
+  it('keeps active canonical tool names distinct from hidden archive aliases', () => {
+    const nameToIds = new Map<string, Set<string>>();
+    for (const tool of [...TOOL_REGISTRY, ...PRAXIS_CANONICAL_TOOLS]) {
+      const ids = nameToIds.get(tool.name) ?? new Set<string>();
+      ids.add(tool.id);
+      nameToIds.set(tool.name, ids);
+    }
+
+    const collisions = [...nameToIds.entries()]
+      .filter(([, ids]) => ids.size > 1)
+      .map(([name, ids]) => `${name}: ${[...ids].sort().join(', ')}`);
+
+    expect(collisions).toEqual([]);
+    expect(PRAXIS_CANONICAL_TOOLS.find((tool) => tool.id === 'sourceability')?.shortLabel).toBe('Sourceability');
   });
 });

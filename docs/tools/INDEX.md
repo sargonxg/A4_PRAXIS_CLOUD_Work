@@ -63,7 +63,7 @@ long tail. Tools that already have a doc in this folder:
 
 - `dashboard.md` — Situation overview hub
 - `briefing.md` — UN-DPPA-style intelligence briefing
-- `assistant.md` — Multi-tool chat assistant
+- `assistant.md` — Hidden legacy assistant chat alias
 - `early-warning.md` — Glasl-stage escalation monitor
 - `argus.md` — Deep web research
 - `scenarios.md` — Monte Carlo scenario planner

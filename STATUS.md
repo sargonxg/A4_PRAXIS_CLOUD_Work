@@ -1,5 +1,24 @@
 # PRAXIS — STATUS
 
+## 2026-05-19 — Senior Engineering Cleanup And Naming Hardening
+
+Current cleanup checkpoint:
+
+- Launch readiness was regenerated with live header probes enabled:
+  `npm run audit:launch-readiness` now records 41 passing checks, 0 warnings,
+  and 0 failures in `docs/audits/2026-05-19-launch-readiness.*`.
+- `npm run audit:names` now reports 0 warnings after hidden archive aliases were
+  distinguished from live canonical tools: `assistant` is documented as Legacy
+  Assistant Chat, `commitments` as Legacy Commitments Monitor, and
+  Sourceability uses `Sourceability` as its canonical short label.
+- A regression test now guards canonical tool names against hidden archive alias
+  collisions in `src/__tests__/consolidated-tools.test.ts`.
+- The senior-engineering audit ledger for this pass is
+  `docs/audits/2026-05-19-senior-engineering-improvement-audit.md`.
+- Runtime proof remains structurally guarded, but full live worker proof still
+  requires a credentialed shell with Cloud SQL, Cloud Tasks worker URL/auth, and
+  Genkit/Vertex runtime configuration.
+
 ## 2026-05-17 — Ask PRAXIS Agentic Conversation Runtime
 
 Current runtime checkpoint:

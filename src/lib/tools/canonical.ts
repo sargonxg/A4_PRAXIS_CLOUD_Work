@@ -140,7 +140,7 @@ export const PRAXIS_CANONICAL_TOOLS: AttachableTool[] = [
   {
     id: 'sourceability',
     name: 'Sourceability Check',
-    shortLabel: 'Source Check',
+    shortLabel: 'Sourceability',
     surface: 'hero',
     requires: ['situation', 'source'],
     produces: 'structured',

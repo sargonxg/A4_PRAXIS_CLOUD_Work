@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- chore(cleanup): harden canonical tool naming and launch audit evidence.
+  Adds a senior-engineering audit ledger for the May 19 cleanup round,
+  regenerates launch readiness with live header probes enabled, distinguishes
+  hidden legacy tool aliases from active canonical surfaces, normalizes the
+  Sourceability short label, and adds a regression test for display-name drift.
+
 - test(auth-runtime): add a repeatable authenticated runtime lane.
   Adds preflight checks for disposable Firebase test credentials, gcloud,
   Firebase CLI, and ADC readiness; exposes local, product-surface, agentic, and
