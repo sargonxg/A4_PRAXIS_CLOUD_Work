@@ -196,6 +196,26 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Detach</button>');
   });
 
+  it('reframes /app/capsules as a Capsule Factory with reviewable specialist lanes', () => {
+    expect(source).toContain('Capsule Factory');
+    expect(source).toContain('factorySidebarItems');
+    expect(source).toContain('Capsule Factory');
+    expect(source).toContain('Catalog');
+    expect(source).toContain('Ontology/Graph');
+    expect(source).toContain('Sources');
+    expect(source).toContain('Temporality');
+    expect(source).toContain('Conflict/Actors');
+    expect(source).toContain('Output/Handover');
+    expect(source).toContain('Runs');
+    expect(source).toContain('factoryBuilderLanes');
+    expect(source).toContain('DIALECTICA lane');
+    expect(source).toContain('KAIROS lane');
+    expect(source).toContain('AGON lane');
+    expect(source).toContain('Review draft');
+    expect(source).toContain('reviewable capsule improvements');
+    expect(source).toContain('Do not silently mutate the capsule');
+  });
+
   it('uses one capsule-card contract for public starters and authenticated fallback cards', () => {
     expect(source).toContain('starterCapsuleSummaries');
     expect(source).toContain('visibleCapsuleCards');

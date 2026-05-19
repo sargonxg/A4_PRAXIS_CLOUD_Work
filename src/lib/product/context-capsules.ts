@@ -2028,6 +2028,21 @@ export function resolveCapsuleTaxonomy(input: CapsuleTaxonomyInput): CapsuleReso
     if (!value) return;
     const clean = value.trim().toLowerCase();
     if (!clean) return;
+    const knownDomain = starterDomainValues.has(clean) ||
+      POLICY_TEAM_CATEGORIES.some((category) => category.domainId === clean) ||
+      Boolean(getPolicyTeamCategory(clean));
+    if (source === 'repair' || clean === 'custom' || !knownDomain) {
+      const repairState = clean === 'custom' ? 'custom' : 'unknown';
+      domainFacets.set(`${repairState}:${clean}`, {
+        id: repairState,
+        value: clean,
+        label: repairState === 'custom' ? 'Custom domain' : `Unknown domain: ${clean}`,
+        tag: `domain:${clean}`,
+        source: 'repair',
+        repairState,
+      });
+      return;
+    }
     domainFacets.set(clean, {
       id: clean,
       label: capsuleDomainFacetLabel(clean),
@@ -2166,15 +2181,15 @@ export function buildCapsuleTaxonomyStats(capsules: CapsuleTaxonomyStatsInput[])
     if (isArchived) continue;
 
     for (const facet of taxonomy.types) {
-      addFacet(typeCounts, facet);
+      if (!facet.repairState) addFacet(typeCounts, facet);
       addRepair('types', facet);
     }
     for (const facet of taxonomy.domains) {
-      addFacet(domainCounts, facet);
+      if (!facet.repairState) addFacet(domainCounts, facet);
       addRepair('domains', facet);
     }
     for (const facet of taxonomy.policyTeams) {
-      addFacet(teamCounts, facet);
+      if (!facet.repairState) addFacet(teamCounts, facet);
       addRepair('policy-teams', facet);
     }
     for (const toolId of taxonomy.tools) addId(toolCounts, toolId);

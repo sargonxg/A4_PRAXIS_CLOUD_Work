@@ -74,6 +74,34 @@ describe('capsule factory Genkit flows', () => {
     expect(result.applyActions.every((action) => action.requiresConfirmation)).toBe(true);
   });
 
+  it('accepts DIALECTICA, KAIROS, and AGON lanes as reviewable draft improvements', async () => {
+    const { CapsuleSynthesisOutputSchema } = await import('@/lib/genkit/schemas/capsule-factory');
+    const parsed = CapsuleSynthesisOutputSchema.parse({
+      contextCapsuleDraft: {
+        label: 'Access negotiation capsule',
+        summary: 'Reusable expert framing for access talks.',
+        coreIds: ['situation:access'],
+        provenance: { sourceIds: ['src-1'], documentIds: [] },
+        assumptions: ['Postures may change quickly.'],
+        status: 'draft',
+      },
+      proposedCores: [],
+      openQuestions: ['Which crossing status is current?'],
+      suggestedTools: ['sourceability-reviewer'],
+      applyActions: [
+        { label: 'Review and apply source posture', target: 'source_core', requiresConfirmation: true },
+      ],
+      laneImprovements: [
+        { laneId: 'dialectica', title: 'Ontology delta', summary: 'Add actor and claim graph deltas.', proposedTags: ['ontology'], evidenceIds: ['src-1'], requiresConfirmation: true },
+        { laneId: 'kairos', title: 'Temporal delta', summary: 'Add stale-claim and decision-window checks.', proposedTags: ['temporality'], evidenceIds: [], requiresConfirmation: true },
+        { laneId: 'agon', title: 'Conflict delta', summary: 'Add incentives, commitments, and friction checks.', proposedTags: ['actors'], evidenceIds: [], requiresConfirmation: true },
+      ],
+    });
+
+    expect(parsed.laneImprovements.map((lane) => lane.laneId)).toEqual(['dialectica', 'kairos', 'agon']);
+    expect(parsed.laneImprovements.every((lane) => lane.requiresConfirmation)).toBe(true);
+  });
+
   it('derives writing defaults without generic document-automation framing', async () => {
     const { capsuleWritingProfileFlow } = await import('@/lib/genkit/flows/capsule-factory');
     const result = await capsuleWritingProfileFlow({

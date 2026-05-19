@@ -267,6 +267,24 @@ describe('context capsule product contract', () => {
     ]));
   });
 
+  it('surfaces custom and unknown taxonomy repairs without mixing them into normal filters', () => {
+    const stats = buildCapsuleTaxonomyStats([{
+      capsuleId: 'unresolved-taxonomy-capsule',
+      scope: 'team',
+      community: { tags: ['type:experimental', 'domain:custom-region', 'team:unknown-analysis'] },
+      coreRefs: {},
+    }]);
+
+    expect(stats.types.map((facet) => facet.id)).not.toContain('unknown');
+    expect(stats.domains.map((facet) => facet.id)).not.toContain('custom-region');
+    expect(stats.policyTeams.map((facet) => facet.id)).not.toContain('unknown-analysis');
+    expect(stats.repairStates).toEqual(expect.arrayContaining([
+      expect.objectContaining({ axis: 'types', id: 'experimental', repairState: 'unknown', count: 1 }),
+      expect.objectContaining({ axis: 'domains', id: 'custom-region', repairState: 'unknown', count: 1 }),
+      expect.objectContaining({ axis: 'policy-teams', id: 'unknown-analysis', repairState: 'unknown', count: 1 }),
+    ]));
+  });
+
   it('normalizes prefixed taxonomy tags while keeping legacy tags readable', () => {
     const normalized = normalizeCapsuleTaxonomyTags(
       ['starter', 'situation', 'type:situation', 'domain:diplomacy', 'team:diplomatic', 'diplomacy'],
