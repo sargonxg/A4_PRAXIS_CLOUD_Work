@@ -125,11 +125,12 @@ function deterministicIntake(input: CapsuleIntakeInput): CapsuleIntakeOutput {
     ...input.sourceSnippets.map((source) => source.id),
   ].slice(0, 20);
   const hasSources = input.documents.length > 0 || input.sourceSnippets.length > 0;
+  const sourcePosture = dominantProposalSource(input.sourceSnippets);
   return {
     draftCores: [
       core('user', 'Analyst posture', `Use this capsule as a reusable expert-thinking block for the user's policy question: ${context}`, [], 'medium'),
       core('situation', titleFromObjective(input.objective), summarizeContext(input, 'Frame the situation, actors, constraints, and decision horizon.'), provenanceIds, hasSources ? 'medium' : 'low'),
-      core('source', 'Source posture', hasSources ? `Source material is available from ${provenanceIds.length} receipt(s); keep provenance attached to draft cores.` : 'Source material is not attached yet; preserve this as a visible evidence gap.', provenanceIds, hasSources ? 'medium' : 'low'),
+      core('source', 'Source posture', hasSources ? `Source material is available from ${provenanceIds.length} receipt(s); keep provenance attached to draft cores.` : 'Source material is not attached yet; preserve this as a visible evidence gap.', provenanceIds, hasSources ? 'medium' : 'low', sourcePosture),
       core('tool', 'Capsule build tools', 'Use grounded search, sourceability review, context resolve, and memo formatting as receipt-returning tools before any write action.', [], 'medium'),
       core('output', 'Reviewable work product', 'Default to a draft memo, brief, talking points, or handover profile with export gates and human confirmation.', [], 'medium'),
     ],
@@ -251,6 +252,7 @@ function core(
   summary: string,
   provenanceIds: string[],
   confidence: 'low' | 'medium' | 'high',
+  source: z.infer<typeof CapsuleFactoryDraftCoreSchema>['source'] = 'firestore',
 ) {
   return CapsuleFactoryDraftCoreSchema.parse({
     kind,
@@ -258,6 +260,7 @@ function core(
     summary: clean(summary, 1200),
     provenanceIds,
     confidence,
+    source,
   });
 }
 
@@ -268,7 +271,14 @@ function normalizeSources(sources: SourceSnippet[]): SourceSnippet[] {
     url: clean(source.url ?? '', 1000) || undefined,
     date: clean(source.date ?? '', 80) || undefined,
     span: clean(source.span, 4000),
+    source: source.source ?? 'firestore',
   })).filter((source) => source.span);
+}
+
+function dominantProposalSource(sources: SourceSnippet[]): z.infer<typeof CapsuleFactoryDraftCoreSchema>['source'] {
+  if (sources.some((source) => source.source === 'future_graphiti')) return 'future_graphiti';
+  if (sources.some((source) => source.source === 'cognee')) return 'cognee';
+  return 'firestore';
 }
 
 function summarizeContext(input: CapsuleIntakeInput, fallback: string): string {

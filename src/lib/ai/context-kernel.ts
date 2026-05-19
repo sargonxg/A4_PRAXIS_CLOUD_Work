@@ -49,6 +49,16 @@ export interface TurnCapsule {
   injectableContext: InjectableContext;
   memory: Record<MemoryType, KernelMemoryItem[]>;
   retrievalPlan: CapsuleRetrievalPlan;
+  enrichment?: {
+    receipt: {
+      firestore: 'ready';
+      cognee: 'enabled' | 'disabled' | 'degraded';
+      graphiti: 'deferred';
+      memoryItemIds: string[];
+      warnings: string[];
+    };
+    memoryHitCount: number;
+  };
 }
 
 export type CapsuleRetrievalLayerId =

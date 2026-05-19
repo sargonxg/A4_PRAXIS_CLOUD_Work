@@ -10,6 +10,13 @@ interface FeatureFlagState {
 
 interface FeatureFlags {
   cognee: FeatureFlagState;
+  contextEnrichment: FeatureFlagState & {
+    receipts: {
+      firestore: 'ready';
+      cognee: 'enabled' | 'disabled';
+      graphiti: 'deferred';
+    };
+  };
   polar: FeatureFlagState;
   postgresKg: FeatureFlagState;
   agentEngineSubagents: FeatureFlagState;
@@ -31,6 +38,18 @@ export async function GET() {
         reason: cogneeEnabled
           ? 'COGNEE_ENABLED=true and COGNEE_BACKEND_URL is set'
           : 'COGNEE_ENABLED is not "true" or COGNEE_BACKEND_URL is missing',
+      },
+      contextEnrichment: {
+        enabled: true,
+        mode: cogneeEnabled ? 'firestore+cognee_review' : 'firestore_only',
+        reason: cogneeEnabled
+          ? 'Firestore is canonical; Cognee recall may enrich reviewable context; Graphiti is deferred'
+          : 'Firestore-only context is active; Cognee is disabled or unconfigured; Graphiti is deferred',
+        receipts: {
+          firestore: 'ready',
+          cognee: cogneeEnabled ? 'enabled' : 'disabled',
+          graphiti: 'deferred',
+        },
       },
       polar: {
         enabled: polarMissing.length === 0,

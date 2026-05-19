@@ -25,7 +25,8 @@ import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
 import { buildAskRuntimeFallbackCandidates, getAskRuntimeOption, isAskRuntimeModelAccessError } from '@/lib/ai/ask-runtime-catalog';
 import { getAskPraxisModelRuntimePolicy, type ModelRuntimePolicy } from '@/lib/ai/model-runtime-policy';
 import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock } from '@/lib/agent-runtime/evidence-pack';
-import { buildTurnCapsule, suggestNextActions, type TurnCapsule } from '@/lib/ai/context-kernel';
+import { suggestNextActions, type TurnCapsule } from '@/lib/ai/context-kernel';
+import { buildEnrichedTurnCapsule, type ContextEnrichmentReceipt } from '@/lib/knowledge/context-enrichment-adapter';
 import {
   buildAskPraxisAnswerPolicyBlock,
   buildAskPraxisPathFrameworkBlock,
@@ -192,7 +193,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
     // --- Live mode ---
     // Credits + profile gate already handled by withCalibration above.
     turnCapsule = _user.uid
-      ? await buildTurnCapsule({
+      ? await buildEnrichedTurnCapsule({
           uid: _user.uid,
           capsuleId,
           contextPackageId,
@@ -797,6 +798,7 @@ interface AskRuntimeReceipt extends Record<string, unknown> {
   contextMode?: 'praxis_lite' | 'thin_fallback';
   memoryPersistence?: 'cloud-sql' | 'firestore';
   contextReceipt?: ReturnType<typeof buildAskContextReceipt>;
+  contextEnrichment?: ContextEnrichmentReceipt;
   orchestrationReceipt?: AskConversationOrchestrationReceipt;
   answerEnvelope?: AskAnswerEnvelope;
 }
@@ -938,6 +940,13 @@ function decorateAskRuntimeReceipt(
     // audit marker: contextMode: 'praxis_lite' remains the normal full-capsule path; thin_fallback is explicit when resolver recovery is used.
     contextMode,
     memoryPersistence: input.memoryPersistence,
+    contextEnrichment: input.turnCapsule?.enrichment?.receipt ?? {
+      firestore: 'ready',
+      cognee: 'disabled',
+      graphiti: 'deferred',
+      memoryItemIds: [],
+      warnings: [],
+    },
     resolvedCapsules: resolvedCapsule
       ? [{
           capsuleId: resolvedCapsule.capsuleId,

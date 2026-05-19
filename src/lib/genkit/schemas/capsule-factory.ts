@@ -3,6 +3,7 @@ import { z } from 'genkit';
 export const CapsuleFactoryCoreKindSchema = z.enum(['user', 'situation', 'source', 'tool', 'output']);
 export const CapsuleFactoryLaneIdSchema = z.enum(['dialectica', 'kairos', 'agon']);
 export const CapsuleFactoryReviewStateSchema = z.enum(['draft', 'reviewed', 'applied', 'rejected']);
+export const CapsuleFactoryProposalSourceSchema = z.enum(['firestore', 'cognee', 'future_graphiti']);
 
 export const CapsuleFactorySourceSnippetSchema = z.object({
   id: z.string().min(1).max(160),
@@ -10,6 +11,7 @@ export const CapsuleFactorySourceSnippetSchema = z.object({
   url: z.string().max(1000).optional(),
   date: z.string().max(80).optional(),
   span: z.string().min(1).max(4000),
+  source: CapsuleFactoryProposalSourceSchema.default('firestore'),
 });
 
 export const CapsuleFactoryDocumentSchema = z.object({
@@ -24,6 +26,7 @@ export const CapsuleFactoryDraftCoreSchema = z.object({
   summary: z.string().min(1).max(1200),
   provenanceIds: z.array(z.string().min(1).max(160)).max(20).default([]),
   confidence: z.enum(['low', 'medium', 'high']).default('medium'),
+  source: CapsuleFactoryProposalSourceSchema.default('firestore'),
 });
 
 export const CapsuleIntakeInputSchema = z.object({

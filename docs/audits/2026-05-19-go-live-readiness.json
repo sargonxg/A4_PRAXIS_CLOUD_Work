@@ -1,0 +1,39 @@
+{
+  "generatedAt": "2026-05-19T05:20:00.000Z",
+  "repo": "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work",
+  "branch": "main",
+  "localHead": "3616be79",
+  "items": [
+    { "area": "public pages", "status": "pass", "evidence": "npm run build completed; PRAXIS Doctor HTTP 200 for production home and login" },
+    { "area": "authenticated browser flow", "status": "blocked", "evidence": "npm run test:auth-runtime:live missing TEST_FIREBASE_EMAIL and TEST_FIREBASE_PASSWORD" },
+    { "area": "/app", "status": "pass", "evidence": "npm run build lists /app" },
+    { "area": "/app/capsules", "status": "pass", "evidence": "build route plus focused Capsule Factory contract tests" },
+    { "area": "/app/repository", "status": "pass", "evidence": "build route plus repository contract tests" },
+    { "area": "/app/settings", "status": "pass", "evidence": "build route and doctor health lanes" },
+    { "area": "/agents/[runId]", "status": "pass", "evidence": "build route and agent workspace/runtime tests" },
+    { "area": "health/runtime APIs", "status": "pass", "evidence": "doctor HTTP 200 and audit:agent-runtime-proof passed with warnings" },
+    { "area": "API route inventory", "status": "pass", "evidence": "207 routes inventoried in markdown and json" },
+    { "area": "launch headers", "status": "pass", "evidence": "audit:launch-readiness with live headers passed with 0 warnings" },
+    { "area": "Cloud Run", "status": "pass", "evidence": "doctor reports praxis-frontend serving praxis-frontend-00611-9sg" },
+    { "area": "Cloud Tasks", "status": "pass", "evidence": "doctor passed agent-runs queue describe" },
+    { "area": "Cloud SQL", "status": "pass", "evidence": "doctor passed Cloud SQL instance describe" },
+    { "area": "Firebase rules/auth", "status": "pass", "evidence": "doctor passed auth doctor and Firestore database describe" },
+    { "area": "agent runtime proof env", "status": "warn", "evidence": "local shell lacks runtime database URL, worker base URL/auth, live Genkit, and ADK env" },
+    { "area": "typecheck", "status": "pass", "evidence": "npm run typecheck passed" },
+    { "area": "build", "status": "pass", "evidence": "npm run build passed" },
+    { "area": "vitest", "status": "pass", "evidence": "npx vitest run passed 199 files and 841 tests" },
+    { "area": "standalone GCP audit", "status": "pass", "evidence": "npm run audit:gcp passed inside npm run audit:gate with 0 hard failures and 1 runtime-proof soft warning" },
+    { "area": "full gate", "status": "pass", "evidence": "npm run audit:gate passed after earlier concurrent next build process finished" },
+    { "area": "full PRAXIS doctor command", "status": "blocked", "evidence": "shell command timed out after 300 seconds but wrote doctor artifacts with PASS=23 WARN=4 FAIL=3 against earlier dirty state" }
+  ],
+  "authenticatedFlowBlockers": ["TEST_FIREBASE_EMAIL", "TEST_FIREBASE_PASSWORD"],
+  "capsuleFactory": {
+    "reviewStates": ["draft", "reviewed", "applied", "rejected"],
+    "singleApplyBoundary": "/api/context/capsules/[capsuleId]/diff",
+    "confirmationRequired": true
+  },
+  "runtimeProofStrip": {
+    "fields": ["active capsule", "source count", "last Ask receipt", "queued agent run id", "worker/run status", "latest mirrored event", "memo/output link"],
+    "sanitized": true
+  }
+}

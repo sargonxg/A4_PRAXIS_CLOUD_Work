@@ -1,21 +1,21 @@
 # API Route Inventory
 
-Generated: 2026-05-19T05:01:36.443Z
+Generated: 2026-05-19T05:19:20.489Z
 Total routes: 207
 
 | Category | Count |
 | --- | ---: |
-| canonical | 96 |
+| canonical | 100 |
 | compatibility | 37 |
 | admin/internal | 68 |
 | staged | 2 |
-| deletion-candidate | 4 |
+| deletion-candidate | 0 |
 
 | Route | Category | Auth posture | Calibration | Caller evidence | Recommended action |
 | --- | --- | --- | --- | --- | --- |
 | `/api/account` | admin/internal | user authenticated | not AI route | server auth boundary<br>GET handler<br>PATCH handler<br>DELETE handler | Keep sanitized/admin-gated and exclude from normal-user UI. |
 | `/api/admin/system-health` | admin/internal | user authenticated | not AI route | server auth boundary<br>GET handler | Keep sanitized/admin-gated and exclude from normal-user UI. |
-| `/api/agents/runs` | deletion-candidate | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler | Keep until rg, tests, route audit, and graph references prove zero active usage. |
+| `/api/agents/runs` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler | Keep canonical. |
 | `/api/agents/runs/[runId]` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>/agents/[runId] workspace/API family | Keep canonical. |
 | `/api/agents/runs/[runId]/approvals/[approvalId]` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler<br>/agents/[runId] workspace/API family | Keep canonical. |
 | `/api/agents/runs/[runId]/cancel` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler<br>/agents/[runId] workspace/API family | Keep canonical. |
@@ -96,7 +96,7 @@ Total routes: 207
 | `/api/billing/portal` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler | Keep canonical. |
 | `/api/billing/webhook` | admin/internal | public or route-local | not AI route | static route export | Keep sanitized/admin-gated and exclude from normal-user UI. |
 | `/api/capabilities` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler | Keep canonical. |
-| `/api/context/capsules` | deletion-candidate | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler<br>ContextCapsule cockpit/repository family | Keep until rg, tests, route audit, and graph references prove zero active usage. |
+| `/api/context/capsules` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler<br>ContextCapsule cockpit/repository family | Keep canonical. |
 | `/api/context/capsules/[capsuleId]` | admin/internal | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler<br>PATCH handler<br>DELETE handler<br>ContextCapsule cockpit/repository family | Keep sanitized/admin-gated and exclude from normal-user UI. |
 | `/api/context/capsules/[capsuleId]/attach` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler<br>ContextCapsule cockpit/repository family | Keep canonical. |
 | `/api/context/capsules/[capsuleId]/diff` | admin/internal | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler<br>ContextCapsule cockpit/repository family | Keep sanitized/admin-gated and exclude from normal-user UI. |
@@ -154,8 +154,8 @@ Total routes: 207
 | `/api/knowledge/documents/[documentId]/capsules` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler | Keep canonical. |
 | `/api/knowledge/documents/[documentId]/summarize` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler | Keep canonical. |
 | `/api/knowledge/ingest-runs/[id]` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler | Keep canonical. |
-| `/api/knowledge/repositories` | deletion-candidate | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler | Keep until rg, tests, route audit, and graph references prove zero active usage. |
-| `/api/knowledge/repositories/[repositoryId]` | deletion-candidate | user authenticated | not AI route | server auth boundary<br>GET handler<br>PATCH handler<br>DELETE handler | Keep until rg, tests, route audit, and graph references prove zero active usage. |
+| `/api/knowledge/repositories` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler | Keep canonical. |
+| `/api/knowledge/repositories/[repositoryId]` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler<br>PATCH handler<br>DELETE handler | Keep canonical. |
 | `/api/knowledge/repositories/[repositoryId]/attach` | canonical | user authenticated | not AI route | server auth boundary<br>POST handler | Keep canonical. |
 | `/api/knowledge/repositories/[repositoryId]/documents` | canonical | user authenticated | not AI route | server auth boundary<br>GET handler | Keep canonical. |
 | `/api/memory/[...slug]` | compatibility | user authenticated | not AI route | server auth boundary<br>GET handler<br>POST handler<br>DELETE handler | Keep as compatibility boundary; document caller before removal. |

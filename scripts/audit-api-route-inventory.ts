@@ -88,7 +88,7 @@ function categorizeRoute(route: string, source: string): ApiRouteCategory {
   if (/\/(admin|debug|diagnostics|internal|worker)\b/.test(route) || source.includes('admin')) return 'admin/internal';
   if (/compat|legacy|redirect|deprecated|proxy/i.test(source) || /\/(legacy|proxy)\b/.test(route)) return 'compatibility';
   if (/TODO|staged|not implemented|planned/i.test(source)) return 'staged';
-  if (/archive|obsolete|delete candidate/i.test(source)) return 'deletion-candidate';
+  if (/deletion-candidate|delete candidate|safe to remove|removal candidate/i.test(source)) return 'deletion-candidate';
   return 'canonical';
 }
 

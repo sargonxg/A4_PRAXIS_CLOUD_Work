@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T05:01:36.445Z",
+  "generatedAt": "2026-05-19T05:19:20.493Z",
   "totalRoutes": 207,
   "entries": [
     {
@@ -31,7 +31,7 @@
     {
       "route": "/api/agents/runs",
       "file": "src/app/api/agents/runs/route.ts",
-      "category": "deletion-candidate",
+      "category": "canonical",
       "authPosture": "user authenticated",
       "calibrationStatus": "not AI route",
       "callerEvidence": [
@@ -39,7 +39,7 @@
         "GET handler",
         "POST handler"
       ],
-      "recommendedAction": "Keep until rg, tests, route audit, and graph references prove zero active usage."
+      "recommendedAction": "Keep canonical."
     },
     {
       "route": "/api/agents/runs/[runId]",
@@ -950,7 +950,7 @@
     {
       "route": "/api/context/capsules",
       "file": "src/app/api/context/capsules/route.ts",
-      "category": "deletion-candidate",
+      "category": "canonical",
       "authPosture": "user authenticated",
       "calibrationStatus": "not AI route",
       "callerEvidence": [
@@ -959,7 +959,7 @@
         "POST handler",
         "ContextCapsule cockpit/repository family"
       ],
-      "recommendedAction": "Keep until rg, tests, route audit, and graph references prove zero active usage."
+      "recommendedAction": "Keep canonical."
     },
     {
       "route": "/api/context/capsules/[capsuleId]",
@@ -1664,7 +1664,7 @@
     {
       "route": "/api/knowledge/repositories",
       "file": "src/app/api/knowledge/repositories/route.ts",
-      "category": "deletion-candidate",
+      "category": "canonical",
       "authPosture": "user authenticated",
       "calibrationStatus": "not AI route",
       "callerEvidence": [
@@ -1672,12 +1672,12 @@
         "GET handler",
         "POST handler"
       ],
-      "recommendedAction": "Keep until rg, tests, route audit, and graph references prove zero active usage."
+      "recommendedAction": "Keep canonical."
     },
     {
       "route": "/api/knowledge/repositories/[repositoryId]",
       "file": "src/app/api/knowledge/repositories/[repositoryId]/route.ts",
-      "category": "deletion-candidate",
+      "category": "canonical",
       "authPosture": "user authenticated",
       "calibrationStatus": "not AI route",
       "callerEvidence": [
@@ -1686,7 +1686,7 @@
         "PATCH handler",
         "DELETE handler"
       ],
-      "recommendedAction": "Keep until rg, tests, route audit, and graph references prove zero active usage."
+      "recommendedAction": "Keep canonical."
     },
     {
       "route": "/api/knowledge/repositories/[repositoryId]/attach",

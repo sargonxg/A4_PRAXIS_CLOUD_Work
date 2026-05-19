@@ -4,7 +4,8 @@ import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { localKnowledgeAdapter } from '@/lib/knowledge/context-engine';
 import { resolveInjectableContext } from '@/lib/context/context-injection';
-import { buildTurnCapsule, compileEffectiveCapsule } from '@/lib/ai/context-kernel';
+import { compileEffectiveCapsule } from '@/lib/ai/context-kernel';
+import { buildEnrichedTurnCapsule } from '@/lib/knowledge/context-enrichment-adapter';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
 
 const RequestSchema = z.object({
@@ -48,7 +49,7 @@ export const POST = withAuth(async (request, user) => {
         : null,
       situationId: parsed.data.situationId,
     });
-    const turnCapsule = await buildTurnCapsule({
+    const turnCapsule = await buildEnrichedTurnCapsule({
       uid: user.uid,
       capsuleId: parsed.data.capsuleId,
       contextPackageId: parsed.data.contextPackageId,
@@ -61,7 +62,7 @@ export const POST = withAuth(async (request, user) => {
     const effectiveCapsule = compileEffectiveCapsule(turnCapsule, parsed.data.query);
     const situationId = parsed.data.situationId ?? injectable.stack.situationId;
     if (!situationId) {
-      return NextResponse.json({ injectable, effectiveCapsule });
+      return NextResponse.json({ injectable, effectiveCapsule, enrichment: turnCapsule.enrichment?.receipt });
     }
 
     const context = await localKnowledgeAdapter.buildContextPack({
@@ -71,7 +72,7 @@ export const POST = withAuth(async (request, user) => {
       query: parsed.data.query,
       coreRefs: parsed.data.coreRefs,
     });
-    return NextResponse.json({ ...context, injectable, effectiveCapsule });
+    return NextResponse.json({ ...context, injectable, effectiveCapsule, enrichment: turnCapsule.enrichment?.receipt });
   } catch (err) {
     return handleRouteError(err, 'context/resolve');
   }

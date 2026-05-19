@@ -67,7 +67,7 @@ if (!contextInjection.includes('locked_cores')) {
 }
 
 const chatRoute = read('src/app/api/ai/chat/route.ts');
-if (!chatRoute.includes('buildTurnCapsule')) {
+if (!chatRoute.includes('buildTurnCapsule') && !chatRoute.includes('buildEnrichedTurnCapsule')) {
   failures.push('Ask PRAXIS chat route must build the turn capsule before answering');
 }
 

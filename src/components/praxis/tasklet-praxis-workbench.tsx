@@ -608,6 +608,13 @@ export function TaskletPraxisWorkbench({
     ?? selectedAgent.outputDestination?.replace(/_/g, ' ')
     ?? 'Memo posture';
   const conversationUrl = conversationThreadId ? buildConversationUrl(currentCapsuleId, conversationThreadId) : null;
+  const focusedRunStream = useOrchestratorEvents(
+    focusedRunId ? `/api/agents/runs/${encodeURIComponent(focusedRunId)}/stream` : null,
+    {
+      enabled: isAuthenticated && Boolean(focusedRunId) && !isTerminalAgentRunStatus(focusedRun?.run.status ?? 'queued'),
+      limit: 30,
+    },
+  );
   const latestRun = focusedRun?.run ?? agentRuns[0] ?? null;
   const latestEvent = focusedRunEvents.at(-1);
   const runtimeProof: RuntimeProof = {
@@ -619,13 +626,6 @@ export function TaskletPraxisWorkbench({
     latestMirroredEvent: latestEvent?.message ?? latestEvent?.eventType ?? focusedRunStream.lastEventId ?? 'no mirrored event',
     memoOutputHref: latestRun?.outputHref ?? null,
   };
-  const focusedRunStream = useOrchestratorEvents(
-    focusedRunId ? `/api/agents/runs/${encodeURIComponent(focusedRunId)}/stream` : null,
-    {
-      enabled: isAuthenticated && Boolean(focusedRunId) && !isTerminalAgentRunStatus(focusedRun?.run.status ?? 'queued'),
-      limit: 30,
-    },
-  );
 
   useEffect(() => {
     if (focusedRunId) return;

@@ -55,8 +55,8 @@ describe('capsule factory Genkit flows', () => {
     const result = await capsuleSynthesisFlow({
       objective: 'Prepare an options memo for humanitarian access negotiations.',
       draftCores: [
-        { kind: 'situation', label: 'Sudan access', summary: 'Access corridors are contested.', provenanceIds: [], confidence: 'medium' },
-        { kind: 'source', label: 'OCHA note', summary: 'OCHA reports access constraints.', provenanceIds: ['src-ocha'], confidence: 'medium' },
+        { kind: 'situation', label: 'Sudan access', summary: 'Access corridors are contested.', provenanceIds: [], confidence: 'medium', source: 'firestore' },
+        { kind: 'source', label: 'OCHA note', summary: 'OCHA reports access constraints.', provenanceIds: ['src-ocha'], confidence: 'medium', source: 'firestore' },
       ],
       researchPlan: {
         sourceGaps: ['Need dated crossing-status evidence.'],
@@ -65,12 +65,53 @@ describe('capsule factory Genkit flows', () => {
         corpusReads: ['capsule:active'],
         freshnessNeeds: ['Dated source check'],
       },
-      sourceSnippets: [{ id: 'src-ocha', title: 'OCHA update', date: '2026-05-01', span: 'Access constraints remain significant.' }],
+      sourceSnippets: [{ id: 'src-ocha', title: 'OCHA update', date: '2026-05-01', span: 'Access constraints remain significant.', source: 'firestore' }],
     });
 
     expect(result.contextCapsuleDraft.status).toBe('draft');
     expect(result.contextCapsuleDraft.provenance.sourceIds).toEqual(['src-ocha']);
+    expect(result.proposedCores.find((core) => core.label === 'OCHA note')?.source).toBe('firestore');
     expect(result.openQuestions).toContain('Need dated crossing-status evidence.');
+    expect(result.applyActions.every((action) => action.requiresConfirmation)).toBe(true);
+  });
+
+  it('accepts Cognee memory hints as reviewable source snippets without making them canonical', async () => {
+    const { capsuleIntakeFlow, capsuleSynthesisFlow } = await import('@/lib/genkit/flows/capsule-factory');
+    const intake = await capsuleIntakeFlow({
+      objective: 'Build a capsule for ceasefire monitoring assumptions.',
+      prompt: 'Use prior reviewed memory as hints only.',
+      documents: [],
+      sourceSnippets: [
+        {
+          id: 'cognee:memory-1',
+          title: 'Prior memory hint',
+          span: 'A prior review flagged ceasefire monitoring gaps.',
+          source: 'cognee',
+        },
+      ],
+    });
+    const result = await capsuleSynthesisFlow({
+      objective: 'Build a capsule for ceasefire monitoring assumptions.',
+      draftCores: intake.draftCores,
+      researchPlan: {
+        sourceGaps: ['Validate the memory hint against dated sources.'],
+        searchQueries: ['ceasefire monitoring dated source'],
+        readOnlyTools: [{ toolId: 'capsule-repository-read', reason: 'Read only.', approvalPosture: 'receipt_only' }],
+        corpusReads: ['capsule:active'],
+        freshnessNeeds: ['Confirm memory hints before applying.'],
+      },
+      sourceSnippets: [
+        {
+          id: 'cognee:memory-1',
+          title: 'Prior memory hint',
+          span: 'A prior review flagged ceasefire monitoring gaps.',
+          source: 'cognee',
+        },
+      ],
+    });
+
+    expect(result.contextCapsuleDraft.status).toBe('draft');
+    expect(result.proposedCores.some((core) => core.source === 'cognee')).toBe(true);
     expect(result.applyActions.every((action) => action.requiresConfirmation)).toBe(true);
   });
 
