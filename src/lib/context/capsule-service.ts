@@ -923,6 +923,16 @@ function buildStarterSnapshot(starterDefinition: CapsuleStarterDefinition): Caps
       nextIdeas: [...starterDefinition.richProfile.nextIdeas],
       qualityRubric: [...starterDefinition.richProfile.qualityRubric],
     },
+    ...(starterDefinition.deviceProfile ? {
+      deviceProfile: {
+        ...starterDefinition.deviceProfile,
+        methodSteps: [...starterDefinition.deviceProfile.methodSteps],
+        bestInputs: [...starterDefinition.deviceProfile.bestInputs],
+        expectedOutputs: [...starterDefinition.deviceProfile.expectedOutputs],
+        failureModes: [...starterDefinition.deviceProfile.failureModes],
+        sourceabilityRequirements: [...starterDefinition.deviceProfile.sourceabilityRequirements],
+      },
+    } : {}),
     combinesWellWith: [...starterDefinition.combinesWellWith],
   };
 }
@@ -1370,6 +1380,7 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     : [];
   const workflow = isRecord(value.agentWorkflow) ? value.agentWorkflow : {};
   const richProfileRecord = isRecord(value.richProfile) ? value.richProfile : {};
+  const deviceProfileRecord = isRecord(value.deviceProfile) ? value.deviceProfile : null;
   const richProfile = {
     purpose: longStringOrNull(richProfileRecord.purpose) ?? stringOrNull(value.summary) ?? label,
     userJob: longStringOrNull(richProfileRecord.userJob) ?? stringOrNull(value.detail) ?? label,
@@ -1408,6 +1419,18 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     },
     aiUseGuidance: stringOrNull(value.aiUseGuidance) ?? '',
     richProfile,
+    ...(deviceProfileRecord ? {
+      deviceProfile: {
+        deviceKind: stringOrNull(deviceProfileRecord.deviceKind) ?? 'thinking-device',
+        methodSteps: cleanLongStringArray(deviceProfileRecord.methodSteps).slice(0, 10),
+        bestInputs: cleanLongStringArray(deviceProfileRecord.bestInputs).slice(0, 10),
+        expectedOutputs: cleanLongStringArray(deviceProfileRecord.expectedOutputs).slice(0, 10),
+        failureModes: cleanLongStringArray(deviceProfileRecord.failureModes).slice(0, 10),
+        humanReviewGate: longStringOrNull(deviceProfileRecord.humanReviewGate) ?? 'Require human review before external use.',
+        agentInstructions: longStringOrNull(deviceProfileRecord.agentInstructions) ?? stringOrNull(value.aiUseGuidance) ?? '',
+        sourceabilityRequirements: cleanLongStringArray(deviceProfileRecord.sourceabilityRequirements).slice(0, 10),
+      },
+    } : {}),
     combinesWellWith: cleanStringArray(value.combinesWellWith).slice(0, 20),
   };
 }

@@ -66,6 +66,11 @@ export const AgentRunOutputSchema = z.object({
   policyAgentLabel: z.string().nullable().optional(),
   outputDestination: z.enum(['memo_studio', 'canvas', 'library', 'handover']).nullable().optional(),
   outputHref: z.string().nullable().optional(),
+  outputTargetLabel: z.string().nullable().optional(),
+  selectedTools: z.array(z.string()).optional(),
+  sourcePosture: z.string().nullable().optional(),
+  sourceCount: z.number().int().nonnegative().optional(),
+  approvalGateCount: z.number().int().nonnegative().optional(),
   readiness: z.enum(['live', 'queued', 'planned', 'gated']).nullable().optional(),
   riskLevel: z.enum(['low', 'medium', 'high']).nullable().optional(),
   contextReceipt: z.object({
@@ -73,6 +78,9 @@ export const AgentRunOutputSchema = z.object({
     selectedTools: z.array(z.string()),
     outputDestination: z.string().nullable(),
     sourcePosture: z.string().nullable(),
+    sourceCount: z.number().int().nonnegative(),
+    approvalGateCount: z.number().int().nonnegative(),
+    groundingPosture: z.string(),
   }).optional(),
   factoryMetadata: z.object({
     factoryLane: z.string().nullable(),
@@ -100,6 +108,18 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
   const selectedTools = Array.isArray(run.metadata?.selectedTools)
     ? run.metadata.selectedTools.filter((item): item is string => typeof item === 'string')
     : [];
+  const sourceCount = nonnegativeInt(run.metadata?.sourceCount)
+    ?? stringArray(run.metadata?.sourceReceiptIds).length
+    ?? 0;
+  const approvalGateCount = nonnegativeInt(run.metadata?.approvalGateCount)
+    ?? stringArray(run.metadata?.approvalRequiredToolIds).length
+    ?? 0;
+  const sourcePosture = typeof run.metadata?.sourcePosture === 'string' ? run.metadata.sourcePosture : null;
+  const groundingPosture = typeof run.metadata?.groundingPosture === 'string'
+    ? run.metadata.groundingPosture
+    : selectedTools.includes('grounded-search')
+      ? 'Google grounding requested'
+      : sourcePosture ?? 'No grounding metadata';
   const factoryMetadata = normalizeFactoryMetadata(run.metadata);
   return AgentRunOutputSchema.parse({
     runId: run.id,
@@ -112,6 +132,11 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
     policyAgentLabel: policyAgent?.label ?? null,
     outputDestination,
     outputHref: outputDestination ? destinationHref(outputDestination) : null,
+    outputTargetLabel: outputDestination ? destinationLabel(outputDestination) : null,
+    selectedTools,
+    sourcePosture: sourcePosture ?? 'No grounding metadata',
+    sourceCount,
+    approvalGateCount,
     readiness: policyAgent?.readiness ?? null,
     riskLevel: policyAgent?.riskLevel ?? null,
     contextReceipt: {
@@ -121,7 +146,10 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
         .join(' + ') || (typeof activeContextStack?.capsuleId === 'string' ? activeContextStack.capsuleId : run.capsuleId),
       selectedTools,
       outputDestination: outputDestination ?? null,
-      sourcePosture: typeof run.metadata?.sourcePosture === 'string' ? run.metadata.sourcePosture : null,
+      sourcePosture,
+      sourceCount,
+      approvalGateCount,
+      groundingPosture,
     },
     ...(factoryMetadata ? { factoryMetadata } : {}),
   });
@@ -131,6 +159,19 @@ function normalizeOutputDestination(value: unknown): PolicyAgentOutputDestinatio
   return value === 'memo_studio' || value === 'canvas' || value === 'library' || value === 'handover'
     ? value
     : null;
+}
+
+function destinationLabel(destination: PolicyAgentOutputDestination): string {
+  switch (destination) {
+    case 'memo_studio':
+      return 'Memo Studio';
+    case 'canvas':
+      return 'Canvas';
+    case 'library':
+      return 'Capsules';
+    case 'handover':
+      return 'Handover';
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -163,4 +204,8 @@ function normalizeFactoryMetadata(metadata: Record<string, unknown> | undefined)
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function nonnegativeInt(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
 }

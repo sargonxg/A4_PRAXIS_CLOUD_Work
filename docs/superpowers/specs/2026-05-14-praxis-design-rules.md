@@ -3,11 +3,11 @@
 Date: 2026-05-14
 Status: Active. Every new PR must comply.
 
-These seven rules exist so PRAXIS reads like a foreign-affairs
-publication that happens to be software, not like the generic
-gradient-and-emoji output of an off-the-shelf coding agent. Audits
-in `audit:simplification` already enforce some of these; visual
-ones are enforced by review.
+These seven rules exist so PRAXIS reads like a Civic Atelier for
+statecraft work: dossier layouts, cartographic structure, specimen-like
+ContextCapsules, and compact evidence receipts. Audits in
+`audit:simplification` already enforce some of these; visual ones are
+enforced by review.
 
 ---
 
@@ -31,11 +31,11 @@ Enforcement: `audit:no-emoji-icons` script (planned).
 
 | Surface | Family |
 |---|---|
-| Headings (H1, H2, H3) | EB Garamond, serif |
+| Headings (H1, H2, H3) | Newsreader, heading/display |
 | UI text (labels, buttons, body) | Inter, sans-serif |
 | Receipts, citations, IDs, page-spans, machine output | JetBrains Mono |
 
-Never use a sans for a heading or a serif for a button. Receipts
+Never use a sans for a heading or a heading/display face for a button. Receipts
 (`[§4, p.12]`, `source-linked event reporting·CY-2026`) are always mono.
 
 ## Rule 4 — Empty states ≤ 6 words
@@ -55,9 +55,10 @@ Anti-examples (do not ship):
 ## Rule 5 — No gradient blobs, no neon, no glow buttons
 
 No multi-stop background gradients on hero / feature surfaces. No
-saturated neons. No drop-shadow "glow" on action buttons. The only
-accent in the system is `gold #E8B931` on a single primary action.
-Everything else is grayscale, navy, or cream.
+saturated neons. No drop-shadow "glow" on action buttons. Gold is rare:
+single primary action, focus ring, or active state only. The pilot palette
+is tokenized as deep ink, mineral green-gray, oxide/clay, archive paper,
+graphite, civic blue, and calibrated evidence states.
 
 Vignettes inside SVG illustrations (the hero capsule animation) are
 permitted because they read as photographic depth, not as marketing
@@ -116,7 +117,8 @@ If you see any of these in a PR, request changes citing this doc.
 When in doubt:
 
 1. Open `praxis.tacitus.me` and the landing hero. The vibe there is
-   the vibe everywhere.
+    the product direction; the Civic Atelier contract in `DESIGN.md`
+    is the current vibe everywhere.
 2. Strip everything until the screen says one thing.
 3. Add the gold accent only on the single action the user is most
    likely to take.

@@ -373,7 +373,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     }
 
     expect(source).toContain('Featured Expert Picks');
-    expect(source).toContain('data-testid="featured-expert-picks-shelf"');
+    expect(source).toContain("'featured-expert-picks-shelf'");
+    expect(source).toContain("'intellectual-devices-shelf'");
     expect(source).toContain('data-testid={`featured-expert-pick-${capsule.capsuleId}`}');
     expect(source).toContain('data-testid="build-your-own-knowledge-cta"');
     expect(source).toContain('Build your own inheritable knowledge for your team or agents');
@@ -382,6 +383,10 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Expert pick');
     expect(source).toContain('Source posture');
     expect(source).toContain('Reasoning style');
+    expect(source).toContain('Intellectual Devices');
+    expect(source).toContain('deviceProfile');
+    expect(source).toContain('domainAccent');
+    expect(source).toContain('Human review gate');
     expect(source).toContain('Best next action');
     expect(source).toContain('readiness signals');
   });

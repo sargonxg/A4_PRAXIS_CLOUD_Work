@@ -41,7 +41,7 @@ import type { AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
 import type { AskOrchestrationStatusEvent } from '@/lib/ai/ask-orchestrator';
 import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
 import { buildAskTimelineMessages, type AskTimelineMessage } from '@/lib/ai/ask-conversation';
-import { useOrchestratorEvents } from '@/hooks/useOrchestratorEvents';
+import { agentRailStageFromEvent, useOrchestratorEvents } from '@/hooks/useOrchestratorEvents';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
@@ -681,13 +681,13 @@ function appendOrchestrationEvent(setMessages: TimelineSetter, messageId: string
 
 function initialAskWorkingTimeline(): AskOrchestrationStatusEvent[] {
   return [
-    { type: 'orchestrationStatus', id: 'context', label: 'Reading capsule', status: 'active', detail: 'Checking the active capsule.' },
-    { type: 'orchestrationStatus', id: 'triage', label: 'Planning searches', status: 'pending', detail: 'Classifying the research path.' },
-    { type: 'orchestrationStatus', id: 'agent', label: 'Checking sources', status: 'pending', detail: 'Choosing the source and policy agent path.' },
-    { type: 'orchestrationStatus', id: 'model-tier', label: 'Retrieving documents', status: 'pending', detail: 'Preparing the retrieval and model tier.' },
-    { type: 'orchestrationStatus', id: 'tools', label: 'Reviewing gaps', status: 'pending', detail: 'Selecting safe tool routes and evidence checks.' },
-    { type: 'orchestrationStatus', id: 'worker', label: 'Synthesizing memo', status: 'pending', detail: 'Deciding whether durable work is needed.' },
-    { type: 'orchestrationStatus', id: 'draft', label: 'Saving output', status: 'pending', detail: 'Waiting to draft and save the answer.' },
+    { type: 'orchestrationStatus', id: 'context', label: 'Capsule read', status: 'active', detail: 'Checking the active capsule.' },
+    { type: 'orchestrationStatus', id: 'triage', label: 'Research plan', status: 'pending', detail: 'Classifying the research path.' },
+    { type: 'orchestrationStatus', id: 'agent', label: 'Source discovery', status: 'pending', detail: 'Choosing the source and policy agent path.' },
+    { type: 'orchestrationStatus', id: 'model-tier', label: 'Document retrieval', status: 'pending', detail: 'Preparing the retrieval and model tier.' },
+    { type: 'orchestrationStatus', id: 'tools', label: 'Gap review', status: 'pending', detail: 'Selecting safe tool routes and evidence checks.' },
+    { type: 'orchestrationStatus', id: 'worker', label: 'Synthesis', status: 'pending', detail: 'Deciding whether durable work is needed.' },
+    { type: 'orchestrationStatus', id: 'draft', label: 'Save output', status: 'pending', detail: 'Waiting to draft and save the answer.' },
   ];
 }
 
@@ -798,42 +798,42 @@ function mergeWorkingTimeline(
     {
       type: 'orchestrationStatus' as const,
       id: 'context' as const,
-      label: 'Reading capsule',
+      label: 'Capsule read',
       status: receipt.capsule.contextHealth === 'ready' ? 'complete' as const : 'warn' as const,
       detail: `${receipt.capsule.contextHealth} capsule checked with ${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'}.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'triage' as const,
-      label: 'Planning searches',
+      label: 'Research plan',
       status: 'complete' as const,
       detail: `${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'agent' as const,
-      label: 'Checking sources',
+      label: 'Source discovery',
       status: 'complete' as const,
       detail: `${receipt.routingDecision.userSafeLabels.policyAgent} selected.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'model-tier' as const,
-      label: 'Retrieving documents',
+      label: 'Document retrieval',
       status: 'complete' as const,
       detail: `${receipt.routingDecision.userSafeLabels.modelTier}. ${receipt.routingDecision.userSafeLabels.fallbackPosture}.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'tools' as const,
-      label: 'Reviewing gaps',
+      label: 'Gap review',
       status: receipt.toolRouting.blockedToolIds.length ? 'warn' as const : 'complete' as const,
       detail: `${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'worker' as const,
-      label: 'Synthesizing memo',
+      label: 'Synthesis',
       status: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'queued' as const : receipt.supervisor.action === 'queue_agent_run' ? 'warn' as const : 'skipped' as const,
       detail: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'Durable agent run queued for deeper work.' : receipt.supervisor.action === 'queue_agent_run' ? 'Durable run could not be queued; Ask continued synchronously.' : 'No durable run needed for this answer.',
       runId: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? receipt.supervisor.queuedRun.runId : null,
@@ -845,7 +845,7 @@ function mergeWorkingTimeline(
     {
       type: 'orchestrationStatus' as const,
       id: 'draft' as const,
-      label: 'Saving output',
+      label: 'Save output',
       status: 'complete' as const,
       detail: 'Answer drafted with source and memo handoff metadata.',
     },
@@ -879,6 +879,15 @@ function AskWorkingTimeline({ events }: { events: AskOrchestrationStatusEvent[] 
             <div className="min-w-0">
               <p className="text-xs font-semibold text-slate-900">{event.label}</p>
               <p className="mt-0.5 text-[11px] leading-4 text-slate-600">{event.detail}</p>
+              {event.id === 'worker' ? (
+                <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-slate-500">
+                  {event.agentLabel ? <span>{event.agentLabel}</span> : null}
+                  {typeof event.sourceCount === 'number' ? <span>{event.sourceCount} sources</span> : null}
+                  {event.selectedToolIds?.length ? <span>{event.selectedToolIds.length} tools</span> : null}
+                  {typeof event.approvalGateCount === 'number' ? <span>{event.approvalGateCount} gates</span> : null}
+                  {event.outputTarget ? <span>{event.outputTarget}</span> : null}
+                </div>
+              ) : null}
             </div>
           </li>
         ))}
@@ -889,7 +898,17 @@ function AskWorkingTimeline({ events }: { events: AskOrchestrationStatusEvent[] 
 
 function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrationStatusEvent | null }) {
   const runId = queuedRun?.runId ?? null;
-  const [run, setRun] = useState<{ runId: string; status: string; outputHref?: string | null } | null>(null);
+  const [run, setRun] = useState<{
+    runId: string;
+    status: string;
+    outputHref?: string | null;
+    policyAgentLabel?: string | null;
+    outputTargetLabel?: string | null;
+    selectedTools?: string[];
+    sourceCount?: number;
+    approvalGateCount?: number;
+    sourcePosture?: string | null;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const eventState = useOrchestratorEvents(runId ? `/api/agents/runs/${encodeURIComponent(runId)}/stream` : null, {
@@ -902,7 +921,7 @@ function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrationStat
     if (!runId) return;
     try {
       const response = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}`, { credentials: 'include', cache: 'no-store' });
-      const payload = await response.json().catch(() => ({})) as { run?: { runId: string; status: string; outputHref?: string | null }; error?: string };
+      const payload = await response.json().catch(() => ({})) as { run?: typeof run; error?: string };
       if (!response.ok) {
         setError(response.status === 503 ? 'Deep work queue is not configured in this environment.' : payload.error ?? `Agent run lookup failed (${response.status}).`);
         return;
@@ -929,7 +948,7 @@ function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrationStat
         method: 'POST',
         credentials: 'include',
       });
-      const payload = await response.json().catch(() => ({})) as { run?: { runId: string; status: string; outputHref?: string | null }; error?: string };
+      const payload = await response.json().catch(() => ({})) as { run?: typeof run; error?: string };
       if (!response.ok) {
         setError(payload.error ?? `${action} failed (${response.status}).`);
         return;
@@ -950,6 +969,12 @@ function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrationStat
   const recentEvents = eventState.events.slice(-4).reverse();
   const canCancel = queuedRun.canCancel && ['queued', 'running', 'waiting_approval', 'dispatch_enqueued', 'queued'].includes(status);
   const canRetry = queuedRun.canRetry || ['failed', 'cancelled', 'expired'].includes(status);
+  const selectedTools = run?.selectedTools ?? queuedRun.selectedToolIds ?? [];
+  const sourceCount = run?.sourceCount ?? queuedRun.sourceCount ?? 0;
+  const approvalGateCount = run?.approvalGateCount ?? queuedRun.approvalGateCount ?? 0;
+  const outputTarget = run?.outputTargetLabel ?? queuedRun.outputTarget ?? null;
+  const agentLabel = run?.policyAgentLabel ?? queuedRun.agentLabel ?? 'Policy agent';
+  const sourcePosture = run?.sourcePosture ?? queuedRun.groundingPosture ?? 'No grounding metadata';
 
   return (
     <section className="mt-3 rounded-md border border-diplomatic-blue/20 bg-blue-50 p-2" data-testid="ask-agent-run-panel">
@@ -957,6 +982,14 @@ function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrationStat
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-diplomatic-blue">Deep work queue</p>
           <p className="truncate text-xs text-slate-700">{runId ? `${runId} / ${status.replace(/_/g, ' ')}` : queuedRun.detail}</p>
+          <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-slate-600">
+            <span>{agentLabel}</span>
+            <span>{selectedTools.length} tools</span>
+            <span>{sourceCount} sources</span>
+            <span>{approvalGateCount} gates</span>
+            {outputTarget ? <span>{outputTarget}</span> : null}
+            <span>{sourcePosture}</span>
+          </div>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {runId ? (
@@ -981,7 +1014,7 @@ function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrationStat
         <div className="mt-2 space-y-1">
           {recentEvents.map((event) => (
             <p key={event.id} className="rounded-md border border-blue-100 bg-white px-2 py-1 text-[11px] text-slate-600">
-              <span className="font-semibold text-slate-800">{event.rawType.replace(/_/g, ' ')}</span>
+              <span className="font-semibold text-slate-800">{agentRailStageFromEvent(event)}</span>
               {event.message ? ` / ${event.message}` : null}
             </p>
           ))}

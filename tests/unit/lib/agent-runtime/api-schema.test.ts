@@ -84,7 +84,15 @@ describe('agent run API validation schema', () => {
         selectedTools: [],
         outputDestination: null,
         sourcePosture: null,
+        sourceCount: 0,
+        approvalGateCount: 0,
+        groundingPosture: 'No grounding metadata',
       },
+      selectedTools: [],
+      sourcePosture: 'No grounding metadata',
+      sourceCount: 0,
+      approvalGateCount: 0,
+      outputTargetLabel: null,
     });
     expect(AgentRunOutputSchema.safeParse(dto).success).toBe(true);
     expect('internalSpendCents' in dto).toBe(false);
@@ -107,6 +115,9 @@ describe('agent run API validation schema', () => {
         ],
         selectedTools: ['sourceability-check'],
         sourcePosture: 'Grounded',
+        sourceCount: 3,
+        approvalGateCount: 1,
+        groundingPosture: 'Google grounding requested',
       },
     } as never);
 
@@ -115,6 +126,16 @@ describe('agent run API validation schema', () => {
       selectedTools: ['sourceability-check'],
       outputDestination: 'memo_studio',
       sourcePosture: 'Grounded',
+      sourceCount: 3,
+      approvalGateCount: 1,
+      groundingPosture: 'Google grounding requested',
+    });
+    expect(dto).toMatchObject({
+      selectedTools: ['sourceability-check'],
+      sourcePosture: 'Grounded',
+      sourceCount: 3,
+      approvalGateCount: 1,
+      outputTargetLabel: 'Memo Studio',
     });
   });
 });

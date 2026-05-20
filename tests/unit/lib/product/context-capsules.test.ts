@@ -165,7 +165,7 @@ describe('context capsule product contract', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(59);
+    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(69);
     expect(starterIds.size).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
@@ -173,7 +173,7 @@ describe('context capsule product contract', () => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toEqual({ situation: 20, tool: 15, output: 19, user: 5 });
+    expect(categoryCounts).toEqual({ situation: 20, tool: 25, output: 19, user: 5 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
@@ -197,6 +197,44 @@ describe('context capsule product contract', () => {
         expect([1, 2, 3]).toContain(source.reliabilityTier);
         expect(source.url).toMatch(/^https:\/\//);
       }
+    }
+  });
+
+  it('adds review-gated intellectual-device starter capsules with complete device profiles', () => {
+    const expectedDeviceIds = [
+      'starter-tool-assumption-stress-test',
+      'starter-tool-counterfactual-pivot-check',
+      'starter-tool-competing-hypotheses-matrix',
+      'starter-tool-stakeholder-incentive-map',
+      'starter-tool-spoiler-blocker-scan',
+      'starter-tool-policy-tradeoff-ledger',
+      'starter-tool-implementation-feasibility-gate',
+      'starter-tool-second-order-effects-map',
+      'starter-tool-pre-mortem-failure-review',
+      'starter-tool-escalation-ladder-deescalation-path',
+    ];
+
+    for (const starterId of expectedDeviceIds) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter, `${starterId} missing`).toBeTruthy();
+      expect(starter?.category).toBe('tool');
+      expect(starter?.tags).toEqual(expect.arrayContaining(['thinking-device', 'review-gated']));
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.suggestedQuestions.length, `${starterId} questions`).toBeGreaterThanOrEqual(3);
+      expect(starter?.suggestedNextActions.length, `${starterId} actions`).toBeGreaterThanOrEqual(3);
+      expect(starter?.combinesWellWith.some((id) => id.startsWith('starter-situation-')), `${starterId} situation compatibility`).toBe(true);
+      expect(starter?.combinesWellWith.some((id) => id.startsWith('starter-output-')), `${starterId} output compatibility`).toBe(true);
+      expect(starter?.outputProductIds.length, `${starterId} output targets`).toBeGreaterThanOrEqual(1);
+      expect(starter?.deviceProfile).toMatchObject({
+        deviceKind: expect.any(String),
+        humanReviewGate: expect.stringMatching(/review|approval|human/i),
+      });
+      expect(starter?.deviceProfile?.methodSteps.length, `${starterId} method steps`).toBeGreaterThanOrEqual(4);
+      expect(starter?.deviceProfile?.bestInputs.length, `${starterId} best inputs`).toBeGreaterThanOrEqual(3);
+      expect(starter?.deviceProfile?.expectedOutputs.length, `${starterId} expected outputs`).toBeGreaterThanOrEqual(2);
+      expect(starter?.deviceProfile?.failureModes.length, `${starterId} failure modes`).toBeGreaterThanOrEqual(2);
+      expect(starter?.deviceProfile?.agentInstructions, `${starterId} agent instructions`).toContain(starter?.label);
+      expect(starter?.deviceProfile?.sourceabilityRequirements.length, `${starterId} sourceability requirements`).toBeGreaterThanOrEqual(2);
     }
   });
 
@@ -489,6 +527,19 @@ describe('context capsule product contract', () => {
     expect(promptBlock).not.toContain('GOOGLE_APPLICATION_CREDENTIALS');
     expect(promptBlock).not.toContain('serviceAccount');
     expect(buildCapsuleStarterPromptBlock('custom-capsule')).toBeNull();
+  });
+
+  it('injects intellectual-device method and review gates into Ask PRAXIS starter context', () => {
+    const promptBlock = buildCapsuleStarterPromptBlock('starter-tool-assumption-stress-test');
+
+    expect(promptBlock).toContain('device_kind: stress-test');
+    expect(promptBlock).toContain('device_method_steps:');
+    expect(promptBlock).toContain('device_best_inputs:');
+    expect(promptBlock).toContain('device_expected_outputs:');
+    expect(promptBlock).toContain('device_failure_modes:');
+    expect(promptBlock).toContain('device_human_review_gate:');
+    expect(promptBlock).toContain('device_agent_instructions: Use Assumption Stress Test');
+    expect(promptBlock).toContain('device_sourceability_requirements:');
   });
 
   it('finds policy teams from capsule tags', () => {

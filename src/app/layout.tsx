@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { EB_Garamond, Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 
-const ebGaramond = EB_Garamond({
+const newsreader = Newsreader({
   subsets: ["latin"],
-  variable: "--font-eb-garamond",
+  variable: "--font-newsreader",
   display: "swap",
 });
 
@@ -145,7 +145,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${ebGaramond.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body className={`${newsreader.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
         {children}
       </body>
     </html>

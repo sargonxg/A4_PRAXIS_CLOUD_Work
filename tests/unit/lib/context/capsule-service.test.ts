@@ -423,7 +423,7 @@ describe('capsule service', () => {
     const second = await seedStarterCapsules('u1', deps(db));
     const capsules = await listCapsules('u1', { includeArchived: true }, deps(db));
 
-    expect(first.created).toBe(59);
+    expect(first.created).toBe(69);
     expect(first.existing).toBe(0);
     expect(second.created).toBe(0);
     expect(second.existing).toBe(first.created);
@@ -473,7 +473,7 @@ describe('capsule service', () => {
     const capsule = await getCapsule('u1', 'starter-situation-diplomatic-options', deps(db));
 
     expect(result.created).toBe(0);
-    expect(result.existing).toBe(59);
+    expect(result.existing).toBe(69);
     expect(capsule?.label).toBe('Edited diplomatic options capsule');
     expect(capsule?.community.tags).toContain('custom-tag');
     expect(capsule?.community.tags).toContain('type:situation');
@@ -516,7 +516,7 @@ describe('capsule service', () => {
     const sourceRecords = Array.from(db.data.keys()).filter((key) => key.startsWith(`${path}/sources/`));
 
     expect(result.created).toBe(0);
-    expect(result.existing).toBe(59);
+    expect(result.existing).toBe(69);
     expect(capsule?.label).toBe('Custom diplomatic label');
     expect(capsule?.archivedAt).toBe('2026-05-13T00:00:00.000Z');
     expect(capsule?.associatedCapsuleIds).toContain('user-added-related-capsule');
@@ -524,7 +524,7 @@ describe('capsule service', () => {
     expect(capsule?.coreRefs.documentCoreIds).toContain('user-added-document');
     expect(capsule?.community.userRating).toBe(2);
     expect(capsule?.community.tags).toEqual(expect.arrayContaining(['user-added-tag', 'type:situation', 'domain:diplomacy']));
-    expect(capsule?.starterSnapshot?.catalogVersion).toBe('2026-05-19-capsule-depth-v4');
+    expect(capsule?.starterSnapshot?.catalogVersion).toBe('2026-05-20-intellectual-devices-v5');
     expect(capsule?.starterSnapshot?.richProfile?.decisionPrompts.length).toBeGreaterThanOrEqual(3);
     expect(capsule?.version).toBe(8);
     expect(db.data.get(`${path}/evaluations/starter-readiness`)?.evidenceRequirements).toEqual(expect.arrayContaining([
@@ -537,6 +537,40 @@ describe('capsule service', () => {
     const sourceRecordsAfterSecondRun = Array.from(db.data.keys()).filter((key) => key.startsWith(`${path}/sources/`));
     expect(afterSecondRun?.version).toBe(8);
     expect(sourceRecordsAfterSecondRun).toEqual(sourceRecords);
+  });
+
+  it('backfills intellectual-device profiles without overwriting user-authored state', async () => {
+    const db = new FakeFirestore();
+    await seedStarterCapsules('u1', deps(db));
+    const path = 'users/u1/capsules/starter-tool-assumption-stress-test';
+    const existing = db.data.get(path) ?? {};
+    db.data.set(path, {
+      ...existing,
+      version: 4,
+      label: 'Custom stress-test label',
+      lockedCoreKinds: ['tool'],
+      trust: {
+        ...((existing.trust ?? {}) as Record<string, unknown>),
+        level: 'red',
+        score: 41,
+        label: 'User review pending',
+      },
+      starterSnapshot: {
+        ...((existing.starterSnapshot ?? {}) as Record<string, unknown>),
+        catalogVersion: '2026-05-19-capsule-depth-v4',
+        deviceProfile: undefined,
+      },
+    });
+
+    await seedStarterCapsules('u1', deps(db));
+    const capsule = await getCapsule('u1', 'starter-tool-assumption-stress-test', deps(db));
+
+    expect(capsule?.label).toBe('Custom stress-test label');
+    expect(capsule?.lockedCoreKinds).toContain('tool');
+    expect(capsule?.trust.label).toBe('User review pending');
+    expect(capsule?.starterSnapshot?.deviceProfile?.methodSteps.length).toBeGreaterThanOrEqual(4);
+    expect(capsule?.starterSnapshot?.deviceProfile?.humanReviewGate).toMatch(/review|approval|human/i);
+    expect(capsule?.version).toBe(5);
   });
 });
 

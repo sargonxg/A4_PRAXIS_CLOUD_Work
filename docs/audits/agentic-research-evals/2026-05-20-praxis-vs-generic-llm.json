@@ -1,0 +1,306 @@
+{
+  "generatedAt": "2026-05-20T18:49:48.646Z",
+  "mode": "deterministic-contract-eval",
+  "scenarios": [
+    {
+      "id": "current-events",
+      "title": "Current events and recency",
+      "prompt": "Prepare a current-source briefing on a fast-moving policy issue and separate confirmed facts from open questions.",
+      "mustMeasure": [
+        "recency",
+        "source authority",
+        "citation fidelity",
+        "failure mode"
+      ]
+    },
+    {
+      "id": "conflict-policy-research",
+      "title": "Conflict and policy research",
+      "prompt": "Use the active ContextCapsule to produce a conflict-policy memo with actors, options, source gaps, and decision caveats.",
+      "mustMeasure": [
+        "planning",
+        "capsule reuse",
+        "source authority",
+        "persistence"
+      ]
+    },
+    {
+      "id": "claim-source-discovery",
+      "title": "Source discovery for a claim",
+      "prompt": "Find authoritative sources for a specific claim, rank their reliability, and flag unsupported parts.",
+      "mustMeasure": [
+        "source authority",
+        "citation fidelity",
+        "audit trail"
+      ]
+    },
+    {
+      "id": "contradiction-uncertainty",
+      "title": "Contradiction and uncertainty check",
+      "prompt": "Identify evidence that contradicts the draft conclusion and state what would change the assessment.",
+      "mustMeasure": [
+        "uncertainty handling",
+        "citation fidelity",
+        "planning"
+      ]
+    },
+    {
+      "id": "capsule-grounded-research",
+      "title": "Capsule-grounded research",
+      "prompt": "Answer from the active ContextCapsule first, then use external grounding only for gaps and save the output receipt.",
+      "mustMeasure": [
+        "capsule reuse",
+        "persistence",
+        "audit trail",
+        "source authority"
+      ]
+    }
+  ],
+  "comparisons": [
+    {
+      "scenarioId": "current-events",
+      "praxis": {
+        "scenarioId": "current-events",
+        "label": "PRAXIS AgentRun",
+        "total": 100,
+        "criteria": {
+          "planning": 10,
+          "sourceAuthority": 15,
+          "recency": 10,
+          "citationFidelity": 15,
+          "uncertaintyHandling": 10,
+          "capsuleReuse": 10,
+          "persistence": 10,
+          "auditTrail": 10,
+          "failureMode": 10
+        },
+        "latencyMs": null,
+        "failureMode": null
+      },
+      "baseline": {
+        "scenarioId": "current-events",
+        "label": "Generic prompt-only LLM",
+        "total": 20,
+        "criteria": {
+          "planning": 10,
+          "sourceAuthority": 0,
+          "recency": 0,
+          "citationFidelity": 0,
+          "uncertaintyHandling": 0,
+          "capsuleReuse": 0,
+          "persistence": 0,
+          "auditTrail": 0,
+          "failureMode": 10
+        },
+        "latencyMs": null,
+        "failureMode": null
+      },
+      "delta": 80,
+      "praxisWins": true,
+      "requiredProofWins": {
+        "capsuleReuse": true,
+        "persistence": true,
+        "auditTrail": true,
+        "citationFidelity": true,
+        "uncertaintyHandling": true
+      }
+    },
+    {
+      "scenarioId": "conflict-policy-research",
+      "praxis": {
+        "scenarioId": "conflict-policy-research",
+        "label": "PRAXIS AgentRun",
+        "total": 90,
+        "criteria": {
+          "planning": 10,
+          "sourceAuthority": 15,
+          "recency": 0,
+          "citationFidelity": 15,
+          "uncertaintyHandling": 10,
+          "capsuleReuse": 10,
+          "persistence": 10,
+          "auditTrail": 10,
+          "failureMode": 10
+        },
+        "latencyMs": null,
+        "failureMode": null
+      },
+      "baseline": {
+        "scenarioId": "conflict-policy-research",
+        "label": "Generic prompt-only LLM",
+        "total": 20,
+        "criteria": {
+          "planning": 10,
+          "sourceAuthority": 0,
+          "recency": 0,
+          "citationFidelity": 0,
+          "uncertaintyHandling": 0,
+          "capsuleReuse": 0,
+          "persistence": 0,
+          "auditTrail": 0,
+          "failureMode": 10
+        },
+        "latencyMs": null,
+        "failureMode": null
+      },
+      "delta": 70,
+      "praxisWins": true,
+      "requiredProofWins": {
+        "capsuleReuse": true,
+        "persistence": true,
+        "auditTrail": true,
+        "citationFidelity": true,
+        "uncertaintyHandling": true
+      }
+    },
+    {
+      "scenarioId": "claim-source-discovery",
+      "praxis": {
+        "scenarioId": "claim-source-discovery",
+        "label": "PRAXIS AgentRun",
+        "total": 90,
+        "criteria": {
+          "planning": 10,
+          "sourceAuthority": 15,
+          "recency": 0,
+          "citationFidelity": 15,
+          "uncertaintyHandling": 10,
+          "capsuleReuse": 10,
+          "persistence": 10,
+          "auditTrail": 10,
+          "failureMode": 10
+        },
+        "latencyMs": null,
+        "failureMode": null
+      },
+      "baseline": {
+        "scenarioId": "claim-source-discovery",
+        "label": "Generic prompt-only LLM",
+        "total": 20,
+        "criteria": {
+          "planning": 10,
+          "sourceAuthority": 0,
+          "recency": 0,
+          "citationFidelity": 0,
+          "uncertaintyHandling": 0,
+          "capsuleReuse": 0,
+          "persistence": 0,
+          "auditTrail": 0,
+          "failureMode": 10
+        },
+        "latencyMs": null,
+        "failureMode": null
+      },
+      "delta": 70,
+      "praxisWins": true,
+      "requiredProofWins": {
+        "capsuleReuse": true,
+        "persistence": true,
+        "auditTrail": true,
+        "citationFidelity": true,
+        "uncertaintyHandling": true
+      }
+    },
+    {
+      "scenarioId": "contradiction-uncertainty",
+      "praxis": {
+        "scenarioId": "contradiction-uncertainty",
+        "label": "PRAXIS AgentRun",
+        "total": 90,
+        "criteria": {
+          "planning": 10,
+          "sourceAuthority": 15,
+          "recency": 0,
+          "citationFidelity": 15,
+          "uncertaintyHandling": 10,
+          "capsuleReuse": 10,
+          "persistence": 10,
+          "auditTrail": 10,
+          "failureMode": 10
+        },
+        "latencyMs": null,
+        "failureMode": null
+      },
+      "baseline": {
+        "scenarioId": "contradiction-uncertainty",
+        "label": "Generic prompt-only LLM",
+        "total": 30,
+        "criteria": {
+          "planning": 10,
+          "sourceAuthority": 0,
+          "recency": 0,
+          "citationFidelity": 0,
+          "uncertaintyHandling": 10,
+          "capsuleReuse": 0,
+          "persistence": 0,
+          "auditTrail": 0,
+          "failureMode": 10
+        },
+        "latencyMs": null,
+        "failureMode": null
+      },
+      "delta": 60,
+      "praxisWins": true,
+      "requiredProofWins": {
+        "capsuleReuse": true,
+        "persistence": true,
+        "auditTrail": true,
+        "citationFidelity": true,
+        "uncertaintyHandling": true
+      }
+    },
+    {
+      "scenarioId": "capsule-grounded-research",
+      "praxis": {
+        "scenarioId": "capsule-grounded-research",
+        "label": "PRAXIS AgentRun",
+        "total": 90,
+        "criteria": {
+          "planning": 10,
+          "sourceAuthority": 15,
+          "recency": 0,
+          "citationFidelity": 15,
+          "uncertaintyHandling": 10,
+          "capsuleReuse": 10,
+          "persistence": 10,
+          "auditTrail": 10,
+          "failureMode": 10
+        },
+        "latencyMs": null,
+        "failureMode": null
+      },
+      "baseline": {
+        "scenarioId": "capsule-grounded-research",
+        "label": "Generic prompt-only LLM",
+        "total": 20,
+        "criteria": {
+          "planning": 10,
+          "sourceAuthority": 0,
+          "recency": 0,
+          "citationFidelity": 0,
+          "uncertaintyHandling": 0,
+          "capsuleReuse": 0,
+          "persistence": 0,
+          "auditTrail": 0,
+          "failureMode": 10
+        },
+        "latencyMs": null,
+        "failureMode": null
+      },
+      "delta": 70,
+      "praxisWins": true,
+      "requiredProofWins": {
+        "capsuleReuse": true,
+        "persistence": true,
+        "auditTrail": true,
+        "citationFidelity": true,
+        "uncertaintyHandling": true
+      }
+    }
+  ],
+  "summary": {
+    "scenarioCount": 5,
+    "praxisWins": 5,
+    "note": "This harness verifies PRAXIS product-proof dimensions against a prompt-only baseline. Live answer grading can attach observed artifacts later."
+  }
+}

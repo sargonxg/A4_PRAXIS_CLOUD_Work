@@ -14,8 +14,8 @@ const onboardingPreview = readFileSync(join(root, 'src/app/onboarding/live-previ
 const docs = readFileSync(join(root, 'docs/contributing/DESIGN_SYSTEM.md'), 'utf8');
 const design = readFileSync(join(root, 'DESIGN.md'), 'utf8');
 
-describe('Instrument Pro visual contract', () => {
-  it('defines the shared instrument primitive module and CSS hooks', () => {
+describe('Civic Atelier visual contract', () => {
+  it('defines the shared atelier primitive module and CSS hooks', () => {
     for (const exportName of [
       'InstrumentSurface',
       'InstrumentWindow',
@@ -31,6 +31,12 @@ describe('Instrument Pro visual contract', () => {
     }
 
     for (const className of [
+      '.civic-atelier-shell',
+      '.cartographic-grid',
+      '.dossier-spine',
+      '.specimen-card',
+      '.receipt-slip',
+      '.context-chain',
       '.instrument-surface',
       '.instrument-window',
       '.instrument-toolbar',
@@ -71,12 +77,35 @@ describe('Instrument Pro visual contract', () => {
     expect(globals).toContain('prefers-reduced-motion: reduce');
   });
 
-  it('documents Instrument Pro and the Living Context Rail as the visual contract', () => {
-    expect(design).toContain('Instrument Pro visual language');
+  it('loads Newsreader as the heading/display face while preserving compatibility aliases', () => {
+    const layout = readFileSync(join(root, 'src/app/layout.tsx'), 'utf8');
+    expect(layout).toContain('Newsreader');
+    expect(layout).not.toContain('EB_Garamond');
+    expect(globals).toContain('--font-heading: "Newsreader"');
+    expect(globals).toContain('--font-serif: var(--font-heading)');
+  });
+
+  it('documents Civic Atelier and token-first implementation as the visual contract', () => {
+    expect(design).toContain('Civic Atelier design contract');
+    expect(design).toContain('canonical_component: ContextChain');
+    expect(design).toContain('Specimen Cards');
+    expect(design).toContain('Receipt Slips');
     expect(design).toContain('canonical_component: LivingContextRail');
     expect(design).toContain('src/components/ui/instrument.tsx');
-    expect(docs).toContain('Instrument Pro');
+    expect(docs).toContain('Civic Atelier');
+    expect(docs).toContain('token first, primitive second, route-local styling last');
     expect(docs).toContain('LivingContextRail');
     expect(docs).toContain('provider names, internal costs');
+  });
+
+  it('pilots Civic Atelier on shared capsule and repository surfaces', () => {
+    expect(workbench).toContain('civic-atelier-shell');
+    expect(workbench).toContain('cartographic-grid');
+    expect(workbench).toContain('dossier-spine');
+    expect(workbench).toContain('specimen-card');
+    expect(workbench).toContain('receipt-slip');
+    expect(workbench).toContain('context-chain');
+    expect(workbench).not.toContain('text-[#ca4a25]');
+    expect(workbench).not.toContain('border-[#ff714d]');
   });
 });

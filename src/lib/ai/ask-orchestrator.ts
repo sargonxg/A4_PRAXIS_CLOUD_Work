@@ -1,6 +1,6 @@
 import type { AskContextReceipt, AskIntent } from '@/lib/ai/ask-conversation';
-import { agentToolRequiresApproval, getAgentToolDefinition, type AgentToolId } from '@/lib/agent-runtime/tool-registry';
-import { policyAgentRunIntent, type PolicyAgentOutputDestination, type PolicyAgentRunIntent } from '@/lib/product/policy-agents';
+import { agentToolRequiresApproval, getAgentToolDefinition } from '@/lib/agent-runtime/tool-registry';
+import { getPolicyAgent, policyAgentRunIntent, type PolicyAgentOutputDestination, type PolicyAgentRunIntent } from '@/lib/product/policy-agents';
 import { buildTacitusRoutingDecision, type TacitusRoutingDecision } from '@/lib/ai/tacitus-routing-policy';
 
 export type AskAgenticMode = 'direct_with_receipts' | 'queue_agent_run';
@@ -81,6 +81,13 @@ export interface AskOrchestrationStatusEvent {
   canOpen?: boolean;
   canRetry?: boolean;
   canCancel?: boolean;
+  agentLabel?: string | null;
+  selectedToolIds?: string[];
+  sourceCount?: number;
+  approvalGateCount?: number;
+  outputTarget?: string | null;
+  groundingPosture?: string;
+  fallbackPosture?: string;
 }
 
 export function buildAskConversationOrchestrationReceipt(input: {
@@ -208,6 +215,11 @@ export function buildAskConversationOrchestrationReceipt(input: {
 
 export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrchestrationReceipt): AskOrchestrationStatusEvent[] {
   const queuedRun = receipt.supervisor.queuedRun ?? null;
+  const selectedToolIds = receipt.toolRouting.selectedToolIds;
+  const policyAgent = getPolicyAgent(receipt.supervisor.policyAgentId);
+  const outputTarget = destinationLabel(receipt.supervisor.outputDestination);
+  const groundingPosture = groundingPostureLabel(selectedToolIds);
+  const fallbackPosture = queuedRun?.status ?? (receipt.supervisor.action === 'queue_agent_run' ? 'queued' : 'synchronous');
   const agentStatus = queuedRun?.status === 'ledger_failed'
     ? 'failed'
     : queuedRun?.status === 'dispatch_failed'
@@ -227,42 +239,50 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     {
       type: 'orchestrationStatus',
       id: 'context',
-      label: 'Reading capsule',
+      label: 'Capsule read',
       status: receipt.capsule.contextHealth === 'ready' ? 'complete' : 'warn',
       detail: safeStatusDetail(`${receipt.capsule.contextHealth} capsule checked with ${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'}.`),
     },
     {
       type: 'orchestrationStatus',
       id: 'triage',
-      label: 'Planning searches',
+      label: 'Research plan',
       status: 'complete',
       detail: safeStatusDetail(`${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}.`),
+      agentLabel: policyAgent?.label ?? receipt.routingDecision.userSafeLabels.policyAgent,
     },
     {
       type: 'orchestrationStatus',
       id: 'agent',
-      label: 'Checking sources',
+      label: 'Source discovery',
       status: 'complete',
       detail: safeStatusDetail(`${receipt.routingDecision.userSafeLabels.policyAgent} selected.`),
+      selectedToolIds,
+      sourceCount: receipt.capsule.sourcePreviewCount,
+      groundingPosture,
     },
     {
       type: 'orchestrationStatus',
       id: 'model-tier',
-      label: 'Retrieving documents',
+      label: 'Document retrieval',
       status: 'complete',
       detail: safeStatusDetail(`${receipt.routingDecision.userSafeLabels.modelTier}. ${receipt.routingDecision.userSafeLabels.fallbackPosture}.`),
+      sourceCount: receipt.capsule.sourcePreviewCount,
+      fallbackPosture: receipt.routingDecision.userSafeLabels.fallbackPosture,
     },
     {
       type: 'orchestrationStatus',
       id: 'tools',
-      label: 'Reviewing gaps',
+      label: 'Gap review',
       status: receipt.toolRouting.blockedToolIds.length ? 'warn' : 'complete',
       detail: safeStatusDetail(`${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`),
+      selectedToolIds,
+      approvalGateCount: receipt.toolRouting.approvalRequiredToolIds.length,
     },
     {
       type: 'orchestrationStatus',
       id: 'worker',
-      label: 'Synthesizing memo',
+      label: 'Synthesis',
       status: agentStatus,
       detail: safeStatusDetail(agentDetail),
       runId: queuedRun?.runId && queuedRun.runId !== 'unavailable' ? queuedRun.runId : null,
@@ -270,13 +290,21 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
       canOpen: Boolean(queuedRun?.runId && queuedRun.runId !== 'unavailable'),
       canRetry: queuedRun?.status === 'dispatch_failed',
       canCancel: queuedRun?.status === 'queued' || queuedRun?.status === 'dispatch_enqueued',
+      agentLabel: policyAgent?.label ?? receipt.routingDecision.userSafeLabels.policyAgent,
+      selectedToolIds,
+      sourceCount: receipt.capsule.sourcePreviewCount,
+      approvalGateCount: receipt.toolRouting.approvalRequiredToolIds.length,
+      outputTarget,
+      groundingPosture,
+      fallbackPosture,
     },
     {
       type: 'orchestrationStatus',
       id: 'draft',
-      label: 'Saving output',
+      label: 'Save output',
       status: 'active',
       detail: 'Answer drafting started.',
+      outputTarget,
     },
   ];
 }
@@ -329,35 +357,6 @@ function classifyComplexity(
   return 'simple';
 }
 
-function selectPolicyAgent(prompt: string, intent: AskIntent, complexity: AskOrchestrationComplexity): string | null {
-  const text = prompt.toLowerCase();
-  if (intent === 'handover') return 'handover-builder';
-  if (intent === 'red_team_review') return 'red-team-analyst';
-  if (intent === 'sourceability_review') return 'sourceability-reviewer';
-  if (intent === 'research_memo') return 'research-memo';
-  if (complexity === 'deep' && /\b(memo|brief|write up|draft|options paper)\b/.test(text)) return 'research-memo';
-  if (complexity === 'deep') return 'research-memo';
-  return null;
-}
-
-function selectTools(prompt: string, intent: AskIntent, complexity: AskOrchestrationComplexity): AgentToolId[] {
-  const text = prompt.toLowerCase();
-  const tools = new Set<AgentToolId>(['context-resolve', 'capsule-evidence-pack']);
-  if (complexity === 'deep') {
-    tools.add('grounded-search');
-    tools.add('deep-search-agent');
-  }
-  if (intent === 'research_memo' || /\b(memo|brief|write up|draft|options paper)\b/.test(text)) tools.add('policy-memo');
-  if (intent === 'sourceability_review' || complexity === 'deep' || /\b(cite|citation|verify|sourceability|sources?)\b/.test(text)) tools.add('sourceability-reviewer');
-  if (intent === 'red_team_review') tools.add('red-team-review');
-  if (intent === 'handover') tools.add('handover-package');
-  if (/\b(format|docx|pdf|markdown|export pack)\b/.test(text)) tools.add('memo-formatter');
-  if (/\b(document|upload|attached|quote|chunk)\b/.test(text)) tools.add('document-retrieve');
-  if (/\b(graph|canvas|actor map|relationship)\b/.test(text)) tools.add('graph-mutation');
-  if (/\b(export|send externally|external)\b/.test(text)) tools.add('external-export');
-  return Array.from(tools);
-}
-
 function buildTriageReasons(input: {
   prompt: string;
   intent: AskIntent;
@@ -375,4 +374,26 @@ function buildTriageReasons(input: {
   if (input.activeGapCount > 0) reasons.push(`gaps:${input.activeGapCount}`);
   if (input.complexity === 'deep') reasons.push('deep/current/multi-source language detected');
   return reasons;
+}
+
+function destinationLabel(destination: PolicyAgentOutputDestination | null): string | null {
+  switch (destination) {
+    case 'memo_studio':
+      return 'Memo Studio';
+    case 'canvas':
+      return 'Canvas';
+    case 'library':
+      return 'Capsules';
+    case 'handover':
+      return 'Handover';
+    default:
+      return null;
+  }
+}
+
+function groundingPostureLabel(selectedToolIds: string[]): string {
+  if (selectedToolIds.includes('grounded-search')) return 'Google grounding requested';
+  if (selectedToolIds.includes('deep-search-agent')) return 'Deep search requested';
+  if (selectedToolIds.includes('sourceability-reviewer')) return 'Source review requested';
+  return 'No grounding metadata';
 }

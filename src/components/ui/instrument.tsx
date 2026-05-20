@@ -48,7 +48,7 @@ export function InstrumentWindow({
         <div className="instrument-window-header">
           <div className="min-w-0">
             {eyebrow ? <p className="instrument-eyebrow">{eyebrow}</p> : null}
-            {title ? <h2 className="truncate text-base font-semibold text-slate-950">{title}</h2> : null}
+            {title ? <h2 className="truncate font-serif text-lg font-semibold text-[color:var(--color-deep-ink)]">{title}</h2> : null}
           </div>
           {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
         </div>
@@ -152,9 +152,9 @@ export function StatusCell({
         </span>
       ) : null}
       <span className="min-w-0">
-        <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</span>
-        <span className="block truncate text-xs font-semibold text-slate-950">{value}</span>
-        {detail ? <span className="block truncate text-[11px] text-slate-500">{detail}</span> : null}
+        <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-evidence-muted)]">{label}</span>
+        <span className="block truncate text-xs font-semibold text-[color:var(--color-deep-ink)]">{value}</span>
+        {detail ? <span className="block truncate text-[11px] text-[color:var(--color-mineral)]">{detail}</span> : null}
       </span>
     </>
   );

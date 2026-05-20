@@ -10,7 +10,7 @@ vi.mock('next/navigation', () => ({
   redirect: navigation.redirect,
 }));
 
-describe('Capsule Factory route consolidation', () => {
+describe('Capsules route consolidation', () => {
   it('keeps /app/repository as a compatibility redirect to the Repository lane', async () => {
     const { default: RepositoryPage } = await import('@/app/app/repository/page');
 
@@ -18,14 +18,14 @@ describe('Capsule Factory route consolidation', () => {
     expect(navigation.redirect).toHaveBeenCalledWith('/app/capsules?lane=repository');
   });
 
-  it('promotes only Capsule Factory as the primary capsule workspace', async () => {
+  it('promotes only Capsules as the primary capsule workspace', async () => {
     const { NAV_GROUPS, PRIMARY_NAV } = await import('@/lib/navigation/primary-nav');
     const workspaceItems = NAV_GROUPS.find((group) => group.id === 'workspace')?.items ?? [];
 
     expect(workspaceItems.map((item) => item.id)).toEqual(['home', 'capsules']);
     expect(PRIMARY_NAV.some((item) => item.id === 'repository')).toBe(false);
     expect(PRIMARY_NAV.find((item) => item.id === 'capsules')).toMatchObject({
-      label: 'Capsule Factory',
+      label: 'Capsules',
       href: '/app/capsules',
     });
   });
@@ -35,7 +35,7 @@ describe('Capsule Factory route consolidation', () => {
 
     expect(COMMANDS.find((command) => command.id === 'open-repository')).toBeUndefined();
     expect(COMMANDS.find((command) => command.id === 'open-capsule-factory')).toMatchObject({
-      label: 'Open Capsule Factory',
+      label: 'Open Capsules',
       href: '/app/capsules',
     });
   });

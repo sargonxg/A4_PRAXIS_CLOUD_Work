@@ -468,6 +468,18 @@ const FEATURED_EXPERT_PICK_CAPSULE_IDS = [
   'starter-tool-actor-leverage-veto-map',
   'starter-output-principals-decision-memo',
 ] as const;
+const FEATURED_INTELLECTUAL_DEVICE_CAPSULE_IDS = [
+  'starter-tool-assumption-stress-test',
+  'starter-tool-counterfactual-pivot-check',
+  'starter-tool-competing-hypotheses-matrix',
+  'starter-tool-stakeholder-incentive-map',
+  'starter-tool-spoiler-blocker-scan',
+  'starter-tool-policy-tradeoff-ledger',
+  'starter-tool-implementation-feasibility-gate',
+  'starter-tool-second-order-effects-map',
+  'starter-tool-pre-mortem-failure-review',
+  'starter-tool-escalation-ladder-deescalation-path',
+] as const;
 const STARTER_USER_CAPSULE_CHIP: ActiveCapsuleChip = {
   id: 'starter-user-generic-analyst',
   label: 'Generic analyst',
@@ -656,6 +668,9 @@ export function TaskletPraxisWorkbench({
   const filteredFeaturedCapsuleCards = filterStarterCapsules(capsuleSearch, capsuleTypeFilter, capsuleDomainFilter, capsulePolicyTeamFilter)
     .filter((capsule) => FEATURED_EXPERT_PICK_CAPSULE_IDS.some((id) => id === capsule.capsuleId))
     .sort((a, b) => FEATURED_EXPERT_PICK_CAPSULE_IDS.indexOf(a.capsuleId as (typeof FEATURED_EXPERT_PICK_CAPSULE_IDS)[number]) - FEATURED_EXPERT_PICK_CAPSULE_IDS.indexOf(b.capsuleId as (typeof FEATURED_EXPERT_PICK_CAPSULE_IDS)[number]));
+  const filteredIntellectualDeviceCards = filterStarterCapsules(capsuleSearch, capsuleTypeFilter, capsuleDomainFilter, capsulePolicyTeamFilter)
+    .filter((capsule) => FEATURED_INTELLECTUAL_DEVICE_CAPSULE_IDS.some((id) => id === capsule.capsuleId))
+    .sort((a, b) => FEATURED_INTELLECTUAL_DEVICE_CAPSULE_IDS.indexOf(a.capsuleId as (typeof FEATURED_INTELLECTUAL_DEVICE_CAPSULE_IDS)[number]) - FEATURED_INTELLECTUAL_DEVICE_CAPSULE_IDS.indexOf(b.capsuleId as (typeof FEATURED_INTELLECTUAL_DEVICE_CAPSULE_IDS)[number]));
   const { showingStarterFallback, visibleCapsuleCards } = buildVisibleCapsuleCards({
     isAuthenticated,
     filteredUserCapsules,
@@ -2091,10 +2106,10 @@ export function TaskletPraxisWorkbench({
   }
 
   return (
-    <section className={cn('od-praxis-surface min-h-screen text-[#1f1f1f]', className)} data-testid="tasklet-praxis-workbench">
+    <section className={cn('civic-atelier-shell cartographic-grid od-praxis-surface min-h-screen text-[color:var(--color-deep-ink)]', className)} data-testid="tasklet-praxis-workbench">
       <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleCapsuleDragEnd}>
       <div className={cn('grid min-h-screen', showWorkbenchNavigation && 'lg:grid-cols-[250px_minmax(0,1fr)]')}>
-        {showWorkbenchNavigation ? <aside className="od-praxis-sidebar hidden border-r px-4 py-6 lg:flex lg:flex-col">
+        {showWorkbenchNavigation ? <aside className="dossier-spine od-praxis-sidebar hidden border-r px-4 py-6 lg:flex lg:flex-col">
           <Link href={isAuthenticated ? '/app' : '/'} className="mb-6 flex items-center gap-3 text-lg font-bold">
             <PraxisBrandChip compact />
           </Link>
@@ -2221,14 +2236,14 @@ export function TaskletPraxisWorkbench({
           </header> : null}
 
           <div className={cn('mx-auto flex max-w-6xl flex-col items-center', showWorkbenchNavigation ? 'mt-14 sm:mt-18' : 'mt-8 sm:mt-12')}>
-            <p className="od-praxis-control flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-slate-600">
-              <Sparkles className="h-4 w-4 text-[#ca4a25]" />
+            <p className="receipt-slip flex items-center gap-2 rounded-md px-3 py-1.5 font-mono text-xs font-semibold">
+              <Sparkles className="h-4 w-4 text-[color:var(--color-oxide)]" />
               Compose your reasoning and policy products from expert ContextCapsules.
             </p>
             <div className="mt-3" data-testid="runtime-health-semaphore">
               <RuntimeHealthSemaphore isAuthenticated={isAuthenticated} />
             </div>
-            <h1 className="mt-7 max-w-4xl text-center font-serif text-5xl font-semibold tracking-tight text-[#151515] sm:text-6xl">
+            <h1 className="mt-7 max-w-4xl text-center font-serif text-5xl font-semibold tracking-tight text-[color:var(--color-deep-ink)] sm:text-6xl">
               What can PRAXIS do for you?
             </h1>
 
@@ -2242,7 +2257,7 @@ export function TaskletPraxisWorkbench({
               <Link
                 href="/app/capsules"
                 data-testid="open-capsule-factory-cta"
-                className="mt-4 inline-flex items-center gap-2 rounded-md border border-[#ff714d]/25 bg-[#fff7f3] px-4 py-2 text-sm font-semibold text-[#9f341c] shadow-sm shadow-[#ff714d]/10 hover:border-[#ff714d]/45 hover:bg-[#fff0e8]"
+                className="mt-4 inline-flex items-center gap-2 rounded-md border border-[color:var(--color-clay)]/25 bg-[color:var(--color-archive-paper-strong)] px-4 py-2 text-sm font-semibold text-[color:var(--color-oxide)] shadow-sm shadow-[rgba(164,73,46,0.10)] hover:border-[color:var(--color-clay)]/45 hover:bg-[color:var(--color-mineral-soft)]"
               >
                 <WandSparkles className="h-4 w-4" />
                 Open Capsules
@@ -2343,8 +2358,8 @@ export function TaskletPraxisWorkbench({
                 </div>
                 {!contextComposerCollapsed ? (
                   <ContextChainDropzone>
-                    <div className="relative mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white/78 p-3 shadow-sm shadow-black/5">
-                      <div className="pointer-events-none absolute left-7 right-7 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-[#c9a961]/45 via-[#4b92db]/45 to-[#c9a961]/30" aria-hidden />
+                    <div className="context-chain relative mt-4 overflow-x-auto rounded-xl p-3 shadow-sm shadow-black/5">
+                      <div className="pointer-events-none absolute left-7 right-7 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-[color:var(--color-mineral)]/35 via-[color:var(--color-civic-blue)]/35 to-[color:var(--color-mineral)]/25" aria-hidden />
                       <SortableContext items={activeCapsuleIds} strategy={horizontalListSortingStrategy}>
                         <div className="relative flex min-w-full items-stretch gap-3">
                           {activeCapsuleStack.map((capsule, index) => (
@@ -2367,7 +2382,7 @@ export function TaskletPraxisWorkbench({
                               key={slot.role}
                               type="button"
                               onClick={() => setCapsuleBrowserOpen(true)}
-                              className="relative min-w-[168px] flex-1 rounded-lg border border-dashed border-slate-300 bg-white/70 p-3 text-left text-xs text-slate-500 transition hover:border-[#c9a961] hover:bg-white"
+                              className="relative min-w-[168px] flex-1 rounded-lg border border-dashed border-slate-300 bg-white/70 p-3 text-left text-xs text-slate-500 transition hover:border-[color:var(--color-oxide)] hover:bg-white"
                             >
                               <span className="block font-semibold text-slate-700">{slot.label}</span>
                               <span className="mt-1 block leading-5">{slot.helper}</span>
@@ -2528,12 +2543,12 @@ export function TaskletPraxisWorkbench({
                   </article>
                 ))}
                 {selectedText ? (
-                  <div className="rounded-lg border border-[#ff714d]/30 bg-[#fff7f3] p-3 shadow-sm" data-testid="text-span-core-popover">
+                  <div className="rounded-lg border border-[color:var(--color-clay)]/30 bg-[color:var(--color-archive-paper-strong)] p-3 shadow-sm" data-testid="text-span-core-popover">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[#ca4a25]">Attach selected text</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-oxide)]">Attach selected text</p>
                         <p className="mt-1 text-xs font-semibold text-slate-500">Attach to active capsule: {selectedCapsule?.label ?? currentCapsuleId}</p>
-                        <blockquote className="mt-2 max-h-24 overflow-y-auto rounded-md border border-[#ff714d]/20 bg-white px-3 py-2 text-sm leading-6 text-slate-700">
+                        <blockquote className="mt-2 max-h-24 overflow-y-auto rounded-md border border-[color:var(--color-clay)]/20 bg-white px-3 py-2 text-sm leading-6 text-slate-700">
                           {selectedText}
                         </blockquote>
                       </div>
@@ -2549,8 +2564,8 @@ export function TaskletPraxisWorkbench({
                           disabled={selectedSpanStatus === 'pending'}
                           onClick={() => void bindSelectedSpan(target.id)}
                           className={cn(
-                            'rounded-md bg-white px-3 py-2 text-left text-xs shadow-sm ring-1 ring-slate-200 hover:ring-[#ff714d]/50',
-                            attachedSpan?.target.id === target.id ? 'ring-[#ff714d] text-[#ca4a25]' : 'text-slate-700',
+                            'rounded-md bg-white px-3 py-2 text-left text-xs shadow-sm ring-1 ring-slate-200 hover:ring-[color:var(--color-clay)]',
+                            attachedSpan?.target.id === target.id ? 'ring-[color:var(--color-clay)] text-[color:var(--color-oxide)]' : 'text-slate-700',
                             selectedSpanStatus === 'pending' ? 'cursor-wait opacity-70' : '',
                           )}
                         >
@@ -2574,7 +2589,7 @@ export function TaskletPraxisWorkbench({
                       </p>
                     )}
                     {attachedSpan ? (
-                      <div className="mt-3 flex flex-wrap gap-2 border-t border-[#ff714d]/20 pt-3">
+                      <div className="mt-3 flex flex-wrap gap-2 border-t border-[color:var(--color-clay)]/20 pt-3">
                         <button type="button" onClick={() => askAboutAttachedSpan('ask')} className="rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
                           Ask PRAXIS about this span
                         </button>
@@ -2723,17 +2738,34 @@ export function TaskletPraxisWorkbench({
                       />
                     ) : null}
                   {!isRepositoryLane ? (
-                    <FeaturedExpertPicksShelf
-                      capsules={filteredFeaturedCapsuleCards}
-                      isAuthenticated={isAuthenticated}
-                      onBuildOwn={openBuildYourOwnKnowledge}
-                      onSelect={selectCapsuleCard}
-                      onAdd={applyCapsuleCard}
-                      onInspect={chatWithCapsule}
-                      onImprove={improveCapsuleCard}
-                      onDownload={(capsule) => void downloadCapsulePackage(capsule)}
-                      onArchive={(capsule) => void archiveCapsuleCard(capsule)}
-                    />
+                    <>
+                      <FeaturedExpertPicksShelf
+                        capsules={filteredFeaturedCapsuleCards}
+                        title="Featured Expert Picks"
+                        subtitle="Handpicked knowledge capsules for serious policy work."
+                        isAuthenticated={isAuthenticated}
+                        onBuildOwn={openBuildYourOwnKnowledge}
+                        onSelect={selectCapsuleCard}
+                        onAdd={applyCapsuleCard}
+                        onInspect={chatWithCapsule}
+                        onImprove={improveCapsuleCard}
+                        onDownload={(capsule) => void downloadCapsulePackage(capsule)}
+                        onArchive={(capsule) => void archiveCapsuleCard(capsule)}
+                      />
+                      <FeaturedExpertPicksShelf
+                        capsules={filteredIntellectualDeviceCards}
+                        title="Intellectual Devices"
+                        subtitle="Review-gated methods that make Ask PRAXIS reason from an explicit operating device."
+                        isAuthenticated={isAuthenticated}
+                        onBuildOwn={openBuildYourOwnKnowledge}
+                        onSelect={selectCapsuleCard}
+                        onAdd={applyCapsuleCard}
+                        onInspect={chatWithCapsule}
+                        onImprove={improveCapsuleCard}
+                        onDownload={(capsule) => void downloadCapsulePackage(capsule)}
+                        onArchive={(capsule) => void archiveCapsuleCard(capsule)}
+                      />
+                    </>
                   ) : null}
                   {!isRepositoryLane ? <div className={cn('mt-4 grid gap-3 md:grid-cols-2', isCapsuleRepositoryPage && 'lg:grid-cols-3', isRepositoryPage && 'md:grid-cols-1')} data-testid="tasklet-capsule-cards">
                     {capsulesLoading && !filteredUserCapsules.length ? (
@@ -2958,7 +2990,6 @@ export function TaskletPraxisWorkbench({
     </section>
   );
 }
-
 function ConversationReceiptSummary({ envelope }: { envelope?: AskAnswerEnvelope }) {
   const receipt = envelope?.orchestrationReceipt;
   if (!receipt) return null;
@@ -2993,7 +3024,6 @@ function ConversationReceiptSummary({ envelope }: { envelope?: AskAnswerEnvelope
     </section>
   );
 }
-
 function ConversationSourcePreviewPanel({ envelope, onFollowUp }: { envelope?: AskAnswerEnvelope; onFollowUp: (followUp: string) => void }) {
   const sourceCards = envelope?.sourceCards ?? [];
   const followUps = envelope?.followUps ?? [];
@@ -3223,7 +3253,7 @@ function CapsuleBrowserDialog({
                   key={capsule.capsuleId}
                   type="button"
                   onClick={() => onSelect(capsule)}
-                  className="rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-[#c9a961] hover:shadow-md"
+                  className="rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-[color:var(--color-oxide)] hover:shadow-md"
                 >
                   <span className="flex items-start justify-between gap-3">
                     <span className="min-w-0">
@@ -3472,6 +3502,25 @@ function capsuleCategoryIcon(category: CapsuleStarterCategory | 'custom'): Lucid
   if (category === 'output') return Clipboard;
   if (category === 'user') return ShieldCheck;
   return FileText;
+}
+
+function capsuleDomainAccent(domain: string): { label: string; soft: string } {
+  const accents: Record<string, { label: string; soft: string }> = {
+    diplomacy: { label: 'Diplomacy', soft: 'bg-teal-50 text-teal-800 border-teal-200' },
+    'humanitarian-rights': { label: 'Humanitarian', soft: 'bg-rose-50 text-rose-800 border-rose-200' },
+    finance: { label: 'Finance', soft: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+    'cyber-resilience': { label: 'Cyber', soft: 'bg-cyan-50 text-cyan-800 border-cyan-200' },
+    'public-health': { label: 'Public health', soft: 'bg-red-50 text-red-800 border-red-200' },
+    'ai-governance': { label: 'AI governance', soft: 'bg-violet-50 text-violet-800 border-violet-200' },
+    'election-integrity': { label: 'Elections', soft: 'bg-blue-50 text-blue-800 border-blue-200' },
+    'migration-displacement': { label: 'Migration', soft: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
+    'critical-minerals': { label: 'Minerals', soft: 'bg-stone-100 text-stone-800 border-stone-300' },
+    'policy-review': { label: 'Policy review', soft: 'bg-slate-50 text-slate-700 border-slate-200' },
+    'audit-review': { label: 'Audit', soft: 'bg-amber-50 text-amber-800 border-amber-200' },
+    'options-mapping': { label: 'Options', soft: 'bg-orange-50 text-orange-800 border-orange-200' },
+    'source-intake': { label: 'Sources', soft: 'bg-sky-50 text-sky-800 border-sky-200' },
+  };
+  return accents[domain] ?? { label: 'General', soft: 'bg-slate-50 text-slate-700 border-slate-200' };
 }
 
 function capsuleSourcePosture(capsule: PraxisCapsuleSummary): string {
@@ -3747,11 +3796,11 @@ function CapsuleMap({
   ];
 
   return (
-    <section className="od-praxis-panel mt-6 w-full max-w-5xl rounded-2xl p-4" data-testid="capsule-map">
+    <section className="od-praxis-panel cartographic-grid mt-6 w-full max-w-5xl rounded-2xl p-4" data-testid="capsule-map">
       <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
         <div className="flex items-center gap-3">
-          <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-[#f8f8f6]">
-            <div className="absolute inset-2 rounded-full border border-[#ff714d]/25" />
+          <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-[color:var(--color-archive-paper-strong)]">
+            <div className="absolute inset-2 rounded-full border border-[color:var(--color-clay)]/25" />
             <div className="absolute inset-5 rounded-full border border-sage/30" />
             <span className="praxis-thinking-glyph od-praxis-status-dot flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white">◳</span>
           </div>
@@ -3767,16 +3816,16 @@ function CapsuleMap({
               key={segment.id}
               type="button"
               onClick={() => onFilter(segment.filter)}
-              className="od-praxis-card group rounded-lg p-3 text-left transition hover:-translate-y-0.5 hover:border-[#ff714d]/40"
+              className="od-praxis-card group rounded-lg p-3 text-left transition hover:-translate-y-0.5 hover:border-[color:var(--color-clay)]/40"
               data-testid={`capsule-map-${segment.id}`}
             >
               <span className="flex items-center justify-between gap-2">
-                <segment.icon className="h-4 w-4 text-slate-400 group-hover:text-[#ca4a25]" />
+                <segment.icon className="h-4 w-4 text-slate-400 group-hover:text-[color:var(--color-oxide)]" />
                 <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500">{segment.value}</span>
               </span>
               <span className="mt-4 block text-xs font-semibold text-slate-800">{segment.label}</span>
               <span className="mt-1 block h-1 rounded-full bg-slate-100">
-                <span className="block h-1 rounded-full bg-[#ff714d]" style={{ width: `${Math.min(100, Math.max(12, segment.value * 24))}%` }} />
+                <span className="block h-1 rounded-full bg-[color:var(--color-clay)]" style={{ width: `${Math.min(100, Math.max(12, segment.value * 24))}%` }} />
               </span>
             </button>
           ))}
@@ -3982,12 +4031,12 @@ function CapsuleFactoryCommandBand({
   const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
   return (
     <section
-      className="mt-4 overflow-hidden rounded-xl border border-[#ff714d]/20 bg-[#fff8f5] shadow-sm shadow-[#ff714d]/10"
+      className="mt-4 overflow-hidden rounded-xl border border-[color:var(--color-clay)]/20 bg-[color:var(--color-archive-paper)] shadow-sm shadow-[rgba(164,73,46,0.10)]"
       data-testid="capsule-factory-command-band"
     >
       <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto]">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#ca4a25]">Capsules</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-oxide)]">Capsules</p>
           <h3 className="mt-1 text-lg font-semibold text-slate-950">
             Manage the capsules your policy work depends on.
           </h3>
@@ -4003,7 +4052,7 @@ function CapsuleFactoryCommandBand({
               <BookOpen className="h-4 w-4" />
               Inspect capsule
             </button>
-            <button type="button" onClick={onRunFactory} className="inline-flex items-center gap-2 rounded-md border border-[#ff714d]/30 bg-white px-3 py-2 text-sm font-semibold text-[#9f341c] hover:bg-[#fff0e8]">
+            <button type="button" onClick={onRunFactory} className="inline-flex items-center gap-2 rounded-md border border-[color:var(--color-clay)]/30 bg-white px-3 py-2 text-sm font-semibold text-[color:var(--color-oxide)] hover:bg-[color:var(--color-mineral-soft)]">
               <Sparkles className="h-4 w-4" />
               Improve with PRAXIS
             </button>
@@ -4016,7 +4065,7 @@ function CapsuleFactoryCommandBand({
           <Metric label="Archived" value={archivedCount} />
         </div>
       </div>
-      <div className="grid border-t border-[#ff714d]/15 bg-white/65 text-[11px] font-semibold text-slate-600 sm:grid-cols-4">
+      <div className="grid border-t border-[color:var(--color-clay)]/15 bg-white/65 text-[11px] font-semibold text-slate-600 sm:grid-cols-4">
         <FactoryCommandCell label="Evidence" value={`${counts.sources + counts.documents} source refs`} />
         <FactoryCommandCell label="Graph" value={capsule?.coreRefs.graphCoreId ?? 'proposal gated'} />
         <FactoryCommandCell label="Download" value=".praxis bundle" />
@@ -4028,7 +4077,7 @@ function CapsuleFactoryCommandBand({
 
 function FactoryCommandCell({ label, value }: { label: string; value: string }) {
   return (
-    <p className="min-w-0 border-t border-[#ff714d]/10 px-3 py-2 sm:border-l sm:border-t-0 first:sm:border-l-0">
+    <p className="min-w-0 border-t border-[color:var(--color-clay)]/10 px-3 py-2 sm:border-l sm:border-t-0 first:sm:border-l-0">
       <span className="block text-slate-400">{label}</span>
       <span className="mt-1 block truncate text-slate-700">{value}</span>
     </p>
@@ -4043,8 +4092,8 @@ function CapsuleFactorySidebar({
   onSelect: (item: (typeof factorySidebarItems)[number]) => void;
 }) {
   return (
-    <aside className="rounded-lg border border-slate-200 bg-white/85 p-2 shadow-sm shadow-slate-950/[0.03]" data-testid="capsule-factory-sidebar">
-      <p className="px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#ca4a25]">Capsules</p>
+    <aside className="dossier-spine rounded-lg border p-2 shadow-sm shadow-slate-950/[0.03]" data-testid="capsule-factory-sidebar">
+      <p className="px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-oxide)]">Capsules</p>
       <nav aria-label="Capsule management views" className="space-y-1">
         {factorySidebarItems.map((item) => (
           <button
@@ -4092,10 +4141,10 @@ function CapsuleFactoryLanePanel({
   const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
   const openDiffs = reviewDiffs.filter((diff) => diff.reviewState !== 'rejected').slice(0, 3);
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-slate-950/[0.03]" data-testid="capsule-factory-workshop">
+    <section className="specimen-card rounded-lg p-4 shadow-sm shadow-slate-950/[0.03]" data-testid="capsule-factory-workshop">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#ca4a25]">{laneLabel}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-oxide)]">{laneLabel}</p>
           <h3 className="mt-1 text-base font-semibold text-slate-950">{capsule?.label ?? 'Select or create a ContextCapsule'}</h3>
           <p className="mt-1 text-xs leading-5 text-slate-500">
             PRAXIS creates reviewable capsule improvements. Inspect each draft change before applying it.
@@ -4157,7 +4206,7 @@ function CapsuleFactoryLanePanel({
       {openDiffs.length ? (
         <div className="mt-4 grid gap-2" data-testid="capsule-factory-review-diffs">
           {openDiffs.map((diff) => (
-            <article key={diff.diffId} className="rounded-lg border border-[#ff714d]/20 bg-[#fff8f5] p-3">
+            <article key={diff.diffId} className="rounded-lg border border-[color:var(--color-clay)]/20 bg-[color:var(--color-archive-paper)] p-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-slate-900">{diff.laneTitle}</p>
@@ -4224,7 +4273,7 @@ function CapsulePlusGraphLane({
         <FactoryCommandCell label="Export bundle" value=".praxis" />
         <FactoryCommandCell label="Review state" value={capsule?.coreRefs.graphCoreId ? 'approved graph facts readable' : 'draft graph proposals only'} />
       </div>
-      <div className="rounded-lg border border-[#ff714d]/20 bg-[#fff8f5] p-3 text-[11px] leading-5 text-slate-600">
+      <div className="rounded-lg border border-[color:var(--color-clay)]/20 bg-[color:var(--color-archive-paper)] p-3 text-[11px] leading-5 text-slate-600">
         Decision Clock Capsule+ seeds Decision, Deadline, Actor, Claim, Source, Commitment, Risk, and OpenQuestion nodes with PRECEDES, DEPENDS_ON, SUPPORTED_BY, OWNED_BY, CONSTRAINS, and TRIGGERS_REVIEW edges. Ask PRAXIS may read approved graph facts as context; proposed graph facts must remain labeled until review.
       </div>
       <div className="rounded-lg border border-slate-200 bg-white p-3 text-[11px] text-slate-600">
@@ -4241,7 +4290,7 @@ function RuntimeProofStrip({ proof }: { proof: RuntimeProof }) {
     <div className="mt-4 grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-[11px]" data-testid="runtime-proof-strip">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-semibold uppercase tracking-[0.16em] text-slate-400">Runtime proof</p>
-        {proof.memoOutputHref ? <Link href={proof.memoOutputHref} className="font-semibold text-[#ca4a25] hover:underline">memo/output link</Link> : <span className="font-semibold text-slate-400">memo/output link pending</span>}
+        {proof.memoOutputHref ? <Link href={proof.memoOutputHref} className="font-semibold text-[color:var(--color-oxide)] hover:underline">memo/output link</Link> : <span className="font-semibold text-slate-400">memo/output link pending</span>}
       </div>
       <div className="grid gap-2 md:grid-cols-3">
         <ProofCell label="active capsule" value={proof.activeCapsule} />
@@ -4312,6 +4361,8 @@ function FactoryDiffBucket({ label, values }: { label: string; values: string[] 
 
 function FeaturedExpertPicksShelf({
   capsules,
+  title = 'Featured Expert Picks',
+  subtitle = 'Handpicked knowledge capsules for serious policy work.',
   isAuthenticated,
   onBuildOwn,
   onSelect,
@@ -4325,6 +4376,8 @@ function FeaturedExpertPicksShelf({
   onArchive,
 }: {
   capsules: PraxisCapsuleSummary[];
+  title?: string;
+  subtitle?: string;
   isAuthenticated: boolean;
   onBuildOwn: () => void;
   onSelect: (capsule: PraxisCapsuleSummary) => void;
@@ -4338,11 +4391,11 @@ function FeaturedExpertPicksShelf({
   onArchive: (capsule: PraxisCapsuleSummary) => void;
 }) {
   return (
-    <section className="mt-6 rounded-xl border border-slate-200 bg-white/80 p-3 shadow-sm shadow-slate-950/[0.03]" data-testid="featured-expert-picks-shelf">
+    <section className="cartographic-grid mt-6 rounded-xl border border-[color:color-mix(in_srgb,var(--color-mineral)_22%,transparent)] bg-[color:var(--color-archive-paper-strong)]/80 p-3 shadow-sm shadow-slate-950/[0.03]" data-testid={title === 'Intellectual Devices' ? 'intellectual-devices-shelf' : 'featured-expert-picks-shelf'}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#ca4a25]">Featured Expert Picks</p>
-          <h3 className="mt-1 text-base font-semibold text-slate-950">Handpicked knowledge capsules for serious policy work.</h3>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-oxide)]">{title}</p>
+          <h3 className="mt-1 text-base font-semibold text-slate-950">{subtitle}</h3>
         </div>
         <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-500">
           {capsules.length} visible under current filter
@@ -4378,11 +4431,11 @@ function FeaturedExpertPicksShelf({
 function BuildYourOwnKnowledgeCta({ isAuthenticated, onBuildOwn }: { isAuthenticated: boolean; onBuildOwn: () => void }) {
   return (
     <article
-      className="flex min-h-[15rem] flex-col justify-between rounded-lg border border-dashed border-[#ff714d]/40 bg-[#fff8f5] p-4"
+      className="specimen-card flex min-h-[15rem] flex-col justify-between rounded-lg border-dashed p-4"
       data-testid="build-your-own-knowledge-cta"
     >
       <div>
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-[#ca4a25] shadow-sm">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-[color:var(--color-oxide)] shadow-sm">
           <Plus className="h-4 w-4" />
         </span>
         <p className="mt-3 text-sm font-semibold text-slate-950">Build your own inheritable knowledge for your team or agents</p>
@@ -4437,8 +4490,10 @@ function CapsuleCard({
   const score = capsule.trust?.score ?? capsule.health?.score ?? 0;
   const typeChip = meta.taxonomy.types[0]?.label ?? capsuleRoleLabel(defaultRole);
   const domainChip = meta.taxonomy.domains[0]?.label ?? capsule.scope;
+  const domainAccent = capsuleDomainAccent(meta.starterDefinition?.domain ?? meta.taxonomy.domains[0]?.id ?? 'other');
   const policyTeamChip = meta.taxonomy.policyTeams[0]?.label ?? 'Review team';
   const richProfile = meta.starterDefinition?.richProfile;
+  const deviceProfile = meta.starterDefinition?.deviceProfile;
   const purposeLine = richProfile?.purpose ?? meta.summary;
   const bestNextAction = richProfile?.nextIdeas[0] ?? capsule.health?.warnings?.[0] ?? 'Inspect source gaps before relying on this capsule.';
   const CategoryIcon = capsuleCategoryIcon(meta.category);
@@ -4450,7 +4505,7 @@ function CapsuleCard({
       data-testid={`capsule-card-${capsule.capsuleId}`}
       data-capsule-type={meta.category}
       className={cn(
-        'od-praxis-card overflow-hidden rounded-lg p-0 transition hover:-translate-y-0.5',
+        'specimen-card od-praxis-card overflow-hidden rounded-lg p-0 transition hover:-translate-y-0.5',
         compact ? 'min-h-[9.5rem]' : 'min-h-[11rem]',
         active ? 'border-sky-300' : 'border-black/10',
         isDragging && 'opacity-70',
@@ -4469,7 +4524,7 @@ function CapsuleCard({
       >
         <span className="flex items-center justify-between gap-3">
           <span className="flex min-w-0 items-start gap-2">
-            <span className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border', meta.soft)}>
+            <span className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border', domainAccent.soft)}>
               <CategoryIcon className="h-4 w-4" />
             </span>
             <span className="min-w-0">
@@ -4484,7 +4539,9 @@ function CapsuleCard({
         </span>
         <span className="mt-3 flex flex-wrap items-center gap-1.5">
           <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', meta.soft)}>{domainChip}</span>
+          <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', domainAccent.soft)}>{domainAccent.label}</span>
           <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600">{policyTeamChip}</span>
+          {deviceProfile ? <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">Thinking device</span> : null}
           <CapsuleStateBadge state={state} />
         </span>
         <span className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500">
@@ -4496,6 +4553,7 @@ function CapsuleCard({
         <span className="mt-3 grid gap-1.5 text-[11px] leading-5 text-slate-600">
           <span className="rounded-md bg-white/80 px-2 py-1"><strong className="text-slate-700">Source posture:</strong> {sourcePosture}</span>
           <span className="rounded-md bg-white/80 px-2 py-1"><strong className="text-slate-700">Reasoning style:</strong> {reasoningStyle}</span>
+          {deviceProfile ? <span className="rounded-md bg-white/80 px-2 py-1"><strong className="text-slate-700">Human review gate:</strong> {deviceProfile.humanReviewGate}</span> : null}
         </span>
         <span className="mt-2 block truncate rounded-md bg-white/80 px-2 py-1.5 text-[11px] font-semibold text-slate-700">
           Best next action: {bestNextAction}
@@ -4626,7 +4684,7 @@ function CapsuleDetailPanel({
   const counts = capsuleCounts(capsule);
   const state = capsuleState(capsule);
   return (
-    <aside className="rounded-lg border border-black/10 bg-white p-4 shadow-sm shadow-black/5" data-testid="capsule-detail-panel">
+    <aside className="specimen-card rounded-lg p-4 shadow-sm shadow-black/5" data-testid="capsule-detail-panel">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-900">{capsule.label}</p>
@@ -4667,7 +4725,7 @@ function CapsuleDetailPanel({
               onClick={() => onAssignPolicyTeam(category)}
               className={cn(
                 'rounded-md border px-2 py-1.5 text-left text-[11px] font-semibold',
-                policyTeam?.id === category.id ? 'border-[#ff714d] bg-[#fff2ed] text-[#ca4a25]' : 'border-slate-200 text-slate-500 hover:bg-slate-50',
+                policyTeam?.id === category.id ? 'border-[color:var(--color-clay)] bg-[color:var(--color-mineral-soft)] text-[color:var(--color-oxide)]' : 'border-slate-200 text-slate-500 hover:bg-slate-50',
               )}
             >
               {category.shortLabel}
@@ -4780,7 +4838,7 @@ function CapsuleDetailPanel({
                   <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-slate-500">{run.objective}</p>
                   <div className="mt-1 flex items-center justify-between gap-2">
                     <p className="font-mono text-[10px] text-slate-400">{run.runId.slice(0, 12)} · {new Date(run.createdAt).toLocaleDateString()}</p>
-                    <Link href={`/agents/${encodeURIComponent(run.runId)}`} className="text-[11px] font-semibold text-[#ca4a25] hover:underline">Open</Link>
+                    <Link href={`/agents/${encodeURIComponent(run.runId)}`} className="text-[11px] font-semibold text-[color:var(--color-oxide)] hover:underline">Open</Link>
                   </div>
                 </article>
               ))}
@@ -4856,12 +4914,12 @@ function FocusedAgentRunPanel({
   const canCancel = run.status === 'queued' || run.status === 'running' || run.status === 'waiting_approval';
   const disabled = Boolean(action);
   return (
-    <article className="overflow-hidden rounded-xl border border-[#ff714d]/25 bg-[#fff8f5] shadow-sm shadow-[#ff714d]/10" data-testid="focused-agent-run">
-      <div className="relative border-b border-[#ff714d]/15 bg-gradient-to-br from-[#fff7f3] via-white to-[#f8fafc] p-4">
-        <div className="absolute right-4 top-4 h-16 w-16 rounded-full border border-[#ff714d]/20" aria-hidden />
+    <article className="overflow-hidden rounded-xl border border-[color:var(--color-clay)]/25 bg-[color:var(--color-archive-paper)] shadow-sm shadow-[rgba(164,73,46,0.10)]" data-testid="focused-agent-run">
+      <div className="relative border-b border-[color:var(--color-clay)]/15 bg-gradient-to-br from-[#fff7f3] via-white to-[#f8fafc] p-4">
+        <div className="absolute right-4 top-4 h-16 w-16 rounded-full border border-[color:var(--color-clay)]/20" aria-hidden />
         <div className="relative flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#ca4a25]">Agent workspace</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-oxide)]">Agent workspace</p>
             <p className="mt-1 truncate text-sm font-semibold text-slate-950">{run.policyAgentLabel ?? run.policyAgentId ?? 'Capsule agent workspace'}</p>
             <p className="mt-1 break-all font-mono text-[10px] leading-4 text-slate-500">{run.runId}</p>
           </div>
@@ -4878,7 +4936,7 @@ function FocusedAgentRunPanel({
         <ReceiptTile label="Approvals" value={approvals.length} icon={ShieldCheck} tone="emerald" />
       </div>
       {run.contextReceipt ? (
-        <div className="grid gap-2 border-t border-[#ff714d]/15 bg-white/75 p-3 text-[11px]" data-testid="agent-context-receipt">
+        <div className="grid gap-2 border-t border-[color:var(--color-clay)]/15 bg-white/75 p-3 text-[11px]" data-testid="agent-context-receipt">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-semibold uppercase tracking-[0.16em] text-slate-400">Context read by agent</p>
             <span className="rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-600">{run.contextReceipt.sourcePosture ?? 'Baseline'}</span>
@@ -4891,7 +4949,7 @@ function FocusedAgentRunPanel({
           </div>
         </div>
       ) : null}
-      <div className="border-t border-[#ff714d]/15 bg-white/75 px-3 py-2 text-[11px] font-semibold text-slate-500" data-testid="agent-run-stream-state">
+      <div className="border-t border-[color:var(--color-clay)]/15 bg-white/75 px-3 py-2 text-[11px] font-semibold text-slate-500" data-testid="agent-run-stream-state">
         {stream.isReconnecting ? 'Live receipts reconnecting' : stream.isConnected ? 'Live receipts connected' : 'Live receipts ready'}
         {stream.lastEventAt ? ` · last event ${formatEventTime(stream.lastEventAt)}` : ''}
         {stream.lastEventId ? ` · ${stream.lastEventId.slice(0, 12)}` : ''}
@@ -4904,7 +4962,7 @@ function FocusedAgentRunPanel({
         </div>
       ) : null}
       {(canRetry || canCancel || pendingApprovals.length > 0) ? (
-        <div className="grid gap-2 border-t border-[#ff714d]/15 bg-white/80 p-3">
+        <div className="grid gap-2 border-t border-[color:var(--color-clay)]/15 bg-white/80 p-3">
           <div className="flex flex-wrap gap-2">
             {canRetry ? (
               <button
@@ -4980,7 +5038,7 @@ function CapsuleHealthMeter({
     { label: 'Sources', active: counts.sources > 0, tone: 'bg-emerald-500' },
     { label: 'Tools', active: counts.tools > 0, tone: 'bg-amber-500' },
     { label: 'Outputs', active: counts.outputs > 0, tone: 'bg-violet-500' },
-    { label: 'Runs', active: agentRunCount > 0, tone: 'bg-[#ff714d]' },
+    { label: 'Runs', active: agentRunCount > 0, tone: 'bg-[color:var(--color-clay)]' },
   ];
   const active = slots.filter((slot) => slot.active).length;
 
@@ -5021,7 +5079,7 @@ function AgentStatusRail({ status, compact = false }: { status: AgentRunSummary[
         const current = step.id === status;
         return (
           <span key={step.id} className="min-w-0">
-            <span className={cn('block h-1 rounded-full', active ? 'bg-[#ff714d]' : terminalFailed && index === activeIndex ? 'bg-rose-400' : 'bg-slate-200')} />
+            <span className={cn('block h-1 rounded-full', active ? 'bg-[color:var(--color-clay)]' : terminalFailed && index === activeIndex ? 'bg-rose-400' : 'bg-slate-200')} />
             {!compact ? (
               <span className={cn('mt-1 block truncate text-[10px] font-semibold', current ? 'text-slate-800' : 'text-slate-400')}>{step.label}</span>
             ) : null}
@@ -5062,13 +5120,13 @@ function ReceiptTile({
 
 function RunEventTimeline({ events }: { events: AgentRunEventSummary[] }) {
   return (
-    <div className="border-t border-[#ff714d]/15 bg-white/70 p-3">
+    <div className="border-t border-[color:var(--color-clay)]/15 bg-white/70 p-3">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Run receipts</p>
       <div className="mt-3 space-y-0">
         {events.map((event, index) => (
           <div key={event.id} className="grid grid-cols-[18px_minmax(0,1fr)] gap-2">
             <span className="flex flex-col items-center">
-              <span className="mt-1 h-2 w-2 rounded-full bg-[#ff714d]" />
+              <span className="mt-1 h-2 w-2 rounded-full bg-[color:var(--color-clay)]" />
               {index < events.length - 1 ? <span className="mt-1 h-full min-h-8 w-px bg-slate-200" /> : null}
             </span>
             <span className="pb-3">
@@ -5098,7 +5156,7 @@ function AgentRegistryCard({
 }) {
   const runnable = agent.readiness === 'live' || agent.readiness === 'queued';
   return (
-    <article className={cn('rounded-md border p-3', selected ? 'border-[#ff714d] bg-[#fff7f3]' : 'border-slate-200')}>
+    <article className={cn('rounded-md border p-3', selected ? 'border-[color:var(--color-clay)] bg-[color:var(--color-archive-paper-strong)]' : 'border-slate-200')}>
       <button type="button" onClick={onSelect} className="block w-full text-left">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -5296,7 +5354,7 @@ function CapsuleBuilderDialog({
       <section className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ca4a25]">New ContextCapsule</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--color-oxide)]">New ContextCapsule</p>
             <h2 className="mt-1 text-2xl font-semibold text-slate-950">Build a capsule around the work.</h2>
           </div>
           <button type="button" aria-label="Close capsule builder" onClick={onClose} className="rounded-md p-2 text-slate-500 hover:bg-slate-100">
@@ -5306,11 +5364,11 @@ function CapsuleBuilderDialog({
         <div className="mt-5 grid gap-4">
           <label className="grid gap-1.5">
             <span className="text-xs font-semibold uppercase text-slate-500">Capsule name</span>
-            <input value={label} onChange={(event) => onLabel(event.target.value)} placeholder="Director handover, Syria access brief, HR policy review..." className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#ff714d]" />
+            <input value={label} onChange={(event) => onLabel(event.target.value)} placeholder="Director handover, Syria access brief, HR policy review..." className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[color:var(--color-clay)]" />
           </label>
           <label className="grid gap-1.5">
             <span className="text-xs font-semibold uppercase text-slate-500">Policy team preset</span>
-            <select value={categoryId} onChange={(event) => onCategory(event.target.value)} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#ff714d]">
+            <select value={categoryId} onChange={(event) => onCategory(event.target.value)} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[color:var(--color-clay)]">
               {POLICY_TEAM_CATEGORIES.map((category) => (
                 <option key={category.id} value={category.id}>{category.label}</option>
               ))}
@@ -5318,11 +5376,11 @@ function CapsuleBuilderDialog({
           </label>
           <label className="grid gap-1.5">
             <span className="text-xs font-semibold uppercase text-slate-500">What should PRAXIS remember?</span>
-            <textarea value={notes} onChange={(event) => onNotes(event.target.value)} rows={5} placeholder="Paste brief context, assumptions, stakeholders, deadlines, rules, and open questions." className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#ff714d]" />
+            <textarea value={notes} onChange={(event) => onNotes(event.target.value)} rows={5} placeholder="Paste brief context, assumptions, stakeholders, deadlines, rules, and open questions." className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[color:var(--color-clay)]" />
           </label>
           <label className="grid gap-1.5">
             <span className="text-xs font-semibold uppercase text-slate-500">Source links or repositories</span>
-            <textarea value={links} onChange={(event) => onLinks(event.target.value)} rows={3} placeholder="Paste URLs, Drive folders, source lists, or internal repository notes." className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#ff714d]" />
+            <textarea value={links} onChange={(event) => onLinks(event.target.value)} rows={3} placeholder="Paste URLs, Drive folders, source lists, or internal repository notes." className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[color:var(--color-clay)]" />
           </label>
         </div>
         <div className="mt-5 flex flex-wrap justify-end gap-2">
@@ -5357,10 +5415,10 @@ function DocumentRepositorySection({
 }) {
   const attached = new Set(documentRefs);
   return (
-    <section className="rounded-lg border border-black/10 bg-white p-4 shadow-sm shadow-black/5" data-testid="document-repository-section">
+    <section className="specimen-card rounded-lg p-4 shadow-sm shadow-black/5" data-testid="document-repository-section">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ca4a25]">Document repository</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-oxide)]">Document repository</p>
           <h3 className="mt-1 text-lg font-semibold text-slate-950">{capsule?.label ?? 'Select a capsule'}</h3>
           <p className="mt-1 text-sm leading-6 text-slate-500">
             Inspect uploaded documents, check chunk/entity status, and attach or detach them from the selected capsule.
@@ -5433,11 +5491,11 @@ function RepositorySheet({
 }) {
   return (
     <div className="fixed inset-0 z-40 bg-black/25" data-testid="capsule-repository-sheet">
-      <aside className="ml-auto flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
+      <aside className="dossier-spine ml-auto flex h-full w-full max-w-xl flex-col shadow-2xl">
         <div className="border-b border-slate-200 p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ca4a25]">Capsule repository</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--color-oxide)]">Capsule repository</p>
               <h2 className="mt-1 truncate text-xl font-semibold text-slate-950">{capsule?.label ?? 'No capsule selected'}</h2>
               <p className="mt-1 text-sm text-slate-500">Documents, generated outputs, source receipts, and reusable context attached to this capsule.</p>
             </div>
@@ -5514,16 +5572,17 @@ function CapsuleInspectorSheet({
   const starterGuidance = meta?.starterDefinition?.aiUseGuidance ?? null;
   const starterReadiness = meta?.starterDefinition?.readinessStars ?? null;
   const richProfile = meta?.starterDefinition?.richProfile ?? null;
+  const deviceProfile = meta?.starterDefinition?.deviceProfile ?? null;
   const compatible = meta?.starterDefinition?.combinesWellWith
     .map((id) => CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === id)?.label ?? id)
     .slice(0, 4) ?? [];
   const warnings = capsule?.health?.warnings ?? [];
   return (
     <div className="fixed inset-0 z-40 bg-black/25" data-testid="capsule-inspector-sheet">
-      <aside className="ml-auto flex h-full w-full max-w-xl flex-col overflow-y-auto bg-white p-5 shadow-2xl">
+      <aside className="dossier-spine ml-auto flex h-full w-full max-w-xl flex-col overflow-y-auto p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ca4a25]">Capsule inspector</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--color-oxide)]">Capsule inspector</p>
             <h2 className="mt-1 truncate text-xl font-semibold text-slate-950">{capsule?.label ?? 'No capsule selected'}</h2>
             {meta ? (
               <p className="mt-2 text-sm leading-6 text-slate-500">{meta.detail}</p>
@@ -5557,18 +5616,30 @@ function CapsuleInspectorSheet({
             <InspectorTextSection label="Compatible Capsules" detail={(compatible.length ? compatible : ['Any user capsule', 'Any tool capsule', 'Any output capsule']).join(', ')} />
           </div>
         ) : null}
+        {deviceProfile ? (
+          <div className="mt-5 space-y-2" data-testid="capsule-device-profile">
+            <InspectorTextSection label="Tools/Thinking Devices" detail={`${deviceProfile.deviceKind}: ${deviceProfile.methodSteps.join(' ')}`} />
+            <InspectorTextSection label="Best inputs" detail={deviceProfile.bestInputs.join(' ')} />
+            <InspectorTextSection label="Expected outputs" detail={deviceProfile.expectedOutputs.join(' ')} />
+            <InspectorTextSection label="Failure modes" detail={deviceProfile.failureModes.join(' ')} />
+            <InspectorTextSection label="Human review gate" detail={deviceProfile.humanReviewGate} />
+            <InspectorTextSection label="Sourceability requirements" detail={deviceProfile.sourceabilityRequirements.join(' ')} />
+          </div>
+        ) : null}
         {capsule ? (
           <div className="mt-5 rounded-lg border border-slate-200 p-4">
             <p className="text-xs font-semibold uppercase text-slate-400">Capsule anatomy</p>
             <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600">
               <InspectorRef label="User" value={refs?.userCoreId} />
               <InspectorRef label="Situation" value={refs?.situationCoreId} />
-              <InspectorRef label="Path" value={refs?.pathCoreId} />
-              <InspectorRef label="Time" value={refs?.timeCoreId} />
-              <InspectorRef label="Graph" value={refs?.graphCoreId} />
-              <InspectorRef label="Memory" value={refs?.memoryCoreId} />
-              <InspectorRef label="Tools" value={refs?.toolCoreIds?.join(', ')} />
+              <InspectorRef label="Sourceability" value={[...(refs?.sourceCoreIds ?? []), ...(refs?.documentCoreIds ?? [])].join(', ')} />
+              <InspectorRef label="Temporality" value={refs?.timeCoreId} />
+              <InspectorRef label="Power Dynamics" value={refs?.graphCoreId ?? refs?.toolCoreIds?.find((id) => id.includes('stakeholder') || id.includes('coalition'))} />
+              <InspectorRef label="Rules/Specs" value={refs?.pathCoreId} />
+              <InspectorRef label="Tools/Thinking Devices" value={refs?.toolCoreIds?.join(', ')} />
               <InspectorRef label="Outputs" value={[...(refs?.outputCoreIds ?? []), ...(refs?.productCoreIds ?? [])].join(', ')} />
+              <InspectorRef label="Handover" value={meta?.starterDefinition?.agentWorkflow.outputGoal ?? refs?.memoryCoreId} />
+              <InspectorRef label="Review Gates" value={deviceProfile?.humanReviewGate ?? meta?.starterDefinition?.agentWorkflow.approvalNotes} />
             </div>
           </div>
         ) : null}
@@ -5737,7 +5808,7 @@ function AgentActionDrawer({
         <div className="border-b border-slate-200 p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ca4a25]">Policy actions</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--color-oxide)]">Policy actions</p>
               <h2 className="mt-1 text-xl font-semibold text-slate-950">Build or run capsule work.</h2>
             </div>
             <button type="button" aria-label="Close agent actions" onClick={onClose} className="rounded-md p-2 text-slate-500 hover:bg-slate-100">
@@ -5751,7 +5822,7 @@ function AgentActionDrawer({
             <select
               value={selectedAgentId}
               onChange={(event) => onSelectAgent(event.target.value)}
-              className="mt-2 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#ff714d]"
+              className="mt-2 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[color:var(--color-clay)]"
             >
               {PRAXIS_POLICY_AGENTS.map((agent) => (
                 <option key={agent.id} value={agent.id}>{agent.label}</option>
@@ -5763,7 +5834,7 @@ function AgentActionDrawer({
             </button>
           </section>
           {capsuleActionPrompts.map((action) => (
-            <button key={action.label} type="button" onClick={() => onRun(action.prompt)} className="rounded-lg border border-slate-200 p-4 text-left hover:border-[#ff714d]/50 hover:bg-[#fff7f3]">
+            <button key={action.label} type="button" onClick={() => onRun(action.prompt)} className="rounded-lg border border-slate-200 p-4 text-left hover:border-[color:var(--color-clay)]/50 hover:bg-[color:var(--color-archive-paper-strong)]">
               <span className="block text-sm font-semibold text-slate-950">{action.label}</span>
               <span className="mt-2 block text-xs leading-5 text-slate-500">{action.prompt}</span>
             </button>

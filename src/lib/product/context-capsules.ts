@@ -381,6 +381,17 @@ export interface CapsuleStarterRichProfile {
   agentInstructions: string;
 }
 
+export interface CapsuleStarterDeviceProfile {
+  deviceKind: string;
+  methodSteps: string[];
+  bestInputs: string[];
+  expectedOutputs: string[];
+  failureModes: string[];
+  humanReviewGate: string;
+  agentInstructions: string;
+  sourceabilityRequirements: string[];
+}
+
 export type CapsuleStarterDomain =
   | 'sustainability'
   | 'finance'
@@ -421,11 +432,12 @@ export interface CapsuleStarterDefinition {
   agentWorkflow: CapsuleStarterAgentWorkflow;
   aiUseGuidance: string;
   richProfile: CapsuleStarterRichProfile;
+  deviceProfile?: CapsuleStarterDeviceProfile;
   inspectionSections: CapsuleStarterInspectionSection[];
   combinesWellWith: string[];
 }
 
-export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-19-capsule-depth-v4';
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-20-intellectual-devices-v5';
 
 export type CapsuleStarterSnapshot = Pick<
   CapsuleStarterDefinition,
@@ -446,6 +458,7 @@ export type CapsuleStarterSnapshot = Pick<
   | 'agentWorkflow'
   | 'aiUseGuidance'
   | 'richProfile'
+  | 'deviceProfile'
   | 'combinesWellWith'
 > & {
   catalogVersion: string;
@@ -822,6 +835,7 @@ type CapsuleStarterOverrides = Partial<Pick<
   | 'agentWorkflow'
   | 'aiUseGuidance'
   | 'richProfile'
+  | 'deviceProfile'
 >>;
 
 function normalizeStarterTags(
@@ -860,6 +874,11 @@ function starter(
     recommendedToolIds,
     outputProductIds,
   });
+  const deviceProfile = overrides?.deviceProfile ?? (
+    category === 'tool' && tags.includes('thinking-device')
+      ? buildStarterDeviceProfile(label)
+      : undefined
+  );
   return {
     starterId,
     category,
@@ -896,9 +915,14 @@ function starter(
     },
     aiUseGuidance,
     richProfile,
+    ...(deviceProfile ? { deviceProfile } : {}),
     inspectionSections: [
       { label: 'Purpose', detail: richProfile.purpose },
       { label: 'Sources', detail: richProfile.sourceIndications.slice(0, 3).join(' ') },
+      ...(deviceProfile ? [
+        { label: 'Tools/Thinking Devices', detail: `${deviceProfile.deviceKind}: ${deviceProfile.methodSteps.slice(0, 4).join(' ')}` },
+        { label: 'Review Gates', detail: deviceProfile.humanReviewGate },
+      ] : []),
       { label: 'Decision Use', detail: richProfile.decisionPrompts.slice(0, 2).join(' ') },
       { label: 'Improvement Ideas', detail: richProfile.nextIdeas.slice(0, 2).join(' ') },
       { label: 'Gaps/Risks', detail: richProfile.riskCaveats.slice(0, 2).join(' ') },
@@ -1028,6 +1052,41 @@ function buildStarterRichProfile(input: {
       `Review posture: risks, caveats, and approval gates are visible before export.`,
     ],
     agentInstructions: `When ${label} is active, start by restating its purpose in one line, inspect ${firstSource} and ${secondSource}, run ${primaryTool}${secondaryTool !== primaryTool ? ` or ${secondaryTool}` : ''} for gaps, produce ${primaryOutput}, and stop for approval before external export or connector writes. Context detail: ${detail}`,
+  };
+}
+
+function buildStarterDeviceProfile(
+  label: string,
+  overrides: Partial<CapsuleStarterDeviceProfile> = {},
+): CapsuleStarterDeviceProfile {
+  const deviceKind = overrides.deviceKind ?? label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
+  return {
+    deviceKind,
+    methodSteps: overrides.methodSteps ?? [
+      `Name the decision or claim that ${label} is testing before producing advice.`,
+      `Separate facts, assumptions, uncertainties, actors, rules, and output needs into distinct rows.`,
+      `Run the device against the active situation capsule, then test it against at least one compatible output capsule.`,
+      `Mark unsupported claims, stale evidence, inferred incentives, and points requiring human judgment.`,
+    ],
+    bestInputs: overrides.bestInputs ?? [
+      'A situation capsule with dates, actors, and source receipts.',
+      'A user or team capsule that states the decision owner and tolerance for uncertainty.',
+      'A target output capsule so the device produces a usable artifact instead of open-ended analysis.',
+    ],
+    expectedOutputs: overrides.expectedOutputs ?? [
+      `${label} table with claims, evidence, caveats, and next actions.`,
+      'Review notes that identify which conclusions can be reused and which must stay provisional.',
+    ],
+    failureModes: overrides.failureModes ?? [
+      'Treating the device as a conclusion generator rather than a review scaffold.',
+      'Collapsing unsupported assumptions, actor incentives, and sourced facts into the same confidence level.',
+    ],
+    humanReviewGate: overrides.humanReviewGate ?? 'Human review is required before relying on the device for external advice, graph promotion, or final output approval.',
+    agentInstructions: overrides.agentInstructions ?? `Use ${label} as an intellectual device. Apply the method steps explicitly, cite the active sources, show failure modes, and stop at the human review gate before finalizing.`,
+    sourceabilityRequirements: overrides.sourceabilityRequirements ?? [
+      'Every decision-critical claim must point to a source receipt, attached document, or explicit uncertainty note.',
+      'Each inferred incentive, causal link, or implementation risk must be labeled as inference until reviewed.',
+    ],
   };
 }
 
@@ -1659,6 +1718,76 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     suggestedNextActions: ['Build a decision clock with dates and triggers.', 'Map positions versus interests for each party.', 'Draft negotiation prep materials with caveats and fallback questions.'],
     aiUseGuidance: 'Use this for negotiation timing analysis. Verify dates and mandates, label uncertainty, and do not assert ripeness without source-backed indicators.',
   }),
+  starter('starter-tool-assumption-stress-test', 'tool', 'audit-review', 'Assumption Stress Test', 'A review-gated thinking-device capsule for pressure-testing the load-bearing assumptions behind an answer, option, or recommendation.', 'Use this when a PRAXIS response may be leaning on hidden assumptions. It forces the model to name each assumption, source status, counterevidence, and review decision before drafting.', ['assumptions', 'stress-test', 'red-team', 'thinking-device', 'review-gated', 'team:research-strategy'], { toolCoreIds: ['ach', 'contradiction-finder', 'sourceability'], objectiveCoreIds: ['stress-test-assumptions'], outputCoreIds: ['principals-decision-memo'] }, ['ach', 'contradiction-finder', 'sourceability'], ['principals-decision-memo', 'evidence-sourceability-annex'], ['starter-situation-mediation-track', 'starter-output-principals-decision-memo', 'starter-tool-sourceability-matrix'], {
+    readinessStars: 5,
+    suggestedQuestions: ['Which conclusion depends on the weakest assumption?', 'What would disconfirm the preferred option?', 'Which assumption needs human sign-off before reuse?'],
+    suggestedNextActions: ['List load-bearing assumptions with source status.', 'Add counterevidence and missing-source rows.', 'Route unsupported assumptions to human review before drafting.'],
+    aiUseGuidance: 'Use this as an assumption stress test. Do not let PRAXIS finalize advice until weak assumptions, source gaps, and review gates are visible.',
+    deviceProfile: buildStarterDeviceProfile('Assumption Stress Test', { deviceKind: 'stress-test' }),
+  }),
+  starter('starter-tool-counterfactual-pivot-check', 'tool', 'options-mapping', 'Counterfactual Pivot Check', 'A review-gated thinking-device capsule for asking what would change if one pivotal actor, event, rule, or indicator moved differently.', 'Use this when strategy depends on a fragile scenario. PRAXIS should state the pivot, compare the baseline and counterfactual, and identify decisions that survive both.', ['counterfactual', 'scenario', 'pivot', 'thinking-device', 'review-gated', 'team:research-strategy'], { toolCoreIds: ['scenario-projector', 'ach', 'sourceability'], objectiveCoreIds: ['check-counterfactual-pivot'], outputCoreIds: ['scenario-risk-dashboard-card'] }, ['scenario-projector', 'ach', 'sourceability'], ['scenario-risk-dashboard-card', 'principals-decision-memo'], ['starter-situation-red-sea-houthi-shipping-risk', 'starter-output-scenario-risk-dashboard-card', 'starter-tool-temporal-causal-map'], {
+    readinessStars: 4,
+    suggestedQuestions: ['What single pivot would change the recommendation?', 'Which assumptions hold in both baseline and counterfactual?', 'What indicator would reveal the pivot is happening?'],
+    suggestedNextActions: ['Define the pivot in one sentence.', 'Compare baseline, counterfactual, and invariant decisions.', 'Attach indicators to the output before approval.'],
+    aiUseGuidance: 'Use this for counterfactual discipline. Keep plausible pivots source-linked and do not present speculative branches as forecasts.',
+    deviceProfile: buildStarterDeviceProfile('Counterfactual Pivot Check', { deviceKind: 'counterfactual-pivot' }),
+  }),
+  starter('starter-tool-competing-hypotheses-matrix', 'tool', 'audit-review', 'Competing Hypotheses Matrix', 'A review-gated thinking-device capsule for comparing plausible explanations against evidence, contradictions, and collection gaps.', 'Use this when PRAXIS needs to avoid premature convergence. It should score evidence against alternatives and make missing collection explicit.', ['ach', 'hypotheses', 'evidence', 'thinking-device', 'review-gated', 'team:research-strategy'], { toolCoreIds: ['ach', 'contradiction-finder', 'grounded-research'], objectiveCoreIds: ['compare-hypotheses'], outputCoreIds: ['evidence-sourceability-annex'] }, ['ach', 'contradiction-finder', 'grounded-research'], ['evidence-sourceability-annex', 'principals-decision-memo'], ['starter-situation-sudan-darfur-atrocity-access', 'starter-output-evidence-sourceability-annex', 'starter-tool-sourceability-matrix'], {
+    readinessStars: 5,
+    suggestedQuestions: ['What are the plausible explanations?', 'Which evidence supports or contradicts each one?', 'What collection gap blocks confidence?'],
+    suggestedNextActions: ['Build hypothesis columns and evidence rows.', 'Mark contradictions and missing receipts.', 'Summarize confidence without collapsing alternatives.'],
+    aiUseGuidance: 'Use this as an ACH-style matrix. Keep evidence, contradiction, and confidence separate, and preserve alternatives until reviewed.',
+    deviceProfile: buildStarterDeviceProfile('Competing Hypotheses Matrix', { deviceKind: 'hypotheses-matrix' }),
+  }),
+  starter('starter-tool-stakeholder-incentive-map', 'tool', 'options-mapping', 'Stakeholder Incentive Map', 'A review-gated thinking-device capsule for mapping stakeholder incentives, fears, constraints, leverage, and likely reactions.', 'Use this before recommending a policy option that depends on actor behavior. PRAXIS should separate sourced positions from inferred incentives.', ['stakeholders', 'incentives', 'leverage', 'thinking-device', 'review-gated', 'team:diplomatic'], { toolCoreIds: ['stakeholder-map', 'position-vs-interest', 'coalition-detector'], objectiveCoreIds: ['map-stakeholder-incentives'], outputCoreIds: ['negotiation-prep-book'] }, ['stakeholder-map', 'position-vs-interest', 'coalition-detector'], ['negotiation-prep-book', 'actor-dossier'], ['starter-situation-gaza-ceasefire-aid-reconstruction', 'starter-output-negotiation-prep-book', 'starter-tool-actor-leverage-veto-map'], {
+    readinessStars: 5,
+    suggestedQuestions: ['Who can enable or block the option?', 'What incentive is sourced versus inferred?', 'Which actor reaction changes implementation feasibility?'],
+    suggestedNextActions: ['Map actors, incentives, fears, and leverage.', 'Label inferred incentives clearly.', 'Turn the map into negotiation prep or an actor dossier.'],
+    aiUseGuidance: 'Use this for actor incentive mapping. Do not assert motives as fact; label evidence and inference separately.',
+    deviceProfile: buildStarterDeviceProfile('Stakeholder Incentive Map', { deviceKind: 'stakeholder-incentive-map' }),
+  }),
+  starter('starter-tool-spoiler-blocker-scan', 'tool', 'options-mapping', 'Spoiler and Blocker Scan', 'A review-gated thinking-device capsule for identifying actors, process points, resources, rules, and narratives that could block implementation.', 'Use this when an option looks attractive but execution risk is unclear. PRAXIS should name blockers, evidence, mitigation, and escalation triggers.', ['spoilers', 'blockers', 'implementation-risk', 'thinking-device', 'review-gated', 'team:diplomatic'], { toolCoreIds: ['stakeholder-map', 'scenario-projector', 'contradiction-finder'], objectiveCoreIds: ['scan-spoilers-blockers'], outputCoreIds: ['risk-monitor-card'] }, ['stakeholder-map', 'scenario-projector', 'contradiction-finder'], ['risk-monitor-card', 'principals-decision-memo'], ['starter-situation-mediation-track', 'starter-output-scenario-risk-dashboard-card', 'starter-tool-negotiation-ripeness-decision-clock'], {
+    readinessStars: 4,
+    suggestedQuestions: ['Who or what can block implementation?', 'Which blocker is evidenced versus hypothetical?', 'What mitigation or trigger should be monitored?'],
+    suggestedNextActions: ['List blockers by actor, rule, resource, and narrative.', 'Add mitigation and monitor columns.', 'Route high-impact blockers to a risk card.'],
+    aiUseGuidance: 'Use this as a spoiler/blocker scan. Keep speculative blockers caveated and require review before naming actors as spoilers.',
+    deviceProfile: buildStarterDeviceProfile('Spoiler and Blocker Scan', { deviceKind: 'spoiler-blocker-scan' }),
+  }),
+  starter('starter-tool-policy-tradeoff-ledger', 'tool', 'policy-review', 'Policy Tradeoff Ledger', 'A review-gated thinking-device capsule for making benefits, costs, distributional effects, legal constraints, and reversibility visible.', 'Use this when PRAXIS compares options. It should produce a ledger that shows who benefits, who bears costs, what is uncertain, and what needs approval.', ['tradeoffs', 'options', 'distributional-effects', 'thinking-device', 'review-gated', 'team:research-strategy'], { toolCoreIds: ['sourceability', 'ach', 'memo-drafter'], objectiveCoreIds: ['build-policy-tradeoff-ledger'], outputCoreIds: ['principals-decision-memo'] }, ['sourceability', 'ach', 'memo-drafter'], ['principals-decision-memo', 'options-memo'], ['starter-situation-sanctions-exposure', 'starter-output-principals-decision-memo', 'starter-tool-legal-mandate-compliance-lens'], {
+    readinessStars: 5,
+    suggestedQuestions: ['What benefit, cost, and distributional effect matters most?', 'Which tradeoff is legal, political, financial, or operational?', 'Which option is reversible if assumptions fail?'],
+    suggestedNextActions: ['Create option rows with tradeoff columns.', 'Mark evidence and uncertainty for each tradeoff.', 'Attach the ledger to a decision memo before approval.'],
+    aiUseGuidance: 'Use this as a policy tradeoff ledger. Do not hide costs, affected groups, legal limits, or reversibility concerns.',
+    deviceProfile: buildStarterDeviceProfile('Policy Tradeoff Ledger', { deviceKind: 'tradeoff-ledger' }),
+  }),
+  starter('starter-tool-implementation-feasibility-gate', 'tool', 'policy-review', 'Implementation Feasibility Gate', 'A review-gated thinking-device capsule for testing whether an option can actually be executed with available authority, capacity, budget, timeline, and partners.', 'Use this before a recommendation becomes a plan. PRAXIS should stop if authority, ownership, resources, or sequencing are missing.', ['implementation', 'feasibility', 'capacity', 'thinking-device', 'review-gated', 'team:program-delivery'], { toolCoreIds: ['commitment-tracker', 'sourceability', 'stakeholder-map'], objectiveCoreIds: ['gate-implementation-feasibility'], outputCoreIds: ['options-memo'] }, ['commitment-tracker', 'sourceability', 'stakeholder-map'], ['options-memo', 'principals-decision-memo'], ['starter-situation-critical-minerals-supply-chain', 'starter-output-principals-decision-memo', 'starter-tool-policy-tradeoff-ledger'], {
+    readinessStars: 4,
+    suggestedQuestions: ['Who owns implementation?', 'What authority, budget, or capacity is missing?', 'What sequence must happen before launch?'],
+    suggestedNextActions: ['Run authority, owner, capacity, budget, and timeline checks.', 'Name blockers before drafting implementation language.', 'Create a readiness checklist for approval.'],
+    aiUseGuidance: 'Use this as an implementation feasibility gate. Block confident recommendations when authority, owner, budget, or timeline are absent.',
+    deviceProfile: buildStarterDeviceProfile('Implementation Feasibility Gate', { deviceKind: 'feasibility-gate' }),
+  }),
+  starter('starter-tool-second-order-effects-map', 'tool', 'audit-review', 'Second-Order Effects Map', 'A review-gated thinking-device capsule for tracing indirect consequences, feedback loops, displacement effects, and unintended incentives.', 'Use this when an option may create spillovers. PRAXIS should distinguish immediate effects, second-order effects, confidence, and monitoring indicators.', ['second-order-effects', 'spillovers', 'feedback-loops', 'thinking-device', 'review-gated', 'team:research-strategy'], { toolCoreIds: ['scenario-projector', 'ach', 'sourceability'], objectiveCoreIds: ['map-second-order-effects'], outputCoreIds: ['scenario-risk-dashboard-card'] }, ['scenario-projector', 'ach', 'sourceability'], ['scenario-risk-dashboard-card', 'risk-monitor-card'], ['starter-situation-ai-governance-procurement', 'starter-output-scenario-risk-dashboard-card', 'starter-tool-counterfactual-pivot-check'], {
+    readinessStars: 4,
+    suggestedQuestions: ['What indirect effect follows the first-order outcome?', 'Who changes behavior because of the policy?', 'Which indicator would reveal an unintended effect?'],
+    suggestedNextActions: ['Map first-, second-, and feedback effects separately.', 'Label speculative links and monitoring indicators.', 'Attach high-risk effects to a dashboard card.'],
+    aiUseGuidance: 'Use this for second-order analysis. Keep indirect effects caveated and source-linked; do not overstate causal certainty.',
+    deviceProfile: buildStarterDeviceProfile('Second-Order Effects Map', { deviceKind: 'second-order-effects-map' }),
+  }),
+  starter('starter-tool-pre-mortem-failure-review', 'tool', 'audit-review', 'Pre-Mortem Failure Review', 'A review-gated thinking-device capsule for assuming the plan failed and working backward to likely causes, warning signs, and mitigations.', 'Use this before approving a plan, memo, or launch. PRAXIS should identify plausible failure paths and convert them into review gates.', ['pre-mortem', 'failure-review', 'risk', 'thinking-device', 'review-gated', 'team:research-strategy'], { toolCoreIds: ['contradiction-finder', 'scenario-projector', 'sourceability'], objectiveCoreIds: ['run-pre-mortem-review'], outputCoreIds: ['risk-monitor-card'] }, ['contradiction-finder', 'scenario-projector', 'sourceability'], ['risk-monitor-card', 'options-memo'], ['starter-situation-humanitarian-access-update', 'starter-output-principals-decision-memo', 'starter-tool-spoiler-blocker-scan'], {
+    readinessStars: 5,
+    suggestedQuestions: ['If the plan failed, what likely caused it?', 'What early warning signal would appear first?', 'Which mitigation must be approved before launch?'],
+    suggestedNextActions: ['Write failure headlines and root causes.', 'Map warning signs and mitigations.', 'Add review gates to the output before final approval.'],
+    aiUseGuidance: 'Use this as a pre-mortem. Force PRAXIS to name failure paths, warning signs, and mitigations before polishing the answer.',
+    deviceProfile: buildStarterDeviceProfile('Pre-Mortem Failure Review', { deviceKind: 'pre-mortem-review' }),
+  }),
+  starter('starter-tool-escalation-ladder-deescalation-path', 'tool', 'options-mapping', 'Escalation Ladder and De-escalation Path', 'A review-gated thinking-device capsule for mapping escalation rungs, off-ramps, signals, red lines, and proportional response options.', 'Use this in crisis, mediation, sanctions, or security questions where action can escalate conflict. PRAXIS should pair each rung with sources, signals, and de-escalation choices.', ['escalation', 'de-escalation', 'crisis', 'thinking-device', 'review-gated', 'team:diplomatic'], { toolCoreIds: ['scenario-projector', 'position-vs-interest', 'commitment-tracker'], objectiveCoreIds: ['map-escalation-deescalation'], outputCoreIds: ['negotiation-prep-book'] }, ['scenario-projector', 'position-vs-interest', 'commitment-tracker'], ['negotiation-prep-book', 'talking-points', 'principals-decision-memo'], ['starter-situation-gaza-ceasefire-aid-reconstruction', 'starter-output-negotiation-prep-book', 'starter-tool-negotiation-ripeness-decision-clock'], {
+    readinessStars: 5,
+    suggestedQuestions: ['What is the current escalation rung?', 'Which signal or red line moves the ladder?', 'What de-escalation path is credible and sourced?'],
+    suggestedNextActions: ['Map rungs, signals, red lines, and off-ramps.', 'Separate public signals from inferred intent.', 'Draft de-escalation talking points with caveats.'],
+    aiUseGuidance: 'Use this for escalation discipline. Avoid operational advice; keep public signals, proportionality, and review gates explicit.',
+    deviceProfile: buildStarterDeviceProfile('Escalation Ladder and De-escalation Path', { deviceKind: 'escalation-deescalation-path' }),
+  }),
   starter('starter-output-principals-decision-memo', 'output', 'output-brief', 'Principals decision memo artifact capsule', 'An artifact capsule for a principals-ready decision memo with BLUF, decision question, options, risks, recommendation, sourceability, and approval posture.', 'Use this when the final product must support a senior decision. PRAXIS should keep source gaps and tradeoffs visible rather than over-polishing uncertainty away.', ['decision-memo', 'principals', 'options', 'recommendation', 'artifact', 'team:research-strategy'], { outputCoreIds: ['principals-decision-memo'], productCoreIds: ['principals-decision-memo'], objectiveCoreIds: ['draft-principals-decision-memo'] }, ['memo-drafter', 'sourceability', 'ach'], ['principals-decision-memo', 'evidence-sourceability-annex'], ['starter-tool-sourceability-matrix', 'starter-tool-temporal-causal-map', 'starter-output-evidence-sourceability-annex'], {
     readinessStars: 4,
     suggestedQuestions: ['What decision must principals make?', 'Which options and risks are truly decision-relevant?', 'Which claims need an annex before approval?'],
@@ -1733,6 +1862,16 @@ export function buildCapsuleStarterPromptBlock(
     `rich_next_ideas: ${starterDefinition.richProfile.nextIdeas.join(' | ')}`,
     `rich_quality_rubric: ${starterDefinition.richProfile.qualityRubric.join(' | ')}`,
     `rich_agent_instructions: ${starterDefinition.richProfile.agentInstructions}`,
+    ...(starterDefinition.deviceProfile ? [
+      `device_kind: ${starterDefinition.deviceProfile.deviceKind}`,
+      `device_method_steps: ${starterDefinition.deviceProfile.methodSteps.join(' | ')}`,
+      `device_best_inputs: ${starterDefinition.deviceProfile.bestInputs.join(' | ')}`,
+      `device_expected_outputs: ${starterDefinition.deviceProfile.expectedOutputs.join(' | ')}`,
+      `device_failure_modes: ${starterDefinition.deviceProfile.failureModes.join(' | ')}`,
+      `device_human_review_gate: ${starterDefinition.deviceProfile.humanReviewGate}`,
+      `device_agent_instructions: ${starterDefinition.deviceProfile.agentInstructions}`,
+      `device_sourceability_requirements: ${starterDefinition.deviceProfile.sourceabilityRequirements.join(' | ')}`,
+    ] : []),
     `combines_well_with: ${starterDefinition.combinesWellWith.length ? starterDefinition.combinesWellWith.join(', ') : 'none'}`,
     ...('inspectionSections' in starterDefinition ? starterDefinition.inspectionSections.map((section) => `starter_section_${stableReceiptPart(section.label)}: ${section.detail}`) : []),
     'runtime_rule: Treat this starter definition as reusable operating context for Ask PRAXIS, tool routing, agent runs, and output drafting.',

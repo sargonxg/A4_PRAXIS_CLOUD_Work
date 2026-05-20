@@ -49,6 +49,8 @@ const LEDGER_EVENT_TYPES = [
   'praxis.reasoning.plan',
   'praxis.reasoning.act',
   'praxis.reasoning.reflect',
+  'praxis.source.discovered',
+  'praxis.document.retrieved',
   'praxis.memo_output_created',
   'praxis.output_created',
   'praxis.approval_requested',
@@ -180,6 +182,23 @@ export function normalizeOrchestratorEvent(input: RawSseEvent): OrchestratorEven
     data,
     createdAt,
   };
+}
+
+export function agentRailStageFromEvent(event: OrchestratorEvent): string {
+  const rawType = event.rawType;
+  const phase = stringValue(event.data.phase);
+  if (event.type === 'fail') return 'Failed';
+  if (event.type === 'complete' || rawType.includes('memo_output') || rawType.includes('output_created')) return 'Save output';
+  if (rawType === 'status_transition' && stringValue(event.data.toStatus) === 'running') return 'Agent started';
+  if (rawType.includes('context_resolved') || phase === 'context_resolved') return 'Capsule read';
+  if (rawType.includes('reasoning.plan') || phase === 'reasoning.plan' || phase === 'plan') return 'Research plan';
+  if (rawType.includes('source') || phase === 'source_discovery') return 'Source discovery';
+  if (rawType.includes('document') || phase === 'document_retrieval') return 'Document retrieval';
+  if (rawType.includes('approval') || phase === 'approval_gate') return 'Approval gate';
+  if (rawType.includes('reasoning.act') || phase === 'reasoning.act' || stringValue(event.data.toolId)) return 'Tool call';
+  if (rawType.includes('reasoning.reflect') || phase === 'reasoning.reflect') return 'Gap review';
+  if (event.type === 'start') return 'Agent started';
+  return 'Progress';
 }
 
 export function applyOrchestratorEvent(

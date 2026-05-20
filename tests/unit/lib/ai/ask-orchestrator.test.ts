@@ -139,13 +139,13 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     const events = buildAskOrchestrationStatusEvents(receipt);
 
     expect(events.map((event) => event.label)).toEqual([
-      'Reading capsule',
-      'Planning searches',
-      'Checking sources',
-      'Retrieving documents',
-      'Reviewing gaps',
-      'Synthesizing memo',
-      'Saving output',
+      'Capsule read',
+      'Research plan',
+      'Source discovery',
+      'Document retrieval',
+      'Gap review',
+      'Synthesis',
+      'Save output',
     ]);
     expect(events.map((event) => event.status)).toEqual([
       'warn',
@@ -158,6 +158,12 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     ]);
     expect(events.find((event) => event.id === 'worker')).toMatchObject({
       detail: 'Durable agent run queued for deeper work.',
+      agentLabel: 'Sourceability Reviewer',
+      selectedToolIds: expect.arrayContaining(['grounded-search', 'deep-search-agent']),
+      sourceCount: 2,
+      approvalGateCount: 0,
+      outputTarget: 'Memo Studio',
+      groundingPosture: 'Google grounding requested',
     });
     const serialized = JSON.stringify(events);
     expect(serialized).not.toContain('DATABASE_URL');
@@ -177,6 +183,39 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     expect(buildAskOrchestrationStatusEvents(receipt).find((event) => event.id === 'worker')).toMatchObject({
       status: 'skipped',
       detail: 'No durable run needed for this answer.',
+    });
+  });
+
+  it('keeps dispatch failures actionable without hiding the run id', () => {
+    const receipt = buildAskConversationOrchestrationReceipt({
+      prompt: 'Do a deep current source memo.',
+      intent: 'research_memo',
+      contextReceipt: contextReceipt({ health: 'ready', evidenceCount: 3 }),
+      sourcePreviewCount: 1,
+      activeGapCount: 0,
+    });
+
+    const events = buildAskOrchestrationStatusEvents({
+      ...receipt,
+      supervisor: {
+        ...receipt.supervisor,
+        status: 'dispatch_enqueued',
+        queuedRun: {
+          runId: 'run-1',
+          status: 'dispatch_failed',
+          outputHref: '/app/write',
+          error: 'worker target missing',
+        },
+      },
+    });
+
+    expect(events.find((event) => event.id === 'worker')).toMatchObject({
+      status: 'warn',
+      runId: 'run-1',
+      canOpen: true,
+      canRetry: true,
+      canCancel: false,
+      fallbackPosture: 'dispatch_failed',
     });
   });
 });
