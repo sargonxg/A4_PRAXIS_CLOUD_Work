@@ -163,7 +163,7 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       sourceCount: 2,
       approvalGateCount: 0,
       outputTarget: 'Memo Studio',
-      groundingPosture: 'Google grounding requested',
+      groundingPosture: 'Grounding unavailable',
     });
     const serialized = JSON.stringify(events);
     expect(serialized).not.toContain('DATABASE_URL');
@@ -216,6 +216,25 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       canRetry: true,
       canCancel: false,
       fallbackPosture: 'dispatch_failed',
+    });
+  });
+
+  it('does not claim Google Search grounding when the grounding plan lacks google_search', () => {
+    const receipt = buildAskConversationOrchestrationReceipt({
+      prompt: 'Do a deep current web search with multiple sources.',
+      intent: 'research_memo',
+      contextReceipt: contextReceipt({ health: 'thin', evidenceCount: 1 }),
+      sourcePreviewCount: 0,
+      activeGapCount: 2,
+    });
+
+    expect(receipt.grounding.groundingPlan.modes).not.toContain('google_search');
+    expect(receipt.grounding.groundingPosture).toBe('Grounding unavailable');
+    expect(receipt.grounding.degradedReason).toBe('Google Search grounding is not configured.');
+    expect(buildAskOrchestrationStatusEvents(receipt).find((event) => event.id === 'worker')).toMatchObject({
+      groundingPosture: 'Grounding unavailable',
+      sourcePosture: 'No source receipts saved',
+      degradedReason: 'Google Search grounding is not configured.',
     });
   });
 });

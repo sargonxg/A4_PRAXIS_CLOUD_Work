@@ -359,6 +359,43 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain("CapsuleEmptyState label=\"No capsules found.\"");
   });
 
+  it('exposes usefulness rating as a distinct capsule card and inspector contract', () => {
+    expect(source).toContain('type CapsuleUsefulnessRating');
+    expect(source).toContain('buildCapsuleUsefulnessRating');
+    expect(source).toContain('onRateUsefulness');
+    expect(source).toContain("action: 'rate'");
+    expect(source).toContain('capsule-usefulness-rating');
+    expect(source).toContain('capsule-inspector-usefulness-rating');
+    expect(source).toContain('Helped me/agent do useful work');
+    expect(source).toContain('Save or fork this starter before rating usefulness.');
+    expect(source).toContain('community.userRating');
+    expect(source).toContain('community.averageRating');
+    expect(source).toContain('ratingCount');
+    expect(source).toContain('allowCommunityRating');
+  });
+
+  it('surfaces quality audit, enrichment, and review-gated improvement proposal affordances without canonical mutation', () => {
+    expect(source).toContain('CapsuleQualityAuditResult');
+    expect(source).toContain('CapsuleImprovementProposal');
+    expect(source).toContain('CapsuleEnrichmentReceipt');
+    expect(source).toContain('Quality audit');
+    expect(source).toContain('Enrichment status');
+    expect(source).toContain('Proposed next improvements');
+    expect(source).toContain('review-gated');
+    expect(source).toContain('Cognee advisory');
+    expect(source).toContain('Firestore canonical');
+  });
+
+  it('adds a paid-only Exa agentic search toggle to conversation sends', () => {
+    expect(source).toContain('agenticSearchPremiumEnabled');
+    expect(source).toContain('canUseAgenticSearchPremium');
+    expect(source).toContain('Exa agentic search');
+    expect(source).toContain('Premium web');
+    expect(source).toContain('agenticSearchPremium');
+    expect(source).toContain('/login?mode=signup&plan=analyst');
+    expect(source).not.toContain('EXA_API_KEY');
+  });
+
   it('renders a filter-aware Featured Expert Picks shelf and build-your-own CTA', () => {
     expect(source).toContain('FEATURED_EXPERT_PICK_CAPSULE_IDS');
     for (const expectedId of [

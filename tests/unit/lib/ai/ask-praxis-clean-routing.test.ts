@@ -6,6 +6,7 @@ import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 const repoRoot = process.cwd();
 const chatRouteSource = readFileSync(join(repoRoot, 'src/app/api/ai/chat/route.ts'), 'utf8');
 const askToolsSource = readFileSync(join(repoRoot, 'src/lib/ai/ask-praxis-tools.ts'), 'utf8');
+const exaSource = readFileSync(join(repoRoot, 'src/lib/ai/exa-agentic-search.ts'), 'utf8');
 
 describe('Ask PRAXIS clean routing contract', () => {
   it('routes heavy work through the simple app spine instead of removed tool pages', () => {
@@ -28,5 +29,15 @@ describe('Ask PRAXIS clean routing contract', () => {
     expect(askToolsSource).toContain("directive: 'suggest_internal_tool'");
     expect(askToolsSource).toContain("toolId: 'grounded-research'");
     expect(askToolsSource).toContain("toolPath: '/app'");
+  });
+
+  it('keeps Exa as an explicit paid conversation extra instead of a default search path', () => {
+    expect(askToolsSource).toContain('makePremiumExaSearch');
+    expect(askToolsSource).toContain('agenticSearchPremiumEnabled');
+    expect(askToolsSource).toContain("gateTier(b.tier, 'analyst')");
+    expect(askToolsSource).toContain('runExaAgenticSearch');
+    expect(exaSource).toContain('EXA_API_KEY');
+    expect(askToolsSource).toContain('premiumExaSearch');
+    expect(askToolsSource).not.toContain('costDollars');
   });
 });

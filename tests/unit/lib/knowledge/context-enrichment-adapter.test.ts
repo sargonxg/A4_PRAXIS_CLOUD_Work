@@ -92,11 +92,17 @@ describe('context enrichment adapter', () => {
       firestore: 'ready',
       cognee: 'disabled',
       graphiti: 'deferred',
+      canonicalStatus: 'firestore-canonical',
+      memoryHitCount: 0,
+      writebackProposalIds: [],
     });
     expect(buildContextEnrichmentReceipt({ cogneeEnabled: true })).toMatchObject({
       firestore: 'ready',
       cognee: 'enabled',
       graphiti: 'deferred',
+      canonicalStatus: 'firestore-canonical',
+      memoryHitCount: 0,
+      writebackProposalIds: [],
     });
   });
 });

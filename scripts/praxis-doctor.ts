@@ -1,10 +1,12 @@
 import { exec as execCallback } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 type DoctorMode = 'quick' | 'full' | 'canary';
 type DoctorStatus = 'PASS' | 'WARN' | 'FAIL' | 'BLOCKED';
+type DiagnosticsStatus = 'ok' | 'warn' | 'blocked';
+type RedFlagLane = 'blocking' | 'needs-auth' | 'stale-artifact' | 'security-dependency' | 'canary-gated';
 
 export type DoctorOptions = {
   baseUrl: string;
@@ -34,6 +36,28 @@ export type CanaryArtifact = {
   detail?: string;
 };
 
+export type DoctorRedFlag = {
+  id: string;
+  label: string;
+  severity: DiagnosticsStatus;
+  lane: RedFlagLane;
+  summary: string;
+  actionHref?: string;
+};
+
+export type AuditArtifactSnapshot = {
+  path: string;
+  commit?: string | null;
+  cloudRunRevision?: string | null;
+};
+
+export type ArtifactFreshnessSummary = {
+  commit: string;
+  cloudRunRevision?: string | null;
+  staleArtifactCount: number;
+  artifacts?: AuditArtifactSnapshot[];
+};
+
 export type DoctorReport = {
   runId: string;
   timestamp: string;
@@ -44,6 +68,9 @@ export type DoctorReport = {
   region: string;
   cloudRunRevision?: string | null;
   checks: DoctorCheckResult[];
+  status?: DiagnosticsStatus;
+  redFlags?: DoctorRedFlag[];
+  artifactFreshness?: ArtifactFreshnessSummary;
   artifacts?: CanaryArtifact[];
   cleanup?: {
     status: 'not-needed' | 'planned' | 'cleaned' | 'leftover' | 'blocked';
@@ -159,8 +186,29 @@ export function summarizeStatus(checks: DoctorCheckResult[]): Record<DoctorStatu
 }
 
 export function buildDoctorReport(input: DoctorReport): DoctorReport {
+  const artifactFreshness = input.artifactFreshness ?? buildArtifactFreshness({
+    commit: input.commit,
+    cloudRunRevision: input.cloudRunRevision,
+    artifacts: [],
+  });
+  const redFlags = input.redFlags ?? classifyDoctorRedFlags({
+    commit: input.commit,
+    cloudRunRevision: input.cloudRunRevision,
+    checks: input.checks,
+    artifactFreshness,
+  });
+  const status: DiagnosticsStatus = input.status ?? (
+    redFlags.some((flag) => flag.severity === 'blocked')
+      ? 'blocked'
+      : redFlags.length > 0
+        ? 'warn'
+        : 'ok'
+  );
   return redactSecrets({
     ...input,
+    status,
+    redFlags,
+    artifactFreshness,
     checks: input.checks.map((check) => ({
       ...check,
       evidence: check.evidence ? redactSecrets(check.evidence) : undefined,
@@ -183,7 +231,21 @@ export function renderMarkdownReport(report: DoctorReport): string {
     `- Branch: \`${report.branch}\``,
     `- Commit: \`${report.commit}\``,
     `- Cloud Run revision: \`${report.cloudRunRevision ?? 'unknown'}\``,
+    `- Diagnostics status: \`${report.status ?? 'ok'}\``,
+    `- Stale diagnostic artifacts: \`${report.artifactFreshness?.staleArtifactCount ?? 0}\``,
     `- Summary: PASS=${counts.PASS}, WARN=${counts.WARN}, FAIL=${counts.FAIL}, BLOCKED=${counts.BLOCKED}`,
+    '',
+    '## Red Flags',
+    '',
+    ...(report.redFlags?.length
+      ? [
+          '| Severity | Lane | Finding | Summary |',
+          '| --- | --- | --- | --- |',
+          ...report.redFlags.map((flag) =>
+            `| ${flag.severity} | ${escapeTable(flag.lane)} | ${escapeTable(flag.label)} | ${escapeTable(flag.summary)} |`
+          ),
+        ]
+      : ['No blocking red flags.']),
     '',
     '## Checks',
     '',
@@ -268,6 +330,128 @@ export function buildCanaryPlan(input: {
   };
 }
 
+export function buildArtifactFreshness(input: {
+  commit: string;
+  cloudRunRevision?: string | null;
+  artifacts: AuditArtifactSnapshot[];
+}): ArtifactFreshnessSummary {
+  const staleArtifacts = input.artifacts.filter((artifact) => {
+    const staleCommit = Boolean(artifact.commit && artifact.commit !== input.commit);
+    const staleRevision = Boolean(
+      input.cloudRunRevision
+        && artifact.cloudRunRevision
+        && artifact.cloudRunRevision !== input.cloudRunRevision
+    );
+    return staleCommit || staleRevision;
+  });
+  return {
+    commit: input.commit,
+    cloudRunRevision: input.cloudRunRevision ?? null,
+    staleArtifactCount: staleArtifacts.length,
+    artifacts: input.artifacts,
+  };
+}
+
+export function classifyDoctorRedFlags(input: {
+  commit: string;
+  cloudRunRevision?: string | null;
+  checks: DoctorCheckResult[];
+  artifactFreshness?: ArtifactFreshnessSummary;
+}): DoctorRedFlag[] {
+  const liveRuntimeReady = input.checks.some((check) =>
+    check.id === 'health-runtime' && check.status === 'PASS'
+  );
+  const liveAgenticReady = input.checks.some((check) =>
+    check.id === 'health-agentic-search' && check.status === 'PASS'
+  );
+  const redFlags: DoctorRedFlag[] = [];
+
+  for (const check of input.checks) {
+    if (check.id === 'auth-doctor' && check.status !== 'PASS') {
+      redFlags.push({
+        id: check.id,
+        label: 'Local cloud auth',
+        severity: check.status === 'BLOCKED' ? 'blocked' : 'warn',
+        lane: 'needs-auth',
+        summary: liveRuntimeReady && liveAgenticReady
+          ? `${check.summary}; local only while production runtime and agentic-search health are ready.`
+          : check.summary,
+        actionHref: '/app/settings?tab=system',
+      });
+      continue;
+    }
+    if (check.id === 'canary-write-gate' && check.status !== 'PASS') {
+      redFlags.push({
+        id: check.id,
+        label: 'Authenticated canary gate',
+        severity: 'warn',
+        lane: 'canary-gated',
+        summary: check.summary,
+        actionHref: '/app/settings?tab=system',
+      });
+      continue;
+    }
+    if (check.id === 'package-audit-summary' && check.status !== 'PASS') {
+      redFlags.push({
+        id: check.id,
+        label: 'Dependency advisory summary',
+        severity: 'warn',
+        lane: 'security-dependency',
+        summary: check.summary,
+        actionHref: '/app/settings?tab=system',
+      });
+      continue;
+    }
+    if (check.status === 'FAIL' || (check.status === 'BLOCKED' && check.lane !== 'local-cloud-auth')) {
+      redFlags.push({
+        id: check.id,
+        label: check.id,
+        severity: 'blocked',
+        lane: 'blocking',
+        summary: check.summary,
+        actionHref: '/app/settings?tab=system',
+      });
+    }
+  }
+
+  if ((input.artifactFreshness?.staleArtifactCount ?? 0) > 0) {
+    redFlags.push({
+      id: 'stale-diagnostic-artifacts',
+      label: 'Stale diagnostic artifacts',
+      severity: 'warn',
+      lane: 'stale-artifact',
+      summary: `${input.artifactFreshness?.staleArtifactCount ?? 0} saved doctor/eval artifact(s) do not match HEAD or the latest ready Cloud Run revision.`,
+      actionHref: '/app/settings?tab=system',
+    });
+  }
+
+  return redFlags;
+}
+
+export function parseAuditAdvisorySummary(stdout: string): {
+  total: number;
+  forcedOrBreaking: number;
+  summary: string;
+} {
+  const parsed = safeJsonParse(stdout);
+  const parsedRecord = isRecord(parsed) ? parsed : {};
+  const vulnerabilities = isRecord(parsedRecord.vulnerabilities) ? parsedRecord.vulnerabilities : {};
+  const entries = Object.values(vulnerabilities).filter(isRecord);
+  const forcedOrBreaking = entries.filter((entry) => {
+    const fixAvailable = entry.fixAvailable;
+    return isRecord(fixAvailable) && (fixAvailable.isSemVerMajor === true || fixAvailable.force === true);
+  }).length;
+  return {
+    total: entries.length,
+    forcedOrBreaking,
+    summary: forcedOrBreaking > 0
+      ? `${forcedOrBreaking} advisory group(s) require forced or breaking updates`
+      : entries.length > 0
+        ? `${entries.length} advisory group(s) remain without forced breaking fixes`
+        : 'No npm audit advisories reported',
+  };
+}
+
 export async function runPraxisDoctor(deps: RunDeps): Promise<DoctorReport> {
   const options = deps.options;
   const env = deps.env ?? process.env;
@@ -319,6 +503,17 @@ export async function runPraxisDoctor(deps: RunDeps): Promise<DoctorReport> {
       checks.push(await commandCheck(exec, commandId(command), 'repo-and-deployability', command));
     }
   }
+
+  const auditResult = await commandText(exec, 'npm audit --json');
+  const auditSummary = parseAuditAdvisorySummary(auditResult.stdout || auditResult.stderr || '{}');
+  checks.push({
+    id: 'package-audit-summary',
+    lane: 'repo-and-deployability',
+    status: auditSummary.forcedOrBreaking > 0 ? 'WARN' : 'PASS',
+    summary: auditSummary.summary,
+    evidence: [{ total: auditSummary.total, forcedOrBreaking: auditSummary.forcedOrBreaking }],
+    remediation: auditSummary.forcedOrBreaking > 0 ? ['Review npm audit --json before forced or SemVer-major dependency changes.'] : undefined,
+  });
 
   checks.push(await commandCheck(exec, 'auth-doctor', 'local-cloud-auth', 'npm run auth:doctor', {
     blockedOnFailure: true,
@@ -381,6 +576,12 @@ export async function runPraxisDoctor(deps: RunDeps): Promise<DoctorReport> {
     checks.push(await runAuthenticatedCanary(fetchImpl, options, env, canaryPlan));
   }
 
+  const artifactFreshness = buildArtifactFreshness({
+    commit: commit.stdout.trim() || 'unknown',
+    cloudRunRevision,
+    artifacts: deps.writeArtifacts === false ? [] : await readAuditArtifactSnapshots(options.outDir),
+  });
+
   const report = buildDoctorReport({
     runId,
     timestamp: now.toISOString(),
@@ -391,6 +592,7 @@ export async function runPraxisDoctor(deps: RunDeps): Promise<DoctorReport> {
     region: options.region,
     cloudRunRevision,
     checks,
+    artifactFreshness,
     artifacts: canaryPlan.artifacts,
     cleanup: {
       status: canaryPlan.enabled ? 'planned' : 'blocked',
@@ -471,6 +673,38 @@ async function writeDoctorArtifacts(report: DoctorReport, outDir: string): Promi
     writeFile(`${outDir}/${date}-PRAXIS_DOCTOR.json`, `${JSON.stringify(report, null, 2)}\n`, 'utf8'),
     writeFile(`${outDir}/${date}-PRAXIS_DOCTOR.md`, renderMarkdownReport(report), 'utf8'),
   ]);
+}
+
+async function readAuditArtifactSnapshots(outDir: string): Promise<AuditArtifactSnapshot[]> {
+  let names: string[];
+  try {
+    names = await readdir(outDir);
+  } catch {
+    return [];
+  }
+
+  const candidateNames = names.filter((name) =>
+    name.endsWith('.json') && (
+      name.includes('PRAXIS_DOCTOR')
+        || name.toLowerCase().includes('agentic')
+        || name.toLowerCase().includes('eval')
+    )
+  );
+  const snapshots = await Promise.all(candidateNames.map(async (name) => {
+    const path = `${outDir}/${name}`;
+    try {
+      const parsed = safeJsonParse(await readFile(path, 'utf8'));
+      if (!isRecord(parsed)) return null;
+      return {
+        path,
+        commit: typeof parsed.commit === 'string' ? parsed.commit : null,
+        cloudRunRevision: typeof parsed.cloudRunRevision === 'string' ? parsed.cloudRunRevision : null,
+      } satisfies AuditArtifactSnapshot;
+    } catch {
+      return null;
+    }
+  }));
+  return snapshots.filter((item): item is NonNullable<typeof item> => Boolean(item));
 }
 
 function infrastructureCommandChecks(
@@ -588,6 +822,7 @@ function liveHealthChecks(
     { id: 'production-login', url: `${options.baseUrl}/login` },
     { id: 'health-core', url: `${options.baseUrl}/api/health` },
     { id: 'health-runtime', url: `${options.baseUrl}/api/health/runtime` },
+    { id: 'health-agentic-search', url: `${options.baseUrl}/api/health/agentic-search` },
   ];
   if (env.CRON_SECRET) {
     checks.push({
@@ -702,6 +937,14 @@ async function readResponse(response: Awaited<ReturnType<FetchFn>>): Promise<unk
     // Return status if the body cannot be consumed.
   }
   return { status: response.status };
+}
+
+function safeJsonParse(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
 }
 
 function isOptionalHealthWarning(payload: unknown): boolean {

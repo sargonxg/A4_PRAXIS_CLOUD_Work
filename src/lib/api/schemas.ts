@@ -54,5 +54,6 @@ export const aiSettingsSchema = z
     temperature: z.number().min(0).max(2).optional(),
     analysisDepth: z.enum(['standard', 'deep']).optional(),
     provider: z.string().optional(),
+    agenticSearchPremium: z.boolean().optional(),
   })
   .optional();

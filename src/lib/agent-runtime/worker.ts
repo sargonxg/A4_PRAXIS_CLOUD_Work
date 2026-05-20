@@ -118,7 +118,7 @@ export async function executeNoopAgentRun(
         },
       });
       if (!next) throw new AgentWorkerError('Agent run disappeared before execution', 404);
-      running = next;
+      running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
     }
 
     await mirrorWorkerEvent(running, {
@@ -225,7 +225,7 @@ async function executeCapsuleFactoryAgentRun(
         },
       });
       if (!next) throw new AgentWorkerError('Agent run disappeared before execution', 404);
-      running = next;
+      running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
     }
 
     await mirrorWorkerEvent(running, {
@@ -329,7 +329,7 @@ async function executeResearchMemoAgentRun(
         },
       });
       if (!next) throw new AgentWorkerError('Agent run disappeared before execution', 404);
-      running = next;
+      running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
     }
 
     const workerContext = buildCapsuleWorkerContext(running);
@@ -405,6 +405,11 @@ async function executeResearchMemoAgentRun(
         traceId: running.traceId,
       };
     }
+
+    await collectSearchEvidenceForRun(running, {
+      appendToolCall: persistToolCall,
+      appendEvent: deps.appendEvent,
+    });
 
     const evidencePack = await getEvidencePack({
       ownerUid: running.ownerUid,
@@ -876,6 +881,154 @@ async function executeReviewAgentRun(
 function outputHrefFromMetadata(metadata: Record<string, unknown>, fallback: string): string {
   const outputHref = metadata.outputHref;
   return typeof outputHref === 'string' && outputHref.startsWith('/app') ? outputHref : fallback;
+}
+
+async function collectSearchEvidenceForRun(
+  running: AgentRun,
+  deps: Pick<WorkerDeps, 'appendToolCall' | 'appendEvent'>,
+): Promise<void> {
+  const persistToolCall = deps.appendToolCall ?? appendAgentToolCall;
+  const selectedToolIds = selectedSearchToolIds(running);
+  if (!selectedToolIds.length) return;
+
+  const searchPlan = normalizeSearchPlan(running.metadata.searchPlan, running.objective);
+  const sourceReceiptIds = stringArray(running.metadata.sourceReceiptIds);
+  const groundingPlan = isRecord(running.metadata.groundingPlan) ? running.metadata.groundingPlan : null;
+  const googleGroundingActive = Array.isArray(groundingPlan?.modes) && groundingPlan.modes.includes('google_search');
+  const groundingPosture = googleGroundingActive ? 'Google Search grounding active' : 'Grounding unavailable';
+  const degradedReason = googleGroundingActive ? null : 'Google Search grounding is not configured.';
+  const gaps = [
+    ...(sourceReceiptIds.length ? [] : ['No current-source receipts were collected for this run.']),
+    ...(degradedReason ? [degradedReason] : []),
+  ];
+
+  await mirrorWorkerEvent(running, {
+    substrate: 'praxis',
+    phase: 'grounding.search_evidence_started',
+    message: 'Agent worker started the search evidence collection phase.',
+    data: {
+      selectedToolIds,
+      querySet: searchPlan.queries,
+      sourceClasses: searchPlan.sourceClasses,
+      groundingPosture,
+      degradedReason,
+    },
+  }, deps);
+
+  for (const toolId of selectedToolIds) {
+    const now = new Date().toISOString();
+    const output = {
+      receiptKind: 'search_evidence',
+      querySet: searchPlan.queries,
+      sourceClasses: searchPlan.sourceClasses,
+      freshnessNeed: searchPlan.freshnessNeed,
+      timeframe: searchPlan.timeframe,
+      sourceReceiptIds,
+      sourceReceiptCount: sourceReceiptIds.length,
+      groundingPlan,
+      groundingPosture,
+      degradedReason,
+      gaps,
+    };
+    await persistToolCall(makeAgentToolCall({
+      runId: running.id,
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      toolId,
+      risk: getAgentToolDefinition(toolId).risk,
+      status: sourceReceiptIds.length || googleGroundingActive ? 'succeeded' : 'failed',
+      input: {
+        objective: running.objective,
+        querySet: searchPlan.queries,
+        sourceClasses: searchPlan.sourceClasses,
+      },
+      output,
+      error: degradedReason,
+      startedAt: now,
+      completedAt: now,
+    }));
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: `tool.${toolId}.completed`,
+      message: `${getAgentToolDefinition(toolId).label} saved a search evidence receipt.`,
+      data: {
+        toolId,
+        sourceReceiptCount: sourceReceiptIds.length,
+        groundingPosture,
+        degradedReason,
+      },
+    }, deps);
+  }
+
+  if (degradedReason) {
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'search_evidence_degraded',
+      message: 'Search evidence collection continued with an explicit degraded grounding receipt.',
+      data: {
+        sourceReceiptCount: sourceReceiptIds.length,
+        groundingPosture,
+        degradedReason,
+        gaps,
+      },
+    }, deps);
+  }
+
+  await mirrorWorkerEvent(running, {
+    substrate: 'praxis',
+    phase: 'search_evidence_collected',
+    message: sourceReceiptIds.length
+      ? 'Search evidence source receipts were attached to the run.'
+      : 'Search evidence phase completed without live current-source receipts.',
+    data: {
+      sourceReceiptIds,
+      sourceReceiptCount: sourceReceiptIds.length,
+      querySet: searchPlan.queries,
+      gaps,
+      groundingPosture,
+      degradedReason,
+    },
+  }, deps);
+}
+
+function selectedSearchToolIds(run: AgentRun): string[] {
+  const toolIds = [
+    ...stringArray(run.metadata.selectedTools),
+    ...stringArray(run.metadata.selectedToolIds),
+    ...run.selectedCoreIds.toolCoreIds,
+  ];
+  return Array.from(new Set(toolIds.filter((toolId) => toolId === 'grounded-search' || toolId === 'deep-search-agent')));
+}
+
+function normalizeSearchPlan(value: unknown, objective: string): {
+  queries: string[];
+  sourceClasses: string[];
+  freshnessNeed: string;
+  timeframe: string | null;
+} {
+  if (!isRecord(value)) {
+    return {
+      queries: [objective.slice(0, 240)],
+      sourceClasses: ['attached_sources'],
+      freshnessNeed: 'not_specified',
+      timeframe: null,
+    };
+  }
+  const queries = stringArray(value.queries);
+  return {
+    queries: queries.length ? queries : [objective.slice(0, 240)],
+    sourceClasses: stringArray(value.sourceClasses).length ? stringArray(value.sourceClasses) : ['attached_sources'],
+    freshnessNeed: typeof value.freshnessNeed === 'string' ? value.freshnessNeed : 'not_specified',
+    timeframe: typeof value.timeframe === 'string' ? value.timeframe : null,
+  };
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function buildMemoBlocks(running: AgentRun, evidencePack: CapsuleEvidencePack): SaveMemoDraftInput['blocks'] {

@@ -51,6 +51,7 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  Star,
   Trash2,
   Upload,
   WandSparkles,
@@ -61,6 +62,12 @@ import { AccountProfileButton } from '@/components/app/account-profile-button';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
 import { SourcePostureChip, WorkActionMenu } from '@/components/ui/instrument';
+import {
+  buildCapsuleSearchItem,
+  capsuleSearchMatchReason,
+  rankAppSearchItems,
+  type AppSearchItemInput,
+} from '@/lib/app-search/shared-contracts';
 import {
   PENDING_POLICY_AGENT_ID_KEY,
   PENDING_TASKLET_PROMPT_KEY,
@@ -82,8 +89,12 @@ import {
   categoryTagsForPolicyTeam,
   getPolicyTeamCategory,
   normalizeCapsuleTaxonomyTags,
+  proposeCapsuleImprovementsFromQualityAudit,
   policyTeamCategoryForTags,
   resolveCapsuleTaxonomy,
+  runCapsuleStarterQualityAudit,
+  type CapsuleImprovementProposal,
+  type CapsuleQualityAuditResult,
   type CapsuleStarterCategory,
   type CapsuleStarterDefinition,
   type CapsuleConnectorDefinition,
@@ -187,7 +198,14 @@ type AgentRunSummary = {
     selectedTools: string[];
     outputDestination: string | null;
     sourcePosture: string | null;
+    sourceCount?: number;
+    groundingPosture?: string | null;
+    degradedReason?: string | null;
   };
+  sourceReceiptIds?: string[];
+  sourceCount?: number;
+  groundingPosture?: string | null;
+  degradedReason?: string | null;
   factoryMetadata?: {
     factoryLane: string | null;
     ontologyStack: string[];
@@ -258,9 +276,27 @@ type PraxisCapsuleSummary = {
   activeForSituationIds?: string[];
   coreRefs: CapsuleCoreRefs;
   health?: { score?: number; warnings?: string[]; blockers?: string[] };
-  community?: { tags?: string[]; favorite?: boolean };
+  community?: { tags?: string[]; favorite?: boolean; userRating?: number | null; averageRating?: number | null; ratingCount?: number };
   trust?: { level?: string; score?: number; label?: string };
-  access?: { visibility?: 'private' | 'team' | 'public'; allowDownload?: boolean; allowClone?: boolean; allowCommunityRating?: boolean };
+  access?: { visibility?: 'private' | 'team' | 'organization' | 'shared' | 'public' | 'unlisted'; allowDownload?: boolean; allowClone?: boolean; allowCommunityRating?: boolean };
+  searchMatchReason?: string | null;
+};
+type CapsuleUsefulnessRating = {
+  userRating: number | null;
+  averageRating: number | null;
+  ratingCount: number;
+  enabled: boolean;
+  disabledReason: string | null;
+};
+type CapsuleEnrichmentReceipt = {
+  canonicalStatus: 'firestore-canonical';
+  firestore: 'ready';
+  cognee: 'enabled' | 'disabled' | 'degraded';
+  graphiti: 'deferred';
+  memoryHitCount: number;
+  memoryItemIds: string[];
+  warnings: string[];
+  writebackProposalIds: string[];
 };
 type ActiveCapsuleChip = {
   id: string;
@@ -630,6 +666,7 @@ export function TaskletPraxisWorkbench({
   const [selectedSpanStatus, setSelectedSpanStatus] = useState<SpanAttachStatus>('idle');
   const [selectedSpanMessage, setSelectedSpanMessage] = useState('');
   const [attachedSpan, setAttachedSpan] = useState<AttachedSpanState | null>(null);
+  const [agenticSearchPremiumEnabled, setAgenticSearchPremiumEnabled] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const starterSeededRef = useRef(false);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
@@ -692,6 +729,7 @@ export function TaskletPraxisWorkbench({
   const filledChainRoles = new Set(activeCapsuleStack.map((capsule) => capsule.role));
   const openChainSlots = capsuleChainSlots.filter((slot) => !filledChainRoles.has(slot.role));
   const activeCapsuleForStrip = selectedCapsule ?? activeCapsuleStack[0] ?? null;
+  const canUseAgenticSearchPremium = isPaidSubscription(user?.subscription);
   const activeCapsuleSummaryForStrip = selectedCapsule ?? capsuleSummaryForChip(activeCapsuleStack[0], userCapsules);
   const activeStarterForStrip = starterDefinitionForCapsule(activeCapsuleSummaryForStrip);
   const activeCapsuleSourceCount = activeStarterForStrip?.sourcePack.length
@@ -858,6 +896,9 @@ export function TaskletPraxisWorkbench({
       `Available tool capsules: ${availableToolIds.join(', ')}`,
       `Active ContextCapsule stack:\n${capsuleStack}`,
       `Conversation thread: ${threadId}`,
+      agenticSearchPremiumEnabled && canUseAgenticSearchPremium
+        ? 'Paid extra enabled: Exa agentic search may be used for current web evidence when materially useful. Keep source URLs visible and do not expose provider cost.'
+        : 'Paid extra disabled: do not use Exa agentic search for this turn.',
       '',
       'Behave like a normal chat assistant first. Answer directly when enough context exists. If a tool, upload, connector, source check, memo, or capsule update would help, decide that yourself and explain the next step plainly.',
       'Format the answer for a policy team: start with a short answer, then use concise headings for Findings, Source posture, Gaps, and Next actions when relevant. Do not fabricate citations; name source gaps plainly.',
@@ -904,6 +945,7 @@ export function TaskletPraxisWorkbench({
           aiSettings: {
             provider: 'vertex',
             analysisDepth: selectedAgent.id === 'research-memo' || selectedAgent.id === 'capsule-factory' ? 'deep' : 'standard',
+            agenticSearchPremium: agenticSearchPremiumEnabled && canUseAgenticSearchPremium,
           },
         }),
       });
@@ -1628,6 +1670,35 @@ export function TaskletPraxisWorkbench({
     }
     setStatus(`${capsule.label} archived.`);
     await refreshCapsules();
+  }
+
+  async function rateCapsuleUsefulness(capsule: PraxisCapsuleSummary, rating: number) {
+    if (!isAuthenticated) {
+      sendPublicToLogin(`Rate "${capsule.label}" usefulness.`);
+      return;
+    }
+    const persisted = userCapsules.find((item) => item.capsuleId === capsule.capsuleId);
+    if (!persisted) {
+      setStatus('Save or fork this starter before rating usefulness.');
+      return;
+    }
+    if (persisted.access?.allowCommunityRating === false) {
+      setStatus('Community usefulness rating is disabled for this capsule.');
+      return;
+    }
+    const response = await fetch(`/api/context/capsules/${encodeURIComponent(persisted.capsuleId)}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'rate', rating }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setStatus(payload?.error ? `Rating failed: ${payload.error}` : 'Rating failed.');
+      return;
+    }
+    setStatus(`Rated ${persisted.label} ${rating}/5 for usefulness.`);
+    await refreshCapsules(persisted.capsuleId);
   }
 
   async function setCapsuleVisibility(capsule: PraxisCapsuleSummary, visibility: 'private' | 'public') {
@@ -2439,6 +2510,35 @@ export function TaskletPraxisWorkbench({
                   />
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        sendPublicToLogin(prompt.trim() || 'Use Premium web search in PRAXIS.');
+                        return;
+                      }
+                      if (!canUseAgenticSearchPremium) {
+                        window.location.href = '/login?mode=signup&plan=analyst';
+                        return;
+                      }
+                      setAgenticSearchPremiumEnabled((enabled) => !enabled);
+                      setStatus(agenticSearchPremiumEnabled
+                        ? 'Exa agentic search disabled for the next turn.'
+                        : 'Exa agentic search enabled for the next turn. PRAXIS will use it only when current web evidence is needed.');
+                    }}
+                    aria-pressed={agenticSearchPremiumEnabled && canUseAgenticSearchPremium}
+                    title={canUseAgenticSearchPremium ? 'Toggle Exa agentic search for this conversation turn' : 'Premium web requires a paid PRAXIS subscription'}
+                    className={cn(
+                      'inline-flex h-10 items-center gap-2 rounded-md border px-3 text-xs font-semibold shadow-sm transition',
+                      agenticSearchPremiumEnabled && canUseAgenticSearchPremium
+                        ? 'border-amber-300 bg-amber-50 text-amber-900 shadow-amber-900/5'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+                    )}
+                  >
+                    {canUseAgenticSearchPremium ? <Search className="h-4 w-4" /> : <LockKeyhole className="h-4 w-4" />}
+                    <span className="hidden sm:inline">Premium web</span>
+                    <span className="rounded-sm bg-slate-950 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Exa</span>
+                  </button>
                   <span className="hidden rounded-md border border-slate-200 bg-white px-2 py-2 text-xs font-semibold text-slate-600 sm:inline-flex">
                     TACITUS routes model, worker, and tools
                   </span>
@@ -2749,6 +2849,7 @@ export function TaskletPraxisWorkbench({
                         onAdd={applyCapsuleCard}
                         onInspect={chatWithCapsule}
                         onImprove={improveCapsuleCard}
+                        onRateUsefulness={rateCapsuleUsefulness}
                         onDownload={(capsule) => void downloadCapsulePackage(capsule)}
                         onArchive={(capsule) => void archiveCapsuleCard(capsule)}
                       />
@@ -2762,6 +2863,7 @@ export function TaskletPraxisWorkbench({
                         onAdd={applyCapsuleCard}
                         onInspect={chatWithCapsule}
                         onImprove={improveCapsuleCard}
+                        onRateUsefulness={rateCapsuleUsefulness}
                         onDownload={(capsule) => void downloadCapsulePackage(capsule)}
                         onArchive={(capsule) => void archiveCapsuleCard(capsule)}
                       />
@@ -2782,6 +2884,7 @@ export function TaskletPraxisWorkbench({
                         onAdd={() => applyCapsuleCard(capsule)}
                         onInspect={() => chatWithCapsule(capsule)}
                         onImprove={() => improveCapsuleCard(capsule)}
+                        onRateUsefulness={(rating) => void rateCapsuleUsefulness(capsule, rating)}
                         onDownload={() => void downloadCapsulePackage(capsule)}
                         onMakePrivate={() => void setCapsuleVisibility(capsule, 'private')}
                         onMakePublic={() => void setCapsuleVisibility(capsule, 'public')}
@@ -2860,6 +2963,7 @@ export function TaskletPraxisWorkbench({
                       onMakePublic={() => selectedCapsule ? void setCapsuleVisibility(selectedCapsule, 'public') : undefined}
                       onDelete={() => selectedCapsule ? void deleteCapsule(selectedCapsule) : undefined}
                       onRefresh={() => void refreshCapsules(currentCapsuleId)}
+                      onRateUsefulness={(rating) => selectedCapsule ? void rateCapsuleUsefulness(selectedCapsule, rating) : undefined}
                       onRetryFocusedRun={() => void postFocusedRunAction('retry')}
                       onCancelFocusedRun={() => void postFocusedRunAction('cancel')}
                       onDecideApproval={(approvalId, decision) => void postFocusedRunAction(`approvals/${encodeURIComponent(approvalId)}`, { decision })}
@@ -2897,6 +3001,7 @@ export function TaskletPraxisWorkbench({
                       onAdd={() => applyCapsuleCard(capsule)}
                       onInspect={() => chatWithCapsule(capsule)}
                       onImprove={() => improveCapsuleCard(capsule)}
+                      onRateUsefulness={(rating) => void rateCapsuleUsefulness(capsule, rating)}
                       onDownload={() => void downloadCapsulePackage(capsule)}
                       onMakePrivate={() => void setCapsuleVisibility(capsule, 'private')}
                       onMakePublic={() => void setCapsuleVisibility(capsule, 'public')}
@@ -2956,6 +3061,7 @@ export function TaskletPraxisWorkbench({
             setRepositoryOpen(true);
             void refreshRepository();
           }}
+          onRateUsefulness={(rating) => selectedCapsule ? void rateCapsuleUsefulness(selectedCapsule, rating) : undefined}
         />
       ) : null}
       {capsuleBrowserOpen ? (
@@ -3431,6 +3537,15 @@ function starterDefinitionToCapsuleSummary(starter: CapsuleStarterDefinition): P
     community: {
       tags: starter.tags,
       favorite: false,
+      userRating: null,
+      averageRating: null,
+      ratingCount: 0,
+    },
+    access: {
+      visibility: 'public',
+      allowDownload: false,
+      allowClone: true,
+      allowCommunityRating: false,
     },
     trust: {
       level: 'starter',
@@ -3443,6 +3558,48 @@ function starterDefinitionToCapsuleSummary(starter: CapsuleStarterDefinition): P
 function starterDefinitionForCapsule(capsule: PraxisCapsuleSummary | null): CapsuleStarterDefinition | null {
   if (!capsule) return null;
   return CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === capsule.capsuleId) ?? null;
+}
+
+function buildCapsuleUsefulnessRating(capsule: PraxisCapsuleSummary, mutable: boolean): CapsuleUsefulnessRating {
+  const isStarter = Boolean(starterDefinitionForCapsule(capsule));
+  const enabled = mutable && capsule.access?.allowCommunityRating !== false;
+  return {
+    userRating: typeof capsule.community?.userRating === 'number' ? capsule.community.userRating : null,
+    averageRating: typeof capsule.community?.averageRating === 'number' ? capsule.community.averageRating : null,
+    ratingCount: Math.max(0, capsule.community?.ratingCount ?? 0),
+    enabled,
+    disabledReason: enabled ? null : isStarter && !mutable
+      ? 'Save or fork this starter before rating usefulness.'
+      : 'Community usefulness rating is disabled for this capsule.',
+  };
+}
+
+function buildCapsuleEnrichmentReceipt(capsule: PraxisCapsuleSummary | null): CapsuleEnrichmentReceipt {
+  const memoryIds = capsule?.coreRefs.memoryCoreId ? [capsule.coreRefs.memoryCoreId] : [];
+  return {
+    canonicalStatus: 'firestore-canonical',
+    firestore: 'ready',
+    cognee: 'disabled',
+    graphiti: 'deferred',
+    memoryHitCount: memoryIds.length,
+    memoryItemIds: memoryIds,
+    warnings: [],
+    writebackProposalIds: [],
+  };
+}
+
+function capsuleQualityAuditForSummary(capsule: PraxisCapsuleSummary | null): CapsuleQualityAuditResult | null {
+  const starterDefinition = starterDefinitionForCapsule(capsule);
+  return starterDefinition ? runCapsuleStarterQualityAudit(starterDefinition) : null;
+}
+
+function capsuleImprovementProposalsForSummary(capsule: PraxisCapsuleSummary | null): CapsuleImprovementProposal[] {
+  const audit = capsuleQualityAuditForSummary(capsule);
+  return audit ? proposeCapsuleImprovementsFromQualityAudit(audit, { evidenceSourceIds: [`audit:${audit.starterId}`], generatedBy: 'quality-audit' }).slice(0, 4) : [];
+}
+
+function isPaidSubscription(tier: string | null | undefined): boolean {
+  return tier === 'analyst' || tier === 'team' || tier === 'enterprise';
 }
 
 function capsuleSummaryForChip(chip: ActiveCapsuleChip | undefined, userCapsules: PraxisCapsuleSummary[]): PraxisCapsuleSummary | null {
@@ -3634,9 +3791,8 @@ function filterPublicCapsules(query: string, typeFilter: string, domainFilter: s
 
 function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, typeFilter: string, domainFilter: string, policyTeamFilter: string): PraxisCapsuleSummary[] {
   const clean = query.trim().toLowerCase();
-  return capsules
+  const filtered = capsules
     .filter((capsule) => {
-      const tags = capsule.community?.tags ?? [];
       const isArchived = Boolean(capsule.archivedAt);
       if (typeFilter === 'archived') {
         if (!isArchived) return false;
@@ -3646,32 +3802,56 @@ function filterUserCapsules(capsules: PraxisCapsuleSummary[], query: string, typ
       if (!capsuleMatchesDomain(capsule, domainFilter)) return false;
       if (!capsuleMatchesPolicyTeam(capsule, policyTeamFilter)) return false;
       if (!clean) return true;
-      const taxonomy = resolveCapsuleTaxonomy(capsule);
-      return [
-        capsule.capsuleId,
-        capsule.label,
-        capsule.scope,
-        capsuleCategoryMeta(capsule).summary,
-        capsuleCategoryMeta(capsule).detail,
-        ...tags,
-        ...taxonomy.types.map((facet) => facet.id),
-        ...taxonomy.types.map((facet) => facet.label),
-        ...taxonomy.domains.map((facet) => facet.id),
-        ...taxonomy.domains.map((facet) => facet.label),
-        ...taxonomy.policyTeams.map((facet) => facet.id),
-        ...taxonomy.policyTeams.map((facet) => facet.label),
-        ...(capsule.coreRefs.sourceCoreIds ?? []),
-        ...(capsule.coreRefs.documentCoreIds ?? []),
-        ...(capsule.coreRefs.toolCoreIds ?? []),
-        ...(capsule.coreRefs.outputCoreIds ?? []),
-        ...(capsule.coreRefs.productCoreIds ?? []),
-      ].join(' ').toLowerCase().includes(clean);
+      return true;
     })
-    .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+    .map((capsule) => ({ ...capsule, searchMatchReason: null }));
+  if (!clean) return filtered.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+
+  const capsuleBySearchId = new Map(filtered.map((capsule) => [`capsule:${capsule.capsuleId}`, capsule]));
+  const rankedCapsules: PraxisCapsuleSummary[] = [];
+  for (const result of rankAppSearchItems(query, filtered.map(capsuleSummarySearchItem))) {
+    const capsule = capsuleBySearchId.get(result.id);
+    if (capsule) rankedCapsules.push({ ...capsule, searchMatchReason: capsuleSearchMatchReason(result) });
+  }
+  return rankedCapsules;
 }
 
 function filterStarterCapsules(query: string, typeFilter: string, domainFilter: string, policyTeamFilter: string): PraxisCapsuleSummary[] {
   return filterUserCapsules(starterCapsuleSummaries, query, typeFilter, domainFilter, policyTeamFilter);
+}
+
+function capsuleSummarySearchItem(capsule: PraxisCapsuleSummary): AppSearchItemInput {
+  const starter = starterDefinitionForCapsule(capsule);
+  if (starter) return buildCapsuleSearchItem(starter);
+  const taxonomy = resolveCapsuleTaxonomy(capsule);
+  const meta = capsuleCategoryMeta(capsule);
+  return {
+    id: `capsule:${capsule.capsuleId}`,
+    label: capsule.label,
+    description: capsule.scope || meta.summary,
+    kind: capsuleCategory(capsule) === 'output' ? 'Output' : 'Capsule',
+    href: '/app/capsules',
+    keywords: [
+      capsule.capsuleId,
+      capsule.label,
+      capsule.scope,
+      ...(capsule.community?.tags ?? []),
+      ...(capsule.coreRefs.sourceCoreIds ?? []),
+      ...(capsule.coreRefs.documentCoreIds ?? []),
+      ...(capsule.coreRefs.toolCoreIds ?? []),
+      ...(capsule.coreRefs.outputCoreIds ?? []),
+      ...(capsule.coreRefs.productCoreIds ?? []),
+    ].filter(Boolean),
+    fields: [
+      { name: 'title', text: `${capsule.label} ${capsule.capsuleId}`, weight: 1_000 },
+      { name: 'type', text: taxonomy.types.map((item) => `${item.id} ${item.label}`).join(' '), weight: 760 },
+      { name: 'domain', text: taxonomy.domains.map((item) => `${item.id} ${item.label}`).join(' '), weight: 720 },
+      { name: 'team', text: taxonomy.policyTeams.map((item) => `${item.id} ${item.label}`).join(' '), weight: 700 },
+      { name: 'source pack', text: (capsule.coreRefs.sourceCoreIds ?? []).join(' '), weight: 620 },
+      { name: 'output target', text: [...(capsule.coreRefs.outputCoreIds ?? []), ...(capsule.coreRefs.productCoreIds ?? [])].join(' '), weight: 610 },
+      { name: 'description', text: [capsule.scope, meta.summary, meta.detail, ...(capsule.community?.tags ?? [])].join(' '), weight: 420 },
+    ],
+  };
 }
 
 function buildVisibleCapsuleCards({
@@ -4369,6 +4549,7 @@ function FeaturedExpertPicksShelf({
   onAdd,
   onInspect,
   onImprove,
+  onRateUsefulness,
   onDownload,
   onMakePrivate,
   onMakePublic,
@@ -4384,6 +4565,7 @@ function FeaturedExpertPicksShelf({
   onAdd: (capsule: PraxisCapsuleSummary) => void;
   onInspect: (capsule: PraxisCapsuleSummary) => void;
   onImprove: (capsule: PraxisCapsuleSummary) => void;
+  onRateUsefulness?: (capsule: PraxisCapsuleSummary, rating: number) => void;
   onDownload: (capsule: PraxisCapsuleSummary) => void;
   onMakePrivate?: (capsule: PraxisCapsuleSummary) => void;
   onMakePublic?: (capsule: PraxisCapsuleSummary) => void;
@@ -4414,6 +4596,7 @@ function FeaturedExpertPicksShelf({
               onAdd={() => onAdd(capsule)}
               onInspect={() => onInspect(capsule)}
               onImprove={() => onImprove(capsule)}
+              onRateUsefulness={(rating) => onRateUsefulness?.(capsule, rating)}
               onDownload={() => onDownload(capsule)}
               onMakePrivate={onMakePrivate ? () => onMakePrivate(capsule) : undefined}
               onMakePublic={onMakePublic ? () => onMakePublic(capsule) : undefined}
@@ -4451,6 +4634,50 @@ function BuildYourOwnKnowledgeCta({ isAuthenticated, onBuildOwn }: { isAuthentic
   );
 }
 
+function CapsuleUsefulnessRatingControl({
+  rating,
+  compact = false,
+  testId,
+  onRate,
+}: {
+  rating: CapsuleUsefulnessRating;
+  compact?: boolean;
+  testId: string;
+  onRate: (rating: number) => void;
+}) {
+  const visibleValue = rating.userRating ?? rating.averageRating ?? 0;
+  return (
+    <span className={cn('mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-600', !compact && 'rounded-lg border border-slate-200 bg-white p-3')} data-testid={testId}>
+      <span className="font-semibold text-slate-700">Helped me/agent do useful work</span>
+      <span className="inline-flex h-7 items-center rounded-md border border-slate-200 bg-white px-1">
+        {[1, 2, 3, 4, 5].map((value) => (
+          <button
+            key={value}
+            type="button"
+            disabled={!rating.enabled}
+            title={rating.enabled ? `Rate usefulness ${value}/5` : rating.disabledReason ?? 'Rating disabled'}
+            aria-label={rating.enabled ? `Rate usefulness ${value}/5` : rating.disabledReason ?? 'Rating disabled'}
+            onClick={(event) => {
+              event.stopPropagation();
+              if (rating.enabled) onRate(value);
+            }}
+            className={cn(
+              'inline-flex h-6 w-6 items-center justify-center rounded-sm text-slate-300 hover:bg-slate-50',
+              rating.enabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-60',
+            )}
+          >
+            <Star className={cn('h-3.5 w-3.5', value <= visibleValue && 'fill-amber-400 text-amber-500')} />
+          </button>
+        ))}
+      </span>
+      <span className="font-mono text-[10px] text-slate-500">
+        {rating.averageRating ? `${rating.averageRating.toFixed(1)} avg` : 'no avg'} · {rating.ratingCount} ratings
+      </span>
+      {!rating.enabled && rating.disabledReason ? <span className="text-[10px] font-semibold text-slate-400">{rating.disabledReason}</span> : null}
+    </span>
+  );
+}
+
 function CapsuleCard({
   capsule,
   active,
@@ -4461,6 +4688,7 @@ function CapsuleCard({
   onAdd,
   onInspect,
   onImprove,
+  onRateUsefulness,
   onDownload,
   onMakePrivate,
   onMakePublic,
@@ -4476,6 +4704,7 @@ function CapsuleCard({
   onAdd: () => void;
   onInspect: () => void;
   onImprove: () => void;
+  onRateUsefulness?: (rating: number) => void;
   onDownload: () => void;
   onMakePrivate?: () => void;
   onMakePublic?: () => void;
@@ -4499,6 +4728,7 @@ function CapsuleCard({
   const CategoryIcon = capsuleCategoryIcon(meta.category);
   const sourcePosture = capsuleSourcePosture(capsule);
   const reasoningStyle = capsuleReasoningStyle(capsule);
+  const usefulness = buildCapsuleUsefulnessRating(capsule, mutable);
   return (
     <article
       ref={setNodeRef}
@@ -4548,8 +4778,15 @@ function CapsuleCard({
           <span>health {score}/100</span>
           <span>{counts.documents} docs</span>
           <span>{counts.sources} sources</span>
+          <span>{counts.tools} tools</span>
+          <span>{counts.outputs} outputs</span>
         </span>
         <span className="mt-3 block line-clamp-2 text-xs leading-5 text-slate-600">{purposeLine}</span>
+        {capsule.searchMatchReason ? (
+          <span className="mt-2 block rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">
+            {capsule.searchMatchReason}
+          </span>
+        ) : null}
         <span className="mt-3 grid gap-1.5 text-[11px] leading-5 text-slate-600">
           <span className="rounded-md bg-white/80 px-2 py-1"><strong className="text-slate-700">Source posture:</strong> {sourcePosture}</span>
           <span className="rounded-md bg-white/80 px-2 py-1"><strong className="text-slate-700">Reasoning style:</strong> {reasoningStyle}</span>
@@ -4561,6 +4798,12 @@ function CapsuleCard({
         </span>
       </button>
       <div className="px-3 pb-3">
+      <CapsuleUsefulnessRatingControl
+        rating={usefulness}
+        compact
+        testId="capsule-usefulness-rating"
+        onRate={(rating) => onRateUsefulness?.(rating)}
+      />
       <div className="grid grid-cols-4 gap-1.5" aria-label={`${capsule.label} readiness signals`}>
         {[
           { label: 'Docs', active: counts.documents > 0 },
@@ -4639,6 +4882,7 @@ function CapsuleDetailPanel({
   onMakePublic,
   onDelete,
   onRefresh,
+  onRateUsefulness,
   onRetryFocusedRun,
   onCancelFocusedRun,
   onDecideApproval,
@@ -4668,6 +4912,7 @@ function CapsuleDetailPanel({
   onMakePublic: () => void;
   onDelete: () => void;
   onRefresh: () => void;
+  onRateUsefulness: (rating: number) => void;
   onRetryFocusedRun: () => void;
   onCancelFocusedRun: () => void;
   onDecideApproval: (approvalId: string, decision: 'approved' | 'rejected') => void;
@@ -4683,6 +4928,10 @@ function CapsuleDetailPanel({
   }
   const counts = capsuleCounts(capsule);
   const state = capsuleState(capsule);
+  const usefulness = buildCapsuleUsefulnessRating(capsule, true);
+  const audit = capsuleQualityAuditForSummary(capsule);
+  const enrichmentReceipt = buildCapsuleEnrichmentReceipt(capsule);
+  const proposals = capsuleImprovementProposalsForSummary(capsule);
   return (
     <aside className="specimen-card rounded-lg p-4 shadow-sm shadow-black/5" data-testid="capsule-detail-panel">
       <div className="flex items-start justify-between gap-3">
@@ -4697,6 +4946,36 @@ function CapsuleDetailPanel({
         <Metric label="Sources" value={counts.sources} />
         <Metric label="Tools" value={counts.tools} />
         <Metric label="Outputs" value={counts.outputs} />
+      </div>
+      <CapsuleUsefulnessRatingControl
+        rating={usefulness}
+        testId="capsule-inspector-usefulness-rating"
+        onRate={onRateUsefulness}
+      />
+      <div className="mt-4 rounded-lg border border-slate-200 p-3">
+        <p className="text-[11px] font-semibold uppercase text-slate-400">Quality audit</p>
+        <div className="mt-2 grid grid-cols-2 gap-1.5 text-[11px] text-slate-600">
+          <span>Taxonomy {audit ? Math.round(audit.scores.taxonomy * 100) : 'n/a'}</span>
+          <span>Sources {audit ? Math.round(audit.scores.sourceability * 100) : 'n/a'}</span>
+          <span>Agent usability {audit ? Math.round(audit.scores.agentUsability * 100) : 'n/a'}</span>
+          <span>Review gate {audit ? Math.round(audit.scores.reviewGate * 100) : 'n/a'}</span>
+        </div>
+      </div>
+      <div className="mt-3 rounded-lg border border-slate-200 p-3">
+        <p className="text-[11px] font-semibold uppercase text-slate-400">Enrichment status</p>
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          Firestore canonical. Cognee advisory: {enrichmentReceipt.cognee}. Memory hits: {enrichmentReceipt.memoryHitCount}. Graphiti: {enrichmentReceipt.graphiti}.
+        </p>
+      </div>
+      <div className="mt-3 rounded-lg border border-slate-200 p-3">
+        <p className="text-[11px] font-semibold uppercase text-slate-400">Proposed next improvements</p>
+        <div className="mt-2 space-y-1.5">
+          {(proposals.length ? proposals : [{ proposalId: 'no-proposals', target: 'suggestedNextActions', rationale: 'No review-gated proposal is needed from the current quality audit.', reviewStatus: 'proposed' }]).slice(0, 3).map((proposal) => (
+            <p key={proposal.proposalId} className="rounded-md bg-slate-50 px-2 py-1.5 text-[11px] leading-5 text-slate-600">
+              <span className="font-semibold text-slate-800">{proposal.target}</span>: {proposal.rationale}
+            </p>
+          ))}
+        </div>
       </div>
       <CapsuleHealthMeter counts={counts} state={state} agentRunCount={agentRuns.length} />
       <RuntimeProofStrip proof={runtimeProof} />
@@ -4945,7 +5224,9 @@ function FocusedAgentRunPanel({
             <ProofCell label="active capsule/chain" value={run.contextReceipt.activeCapsuleOrChain ?? run.capsuleId} />
             <ProofCell label="selected tools" value={run.contextReceipt.selectedTools.length ? run.contextReceipt.selectedTools.join(', ') : 'ask-praxis'} />
             <ProofCell label="output destination" value={run.contextReceipt.outputDestination?.replaceAll('_', ' ') ?? 'not selected'} />
-            <ProofCell label="source posture" value={run.contextReceipt.sourcePosture ?? 'Baseline'} />
+            <ProofCell label="source receipts" value={String(run.contextReceipt.sourceCount ?? run.sourceCount ?? run.sourceReceiptIds?.length ?? 0)} />
+            <ProofCell label="grounding posture" value={run.contextReceipt.groundingPosture ?? run.groundingPosture ?? 'No grounding metadata'} />
+            <ProofCell label="degraded reason" value={run.contextReceipt.degradedReason ?? run.degradedReason ?? 'none'} />
           </div>
         </div>
       ) : null}
@@ -5552,12 +5833,14 @@ function CapsuleInspectorSheet({
   onClose,
   onImprove,
   onRepository,
+  onRateUsefulness,
 }: {
   capsule: PraxisCapsuleSummary | null;
   policyTeam: PolicyTeamCategory | null;
   onClose: () => void;
   onImprove: () => void;
   onRepository: () => void;
+  onRateUsefulness: (rating: number) => void;
 }) {
   const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
   const meta = capsule ? capsuleCategoryMeta(capsule) : null;
@@ -5577,6 +5860,10 @@ function CapsuleInspectorSheet({
     .map((id) => CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === id)?.label ?? id)
     .slice(0, 4) ?? [];
   const warnings = capsule?.health?.warnings ?? [];
+  const usefulness = capsule ? buildCapsuleUsefulnessRating(capsule, true) : null;
+  const audit = capsuleQualityAuditForSummary(capsule);
+  const enrichmentReceipt = buildCapsuleEnrichmentReceipt(capsule);
+  const proposals = capsuleImprovementProposalsForSummary(capsule);
   return (
     <div className="fixed inset-0 z-40 bg-black/25" data-testid="capsule-inspector-sheet">
       <aside className="dossier-spine ml-auto flex h-full w-full max-w-xl flex-col overflow-y-auto p-5 shadow-2xl">
@@ -5605,6 +5892,13 @@ function CapsuleInspectorSheet({
           <Metric label="Tools" value={counts.tools} />
           <Metric label="Outputs" value={counts.outputs} />
         </div>
+        {usefulness ? (
+          <CapsuleUsefulnessRatingControl
+            rating={usefulness}
+            testId="capsule-inspector-usefulness-rating"
+            onRate={onRateUsefulness}
+          />
+        ) : null}
         {richProfile ? (
           <div className="mt-5 space-y-2" data-testid="capsule-rich-profile">
             <InspectorTextSection label="Purpose" detail={`${richProfile.purpose} ${richProfile.userJob}`} />
@@ -5658,6 +5952,34 @@ function CapsuleInspectorSheet({
               <InspectorRef label="Marketplace readiness" value={capsule.trust?.label ?? 'private by default'} />
               <InspectorRef label="Open gaps" value={warnings.join(', ') || starterQuestions.slice(0, 2).join(', ')} />
             </div>
+          </div>
+        ) : null}
+        {capsule ? (
+          <div className="mt-5 grid gap-3">
+            <section className="rounded-lg border border-slate-200 p-3">
+              <p className="text-xs font-semibold uppercase text-slate-400">Quality audit</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                {audit
+                  ? `Taxonomy ${Math.round(audit.scores.taxonomy * 100)}, sourceability ${Math.round(audit.scores.sourceability * 100)}, agent usability ${Math.round(audit.scores.agentUsability * 100)}, review gate ${Math.round(audit.scores.reviewGate * 100)}.`
+                  : 'Custom capsule quality is evaluated through saved evaluations and source coverage.'}
+              </p>
+            </section>
+            <section className="rounded-lg border border-slate-200 p-3">
+              <p className="text-xs font-semibold uppercase text-slate-400">Enrichment status</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Firestore canonical. Cognee advisory: {enrichmentReceipt.cognee}. Memory hits: {enrichmentReceipt.memoryHitCount}. Proposed writebacks: {enrichmentReceipt.writebackProposalIds.length}.
+              </p>
+            </section>
+            <section className="rounded-lg border border-slate-200 p-3">
+              <p className="text-xs font-semibold uppercase text-slate-400">Proposed next improvements</p>
+              <div className="mt-2 grid gap-1.5">
+                {(proposals.length ? proposals : [{ proposalId: 'no-proposals', target: 'suggestedNextActions', rationale: 'No review-gated proposal is needed from the current quality audit.' }]).slice(0, 3).map((proposal) => (
+                  <p key={proposal.proposalId} className="rounded-md bg-slate-50 px-2 py-1.5 text-xs leading-5 text-slate-600">
+                    <span className="font-semibold text-slate-800">{proposal.target}</span>: {proposal.rationale}
+                  </p>
+                ))}
+              </div>
+            </section>
           </div>
         ) : null}
         {starterSections.length ? (

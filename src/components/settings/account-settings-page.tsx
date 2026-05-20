@@ -26,6 +26,7 @@ import { DangerZone } from '@/components/settings/danger-zone';
 import { LivingContextRail } from '@/components/ui/instrument';
 import { useAuth } from '@/lib/auth/auth-context';
 import { MODEL_PREFERENCE_VALUES } from '@/lib/ai/model-preferences';
+import { buildAppDiagnosticSummary, type AppDiagnosticStatus } from '@/lib/diagnostics/app-red-flags';
 import { cn } from '@/lib/utils/cn';
 import {
   CITATION_STYLES,
@@ -992,6 +993,14 @@ function SystemTab({
   const coreChecks = typeof coreHealth?.checks === 'object' && coreHealth?.checks !== null
     ? Object.entries(coreHealth.checks as Record<string, unknown>)
     : [];
+  const diagnosticSummary = buildAppDiagnosticSummary({
+    runtimeHealth,
+    agenticSearchHealth,
+    appSearchAudit: { status: 'ok', detail: 'Command IDs, diagnostic targets, and app routes are checked by npm run audit:app-search.' },
+    capsuleAudit: { status: 'ok', detail: 'Capsule strict filters, review gates, and starter contracts are checked by local audits.' },
+    graphFreshness: { status: 'degraded', detail: 'Graphify freshness is verified locally by npm run audit:app-search because HEAD is not exposed to the browser.' },
+    authCanary: { missingEnvVars: ['TEST_FIREBASE_EMAIL', 'TEST_FIREBASE_PASSWORD'] },
+  });
 
   async function decideMemoryCandidate(candidate: MemoryCandidate, decision: 'promote' | 'reject') {
     const candidateId = candidate.candidateId ?? candidate.id;
@@ -1053,6 +1062,38 @@ function SystemTab({
         </div>
 
         {healthError ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">{healthError}</p> : null}
+
+        <div className="rounded-lg border border-slate-200 bg-white p-3" data-testid="system-red-flags-summary">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-navy-950">Diagnostic red flags</p>
+              <p className="mt-1 text-xs leading-5 text-navy-500">
+                Read-only grouped repair guidance from live endpoints, local audits, static route checks, and skipped canary gates.
+              </p>
+            </div>
+            <StatusPill status={Object.values(diagnosticSummary.groups).flat().some((item) => item.status === 'blocked') ? 'down' : 'degraded'} />
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {Object.entries(diagnosticSummary.groups).map(([group, flags]) => (
+              <section key={group} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-navy-500">{group}</p>
+                <div className="mt-2 space-y-2">
+                  {flags.map((flag) => (
+                    <div key={flag.id} className="rounded-md bg-white p-2 text-xs leading-5 text-navy-600">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-navy-950">{flag.label}</span>
+                        <DiagnosticStatusPill status={flag.status} />
+                      </div>
+                      <p className="mt-1">{flag.detail}</p>
+                      <p className="mt-1 text-amber-700">{flag.repairAction}</p>
+                      <p className="mt-1 text-[11px] uppercase tracking-[0.1em] text-navy-400">{flag.source}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
 
         <div className="grid gap-3 md:grid-cols-2">
           <div className="rounded-lg border border-slate-200 bg-white p-3">
@@ -1249,6 +1290,15 @@ function StatusPill({ status }: { status: RuntimeHealthStatus }) {
       {status}
     </span>
   );
+}
+
+function DiagnosticStatusPill({ status }: { status: AppDiagnosticStatus }) {
+  const mapped: RuntimeHealthStatus = status === 'healthy'
+    ? 'ok'
+    : status === 'blocked'
+      ? 'down'
+      : 'degraded';
+  return <StatusPill status={mapped} />;
 }
 
 function repairActionFor(check: unknown): string | null {

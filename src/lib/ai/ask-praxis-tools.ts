@@ -11,6 +11,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { gateTier, type SubscriptionTier } from '@/lib/api/tier';
+import { runExaAgenticSearch } from '@/lib/ai/exa-agentic-search';
 import { scrapeUrl } from '@/lib/ai/grounded-research';
 import { createGraphUpdateProposal, type GraphUpdateKind } from '@/lib/firebase/graph-updates-service';
 
@@ -20,6 +21,7 @@ export interface AskPraxisToolBindings {
   profileVersion: number;
   tier: SubscriptionTier;
   isDemo: boolean;
+  agenticSearchPremiumEnabled?: boolean;
 }
 
 const TOOL_TIMEOUT_MS = 30_000;
@@ -160,6 +162,58 @@ export function makeRunDeepResearch(b: AskPraxisToolBindings) {
   });
 }
 
+export function makePremiumExaSearch(b: AskPraxisToolBindings) {
+  return tool({
+    description:
+      'Paid conversation extra: run Exa /search for agentic web research when the user has explicitly enabled the Premium web button for this conversation turn. Uses highlights by default and returns source URLs, highlights, and optional structured output grounding.',
+    inputSchema: z.object({
+      query: z.string().min(3).max(1000),
+      type: z.enum(['auto', 'fast', 'instant', 'deep-lite', 'deep', 'deep-reasoning']).default('auto'),
+      numResults: z.number().int().min(1).max(20).default(8),
+      includeDomains: z.array(z.string()).max(25).optional(),
+      excludeDomains: z.array(z.string()).max(25).optional(),
+      maxAgeHours: z.number().int().min(-1).max(8760).optional(),
+      systemPrompt: z.string().max(1200).optional(),
+      outputSchema: z.record(z.string(), z.unknown()).optional(),
+      reason: z.string().max(500).describe('Why this premium search is needed for the user-visible answer.'),
+    }),
+    execute: async ({ query, type, numResults, includeDomains, excludeDomains, maxAgeHours, systemPrompt, outputSchema, reason }) => {
+      if (!b.agenticSearchPremiumEnabled) {
+        return {
+          ok: false,
+          requiresButton: 'agenticSearchPremium',
+          message: 'Premium Exa search is available only after the user turns on the Premium web button for this conversation turn.',
+        };
+      }
+      const gate = gateTier(b.tier, 'analyst');
+      if (!gate.ok) {
+        return {
+          ok: false,
+          requiresTier: gate.requiredTier,
+          currentTier: gate.currentTier,
+          upgradeHref: '/login?mode=signup&plan=analyst',
+          message: 'Premium Exa search requires a paid PRAXIS subscription.',
+        };
+      }
+      const result = await runExaAgenticSearch({
+        query,
+        type,
+        numResults,
+        includeDomains,
+        excludeDomains,
+        maxAgeHours,
+        outputSchema,
+        systemPrompt,
+      });
+      return {
+        ...result,
+        reason,
+        via: 'exa-search-premium',
+      };
+    },
+  });
+}
+
 export function makeProposeGraphDelta(b: AskPraxisToolBindings) {
   return tool({
     description:
@@ -227,5 +281,6 @@ export function buildAskPraxisExtensions(b: AskPraxisToolBindings) {
     proposeGraphDelta: makeProposeGraphDelta(b),
     groundedSearchFetch: makeGroundedSearchFetch(b, sessionKey),
     runDeepResearch: makeRunDeepResearch(b),
+    ...(b.agenticSearchPremiumEnabled ? { premiumExaSearch: makePremiumExaSearch(b) } : {}),
   };
 }

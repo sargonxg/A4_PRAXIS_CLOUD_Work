@@ -451,6 +451,7 @@ You have access to the user's active situation data. When answering questions:
       profileVersion: _user.calibration.provenance.profileVersion ?? 1,
       tier,
       isDemo: _user.isDemo === true,
+      agenticSearchPremiumEnabled: aiSettings?.agenticSearchPremium === true,
     });
     const tools = runAskTools({ ...baseTools, ...askPraxisExt }, toolInvocations);
     const toolsConsidered = Object.keys(tools).sort();
@@ -458,6 +459,9 @@ You have access to the user's active situation data. When answering questions:
       ? '\n\nANALYSIS DEPTH: Provide a more detailed answer with explicit assumptions, alternative interpretations, source/corpus gaps, and practical next actions. Keep it concise enough for an analyst to use.'
       : '\n\nANALYSIS DEPTH: Provide a concise operational answer with the most relevant assumptions and next action.';
     systemPrompt += depthDirective;
+    systemPrompt += aiSettings?.agenticSearchPremium === true
+      ? '\n\nPREMIUM WEB: The user enabled the paid Exa agentic search extra for this turn. Use premiumExaSearch only when external, current, source-grounded evidence is materially needed; cite returned URLs and do not mention provider cost.'
+      : '\n\nPREMIUM WEB: Exa agentic search is off for this turn. Do not use premiumExaSearch unless the user enables the Premium web button in the conversation composer.';
     systemPrompt += '\n\n' + askIntentDirective(askIntent);
 
     // TACITUS owns model routing for Ask PRAXIS. Legacy client settings are
@@ -943,9 +947,12 @@ function decorateAskRuntimeReceipt(
     memoryPersistence: input.memoryPersistence,
     contextEnrichment: input.turnCapsule?.enrichment?.receipt ?? {
       firestore: 'ready',
+      canonicalStatus: 'firestore-canonical',
       cognee: 'disabled',
       graphiti: 'deferred',
       memoryItemIds: [],
+      memoryHitCount: 0,
+      writebackProposalIds: [],
       warnings: [],
     },
     resolvedCapsules: resolvedCapsule
@@ -1016,6 +1023,24 @@ async function maybeQueueAskAgentRun(input: {
         ?? input.evidencePackReceipt?.paragraphCount
         ?? 0,
     });
+    const sourceReceiptIds = input.turnCapsule?.retrievalPlan.repository.sourceReceiptIds
+      ?? input.capsule.coreRefs.sourceCoreIds
+      ?? [];
+    const sourceCount = sourceReceiptIds.length;
+    const searchPlan = buildAskAgentRunSearchPlan(input.prompt, receipt.toolRouting.selectedToolIds);
+    const googleGroundingActive = groundingPlan.modes.includes('google_search');
+    const searchSelected = receipt.toolRouting.selectedToolIds.includes('grounded-search')
+      || receipt.toolRouting.selectedToolIds.includes('deep-search-agent');
+    const groundingPosture = googleGroundingActive
+      ? 'Google Search grounding active'
+      : searchSelected
+        ? 'Grounding unavailable'
+        : sourceCount > 0
+          ? 'Source receipts saved'
+          : 'No grounding metadata';
+    const degradedReason = searchSelected && !googleGroundingActive
+      ? 'Google Search grounding is not configured.'
+      : null;
     const run = await createAgentRun({
       ownerUid: input.uid,
       capsuleId: input.capsule.capsuleId,
@@ -1052,8 +1077,15 @@ async function maybeQueueAskAgentRun(input: {
         triageIntent: receipt.triage.intent,
         triageComplexity: receipt.triage.complexity,
         selectedToolIds: receipt.toolRouting.selectedToolIds,
+        selectedTools: receipt.toolRouting.selectedToolIds,
         deepSearch: receipt.toolRouting.selectedToolIds.includes('deep-search-agent'),
+        searchPlan,
+        sourceReceiptIds,
+        sourceCount,
+        sourcePosture: sourceCount > 0 ? 'Source receipts saved' : 'No source receipts saved',
         groundingPlan,
+        groundingPosture,
+        degradedReason,
       },
     });
 
@@ -1099,6 +1131,28 @@ function buildAskRouteDecisionReceipt(receipt: AskConversationOrchestrationRecei
     queuedRunId: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable'
       ? receipt.supervisor.queuedRun.runId
       : null,
+  };
+}
+
+function buildAskAgentRunSearchPlan(prompt: string, selectedToolIds: string[]): {
+  queries: string[];
+  sourceClasses: string[];
+  freshnessNeed: string;
+  timeframe: string | null;
+} {
+  const searchSelected = selectedToolIds.includes('grounded-search') || selectedToolIds.includes('deep-search-agent');
+  const text = prompt.trim().replace(/\s+/g, ' ');
+  return {
+    queries: searchSelected ? [text.slice(0, 240)] : [],
+    sourceClasses: searchSelected ? ['public_web', 'attached_sources'] : ['attached_sources'],
+    freshnessNeed: /\b(latest|current|today|recent|new|now|this week|this month)\b/i.test(prompt) ? 'current' : 'not_specified',
+    timeframe: /\b(today|now)\b/i.test(prompt)
+      ? 'today'
+      : /\b(this week|weekly)\b/i.test(prompt)
+        ? 'this week'
+        : /\b(this month|monthly)\b/i.test(prompt)
+          ? 'this month'
+          : null,
   };
 }
 

@@ -192,6 +192,88 @@ describe('agent runtime no-op worker', () => {
     expect(mirrored).toContain('memo_output_created');
   });
 
+  it('persists degraded search evidence receipts before memo output when search tools are selected', async () => {
+    const toolCalls: Array<{ toolId: string; output: Record<string, unknown> | null }> = [];
+    const mirrored: string[] = [];
+
+    await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', {
+        policyAgentId: 'research-memo',
+        selectedToolIds: ['context-resolve', 'grounded-search', 'deep-search-agent', 'policy-memo'],
+        searchPlan: {
+          queries: ['current border access restrictions'],
+          sourceClasses: ['public_web'],
+          freshnessNeed: 'current',
+        },
+        sourceReceiptIds: [],
+        groundingPlan: {
+          modes: ['internal_capsule_corpus'],
+          deferredModes: ['google_search'],
+          requiresSearchSuggestionsDisplay: false,
+          receiptPosture: 'praxis_canonical',
+        },
+      }),
+      updateStatus: async (input) => makeRun(input.toStatus, {
+        policyAgentId: 'research-memo',
+        selectedToolIds: ['context-resolve', 'grounded-search', 'deep-search-agent', 'policy-memo'],
+      }),
+      appendToolCall: async (toolCall) => {
+        toolCalls.push({ toolId: toolCall.toolId, output: toolCall.output });
+        return toolCall;
+      },
+      appendApproval: async (approval) => approval,
+      appendEvent: async (event) => {
+        mirrored.push(String(event.data.phase ?? event.eventType));
+        return event;
+      },
+      buildEvidencePack: async () => ({
+        packId: 'evidence-1',
+        ownerUid: 'user-1',
+        capsuleId: 'cap-1',
+        objective: 'No-op run',
+        builtAt: '2026-05-15T12:00:00.000Z',
+        activeCapsule: { capsuleId: 'cap-1', version: 1 } as never,
+        knowledgeDocuments: [],
+        sourceReceiptIds: [],
+        sourcedParagraphs: [],
+        documentDigests: [],
+        outputHistory: [],
+        memories: [],
+        openGaps: [],
+        receipts: {
+          sourcesUsed: 0,
+          paragraphsUsed: 0,
+          unsupportedGaps: [],
+          outputHistoryCount: 0,
+          memoryCount: 0,
+        },
+      }),
+      saveMemoDraft: async () => ({ memo: { id: 'memo-1' } }),
+      saveOutputCapsule: async () => ({ id: 'output-1' }),
+    });
+
+    const searchCall = toolCalls.find((call) => call.toolId === 'grounded-search');
+    expect(searchCall?.output).toMatchObject({
+      sourceReceiptCount: 0,
+      querySet: ['current border access restrictions'],
+      groundingPosture: 'Grounding unavailable',
+      degradedReason: 'Google Search grounding is not configured.',
+    });
+    expect(toolCalls.find((call) => call.toolId === 'deep-search-agent')?.output).toMatchObject({
+      sourceReceiptCount: 0,
+      gaps: expect.arrayContaining(['No current-source receipts were collected for this run.']),
+    });
+    expect(mirrored).toEqual(expect.arrayContaining([
+      'grounding.search_evidence_started',
+      'tool.grounded-search.completed',
+      'tool.deep-search-agent.completed',
+      'search_evidence_degraded',
+      'search_evidence_collected',
+      'memo_output_created',
+    ]));
+    expect(mirrored.indexOf('search_evidence_collected')).toBeLessThan(mirrored.indexOf('memo_output_created'));
+  });
+
   it('routes output-formatter runs into an export-ready memo draft', async () => {
     const transitions: AgentRun['status'][] = [];
     const mirrored: string[] = [];

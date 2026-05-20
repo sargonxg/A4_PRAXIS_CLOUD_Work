@@ -1,20 +1,30 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Command } from 'cmdk';
 import {
   BookOpenCheck,
+  Command as CommandIcon,
+  FileSearch,
   FolderKanban,
   Home,
+  MessageSquareText,
   Plus,
   Search,
+  ServerCog,
   ShieldAlert,
   Sparkles,
   Upload,
   X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import {
+  buildFederatedSearchResults,
+  fetchFederatedSearchData,
+  type FederatedSearchData,
+  type SearchResult,
+} from '@/lib/search/federated-app-search';
 
 type PraxisCommand = {
   id: string;
@@ -23,7 +33,6 @@ type PraxisCommand = {
   href?: string;
   icon: LucideIcon;
   group: 'Primary surfaces' | 'Context actions' | 'Output actions';
-  run?: (query: string) => void;
 };
 
 export const COMMANDS: PraxisCommand[] = [
@@ -36,6 +45,8 @@ export const COMMANDS: PraxisCommand[] = [
   { id: 'improve-capsule', label: 'Improve capsule', description: 'Ask PRAXIS to find missing context.', href: '/app', icon: Sparkles, group: 'Output actions' },
 ];
 
+const SEARCH_GROUPS: SearchResult['group'][] = ['Ask', 'Commands', 'Conversations', 'Capsules', 'Sources', 'Diagnostics'];
+
 export function GlobalSearch({
   onClose,
   initialQuery = '',
@@ -44,6 +55,7 @@ export function GlobalSearch({
   initialQuery?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
+  const [federatedData, setFederatedData] = useState<FederatedSearchData>({});
   const router = useRouter();
 
   const askPraxis = useCallback((prompt: string) => {
@@ -56,24 +68,37 @@ export function GlobalSearch({
     onClose();
   }, [onClose, router]);
 
-  const commands = useMemo<PraxisCommand[]>(() => [
-    {
-      id: 'ask-query',
-      label: query.trim().length > 0 ? `Ask PRAXIS: ${query.replace(/^\?/, '').trim()}` : 'Ask PRAXIS with current context',
-      description: 'Send the prompt to PRAXIS without exposing the tool library.',
-      icon: Sparkles,
-      group: 'Primary surfaces',
-      run: askPraxis,
-    },
-    ...COMMANDS,
-  ], [askPraxis, query]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchFederatedSearchData()
+        .then(setFederatedData)
+        .catch((error) => {
+          const message = error instanceof Error ? error.message : 'Search data unavailable';
+          setFederatedData({
+            errors: {
+              Conversations: message,
+              Capsules: message,
+              Sources: message,
+              Diagnostics: message,
+            },
+          });
+        });
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [query]);
 
-  function runCommand(command: PraxisCommand) {
-    if (command.run) {
-      command.run(query);
+  const results = useMemo(() => buildFederatedSearchResults({
+    query,
+    commands: COMMANDS,
+    ...federatedData,
+  }), [federatedData, query]);
+
+  function runResult(result: SearchResult) {
+    if (result.run === 'ask') {
+      askPraxis(query);
       return;
     }
-    if (command.href) router.push(command.href);
+    if (result.href) router.push(result.href);
     onClose();
   }
 
@@ -106,33 +131,39 @@ export function GlobalSearch({
           <Command.Empty className="px-3 py-8 text-center text-sm text-navy-500">
             No command found. Press enter after a question to ask PRAXIS.
           </Command.Empty>
-          {(['Primary surfaces', 'Context actions', 'Output actions'] as const).map((group) => (
-            <Command.Group
-              key={group}
-              heading={group}
-              className="px-1 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-500 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-2"
-            >
-              {commands.filter((command) => command.group === group).map((command) => {
-                const Icon = command.icon;
-                return (
-                  <Command.Item
-                    key={command.id}
-                    value={`${command.label} ${command.description}`}
-                    onSelect={() => runCommand(command)}
-                    className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-left text-navy-800 data-[selected=true]:bg-slate-100 data-[selected=true]:text-navy-950"
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white">
-                      <Icon className="h-4 w-4 text-diplomatic-blue" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold">{command.label}</span>
-                      <span className="block truncate text-xs text-navy-500">{command.description}</span>
-                    </span>
-                  </Command.Item>
-                );
-              })}
-            </Command.Group>
-          ))}
+          {SEARCH_GROUPS.map((group) => {
+            const groupResults = results.filter((result) => result.group === group);
+            if (groupResults.length === 0) return null;
+            return (
+              <Command.Group
+                key={group}
+                heading={group}
+                className="px-1 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-navy-500 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-2"
+              >
+                {groupResults.map((result) => {
+                  const Icon = iconForResult(result);
+                  return (
+                    <Command.Item
+                      key={result.id}
+                      value={`${result.label} ${result.description} ${result.meta ?? ''}`}
+                      onSelect={() => runResult(result)}
+                      className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2.5 text-left text-navy-800 data-[selected=true]:bg-slate-100 data-[selected=true]:text-navy-950"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white">
+                        <Icon className="h-4 w-4 text-diplomatic-blue" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold">{result.label}</span>
+                        <span className="block truncate text-xs text-navy-500">{result.description}</span>
+                        {result.meta ? <span className="block truncate text-[11px] text-navy-400">{result.meta}</span> : null}
+                      </span>
+                      {result.status ? <span className="rounded-full border border-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase text-navy-500">{result.status}</span> : null}
+                    </Command.Item>
+                  );
+                })}
+              </Command.Group>
+            );
+          })}
         </Command.List>
 
         <div className="flex items-center gap-4 border-t border-[var(--color-app-border)] px-4 py-2">
@@ -143,4 +174,14 @@ export function GlobalSearch({
       </Command>
     </div>
   );
+}
+
+function iconForResult(result: SearchResult): LucideIcon {
+  if (result.group === 'Ask') return Sparkles;
+  if (result.group === 'Conversations') return MessageSquareText;
+  if (result.group === 'Capsules') return FolderKanban;
+  if (result.group === 'Sources') return FileSearch;
+  if (result.group === 'Diagnostics') return ServerCog;
+  const command = COMMANDS.find((item) => item.id === result.id);
+  return command?.icon ?? CommandIcon;
 }

@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  buildArtifactFreshness,
   buildCanaryPlan,
   buildDoctorReport,
+  classifyDoctorRedFlags,
+  parseAuditAdvisorySummary,
   parseDoctorArgs,
   redactSecrets,
   renderMarkdownReport,
@@ -87,13 +90,32 @@ describe('praxis doctor helpers', () => {
           summary: 'Core health is ok',
           evidence: [{ checks: { firestore: 'ok', cookie_secret: 'ok' } }],
         },
+        {
+          id: 'health-runtime',
+          lane: 'live-production-health',
+          status: 'PASS',
+          summary: 'Runtime health is ready',
+        },
+        {
+          id: 'health-agentic-search',
+          lane: 'live-production-health',
+          status: 'PASS',
+          summary: 'Agentic search is ready',
+        },
       ],
+      artifactFreshness: {
+        commit: 'abc123',
+        cloudRunRevision: 'praxis-frontend-00001-abc',
+        staleArtifactCount: 0,
+      },
     });
 
     const markdown = renderMarkdownReport(report);
 
-    expect(summarizeStatus(report.checks)).toEqual({ PASS: 1, WARN: 0, FAIL: 0, BLOCKED: 1 });
+    expect(summarizeStatus(report.checks)).toEqual({ PASS: 3, WARN: 0, FAIL: 0, BLOCKED: 1 });
     expect(markdown).toContain('| BLOCKED | local-cloud-auth | auth-doctor | ADC is expired |');
+    expect(markdown).toContain('## Red Flags');
+    expect(markdown).toContain('local only');
     expect(markdown).toContain('gcloud auth application-default login --project=praxisbytacitus');
     expect(markdown).not.toContain('should-not-leak');
   });
@@ -120,6 +142,63 @@ describe('praxis doctor helpers', () => {
       status: 'PASS',
       email: 'canary@example.test',
       tag: 'praxis-doctor-canary-20260517T120000000Z',
+    });
+  });
+
+  it('classifies blocking, local-auth, stale-artifact, dependency, and canary-gated red flags', () => {
+    const redFlags = classifyDoctorRedFlags({
+      commit: 'current',
+      cloudRunRevision: 'praxis-frontend-00002-def',
+      artifactFreshness: {
+        commit: 'current',
+        cloudRunRevision: 'praxis-frontend-00002-def',
+        staleArtifactCount: 2,
+      },
+      checks: [
+        { id: 'auth-doctor', lane: 'local-cloud-auth', status: 'BLOCKED', summary: 'ADC expired' },
+        { id: 'health-runtime', lane: 'live-production-health', status: 'PASS', summary: 'Runtime ready' },
+        { id: 'health-agentic-search', lane: 'live-production-health', status: 'PASS', summary: 'Agentic search ready' },
+        { id: 'cloud-run-praxis-frontend', lane: 'gcp-firebase-infrastructure', status: 'FAIL', summary: 'Revision unavailable' },
+        { id: 'package-audit-summary', lane: 'repo-and-deployability', status: 'WARN', summary: '2 advisory groups require forced or breaking updates' },
+        { id: 'canary-write-gate', lane: 'authenticated-full-canary', status: 'WARN', summary: 'Canary writes disabled' },
+      ],
+    });
+
+    expect(redFlags).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'cloud-run-praxis-frontend', lane: 'blocking', severity: 'blocked' }),
+      expect.objectContaining({ id: 'auth-doctor', lane: 'needs-auth', summary: expect.stringContaining('local only') }),
+      expect.objectContaining({ id: 'stale-diagnostic-artifacts', lane: 'stale-artifact', severity: 'warn' }),
+      expect.objectContaining({ id: 'package-audit-summary', lane: 'security-dependency', severity: 'warn' }),
+      expect.objectContaining({ id: 'canary-write-gate', lane: 'canary-gated', severity: 'warn' }),
+    ]));
+  });
+
+  it('counts stale audit artifacts against the current commit and Cloud Run revision', () => {
+    expect(buildArtifactFreshness({
+      commit: 'current',
+      cloudRunRevision: 'praxis-frontend-00002-def',
+      artifacts: [
+        { path: 'docs/audits/current.json', commit: 'current', cloudRunRevision: 'praxis-frontend-00002-def' },
+        { path: 'docs/audits/old-commit.json', commit: 'old', cloudRunRevision: 'praxis-frontend-00002-def' },
+        { path: 'docs/audits/old-revision.json', commit: 'current', cloudRunRevision: 'praxis-frontend-00001-abc' },
+      ],
+    })).toMatchObject({
+      commit: 'current',
+      cloudRunRevision: 'praxis-frontend-00002-def',
+      staleArtifactCount: 2,
+    });
+  });
+
+  it('summarizes forced or breaking npm audit advisories without failing the deploy gate', () => {
+    expect(parseAuditAdvisorySummary(JSON.stringify({
+      vulnerabilities: {
+        alpha: { fixAvailable: { name: 'alpha', version: '2.0.0', isSemVerMajor: true } },
+        beta: { fixAvailable: false },
+        gamma: { fixAvailable: true },
+      },
+    }))).toMatchObject({
+      forcedOrBreaking: 1,
+      total: 3,
     });
   });
 });
@@ -158,6 +237,11 @@ describe('runPraxisDoctor', () => {
     expect(exec).toHaveBeenCalledWith('gcloud tasks queues describe agent-runs --location=us-central1 --project=praxisbytacitus');
     expect(report.checks.some((check) => check.id === 'auth-doctor' && check.status === 'BLOCKED')).toBe(true);
     expect(report.checks.some((check) => check.id === 'agent-run-queue' && check.status === 'PASS')).toBe(true);
+    expect(report.redFlags).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'auth-doctor', lane: 'needs-auth' }),
+      expect.objectContaining({ id: 'canary-write-gate', lane: 'canary-gated' }),
+    ]));
+    expect(report.artifactFreshness).toMatchObject({ commit: 'abc123', staleArtifactCount: 0 });
     expect(report.artifacts?.some((artifact) => artifact.tag === 'praxis-doctor-canary-20260517T120000000Z')).toBe(true);
   });
 

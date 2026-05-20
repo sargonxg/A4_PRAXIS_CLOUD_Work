@@ -437,6 +437,47 @@ export interface CapsuleStarterDefinition {
   combinesWellWith: string[];
 }
 
+export interface CapsuleQualityAuditScores {
+  taxonomy: number;
+  sourceability: number;
+  expertMethod: number;
+  agentUsability: number;
+  reviewGate: number;
+  contentDepth: number;
+}
+
+export interface CapsuleQualityAuditResult {
+  starterId: string;
+  label: string;
+  category: CapsuleStarterCategory;
+  scores: CapsuleQualityAuditScores;
+  findings: string[];
+  sourceGaps: string[];
+  agentInstructionGaps: string[];
+  deviceProfileGaps: string[];
+  signals: Array<'rating_separate_from_quality' | 'review_gated_improvements_only' | 'firestore_canonical'>;
+}
+
+export type CapsuleImprovementProposalTarget =
+  | 'tags'
+  | 'sourcePack'
+  | 'richProfile.agentInstructions'
+  | 'deviceProfile.failureModes'
+  | 'deviceProfile.sourceabilityRequirements'
+  | 'agentWorkflow.approvalNotes'
+  | 'suggestedNextActions';
+
+export interface CapsuleImprovementProposal {
+  proposalId: string;
+  starterId: string;
+  target: CapsuleImprovementProposalTarget;
+  rationale: string;
+  evidenceSourceIds: string[];
+  riskLevel: 'low' | 'medium' | 'high';
+  reviewStatus: 'proposed' | 'accepted' | 'rejected';
+  generatedBy: 'quality-audit' | 'cognee' | 'agent' | string;
+}
+
 export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-20-intellectual-devices-v5';
 
 export type CapsuleStarterSnapshot = Pick<
@@ -2290,6 +2331,131 @@ export function normalizeCapsuleTaxonomyTags(
   return uniqueStrings(normalized);
 }
 
+export function runCapsuleStarterQualityAudit(starter: CapsuleStarterDefinition): CapsuleQualityAuditResult {
+  const taxonomy = resolveCapsuleTaxonomy(starter);
+  const findings: string[] = [];
+  const sourceGaps: string[] = [];
+  const agentInstructionGaps: string[] = [];
+  const deviceProfileGaps: string[] = [];
+  const sourcePackScore = scoreRatio(starter.sourcePack.length, 2);
+  const excerptScore = scoreRatio(starter.excerpts.length, 2);
+  const sourceMetadataScore = average(starter.sourcePack.map((source) => average([
+    source.id ? 1 : 0,
+    source.publisher ? 1 : 0,
+    source.date ? 1 : 0,
+    source.url.startsWith('https://') ? 1 : 0,
+    source.relevance.length > 30 ? 1 : 0,
+  ])));
+  if (starter.sourcePack.length < 2) sourceGaps.push('Add at least two source-pack entries before relying on the capsule.');
+  if (starter.excerpts.length < 2) sourceGaps.push('Add source-linked excerpts so claims can be inspected.');
+
+  const agentInstructionScore = average([
+    starter.agentWorkflow.preferredAgentId ? 1 : 0,
+    starter.agentWorkflow.outputGoal.length > 20 ? 1 : 0,
+    starter.agentWorkflow.approvalNotes.length > 20 ? 1 : 0,
+    starter.aiUseGuidance.length > 40 ? 1 : 0,
+    starter.richProfile.agentInstructions.includes(starter.label) ? 1 : 0,
+  ]);
+  if (agentInstructionScore < 1) agentInstructionGaps.push('Tighten agent instructions, output goal, or approval notes before promoting.');
+
+  const device = starter.deviceProfile;
+  const deviceScore = device
+    ? average([
+        scoreRatio(device.methodSteps.length, 4),
+        scoreRatio(device.bestInputs.length, 3),
+        scoreRatio(device.expectedOutputs.length, 2),
+        scoreRatio(device.failureModes.length, 2),
+        /review|approval|human/i.test(device.humanReviewGate) ? 1 : 0,
+        scoreRatio(device.sourceabilityRequirements.length, 2),
+      ])
+    : starter.category === 'tool'
+      ? 0.85
+      : 1;
+  if (device && device.failureModes.length < 2) deviceProfileGaps.push('Add concrete failure modes for review before agent use.');
+  if (device && device.sourceabilityRequirements.length < 2) deviceProfileGaps.push('Add sourceability requirements for review before agent use.');
+
+  const scores: CapsuleQualityAuditScores = {
+    taxonomy: average([
+      taxonomy.types.length ? 1 : 0,
+      taxonomy.domains.length ? 1 : 0,
+      taxonomy.policyTeams.length ? 1 : 0,
+      starter.tags.includes(`type:${starter.category}`) ? 1 : 0,
+      starter.tags.includes(`domain:${starter.domain}`) ? 1 : 0,
+    ]),
+    sourceability: average([sourcePackScore, excerptScore, sourceMetadataScore]),
+    expertMethod: average([
+      scoreRatio(starter.richProfile.qualityRubric.length, 4),
+      scoreRatio(starter.richProfile.whenToUse.length, 3),
+      scoreRatio(starter.richProfile.whenNotToUse.length, 2),
+      deviceScore,
+    ]),
+    agentUsability: agentInstructionScore,
+    reviewGate: average([
+      starter.agentWorkflow.approvalNotes.length > 20 ? 1 : 0,
+      device ? (/review|approval|human/i.test(device.humanReviewGate) ? 1 : 0) : 1,
+      starter.aiUseGuidance.match(/source|citation|approval|verify/i) ? 1 : 0,
+    ]),
+    contentDepth: average([
+      starter.summary.length > 20 ? 1 : 0,
+      starter.detail.length > 40 ? 1 : 0,
+      scoreRatio(starter.richProfile.nextIdeas.length, 3),
+      scoreRatio(starter.suggestedQuestions.length, 2),
+      scoreRatio(starter.suggestedNextActions.length, 3),
+    ]),
+  };
+
+  for (const [key, value] of Object.entries(scores)) {
+    if (value < 0.8) findings.push(`${key} score needs review before relying on this starter.`);
+  }
+
+  return {
+    starterId: starter.starterId,
+    label: starter.label,
+    category: starter.category,
+    scores,
+    findings,
+    sourceGaps,
+    agentInstructionGaps,
+    deviceProfileGaps,
+    signals: ['rating_separate_from_quality', 'review_gated_improvements_only', 'firestore_canonical'],
+  };
+}
+
+export function proposeCapsuleImprovementsFromQualityAudit(
+  audit: CapsuleQualityAuditResult,
+  input: { evidenceSourceIds?: string[]; generatedBy?: string } = {},
+): CapsuleImprovementProposal[] {
+  const evidenceSourceIds = uniqueStrings(input.evidenceSourceIds ?? [`audit:${audit.starterId}`]);
+  const generatedBy = input.generatedBy ?? 'quality-audit';
+  const proposals: CapsuleImprovementProposal[] = [];
+  const add = (
+    target: CapsuleImprovementProposalTarget,
+    rationale: string,
+    riskLevel: CapsuleImprovementProposal['riskLevel'],
+  ) => {
+    proposals.push({
+      proposalId: stableReceiptPart(`${audit.starterId}:${target}:${rationale}`),
+      starterId: audit.starterId,
+      target,
+      rationale,
+      evidenceSourceIds,
+      riskLevel,
+      reviewStatus: 'proposed',
+      generatedBy,
+    });
+  };
+
+  if (audit.scores.taxonomy < 0.95) add('tags', 'Taxonomy tags should be reviewed before changing canonical capsule categorization.', 'low');
+  if (audit.scores.sourceability < 0.95 || audit.sourceGaps.length) add('sourcePack', 'Source-pack gaps should become reviewable additions before canonical capsule mutation.', 'medium');
+  if (audit.scores.agentUsability < 0.95 || audit.agentInstructionGaps.length) add('richProfile.agentInstructions', 'Agent instructions should be reviewed before they affect model-ready context.', 'medium');
+  if (audit.deviceProfileGaps.some((gap) => gap.includes('failure modes'))) add('deviceProfile.failureModes', 'Failure-mode refinements should be reviewed before agent use.', 'low');
+  if (audit.deviceProfileGaps.some((gap) => gap.includes('sourceability'))) add('deviceProfile.sourceabilityRequirements', 'Sourceability requirements should be reviewed before agent use.', 'low');
+  if (audit.scores.reviewGate < 0.95) add('agentWorkflow.approvalNotes', 'Review gates should be explicit before canonical capsule promotion.', 'medium');
+  if (audit.scores.contentDepth < 0.95) add('suggestedNextActions', 'Next actions should be reviewed for output usability before canonical updates.', 'low');
+
+  return proposals;
+}
+
 export function resolveCapsuleTaxonomy(input: CapsuleTaxonomyInput): CapsuleResolvedTaxonomy {
   const starter = resolveStarterForTaxonomy(input);
   const tags = uniqueStrings([
@@ -2918,6 +3084,15 @@ export const CAPSULE_CONNECTOR_IDEAS: CapsuleConnectorIdea[] = [
 
 function uniqueStrings(values: string[] | null | undefined): string[] {
   return Array.from(new Set((values ?? []).map((value) => value.trim()).filter(Boolean)));
+}
+
+function scoreRatio(value: number, target: number): number {
+  return Math.max(0, Math.min(1, value / target));
+}
+
+function average(values: number[]): number {
+  if (!values.length) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function sortStatItems<T extends CapsuleTaxonomyStatItem>(items: Map<string, T>): T[] {

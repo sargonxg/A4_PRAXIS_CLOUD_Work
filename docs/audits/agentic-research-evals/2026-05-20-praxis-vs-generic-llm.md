@@ -1,6 +1,6 @@
 # PRAXIS Agentic Research Eval
 
-Generated: 2026-05-20T18:52:14.654Z
+Generated: 2026-05-20T20:41:17.478Z
 
 | Scenario | PRAXIS | Baseline | Delta | Proof win | Failure mode |
 |---|---:|---:|---:|---|---|

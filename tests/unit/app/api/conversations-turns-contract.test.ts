@@ -25,4 +25,10 @@ describe('conversation turns Ask PRAXIS contract', () => {
     expect(routeSource).toContain("code: 'capsule_context_required'");
     expect(routeSource).toContain('{ status: 412 }');
   });
+
+  it('passes the paid agentic search toggle through aiSettings only', () => {
+    expect(routeSource).toContain('agenticSearchPremium');
+    expect(routeSource).toContain('aiSettings: parsed.data.aiSettings');
+    expect(routeSource).not.toContain('EXA_API_KEY');
+  });
 });

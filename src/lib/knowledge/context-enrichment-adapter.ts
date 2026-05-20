@@ -13,9 +13,12 @@ export type ContextEnrichmentSource = 'firestore' | 'cognee' | 'future_graphiti'
 
 export interface ContextEnrichmentReceipt {
   firestore: 'ready';
+  canonicalStatus: 'firestore-canonical';
   cognee: ContextEnrichmentCogneeStatus;
   graphiti: 'deferred';
   memoryItemIds: string[];
+  memoryHitCount: number;
+  writebackProposalIds: string[];
   warnings: string[];
 }
 
@@ -108,13 +111,18 @@ export function buildContextEnrichmentReceipt(input: {
   cogneeEnabled: boolean;
   cogneeStatus?: ContextEnrichmentCogneeStatus;
   memoryItemIds?: string[];
+  writebackProposalIds?: string[];
   warnings?: string[];
 }): ContextEnrichmentReceipt {
+  const memoryItemIds = input.memoryItemIds ?? [];
   return {
     firestore: 'ready',
+    canonicalStatus: 'firestore-canonical',
     cognee: input.cogneeStatus ?? (input.cogneeEnabled ? 'enabled' : 'disabled'),
     graphiti: 'deferred',
-    memoryItemIds: input.memoryItemIds ?? [],
+    memoryItemIds,
+    memoryHitCount: memoryItemIds.length,
+    writebackProposalIds: input.writebackProposalIds ?? [],
     warnings: input.warnings ?? [],
   };
 }

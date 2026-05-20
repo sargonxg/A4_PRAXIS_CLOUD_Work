@@ -68,8 +68,18 @@ export const AgentRunOutputSchema = z.object({
   outputHref: z.string().nullable().optional(),
   outputTargetLabel: z.string().nullable().optional(),
   selectedTools: z.array(z.string()).optional(),
+  searchPlan: z.object({
+    queries: z.array(z.string()),
+    sourceClasses: z.array(z.string()),
+    freshnessNeed: z.string(),
+    timeframe: z.string().nullable(),
+  }).nullable().optional(),
+  sourceReceiptIds: z.array(z.string()).optional(),
   sourcePosture: z.string().nullable().optional(),
   sourceCount: z.number().int().nonnegative().optional(),
+  groundingPlan: z.record(z.string(), z.unknown()).nullable().optional(),
+  groundingPosture: z.string().nullable().optional(),
+  degradedReason: z.string().nullable().optional(),
   approvalGateCount: z.number().int().nonnegative().optional(),
   readiness: z.enum(['live', 'queued', 'planned', 'gated']).nullable().optional(),
   riskLevel: z.enum(['low', 'medium', 'high']).nullable().optional(),
@@ -81,6 +91,7 @@ export const AgentRunOutputSchema = z.object({
     sourceCount: z.number().int().nonnegative(),
     approvalGateCount: z.number().int().nonnegative(),
     groundingPosture: z.string(),
+    degradedReason: z.string().nullable(),
   }).optional(),
   factoryMetadata: z.object({
     factoryLane: z.string().nullable(),
@@ -105,11 +116,12 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
   const outputDestination = policyAgent?.outputDestination ?? metadataDestination;
   const activeContextStack = isRecord(run.metadata?.activeContextStack) ? run.metadata.activeContextStack : null;
   const appliedCapsules = Array.isArray(run.metadata?.appliedCapsules) ? run.metadata.appliedCapsules : [];
-  const selectedTools = Array.isArray(run.metadata?.selectedTools)
-    ? run.metadata.selectedTools.filter((item): item is string => typeof item === 'string')
-    : [];
+  const selectedTools = stringArray(run.metadata?.selectedTools).length
+    ? stringArray(run.metadata?.selectedTools)
+    : stringArray(run.metadata?.selectedToolIds);
+  const sourceReceiptIds = stringArray(run.metadata?.sourceReceiptIds);
   const sourceCount = nonnegativeInt(run.metadata?.sourceCount)
-    ?? stringArray(run.metadata?.sourceReceiptIds).length
+    ?? sourceReceiptIds.length
     ?? 0;
   const approvalGateCount = nonnegativeInt(run.metadata?.approvalGateCount)
     ?? stringArray(run.metadata?.approvalRequiredToolIds).length
@@ -118,8 +130,11 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
   const groundingPosture = typeof run.metadata?.groundingPosture === 'string'
     ? run.metadata.groundingPosture
     : selectedTools.includes('grounded-search')
-      ? 'Google grounding requested'
+      ? 'Grounding unavailable'
       : sourcePosture ?? 'No grounding metadata';
+  const degradedReason = typeof run.metadata?.degradedReason === 'string' ? run.metadata.degradedReason : null;
+  const searchPlan = normalizeSearchPlan(run.metadata?.searchPlan);
+  const groundingPlan = isRecord(run.metadata?.groundingPlan) ? run.metadata.groundingPlan : null;
   const factoryMetadata = normalizeFactoryMetadata(run.metadata);
   return AgentRunOutputSchema.parse({
     runId: run.id,
@@ -134,8 +149,13 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
     outputHref: outputDestination ? destinationHref(outputDestination) : null,
     outputTargetLabel: outputDestination ? destinationLabel(outputDestination) : null,
     selectedTools,
+    searchPlan,
+    sourceReceiptIds,
     sourcePosture: sourcePosture ?? 'No grounding metadata',
     sourceCount,
+    groundingPlan,
+    groundingPosture,
+    degradedReason,
     approvalGateCount,
     readiness: policyAgent?.readiness ?? null,
     riskLevel: policyAgent?.riskLevel ?? null,
@@ -150,9 +170,20 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
       sourceCount,
       approvalGateCount,
       groundingPosture,
+      degradedReason,
     },
     ...(factoryMetadata ? { factoryMetadata } : {}),
   });
+}
+
+function normalizeSearchPlan(value: unknown): AgentRunOutput['searchPlan'] | null {
+  if (!isRecord(value)) return null;
+  return {
+    queries: stringArray(value.queries).slice(0, 12),
+    sourceClasses: stringArray(value.sourceClasses).slice(0, 12),
+    freshnessNeed: typeof value.freshnessNeed === 'string' ? value.freshnessNeed : 'not_specified',
+    timeframe: typeof value.timeframe === 'string' ? value.timeframe : null,
+  };
 }
 
 function normalizeOutputDestination(value: unknown): PolicyAgentOutputDestination | null {

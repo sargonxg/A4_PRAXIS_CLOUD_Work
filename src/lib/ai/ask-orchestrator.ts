@@ -1,4 +1,5 @@
 import type { AskContextReceipt, AskIntent } from '@/lib/ai/ask-conversation';
+import { resolveGroundingPlan, type GroundingPlan } from '@/lib/agent-runtime/grounding-adapter';
 import { agentToolRequiresApproval, getAgentToolDefinition } from '@/lib/agent-runtime/tool-registry';
 import { getPolicyAgent, policyAgentRunIntent, type PolicyAgentOutputDestination, type PolicyAgentRunIntent } from '@/lib/product/policy-agents';
 import { buildTacitusRoutingDecision, type TacitusRoutingDecision } from '@/lib/ai/tacitus-routing-policy';
@@ -48,6 +49,12 @@ export interface AskConversationOrchestrationReceipt {
     approvalRequiredToolIds: string[];
     blockedToolIds: string[];
   };
+  grounding: {
+    groundingPlan: GroundingPlan;
+    sourcePosture: string;
+    groundingPosture: string;
+    degradedReason: string | null;
+  };
   routingDecision: TacitusRoutingDecision;
   supervisor: {
     action: AskSupervisorAction;
@@ -87,6 +94,8 @@ export interface AskOrchestrationStatusEvent {
   approvalGateCount?: number;
   outputTarget?: string | null;
   groundingPosture?: string;
+  sourcePosture?: string;
+  degradedReason?: string | null;
   fallbackPosture?: string;
 }
 
@@ -124,6 +133,11 @@ export function buildAskConversationOrchestrationReceipt(input: {
   const blockedToolIds = approvalRequiredToolIds;
   const shouldQueue = routingDecision.workerMode !== 'direct-answer';
   const activeGapCount = input.activeGapCount ?? input.contextReceipt.warnings.length;
+  const grounding = buildGroundingReceipt({
+    selectedToolIds,
+    sourcePreviewCount: input.sourcePreviewCount,
+    documentCount: input.contextReceipt.coreRefs.sourceDocumentCoreIds.length,
+  });
   const reasons = buildTriageReasons({
     prompt: input.prompt,
     intent: input.intent,
@@ -158,11 +172,12 @@ export function buildAskConversationOrchestrationReceipt(input: {
       activeGapCount,
       warnings: input.contextReceipt.warnings,
     },
-      toolRouting: {
+    toolRouting: {
       selectedToolIds,
       approvalRequiredToolIds,
       blockedToolIds,
     },
+    grounding,
     routingDecision,
     supervisor: {
       action: shouldQueue ? 'queue_agent_run' : 'direct_answer',
@@ -218,7 +233,9 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
   const selectedToolIds = receipt.toolRouting.selectedToolIds;
   const policyAgent = getPolicyAgent(receipt.supervisor.policyAgentId);
   const outputTarget = destinationLabel(receipt.supervisor.outputDestination);
-  const groundingPosture = groundingPostureLabel(selectedToolIds);
+  const groundingPosture = receipt.grounding.groundingPosture;
+  const sourcePosture = receipt.grounding.sourcePosture;
+  const degradedReason = receipt.grounding.degradedReason;
   const fallbackPosture = queuedRun?.status ?? (receipt.supervisor.action === 'queue_agent_run' ? 'queued' : 'synchronous');
   const agentStatus = queuedRun?.status === 'ledger_failed'
     ? 'failed'
@@ -260,6 +277,8 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
       selectedToolIds,
       sourceCount: receipt.capsule.sourcePreviewCount,
       groundingPosture,
+      sourcePosture,
+      degradedReason,
     },
     {
       type: 'orchestrationStatus',
@@ -296,6 +315,8 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
       approvalGateCount: receipt.toolRouting.approvalRequiredToolIds.length,
       outputTarget,
       groundingPosture,
+      sourcePosture,
+      degradedReason,
       fallbackPosture,
     },
     {
@@ -391,9 +412,34 @@ function destinationLabel(destination: PolicyAgentOutputDestination | null): str
   }
 }
 
-function groundingPostureLabel(selectedToolIds: string[]): string {
-  if (selectedToolIds.includes('grounded-search')) return 'Google grounding requested';
-  if (selectedToolIds.includes('deep-search-agent')) return 'Deep search requested';
-  if (selectedToolIds.includes('sourceability-reviewer')) return 'Source review requested';
-  return 'No grounding metadata';
+function buildGroundingReceipt(input: {
+  selectedToolIds: string[];
+  sourcePreviewCount: number;
+  documentCount: number;
+}): AskConversationOrchestrationReceipt['grounding'] {
+  const groundingPlan = resolveGroundingPlan({
+    selectedToolIds: input.selectedToolIds,
+    documentCount: input.documentCount,
+    sourceReceiptCount: input.sourcePreviewCount,
+  });
+  const searchSelected = input.selectedToolIds.includes('grounded-search') || input.selectedToolIds.includes('deep-search-agent');
+  const googleGroundingActive = groundingPlan.modes.includes('google_search');
+  const sourcePosture = input.sourcePreviewCount > 0
+    ? 'Source receipts saved'
+    : 'No source receipts saved';
+  const groundingPosture = googleGroundingActive
+    ? 'Google Search grounding active'
+    : searchSelected
+      ? 'Grounding unavailable'
+      : input.selectedToolIds.includes('sourceability-reviewer')
+        ? 'Source review requested'
+        : sourcePosture;
+  return {
+    groundingPlan,
+    sourcePosture,
+    groundingPosture,
+    degradedReason: searchSelected && !googleGroundingActive
+      ? 'Google Search grounding is not configured.'
+      : null,
+  };
 }

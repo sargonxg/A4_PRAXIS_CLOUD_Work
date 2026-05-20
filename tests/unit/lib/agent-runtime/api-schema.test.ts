@@ -87,10 +87,16 @@ describe('agent run API validation schema', () => {
         sourceCount: 0,
         approvalGateCount: 0,
         groundingPosture: 'No grounding metadata',
+        degradedReason: null,
       },
       selectedTools: [],
+      searchPlan: null,
+      sourceReceiptIds: [],
       sourcePosture: 'No grounding metadata',
       sourceCount: 0,
+      groundingPlan: null,
+      groundingPosture: 'No grounding metadata',
+      degradedReason: null,
       approvalGateCount: 0,
       outputTargetLabel: null,
     });
@@ -129,6 +135,7 @@ describe('agent run API validation schema', () => {
       sourceCount: 3,
       approvalGateCount: 1,
       groundingPosture: 'Google grounding requested',
+      degradedReason: null,
     });
     expect(dto).toMatchObject({
       selectedTools: ['sourceability-check'],
@@ -137,5 +144,57 @@ describe('agent run API validation schema', () => {
       approvalGateCount: 1,
       outputTargetLabel: 'Memo Studio',
     });
+  });
+
+  it('exposes safe search and grounding proof fields without internal spend', () => {
+    const dto = toAgentRunOutput({
+      id: 'run-search-1',
+      status: 'queued',
+      capsuleId: 'cap-1',
+      createdAt: '2026-05-20T12:00:00.000Z',
+      updatedAt: '2026-05-20T12:00:00.000Z',
+      objective: 'Do a current multi-source search.',
+      metadata: {
+        selectedToolIds: ['context-resolve', 'grounded-search', 'deep-search-agent'],
+        searchPlan: {
+          queries: ['latest access restrictions'],
+          sourceClasses: ['public_web', 'attached_sources'],
+          freshnessNeed: 'current',
+          timeframe: 'last 30 days',
+        },
+        sourceReceiptIds: ['src-1', 'src-2'],
+        groundingPlan: {
+          modes: ['internal_capsule_corpus'],
+          deferredModes: ['google_search'],
+          requiresSearchSuggestionsDisplay: false,
+          receiptPosture: 'praxis_canonical',
+        },
+        sourcePosture: 'Source receipts saved',
+        groundingPosture: 'Grounding unavailable',
+        degradedReason: 'Google Search grounding is not configured.',
+        internalSpendCents: 2500,
+      },
+    } as never);
+
+    expect(dto).toMatchObject({
+      selectedTools: ['context-resolve', 'grounded-search', 'deep-search-agent'],
+      sourceReceiptIds: ['src-1', 'src-2'],
+      sourceCount: 2,
+      sourcePosture: 'Source receipts saved',
+      groundingPosture: 'Grounding unavailable',
+      degradedReason: 'Google Search grounding is not configured.',
+      searchPlan: {
+        queries: ['latest access restrictions'],
+        sourceClasses: ['public_web', 'attached_sources'],
+        freshnessNeed: 'current',
+        timeframe: 'last 30 days',
+      },
+    });
+    expect(dto.contextReceipt).toMatchObject({
+      groundingPosture: 'Grounding unavailable',
+      degradedReason: 'Google Search grounding is not configured.',
+    });
+    expect(JSON.stringify(dto)).not.toContain('internalSpendCents');
+    expect(JSON.stringify(dto)).not.toContain('2500');
   });
 });

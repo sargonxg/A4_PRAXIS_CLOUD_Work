@@ -29,6 +29,8 @@ import {
   normalizeCapsuleRepositoryContract,
   normalizeCapsuleRepositoryMetadata,
   policyTeamCategoryForTags,
+  proposeCapsuleImprovementsFromQualityAudit,
+  runCapsuleStarterQualityAudit,
   resolveCapsuleTaxonomy,
   resolveCapsuleRetrievalBackend,
 } from '@/lib/product/context-capsules';
@@ -297,6 +299,57 @@ describe('context capsule product contract', () => {
         expect(sourceIds.has(excerpt.sourceId), `${starter.starterId} excerpt source ${excerpt.sourceId}`).toBe(true);
       }
     }
+  });
+
+  it('scores starter capsule quality without mixing usefulness ratings into expert soundness', () => {
+    const audits = CAPSULE_STARTER_DEFINITIONS.map((starter) => runCapsuleStarterQualityAudit(starter));
+
+    expect(audits).toHaveLength(CAPSULE_STARTER_DEFINITIONS.length);
+    for (const audit of audits) {
+      expect(audit.starterId).toMatch(/^starter-/);
+      expect(audit.scores.taxonomy).toBeGreaterThanOrEqual(0.8);
+      expect(audit.scores.sourceability).toBeGreaterThanOrEqual(0.8);
+      expect(audit.scores.agentUsability).toBeGreaterThanOrEqual(0.8);
+      expect(audit.scores.contentDepth).toBeGreaterThanOrEqual(0.8);
+      expect(audit.signals).toEqual(expect.arrayContaining([
+        'rating_separate_from_quality',
+        'review_gated_improvements_only',
+      ]));
+      expect(audit).not.toHaveProperty('averageRating');
+      expect(audit).not.toHaveProperty('userRating');
+    }
+  });
+
+  it('creates review-gated capsule improvement proposals from weak audit evidence', () => {
+    const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === 'starter-tool-assumption-stress-test')!;
+    const audit = runCapsuleStarterQualityAudit({
+      ...starter,
+      sourcePack: starter.sourcePack.slice(0, 1),
+      deviceProfile: {
+        ...starter.deviceProfile!,
+        failureModes: [],
+      },
+    });
+    const proposals = proposeCapsuleImprovementsFromQualityAudit(audit, {
+      evidenceSourceIds: ['audit:starter-tool-assumption-stress-test'],
+      generatedBy: 'unit-test',
+    });
+
+    expect(proposals.length).toBeGreaterThanOrEqual(2);
+    expect(proposals).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        target: 'sourcePack',
+        reviewStatus: 'proposed',
+        riskLevel: 'medium',
+        evidenceSourceIds: ['audit:starter-tool-assumption-stress-test'],
+      }),
+      expect.objectContaining({
+        target: 'deviceProfile.failureModes',
+        reviewStatus: 'proposed',
+        riskLevel: 'low',
+      }),
+    ]));
+    expect(proposals.every((proposal) => proposal.rationale.includes('review'))).toBe(true);
   });
 
   it('resolves every starter into the Types, Domains, and Policy Teams taxonomy', () => {

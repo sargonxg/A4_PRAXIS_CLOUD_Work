@@ -905,9 +905,12 @@ function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrationStat
     policyAgentLabel?: string | null;
     outputTargetLabel?: string | null;
     selectedTools?: string[];
+    sourceReceiptIds?: string[];
     sourceCount?: number;
     approvalGateCount?: number;
     sourcePosture?: string | null;
+    groundingPosture?: string | null;
+    degradedReason?: string | null;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
@@ -975,6 +978,17 @@ function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrationStat
   const outputTarget = run?.outputTargetLabel ?? queuedRun.outputTarget ?? null;
   const agentLabel = run?.policyAgentLabel ?? queuedRun.agentLabel ?? 'Policy agent';
   const sourcePosture = run?.sourcePosture ?? queuedRun.groundingPosture ?? 'No grounding metadata';
+  const groundingPosture = run?.groundingPosture ?? queuedRun.groundingPosture ?? sourcePosture;
+  const degradedReason = run?.degradedReason ?? queuedRun.degradedReason ?? null;
+  const sourceReceiptCount = run?.sourceReceiptIds?.length ?? sourceCount;
+  const searchTools = selectedTools.filter((toolId) => toolId === 'grounded-search' || toolId === 'deep-search-agent');
+  const stateLabel = degradedReason
+    ? 'Search degraded'
+    : sourceReceiptCount > 0
+      ? 'Source receipts saved'
+      : runId
+        ? 'Search queued'
+        : 'Grounding unavailable';
 
   return (
     <section className="mt-3 rounded-md border border-diplomatic-blue/20 bg-blue-50 p-2" data-testid="ask-agent-run-panel">
@@ -983,13 +997,16 @@ function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrationStat
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-diplomatic-blue">Deep work queue</p>
           <p className="truncate text-xs text-slate-700">{runId ? `${runId} / ${status.replace(/_/g, ' ')}` : queuedRun.detail}</p>
           <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-slate-600">
+            <span className="font-semibold text-diplomatic-blue">{stateLabel}</span>
             <span>{agentLabel}</span>
             <span>{selectedTools.length} tools</span>
-            <span>{sourceCount} sources</span>
+            {searchTools.length ? <span>{searchTools.join(', ')}</span> : null}
+            <span>{sourceReceiptCount} source receipts</span>
             <span>{approvalGateCount} gates</span>
             {outputTarget ? <span>{outputTarget}</span> : null}
-            <span>{sourcePosture}</span>
+            <span>{groundingPosture}</span>
           </div>
+          {degradedReason ? <p className="mt-1 text-[11px] leading-4 text-gold-900">{degradedReason}</p> : null}
         </div>
         <div className="flex flex-wrap gap-1.5">
           {runId ? (

@@ -82,6 +82,15 @@ export function collectAgenticSearchHealth(
       missingDetail: 'Google Search grounding is not explicitly enabled; keep current-source claims caveated.',
       env,
     }),
+    oneOfCheck({
+      id: 'exa_premium_search',
+      label: 'Exa premium agentic search',
+      names: ['EXA_API_KEY'],
+      required: false,
+      readyDetail: 'Exa is configured for paid Premium web conversation turns.',
+      missingDetail: 'Exa Premium web is unavailable until EXA_API_KEY is configured; default grounded search remains separate.',
+      env,
+    }),
     {
       id: 'route_imports',
       label: 'Route/runtime imports',

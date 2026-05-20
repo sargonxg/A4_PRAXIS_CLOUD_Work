@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { POST as askPraxisPost } from '@/app/api/ai/ask-praxis/route';
-import { resolveTier } from '@/lib/api/tier';
+import { meetsTier, resolveTier } from '@/lib/api/tier';
 import { withAuth } from '@/lib/api/with-auth';
 import {
   PRAXIS_ASK_TOKEN_COST,
@@ -84,6 +84,16 @@ export const POST = withAuth<ConversationTurnRouteContext>(async (request, user,
       upgradeHref: '/pricing',
     }, { status: 402 });
   }
+  const agenticSearchPremium = requestedAgenticSearchPremium(parsed.data.aiSettings);
+  if (agenticSearchPremium && !meetsTier(tier, 'analyst')) {
+    return NextResponse.json({
+      error: 'Premium Exa agentic search requires a paid PRAXIS subscription.',
+      code: 'agentic_search_premium_requires_subscription',
+      currentTier: tier,
+      requiredTier: 'analyst',
+      upgradeHref: '/login?mode=signup&plan=analyst',
+    }, { status: 402 });
+  }
 
   const appliedCapsules = normalizeAppliedCapsules(parsed.data.appliedCapsules);
   if (!hasConversationCapsuleSignal({
@@ -123,6 +133,7 @@ export const POST = withAuth<ConversationTurnRouteContext>(async (request, user,
     appliedCapsules,
     currentPath: parsed.data.currentPath ?? `/app/conversations/${cleanConversationId}?capsuleId=${encodeURIComponent(parsed.data.capsuleId)}`,
     currentToolId: parsed.data.currentToolId ?? 'ask-praxis',
+    aiSettings: parsed.data.aiSettings,
   };
 
   const delegateRequest = new Request(new URL('/api/ai/ask-praxis', request.url), {
@@ -136,4 +147,8 @@ export const POST = withAuth<ConversationTurnRouteContext>(async (request, user,
 
 function cleanDocId(value: string): string {
   return value.trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 96);
+}
+
+function requestedAgenticSearchPremium(value: unknown): boolean {
+  return Boolean(value && typeof value === 'object' && (value as { agenticSearchPremium?: unknown }).agenticSearchPremium === true);
 }

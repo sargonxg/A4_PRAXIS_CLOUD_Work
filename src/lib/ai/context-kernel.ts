@@ -52,9 +52,12 @@ export interface TurnCapsule {
   enrichment?: {
     receipt: {
       firestore: 'ready';
+      canonicalStatus: 'firestore-canonical';
       cognee: 'enabled' | 'disabled' | 'degraded';
       graphiti: 'deferred';
       memoryItemIds: string[];
+      memoryHitCount: number;
+      writebackProposalIds: string[];
       warnings: string[];
     };
     memoryHitCount: number;

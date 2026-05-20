@@ -205,6 +205,20 @@ export async function listAgentRunsForCapsule(ownerUid: string, capsuleId: strin
   return result.rows.map(rowToAgentRun);
 }
 
+export async function listRecentAgentRuns(ownerUid: string, limit = 25): Promise<AgentRun[]> {
+  await ensureSchema();
+  const result = await getPool().query(
+    `
+      SELECT * FROM agent_runs
+      WHERE owner_uid = $1
+      ORDER BY created_at DESC
+      LIMIT $2
+    `,
+    [ownerUid, Math.max(1, Math.min(100, Math.floor(limit)))],
+  );
+  return result.rows.map(rowToAgentRun);
+}
+
 export async function listAgentRunEvents(input: {
   ownerUid: string;
   runId: string;
