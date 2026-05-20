@@ -5,6 +5,7 @@ import {
   CapsulePlusGraphEdgeSchema,
   CapsulePlusGraphNodeSchema,
   buildCapsulePlusExportBundle,
+  buildPraxisCapsuleFilename,
   parseCapsulePlusImportBundle,
 } from '@/lib/capsule-plus';
 
@@ -62,7 +63,7 @@ describe('Capsule+ graph contract', () => {
     })).toThrow();
   });
 
-  it('builds portable .praxiscapsule.zip bundles with required files', async () => {
+  it('builds portable .praxis bundles with required files', async () => {
     const bundle = CapsulePlusBundleSchema.parse({
       manifest: {
         capsuleId: 'cap-1',
@@ -105,6 +106,16 @@ describe('Capsule+ graph contract', () => {
     }
     await expect(zip.file('graph/nodes.jsonl')?.async('string')).resolves.toContain('node-deadline-1');
     await expect(zip.file('sql/postgres-seed.sql')?.async('string')).resolves.toContain('graph_nodes');
+  });
+
+  it('creates portable .praxis filenames from capsule metadata', () => {
+    expect(buildPraxisCapsuleFilename({
+      label: 'Governance Review',
+      capsuleId: 'AB34-governance-review',
+      scope: 'user',
+      tags: ['domain:governance'],
+      exportedAt: '2026-05-19T12:00:00.000Z',
+    })).toBe('governance_AB34_2026.praxis');
   });
 
   it('refuses malformed import bundles', async () => {

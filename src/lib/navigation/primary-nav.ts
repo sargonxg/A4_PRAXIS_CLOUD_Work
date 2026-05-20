@@ -44,7 +44,7 @@ export const NAV_GROUPS: readonly PrimaryNavGroup[] = [
     defaultOpen: true,
     items: [
       { id: 'home', label: 'Home', icon: 'Home', href: '/app', shortcut: 'g h', hint: 'Ask from the active capsule' },
-      { id: 'capsules', label: 'Capsule Factory', icon: 'FolderKanban', href: '/app/capsules', shortcut: 'g c', hint: 'Build, inspect, enrich, and maintain capsules plus their repository receipts' },
+      { id: 'capsules', label: 'Capsules', icon: 'FolderKanban', href: '/app/capsules', shortcut: 'g c', hint: 'Manage, improve, source, and download reusable capsules' },
     ],
   },
 ] as const;

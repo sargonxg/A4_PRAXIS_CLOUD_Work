@@ -216,7 +216,7 @@ async function executeCapsuleFactoryAgentRun(
         ownerUid: run.ownerUid,
         runId: run.id,
         toStatus: 'running',
-        message: 'Capsule Factory accepted the queued capsule build.',
+        message: 'Capsule AI accepted the queued capsule build.',
         data: {
           dispatchId: payload.dispatchId,
           attempt: payload.attempt,
@@ -231,7 +231,7 @@ async function executeCapsuleFactoryAgentRun(
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'context_resolved',
-      message: 'Capsule Factory resolved PRAXIS-owned capsule pointers before Genkit flow execution.',
+      message: 'Capsule AI resolved PRAXIS-owned capsule pointers before Genkit flow execution.',
       data: {
         dispatchId: payload.dispatchId,
         attempt: payload.attempt,
@@ -247,7 +247,7 @@ async function executeCapsuleFactoryAgentRun(
       ownerUid: running.ownerUid,
       runId: running.id,
       toStatus: 'succeeded',
-      message: 'Capsule Factory completed reviewable draft capsule proposals.',
+      message: 'Capsule AI completed reviewable draft capsule proposals.',
       data: {
         dispatchId: payload.dispatchId,
         attempt: payload.attempt,
@@ -270,7 +270,7 @@ async function executeCapsuleFactoryAgentRun(
       ownerUid: running.ownerUid,
       runId: running.id,
       toStatus: 'failed',
-      message: 'Capsule Factory failed before draft capsule persistence.',
+      message: 'Capsule AI failed before draft capsule persistence.',
       data: {
         dispatchId: payload.dispatchId,
         attempt: payload.attempt,

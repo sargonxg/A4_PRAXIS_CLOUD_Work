@@ -64,7 +64,7 @@ for (const required of [
   'data-testid="capsule-agent-lane"',
   'data-testid="praxis-answer-markdown"',
   'Compose your reasoning and policy products from expert ContextCapsules.',
-  'Capsule Factory',
+  'Capsules',
   'showWorkbenchNavigation',
   'starterCapsuleSummaries',
   'visibleCapsuleCards',
@@ -74,7 +74,7 @@ for (const required of [
 }
 
 const landingLayout = read('src/app/(landing)/layout.tsx');
-for (const required of ['Home', 'Capsule Factory', 'Pricing', 'Learn', 'Release notes', 'Sign in']) {
+for (const required of ['Home', 'Capsules', 'Pricing', 'Learn', 'Release notes', 'Sign in']) {
   if (!landingLayout.includes(required)) failures.push(`public navigation missing marker: ${required}`);
 }
 if (landingLayout.includes('Repository')) failures.push('public navigation still exposes Repository as a separate primary route');

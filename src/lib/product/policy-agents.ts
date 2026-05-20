@@ -79,7 +79,7 @@ export interface PolicyAgentDefinition {
 export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
   {
     id: 'capsule-factory',
-    label: 'Capsule Factory',
+    label: 'Capsule AI',
     category: 'analysis',
     description: 'Builds or improves draft ContextCapsule cores as reusable expert-thinking blocks with provenance, source gaps, suggested tools, and confirmation gates.',
     requiredCores: ['User Core', 'Situation Core', 'Source Core', 'Tool Core', 'Output Core'],
@@ -90,7 +90,7 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     riskLevel: 'medium',
     allowedTools: ['context-resolve', 'capsule-repository-read', 'grounded-search', 'sourceability-reviewer'],
     capsuleSlots: ['user', 'situation', 'sources', 'documents', 'tools', 'outputs'],
-    actionLabel: 'Build capsule',
+    actionLabel: 'Improve capsule',
   },
   {
     id: 'research-memo',

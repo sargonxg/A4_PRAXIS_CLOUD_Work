@@ -14,7 +14,7 @@ export const CapsuleFactoryCoreKindSchema = z.enum([
   'memory',
   'handover',
 ]);
-export const CapsuleFactoryLaneIdSchema = z.enum(['dialectica', 'kairos', 'agon']);
+export const CapsuleFactoryLaneIdSchema = z.enum(['improve', 'sources', 'output', 'dialectica', 'kairos', 'agon']);
 export const CapsuleFactoryReviewStateSchema = z.enum(['draft', 'reviewed', 'applied', 'rejected']);
 export const CapsuleFactoryProposalSourceSchema = z.enum(['firestore', 'cognee', 'future_graphiti']);
 export const CapsuleFactoryApplyTargetSchema = z.enum([
@@ -137,7 +137,7 @@ export const CapsuleFactoryReceiptsSchema = z.object({
 });
 
 export const CapsuleFactoryRunMetadataSchema = z.object({
-  factoryLane: z.enum(['catalog', 'repository', 'ontology', 'graph', 'sources', 'temporality', 'conflict', 'output', 'runs']).optional(),
+  factoryLane: z.enum(['catalog', 'repository', 'sources', 'graph', 'agents', 'ontology', 'temporality', 'conflict', 'output', 'runs']).optional(),
   ontologyStack: z.array(z.string().min(1).max(120)).max(12).default([]),
   graphMode: CapsuleFactoryGraphModeSchema.default('embedded_proposal'),
   cogneeMode: CapsuleFactoryCogneeModeSchema.default('disabled'),

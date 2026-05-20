@@ -20,7 +20,7 @@ function expectMissing(rel: string): void {
 const primaryNav = read('src/lib/navigation/primary-nav.ts');
 for (const marker of [
   "label: 'Home'",
-  "label: 'Capsule Factory'",
+  "label: 'Capsules'",
   "href: '/app'",
   "href: '/app/capsules'",
 ]) {

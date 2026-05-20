@@ -33,7 +33,7 @@ if (!capsuleRoute.includes("queryAction === 'share'")) {
 if (!capsuleRoute.includes("collection('capsule_shares')")) {
   failures.push('capsule share action must write users/{uid}/capsule_shares/{token}');
 }
-for (const token of ["format') === 'core'", "action: z.literal('set-visibility')", "action: z.literal('favorite')", "action: z.literal('rate')"]) {
+for (const token of ["requestedFormat === 'praxis'", "requestedFormat === 'core'", "action: z.literal('set-visibility')", "action: z.literal('favorite')", "action: z.literal('rate')"]) {
   if (!capsuleRoute.includes(token)) failures.push(`capsule route missing marketplace/.core marker: ${token}`);
 }
 
@@ -92,6 +92,11 @@ for (const token of ['setCapsuleCoreLock', "collection('versions')", 'lockedCore
 const corePackage = read('src/lib/context/core-package.ts');
 for (const token of ['CORE_PACKAGE_EXTENSION', '.core', 'application/praxis-core+json', 'privateByDefault', 'cloneCreatesNewOwnerObject']) {
   if (!corePackage.includes(token)) failures.push(`core package contract missing ${token}`);
+}
+
+const capsulePlus = read('src/lib/capsule-plus/index.ts');
+for (const token of ['buildPraxisCapsuleFilename', '.praxis', 'application/vnd.praxis.capsule+zip']) {
+  if (!capsulePlus.includes(token) && !capsuleRoute.includes(token)) failures.push(`praxis bundle contract missing ${token}`);
 }
 
 if (failures.length > 0) {

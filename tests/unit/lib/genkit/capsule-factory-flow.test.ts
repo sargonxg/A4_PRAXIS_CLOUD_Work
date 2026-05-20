@@ -115,7 +115,7 @@ describe('capsule factory Genkit flows', () => {
     expect(result.applyActions.every((action) => action.requiresConfirmation)).toBe(true);
   });
 
-  it('accepts DIALECTICA, KAIROS, and AGON lanes as reviewable draft improvements', async () => {
+  it('accepts capsule-centered lanes as reviewable draft improvements', async () => {
     const { CapsuleFactoryReviewDiffSchema, CapsuleSynthesisOutputSchema } = await import('@/lib/genkit/schemas/capsule-factory');
     const parsed = CapsuleSynthesisOutputSchema.parse({
       contextCapsuleDraft: {
@@ -133,13 +133,13 @@ describe('capsule factory Genkit flows', () => {
         { label: 'Review and apply source posture', target: 'source_core', requiresConfirmation: true },
       ],
       laneImprovements: [
-        { laneId: 'dialectica', title: 'Ontology delta', summary: 'Add actor and claim graph deltas.', proposedTags: ['ontology'], evidenceIds: ['src-1'], requiresConfirmation: true },
-        { laneId: 'kairos', title: 'Temporal delta', summary: 'Add stale-claim and decision-window checks.', proposedTags: ['temporality'], evidenceIds: [], requiresConfirmation: true },
-        { laneId: 'agon', title: 'Conflict delta', summary: 'Add incentives, commitments, and friction checks.', proposedTags: ['actors'], evidenceIds: [], requiresConfirmation: true },
+        { laneId: 'improve', title: 'Capsule improvement', summary: 'Add actor and claim graph deltas.', proposedTags: ['capsule-improvement'], evidenceIds: ['src-1'], requiresConfirmation: true },
+        { laneId: 'sources', title: 'Source coverage', summary: 'Add stale-claim and decision-window checks.', proposedTags: ['source-coverage'], evidenceIds: [], requiresConfirmation: true },
+        { laneId: 'output', title: 'Output readiness', summary: 'Add commitments and handover checks.', proposedTags: ['output-readiness'], evidenceIds: [], requiresConfirmation: true },
       ],
     });
 
-    expect(parsed.laneImprovements.map((lane) => lane.laneId)).toEqual(['dialectica', 'kairos', 'agon']);
+    expect(parsed.laneImprovements.map((lane) => lane.laneId)).toEqual(['improve', 'sources', 'output']);
     expect(parsed.laneImprovements.every((lane) => lane.requiresConfirmation)).toBe(true);
 
     const diff = CapsuleFactoryReviewDiffSchema.parse({
@@ -192,7 +192,7 @@ describe('capsule factory Genkit flows', () => {
       suggestedTools: ['sourceability-reviewer'],
       applyActions: [{ label: 'Review and apply mature capsule diff', target: 'context_capsule', requiresConfirmation: true }],
       laneImprovements: [
-        { laneId: 'dialectica', title: 'Graph proposal', summary: 'Candidate graph nodes only.', proposedTags: ['graph'], evidenceIds: ['src-1'], requiresConfirmation: true },
+        { laneId: 'improve', title: 'Graph proposal', summary: 'Candidate graph nodes only.', proposedTags: ['graph'], evidenceIds: ['src-1'], requiresConfirmation: true },
       ],
       factoryReceipts: {
         selectedOntologyStack: ['policy-core', 'source-to-claim'],

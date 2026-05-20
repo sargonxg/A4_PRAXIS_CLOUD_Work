@@ -41,7 +41,7 @@ export async function runCapsuleFactoryDraft(
     flowName: 'capsuleIntakeFlow',
     phase: 'started',
     schemaName: 'CapsuleIntakeOutput',
-    message: 'Capsule Factory started intake into draft core proposals.',
+    message: 'Capsule AI started intake into draft core proposals.',
     data: { workerContext },
   }, deps);
   const intake = await runIntake({
@@ -66,7 +66,7 @@ export async function runCapsuleFactoryDraft(
     phase: 'tool_call',
     schemaName: 'CapsuleResearchPlanOutput',
     toolId: 'capsule-repository-read',
-    message: 'Capsule Factory planned read-only source and corpus checks.',
+    message: 'Capsule AI planned read-only source and corpus checks.',
     data: { approvalPosture: 'receipt_only' },
   }, deps);
   const researchPlan = await runResearchPlan({
@@ -92,7 +92,7 @@ export async function runCapsuleFactoryDraft(
     flowName: 'capsuleSynthesisFlow',
     phase: 'started',
     schemaName: 'CapsuleSynthesisOutput',
-    message: 'Capsule Factory started draft ContextCapsule synthesis.',
+    message: 'Capsule AI started draft ContextCapsule synthesis.',
   }, deps);
   const synthesis = await runSynthesis({
     objective: run.objective,

@@ -2,8 +2,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const source = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
+const workbenchSource = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
+const conversationHelperSource = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-workbench-conversation.ts'), 'utf8');
+const source = `${workbenchSource}\n${conversationHelperSource}`;
 const sidebarSource = readFileSync(join(process.cwd(), 'src/components/app/app-sidebar.tsx'), 'utf8');
+const primaryNavSource = readFileSync(join(process.cwd(), 'src/lib/navigation/primary-nav.ts'), 'utf8');
 const repositoryPageSource = readFileSync(join(process.cwd(), 'src/app/app/repository/page.tsx'), 'utf8');
 
 describe('Tasklet PRAXIS workbench contract', () => {
@@ -17,7 +20,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('/api/conversations/${encodeURIComponent(nextThreadId)}/turns');
     expect(source).not.toContain("fetch('/api/ai/ask-praxis'");
     expect(source).toContain("currentToolId: 'ask-praxis'");
-    expect(source).toContain('appliedCapsules: activeCapsules.map');
+    expect(source).toContain('appliedCapsules: activeCapsuleStack.map');
   });
 
   it('keeps conversation URLs capsule-scoped for sends and copied links', () => {
@@ -32,10 +35,31 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('loadLegacyAskThreadHistory');
   });
 
+  it('loads saved homepage conversations before separate agent-run recents', () => {
+    expect(source).toContain("fetch('/api/conversations', { credentials: 'include' })");
+    expect(source).toContain('savedConversations.slice(0, 6).map');
+    expect(source).toContain('savedConversationHref(conversation');
+    expect(source).toContain('router.push(href)');
+    expect(source).toContain('Agent runs');
+    expect(source.indexOf('savedConversations.slice(0, 6).map')).toBeLessThan(source.indexOf('agentRuns.length ? agentRuns.slice(0, 5).map'));
+  });
+
   it('keeps retry/source-check actions on the active conversation thread', () => {
     expect(source).toContain('const nextThreadId = ensureConversationThread()');
     expect(source).toContain("onSourceCheck={() => void sendToPraxis(selectedAgent, `Source-check this answer in the active conversation");
     expect(source).toContain('retryFromMessage(index)');
+  });
+
+  it('renders richer assistant messages inside the homepage conversation block', () => {
+    expect(source).toContain('data-testid="praxis-chat-thread"');
+    expect(source).toContain('answerEnvelopeFromDataStreamLine(line)');
+    expect(source).toContain('ConversationReceiptSummary');
+    expect(source).toContain('ConversationSourcePreviewPanel');
+    expect(source).toContain('data-testid="praxis-answer-source-preview"');
+    expect(source).toContain('Source receipt');
+    expect(source).toContain('Follow-ups');
+    expect(source).toContain('safeMarkdownHref(href)');
+    expect(source).toContain("target={external ? '_blank' : undefined}");
   });
 
   it('defines explainable selected-span targets with follow-up prompts', () => {
@@ -246,22 +270,23 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('bg-sage text-white">◳');
   });
 
-  it('gives the authenticated homepage one clear Capsule Factory launch button', () => {
+  it('gives the authenticated homepage one clear Capsules launch button', () => {
     expect(source).toContain('data-testid="open-capsule-factory-cta"');
-    expect(source).toContain('Open Capsule Factory');
+    expect(source).toContain('Open Capsules');
     expect(source).toContain("!initialPanel && mode === 'app'");
   });
 
-  it('marks the canonical Capsules sidebar link as the Capsule Factory without changing route identity', () => {
-    expect(sidebarSource).toContain("item.id === 'capsules'");
-    expect(sidebarSource).toContain('Factory');
+  it('marks the canonical Capsules sidebar link without changing route identity', () => {
+    expect(primaryNavSource).toContain("id: 'capsules'");
+    expect(primaryNavSource).toContain("label: 'Capsules'");
+    expect(primaryNavSource).toContain("href: '/app/capsules'");
     expect(sidebarSource).toContain('item.hint');
   });
 
   it('renders app capsules as a first-class dense repository surface', () => {
     expect(source).toContain('const isCapsuleRepositoryPage = initialPanel ===');
-    expect(source).toContain('Capsule Factory & Repository');
-    expect(source).toContain("id: 'repository', label: 'Repository'");
+    expect(source).toContain('Manage reusable ContextCapsules');
+    expect(source).toContain("id: 'repository', label: 'My workspace'");
     expect(source).toContain('data-testid="capsule-factory-repository-lane"');
     expect(source).toContain("href={isAuthenticated ? '/app/capsules?lane=repository'");
     expect(source).toContain('data-testid="document-repository-section"');
@@ -269,27 +294,26 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Detach</button>');
   });
 
-  it('reframes /app/capsules as a Capsule Factory with reviewable specialist lanes', () => {
-    expect(source).toContain('Capsule Factory');
+  it('reframes /app/capsules as capsule-centered management with reviewable AI changes', () => {
+    expect(source).toContain('Manage reusable ContextCapsules');
     expect(source).toContain('data-testid="capsule-factory-command-band"');
-    expect(source).toContain('Build, inspect, improve, and maintain reusable ContextCapsules');
+    expect(source).toContain('Manage the capsules your policy work depends on.');
     expect(source).toContain('Create capsule');
-    expect(source).toContain('Inspect availability');
-    expect(source).toContain('Run factory agent');
+    expect(source).toContain('Inspect capsule');
+    expect(source).toContain('Improve with PRAXIS');
     expect(source).toContain('factorySidebarItems');
-    expect(source).toContain('Capsule Factory');
-    expect(source).toContain('Catalog');
-    expect(source).toContain('Repository');
-    expect(source).toContain('Ontology/Graph');
+    expect(source).toContain('Capsules');
+    expect(source).toContain('My workspace');
     expect(source).toContain('Sources');
-    expect(source).toContain('Temporality');
-    expect(source).toContain('Conflict/Actors');
-    expect(source).toContain('Output/Handover');
-    expect(source).toContain('Runs');
+    expect(source).toContain('Capsule graph');
+    expect(source).toContain('AI work');
     expect(source).toContain('factoryBuilderLanes');
-    expect(source).toContain('DIALECTICA lane');
-    expect(source).toContain('KAIROS lane');
-    expect(source).toContain('AGON lane');
+    expect(source).toContain('Improve capsule');
+    expect(source).toContain('Add sources');
+    expect(source).toContain('Prepare output');
+    expect(source).not.toContain('DIALECTICA lane');
+    expect(source).not.toContain('KAIROS lane');
+    expect(source).not.toContain('AGON lane');
     expect(source).toContain('Review draft');
     expect(source).toContain("type CapsuleFactoryReviewState = 'draft' | 'reviewed' | 'applied' | 'rejected'");
     expect(source).toContain('factoryReviewDiffs');
@@ -297,9 +321,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Reject');
     expect(source).toContain('reviewable capsule improvements');
     expect(source).toContain('Do not silently mutate the capsule');
-    expect(source).toContain('Share/export readiness');
-    expect(source).toContain('Marketplace readiness');
-    expect(source).toContain('Source-to-claim map');
+    expect(source).toContain('Download .praxis');
+    expect(source).toContain('Make private');
+    expect(source).toContain('Make public');
   });
 
   it('shows sanitized runtime proof inside the active capsule/run area', () => {
@@ -362,7 +386,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('readiness signals');
   });
 
-  it('keeps repository compatibility as a Capsule Factory lane instead of a separate page model', () => {
+  it('keeps repository compatibility inside the Capsules surface instead of a separate page model', () => {
     expect(repositoryPageSource).toContain("redirect('/app/capsules?lane=repository')");
     expect(source).toContain("initialPanel?: 'ask' | 'capsules' | 'repository'");
     expect(source).toContain("const isRepositoryLane = isCapsuleRepositoryPage && factoryLane === 'repository'");

@@ -147,6 +147,21 @@ export function buildCapsulePlusManifest(input: {
   });
 }
 
+export function buildPraxisCapsuleFilename(input: {
+  label?: string | null;
+  capsuleId: string;
+  scope?: string | null;
+  tags?: string[];
+  exportedAt?: string;
+}): string {
+  const year = new Date(input.exportedAt ?? Date.now()).getUTCFullYear();
+  const domainTag = input.tags?.find((tag) => tag.startsWith('domain:'))?.split(':')[1]
+    ?? input.tags?.find((tag) => /^[a-z][a-z0-9-]{2,32}$/i.test(tag));
+  const prefix = cleanFilenamePart(domainTag ?? input.scope ?? input.label ?? 'capsule').toLowerCase() || 'capsule';
+  const code = cleanFilenamePart(input.capsuleId).replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 4).padEnd(4, 'X');
+  return `${prefix}_${code}_${year}.praxis`;
+}
+
 export async function buildCapsulePlusExportBundle(input: CapsulePlusBundle): Promise<Buffer> {
   const bundle = CapsulePlusBundleSchema.parse(input);
   const zip = new JSZip();
@@ -229,6 +244,14 @@ function buildBundleReadme(bundle: CapsulePlusBundle): string {
 
 function toJsonl(rows: unknown[]): string {
   return rows.map((row) => JSON.stringify(row)).join('\n') + (rows.length ? '\n' : '');
+}
+
+function cleanFilenamePart(value: string): string {
+  return value
+    .normalize('NFKD')
+    .replace(/[^\w-]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 48);
 }
 
 function parseJsonl<T>(text: string, schema: z.ZodType<T>): T[] {

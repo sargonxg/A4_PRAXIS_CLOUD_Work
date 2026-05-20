@@ -18,6 +18,13 @@ import {
   setCapsuleCoreLock,
   setCapsuleFavorite,
 } from '@/lib/context/capsule-service';
+import {
+  buildCapsulePlusExportBundle,
+  buildCapsulePlusManifest,
+  buildPraxisCapsuleFilename,
+  type CapsulePlusBundle,
+} from '@/lib/capsule-plus';
+import { listCapsulePlusGraphRows } from '@/lib/capsule-plus/postgres';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,7 +107,41 @@ export const GET = withAuth<RouteContext>(async (_request, user, context) => {
     const { capsuleId } = await context.params;
     if (user.isDemo) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
     const url = new URL(_request.url);
-    if (url.searchParams.get('format') === 'core') {
+    const requestedFormat = url.searchParams.get('format');
+    if (requestedFormat === 'praxis') {
+      const capsule = await getCapsule(user.uid, capsuleId);
+      if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      const graph = await listCapsulePlusGraphRows({
+        ownerUid: user.uid,
+        capsuleId: capsule.capsuleId,
+        includeProposed: true,
+      });
+      const bundle: CapsulePlusBundle = {
+        manifest: buildCapsulePlusManifest({
+          capsuleId: capsule.capsuleId,
+          ownerUid: user.uid,
+          graphVersion: graph.nodes.length || graph.edges.length ? capsule.version : 0,
+        }),
+        capsule: { ...capsule },
+        nodes: graph.nodes,
+        edges: graph.edges,
+        proposals: [],
+        sourceReceipts: capsule.coreRefs.sourceCoreIds.map((id) => ({ id, title: id, metadata: { capsuleId: capsule.capsuleId } })),
+      };
+      const zip = await buildCapsulePlusExportBundle(bundle);
+      return new NextResponse(new Uint8Array(zip), {
+        headers: {
+          'content-type': 'application/vnd.praxis.capsule+zip',
+          'content-disposition': `attachment; filename="${buildPraxisCapsuleFilename({
+            label: capsule.label,
+            capsuleId: capsule.capsuleId,
+            scope: capsule.scope,
+            tags: capsule.community.tags,
+          })}"`,
+        },
+      });
+    }
+    if (requestedFormat === 'core') {
       const exported = await exportCapsuleCorePackage(user.uid, capsuleId);
       if (!exported) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
       return new NextResponse(JSON.stringify(exported.package, null, 2), {

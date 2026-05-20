@@ -69,7 +69,7 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'data-testid="capsule-detail-panel"',
   '/api/conversations/${encodeURIComponent(nextThreadId)}/turns',
   "currentToolId: 'ask-praxis'",
-  'appliedCapsules: activeCapsules.map',
+  'appliedCapsules: activeCapsuleStack.map',
   'Active ContextCapsule stack',
   'ContextCapsule Lite',
   'action: \'combine\'',

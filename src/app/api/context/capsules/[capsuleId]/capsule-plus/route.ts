@@ -5,6 +5,7 @@ import { getCapsule } from '@/lib/context/capsule-service';
 import {
   buildCapsulePlusExportBundle,
   buildCapsulePlusManifest,
+  buildPraxisCapsuleFilename,
   type CapsulePlusBundle,
 } from '@/lib/capsule-plus';
 import { listCapsulePlusGraphRows } from '@/lib/capsule-plus/postgres';
@@ -43,7 +44,12 @@ export const GET = withAuth<RouteContext>(async (_request, user, context) => {
     return new NextResponse(new Uint8Array(zip), {
       headers: {
         'content-type': 'application/vnd.praxis.capsule+zip',
-        'content-disposition': `attachment; filename="${capsule.capsuleId}.praxiscapsule.zip"`,
+        'content-disposition': `attachment; filename="${buildPraxisCapsuleFilename({
+          label: capsule.label,
+          capsuleId: capsule.capsuleId,
+          scope: capsule.scope,
+          tags: capsule.community.tags,
+        })}"`,
       },
     });
   } catch (err) {

@@ -1,6 +1,6 @@
 # API Route Cleanup Map
 
-Generated: 2026-05-19T20:49:00.329Z
+Generated: 2026-05-20T02:02:57.110Z
 Total routes: 210
 
 | Disposition | Count |
@@ -102,8 +102,8 @@ Total routes: 210
 | `/api/billing/portal` | do not touch | canonical | POST | Secrets/Billing | 1 | 0 | 1 | 4 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/billing/webhook` | do not touch | admin/internal | none | Firestore/Firebase<br>Secrets/Billing | 0 | 0 | 0 | 11 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/capabilities` | keep | canonical | GET | none detected | 0 | 0 | 1 | 3 | Keep as active or canonical route. |
-| `/api/context/capsules` | do not touch | canonical | GET, POST | none detected | 13 | 0 | 3 | 110 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
-| `/api/context/capsules/[capsuleId]` | do not touch | admin/internal | GET, POST, PATCH, DELETE | Firestore/Firebase | 9 | 0 | 2 | 191 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
+| `/api/context/capsules` | do not touch | canonical | GET, POST | none detected | 13 | 0 | 3 | 111 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
+| `/api/context/capsules/[capsuleId]` | do not touch | admin/internal | GET, POST, PATCH, DELETE | Firestore/Firebase<br>Cloud SQL/Postgres | 9 | 0 | 2 | 193 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/capsules/[capsuleId]/attach` | do not touch | canonical | POST | none detected | 0 | 0 | 0 | 5 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/capsules/[capsuleId]/capsule-plus` | do not touch | canonical | GET | Cloud SQL/Postgres | 0 | 0 | 0 | 12 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/capsules/[capsuleId]/diff` | do not touch | admin/internal | GET, POST | Firestore/Firebase | 0 | 0 | 0 | 21 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
@@ -121,7 +121,7 @@ Total routes: 210
 | `/api/context/readiness` | do not touch | admin/internal | none | Firestore/Firebase | 2 | 0 | 1 | 25 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/resolve` | do not touch | canonical | POST | none detected | 1 | 1 | 1 | 9 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/context/trust-posture` | do not touch | canonical | none | Firestore/Firebase | 2 | 0 | 0 | 18 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
-| `/api/conversations` | do not touch | admin/internal | GET, POST | Firestore/Firebase | 1 | 0 | 5 | 22 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
+| `/api/conversations` | do not touch | admin/internal | GET, POST | Firestore/Firebase | 2 | 0 | 5 | 22 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/conversations/[conversationId]` | do not touch | admin/internal | GET | Firestore/Firebase | 1 | 0 | 5 | 39 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/conversations/[conversationId]/turns` | do not touch | admin/internal | POST | Firestore/Firebase<br>Secrets/Billing | 0 | 0 | 2 | 15 | Preserve because this route supports auth, billing, runtime, health, documents, capsules, or agentic execution. |
 | `/api/cores/library` | keep | canonical | GET | none detected | 1 | 1 | 0 | 5 | Keep as active or canonical route. |

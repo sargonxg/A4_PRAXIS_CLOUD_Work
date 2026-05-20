@@ -266,11 +266,6 @@ function NavGroup({
                 <span className="min-w-0 flex-1">
                   <span className="flex min-w-0 items-center gap-2">
                     <span className="truncate">{item.label}</span>
-                    {item.id === 'capsules' ? (
-                      <span className="rounded bg-[#fff0e8] px-1.5 py-0.5 text-[10px] font-semibold text-[#9f341c]">
-                        Factory
-                      </span>
-                    ) : null}
                   </span>
                   {item.hint ? <span className="mt-0.5 block truncate text-[11px] font-normal text-navy-400">{item.hint}</span> : null}
                 </span>

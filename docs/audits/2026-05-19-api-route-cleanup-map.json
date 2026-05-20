@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T20:49:00.329Z",
+  "generatedAt": "2026-05-20T02:02:57.110Z",
   "totalRoutes": 210,
   "routeMap": [
     {
@@ -28,7 +28,6 @@
       "testCallerCount": 1,
       "graphReferences": 10,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -64,7 +63,6 @@
       "testCallerCount": 1,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -105,7 +103,6 @@
       "graphReferences": 68,
       "sourceCallers": [
         "docs/GCP_OPERATIONS.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -115,7 +112,8 @@
         "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md",
         "docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md",
-        "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md"
+        "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md",
+        "docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md"
       ],
       "tests": [
         "tests/e2e/ask-capsule-runtime.spec.ts",
@@ -155,7 +153,6 @@
       "graphReferences": 115,
       "sourceCallers": [
         "docs/GCP_OPERATIONS.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -165,7 +162,8 @@
         "docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md",
         "docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md",
         "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md",
-        "docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md"
+        "docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md",
+        "docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md"
       ],
       "tests": [
         "tests/e2e/ask-capsule-runtime.spec.ts",
@@ -203,7 +201,6 @@
       "testCallerCount": 0,
       "graphReferences": 7,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -238,7 +235,6 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -274,7 +270,6 @@
       "graphReferences": 3,
       "sourceCallers": [
         "docs/GCP_OPERATIONS.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -310,7 +305,6 @@
       "graphReferences": 14,
       "sourceCallers": [
         "docs/GCP_OPERATIONS.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -320,7 +314,8 @@
         "docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md",
         "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md",
         "docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md",
-        "docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md"
+        "docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md",
+        "docs/superpowers/plans/2026-05-16-cleanup-and-infra.md"
       ],
       "tests": [],
       "disposition": "do not touch",
@@ -350,7 +345,6 @@
       "testCallerCount": 0,
       "graphReferences": 6,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -385,7 +379,6 @@
       "testCallerCount": 2,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -396,7 +389,8 @@
         "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md",
         "scripts/audit-agent-runtime-proof.ts",
         "scripts/audit-agentic-search.ts",
-        "scripts/audit-route-cleanup-map.ts"
+        "scripts/audit-route-cleanup-map.ts",
+        "src/lib/health/agentic-search-health.ts"
       ],
       "tests": [
         "tests/unit/lib/agent-runtime/runtime-proof.test.ts",
@@ -426,7 +420,6 @@
       "testCallerCount": 0,
       "graphReferences": 9,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -457,7 +450,6 @@
       "testCallerCount": 0,
       "graphReferences": 11,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -488,7 +480,6 @@
       "testCallerCount": 0,
       "graphReferences": 11,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -522,7 +513,6 @@
       "testCallerCount": 0,
       "graphReferences": 13,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -557,7 +547,6 @@
       "testCallerCount": 0,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -588,7 +577,6 @@
       "graphReferences": 2,
       "sourceCallers": [
         "docs/audits/2026-05-17-agentic-workflow-capsule-conversation-audit.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -598,7 +586,8 @@
         "docs/tools/canonical-tool-library.json",
         "scripts/audit-ai-functionality.ts",
         "scripts/audit-capsule-contract.ts",
-        "src/app/api/ai/ask-praxis/route.ts"
+        "src/app/api/ai/ask-praxis/route.ts",
+        "src/app/api/conversations/[conversationId]/turns/route.ts"
       ],
       "tests": [
         "tests/unit/app/api/conversations-turns-contract.test.ts",
@@ -627,7 +616,6 @@
       "graphReferences": 1,
       "sourceCallers": [
         "docs/audits/2026-05-17-agentic-workflow-capsule-conversation-audit.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -637,7 +625,8 @@
         "docs/tools/canonical-tool-library.json",
         "scripts/audit-ai-functionality.ts",
         "scripts/audit-capsule-contract.ts",
-        "src/app/api/conversations/[conversationId]/turns/route.ts"
+        "src/app/api/conversations/[conversationId]/turns/route.ts",
+        "src/components/ask/AskStreamPanel.tsx"
       ],
       "tests": [
         "tests/unit/app/api/conversations-turns-contract.test.ts",
@@ -668,7 +657,6 @@
       "graphReferences": 18,
       "sourceCallers": [
         "docs/CONTEXT_INJECTION.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -704,7 +692,6 @@
       "testCallerCount": 0,
       "graphReferences": 20,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -739,7 +726,6 @@
       "graphReferences": 12,
       "sourceCallers": [
         "docs/architecture/MULTI_TENANT_MODEL.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -773,7 +759,6 @@
       "graphReferences": 28,
       "sourceCallers": [
         "docs/architecture/MULTI_TENANT_MODEL.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -783,7 +768,8 @@
         "src/app/api/ai/briefing-generate/route.ts",
         "src/lib/ai/audience-presets.ts",
         "src/lib/ai/capability-registry.ts",
-        "src/lib/constants/tool-registry.ts"
+        "src/lib/constants/tool-registry.ts",
+        "src/lib/genkit/tools/registry.ts"
       ],
       "tests": [
         "tests/services/brief-builder-schema.test.ts"
@@ -813,7 +799,6 @@
       "graphReferences": 9,
       "sourceCallers": [
         "docs/architecture/MULTI_TENANT_MODEL.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -850,7 +835,6 @@
       "testCallerCount": 0,
       "graphReferences": 18,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -894,7 +878,6 @@
       "graphReferences": 139,
       "sourceCallers": [
         "docs/audits/2026-05-17-agentic-workflow-capsule-conversation-audit.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -904,7 +887,8 @@
         "docs/product/PRAXIS_ASK_CONTEXT_CAPSULE_COCKPIT_PLAN_2026-05-16.md",
         "docs/tools/assistant.md",
         "scripts/audit-agentic-search.ts",
-        "scripts/audit-ai-functionality.ts"
+        "scripts/audit-ai-functionality.ts",
+        "scripts/audit-ask-cockpit-runtime.ts"
       ],
       "tests": [
         "tests/e2e/canary-auth-skip.spec.ts",
@@ -934,7 +918,6 @@
       "testCallerCount": 0,
       "graphReferences": 10,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -971,7 +954,6 @@
       "testCallerCount": 0,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1000,7 +982,6 @@
       "testCallerCount": 1,
       "graphReferences": 1,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1035,7 +1016,6 @@
       "testCallerCount": 1,
       "graphReferences": 8,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1073,7 +1053,6 @@
       "graphReferences": 16,
       "sourceCallers": [
         "docs/architecture/DEEP_RESEARCH.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1107,7 +1086,6 @@
       "graphReferences": 16,
       "sourceCallers": [
         "docs/architecture/DEEP_RESEARCH.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1117,7 +1095,8 @@
         "docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md",
         "docs/product/PRAXIS_AGENTIC_SEARCH_DIAGNOSTIC_2026-05-19.md",
         "scripts/verify-tools.ts",
-        "src/app/api/ai/deep-research/route.ts"
+        "src/app/api/ai/deep-research/route.ts",
+        "src/lib/constants/tool-registry.ts"
       ],
       "tests": [],
       "disposition": "do not touch",
@@ -1144,7 +1123,6 @@
       "testCallerCount": 0,
       "graphReferences": 9,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1174,7 +1152,6 @@
       "testCallerCount": 0,
       "graphReferences": 1,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1207,7 +1184,6 @@
       "testCallerCount": 0,
       "graphReferences": 13,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1240,7 +1216,6 @@
       "testCallerCount": 0,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1273,7 +1248,6 @@
       "testCallerCount": 0,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1305,7 +1279,6 @@
       "testCallerCount": 0,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1340,7 +1313,6 @@
       "graphReferences": 20,
       "sourceCallers": [
         "docs/architecture/MULTI_TENANT_MODEL.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1378,7 +1350,6 @@
       "graphReferences": 7,
       "sourceCallers": [
         "docs/architecture/MULTI_TENANT_MODEL.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1411,7 +1382,6 @@
       "testCallerCount": 1,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1446,7 +1416,6 @@
       "testCallerCount": 0,
       "graphReferences": 13,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1480,7 +1449,6 @@
       "testCallerCount": 0,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1514,7 +1482,6 @@
       "testCallerCount": 0,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1547,7 +1514,6 @@
       "testCallerCount": 0,
       "graphReferences": 13,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1581,7 +1547,6 @@
       "testCallerCount": 0,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1615,7 +1580,6 @@
       "graphReferences": 11,
       "sourceCallers": [
         "docs/architecture/MULTI_TENANT_MODEL.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1651,7 +1615,6 @@
       "testCallerCount": 1,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1662,7 +1625,8 @@
         "scripts/verify-tools.ts",
         "src/lib/constants/tool-registry.ts",
         "src/lib/genkit/tools/registry.ts",
-        "src/lib/tools/canonical.ts"
+        "src/lib/tools/canonical.ts",
+        "tests/tools/info-environment.smoke.test.ts"
       ],
       "tests": [
         "tests/tools/info-environment.smoke.test.ts"
@@ -1691,7 +1655,6 @@
       "testCallerCount": 0,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1724,7 +1687,6 @@
       "testCallerCount": 0,
       "graphReferences": 9,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1758,7 +1720,6 @@
       "testCallerCount": 0,
       "graphReferences": 14,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1790,7 +1751,6 @@
       "testCallerCount": 0,
       "graphReferences": 13,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1823,7 +1783,6 @@
       "testCallerCount": 0,
       "graphReferences": 13,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1860,7 +1819,6 @@
       "testCallerCount": 0,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1893,7 +1851,6 @@
       "testCallerCount": 0,
       "graphReferences": 13,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1928,7 +1885,6 @@
       "testCallerCount": 0,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1967,7 +1923,6 @@
       "graphReferences": 9,
       "sourceCallers": [
         "docs/architecture/MULTI_TENANT_MODEL.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -1977,7 +1932,8 @@
         "docs/tools/CANONICAL_TOOL_LIBRARY.md",
         "docs/tools/canonical-tool-library.json",
         "src/lib/constants/tool-registry.ts",
-        "src/lib/tools/canonical.ts"
+        "src/lib/tools/canonical.ts",
+        "tests/services/red-team-review-schema.test.ts"
       ],
       "tests": [
         "tests/services/red-team-review-schema.test.ts"
@@ -2006,7 +1962,6 @@
       "testCallerCount": 0,
       "graphReferences": 11,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2039,7 +1994,6 @@
       "testCallerCount": 0,
       "graphReferences": 14,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2072,7 +2026,6 @@
       "testCallerCount": 0,
       "graphReferences": 6,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2105,7 +2058,6 @@
       "testCallerCount": 0,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2137,7 +2089,6 @@
       "testCallerCount": 0,
       "graphReferences": 13,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2171,7 +2122,6 @@
       "testCallerCount": 0,
       "graphReferences": 15,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2207,7 +2157,6 @@
       "testCallerCount": 1,
       "graphReferences": 1,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2243,7 +2192,6 @@
       "testCallerCount": 2,
       "graphReferences": 14,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2285,7 +2233,6 @@
       "graphReferences": 14,
       "sourceCallers": [
         "docs/architecture/MULTI_TENANT_MODEL.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2295,7 +2242,8 @@
         "docs/tools/CANONICAL.md",
         "docs/tools/CANONICAL_TOOL_LIBRARY.md",
         "docs/tools/canonical-tool-library.json",
-        "scripts/verify-tools.ts"
+        "scripts/verify-tools.ts",
+        "src/lib/constants/tool-registry.ts"
       ],
       "tests": [
         "tests/services/source-scout-schema.test.ts"
@@ -2324,7 +2272,6 @@
       "testCallerCount": 0,
       "graphReferences": 2,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2358,7 +2305,6 @@
       "testCallerCount": 0,
       "graphReferences": 13,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2392,7 +2338,6 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2426,7 +2371,6 @@
       "testCallerCount": 0,
       "graphReferences": 9,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2460,7 +2404,6 @@
       "testCallerCount": 0,
       "graphReferences": 14,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2492,7 +2435,6 @@
       "testCallerCount": 0,
       "graphReferences": 6,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2531,7 +2473,6 @@
       "testCallerCount": 0,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2564,7 +2505,6 @@
       "testCallerCount": 0,
       "graphReferences": 3,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2596,7 +2536,6 @@
       "testCallerCount": 1,
       "graphReferences": 3,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2630,7 +2569,6 @@
       "testCallerCount": 0,
       "graphReferences": 3,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2659,7 +2597,6 @@
       "testCallerCount": 0,
       "graphReferences": 3,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2688,7 +2625,6 @@
       "testCallerCount": 0,
       "graphReferences": 24,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2723,7 +2659,6 @@
       "graphReferences": 7,
       "sourceCallers": [
         "docs/GCP_OPERATIONS.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2761,7 +2696,6 @@
       "testCallerCount": 2,
       "graphReferences": 34,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2801,7 +2735,6 @@
       "testCallerCount": 0,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2834,7 +2767,6 @@
       "graphReferences": 5,
       "sourceCallers": [
         "docs/audits/2026-05-17-agentic-workflow-capsule-conversation-audit.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2871,7 +2803,6 @@
       "graphReferences": 4,
       "sourceCallers": [
         "docs/audits/2026-05-17-agentic-workflow-capsule-conversation-audit.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2905,7 +2836,6 @@
       "testCallerCount": 0,
       "graphReferences": 11,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2937,7 +2867,6 @@
       "testCallerCount": 1,
       "graphReferences": 3,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -2973,9 +2902,8 @@
       "visibleCallerCount": 13,
       "serverCallerCount": 0,
       "testCallerCount": 3,
-      "graphReferences": 110,
+      "graphReferences": 111,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -2986,7 +2914,8 @@
         "docs/audits/2026-05-19-go-live-readiness.md",
         "docs/build/PRAXIS_AGENTIC_RESEARCH_DIAGNOSTIC_PROMPT_2026-05-19.md",
         "scripts/audit-ai-functionality.ts",
-        "scripts/audit-capsule-contract.ts"
+        "scripts/audit-capsule-contract.ts",
+        "scripts/audit-capsule-memory-contract.ts"
       ],
       "tests": [
         "tests/e2e/ask-capsule-runtime.spec.ts",
@@ -3018,14 +2947,14 @@
         "DELETE"
       ],
       "dataStores": [
-        "Firestore/Firebase"
+        "Firestore/Firebase",
+        "Cloud SQL/Postgres"
       ],
       "visibleCallerCount": 9,
       "serverCallerCount": 0,
       "testCallerCount": 2,
-      "graphReferences": 191,
+      "graphReferences": 193,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3036,7 +2965,8 @@
         "scripts/audit-ai-functionality.ts",
         "scripts/audit-capsule-contract.ts",
         "scripts/audit-capsule-memory-contract.ts",
-        "scripts/audit-named-stack-contract.ts"
+        "scripts/audit-named-stack-contract.ts",
+        "src/components/app/capsule-strip-header.tsx"
       ],
       "tests": [
         "tests/e2e/ask-capsule-runtime.spec.ts",
@@ -3068,7 +2998,6 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3136,7 +3065,6 @@
       "testCallerCount": 0,
       "graphReferences": 21,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3173,7 +3101,6 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3207,7 +3134,6 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3242,7 +3168,6 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3278,7 +3203,6 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3314,7 +3238,6 @@
       "testCallerCount": 1,
       "graphReferences": 6,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3350,7 +3273,6 @@
       "testCallerCount": 0,
       "graphReferences": 8,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3418,7 +3340,6 @@
       "testCallerCount": 0,
       "graphReferences": 22,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3451,7 +3372,6 @@
       "testCallerCount": 0,
       "graphReferences": 3,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3486,7 +3406,6 @@
       "testCallerCount": 1,
       "graphReferences": 6,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -3523,7 +3442,6 @@
       "graphReferences": 13,
       "sourceCallers": [
         "docs/CONTEXT_INJECTION.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3552,7 +3470,6 @@
       "testCallerCount": 1,
       "graphReferences": 25,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3589,7 +3506,6 @@
       "testCallerCount": 1,
       "graphReferences": 9,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -3627,7 +3543,6 @@
       "testCallerCount": 0,
       "graphReferences": 18,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3660,13 +3575,12 @@
       "dataStores": [
         "Firestore/Firebase"
       ],
-      "visibleCallerCount": 1,
+      "visibleCallerCount": 2,
       "serverCallerCount": 0,
       "testCallerCount": 5,
       "graphReferences": 22,
       "sourceCallers": [
         "docs/audits/2026-05-17-agentic-workflow-capsule-conversation-audit.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -3676,6 +3590,7 @@
         "scripts/audit-ask-cockpit-runtime.ts",
         "scripts/audit-route-cleanup-map.ts",
         "src/components/praxis/tasklet-praxis-workbench.tsx",
+        "src/components/praxis/tasklet-workbench-conversation.ts",
         "tests/e2e/ask-capsule-runtime.spec.ts"
       ],
       "tests": [
@@ -3712,7 +3627,6 @@
       "graphReferences": 39,
       "sourceCallers": [
         "docs/audits/2026-05-17-agentic-workflow-capsule-conversation-audit.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -3722,7 +3636,8 @@
         "scripts/audit-ask-cockpit-runtime.ts",
         "scripts/audit-route-cleanup-map.ts",
         "src/components/praxis/tasklet-praxis-workbench.tsx",
-        "tests/e2e/ask-capsule-runtime.spec.ts"
+        "tests/e2e/ask-capsule-runtime.spec.ts",
+        "tests/e2e/canary-auth-skip.spec.ts"
       ],
       "tests": [
         "tests/e2e/ask-capsule-runtime.spec.ts",
@@ -3759,7 +3674,6 @@
       "graphReferences": 15,
       "sourceCallers": [
         "docs/audits/2026-05-17-agentic-workflow-capsule-conversation-audit.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -3798,7 +3712,6 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3834,7 +3747,6 @@
       "testCallerCount": 0,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3864,7 +3776,6 @@
       "testCallerCount": 0,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3896,7 +3807,6 @@
       "testCallerCount": 0,
       "graphReferences": 21,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3926,7 +3836,6 @@
       "testCallerCount": 1,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3960,7 +3869,6 @@
       "graphReferences": 8,
       "sourceCallers": [
         "docs/architecture/MULTI_TENANT_MODEL.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -3990,7 +3898,6 @@
       "testCallerCount": 0,
       "graphReferences": 10,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4022,7 +3929,6 @@
       "testCallerCount": 0,
       "graphReferences": 6,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4057,7 +3963,6 @@
       "testCallerCount": 1,
       "graphReferences": 45,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4068,7 +3973,8 @@
         "scripts/audit-knowledge-library-contract.ts",
         "scripts/audit-purpose-surface.ts",
         "scripts/audit-route-cleanup-map.ts",
-        "src/app/api/documents/[id]/extract-stored/route.ts"
+        "src/app/api/documents/[id]/extract-stored/route.ts",
+        "src/app/api/documents/upload/route.ts"
       ],
       "tests": [
         "tests/e2e/ask-capsule-runtime.spec.ts"
@@ -4099,7 +4005,6 @@
       "testCallerCount": 1,
       "graphReferences": 54,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4110,7 +4015,8 @@
         "scripts/audit-knowledge-library-contract.ts",
         "scripts/audit-purpose-surface.ts",
         "src/app/api/documents/[id]/extract-stored/route.ts",
-        "src/app/api/documents/upload/route.ts"
+        "src/app/api/documents/upload/route.ts",
+        "src/components/praxis/tasklet-praxis-workbench.tsx"
       ],
       "tests": [
         "tests/e2e/ask-capsule-runtime.spec.ts"
@@ -4141,7 +4047,6 @@
       "testCallerCount": 0,
       "graphReferences": 6,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4175,7 +4080,6 @@
       "testCallerCount": 0,
       "graphReferences": 3,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4209,7 +4113,6 @@
       "testCallerCount": 1,
       "graphReferences": 30,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4249,7 +4152,6 @@
       "testCallerCount": 0,
       "graphReferences": 3,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4280,7 +4182,6 @@
       "testCallerCount": 1,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4315,7 +4216,6 @@
       "testCallerCount": 0,
       "graphReferences": 10,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4349,7 +4249,6 @@
       "testCallerCount": 1,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4385,7 +4284,6 @@
       "testCallerCount": 0,
       "graphReferences": 6,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4417,7 +4315,6 @@
       "testCallerCount": 0,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4449,7 +4346,6 @@
       "testCallerCount": 0,
       "graphReferences": 8,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4483,7 +4379,6 @@
       "testCallerCount": 0,
       "graphReferences": 8,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4515,7 +4410,6 @@
       "testCallerCount": 1,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4551,7 +4445,6 @@
       "testCallerCount": 0,
       "graphReferences": 6,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4583,7 +4476,6 @@
       "testCallerCount": 1,
       "graphReferences": 13,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4623,7 +4515,6 @@
       "testCallerCount": 1,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4659,7 +4550,6 @@
       "testCallerCount": 1,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4695,7 +4585,6 @@
       "testCallerCount": 1,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4770,7 +4659,6 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4808,7 +4696,6 @@
       "testCallerCount": 0,
       "graphReferences": 3,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4839,7 +4726,6 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4871,7 +4757,6 @@
       "testCallerCount": 0,
       "graphReferences": 3,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4902,7 +4787,6 @@
       "testCallerCount": 0,
       "graphReferences": 3,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -4936,7 +4820,6 @@
       "testCallerCount": 1,
       "graphReferences": 7,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5013,7 +4896,6 @@
       "testCallerCount": 0,
       "graphReferences": 2,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5046,7 +4928,6 @@
       "testCallerCount": 0,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5080,7 +4961,6 @@
       "testCallerCount": 0,
       "graphReferences": 12,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5115,7 +4995,6 @@
       "testCallerCount": 0,
       "graphReferences": 10,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5149,7 +5028,6 @@
       "testCallerCount": 0,
       "graphReferences": 20,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5186,7 +5064,6 @@
       "testCallerCount": 0,
       "graphReferences": 35,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5219,7 +5096,6 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5252,7 +5128,6 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5291,7 +5166,6 @@
       "sourceCallers": [
         "docs/CONTEXT_INJECTION.md",
         "docs/architecture/COGNEE_MEMORY_LAYER.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5300,7 +5174,8 @@
         "scripts/audit-cognee-isolation.ts",
         "src/components/settings/account-settings-page.tsx",
         "src/lib/knowledge/memory-layer.ts",
-        "tests/unit/api/graph-memory-review-contract.test.ts"
+        "tests/unit/api/graph-memory-review-contract.test.ts",
+        "tests/unit/api/memory-proxy-contract.test.ts"
       ],
       "tests": [
         "tests/unit/api/graph-memory-review-contract.test.ts",
@@ -5335,7 +5210,6 @@
       "testCallerCount": 2,
       "graphReferences": 20,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5374,7 +5248,6 @@
       "testCallerCount": 2,
       "graphReferences": 29,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5413,7 +5286,6 @@
       "testCallerCount": 1,
       "graphReferences": 89,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -5424,7 +5296,8 @@
         "docs/product/CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md",
         "docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md",
         "docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md",
-        "scripts/audit-capsule-contract.ts"
+        "scripts/audit-capsule-contract.ts",
+        "scripts/audit-route-cleanup-map.ts"
       ],
       "tests": [
         "tests/unit/app/api/memos/from-ask-pack.test.ts"
@@ -5455,7 +5328,6 @@
       "testCallerCount": 0,
       "graphReferences": 48,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5490,7 +5362,6 @@
       "testCallerCount": 1,
       "graphReferences": 14,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -5501,7 +5372,8 @@
         "scripts/audit-capsule-contract.ts",
         "scripts/audit-route-cleanup-map.ts",
         "src/components/ask/AskStreamPanel.tsx",
-        "src/components/memo/memo-desk.tsx"
+        "src/components/memo/memo-desk.tsx",
+        "tests/unit/app/api/memos/from-ask-pack.test.ts"
       ],
       "tests": [
         "tests/unit/app/api/memos/from-ask-pack.test.ts"
@@ -5531,7 +5403,6 @@
       "testCallerCount": 1,
       "graphReferences": 10,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5567,7 +5438,6 @@
       "testCallerCount": 0,
       "graphReferences": 22,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5599,7 +5469,6 @@
       "testCallerCount": 0,
       "graphReferences": 9,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5628,7 +5497,6 @@
       "testCallerCount": 0,
       "graphReferences": 10,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5662,7 +5530,6 @@
       "testCallerCount": 0,
       "graphReferences": 9,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5698,7 +5565,6 @@
       "testCallerCount": 0,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5734,7 +5600,6 @@
       "testCallerCount": 2,
       "graphReferences": 9,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5776,7 +5641,6 @@
       "testCallerCount": 0,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5811,7 +5675,6 @@
       "testCallerCount": 0,
       "graphReferences": 8,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5848,7 +5711,6 @@
       "sourceCallers": [
         "docs/audits/2026-05-18-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-18-PRAXIS_DOCTOR.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5886,7 +5748,6 @@
       "testCallerCount": 0,
       "graphReferences": 9,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -5921,7 +5782,6 @@
       "testCallerCount": 0,
       "graphReferences": 13,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5951,7 +5811,6 @@
       "testCallerCount": 1,
       "graphReferences": 8,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -5989,7 +5848,6 @@
       "testCallerCount": 1,
       "graphReferences": 2,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6028,7 +5886,6 @@
       "testCallerCount": 2,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6067,7 +5924,6 @@
       "testCallerCount": 3,
       "graphReferences": 11,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6110,7 +5966,6 @@
       "testCallerCount": 1,
       "graphReferences": 3,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6146,7 +6001,6 @@
       "testCallerCount": 1,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6182,7 +6036,6 @@
       "testCallerCount": 0,
       "graphReferences": 5,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6211,7 +6064,6 @@
       "testCallerCount": 0,
       "graphReferences": 28,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6241,7 +6093,6 @@
       "testCallerCount": 0,
       "graphReferences": 51,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6271,7 +6122,6 @@
       "testCallerCount": 0,
       "graphReferences": 19,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6305,7 +6155,6 @@
       "testCallerCount": 0,
       "graphReferences": 16,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6339,7 +6188,6 @@
       "testCallerCount": 0,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6370,7 +6218,6 @@
       "testCallerCount": 1,
       "graphReferences": 14,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6407,7 +6254,6 @@
       "testCallerCount": 3,
       "graphReferences": 16,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6418,7 +6264,8 @@
         "src/components/settings/account-settings-page.tsx",
         "src/lib/providers/user-keys.ts",
         "tests/e2e/capabilities-api.spec.ts",
-        "tests/unit/components/settings-page-contract.test.ts"
+        "tests/unit/components/settings-page-contract.test.ts",
+        "tests/unit/scripts/audit-launch-readiness.test.ts"
       ],
       "tests": [
         "tests/e2e/capabilities-api.spec.ts",
@@ -6451,7 +6298,6 @@
       "testCallerCount": 1,
       "graphReferences": 29,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6489,7 +6335,6 @@
       "testCallerCount": 0,
       "graphReferences": 8,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6521,7 +6366,6 @@
       "testCallerCount": 0,
       "graphReferences": 2,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6557,7 +6401,6 @@
       "graphReferences": 186,
       "sourceCallers": [
         "docs/architecture/MULTI_TENANT_MODEL.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6567,7 +6410,8 @@
         "docs/tools/canonical-tool-library.json",
         "docs/tools/dashboard.md",
         "src/app/api/ai/extract-episodes/route.ts",
-        "src/app/api/situations/[id]/graph-updates/route.ts"
+        "src/app/api/situations/[id]/graph-updates/route.ts",
+        "src/app/api/situations/[id]/inspect/route.ts"
       ],
       "tests": [
         "tests/unit/lib/context/context-core-lite-ui-contract.test.ts",
@@ -6596,7 +6440,6 @@
       "graphReferences": 275,
       "sourceCallers": [
         "docs/architecture/MULTI_TENANT_MODEL.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6606,7 +6449,8 @@
         "docs/tools/canonical-tool-library.json",
         "docs/tools/dashboard.md",
         "src/app/api/situations/[id]/graph-updates/route.ts",
-        "src/app/api/situations/[id]/inspect/route.ts"
+        "src/app/api/situations/[id]/inspect/route.ts",
+        "src/app/api/situations/[id]/recent-tools/route.ts"
       ],
       "tests": [],
       "disposition": "keep",
@@ -6631,7 +6475,6 @@
       "testCallerCount": 0,
       "graphReferences": 11,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6660,7 +6503,6 @@
       "testCallerCount": 0,
       "graphReferences": 7,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6694,7 +6536,6 @@
       "testCallerCount": 0,
       "graphReferences": 7,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6726,7 +6567,6 @@
       "testCallerCount": 0,
       "graphReferences": 9,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6760,7 +6600,6 @@
       "testCallerCount": 0,
       "graphReferences": 7,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6791,7 +6630,6 @@
       "testCallerCount": 0,
       "graphReferences": 8,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6820,7 +6658,6 @@
       "testCallerCount": 0,
       "graphReferences": 6,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6853,7 +6690,6 @@
       "graphReferences": 4,
       "sourceCallers": [
         "docs/architecture/MULTI_TENANT_MODEL.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6885,7 +6721,6 @@
       "testCallerCount": 0,
       "graphReferences": 13,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6923,7 +6758,6 @@
       "testCallerCount": 0,
       "graphReferences": 7,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6962,7 +6796,6 @@
       "testCallerCount": 0,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -6996,7 +6829,6 @@
       "graphReferences": 9,
       "sourceCallers": [
         "docs/architecture/TELEMETRY.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -7033,7 +6865,6 @@
       "testCallerCount": 0,
       "graphReferences": 7,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -7067,7 +6898,6 @@
       "testCallerCount": 0,
       "graphReferences": 4,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -7099,7 +6929,6 @@
       "testCallerCount": 0,
       "graphReferences": 9,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -7128,7 +6957,6 @@
       "testCallerCount": 0,
       "graphReferences": 13,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -7164,7 +6992,6 @@
       "sourceCallers": [
         "docs/CONTEXT_INJECTION.md",
         "docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md",
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -7197,7 +7024,6 @@
       "testCallerCount": 0,
       "graphReferences": 3,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -7230,7 +7056,6 @@
       "testCallerCount": 2,
       "graphReferences": 8,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -7269,7 +7094,6 @@
       "testCallerCount": 0,
       "graphReferences": 18,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -7299,7 +7123,6 @@
       "testCallerCount": 0,
       "graphReferences": 10,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -7331,7 +7154,6 @@
       "testCallerCount": 0,
       "graphReferences": 14,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-agentic-runtime-readiness.md",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
@@ -7365,7 +7187,6 @@
       "testCallerCount": 0,
       "graphReferences": 6,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -7398,7 +7219,6 @@
       "testCallerCount": 0,
       "graphReferences": 29,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -7436,7 +7256,6 @@
       "testCallerCount": 0,
       "graphReferences": 9,
       "sourceCallers": [
-        "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.json",
         "docs/audits/2026-05-19-api-route-cleanup-map.md",
         "docs/audits/2026-05-19-api-route-inventory.json",
@@ -7593,6 +7412,28 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
+      "file": "scripts/audit-named-stack-contract.ts",
+      "kind": "script",
+      "references": 2,
+      "markers": [
+        "compatibility",
+        "archive-state-field"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
+      "file": "scripts/audit-route-consolidation.ts",
+      "kind": "script",
+      "references": 2,
+      "markers": [
+        "legacy",
+        "compatibility"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
       "file": "scripts/generate-tool-docs.ts",
       "kind": "script",
       "references": 2,
@@ -7637,31 +7478,9 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "scripts/audit-named-stack-contract.ts",
-      "kind": "script",
-      "references": 3,
-      "markers": [
-        "compatibility",
-        "archive-state-field"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
-      "file": "scripts/audit-route-consolidation.ts",
-      "kind": "script",
-      "references": 3,
-      "markers": [
-        "legacy",
-        "compatibility"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
       "file": "scripts/audit-mvp-route-shape.ts",
       "kind": "script",
-      "references": 4,
+      "references": 3,
       "markers": [
         "legacy",
         "obsolete-or-retired"
@@ -7703,24 +7522,24 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
+      "file": "src/lib/product/release-notes.ts",
+      "kind": "library",
+      "references": 19,
+      "markers": [
+        "legacy",
+        "obsolete-or-retired",
+        "compatibility"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
       "file": "docs/tools/INDEX.md",
       "kind": "doc",
       "references": 10,
       "markers": [
         "legacy",
         "obsolete-or-retired"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
-      "file": "src/lib/product/release-notes.ts",
-      "kind": "library",
-      "references": 20,
-      "markers": [
-        "legacy",
-        "obsolete-or-retired",
-        "compatibility"
       ],
       "disposition": "keep",
       "deletionGate": "Keep until compatibility/runtime use is removed."
@@ -7766,7 +7585,37 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
+      "file": "scripts/audit-capability-registry.ts",
+      "kind": "script",
+      "references": 2,
+      "markers": [
+        "legacy"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
+      "file": "scripts/audit-no-normal-user-archive.ts",
+      "kind": "script",
+      "references": 2,
+      "markers": [
+        "archive"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
       "file": "scripts/audit-runtime-health-live.ts",
+      "kind": "script",
+      "references": 2,
+      "markers": [
+        "obsolete-or-retired"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
+      "file": "scripts/audit-single-h1.mjs",
       "kind": "script",
       "references": 2,
       "markers": [
@@ -7858,16 +7707,6 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "scripts/audit-capability-registry.ts",
-      "kind": "script",
-      "references": 3,
-      "markers": [
-        "legacy"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
       "file": "scripts/audit-genkit-coverage.mjs",
       "kind": "script",
       "references": 3,
@@ -7878,17 +7717,17 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "scripts/audit-no-normal-user-archive.ts",
+      "file": "scripts/audit-public-surface.ts",
       "kind": "script",
       "references": 3,
       "markers": [
-        "archive"
+        "legacy"
       ],
       "disposition": "keep",
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "scripts/audit-single-h1.mjs",
+      "file": "scripts/audit-purpose-surface.ts",
       "kind": "script",
       "references": 3,
       "markers": [
@@ -7908,11 +7747,31 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
+      "file": "src/components/app/trust-posture-chip.tsx",
+      "kind": "component",
+      "references": 3,
+      "markers": [
+        "legacy"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
       "file": "src/components/cores/CapsuleListPicker.tsx",
       "kind": "component",
       "references": 3,
       "markers": [
         "archive-state-field"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
+      "file": "src/components/praxis/tasklet-workbench-conversation.ts",
+      "kind": "component",
+      "references": 3,
+      "markers": [
+        "legacy"
       ],
       "disposition": "keep",
       "deletionGate": "Keep until compatibility/runtime use is removed."
@@ -7940,38 +7799,8 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "scripts/audit-public-surface.ts",
-      "kind": "script",
-      "references": 4,
-      "markers": [
-        "legacy"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
-      "file": "scripts/audit-purpose-surface.ts",
-      "kind": "script",
-      "references": 4,
-      "markers": [
-        "obsolete-or-retired"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
       "file": "scripts/audit-tasklet-mvp-foundation.ts",
       "kind": "script",
-      "references": 4,
-      "markers": [
-        "legacy"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
-      "file": "src/components/app/trust-posture-chip.tsx",
-      "kind": "component",
       "references": 4,
       "markers": [
         "legacy"
@@ -8043,6 +7872,16 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
+      "file": "src/lib/ai/capability-registry.ts",
+      "kind": "library",
+      "references": 5,
+      "markers": [
+        "legacy"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
       "file": "src/lib/conversations/capsule-signal.ts",
       "kind": "library",
       "references": 5,
@@ -8055,16 +7894,6 @@
     {
       "file": "docs/architecture/KG_BACKEND.md",
       "kind": "doc",
-      "references": 6,
-      "markers": [
-        "legacy"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
-      "file": "src/lib/ai/capability-registry.ts",
-      "kind": "library",
       "references": 6,
       "markers": [
         "legacy"
@@ -8183,21 +8012,21 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "src/lib/knowledge/library-service.ts",
-      "kind": "library",
-      "references": 14,
+      "file": "src/components/praxis/tasklet-praxis-workbench.tsx",
+      "kind": "component",
+      "references": 24,
       "markers": [
+        "legacy",
         "archive-state-field"
       ],
       "disposition": "keep",
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
-      "file": "src/components/praxis/tasklet-praxis-workbench.tsx",
-      "kind": "component",
-      "references": 25,
+      "file": "src/lib/knowledge/library-service.ts",
+      "kind": "library",
+      "references": 14,
       "markers": [
-        "legacy",
         "archive-state-field"
       ],
       "disposition": "keep",
@@ -8245,6 +8074,16 @@
       "deletionGate": "Keep until compatibility/runtime use is removed."
     },
     {
+      "file": "src/lib/firebase/analyst-profile-admin.ts",
+      "kind": "library",
+      "references": 25,
+      "markers": [
+        "legacy"
+      ],
+      "disposition": "keep",
+      "deletionGate": "Keep until compatibility/runtime use is removed."
+    },
+    {
       "file": "src/lib/compat/sample-mode.ts",
       "kind": "library",
       "references": 46,
@@ -8252,16 +8091,6 @@
         "legacy",
         "obsolete-or-retired",
         "compatibility"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
-      "file": "src/lib/firebase/analyst-profile-admin.ts",
-      "kind": "library",
-      "references": 26,
-      "markers": [
-        "legacy"
       ],
       "disposition": "keep",
       "deletionGate": "Keep until compatibility/runtime use is removed."
@@ -8322,7 +8151,7 @@
     {
       "file": "docs/tools/assistant.md",
       "kind": "doc",
-      "references": 72,
+      "references": 74,
       "markers": [
         "legacy"
       ],
@@ -8332,20 +8161,9 @@
     {
       "file": "src/lib/ai/providers.ts",
       "kind": "library",
-      "references": 100,
+      "references": 99,
       "markers": [
         "deprecated",
-        "legacy",
-        "compatibility"
-      ],
-      "disposition": "keep",
-      "deletionGate": "Keep until compatibility/runtime use is removed."
-    },
-    {
-      "file": "src/lib/firebase/firestore.ts",
-      "kind": "library",
-      "references": 110,
-      "markers": [
         "legacy",
         "compatibility"
       ],
