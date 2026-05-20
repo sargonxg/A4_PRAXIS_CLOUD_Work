@@ -185,7 +185,7 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 
 | Status | Check | Evidence | Remediation |
 |---|---|---|---|
-| PASS | Allowed model gemini-3-flash present | gemini-3-flash appears in source. | Confirm model routing matrix if this is intentional. |
+| PASS | Allowed model gemini-3.5-flash present | gemini-3.5-flash appears in source. | Confirm model routing matrix if this is intentional. |
 | PASS | Allowed model gemini-3.1-pro-preview present | gemini-3.1-pro-preview appears in source. | Confirm model routing matrix if this is intentional. |
 | PASS | No banned direct model marker gpt- | gpt- marker not found. | None. |
 | PASS | No banned direct model marker claude- | claude- marker not found. | None. |

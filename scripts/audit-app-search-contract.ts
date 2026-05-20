@@ -24,14 +24,14 @@ checkFile('src/lib/app-search/app-search.ts', [
   'listRecentAgentRuns',
 ]);
 checkFile('src/components/shared/global-search.tsx', [
-  '/api/app/search',
+  'fetchFederatedSearchData',
   'Actions',
   'Capsules',
   'Memos',
   'Documents & Sources',
   'Agent Runs',
-  'Find missing sources',
 ]);
+checkFile('src/lib/search/federated-app-search.ts', ['/api/app/search', 'Find missing sources']);
 checkFile('tests/unit/app/api/app-search-route.test.ts', ['Invalid app search', 'isDemo: true']);
 checkFile('tests/unit/lib/app-search.test.ts', ['degrades unavailable lanes', 'rejects invalid query params', 'normalizeCapsuleSearchResult']);
 
@@ -41,7 +41,10 @@ for (const marker of forbiddenExternalMarkers) {
 }
 
 const globalSearch = readRequired('src/components/shared/global-search.tsx');
-if (!globalSearch.includes('/api/app/search')) failures.push('GlobalSearch does not call the unified app-search API');
+const federatedSearch = readRequired('src/lib/search/federated-app-search.ts');
+if (!globalSearch.includes('fetchFederatedSearchData') || !federatedSearch.includes('/api/app/search')) {
+  failures.push('GlobalSearch does not call the unified app-search API');
+}
 
 const route = readRequired('src/app/api/app/search/route.ts');
 if (!route.includes('withAuth')) failures.push('/api/app/search is missing auth');

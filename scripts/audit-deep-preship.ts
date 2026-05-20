@@ -303,7 +303,7 @@ for (const script of ['smoke:app-usability', 'smoke:golden-path', 'smoke:tasklet
 }
 
 const allSource = codeFiles.map((file) => readFileSync(file, 'utf8')).join('\n');
-for (const model of ['gemini-3-flash', 'gemini-3.1-pro-preview']) {
+for (const model of ['gemini-3.5-flash', 'gemini-3.1-pro-preview']) {
   add({
     id: `vertex-model-${model}`,
     section: '7. Vertex Gemini integration',

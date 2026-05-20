@@ -1,13 +1,24 @@
 # PRAXIS Doctor - 2026-05-20
 
-- Run ID: `doctor-20260520T190426116Z`
+- Run ID: `doctor-20260520T211823956Z`
 - Base URL: `https://praxis.tacitus.me`
 - Project: `praxisbytacitus`
 - Region: `us-central1`
 - Branch: `main`
-- Commit: `debf161a95b28b432b21a310729baaafeb6c6ad4`
-- Cloud Run revision: `praxis-frontend-00642-wp7`
-- Summary: PASS=19, WARN=3, FAIL=0, BLOCKED=1
+- Commit: `4872a82ff4edd3ad1931418baf160a6b7d14e0ad`
+- Cloud Run revision: `praxis-frontend-00644-tp5`
+- Diagnostics status: `blocked`
+- Stale diagnostic artifacts: `3`
+- Summary: PASS=20, WARN=4, FAIL=0, BLOCKED=1
+
+## Red Flags
+
+| Severity | Lane | Finding | Summary |
+| --- | --- | --- | --- |
+| warn | security-dependency | Dependency advisory summary | 23 advisory group(s) require forced or breaking updates |
+| blocked | needs-auth | Local cloud auth | npm run auth:doctor exited 1; local only while production runtime and agentic-search health are ready. |
+| warn | canary-gated | Authenticated canary gate | Canary writes disabled: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD |
+| warn | stale-artifact | Stale diagnostic artifacts | 3 saved doctor/eval artifact(s) do not match HEAD or the latest ready Cloud Run revision. |
 
 ## Checks
 
@@ -18,8 +29,9 @@
 | WARN | repo-and-deployability | repo-dirty-state | Working tree has uncommitted changes |
 | PASS | repo-and-deployability | repo-origin-sync | origin/main...HEAD = 0	0 |
 | PASS | repo-and-deployability | typecheck | npm run typecheck passed |
+| WARN | repo-and-deployability | package-audit-summary | 23 advisory group(s) require forced or breaking updates |
 | BLOCKED | local-cloud-auth | auth-doctor | npm run auth:doctor exited 1 |
-| PASS | gcp-firebase-infrastructure | cloud-run-praxis-frontend | praxis-frontend serving praxis-frontend-00642-wp7 |
+| PASS | gcp-firebase-infrastructure | cloud-run-praxis-frontend | praxis-frontend serving praxis-frontend-00644-tp5 |
 | PASS | gcp-firebase-infrastructure | cloud-run-private-sql-networking | Cloud Run has private networking for the attached Cloud SQL instance |
 | PASS | gcp-firebase-infrastructure | agent-worker-runtime-env | Agent worker dispatch URL and auth env are configured |
 | PASS | gcp-firebase-infrastructure | agent-run-queue | gcloud tasks queues describe agent-runs --location=us-central1 --project=praxisbytacitus passed |
@@ -35,6 +47,7 @@
 | PASS | live-production-health | production-login | HTTP 200 from https://praxis.tacitus.me/login |
 | WARN | live-production-health | health-core | HTTP 200 from https://praxis.tacitus.me/api/health |
 | PASS | live-production-health | health-runtime | HTTP 200 from https://praxis.tacitus.me/api/health/runtime |
+| PASS | live-production-health | health-agentic-search | HTTP 200 from https://praxis.tacitus.me/api/health/agentic-search |
 | WARN | authenticated-full-canary | canary-write-gate | Canary writes disabled: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD |
 
 ## Evidence And Remediation
@@ -49,13 +62,13 @@ Evidence:
 
 Evidence:
 
-- `debf161a95b28b432b21a310729baaafeb6c6ad4`
+- `4872a82ff4edd3ad1931418baf160a6b7d14e0ad`
 
 ### WARN repo-dirty-state
 
 Evidence:
 
-- `M ARCHITECTURE.md M CLAUDE.md M docs/audits/agentic-research-evals/2026-05-20-praxis-vs-generic-llm.json M docs/audits/agentic-research-evals/2026-05-20-praxis-vs-generic-llm.md M docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md ?? docs/architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md ?? docs/audits/2026-05-20-agent-core-diagnostic.md`
+- `M backend/.env.example M backend/ai/providers.py M docs/architecture/MODEL_SELECTION.md M docs/architecture/PRAXIS_ARCHITECTURE.md M docs/audits/2026-05-20-DEEP_PRESHIP_CHECKLIST.json M docs/audits/2026-05-20-DEEP_PRESHIP_CHECKLIST.md M docs/audits/agentic-research-evals/2026-05-20-praxis-vs-generic-llm.json M docs/audits/agentic-research-evals/2026-05-20-praxis-vs-generic-llm.md M graphify-out/GRAPH_REPORT.md M graphify-out/graph.json M graphify-out/manifest.json M scripts/audit-app-search-cont`
 
 ### PASS repo-origin-sync
 
@@ -68,6 +81,16 @@ Evidence:
 Evidence:
 
 - `> tacitus-app@6.4.1 typecheck > tsc --noEmit`
+
+### WARN package-audit-summary
+
+Evidence:
+
+- `{"total":39,"forcedOrBreaking":23}`
+
+Remediation:
+
+- `Review npm audit --json before forced or SemVer-major dependency changes.`
 
 ### BLOCKED auth-doctor
 
@@ -85,7 +108,7 @@ Remediation:
 
 Evidence:
 
-- `{"service":"praxis-frontend","latestReadyRevisionName":"praxis-frontend-00642-wp7","traffic":[{"revisionName":"praxis-frontend-00642-wp7","percent":100,"latestRevision":true}],"ready":"True"}`
+- `{"service":"praxis-frontend","latestReadyRevisionName":"praxis-frontend-00644-tp5","traffic":[{"revisionName":"praxis-frontend-00644-tp5","percent":100,"latestRevision":true}],"ready":"True"}`
 
 ### PASS cloud-run-private-sql-networking
 
@@ -115,7 +138,7 @@ Evidence:
 
 Evidence:
 
-- `appEngineIntegrationMode: DISABLED concurrencyMode: PESSIMISTIC createTime: '2026-03-22T15:19:16.119019Z' databaseEdition: STANDARD deleteProtectionState: DELETE_PROTECTION_DISABLED earliestVersionTime: '2026-05-20T18:04:52.622542Z' etag: IPO03sPHyJQDMPSV+ZPz+pMD freeTier: true keyPrefix: s locationId: nam5 name: projects/praxisbytacitus/databases/(default) pointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED realtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED type: FIRESTORE_NATIVE uid`
+- `appEngineIntegrationMode: DISABLED concurrencyMode: PESSIMISTIC createTime: '2026-03-22T15:19:16.119019Z' databaseEdition: STANDARD deleteProtectionState: DELETE_PROTECTION_DISABLED earliestVersionTime: '2026-05-20T20:19:50.750786Z' etag: IJT3nNnlyJQDMPSV+ZPz+pMD freeTier: true keyPrefix: s locationId: nam5 name: projects/praxisbytacitus/databases/(default) pointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED realtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED type: FIRESTORE_NATIVE uid`
 
 ### PASS secret-manager-cookie
 
@@ -169,19 +192,25 @@ Evidence:
 
 Evidence:
 
-- `{"status":"ok","timestamp":"2026-05-20T19:05:03.744Z","checks":{"firestore":"ok","ai_provider":"ok","cookie_secret":"ok","vertex_adk":"ok","cognee_memory":"unconfigured","polar":"unconfigured"},"safeguards":{"authenticatedRateLimitPerMinute":100,"aiRequestLimits":{"maxBytes":750000,"maxMessages":50,"maxTextChars":250000},"highCostAiRoutesRequireAuth":true,"calibratedAiRoutesStartToolRuns":true,"genkitProvider":"vertex","genkitLocation":"us-central1","cogneeMemoryEnabled":false,"cogneeMode":"disa`
+- `{"status":"ok","timestamp":"2026-05-20T21:20:07.439Z","checks":{"firestore":"ok","ai_provider":"ok","cookie_secret":"ok","vertex_adk":"ok","cognee_memory":"unconfigured","polar":"unconfigured"},"safeguards":{"authenticatedRateLimitPerMinute":100,"aiRequestLimits":{"maxBytes":750000,"maxMessages":50,"maxTextChars":250000},"highCostAiRoutesRequireAuth":true,"calibratedAiRoutesStartToolRuns":true,"genkitProvider":"vertex","genkitLocation":"us-central1","cogneeMemoryEnabled":false,"cogneeMode":"disa`
 
 ### PASS health-runtime
 
 Evidence:
 
-- `{"status":"ok","summary":"Systems ready","checkedAt":"2026-05-20T19:05:04.535Z","debugHref":"/app/settings?tab=system","checks":[{"id":"frontend","label":"Frontend runtime","status":"ok","latencyMs":595},{"id":"firestore","label":"Firestore","status":"ok"},{"id":"backend","label":"Private backend","status":"ok"},{"id":"agent_ledger","label":"Deep work queue","status":"ok"},{"id":"agent_queue","label":"Agent task queue","status":"ok","latencyMs":595},{"id":"agent_worker","label":"Agent worker dis`
+- `{"status":"ok","summary":"Systems ready","checkedAt":"2026-05-20T21:20:07.658Z","debugHref":"/app/settings?tab=system","checks":[{"id":"frontend","label":"Frontend runtime","status":"ok","latencyMs":78},{"id":"firestore","label":"Firestore","status":"ok"},{"id":"backend","label":"Private backend","status":"ok"},{"id":"agent_ledger","label":"Deep work queue","status":"ok"},{"id":"agent_queue","label":"Agent task queue","status":"ok","latencyMs":78},{"id":"agent_worker","label":"Agent worker dispa`
+
+### PASS health-agentic-search
+
+Evidence:
+
+- `{"status":"ready","summary":"Agentic search ready","checkedAt":"2026-05-20T21:20:07.745Z","missing":[],"checks":[{"id":"ledger","label":"Cloud SQL run ledger","status":"ready","names":["AGENT_RUNTIME_DATABASE_URL","PRAXIS_DATABASE_URL","DATABASE_URL"],"missing":[],"detail":"AgentRun ledger can persist runs, events, tool calls, approvals, and artifacts.","required":true},{"id":"cloud_tasks_queue","label":"Cloud Tasks queue","status":"ready","names":["AGENT_RUN_TASKS_PROJECT","AGENT_RUN_TASKS_LOCA`
 
 ### WARN canary-write-gate
 
 Evidence:
 
-- `{"tag":"praxis-doctor-canary-20260520T190426116Z","email":null}`
+- `{"tag":"praxis-doctor-canary-20260520T211823956Z","email":null}`
 
 Remediation:
 
@@ -190,4 +219,4 @@ Remediation:
 
 ## Canary Artifacts
 
-- blocked: doctor-canary-workflow `praxis-doctor-canary-20260520T190426116Z`
+- blocked: doctor-canary-workflow `praxis-doctor-canary-20260520T211823956Z`

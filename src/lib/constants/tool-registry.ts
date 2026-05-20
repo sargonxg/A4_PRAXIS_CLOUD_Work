@@ -516,7 +516,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     frameworks: ['Diplomatic Morning Brief Format', 'OCHA SitRep Standards'],
     dataSources: ['grounded search', 'source-linked event reporting', 'humanitarian web reporting', 'humanitarian data APIs', 'Google Grounding'],
     relatedTools: ['briefing', 'alert-center', 'dashboard'],
-    methodology: 'Standard mode aggregates the previous 24h from four live feeds: grounded search/source-linked conflict signals, grounded search instability and diplomatic activity, humanitarian web reporting humanitarian reports, and humanitarian data APIs food security/displacement updates. Deep Research mode additionally runs a Google-grounded search pass of 5 pre-configured high-reliability sources plus a Google-grounded Gemini query for breaking developments. AI synthesis uses gemini-2.5-flash with the situation context block to produce a 400-600 word morning brief in OCHA SitRep format. Source provenance is tracked in the `sourcesSummary` field.',
+    methodology: 'Standard mode aggregates the previous 24h from four live feeds: grounded search/source-linked conflict signals, grounded search instability and diplomatic activity, humanitarian web reporting humanitarian reports, and humanitarian data APIs food security/displacement updates. Deep Research mode additionally runs a Google-grounded search pass of 5 pre-configured high-reliability sources plus a Google-grounded Gemini query for breaking developments. AI synthesis uses the central balanced model policy with the situation context block to produce a 400-600 word morning brief in OCHA SitRep format. Source provenance is tracked in the `sourcesSummary` field.',
     staleAfterHours: 24,
     modelTier: 'flash',
   },

@@ -259,7 +259,7 @@ export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
     category: 'runtime',
     items: [
       'Deep memo and long-context routes now default to Gemini 3.1 Pro Preview in the central model matrix.',
-      'The cockpit exposes Gemini 3.1 Pro Preview, Gemini 3 Flash Preview, and Gemini 2.5 fallback choices.',
+      'The cockpit exposes Gemini 3.5 Flash, Gemini 3.1 Pro Preview, and Gemini 2.5 fallback choices.',
       'The runtime catalog test now guards the expanded frontier model selector.',
     ],
   },
@@ -288,7 +288,7 @@ export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
       'Capsules in the rail above the Ask bar can now be changed, removed, searched, or replaced from the capsule library.',
       'The same popup includes a tool and core library so policy tools can be toggled without leaving the discussion surface.',
       'The composer supports Enter to send, Shift+Enter for a new line, and Shift+Up to restore the last queued message for editing.',
-      'The model selector now includes Gemini 3 Flash/Pro Preview and Gemini 2.5 Pro/Flash/Flash-Lite Vertex options.',
+      'The model selector now includes Gemini 3.5 Flash, Gemini 3.1 Pro Preview, and Gemini 2.5 Pro/Flash/Flash-Lite Vertex options.',
     ],
   },
   {

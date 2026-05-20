@@ -1,5 +1,5 @@
 {
-  "version": "pack15-2026-05-16",
+  "version": "pack15-2026-05-20-gemini-3.5-flash",
   "platform": {
     "enterpriseAgentPlatform": "gemini-enterprise",
     "developerModelRuntime": "vertex-ai",
@@ -11,7 +11,7 @@
   "taskKinds": {
     "balanced": {
       "provider": "vertex",
-      "model": "gemini-3-flash-preview",
+      "model": "gemini-3.5-flash",
       "maxTokens": 4096,
       "temperature": 0.3,
       "costClass": "medium"
@@ -25,7 +25,7 @@
     },
     "cheap_classify": {
       "provider": "vertex",
-      "model": "gemini-3-flash-preview",
+      "model": "gemini-3.5-flash",
       "maxTokens": 1024,
       "temperature": 0,
       "costClass": "cheap"
@@ -59,9 +59,9 @@
   },
   "fallbackProvider": {
     "google-ai-studio": {
-      "balanced": "gemini-3-flash-preview",
+      "balanced": "gemini-3.5-flash",
       "complex_reasoning": "gemini-3.1-pro-preview",
-      "cheap_classify": "gemini-3-flash-preview",
+      "cheap_classify": "gemini-3.5-flash",
       "long_context": "gemini-3.1-pro-preview",
       "writing_quality": "gemini-3.1-pro-preview",
       "embeddings_text": "text-embedding-005",

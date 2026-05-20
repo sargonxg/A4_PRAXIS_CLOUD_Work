@@ -1008,11 +1008,11 @@
       "remediation": "Run against staging weekly."
     },
     {
-      "id": "vertex-model-gemini-3-flash",
+      "id": "vertex-model-gemini-3.5-flash",
       "section": "7. Vertex Gemini integration",
-      "title": "Allowed model gemini-3-flash present",
+      "title": "Allowed model gemini-3.5-flash present",
       "status": "PASS",
-      "evidence": "gemini-3-flash appears in source.",
+      "evidence": "gemini-3.5-flash appears in source.",
       "remediation": "Confirm model routing matrix if this is intentional."
     },
     {

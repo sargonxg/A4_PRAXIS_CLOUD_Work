@@ -6,7 +6,7 @@ import { buildModelRuntimeHealthCheck, getAskPraxisModelRuntimePolicy } from '@/
 import { MODEL_PREFERENCE_VALUES, isModelPreferenceValue, modelPreferenceLabel } from '@/lib/ai/model-preferences';
 
 describe('Ask PRAXIS runtime catalog', () => {
-  it('exposes Gemini 3 frontier previews and Gemini 2.5 Vertex choices', () => {
+  it('exposes Gemini 3 frontier choices and Gemini 2.5 Vertex fallbacks', () => {
     const ids = ASK_RUNTIME_OPTIONS.map((option) => option.id);
 
     expect(ids).toEqual([
@@ -32,6 +32,7 @@ describe('Ask PRAXIS runtime catalog', () => {
     expect(isModelPreferenceValue('gemini-2.5-flash-lite')).toBe(true);
     expect(isModelPreferenceValue('gemini-3-pro-image-preview')).toBe(false);
     expect(modelPreferenceLabel(getModelMatrixEntry('complex_reasoning').model)).toContain('Gemini 3.1 Pro Preview');
+    expect(modelPreferenceLabel(getModelMatrixEntry('balanced').model)).toContain('Gemini 3.5 Flash');
     expect(modelPreferenceLabel('gemini-2.5-pro')).toContain('GA reasoning fallback');
   });
 
@@ -39,7 +40,7 @@ describe('Ask PRAXIS runtime catalog', () => {
     expect(getAskRuntimeOption('unknown-model').id).toBe(getModelMatrixEntry('balanced').model);
   });
 
-  it('builds GA fallback candidates for preview chat selections', () => {
+  it('builds GA fallback candidates for frontier chat selections', () => {
     expect(buildAskRuntimeFallbackCandidates({
       selectedModelId: getModelMatrixEntry('balanced').model,
       analysisDepth: 'standard',

@@ -12,7 +12,7 @@ describe('AI Providers', () => {
     expect(['google', 'vertex']).toContain(info.name);
   });
 
-  it('loads the Pack 14 model matrix and platform posture', () => {
+  it('loads the Pack 15 model matrix and platform posture', () => {
     expect(getModelMatrixEntry('balanced').model).toBe(MODEL_NAMES.flash);
     expect(getModelMatrixEntry('complex_reasoning').provider).toBe('vertex');
     expect(getModelMatrixEntry('embeddings_text').model).toBe(MODEL_NAMES.embed);

@@ -634,13 +634,13 @@ Every tool execution produces a `ToolRun` record at `users/{uid}/situations/{cas
 
 | Subagent | Purpose | Default model | Cost ceiling | P95 latency |
 |---|---|---|---|---|
-| **Context Preparer** | Reads spec + substrate, fills gaps with synthesized assertions | gemini-3-flash (gemini-3.1-pro for high-stakes) | $0.05/call | 6s |
-| **Source Augmenter** | Suggests authoritative public sources from a domain allowlist | gemini-3-flash | $0.10/call | 8s |
-| **Output Refiner** | Adapts tool output to user's communication style; schema-validated, can't change facts | claude-opus-4.7@vertex | $0.03/call | 4s |
-| **Memo Drafter** | Drafts memo blocks from prepared context with graph citations | claude-opus-4.7@vertex | $0.08/call | 6s |
-| **Red Team Analyst** | Safe adversary-perspective modeling for Pack 15 SATs | gemini-3-flash | $0.06/call | 6s |
-| **Tool Runtime Analyst** | Tasklet-style reasoning loop over ContextCapsule state and registered tools | gemini-3-flash (gemini-3.1-pro for high-stakes) | $0.06/call | 8s |
-| **Approval Moderator** | Enforces risk gates, human approvals, and synthesis boundaries before high-risk actions | gemini-3-flash | $0.04/gate | 5s |
+| **Context Preparer** | Reads spec + substrate, fills gaps with synthesized assertions | gemini-3.5-flash (gemini-3.1-pro-preview for high-stakes) | $0.05/call | 6s |
+| **Source Augmenter** | Suggests authoritative public sources from a domain allowlist | gemini-3.5-flash | $0.10/call | 8s |
+| **Output Refiner** | Adapts tool output to user's communication style; schema-validated, can't change facts | gemini-3.1-pro-preview | $0.03/call | 4s |
+| **Memo Drafter** | Drafts memo blocks from prepared context with graph citations | gemini-3.1-pro-preview | $0.08/call | 6s |
+| **Red Team Analyst** | Safe adversary-perspective modeling for Pack 15 SATs | gemini-3.5-flash | $0.06/call | 6s |
+| **Tool Runtime Analyst** | Tasklet-style reasoning loop over ContextCapsule state and registered tools | gemini-3.5-flash (gemini-3.1-pro-preview for high-stakes) | $0.06/call | 8s |
+| **Approval Moderator** | Enforces risk gates, human approvals, and synthesis boundaries before high-risk actions | gemini-3.5-flash | $0.04/gate | 5s |
 
 The old Pack 16 visible Agentic Boardroom/persona UI has been retired from the
 default product surface. Multi-perspective review now belongs behind the
@@ -883,11 +883,11 @@ Cloud Trace propagation end-to-end. Cloud Logging structured JSON with `traceId/
 ```json
 {
   "task_kinds": {
-    "complex_reasoning":  { "provider": "vertex", "model": "gemini-3.1-pro",       "max_tokens": 8192,  "temperature": 0.2, "cost_class": "expensive" },
-    "balanced":           { "provider": "vertex", "model": "gemini-3-flash",       "max_tokens": 4096,  "temperature": 0.3, "cost_class": "medium" },
-    "cheap_classify":     { "provider": "vertex", "model": "gemini-2.5-flash-lite","max_tokens": 1024,  "temperature": 0.0, "cost_class": "cheap" },
-    "long_context":       { "provider": "vertex", "model": "gemini-3.1-pro",       "max_tokens": 32768, "temperature": 0.2, "cost_class": "expensive_long" },
-    "writing_quality":    { "provider": "vertex", "model": "claude-opus-4.7@vertex","max_tokens": 4096, "temperature": 0.4, "cost_class": "expensive" },
+    "complex_reasoning":  { "provider": "vertex", "model": "gemini-3.1-pro-preview", "max_tokens": 8192,  "temperature": 0.2, "cost_class": "expensive" },
+    "balanced":           { "provider": "vertex", "model": "gemini-3.5-flash",       "max_tokens": 4096,  "temperature": 0.3, "cost_class": "medium" },
+    "cheap_classify":     { "provider": "vertex", "model": "gemini-3.5-flash",       "max_tokens": 1024,  "temperature": 0.0, "cost_class": "cheap" },
+    "long_context":       { "provider": "vertex", "model": "gemini-3.1-pro-preview", "max_tokens": 32768, "temperature": 0.2, "cost_class": "expensive_long" },
+    "writing_quality":    { "provider": "vertex", "model": "gemini-3.1-pro-preview", "max_tokens": 4096, "temperature": 0.4, "cost_class": "expensive" },
     "embeddings_text":    { "provider": "vertex", "model": "text-embedding-005",   "dimensions": 768,                       "cost_class": "cheap" },
     "embeddings_long":    { "provider": "vertex", "model": "gemini-embedding-001", "dimensions": 1536,                      "cost_class": "medium" }
   }
@@ -948,10 +948,10 @@ T+360ms     ctx.retrieveWorkspace(query="mediation brief structure"):
 T+580ms     ctx.subagent('context_preparer', spec):
               HTTPS to Agent Engine endpoint. Trace span propagated.
               LangGraph subgraph runs: gather → summarize_per_layer
-              (one gemini-3-flash call) → extract → identify_gaps → self_rate.
+              (one gemini-3.5-flash call) → extract → identify_gaps → self_rate.
               Returns PreparedContext, confidence=0.78. Cost: $0.012.
 T+1.98s     ctx.subagent('memo_drafter', input):
-              HTTPS to Agent Engine. claude-opus-4.7@vertex generates blocks.
+              HTTPS to Agent Engine. gemini-3.1-pro-preview generates blocks.
               Each block carries citations to actual graph node IDs.
               All blocks marked synthesized: true.
               Returns MemoBlocks. Cost: $0.038.
@@ -1347,11 +1347,11 @@ npm run lh:ci                          # before any UI-touching merge
 
 | Need | Use |
 |---|---|
-| Cheap classification | `cheap_classify` → gemini-2.5-flash-lite |
-| Balanced reasoning | `balanced` → gemini-3-flash |
-| Complex reasoning | `complex_reasoning` → gemini-3.1-pro |
-| Long-context analysis | `long_context` → gemini-3.1-pro (32k+) |
-| Writing quality | `writing_quality` → claude-opus-4.7@vertex |
+| Cheap classification | `cheap_classify` → gemini-3.5-flash |
+| Balanced reasoning | `balanced` → gemini-3.5-flash |
+| Complex reasoning | `complex_reasoning` → gemini-3.1-pro-preview |
+| Long-context analysis | `long_context` → gemini-3.1-pro-preview (32k+) |
+| Writing quality | `writing_quality` → gemini-3.1-pro-preview |
 | Embeddings | `embeddings_text` → text-embedding-005 (768-dim) |
 | Embeddings (long docs) | `embeddings_long` → gemini-embedding-001 (1536-dim) |
 

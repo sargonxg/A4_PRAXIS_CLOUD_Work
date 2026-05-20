@@ -45,7 +45,7 @@ export const COMMANDS: PraxisCommand[] = [
   { id: 'improve-capsule', label: 'Improve capsule', description: 'Ask PRAXIS to find missing context.', href: '/app', icon: Sparkles, group: 'Output actions' },
 ];
 
-const SEARCH_GROUPS: SearchResult['group'][] = ['Ask', 'Commands', 'Conversations', 'Capsules', 'Sources', 'Diagnostics'];
+const SEARCH_GROUPS: SearchResult['group'][] = ['Ask', 'Commands', 'Actions', 'Conversations', 'Capsules', 'Sources', 'Memos', 'Documents & Sources', 'Agent Runs', 'Diagnostics'];
 
 export function GlobalSearch({
   onClose,
@@ -70,17 +70,14 @@ export function GlobalSearch({
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      void fetchFederatedSearchData()
+      void fetchFederatedSearchData(query)
         .then(setFederatedData)
         .catch((error) => {
           const message = error instanceof Error ? error.message : 'Search data unavailable';
           setFederatedData({
-            errors: {
-              Conversations: message,
-              Capsules: message,
-              Sources: message,
-              Diagnostics: message,
-            },
+            errors: Object.fromEntries(
+              ['Conversations', 'Capsules', 'Sources', 'Diagnostics'].map((group) => [group, message]),
+            ) as FederatedSearchData['errors'],
           });
         });
     }, 180);
@@ -178,9 +175,10 @@ export function GlobalSearch({
 
 function iconForResult(result: SearchResult): LucideIcon {
   if (result.group === 'Ask') return Sparkles;
-  if (result.group === 'Conversations') return MessageSquareText;
+  if (result.group === 'Conversations' || result.group === 'Memos') return MessageSquareText;
   if (result.group === 'Capsules') return FolderKanban;
-  if (result.group === 'Sources') return FileSearch;
+  if (result.group === 'Sources' || result.group === 'Documents & Sources') return FileSearch;
+  if (result.group === 'Agent Runs') return ServerCog;
   if (result.group === 'Diagnostics') return ServerCog;
   const command = COMMANDS.find((item) => item.id === result.id);
   return command?.icon ?? CommandIcon;

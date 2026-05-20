@@ -6,7 +6,7 @@
  *   2. Google AI Studio via GOOGLE_AI_API_KEY — dev fallback
  *
  * Models are selected from MODEL_MATRIX.json:
- *   - balanced / cheap_classify : Gemini 3 Flash Preview
+ *   - balanced / cheap_classify : Gemini 3.5 Flash
  *   - complex_reasoning / writing_quality / long_context : Gemini 3.1 Pro Preview
  *   - embeddings_text / embeddings_long : text-embedding-005
  *
@@ -35,9 +35,9 @@ export interface ProviderInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Model IDs come from MODEL_MATRIX.json. Gemini 3 models are preview/Pre-GA on
-// Vertex and currently require the global endpoint, so do not scatter raw model
-// strings through routes.
+// Model IDs come from MODEL_MATRIX.json. Gemini 3 frontier models use the
+// Gemini global endpoint by default, so do not scatter raw model strings
+// through routes.
 // ---------------------------------------------------------------------------
 
 const MODEL_FLASH = getModelMatrixEntry('balanced').model;

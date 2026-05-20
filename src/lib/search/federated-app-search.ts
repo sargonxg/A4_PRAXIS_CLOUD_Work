@@ -1,4 +1,16 @@
-export type SearchResultGroup = 'Ask' | 'Commands' | 'Conversations' | 'Capsules' | 'Sources' | 'Diagnostics';
+import type { AppSearchResponse, AppSearchResult } from '@/lib/app-search/app-search';
+
+export type SearchResultGroup =
+  | 'Ask'
+  | 'Commands'
+  | 'Actions'
+  | 'Conversations'
+  | 'Capsules'
+  | 'Sources'
+  | 'Memos'
+  | 'Documents & Sources'
+  | 'Agent Runs'
+  | 'Diagnostics';
 export type SearchResultStatus = 'ok' | 'degraded' | 'blocked' | 'warn';
 
 export type StaticSearchCommand = {
@@ -53,6 +65,7 @@ type DiagnosticsInput = {
 };
 
 export type FederatedSearchData = {
+  appSearch?: AppSearchResponse;
   conversations?: ConversationSearchItem[];
   capsules?: CapsuleSearchItem[];
   repositories?: RepositorySearchItem[];
@@ -77,6 +90,21 @@ export function buildFederatedSearchResults(input: {
       icon: 'sparkles',
     },
   ];
+
+  if (input.appSearch) {
+    results.push(...appSearchResults(input.appSearch));
+    if (rawQuery && appSearchResultCount(input.appSearch) === 0) {
+      results.push({
+        id: 'find-missing-sources',
+        group: 'Commands',
+        label: 'Find missing sources',
+        description: 'Ask PRAXIS to collect missing source leads for this query.',
+        run: 'ask',
+        icon: 'sources',
+      });
+    }
+    return groupOrder(results);
+  }
 
   results.push(...input.commands.map((command) => ({
       id: command.id,
@@ -131,13 +159,22 @@ export function buildFederatedSearchResults(input: {
 
 type SearchFetch = (input: string, init?: RequestInit) => Promise<Response>;
 
-export async function fetchFederatedSearchData(fetchImpl: SearchFetch = fetch): Promise<FederatedSearchData> {
+export async function fetchFederatedSearchData(queryOrFetch: string | SearchFetch = '', fetchImpl: SearchFetch = fetch): Promise<FederatedSearchData> {
+  const query = typeof queryOrFetch === 'function' ? '' : queryOrFetch;
+  const fetcher = typeof queryOrFetch === 'function' ? queryOrFetch : fetchImpl;
+  const appSearch = await readJson(fetcher, `/api/app/search?q=${encodeURIComponent(query.trim())}&limit=8`, 'Commands');
+  if (!appSearch.error && isAppSearchResponse(appSearch.data)) {
+    return {
+      appSearch: appSearch.data,
+    };
+  }
+
   const [conversations, capsules, repositories, runtime, agenticSearch] = await Promise.all([
-    readJson(fetchImpl, '/api/conversations', 'Conversations'),
-    readJson(fetchImpl, '/api/context/capsules', 'Capsules'),
-    readJson(fetchImpl, '/api/knowledge/repositories', 'Sources'),
-    readJson(fetchImpl, '/api/health/runtime', 'Diagnostics'),
-    readJson(fetchImpl, '/api/health/agentic-search', 'Diagnostics'),
+    readJson(fetcher, '/api/conversations', 'Conversations'),
+    readJson(fetcher, '/api/context/capsules', 'Capsules'),
+    readJson(fetcher, '/api/knowledge/repositories', 'Sources'),
+    readJson(fetcher, '/api/health/runtime', 'Diagnostics'),
+    readJson(fetcher, '/api/health/agentic-search', 'Diagnostics'),
   ]);
 
   return {
@@ -149,12 +186,49 @@ export async function fetchFederatedSearchData(fetchImpl: SearchFetch = fetch): 
       agenticSearch: isRecord(agenticSearch.data) ? agenticSearch.data : null,
     },
     errors: {
+      ...(appSearch.error ? { Commands: appSearch.error } : {}),
       ...errorFor(conversations),
       ...errorFor(capsules),
       ...errorFor(repositories),
       ...(runtime.error && agenticSearch.error ? { Diagnostics: runtime.error } : {}),
     },
   };
+}
+
+function appSearchResults(response: AppSearchResponse): SearchResult[] {
+  return [
+    ...response.groups.actions.map((item) => appSearchResult(item, 'Commands')),
+    ...response.groups.capsules.map((item) => appSearchResult(item, 'Capsules')),
+    ...response.groups.memos.map((item) => appSearchResult(item, 'Sources')),
+    ...response.groups.documents_sources.map((item) => appSearchResult(item, 'Sources')),
+    ...response.groups.agent_runs.map((item) => appSearchResult(item, 'Diagnostics')),
+    ...response.diagnostics.degradedLanes.map((lane) => degradedRow(`degraded-${lane}`, groupForDegradedLane(lane), `${lane.replace(/_/g, ' ')} degraded`, 'Partial app-search results returned.')),
+  ];
+}
+
+function appSearchResult(item: AppSearchResult, group: SearchResultGroup): SearchResult {
+  return {
+    id: `${item.type}-${item.id}`,
+    group,
+    label: item.label,
+    description: item.description,
+    href: item.href,
+    icon: item.type,
+    meta: item.badges.join(' / '),
+    status: item.badges.includes('degraded') ? 'degraded' : undefined,
+  };
+}
+
+function appSearchResultCount(response: AppSearchResponse): number {
+  return Object.values(response.groups).reduce((count, items) => count + items.length, 0);
+}
+
+function groupForDegradedLane(lane: string): SearchResultGroup {
+  if (lane === 'agent_runs') return 'Diagnostics';
+  if (lane === 'memos') return 'Sources';
+  if (lane === 'documents_sources') return 'Sources';
+  if (lane === 'capsules') return 'Capsules';
+  return 'Commands';
 }
 
 function conversationResult(item: ConversationSearchItem): SearchResult {
@@ -263,4 +337,8 @@ function formatDate(value: string): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function isAppSearchResponse(value: unknown): value is AppSearchResponse {
+  return isRecord(value) && isRecord(value.groups) && isRecord(value.diagnostics);
 }

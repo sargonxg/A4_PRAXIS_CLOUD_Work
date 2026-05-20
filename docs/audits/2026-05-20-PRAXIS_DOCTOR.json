@@ -1,12 +1,12 @@
 {
-  "runId": "doctor-20260520T190426116Z",
-  "timestamp": "2026-05-20T19:04:26.116Z",
-  "commit": "debf161a95b28b432b21a310729baaafeb6c6ad4",
+  "runId": "doctor-20260520T211823956Z",
+  "timestamp": "2026-05-20T21:18:23.956Z",
+  "commit": "4872a82ff4edd3ad1931418baf160a6b7d14e0ad",
   "branch": "main",
   "baseUrl": "https://praxis.tacitus.me",
   "project": "praxisbytacitus",
   "region": "us-central1",
-  "cloudRunRevision": "praxis-frontend-00642-wp7",
+  "cloudRunRevision": "praxis-frontend-00644-tp5",
   "checks": [
     {
       "id": "repo-branch",
@@ -23,7 +23,7 @@
       "status": "PASS",
       "summary": "Commit SHA resolved",
       "evidence": [
-        "debf161a95b28b432b21a310729baaafeb6c6ad4\n"
+        "4872a82ff4edd3ad1931418baf160a6b7d14e0ad\n"
       ]
     },
     {
@@ -32,7 +32,7 @@
       "status": "WARN",
       "summary": "Working tree has uncommitted changes",
       "evidence": [
-        "M ARCHITECTURE.md\n M CLAUDE.md\n M docs/audits/agentic-research-evals/2026-05-20-praxis-vs-generic-llm.json\n M docs/audits/agentic-research-evals/2026-05-20-praxis-vs-generic-llm.md\n M docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md\n?? docs/architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md\n?? docs/audits/2026-05-20-agent-core-diagnostic.md"
+        "M backend/.env.example\n M backend/ai/providers.py\n M docs/architecture/MODEL_SELECTION.md\n M docs/architecture/PRAXIS_ARCHITECTURE.md\n M docs/audits/2026-05-20-DEEP_PRESHIP_CHECKLIST.json\n M docs/audits/2026-05-20-DEEP_PRESHIP_CHECKLIST.md\n M docs/audits/agentic-research-evals/2026-05-20-praxis-vs-generic-llm.json\n M docs/audits/agentic-research-evals/2026-05-20-praxis-vs-generic-llm.md\n M graphify-out/GRAPH_REPORT.md\n M graphify-out/graph.json\n M graphify-out/manifest.json\n M scripts/audit-app-search-contract.ts\n M scripts/audit-deep-preship.ts\n M src/__tests__/ai-providers.test.ts\n M src/components/shared/global-search.tsx\n M src/lib/ai/MODEL_MATRIX.json\n M src/lib/ai/model-runtime-policy.ts\n M src/lib/ai/providers.ts\n M src/lib/constants/tool-registry.ts\n M src/lib/product/release-notes.ts\n M src/lib/search/federated-app-search.ts\n M tests/unit/lib/ai/ask-runtime-catalog.test.ts"
       ]
     },
     {
@@ -54,6 +54,21 @@
       ]
     },
     {
+      "id": "package-audit-summary",
+      "lane": "repo-and-deployability",
+      "status": "WARN",
+      "summary": "23 advisory group(s) require forced or breaking updates",
+      "evidence": [
+        {
+          "total": 39,
+          "forcedOrBreaking": 23
+        }
+      ],
+      "remediation": [
+        "Review npm audit --json before forced or SemVer-major dependency changes."
+      ]
+    },
+    {
       "id": "auth-doctor",
       "lane": "local-cloud-auth",
       "status": "BLOCKED",
@@ -71,14 +86,14 @@
       "id": "cloud-run-praxis-frontend",
       "lane": "gcp-firebase-infrastructure",
       "status": "PASS",
-      "summary": "praxis-frontend serving praxis-frontend-00642-wp7",
+      "summary": "praxis-frontend serving praxis-frontend-00644-tp5",
       "evidence": [
         {
           "service": "praxis-frontend",
-          "latestReadyRevisionName": "praxis-frontend-00642-wp7",
+          "latestReadyRevisionName": "praxis-frontend-00644-tp5",
           "traffic": [
             {
-              "revisionName": "praxis-frontend-00642-wp7",
+              "revisionName": "praxis-frontend-00644-tp5",
               "percent": 100,
               "latestRevision": true
             }
@@ -138,7 +153,7 @@
       "status": "PASS",
       "summary": "gcloud firestore databases describe --database=\"(default)\" --project=praxisbytacitus passed",
       "evidence": [
-        "appEngineIntegrationMode: DISABLED\r\nconcurrencyMode: PESSIMISTIC\r\ncreateTime: '2026-03-22T15:19:16.119019Z'\r\ndatabaseEdition: STANDARD\r\ndeleteProtectionState: DELETE_PROTECTION_DISABLED\r\nearliestVersionTime: '2026-05-20T18:04:52.622542Z'\r\netag: IPO03sPHyJQDMPSV+ZPz+pMD\r\nfreeTier: true\r\nkeyPrefix: s\r\nlocationId: nam5\r\nname: projects/praxisbytacitus/databases/(default)\r\npointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED\r\nrealtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED\r\ntype: FIRESTORE_NATIVE\r\nuid: fb7e3f38-b5f6-402d-9f42-97881107da45\r\nupdateTime: '2026-03-22T15:19:16.119019Z'\r\nversionRetentionPeriod: 3600s\r\n"
+        "appEngineIntegrationMode: DISABLED\r\nconcurrencyMode: PESSIMISTIC\r\ncreateTime: '2026-03-22T15:19:16.119019Z'\r\ndatabaseEdition: STANDARD\r\ndeleteProtectionState: DELETE_PROTECTION_DISABLED\r\nearliestVersionTime: '2026-05-20T20:19:50.750786Z'\r\netag: IJT3nNnlyJQDMPSV+ZPz+pMD\r\nfreeTier: true\r\nkeyPrefix: s\r\nlocationId: nam5\r\nname: projects/praxisbytacitus/databases/(default)\r\npointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED\r\nrealtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED\r\ntype: FIRESTORE_NATIVE\r\nuid: fb7e3f38-b5f6-402d-9f42-97881107da45\r\nupdateTime: '2026-03-22T15:19:16.119019Z'\r\nversionRetentionPeriod: 3600s\r\n"
       ]
     },
     {
@@ -225,7 +240,7 @@
       "evidence": [
         {
           "status": "ok",
-          "timestamp": "2026-05-20T19:05:03.744Z",
+          "timestamp": "2026-05-20T21:20:07.439Z",
           "checks": {
             "firestore": "ok",
             "ai_provider": "ok",
@@ -260,14 +275,14 @@
         {
           "status": "ok",
           "summary": "Systems ready",
-          "checkedAt": "2026-05-20T19:05:04.535Z",
+          "checkedAt": "2026-05-20T21:20:07.658Z",
           "debugHref": "/app/settings?tab=system",
           "checks": [
             {
               "id": "frontend",
               "label": "Frontend runtime",
               "status": "ok",
-              "latencyMs": 595
+              "latencyMs": 78
             },
             {
               "id": "firestore",
@@ -288,7 +303,7 @@
               "id": "agent_queue",
               "label": "Agent task queue",
               "status": "ok",
-              "latencyMs": 595
+              "latencyMs": 78
             },
             {
               "id": "agent_worker",
@@ -305,13 +320,135 @@
       ]
     },
     {
+      "id": "health-agentic-search",
+      "lane": "live-production-health",
+      "status": "PASS",
+      "summary": "HTTP 200 from https://praxis.tacitus.me/api/health/agentic-search",
+      "evidence": [
+        {
+          "status": "ready",
+          "summary": "Agentic search ready",
+          "checkedAt": "2026-05-20T21:20:07.745Z",
+          "missing": [],
+          "checks": [
+            {
+              "id": "ledger",
+              "label": "Cloud SQL run ledger",
+              "status": "ready",
+              "names": [
+                "AGENT_RUNTIME_DATABASE_URL",
+                "PRAXIS_DATABASE_URL",
+                "DATABASE_URL"
+              ],
+              "missing": [],
+              "detail": "AgentRun ledger can persist runs, events, tool calls, approvals, and artifacts.",
+              "required": true
+            },
+            {
+              "id": "cloud_tasks_queue",
+              "label": "Cloud Tasks queue",
+              "status": "ready",
+              "names": [
+                "AGENT_RUN_TASKS_PROJECT",
+                "AGENT_RUN_TASKS_LOCATION",
+                "AGENT_RUN_TASKS_QUEUE"
+              ],
+              "missing": [],
+              "detail": "Cloud Tasks queue names are explicit.",
+              "required": false
+            },
+            {
+              "id": "worker_auth",
+              "label": "Worker route auth",
+              "status": "ready",
+              "names": [
+                "AGENT_RUN_WORKER_BASE_URL",
+                "NEXT_PUBLIC_APP_URL",
+                "APP_URL",
+                "VERCEL_PROJECT_PRODUCTION_URL",
+                "AGENT_RUN_WORKER_SHARED_SECRET",
+                "AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL",
+                "AGENT_RUN_WORKER_OIDC_AUDIENCE"
+              ],
+              "missing": [],
+              "detail": "Worker route target and auth posture are configured.",
+              "required": true
+            },
+            {
+              "id": "vertex_runtime",
+              "label": "Vertex/Gemini runtime",
+              "status": "ready",
+              "names": [
+                "GOOGLE_VERTEX_PROJECT",
+                "GOOGLE_CLOUD_PROJECT",
+                "GCLOUD_PROJECT"
+              ],
+              "missing": [],
+              "detail": "Vertex project is configured for Gemini runtime calls.",
+              "required": false
+            },
+            {
+              "id": "adk_runtime",
+              "label": "ADK agent runtime",
+              "status": "ready",
+              "names": [
+                "VERTEX_AGENT_ENGINE_ID",
+                "GOOGLE_ADK_AGENT_ENGINE_ID"
+              ],
+              "missing": [],
+              "detail": "ADK/Agent Platform runtime id is configured.",
+              "required": false
+            },
+            {
+              "id": "genkit_provider",
+              "label": "Genkit provider",
+              "status": "ready",
+              "names": [
+                "GOOGLE_GENAI_API_KEY",
+                "GOOGLE_AI_API_KEY",
+                "GEMINI_API_KEY",
+                "GOOGLE_VERTEX_PROJECT"
+              ],
+              "missing": [],
+              "detail": "Genkit can resolve a Google provider for typed flows.",
+              "required": false
+            },
+            {
+              "id": "vertex_grounding",
+              "label": "Vertex Google Search grounding",
+              "status": "ready",
+              "names": [
+                "VERTEX_GROUNDING_GOOGLE_SEARCH_ENABLED"
+              ],
+              "missing": [],
+              "detail": "Google Search grounding is explicitly enabled for current public-web research.",
+              "required": false
+            },
+            {
+              "id": "route_imports",
+              "label": "Route/runtime imports",
+              "status": "ready",
+              "names": [
+                "/api/ai/chat",
+                "/api/agents/runs",
+                "/api/agents/runs/[runId]/stream",
+                "/api/health/agentic-search"
+              ],
+              "detail": "Ask, AgentRun, stream, and agentic-search health routes are part of the runtime inventory.",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "canary-write-gate",
       "lane": "authenticated-full-canary",
       "status": "WARN",
       "summary": "Canary writes disabled: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD",
       "evidence": [
         {
-          "tag": "praxis-doctor-canary-20260520T190426116Z",
+          "tag": "praxis-doctor-canary-20260520T211823956Z",
           "email": null
         }
       ],
@@ -321,11 +458,38 @@
       ]
     }
   ],
+  "artifactFreshness": {
+    "commit": "4872a82ff4edd3ad1931418baf160a6b7d14e0ad",
+    "cloudRunRevision": "praxis-frontend-00644-tp5",
+    "staleArtifactCount": 3,
+    "artifacts": [
+      {
+        "path": "docs/audits/2026-05-18-PRAXIS_DOCTOR.json",
+        "commit": "875ec357f257a3c2afc085385a2df53600184d6c",
+        "cloudRunRevision": "praxis-frontend-00597-9rt"
+      },
+      {
+        "path": "docs/audits/2026-05-19-PRAXIS_DOCTOR.json",
+        "commit": "ad4933655c33c655b1952f4f9d6d1cb99ba3e120",
+        "cloudRunRevision": "praxis-frontend-00638-2hn"
+      },
+      {
+        "path": "docs/audits/2026-05-20-agentic-search-redflags.json",
+        "commit": null,
+        "cloudRunRevision": null
+      },
+      {
+        "path": "docs/audits/2026-05-20-PRAXIS_DOCTOR.json",
+        "commit": "debf161a95b28b432b21a310729baaafeb6c6ad4",
+        "cloudRunRevision": "praxis-frontend-00642-wp7"
+      }
+    ]
+  },
   "artifacts": [
     {
-      "tag": "praxis-doctor-canary-20260520T190426116Z",
+      "tag": "praxis-doctor-canary-20260520T211823956Z",
       "kind": "doctor-canary-workflow",
-      "id": "praxis-doctor-canary-20260520T190426116Z",
+      "id": "praxis-doctor-canary-20260520T211823956Z",
       "cleanupStatus": "blocked",
       "detail": "Canary write gate is disabled or missing credentials: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD"
     }
@@ -333,5 +497,40 @@
   "cleanup": {
     "status": "blocked",
     "leftovers": []
-  }
+  },
+  "status": "blocked",
+  "redFlags": [
+    {
+      "id": "package-audit-summary",
+      "label": "Dependency advisory summary",
+      "severity": "warn",
+      "lane": "security-dependency",
+      "summary": "23 advisory group(s) require forced or breaking updates",
+      "actionHref": "/app/settings?tab=system"
+    },
+    {
+      "id": "auth-doctor",
+      "label": "Local cloud auth",
+      "severity": "blocked",
+      "lane": "needs-auth",
+      "summary": "npm run auth:doctor exited 1; local only while production runtime and agentic-search health are ready.",
+      "actionHref": "/app/settings?tab=system"
+    },
+    {
+      "id": "canary-write-gate",
+      "label": "Authenticated canary gate",
+      "severity": "warn",
+      "lane": "canary-gated",
+      "summary": "Canary writes disabled: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD",
+      "actionHref": "/app/settings?tab=system"
+    },
+    {
+      "id": "stale-diagnostic-artifacts",
+      "label": "Stale diagnostic artifacts",
+      "severity": "warn",
+      "lane": "stale-artifact",
+      "summary": "3 saved doctor/eval artifact(s) do not match HEAD or the latest ready Cloud Run revision.",
+      "actionHref": "/app/settings?tab=system"
+    }
+  ]
 }

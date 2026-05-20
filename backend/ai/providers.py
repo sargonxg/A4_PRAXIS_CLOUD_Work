@@ -7,7 +7,7 @@ google-genai, and Agent Runtime code do not hardcode model IDs in call sites.
 
 from __future__ import annotations
 
-MODEL_FLASH = "gemini-2.5-flash"
+MODEL_FLASH = "gemini-3.5-flash"
 MODEL_PRO = "gemini-2.5-pro"
 MODEL_EMBED = "text-embedding-005"
 
@@ -15,7 +15,7 @@ COGNEE_VERTEX_PROVIDER = "vertex_ai"
 COGNEE_LLM_PROVIDER = "vertex_ai"
 COGNEE_LLM_API_KEY = "vertex-adc"
 COGNEE_MODEL_PRO = "vertex_ai/gemini-3.1-pro-preview"
-COGNEE_MODEL_FLASH = "vertex_ai/gemini-3-flash"
+COGNEE_MODEL_FLASH = "vertex_ai/gemini-3.5-flash"
 COGNEE_EMBED_MODEL = "vertex_ai/text-embedding-005"
 COGNEE_EMBEDDING_MODEL = "vertex_ai/text-embedding-005"
 COGNEE_EMBED_DIMENSIONS = 768
