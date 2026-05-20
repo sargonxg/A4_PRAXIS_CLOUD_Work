@@ -65,7 +65,6 @@ export function buildFederatedSearchResults(input: {
   commands: StaticSearchCommand[];
 } & FederatedSearchData): SearchResult[] {
   const rawQuery = input.query.replace(/^\?/, '').trim();
-  const matcher = rawQuery.toLowerCase();
   const results: SearchResult[] = [
     {
       id: 'ask-praxis',
@@ -249,15 +248,6 @@ function arrayFrom<T>(value: unknown, key: string): T[] {
   if (!isRecord(value)) return [];
   const nested = value[key];
   return Array.isArray(nested) ? nested as T[] : [];
-}
-
-function matches(query: string, ...values: Array<string | undefined>): boolean {
-  if (!query) return true;
-  const tokens = query.split(/\s+/).filter(Boolean);
-  return values.some((value) => {
-    const normalized = value?.toLowerCase() ?? '';
-    return normalized.includes(query) || tokens.every((token) => normalized.includes(token));
-  });
 }
 
 function groupOrder(results: SearchResult[]): SearchResult[] {
