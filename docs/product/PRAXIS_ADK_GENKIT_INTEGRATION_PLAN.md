@@ -3,6 +3,9 @@
 Date: 2026-05-15  
 Status: Hybrid Stable architecture and Capsule Factory build plan
 
+Canonical runtime architecture:
+[`docs/architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md`](../architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md).
+
 ## Executive Position
 
 PRAXIS should use ADK and Genkit as implementation substrates around the

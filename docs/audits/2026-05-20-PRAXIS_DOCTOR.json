@@ -1,0 +1,337 @@
+{
+  "runId": "doctor-20260520T190426116Z",
+  "timestamp": "2026-05-20T19:04:26.116Z",
+  "commit": "debf161a95b28b432b21a310729baaafeb6c6ad4",
+  "branch": "main",
+  "baseUrl": "https://praxis.tacitus.me",
+  "project": "praxisbytacitus",
+  "region": "us-central1",
+  "cloudRunRevision": "praxis-frontend-00642-wp7",
+  "checks": [
+    {
+      "id": "repo-branch",
+      "lane": "repo-and-deployability",
+      "status": "PASS",
+      "summary": "Repo is on main",
+      "evidence": [
+        "main\n"
+      ]
+    },
+    {
+      "id": "repo-commit",
+      "lane": "repo-and-deployability",
+      "status": "PASS",
+      "summary": "Commit SHA resolved",
+      "evidence": [
+        "debf161a95b28b432b21a310729baaafeb6c6ad4\n"
+      ]
+    },
+    {
+      "id": "repo-dirty-state",
+      "lane": "repo-and-deployability",
+      "status": "WARN",
+      "summary": "Working tree has uncommitted changes",
+      "evidence": [
+        "M ARCHITECTURE.md\n M CLAUDE.md\n M docs/audits/agentic-research-evals/2026-05-20-praxis-vs-generic-llm.json\n M docs/audits/agentic-research-evals/2026-05-20-praxis-vs-generic-llm.md\n M docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md\n?? docs/architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md\n?? docs/audits/2026-05-20-agent-core-diagnostic.md"
+      ]
+    },
+    {
+      "id": "repo-origin-sync",
+      "lane": "repo-and-deployability",
+      "status": "PASS",
+      "summary": "origin/main...HEAD = 0\t0",
+      "evidence": [
+        "0\t0\n"
+      ]
+    },
+    {
+      "id": "typecheck",
+      "lane": "repo-and-deployability",
+      "status": "PASS",
+      "summary": "npm run typecheck passed",
+      "evidence": [
+        "\n> tacitus-app@6.4.1 typecheck\n> tsc --noEmit\n\n"
+      ]
+    },
+    {
+      "id": "auth-doctor",
+      "lane": "local-cloud-auth",
+      "status": "BLOCKED",
+      "summary": "npm run auth:doctor exited 1",
+      "evidence": [
+        "\n> tacitus-app@6.4.1 auth:doctor\n> tsx scripts/auth-doctor.ts\n\nOK   gcloud CLI: installed\nOK   gcloud active account: giulio@tacitus.me\nOK   gcloud project config: praxisbytacitus\nOK   gcloud project access: praxisbytacitus\nFAIL Application Default Credentials: ERROR: (gcloud.auth.application-default.print-access-token) There was a problem refreshing your current auth tokens: Reauthentication failed. cannot prompt during non-interactive execution.\nOK   Firebase CLI login: Logged in as giulio@tacitus.me\nOK   Firebase project binding: praxisbytacitus\n\nRepair commands that require a human browser login:\n  gcloud auth login --update-adc\n  gcloud auth application-default login --project=praxisbytacitus\n  gcloud auth application-default set-quota-project praxisbytacitus\n  firebase login --reauth\n\nThen run:\n  npm run auth:doctor -- --fix\n"
+      ],
+      "remediation": [
+        "gcloud auth application-default login --project=praxisbytacitus",
+        "firebase login --reauth",
+        "npm run auth:doctor -- --fix"
+      ]
+    },
+    {
+      "id": "cloud-run-praxis-frontend",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "praxis-frontend serving praxis-frontend-00642-wp7",
+      "evidence": [
+        {
+          "service": "praxis-frontend",
+          "latestReadyRevisionName": "praxis-frontend-00642-wp7",
+          "traffic": [
+            {
+              "revisionName": "praxis-frontend-00642-wp7",
+              "percent": 100,
+              "latestRevision": true
+            }
+          ],
+          "ready": "True"
+        }
+      ]
+    },
+    {
+      "id": "cloud-run-private-sql-networking",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "Cloud Run has private networking for the attached Cloud SQL instance",
+      "evidence": [
+        {
+          "cloudSqlAttached": true,
+          "directVpcEgress": true,
+          "connectorEgress": false,
+          "vpcEgress": "private-ranges-only"
+        }
+      ]
+    },
+    {
+      "id": "agent-worker-runtime-env",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "Agent worker dispatch URL and auth env are configured",
+      "evidence": [
+        {
+          "workerBaseUrl": true,
+          "workerOidc": true,
+          "workerSecretFallback": false
+        }
+      ]
+    },
+    {
+      "id": "agent-run-queue",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "gcloud tasks queues describe agent-runs --location=us-central1 --project=praxisbytacitus passed",
+      "evidence": [
+        "name: projects/praxisbytacitus/locations/us-central1/queues/agent-runs\r\nrateLimits:\r\n  maxBurstSize: 100\r\n  maxConcurrentDispatches: 1000\r\n  maxDispatchesPerSecond: 500.0\r\nretryConfig:\r\n  maxAttempts: 100\r\n  maxBackoff: 3600s\r\n  maxDoublings: 16\r\n  minBackoff: 0.100s\r\nstate: RUNNING\r\n"
+      ]
+    },
+    {
+      "id": "cloud-sql-instance",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "gcloud sql instances describe praxisbytacitus-instance --project=praxisbytacitus passed",
+      "evidence": [
+        "availableMaintenanceVersions:\r\n- POSTGRES_16_13.R20260319.00_14\r\nbackendType: SECOND_GEN\r\nconnectionName: praxisbytacitus:us-east4:praxisbytacitus-instance\r\ncreateTime: '2026-04-27T01:27:56.130Z'\r\ndatabaseInstalledVersion: POSTGRES_16_13\r\ndatabaseVersion: POSTGRES_16\r\netag: e17ff6c6f9426a217a7bc62bc5c1bdbc26f5bc9034d768bd447f0d6f02e4f7f2\r\ngceZone: us-east4-a\r\ngeminiConfig:\r\n  activeQueryEnabled: false\r\n  entitled: false\r\n  googleVacuumMgmtEnabled: false\r\n  indexAdvisorEnabled: false\r\n  oomSessionCancelEnabled: true\r\nincludeReplicasForMajorVersionUpgrade: false\r\ninstanceType: CLOUD_SQL_INSTANCE\r\nipAddresses:\r\n- ipAddress: 10.101.0.3\r\n  type: PRIVATE\r\nkind: sql#instance\r\nmaintenanceVersion: POSTGRES_16_13.R20260319.00_02\r\nname: praxisbytacitus-instance\r\nproject: praxisbytacitus\r\nregion: us-east4\r\nsatisfiesPzi: true\r\nselfLink: https://sqladmin.googleapis.com/sql/v1beta4/projects/praxisbytacitus/instances/praxisbytacitus-instance\r\nserverCaCert:\r\n  cert: |-\r\n    -----BEGIN CERTIFICATE-----\r\n    MIIDcTCCAlmgAwIBAgIBADANBgkqhkiG9w0BAQsFADBwMS0wKwYDVQQuEyQ3MTgw\r\n    MjM5NS0yY2EzLTQxMWMtYjc5ZS02NTczY2QyNDA1NWQxHDAaBgNVBAMTE0Nsb3Vk\r\n    IFNRTCBTZXJ2ZXIgQ0ExFDASBgNVBAoTC0dvb2dsZSwgSW5jMQswCQYDVQQGEwJV\r\n    UzAeFw0yNjA0MjcwMTMwMzRaFw0zNjA0MjQwMTMxMzRaMHAxLTArBgNVBC4TJDcx\r\n    ODAyMzk1LTJjYTMtNDExYy1iNzllLTY1NzNjZDI0MDU1ZDEcMBoGA1UEAxMTQ2xv\r\n    dWQgU1FMIFNlcnZlciBDQTEUMBIGA1UEChMLR29vZ2xlLCBJbmMxCzAJBgNVBAYT\r\n    AlVTMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsgP4rDtdSZ9o8f2d\r\n    to2BC3duUQQkt9ge0rtvnKrjh7Ew9nX/PGKzNLLEbNkbhw3nDlqG4C41Ja3M2kgD\r\n    vMgte3O8BG868UkfJjWIwOudX4yMVCryYLV81VAQMw3+wo29coUduwUZVlszSM1l\r\n    nUU+d053YysFY0V16Qx1R6JM7g8///HwKOcez3O2HTxDjSRiV+3HEtUmO9KQxMv1\r\n    rHl6NjJBNVZ/lu8hrwftOyFTk4TgEwzwJPlXAiuzjYGxxxAbQSvYWLcL7L595VdN\r\n    p6G+gzTjPc+NS/1ugpOvHBDUjrhz1ScaS6+OE9stBS14kpE/Pa7aQg6ut0SQeSG0\r\n    32iqyQIDAQABoxYwFDASBgNVHRMBAf8ECDAGAQH/AgEAMA0GCSqGSIb3DQEBCwUA\r\n    A4IBAQCPmoKuenhw3WlmcsoUO/ZEV9COxUZBQLsPnd7w3kZ02iXfb+hHbQcc3r8f\r\n    4+Fk7z0h7kzlDtSLD//BoTC1IZV2sDd0pHUNGOaNaj8FyrKqrzfOzJxrT+uwp9a3\r\n    aJOPWD/GvPwuP/GA3cpZO6/TLIE/TTz7kZhutAuuzrb1Lk5YZ+TshBW5Aqg5Ldes\r\n    XrbQxSoLXwABEvBq87lcvmlbcbhMsYZFg/4RkGTm9Ds4nbi2hmkb35L0RMgAG+W/\r\n    cqn1ADvob/bcN8bhF8YM6VwmPTflq4U/86gVPsteiNm74qJ1B69UxgQOQHOPJTyk\r\n    M8ZZqRF4y6+/68xkm/GL/1TDNRYu\r\n    -----END CERTIFICATE-----\r\n  certSerialNumber: '0'\r\n  commonName: C=US,O=Google\\, Inc,CN=Cloud SQL Server CA,dnQualifier=71802395-2ca3-411c-b79e-6573cd24055d\r\n  createTime: '2026-04-27T01:30:34.795Z'\r\n  expirationTime: '2036-04-24T01:31:34.795Z'\r\n  instance: praxisbytacitus-instance\r\n  kind: sql#sslCert\r\n  sha1Fingerprint: 11b4e5c537f0ba128df764913a58a9162e800dd3\r\nserviceAccountEmailAddress: [REDACTED_SERVICE_ACCOUNT]\r\nsettings:\r\n  activationPolicy: ALWAYS\r\n  availabilityType: ZONAL\r\n  backupConfiguration:\r\n    backupRetentionSettings:\r\n      retainedBackups: 7\r\n      retentionUnit: COUNT\r\n    backupTier: STANDARD\r\n    enabled: true\r\n    kind: sql#backupConfiguration\r\n    startTime: 03:00\r\n    transactionLogRetentionDays: 7\r\n    transactionalLogStorageState: TRANSACTIONAL_LOG_STORAGE_STATE_UNSPECIFIED\r\n  connectorEnforcement: NOT_REQUIRED\r\n  dataDiskSizeGb: '10'\r\n  dataDiskType: PD_SSD\r\n  databaseFlags:\r\n  - name: cloudsql.iam_authentication\r\n    value: on\r\n  deletionProtectionEnabled: false\r\n  edition: ENTERPRISE\r\n  enableDataplexIntegration: true\r\n  ipConfiguration:\r\n    ipv4Enabled: false\r\n    privateNetwork: projects/praxisbytacitus/global/networks/default\r\n    requireSsl: false\r\n    serverCaMode: GOOGLE_MANAGED_INTERNAL_CA\r\n    serverCertificateRotationMode: SERVER_CERTIFICATE_ROTATION_MODE_UNSPECIFIED\r\n    sslMode: ALLOW_UNENCRYPTED_AND_ENCRYPTED\r\n  kind: sql#settings\r\n  locationPreference:\r\n    kind: sql#locationPreference\r\n    zone: us-east4-a\r\n  pricingPlan: PER_USE\r\n  replicationLagMaxSeconds: 31536000\r\n  replicationType: SYNCHRONOUS\r\n  settingsVersion: '30'\r\n  storageAutoResize: true\r\n  storageAutoResizeLimit: '0'\r\n  tier: db-f1-micro\r\nsqlNetworkArchitecture: NEW_NETWORK_ARCHITECTURE\r\nstate: RUNNABLE\r\nupgradableDatabaseVersions:\r\n- displayName: PostgreSQL 17\r\n  majorVersion: POSTGRES_17\r\n  name: POSTGRES_17\r\n- displayName: PostgreSQL 18\r\n  majorVersion: POSTGRES_18\r\n  name: POSTGRES_18\r\n"
+      ]
+    },
+    {
+      "id": "firestore-database",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "gcloud firestore databases describe --database=\"(default)\" --project=praxisbytacitus passed",
+      "evidence": [
+        "appEngineIntegrationMode: DISABLED\r\nconcurrencyMode: PESSIMISTIC\r\ncreateTime: '2026-03-22T15:19:16.119019Z'\r\ndatabaseEdition: STANDARD\r\ndeleteProtectionState: DELETE_PROTECTION_DISABLED\r\nearliestVersionTime: '2026-05-20T18:04:52.622542Z'\r\netag: IPO03sPHyJQDMPSV+ZPz+pMD\r\nfreeTier: true\r\nkeyPrefix: s\r\nlocationId: nam5\r\nname: projects/praxisbytacitus/databases/(default)\r\npointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED\r\nrealtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED\r\ntype: FIRESTORE_NATIVE\r\nuid: fb7e3f38-b5f6-402d-9f42-97881107da45\r\nupdateTime: '2026-03-22T15:19:16.119019Z'\r\nversionRetentionPeriod: 3600s\r\n"
+      ]
+    },
+    {
+      "id": "secret-manager-cookie",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "gcloud secrets describe praxis-cookie-secret --project=praxisbytacitus passed",
+      "evidence": [
+        "createTime: '2026-04-07T08:17:46.521837Z'\r\netag: '\"164eda6b17fc8e\"'\r\nname: projects/852128226674/secrets/praxis-cookie-secret\r\nreplication:\r\n  automatic: {}\r\n"
+      ]
+    },
+    {
+      "id": "secret-manager-cron",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "gcloud secrets describe praxis-cron-secret --project=praxisbytacitus passed",
+      "evidence": [
+        "createTime: '2026-04-07T08:17:45.058498Z'\r\netag: '\"164eda6b01c613\"'\r\nname: projects/852128226674/secrets/praxis-cron-secret\r\nreplication:\r\n  automatic: {}\r\n"
+      ]
+    },
+    {
+      "id": "pubsub-profile-events",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "gcloud pubsub topics describe profile.events --project=praxisbytacitus passed",
+      "evidence": [
+        "name: projects/praxisbytacitus/topics/profile.events\r\n"
+      ]
+    },
+    {
+      "id": "pubsub-praxis-events",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "gcloud pubsub topics describe praxis.events --project=praxisbytacitus passed",
+      "evidence": [
+        "name: projects/praxisbytacitus/topics/praxis.events\r\n"
+      ]
+    },
+    {
+      "id": "scheduler-jobs",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "gcloud scheduler jobs list --location=us-central1 --project=praxisbytacitus passed",
+      "evidence": [
+        "Listed 0 items.\r\n"
+      ]
+    },
+    {
+      "id": "agent-service-account",
+      "lane": "gcp-firebase-infrastructure",
+      "status": "PASS",
+      "summary": "gcloud iam service-accounts describe [REDACTED_SERVICE_ACCOUNT] --project=praxisbytacitus passed",
+      "evidence": [
+        "displayName: praxis-agents-sa\r\nemail: [REDACTED_SERVICE_ACCOUNT]\r\netag: MDEwMjE5MjA=\r\nname: projects/praxisbytacitus/serviceAccounts/[REDACTED_SERVICE_ACCOUNT]\r\noauth2ClientId: '102747481615041284250'\r\nprojectId: praxisbytacitus\r\nuniqueId: '102747481615041284250'\r\n"
+      ]
+    },
+    {
+      "id": "production-home",
+      "lane": "live-production-health",
+      "status": "PASS",
+      "summary": "HTTP 200 from https://praxis.tacitus.me",
+      "evidence": [
+        {
+          "status": 200
+        }
+      ]
+    },
+    {
+      "id": "production-login",
+      "lane": "live-production-health",
+      "status": "PASS",
+      "summary": "HTTP 200 from https://praxis.tacitus.me/login",
+      "evidence": [
+        {
+          "status": 200
+        }
+      ]
+    },
+    {
+      "id": "health-core",
+      "lane": "live-production-health",
+      "status": "WARN",
+      "summary": "HTTP 200 from https://praxis.tacitus.me/api/health",
+      "evidence": [
+        {
+          "status": "ok",
+          "timestamp": "2026-05-20T19:05:03.744Z",
+          "checks": {
+            "firestore": "ok",
+            "ai_provider": "ok",
+            "cookie_secret": "ok",
+            "vertex_adk": "ok",
+            "cognee_memory": "unconfigured",
+            "polar": "unconfigured"
+          },
+          "safeguards": {
+            "authenticatedRateLimitPerMinute": 100,
+            "aiRequestLimits": {
+              "maxBytes": 750000,
+              "maxMessages": 50,
+              "maxTextChars": 250000
+            },
+            "highCostAiRoutesRequireAuth": true,
+            "calibratedAiRoutesStartToolRuns": true,
+            "genkitProvider": "vertex",
+            "genkitLocation": "us-central1",
+            "cogneeMemoryEnabled": false,
+            "cogneeMode": "disabled"
+          }
+        }
+      ]
+    },
+    {
+      "id": "health-runtime",
+      "lane": "live-production-health",
+      "status": "PASS",
+      "summary": "HTTP 200 from https://praxis.tacitus.me/api/health/runtime",
+      "evidence": [
+        {
+          "status": "ok",
+          "summary": "Systems ready",
+          "checkedAt": "2026-05-20T19:05:04.535Z",
+          "debugHref": "/app/settings?tab=system",
+          "checks": [
+            {
+              "id": "frontend",
+              "label": "Frontend runtime",
+              "status": "ok",
+              "latencyMs": 595
+            },
+            {
+              "id": "firestore",
+              "label": "Firestore",
+              "status": "ok"
+            },
+            {
+              "id": "backend",
+              "label": "Private backend",
+              "status": "ok"
+            },
+            {
+              "id": "agent_ledger",
+              "label": "Deep work queue",
+              "status": "ok"
+            },
+            {
+              "id": "agent_queue",
+              "label": "Agent task queue",
+              "status": "ok",
+              "latencyMs": 595
+            },
+            {
+              "id": "agent_worker",
+              "label": "Agent worker dispatch",
+              "status": "ok"
+            },
+            {
+              "id": "agent_platform",
+              "label": "Agent platform",
+              "status": "ok"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "canary-write-gate",
+      "lane": "authenticated-full-canary",
+      "status": "WARN",
+      "summary": "Canary writes disabled: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD",
+      "evidence": [
+        {
+          "tag": "praxis-doctor-canary-20260520T190426116Z",
+          "email": null
+        }
+      ],
+      "remediation": [
+        "Set PRAXIS_DOCTOR_WRITE_CANARY=1",
+        "Set PRAXIS_CANARY_EMAIL and PRAXIS_CANARY_PASSWORD for the isolated canary account"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "tag": "praxis-doctor-canary-20260520T190426116Z",
+      "kind": "doctor-canary-workflow",
+      "id": "praxis-doctor-canary-20260520T190426116Z",
+      "cleanupStatus": "blocked",
+      "detail": "Canary write gate is disabled or missing credentials: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD"
+    }
+  ],
+  "cleanup": {
+    "status": "blocked",
+    "leftovers": []
+  }
+}

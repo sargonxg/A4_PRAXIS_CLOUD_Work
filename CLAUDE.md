@@ -8,6 +8,7 @@
 > **Current handoff:** Before continuing work, read `ARCHITECTURE.md`,
 > `docs/architecture/PRAXIS_ARCHITECTURE.md`,
 > `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`,
+> `docs/architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md`,
 > `docs/product/README.md`,
 > `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`,
 > `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`,
@@ -47,9 +48,10 @@ order. Skipping items 4-10 will produce duplicate work.
 9. `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` — active implementation prompts
 10. `docs/architecture/PRAXIS_ARCHITECTURE.md` — architecture bible / invariants
 11. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` — shipped vs gated state
-12. `STATUS.md`
-13. `TODO.md`
-14. `CHANGELOG.md` — `[Unreleased]` section only
+12. `docs/architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md` — Ask / AgentRun / Genkit / ADK runtime contract
+13. `STATUS.md`
+14. `TODO.md`
+15. `CHANGELOG.md` — `[Unreleased]` section only
 
 ### Operational references (consult when relevant, not every session)
 
