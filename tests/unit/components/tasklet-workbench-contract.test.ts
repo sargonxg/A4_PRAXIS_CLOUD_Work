@@ -79,15 +79,19 @@ describe('Tasklet PRAXIS workbench contract', () => {
   it('defines explainable selected-span targets with follow-up prompts', () => {
     for (const expected of [
       'support check',
-      'decision horizon',
-      'alternative explanation',
       'informal power',
-      'constraint text',
       'decision question',
     ]) {
       expect(source).toContain(expected);
     }
 
+    expect(source).toContain("'sourceability'");
+    expect(source).toContain("'human-friction'");
+    expect(source).toContain("'open-question'");
+    expect(source).not.toContain("id: 'temporality'");
+    expect(source).not.toContain("id: 'causality'");
+    expect(source).not.toContain("id: 'rules'");
+    expect(source).not.toContain('decision horizon');
     expect(source).toContain('askPrompt');
     expect(source).toContain('sourceCheckPrompt');
     expect(source).toContain('memoNote');
@@ -96,10 +100,15 @@ describe('Tasklet PRAXIS workbench contract', () => {
 
   it('keeps selected text available through span attach success and failure states', () => {
     expect(source).toContain('selectedSpanStatus');
-    expect(source).toContain('Attach to active capsule');
+    expect(source).toContain('data-testid="text-span-core-popover"');
+    expect(source).toContain('role="dialog"');
+    expect(source).toContain('Use selected text');
+    expect(source).toContain('Save or inspect this passage');
     expect(source).toContain('Ask PRAXIS about this span');
     expect(source).toContain('Source-check this span');
+    expect(source).toContain('Clear selection');
     expect(source).toContain('setAttachedSpan');
+    expect(source).not.toContain('Attach to active capsule');
     expect(source).not.toContain("setSelectedText('');\n    setSelectedMessageId(null);\n    setStatus(`Selected text attached");
   });
 
@@ -267,6 +276,16 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="agent-context-receipt"');
     expect(source).toContain('Context read by agent');
     expect(source).not.toContain('selectedCoreIds: capsule.coreRefs');
+  });
+
+  it('previews capsule reads and workflow tools before the one-bar Ask send', () => {
+    expect(source).toContain('data-testid="ask-capsule-workflow-preview"');
+    expect(source).toContain('PRAXIS will read');
+    expect(source).toContain('PRAXIS may use');
+    expect(source).toContain('composerReadTargets');
+    expect(source).toContain('composerUseTargets');
+    expect(source).toContain('ContextCapsule evidence first');
+    expect(source).toContain('sourceability reviewer before memo/PDF output');
   });
 
   it('uses dnd-kit for composer reordering and modal capsule browsing', () => {

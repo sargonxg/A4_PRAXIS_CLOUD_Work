@@ -197,7 +197,7 @@ function buildEvidenceGaps(
 ): string[] {
   return [
     capsule.coreRefs.sourceCoreIds.length === 0 ? 'No Source Core receipts are attached.' : null,
-    capsule.coreRefs.documentCoreIds.length === 0 && documents.length === 0 ? 'No Knowledge Library documents are attached.' : null,
+    documents.length === 0 ? 'No Knowledge Library documents are attached.' : null,
     paragraphs.length === 0 ? 'No retrievable paragraph chunks matched the objective.' : null,
     capsule.coreRefs.graphCoreId ? null : 'Graph Core is thin; graph mutation must stay approval-gated.',
     capsule.coreRefs.timeCoreId ? null : 'Time Core is unset; freshness assumptions need review.',

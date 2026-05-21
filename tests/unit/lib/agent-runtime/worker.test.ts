@@ -184,7 +184,11 @@ describe('agent runtime no-op worker', () => {
     expect(toolCalls).toContain('capsule-evidence-pack:succeeded');
     expect(toolCalls).toContain('policy-memo:succeeded');
     expect(toolCalls).toContain('output-capsule-save:succeeded');
+    expect(toolCalls).toContain('sourceability-reviewer:succeeded');
     expect(mirrored).toContain('context_resolved');
+    expect(mirrored).toContain('capsule.read_receipt_created');
+    expect(mirrored).toContain('workflow.plan_created');
+    expect(mirrored).toContain('sourceability.ledger_created');
     expect(mirrored).toContain('reasoning.plan');
     expect(mirrored).toContain('reasoning.act');
     expect(mirrored).toContain('reasoning.reflect');
@@ -321,6 +325,7 @@ describe('agent runtime no-op worker', () => {
         },
         saveMemoDraft: async (_uid, input) => {
           expect(input.blocks.some((block) => block.id === 'receipt')).toBe(true);
+          expect(input.blocks.some((block) => block.id === 'claim-ledger-summary')).toBe(true);
           return { memo: { id: `memo-${policyAgentId}` } };
         },
       });
@@ -329,7 +334,10 @@ describe('agent runtime no-op worker', () => {
       expect(result.status).toBe('succeeded');
       expect(result.executionMode).toBe(policyAgentId);
       expect(toolCalls.length).toBe(1);
-    expect(mirrored).toContain(`${policyAgentId}_receipt_created`);
+      expect(mirrored).toContain('capsule.read_receipt_created');
+      expect(mirrored).toContain('workflow.plan_created');
+      expect(mirrored).toContain('sourceability.ledger_created');
+      expect(mirrored).toContain(`${policyAgentId}_receipt_created`);
     }
   });
 

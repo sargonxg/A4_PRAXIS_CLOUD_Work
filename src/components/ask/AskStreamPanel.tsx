@@ -681,13 +681,12 @@ function appendOrchestrationEvent(setMessages: TimelineSetter, messageId: string
 
 function initialAskWorkingTimeline(): AskOrchestrationStatusEvent[] {
   return [
-    { type: 'orchestrationStatus', id: 'context', label: 'Capsule read', status: 'active', detail: 'Checking the active capsule.' },
-    { type: 'orchestrationStatus', id: 'triage', label: 'Research plan', status: 'pending', detail: 'Classifying the research path.' },
-    { type: 'orchestrationStatus', id: 'agent', label: 'Source discovery', status: 'pending', detail: 'Choosing the source and policy agent path.' },
-    { type: 'orchestrationStatus', id: 'model-tier', label: 'Document retrieval', status: 'pending', detail: 'Preparing the retrieval and model tier.' },
-    { type: 'orchestrationStatus', id: 'tools', label: 'Gap review', status: 'pending', detail: 'Selecting safe tool routes and evidence checks.' },
-    { type: 'orchestrationStatus', id: 'worker', label: 'Synthesis', status: 'pending', detail: 'Deciding whether durable work is needed.' },
-    { type: 'orchestrationStatus', id: 'draft', label: 'Save output', status: 'pending', detail: 'Waiting to draft and save the answer.' },
+    { type: 'orchestrationStatus', id: 'context', label: 'Reading capsule', status: 'active', detail: 'Checking the active capsule.' },
+    { type: 'orchestrationStatus', id: 'triage', label: 'Planning workflow', status: 'pending', detail: 'Classifying the research path.' },
+    { type: 'orchestrationStatus', id: 'agent', label: 'Collecting sources', status: 'pending', detail: 'Choosing the source and policy agent path.' },
+    { type: 'orchestrationStatus', id: 'tools', label: 'Reviewing claims', status: 'pending', detail: 'Selecting safe tool routes and evidence checks.' },
+    { type: 'orchestrationStatus', id: 'worker', label: 'Producing output', status: 'pending', detail: 'Deciding whether durable work is needed.' },
+    { type: 'orchestrationStatus', id: 'draft', label: 'Saving receipts', status: 'pending', detail: 'Waiting to draft and save the answer.' },
   ];
 }
 
@@ -798,42 +797,35 @@ function mergeWorkingTimeline(
     {
       type: 'orchestrationStatus' as const,
       id: 'context' as const,
-      label: 'Capsule read',
+      label: 'Reading capsule',
       status: receipt.capsule.contextHealth === 'ready' ? 'complete' as const : 'warn' as const,
       detail: `${receipt.capsule.contextHealth} capsule checked with ${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'}.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'triage' as const,
-      label: 'Research plan',
+      label: 'Planning workflow',
       status: 'complete' as const,
       detail: `${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'agent' as const,
-      label: 'Source discovery',
+      label: 'Collecting sources',
       status: 'complete' as const,
       detail: `${receipt.routingDecision.userSafeLabels.policyAgent} selected.`,
     },
     {
       type: 'orchestrationStatus' as const,
-      id: 'model-tier' as const,
-      label: 'Document retrieval',
-      status: 'complete' as const,
-      detail: `${receipt.routingDecision.userSafeLabels.modelTier}. ${receipt.routingDecision.userSafeLabels.fallbackPosture}.`,
-    },
-    {
-      type: 'orchestrationStatus' as const,
       id: 'tools' as const,
-      label: 'Gap review',
+      label: 'Reviewing claims',
       status: receipt.toolRouting.blockedToolIds.length ? 'warn' as const : 'complete' as const,
       detail: `${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'worker' as const,
-      label: 'Synthesis',
+      label: 'Producing output',
       status: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'queued' as const : receipt.supervisor.action === 'queue_agent_run' ? 'warn' as const : 'skipped' as const,
       detail: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'Durable agent run queued for deeper work.' : receipt.supervisor.action === 'queue_agent_run' ? 'Durable run could not be queued; Ask continued synchronously.' : 'No durable run needed for this answer.',
       runId: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? receipt.supervisor.queuedRun.runId : null,
@@ -845,7 +837,7 @@ function mergeWorkingTimeline(
     {
       type: 'orchestrationStatus' as const,
       id: 'draft' as const,
-      label: 'Save output',
+      label: 'Saving receipts',
       status: 'complete' as const,
       detail: 'Answer drafted with source and memo handoff metadata.',
     },
@@ -1079,6 +1071,21 @@ function OrchestrationReceiptPanel({ envelope }: { envelope?: AskAnswerEnvelope 
         {queuedRun ? (
           <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-semibold text-emerald-900">
             Agent run: {queuedRun.runId === 'unavailable' ? queuedRun.status.replace(/_/g, ' ') : queuedRun.runId}
+          </span>
+        ) : null}
+        {receipt.workflowPlan ? (
+          <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-slate-600">
+            Workflow: {receipt.workflowPlan.workflowKind.replace(/_/g, ' ')}
+          </span>
+        ) : null}
+        {receipt.capsuleReadReceipt ? (
+          <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-slate-600">
+            Read: {receipt.capsuleReadReceipt.sourceCount} sources / {receipt.capsuleReadReceipt.documentCount} docs
+          </span>
+        ) : null}
+        {receipt.grounding.degradedReason ? (
+          <span className="rounded-md border border-gold-200 bg-gold-50 px-1.5 py-0.5 font-semibold text-gold-900">
+            {receipt.grounding.groundingPosture}
           </span>
         ) : null}
       </div>

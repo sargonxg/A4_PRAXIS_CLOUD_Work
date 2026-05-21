@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import type { CapsuleReadReceipt } from '@/lib/agent-runtime/capsule-read-receipt';
+import type { SourceabilityLedgerSummary } from '@/lib/agent-runtime/sourceability-ledger';
+import type { AgentWorkflowPlan } from '@/lib/agent-runtime/workflow-plan';
 import type { AgentRun } from '@/lib/agent-runtime/types';
 import { destinationHref, getPolicyAgent, type PolicyAgentOutputDestination } from '@/lib/product/policy-agents';
 
@@ -93,6 +96,17 @@ export const AgentRunOutputSchema = z.object({
     groundingPosture: z.string(),
     degradedReason: z.string().nullable(),
   }).optional(),
+  capsuleReadReceipt: z.record(z.string(), z.unknown()).optional(),
+  workflowPlan: z.record(z.string(), z.unknown()).optional(),
+  sourceabilityLedgerSummary: z.object({
+    totalClaims: z.number().int().nonnegative(),
+    supportedClaims: z.number().int().nonnegative(),
+    weakClaims: z.number().int().nonnegative(),
+    unsupportedClaims: z.number().int().nonnegative(),
+    contradictedClaims: z.number().int().nonnegative(),
+    modelPriorClaims: z.number().int().nonnegative(),
+    assumptionClaims: z.number().int().nonnegative(),
+  }).optional(),
   factoryMetadata: z.object({
     factoryLane: z.string().nullable(),
     ontologyStack: z.array(z.string()),
@@ -136,6 +150,9 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
   const searchPlan = normalizeSearchPlan(run.metadata?.searchPlan);
   const groundingPlan = isRecord(run.metadata?.groundingPlan) ? run.metadata.groundingPlan : null;
   const factoryMetadata = normalizeFactoryMetadata(run.metadata);
+  const capsuleReadReceipt = isRecord(run.metadata?.capsuleReadReceipt) ? run.metadata.capsuleReadReceipt as unknown as CapsuleReadReceipt : undefined;
+  const workflowPlan = isRecord(run.metadata?.workflowPlan) ? run.metadata.workflowPlan as unknown as AgentWorkflowPlan : undefined;
+  const sourceabilityLedgerSummary = normalizeSourceabilityLedgerSummary(run.metadata?.sourceabilityLedgerSummary);
   return AgentRunOutputSchema.parse({
     runId: run.id,
     status: run.status,
@@ -172,6 +189,9 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
       groundingPosture,
       degradedReason,
     },
+    ...(capsuleReadReceipt ? { capsuleReadReceipt } : {}),
+    ...(workflowPlan ? { workflowPlan } : {}),
+    ...(sourceabilityLedgerSummary ? { sourceabilityLedgerSummary } : {}),
     ...(factoryMetadata ? { factoryMetadata } : {}),
   });
 }
@@ -190,6 +210,20 @@ function normalizeOutputDestination(value: unknown): PolicyAgentOutputDestinatio
   return value === 'memo_studio' || value === 'canvas' || value === 'library' || value === 'handover'
     ? value
     : null;
+}
+
+function normalizeSourceabilityLedgerSummary(value: unknown): SourceabilityLedgerSummary | null {
+  if (!isRecord(value)) return null;
+  const summary = {
+    totalClaims: nonnegativeInt(value.totalClaims) ?? 0,
+    supportedClaims: nonnegativeInt(value.supportedClaims) ?? 0,
+    weakClaims: nonnegativeInt(value.weakClaims) ?? 0,
+    unsupportedClaims: nonnegativeInt(value.unsupportedClaims) ?? 0,
+    contradictedClaims: nonnegativeInt(value.contradictedClaims) ?? 0,
+    modelPriorClaims: nonnegativeInt(value.modelPriorClaims) ?? 0,
+    assumptionClaims: nonnegativeInt(value.assumptionClaims) ?? 0,
+  };
+  return summary;
 }
 
 function destinationLabel(destination: PolicyAgentOutputDestination): string {

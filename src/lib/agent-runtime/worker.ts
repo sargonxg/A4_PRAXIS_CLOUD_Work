@@ -1,4 +1,5 @@
 import type { AgentRun } from '@/lib/agent-runtime/types';
+import { buildCapsuleReadReceiptFromEvidencePack, buildCapsuleReadReceiptFromRun, type CapsuleReadReceipt } from '@/lib/agent-runtime/capsule-read-receipt';
 import {
   appendAgentApproval,
   appendAgentToolCall,
@@ -6,11 +7,13 @@ import {
   updateAgentRunStatus,
 } from '@/lib/agent-runtime/postgres';
 import { saveMemoDraft, type SaveMemoDraftInput } from '@/lib/firebase/memo-service';
-import { getPolicyAgent } from '@/lib/product/policy-agents';
+import { getPolicyAgent, policyAgentRunIntent, type PolicyAgentOutputDestination } from '@/lib/product/policy-agents';
 import { buildOutputFormatterReasoningLoop, buildResearchMemoReasoningLoop } from '@/lib/agent-runtime/reasoning-loop';
 import { buildCapsuleEvidencePack, type CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
+import { buildSourceabilityLedgerFromEvidencePack, buildSourceabilityLedgerFromRun, type SourceabilityLedger } from '@/lib/agent-runtime/sourceability-ledger';
 import { makeAgentApproval, makeAgentToolCall } from '@/lib/agent-runtime/state';
 import { getAgentToolDefinition } from '@/lib/agent-runtime/tool-registry';
+import { buildAgentWorkflowPlan, type AgentWorkflowPlan } from '@/lib/agent-runtime/workflow-plan';
 import { saveOutputCapsule, type SaveOutputCapsuleInput } from '@/lib/output-capsules/storage';
 import {
   buildCapsuleWorkerContext,
@@ -315,6 +318,7 @@ async function executeResearchMemoAgentRun(
   }
 
   let running = run;
+  let executionStage = 'starting';
   try {
     if (run.status !== 'running') {
       const next = await updateStatus({
@@ -332,6 +336,7 @@ async function executeResearchMemoAgentRun(
       running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
     }
 
+    executionStage = 'context-build';
     const workerContext = buildCapsuleWorkerContext(running);
     const loop = buildResearchMemoReasoningLoop(running);
     await mirrorWorkerEvent(running, {
@@ -345,6 +350,8 @@ async function executeResearchMemoAgentRun(
         executionMode: 'research-memo',
       },
     }, deps);
+    executionStage = 'workflow-proof';
+    const initialWorkflowProof = await emitCapsuleReadAndWorkflowPlan(running, deps);
 
     for (const step of loop.steps) {
       const toolCall = step.toolId
@@ -406,17 +413,39 @@ async function executeResearchMemoAgentRun(
       };
     }
 
+    executionStage = 'search-evidence';
     await collectSearchEvidenceForRun(running, {
       appendToolCall: persistToolCall,
       appendEvent: deps.appendEvent,
     });
 
+    executionStage = 'evidence-pack';
     const evidencePack = await getEvidencePack({
       ownerUid: running.ownerUid,
       capsuleId: running.capsuleId,
       objective: running.objective,
       maxParagraphs: 8,
     });
+    executionStage = 'sourceability-ledger';
+    const capsuleReadReceipt = buildCapsuleReadReceiptFromEvidencePack(evidencePack, {
+      selectedTools: initialWorkflowProof.workflowPlan.selectedTools,
+      outputTarget: outputDestinationFromMetadata(running.metadata) ?? 'memo_studio',
+      groundingPosture: initialWorkflowProof.capsuleReadReceipt.groundingPosture,
+    });
+    const workflowPlan = buildAgentWorkflowPlan({
+      prompt: running.objective,
+      runIntent: 'research_memo',
+      policyAgentId: 'research-memo',
+      selectedToolIds: initialWorkflowProof.workflowPlan.selectedTools,
+      outputTarget: outputDestinationFromMetadata(running.metadata) ?? 'memo_studio',
+      capsuleReadReceipt,
+      groundingPosture: capsuleReadReceipt.groundingPosture,
+    });
+    const sourceabilityLedger = buildSourceabilityLedgerFromEvidencePack(evidencePack, {
+      agentRunId: running.id,
+      outputTarget: 'memo_studio',
+    });
+    await emitSourceabilityLedger(running, sourceabilityLedger, deps);
     await persistToolCall(makeAgentToolCall({
       runId: running.id,
       ownerUid: running.ownerUid,
@@ -434,6 +463,22 @@ async function executeResearchMemoAgentRun(
       startedAt: new Date().toISOString(),
       completedAt: new Date().toISOString(),
     }));
+    await persistToolCall(makeAgentToolCall({
+      runId: running.id,
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      toolId: 'sourceability-reviewer',
+      risk: getAgentToolDefinition('sourceability-reviewer').risk,
+      status: sourceabilityLedger.summary.unsupportedClaims > 0 ? 'succeeded' : 'succeeded',
+      input: { evidencePackId: evidencePack.packId, objective: running.objective },
+      output: {
+        ledgerId: sourceabilityLedger.ledgerId,
+        summary: sourceabilityLedger.summary,
+        unsupportedClaimCount: sourceabilityLedger.summary.unsupportedClaims,
+      },
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    }));
 
     const sourceCount = evidencePack.sourceReceiptIds.length + evidencePack.knowledgeDocuments.length;
     const gapItems = evidencePack.openGaps.length
@@ -441,13 +486,14 @@ async function executeResearchMemoAgentRun(
       : ['No blocking capsule gaps were detected for this first memo pass.'];
     const caseId = running.selectedCoreIds.situationCoreId ?? running.capsuleId;
     const title = `Research memo - ${running.objective.slice(0, 80)}`;
+    executionStage = 'memo-persist';
     const memoRecord = await persistMemo(running.ownerUid, {
       caseId,
       templateId: 'policy-memo',
       title,
       graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:graph-gap`,
       changeNote: `Created by Research Memo Agent run ${running.id}.`,
-      blocks: buildMemoBlocks(running, evidencePack),
+      blocks: buildMemoBlocks(running, evidencePack, sourceabilityLedger),
     });
     await persistToolCall(makeAgentToolCall({
       runId: running.id,
@@ -461,9 +507,10 @@ async function executeResearchMemoAgentRun(
       startedAt: new Date().toISOString(),
       completedAt: new Date().toISOString(),
     }));
+    executionStage = 'output-capsule-persist';
     const outputCapsule = await persistOutputCapsule(
       running.ownerUid,
-      buildOutputCapsuleInput(running, evidencePack, memoRecord.memo.id),
+      buildOutputCapsuleInput(running, evidencePack, memoRecord.memo.id, sourceabilityLedger),
     );
     if (outputCapsule) {
       await persistToolCall(makeAgentToolCall({
@@ -494,9 +541,13 @@ async function executeResearchMemoAgentRun(
         sourceCount,
         gapCount: gapItems.length,
         evidencePackId: evidencePack.packId,
+        capsuleReadReceipt,
+        workflowPlan,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
       },
     }, deps);
 
+    executionStage = 'succeeded-transition';
     const succeeded = await updateStatus({
       ownerUid: running.ownerUid,
       runId: running.id,
@@ -509,6 +560,12 @@ async function executeResearchMemoAgentRun(
         memoId: memoRecord.memo.id,
         outputCapsuleId: outputCapsule?.id ?? null,
         outputHref,
+        capsuleReadReceipt,
+        workflowPlan,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
+        selectedTools: workflowPlan.selectedTools,
+        groundingPosture: workflowPlan.groundingPosture,
+        outputTarget: workflowPlan.outputTarget,
       },
     });
 
@@ -532,6 +589,7 @@ async function executeResearchMemoAgentRun(
         dispatchId: payload.dispatchId,
         attempt: payload.attempt,
         error: err instanceof Error ? err.message : String(err),
+        executionStage,
       },
     }).catch(() => null);
     throw new AgentWorkerError('Agent run execution failed', 500);
@@ -581,7 +639,7 @@ async function executeOutputFormatterAgentRun(
         },
       });
       if (!next) throw new AgentWorkerError('Agent run disappeared before execution', 404);
-      running = next;
+      running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
     }
 
     const workerContext = buildCapsuleWorkerContext(running);
@@ -597,6 +655,11 @@ async function executeOutputFormatterAgentRun(
         executionMode: 'output-formatter',
       },
     }, deps);
+    const { capsuleReadReceipt, workflowPlan } = await emitCapsuleReadAndWorkflowPlan(running, deps);
+    const sourceabilityLedger = buildSourceabilityLedgerFromRun(running, {
+      outputTarget: 'memo_studio',
+    });
+    await emitSourceabilityLedger(running, sourceabilityLedger, deps);
 
     for (const step of loop.steps) {
       await mirrorWorkerEvent(running, {
@@ -688,6 +751,24 @@ async function executeOutputFormatterAgentRun(
           citations: [],
           metadata: { sourceCount },
         },
+        {
+          id: 'claim-ledger-summary',
+          type: 'bullets',
+          title: 'Claim ledger summary',
+          content: '',
+          items: [
+            `${sourceabilityLedger.summary.totalClaims} material claim(s) reviewed.`,
+            `${sourceabilityLedger.summary.unsupportedClaims} unsupported claim(s) remain visible.`,
+            `Generated ${sourceabilityLedger.outputReadiness.generatedAt} for run ${running.id}.`,
+          ],
+          citations: [],
+          metadata: {
+            capsuleId: running.capsuleId,
+            agentRunId: running.id,
+            sourceabilityLedgerId: sourceabilityLedger.ledgerId,
+            sourceabilityLedgerSummary: sourceabilityLedger.summary,
+          },
+        },
       ],
     });
     const outputHref = `/app?panel=memo&memoId=${encodeURIComponent(memoRecord.memo.id)}`;
@@ -700,6 +781,9 @@ async function executeOutputFormatterAgentRun(
         memoId: memoRecord.memo.id,
         outputHref,
         sourceCount,
+        capsuleReadReceipt,
+        workflowPlan,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
       },
     }, deps);
 
@@ -714,6 +798,9 @@ async function executeOutputFormatterAgentRun(
         executionMode: 'output-formatter',
         memoId: memoRecord.memo.id,
         outputHref,
+        capsuleReadReceipt,
+        workflowPlan,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
       },
     });
 
@@ -787,7 +874,7 @@ async function executeReviewAgentRun(
         },
       });
       if (!next) throw new AgentWorkerError('Agent run disappeared before execution', 404);
-      running = next;
+      running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
     }
 
     const toolId = reviewAgentToolId(executionMode);
@@ -802,6 +889,11 @@ async function executeReviewAgentRun(
         executionMode,
       },
     }, deps);
+    const { capsuleReadReceipt, workflowPlan } = await emitCapsuleReadAndWorkflowPlan(running, deps);
+    const sourceabilityLedger = buildSourceabilityLedgerFromRun(running, {
+      outputTarget: executionMode === 'handover-builder' ? 'handover' : 'memo_studio',
+    });
+    await emitSourceabilityLedger(running, sourceabilityLedger, deps);
 
     await persistToolCall(makeAgentToolCall({
       runId: running.id,
@@ -822,7 +914,7 @@ async function executeReviewAgentRun(
       title: `${reviewAgentLabel(executionMode)} - ${running.objective.slice(0, 72)}`,
       graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:${executionMode}`,
       changeNote: `Created by ${reviewAgentLabel(executionMode)} run ${running.id}.`,
-      blocks: buildReviewMemoBlocks(running, executionMode),
+      blocks: buildReviewMemoBlocks(running, executionMode, sourceabilityLedger),
     });
     const outputHref = executionMode === 'handover-builder'
       ? `/app?panel=handover&memoId=${encodeURIComponent(memoRecord.memo.id)}`
@@ -836,6 +928,9 @@ async function executeReviewAgentRun(
         memoId: memoRecord.memo.id,
         outputHref,
         toolId,
+        capsuleReadReceipt,
+        workflowPlan,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
       },
     }, deps);
 
@@ -850,6 +945,9 @@ async function executeReviewAgentRun(
         executionMode,
         memoId: memoRecord.memo.id,
         outputHref,
+        capsuleReadReceipt,
+        workflowPlan,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
       },
     });
 
@@ -881,6 +979,87 @@ async function executeReviewAgentRun(
 function outputHrefFromMetadata(metadata: Record<string, unknown>, fallback: string): string {
   const outputHref = metadata.outputHref;
   return typeof outputHref === 'string' && outputHref.startsWith('/app') ? outputHref : fallback;
+}
+
+async function emitCapsuleReadAndWorkflowPlan(
+  running: AgentRun,
+  deps: WorkerDeps,
+  options: {
+    readReceipt?: CapsuleReadReceipt;
+    workflowPlan?: AgentWorkflowPlan;
+  } = {},
+): Promise<{ capsuleReadReceipt: CapsuleReadReceipt; workflowPlan: AgentWorkflowPlan }> {
+  const selectedTools = selectedWorkflowToolIds(running);
+  const outputTarget = outputDestinationFromMetadata(running.metadata);
+  const groundingPosture = typeof running.metadata.groundingPosture === 'string' ? running.metadata.groundingPosture : 'No grounding metadata';
+  const capsuleReadReceipt = options.readReceipt ?? buildCapsuleReadReceiptFromRun(running, {
+    selectedTools,
+    outputTarget,
+    groundingPosture,
+  });
+  const workflowPlan = options.workflowPlan ?? buildAgentWorkflowPlan({
+    prompt: running.objective,
+    runIntent: policyAgentRunIntent(typeof running.metadata.policyAgentId === 'string' ? running.metadata.policyAgentId : null),
+    policyAgentId: typeof running.metadata.policyAgentId === 'string' ? running.metadata.policyAgentId : null,
+    selectedToolIds: selectedTools,
+    outputTarget,
+    capsuleReadReceipt,
+    groundingPosture,
+  });
+
+  await mirrorWorkerEvent(running, {
+    substrate: 'praxis',
+    phase: 'capsule.read_receipt_created',
+    message: 'Agent worker created the canonical ContextCapsule read receipt before downstream work.',
+    data: { capsuleReadReceipt },
+  }, deps);
+  await mirrorWorkerEvent(running, {
+    substrate: 'praxis',
+    phase: 'workflow.plan_created',
+    message: 'Agent worker created a bounded workflow plan from registered agents and tools.',
+    data: { workflowPlan },
+  }, deps);
+
+  return { capsuleReadReceipt, workflowPlan };
+}
+
+async function emitSourceabilityLedger(
+  running: AgentRun,
+  ledger: SourceabilityLedger,
+  deps: WorkerDeps,
+): Promise<void> {
+  await mirrorWorkerEvent(running, {
+    substrate: 'praxis',
+    phase: 'sourceability.ledger_created',
+    message: 'Agent worker created the sourceability claim ledger for the generated work product.',
+    data: {
+      sourceabilityLedgerId: ledger.ledgerId,
+      sourceabilityLedgerSummary: ledger.summary,
+      unsupportedClaims: ledger.unsupportedClaims.map((claim) => ({
+        id: claim.id,
+        claim: claim.claim,
+        supportLabel: claim.supportLabel,
+      })),
+      outputReadiness: ledger.outputReadiness,
+    },
+  }, deps);
+}
+
+function selectedWorkflowToolIds(run: AgentRun): string[] {
+  const tools = [
+    'context-resolve',
+    ...stringArray(run.metadata.selectedTools),
+    ...stringArray(run.metadata.selectedToolIds),
+    ...run.selectedCoreIds.toolCoreIds,
+  ];
+  return Array.from(new Set(tools));
+}
+
+function outputDestinationFromMetadata(metadata: Record<string, unknown>): PolicyAgentOutputDestination | null {
+  const destination = metadata.outputDestination;
+  return destination === 'memo_studio' || destination === 'canvas' || destination === 'library' || destination === 'handover'
+    ? destination
+    : null;
 }
 
 async function collectSearchEvidenceForRun(
@@ -1031,7 +1210,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-function buildMemoBlocks(running: AgentRun, evidencePack: CapsuleEvidencePack): SaveMemoDraftInput['blocks'] {
+function buildMemoBlocks(
+  running: AgentRun,
+  evidencePack: CapsuleEvidencePack,
+  sourceabilityLedger?: SourceabilityLedger,
+): SaveMemoDraftInput['blocks'] {
   const citedReceiptIds = evidencePack.sourcedParagraphs
     .map((paragraph) => paragraph.sourceReceiptId)
     .filter((value): value is string => Boolean(value));
@@ -1106,6 +1289,28 @@ function buildMemoBlocks(running: AgentRun, evidencePack: CapsuleEvidencePack): 
       citations: [],
       metadata: { outputDestination: 'memo_studio' },
     },
+    ...(sourceabilityLedger ? [{
+      id: 'claim-ledger-summary',
+      type: 'bullets' as const,
+      title: 'Claim ledger summary',
+      content: '',
+      items: [
+        `${sourceabilityLedger.summary.totalClaims} material claim(s) reviewed.`,
+        `${sourceabilityLedger.summary.unsupportedClaims} unsupported claim(s) remain visible.`,
+        `Generated ${sourceabilityLedger.outputReadiness.generatedAt} for run ${running.id}.`,
+      ],
+      citations: paragraphCitation,
+      metadata: {
+        capsuleId: running.capsuleId,
+        capsuleVersion: evidencePack.activeCapsule.version ?? null,
+        agentRunId: running.id,
+        sourceabilityLedgerId: sourceabilityLedger.ledgerId,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
+        unsupportedClaims: sourceabilityLedger.unsupportedClaims.map((claim) => claim.id),
+        generatedAt: sourceabilityLedger.generatedAt,
+        outputDestination: 'memo_studio',
+      },
+    }] : []),
   ];
 }
 
@@ -1113,6 +1318,7 @@ function buildOutputCapsuleInput(
   running: AgentRun,
   evidencePack: CapsuleEvidencePack,
   memoId: string,
+  sourceabilityLedger?: SourceabilityLedger,
 ): SaveOutputCapsuleInput {
   const citations = evidencePack.sourcedParagraphs.map((paragraph) => ({
     id: paragraph.id,
@@ -1153,7 +1359,23 @@ function buildOutputCapsuleInput(
           body: evidencePack.openGaps.length ? evidencePack.openGaps.join('\n') : 'No blocking gaps detected.',
           citationIds: [],
         },
+        ...(sourceabilityLedger ? [{
+          heading: 'Claim ledger',
+          body: [
+            `${sourceabilityLedger.summary.totalClaims} material claim(s) reviewed.`,
+            `${sourceabilityLedger.summary.unsupportedClaims} unsupported claim(s) remain visible.`,
+            `Generated ${sourceabilityLedger.outputReadiness.generatedAt}.`,
+          ].join('\n'),
+          citationIds: citations.map((citation) => citation.id),
+        }] : []),
       ],
+      sourceabilityLedgerSummary: sourceabilityLedger?.summary,
+      unsupportedClaims: sourceabilityLedger?.unsupportedClaims.map((claim) => ({
+        id: claim.id,
+        claim: claim.claim,
+        supportLabel: claim.supportLabel,
+      })) ?? [],
+      generatedAt: sourceabilityLedger?.generatedAt ?? new Date().toISOString(),
     },
     citations,
     gaps,
@@ -1191,6 +1413,7 @@ function reviewAgentToolId(mode: 'sourceability-reviewer' | 'red-team-analyst' |
 function buildReviewMemoBlocks(
   running: AgentRun,
   mode: 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder',
+  sourceabilityLedger?: SourceabilityLedger,
 ): SaveMemoDraftInput['blocks'] {
   const sourceCount = running.selectedCoreIds.sourceCoreIds.length + running.selectedCoreIds.documentCoreIds.length;
   const baseMetadata = {
@@ -1260,6 +1483,24 @@ function buildReviewMemoBlocks(
       citations: [],
       metadata: baseMetadata,
     },
+    ...(sourceabilityLedger ? [{
+      id: 'claim-ledger-summary',
+      type: 'bullets' as const,
+      title: 'Claim ledger summary',
+      content: '',
+      items: [
+        `${sourceabilityLedger.summary.totalClaims} material claim(s) reviewed.`,
+        `${sourceabilityLedger.summary.unsupportedClaims} unsupported claim(s) remain visible.`,
+        `Generated ${sourceabilityLedger.outputReadiness.generatedAt} for run ${running.id}.`,
+      ],
+      citations: [],
+      metadata: {
+        ...baseMetadata,
+        sourceabilityLedgerId: sourceabilityLedger.ledgerId,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
+        outputReadiness: sourceabilityLedger.outputReadiness,
+      },
+    }] : []),
   ];
 }
 

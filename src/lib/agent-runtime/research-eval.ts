@@ -3,7 +3,12 @@ export type AgenticResearchEvalScenarioId =
   | 'conflict-policy-research'
   | 'claim-source-discovery'
   | 'contradiction-uncertainty'
-  | 'capsule-grounded-research';
+  | 'capsule-grounded-research'
+  | 'memo-pdf-output'
+  | 'sourceability-ledger'
+  | 'multi-agent-review'
+  | 'handover-package'
+  | 'degraded-grounding';
 
 export type ResearchEvalCandidate = {
   label: string;
@@ -93,6 +98,36 @@ export const AGENTIC_RESEARCH_EVAL_SCENARIOS: ResearchEvalScenario[] = [
     prompt: 'Answer from the active ContextCapsule first, then use external grounding only for gaps and save the output receipt.',
     mustMeasure: ['capsule reuse', 'persistence', 'audit trail', 'source authority'],
   },
+  {
+    id: 'memo-pdf-output',
+    title: 'Memo and PDF-ready output',
+    prompt: 'Produce a memo/PDF-ready policy brief with capsule id/version, AgentRun id, source receipt ids, claim ledger summary, and unsupported claims.',
+    mustMeasure: ['persistence', 'audit trail', 'citation fidelity', 'capsule reuse'],
+  },
+  {
+    id: 'sourceability-ledger',
+    title: 'Sourceability claim ledger',
+    prompt: 'Review a generated brief and label material claims as supported, weak, contradicted, model-prior, assumption, or unsupported.',
+    mustMeasure: ['citation fidelity', 'uncertainty handling', 'audit trail', 'source authority'],
+  },
+  {
+    id: 'multi-agent-review',
+    title: 'Multi-agent review',
+    prompt: 'Run bounded sourceability and red-team review over the same capsule receipt and surface disagreements before final synthesis.',
+    mustMeasure: ['planning', 'capsule reuse', 'audit trail', 'uncertainty handling'],
+  },
+  {
+    id: 'handover-package',
+    title: 'Handover package',
+    prompt: 'Package the capsule state, generated output, run receipts, unresolved gaps, and next actions for another analyst.',
+    mustMeasure: ['persistence', 'audit trail', 'capsule reuse', 'failure mode'],
+  },
+  {
+    id: 'degraded-grounding',
+    title: 'Degraded grounding posture',
+    prompt: 'Prepare a current-source answer when Google Search grounding is unavailable and show the degraded grounding receipt without implying live web proof.',
+    mustMeasure: ['failure mode', 'uncertainty handling', 'audit trail', 'source authority'],
+  },
 ];
 
 export function scoreResearchEvalCandidate(input: ResearchEvalCandidate & { scenarioId: AgenticResearchEvalScenarioId }): ResearchEvalScore {
@@ -148,7 +183,7 @@ export function buildDefaultAgenticResearchEvalRun(): ResearchEvalComparison[] {
     praxis: {
       label: 'PRAXIS AgentRun',
       planning: true,
-      sourceAuthority: true,
+      sourceAuthority: scenario.id !== 'degraded-grounding',
       recency: scenario.id === 'current-events',
       citationFidelity: true,
       uncertaintyHandling: true,
@@ -156,7 +191,7 @@ export function buildDefaultAgenticResearchEvalRun(): ResearchEvalComparison[] {
       persistence: true,
       auditTrail: true,
       latencyMs: null,
-      failureMode: null,
+      failureMode: scenario.id === 'degraded-grounding' ? 'explicit degraded Google Search grounding receipt' : null,
     },
     baseline: {
       label: 'Generic prompt-only LLM',

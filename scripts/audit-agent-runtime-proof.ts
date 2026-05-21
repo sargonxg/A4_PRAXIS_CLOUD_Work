@@ -67,6 +67,22 @@ requireMarkers('src/lib/agent-runtime/worker.ts', [
   'saveOutputCapsule',
   'appendAgentToolCall',
   'appendAgentApproval',
+  'capsule.read_receipt_created',
+  'workflow.plan_created',
+  'sourceability.ledger_created',
+]);
+requireMarkers('src/lib/agent-runtime/capsule-read-receipt.ts', [
+  'CapsuleReadReceipt',
+  'buildCapsuleReadReceiptFromEvidencePack',
+]);
+requireMarkers('src/lib/agent-runtime/workflow-plan.ts', [
+  'AgentWorkflowPlan',
+  'AGENT_WORKFLOW_PROCESS_RAIL',
+]);
+requireMarkers('src/lib/agent-runtime/sourceability-ledger.ts', [
+  'SourceabilityLedger',
+  'supported',
+  'unsupported',
 ]);
 requireMarkers('src/lib/agent-runtime/mirror.ts', [
   'mirrorWorkerEvent',

@@ -1,6 +1,8 @@
 import type { AskContextReceipt, AskIntent } from '@/lib/ai/ask-conversation';
+import { buildCapsuleReadReceiptFromAsk, type CapsuleReadReceipt } from '@/lib/agent-runtime/capsule-read-receipt';
 import { resolveGroundingPlan, type GroundingPlan } from '@/lib/agent-runtime/grounding-adapter';
 import { agentToolRequiresApproval, getAgentToolDefinition } from '@/lib/agent-runtime/tool-registry';
+import { buildAgentWorkflowPlan, type AgentWorkflowPlan } from '@/lib/agent-runtime/workflow-plan';
 import { getPolicyAgent, policyAgentRunIntent, type PolicyAgentOutputDestination, type PolicyAgentRunIntent } from '@/lib/product/policy-agents';
 import { buildTacitusRoutingDecision, type TacitusRoutingDecision } from '@/lib/ai/tacitus-routing-policy';
 
@@ -55,6 +57,8 @@ export interface AskConversationOrchestrationReceipt {
     groundingPosture: string;
     degradedReason: string | null;
   };
+  capsuleReadReceipt: CapsuleReadReceipt;
+  workflowPlan: AgentWorkflowPlan;
   routingDecision: TacitusRoutingDecision;
   supervisor: {
     action: AskSupervisorAction;
@@ -138,6 +142,26 @@ export function buildAskConversationOrchestrationReceipt(input: {
     sourcePreviewCount: input.sourcePreviewCount,
     documentCount: input.contextReceipt.coreRefs.sourceDocumentCoreIds.length,
   });
+  const capsuleReadReceipt = buildCapsuleReadReceiptFromAsk({
+    capsuleId: input.contextReceipt.capsuleId,
+    capsuleVersion: input.contextReceipt.capsuleVersion,
+    selectedTools: selectedToolIds,
+    outputTarget: routingDecision.outputDestination,
+    sourceCount: input.sourcePreviewCount,
+    documentCount: input.contextReceipt.coreRefs.sourceDocumentCoreIds.length,
+    sourcedParagraphCount: input.contextReceipt.evidenceCount,
+    contextGaps: input.contextReceipt.warnings,
+    groundingPosture: grounding.groundingPosture,
+  });
+  const workflowPlan = buildAgentWorkflowPlan({
+    prompt: input.prompt,
+    runIntent: policyAgentRunIntent(policyAgentId),
+    policyAgentId,
+    selectedToolIds,
+    outputTarget: routingDecision.outputDestination,
+    capsuleReadReceipt,
+    groundingPosture: grounding.groundingPosture,
+  });
   const reasons = buildTriageReasons({
     prompt: input.prompt,
     intent: input.intent,
@@ -178,6 +202,8 @@ export function buildAskConversationOrchestrationReceipt(input: {
       blockedToolIds,
     },
     grounding,
+    capsuleReadReceipt,
+    workflowPlan,
     routingDecision,
     supervisor: {
       action: shouldQueue ? 'queue_agent_run' : 'direct_answer',
@@ -256,14 +282,14 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     {
       type: 'orchestrationStatus',
       id: 'context',
-      label: 'Capsule read',
+      label: 'Reading capsule',
       status: receipt.capsule.contextHealth === 'ready' ? 'complete' : 'warn',
       detail: safeStatusDetail(`${receipt.capsule.contextHealth} capsule checked with ${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'}.`),
     },
     {
       type: 'orchestrationStatus',
       id: 'triage',
-      label: 'Research plan',
+      label: 'Planning workflow',
       status: 'complete',
       detail: safeStatusDetail(`${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}.`),
       agentLabel: policyAgent?.label ?? receipt.routingDecision.userSafeLabels.policyAgent,
@@ -271,7 +297,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     {
       type: 'orchestrationStatus',
       id: 'agent',
-      label: 'Source discovery',
+      label: 'Collecting sources',
       status: 'complete',
       detail: safeStatusDetail(`${receipt.routingDecision.userSafeLabels.policyAgent} selected.`),
       selectedToolIds,
@@ -282,17 +308,8 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     },
     {
       type: 'orchestrationStatus',
-      id: 'model-tier',
-      label: 'Document retrieval',
-      status: 'complete',
-      detail: safeStatusDetail(`${receipt.routingDecision.userSafeLabels.modelTier}. ${receipt.routingDecision.userSafeLabels.fallbackPosture}.`),
-      sourceCount: receipt.capsule.sourcePreviewCount,
-      fallbackPosture: receipt.routingDecision.userSafeLabels.fallbackPosture,
-    },
-    {
-      type: 'orchestrationStatus',
       id: 'tools',
-      label: 'Gap review',
+      label: 'Reviewing claims',
       status: receipt.toolRouting.blockedToolIds.length ? 'warn' : 'complete',
       detail: safeStatusDetail(`${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`),
       selectedToolIds,
@@ -301,7 +318,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     {
       type: 'orchestrationStatus',
       id: 'worker',
-      label: 'Synthesis',
+      label: 'Producing output',
       status: agentStatus,
       detail: safeStatusDetail(agentDetail),
       runId: queuedRun?.runId && queuedRun.runId !== 'unavailable' ? queuedRun.runId : null,
@@ -322,7 +339,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     {
       type: 'orchestrationStatus',
       id: 'draft',
-      label: 'Save output',
+      label: 'Saving receipts',
       status: 'active',
       detail: 'Answer drafting started.',
       outputTarget,

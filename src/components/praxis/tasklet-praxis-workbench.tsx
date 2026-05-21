@@ -244,7 +244,7 @@ type AgentRunDetail = {
   toolCalls?: unknown[];
   approvals?: AgentApprovalSummary[];
 };
-type SpanTargetCore = 'sourceability' | 'temporality' | 'causality' | 'human-friction' | 'rules' | 'open-question';
+type SpanTargetCore = 'sourceability' | 'human-friction' | 'open-question';
 type SpanAttachStatus = 'idle' | 'pending' | 'success' | 'error';
 type SpanTargetDefinition = {
   id: SpanTargetCore;
@@ -382,36 +382,12 @@ const spanTargets: SpanTargetDefinition[] = [
     memoNote: 'Sourceability note: claim/evidence needing support check.',
   },
   {
-    id: 'temporality',
-    label: 'Freshness',
-    note: 'Extract date, sequence, stale assumption, or decision horizon.',
-    helper: 'Use for dates, timelines, stale assumptions, deadlines, and decision horizons.',
-    askPrompt: 'Analyze the temporality of this selected span. Extract dates, sequence, stale assumptions, and decision horizons.',
-    memoNote: 'Freshness note: date, sequence, stale assumption, or decision horizon.',
-  },
-  {
-    id: 'causality',
-    label: 'Causality',
-    note: 'Mark cause/effect, trigger, indicator, or alternative explanation.',
-    helper: 'Use for causal claims, triggers, indicators, effects, and alternative explanations.',
-    askPrompt: 'Map the causal logic in this selected span. Separate triggers, effects, indicators, lags, and alternative explanations.',
-    memoNote: 'Causality note: cause/effect, trigger, indicator, or alternative explanation.',
-  },
-  {
     id: 'human-friction',
     label: 'Human friction',
     note: 'Mark incentives, resistance, approvals, fatigue, or informal power.',
     helper: 'Use for incentives, resistance, approvals, fatigue, informal power, and implementation blockers.',
     askPrompt: 'Analyze the human friction in this selected span. Identify incentives, resistance, approvals, fatigue, informal power, and likely blockers.',
     memoNote: 'Human friction note: incentives, resistance, approvals, fatigue, or informal power.',
-  },
-  {
-    id: 'rules',
-    label: 'Rules',
-    note: 'Mark legal, policy, mandate, standard, or constraint text.',
-    helper: 'Use for legal text, policy rules, mandates, standards, constraints, and compliance boundaries.',
-    askPrompt: 'Interpret the rule posture of this selected span. Name legal, policy, mandate, standard, and constraint implications.',
-    memoNote: 'Rules note: legal, policy, mandate, standard, or constraint text.',
   },
   {
     id: 'open-question',
@@ -779,6 +755,17 @@ export function TaskletPraxisWorkbench({
   const openChainSlots = capsuleChainSlots.filter((slot) => !filledChainRoles.has(slot.role));
   const activeCapsuleForStrip = selectedCapsule ?? activeCapsuleStack[0] ?? null;
   const canUseAgenticSearchPremium = isPaidSubscription(user?.subscription);
+  const composerReadTargets = [
+    activeCapsuleForStrip?.label ?? 'Generic analyst',
+    repositoryDocuments.length ? `${repositoryDocuments.length} attached source document${repositoryDocuments.length === 1 ? '' : 's'}` : 'no attached source documents',
+    selectedToolIds.length ? `${selectedToolIds.length} capsule tool${selectedToolIds.length === 1 ? '' : 's'}` : 'capsule evidence pack',
+  ];
+  const composerUseTargets = [
+    'ContextCapsule evidence first',
+    agenticSearchPremiumEnabled && canUseAgenticSearchPremium ? 'Google/Exa current-source lane when needed' : 'grounding only when configured',
+    selectedAgent.label,
+    'sourceability reviewer before memo/PDF output',
+  ];
   const activeCapsuleSummaryForStrip = selectedCapsule ?? capsuleSummaryForChip(activeCapsuleStack[0], userCapsules);
   const activeStarterForStrip = starterDefinitionForCapsule(activeCapsuleSummaryForStrip);
   const activeCapsuleSourceCount = activeStarterForStrip?.sourcePack.length
@@ -2769,6 +2756,24 @@ export function TaskletPraxisWorkbench({
                     Browse capsules
                   </button>
                 </div>
+                <div className="mt-3 grid gap-2 rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-600" data-testid="ask-capsule-workflow-preview">
+                  <div>
+                    <p className="font-semibold uppercase tracking-[0.14em] text-slate-400">PRAXIS will read</p>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {composerReadTargets.map((target) => (
+                        <span key={target} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700">{target}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="font-semibold uppercase tracking-[0.14em] text-slate-400">PRAXIS may use</p>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {composerUseTargets.map((target) => (
+                        <span key={target} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700">{target}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
               {mobileContextSheetOpen ? (
                 <div className="fixed inset-0 z-50 flex items-end bg-black/35 md:hidden" role="dialog" aria-modal="true" aria-label="Mobile ContextChain selector">
@@ -2959,6 +2964,7 @@ export function TaskletPraxisWorkbench({
             </div>
 
             {chatMessages.length ? (
+              <>
               <section className="praxis-workbench-panel mt-5 w-full max-w-5xl space-y-3 p-4" data-testid="praxis-chat-thread">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
                   <div className="min-w-0">
@@ -3012,12 +3018,14 @@ export function TaskletPraxisWorkbench({
                     )}
                   </article>
                 ))}
-                {selectedText ? (
-                  <div className="rounded-lg border border-[color:var(--color-clay)]/30 bg-[color:var(--color-archive-paper-strong)] p-3 shadow-sm" data-testid="text-span-core-popover">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
+              </section>
+              {selectedText ? (
+                <div className="fixed inset-x-3 bottom-4 z-[80] mx-auto max-w-xl sm:bottom-6" role="dialog" aria-modal="false" aria-label="Use selected text in PRAXIS" data-testid="text-span-core-popover">
+                  <div className="rounded-xl border border-[color:var(--color-clay)]/35 bg-[color:var(--color-archive-paper-strong)] p-3 shadow-2xl shadow-slate-950/20 ring-1 ring-white/70">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-oxide)]">Attach selected text</p>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">Attach to active capsule: {selectedCapsule?.label ?? currentCapsuleId}</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-oxide)]">Use selected text</p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">Save or inspect this passage in the active capsule.</p>
                         <blockquote className="mt-2 max-h-24 overflow-y-auto rounded-md border border-[color:var(--color-clay)]/20 bg-white px-3 py-2 text-sm leading-6 text-slate-700">
                           {selectedText}
                         </blockquote>
@@ -3026,7 +3034,7 @@ export function TaskletPraxisWorkbench({
                         <X className="h-4 w-4" />
                       </button>
                     </div>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
                       {spanTargets.map((target) => (
                         <button
                           key={target.id}
@@ -3055,7 +3063,7 @@ export function TaskletPraxisWorkbench({
                       </p>
                     ) : (
                       <p className="mt-3 text-xs leading-5 text-slate-500">
-                        Attaching saves this excerpt to the active capsule. It will not run AI until you choose a follow-up.
+                        Saving keeps this excerpt with the active capsule. It will not run AI until you choose a follow-up.
                       </p>
                     )}
                     {attachedSpan ? (
@@ -3077,8 +3085,9 @@ export function TaskletPraxisWorkbench({
                       </div>
                     ) : null}
                   </div>
-                ) : null}
-              </section>
+                </div>
+              ) : null}
+              </>
             ) : null}
             </>
             ) : null}

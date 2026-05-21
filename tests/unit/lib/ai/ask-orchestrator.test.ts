@@ -21,6 +21,27 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       'context-resolve',
       'capsule-evidence-pack',
     ]);
+    expect(receipt.capsuleReadReceipt).toMatchObject({
+      capsuleId: 'capsule-1',
+      capsuleVersion: 3,
+      selectedTools: ['context-resolve', 'capsule-evidence-pack'],
+      outputTarget: null,
+      sourceCount: 2,
+      documentCount: 1,
+    });
+    expect(receipt.workflowPlan).toMatchObject({
+      workflowKind: 'direct_answer',
+      selectedTools: ['context-resolve', 'capsule-evidence-pack'],
+      requiredPolicyAgentIds: [],
+      processRail: [
+        'Reading capsule',
+        'Planning workflow',
+        'Collecting sources',
+        'Reviewing claims',
+        'Producing output',
+        'Saving receipts',
+      ],
+    });
     expect(receipt.stages.map((stage) => stage.stage)).toEqual([
       'capsule',
       'triage',
@@ -61,6 +82,12 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       policyAgentId: 'research-memo',
       modelTier: 'deep',
       workerMode: 'research-memo',
+    });
+    expect(receipt.workflowPlan).toMatchObject({
+      workflowKind: 'current_research_brief',
+      requiredPolicyAgentIds: ['research-memo', 'sourceability-reviewer'],
+      requiresSourceabilityPass: true,
+      requiresCurrentGrounding: true,
     });
     expect(receipt.routingDecision.userSafeLabels.modelTier).toBe('TACITUS selected deep reasoning');
   });
@@ -139,17 +166,15 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     const events = buildAskOrchestrationStatusEvents(receipt);
 
     expect(events.map((event) => event.label)).toEqual([
-      'Capsule read',
-      'Research plan',
-      'Source discovery',
-      'Document retrieval',
-      'Gap review',
-      'Synthesis',
-      'Save output',
+      'Reading capsule',
+      'Planning workflow',
+      'Collecting sources',
+      'Reviewing claims',
+      'Producing output',
+      'Saving receipts',
     ]);
     expect(events.map((event) => event.status)).toEqual([
       'warn',
-      'complete',
       'complete',
       'complete',
       'complete',

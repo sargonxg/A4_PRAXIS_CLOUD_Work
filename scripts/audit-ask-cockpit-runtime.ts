@@ -57,6 +57,10 @@ expectIncludes('src/components/ask/AskStreamPanel.tsx', [
   'TACITUS chooses model tier',
   'TACITUS routing',
   'activeContextStack',
+  'Reading capsule',
+  'Planning workflow',
+  'Reviewing claims',
+  'Saving receipts',
 ]);
 
 expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
@@ -77,7 +81,17 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'activeCapsules',
   'selectedToolIds',
   'selectedAgentId',
+  'data-testid="ask-capsule-workflow-preview"',
+  'PRAXIS will read',
+  'PRAXIS may use',
   'ReactMarkdown',
+]);
+
+expectIncludes('src/lib/ai/ask-orchestrator.ts', [
+  'capsuleReadReceipt',
+  'workflowPlan',
+  'buildCapsuleReadReceiptFromAsk',
+  'buildAgentWorkflowPlan',
 ]);
 
 expectIncludes('src/lib/product/cockpit-composition.ts', [

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { buildCapsuleReadReceiptFromEvidencePack } from '@/lib/agent-runtime/capsule-read-receipt';
 import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock } from '@/lib/agent-runtime/evidence-pack';
+import { buildSourceabilityLedgerFromEvidencePack } from '@/lib/agent-runtime/sourceability-ledger';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 
 const capsule = {
@@ -116,5 +118,49 @@ describe('capsule evidence pack', () => {
     expect(pack.memories).toHaveLength(1);
     expect(pack.openGaps).toContain('Graph Core is thin; graph mutation must stay approval-gated.');
     expect(formatEvidencePackPromptBlock(pack)).toContain('[D1:para-1]');
+  });
+
+  it('builds canonical capsule read receipts and sourceability ledgers from an evidence pack', async () => {
+    const pack = await buildCapsuleEvidencePack({
+      ownerUid: 'user-1',
+      capsuleId: 'cap-1',
+      objective: 'Draft an options memo',
+    }, {
+      now: () => new Date('2026-05-16T12:00:00.000Z'),
+      getCapsule: async () => capsule,
+      listKnowledgeDocuments: async () => [],
+      retrieveRelevantChunks: async () => [],
+      listOutputCapsules: async () => [],
+      listCapsuleMemories: async () => [],
+    });
+
+    const readReceipt = buildCapsuleReadReceiptFromEvidencePack(pack, {
+      selectedTools: ['context-resolve', 'capsule-evidence-pack', 'sourceability-reviewer'],
+      outputTarget: 'memo_studio',
+      groundingPosture: 'Source review requested',
+      constraints: ['Do not mutate graph state without approval.'],
+    });
+    expect(readReceipt).toMatchObject({
+      capsuleId: 'cap-1',
+      capsuleVersion: 3,
+      outputTarget: 'memo_studio',
+      selectedTools: ['context-resolve', 'capsule-evidence-pack', 'sourceability-reviewer'],
+      groundingPosture: 'Source review requested',
+      sourceCount: 1,
+      documentCount: 0,
+    });
+    expect(readReceipt.contextGaps).toEqual(expect.arrayContaining([
+      'No Knowledge Library documents are attached.',
+      'No retrievable paragraph chunks matched the objective.',
+    ]));
+
+    const ledger = buildSourceabilityLedgerFromEvidencePack(pack, {
+      outputTarget: 'memo_studio',
+      generatedAt: '2026-05-16T12:00:00.000Z',
+    });
+    expect(ledger.summary.totalClaims).toBeGreaterThan(0);
+    expect(ledger.summary.unsupportedClaims).toBeGreaterThan(0);
+    expect(ledger.claims.some((claim) => claim.supportLabel === 'unsupported')).toBe(true);
+    expect(ledger.outputReadiness.generatedAt).toBe('2026-05-16T12:00:00.000Z');
   });
 });
