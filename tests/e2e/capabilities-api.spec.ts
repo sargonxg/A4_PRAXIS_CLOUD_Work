@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 /**
  * Lightweight smoke test for the platform's public-surface contracts. Runs
  * unauthenticated to verify:
- *   - Landing page loads and mentions the current policy-core value proposition
+ *   - Home loads as the app-first PRAXIS workbench preview
  *   - /api/capabilities is reachable (expects 401 unauth or 200 with matrix)
  *   - /api/settings/api-keys returns 401 unauth
  *
@@ -14,18 +14,12 @@ import { test, expect } from '@playwright/test';
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 test.describe('public surface smoke', () => {
-  test('landing page renders the current landing pitch', async ({ page }) => {
+  test('home renders the app-first PRAXIS workbench preview', async ({ page }) => {
     await page.goto(`${BASE}/`);
-    await expect(page.getByRole('heading', { name: /Build the right context for policy AI\./i })).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toHaveAttribute('href', '/app');
-    await expect(page.getByText(/User Core/i).first()).toBeVisible();
-    await expect(page.getByText(/Situation Core/i).first()).toBeVisible();
-    await expect(page.getByText(/Source Core/i).first()).toBeVisible();
-    await expect(page.getByText(/Graph Core/i).first()).toBeVisible();
-    await expect(page.getByText(/Time Core/i).first()).toBeVisible();
-    await expect(page.getByText(/Output Core/i).first()).toBeVisible();
+    await expect(page.locator('[data-testid="app-first-root"]')).toHaveCount(1, { timeout: 15_000 });
+    await expect(page.locator('[data-testid="tasklet-praxis-workbench"]')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/Compose your reasoning and policy products/i).first()).toBeVisible();
+    await expect(page.locator('[data-testid="mobile-context-chain-bar"]')).toHaveCount(1);
   });
 
   test('capabilities route requires auth (401)', async ({ request }) => {
@@ -38,8 +32,8 @@ test.describe('public surface smoke', () => {
     expect([401, 403]).toContain(res.status());
   });
 
-  test('admin diagnostics requires admin (401 unauth, 403 non-admin)', async ({ request }) => {
-    const res = await request.get(`${BASE}/api/admin/diagnostics`);
+  test('admin system health requires admin or remains hidden', async ({ request }) => {
+    const res = await request.get(`${BASE}/api/admin/system-health`);
     expect([401, 403]).toContain(res.status());
   });
 });
