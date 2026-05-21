@@ -33,8 +33,12 @@ export default function LandingLayout({
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
+    document.documentElement.dataset.praxisHydrated = "true";
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      delete document.documentElement.dataset.praxisHydrated;
+      window.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   useEffect(() => {

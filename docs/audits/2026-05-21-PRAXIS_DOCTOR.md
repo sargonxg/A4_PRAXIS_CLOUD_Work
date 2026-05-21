@@ -1,22 +1,22 @@
 # PRAXIS Doctor - 2026-05-21
 
-- Run ID: `doctor-20260521T161134738Z`
+- Run ID: `doctor-20260521T202504469Z`
 - Base URL: `https://praxis.tacitus.me`
 - Project: `praxisbytacitus`
 - Region: `us-central1`
 - Branch: `main`
-- Commit: `76e654bddae8aeda482c6d63a5a3fa8a9e0be94a`
-- Cloud Run revision: `praxis-frontend-00668-zmb`
-- Diagnostics status: `blocked`
+- Commit: `1ea444db3736bf00021fa91e360fae29d2ad9e32`
+- Cloud Run revision: `praxis-frontend-00676-gwx`
+- Diagnostics status: `warn`
 - Stale diagnostic artifacts: `4`
-- Summary: PASS=21, WARN=3, FAIL=1, BLOCKED=0
+- Summary: PASS=29, WARN=2, FAIL=0, BLOCKED=1
 
 ## Red Flags
 
 | Severity | Lane | Finding | Summary |
 | --- | --- | --- | --- |
-| warn | security-dependency | Dependency advisory summary | 24 advisory group(s) require forced or breaking updates |
-| blocked | blocking | canary-authenticated-session | Firebase canary login failed with HTTP 400 |
+| warn | security-dependency | Dependency advisory summary | 23 advisory group(s) require forced or breaking updates |
+| warn | canary-gated | Authenticated canary gate | Canary writes disabled: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD |
 | warn | stale-artifact | Stale diagnostic artifacts | 4 saved doctor/eval artifact(s) do not match HEAD or the latest ready Cloud Run revision. |
 
 ## Checks
@@ -25,11 +25,19 @@
 | --- | --- | --- | --- |
 | PASS | repo-and-deployability | repo-branch | Repo is on main |
 | PASS | repo-and-deployability | repo-commit | Commit SHA resolved |
-| WARN | repo-and-deployability | repo-dirty-state | Working tree has uncommitted changes |
+| PASS | repo-and-deployability | repo-dirty-state | Working tree is clean |
 | PASS | repo-and-deployability | repo-origin-sync | origin/main...HEAD = 0	0 |
-| WARN | repo-and-deployability | package-audit-summary | 24 advisory group(s) require forced or breaking updates |
+| PASS | repo-and-deployability | typecheck | npm run typecheck passed |
+| PASS | repo-and-deployability | build | npm run build passed |
+| PASS | repo-and-deployability | lint | npm run lint passed |
+| PASS | repo-and-deployability | vitest-run-tests-unit-lib-agent-runtime-tests-unit-lib-health | npx vitest run tests/unit/lib/agent-runtime tests/unit/lib/health passed |
+| PASS | repo-and-deployability | audit-ai-routes-mjs | node scripts/audit-ai-routes.mjs passed |
+| PASS | repo-and-deployability | audit-repo-shape | npm run audit:repo-shape passed |
+| PASS | repo-and-deployability | audit-gcp | npm run audit:gcp passed |
+| PASS | repo-and-deployability | audit-gate | npm run audit:gate passed |
+| WARN | repo-and-deployability | package-audit-summary | 23 advisory group(s) require forced or breaking updates |
 | PASS | local-cloud-auth | auth-doctor | npm run auth:doctor passed |
-| PASS | gcp-firebase-infrastructure | cloud-run-praxis-frontend | praxis-frontend serving praxis-frontend-00668-zmb |
+| PASS | gcp-firebase-infrastructure | cloud-run-praxis-frontend | praxis-frontend serving praxis-frontend-00676-gwx |
 | PASS | gcp-firebase-infrastructure | cloud-run-private-sql-networking | Cloud Run has private networking for the attached Cloud SQL instance |
 | PASS | gcp-firebase-infrastructure | agent-worker-runtime-env | Agent worker dispatch URL and auth env are configured |
 | PASS | gcp-firebase-infrastructure | agent-run-queue | gcloud tasks queues describe agent-runs --location=us-central1 --project=praxisbytacitus passed |
@@ -46,8 +54,7 @@
 | WARN | live-production-health | health-core | HTTP 200 from https://praxis.tacitus.me/api/health |
 | PASS | live-production-health | health-runtime | HTTP 200 from https://praxis.tacitus.me/api/health/runtime |
 | PASS | live-production-health | health-agentic-search | HTTP 200 from https://praxis.tacitus.me/api/health/agentic-search |
-| PASS | authenticated-full-canary | canary-write-gate | Canary writes enabled for already-onboarded-test-user@example.com |
-| FAIL | authenticated-full-canary | canary-authenticated-session | Firebase canary login failed with HTTP 400 |
+| BLOCKED | authenticated-full-canary | canary-write-gate | Canary writes disabled: PRAXIS_DOCTOR_WRITE_CANARY=1, PRAXIS_CANARY_EMAIL or TEST_FIREBASE_EMAIL, PRAXIS_CANARY_PASSWORD or TEST_FIREBASE_PASSWORD |
 
 ## Evidence And Remediation
 
@@ -61,13 +68,13 @@ Evidence:
 
 Evidence:
 
-- `76e654bddae8aeda482c6d63a5a3fa8a9e0be94a`
+- `1ea444db3736bf00021fa91e360fae29d2ad9e32`
 
-### WARN repo-dirty-state
+### PASS repo-dirty-state
 
 Evidence:
 
-- `?? tests/unit/auth/ ?? tests/unit/components/praxis-background-contract.test.ts`
+- `clean`
 
 ### PASS repo-origin-sync
 
@@ -75,11 +82,59 @@ Evidence:
 
 - `0 0`
 
+### PASS typecheck
+
+Evidence:
+
+- `> tacitus-app@6.4.1 typecheck > tsc --noEmit`
+
+### PASS build
+
+Evidence:
+
+- `> tacitus-app@6.4.1 build > next build ▲ Next.js 16.2.6 (Turbopack) - Environments: .env.local - Experiments (use with caution): · serverActions Creating an optimized production build ... ✓ Compiled successfully in 28.8s Running TypeScript ... Finished TypeScript in 37.9s ... Collecting page data using 7 workers ... [firebase-admin] Initialized successfully with service account from FIREBASE_SERVICE_ACCOUNT_KEY [firebase-admin] Initialized successfully with service account from FIREBASE_SERVICE_`
+
+### PASS lint
+
+Evidence:
+
+- `> tacitus-app@6.4.1 lint > eslint C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\scripts\audit-ai-provider-isolation.ts 1:10 warning 'existsSync' is defined but never used. Allowed unused vars must match /^_/u @typescript-eslint/no-unused-vars C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work\scripts\sync-ecc-to-codex.mjs 48:10 warning 'tableBlock' is defined but never used. Allowed unused vars must match /^_/u @typescript-eslint/no-unused-vars C:\Users\giuli\ANTIGRAVI`
+
+### PASS vitest-run-tests-unit-lib-agent-runtime-tests-unit-lib-health
+
+Evidence:
+
+- `[1m[46m RUN [49m[22m [36mv4.1.1 [39m[90mC:/Users/giuli/ANTIGRAVITY/PRAXISMAY2026/A4_PRAXIS_CLOUD_Work[39m [2m Test Files [22m [1m[32m16 passed[39m[22m[90m (16)[39m [2m Tests [22m [1m[32m59 passed[39m[22m[90m (59)[39m [2m Start at [22m 16:27:32 [2m Duration [22m 5.75s[2m (transform 2.50s, setup 449ms, import 16.94s, tests 452ms, environment 5ms)[22m`
+
+### PASS audit-ai-routes-mjs
+
+Evidence:
+
+- `OK - 60 AI route files, 60 calibrated, 10 exempt (static-marker).`
+
+### PASS audit-repo-shape
+
+Evidence:
+
+- `> tacitus-app@6.4.1 audit:repo-shape > tsx scripts/audit-repo-shape.ts Repo shape audit passed. (static-marker)`
+
+### PASS audit-gcp
+
+Evidence:
+
+- `> tacitus-app@6.4.1 audit:gcp > node scripts/audit-gcp.mjs OK [api] Vertex AI API enabled OK [api] Firestore API enabled OK [api] Cloud Run API enabled OK [api] Cloud Build API enabled OK [api] Pub/Sub API enabled OK [api] Cloud Functions API enabled OK [api] Cloud Scheduler API enabled OK [api] Cloud Tasks API enabled OK [api] Cloud SQL Admin API enabled OK [api] Service Networking API enabled OK [api] Secret Manager API enabled OK [api] BigQuery API enabled OK [api] Artifact Registry API enabl`
+
+### PASS audit-gate
+
+Evidence:
+
+- `> tacitus-app@6.4.1 audit:gate > npm run typecheck && npm run build && npm run audit:routes && npm run audit:capsule-contract && npm run audit:capsule-memory-contract && npm run audit:output-capsule-storage && npm run audit:agent-process-contract && npm run audit:agent-runtime-proof && npm run audit:knowledge-library-contract && npm run audit:named-stack-contract && npm run audit:graph-proposal-review-contract && npm run audit:architecture-chain && npm run audit:repo-shape && npm run audit:archi`
+
 ### WARN package-audit-summary
 
 Evidence:
 
-- `{"total":39,"forcedOrBreaking":24}`
+- `{"total":32,"forcedOrBreaking":23}`
 
 Remediation:
 
@@ -95,7 +150,7 @@ Evidence:
 
 Evidence:
 
-- `{"service":"praxis-frontend","latestReadyRevisionName":"praxis-frontend-00668-zmb","traffic":[{"revisionName":"praxis-frontend-00668-zmb","percent":100,"latestRevision":true}],"ready":"True"}`
+- `{"service":"praxis-frontend","latestReadyRevisionName":"praxis-frontend-00676-gwx","traffic":[{"revisionName":"praxis-frontend-00676-gwx","percent":100,"latestRevision":true}],"ready":"True"}`
 
 ### PASS cloud-run-private-sql-networking
 
@@ -125,7 +180,7 @@ Evidence:
 
 Evidence:
 
-- `appEngineIntegrationMode: DISABLED concurrencyMode: PESSIMISTIC createTime: '2026-03-22T15:19:16.119019Z' databaseEdition: STANDARD deleteProtectionState: DELETE_PROTECTION_DISABLED earliestVersionTime: '2026-05-21T15:12:02.503583Z' etag: INmKzuHiypQDMPSV+ZPz+pMD freeTier: true keyPrefix: s locationId: nam5 name: projects/praxisbytacitus/databases/(default) pointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED realtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED type: FIRESTORE_NATIVE uid`
+- `appEngineIntegrationMode: DISABLED concurrencyMode: PESSIMISTIC createTime: '2026-03-22T15:19:16.119019Z' databaseEdition: STANDARD deleteProtectionState: DELETE_PROTECTION_DISABLED earliestVersionTime: '2026-05-21T19:37:32.708421Z' etag: INbN3I2ey5QDMPSV+ZPz+pMD freeTier: true keyPrefix: s locationId: nam5 name: projects/praxisbytacitus/databases/(default) pointInTimeRecoveryEnablement: POINT_IN_TIME_RECOVERY_DISABLED realtimeUpdatesMode: REALTIME_UPDATES_MODE_ENABLED type: FIRESTORE_NATIVE uid`
 
 ### PASS secret-manager-cookie
 
@@ -179,32 +234,31 @@ Evidence:
 
 Evidence:
 
-- `{"status":"ok","timestamp":"2026-05-21T16:12:20.357Z","checks":{"firestore":"ok","ai_provider":"ok","cookie_secret":"ok","vertex_adk":"ok","cognee_memory":"unconfigured","polar":"unconfigured"},"safeguards":{"authenticatedRateLimitPerMinute":100,"aiRequestLimits":{"maxBytes":750000,"maxMessages":50,"maxTextChars":250000},"highCostAiRoutesRequireAuth":true,"calibratedAiRoutesStartToolRuns":true,"genkitProvider":"vertex","genkitLocation":"us-central1","cogneeMemoryEnabled":false,"cogneeMode":"disa`
+- `{"status":"ok","timestamp":"2026-05-21T20:37:50.159Z","checks":{"firestore":"ok","ai_provider":"ok","cookie_secret":"ok","vertex_adk":"ok","cognee_memory":"unconfigured","polar":"unconfigured"},"safeguards":{"authenticatedRateLimitPerMinute":100,"aiRequestLimits":{"maxBytes":750000,"maxMessages":50,"maxTextChars":250000},"highCostAiRoutesRequireAuth":true,"calibratedAiRoutesStartToolRuns":true,"genkitProvider":"vertex","genkitLocation":"us-central1","cogneeMemoryEnabled":false,"cogneeMode":"disa`
 
 ### PASS health-runtime
 
 Evidence:
 
-- `{"status":"ok","summary":"Systems ready","checkedAt":"2026-05-21T16:12:20.556Z","debugHref":"/app/settings?tab=system","checks":[{"id":"frontend","label":"Frontend runtime","status":"ok","latencyMs":57},{"id":"firestore","label":"Firestore","status":"ok"},{"id":"backend","label":"Private backend","status":"ok"},{"id":"agent_ledger","label":"Deep work queue","status":"ok"},{"id":"agent_queue","label":"Agent task queue","status":"ok","latencyMs":57},{"id":"agent_worker","label":"Agent worker dispa`
+- `{"status":"ok","summary":"Systems ready","checkedAt":"2026-05-21T20:37:50.332Z","debugHref":"/app/settings?tab=system","checks":[{"id":"frontend","label":"Frontend runtime","status":"ok","latencyMs":52},{"id":"firestore","label":"Firestore","status":"ok"},{"id":"backend","label":"Private backend","status":"ok"},{"id":"agent_ledger","label":"Deep work queue","status":"ok"},{"id":"agent_queue","label":"Agent task queue","status":"ok","latencyMs":51},{"id":"agent_worker","label":"Agent worker dispa`
 
 ### PASS health-agentic-search
 
 Evidence:
 
-- `{"status":"degraded","summary":"Agentic search degraded","checkedAt":"2026-05-21T16:12:20.624Z","missing":["EXA_API_KEY"],"checks":[{"id":"ledger","label":"Cloud SQL run ledger","status":"ready","names":["AGENT_RUNTIME_DATABASE_URL","PRAXIS_DATABASE_URL","DATABASE_URL"],"missing":[],"detail":"AgentRun ledger can persist runs, events, tool calls, approvals, and artifacts.","required":true},{"id":"cloud_tasks_queue","label":"Cloud Tasks queue","status":"ready","names":["AGENT_RUN_TASKS_PROJECT","A`
+- `{"status":"degraded","summary":"Agentic search degraded","checkedAt":"2026-05-21T20:37:50.399Z","missing":["EXA_API_KEY"],"checks":[{"id":"ledger","label":"Cloud SQL run ledger","status":"ready","names":["AGENT_RUNTIME_DATABASE_URL","PRAXIS_DATABASE_URL","DATABASE_URL"],"missing":[],"detail":"AgentRun ledger can persist runs, events, tool calls, approvals, and artifacts.","required":true},{"id":"cloud_tasks_queue","label":"Cloud Tasks queue","status":"ready","names":["AGENT_RUN_TASKS_PROJECT","A`
 
-### PASS canary-write-gate
-
-Evidence:
-
-- `{"tag":"praxis-doctor-canary-20260521T161134738Z","email":"already-onboarded-test-user@example.com"}`
-
-### FAIL canary-authenticated-session
+### BLOCKED canary-write-gate
 
 Evidence:
 
-- `{"error":{"code":400,"message":"INVALID_LOGIN_CREDENTIALS","errors":[{"message":"INVALID_LOGIN_CREDENTIALS","domain":"global","reason":"invalid"}]}}`
+- `{"tag":"praxis-doctor-canary-20260521T202504469Z","email":null}`
+
+Remediation:
+
+- `Set PRAXIS_DOCTOR_WRITE_CANARY=1`
+- `Set PRAXIS_CANARY_EMAIL and PRAXIS_CANARY_PASSWORD for the isolated canary account`
 
 ## Canary Artifacts
 
-- planned: doctor-canary-workflow `praxis-doctor-canary-20260521T161134738Z`
+- blocked: doctor-canary-workflow `praxis-doctor-canary-20260521T202504469Z`

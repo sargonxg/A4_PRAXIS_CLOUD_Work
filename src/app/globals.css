@@ -640,11 +640,29 @@ body {
 }
 
 .context-chain {
-  border: 1px solid color-mix(in srgb, var(--color-mineral) 24%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-mineral) 34%, transparent);
   background:
-    linear-gradient(90deg, rgba(82, 102, 95, 0.08) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(244, 240, 231, 0.74));
-  background-size: 26px 100%, auto;
+    radial-gradient(circle at 8% 18%, color-mix(in srgb, var(--color-oxide) 14%, transparent) 0 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-mineral) 16%, transparent) 1px, transparent 1px),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-archive-paper-strong) 94%, white), color-mix(in srgb, var(--color-sage) 10%, var(--color-archive-paper)));
+  background-size: 34px 34px, 28px 100%, auto;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    inset 0 0 0 1px color-mix(in srgb, var(--color-lab-cyan) 8%, transparent),
+    0 16px 34px rgba(42, 48, 44, 0.08);
+}
+
+.context-chain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-oxide) 22%, transparent), transparent 36%),
+    linear-gradient(90deg, transparent 48%, color-mix(in srgb, var(--color-lab-cyan) 18%, transparent), transparent 68%),
+    linear-gradient(90deg, transparent 68%, color-mix(in srgb, var(--color-gold-500) 20%, transparent), transparent);
+  opacity: 0.65;
 }
 
 .futurist-ai-lab {
@@ -747,7 +765,7 @@ body {
 }
 
 .od-praxis-panel {
-  background: rgba(252, 250, 244, 0.86);
+  background: var(--color-archive-paper-strong);
   border: 1px solid color-mix(in srgb, var(--color-mineral) 22%, transparent);
   box-shadow: 0 18px 48px rgba(17, 24, 22, 0.055);
 }
@@ -762,6 +780,58 @@ body {
   border: 1px solid color-mix(in srgb, var(--color-mineral) 18%, transparent);
   background: rgba(252, 250, 244, 0.82);
   box-shadow: 0 1px 2px rgba(17, 24, 22, 0.035);
+}
+
+.praxis-workbench-panel,
+.praxis-shelf-panel,
+.praxis-card-panel,
+.praxis-menu-panel {
+  border: 1px solid color-mix(in srgb, var(--color-mineral) 24%, var(--color-app-border));
+  background: var(--color-archive-paper-strong);
+  color: var(--color-deep-ink);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 14px 36px rgba(17, 24, 22, 0.06);
+}
+
+.praxis-workbench-panel {
+  border-radius: 10px;
+}
+
+.praxis-shelf-panel {
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-archive-paper-strong) 96%, white), var(--color-archive-paper-strong)),
+    var(--color-archive-paper-strong);
+}
+
+.praxis-card-panel {
+  border-radius: 8px;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.praxis-menu-panel {
+  border-radius: 8px;
+  background: white;
+  color: var(--color-deep-ink);
+  box-shadow:
+    0 18px 48px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+}
+
+.praxis-select-control {
+  min-height: 44px;
+  border: 1px solid color-mix(in srgb, var(--color-mineral) 26%, var(--color-app-border));
+  background: white;
+  color: var(--color-deep-ink);
+  box-shadow: 0 1px 2px rgba(17, 24, 22, 0.04);
+}
+
+.praxis-select-control:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-clay) 58%, transparent);
+  outline-offset: 2px;
 }
 
 .praxis-checker-constellation {

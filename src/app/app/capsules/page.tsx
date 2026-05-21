@@ -6,7 +6,7 @@ type CapsulesPageProps = {
 
 export default async function CapsulesPage({ searchParams }: CapsulesPageProps) {
   const { lane } = await searchParams;
-  const initialFactoryLane = lane === 'repository' ? 'repository' : undefined;
+  const initialFactoryLane = lane === 'repository' || lane === 'sources' ? 'sources' : undefined;
 
   return <TaskletPraxisWorkbench mode="app" initialPanel="capsules" initialFactoryLane={initialFactoryLane} />;
 }

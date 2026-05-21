@@ -1,5 +1,7 @@
+'use client';
+
 import Link from 'next/link';
-import type { ButtonHTMLAttributes, ComponentType, ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ComponentType, type ReactNode } from 'react';
 import { ChevronDown, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -190,12 +192,77 @@ export function WorkActionMenu({
   children?: ReactNode;
   className?: string;
 }) {
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const panelId = useId();
+  const hasMenu = Boolean(children);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(event: PointerEvent) {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (buttonRef.current?.contains(target) || panelRef.current?.contains(target)) return;
+      setOpen(false);
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      setOpen(false);
+      buttonRef.current?.focus();
+    }
+
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  if (!hasMenu) {
+    return (
+      <button ref={buttonRef} type="button" className={cn('work-action-menu', className)} aria-label={label}>
+        <MoreHorizontal className="h-4 w-4" />
+        <span className="hidden sm:inline">{label}</span>
+      </button>
+    );
+  }
+
   return (
-    <button type="button" className={cn('work-action-menu', className)} aria-label={label}>
-      <MoreHorizontal className="h-4 w-4" />
-      <span className="hidden sm:inline">{label}</span>
-      {children ? <ChevronDown className="h-3.5 w-3.5" /> : null}
-    </button>
+    <div className="relative inline-flex">
+      <button
+        ref={buttonRef}
+        type="button"
+        className={cn('work-action-menu', className)}
+        aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <MoreHorizontal className="h-4 w-4" />
+        <span className="hidden sm:inline">{label}</span>
+        <ChevronDown className={cn('h-3.5 w-3.5 transition', open && 'rotate-180')} />
+      </button>
+      {open ? (
+        <div
+          ref={panelRef}
+          id={panelId}
+          role="menu"
+          data-testid="work-action-menu-panel"
+          className="praxis-menu-panel absolute right-0 top-[calc(100%+0.5rem)] z-50 grid w-64 gap-1 p-2"
+          onClick={(event) => {
+            const target = event.target as HTMLElement | null;
+            if (target?.closest('button,a')) setOpen(false);
+          }}
+        >
+          {children}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

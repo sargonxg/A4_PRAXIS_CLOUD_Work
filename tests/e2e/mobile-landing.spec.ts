@@ -46,6 +46,7 @@ test.describe("Mobile landing — iPhone 13 (390×844)", () => {
     page,
   }) => {
     await page.goto(BASE_URL);
+    await page.waitForFunction(() => document.documentElement.dataset.praxisHydrated === "true");
     const toggle = page.locator('button[aria-label="Toggle menu"]');
     await expect(toggle).toBeVisible();
     await toggle.click();

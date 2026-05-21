@@ -76,6 +76,7 @@
     "audit:simplification": "npm run audit:route-consolidation && npm run audit:no-normal-user-archive && npm run audit:admin-only-internals && npm run audit:next-moves && npm run audit:context-health && npm run audit:names",
     "audit:gcp": "node scripts/audit-gcp.mjs",
     "audit:design": "node scripts/audit-design.mjs",
+    "audit:capsule-legibility": "node scripts/audit-capsule-workspace-legibility.mjs",
     "audit:design:strict": "node scripts/audit-design.mjs --strict",
     "verify:design": "node scripts/verify-design-shipped.mjs",
     "test:mobile": "playwright test tests/e2e/mobile-landing.spec.ts",
