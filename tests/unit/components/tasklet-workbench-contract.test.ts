@@ -269,6 +269,24 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('function capsuleTypeCount(');
   });
 
+  it('keeps capsule filter counts tied to real visible capsules instead of summed facets', () => {
+    expect(source).toContain('const filterCountTotal = visibleTotalCount ?? visibleItems.length');
+    expect(source).toContain('visibleTotalCount={stats.visibleCapsules}');
+    expect(source).toContain('function domainOrPolicyTeamMatchesCapsule');
+    expect(source).toContain('domainOrPolicyTeamMatchesCapsule(capsule, domainFilter)');
+    expect(source).not.toContain('visibleItems.reduce((sum, item) => sum + item.count, 0)');
+  });
+
+  it('separates capsule card inspection from capsule chat and keeps chat available inside the inspector', () => {
+    expect(source).toContain('function viewCapsuleCard');
+    expect(source).toContain('onView');
+    expect(source).toContain('View capsule');
+    expect(source).toContain('data-testid="capsule-inspector-chat-panel"');
+    expect(source).toContain('data-testid="capsule-inspector-chat-button"');
+    expect(source).toContain('onAskCapsule');
+    expect(source).toContain('chatMessages={chatMessages}');
+  });
+
   it('uses the login-matched shared brand treatment in the app workbench', () => {
     expect(source).toContain("import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip'");
     expect(source).toContain('<PraxisBrandChip');

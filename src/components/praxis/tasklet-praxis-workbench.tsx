@@ -1698,12 +1698,19 @@ export function TaskletPraxisWorkbench({
     if (isAuthenticated) void sendToPraxis(selectedAgent, nextPrompt);
   }
 
-  function chatWithCapsule(capsule: PraxisCapsuleSummary) {
+  function viewCapsuleCard(capsule: PraxisCapsuleSummary) {
     selectCapsuleCard(capsule);
-    const nextPrompt = `Use the capsule "${capsule.label}" as context. Help me decide what to improve, what sources to add, and what this capsule is ready to produce.`;
+    setInspectorOpen(true);
+  }
+
+  function chatWithCapsule(capsule: PraxisCapsuleSummary, overridePrompt?: string) {
+    const directQuestion = overridePrompt?.trim();
+    if (!directQuestion) selectCapsuleCard(capsule);
+    const nextPrompt = directQuestion || `Use the capsule "${capsule.label}" as context. Help me decide what to improve, what sources to add, and what this capsule is ready to produce.`;
     setPrompt(nextPrompt);
     setActiveTab('analysis');
     setStatus(`${capsule.label} is ready in Ask PRAXIS.`);
+    if (directQuestion) void sendToPraxis(selectedAgent, nextPrompt);
   }
 
   async function archiveCapsuleCard(capsule: PraxisCapsuleSummary) {
@@ -2990,6 +2997,7 @@ export function TaskletPraxisWorkbench({
                         onBuildOwn={openBuildYourOwnKnowledge}
                         onSelect={selectCapsuleCard}
                         onAdd={applyCapsuleCard}
+                        onView={viewCapsuleCard}
                         onInspect={chatWithCapsule}
                         onImprove={improveCapsuleCard}
                         onRateUsefulness={rateCapsuleUsefulness}
@@ -3004,6 +3012,7 @@ export function TaskletPraxisWorkbench({
                         onBuildOwn={openBuildYourOwnKnowledge}
                         onSelect={selectCapsuleCard}
                         onAdd={applyCapsuleCard}
+                        onView={viewCapsuleCard}
                         onInspect={chatWithCapsule}
                         onImprove={improveCapsuleCard}
                         onRateUsefulness={rateCapsuleUsefulness}
@@ -3025,6 +3034,7 @@ export function TaskletPraxisWorkbench({
                         compact={isCapsuleRepositoryPage || !isRepositoryPage}
                         onSelect={() => selectCapsuleCard(capsule)}
                         onAdd={() => applyCapsuleCard(capsule)}
+                        onView={() => viewCapsuleCard(capsule)}
                         onInspect={() => chatWithCapsule(capsule)}
                         onImprove={() => improveCapsuleCard(capsule)}
                         onRateUsefulness={(rating) => void rateCapsuleUsefulness(capsule, rating)}
@@ -3127,6 +3137,7 @@ export function TaskletPraxisWorkbench({
                   onBuildOwn={openBuildYourOwnKnowledge}
                   onSelect={selectCapsuleCard}
                   onAdd={applyCapsuleCard}
+                  onView={viewCapsuleCard}
                   onInspect={chatWithCapsule}
                   onImprove={improveCapsuleCard}
                   onDownload={(capsule) => void downloadCapsulePackage(capsule)}
@@ -3142,6 +3153,7 @@ export function TaskletPraxisWorkbench({
                       compact={isCapsuleRepositoryPage || !isRepositoryPage}
                       onSelect={() => selectCapsuleCard(capsule)}
                       onAdd={() => applyCapsuleCard(capsule)}
+                      onView={() => viewCapsuleCard(capsule)}
                       onInspect={() => chatWithCapsule(capsule)}
                       onImprove={() => improveCapsuleCard(capsule)}
                       onRateUsefulness={(rating) => void rateCapsuleUsefulness(capsule, rating)}
@@ -3194,6 +3206,8 @@ export function TaskletPraxisWorkbench({
         <CapsuleInspectorSheet
           capsule={selectedCapsule}
           policyTeam={selectedPolicyTeam}
+          chatMessages={chatMessages}
+          isStreaming={isStreaming}
           onClose={() => setInspectorOpen(false)}
           onImprove={() => {
             setInspectorOpen(false);
@@ -3203,6 +3217,9 @@ export function TaskletPraxisWorkbench({
             setInspectorOpen(false);
             setRepositoryOpen(true);
             void refreshRepository();
+          }}
+          onAskCapsule={(question) => {
+            if (selectedCapsule) chatWithCapsule(selectedCapsule, question);
           }}
           onRateUsefulness={(rating) => selectedCapsule ? void rateCapsuleUsefulness(selectedCapsule, rating) : undefined}
         />
@@ -3912,10 +3929,10 @@ function taxonomyTypeItems(stats: CapsuleTaxonomyStats) {
 function taxonomyDomainItems(stats: CapsuleTaxonomyStats, includeRepairStates: boolean) {
   const items = stats.domains
     .filter((item) => includeRepairStates || !item.repairState)
-    .slice(0, 8);
+    .slice(0, 12);
   return items.length ? items : capsuleDomainFilters
     .filter((item) => item.id !== 'all')
-    .slice(0, 6)
+    .slice(0, 10)
     .map((item) => ({ id: item.id, label: item.label, count: taxonomyDomainFilterCount(stats, item.id) }));
 }
 
@@ -3941,13 +3958,13 @@ function taxonomyDomainFilterCount(stats: CapsuleTaxonomyStats, domainFilter: st
   const policyTeam = getPolicyTeamCategory(domainFilter);
   if (policyTeam) return stats.policyTeams.find((item) => item.id === policyTeam.id)?.count ?? 0;
   if (domainFilter === 'other') {
-    const knownCount = capsuleDomainFilters
-      .filter((filter) => filter.id !== 'all' && filter.id !== 'other')
-      .reduce((sum, filter) => sum + taxonomyDomainFilterCount(stats, filter.id), 0);
-    return Math.max(0, stats.visibleCapsules - knownCount);
+    return stats.domains
+      .filter((item) => item.repairState)
+      .reduce((sum, item) => sum + item.count, 0);
   }
-  return (stats.domains.find((item) => item.id === domainFilter)?.count ?? 0) +
-    (stats.policyTeams.find((item) => item.id === domainFilter)?.count ?? 0);
+  const domainCount = stats.domains.find((item) => item.id === domainFilter)?.count ?? 0;
+  const teamCount = stats.policyTeams.find((item) => item.id === domainFilter)?.count ?? 0;
+  return Math.max(domainCount, teamCount);
 }
 
 function publicCategoryForTemplate(templateId: string): PolicyTeamCategory | null {
@@ -4087,11 +4104,15 @@ function capsuleMatchesDomain(capsule: PraxisCapsuleSummary, domainFilter: strin
   if (domainFilter === 'all') return true;
   const taxonomy = resolveCapsuleTaxonomy(capsule);
   if (domainFilter === 'other') {
-    return !capsuleDomainFilters
-      .filter((filter) => filter.id !== 'all' && filter.id !== 'other')
-      .some((filter) => capsuleMatchesDomain(capsule, filter.id));
+    return taxonomy.domains.some((domain) => domain.repairState);
   }
-  return taxonomy.domains.some((domain) => domain.id === domainFilter);
+  return domainOrPolicyTeamMatchesCapsule(capsule, domainFilter);
+}
+
+function domainOrPolicyTeamMatchesCapsule(capsule: PraxisCapsuleSummary, domainFilter: string): boolean {
+  const taxonomy = resolveCapsuleTaxonomy(capsule);
+  return taxonomy.domains.some((domain) => domain.id === domainFilter) ||
+    taxonomy.policyTeams.some((team) => team.id === domainFilter);
 }
 
 function capsuleMatchesPolicyTeam(capsule: PraxisCapsuleSummary, policyTeamFilter: string): boolean {
@@ -4329,6 +4350,7 @@ function CapsuleTaxonomyFilterBar({
           selectedId={typeId}
           onSelect={onType}
           showRepairStates={showRepairStates}
+          visibleTotalCount={stats.visibleCapsules}
         />
         <CategoryAxisPanel
           label="Domains"
@@ -4336,6 +4358,7 @@ function CapsuleTaxonomyFilterBar({
           selectedId={domainId}
           onSelect={onDomain}
           showRepairStates={showRepairStates}
+          visibleTotalCount={stats.visibleCapsules}
         />
         <CategoryAxisPanel
           label="Policy Teams"
@@ -4343,6 +4366,7 @@ function CapsuleTaxonomyFilterBar({
           selectedId={policyTeamId}
           onSelect={onPolicyTeam}
           showRepairStates={showRepairStates}
+          visibleTotalCount={stats.visibleCapsules}
         />
       </div>
     </div>
@@ -4355,19 +4379,22 @@ function CategoryAxisPanel({
   selectedId,
   onSelect,
   showRepairStates,
+  visibleTotalCount,
 }: {
   label: string;
   items: Array<{ id: string; label: string; count: number; repairState?: 'custom' | 'unknown' }>;
   selectedId?: string;
   onSelect: (id: string) => void;
   showRepairStates: boolean;
+  visibleTotalCount?: number;
 }) {
   const visibleItems = showRepairStates ? items : items.filter((item) => !item.repairState);
+  const filterCountTotal = visibleTotalCount ?? visibleItems.length;
   return (
     <section className="rounded-lg border border-slate-200 bg-white/80 p-3" aria-label={`${label} category map`}>
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-slate-900">{label}</p>
-        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{visibleItems.reduce((sum, item) => sum + item.count, 0)}</span>
+        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{filterCountTotal}</span>
       </div>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {visibleItems.map((item) => (
@@ -4823,6 +4850,7 @@ function FeaturedExpertPicksShelf({
   onBuildOwn,
   onSelect,
   onAdd,
+  onView,
   onInspect,
   onImprove,
   onRateUsefulness,
@@ -4839,6 +4867,7 @@ function FeaturedExpertPicksShelf({
   onBuildOwn: () => void;
   onSelect: (capsule: PraxisCapsuleSummary) => void;
   onAdd: (capsule: PraxisCapsuleSummary) => void;
+  onView: (capsule: PraxisCapsuleSummary) => void;
   onInspect: (capsule: PraxisCapsuleSummary) => void;
   onImprove: (capsule: PraxisCapsuleSummary) => void;
   onRateUsefulness?: (capsule: PraxisCapsuleSummary, rating: number) => void;
@@ -4870,6 +4899,7 @@ function FeaturedExpertPicksShelf({
               expertPick
               onSelect={() => onSelect(capsule)}
               onAdd={() => onAdd(capsule)}
+              onView={() => onView(capsule)}
               onInspect={() => onInspect(capsule)}
               onImprove={() => onImprove(capsule)}
               onRateUsefulness={(rating) => onRateUsefulness?.(capsule, rating)}
@@ -4962,6 +4992,7 @@ function CapsuleCard({
   expertPick = false,
   onSelect,
   onAdd,
+  onView,
   onInspect,
   onImprove,
   onRateUsefulness,
@@ -4978,6 +5009,7 @@ function CapsuleCard({
   expertPick?: boolean;
   onSelect: () => void;
   onAdd: () => void;
+  onView: () => void;
   onInspect: () => void;
   onImprove: () => void;
   onRateUsefulness?: (rating: number) => void;
@@ -5116,6 +5148,7 @@ function CapsuleCard({
         >
           <GripVertical className="h-3.5 w-3.5" />
         </button>
+        <button type="button" onClick={onView} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">View capsule</button>
         <button type="button" onClick={onInspect} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Chat</button>
         <button type="button" onClick={onImprove} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Improve</button>
         <button type="button" onClick={onDownload} className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
@@ -6118,18 +6151,25 @@ function RepositorySheet({
 function CapsuleInspectorSheet({
   capsule,
   policyTeam,
+  chatMessages,
+  isStreaming,
   onClose,
   onImprove,
   onRepository,
+  onAskCapsule,
   onRateUsefulness,
 }: {
   capsule: PraxisCapsuleSummary | null;
   policyTeam: PolicyTeamCategory | null;
+  chatMessages: ChatMessage[];
+  isStreaming: boolean;
   onClose: () => void;
   onImprove: () => void;
   onRepository: () => void;
+  onAskCapsule: (question: string) => void;
   onRateUsefulness: (rating: number) => void;
 }) {
+  const [inspectorPrompt, setInspectorPrompt] = useState('');
   const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
   const meta = capsule ? capsuleCategoryMeta(capsule) : null;
   const refs = capsule?.coreRefs;
@@ -6153,6 +6193,13 @@ function CapsuleInspectorSheet({
   const audit = capsuleQualityAuditForSummary(capsule);
   const enrichmentReceipt = buildCapsuleEnrichmentReceipt(capsule);
   const proposals = capsuleImprovementProposalsForSummary(capsule);
+  const recentChatMessages = chatMessages.slice(-4).filter((message) => message.text.trim());
+  function askFromInspector(question?: string) {
+    const clean = (question ?? inspectorPrompt).trim();
+    if (!clean || !capsule) return;
+    onAskCapsule(clean);
+    setInspectorPrompt('');
+  }
   return (
     <div className="fixed inset-0 z-40 bg-black/25" data-testid="capsule-inspector-sheet">
       <aside className="dossier-spine ml-auto flex h-full w-full max-w-xl flex-col overflow-y-auto p-5 shadow-2xl">
@@ -6196,6 +6243,60 @@ function CapsuleInspectorSheet({
             testId="capsule-inspector-usefulness-rating"
             onRate={onRateUsefulness}
           />
+        ) : null}
+        {capsule ? (
+          <form
+            className="mt-5 rounded-lg border border-slate-200 bg-white/85 p-4"
+            data-testid="capsule-inspector-chat-panel"
+            onSubmit={(event) => {
+              event.preventDefault();
+              askFromInspector();
+            }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-400">Chat with this capsule</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">Ask PRAXIS from the inspected capsule context without leaving the card.</p>
+              </div>
+              {isStreaming ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> : null}
+            </div>
+            {recentChatMessages.length ? (
+              <div className="mt-3 max-h-36 space-y-2 overflow-y-auto rounded-md bg-slate-50 p-2">
+                {recentChatMessages.map((message, index) => (
+                  <p key={`${message.role}-${index}`} className="text-xs leading-5 text-slate-600">
+                    <span className="font-semibold text-slate-800">{message.role === 'assistant' ? 'PRAXIS' : 'You'}:</span> {message.text.slice(0, 360)}
+                  </p>
+                ))}
+              </div>
+            ) : null}
+            <textarea
+              value={inspectorPrompt}
+              onChange={(event) => setInspectorPrompt(event.target.value)}
+              rows={3}
+              placeholder={`Ask about ${capsule.label}: source gaps, use cases, risks, or next action`}
+              className="mt-3 w-full resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm leading-5 text-slate-800 outline-none focus:border-[color:var(--color-clay)]"
+            />
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="submit"
+                data-testid="capsule-inspector-chat-button"
+                disabled={isStreaming || !inspectorPrompt.trim()}
+                className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+                Ask PRAXIS
+              </button>
+              <button type="button" onClick={() => askFromInspector(`Find the source gaps and weak assumptions inside "${capsule.label}".`)} className="rounded-md border border-slate-200 px-2.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                Source gaps
+              </button>
+              <button type="button" onClick={() => askFromInspector(`Explain how to use "${capsule.label}" in a policy workflow and what output it is ready to produce.`)} className="rounded-md border border-slate-200 px-2.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                How to use
+              </button>
+              <button type="button" onClick={() => askFromInspector(`Propose review-gated improvements for "${capsule.label}" without mutating the canonical capsule.`)} className="rounded-md border border-slate-200 px-2.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                Improve safely
+              </button>
+            </div>
+          </form>
         ) : null}
         {richProfile ? (
           <div className="mt-5 space-y-2" data-testid="capsule-rich-profile">

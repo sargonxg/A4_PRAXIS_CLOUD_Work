@@ -1,19 +1,19 @@
 {
   "ok": true,
   "catalogVersion": "2026-05-21-desk-officer-review-v6",
-  "total": 84,
+  "total": 104,
   "counts": {
     "situation": 30,
-    "tool": 30,
+    "tool": 50,
     "output": 19,
     "user": 5
   },
   "expected": {
-    "total": 84,
+    "total": 104,
     "counts": {
       "output": 19,
       "situation": 30,
-      "tool": 30,
+      "tool": 50,
       "user": 5
     }
   },
@@ -592,6 +592,186 @@
       "domain": "options-mapping",
       "sourceCount": 2,
       "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-toulmin-argument-scaffold",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-stasis-question-ladder",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-hermeneutic-circle-reader",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-reflective-equilibrium-workbench",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-abductive-explanation-generator",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-argument-scheme-critical-questions",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-pragma-dialectical-discussion-map",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-audience-adherence-map",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-ethos-logos-pathos-kairos-lens",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-wicked-problem-boundary-map",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-conceptual-distinction-builder",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-category-error-detector",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-burden-of-proof-allocator",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-steelman-ironman-red-team-triad",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-narrative-frame-audit",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-moral-tradeoff-matrix",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-institutional-logic-lens",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-epistemic-trust-ledger",
+      "category": "tool",
+      "domain": "source-intake",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-analogy-fitness-test",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-decision-rhetoric-converter",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 3,
+      "excerptCount": 3,
       "compatibleCount": 3,
       "richProfile": true
     },

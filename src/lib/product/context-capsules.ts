@@ -383,11 +383,21 @@ export interface CapsuleStarterRichProfile {
 
 export interface CapsuleStarterDeviceProfile {
   deviceKind: string;
+  reasoningOperation: string;
+  activationCriteria: string[];
+  inputContract: string[];
+  outputGrammar: string[];
   methodSteps: string[];
   bestInputs: string[];
   expectedOutputs: string[];
+  disconfirmingChecks: string[];
   failureModes: string[];
   humanReviewGate: string;
+  confidencePolicy: string;
+  forgettingPolicy: string;
+  crossCapsulePairings: string[];
+  misuseWarnings: string[];
+  reviewGateType: string;
   agentInstructions: string;
   sourceabilityRequirements: string[];
 }
@@ -979,6 +989,7 @@ function starter(
       ] : []),
       ...(deviceProfile ? [
         { label: 'Tools/Thinking Devices', detail: `${deviceProfile.deviceKind}: ${deviceProfile.methodSteps.slice(0, 4).join(' ')}` },
+        { label: 'Device Policy', detail: `${deviceProfile.reasoningOperation}: ${deviceProfile.activationCriteria.slice(0, 2).join(' ')}` },
         { label: 'Review Gates', detail: deviceProfile.humanReviewGate },
       ] : []),
       { label: 'Decision Use', detail: richProfile.decisionPrompts.slice(0, 2).join(' ') },
@@ -1131,6 +1142,21 @@ function buildStarterDeviceProfile(
   const deviceKind = overrides.deviceKind ?? label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48);
   return {
     deviceKind,
+    reasoningOperation: overrides.reasoningOperation ?? 'audit and structure a decision-relevant reasoning step',
+    activationCriteria: overrides.activationCriteria ?? [
+      'Attach when the answer contains a decision, claim, explanation, persuasion task, or review-sensitive recommendation.',
+      'Attach when context quality is uneven and the agent needs a named intellectual operation instead of generic analysis.',
+    ],
+    inputContract: overrides.inputContract ?? [
+      'Active situation capsule or user-provided problem statement with scope and dates.',
+      'At least one source, document, or explicit note that the claim is unsourced.',
+      'Target output or decision owner so the device can produce usable structure.',
+    ],
+    outputGrammar: overrides.outputGrammar ?? [
+      'Start with the reasoning operation and the question being tested.',
+      'Use rows or sections for claims, evidence, caveats, disconfirming checks, and next actions.',
+      'End with confidence, review gate, and what must be refreshed before reuse.',
+    ],
     methodSteps: overrides.methodSteps ?? [
       `Name the decision or claim that ${label} is testing before producing advice.`,
       `Separate facts, assumptions, uncertainties, actors, rules, and output needs into distinct rows.`,
@@ -1146,11 +1172,26 @@ function buildStarterDeviceProfile(
       `${label} table with claims, evidence, caveats, and next actions.`,
       'Review notes that identify which conclusions can be reused and which must stay provisional.',
     ],
+    disconfirmingChecks: overrides.disconfirmingChecks ?? [
+      'Name the strongest contrary evidence, alternative framing, or missing source that would weaken the output.',
+      'Identify which conclusion would change if a load-bearing assumption fails.',
+    ],
     failureModes: overrides.failureModes ?? [
       'Treating the device as a conclusion generator rather than a review scaffold.',
       'Collapsing unsupported assumptions, actor incentives, and sourced facts into the same confidence level.',
     ],
     humanReviewGate: overrides.humanReviewGate ?? 'Human review is required before relying on the device for external advice, graph promotion, or final output approval.',
+    confidencePolicy: overrides.confidencePolicy ?? 'Use low, moderate, or high confidence only after evidence quality, freshness, alternatives, and disconfirming checks are visible.',
+    forgettingPolicy: overrides.forgettingPolicy ?? 'Expire or demote device conclusions when sources become stale, the situation changes, or the output is reused outside the reviewed scope; revalidate before promotion.',
+    crossCapsulePairings: overrides.crossCapsulePairings ?? [
+      'starter-tool-sourceability-matrix',
+      'starter-output-principals-decision-memo',
+    ],
+    misuseWarnings: overrides.misuseWarnings ?? [
+      'Do not use this device to launder speculation into a confident recommendation.',
+      'Do not skip the sourceability or human-review gate when the output affects real decisions.',
+    ],
+    reviewGateType: overrides.reviewGateType ?? 'sourceability-human-judgment',
     agentInstructions: overrides.agentInstructions ?? `Use ${label} as an intellectual device. Apply the method steps explicitly, cite the active sources, show failure modes, and stop at the human review gate before finalizing.`,
     sourceabilityRequirements: overrides.sourceabilityRequirements ?? [
       'Every decision-critical claim must point to a source receipt, attached document, or explicit uncertainty note.',
@@ -1303,6 +1344,436 @@ function sourcePackForDomain(domain: CapsuleStarterDomain): CapsuleStarterSource
     ],
   };
   return normalizeStarterSourcePack(byDomain[domain] ?? []);
+}
+
+const REASONING_DEVICE_SOURCE_REFERENCES: Record<string, CapsuleStarterSource> = {
+  toulmin: { id: 'purdue-toulmin-argument', label: 'Purdue OWL Toulmin argument method', url: 'https://owl.purdue.edu/owl/general_writing/academic_writing/historical_perspectives_on_argumentation/toulmin_argument.html', sourceType: 'public-library', relevance: 'Claim, grounds, warrant, backing, qualifier, and rebuttal structure for inspectable arguments.', publisher: 'Purdue OWL', date: '2026', reliabilityTier: 2 },
+  stasis: { id: 'purdue-stasis-theory', label: 'Purdue OWL stasis theory guide', url: 'https://owl.purdue.edu/owl/general_writing/the_writing_process/stasis_theory/index.html', sourceType: 'public-library', relevance: 'Fact, definition, quality, and policy questions for locating disagreement before drafting.', publisher: 'Purdue OWL', date: '2026', reliabilityTier: 2 },
+  rhetoric: { id: 'purdue-rhetorical-situation', label: 'Purdue OWL rhetorical situation guide', url: 'https://owl.purdue.edu/owl/general_writing/academic_writing/rhetorical_situation/aristotles_rhetorical_situation.html', sourceType: 'public-library', relevance: 'Logos, ethos, pathos, telos, and kairos as audience-sensitive rhetorical structure.', publisher: 'Purdue OWL', date: '2026', reliabilityTier: 2 },
+  fallacies: { id: 'purdue-rhetorical-strategies-fallacies', label: 'Purdue OWL rhetorical strategies and fallacies', url: 'https://owl.purdue.edu/owl/general_writing/academic_writing/establishing_arguments/rhetorical_strategies.html', sourceType: 'public-library', relevance: 'Reasoning, credibility, audience appeal, and common fallacy checks for persuasive outputs.', publisher: 'Purdue OWL', date: '2026', reliabilityTier: 2 },
+  abduction: { id: 'sep-abduction', label: 'Stanford Encyclopedia of Philosophy abduction entry', url: 'https://plato.stanford.edu/archives/spr2024/entries/abduction/', sourceType: 'public-library', relevance: 'Inference-to-best-explanation cautions, candidate explanations, and bad-lot risk.', publisher: 'Stanford Encyclopedia of Philosophy', date: '2024', reliabilityTier: 2 },
+  hermeneutics: { id: 'sep-hermeneutics', label: 'Stanford Encyclopedia of Philosophy hermeneutics entry', url: 'https://plato.stanford.edu/entries/hermeneutics/', sourceType: 'public-library', relevance: 'Whole-part interpretation, historical context, and conflicting interpretations as method inputs.', publisher: 'Stanford Encyclopedia of Philosophy', date: '2026', reliabilityTier: 2 },
+  equilibrium: { id: 'sep-reflective-equilibrium', label: 'Stanford Encyclopedia of Philosophy reflective equilibrium entry', url: 'https://plato.stanford.edu/archives/spr2014/entries/reflective-equilibrium/', sourceType: 'public-library', relevance: 'Coherence testing among judgments, principles, and background theories.', publisher: 'Stanford Encyclopedia of Philosophy', date: '2014', reliabilityTier: 2 },
+  wicked: { id: 'rittel-webber-wicked-problems', label: 'Rittel-Webber wicked problems planning tradition', url: 'https://journals.sagepub.com/doi/10.1177/0095399720934010', sourceType: 'public-library', relevance: 'Policy problem framing where definitions, values, and consequences remain contested.', publisher: 'Administration & Society', date: '2020', reliabilityTier: 2 },
+  aiRisk: { id: 'nist-ai-rmf', label: 'NIST AI Risk Management Framework', url: 'https://www.nist.gov/itl/ai-risk-management-framework', sourceType: 'official', relevance: 'Govern, map, measure, and manage pattern for AI risk and review-gated use.', publisher: 'NIST', date: '2023', reliabilityTier: 1 },
+  praxis: { id: 'praxis-reasoning-device-method', label: 'PRAXIS reasoning-device method', url: 'https://praxis.tacitus.me/learn#thinking-devices', sourceType: 'public-library', relevance: 'PRAXIS review-gated method for turning abstract reasoning guides into capsule context.', publisher: 'PRAXIS starter catalog', date: CAPSULE_STARTER_CATALOG_VERSION, reliabilityTier: 3 },
+};
+
+type ReasoningGuideDeviceSpec = {
+  starterId: string;
+  label: string;
+  domain: CapsuleStarterDomain;
+  summary: string;
+  detail: string;
+  deviceKind: string;
+  reasoningOperation: string;
+  tags: string[];
+  methodSteps: string[];
+  outputGrammar: string[];
+  disconfirmingChecks: string[];
+  expectedOutputs: string[];
+  sourceKeys: Array<keyof typeof REASONING_DEVICE_SOURCE_REFERENCES>;
+  reviewGateType: string;
+};
+
+const REASONING_GUIDE_DEVICE_SPECS: ReasoningGuideDeviceSpec[] = [
+  {
+    starterId: 'starter-tool-toulmin-argument-scaffold',
+    label: 'Toulmin Argument Scaffold',
+    domain: 'audit-review',
+    summary: 'A reasoning-guide capsule for turning claims into claim, grounds, warrant, backing, qualifier, and rebuttal structure.',
+    detail: 'Use this when PRAXIS must make a recommendation, memo argument, or critique inspectable. It prevents the agent from hiding the warrant that connects evidence to the claim.',
+    deviceKind: 'toulmin-argument-scaffold',
+    reasoningOperation: 'structure and audit an argument',
+    tags: ['toulmin', 'argumentation', 'warrant', 'reasoning-guide'],
+    methodSteps: ['Name the claim.', 'List grounds and source status.', 'State the warrant linking grounds to claim.', 'Add backing, qualifier, rebuttal, and review decision.'],
+    outputGrammar: ['Claim', 'Grounds', 'Warrant', 'Backing', 'Qualifier', 'Rebuttal', 'Review decision'],
+    disconfirmingChecks: ['Could the grounds be true while the claim remains false?', 'Is the warrant accepted by the target audience?'],
+    expectedOutputs: ['Toulmin argument table.', 'Rebuttal and qualifier notes for the final memo.'],
+    sourceKeys: ['toulmin', 'fallacies'],
+    reviewGateType: 'sourceability-human-judgment',
+  },
+  {
+    starterId: 'starter-tool-stasis-question-ladder',
+    label: 'Stasis Question Ladder',
+    domain: 'options-mapping',
+    summary: 'A reasoning-guide capsule for locating whether disagreement is about fact, definition, seriousness, or policy.',
+    detail: 'Use this before PRAXIS recommends action in a contested situation. It forces the agent to find where parties have not achieved common ground.',
+    deviceKind: 'stasis-question-ladder',
+    reasoningOperation: 'locate disagreement before proposing action',
+    tags: ['stasis', 'problem-framing', 'debate', 'reasoning-guide'],
+    methodSteps: ['Test factual agreement.', 'Test definition and classification.', 'Test seriousness, affected parties, and costs.', 'Only then test policy options.'],
+    outputGrammar: ['Fact stasis', 'Definition stasis', 'Quality stasis', 'Policy stasis', 'Unresolved disagreement'],
+    disconfirmingChecks: ['Is the proposed solution answering a different problem?', 'Are parties debating policy while fact or definition remains unresolved?'],
+    expectedOutputs: ['Stasis ladder with current blockage.', 'Next question needed to move the discussion.'],
+    sourceKeys: ['stasis', 'praxis'],
+    reviewGateType: 'human-judgment',
+  },
+  {
+    starterId: 'starter-tool-hermeneutic-circle-reader',
+    label: 'Hermeneutic Circle Reader',
+    domain: 'audit-review',
+    summary: 'A reasoning-guide capsule for interpreting documents, testimony, doctrine, and speeches through whole-part context.',
+    detail: 'Use this when a sentence, clause, quote, or concept may be misread without the full text, author context, audience, and competing interpretations.',
+    deviceKind: 'hermeneutic-circle-reader',
+    reasoningOperation: 'interpret part and whole together',
+    tags: ['hermeneutics', 'interpretation', 'documents', 'reasoning-guide'],
+    methodSteps: ['Identify the part being interpreted.', 'State the whole text or situation.', 'Compare plausible interpretations.', 'Revise the reading after source and context checks.'],
+    outputGrammar: ['Text part', 'Whole context', 'Interpretation A', 'Interpretation B', 'Context evidence', 'Preferred reading with caveat'],
+    disconfirmingChecks: ['Does a later or earlier passage change the reading?', 'Would a different audience reasonably read the text differently?'],
+    expectedOutputs: ['Interpretation matrix.', 'Caveated reading for memo or source annex.'],
+    sourceKeys: ['hermeneutics', 'rhetoric'],
+    reviewGateType: 'sourceability-human-judgment',
+  },
+  {
+    starterId: 'starter-tool-reflective-equilibrium-workbench',
+    label: 'Reflective Equilibrium Workbench',
+    domain: 'policy-review',
+    summary: 'A reasoning-guide capsule for testing judgments, principles, and background theories for coherence.',
+    detail: 'Use this when PRAXIS faces an ethical, legal, or policy dilemma where a single rule or intuition is not enough.',
+    deviceKind: 'reflective-equilibrium-workbench',
+    reasoningOperation: 'cohere judgments, principles, and background theories',
+    tags: ['reflective-equilibrium', 'ethics', 'coherence', 'reasoning-guide'],
+    methodSteps: ['List considered judgments.', 'List governing principles.', 'List relevant background facts or theories.', 'Revise the weakest element until the posture is coherent or blocked.'],
+    outputGrammar: ['Judgment', 'Principle', 'Background theory', 'Tension', 'Revision', 'Residual risk'],
+    disconfirmingChecks: ['Is coherence being achieved by ignoring an affected group?', 'Does a revised principle create a worse implication elsewhere?'],
+    expectedOutputs: ['Equilibrium table.', 'Residual ethical tension note.'],
+    sourceKeys: ['equilibrium', 'aiRisk'],
+    reviewGateType: 'ethics-human-judgment',
+  },
+  {
+    starterId: 'starter-tool-abductive-explanation-generator',
+    label: 'Abductive Explanation Generator',
+    domain: 'audit-review',
+    summary: 'A reasoning-guide capsule for generating candidate explanations and selecting a provisional best explanation.',
+    detail: 'Use this when the user asks why something happened and PRAXIS must avoid treating the first plausible story as fact.',
+    deviceKind: 'abductive-explanation-generator',
+    reasoningOperation: 'generate and test candidate explanations',
+    tags: ['abduction', 'inference-to-best-explanation', 'hypotheses', 'reasoning-guide'],
+    methodSteps: ['State the observation to explain.', 'Generate multiple candidate explanations.', 'Compare fit, simplicity, scope, and source support.', 'Mark the best explanation as provisional with needed tests.'],
+    outputGrammar: ['Observation', 'Candidate explanation', 'Evidence fit', 'Competing explanation', 'Test needed', 'Provisional confidence'],
+    disconfirmingChecks: ['Is the candidate set too narrow?', 'What observation would favor a rival explanation?'],
+    expectedOutputs: ['Candidate explanation table.', 'Collection plan for disconfirmation.'],
+    sourceKeys: ['abduction', 'praxis'],
+    reviewGateType: 'sourceability-human-judgment',
+  },
+  {
+    starterId: 'starter-tool-argument-scheme-critical-questions',
+    label: 'Argument Scheme Critical Questions',
+    domain: 'audit-review',
+    summary: 'A reasoning-guide capsule for matching common argument schemes to critical questions before accepting a claim.',
+    detail: 'Use this when PRAXIS sees arguments from authority, analogy, consequences, precedent, cause, sign, or expert opinion.',
+    deviceKind: 'argument-scheme-critical-questions',
+    reasoningOperation: 'classify argument scheme and ask critical questions',
+    tags: ['argument-schemes', 'critical-questions', 'fallacies', 'reasoning-guide'],
+    methodSteps: ['Classify the argument scheme.', 'Name the scheme-specific critical questions.', 'Answer each question with source status.', 'Block or qualify the claim when a critical answer fails.'],
+    outputGrammar: ['Scheme', 'Claim', 'Critical question', 'Answer', 'Source status', 'Accept, qualify, or reject'],
+    disconfirmingChecks: ['Is the cited authority expert in this exact domain?', 'Does the analogy preserve the relevant structure?'],
+    expectedOutputs: ['Critical-question checklist.', 'Qualified claim language.'],
+    sourceKeys: ['fallacies', 'toulmin'],
+    reviewGateType: 'sourceability-human-judgment',
+  },
+  {
+    starterId: 'starter-tool-pragma-dialectical-discussion-map',
+    label: 'Pragma-Dialectical Discussion Map',
+    domain: 'options-mapping',
+    summary: 'A reasoning-guide capsule for reconstructing disagreement as confrontation, opening, argumentation, and conclusion stages.',
+    detail: 'Use this for debates, stakeholder disputes, and policy conversations where the goal is resolving disagreement rather than winning rhetoric.',
+    deviceKind: 'pragma-dialectical-discussion-map',
+    reasoningOperation: 'map critical discussion stages',
+    tags: ['pragma-dialectics', 'discussion', 'debate-resolution', 'reasoning-guide'],
+    methodSteps: ['Name the dispute and standpoints.', 'Identify agreed starting points and rules.', 'Map arguments and criticisms.', 'State whether the dispute is resolved, narrowed, or blocked.'],
+    outputGrammar: ['Confrontation', 'Opening commitments', 'Argumentation moves', 'Blocked premises', 'Conclusion status'],
+    disconfirmingChecks: ['Are implicit premises being attacked without being stated?', 'Has one party been prevented from raising a relevant challenge?'],
+    expectedOutputs: ['Critical discussion map.', 'Remaining disagreement register.'],
+    sourceKeys: ['stasis', 'rhetoric'],
+    reviewGateType: 'human-judgment',
+  },
+  {
+    starterId: 'starter-tool-audience-adherence-map',
+    label: 'Audience Adherence Map',
+    domain: 'options-mapping',
+    summary: 'A reasoning-guide capsule for mapping audience premises, shared values, objections, and acceptable forms of proof.',
+    detail: 'Use this when an output must persuade a real audience without overstating evidence or using manipulative framing.',
+    deviceKind: 'audience-adherence-map',
+    reasoningOperation: 'adapt argument to audience without weakening truth conditions',
+    tags: ['audience', 'new-rhetoric', 'persuasion', 'reasoning-guide'],
+    methodSteps: ['Name the audience and decision context.', 'List shared premises and likely objections.', 'Match proof types to audience standards.', 'Draft caveated language that preserves sourceability.'],
+    outputGrammar: ['Audience', 'Shared premise', 'Objection', 'Accepted proof', 'Message implication', 'Ethical limit'],
+    disconfirmingChecks: ['Is the message optimized for adherence at the expense of truth?', 'Would another legitimate audience reject the premise?'],
+    expectedOutputs: ['Audience premise map.', 'Persuasive but caveated message frame.'],
+    sourceKeys: ['rhetoric', 'fallacies'],
+    reviewGateType: 'ethics-human-judgment',
+  },
+  {
+    starterId: 'starter-tool-ethos-logos-pathos-kairos-lens',
+    label: 'Ethos-Logos-Pathos-Kairos Lens',
+    domain: 'options-mapping',
+    summary: 'A reasoning-guide capsule for balancing credibility, reasoning, audience disposition, purpose, and timing.',
+    detail: 'Use this for speeches, public messaging, talking points, advocacy memos, or crisis communication.',
+    deviceKind: 'ethos-logos-pathos-kairos-lens',
+    reasoningOperation: 'audit rhetorical situation and appeals',
+    tags: ['ethos', 'logos', 'pathos', 'kairos', 'reasoning-guide'],
+    methodSteps: ['Identify speaker, audience, purpose, and setting.', 'Audit evidence structure.', 'Audit credibility and audience impact.', 'Check timing and emotional appeal for distortion risk.'],
+    outputGrammar: ['Speaker credibility', 'Evidence structure', 'Audience disposition', 'Purpose', 'Timing', 'Risk of distortion'],
+    disconfirmingChecks: ['Does emotional force distract from the real issue?', 'Does the speaker lack standing for the claim?'],
+    expectedOutputs: ['Rhetorical situation table.', 'Revised message with ethical limits.'],
+    sourceKeys: ['rhetoric', 'fallacies'],
+    reviewGateType: 'ethics-human-judgment',
+  },
+  {
+    starterId: 'starter-tool-wicked-problem-boundary-map',
+    label: 'Wicked Problem Boundary Map',
+    domain: 'policy-review',
+    summary: 'A reasoning-guide capsule for spotting value-laden, unstable, stakeholder-contested policy problems.',
+    detail: 'Use this when a question looks like a technical puzzle but actually has contested definitions, values, and consequences.',
+    deviceKind: 'wicked-problem-boundary-map',
+    reasoningOperation: 'separate tame problem solving from wicked problem coping',
+    tags: ['wicked-problems', 'policy', 'stakeholders', 'reasoning-guide'],
+    methodSteps: ['Test whether goals and definitions are stable.', 'Map stakeholder value conflicts.', 'Identify irreversible or second-order consequences.', 'Propose adaptive next steps rather than final solution claims.'],
+    outputGrammar: ['Problem definition', 'Stakeholder value conflict', 'Uncertainty', 'Consequence risk', 'Adaptive move'],
+    disconfirmingChecks: ['Is PRAXIS pretending consensus exists?', 'Would the proposed solution create a new problem definition?'],
+    expectedOutputs: ['Wickedness boundary map.', 'Adaptive action and monitoring note.'],
+    sourceKeys: ['wicked', 'stasis'],
+    reviewGateType: 'human-judgment',
+  },
+  {
+    starterId: 'starter-tool-conceptual-distinction-builder',
+    label: 'Conceptual Distinction Builder',
+    domain: 'audit-review',
+    summary: 'A reasoning-guide capsule for separating terms that are being blurred in analysis or debate.',
+    detail: 'Use this when PRAXIS must distinguish legality from legitimacy, risk from uncertainty, cause from correlation, position from interest, or evidence from interpretation.',
+    deviceKind: 'conceptual-distinction-builder',
+    reasoningOperation: 'separate conflated concepts',
+    tags: ['conceptual-analysis', 'distinctions', 'definition', 'reasoning-guide'],
+    methodSteps: ['Name the conflated terms.', 'Define each term with source or working definition.', 'Show what follows under each meaning.', 'Rewrite claims so each term does only its proper work.'],
+    outputGrammar: ['Term', 'Definition', 'Not the same as', 'Evidence needed', 'Implication'],
+    disconfirmingChecks: ['Would the conclusion survive if the terms were separated?', 'Is a value claim being smuggled in as a definition?'],
+    expectedOutputs: ['Distinction table.', 'Cleaned claim language.'],
+    sourceKeys: ['stasis', 'hermeneutics'],
+    reviewGateType: 'human-judgment',
+  },
+  {
+    starterId: 'starter-tool-category-error-detector',
+    label: 'Category Error Detector',
+    domain: 'audit-review',
+    summary: 'A reasoning-guide capsule for detecting when the analysis treats one kind of thing as another.',
+    detail: 'Use this when PRAXIS may be treating a plan as proof, a forecast as fact, a legal rule as political feasibility, or a moral claim as empirical evidence.',
+    deviceKind: 'category-error-detector',
+    reasoningOperation: 'detect category mistakes before conclusion',
+    tags: ['category-error', 'logic', 'audit', 'reasoning-guide'],
+    methodSteps: ['Name the object being reasoned about.', 'Classify its category.', 'Identify the category it is being mistaken for.', 'Rewrite the inference or block the claim.'],
+    outputGrammar: ['Object', 'Actual category', 'Mistaken category', 'Invalid inference', 'Repair'],
+    disconfirmingChecks: ['Is a statement doing work it cannot do?', 'Is evidence from one category being used to settle another?'],
+    expectedOutputs: ['Category-error table.', 'Repaired inference note.'],
+    sourceKeys: ['fallacies', 'praxis'],
+    reviewGateType: 'human-judgment',
+  },
+  {
+    starterId: 'starter-tool-burden-of-proof-allocator',
+    label: 'Burden-of-Proof Allocator',
+    domain: 'policy-review',
+    summary: 'A reasoning-guide capsule for naming who must prove what, to what standard, and with which evidence.',
+    detail: 'Use this for allegations, compliance reviews, debate, risk claims, and policy decisions where unsupported assertions could be unfairly accepted.',
+    deviceKind: 'burden-of-proof-allocator',
+    reasoningOperation: 'allocate proof burdens and evidence thresholds',
+    tags: ['burden-of-proof', 'evidence', 'allegations', 'reasoning-guide'],
+    methodSteps: ['List each claim or allegation.', 'Name claimant and affected party.', 'Set evidence threshold and source type.', 'Block claims that do not meet the required standard.'],
+    outputGrammar: ['Claim', 'Claimant', 'Affected party', 'Evidence threshold', 'Current evidence', 'Allowed wording'],
+    disconfirmingChecks: ['Is the burden shifted to the wrong party?', 'Is absence of evidence being treated as evidence of absence?'],
+    expectedOutputs: ['Proof-burden ledger.', 'Permitted claim language.'],
+    sourceKeys: ['toulmin', 'aiRisk'],
+    reviewGateType: 'legal-sourceability-human',
+  },
+  {
+    starterId: 'starter-tool-steelman-ironman-red-team-triad',
+    label: 'Steelman / Ironman / Red-Team Triad',
+    domain: 'audit-review',
+    summary: 'A reasoning-guide capsule for strengthening opposing views, improving the preferred argument, and then attacking it.',
+    detail: 'Use this before a recommendation hardens. It prevents shallow opposition summaries and weak self-critique.',
+    deviceKind: 'steelman-ironman-red-team-triad',
+    reasoningOperation: 'strengthen and attack arguments before final judgment',
+    tags: ['steelman', 'red-team', 'argument-quality', 'reasoning-guide'],
+    methodSteps: ['Steelman the strongest opposing view.', 'Ironman the best version of the preferred view.', 'Red-team both versions.', 'State what survives and what must be qualified.'],
+    outputGrammar: ['Opposing view steelman', 'Preferred view ironman', 'Red-team attack', 'Surviving claim', 'Qualification'],
+    disconfirmingChecks: ['Was the opposing view caricatured?', 'Did the red team test the strongest version or only the easiest target?'],
+    expectedOutputs: ['Triad review table.', 'Revised recommendation caveats.'],
+    sourceKeys: ['toulmin', 'fallacies'],
+    reviewGateType: 'human-judgment',
+  },
+  {
+    starterId: 'starter-tool-narrative-frame-audit',
+    label: 'Narrative Frame Audit',
+    domain: 'audit-review',
+    summary: 'A reasoning-guide capsule for exposing protagonist, antagonist, causal arc, implied values, omissions, and emotional load.',
+    detail: 'Use this for public narratives, crisis communications, media analysis, and advocacy material where frame choices shape conclusions.',
+    deviceKind: 'narrative-frame-audit',
+    reasoningOperation: 'audit narrative structure and omitted alternatives',
+    tags: ['narrative', 'framing', 'rhetoric', 'reasoning-guide'],
+    methodSteps: ['Identify actors assigned narrative roles.', 'Name causal arc and implied values.', 'List omitted actors or facts.', 'Rewrite with caveats or alternate frames.'],
+    outputGrammar: ['Protagonist', 'Antagonist', 'Causal arc', 'Implied value', 'Omission', 'Alternate frame'],
+    disconfirmingChecks: ['Does the narrative make causality feel stronger than evidence supports?', 'Who disappears from the frame?'],
+    expectedOutputs: ['Narrative frame ledger.', 'Balanced framing note.'],
+    sourceKeys: ['rhetoric', 'hermeneutics'],
+    reviewGateType: 'ethics-human-judgment',
+  },
+  {
+    starterId: 'starter-tool-moral-tradeoff-matrix',
+    label: 'Moral Tradeoff Matrix',
+    domain: 'policy-review',
+    summary: 'A reasoning-guide capsule for separating utility, rights, duties, virtues, care, legitimacy, and reversibility.',
+    detail: 'Use this when a policy option has ethical consequences that cannot be reduced to efficiency or operational feasibility.',
+    deviceKind: 'moral-tradeoff-matrix',
+    reasoningOperation: 'map ethical tradeoffs across moral lenses',
+    tags: ['ethics', 'tradeoffs', 'legitimacy', 'reasoning-guide'],
+    methodSteps: ['Name affected groups.', 'Assess utility, rights, duties, care, legitimacy, and reversibility.', 'Identify non-negotiable constraints.', 'State residual moral risk.'],
+    outputGrammar: ['Affected group', 'Benefit', 'Burden', 'Rights/duties', 'Legitimacy', 'Reversibility', 'Residual risk'],
+    disconfirmingChecks: ['Is one affected group invisible?', 'Is a rights constraint being treated as a mere cost?'],
+    expectedOutputs: ['Moral tradeoff matrix.', 'Residual moral risk note.'],
+    sourceKeys: ['equilibrium', 'aiRisk'],
+    reviewGateType: 'ethics-human-judgment',
+  },
+  {
+    starterId: 'starter-tool-institutional-logic-lens',
+    label: 'Institutional Logic Lens',
+    domain: 'policy-review',
+    summary: 'A reasoning-guide capsule for separating legal mandate, bureaucratic incentive, political legitimacy, public trust, and operational capacity.',
+    detail: 'Use this when an institution can legally act but may lack legitimacy, capacity, incentives, or trust.',
+    deviceKind: 'institutional-logic-lens',
+    reasoningOperation: 'separate institutional authority, incentives, and capacity',
+    tags: ['institutions', 'mandate', 'legitimacy', 'capacity', 'reasoning-guide'],
+    methodSteps: ['Name the institution and mandate.', 'Map incentives and constraints.', 'Assess legitimacy and trust.', 'Test operational capacity and implementation owner.'],
+    outputGrammar: ['Mandate', 'Incentive', 'Constraint', 'Legitimacy', 'Capacity', 'Implementation risk'],
+    disconfirmingChecks: ['Is legal authority being mistaken for implementation capacity?', 'Does incentive structure point away from the public rationale?'],
+    expectedOutputs: ['Institutional logic table.', 'Implementation caution note.'],
+    sourceKeys: ['wicked', 'aiRisk'],
+    reviewGateType: 'legal-human-judgment',
+  },
+  {
+    starterId: 'starter-tool-epistemic-trust-ledger',
+    label: 'Epistemic Trust Ledger',
+    domain: 'source-intake',
+    summary: 'A reasoning-guide capsule for tracking source reliability, access, incentives, expertise, freshness, independence, and corroboration.',
+    detail: 'Use this before PRAXIS relies on sources with different incentives, proximity, or expertise. It upgrades sourceability from citation presence to trust posture.',
+    deviceKind: 'epistemic-trust-ledger',
+    reasoningOperation: 'evaluate source trust and corroboration',
+    tags: ['epistemic-trust', 'sourceability', 'corroboration', 'reasoning-guide'],
+    methodSteps: ['List each source and claim supported.', 'Assess expertise, proximity, incentives, independence, and freshness.', 'Check corroboration and contradiction.', 'Set allowed confidence and reuse rules.'],
+    outputGrammar: ['Source', 'Claim supported', 'Expertise', 'Incentive', 'Freshness', 'Corroboration', 'Allowed use'],
+    disconfirmingChecks: ['Are independent sources actually downstream from one source?', 'Does source incentive weaken claim weight?'],
+    expectedOutputs: ['Epistemic trust ledger.', 'Source reuse and refresh note.'],
+    sourceKeys: ['aiRisk', 'praxis'],
+    reviewGateType: 'sourceability-human-judgment',
+  },
+  {
+    starterId: 'starter-tool-analogy-fitness-test',
+    label: 'Analogy Fitness Test',
+    domain: 'audit-review',
+    summary: 'A reasoning-guide capsule for deciding whether an analogy is structurally useful or rhetorically misleading.',
+    detail: 'Use this when historical, legal, geopolitical, or product analogies are shaping an argument or decision.',
+    deviceKind: 'analogy-fitness-test',
+    reasoningOperation: 'test analogy structure and limits',
+    tags: ['analogy', 'comparison', 'history', 'reasoning-guide'],
+    methodSteps: ['State source and target case.', 'Map shared structure.', 'Map critical differences.', 'Decide what the analogy can and cannot support.'],
+    outputGrammar: ['Source case', 'Target case', 'Shared structure', 'Critical difference', 'Supported inference', 'Blocked inference'],
+    disconfirmingChecks: ['Are superficial similarities doing causal work?', 'Does a critical difference invalidate the policy lesson?'],
+    expectedOutputs: ['Analogy fitness table.', 'Allowed and blocked analogy language.'],
+    sourceKeys: ['fallacies', 'stasis'],
+    reviewGateType: 'sourceability-human-judgment',
+  },
+  {
+    starterId: 'starter-tool-decision-rhetoric-converter',
+    label: 'Decision Rhetoric Converter',
+    domain: 'options-mapping',
+    summary: 'A reasoning-guide capsule for converting analysis into persuasive decision language while preserving caveats.',
+    detail: 'Use this after analysis is complete but before the final memo or talking points. It prevents polished language from erasing uncertainty.',
+    deviceKind: 'decision-rhetoric-converter',
+    reasoningOperation: 'translate analysis into decision language with caveats intact',
+    tags: ['decision-rhetoric', 'memo-writing', 'persuasion', 'reasoning-guide'],
+    methodSteps: ['Name the decision and audience.', 'Extract only decision-relevant claims.', 'Preserve caveats and confidence policy.', 'Convert into BLUF, options, recommendation, and review notes.'],
+    outputGrammar: ['BLUF', 'Decision question', 'Options', 'Recommendation', 'Caveat', 'Review gate'],
+    disconfirmingChecks: ['Did persuasive compression remove a material caveat?', 'Does the recommendation imply certainty the evidence does not support?'],
+    expectedOutputs: ['Decision-ready language draft.', 'Caveat preservation checklist.'],
+    sourceKeys: ['rhetoric', 'toulmin'],
+    reviewGateType: 'sourceability-human-judgment',
+  },
+];
+
+function buildReasoningGuideSourcePack(sourceKeys: ReasoningGuideDeviceSpec['sourceKeys']): CapsuleStarterSource[] {
+  return normalizeStarterSourcePack(uniqueStrings([...sourceKeys, 'praxis']).map((sourceKey) => REASONING_DEVICE_SOURCE_REFERENCES[sourceKey]));
+}
+
+function reasoningGuideStarter(spec: ReasoningGuideDeviceSpec): CapsuleStarterDefinition {
+  const sourcePack = buildReasoningGuideSourcePack(spec.sourceKeys);
+  return starter(
+    spec.starterId,
+    'tool',
+    spec.domain,
+    spec.label,
+    spec.summary,
+    spec.detail,
+    [...spec.tags, 'thinking-device', 'reasoning-guide', 'review-gated', 'team:research-strategy'],
+    {
+      toolCoreIds: ['sourceability', 'contradiction-finder', 'memo-drafter'],
+      objectiveCoreIds: [`apply-${spec.deviceKind}`],
+      outputCoreIds: ['principals-decision-memo', 'evidence-sourceability-annex'],
+    },
+    ['sourceability', 'contradiction-finder', 'memo-drafter'],
+    ['principals-decision-memo', 'evidence-sourceability-annex'],
+    ['starter-output-principals-decision-memo', 'starter-tool-sourceability-matrix', 'starter-output-evidence-sourceability-annex'],
+    {
+      readinessStars: 5,
+      sourcePack,
+      suggestedQuestions: [
+        `What claim, decision, interpretation, or message should ${spec.label} structure?`,
+        'Which sources, assumptions, or audience premises are doing the most work?',
+        'What would disconfirm, weaken, or force qualification of the output?',
+      ],
+      suggestedNextActions: [
+        `Run ${spec.label} before drafting the final answer.`,
+        'Attach sourceability and confidence notes to every decision-critical claim.',
+        'Send unresolved caveats to human review before external reuse.',
+      ],
+      agentWorkflow: {
+        preferredAgentId: 'research-memo',
+        routeHint: spec.deviceKind,
+        outputGoal: 'principals-decision-memo',
+        approvalNotes: 'Human review required before external use, graph promotion, or confidence escalation from this reasoning device.',
+      },
+      aiUseGuidance: `Use ${spec.label} as a reasoning guide capsule. Apply the output grammar explicitly, preserve caveats, and keep sourceability visible before drafting persuasive or decision-ready language.`,
+      deviceProfile: buildStarterDeviceProfile(spec.label, {
+        deviceKind: spec.deviceKind,
+        reasoningOperation: spec.reasoningOperation,
+        activationCriteria: [
+          `Attach when the user needs to ${spec.reasoningOperation}.`,
+          'Attach when abstract reasoning, argument quality, persuasion, or philosophical framing affects the answer.',
+        ],
+        inputContract: [
+          'Active situation, question, draft claim, or message to be structured.',
+          'Available source receipts, attached documents, or explicit gaps.',
+          'Target audience, decision owner, or output capsule for the result.',
+        ],
+        outputGrammar: spec.outputGrammar,
+        methodSteps: spec.methodSteps,
+        expectedOutputs: spec.expectedOutputs,
+        disconfirmingChecks: spec.disconfirmingChecks,
+        confidencePolicy: 'Do not raise confidence because the frame is elegant; confidence follows source quality, alternatives, disconfirming checks, and review status.',
+        forgettingPolicy: 'Demote or expire conclusions when the audience, decision, source window, or problem definition changes; revalidate before reuse in another capsule.',
+        crossCapsulePairings: ['starter-tool-sourceability-matrix', 'starter-output-principals-decision-memo', 'starter-output-evidence-sourceability-annex'],
+        misuseWarnings: [
+          'Do not use the framework as decorative terminology without completing its checks.',
+          'Do not let persuasive structure hide uncertainty, missing evidence, or value conflict.',
+        ],
+        reviewGateType: spec.reviewGateType,
+        humanReviewGate: 'Human review is required before using this reasoning device for external advice, sensitive claims, final persuasion, or graph promotion.',
+        sourceabilityRequirements: [
+          'Each material claim must point to a source receipt, document, or explicit uncertainty note.',
+          'Each philosophical, rhetorical, or ethical judgment must state whether it is sourced, inferred, or a PRAXIS working frame.',
+        ],
+      }),
+      humanReview: humanReviewed(`Reviewed as a reasoning-guide capsule for ${spec.reasoningOperation}.`),
+    },
+  );
 }
 
 export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
@@ -1857,6 +2328,7 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     aiUseGuidance: 'Use this for escalation discipline. Avoid operational advice; keep public signals, proportionality, and review gates explicit.',
     deviceProfile: buildStarterDeviceProfile('Escalation Ladder and De-escalation Path', { deviceKind: 'escalation-deescalation-path' }),
   }),
+  ...REASONING_GUIDE_DEVICE_SPECS.map(reasoningGuideStarter),
   starter('starter-situation-haiti-gang-mss-access-watch', 'situation', 'humanitarian-rights', 'Haiti gang violence and MSS access watch', 'A desk-officer capsule for Haiti gang violence, transition politics, MSS support posture, humanitarian access, displacement, and rights reporting.', 'Use this when PRAXIS needs to brief Haiti without flattening security operations, political transition, human-rights allegations, and humanitarian access into one story. Keep dates, localities, source tier, and mandate boundaries explicit.', ['haiti', 'gang-violence', 'mss', 'humanitarian-access', 'transition-politics', 'rights-reporting', 'team:humanitarian', 'team:diplomatic'], { situationCoreId: 'starter-situation-haiti-gang-mss-access-watch', pathCoreId: 'humanitarian-analysis', sourceCoreIds: ['binuh-haiti-mandate-news', 'ocha-access'], toolCoreIds: ['grounded-research', 'sourceability', 'scenario-projector'], outputCoreIds: ['scenario-risk-dashboard-card'] }, ['grounded-research', 'sourceability', 'scenario-projector'], ['scenario-risk-dashboard-card', 'humanitarian-one-pager', 'principals-decision-memo'], ['starter-tool-sourceability-matrix', 'starter-tool-spoiler-blocker-scan', 'starter-output-scenario-risk-dashboard-card'], {
     readinessStars: 5,
     sourcePack: [
@@ -2181,11 +2653,21 @@ export function buildCapsuleStarterPromptBlock(
     `rich_agent_instructions: ${starterDefinition.richProfile.agentInstructions}`,
     ...(starterDefinition.deviceProfile ? [
       `device_kind: ${starterDefinition.deviceProfile.deviceKind}`,
+      `device_reasoning_operation: ${starterDefinition.deviceProfile.reasoningOperation}`,
+      `device_activation_criteria: ${starterDefinition.deviceProfile.activationCriteria.join(' | ')}`,
+      `device_input_contract: ${starterDefinition.deviceProfile.inputContract.join(' | ')}`,
+      `device_output_grammar: ${starterDefinition.deviceProfile.outputGrammar.join(' | ')}`,
       `device_method_steps: ${starterDefinition.deviceProfile.methodSteps.join(' | ')}`,
       `device_best_inputs: ${starterDefinition.deviceProfile.bestInputs.join(' | ')}`,
       `device_expected_outputs: ${starterDefinition.deviceProfile.expectedOutputs.join(' | ')}`,
+      `device_disconfirming_checks: ${starterDefinition.deviceProfile.disconfirmingChecks.join(' | ')}`,
       `device_failure_modes: ${starterDefinition.deviceProfile.failureModes.join(' | ')}`,
       `device_human_review_gate: ${starterDefinition.deviceProfile.humanReviewGate}`,
+      `device_confidence_policy: ${starterDefinition.deviceProfile.confidencePolicy}`,
+      `device_forgetting_policy: ${starterDefinition.deviceProfile.forgettingPolicy}`,
+      `device_cross_capsule_pairings: ${starterDefinition.deviceProfile.crossCapsulePairings.join(' | ')}`,
+      `device_misuse_warnings: ${starterDefinition.deviceProfile.misuseWarnings.join(' | ')}`,
+      `device_review_gate_type: ${starterDefinition.deviceProfile.reviewGateType}`,
       `device_agent_instructions: ${starterDefinition.deviceProfile.agentInstructions}`,
       `device_sourceability_requirements: ${starterDefinition.deviceProfile.sourceabilityRequirements.join(' | ')}`,
     ] : []),
@@ -2640,7 +3122,12 @@ export function runCapsuleStarterQualityAudit(starter: CapsuleStarterDefinition)
         scoreRatio(device.methodSteps.length, 4),
         scoreRatio(device.bestInputs.length, 3),
         scoreRatio(device.expectedOutputs.length, 2),
+        scoreRatio(device.activationCriteria.length, 2),
+        scoreRatio(device.inputContract.length, 2),
+        scoreRatio(device.outputGrammar.length, 2),
+        scoreRatio(device.disconfirmingChecks.length, 2),
         scoreRatio(device.failureModes.length, 2),
+        scoreRatio(device.misuseWarnings.length, 2),
         /review|approval|human/i.test(device.humanReviewGate) ? 1 : 0,
         scoreRatio(device.sourceabilityRequirements.length, 2),
       ])
@@ -2649,6 +3136,11 @@ export function runCapsuleStarterQualityAudit(starter: CapsuleStarterDefinition)
       : 1;
   if (device && device.failureModes.length < 2) deviceProfileGaps.push('Add concrete failure modes for review before agent use.');
   if (device && device.sourceabilityRequirements.length < 2) deviceProfileGaps.push('Add sourceability requirements for review before agent use.');
+  if (device && device.activationCriteria.length < 2) deviceProfileGaps.push('Add activation criteria so agents know when to attach the device.');
+  if (device && device.inputContract.length < 2) deviceProfileGaps.push('Add an input contract so agents know the minimum context needed.');
+  if (device && device.outputGrammar.length < 2) deviceProfileGaps.push('Add output grammar so device runs produce inspectable structure.');
+  if (device && device.disconfirmingChecks.length < 2) deviceProfileGaps.push('Add disconfirming checks to prevent one-sided reasoning.');
+  if (device && device.misuseWarnings.length < 2) deviceProfileGaps.push('Add misuse warnings before agent use.');
 
   const scores: CapsuleQualityAuditScores = {
     taxonomy: average([

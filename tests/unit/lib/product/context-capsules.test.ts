@@ -167,7 +167,7 @@ describe('context capsule product contract', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(84);
+    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(104);
     expect(starterIds.size).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
@@ -175,7 +175,7 @@ describe('context capsule product contract', () => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toEqual({ situation: 30, tool: 30, output: 19, user: 5 });
+    expect(categoryCounts).toEqual({ situation: 30, tool: 50, output: 19, user: 5 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
@@ -283,6 +283,70 @@ describe('context capsule product contract', () => {
       expect(starter?.deviceProfile?.agentInstructions, `${starterId} agent instructions`).toContain(starter?.label);
       expect(starter?.deviceProfile?.sourceabilityRequirements.length, `${starterId} sourceability requirements`).toBeGreaterThanOrEqual(2);
     }
+  });
+
+  it('adds philosophy, rhetoric, and reasoning-guide capsules with extended device policies', () => {
+    const expectedReasoningDeviceIds = [
+      'starter-tool-toulmin-argument-scaffold',
+      'starter-tool-stasis-question-ladder',
+      'starter-tool-hermeneutic-circle-reader',
+      'starter-tool-reflective-equilibrium-workbench',
+      'starter-tool-abductive-explanation-generator',
+      'starter-tool-argument-scheme-critical-questions',
+      'starter-tool-pragma-dialectical-discussion-map',
+      'starter-tool-audience-adherence-map',
+      'starter-tool-ethos-logos-pathos-kairos-lens',
+      'starter-tool-wicked-problem-boundary-map',
+      'starter-tool-conceptual-distinction-builder',
+      'starter-tool-category-error-detector',
+      'starter-tool-burden-of-proof-allocator',
+      'starter-tool-steelman-ironman-red-team-triad',
+      'starter-tool-narrative-frame-audit',
+      'starter-tool-moral-tradeoff-matrix',
+      'starter-tool-institutional-logic-lens',
+      'starter-tool-epistemic-trust-ledger',
+      'starter-tool-analogy-fitness-test',
+      'starter-tool-decision-rhetoric-converter',
+    ];
+
+    for (const starterId of expectedReasoningDeviceIds) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter, `${starterId} missing`).toBeTruthy();
+      expect(starter?.category).toBe('tool');
+      expect(starter?.tags).toEqual(expect.arrayContaining(['thinking-device', 'reasoning-guide', 'review-gated']));
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.suggestedQuestions.length, `${starterId} questions`).toBeGreaterThanOrEqual(3);
+      expect(starter?.suggestedNextActions.length, `${starterId} actions`).toBeGreaterThanOrEqual(3);
+      expect(starter?.combinesWellWith).toEqual(expect.arrayContaining([
+        'starter-output-principals-decision-memo',
+        'starter-tool-sourceability-matrix',
+      ]));
+      expect(starter?.deviceProfile).toMatchObject({
+        reasoningOperation: expect.any(String),
+        activationCriteria: expect.arrayContaining([expect.any(String)]),
+        inputContract: expect.arrayContaining([expect.any(String)]),
+        outputGrammar: expect.arrayContaining([expect.any(String)]),
+        disconfirmingChecks: expect.arrayContaining([expect.any(String)]),
+        confidencePolicy: expect.stringMatching(/confidence|certainty|claim|judgment/i),
+        forgettingPolicy: expect.stringMatching(/expire|refresh|demote|revalidate/i),
+        crossCapsulePairings: expect.arrayContaining(['starter-tool-sourceability-matrix']),
+        misuseWarnings: expect.arrayContaining([expect.any(String)]),
+        reviewGateType: expect.stringMatching(/sourceability|human|ethics|legal|judgment/i),
+      });
+    }
+
+    const promptBlock = buildCapsuleStarterPromptBlock('starter-tool-toulmin-argument-scaffold');
+
+    expect(promptBlock).toContain('device_reasoning_operation:');
+    expect(promptBlock).toContain('device_activation_criteria:');
+    expect(promptBlock).toContain('device_input_contract:');
+    expect(promptBlock).toContain('device_output_grammar:');
+    expect(promptBlock).toContain('device_disconfirming_checks:');
+    expect(promptBlock).toContain('device_confidence_policy:');
+    expect(promptBlock).toContain('device_forgetting_policy:');
+    expect(promptBlock).toContain('device_cross_capsule_pairings:');
+    expect(promptBlock).toContain('device_misuse_warnings:');
+    expect(promptBlock).toContain('device_review_gate_type:');
   });
 
   it('requires every starter capsule to carry a complete non-generic rich profile', () => {

@@ -1527,6 +1527,64 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     qualityRubric: cleanLongStringArray(richProfileRecord.qualityRubric).slice(0, 8),
     agentInstructions: longStringOrNull(richProfileRecord.agentInstructions) ?? stringOrNull(value.aiUseGuidance) ?? '',
   };
+  const deviceProfile = deviceProfileRecord ? {
+    deviceKind: stringOrNull(deviceProfileRecord.deviceKind) ?? 'thinking-device',
+    reasoningOperation: longStringOrNull(deviceProfileRecord.reasoningOperation) ?? 'audit and structure a decision-relevant reasoning step',
+    activationCriteria: cleanLongStringArrayWithFallback(deviceProfileRecord.activationCriteria, [
+      'Attach when the answer contains a decision, claim, explanation, persuasion task, or review-sensitive recommendation.',
+      'Attach when context quality is uneven and the agent needs a named intellectual operation instead of generic analysis.',
+    ]),
+    inputContract: cleanLongStringArrayWithFallback(deviceProfileRecord.inputContract, [
+      'Active situation capsule or user-provided problem statement with scope and dates.',
+      'At least one source, document, or explicit note that the claim is unsourced.',
+      'Target output or decision owner so the device can produce usable structure.',
+    ]),
+    outputGrammar: cleanLongStringArrayWithFallback(deviceProfileRecord.outputGrammar, [
+      'Start with the reasoning operation and the question being tested.',
+      'Use rows or sections for claims, evidence, caveats, disconfirming checks, and next actions.',
+      'End with confidence, review gate, and what must be refreshed before reuse.',
+    ]),
+    methodSteps: cleanLongStringArrayWithFallback(deviceProfileRecord.methodSteps, [
+      `Name the decision or claim that ${label} is testing before producing advice.`,
+      'Separate facts, assumptions, uncertainties, actors, rules, and output needs into distinct rows.',
+      'Run the device against the active situation capsule, then test it against at least one compatible output capsule.',
+      'Mark unsupported claims, stale evidence, inferred incentives, and points requiring human judgment.',
+    ]),
+    bestInputs: cleanLongStringArrayWithFallback(deviceProfileRecord.bestInputs, [
+      'A situation capsule with dates, actors, and source receipts.',
+      'A user or team capsule that states the decision owner and tolerance for uncertainty.',
+      'A target output capsule so the device produces a usable artifact instead of open-ended analysis.',
+    ]),
+    expectedOutputs: cleanLongStringArrayWithFallback(deviceProfileRecord.expectedOutputs, [
+      `${label} table with claims, evidence, caveats, and next actions.`,
+      'Review notes that identify which conclusions can be reused and which must stay provisional.',
+    ]),
+    disconfirmingChecks: cleanLongStringArrayWithFallback(deviceProfileRecord.disconfirmingChecks, [
+      'Name the strongest contrary evidence, alternative framing, or missing source that would weaken the output.',
+      'Identify which conclusion would change if a load-bearing assumption fails.',
+    ]),
+    failureModes: cleanLongStringArrayWithFallback(deviceProfileRecord.failureModes, [
+      'Treating the device as a conclusion generator rather than a review scaffold.',
+      'Collapsing unsupported assumptions, actor incentives, and sourced facts into the same confidence level.',
+    ]),
+    humanReviewGate: longStringOrNull(deviceProfileRecord.humanReviewGate) ?? 'Require human review before external use.',
+    confidencePolicy: longStringOrNull(deviceProfileRecord.confidencePolicy) ?? 'Use low, moderate, or high confidence only after evidence quality, freshness, alternatives, and disconfirming checks are visible.',
+    forgettingPolicy: longStringOrNull(deviceProfileRecord.forgettingPolicy) ?? 'Expire or demote device conclusions when sources become stale, the situation changes, or the output is reused outside the reviewed scope; revalidate before promotion.',
+    crossCapsulePairings: cleanStringArrayWithFallback(deviceProfileRecord.crossCapsulePairings, [
+      'starter-tool-sourceability-matrix',
+      'starter-output-principals-decision-memo',
+    ]),
+    misuseWarnings: cleanLongStringArrayWithFallback(deviceProfileRecord.misuseWarnings, [
+      'Do not use this device to launder speculation into a confident recommendation.',
+      'Do not skip the sourceability or human-review gate when the output affects real decisions.',
+    ]),
+    reviewGateType: stringOrNull(deviceProfileRecord.reviewGateType) ?? 'sourceability-human-judgment',
+    agentInstructions: longStringOrNull(deviceProfileRecord.agentInstructions) ?? stringOrNull(value.aiUseGuidance) ?? '',
+    sourceabilityRequirements: cleanLongStringArrayWithFallback(deviceProfileRecord.sourceabilityRequirements, [
+      'Every decision-critical claim must point to a source receipt, attached document, or explicit uncertainty note.',
+      'Each inferred incentive, causal link, or implementation risk must be labeled as inference until reviewed.',
+    ]),
+  } satisfies NonNullable<CapsuleStarterSnapshot['deviceProfile']> : null;
   return {
     catalogVersion: stringOrNull(value.catalogVersion) ?? 'unknown',
     starterId,
@@ -1551,18 +1609,7 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     },
     aiUseGuidance: stringOrNull(value.aiUseGuidance) ?? '',
     richProfile,
-    ...(deviceProfileRecord ? {
-      deviceProfile: {
-        deviceKind: stringOrNull(deviceProfileRecord.deviceKind) ?? 'thinking-device',
-        methodSteps: cleanLongStringArray(deviceProfileRecord.methodSteps).slice(0, 10),
-        bestInputs: cleanLongStringArray(deviceProfileRecord.bestInputs).slice(0, 10),
-        expectedOutputs: cleanLongStringArray(deviceProfileRecord.expectedOutputs).slice(0, 10),
-        failureModes: cleanLongStringArray(deviceProfileRecord.failureModes).slice(0, 10),
-        humanReviewGate: longStringOrNull(deviceProfileRecord.humanReviewGate) ?? 'Require human review before external use.',
-        agentInstructions: longStringOrNull(deviceProfileRecord.agentInstructions) ?? stringOrNull(value.aiUseGuidance) ?? '',
-        sourceabilityRequirements: cleanLongStringArray(deviceProfileRecord.sourceabilityRequirements).slice(0, 10),
-      },
-    } : {}),
+    ...(deviceProfile ? { deviceProfile } : {}),
     ...(humanReviewRecord ? {
       humanReview: {
         status: humanReviewRecord.status === 'human-reviewed' || humanReviewRecord.status === 'research-reviewed' || humanReviewRecord.status === 'draft'
@@ -1585,10 +1632,20 @@ function cleanStringArray(value: unknown): string[] {
     : [];
 }
 
+function cleanStringArrayWithFallback(value: unknown, fallback: string[], limit = 10): string[] {
+  const cleaned = cleanStringArray(value).slice(0, limit);
+  return cleaned.length ? cleaned : fallback.slice(0, limit);
+}
+
 function cleanLongStringArray(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).map((item) => item.trim().slice(0, 600))
     : [];
+}
+
+function cleanLongStringArrayWithFallback(value: unknown, fallback: string[], limit = 10): string[] {
+  const cleaned = cleanLongStringArray(value).slice(0, limit);
+  return cleaned.length ? cleaned : fallback.slice(0, limit);
 }
 
 function stringOrNull(value: unknown): string | null {

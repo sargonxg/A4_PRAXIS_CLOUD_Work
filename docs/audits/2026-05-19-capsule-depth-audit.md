@@ -3,8 +3,8 @@
 - Date: 2026-05-19
 - Catalog version: 2026-05-21-desk-officer-review-v6
 - Result: pass
-- Total starters: 84
-- Category counts: situation 30, tool 30, output 19, user 5
+- Total starters: 104
+- Category counts: situation 30, tool 50, output 19, user 5
 
 ## Failures
 
@@ -76,6 +76,26 @@
 - starter-tool-second-order-effects-map: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-tool-pre-mortem-failure-review: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-tool-escalation-ladder-deescalation-path: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-toulmin-argument-scaffold: tool, audit-review, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-stasis-question-ladder: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-hermeneutic-circle-reader: tool, audit-review, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-reflective-equilibrium-workbench: tool, policy-review, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-abductive-explanation-generator: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-argument-scheme-critical-questions: tool, audit-review, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-pragma-dialectical-discussion-map: tool, options-mapping, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-audience-adherence-map: tool, options-mapping, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-ethos-logos-pathos-kairos-lens: tool, options-mapping, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-wicked-problem-boundary-map: tool, policy-review, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-conceptual-distinction-builder: tool, audit-review, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-category-error-detector: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-burden-of-proof-allocator: tool, policy-review, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-steelman-ironman-red-team-triad: tool, audit-review, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-narrative-frame-audit: tool, audit-review, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-moral-tradeoff-matrix: tool, policy-review, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-institutional-logic-lens: tool, policy-review, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-epistemic-trust-ledger: tool, source-intake, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-analogy-fitness-test: tool, audit-review, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-tool-decision-rhetoric-converter: tool, options-mapping, sources 3, excerpts 3, compatible 3, richProfile yes
 - starter-situation-haiti-gang-mss-access-watch: situation, humanitarian-rights, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-sahel-aes-ecowas-transition-watch: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-kosovo-serbia-normalization-implementation: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
