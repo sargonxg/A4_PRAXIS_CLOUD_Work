@@ -183,14 +183,12 @@ function LoginForm() {
     setIsLoading(true);
     try {
       const result = await signInWithGoogle();
-      // signInWithRedirect navigates the page away to Google — success/failure is handled
-      // on return via onAuthStateChanged → useEffect auto-redirect above.
-      // Only handle explicit pre-redirect errors here (e.g. auth/unauthorized-domain).
+      // Popup success and redirect return are both handled by onAuthStateChanged,
+      // which syncs the secure app cookie and lets the effect above navigate.
       if (!result.success) {
         setError(result.error || 'Google sign-in failed.');
         setIsLoading(false);
       }
-      // On success: page is navigating away — no further action needed
     } catch {
       setError('Google sign-in failed. Please try again.');
       setIsLoading(false);
@@ -223,10 +221,9 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-[color:var(--color-app-bg)] text-slate-950">
+    <div className="praxis-checker-constellation min-h-screen text-slate-950">
       <div className="grid min-h-screen lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.72fr)]">
-        <section className="relative hidden overflow-hidden border-r border-slate-200 bg-[color:var(--color-app-bg)] lg:block">
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.035)_1px,transparent_1px)] bg-[size:28px_28px]" />
+        <section className="relative hidden overflow-hidden border-r border-slate-200/80 lg:block">
           <div className="relative flex min-h-screen flex-col p-8">
             <div className="flex items-center justify-between border-b border-slate-200 pb-5">
               <PraxisBrandChip subtitle="Private ContextCapsule workspace" />
@@ -276,17 +273,7 @@ function LoginForm() {
           </div>
         </section>
 
-        <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-white px-4 py-8">
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div
-              className="absolute inset-0 opacity-[0.06]"
-              style={{
-                backgroundImage: `radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.42) 1px, transparent 0)`,
-                backgroundSize: '32px 32px',
-              }}
-            />
-          </div>
-
+        <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -591,7 +578,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[color:var(--color-app-bg)]">
+        <div className="praxis-checker-constellation flex min-h-screen items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-[color:var(--color-rose-gold)]" />
         </div>
       }

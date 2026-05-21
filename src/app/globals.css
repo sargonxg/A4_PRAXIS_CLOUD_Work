@@ -764,6 +764,26 @@ body {
   box-shadow: 0 1px 2px rgba(17, 24, 22, 0.035);
 }
 
+.praxis-checker-constellation {
+  --praxis-grid-line: rgba(17, 24, 22, 0.045);
+  --praxis-connection-line: rgba(49, 93, 115, 0.12);
+  --praxis-point-rose: color-mix(in srgb, var(--color-rose-gold) 78%, transparent);
+  --praxis-point-sage: color-mix(in srgb, var(--color-evidence-ready) 62%, transparent);
+  --praxis-point-gold: color-mix(in srgb, var(--color-gold-500) 62%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 340px),
+    radial-gradient(circle at 11px 19px, var(--praxis-point-rose) 0 1.35px, transparent 1.75px),
+    radial-gradient(circle at 93px 47px, var(--praxis-point-sage) 0 1.5px, transparent 1.95px),
+    radial-gradient(circle at 138px 112px, var(--praxis-point-gold) 0 1.25px, transparent 1.7px),
+    linear-gradient(32deg, transparent 0 calc(50% - 0.55px), var(--praxis-connection-line) calc(50% - 0.55px) calc(50% + 0.55px), transparent calc(50% + 0.55px) 100%),
+    linear-gradient(var(--praxis-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--praxis-grid-line) 1px, transparent 1px),
+    var(--color-archive-paper);
+  background-size: auto, 144px 144px, 208px 208px, 176px 176px, 256px 256px, 28px 28px, 28px 28px, auto;
+  background-position: 0 0, 0 0, 33px 17px, 84px 51px, 0 0, 0 0, 0 0, 0 0;
+  color-scheme: light;
+}
+
 .instrument-surface,
 .instrument-window {
   border: 1px solid color-mix(in srgb, var(--color-rose-gold) 22%, var(--color-app-border));

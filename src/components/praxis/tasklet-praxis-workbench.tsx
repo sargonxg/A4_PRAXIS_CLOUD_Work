@@ -2230,7 +2230,7 @@ export function TaskletPraxisWorkbench({
   }
 
   return (
-    <section className={cn('civic-atelier-shell cartographic-grid od-praxis-surface min-h-screen text-[color:var(--color-deep-ink)]', className)} data-testid="tasklet-praxis-workbench">
+    <section className={cn('civic-atelier-shell cartographic-grid praxis-checker-constellation od-praxis-surface min-h-screen text-[color:var(--color-deep-ink)]', className)} data-testid="tasklet-praxis-workbench">
       <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleCapsuleDragEnd}>
       <div className={cn('grid min-h-screen', showWorkbenchNavigation && 'lg:grid-cols-[250px_minmax(0,1fr)]')}>
         {showWorkbenchNavigation ? <aside className="dossier-spine od-praxis-sidebar hidden border-r px-4 py-6 lg:flex lg:flex-col">

@@ -6,11 +6,14 @@ import {
   onIdTokenChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
   GoogleAuthProvider,
+  browserLocalPersistence,
+  setPersistence,
   updateProfile,
   type User as FirebaseUser,
 } from 'firebase/auth';
@@ -95,6 +98,50 @@ function fbUserToAuthUser(fbUser: FirebaseUser, credits = 0): AuthUser {
     credits,
     subscription: 'free',
   };
+}
+
+const DEPLOYED_APP_DOMAIN = 'praxis.tacitus.me';
+const GOOGLE_OAUTH_REDIRECT_URI = 'https://praxisbytacitus.firebaseapp.com/__/auth/handler';
+
+function firebaseAuthErrorCode(err: unknown): string {
+  return (err as { code?: string }).code || '';
+}
+
+function googleProvider() {
+  const provider = new GoogleAuthProvider();
+  provider.addScope('email');
+  provider.addScope('profile');
+  provider.setCustomParameters({ prompt: 'select_account' });
+  return provider;
+}
+
+function isPopupFallbackError(code: string): boolean {
+  return code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request' || code === 'auth/web-storage-unsupported';
+}
+
+function describeGoogleAuthError(code: string): string {
+  if (code === 'auth/unauthorized-domain') {
+    return `This deployment domain is not authorized for Firebase Auth. Add ${DEPLOYED_APP_DOMAIN} in Firebase Console > Authentication > Settings > Authorized domains, and keep ${GOOGLE_OAUTH_REDIRECT_URI} authorized in Google OAuth.`;
+  }
+  if (code === 'auth/operation-not-allowed') {
+    return 'Google sign-in is not enabled for this Firebase project. Enable the Google provider in Firebase Authentication.';
+  }
+  if (code === 'auth/popup-closed-by-user') {
+    return 'Google sign-in was cancelled before completion.';
+  }
+  if (code === 'auth/popup-blocked') {
+    return 'Your browser blocked the Google popup. PRAXIS is switching to Google redirect sign-in.';
+  }
+  if (code === 'auth/auth-domain-config-required') {
+    return 'Firebase Auth is missing its authDomain configuration for this deployment.';
+  }
+  if (code === 'auth/invalid-api-key') {
+    return 'Firebase Auth is using an invalid API key for this deployment.';
+  }
+  if (code === 'auth/network-request-failed') {
+    return 'Network error - could not reach Firebase authentication servers.';
+  }
+  return `Google sign-in failed${code ? ` (${code})` : ''}. Please try again.`;
 }
 
 // ---------------------------------------------------------------------------
@@ -270,20 +317,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ---------------------------------------------------------------------------
   // Handle Google redirect result on page load.
   // signInWithRedirect navigates the user to Google; on return, getRedirectResult
-  // resolves the credential. onAuthStateChanged handles the user state update;
-  // this effect only catches errors from the redirect flow.
+  // resolves the credential. We still sync the PRAXIS cookie here so middleware
+  // has the session before /login auto-redirects to the app.
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    getRedirectResult(auth).catch((err: unknown) => {
-      const code = (err as { code?: string }).code || '';
-      console.error('[auth] Google redirect result error:', code, err);
-      setAuthError(
-        code === 'auth/unauthorized-domain'
-          ? 'This domain is not authorized for Google sign-in. Contact TACITUS support.'
-          : `Google sign-in could not finish${code ? ` (${code})` : ''}. Please try again.`,
-      );
-    });
-  }, []);
+    let cancelled = false;
+    void (async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        const redirectResult = await getRedirectResult(auth);
+        if (cancelled || !redirectResult?.user) return;
+        const synced = await syncTokenCookie(redirectResult.user);
+        if (!synced) {
+          setAuthError('Google sign-in finished, but PRAXIS could not initialize the secure app session. Please try again.');
+        }
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const code = firebaseAuthErrorCode(err);
+        console.error('[auth] Google redirect result error:', code, err);
+        setAuthError(describeGoogleAuthError(code));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [syncTokenCookie]);
 
   // ---------------------------------------------------------------------------
   // Token refresh: listen for token changes AND proactively refresh before expiry
@@ -404,6 +460,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setAuthError(null);
     try {
+      await setPersistence(auth, browserLocalPersistence);
       const cred = await signInWithEmailAndPassword(auth, email, password);
       // Sync cookie before returning so middleware sees the token when router.push fires.
       const synced = await syncTokenCookie(cred.user);
@@ -447,6 +504,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setAuthError(null);
     try {
+      await setPersistence(auth, browserLocalPersistence);
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
       const synced = await syncTokenCookie(cred.user);
@@ -478,26 +536,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [syncTokenCookie]);
 
-  // Google sign in — uses redirect flow to avoid COOP popup blocking
+  // Google sign in: Firebase recommends popup or redirect. Popup keeps the user
+  // on praxis.tacitus.me; redirect is retained as the browser-blocker fallback.
   const signInWithGoogle = useCallback(async () => {
+    setLoading(true);
+    setAuthError(null);
+    const provider = googleProvider();
     try {
-      setAuthError(null);
-      const provider = new GoogleAuthProvider();
-      provider.addScope('email');
-      provider.addScope('profile');
-      provider.setCustomParameters({ prompt: 'select_account' });
-      await signInWithRedirect(auth, provider);
-      // Page navigates to Google — this line is never reached
+      await setPersistence(auth, browserLocalPersistence);
+      const cred = await signInWithPopup(auth, provider);
+      const synced = await syncTokenCookie(cred.user);
+      if (!synced) {
+        setLoading(false);
+        return { success: false, error: 'Google sign-in succeeded, but PRAXIS could not initialize the secure app session. Please try again.' };
+      }
       return { success: true };
     } catch (err: unknown) {
-      const code = (err as { code?: string }).code || '';
-      if (code === 'auth/unauthorized-domain') {
-        return { success: false, error: 'This domain is not authorized for Google sign-in. Please add it in Firebase Console > Authentication > Settings > Authorized domains.' };
+      const code = firebaseAuthErrorCode(err);
+      if (isPopupFallbackError(code)) {
+        try {
+          await signInWithRedirect(auth, provider);
+          return { success: true };
+        } catch (redirectErr: unknown) {
+          setLoading(false);
+          const redirectCode = firebaseAuthErrorCode(redirectErr);
+          console.error('[auth] Google redirect fallback error:', redirectCode, redirectErr);
+          return { success: false, error: describeGoogleAuthError(redirectCode) };
+        }
       }
+      setLoading(false);
       console.error('[auth] Google sign-in error:', code, err);
-      return { success: false, error: `Google sign-in failed (${code}). Please try again.` };
+      return { success: false, error: describeGoogleAuthError(code) };
     }
-  }, []);
+  }, [syncTokenCookie]);
 
   // Legacy sample entry point retained for UI compatibility; sample sessions are retired.
   const signInAsDemo = useCallback(async () => {

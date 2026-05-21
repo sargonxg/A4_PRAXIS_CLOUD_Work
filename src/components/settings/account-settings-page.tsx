@@ -513,7 +513,7 @@ export function AccountSettingsPage() {
   ];
 
   return (
-    <section className="od-praxis-surface min-h-screen px-4 py-6 text-[#1f1f1f] md:px-8 lg:px-10" data-testid="account-settings-page">
+    <section className="od-praxis-surface praxis-checker-constellation min-h-screen px-4 py-6 text-[#1f1f1f] md:px-8 lg:px-10" data-testid="account-settings-page">
       <div className="mx-auto w-full max-w-6xl">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-black/10 pb-4">
           <div>
