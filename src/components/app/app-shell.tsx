@@ -25,6 +25,8 @@ import { LiveContextReadinessCard } from '@/components/app/live-context-readines
 import { CalibrationTransparencyModal } from '@/components/app/calibration-transparency-modal';
 import { useSituationStore } from '@/stores/situation-store';
 
+type SearchOpenEvent = CustomEvent<{ query?: string }>;
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { setUser, setDemoMode, sidebarOpen, setSidebarOpen } = useAppStore();
@@ -92,6 +94,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setSearchOpen(false);
     setSearchInitialQuery('');
   }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const searchEvent = event as SearchOpenEvent;
+      openSearch(searchEvent.detail?.query);
+    };
+    window.addEventListener('open-praxis-search', handler);
+    return () => window.removeEventListener('open-praxis-search', handler);
+  }, [openSearch]);
+
   const openAsk = useCallback(() => {
     window.dispatchEvent(new CustomEvent('open-praxis-chat'));
   }, []);
@@ -139,6 +151,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <TooltipProvider delayDuration={0}>
+      <>
       {isOnePageCockpit ? (
         <div className="app-light h-screen overflow-y-auto bg-[#f3f5f1]" data-testid="praxis-one-page-app-shell">
           <ErrorBoundary>
@@ -189,14 +202,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
-      {/* Global search overlay */}
-      {searchOpen && (
-        <GlobalSearch
-          key={searchInitialQuery || 'empty-command'}
-          onClose={closeSearch}
-          initialQuery={searchInitialQuery}
-        />
-      )}
       {helpOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-navy-950/25 px-4 pt-20 backdrop-blur-sm" onClick={() => setHelpOpen(false)}>
           <div
@@ -236,6 +241,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <AiErrorToast />
       </>
       )}
+      {/* Global search overlay */}
+      {searchOpen && (
+        <GlobalSearch
+          key={searchInitialQuery || 'empty-command'}
+          onClose={closeSearch}
+          initialQuery={searchInitialQuery}
+        />
+      )}
+      </>
     </TooltipProvider>
   );
 }

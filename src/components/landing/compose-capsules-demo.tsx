@@ -18,11 +18,11 @@ type MiniCapsule = {
 };
 
 const ACCENT_INK: Record<MiniCapsule["accent"], string> = {
-  navy: "#1B3A5C",
-  blue: "#4B92DB",
-  gold: "#A37A14",
-  sage: "#3F6440",
-  terracotta: "#8E3D24",
+  navy: "var(--color-deep-ink)",
+  blue: "var(--color-civic-blue)",
+  gold: "var(--color-oxide)",
+  sage: "var(--color-mineral)",
+  terracotta: "var(--color-clay)",
 };
 const ACCENT_BG: Record<MiniCapsule["accent"], string> = {
   navy: "rgba(27,58,92,0.10)",

@@ -38,6 +38,7 @@ type PraxisCommand = {
 export const COMMANDS: PraxisCommand[] = [
   { id: 'open-home', label: 'Open PRAXIS', description: 'Ask from the active capsule.', href: '/app', icon: Home, group: 'Primary surfaces' },
   { id: 'open-capsule-factory', label: 'Open Capsules', description: 'Manage, improve, source, and download ContextCapsules.', href: '/app/capsules', icon: FolderKanban, group: 'Primary surfaces' },
+  { id: 'open-repository-lane', label: 'Open Repository lane', description: 'Inspect uploaded documents, source posture, and capsule evidence receipts.', href: '/app/capsules?lane=repository', icon: FileSearch, group: 'Primary surfaces' },
   { id: 'attach-source', label: 'Attach source', description: 'Upload or attach a source to the active capsule.', href: '/app', icon: Upload, group: 'Context actions' },
   { id: 'find-gaps', label: 'Find evidence gaps', description: 'Review evidence gaps from the active capsule.', href: '/app', icon: ShieldAlert, group: 'Context actions' },
   { id: 'create-capsule', label: 'Create capsule', description: 'Start reusable context from the manager.', href: '/app', icon: Plus, group: 'Context actions' },

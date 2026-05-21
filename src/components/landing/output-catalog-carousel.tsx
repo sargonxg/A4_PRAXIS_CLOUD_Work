@@ -62,12 +62,12 @@ const ACCENT_TINT: Record<Accent, string> = {
 };
 
 const ACCENT_INK: Record<Accent, string> = {
-  navy: "#1B3A5C",
-  blue: "#1B3A5C",
-  gold: "#A37A14",
-  sage: "#3F6440",
-  terracotta: "#8E3D24",
-  purple: "#574A6A",
+  navy: "var(--color-deep-ink)",
+  blue: "var(--color-civic-blue)",
+  gold: "var(--color-oxide)",
+  sage: "var(--color-mineral)",
+  terracotta: "var(--color-clay)",
+  purple: "var(--color-civic-blue)",
 };
 
 type CardData = {

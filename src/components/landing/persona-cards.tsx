@@ -51,9 +51,9 @@ const PERSONAS: readonly Persona[] = [
 ];
 
 const ACCENT_INK: Record<Persona["accent"], string> = {
-  navy: "#1B3A5C",
-  sage: "#3F6440",
-  gold: "#A37A14",
+  navy: "var(--color-deep-ink)",
+  sage: "var(--color-mineral)",
+  gold: "var(--color-oxide)",
 };
 
 const ACCENT_TINT: Record<Persona["accent"], string> = {

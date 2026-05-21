@@ -170,6 +170,12 @@ type RuntimeProof = {
   latestMirroredEvent: string;
   memoOutputHref: string | null;
 };
+type WorkbenchDiagnosticFlag = {
+  label: string;
+  status: string;
+  detail: string;
+  tone: 'ok' | 'watch' | 'warn';
+};
 type RepositoryDocument = {
   id: string;
   title: string;
@@ -642,6 +648,7 @@ export function TaskletPraxisWorkbench({
   const [capsuleBrowserOpen, setCapsuleBrowserOpen] = useState(false);
   const [contextComposerCollapsed, setContextComposerCollapsed] = useState(false);
   const [repositoryOpen, setRepositoryOpen] = useState(false);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [capsuleDetailTab, setCapsuleDetailTab] = useState<CapsuleDetailTab>('overview');
   const [builderOpen, setBuilderOpen] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
@@ -764,6 +771,44 @@ export function TaskletPraxisWorkbench({
     latestMirroredEvent: latestEvent?.message ?? latestEvent?.eventType ?? focusedRunStream.lastEventId ?? 'no mirrored event',
     memoOutputHref: latestRun?.outputHref ?? null,
   };
+  const workbenchRedFlags = [
+    {
+      label: 'Context chain',
+      status: contextHealth.label,
+      detail: contextHealth.detail,
+      tone: contextHealth.label === 'Operational' || contextHealth.label === 'Grounded'
+        ? 'ok'
+        : contextHealth.label === 'Ready'
+          ? 'watch'
+          : 'warn',
+    },
+    {
+      label: 'Sources',
+      status: activeCapsuleSourceCount > 0 ? `${activeCapsuleSourceCount} receipts` : 'missing receipts',
+      detail: activeCapsuleSourceCount > 0
+        ? 'The active capsule has source or document receipts available.'
+        : 'Attach sources or open the Repository lane before relying on grounded claims.',
+      tone: activeCapsuleSourceCount > 0 ? 'ok' : 'warn',
+    },
+    {
+      label: 'Repository',
+      status: repositoryLoading ? 'loading' : `${repositoryDocuments.length} documents`,
+      detail: repositoryLoading
+        ? 'Repository document posture is still loading.'
+        : repositoryDocuments.length
+          ? 'Repository documents are visible for inspection and attachment.'
+          : 'No uploaded repository documents are visible for the active workspace.',
+      tone: repositoryLoading ? 'watch' : repositoryDocuments.length ? 'ok' : 'watch',
+    },
+    {
+      label: 'Agent run',
+      status: runtimeProof.workerStatus.replaceAll('_', ' '),
+      detail: runtimeProof.queuedRunId
+        ? `Latest queued run ${runtimeProof.queuedRunId.slice(0, 12)} with mirrored event: ${runtimeProof.latestMirroredEvent}.`
+        : 'No queued agent run is attached to this workbench view yet.',
+      tone: runtimeProof.queuedRunId ? 'ok' : 'watch',
+    },
+  ] satisfies WorkbenchDiagnosticFlag[];
 
   useEffect(() => {
     if (focusedRunId) return;
@@ -2176,6 +2221,10 @@ export function TaskletPraxisWorkbench({
     else sendPublicToLogin(nextPrompt, capsuleFactoryAgent);
   }
 
+  function openWorkbenchSearch(query?: string) {
+    window.dispatchEvent(new CustomEvent('open-praxis-search', { detail: { query } }));
+  }
+
   return (
     <section className={cn('civic-atelier-shell cartographic-grid od-praxis-surface min-h-screen text-[color:var(--color-deep-ink)]', className)} data-testid="tasklet-praxis-workbench">
       <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleCapsuleDragEnd}>
@@ -2313,6 +2362,18 @@ export function TaskletPraxisWorkbench({
             </p>
             <div className="mt-3" data-testid="runtime-health-semaphore">
               <RuntimeHealthSemaphore isAuthenticated={isAuthenticated} />
+            </div>
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              <button
+                type="button"
+                data-testid="workbench-search-trigger"
+                onClick={() => openWorkbenchSearch(capsuleSearch)}
+                className="inline-flex items-center gap-2 rounded-md border border-[color:var(--color-mineral)]/25 bg-white/80 px-3 py-2 text-xs font-semibold text-[color:var(--color-deep-ink)] shadow-sm hover:border-[color:var(--color-clay)]/40 hover:bg-[color:var(--color-archive-paper-strong)]"
+              >
+                <Search className="h-4 w-4" />
+                Search app
+              </button>
+              <WorkbenchDiagnosticsStrip flags={workbenchRedFlags} onOpen={() => setDiagnosticsOpen(true)} />
             </div>
             <h1 className="mt-7 max-w-4xl text-center font-serif text-5xl font-semibold tracking-tight text-[color:var(--color-deep-ink)] sm:text-6xl">
               What can PRAXIS do for you?
@@ -3062,6 +3123,13 @@ export function TaskletPraxisWorkbench({
             void refreshRepository();
           }}
           onRateUsefulness={(rating) => selectedCapsule ? void rateCapsuleUsefulness(selectedCapsule, rating) : undefined}
+        />
+      ) : null}
+      {diagnosticsOpen ? (
+        <WorkbenchDiagnosticsDrawer
+          flags={workbenchRedFlags}
+          runtimeProof={runtimeProof}
+          onClose={() => setDiagnosticsOpen(false)}
         />
       ) : null}
       {capsuleBrowserOpen ? (
@@ -4102,6 +4170,13 @@ function CapsuleTaxonomyFilterBar({
   showRepairStates: boolean;
   onClear?: () => void;
 }) {
+  const activeFilterLabels = [
+    query?.trim() ? `query:${query.trim()}` : null,
+    typeId !== 'all' ? `type:${typeId}` : null,
+    domainId !== 'all' ? `domain:${domainId}` : null,
+    policyTeamId !== 'all' ? `team:${policyTeamId}` : null,
+  ].filter((label): label is string => Boolean(label));
+
   return (
     <div className="mt-4 grid gap-3" data-testid="capsule-taxonomy-filter-bar">
       {onQuery ? (
@@ -4111,7 +4186,7 @@ function CapsuleTaxonomyFilterBar({
             <input
               value={query ?? ''}
               onChange={(event) => onQuery(event.target.value)}
-              placeholder="Search capsule titles"
+              placeholder="Search capsules by title, role, domain, source posture"
               className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
             />
           </label>
@@ -4122,6 +4197,15 @@ function CapsuleTaxonomyFilterBar({
           ) : null}
         </div>
       ) : null}
+      <div
+        className="receipt-slip flex flex-wrap items-center justify-between gap-2 rounded-md px-3 py-2 font-mono text-[11px]"
+        data-testid="capsule-filter-receipt"
+      >
+        <span className="font-semibold uppercase tracking-[0.14em] text-slate-400">Filter receipt</span>
+        <span className="font-semibold text-slate-700">
+          {activeFilterLabels.length ? activeFilterLabels.join(' / ') : 'all capsules'} / {stats.visibleCapsules} catalogued
+        </span>
+      </div>
       <div className="grid gap-3 md:grid-cols-3" data-testid="capsule-taxonomy-surface">
         <CategoryAxisPanel
           label="Types"
@@ -4482,6 +4566,82 @@ function RuntimeProofStrip({ proof }: { proof: RuntimeProof }) {
         <ProofCell label="worker/run status" value={proof.workerStatus.replaceAll('_', ' ')} />
         <ProofCell label="latest mirrored event" value={proof.latestMirroredEvent} />
       </div>
+    </div>
+  );
+}
+
+function WorkbenchDiagnosticsStrip({
+  flags,
+  onOpen,
+}: {
+  flags: WorkbenchDiagnosticFlag[];
+  onOpen: () => void;
+}) {
+  const warnCount = flags.filter((flag) => flag.tone === 'warn').length;
+  const watchCount = flags.filter((flag) => flag.tone === 'watch').length;
+  const label = warnCount ? `${warnCount} red flag${warnCount === 1 ? '' : 's'}` : watchCount ? `${watchCount} watch item${watchCount === 1 ? '' : 's'}` : 'No red flags';
+  return (
+    <button
+      type="button"
+      data-testid="workbench-red-flags"
+      onClick={onOpen}
+      className="receipt-slip inline-flex items-center gap-2 rounded-md px-3 py-2 font-mono text-[11px] font-semibold hover:border-[color:var(--color-clay)]/40"
+    >
+      <Monitor className="h-4 w-4 text-[color:var(--color-oxide)]" />
+      Diagnostics: {label}
+    </button>
+  );
+}
+
+function WorkbenchDiagnosticsDrawer({
+  flags,
+  runtimeProof,
+  onClose,
+}: {
+  flags: WorkbenchDiagnosticFlag[];
+  runtimeProof: RuntimeProof;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-40 bg-black/25" data-testid="workbench-diagnostics-drawer">
+      <aside className="ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-2xl">
+        <div className="border-b border-slate-200 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-oxide)]">Read-only diagnostics</p>
+              <h2 className="mt-1 text-xl font-semibold text-slate-950">Workbench red flags</h2>
+            </div>
+            <button type="button" aria-label="Close workbench diagnostics" onClick={onClose} className="rounded-md p-2 text-slate-500 hover:bg-slate-100">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <div className="grid gap-3 overflow-y-auto p-5">
+          {flags.map((flag) => (
+            <section key={flag.label} className={cn(
+              'rounded-lg border p-3',
+              flag.tone === 'ok' && 'border-emerald-200 bg-emerald-50/60',
+              flag.tone === 'watch' && 'border-amber-200 bg-amber-50/60',
+              flag.tone === 'warn' && 'border-red-200 bg-red-50/60',
+            )}>
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm font-semibold text-slate-950">{flag.label}</p>
+                <span className="rounded-md bg-white/80 px-2 py-1 font-mono text-[10px] font-semibold text-slate-600">{flag.status}</span>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-slate-600">{flag.detail}</p>
+            </section>
+          ))}
+          <section className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs font-semibold uppercase text-slate-400">Runtime receipt</p>
+            <div className="mt-2 grid gap-2">
+              <ProofCell label="active capsule" value={runtimeProof.activeCapsule} />
+              <ProofCell label="graph mode" value={runtimeProof.graphMode} />
+              <ProofCell label="memory posture" value={runtimeProof.cogneeMode} />
+              <ProofCell label="last Ask receipt" value={runtimeProof.lastAskReceipt} />
+            </div>
+          </section>
+        </div>
+      </aside>
     </div>
   );
 }

@@ -163,7 +163,12 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('capsulePickerQuery');
     expect(source).not.toContain('aria-label="Capsule type filters"');
     expect(source).not.toContain('aria-label="New context capsule presets"');
-    expect(source).toContain('placeholder="Search capsule titles"');
+    expect(source).toContain('placeholder="Search capsules by title, role, domain, source posture"');
+    expect(source).toContain('data-testid="workbench-search-trigger"');
+    expect(source).toContain("new CustomEvent('open-praxis-search'");
+    expect(source).toContain('data-testid="workbench-red-flags"');
+    expect(source).toContain('data-testid="workbench-diagnostics-drawer"');
+    expect(source).toContain('data-testid="capsule-filter-receipt"');
   });
 
   it('renders the live stack inside the composer instead of a separate rail above it', () => {

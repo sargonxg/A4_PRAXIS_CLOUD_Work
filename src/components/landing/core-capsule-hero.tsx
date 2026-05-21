@@ -39,12 +39,12 @@ const CORES: readonly CoreGlyph[] = [
 ] as const;
 
 const TONE_FILL: Record<CoreGlyph["tone"], string> = {
-  navy: "#1B3A5C",
-  blue: "#4B92DB",
-  gold: "#E8B931",
-  sage: "#5B8C5A",
-  terracotta: "#C75B39",
-  purple: "#7B6D8D",
+  navy: "var(--color-deep-ink)",
+  blue: "var(--color-civic-blue)",
+  gold: "var(--color-oxide)",
+  sage: "var(--color-mineral)",
+  terracotta: "var(--color-clay)",
+  purple: "var(--color-civic-blue)",
 };
 
 function usePrefersReducedMotion() {
@@ -120,9 +120,9 @@ export function CoreCapsuleHero({
           >
             <defs>
               <radialGradient id="cap-chamber" cx="50%" cy="38%" r="70%">
-                <stop offset="0%" stopColor="#FDF6E3" />
-                <stop offset="55%" stopColor="#F8F1E0" />
-                <stop offset="100%" stopColor="#EDE4CB" />
+                <stop offset="0%" stopColor="var(--color-archive-paper-strong)" />
+                <stop offset="55%" stopColor="var(--color-archive-paper)" />
+                <stop offset="100%" stopColor="var(--color-mineral-soft)" />
               </radialGradient>
               <radialGradient id="cap-navy" cx="35%" cy="22%" r="80%">
                 <stop offset="0%" stopColor="rgba(75,146,219,0.18)" />
@@ -159,7 +159,7 @@ export function CoreCapsuleHero({
             ))}
 
             {/* Still center — gold spark */}
-            <circle cx="160" cy="380" r="5" fill="#E8B931" />
+            <circle cx="160" cy="380" r="5" fill="var(--color-oxide)" />
             <circle
               cx="160"
               cy="380"
@@ -191,7 +191,7 @@ export function CoreCapsuleHero({
             <span
               className="absolute left-1/2 top-0 block h-2 w-2 -translate-x-1/2 rounded-full"
               style={{
-                background: "#F5D978",
+                background: "var(--color-clay)",
                 boxShadow: "0 0 12px 4px rgba(245,217,120,0.45)",
               }}
             />

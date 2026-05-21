@@ -38,5 +38,9 @@ describe('Capsules route consolidation', () => {
       label: 'Open Capsules',
       href: '/app/capsules',
     });
+    expect(COMMANDS.find((command) => command.id === 'open-repository-lane')).toMatchObject({
+      label: 'Open Repository lane',
+      href: '/app/capsules?lane=repository',
+    });
   });
 });
