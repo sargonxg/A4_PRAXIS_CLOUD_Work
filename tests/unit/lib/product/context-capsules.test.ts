@@ -167,7 +167,7 @@ describe('context capsule product contract', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(69);
+    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(84);
     expect(starterIds.size).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
@@ -175,7 +175,7 @@ describe('context capsule product contract', () => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toEqual({ situation: 20, tool: 25, output: 19, user: 5 });
+    expect(categoryCounts).toEqual({ situation: 30, tool: 30, output: 19, user: 5 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
@@ -199,6 +199,51 @@ describe('context capsule product contract', () => {
         expect([1, 2, 3]).toContain(source.reliabilityTier);
         expect(source.url).toMatch(/^https:\/\//);
       }
+    }
+  });
+
+  it('adds desk-officer situation and intellectual-tool capsules with human review markings', () => {
+    const expectedSituationIds = [
+      'starter-situation-haiti-gang-mss-access-watch',
+      'starter-situation-sahel-aes-ecowas-transition-watch',
+      'starter-situation-kosovo-serbia-normalization-implementation',
+      'starter-situation-armenia-azerbaijan-peace-connectivity',
+      'starter-situation-yemen-roadmap-ceasefire-economy',
+      'starter-situation-libya-ceasefire-elections-institutions',
+      'starter-situation-baltic-undersea-infrastructure-resilience',
+      'starter-situation-south-china-sea-ayungin-resupply',
+      'starter-situation-moldova-energy-hybrid-resilience',
+      'starter-situation-gerd-nile-water-diplomacy',
+    ];
+    const expectedToolIds = [
+      'starter-tool-mediator-batna-zopa-ripeness-map',
+      'starter-tool-ceasefire-monitoring-verification-matrix',
+      'starter-tool-joint-fact-finding-source-protocol',
+      'starter-tool-principal-ask-payrise-negotiation-prep',
+      'starter-tool-estimative-confidence-calibration-table',
+    ];
+
+    for (const starterId of [...expectedSituationIds, ...expectedToolIds]) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter, `${starterId} missing`).toBeTruthy();
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.excerpts.length, `${starterId} excerpts`).toBeGreaterThanOrEqual(2);
+      expect(starter?.readinessStars, `${starterId} readiness`).toBeGreaterThanOrEqual(4);
+      expect(starter?.humanReview).toMatchObject({
+        status: 'human-reviewed',
+        label: 'Human reviewed',
+        tooltip: expect.stringMatching(/human.*review|review.*human/i),
+      });
+      expect(starter?.inspectionSections.map((section) => section.label)).toContain('Human review');
+      expect(buildCapsuleStarterPromptBlock(starterId)).toContain('human_review: Human reviewed');
+    }
+
+    for (const starterId of expectedToolIds) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter?.category).toBe('tool');
+      expect(starter?.tags).toEqual(expect.arrayContaining(['thinking-device', 'review-gated']));
+      expect(starter?.deviceProfile?.humanReviewGate).toMatch(/human|review|approval/i);
+      expect(starter?.combinesWellWith.some((id) => id.startsWith('starter-situation-'))).toBe(true);
     }
   });
 
@@ -495,6 +540,16 @@ describe('context capsule product contract', () => {
       'starter-situation-gaza-ceasefire-aid-reconstruction',
       'starter-situation-red-sea-houthi-shipping-risk',
       'starter-situation-essequibo-legal-diplomatic-dispute',
+      'starter-situation-haiti-gang-mss-access-watch',
+      'starter-situation-sahel-aes-ecowas-transition-watch',
+      'starter-situation-kosovo-serbia-normalization-implementation',
+      'starter-situation-armenia-azerbaijan-peace-connectivity',
+      'starter-situation-yemen-roadmap-ceasefire-economy',
+      'starter-situation-libya-ceasefire-elections-institutions',
+      'starter-situation-baltic-undersea-infrastructure-resilience',
+      'starter-situation-south-china-sea-ayungin-resupply',
+      'starter-situation-moldova-energy-hybrid-resilience',
+      'starter-situation-gerd-nile-water-diplomacy',
     ]));
 
     for (const starter of situationStarters) {

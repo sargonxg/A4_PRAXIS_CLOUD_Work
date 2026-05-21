@@ -429,6 +429,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('deviceProfile');
     expect(source).toContain('domainAccent');
     expect(source).toContain('Human review gate');
+    expect(source).toContain('capsule-human-reviewed-badge');
+    expect(source).toContain('capsule-inspector-human-reviewed-badge');
+    expect(source).toContain('humanReview.tooltip');
     expect(source).toContain('Best next action');
     expect(source).toContain('readiness signals');
   });

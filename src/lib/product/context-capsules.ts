@@ -433,8 +433,18 @@ export interface CapsuleStarterDefinition {
   aiUseGuidance: string;
   richProfile: CapsuleStarterRichProfile;
   deviceProfile?: CapsuleStarterDeviceProfile;
+  humanReview?: CapsuleStarterHumanReview;
   inspectionSections: CapsuleStarterInspectionSection[];
   combinesWellWith: string[];
+}
+
+export interface CapsuleStarterHumanReview {
+  status: 'human-reviewed' | 'research-reviewed' | 'draft';
+  label: string;
+  tooltip: string;
+  reviewedBy: string;
+  reviewedAt: string;
+  notes: string;
 }
 
 export interface CapsuleQualityAuditScores {
@@ -478,7 +488,7 @@ export interface CapsuleImprovementProposal {
   generatedBy: 'quality-audit' | 'cognee' | 'agent' | string;
 }
 
-export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-20-intellectual-devices-v5';
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-21-desk-officer-review-v6';
 
 export type CapsuleStarterSnapshot = Pick<
   CapsuleStarterDefinition,
@@ -500,6 +510,7 @@ export type CapsuleStarterSnapshot = Pick<
   | 'aiUseGuidance'
   | 'richProfile'
   | 'deviceProfile'
+  | 'humanReview'
   | 'combinesWellWith'
 > & {
   catalogVersion: string;
@@ -877,6 +888,7 @@ type CapsuleStarterOverrides = Partial<Pick<
   | 'aiUseGuidance'
   | 'richProfile'
   | 'deviceProfile'
+  | 'humanReview'
 >>;
 
 function normalizeStarterTags(
@@ -920,6 +932,7 @@ function starter(
       ? buildStarterDeviceProfile(label)
       : undefined
   );
+  const humanReview = overrides?.humanReview;
   return {
     starterId,
     category,
@@ -957,9 +970,13 @@ function starter(
     aiUseGuidance,
     richProfile,
     ...(deviceProfile ? { deviceProfile } : {}),
+    ...(humanReview ? { humanReview } : {}),
     inspectionSections: [
       { label: 'Purpose', detail: richProfile.purpose },
       { label: 'Sources', detail: richProfile.sourceIndications.slice(0, 3).join(' ') },
+      ...(humanReview ? [
+        { label: 'Human review', detail: `${humanReview.notes} ${humanReview.tooltip}` },
+      ] : []),
       ...(deviceProfile ? [
         { label: 'Tools/Thinking Devices', detail: `${deviceProfile.deviceKind}: ${deviceProfile.methodSteps.slice(0, 4).join(' ')}` },
         { label: 'Review Gates', detail: deviceProfile.humanReviewGate },
@@ -970,6 +987,17 @@ function starter(
       { label: 'Run Recipe', detail: richProfile.agentInstructions },
       { label: 'Compatible Capsules', detail: combinesWellWith.length ? combinesWellWith.join(', ') : 'Attach a user capsule, a tool capsule, and an output capsule before external handoff.' },
     ],
+  };
+}
+
+function humanReviewed(notes: string, reviewedBy = 'PRAXIS policy capsule review'): CapsuleStarterHumanReview {
+  return {
+    status: 'human-reviewed',
+    label: 'Human reviewed',
+    tooltip: 'Human reviewed: PRAXIS policy reviewers checked the capsule purpose, source posture, AI guardrails, and review limits. Refresh sources before external use.',
+    reviewedBy,
+    reviewedAt: CAPSULE_STARTER_CATALOG_VERSION,
+    notes,
   };
 }
 
@@ -1829,6 +1857,251 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     aiUseGuidance: 'Use this for escalation discipline. Avoid operational advice; keep public signals, proportionality, and review gates explicit.',
     deviceProfile: buildStarterDeviceProfile('Escalation Ladder and De-escalation Path', { deviceKind: 'escalation-deescalation-path' }),
   }),
+  starter('starter-situation-haiti-gang-mss-access-watch', 'situation', 'humanitarian-rights', 'Haiti gang violence and MSS access watch', 'A desk-officer capsule for Haiti gang violence, transition politics, MSS support posture, humanitarian access, displacement, and rights reporting.', 'Use this when PRAXIS needs to brief Haiti without flattening security operations, political transition, human-rights allegations, and humanitarian access into one story. Keep dates, localities, source tier, and mandate boundaries explicit.', ['haiti', 'gang-violence', 'mss', 'humanitarian-access', 'transition-politics', 'rights-reporting', 'team:humanitarian', 'team:diplomatic'], { situationCoreId: 'starter-situation-haiti-gang-mss-access-watch', pathCoreId: 'humanitarian-analysis', sourceCoreIds: ['binuh-haiti-mandate-news', 'ocha-access'], toolCoreIds: ['grounded-research', 'sourceability', 'scenario-projector'], outputCoreIds: ['scenario-risk-dashboard-card'] }, ['grounded-research', 'sourceability', 'scenario-projector'], ['scenario-risk-dashboard-card', 'humanitarian-one-pager', 'principals-decision-memo'], ['starter-tool-sourceability-matrix', 'starter-tool-spoiler-blocker-scan', 'starter-output-scenario-risk-dashboard-card'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'binuh-haiti-mandate-news', label: 'BINUH Haiti mission updates and mandate resources', url: 'https://binuh.unmissions.org/', sourceType: 'multilateral', relevance: 'UN mission lane for Haiti political transition, security, governance, and human-rights reporting.', publisher: 'United Nations BINUH', date: '2026', reliabilityTier: 1 },
+      { id: 'ocha-access', label: 'OCHA humanitarian access guidance', url: 'https://knowledge.base.unocha.org/wiki/spaces/imtoolbox/pages/1410072577/Humanitarian%2BAccess', sourceType: 'multilateral', relevance: 'Operational vocabulary for access constraints, affected populations, and mitigation actions.', publisher: 'UN OCHA', date: '2024', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'binuh-haiti-mandate-news', text: 'BINUH material should anchor public claims about Haiti mission posture, governance, security, and rights reporting before PRAXIS drafts an assessment.' },
+      { sourceId: 'ocha-access', text: 'OCHA access guidance keeps the capsule focused on constraints, impacts, restriction policies, and mitigation actions rather than unsupported operational conclusions.' },
+    ],
+    suggestedQuestions: ['Which Haitian department, neighborhood, or access route is in scope?', 'Which claims are security facts, political-transition signals, humanitarian access constraints, or rights allegations?', 'What source must be refreshed before a principals update?'],
+    suggestedNextActions: ['Refresh BINUH, OCHA, and rights receipts for the exact time window.', 'Build an actor, access, and displacement risk card.', 'Run sourceability before naming perpetrators, access patterns, or mandate performance.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'haiti-security-access-watch', outputGoal: 'scenario-risk-dashboard-card', approvalNotes: 'Human review is required before external use of rights allegations, security-operation claims, or access judgments.' },
+    aiUseGuidance: 'Use this as a Haiti watch capsule. Separate public security reporting, humanitarian access constraints, political-transition milestones, and rights allegations with source IDs and human approval gates.',
+    humanReview: humanReviewed('Reviewed as a high-value public-source capsule for desk officers tracking Haiti access, security, and political-transition risk.'),
+  }),
+  starter('starter-situation-sahel-aes-ecowas-transition-watch', 'situation', 'diplomacy', 'Sahel AES-ECOWAS transition watch', 'A diplomatic desk capsule for AES, ECOWAS, UNOWAS, coastal spillover, transition timelines, counter-terrorism cooperation, and humanitarian stress.', 'Use this when PRAXIS must brief regional Sahel dynamics without treating military cooperation, regional diplomacy, humanitarian indicators, and political legitimacy as the same layer.', ['sahel', 'aes', 'ecowas', 'unowas', 'transition', 'coastal-spillover', 'team:diplomatic', 'team:security-defence'], { situationCoreId: 'starter-situation-sahel-aes-ecowas-transition-watch', pathCoreId: 'foreign-policy', sourceCoreIds: ['unowas-sahel-security-council-2025', 'unowas-mission'], toolCoreIds: ['stakeholder-map', 'sourceability', 'scenario-projector'], outputCoreIds: ['principals-decision-memo'] }, ['stakeholder-map', 'sourceability', 'scenario-projector'], ['principals-decision-memo', 'scenario-risk-dashboard-card', 'talking-points'], ['starter-tool-actor-leverage-veto-map', 'starter-tool-negotiation-ripeness-decision-clock', 'starter-output-principals-decision-memo'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'unowas-sahel-security-council-2025', label: 'UNOWAS Security Council briefing on West Africa and the Sahel', url: 'https://unowas.unmissions.org/en/security-council-special-representative-sim%C3%A3o-calls-collective-response-challenges-west', sourceType: 'multilateral', relevance: 'UN lane for regional security, humanitarian pressure, ECOWAS-AES cooperation, and preventive diplomacy.', publisher: 'UNOWAS', date: '2025-08-07', reliabilityTier: 1 },
+      { id: 'unowas-mission', label: 'UNOWAS mission and preventive diplomacy mandate', url: 'https://unowas.unmissions.org/', sourceType: 'multilateral', relevance: 'Mission baseline for preventive diplomacy, political dialogue, and regional conflict-prevention work.', publisher: 'UNOWAS', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'unowas-sahel-security-council-2025', text: 'The Security Council briefing lane supports claims about regional fragility, spillover risk, ECOWAS-AES cooperation, and humanitarian indicators.' },
+      { sourceId: 'unowas-mission', text: 'UNOWAS mission language anchors the capsule in preventive diplomacy, inclusive political processes, and coordination with regional actors.' },
+    ],
+    suggestedQuestions: ['Which Sahel state, coastal spillover corridor, or regional mechanism is the decision about?', 'Which claims are official transition timelines, counter-terrorism posture, humanitarian indicators, or inferred incentives?', 'What would change the recommendation in the next 30 days?'],
+    suggestedNextActions: ['Map ECOWAS, AES, AU, UNOWAS, and coastal-state interests.', 'Build a decision clock for transition and regional-security milestones.', 'Create a principals memo with explicit source freshness and inference labels.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'sahel-regional-transition-watch', outputGoal: 'principals-decision-memo', approvalNotes: 'Review inferred actor incentives and security-risk claims before sharing beyond the workspace.' },
+    aiUseGuidance: 'Use this for regional Sahel statecraft. Keep public mandate facts separate from analytic inference, and attach recent UN or regional receipts before drafting options.',
+    humanReview: humanReviewed('Reviewed as a regional statecraft capsule for transition, preventive diplomacy, and cross-border risk analysis.'),
+  }),
+  starter('starter-situation-kosovo-serbia-normalization-implementation', 'situation', 'diplomacy', 'Kosovo-Serbia normalization implementation watch', 'A diplomacy capsule for the EU-facilitated Belgrade-Pristina Dialogue, implementation sequencing, municipal tensions, recognition language, and escalation risk.', 'Use this when PRAXIS needs implementation analysis rather than a generic Balkan conflict summary. Track public commitments, sequence, blockers, local incidents, and language that should not overstate recognition or compliance.', ['kosovo', 'serbia', 'belgrade-pristina-dialogue', 'normalization', 'implementation', 'eu-facilitated-dialogue', 'team:diplomatic'], { situationCoreId: 'starter-situation-kosovo-serbia-normalization-implementation', pathCoreId: 'foreign-policy', sourceCoreIds: ['eeas-belgrade-pristina-dialogue', 'un-peacemaker'], toolCoreIds: ['commitment-tracker', 'position-vs-interest', 'sourceability'], outputCoreIds: ['negotiation-prep-book'] }, ['commitment-tracker', 'position-vs-interest', 'sourceability'], ['negotiation-prep-book', 'talking-points', 'principals-decision-memo'], ['starter-tool-negotiation-ripeness-decision-clock', 'starter-tool-actor-leverage-veto-map', 'starter-output-negotiation-prep-book'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'eeas-belgrade-pristina-dialogue', label: 'EEAS Belgrade-Pristina Dialogue page', url: 'https://www.eeas.europa.eu/eeas/belgrade-pristina-dialogue_en', sourceType: 'official', relevance: 'Official EU lane for dialogue framework, agreements, and implementation posture.', publisher: 'European External Action Service', date: '2026', reliabilityTier: 1 },
+      { id: 'un-peacemaker', label: 'UN Peacemaker mediation resources', url: 'https://peacemaker.un.org/', sourceType: 'multilateral', relevance: 'Mediation and process-design vocabulary for sequencing implementation and managing consent.', publisher: 'United Nations', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'eeas-belgrade-pristina-dialogue', text: 'EEAS dialogue material should control public references to agreements, EU facilitation, implementation steps, and official language.' },
+      { sourceId: 'un-peacemaker', text: 'UN mediation resources keep the analysis focused on preparedness, consent, impartiality, inclusivity, and implementable agreement quality.' },
+    ],
+    suggestedQuestions: ['Which article, municipal issue, license-plate or association question is in scope?', 'What commitment is agreed, disputed, not implemented, or only proposed?', 'Which local incident or external statement changes the decision window?'],
+    suggestedNextActions: ['Create an implementation ledger with party, obligation, evidence, blocker, and next forum.', 'Map spoilers and incentives separately from public positions.', 'Draft negotiating points with exact caveats on status and implementation.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'kosovo-serbia-implementation-ledger', outputGoal: 'negotiation-prep-book', approvalNotes: 'Human review required for status-sensitive language and claims about compliance or non-compliance.' },
+    aiUseGuidance: 'Use this as an implementation watch capsule. Do not overstate legal status, party intent, or fulfillment without official source receipts.',
+    humanReview: humanReviewed('Reviewed for status-sensitive diplomatic language and implementation-ledger usefulness.'),
+  }),
+  starter('starter-situation-armenia-azerbaijan-peace-connectivity', 'situation', 'diplomacy', 'Armenia-Azerbaijan peace and connectivity watch', 'A South Caucasus capsule for Armenia-Azerbaijan peace-treaty steps, border monitoring, connectivity projects, ratification risk, and confidence-building.', 'Use this for practical implementation and connectivity analysis. PRAXIS should distinguish initialled or finalized texts, signature and ratification steps, border security, demining, transport links, and external support.', ['armenia', 'azerbaijan', 'peace-treaty', 'connectivity', 'border-monitoring', 'south-caucasus', 'team:diplomatic'], { situationCoreId: 'starter-situation-armenia-azerbaijan-peace-connectivity', pathCoreId: 'foreign-policy', sourceCoreIds: ['eeas-armenia-azerbaijan-treaty-initialling', 'eeas-euma-border-monitoring'], toolCoreIds: ['commitment-tracker', 'scenario-projector', 'sourceability'], outputCoreIds: ['principals-decision-memo'] }, ['commitment-tracker', 'scenario-projector', 'sourceability'], ['principals-decision-memo', 'negotiation-prep-book', 'scenario-risk-dashboard-card'], ['starter-tool-negotiation-ripeness-decision-clock', 'starter-tool-implementation-feasibility-gate', 'starter-output-principals-decision-memo'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'eeas-armenia-azerbaijan-treaty-initialling', label: 'EEAS statement on Armenia-Azerbaijan peace treaty initialling', url: 'https://www.eeas.europa.eu/delegations/armenia/armeniaazerbaijan-statement-high-representative-behalf-european-union-initialling-armenia-azerbaijan_en', sourceType: 'official', relevance: 'Official EU posture on peace-treaty steps, normalization, sovereignty, borders, and implementation support.', publisher: 'European External Action Service', date: '2025-08-08', reliabilityTier: 1 },
+      { id: 'eeas-euma-border-monitoring', label: 'EU Mission in Armenia border monitoring update', url: 'https://www.eeas.europa.eu/euma/euma-reaffirms-its-continued-presence-and-commitment-along-armenia-azerbaijan-border_en', sourceType: 'official', relevance: 'Border-monitoring and human-security lane for implementation risk and confidence-building.', publisher: 'European External Action Service', date: '2025-04-14', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'eeas-armenia-azerbaijan-treaty-initialling', text: 'The EEAS statement distinguishes treaty initialling, signature, ratification, normalization, sovereignty, territorial integrity, and inviolability of borders.' },
+      { sourceId: 'eeas-euma-border-monitoring', text: 'EUMA material supports analysis of border observation, human security, confidence-building, and continuing monitoring needs.' },
+    ],
+    suggestedQuestions: ['Is the decision about treaty text, ratification, border security, connectivity, demining, or external support?', 'Which step is completed, pending, contested, or vulnerable to spoilers?', 'What confidence-building measure would reduce implementation risk?'],
+    suggestedNextActions: ['Build a treaty-step and connectivity implementation ledger.', 'Map border-monitoring and demining assumptions separately.', 'Draft a principals memo with explicit status and implementation caveats.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'south-caucasus-peace-connectivity', outputGoal: 'principals-decision-memo', approvalNotes: 'Review status language and conflict-sensitive assumptions before external circulation.' },
+    aiUseGuidance: 'Use this for South Caucasus implementation analysis. Verify current status and avoid converting initialling, statement language, or connectivity ambition into implemented fact.',
+    humanReview: humanReviewed('Reviewed for conflict-sensitive implementation language and connectivity-risk analysis.'),
+  }),
+  starter('starter-situation-yemen-roadmap-ceasefire-economy', 'situation', 'diplomacy', 'Yemen roadmap, ceasefire, and economy watch', 'A Yemen capsule for UN-led political process, ceasefire posture, detainees, economic measures, humanitarian access, and regional de-escalation.', 'Use this when PRAXIS needs to brief Yemen as a negotiation and implementation file. Keep UN-led process language, regional dynamics, economic confidence measures, detainee issues, and humanitarian claims source-separated.', ['yemen', 'ceasefire', 'roadmap', 'un-special-envoy', 'detainees', 'economy', 'team:diplomatic', 'team:humanitarian'], { situationCoreId: 'starter-situation-yemen-roadmap-ceasefire-economy', pathCoreId: 'mediator-peace-process', sourceCoreIds: ['osesgy-yemen-muscat-2025', 'un-peacemaker-ceasefire-guidance'], toolCoreIds: ['commitment-tracker', 'position-vs-interest', 'sourceability'], outputCoreIds: ['negotiation-prep-book'] }, ['commitment-tracker', 'position-vs-interest', 'sourceability'], ['negotiation-prep-book', 'principals-decision-memo', 'humanitarian-one-pager'], ['starter-tool-ceasefire-monitoring-verification-matrix', 'starter-tool-negotiation-ripeness-decision-clock', 'starter-output-negotiation-prep-book'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'osesgy-yemen-muscat-2025', label: 'UN Special Envoy for Yemen Muscat visit update', url: 'https://osesgy.unmissions.org/en/news/un-special-envoy-yemen-concludes-visit-muscat-0', sourceType: 'multilateral', relevance: 'UN-led political process, de-escalation, detainee, and regional-dynamics source lane.', publisher: 'Office of the Special Envoy of the Secretary-General for Yemen', date: '2025-05-28', reliabilityTier: 1 },
+      { id: 'un-peacemaker-ceasefire-guidance', label: 'UN Guidance on Mediation of Ceasefires', url: 'https://peacemaker.un.org/en/documents/guidance-mediation-ceasefires', sourceType: 'multilateral', relevance: 'Ceasefire design, monitoring, sequencing, and implementation vocabulary.', publisher: 'United Nations DPPA', date: '2022-09', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'osesgy-yemen-muscat-2025', text: 'OSESGY updates should anchor claims about UN-led process, regional de-escalation, detainee issues, and sustainable political progress.' },
+      { sourceId: 'un-peacemaker-ceasefire-guidance', text: 'Ceasefire guidance keeps the capsule focused on design, guarantees, monitoring, parties, and implementation mechanics rather than vague peace-process optimism.' },
+    ],
+    suggestedQuestions: ['Which track is in scope: military de-escalation, detainees, economy, humanitarian access, or roadmap implementation?', 'Which claim is an official UN process statement versus an inferred party incentive?', 'What monitoring or guarantee element is missing?'],
+    suggestedNextActions: ['Create a ceasefire and economic-measure commitment matrix.', 'Map party positions, interests, and detainee/humanitarian blockers.', 'Prepare negotiation prep with verification and review caveats.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'yemen-roadmap-ceasefire-economy', outputGoal: 'negotiation-prep-book', approvalNotes: 'Human review required for ceasefire, detainee, and humanitarian-access judgments.' },
+    aiUseGuidance: 'Use this as a Yemen negotiation capsule. Separate official UN process language, public party statements, economic measures, and humanitarian claims with dated receipts.',
+    humanReview: humanReviewed('Reviewed for ceasefire-process structure, detainee sensitivity, and economic-confidence-measure analysis.'),
+  }),
+  starter('starter-situation-libya-ceasefire-elections-institutions', 'situation', 'diplomacy', 'Libya ceasefire, elections, and institutions watch', 'A Libya capsule for ceasefire maintenance, electoral track, unified institutions, armed actor posture, mandate language, and implementation spoilers.', 'Use this when PRAXIS needs to brief Libya across political, security, and institutional tracks. Keep UNSMIL mandate language, electoral claims, ceasefire implementation, and inferred militia incentives separate.', ['libya', 'unsmil', 'ceasefire', 'elections', 'unified-institutions', 'spoilers', 'team:diplomatic'], { situationCoreId: 'starter-situation-libya-ceasefire-elections-institutions', pathCoreId: 'foreign-policy', sourceCoreIds: ['unsmil-home', 'un-peacemaker-ceasefire-guidance'], toolCoreIds: ['stakeholder-map', 'commitment-tracker', 'sourceability'], outputCoreIds: ['principals-decision-memo'] }, ['stakeholder-map', 'commitment-tracker', 'sourceability'], ['principals-decision-memo', 'scenario-risk-dashboard-card', 'talking-points'], ['starter-tool-spoiler-blocker-scan', 'starter-tool-legal-mandate-compliance-lens', 'starter-output-principals-decision-memo'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'unsmil-home', label: 'UNSMIL mission resources and updates', url: 'https://unsmil.unmissions.org/', sourceType: 'multilateral', relevance: 'UN Libya mission lane for political process, mandate, institutional, and ceasefire context.', publisher: 'United Nations Support Mission in Libya', date: '2026', reliabilityTier: 1 },
+      { id: 'un-peacemaker-ceasefire-guidance', label: 'UN Guidance on Mediation of Ceasefires', url: 'https://peacemaker.un.org/en/documents/guidance-mediation-ceasefires', sourceType: 'multilateral', relevance: 'Ceasefire monitoring, verification, and implementation design vocabulary.', publisher: 'United Nations DPPA', date: '2022-09', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'unsmil-home', text: 'UNSMIL should anchor claims about Libya mission posture, political process, mandate, elections, and institutional tracks.' },
+      { sourceId: 'un-peacemaker-ceasefire-guidance', text: 'Ceasefire guidance supports analysis of monitoring, verification, spoilers, and implementation conditions.' },
+    ],
+    suggestedQuestions: ['Which Libya track is in scope: elections, institutions, ceasefire, armed groups, or mandate renewal?', 'Which statement is official mission posture versus analytic inference?', 'What spoiler or blocker could derail implementation?'],
+    suggestedNextActions: ['Build a track-by-track ledger for political, security, and institutional issues.', 'Run spoiler and mandate checks before recommending options.', 'Draft a principals memo with source gaps and explicit review gates.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'libya-institutions-ceasefire-watch', outputGoal: 'principals-decision-memo', approvalNotes: 'Review claims about armed actors, elections, and mandate authority before external use.' },
+    aiUseGuidance: 'Use this for Libya statecraft analysis. Keep public UN mission information separate from inferred actor motives and unverified electoral or armed-group claims.',
+    humanReview: humanReviewed('Reviewed for mission-mandate posture, ceasefire implementation logic, and spoiler-risk utility.'),
+  }),
+  starter('starter-situation-baltic-undersea-infrastructure-resilience', 'situation', 'cyber-resilience', 'Baltic undersea infrastructure resilience watch', 'A hybrid-resilience capsule for Baltic undersea cables, pipelines, maritime surveillance, attribution caution, infrastructure protection, and allied response.', 'Use this when the issue involves undersea or maritime critical infrastructure. PRAXIS should separate incident facts, attribution, resilience measures, alliance posture, private operator data, and escalation implications.', ['baltic-sea', 'undersea-infrastructure', 'critical-infrastructure', 'maritime-security', 'hybrid-threats', 'attribution', 'team:information-cyber', 'team:security-defence'], { situationCoreId: 'starter-situation-baltic-undersea-infrastructure-resilience', pathCoreId: 'information-cyber', sourceCoreIds: ['nato-baltic-sentry-2025', 'nist-csf'], toolCoreIds: ['sourceability', 'scenario-projector', 'contradiction-finder'], outputCoreIds: ['risk-monitor-card'] }, ['sourceability', 'scenario-projector', 'contradiction-finder'], ['risk-monitor-card', 'scenario-risk-dashboard-card', 'principals-decision-memo'], ['starter-tool-estimative-confidence-calibration-table', 'starter-tool-escalation-ladder-deescalation-path', 'starter-output-scenario-risk-dashboard-card'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'nato-baltic-sentry-2025', label: 'NATO Baltic Sentry critical infrastructure security launch', url: 'https://www.nato.int/en/news-and-events/articles/news/2025/01/14/nato-launches-baltic-sentry-to-increase-critical-infrastructure-security', sourceType: 'multilateral', relevance: 'Alliance posture for Baltic Sea surveillance, deterrence, and critical infrastructure security.', publisher: 'NATO', date: '2025-01-14', reliabilityTier: 1 },
+      { id: 'nist-csf', label: 'NIST Cybersecurity Framework', url: 'https://www.nist.gov/cyberframework', sourceType: 'official', relevance: 'Resilience, response, recovery, and governance vocabulary for critical infrastructure risk.', publisher: 'NIST', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'nato-baltic-sentry-2025', text: 'NATO Baltic Sentry material should anchor public claims about allied posture, maritime surveillance, and infrastructure-security response.' },
+      { sourceId: 'nist-csf', text: 'NIST CSF vocabulary helps separate identify, protect, detect, respond, recover, governance, and communication tasks.' },
+    ],
+    suggestedQuestions: ['Which asset type, incident, operator, or jurisdiction is in scope?', 'What is confirmed fact, attribution claim, resilience measure, or alliance signal?', 'What communication should avoid over-attribution?'],
+    suggestedNextActions: ['Build an incident fact and confidence table.', 'Map resilience controls, operator dependencies, and public messaging constraints.', 'Draft a risk monitor card with attribution caveats.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'baltic-undersea-resilience', outputGoal: 'risk-monitor-card', approvalNotes: 'Attribution and escalation language require human review and strong source receipts.' },
+    aiUseGuidance: 'Use this for undersea infrastructure risk. Avoid unsupported attribution, separate operational facts from alliance response, and keep private operator assumptions caveated.',
+    humanReview: humanReviewed('Reviewed for hybrid-threat attribution discipline and critical-infrastructure resilience framing.'),
+  }),
+  starter('starter-situation-south-china-sea-ayungin-resupply', 'situation', 'diplomacy', 'South China Sea Ayungin resupply watch', 'A maritime diplomacy capsule for Ayungin/Second Thomas Shoal resupply missions, UNCLOS posture, crisis-management signals, alliance commitments, and misinformation risk.', 'Use this when PRAXIS needs a precise South China Sea file. Keep resupply facts, legal posture, incident timeline, public messaging, alliance deterrence, and de-escalation channels separate.', ['south-china-sea', 'ayungin-shoal', 'second-thomas-shoal', 'resupply', 'unclos', 'maritime-gray-zone', 'team:diplomatic', 'team:security-defence'], { situationCoreId: 'starter-situation-south-china-sea-ayungin-resupply', pathCoreId: 'foreign-policy', sourceCoreIds: ['pna-ayungin-resupply-2025', 'pna-dfa-ayungin-legal-posture'], toolCoreIds: ['sourceability', 'commitment-tracker', 'scenario-projector'], outputCoreIds: ['talking-points'] }, ['sourceability', 'commitment-tracker', 'scenario-projector'], ['talking-points', 'principals-decision-memo', 'scenario-risk-dashboard-card'], ['starter-tool-escalation-ladder-deescalation-path', 'starter-tool-estimative-confidence-calibration-table', 'starter-output-negotiation-prep-book'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'pna-ayungin-resupply-2025', label: 'Philippine News Agency report on Ayungin resupply mission', url: 'https://www.pna.gov.ph/index.php/articles/1247817', sourceType: 'official', relevance: 'Government news lane for routine resupply mission details, incident status, and public messaging.', publisher: 'Philippine News Agency', date: '2025-04-09', reliabilityTier: 1 },
+      { id: 'pna-dfa-ayungin-legal-posture', label: 'DFA statement on Ayungin resupply legal posture', url: 'https://www.pna.gov.ph/articles/1213808', sourceType: 'official', relevance: 'Philippine official legal-position lane for EEZ, UNCLOS, and arbitration-award claims.', publisher: 'Philippine News Agency', date: '2023-11-16', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'pna-ayungin-resupply-2025', text: 'The 2025 resupply report anchors facts about the routine rotation and resupply mission, incident status, and public defense posture.' },
+      { sourceId: 'pna-dfa-ayungin-legal-posture', text: 'The DFA legal-position report anchors claims about EEZ, UNCLOS, arbitral award framing, and the legitimacy of resupply activity.' },
+    ],
+    suggestedQuestions: ['Which mission, date, vessel, or legal claim is in scope?', 'What is a confirmed incident fact, official legal claim, alliance signal, or misinformation risk?', 'What language avoids escalation while preserving legal posture?'],
+    suggestedNextActions: ['Create a timeline with mission, source, incident, and confidence columns.', 'Separate legal posture from operational facts and alliance messaging.', 'Draft talking points with de-escalation and sourceability checks.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'south-china-sea-ayungin-watch', outputGoal: 'talking-points', approvalNotes: 'Human review required for legal, alliance, and escalation language.' },
+    aiUseGuidance: 'Use this as a maritime gray-zone capsule. Verify dates and official source posture, avoid operational advice, and separate confirmed facts from claims and counterclaims.',
+    humanReview: humanReviewed('Reviewed for maritime gray-zone specificity, legal-posture caveats, and de-escalation language.'),
+  }),
+  starter('starter-situation-moldova-energy-hybrid-resilience', 'situation', 'cyber-resilience', 'Moldova energy and hybrid resilience watch', 'A resilience capsule for Moldova energy security, Transnistria pressure, EU support, hybrid threats, cybersecurity, FIMI, and crisis-management capacity.', 'Use this when PRAXIS needs to connect energy resilience and hybrid-threat analysis without conflating technical energy supply, political pressure, information operations, and EU support instruments.', ['moldova', 'energy-security', 'hybrid-threats', 'transnistria', 'fimi', 'cybersecurity', 'team:information-cyber', 'team:crisis-ops'], { situationCoreId: 'starter-situation-moldova-energy-hybrid-resilience', pathCoreId: 'information-cyber', sourceCoreIds: ['eu-energy-neighbourhood-east-moldova', 'eeas-eupm-moldova-2025'], toolCoreIds: ['scenario-projector', 'sourceability', 'stakeholder-map'], outputCoreIds: ['risk-monitor-card'] }, ['scenario-projector', 'sourceability', 'stakeholder-map'], ['risk-monitor-card', 'principals-decision-memo', 'scenario-risk-dashboard-card'], ['starter-tool-second-order-effects-map', 'starter-tool-implementation-feasibility-gate', 'starter-output-scenario-risk-dashboard-card'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'eu-energy-neighbourhood-east-moldova', label: 'European Commission Neighbourhood-East Moldova energy cooperation', url: 'https://energy.ec.europa.eu/topics/international-cooperation/key-partner-countries-and-regions/neighbourhood-east_en', sourceType: 'official', relevance: 'EU lane for Moldova energy diversification, grid synchronization, gas supply, and energy-resilience support.', publisher: 'European Commission', date: '2026', reliabilityTier: 1 },
+      { id: 'eeas-eupm-moldova-2025', label: 'EUPM Moldova resilience and hybrid-threat mandate update', url: 'https://www.eeas.europa.eu/eupm-moldova/eupm-moldova-moving-forward-towards-sustainable-security-resilience-moldova_en?s=410318', sourceType: 'official', relevance: 'EU civilian mission lane for hybrid threats, cybersecurity vulnerabilities, and foreign information manipulation.', publisher: 'European External Action Service', date: '2025-05-22', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'eu-energy-neighbourhood-east-moldova', text: 'Commission energy cooperation material anchors Moldova energy-security claims, including diversification, grid synchronization, Russian gas exposure, and EU support.' },
+      { sourceId: 'eeas-eupm-moldova-2025', text: 'EUPM Moldova material anchors hybrid-threat analysis across cybersecurity, FIMI, crisis management, and resilience advisory support.' },
+    ],
+    suggestedQuestions: ['Is the decision about gas, electricity, Transnistria, hybrid threats, FIMI, or crisis-management capacity?', 'Which pressure is technical, economic, informational, political, or security-related?', 'What support instrument or resilience gap changes the recommendation?'],
+    suggestedNextActions: ['Build an energy-hybrid risk matrix with source, actor, channel, impact, and mitigation.', 'Separate EU support commitments from implementation assumptions.', 'Draft a risk monitor card with public communication caveats.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'moldova-energy-hybrid-resilience', outputGoal: 'risk-monitor-card', approvalNotes: 'Review attribution, cyber, and FIMI language before external circulation.' },
+    aiUseGuidance: 'Use this as an energy and hybrid resilience capsule. Keep energy supply facts, mission support, cyber/FIMI claims, and political inference in separate sourceable tracks.',
+    humanReview: humanReviewed('Reviewed for coupled energy-security and hybrid-resilience analysis with attribution caution.'),
+  }),
+  starter('starter-situation-gerd-nile-water-diplomacy', 'situation', 'sustainability', 'GERD and Nile water diplomacy capsule', 'A water-diplomacy capsule for the Grand Ethiopian Renaissance Dam, riparian interests, mediation history, water security, trust-building, and agreement design.', 'Use this when PRAXIS must explain GERD as both a technical water issue and a diplomatic identity/security issue. Separate hydrological claims, legal positions, mediator roles, public statements, and possible confidence-building options.', ['gerd', 'nile', 'water-diplomacy', 'ethiopia', 'egypt', 'sudan', 'riparian', 'team:climate-development', 'team:diplomatic'], { situationCoreId: 'starter-situation-gerd-nile-water-diplomacy', pathCoreId: 'climate-development', sourceCoreIds: ['auc-library-gerd-mediation', 'un-peacemaker'], toolCoreIds: ['position-vs-interest', 'stakeholder-map', 'sourceability'], outputCoreIds: ['principals-decision-memo'] }, ['position-vs-interest', 'stakeholder-map', 'sourceability'], ['principals-decision-memo', 'negotiation-prep-book', 'options-memo'], ['starter-tool-mediator-batna-zopa-ripeness-map', 'starter-tool-joint-fact-finding-source-protocol', 'starter-output-negotiation-prep-book'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'auc-library-gerd-mediation', label: 'African Union Library GERD negotiations reference', url: 'https://library.au.int/nile-basin-initiatives-nbi-external-mediator-challenges-ethiopias-renaissance-dam-negotiations', sourceType: 'public-library', relevance: 'AU Library reference on GERD mediation history and riparian-state positions.', publisher: 'African Union Library', date: '2020', reliabilityTier: 2 },
+      { id: 'un-peacemaker', label: 'UN Peacemaker mediation resources', url: 'https://peacemaker.un.org/', sourceType: 'multilateral', relevance: 'Mediation fundamentals for process design, consent, inclusivity, and agreement quality.', publisher: 'United Nations', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'auc-library-gerd-mediation', text: 'The AU Library reference frames GERD as a riparian negotiation involving Ethiopia, Egypt, Sudan, mediation history, and unresolved rights and water-security claims.' },
+      { sourceId: 'un-peacemaker', text: 'UN mediation resources keep the capsule focused on preparedness, consent, impartiality, inclusivity, and quality agreement design.' },
+    ],
+    suggestedQuestions: ['Is the decision about filling, drought rules, data sharing, legal position, mediator role, or confidence-building?', 'Which hydrological claim needs a technical source rather than diplomatic inference?', 'What joint fact-finding mechanism would reduce distrust?'],
+    suggestedNextActions: ['Map riparian interests, positions, BATNAs, and data gaps.', 'Design a joint fact-finding and data-sharing protocol.', 'Draft options with water-security, legal, and identity caveats separated.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'gerd-nile-water-diplomacy', outputGoal: 'negotiation-prep-book', approvalNotes: 'Human review required before legal, hydrological, or riparian-state position claims are used externally.' },
+    aiUseGuidance: 'Use this for water diplomacy. Do not let PRAXIS turn technical hydrology, treaty law, and identity/security assumptions into one confidence level.',
+    humanReview: humanReviewed('Reviewed for water-diplomacy utility and joint fact-finding design potential.'),
+  }),
+  starter('starter-tool-mediator-batna-zopa-ripeness-map', 'tool', 'options-mapping', 'Mediator BATNA-ZOPA ripeness map', 'A mediation tool capsule for mapping each party BATNA, ZOPA, hurting-stalemate signals, consent, mandate, spoilers, and possible process entry points.', 'Use this before advising whether a negotiation should be opened, paused, widened, narrowed, or moved through shuttle diplomacy. PRAXIS should label public positions, inferred interests, and review-sensitive assumptions separately.', ['mediation', 'batna', 'zopa', 'ripeness', 'hurting-stalemate', 'thinking-device', 'review-gated', 'team:diplomatic'], { toolCoreIds: ['position-vs-interest', 'stakeholder-map', 'scenario-projector'], objectiveCoreIds: ['map-mediation-ripeness'], outputCoreIds: ['negotiation-prep-book'] }, ['position-vs-interest', 'stakeholder-map', 'scenario-projector'], ['negotiation-prep-book', 'talking-points', 'principals-decision-memo'], ['starter-situation-yemen-roadmap-ceasefire-economy', 'starter-situation-gerd-nile-water-diplomacy', 'starter-output-negotiation-prep-book'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'un-guidance-effective-mediation', label: 'United Nations Guidance for Effective Mediation', url: 'https://peacemaker.un.org/en/documents/united-nations-guidance-effective-mediation-0', sourceType: 'multilateral', relevance: 'UN fundamentals for mediation preparedness, consent, impartiality, inclusivity, coherence, and agreement quality.', publisher: 'United Nations', date: '2012-07', reliabilityTier: 1 },
+      { id: 'harvard-pon-batna', label: 'Harvard Program on Negotiation BATNA resources', url: 'https://www.pon.harvard.edu/tag/batna/', sourceType: 'public-library', relevance: 'Negotiation method lane for best alternative, bargaining range, and negotiation preparation.', publisher: 'Harvard Program on Negotiation', date: '2026', reliabilityTier: 2 },
+    ],
+    excerpts: [
+      { sourceId: 'un-guidance-effective-mediation', text: 'UN mediation guidance grounds the tool in preparedness, consent, impartiality, inclusivity, and quality agreement design.' },
+      { sourceId: 'harvard-pon-batna', text: 'BATNA resources anchor the practical negotiation distinction between each party alternative, walk-away threshold, and possible bargaining range.' },
+    ],
+    suggestedQuestions: ['What is each party public position, inferred interest, BATNA, and possible walk-away point?', 'What evidence shows ripeness rather than mediator wishful thinking?', 'Which spoiler, mandate, or deadline changes the entry point?'],
+    suggestedNextActions: ['Build a party-by-party BATNA, ZOPA, leverage, and consent table.', 'Add ripeness and spoiler signals with source IDs.', 'Convert the map into a negotiation prep book or talking points.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'mediator-batna-zopa-ripeness-map', outputGoal: 'negotiation-prep-book', approvalNotes: 'Human review required for inferred interests, BATNAs, and ripeness judgments.' },
+    aiUseGuidance: 'Use this as a mediator preparation device. Keep interests and BATNAs caveated unless sourced, and never claim private intent as fact.',
+    deviceProfile: buildStarterDeviceProfile('Mediator BATNA-ZOPA ripeness map', { deviceKind: 'mediator-ripeness-map' }),
+    humanReview: humanReviewed('Reviewed as a mediator tool capsule connecting UN mediation fundamentals with practical BATNA/ZOPA preparation.'),
+  }),
+  starter('starter-tool-ceasefire-monitoring-verification-matrix', 'tool', 'policy-review', 'Ceasefire monitoring and verification matrix', 'A ceasefire tool capsule for converting proposed terms into monitorable commitments, verification sources, incidents, dispute mechanisms, and escalation gates.', 'Use this when ceasefire language is vague or politically loaded. PRAXIS should turn clauses into observable behaviors, monitoring owners, evidence receipts, timelines, and unresolved verification gaps.', ['ceasefire', 'monitoring', 'verification', 'commitments', 'incident-log', 'thinking-device', 'review-gated', 'team:diplomatic'], { toolCoreIds: ['commitment-tracker', 'sourceability', 'contradiction-finder'], objectiveCoreIds: ['build-ceasefire-verification-matrix'], outputCoreIds: ['legal-mandate-compliance-note'] }, ['commitment-tracker', 'sourceability', 'contradiction-finder'], ['legal-mandate-compliance-note', 'negotiation-prep-book', 'risk-monitor-card'], ['starter-situation-yemen-roadmap-ceasefire-economy', 'starter-situation-libya-ceasefire-elections-institutions', 'starter-output-legal-mandate-compliance-note'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'un-peacemaker-ceasefire-guidance', label: 'UN Guidance on Mediation of Ceasefires', url: 'https://peacemaker.un.org/en/documents/guidance-mediation-ceasefires', sourceType: 'multilateral', relevance: 'Ceasefire design, monitoring, verification, implementation, and dispute-management vocabulary.', publisher: 'United Nations DPPA', date: '2022-09', reliabilityTier: 1 },
+      { id: 'un-guidance-effective-mediation', label: 'United Nations Guidance for Effective Mediation', url: 'https://peacemaker.un.org/en/documents/united-nations-guidance-effective-mediation-0', sourceType: 'multilateral', relevance: 'Mediation fundamentals for coherent process design and quality agreements.', publisher: 'United Nations', date: '2012-07', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'un-peacemaker-ceasefire-guidance', text: 'Ceasefire guidance should drive the matrix fields: commitment, monitor, verification source, incident threshold, dispute channel, and implementation risk.' },
+      { sourceId: 'un-guidance-effective-mediation', text: 'Effective mediation guidance reinforces consent, inclusivity, coherence, and quality agreement design before terms are treated as implementable.' },
+    ],
+    suggestedQuestions: ['Which term must be translated into observable behavior?', 'Who monitors, verifies, reports, and resolves disputes?', 'What incident threshold triggers escalation or review?'],
+    suggestedNextActions: ['Create commitment rows with monitor, source, timeline, threshold, and dispute mechanism.', 'Mark unverifiable terms and missing monitors.', 'Attach the matrix to negotiation prep or mandate compliance review.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'ceasefire-monitoring-verification', outputGoal: 'legal-mandate-compliance-note', approvalNotes: 'Human review required before stating compliance, violations, or verification sufficiency.' },
+    aiUseGuidance: 'Use this for ceasefire implementation discipline. Do not label behavior as violation or compliance without sourceable terms and evidence.',
+    deviceProfile: buildStarterDeviceProfile('Ceasefire monitoring and verification matrix', { deviceKind: 'ceasefire-verification-matrix' }),
+    humanReview: humanReviewed('Reviewed as a ceasefire implementation tool with monitorable-commitment and verification gates.'),
+  }),
+  starter('starter-tool-joint-fact-finding-source-protocol', 'tool', 'source-intake', 'Joint fact-finding source protocol', 'A collaborative evidence tool capsule for turning contested facts into shared questions, agreed source rules, expert inputs, evidence tiers, and review decisions.', 'Use this when parties or teams disagree about the factual baseline. PRAXIS should design a neutral source protocol before drafting conclusions, preserving what is agreed, disputed, unknowable, and review-gated.', ['joint-fact-finding', 'source-protocol', 'contested-facts', 'evidence-tiers', 'thinking-device', 'review-gated', 'team:research-strategy'], { toolCoreIds: ['grounded-research', 'sourceability', 'contradiction-finder'], objectiveCoreIds: ['build-joint-fact-finding-protocol'], sourceCoreIds: ['grounded_search'], outputCoreIds: ['evidence-sourceability-annex'] }, ['grounded-research', 'sourceability', 'contradiction-finder'], ['evidence-sourceability-annex', 'negotiation-prep-book', 'options-memo'], ['starter-situation-gerd-nile-water-diplomacy', 'starter-tool-sourceability-matrix', 'starter-output-evidence-sourceability-annex'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'un-guidance-effective-mediation', label: 'United Nations Guidance for Effective Mediation', url: 'https://peacemaker.un.org/en/documents/united-nations-guidance-effective-mediation-0', sourceType: 'multilateral', relevance: 'Process-design lane for preparedness, inclusivity, impartiality, and agreement quality in contested settings.', publisher: 'United Nations', date: '2012-07', reliabilityTier: 1 },
+      { id: 'ocha-access', label: 'OCHA humanitarian access guidance', url: 'https://knowledge.base.unocha.org/wiki/spaces/imtoolbox/pages/1410072577/Humanitarian%2BAccess', sourceType: 'multilateral', relevance: 'Example of operational data fields and constraint typologies for shared evidence collection.', publisher: 'UN OCHA', date: '2024', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'un-guidance-effective-mediation', text: 'Mediation guidance supports neutral process design, inclusivity, coherence, and transparent agreement quality for contested facts.' },
+      { sourceId: 'ocha-access', text: 'OCHA access guidance gives a concrete model for field, constraint, impact, and action categories in shared evidence protocols.' },
+    ],
+    suggestedQuestions: ['What facts are agreed, disputed, missing, or outside PRAXIS competence?', 'Which source tiers and expert inputs will all parties accept?', 'What claim must stay blocked until joint review?'],
+    suggestedNextActions: ['Create agreed/disputed/missing/blocked fact rows.', 'Define acceptable source tiers and freshness windows.', 'Draft an evidence annex before any conclusion memo.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'joint-fact-finding-source-protocol', outputGoal: 'evidence-sourceability-annex', approvalNotes: 'Human review required before promoting disputed facts into shared conclusions.' },
+    aiUseGuidance: 'Use this to operationalize joint fact-finding for AI. Make PRAXIS ask for source rules first and block conclusions that lack shared evidence criteria.',
+    deviceProfile: buildStarterDeviceProfile('Joint fact-finding source protocol', { deviceKind: 'joint-fact-finding-protocol' }),
+    humanReview: humanReviewed('Reviewed as an AI-operationalized joint fact-finding protocol for contested factual baselines.'),
+  }),
+  starter('starter-tool-principal-ask-payrise-negotiation-prep', 'tool', 'options-mapping', 'Principal ask and pay-rise negotiation prep', 'A negotiation tool capsule for preparing a boss conversation, raise request, scope expansion, BATNA, evidence packet, timing, and graceful fallback.', 'Use this for personal, managerial, or organizational negotiation prep where the user needs a serious ask without sounding entitled or underprepared. PRAXIS should structure evidence, constraints, interests, concessions, and next steps.', ['salary-negotiation', 'payrise', 'boss-conversation', 'principal-ask', 'batna', 'zopa', 'thinking-device', 'review-gated'], { toolCoreIds: ['position-vs-interest', 'sourceability', 'memo-drafter'], objectiveCoreIds: ['prepare-principal-ask'], outputCoreIds: ['talking-points'] }, ['position-vs-interest', 'sourceability', 'memo-drafter'], ['talking-points', 'negotiation-prep-book', 'options-memo'], ['starter-situation-hr-harassment-policy', 'starter-tool-mediator-batna-zopa-ripeness-map', 'starter-output-meeting-talking-points', 'starter-user-hr-policy-owner'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'harvard-pon-batna', label: 'Harvard Program on Negotiation BATNA resources', url: 'https://www.pon.harvard.edu/tag/batna/', sourceType: 'public-library', relevance: 'Negotiation preparation lane for alternatives, bargaining range, and disciplined asks.', publisher: 'Harvard Program on Negotiation', date: '2026', reliabilityTier: 2 },
+      { id: 'acas-pay-deductions', label: 'Acas pay and deductions guidance', url: 'https://www.acas.org.uk/pay-and-deductions', sourceType: 'official', relevance: 'Employment-pay context lane for pay discussions, records, deductions, and workplace process caution.', publisher: 'Acas', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'harvard-pon-batna', text: 'BATNA preparation keeps the ask grounded in alternatives, bargaining range, and value evidence rather than a vague demand.' },
+      { sourceId: 'acas-pay-deductions', text: 'Acas pay guidance keeps pay discussions tied to workplace process and cautions against legal or HR overclaiming.' },
+    ],
+    suggestedQuestions: ['What specific raise, title, scope, or benefit is the user asking for?', 'What evidence shows value, market movement, retained risk, or expanded responsibility?', 'What fallback preserves trust if the answer is no or not yet?'],
+    suggestedNextActions: ['Build a one-page evidence packet with outcomes, scope, benchmarks, and timing.', 'Write the opening ask, likely objections, concessions, and fallback path.', 'Prepare a follow-up email and review before sending.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'payrise-principal-ask-prep', outputGoal: 'talking-points', approvalNotes: 'Human review required before sending salary, legal, or HR-sensitive language.' },
+    aiUseGuidance: 'Use this for practical negotiation prep. Do not invent compensation benchmarks; ask for user evidence, local context, and constraints before drafting.',
+    deviceProfile: buildStarterDeviceProfile('Principal ask and pay-rise negotiation prep', { deviceKind: 'principal-ask-negotiation-prep' }),
+    humanReview: humanReviewed('Reviewed as a high-practicality negotiation tool connecting BATNA discipline, evidence prep, and respectful boss-conversation language.'),
+  }),
+  starter('starter-tool-estimative-confidence-calibration-table', 'tool', 'audit-review', 'Estimative confidence calibration table', 'An analytic tradecraft tool capsule for calibrated confidence, probability words, evidence strength, source freshness, dissent, and decision implications.', 'Use this when an answer has intelligence-style judgments, scenarios, warnings, or policy confidence claims. PRAXIS should force probability, evidence quality, confidence drivers, and dissent to be explicit.', ['confidence', 'estimative-language', 'probability', 'analytic-tradecraft', 'uncertainty', 'thinking-device', 'review-gated', 'team:research-strategy'], { toolCoreIds: ['ach', 'sourceability', 'contradiction-finder'], objectiveCoreIds: ['calibrate-estimative-confidence'], outputCoreIds: ['evidence-sourceability-annex'] }, ['ach', 'sourceability', 'contradiction-finder'], ['evidence-sourceability-annex', 'scenario-risk-dashboard-card', 'principals-decision-memo'], ['starter-situation-baltic-undersea-infrastructure-resilience', 'starter-tool-competing-hypotheses-matrix', 'starter-output-evidence-sourceability-annex'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'dni-analytic-standards', label: 'US Intelligence Community Directive 203 analytic standards', url: 'https://www.dni.gov/files/documents/ICD/ICD%20203%20Analytic%20Standards.pdf', sourceType: 'official', relevance: 'Analytic standards lane for sourcing, uncertainty, alternatives, and judgments.', publisher: 'Office of the Director of National Intelligence', date: '2015', reliabilityTier: 1 },
+      { id: 'un-guidance-effective-mediation', label: 'United Nations Guidance for Effective Mediation', url: 'https://peacemaker.un.org/en/documents/united-nations-guidance-effective-mediation-0', sourceType: 'multilateral', relevance: 'Decision-process context for uncertainty, mediator error, preparation, and quality agreement design.', publisher: 'United Nations', date: '2012-07', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'dni-analytic-standards', text: 'Analytic standards anchor the table in clear sourcing, alternatives, uncertainty, and transparent judgment language.' },
+      { sourceId: 'un-guidance-effective-mediation', text: 'Mediation guidance reminds PRAXIS that complexity and political will limit certainty even when preparation improves the odds.' },
+    ],
+    suggestedQuestions: ['What judgment needs confidence calibration?', 'What evidence quality, freshness, contradiction, or collection gap drives confidence?', 'What decision changes if confidence is low, moderate, or high?'],
+    suggestedNextActions: ['Create judgment rows with probability word, confidence, evidence base, dissent, and decision implication.', 'Downgrade confidence where sourceability or freshness is weak.', 'Attach the table to an evidence annex or risk dashboard.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'estimative-confidence-calibration', outputGoal: 'evidence-sourceability-annex', approvalNotes: 'Human review required before high-confidence judgments or warning language are used externally.' },
+    aiUseGuidance: 'Use this for uncertainty discipline. Do not allow PRAXIS to sound certain when evidence quality, freshness, or alternative hypotheses do not support it.',
+    deviceProfile: buildStarterDeviceProfile('Estimative confidence calibration table', { deviceKind: 'estimative-confidence-table' }),
+    humanReview: humanReviewed('Reviewed as an analytic tradecraft capsule for confidence language, sourceability, and decision implications.'),
+  }),
   starter('starter-output-principals-decision-memo', 'output', 'output-brief', 'Principals decision memo artifact capsule', 'An artifact capsule for a principals-ready decision memo with BLUF, decision question, options, risks, recommendation, sourceability, and approval posture.', 'Use this when the final product must support a senior decision. PRAXIS should keep source gaps and tradeoffs visible rather than over-polishing uncertainty away.', ['decision-memo', 'principals', 'options', 'recommendation', 'artifact', 'team:research-strategy'], { outputCoreIds: ['principals-decision-memo'], productCoreIds: ['principals-decision-memo'], objectiveCoreIds: ['draft-principals-decision-memo'] }, ['memo-drafter', 'sourceability', 'ach'], ['principals-decision-memo', 'evidence-sourceability-annex'], ['starter-tool-sourceability-matrix', 'starter-tool-temporal-causal-map', 'starter-output-evidence-sourceability-annex'], {
     readinessStars: 4,
     suggestedQuestions: ['What decision must principals make?', 'Which options and risks are truly decision-relevant?', 'Which claims need an annex before approval?'],
@@ -1886,6 +2159,9 @@ export function buildCapsuleStarterPromptBlock(
     `readiness_stars: ${starterDefinition.readinessStars}/5 source-readiness confidence`,
     `source_pack: ${starterDefinition.sourcePack.length ? starterDefinition.sourcePack.map((source) => `${source.id}|${source.label}|${source.publisher ?? 'unknown publisher'}|${source.date ?? 'unknown date'}|tier${source.reliabilityTier ?? 'unknown'}|${source.url}|${source.relevance}`).join(' ; ') : 'none'}`,
     `source_excerpts: ${starterDefinition.excerpts.length ? starterDefinition.excerpts.map((excerpt) => `${excerpt.sourceId}: ${excerpt.text}`).join(' ; ') : 'none'}`,
+    ...(starterDefinition.humanReview ? [
+      `human_review: ${starterDefinition.humanReview.label}|${starterDefinition.humanReview.status}|${starterDefinition.humanReview.reviewedBy}|${starterDefinition.humanReview.reviewedAt}|${starterDefinition.humanReview.notes}`,
+    ] : []),
     `recommended_tools: ${starterDefinition.recommendedToolIds.length ? starterDefinition.recommendedToolIds.join(', ') : 'none'}`,
     `output_targets: ${starterDefinition.outputProductIds.length ? starterDefinition.outputProductIds.join(', ') : 'none'}`,
     `suggested_questions: ${starterDefinition.suggestedQuestions.join(' | ')}`,

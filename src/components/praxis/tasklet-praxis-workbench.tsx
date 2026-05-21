@@ -503,14 +503,25 @@ const factoryBuilderLanes = [
 const STARTER_CAPSULE_UPDATED_AT = '2026-05-18T00:00:00.000Z';
 const starterCapsuleSummaries = CAPSULE_STARTER_DEFINITIONS.map(starterDefinitionToCapsuleSummary);
 const FEATURED_EXPERT_PICK_CAPSULE_IDS = [
+  'starter-situation-haiti-gang-mss-access-watch',
+  'starter-situation-moldova-energy-hybrid-resilience',
+  'starter-situation-baltic-undersea-infrastructure-resilience',
   'starter-situation-ai-governance-procurement',
   'starter-situation-humanitarian-rights-access',
   'starter-situation-mediation-track',
+  'starter-tool-mediator-batna-zopa-ripeness-map',
+  'starter-tool-ceasefire-monitoring-verification-matrix',
+  'starter-tool-estimative-confidence-calibration-table',
   'starter-tool-sourceability-matrix',
   'starter-tool-actor-leverage-veto-map',
   'starter-output-principals-decision-memo',
 ] as const;
 const FEATURED_INTELLECTUAL_DEVICE_CAPSULE_IDS = [
+  'starter-tool-mediator-batna-zopa-ripeness-map',
+  'starter-tool-ceasefire-monitoring-verification-matrix',
+  'starter-tool-joint-fact-finding-source-protocol',
+  'starter-tool-principal-ask-payrise-negotiation-prep',
+  'starter-tool-estimative-confidence-calibration-table',
   'starter-tool-assumption-stress-test',
   'starter-tool-counterfactual-pivot-check',
   'starter-tool-competing-hypotheses-matrix',
@@ -4988,6 +4999,7 @@ function CapsuleCard({
   const policyTeamChip = meta.taxonomy.policyTeams[0]?.label ?? 'Review team';
   const richProfile = meta.starterDefinition?.richProfile;
   const deviceProfile = meta.starterDefinition?.deviceProfile;
+  const humanReview = meta.starterDefinition?.humanReview;
   const purposeLine = richProfile?.purpose ?? meta.summary;
   const bestNextAction = richProfile?.nextIdeas[0] ?? capsule.health?.warnings?.[0] ?? 'Inspect source gaps before relying on this capsule.';
   const CategoryIcon = capsuleCategoryIcon(meta.category);
@@ -5029,6 +5041,15 @@ function CapsuleCard({
           </span>
           <span className="flex shrink-0 flex-col items-end gap-1">
             {expertPick ? <span className="rounded-md bg-slate-950 px-2 py-1 text-[10px] font-semibold text-white">Expert pick</span> : null}
+            {humanReview ? (
+              <span
+                data-testid="capsule-human-reviewed-badge"
+                title={humanReview.tooltip}
+                className="rounded-md border border-teal-200 bg-teal-50 px-2 py-1 text-[10px] font-semibold text-teal-800"
+              >
+                {humanReview.label}
+              </span>
+            ) : null}
             <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', meta.soft)}>{capsuleRoleLabel(defaultRole)}</span>
           </span>
         </span>
@@ -5037,6 +5058,7 @@ function CapsuleCard({
           <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', domainAccent.soft)}>{domainAccent.label}</span>
           <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600">{policyTeamChip}</span>
           {deviceProfile ? <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">Thinking device</span> : null}
+          {humanReview ? <span title={humanReview.tooltip} className="rounded-md border border-teal-200 bg-white px-2 py-1 text-[11px] font-semibold text-teal-700">{humanReview.status}</span> : null}
           <CapsuleStateBadge state={state} />
         </span>
         <span className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500">
@@ -5055,6 +5077,7 @@ function CapsuleCard({
         <span className="mt-3 grid gap-1.5 text-[11px] leading-5 text-slate-600">
           <span className="rounded-md bg-white/80 px-2 py-1"><strong className="text-slate-700">Source posture:</strong> {sourcePosture}</span>
           <span className="rounded-md bg-white/80 px-2 py-1"><strong className="text-slate-700">Reasoning style:</strong> {reasoningStyle}</span>
+          {humanReview ? <span className="rounded-md bg-white/80 px-2 py-1"><strong className="text-slate-700">Human review:</strong> {humanReview.notes}</span> : null}
           {deviceProfile ? <span className="rounded-md bg-white/80 px-2 py-1"><strong className="text-slate-700">Human review gate:</strong> {deviceProfile.humanReviewGate}</span> : null}
         </span>
         <span className="mt-2 block truncate rounded-md bg-white/80 px-2 py-1.5 text-[11px] font-semibold text-slate-700">
@@ -6121,6 +6144,7 @@ function CapsuleInspectorSheet({
   const starterReadiness = meta?.starterDefinition?.readinessStars ?? null;
   const richProfile = meta?.starterDefinition?.richProfile ?? null;
   const deviceProfile = meta?.starterDefinition?.deviceProfile ?? null;
+  const humanReview = meta?.starterDefinition?.humanReview ?? null;
   const compatible = meta?.starterDefinition?.combinesWellWith
     .map((id) => CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === id)?.label ?? id)
     .slice(0, 4) ?? [];
@@ -6149,6 +6173,15 @@ function CapsuleInspectorSheet({
             <span className={cn('rounded-md border px-2 py-1 text-xs font-semibold', meta.soft)}>{meta.label}</span>
             <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-xs font-semibold text-slate-500">v{capsule?.version ?? 0}</span>
             <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-500">{capsule?.trust?.label ?? 'Trust pending'}</span>
+            {humanReview ? (
+              <span
+                data-testid="capsule-inspector-human-reviewed-badge"
+                title={humanReview.tooltip}
+                className="rounded-md border border-teal-200 bg-teal-50 px-2 py-1 text-xs font-semibold text-teal-800"
+              >
+                {humanReview.label}
+              </span>
+            ) : null}
           </div>
         ) : null}
         <div className="mt-5 grid grid-cols-2 gap-2">
@@ -6171,6 +6204,7 @@ function CapsuleInspectorSheet({
             <InspectorTextSection label="Decision Use" detail={[...richProfile.whenToUse, ...richProfile.decisionPrompts].slice(0, 5).join(' ')} />
             <InspectorTextSection label="Improvement Ideas" detail={[...richProfile.improves, ...richProfile.nextIdeas].slice(0, 6).join(' ')} />
             <InspectorTextSection label="Gaps/Risks" detail={[...richProfile.whenNotToUse, ...richProfile.riskCaveats, ...richProfile.evidenceRequirements].slice(0, 6).join(' ')} />
+            {humanReview ? <InspectorTextSection label="Human review" detail={`${humanReview.notes} ${humanReview.tooltip} Reviewed by ${humanReview.reviewedBy} on ${humanReview.reviewedAt}.`} /> : null}
             <InspectorTextSection label="Run Recipe" detail={richProfile.agentInstructions} />
             <InspectorTextSection label="Compatible Capsules" detail={(compatible.length ? compatible : ['Any user capsule', 'Any tool capsule', 'Any output capsule']).join(', ')} />
           </div>

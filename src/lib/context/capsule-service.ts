@@ -1048,6 +1048,9 @@ function buildStarterSnapshot(starterDefinition: CapsuleStarterDefinition): Caps
         sourceabilityRequirements: [...starterDefinition.deviceProfile.sourceabilityRequirements],
       },
     } : {}),
+    ...(starterDefinition.humanReview ? {
+      humanReview: { ...starterDefinition.humanReview },
+    } : {}),
     combinesWellWith: [...starterDefinition.combinesWellWith],
   };
 }
@@ -1509,6 +1512,7 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
   const workflow = isRecord(value.agentWorkflow) ? value.agentWorkflow : {};
   const richProfileRecord = isRecord(value.richProfile) ? value.richProfile : {};
   const deviceProfileRecord = isRecord(value.deviceProfile) ? value.deviceProfile : null;
+  const humanReviewRecord = isRecord(value.humanReview) ? value.humanReview : null;
   const richProfile = {
     purpose: longStringOrNull(richProfileRecord.purpose) ?? stringOrNull(value.summary) ?? label,
     userJob: longStringOrNull(richProfileRecord.userJob) ?? stringOrNull(value.detail) ?? label,
@@ -1557,6 +1561,18 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
         humanReviewGate: longStringOrNull(deviceProfileRecord.humanReviewGate) ?? 'Require human review before external use.',
         agentInstructions: longStringOrNull(deviceProfileRecord.agentInstructions) ?? stringOrNull(value.aiUseGuidance) ?? '',
         sourceabilityRequirements: cleanLongStringArray(deviceProfileRecord.sourceabilityRequirements).slice(0, 10),
+      },
+    } : {}),
+    ...(humanReviewRecord ? {
+      humanReview: {
+        status: humanReviewRecord.status === 'human-reviewed' || humanReviewRecord.status === 'research-reviewed' || humanReviewRecord.status === 'draft'
+          ? humanReviewRecord.status
+          : 'draft',
+        label: stringOrNull(humanReviewRecord.label) ?? 'Review pending',
+        tooltip: longStringOrNull(humanReviewRecord.tooltip) ?? 'Human review status was not provided.',
+        reviewedBy: stringOrNull(humanReviewRecord.reviewedBy) ?? 'unknown',
+        reviewedAt: stringOrNull(humanReviewRecord.reviewedAt) ?? 'unknown',
+        notes: longStringOrNull(humanReviewRecord.notes) ?? 'No human review notes were provided.',
       },
     } : {}),
     combinesWellWith: cleanStringArray(value.combinesWellWith).slice(0, 20),

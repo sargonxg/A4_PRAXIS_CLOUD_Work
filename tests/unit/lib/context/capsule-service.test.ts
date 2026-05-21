@@ -24,6 +24,10 @@ import {
 import { parseCorePackage } from '@/lib/context/core-package';
 import { buildCapsuleInjectionKey, resolveInjectableContext } from '@/lib/context/context-injection';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
+import {
+  CAPSULE_STARTER_CATALOG_VERSION,
+  CAPSULE_STARTER_DEFINITIONS,
+} from '@/lib/product/context-capsules';
 
 describe('capsule service', () => {
   it('migrates the legacy default context stack into the default capsule', async () => {
@@ -424,7 +428,7 @@ describe('capsule service', () => {
     const second = await seedStarterCapsules('u1', deps(db));
     const capsules = await listCapsules('u1', { includeArchived: true }, deps(db));
 
-    expect(first.created).toBe(69);
+    expect(first.created).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(first.existing).toBe(0);
     expect(second.created).toBe(0);
     expect(second.existing).toBe(first.created);
@@ -442,6 +446,8 @@ describe('capsule service', () => {
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-statistical-annex')?.coreRefs.outputCoreIds).toContain('governance-index');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-evidence-dashboard-brief')?.coreRefs.productCoreIds).toContain('risk-monitor-card');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-data-quality-statistics')?.community.tags).toContain('team:research-strategy');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-haiti-gang-mss-access-watch')?.starterSnapshot?.humanReview?.status).toBe('human-reviewed');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-mediator-batna-zopa-ripeness-map')?.starterSnapshot?.deviceProfile?.deviceKind).toBe('mediator-ripeness-map');
     const sudanStarter = capsules.find((capsule) => capsule.capsuleId === 'starter-situation-sudan-darfur-atrocity-access');
     expect(sudanStarter?.starterSnapshot?.sourcePack?.some((source) => source.id === 'un-sudan-atrocity-famine-risk')).toBe(true);
     expect(sudanStarter?.starterSnapshot?.excerpts?.length).toBeGreaterThanOrEqual(2);
@@ -474,7 +480,7 @@ describe('capsule service', () => {
     const capsule = await getCapsule('u1', 'starter-situation-diplomatic-options', deps(db));
 
     expect(result.created).toBe(0);
-    expect(result.existing).toBe(69);
+    expect(result.existing).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(capsule?.label).toBe('Edited diplomatic options capsule');
     expect(capsule?.community.tags).toContain('custom-tag');
     expect(capsule?.community.tags).toContain('type:situation');
@@ -517,7 +523,7 @@ describe('capsule service', () => {
     const sourceRecords = Array.from(db.data.keys()).filter((key) => key.startsWith(`${path}/sources/`));
 
     expect(result.created).toBe(0);
-    expect(result.existing).toBe(69);
+    expect(result.existing).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(capsule?.label).toBe('Custom diplomatic label');
     expect(capsule?.archivedAt).toBe('2026-05-13T00:00:00.000Z');
     expect(capsule?.associatedCapsuleIds).toContain('user-added-related-capsule');
@@ -525,7 +531,7 @@ describe('capsule service', () => {
     expect(capsule?.coreRefs.documentCoreIds).toContain('user-added-document');
     expect(capsule?.community.userRating).toBe(2);
     expect(capsule?.community.tags).toEqual(expect.arrayContaining(['user-added-tag', 'type:situation', 'domain:diplomacy']));
-    expect(capsule?.starterSnapshot?.catalogVersion).toBe('2026-05-20-intellectual-devices-v5');
+    expect(capsule?.starterSnapshot?.catalogVersion).toBe(CAPSULE_STARTER_CATALOG_VERSION);
     expect(capsule?.starterSnapshot?.richProfile?.decisionPrompts.length).toBeGreaterThanOrEqual(3);
     expect(capsule?.version).toBe(8);
     expect(db.data.get(`${path}/evaluations/starter-readiness`)?.evidenceRequirements).toEqual(expect.arrayContaining([

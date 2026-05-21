@@ -1,19 +1,19 @@
 {
   "ok": true,
-  "catalogVersion": "2026-05-20-intellectual-devices-v5",
-  "total": 69,
+  "catalogVersion": "2026-05-21-desk-officer-review-v6",
+  "total": 84,
   "counts": {
-    "situation": 20,
-    "tool": 25,
+    "situation": 30,
+    "tool": 30,
     "output": 19,
     "user": 5
   },
   "expected": {
-    "total": 69,
+    "total": 84,
     "counts": {
       "output": 19,
-      "situation": 20,
-      "tool": 25,
+      "situation": 30,
+      "tool": 30,
       "user": 5
     }
   },
@@ -590,6 +590,141 @@
       "starterId": "starter-tool-escalation-ladder-deescalation-path",
       "category": "tool",
       "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-haiti-gang-mss-access-watch",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-sahel-aes-ecowas-transition-watch",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-kosovo-serbia-normalization-implementation",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-armenia-azerbaijan-peace-connectivity",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-yemen-roadmap-ceasefire-economy",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-libya-ceasefire-elections-institutions",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-baltic-undersea-infrastructure-resilience",
+      "category": "situation",
+      "domain": "cyber-resilience",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-south-china-sea-ayungin-resupply",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-moldova-energy-hybrid-resilience",
+      "category": "situation",
+      "domain": "cyber-resilience",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-gerd-nile-water-diplomacy",
+      "category": "situation",
+      "domain": "sustainability",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-mediator-batna-zopa-ripeness-map",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-ceasefire-monitoring-verification-matrix",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-joint-fact-finding-source-protocol",
+      "category": "tool",
+      "domain": "source-intake",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-principal-ask-payrise-negotiation-prep",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 4,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-estimative-confidence-calibration-table",
+      "category": "tool",
+      "domain": "audit-review",
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,

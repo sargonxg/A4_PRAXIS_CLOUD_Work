@@ -1,10 +1,10 @@
 # Capsule Depth Audit
 
 - Date: 2026-05-19
-- Catalog version: 2026-05-20-intellectual-devices-v5
+- Catalog version: 2026-05-21-desk-officer-review-v6
 - Result: pass
-- Total starters: 69
-- Category counts: situation 20, tool 25, output 19, user 5
+- Total starters: 84
+- Category counts: situation 30, tool 30, output 19, user 5
 
 ## Failures
 
@@ -76,6 +76,21 @@
 - starter-tool-second-order-effects-map: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-tool-pre-mortem-failure-review: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-tool-escalation-ladder-deescalation-path: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-haiti-gang-mss-access-watch: situation, humanitarian-rights, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-sahel-aes-ecowas-transition-watch: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-kosovo-serbia-normalization-implementation: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-armenia-azerbaijan-peace-connectivity: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-yemen-roadmap-ceasefire-economy: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-libya-ceasefire-elections-institutions: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-baltic-undersea-infrastructure-resilience: situation, cyber-resilience, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-south-china-sea-ayungin-resupply: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-moldova-energy-hybrid-resilience: situation, cyber-resilience, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-gerd-nile-water-diplomacy: situation, sustainability, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-mediator-batna-zopa-ripeness-map: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-ceasefire-monitoring-verification-matrix: tool, policy-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-joint-fact-finding-source-protocol: tool, source-intake, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-principal-ask-payrise-negotiation-prep: tool, options-mapping, sources 2, excerpts 2, compatible 4, richProfile yes
+- starter-tool-estimative-confidence-calibration-table: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-output-principals-decision-memo: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-output-negotiation-prep-book: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-output-legal-mandate-compliance-note: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
