@@ -1,10 +1,10 @@
-# PRAXIS Civic Atelier Design Contract
+# PRAXIS Futurist AI Lab Design Contract
 
-Status: active pilot. This is the Civic Atelier design contract. It replaces the former Instrument Pro visual language for the landing page, Capsules, Repository, and the shared `TaskletPraxisWorkbench` surfaces. Do not sweep unrelated Settings, Memo Studio, Advanced, auth, or admin screens during this first rollout except where shared tokens naturally affect them.
+Status: active pilot. This is the Futurist AI Lab design contract. It extends the Civic Atelier foundation for the landing page, Capsules, Repository, and the shared `TaskletPraxisWorkbench` surfaces. Do not sweep unrelated Settings, Memo Studio, Advanced, auth, or admin screens except where shared tokens naturally affect them.
 
 ## North Star
 
-PRAXIS should read as a professional statecraft product with a proprietary object model, not as a generic AI dashboard. The visual system is **Civic Atelier**: dossier layouts, cartographic structure, specimen-like ContextCapsules, compact evidence receipts, and restrained institutional detail.
+PRAXIS should read as a professional statecraft product with a proprietary object model, not as a generic AI dashboard. The visual system is **Futurist AI Lab**: computational cartography, capsule chains, source-flow graphics, AI receipt strips, and precise agent proof layered on the existing dossier and specimen grammar.
 
 The interface should feel designed for analysts, policy teams, and operators who need source posture and reusable context to be visible without turning the main screen into a manual.
 
@@ -29,6 +29,9 @@ Use PRAXIS tokens first. Gold is a rare action/focus signal, not the brand's mai
 | `--color-civic-blue` | Selected civic/system signal. |
 | `--color-evidence-ready` / `--color-evidence-review` / `--color-evidence-muted` | Receipts, source posture, readiness states. |
 | `--color-gold-*` | Single primary action, focus ring, or rare active signal only. |
+| `--color-lab-void` / `--color-lab-ink` / `--color-lab-panel` | Futurist operating scene and dark lab surfaces. |
+| `--color-lab-cyan` / `--color-lab-lime` / `--color-lab-plasma` / `--color-lab-warning` | Restrained AI, receipt, agent, and review signals. |
+| `--color-lab-line` | Source-flow lines, capsule borders, and technical map structure. |
 
 Pilot surfaces must not introduce raw `#ca4a25`, default Tailwind `slate-*`, `amber-*`, or `emerald-*` as the core visual language when a PRAXIS token exists. Legacy classes can remain outside the pilot until touched.
 
@@ -64,6 +67,12 @@ Active capsules render as a composed chain/stack. Avoid scattered chips that mak
 
 canonical_component: ContextChain
 
+Mobile rule: the active ContextChain must remain reachable through a sticky compact bar or bottom sheet. Do not hide critical capsule state behind desktop-only rails.
+
+### Futurist AI Lab Primitives
+
+Use `app-first-futurist-shell` for the public root when it renders the PRAXIS workbench preview, not a standalone marketing page. Use `futurist-ai-lab`, `capsule-chain-node`, `source-flow-line`, `ai-receipt-strip`, `capsule-state-active`, `capsule-state-reference`, `capsule-state-review`, `capsule-state-missing`, and `capsule-mobile-sheet` inside the app-first workbench, capsule selector, source receipts, and agent proof surfaces.
+
 ### Living Context Rail
 
 `LivingContextRail` remains valid for compact status strips on secondary surfaces, onboarding, login previews, and settings-style summary rows.
@@ -87,7 +96,7 @@ Use these primitives before route-local styling:
 
 ## Implementation Order
 
-For any Civic Atelier change: **token first, primitive second, route-local styling last**.
+For any Futurist AI Lab change: **token first, primitive second, route-local styling last**.
 
 1. Add or reuse a CSS token/class in `src/app/globals.css`.
 2. Prefer shared primitives in `src/components/ui/instrument.tsx`.
@@ -97,7 +106,7 @@ For any Civic Atelier change: **token first, primitive second, route-local styli
 
 ## Anti-Patterns
 
-- Decorative AI gradients, blobs, glow buttons, or neon accents.
+- Decorative blobs, generic gradients, glow buttons, or neon as decoration.
 - Card grids where ContextCapsules look like generic feature tiles.
 - Gold used as section decoration.
 - Visible explanatory copy that teaches the interface instead of doing the work.

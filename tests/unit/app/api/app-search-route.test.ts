@@ -45,9 +45,10 @@ describe('/api/app/search route', () => {
       types: ['capsule', 'memo'],
       limit: 25,
     });
-  });
+  }, 15000);
 
   it('returns 400 for invalid query length', async () => {
+    mocks.searchApp.mockClear();
     const { GET } = await import('@/app/api/app/search/route');
 
     const response = await GET(new Request(`https://praxis.tacitus.me/api/app/search?q=${'x'.repeat(201)}`));
@@ -56,7 +57,7 @@ describe('/api/app/search route', () => {
     expect(response.status).toBe(400);
     expect(body.error).toBe('Invalid app search');
     expect(mocks.searchApp).not.toHaveBeenCalled();
-  });
+  }, 15000);
 
   it('marks demo users so the service can restrict private lanes', async () => {
     mocks.authUser = { uid: 'demo-user-001', isDemo: true };

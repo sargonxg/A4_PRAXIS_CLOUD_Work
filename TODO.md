@@ -1,6 +1,6 @@
 # PRAXIS TODO
 
-Last updated: 2026-05-19.
+Last updated: 2026-05-21.
 
 ## Current Build Queue
 
@@ -16,6 +16,18 @@ Tasklet cleanup. New work starts from the active ledger above.
 
 ### Canonical Tasklet-Style Runtime Build
 
+0. Current surface doctrine is public Home plus signed-in Home + Capsules.
+   Keep Ask PRAXIS, library/source work, memo, canvas, diagnostics, and agent
+   proof inside the existing cockpit/workbench as panels/actions. Legacy
+   signed-in URLs and `/agents/[runId]` may redirect or deep-link for
+   compatibility, but new product work must not add another primary app page or
+   navigation item.
+0. The capsule-depth audit now derives starter totals from the live catalog and
+   passes with 69 starters. Next live-proof work should run
+   `doctor:praxis:canary` with the disposable Firebase account, ADC, Cloud SQL,
+   Cloud Tasks, worker auth, and model runtime env configured; do not claim
+   production golden-path proof unless that canary records the run id, output
+   destination, same-thread receipt, and cleanup posture.
 0. Senior engineering cleanup is now in progress: launch-readiness live header
    probes pass, canonical-name warnings are fixed and regression-tested, and
    `docs/audits/2026-05-19-senior-engineering-improvement-audit.md` records the

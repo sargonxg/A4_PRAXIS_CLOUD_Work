@@ -4,11 +4,11 @@ import { TaskletPraxisWorkbench } from "@/components/praxis/tasklet-praxis-workb
 
 export function Phase8WowLanding() {
   return (
-    <main className="od-praxis-surface min-h-screen text-slate-900">
+    <div className="app-first-futurist-shell relative min-h-screen overflow-hidden text-slate-900" data-testid="app-first-root">
       <TaskletPraxisWorkbench
         mode="public"
         activeCapsuleName="Middle East policy analysis"
       />
-    </main>
+    </div>
   );
 }

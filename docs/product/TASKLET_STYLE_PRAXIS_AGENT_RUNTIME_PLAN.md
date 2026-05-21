@@ -468,29 +468,26 @@ Keep primary nav unchanged:
 
 ```text
 Home
-Ask PRAXIS
-Library
-Memo Studio
-Canvas
-Advanced
+Capsules
 ```
 
-Add runtime affordances in existing surfaces:
+Add runtime affordances inside the existing cockpit/workbench:
 
-- Home: recent agent runs, scheduled briefs, active capsule health, and direct
-  `/agents/[runId]` links for active work.
-- Ask PRAXIS: "Run with active capsule", "Schedule", "Prepare memo", "Prepare handover".
-- Library: source/document changes that can trigger a run.
-- Memo Studio: outputs from runs and review receipts.
-- Canvas: timeline/graph/source gaps produced by runs.
-- Advanced: agent run logs, trigger settings, provider/model diagnostics.
+- Home: prompt bar, recent agent runs, scheduled briefs, active capsule health,
+  and deep links that focus active work inside the shared cockpit.
+- Capsules: source/document changes, capsule health, ratings, improvement
+  proposals, review-gated source gaps, and actions to run with the active
+  capsule.
+- Ask PRAXIS, Library, Memo Studio, Canvas, and Advanced/diagnostics are panels
+  or actions inside Home + Capsules, not new primary navigation.
 
 Canonical route behavior:
 
-- `https://praxis.tacitus.me/agents/[runId]` is the durable workspace URL for a
-  private capsule-bound run.
-- Starting a run from the cockpit should queue/dispatch it, then navigate to
-  `/agents/[runId]`.
+- `https://praxis.tacitus.me/agents/[runId]` is a focused compatibility/deep-link
+  URL for a private capsule-bound run.
+- Starting a run from the cockpit should queue/dispatch it, then focus the run
+  inside the shared cockpit/workbench. A deep-link URL may be used for reloads,
+  notifications, and handoff.
 - The route must reuse the shared PRAXIS cockpit and focus the selected run,
   not introduce a second agent dashboard or separate app domain.
 - The focused workspace should refresh active run state and expose retry,

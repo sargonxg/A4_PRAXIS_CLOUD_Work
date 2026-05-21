@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+- chore(governance): align the cockpit doctrine and canary proof contract.
+  Build 2026.05.21.02 updates repo/product docs to preserve public Home plus
+  signed-in Home + Capsules, repairs capsule-depth audit expectations against
+  the live starter catalog, and extends the doctor canary to record session,
+  capsule, Ask thread, AgentRun, Memo Studio output, same-thread receipt, and
+  cleanup posture when credential-gated production proof is enabled.
+
+- feat(capsules): promote Ask source gaps into reviewable capsule updates.
+  Build 2026.05.21.01 adds a capsule-service and authenticated API path for
+  deduping source-pack gaps into proposed repository notes, preserving review
+  gates and trust-posture blockers before any canonical source mutation.
+
 - feat(runtime): harden pre-ship proof and cleanup readiness.
   Build 2026.05.19.01 closes the static deep pre-ship blockers, adds
   resumable agent stream URL coverage, wires named package audits, archives

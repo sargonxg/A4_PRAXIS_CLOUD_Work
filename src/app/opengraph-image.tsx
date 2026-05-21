@@ -227,7 +227,7 @@ export default async function Image() {
             flexWrap: 'wrap',
           }}
         >
-          {['Capsules', 'Documents', 'Sources', 'Policy Tools', 'Outputs'].map((s) => (
+          {['Capsule chain', 'Source receipts', 'Agent timeline', 'Provenance map', 'Memo handoff'].map((s) => (
             <div
               key={s}
               style={{
@@ -262,7 +262,7 @@ export default async function Image() {
           >
             <span style={{ color: DIPLOMATIC }}>praxis.tacitus.me</span>
             <span style={{ color: NAVY_400 }}>·</span>
-            <span>Context · Source · Gap · Handoff</span>
+            <span>Context · Source · Agent · Handoff</span>
           </div>
         </div>
       </div>

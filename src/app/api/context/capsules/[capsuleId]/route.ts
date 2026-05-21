@@ -12,6 +12,7 @@ import {
   exportCapsuleCorePackage,
   forkCapsule,
   getCapsule,
+  promoteCapsuleSourceGaps,
   rateCapsule,
   renameCapsule,
   setCapsuleAccessPolicy,
@@ -95,6 +96,13 @@ const ActionSchema = z.discriminatedUnion('action', [
   }),
   z.object({ action: z.literal('favorite'), favorite: z.boolean() }),
   z.object({ action: z.literal('rate'), rating: z.number().min(1).max(5) }),
+  z.object({
+    action: z.literal('promote-source-gaps'),
+    gaps: z.array(z.string().min(1).max(600)).min(1).max(10),
+    sourceIds: z.array(z.string().min(1).max(120)).max(20).optional(),
+    runId: z.string().min(1).max(120).nullable().optional(),
+    generatedBy: z.string().min(1).max(80).optional(),
+  }),
 ]);
 
 const ShareSchema = z.object({
@@ -282,6 +290,16 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
       const capsule = await rateCapsule(user.uid, capsuleId, parsed.data.rating);
       if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
       return NextResponse.json({ capsule });
+    }
+    if (parsed.data.action === 'promote-source-gaps') {
+      const result = await promoteCapsuleSourceGaps(user.uid, capsuleId, {
+        gaps: parsed.data.gaps,
+        sourceIds: parsed.data.sourceIds,
+        runId: parsed.data.runId,
+        generatedBy: parsed.data.generatedBy,
+      });
+      if (!result) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return NextResponse.json(result, { status: 201 });
     }
     if (parsed.data.action !== 'fork') {
       return NextResponse.json({ error: 'Invalid capsule action' }, { status: 400 });

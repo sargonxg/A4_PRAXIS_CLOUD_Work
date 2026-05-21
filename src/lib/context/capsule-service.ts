@@ -1,4 +1,5 @@
 import type { Firestore } from 'firebase-admin/firestore';
+import { createHash } from 'node:crypto';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { buildCorePackage, type PraxisCorePackageV1 } from '@/lib/context/core-package';
 import {
@@ -173,6 +174,32 @@ export interface SeedStarterCapsulesResult {
   capsules: PraxisCapsule[];
 }
 
+export interface CapsuleSourceGapProposal {
+  proposalId: string;
+  capsuleId: string;
+  target: 'sourcePack';
+  reviewStatus: 'proposed';
+  title: string;
+  gap: string;
+  sourceIds: string[];
+  runId: string | null;
+  generatedBy: string;
+  createdAt: string;
+}
+
+export interface PromoteCapsuleSourceGapsInput {
+  gaps: string[];
+  sourceIds?: string[];
+  runId?: string | null;
+  generatedBy?: string;
+}
+
+export interface PromoteCapsuleSourceGapsResult {
+  capsule: PraxisCapsule;
+  proposals: CapsuleSourceGapProposal[];
+  reviewRequired: true;
+}
+
 export interface CapsuleServiceDeps {
   db?: Firestore;
   now?: () => Date;
@@ -298,6 +325,94 @@ export async function seedStarterCapsules(
     created,
     existing,
     capsules: sortCapsulesForLibrary(capsules),
+  };
+}
+
+export async function promoteCapsuleSourceGaps(
+  uid: string,
+  capsuleId: string,
+  input: PromoteCapsuleSourceGapsInput,
+  deps?: CapsuleServiceDeps,
+): Promise<PromoteCapsuleSourceGapsResult | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  const gaps = uniqueStrings(input.gaps.map((gap) => gap.trim().slice(0, 600))).slice(0, 10);
+  if (!gaps.length) return { capsule, proposals: [], reviewRequired: true };
+  const timestamp = nowIso(deps);
+  const sourceIds = uniqueStrings([
+    ...capsule.coreRefs.sourceCoreIds,
+    ...(capsule.starterSnapshot?.sourcePack.map((source) => source.id) ?? []),
+    ...cleanStringArray(input.sourceIds),
+  ]).slice(0, 20);
+  const generatedBy = cleanText(input.generatedBy, 80) || 'ask-praxis';
+  const runId = stringOrNull(input.runId);
+  const proposals = gaps.map((gap): CapsuleSourceGapProposal => {
+    const proposalId = `source-gap-${stableId(`${uid}:${capsule.capsuleId}:${gap}`)}`;
+    return {
+      proposalId,
+      capsuleId: capsule.capsuleId,
+      target: 'sourcePack',
+      reviewStatus: 'proposed',
+      title: sourceGapTitle(gap),
+      gap,
+      sourceIds,
+      runId,
+      generatedBy,
+      createdAt: timestamp,
+    };
+  });
+  const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
+  const batch = dbOf(deps).batch();
+  for (const proposal of proposals) {
+    batch.set(ref.collection('notes').doc(proposal.proposalId), {
+      noteId: proposal.proposalId,
+      id: proposal.proposalId,
+      ownerUid: uid,
+      capsuleId: capsule.capsuleId,
+      kind: 'note',
+      type: 'gap',
+      title: proposal.title,
+      body: [
+        proposal.gap,
+        '',
+        'Review posture: proposed source-pack update. Add or reject sources before treating this gap as resolved.',
+      ].join('\n'),
+      tags: ['source-gap', 'source-pack', 'review-required', generatedBy].slice(0, 20),
+      starred: false,
+      pinned: false,
+      links: {
+        sourceIds: proposal.sourceIds,
+        documentIds: [],
+        outputCapsuleId: null,
+        runId: proposal.runId,
+      },
+      target: proposal.target,
+      reviewStatus: proposal.reviewStatus,
+      generatedBy,
+      createdAt: proposal.createdAt,
+      updatedAt: proposal.createdAt,
+      createdBy: uid,
+    }, { merge: true });
+  }
+  batch.set(ref, {
+    updatedAt: timestamp,
+    trust: {
+      ...capsule.trust,
+      level: capsule.trust.level === 'green' ? 'amber' : capsule.trust.level,
+      blockers: uniqueStrings([...capsule.trust.blockers, ...gaps]).slice(0, 10),
+      recommendations: uniqueStrings([
+        ...capsule.trust.recommendations,
+        'Review proposed source-pack gaps before the next external handoff.',
+      ]).slice(0, 10),
+      checkedAt: timestamp,
+    },
+  }, { merge: true });
+  await batch.commit();
+  const updated = await getCapsule(uid, capsule.capsuleId, deps);
+  return {
+    capsule: updated ?? capsule,
+    proposals,
+    reviewRequired: true,
   };
 }
 
@@ -1320,6 +1435,19 @@ function cleanId(value: string, fallback: string): string {
 
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values.filter((item) => item.length > 0))).slice(0, 50);
+}
+
+function stableId(value: string): string {
+  return createHash('sha1').update(value).digest('hex').slice(0, 16);
+}
+
+function cleanText(value: unknown, maxLength: number): string {
+  return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ').slice(0, maxLength) : '';
+}
+
+function sourceGapTitle(gap: string): string {
+  const cleaned = cleanText(gap, 96);
+  return cleaned ? `Source gap: ${cleaned}` : 'Source gap review';
 }
 
 function uniqueLockKinds(values: string[]): CapsuleLockKind[] {

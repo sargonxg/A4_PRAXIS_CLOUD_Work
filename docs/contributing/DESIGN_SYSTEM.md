@@ -1,6 +1,6 @@
 # PRAXIS Design System
 
-Aesthetic north star: **Civic Atelier: statecraft dossiers, not a generic AI dashboard.**
+Aesthetic north star: **Futurist AI Lab: computational statecraft, not a generic AI dashboard.**
 
 This file is the agent-facing implementation guide. The canonical design contract is `DESIGN.md`; this file turns it into tokens, component rules, and review checks.
 
@@ -29,10 +29,31 @@ Use token classes or CSS variables instead of raw hex values.
 | `--color-evidence-ready` | Ready/source-complete evidence state. |
 | `--color-evidence-review` | Review/source-gap evidence state. |
 | `--color-evidence-muted` | Muted evidence labels. |
+| `--color-lab-void` / `--color-lab-ink` / `--color-lab-panel` | Dark lab operating scene surfaces. |
+| `--color-lab-cyan` / `--color-lab-lime` / `--color-lab-plasma` / `--color-lab-warning` | Restrained capsule, source, agent, and review signals. |
+| `--color-lab-line` | Technical map lines, source flow, and capsule borders. |
 
 Gold tokens remain available only for a single primary action, focus rings, and rare active states. They should not carry the brand by themselves.
 
-## Civic Atelier Components
+## Futurist AI Lab Components
+
+### AI Operating Scene
+
+Use `app-first-futurist-shell` for the public root when it renders the PRAXIS workbench preview. Use `futurist-ai-lab` only for high-signal AI operating regions inside the app. The first screen must remain the product loop itself: prompt, active ContextCapsule, source receipts, agent run, and output handoff.
+
+### Capsule Chain Nodes
+
+Use `capsule-chain-node` with `capsule-state-active`, `capsule-state-reference`, `capsule-state-review`, or `capsule-state-missing` for composed context objects. These are operational states, not generic chips.
+
+### Source Flow And Receipts
+
+Use `source-flow-line` for visible source movement and `ai-receipt-strip` for source posture, runtime proof, citations, and compact evidence.
+
+### Mobile Capsule Sheet
+
+Use `capsule-mobile-sheet` for mobile capsule selectors. Critical active capsule, reference, archive, readiness, missing-core, and next-action state cannot be desktop-only.
+
+## Civic Atelier Foundations
 
 ### Dossier Spine
 
@@ -63,7 +84,7 @@ Use `cartographic-grid` on repository/workbench fields where the user is mapping
 
 ### Context Chain
 
-Use `context-chain` when active capsules are composed together. The chain is the visible applied-context state. Avoid scattering applied capsules as unrelated chips.
+Use `context-chain` or `capsule-chain-node` when active capsules are composed together. The chain is the visible applied-context state. Avoid scattering applied capsules as unrelated chips.
 
 ### LivingContextRail
 
@@ -80,9 +101,9 @@ When building or editing UI: **token first, primitive second, route-local stylin
 
 ## Pilot Scope
 
-The current Civic Atelier pilot covers:
+The current Futurist AI Lab pilot covers:
 
-- public landing home through the shared workbench,
+- public root through the app-first PRAXIS workbench preview,
 - `/app/capsules`,
 - `/app/repository`,
 - `TaskletPraxisWorkbench` capsule cards, inspector sheets, repository sections, and context chain.
@@ -93,7 +114,7 @@ Do not redesign Settings, Memo Studio, Advanced, auth, or admin screens in this 
 
 - Raw `#ca4a25` and one-off orange/terracotta literals.
 - Default Tailwind `slate-*`, `amber-*`, or `emerald-*` as the primary visual identity when a PRAXIS token exists.
-- Decorative AI gradients, blobs, glow buttons, and neon.
+- Decorative blobs, generic gradients, glow buttons, and neon.
 - Three-column feature-card marketing grids for ContextCapsules.
 - Multiple competing Repository/Capsules search surfaces.
 - Public UI that exposes provider names, internal costs, prompts, or secrets.

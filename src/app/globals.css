@@ -70,6 +70,16 @@
   --color-evidence-review: #A4492E;
   --color-evidence-muted: #777066;
 
+  /* Futurist AI Lab palette. Use for capsule/source/agent operating scenes. */
+  --color-lab-void: #070A12;
+  --color-lab-ink: #0D1524;
+  --color-lab-panel: #111D2E;
+  --color-lab-cyan: #73D6FF;
+  --color-lab-lime: #B6F36D;
+  --color-lab-plasma: #D7B8FF;
+  --color-lab-warning: #FFD166;
+  --color-lab-line: #29415F;
+
   /* App light theme palette */
   --color-app-bg: #FAFBFD;
   --color-app-surface: #FFFFFF;
@@ -635,6 +645,80 @@ body {
     linear-gradient(90deg, rgba(82, 102, 95, 0.08) 1px, transparent 1px),
     linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(244, 240, 231, 0.74));
   background-size: 26px 100%, auto;
+}
+
+.futurist-ai-lab {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-lab-ink) 94%, black), var(--color-lab-void)),
+    var(--color-lab-void);
+  color: var(--color-navy-50);
+}
+
+.app-first-futurist-shell {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-archive-paper) 84%, white), var(--color-archive-paper) 46%, color-mix(in srgb, var(--color-lab-ink) 8%, var(--color-archive-paper))),
+    var(--color-archive-paper);
+}
+
+.futurist-ai-lab::before,
+.app-first-futurist-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-lab-line) 42%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-lab-line) 42%, transparent) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(180deg, black, transparent 86%);
+  opacity: 0.36;
+}
+
+.capsule-chain-node {
+  border: 1px solid color-mix(in srgb, var(--color-lab-cyan) 34%, var(--color-lab-line));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-lab-panel) 88%, transparent), color-mix(in srgb, var(--color-lab-ink) 90%, transparent)),
+    var(--color-lab-panel);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 10%, transparent),
+    0 18px 50px color-mix(in srgb, var(--color-lab-cyan) 10%, transparent);
+}
+
+.source-flow-line {
+  background:
+    linear-gradient(90deg, transparent, var(--color-lab-cyan), var(--color-lab-lime), transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-lab-cyan) 36%, transparent);
+}
+
+.ai-receipt-strip {
+  border: 1px solid color-mix(in srgb, var(--color-lab-lime) 24%, var(--color-lab-line));
+  background: color-mix(in srgb, var(--color-lab-panel) 82%, transparent);
+  color: var(--color-navy-50);
+}
+
+.capsule-state-active {
+  border-color: color-mix(in srgb, var(--color-lab-cyan) 56%, var(--color-lab-line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-lab-cyan) 16%, transparent);
+}
+
+.capsule-state-reference {
+  border-color: color-mix(in srgb, var(--color-lab-lime) 48%, var(--color-lab-line));
+}
+
+.capsule-state-review {
+  border-color: color-mix(in srgb, var(--color-lab-warning) 52%, var(--color-lab-line));
+}
+
+.capsule-state-missing {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--color-lab-plasma) 42%, var(--color-lab-line));
+}
+
+.capsule-mobile-sheet {
+  border: 1px solid color-mix(in srgb, var(--color-lab-cyan) 24%, var(--color-app-border));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 92%, var(--color-lab-cyan)), white);
+  box-shadow: 0 -18px 60px rgba(7, 10, 18, 0.22);
 }
 
 .civic-atelier-eyebrow {

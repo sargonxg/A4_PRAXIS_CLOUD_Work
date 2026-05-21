@@ -14,7 +14,7 @@ const onboardingPreview = readFileSync(join(root, 'src/app/onboarding/live-previ
 const docs = readFileSync(join(root, 'docs/contributing/DESIGN_SYSTEM.md'), 'utf8');
 const design = readFileSync(join(root, 'DESIGN.md'), 'utf8');
 
-describe('Civic Atelier visual contract', () => {
+describe('Futurist AI Lab visual contract', () => {
   it('defines the shared atelier primitive module and CSS hooks', () => {
     for (const exportName of [
       'InstrumentSurface',
@@ -44,6 +44,12 @@ describe('Civic Atelier visual contract', () => {
       '.living-context-cell',
       '.source-posture-chip',
       '.work-action-menu',
+      '.app-first-futurist-shell',
+      '.futurist-ai-lab',
+      '.capsule-chain-node',
+      '.source-flow-line',
+      '.ai-receipt-strip',
+      '.capsule-mobile-sheet',
     ]) {
       expect(globals).toContain(className);
     }
@@ -85,14 +91,15 @@ describe('Civic Atelier visual contract', () => {
     expect(globals).toContain('--font-serif: var(--font-heading)');
   });
 
-  it('documents Civic Atelier and token-first implementation as the visual contract', () => {
-    expect(design).toContain('Civic Atelier design contract');
+  it('documents Futurist AI Lab and token-first implementation as the visual contract', () => {
+    expect(design).toContain('Futurist AI Lab design contract');
     expect(design).toContain('canonical_component: ContextChain');
     expect(design).toContain('Specimen Cards');
     expect(design).toContain('Receipt Slips');
+    expect(design).toContain('Futurist AI Lab Primitives');
     expect(design).toContain('canonical_component: LivingContextRail');
     expect(design).toContain('src/components/ui/instrument.tsx');
-    expect(docs).toContain('Civic Atelier');
+    expect(docs).toContain('Futurist AI Lab');
     expect(docs).toContain('token first, primitive second, route-local styling last');
     expect(docs).toContain('LivingContextRail');
     expect(docs).toContain('provider names, internal costs');

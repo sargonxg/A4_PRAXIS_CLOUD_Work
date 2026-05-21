@@ -1,10 +1,10 @@
 # Capsule Depth Audit
 
 - Date: 2026-05-19
-- Catalog version: 2026-05-19-capsule-depth-v4
+- Catalog version: 2026-05-20-intellectual-devices-v5
 - Result: pass
-- Total starters: 59
-- Category counts: situation 20, tool 15, output 19, user 5
+- Total starters: 69
+- Category counts: situation 20, tool 25, output 19, user 5
 
 ## Failures
 
@@ -66,6 +66,16 @@
 - starter-tool-actor-leverage-veto-map: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-tool-legal-mandate-compliance-lens: tool, policy-review, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-tool-negotiation-ripeness-decision-clock: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-assumption-stress-test: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-counterfactual-pivot-check: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-competing-hypotheses-matrix: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-stakeholder-incentive-map: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-spoiler-blocker-scan: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-policy-tradeoff-ledger: tool, policy-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-implementation-feasibility-gate: tool, policy-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-second-order-effects-map: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-pre-mortem-failure-review: tool, audit-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-escalation-ladder-deescalation-path: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-output-principals-decision-memo: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-output-negotiation-prep-book: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-output-legal-mandate-compliance-note: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes

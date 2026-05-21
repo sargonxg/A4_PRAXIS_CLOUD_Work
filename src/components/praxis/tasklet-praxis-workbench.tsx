@@ -646,6 +646,7 @@ export function TaskletPraxisWorkbench({
   const [userCapsules, setUserCapsules] = useState<PraxisCapsuleSummary[]>([]);
   const [capsulesLoading, setCapsulesLoading] = useState(false);
   const [capsuleBrowserOpen, setCapsuleBrowserOpen] = useState(false);
+  const [mobileContextSheetOpen, setMobileContextSheetOpen] = useState(false);
   const [contextComposerCollapsed, setContextComposerCollapsed] = useState(false);
   const [repositoryOpen, setRepositoryOpen] = useState(false);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
@@ -733,6 +734,9 @@ export function TaskletPraxisWorkbench({
   const outputCapsuleForHeader = activeCapsuleStack.find((capsule) => capsule.role === 'output');
   const referenceCapsulesForHeader = activeCapsuleStack.filter((capsule) => capsule.role === 'reference' || capsule.role === 'tool');
   const activeCapsuleIds = activeCapsuleStack.map((capsule) => capsule.id);
+  const primaryCapsules = activeCapsuleStack.filter((capsule) => capsule.role === 'user' || capsule.role === 'situation' || capsule.role === 'output');
+  const referenceCapsules = activeCapsuleStack.filter((capsule) => capsule.role === 'reference' || capsule.role === 'tool');
+  const archivedCapsules = userCapsules.filter((capsule) => capsule.archivedAt).slice(0, 4);
   const filledChainRoles = new Set(activeCapsuleStack.map((capsule) => capsule.role));
   const openChainSlots = capsuleChainSlots.filter((slot) => !filledChainRoles.has(slot.role));
   const activeCapsuleForStrip = selectedCapsule ?? activeCapsuleStack[0] ?? null;
@@ -2398,6 +2402,20 @@ export function TaskletPraxisWorkbench({
 
             <div className="od-praxis-panel mt-6 w-full max-w-5xl rounded-xl" data-testid="praxis-main-composer">
               <div className="border-b border-black/10 px-5 py-4" data-testid="capsule-context-bar">
+                <button
+                  type="button"
+                  data-testid="mobile-context-chain-bar"
+                  onClick={() => setMobileContextSheetOpen(true)}
+                  className="capsule-chain-node capsule-state-active mb-4 flex min-h-14 w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left md:hidden"
+                >
+                  <span className="min-w-0">
+                    <span className="block font-mono text-[10px] font-semibold uppercase text-slate-300">Active ContextChain</span>
+                    <span className="mt-0.5 block truncate text-sm font-semibold text-white">{activeCapsuleForStrip?.label ?? 'No capsule opened'}</span>
+                  </span>
+                  <span className="shrink-0 rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] font-semibold text-[color:var(--color-lab-cyan)]">
+                    {activeCapsuleReadiness}
+                  </span>
+                </button>
                 <div className="flex flex-wrap items-start justify-between gap-3" data-testid="capsule-context-composer">
                   <div className="min-w-0 flex-1" data-testid="active-capsule-strip">
                     <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
@@ -2541,6 +2559,59 @@ export function TaskletPraxisWorkbench({
                   </button>
                 </div>
               </div>
+              {mobileContextSheetOpen ? (
+                <div className="fixed inset-0 z-50 flex items-end bg-black/35 md:hidden" role="dialog" aria-modal="true" aria-label="Mobile ContextChain selector">
+                  <section className="capsule-mobile-sheet max-h-[86vh] w-full overflow-y-auto rounded-t-xl p-4" data-testid="mobile-context-chain-sheet">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-[color:var(--color-lab-line)]">ContextChain</p>
+                        <h2 className="mt-1 text-lg font-semibold text-slate-950">Capsule selector</h2>
+                      </div>
+                      <button type="button" aria-label="Close ContextChain selector" onClick={() => setMobileContextSheetOpen(false)} className="rounded-md p-2 text-slate-500 hover:bg-slate-100">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="mt-4 grid gap-4">
+                      <MobileCapsuleLane title="Primary" capsules={primaryCapsules} onOpen={(capsule) => {
+                        setCurrentCapsuleId(capsule.id);
+                        setMobileContextSheetOpen(false);
+                      }} />
+                      <MobileCapsuleLane title="References" capsules={referenceCapsules} onOpen={(capsule) => {
+                        setCurrentCapsuleId(capsule.id);
+                        setMobileContextSheetOpen(false);
+                      }} />
+                      <div data-testid="selected-reference-capsules-preview" className="rounded-md border border-slate-200 bg-white p-3">
+                        <p className="text-xs font-semibold uppercase text-slate-400">Selected references</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-800">
+                          {referenceCapsules.length ? referenceCapsules.map((capsule) => capsule.label).join(', ') : 'No reference capsules selected'}
+                        </p>
+                      </div>
+                      <div className="rounded-md border border-dashed border-slate-300 bg-white p-3">
+                        <p className="text-xs font-semibold uppercase text-slate-400">Archive lane</p>
+                        <div className="mt-2 grid gap-2">
+                          {archivedCapsules.length ? archivedCapsules.map((capsule) => (
+                            <button key={capsule.capsuleId} type="button" onClick={() => selectUserCapsule(capsule)} className="rounded-md border border-slate-200 px-3 py-2 text-left text-xs font-semibold text-slate-600">
+                              {capsule.label}
+                            </button>
+                          )) : <span className="text-xs text-slate-500">No archived capsules loaded.</span>}
+                        </div>
+                      </div>
+                      {openChainSlots.length ? (
+                        <div className="capsule-state-missing rounded-md border bg-white p-3">
+                          <p className="text-xs font-semibold uppercase text-slate-500">Thin context warning</p>
+                          <p className="mt-1 text-sm text-slate-700">Missing: {openChainSlots.map((slot) => slot.label).join(', ')}.</p>
+                        </div>
+                      ) : null}
+                      <button type="button" onClick={() => {
+                        setMobileContextSheetOpen(false);
+                        setCapsuleBrowserOpen(true);
+                      }} className="min-h-11 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white">
+                        Browse capsule library
+                      </button>
+                    </div>
+                  </section>
+                </div>
+              ) : null}
               <textarea
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
@@ -3385,6 +3456,40 @@ function SortableCapsuleBlock({
         {reviewCategory ? <span className="rounded bg-white/60 px-1.5 py-0.5">review category</span> : null}
       </div>
     </article>
+  );
+}
+
+function MobileCapsuleLane({
+  title,
+  capsules,
+  onOpen,
+}: {
+  title: string;
+  capsules: ActiveCapsuleChip[];
+  onOpen: (capsule: ActiveCapsuleChip) => void;
+}) {
+  return (
+    <section className="rounded-md border border-slate-200 bg-white p-3">
+      <p className="text-xs font-semibold uppercase text-slate-400">{title}</p>
+      <div className="mt-2 grid gap-2">
+        {capsules.length ? capsules.map((capsule) => (
+          <button
+            key={capsule.id}
+            type="button"
+            onClick={() => onOpen(capsule)}
+            className="capsule-chain-node flex min-h-12 items-center justify-between gap-3 rounded-md px-3 py-2 text-left"
+          >
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-white">{capsule.label}</span>
+              <span className="block font-mono text-[10px] font-semibold uppercase text-slate-400">{capsuleRoleLabel(capsule.role)}</span>
+            </span>
+            <span className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-[color:var(--color-lab-cyan)]">{capsule.code}</span>
+          </button>
+        )) : (
+          <span className="rounded-md border border-dashed border-slate-200 px-3 py-2 text-xs text-slate-500">No capsules in this lane.</span>
+        )}
+      </div>
+    </section>
   );
 }
 

@@ -25,14 +25,18 @@ Business / funding snapshot:
 
 Current product direction:
 
-- One shared workspace shell for dashboard and workbench
-- Ask PRAXIS first
+- Public Home is the front door; the signed-in product stays Home + Capsules.
+- Ask PRAXIS first, inside the shared cockpit/workbench rather than a
+  separate primary app page.
 - ContextCapsules, User Cores, Situation Cores, sources, time, graph, tools,
   output, and memory as the main context model
 - Research, source intake, graph review, stakeholder mapping, scenario / ACH,
-  memo drafting, brief export, and red-team review as the core tool set
+  memo drafting, brief export, diagnostics, and red-team review as panels or
+  actions inside the current cockpit
 - Tools stay attachable to context and are surfaced by recommendation, not
   by tool-marketplace sprawl
+- Legacy signed-in URLs may redirect or deep-link for compatibility, but new
+  product work lands in the shared cockpit/workbench.
 - Tasklet-style persistent agents are built on the existing GCP stack: Cloud
   Run, Cloud SQL Postgres, Firestore, Cloud Tasks, Pub/Sub, Cloud Scheduler,
   Vertex AI, Cloud Storage, Secret Manager, and Cloud Monitoring.
@@ -96,7 +100,7 @@ PRAXIS is organized around a small set of durable concepts.
 | **ContextCapsule** | The inheritable working object: user, situation, sources, time, graph, tools, output, memory, and handover rules. |
 | **User Core** | The analyst, team, institution, tone, method, and constraints. |
 | **Situation Core** | The case, actors, sources, timeline, risks, and open questions. |
-| **Core Library** | Create, select, fork, inspect, and manage cores. |
+| **Capsule Library** | Create, select, fork, inspect, and manage capsules and cores. |
 | **Agent Runs** | Durable capsule-aware work: plans, tool calls, approvals, outputs, retries, and audit events. |
 | **Policy Graph** | Structured entities, relationships, provenance, and changes over time. |
 | **Tools** | Research, source intake, graph review, stakeholder map, ACH, memo drafting, export, red team. |
@@ -118,18 +122,18 @@ flowchart LR
 
 ## App Shape
 
-The real app lives under `/app/*` and should stay simple:
+The real product surface should stay simple:
 
-- `/app/assistant` is the dedicated full-page Ask PRAXIS workspace.
-- `/app/dashboard` is the main workspace shell.
-- `/app/contexts` is the core library entry point.
-- `/app/cores/user` manages User Cores.
-- `/app/cores/context` manages Situation Cores.
-- `/app/workbench/[caseId]` is the detailed case view when needed.
-- `/app/tools` is a recommendation library, not a market stall.
-- Drafting lives in the same shared shell, not in a disconnected page.
+- `/` is the public Home and prompt entry.
+- `/app` is the signed-in Home cockpit.
+- Capsule library, Ask PRAXIS, memo drafting, canvas/source work, diagnostics,
+  and agent work appear as cockpit panels/actions inside the signed-in shell.
+- Pricing and release notes remain public support pages.
+- Legacy routes such as `/app/assistant`, `/app/dashboard`, `/app/contexts`,
+  `/app/tools`, and focused agent deep links may remain as redirects or
+  compatibility entry points, but they are not new primary navigation.
 
-The public landing page should point into this experience, not compete with it.
+The public Home should point into this experience, not compete with it.
 
 ---
 
@@ -232,9 +236,11 @@ https://praxis.tacitus.me
 ## Working With the Repo
 
 - Keep the visible product surface small. Ask PRAXIS, cores, research, and
-  drafting should stay central.
+  drafting should stay central inside Home + Capsules.
 - Prefer the shared workspace shell over one-off page layouts.
 - Make tools attachable to a core and a case, not just clickable.
+- Treat compatibility routes as preservation paths, not places to add new
+  product surface area.
 - Keep docs honest about what is live versus staged.
 - Do not expose internal costs or hidden implementation details in user-facing
   copy.

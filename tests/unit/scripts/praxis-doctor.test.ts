@@ -300,4 +300,122 @@ describe('runPraxisDoctor', () => {
       status: 'WARN',
     }));
   });
+
+  it('records the authenticated canary golden path when all production steps pass', async () => {
+    const exec = vi.fn(async (command: string) => {
+      if (command === 'git branch --show-current') return { code: 0, stdout: 'main\n', stderr: '' };
+      if (command === 'git rev-parse HEAD') return { code: 0, stdout: 'abc123\n', stderr: '' };
+      if (command === 'git status --short') return { code: 0, stdout: '', stderr: '' };
+      if (command === 'git rev-list --left-right --count origin/main...HEAD') return { code: 0, stdout: '0\t0\n', stderr: '' };
+      if (command.startsWith('npm run auth:doctor')) return { code: 0, stdout: 'ok', stderr: '' };
+      return { code: 0, stdout: 'ok', stderr: '' };
+    });
+    const fetch = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes('identitytoolkit.googleapis.com')) {
+        return jsonResponse(200, { idToken: 'firebase-id-token' });
+      }
+      if (url.endsWith('/api/auth/session') && init?.method === 'POST') {
+        return jsonResponse(200, { success: true }, {
+          'set-cookie': 'tacitus-auth-session=signed-cookie-value; Path=/; HttpOnly',
+        });
+      }
+      if (url.endsWith('/api/auth/session') && init?.method === 'GET') {
+        return jsonResponse(200, { authenticated: true, user: { id: 'uid-1' } });
+      }
+      if (url.endsWith('/api/context/capsules')) {
+        return jsonResponse(201, { capsule: { capsuleId: 'praxis-doctor-canary-20260517T120000000Z' } });
+      }
+      if (url.includes('/api/conversations/') && url.endsWith('/turns')) {
+        return textResponse(200, 'answer stream');
+      }
+      if (url.endsWith('/api/agents/runs')) {
+        return jsonResponse(201, {
+          runId: 'run-canary-1',
+          status: 'queued',
+          capsuleId: 'praxis-doctor-canary-20260517T120000000Z',
+          outputDestination: 'memo_studio',
+          outputHref: '/app?panel=memo',
+        });
+      }
+      if (url.endsWith('/api/agents/runs/run-canary-1/dispatch')) {
+        return jsonResponse(200, { taskName: 'agent-runs/run-canary-1' });
+      }
+      if (url.endsWith('/api/agents/runs/run-canary-1')) {
+        return jsonResponse(200, {
+          run: {
+            runId: 'run-canary-1',
+            status: 'succeeded',
+            outputDestination: 'memo_studio',
+            outputHref: '/app?panel=memo&memoId=canary-memo',
+          },
+          toolCalls: [],
+          approvals: [],
+          persisted: true,
+        });
+      }
+      if (url.endsWith('/api/memos/from-ask-pack')) {
+        return jsonResponse(200, { success: true, memo: { memoId: 'canary-memo' }, versions: [] });
+      }
+      if (url.includes('/api/conversations/praxis-doctor-canary-20260517T120000000Z-thread')) {
+        return jsonResponse(200, {
+          persisted: true,
+          conversation: { conversationId: 'praxis-doctor-canary-20260517T120000000Z-thread' },
+          turns: [{ turnId: 'turn-1' }],
+        });
+      }
+      return jsonResponse(200, { status: 'ok', url });
+    });
+
+    const report = await runPraxisDoctor({
+      options: parseDoctorArgs(['--mode=canary', '--skip-build', '--skip-deploy-check']),
+      exec,
+      fetch,
+      now: new Date('2026-05-17T12:00:00.000Z'),
+      env: {
+        PRAXIS_DOCTOR_WRITE_CANARY: '1',
+        PRAXIS_CANARY_EMAIL: 'canary@example.test',
+        PRAXIS_CANARY_PASSWORD: 'secret-password',
+        NEXT_PUBLIC_FIREBASE_API_KEY: 'AIza-test-key',
+        PRAXIS_CANARY_POLL_MS: '0',
+        PRAXIS_CANARY_POLL_ATTEMPTS: '1',
+      },
+      writeArtifacts: false,
+    });
+
+    expect(report.checks).toContainEqual(expect.objectContaining({
+      id: 'canary-authenticated-golden-path',
+      status: 'PASS',
+      summary: expect.stringContaining('AgentRun run-canary-1'),
+    }));
+    expect(report.artifacts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'context-capsule', id: 'praxis-doctor-canary-20260517T120000000Z' }),
+      expect.objectContaining({ kind: 'conversation-thread', id: 'praxis-doctor-canary-20260517T120000000Z-thread' }),
+      expect.objectContaining({ kind: 'agent-run', id: 'run-canary-1' }),
+      expect.objectContaining({ kind: 'memo-draft', id: 'canary-memo' }),
+    ]));
+    expect(JSON.stringify(report)).not.toContain('secret-password');
+    expect(JSON.stringify(report)).not.toContain('signed-cookie-value');
+  });
 });
+
+function jsonResponse(status: number, payload: unknown, headers?: Record<string, string>) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    headers: new Headers(headers),
+    json: async () => payload,
+    text: async () => JSON.stringify(payload),
+  };
+}
+
+function textResponse(status: number, payload: string) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    headers: new Headers(),
+    json: async () => {
+      throw new Error('not json');
+    },
+    text: async () => payload,
+  };
+}

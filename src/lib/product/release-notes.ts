@@ -26,6 +26,32 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.21.02',
+    version: '6.4.1',
+    date: '2026-05-21',
+    title: 'Surface doctrine and canary proof contract align',
+    summary: 'PRAXIS now keeps docs, capsule-depth audit expectations, and the credential-gated production canary aligned to the Home + Capsules cockpit contract.',
+    category: 'governance',
+    items: [
+      'Reconciled repo and product docs around public Home plus signed-in Home + Capsules, with legacy routes treated as redirects or deep links into the shared cockpit.',
+      'Repaired capsule-depth auditing so starter totals and category counts are derived from the live catalog instead of stale fixed counts.',
+      'Extended the doctor canary contract to record public reachability, authenticated session, active capsule, Ask thread, AgentRun dispatch/completion, Memo Studio output, same-thread receipt, and cleanup posture.',
+    ],
+  },
+  {
+    buildNumber: '2026.05.21.01',
+    version: '6.4.1',
+    date: '2026-05-21',
+    title: 'Capsule source gaps become reviewable updates',
+    summary: 'Ask PRAXIS and runtime flows can now promote source-pack gaps into the active ContextCapsule repository as proposed review notes before any canonical source mutation.',
+    category: 'runtime',
+    items: [
+      'Added a capsule-service promotion path that dedupes source gaps and stores them as proposed capsule notes with source, run, and review metadata.',
+      'Added an authenticated capsule action for source-gap promotion while preserving sample-mode mutation guards.',
+      'Capsule trust posture now records proposed source gaps as review blockers and keeps the user in the existing capsule repository workflow.',
+    ],
+  },
+  {
     buildNumber: '2026.05.19.01',
     version: '6.4.1',
     date: '2026-05-19',

@@ -93,6 +93,14 @@ type FetchFn = (url: string, init?: RequestInit) => Promise<{
   headers?: Headers;
 }>;
 
+type CanaryStepResult = {
+  step: string;
+  status: DoctorStatus;
+  httpStatus?: number;
+  id?: string | null;
+  detail?: string;
+};
+
 type RunDeps = {
   options: DoctorOptions;
   exec?: ExecFn;
@@ -613,6 +621,7 @@ async function runAuthenticatedCanary(
   env: NodeJS.ProcessEnv | Record<string, string | undefined>,
   canaryPlan: ReturnType<typeof buildCanaryPlan>
 ): Promise<DoctorCheckResult> {
+  const steps: CanaryStepResult[] = [];
   const apiKey = env.NEXT_PUBLIC_FIREBASE_API_KEY || env.FIREBASE_WEB_API_KEY;
   if (!apiKey) {
     return {
@@ -623,6 +632,23 @@ async function runAuthenticatedCanary(
       evidence: [{ tag: canaryPlan.tag }],
       remediation: ['Set NEXT_PUBLIC_FIREBASE_API_KEY or FIREBASE_WEB_API_KEY before canary mode'],
     };
+  }
+
+  const publicHomeResponse = await fetchImpl(`${options.baseUrl}/?canary=${encodeURIComponent(canaryPlan.tag)}`);
+  steps.push({
+    step: 'public-home',
+    status: publicHomeResponse.ok ? 'PASS' : 'FAIL',
+    httpStatus: publicHomeResponse.status,
+    detail: 'Public prompt surface reachable before login.',
+  });
+  if (!publicHomeResponse.ok) {
+    return canaryResult({
+      status: 'FAIL',
+      canaryPlan,
+      steps,
+      summary: `Public Home failed before authenticated canary with HTTP ${publicHomeResponse.status}`,
+      remediation: [`curl -i ${options.baseUrl}`],
+    });
   }
 
   const email = canaryPlan.email!;
@@ -645,6 +671,12 @@ async function runAuthenticatedCanary(
       evidence: [authPayload],
     };
   }
+  steps.push({
+    step: 'firebase-login',
+    status: 'PASS',
+    httpStatus: authResponse.status,
+    detail: `Firebase accepted the canary user ${email}.`,
+  });
 
   const sessionResponse = await fetchImpl(`${options.baseUrl}/api/auth/session`, {
     method: 'POST',
@@ -654,16 +686,543 @@ async function runAuthenticatedCanary(
     },
     body: JSON.stringify({ token: authPayload.idToken }),
   });
-  return {
-    id: 'canary-authenticated-session',
-    lane: 'authenticated-full-canary',
-    status: sessionResponse.ok ? 'PASS' : 'FAIL',
-    summary: sessionResponse.ok
-      ? `Authenticated canary session established for ${email}; write artifacts are planned with tag ${canaryPlan.tag}`
-      : `App session establishment failed with HTTP ${sessionResponse.status}`,
-    evidence: [{ status: sessionResponse.status, tag: canaryPlan.tag }],
-    remediation: sessionResponse.ok ? undefined : ['Verify /api/auth/session and canary account Firebase status'],
+  const sessionPayload = await readResponse(sessionResponse);
+  const cookieHeader = extractCookieHeader(sessionResponse.headers, 'tacitus-auth-session');
+  steps.push({
+    step: 'app-session',
+    status: sessionResponse.ok && cookieHeader ? 'PASS' : 'FAIL',
+    httpStatus: sessionResponse.status,
+    detail: cookieHeader
+      ? 'App session cookie established.'
+      : 'App session response did not include tacitus-auth-session.',
+  });
+  if (!sessionResponse.ok || !cookieHeader) {
+    return canaryResult({
+      status: 'FAIL',
+      canaryPlan,
+      steps,
+      summary: sessionResponse.ok
+        ? 'App session endpoint responded, but no session cookie was available for authenticated writes'
+        : `App session establishment failed with HTTP ${sessionResponse.status}`,
+      evidence: [sessionPayload],
+      remediation: ['Verify /api/auth/session, cookie signing secrets, and canary account Firebase status'],
+    });
+  }
+
+  const authHeaders = {
+    'Content-Type': 'application/json',
+    Cookie: cookieHeader,
+    Origin: options.baseUrl,
   };
+  const sessionCheckResponse = await fetchImpl(`${options.baseUrl}/api/auth/session`, {
+    method: 'GET',
+    headers: { Cookie: cookieHeader },
+  });
+  const sessionCheckPayload = await readResponse(sessionCheckResponse);
+  const authenticated = isRecord(sessionCheckPayload) && sessionCheckPayload.authenticated === true;
+  steps.push({
+    step: 'authenticated-session-read',
+    status: sessionCheckResponse.ok && authenticated ? 'PASS' : 'FAIL',
+    httpStatus: sessionCheckResponse.status,
+    detail: authenticated ? 'Authenticated session readback succeeded.' : 'Session readback did not return authenticated=true.',
+  });
+  if (!sessionCheckResponse.ok || !authenticated) {
+    return canaryResult({
+      status: 'FAIL',
+      canaryPlan,
+      steps,
+      summary: `Authenticated session readback failed with HTTP ${sessionCheckResponse.status}`,
+      evidence: [sessionCheckPayload],
+      remediation: ['Verify canary user onboarding state and auth middleware cookie parsing'],
+    });
+  }
+
+  const capsuleId = canaryPlan.tag;
+  const threadId = `${canaryPlan.tag}-thread`.slice(0, 96);
+  const outputDestination = 'memo_studio';
+  const capsuleResponse = await fetchImpl(`${options.baseUrl}/api/context/capsules`, {
+    method: 'POST',
+    headers: authHeaders,
+    body: JSON.stringify({
+      action: 'create',
+      capsuleId,
+      label: `Doctor canary ${canaryPlan.tag}`,
+      scope: 'situation',
+      coreRefs: {
+        situationCoreId: canaryPlan.tag,
+        sourceCoreIds: [`${canaryPlan.tag}:source`],
+        documentCoreIds: [],
+        outputCoreIds: [outputDestination],
+        toolCoreIds: ['ask-praxis', 'research-memo'],
+        memoryCoreId: `${canaryPlan.tag}:memory`,
+      },
+      retrievalPolicy: {
+        layers: ['sources', 'documents'],
+        limit: 5,
+        checkFreshness: true,
+        freshnessWindowDays: 30,
+      },
+      community: {
+        tags: ['doctor-canary', canaryPlan.tag, 'cleanup:planned'],
+        listedInMarketplace: false,
+      },
+      activeForSituationIds: [canaryPlan.tag],
+    }),
+  });
+  const capsulePayload = await readResponse(capsuleResponse);
+  const capsuleStatus = canaryHttpStatus(capsuleResponse.status);
+  steps.push({
+    step: 'active-capsule-create',
+    status: capsuleResponse.ok ? 'PASS' : capsuleStatus,
+    httpStatus: capsuleResponse.status,
+    id: capsuleId,
+    detail: 'Canary ContextCapsule created for the authenticated user.',
+  });
+  if (!capsuleResponse.ok) {
+    return canaryResult({
+      status: capsuleStatus,
+      canaryPlan,
+      steps,
+      summary: `Canary capsule creation failed with HTTP ${capsuleResponse.status}`,
+      evidence: [capsulePayload],
+      remediation: ['Verify Firestore admin access and /api/context/capsules owner-scoped writes'],
+    });
+  }
+  canaryPlan.artifacts.push({
+    tag: canaryPlan.tag,
+    kind: 'context-capsule',
+    id: capsuleId,
+    cleanupStatus: 'planned',
+    detail: 'Created by doctor canary; safe to remove by tag after validation.',
+  });
+
+  const activateResponse = await fetchImpl(`${options.baseUrl}/api/context/capsules`, {
+    method: 'POST',
+    headers: authHeaders,
+    body: JSON.stringify({
+      action: 'activate',
+      capsuleId,
+      situationId: canaryPlan.tag,
+    }),
+  });
+  const activatePayload = await readResponse(activateResponse);
+  const activateStatus = canaryHttpStatus(activateResponse.status);
+  steps.push({
+    step: 'active-capsule-activate',
+    status: activateResponse.ok ? 'PASS' : activateStatus,
+    httpStatus: activateResponse.status,
+    id: capsuleId,
+    detail: 'Canary ContextCapsule activated for the golden path thread.',
+  });
+  if (!activateResponse.ok) {
+    return canaryResult({
+      status: activateStatus,
+      canaryPlan,
+      steps,
+      summary: `Canary capsule activation failed with HTTP ${activateResponse.status}`,
+      evidence: [activatePayload],
+      remediation: ['Verify capsule activation and activeForSituationIds writes'],
+    });
+  }
+
+  const activeContextStack = {
+    stackId: 'default',
+    capsuleId,
+    userModelId: null,
+    situationId: canaryPlan.tag,
+    sourceIds: [`${canaryPlan.tag}:source`],
+    documentIds: [],
+    outputGoal: outputDestination,
+    evidenceGaps: [`${canaryPlan.tag}:source-gap`],
+    canvasLayout: {},
+    schemaVersion: 1,
+    updatedAt: new Date().toISOString(),
+  };
+  const askResponse = await fetchImpl(`${options.baseUrl}/api/conversations/${encodeURIComponent(threadId)}/turns`, {
+    method: 'POST',
+    headers: authHeaders,
+    body: JSON.stringify({
+      messages: [
+        {
+          role: 'user',
+          content: `Doctor canary ${canaryPlan.tag}: produce a concise source-aware memo receipt for this active capsule.`,
+        },
+      ],
+      capsuleId,
+      appliedCapsules: [{ id: capsuleId, label: `Doctor canary ${canaryPlan.tag}`, role: 'situation' }],
+      currentToolId: 'ask-praxis',
+      currentPath: `/app?thread=${encodeURIComponent(threadId)}&capsuleId=${encodeURIComponent(capsuleId)}`,
+      activeContextStack,
+      aiSettings: {
+        provider: 'vertex',
+        analysisDepth: 'standard',
+        agenticSearchPremium: false,
+      },
+    }),
+  });
+  const askPayload = await readResponse(askResponse);
+  const askStatus = canaryHttpStatus(askResponse.status);
+  steps.push({
+    step: 'ask-praxis-thread',
+    status: askResponse.ok ? 'PASS' : askStatus,
+    httpStatus: askResponse.status,
+    id: threadId,
+    detail: 'Ask PRAXIS turn submitted against the active capsule.',
+  });
+  if (!askResponse.ok) {
+    return canaryResult({
+      status: askStatus,
+      canaryPlan,
+      steps,
+      summary: `Ask PRAXIS canary turn failed with HTTP ${askResponse.status}`,
+      evidence: [askPayload],
+      remediation: [
+        'Verify logged-in Ask PRAXIS model/runtime env and monthly test-user allowance',
+        'npm run test:auth-runtime:product',
+      ],
+    });
+  }
+  canaryPlan.artifacts.push({
+    tag: canaryPlan.tag,
+    kind: 'conversation-thread',
+    id: threadId,
+    cleanupStatus: 'planned',
+    detail: 'Created by doctor canary; same-thread receipt is verified before pass.',
+  });
+
+  const runResponse = await fetchImpl(`${options.baseUrl}/api/agents/runs`, {
+    method: 'POST',
+    headers: authHeaders,
+    body: JSON.stringify({
+      capsuleId,
+      contextStackId: 'default',
+      contextPackageId: `capsule:${capsuleId}:v1`,
+      selectedCoreIds: {
+        situationCoreId: canaryPlan.tag,
+        sourceCoreIds: [`${canaryPlan.tag}:source`],
+        documentCoreIds: [],
+        toolCoreIds: ['ask-praxis', 'research-memo'],
+        outputCoreIds: [outputDestination],
+        memoryCoreId: `${canaryPlan.tag}:memory`,
+      },
+      policyAgentId: 'research-memo',
+      outputDestination,
+      triggerType: 'manual',
+      objective: `Doctor canary ${canaryPlan.tag}: prove queued AgentRun worker output returns to Memo Studio.`,
+      traceId: canaryPlan.tag,
+      idempotencyKey: `${canaryPlan.tag}-research-memo`,
+      metadata: {
+        canary: true,
+        tag: canaryPlan.tag,
+        threadId,
+        activeContextStack,
+        appliedCapsules: [{ id: capsuleId, label: `Doctor canary ${canaryPlan.tag}`, role: 'situation' }],
+        sourcePosture: 'doctor-canary',
+        selectedTools: ['ask-praxis', 'research-memo'],
+      },
+    }),
+  });
+  const runPayload = await readResponse(runResponse);
+  const runId = extractRunId(runPayload);
+  const runCreateStatus = canaryHttpStatus(runResponse.status);
+  steps.push({
+    step: 'agent-run-create',
+    status: runResponse.ok && runId ? 'PASS' : runCreateStatus,
+    httpStatus: runResponse.status,
+    id: runId,
+    detail: `AgentRun created for ${outputDestination}.`,
+  });
+  if (!runResponse.ok || !runId) {
+    return canaryResult({
+      status: runCreateStatus,
+      canaryPlan,
+      steps,
+      summary: `AgentRun creation failed with HTTP ${runResponse.status}`,
+      evidence: [runPayload],
+      remediation: ['Verify AGENT_RUNTIME_DATABASE_URL / PRAXIS_DATABASE_URL / DATABASE_URL and Cloud SQL connectivity'],
+    });
+  }
+  canaryPlan.artifacts.push({
+    tag: canaryPlan.tag,
+    kind: 'agent-run',
+    id: runId,
+    cleanupStatus: 'planned',
+    detail: 'Created by doctor canary; should complete through the worker and remain auditable by run id.',
+  });
+
+  const dispatchResponse = await fetchImpl(`${options.baseUrl}/api/agents/runs/${encodeURIComponent(runId)}/dispatch`, {
+    method: 'POST',
+    headers: authHeaders,
+    body: JSON.stringify({ attempt: 1 }),
+  });
+  const dispatchPayload = await readResponse(dispatchResponse);
+  const dispatchStatus = canaryHttpStatus(dispatchResponse.status);
+  steps.push({
+    step: 'agent-run-dispatch',
+    status: dispatchResponse.ok ? 'PASS' : dispatchStatus,
+    httpStatus: dispatchResponse.status,
+    id: runId,
+    detail: 'AgentRun dispatch requested through Cloud Tasks.',
+  });
+  if (!dispatchResponse.ok) {
+    return canaryResult({
+      status: dispatchStatus,
+      canaryPlan,
+      steps,
+      summary: `AgentRun dispatch failed with HTTP ${dispatchResponse.status}`,
+      evidence: [dispatchPayload],
+      remediation: ['Verify AGENT_RUN_WORKER_BASE_URL and worker auth/OIDC env on praxis-frontend'],
+    });
+  }
+
+  let runReadPayload: unknown = runPayload;
+  let runReadStatus = extractRunStatus(runPayload) ?? null;
+  const pollMs = Math.max(0, Number(env.PRAXIS_CANARY_POLL_MS ?? 1500));
+  const pollAttempts = Math.max(1, Math.min(10, Number(env.PRAXIS_CANARY_POLL_ATTEMPTS ?? 5)));
+  for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
+    if (attempt > 1 && pollMs > 0) await sleep(pollMs);
+    const readResponse = await fetchImpl(`${options.baseUrl}/api/agents/runs/${encodeURIComponent(runId)}`, {
+      method: 'GET',
+      headers: { Cookie: cookieHeader },
+    });
+    runReadPayload = await readResponseJsonOrText(readResponse);
+    runReadStatus = extractRunStatus(runReadPayload) ?? runReadStatus;
+    if (!readResponse.ok) {
+      steps.push({
+        step: 'agent-run-read',
+        status: canaryHttpStatus(readResponse.status),
+        httpStatus: readResponse.status,
+        id: runId,
+        detail: 'AgentRun readback failed.',
+      });
+      return canaryResult({
+        status: canaryHttpStatus(readResponse.status),
+        canaryPlan,
+        steps,
+        summary: `AgentRun readback failed with HTTP ${readResponse.status}`,
+        evidence: [runReadPayload],
+        remediation: ['Verify owner-scoped AgentRun read route and Cloud SQL ledger connectivity'],
+      });
+    }
+    if (runReadStatus && ['succeeded', 'failed', 'cancelled', 'expired'].includes(runReadStatus)) break;
+  }
+  const workerStatus: DoctorStatus = runReadStatus === 'succeeded'
+    ? 'PASS'
+    : runReadStatus && ['failed', 'cancelled', 'expired'].includes(runReadStatus)
+      ? 'FAIL'
+      : 'BLOCKED';
+  steps.push({
+    step: 'agent-run-worker-completion',
+    status: workerStatus,
+    id: runId,
+    detail: runReadStatus
+      ? `AgentRun status after polling: ${runReadStatus}.`
+      : 'AgentRun status was not available after polling.',
+  });
+  if (workerStatus !== 'PASS') {
+    return canaryResult({
+      status: workerStatus,
+      canaryPlan,
+      steps,
+      summary: runReadStatus
+        ? `AgentRun ${runId} did not complete successfully; final observed status ${runReadStatus}`
+        : `AgentRun ${runId} did not report a terminal worker status during the canary window`,
+      evidence: [runReadPayload],
+      remediation: ['Inspect Cloud Tasks delivery, praxis-agent-worker logs, and agent_run_events for the canary run id'],
+    });
+  }
+
+  const memoResponse = await fetchImpl(`${options.baseUrl}/api/memos/from-ask-pack`, {
+    method: 'POST',
+    headers: authHeaders,
+    body: JSON.stringify({
+      situationId: canaryPlan.tag,
+      askTurnId: `${threadId}:doctor-canary`,
+      pack: {
+        title: `Doctor canary memo ${canaryPlan.tag}`,
+        prompt: `Doctor canary ${canaryPlan.tag}`,
+        answer: `Authenticated canary ${canaryPlan.tag} produced an AgentRun ${runId} with Memo Studio output destination.`,
+        sourceCards: [
+          {
+            id: `${canaryPlan.tag}:source`,
+            title: 'Doctor canary source receipt',
+            label: 'Canary source',
+            sourceType: 'doctor-canary',
+            quotePreview: 'Synthetic doctor canary source card used only for write-path validation.',
+            confidence: 0.8,
+          },
+        ],
+        gaps: ['Synthetic doctor canary artifacts are tagged cleanup:planned.'],
+        provenance: {
+          capsuleId,
+          capsuleVersion: 1,
+          threadId,
+          model: 'doctor-canary',
+          provider: 'deterministic',
+          contextPackageId: `capsule:${capsuleId}:v1`,
+          generatedAt: new Date().toISOString(),
+        },
+      },
+    }),
+  });
+  const memoPayload = await readResponse(memoResponse);
+  const memoStatus = canaryHttpStatus(memoResponse.status);
+  const memoId = extractMemoId(memoPayload);
+  steps.push({
+    step: 'memo-output-capsule',
+    status: memoResponse.ok ? 'PASS' : memoStatus,
+    httpStatus: memoResponse.status,
+    id: memoId,
+    detail: 'Memo Studio draft persisted from the Ask document pack.',
+  });
+  if (!memoResponse.ok) {
+    return canaryResult({
+      status: memoStatus,
+      canaryPlan,
+      steps,
+      summary: `Memo/OutputCapsule persistence failed with HTTP ${memoResponse.status}`,
+      evidence: [memoPayload],
+      remediation: ['Verify /api/memos/from-ask-pack and Firestore memo writes for the canary user'],
+    });
+  }
+  canaryPlan.artifacts.push({
+    tag: canaryPlan.tag,
+    kind: 'memo-draft',
+    id: memoId ?? `${canaryPlan.tag}__policy-memo`,
+    cleanupStatus: 'planned',
+    detail: 'Created by doctor canary from the Ask document pack.',
+  });
+
+  const threadResponse = await fetchImpl(`${options.baseUrl}/api/conversations/${encodeURIComponent(threadId)}`, {
+    method: 'GET',
+    headers: { Cookie: cookieHeader },
+  });
+  const threadPayload = await readResponse(threadResponse);
+  const sameThread = isRecord(threadPayload)
+    && isRecord(threadPayload.conversation)
+    && threadPayload.conversation.conversationId === threadId;
+  const threadStatus = canaryHttpStatus(threadResponse.status);
+  steps.push({
+    step: 'same-thread-receipt',
+    status: threadResponse.ok && sameThread ? 'PASS' : threadStatus,
+    httpStatus: threadResponse.status,
+    id: threadId,
+    detail: sameThread ? 'Conversation receipt resolved on the original thread.' : 'Original conversation thread was not found.',
+  });
+  if (!threadResponse.ok || !sameThread) {
+    return canaryResult({
+      status: threadStatus,
+      canaryPlan,
+      steps,
+      summary: `Same-thread receipt failed with HTTP ${threadResponse.status}`,
+      evidence: [threadPayload],
+      remediation: ['Verify conversation persistence and saved-thread readback for authenticated Ask turns'],
+    });
+  }
+
+  return canaryResult({
+    status: 'PASS',
+    canaryPlan,
+    steps,
+    summary: `Authenticated canary passed for ${email}: capsule ${capsuleId}, Ask thread ${threadId}, AgentRun ${runId}, output ${outputDestination}, memo ${memoId ?? 'recorded'}, cleanup planned`,
+    evidence: [{
+      tag: canaryPlan.tag,
+      email,
+      capsuleId,
+      threadId,
+      runId,
+      runStatus: runReadStatus,
+      outputDestination,
+      outputHref: extractOutputHref(runReadPayload) ?? '/app?panel=memo',
+      memoId,
+      cleanup: 'planned',
+    }],
+  });
+}
+
+function canaryResult(input: {
+  status: DoctorStatus;
+  canaryPlan: ReturnType<typeof buildCanaryPlan>;
+  steps: CanaryStepResult[];
+  summary: string;
+  evidence?: unknown[];
+  remediation?: string[];
+}): DoctorCheckResult {
+  return {
+    id: 'canary-authenticated-golden-path',
+    lane: 'authenticated-full-canary',
+    status: input.status,
+    summary: input.summary,
+    evidence: [
+      ...(input.evidence ?? []),
+      {
+        tag: input.canaryPlan.tag,
+        steps: input.steps,
+        artifacts: input.canaryPlan.artifacts,
+        cleanup: input.canaryPlan.enabled ? 'planned' : 'blocked',
+      },
+    ],
+    remediation: input.remediation,
+  };
+}
+
+function canaryHttpStatus(status: number): DoctorStatus {
+  return [402, 429, 503].includes(status) ? 'BLOCKED' : 'FAIL';
+}
+
+function extractCookieHeader(headers: Headers | undefined, name: string): string | null {
+  if (!headers) return null;
+  const values: string[] = [];
+  const extendedHeaders = headers as Headers & { getSetCookie?: () => string[] };
+  if (typeof extendedHeaders.getSetCookie === 'function') {
+    values.push(...extendedHeaders.getSetCookie());
+  }
+  const direct = headers.get('set-cookie') ?? headers.get('Set-Cookie');
+  if (direct) values.push(direct);
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = values.join('\n').match(new RegExp(`(?:^|[,\\n]\\s*)(${escaped}=[^;\\n]+)`, 'i'));
+  return match?.[1] ?? null;
+}
+
+async function readResponseJsonOrText(response: Awaited<ReturnType<FetchFn>>): Promise<unknown> {
+  return readResponse(response);
+}
+
+function extractRunId(payload: unknown): string | null {
+  const run = extractRunRecord(payload);
+  return typeof run?.runId === 'string' ? run.runId : null;
+}
+
+function extractRunStatus(payload: unknown): string | null {
+  const run = extractRunRecord(payload);
+  return typeof run?.status === 'string' ? run.status : null;
+}
+
+function extractOutputHref(payload: unknown): string | null {
+  const run = extractRunRecord(payload);
+  return typeof run?.outputHref === 'string' ? run.outputHref : null;
+}
+
+function extractRunRecord(payload: unknown): Record<string, unknown> | null {
+  if (!isRecord(payload)) return null;
+  if (isRecord(payload.run)) return payload.run;
+  if (typeof payload.runId === 'string') return payload;
+  return null;
+}
+
+function extractMemoId(payload: unknown): string | null {
+  if (!isRecord(payload)) return null;
+  if (isRecord(payload.memo)) {
+    if (typeof payload.memo.memoId === 'string') return payload.memo.memoId;
+    if (typeof payload.memo.id === 'string') return payload.memo.id;
+  }
+  if (typeof payload.memoId === 'string') return payload.memoId;
+  if (typeof payload.id === 'string') return payload.id;
+  return null;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function writeDoctorArtifacts(report: DoctorReport, outDir: string): Promise<void> {

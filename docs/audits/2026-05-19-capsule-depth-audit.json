@@ -1,12 +1,21 @@
 {
   "ok": true,
-  "catalogVersion": "2026-05-19-capsule-depth-v4",
-  "total": 59,
+  "catalogVersion": "2026-05-20-intellectual-devices-v5",
+  "total": 69,
   "counts": {
     "situation": 20,
-    "tool": 15,
+    "tool": 25,
     "output": 19,
     "user": 5
+  },
+  "expected": {
+    "total": 69,
+    "counts": {
+      "output": 19,
+      "situation": 20,
+      "tool": 25,
+      "user": 5
+    }
   },
   "failures": [],
   "capsules": [
@@ -489,6 +498,96 @@
     },
     {
       "starterId": "starter-tool-negotiation-ripeness-decision-clock",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-assumption-stress-test",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-counterfactual-pivot-check",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-competing-hypotheses-matrix",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-stakeholder-incentive-map",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-spoiler-blocker-scan",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-policy-tradeoff-ledger",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-implementation-feasibility-gate",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-second-order-effects-map",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-pre-mortem-failure-review",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-escalation-ladder-deescalation-path",
       "category": "tool",
       "domain": "options-mapping",
       "sourceCount": 2,

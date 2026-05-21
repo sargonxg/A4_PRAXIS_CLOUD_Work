@@ -1,6 +1,6 @@
 # PRAXIS Product Documentation Index
 
-Date: 2026-05-15  
+Date: 2026-05-21  
 Status: canonical index for the current app structure
 
 ## Read These First
@@ -94,6 +94,9 @@ library, memo, canvas, or advanced tools.
   source/document refs, upload, improve, archive, and AI-guided build actions.
 - Deeper memo, canvas, library, run-log, and diagnostic behavior should open as
   panels/actions inside the capsule manager or remain admin/debug-only.
+- Legacy signed-in URLs and focused run links may redirect or deep-link into
+  the shared cockpit for compatibility. They should not become new primary app
+  surfaces.
 
 ## Runtime Spine
 

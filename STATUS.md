@@ -1,5 +1,29 @@
 # PRAXIS — STATUS
 
+## 2026-05-21 — Product Surface Contract And Canary Audit Repair
+
+Current stabilization checkpoint:
+
+- The repo contract is public Home plus signed-in Home + Capsules. Ask PRAXIS,
+  library/source work, memo drafting, canvas, diagnostics, and AgentRun proof
+  stay inside the existing cockpit/workbench as panels and actions.
+- Legacy signed-in URLs and focused run URLs may redirect or deep-link for
+  compatibility, but they are not new primary navigation or new top-level
+  signed-in product surfaces.
+- `scripts/audit-capsule-depth.ts` now derives its expected starter totals and
+  category counts from the live `CAPSULE_STARTER_DEFINITIONS` catalog instead
+  of stale hard-coded assumptions. The regenerated audit passes with 69
+  starters across situation/tool/output/user categories.
+- `doctor:praxis:canary` now has a credential-gated authenticated golden-path
+  contract: public Home, Firebase/app session, active canary capsule, Ask
+  thread, AgentRun creation/dispatch/worker completion, Memo Studio draft, and
+  same-thread receipt. It still blocks honestly when Firebase, Cloud SQL, Cloud
+  Tasks, worker auth, or model runtime configuration is missing.
+- Early verification for this pass includes capsule-depth, route consolidation,
+  release-note, capsule contract, capsule-memory contract, agent-runtime proof,
+  agent-process contract, Genkit runtime, Genkit coverage inventory, and the
+  focused doctor canary unit test.
+
 ## 2026-05-19 — Senior Engineering Cleanup And Naming Hardening
 
 Current cleanup checkpoint:

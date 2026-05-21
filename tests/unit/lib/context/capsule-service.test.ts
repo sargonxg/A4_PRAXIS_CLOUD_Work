@@ -12,6 +12,7 @@ import {
   getCapsule,
   getOrMigrateDefaultCapsule,
   listCapsules,
+  promoteCapsuleSourceGaps,
   rateCapsule,
   saveContextStackCompat,
   seedStarterCapsules,
@@ -571,6 +572,37 @@ describe('capsule service', () => {
     expect(capsule?.starterSnapshot?.deviceProfile?.methodSteps.length).toBeGreaterThanOrEqual(4);
     expect(capsule?.starterSnapshot?.deviceProfile?.humanReviewGate).toMatch(/review|approval|human/i);
     expect(capsule?.version).toBe(5);
+  });
+
+  it('promotes Ask source gaps into review-gated capsule repository notes', async () => {
+    const db = new FakeFirestore();
+    await seedStarterCapsules('u1', deps(db));
+
+    const result = await promoteCapsuleSourceGaps('u1', 'starter-situation-diplomatic-options', {
+      gaps: [
+        'Need a current opposition negotiating position before drafting external options.',
+        'Need a current opposition negotiating position before drafting external options.',
+        'Confirm the latest mediator mandate date with a primary source.',
+      ],
+      sourceIds: ['ask-source-1'],
+      runId: 'run-123',
+      generatedBy: 'ask-praxis',
+    }, deps(db));
+
+    expect(result?.reviewRequired).toBe(true);
+    expect(result?.proposals).toHaveLength(2);
+    expect(result?.proposals.every((proposal) => proposal.reviewStatus === 'proposed')).toBe(true);
+    expect(result?.proposals.every((proposal) => proposal.target === 'sourcePack')).toBe(true);
+    const proposal = result!.proposals[0];
+    const notePath = `users/u1/capsules/starter-situation-diplomatic-options/notes/${proposal.proposalId}`;
+    const note = db.data.get(notePath);
+    expect(note?.type).toBe('gap');
+    expect(note?.reviewStatus).toBe('proposed');
+    expect(note?.body).toEqual(expect.stringContaining('proposed source-pack update'));
+    expect((note?.links as { sourceIds: string[]; runId: string }).runId).toBe('run-123');
+    expect((note?.links as { sourceIds: string[] }).sourceIds).toContain('ask-source-1');
+    expect(result?.capsule.trust.level).toBe('amber');
+    expect(result?.capsule.trust.recommendations).toContain('Review proposed source-pack gaps before the next external handoff.');
   });
 });
 

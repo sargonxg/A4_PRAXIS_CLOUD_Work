@@ -1,6 +1,6 @@
 # PRAXIS Architecture
 
-Last updated: 2026-05-15.
+Last updated: 2026-05-21.
 
 ## Canonical references
 
@@ -8,7 +8,7 @@ Last updated: 2026-05-15.
 - [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md) — shipped, partial, gated, and drift state.
 - [`docs/architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md`](./docs/architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md) — canonical Ask PRAXIS / AgentRun / Genkit / ADK runtime architecture: PRAXIS-owned state, queued worker execution, mirrored events, approvals, receipts, evals, and local-vs-production proof.
 - [`docs/architecture/PRAXIS_DIALECTICA_KNOWLEDGE_LAYER_ALIGNMENT.md`](./docs/architecture/PRAXIS_DIALECTICA_KNOWLEDGE_LAYER_ALIGNMENT.md) — future product boundary: PRAXIS as the user-facing policy workbench, DIALECTICA as the ingestion/knowledge layer, with KAIROS and AGON feeding structured evidence upstream.
-- [`docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md`](./docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md) — current product model (Home, Ask PRAXIS, Sources, Situation Model, Outputs, Advanced; eight context cores).
+- [`docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md`](./docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md) — historical simplified model evidence. The current visible product spine is Home + Capsules, with Ask, sources, outputs, diagnostics, and agent work inside the shared cockpit.
 - [`docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md`](./docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md) — current canonical product/app structure for the Tasklet-style ContextCapsule runtime on Google Cloud.
 - [`docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`](./docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md) — canonical guide for policy/statecraft capsule anatomy, generic and path-bound users, personas, combination, tools, connectors, and output products.
 - [`docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`](./docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md) — implementation plan for persistent capsule-aware agents, Cloud SQL run ledger, Cloud Tasks dispatch, approvals, MCP, and browser/sandbox deferral.
@@ -60,6 +60,19 @@ The next canonical runtime target is Cloud Run first, GKE later:
 - When browser automation becomes necessary, the preferred deferred lane is
   `browser-use` plus Steel.dev managed first, self-hosted on GKE only when
   economics or concurrency require it.
+
+## Product Surface Doctrine
+
+The current product shell is intentionally small:
+
+- Public Home (`/`) is the prompt-first entry.
+- Signed-in Home and Capsules are the only primary product surfaces.
+- Ask PRAXIS, capsule library, source review, Memo Studio, canvas/graph work,
+  diagnostics, and AgentRun proof appear as panels/actions inside the shared
+  cockpit and `TaskletPraxisWorkbench`.
+- Legacy signed-in URLs and focused run URLs may redirect or deep-link for
+  compatibility, but they must reuse the shared cockpit and must not add a new
+  top-level app page or primary navigation item.
 
 ## Active Enforcement
 

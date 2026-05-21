@@ -23,8 +23,9 @@ test.describe("Mobile landing — iPhone 13 (390×844)", () => {
       .count();
     expect(ctaCount).toBeGreaterThan(0);
 
-    // Section rhythm wrapper exists for the additive landing block.
-    await expect(page.locator(".section-rhythm")).toHaveCount(1);
+    // The public root starts with the app/workbench preview, not a standalone hero.
+    await expect(page.locator('[data-testid="tasklet-praxis-workbench"]')).toBeVisible();
+    await expect(page.locator('[data-testid="app-first-root"]')).toHaveCount(1);
   });
 
   test("primary mobile CTAs meet touch-target floor (≥44px)", async ({
@@ -57,11 +58,11 @@ test.describe("Mobile landing — iPhone 13 (390×844)", () => {
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 
-  test("output catalog horizontal-scrolls without body overflow", async ({
+  test("app-first workbench renders without body overflow", async ({
     page,
   }) => {
     await page.goto(BASE_URL);
-    await page.locator("text=Output catalog").scrollIntoViewIfNeeded();
+    await page.locator('[data-testid="tasklet-praxis-workbench"]').scrollIntoViewIfNeeded();
     const bodyOverflowX = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
@@ -70,16 +71,11 @@ test.describe("Mobile landing — iPhone 13 (390×844)", () => {
 });
 
 test.describe("Mobile landing — reduced motion", () => {
-  test.use({
-    ...devices["iPhone 13"],
-  });
-
   test("respects prefers-reduced-motion on capsule hero", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(BASE_URL);
-    // The CoreCapsuleHero is not necessarily on the landing today, but the
-    // capsule strip / section rhythm should still render without runtime
-    // animation errors.
-    await expect(page.locator(".section-rhythm")).toBeVisible();
+    // The root is the public workbench preview; reduced motion should not
+    // break capsule controls or the app-first shell.
+    await expect(page.locator('[data-testid="tasklet-praxis-workbench"]')).toBeVisible();
   });
 });

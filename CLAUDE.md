@@ -1,6 +1,6 @@
 # PRAXIS — Policy, Diplomacy, and Political Intelligence Platform by TACITUS
 
-> Version 6.4.0 — Operational spine: jobs · events · notifications · semaphore
+> Version 6.4.1 — ContextCapsule cockpit, durable AgentRun proof, and canary-gated production truth
 > Pure GCP Cloud Run · Dual-service: Next.js + Python FastAPI
 > Project: `praxisbytacitus` (852128226674) · Region: `us-central1`
 > Domain: praxis.tacitus.me
@@ -28,9 +28,12 @@ helps practitioners turn sources, documents, live feeds, and graph context into
 cited assessments, briefings, reports, and decision support. In TACITUS terms,
 PRAXIS is the system of record for conflict: a governed data layer for human
 friction centered on Actor, Claim, Interest, Constraint, Leverage, Commitment,
-Event, and Narrative. Two experiences: a user-owned for prospects (`retired user-owned routes`) and a
-real situation-driven workspace for authenticated users (`/app/*`). Deployed
-on GCP Cloud Run.
+Event, and Narrative. The visible product contract is public Home, then signed-in
+Home + Capsules. Ask PRAXIS, library/source work, memo drafting, canvas,
+diagnostics, and agent runs are panels/actions inside the shared cockpit and
+workbench. Legacy signed-in URLs may redirect or deep-link for compatibility;
+they are not places to add new primary navigation or top-level product surfaces.
+Deployed on GCP Cloud Run.
 
 ## Agent Handoff
 
@@ -78,9 +81,10 @@ npm install
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  Frontend (Next.js 16 App Router)  →  Cloud Run         │
-│    src/app/app/*   (55 registered tool surfaces)        │
-│    src/appretired user-owned routes  (authenticated mode, cookie auth)             │
-│    src/app/api/*   (73 API routes: AI, data, auth)      │
+│    src/app/page.tsx        public Home / prompt entry   │
+│    src/app/app/*           signed-in Home + Capsules    │
+│    compatibility routes    redirects and deep links     │
+│    src/app/api/*           AI, data, auth, runtime APIs  │
 ├─────────────────────────────────────────────────────────┤
 │  Backend (Python FastAPI)  →  Cloud Run                 │
 │    /api/v1/pipeline/*   (extract → build → analyze)     │
@@ -147,8 +151,9 @@ npm install
 
 ```
 /                            Next.js frontend (root)
-├── src/app/app/             55 registered tool surfaces
-├── src/app/app/            user-owned mirror pages
+├── src/app/app/             signed-in Home + Capsules cockpit/workbench
+├── src/app/agents/          focused run deep links into the shared cockpit
+├── compatibility routes     legacy redirects into the cockpit where retained
 ├── src/app/onboarding/      3-screen wizard + layout (identity, perspective, working style)
 ├── src/app/api/             API routes (73 total)
 │   ├── ai/                  35 AI tool routes

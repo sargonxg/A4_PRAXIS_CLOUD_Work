@@ -1,6 +1,6 @@
 # PRAXIS Canonical App Structure
 
-Date: 2026-05-15  
+Date: 2026-05-21  
 Canonical domain: `https://praxis.tacitus.me`  
 Status: source-of-truth product and infrastructure structure for the next build waves
 
@@ -399,7 +399,8 @@ Ship:
 - `POST /api/agents/runs`;
 - `GET /api/agents/runs/[runId]`;
 - run list by active capsule;
-- private `/agents/[runId]` workspace route on `praxis.tacitus.me`;
+- focused `/agents/[runId]` compatibility/deep-link route into the shared
+  cockpit on `praxis.tacitus.me`;
 - unit tests for state transitions and path/schema shape.
 
 ### Wave 2: Cloud Tasks Dispatch
@@ -413,10 +414,11 @@ Ship:
 
 Current implementation checkpoint:
 
-- `/agents/[runId]` is the canonical signed-in route for inspecting a durable
-  agent run in the real PRAXIS cockpit. It reuses the shared workbench, focuses
-  the selected run, loads the run's capsule, reads run events from the existing
-  stream endpoint, and shows tool-call/approval counts plus output links.
+- `/agents/[runId]` is a focused signed-in compatibility/deep-link route for
+  inspecting a durable agent run in the real PRAXIS cockpit. It reuses the
+  shared workbench, focuses the selected run, loads the run's capsule, reads
+  run events from the existing stream endpoint, and shows tool-call/approval
+  counts plus output links. It is not a new primary app surface.
 - `/app/agents/[runId]` redirects to `/agents/[runId]` for compatibility. Login
   and onboarding middleware preserve the deep-link target; this is not a second
   app surface or navigation item.

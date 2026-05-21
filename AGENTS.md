@@ -52,6 +52,19 @@ old phase queues.
 - [`docs/COMPLIANCE.md`](./docs/COMPLIANCE.md)
 - [`docs/PRAXIS_TECHNICAL_SPECIFICATION.md`](./docs/PRAXIS_TECHNICAL_SPECIFICATION.md)
 
+## Codex ECC Baseline
+
+- Project-local Codex config lives at [`.codex/config.toml`](./.codex/config.toml).
+- Multi-agent role layers live under [`.codex/agents/`](./.codex/agents/).
+- To merge missing ECC MCP servers into `~/.codex/config.toml`, run:
+
+```bash
+node scripts/sync-ecc-to-codex.mjs
+```
+
+- PowerShell users can also run `.\scripts\sync-ecc-to-codex.ps1`.
+- The sync is add-only by default. Use `node scripts/sync-ecc-to-codex.mjs --update-mcp`
+  only when intentionally replacing the ECC-managed server blocks.
 
 ## Current Slice Work
 
