@@ -8,24 +8,29 @@ regulatory obligation changes.
 
 ## 1. Data licensing — Google-grounded and user-source stack
 
-**Strategic posture (2026-05-17):** PRAXIS no longer ingests structured
-conflict/humanitarian feeds. Live research runs through Google Search grounding
-and source-linked crawler receipts, with user documents/URLs as primary
-analyst-provided evidence.
+**Strategic posture (2026-05-22):** PRAXIS does not auto-ingest structured
+conflict/humanitarian feeds into canonical state. Live research runs through
+Google Search grounding, source-linked crawler receipts, user documents/URLs,
+and an optional Research graph extra that uses GDELT DOC/API plus Wikidata
+SPARQL for advisory receipts only.
 
 ### 1.1 Sources actively used and their license posture
 
 | Source | License | Commercial SaaS use | Attribution required | Notes |
 |---|---|---|---|---|
 | Wikipedia | CC-BY-SA 4.0 | ✅ Yes (with share-alike) | Yes — link to article | Used for actor enrichment summaries; we do not redistribute large excerpts verbatim |
+| Wikidata | CC0 | ✅ Yes | Link recommended | Used by Research graph for QIDs, labels, aliases, identifiers, coordinates, and official-site hints |
+| GDELT DOC/API | GDELT open data terms | ✅ Yes | Link source URLs | Optional Research graph media-pulse receipts; advisory only, no canonical graph mutation |
 | Google Search (grounded via Gemini) | Google AI Terms | ✅ Yes | Per Google attribution rules | Built into Vertex AI |
+| Exa Premium web | Exa terms | ✅ Yes | Source URLs in receipts | Paid high-quality open-web discovery lane; remains separate from free Research graph |
 | Source-linked web crawler receipts | Per-source terms | Review per source | Link + timestamp required | Optional; stores metadata/excerpts, not full articles |
 
 ### 1.2 Sources we deliberately DO NOT use
 
 | Source | Why we don't use it |
 |---|---|
-| ~~ACLED, GDELT, UCDP, ReliefWeb, HDX, UN News, UNHCR, SIPRI, Crisis Group, World Bank~~ | Removed from active runtime; no dedicated clients, workers, or credentials. Use Google-grounded search or source-linked crawler receipts instead. |
+| ~~ACLED, UCDP, ReliefWeb, HDX, UN News, UNHCR, SIPRI, Crisis Group, World Bank dedicated feeds~~ | Removed from active runtime; no dedicated clients, workers, or credentials. Use Google-grounded search, Research graph advisory receipts, or source-linked crawler receipts instead. |
+| GDELT BigQuery public datasets by default | Google bills public-dataset query processing to the PRAXIS GCP project. BigQuery mode must stay disabled unless `GDELT_BIGQUERY_ENABLED=true`, `RESEARCH_GRAPH_MAX_BYTES_BILLED` is configured, dry-run estimate passes, and bounded date/filter/LIMIT templates are used. |
 | ~~Firecrawl / Bright Data / Apify~~ | Paid scrapers introduce vendor lock-in and per-page costs. Replaced with grounded Google Search unless a crawler is explicitly receipt-backed. |
 | ~~Anthropic Claude~~ | Operational simplicity — Gemini 3.1 Pro is the single AI line. |
 | ~~Tavily / Parallel.ai~~ | Replaced with grounded Google Search. |
@@ -34,6 +39,9 @@ analyst-provided evidence.
 
 - Every page / report / API response that surfaces live web content carries
   source URL, title, retrieval timestamp, and receipt metadata.
+- Research graph receipts must say they are advisory only. GDELT/Wikidata
+  findings can feed review-gated graph proposals, but they do not mutate the
+  canonical PRAXIS graph automatically.
 - The CC-BY-SA share-alike obligation for Wikipedia is honoured by
   treating the actor-enrichment summaries as derivative metadata,
   not redistribution; full attribution links are kept on the actor
@@ -108,7 +116,7 @@ of the open-source pivot.
 | Cloudflare (DNS) | DNS + CDN | Global | Yes |
 | GitHub | Source code hosting (no customer data) | US | Yes |
 
-**Removed from this list (no longer used):** ACLED, GDELT, UCDP, ReliefWeb,
+**Removed from this list (no longer used):** ACLED, UCDP, ReliefWeb,
 HDX, UN News, UNHCR, SIPRI, Crisis Group, World Bank dedicated feeds,
 Firecrawl, Anthropic, Tavily, Parallel.ai.
 
@@ -123,6 +131,7 @@ Firecrawl, Anthropic, Tavily, Parallel.ai.
 | 2026-04-27 (LangGraph) | Added private-IP-only Cloud SQL Postgres as the approved LangGraph checkpoint store. This remains within the Google Cloud sub-processor boundary; user-visible canonical state stays in Firestore. |
 | 2026-04-28 (billing) | Began Stripe-to-Polar transition. New payments stack uses Polar hosted Checkout, Customer Portal, webhooks, and Firestore entitlement mirroring. |
 | 2026-05-17 (source cleanup) | Removed dedicated structured feed workers/clients and narrowed live research to Google Search grounding, optional receipt-backed crawlers, and user evidence. |
+| 2026-05-22 (research graph extra) | Added optional free Research graph receipts via GDELT DOC/API and Wikidata SPARQL. BigQuery remains disabled-by-default and server-capped because public-dataset query processing can bill PRAXIS. Exa remains the paid Premium web discovery lane. |
 
 ---
 

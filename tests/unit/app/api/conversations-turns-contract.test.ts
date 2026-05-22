@@ -28,7 +28,14 @@ describe('conversation turns Ask PRAXIS contract', () => {
 
   it('passes the paid agentic search toggle through aiSettings only', () => {
     expect(routeSource).toContain('agenticSearchPremium');
-    expect(routeSource).toContain('aiSettings: parsed.data.aiSettings');
+    expect(routeSource).toContain('aiSettings: withResearchGraphSetting(parsed.data.aiSettings, researchGraphExtra)');
     expect(routeSource).not.toContain('EXA_API_KEY');
+  });
+
+  it('does not subscription-gate the free Research graph per-turn toggle', () => {
+    expect(routeSource).toContain('researchGraphExtra');
+    expect(routeSource).toContain('requestedAgenticSearchPremium');
+    expect(routeSource).not.toContain('research_graph_requires_subscription');
+    expect(routeSource).not.toContain("meetsTier(tier, 'analyst') && requestedResearchGraph");
   });
 });

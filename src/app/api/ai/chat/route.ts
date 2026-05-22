@@ -50,7 +50,7 @@ import {
   classifyAskIntent,
   type AskIntent,
 } from '@/lib/ai/ask-conversation';
-import { buildAskAnswerEnvelope, buildSourcePreviewCards, type AskAnswerEnvelope, type AskCapsuleSuggestionReceipt, type AskGenerationReceipt } from '@/lib/ai/ask-answer-envelope';
+import { buildAskAnswerEnvelope, buildResearchGraphSourcePreviewCards, buildSourcePreviewCards, type AskAnswerEnvelope, type AskCapsuleSuggestionReceipt, type AskGenerationReceipt } from '@/lib/ai/ask-answer-envelope';
 import {
   buildAskConversationOrchestrationReceipt,
   buildAskOrchestrationStatusEvents,
@@ -62,6 +62,12 @@ import { enqueueAgentRunDispatch } from '@/lib/agent-runtime/cloud-tasks';
 import { destinationHref } from '@/lib/product/policy-agents';
 import { DEFAULT_SELECTED_CORE_IDS, type CapsuleAgentExecutionContext, type SelectedCoreIds } from '@/lib/agent-runtime/types';
 import { resolveGroundingPlan } from '@/lib/agent-runtime/grounding-adapter';
+import {
+  buildBlockedResearchGraphReceipt,
+  coerceResearchGraphReceipts,
+  isResearchGraphServerEnabled,
+  type ResearchGraphReceipt,
+} from '@/lib/research-graph';
 import type { Situation } from '@/types/situation';
 
 export const maxDuration = 60;
@@ -165,6 +171,15 @@ export const POST = withCalibration('chat', 'ai_chat', {
     let evidencePackReceipt: { packId: string; paragraphCount: number; gapCount: number } | null = null;
     let answerEvidencePack: Awaited<ReturnType<typeof buildCapsuleEvidencePack>> | null = null;
     const toolInvocations: AskToolInvocationReceipt[] = [];
+    const requestedResearchGraphExtra = aiSettings?.researchGraphExtra === true;
+    const researchGraphServerEnabled = isResearchGraphServerEnabled();
+    const researchGraphReceipts: ResearchGraphReceipt[] = requestedResearchGraphExtra && (!researchGraphServerEnabled || _user.isDemo === true)
+      ? [buildBlockedResearchGraphReceipt({
+          queryKind: 'current_media_pulse',
+          blockedReason: _user.isDemo === true ? 'sample_mode_disabled' : 'server_disabled',
+          filters: { requested: true },
+        })]
+      : [];
     const frameworkSteps = buildAskFrameworkStepReceipts(
       _user.calibration.path,
       prompt,
@@ -454,8 +469,9 @@ You have access to the user's active situation data. When answering questions:
       tier,
       isDemo: _user.isDemo === true,
       agenticSearchPremiumEnabled: aiSettings?.agenticSearchPremium === true,
+      researchGraphExtraEnabled: requestedResearchGraphExtra && researchGraphServerEnabled,
     });
-    const tools = runAskTools({ ...baseTools, ...askPraxisExt }, toolInvocations);
+    const tools = runAskTools({ ...baseTools, ...askPraxisExt }, toolInvocations, researchGraphReceipts);
     const toolsConsidered = Object.keys(tools).sort();
     const depthDirective = aiSettings?.analysisDepth === 'deep'
       ? '\n\nANALYSIS DEPTH: Provide a more detailed answer with explicit assumptions, alternative interpretations, source/corpus gaps, and practical next actions. Keep it concise enough for an analyst to use.'
@@ -464,6 +480,11 @@ You have access to the user's active situation data. When answering questions:
     systemPrompt += aiSettings?.agenticSearchPremium === true
       ? '\n\nPREMIUM WEB: The user enabled the paid Exa agentic search extra for this turn. Use premiumExaSearch only when external, current, source-grounded evidence is materially needed; cite returned URLs and do not mention provider cost.'
       : '\n\nPREMIUM WEB: Exa agentic search is off for this turn. Do not use premiumExaSearch unless the user enables the Premium web button in the conversation composer.';
+    systemPrompt += requestedResearchGraphExtra && researchGraphServerEnabled && _user.isDemo !== true
+      ? '\n\nRESEARCH GRAPH: The user enabled the free Research graph extra for this turn. Use researchGraphSearch only for entity/event/media-graph questions where Wikidata grounding, aliases, identifiers, GDELT media pulse, or relationship hints would materially improve the answer. Treat every result as advisory only. When used, include a short section titled "What PRAXIS learned from Research graph" with entity matches, aliases, identifiers, event/media signal, source URLs, caveats, and a promote-to-graph-proposal follow-up when appropriate.'
+      : requestedResearchGraphExtra
+        ? '\n\nRESEARCH GRAPH: The user requested Research graph, but it is unavailable for this turn. Answer normally from the active capsule and available sources, and surface the degraded Research graph receipt without failing the turn.'
+        : '\n\nRESEARCH GRAPH: The free GDELT + Wikidata Research graph extra is off for this turn. Do not use researchGraphSearch unless the user enables the Research graph button in the conversation composer.';
     systemPrompt += '\n\n' + askIntentDirective(askIntent);
 
     // TACITUS owns model routing for Ask PRAXIS. Legacy client settings are
@@ -533,14 +554,19 @@ You have access to the user's active situation data. When answering questions:
     });
     runtimeReceipt.orchestrationReceipt = orchestrationReceipt;
     runtimeReceipt.routeDecision = buildAskRouteDecisionReceipt(orchestrationReceipt);
+    const sourceCardsForEnvelope = () => [
+      ...sourcePreviewCards,
+      ...buildResearchGraphSourcePreviewCards(researchGraphReceipts),
+    ];
     const buildEnvelopeForText = (text: string): AskAnswerEnvelope => buildAskAnswerEnvelope({
       prompt,
       answer: text,
       intent: askIntent,
-      sourceCards: sourcePreviewCards,
+      sourceCards: sourceCardsForEnvelope(),
       gaps: uniqueStrings([
         ...(turnCapsule?.activeGaps ?? []),
         ...(answerEvidencePack?.openGaps ?? []),
+        ...researchGraphReceipts.filter((receipt) => receipt.status !== 'ready').flatMap((receipt) => receipt.caveats),
       ]),
       provenance: {
         capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
@@ -553,6 +579,7 @@ You have access to the user's active situation data. When answering questions:
       orchestrationReceipt,
       generationReceipt: runtimeReceipt.generationReceipt,
       capsuleSuggestions: normalizedSuggestedCapsules,
+      researchGraphReceipts,
     });
     const effectiveMessages = buildAskConversationMessages(
       messages,
@@ -562,6 +589,7 @@ You have access to the user's active situation data. When answering questions:
     const { provenance } = _user.calibration;
     const persistSuccessfulAskOutput = async (text: string) => {
       if (!_user.uid || !text) return;
+      runtimeReceipt.researchGraphReceipts = researchGraphReceipts;
       runtimeReceipt.answerEnvelope = buildEnvelopeForText(text);
       if (effectiveSituationId) {
         await saveToolOutput({
@@ -718,7 +746,7 @@ You have access to the user's active situation data. When answering questions:
               fallbackModel: selectedReceipt.fallbackFrom ?? null,
               finishReason,
               usage: totalUsage,
-              sourceCount: sourcePreviewCards.length,
+              sourceCount: sourceCardsForEnvelope().length,
               capsuleCount: normalizedAppliedCapsules.length,
               warningCount: runtimeReceipt.contextReceipt?.warnings.length ?? 0,
             }),
@@ -760,7 +788,7 @@ You have access to the user's active situation data. When answering questions:
           fallbackModel: runtimeReceipt.generationReceipt?.fallbackModel ?? null,
           finishReason: runtimeReceipt.generationReceipt?.finishReason ?? null,
           usage: runtimeReceipt.generationReceipt?.usage ?? null,
-          sourceCount: sourcePreviewCards.length,
+          sourceCount: sourceCardsForEnvelope().length,
           capsuleCount: normalizedAppliedCapsules.length,
           warningCount: runtimeReceipt.contextReceipt?.warnings.length ?? 0,
         },
@@ -854,6 +882,7 @@ interface AskRuntimeReceipt extends Record<string, unknown> {
   orchestrationReceipt?: AskConversationOrchestrationReceipt;
   generationReceipt?: AskGenerationReceipt;
   suggestedCapsules?: AskCapsuleSuggestionReceipt[];
+  researchGraphReceipts?: ResearchGraphReceipt[];
   answerEnvelope?: AskAnswerEnvelope;
 }
 
@@ -1354,6 +1383,7 @@ async function loadServerAskHistory(input: {
 function runAskTools<TTools extends Record<string, unknown>>(
   tools: TTools,
   receipts: AskToolInvocationReceipt[],
+  researchGraphReceipts: ResearchGraphReceipt[] = [],
 ): TTools {
   return Object.fromEntries(
     Object.entries(tools).map(([toolId, toolDef]) => {
@@ -1369,6 +1399,10 @@ function runAskTools<TTools extends Record<string, unknown>>(
           const startedAt = new Date();
           try {
             const output = await originalExecute(input, options);
+            const graphReceipts = coerceResearchGraphReceipts(output);
+            if (graphReceipts.length) {
+              researchGraphReceipts.push(...graphReceipts);
+            }
             const finishedAt = new Date();
             receipts.push({
               event: 'tool_invocation',

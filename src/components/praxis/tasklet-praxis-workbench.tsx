@@ -30,6 +30,7 @@ import {
   BookOpen,
   BrainCircuit,
   ChevronDown,
+  CircleHelp,
   Clipboard,
   Copy,
   Database,
@@ -45,6 +46,7 @@ import {
   MessageCircle,
   Mic,
   Monitor,
+  Network,
   Paperclip,
   Plus,
   RefreshCcw,
@@ -707,6 +709,7 @@ export function TaskletPraxisWorkbench({
   const [selectedSpanStatus, setSelectedSpanStatus] = useState<SpanAttachStatus>('idle');
   const [selectedSpanMessage, setSelectedSpanMessage] = useState('');
   const [agenticSearchPremiumEnabled, setAgenticSearchPremiumEnabled] = useState(false);
+  const [researchGraphExtraEnabled, setResearchGraphExtraEnabled] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const starterSeededRef = useRef(false);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
@@ -785,6 +788,7 @@ export function TaskletPraxisWorkbench({
   const openChainSlots = capsuleChainSlots.filter((slot) => !filledChainRoles.has(slot.role));
   const activeCapsuleForStrip = selectedCapsule ?? activeCapsuleStack[0] ?? null;
   const canUseAgenticSearchPremium = isPaidSubscription(user?.subscription);
+  const canUseResearchGraphExtra = isAuthenticated;
   const composerReadTargets = [
     activeCapsuleForStrip?.label ?? 'Generic analyst',
     repositoryDocuments.length ? `${repositoryDocuments.length} attached source document${repositoryDocuments.length === 1 ? '' : 's'}` : 'no attached source documents',
@@ -793,6 +797,7 @@ export function TaskletPraxisWorkbench({
   const composerUseTargets = [
     'ContextCapsule evidence first',
     agenticSearchPremiumEnabled && canUseAgenticSearchPremium ? 'Google/Exa current-source lane when needed' : 'grounding only when configured',
+    researchGraphExtraEnabled && canUseResearchGraphExtra ? 'GDELT + WD research graph advisory receipts' : 'research graph only when requested',
     selectedAgent.label,
     'sourceability reviewer before memo/PDF output',
   ];
@@ -1007,6 +1012,9 @@ export function TaskletPraxisWorkbench({
       agenticSearchPremiumEnabled && canUseAgenticSearchPremium
         ? 'Paid extra enabled: Exa agentic search may be used for current web evidence when materially useful. Keep source URLs visible and do not expose provider cost.'
         : 'Paid extra disabled: do not use Exa agentic search for this turn.',
+      researchGraphExtraEnabled && canUseResearchGraphExtra
+        ? 'Free extra enabled: Research graph may use GDELT + WD advisory receipts for entity grounding, aliases, identifiers, event/media pulse, and relationship hints. Keep "What PRAXIS learned from Research graph" separate from canonical graph claims.'
+        : 'Free extra disabled: do not use Research graph for this turn.',
       '',
       'Behave like a normal chat assistant first. Answer directly when enough context exists. If a tool, upload, connector, source check, memo, or capsule update would help, decide that yourself and explain the next step plainly.',
       'Format the answer for a policy team: start with a short answer, then use concise headings for Findings, Source posture, Gaps, and Next actions when relevant. Do not fabricate citations; name source gaps plainly.',
@@ -1100,6 +1108,7 @@ export function TaskletPraxisWorkbench({
             provider: 'vertex',
             analysisDepth: 'standard',
             agenticSearchPremium: false,
+            researchGraphExtra: false,
           },
         }),
       });
@@ -1200,6 +1209,7 @@ export function TaskletPraxisWorkbench({
             provider: 'vertex',
             analysisDepth: selectedAgent.id === 'research-memo' || selectedAgent.id === 'capsule-factory' ? 'deep' : 'standard',
             agenticSearchPremium: agenticSearchPremiumEnabled && canUseAgenticSearchPremium,
+            researchGraphExtra: researchGraphExtraEnabled && canUseResearchGraphExtra,
           },
         }),
       });
@@ -3034,6 +3044,41 @@ export function TaskletPraxisWorkbench({
                     <span className="hidden sm:inline">Premium web</span>
                     <span className="rounded-sm bg-slate-950 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Exa</span>
                   </button>
+                  <div className="relative inline-flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          sendPublicToLogin(prompt.trim() || 'Use Research graph in PRAXIS.');
+                          return;
+                        }
+                        setResearchGraphExtraEnabled((enabled) => !enabled);
+                        setStatus(researchGraphExtraEnabled
+                          ? 'Research graph disabled for the next turn.'
+                          : 'Research graph enabled for the next turn. PRAXIS may use GDELT + WD advisory receipts when entity or media signals matter.');
+                      }}
+                      aria-pressed={researchGraphExtraEnabled && canUseResearchGraphExtra}
+                      title={canUseResearchGraphExtra ? 'Toggle Research graph for this conversation turn' : 'Research graph requires sign-in'}
+                      className={cn(
+                        'inline-flex h-10 items-center gap-2 rounded-md border px-3 text-xs font-semibold shadow-sm transition',
+                        researchGraphExtraEnabled && canUseResearchGraphExtra
+                          ? 'border-emerald-300 bg-emerald-50 text-emerald-900 shadow-emerald-900/5'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+                      )}
+                    >
+                      {canUseResearchGraphExtra ? <Network className="h-4 w-4" /> : <LockKeyhole className="h-4 w-4" />}
+                      <span className="hidden sm:inline">Research graph</span>
+                      <span className="rounded-sm bg-slate-950 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">GDELT + WD</span>
+                    </button>
+                    <details className="group relative">
+                      <summary className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50" aria-label="Research graph help">
+                        <CircleHelp className="h-3.5 w-3.5" />
+                      </summary>
+                      <div className="absolute right-0 z-30 mt-2 w-72 rounded-md border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-700 shadow-lg">
+                        entity grounding, aliases, identifiers, event/media pulse, and relationship hints; advisory receipts only
+                      </div>
+                    </details>
+                  </div>
                   <span className="hidden rounded-md border border-slate-200 bg-white px-2 py-2 text-xs font-semibold text-slate-600 sm:inline-flex">
                     TACITUS routes model, worker, and tools
                   </span>
@@ -3775,6 +3820,7 @@ function ConversationAgentActivityRail({ envelope, onAction }: { envelope?: AskA
           ) : null}
         </div>
       ) : null}
+      <ResearchGraphReceiptPanel envelope={envelope} onAction={onAction} />
       {envelope?.continuationActions?.length ? (
         <div className="mt-2 flex flex-wrap gap-1.5" aria-label={continuationActionLabels.join(', ')}>
           {envelope.continuationActions.map((action) => (
@@ -3792,6 +3838,78 @@ function ConversationAgentActivityRail({ envelope, onAction }: { envelope?: AskA
     </section>
   );
 }
+
+function ResearchGraphReceiptPanel({ envelope, onAction }: { envelope?: AskAnswerEnvelope; onAction: (prompt: string) => void }) {
+  const receipts = envelope?.researchGraphReceipts ?? [];
+  if (!receipts.length) return null;
+  const entityMatches = receipts.flatMap((receipt) => receipt.entityMatches).slice(0, 4);
+  const signals = receipts.flatMap((receipt) => receipt.extractedSignals).slice(0, 5);
+  const sourceUrls = Array.from(new Set(receipts.flatMap((receipt) => receipt.sourceUrls))).slice(0, 4);
+  return (
+    <section className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 p-2" data-testid="research-graph-receipt-panel">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-900">What PRAXIS learned from Research graph</p>
+        <span className="rounded-md border border-emerald-200 bg-white px-1.5 py-0.5 font-mono text-[10px] text-emerald-900">
+          {receipts.map((receipt) => receipt.queryKind.replace(/_/g, ' ')).join(' / ')}
+        </span>
+      </div>
+      {entityMatches.length ? (
+        <div className="mt-2 grid gap-1 sm:grid-cols-2">
+          {entityMatches.map((match) => (
+            <div key={match.qid} className="rounded-md border border-emerald-100 bg-white px-2 py-1.5">
+              <p className="text-xs font-semibold text-slate-900">{match.label} <span className="font-mono text-[10px] text-slate-500">{match.qid}</span></p>
+              <p className="mt-0.5 text-[11px] leading-4 text-slate-600">{[match.description, match.aliases.length ? `Aliases: ${match.aliases.slice(0, 3).join(', ')}` : null].filter(Boolean).join(' / ')}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {signals.length ? (
+        <div className="mt-2 overflow-x-auto rounded-md border border-emerald-100 bg-white">
+          <table className="min-w-full text-left text-[11px]">
+            <thead className="bg-emerald-50 text-emerald-900">
+              <tr>
+                <th className="px-2 py-1 font-semibold">Signal</th>
+                <th className="px-2 py-1 font-semibold">Value</th>
+                <th className="px-2 py-1 font-semibold">Confidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {signals.map((signal, index) => (
+                <tr key={`${signal.label}-${index}`} className="border-t border-emerald-100">
+                  <td className="px-2 py-1 font-semibold text-slate-800">{signal.label}</td>
+                  <td className="px-2 py-1 text-slate-600">{signal.value}</td>
+                  <td className="px-2 py-1 font-mono text-slate-500">{Math.round(signal.confidence * 100)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+      {sourceUrls.length ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {sourceUrls.map((url) => (
+            <a key={url} href={url} target="_blank" rel="noreferrer" className="max-w-full truncate rounded-md border border-emerald-200 bg-white px-2 py-1 text-[11px] font-semibold text-emerald-900 hover:bg-emerald-50">
+              {url}
+            </a>
+          ))}
+        </div>
+      ) : null}
+      <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-emerald-950">
+        {receipts.flatMap((receipt) => receipt.caveats).slice(0, 2).map((caveat) => (
+          <span key={caveat} className="rounded-md bg-white px-2 py-1">{caveat}</span>
+        ))}
+        <button
+          type="button"
+          onClick={() => onAction('Promote the Research graph entity, event, and relationship candidates into a review-gated graph proposal.')}
+          className="rounded-md border border-emerald-300 bg-white px-2 py-1 font-semibold text-emerald-900 hover:bg-emerald-50"
+        >
+          promote to graph proposal
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function ConversationSourcePreviewPanel({ envelope, messageId, onFollowUp }: { envelope?: AskAnswerEnvelope; messageId?: string; onFollowUp: (followUp: string) => void }) {
   const sourceCards = envelope?.sourceCards ?? [];
   const followUps = envelope?.followUps ?? [];

@@ -91,6 +91,15 @@ export function collectAgenticSearchHealth(
       missingDetail: 'Exa Premium web is unavailable until EXA_API_KEY is configured; default grounded search remains separate.',
       env,
     }),
+    oneOfCheck({
+      id: 'research_graph_extra',
+      label: 'Research graph extra',
+      names: ['RESEARCH_GRAPH_ENABLED'],
+      required: false,
+      readyDetail: 'Research graph can use free GDELT DOC/API and Wikidata SPARQL receipts for optional Ask turns.',
+      missingDetail: 'Research graph is disabled; Ask PRAXIS remains available and should show a degraded optional receipt when requested.',
+      env,
+    }),
     {
       id: 'route_imports',
       label: 'Route/runtime imports',

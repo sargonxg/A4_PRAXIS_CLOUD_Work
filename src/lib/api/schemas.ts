@@ -55,5 +55,6 @@ export const aiSettingsSchema = z
     analysisDepth: z.enum(['standard', 'deep']).optional(),
     provider: z.string().optional(),
     agenticSearchPremium: z.boolean().optional(),
+    researchGraphExtra: z.boolean().default(false),
   })
   .optional();

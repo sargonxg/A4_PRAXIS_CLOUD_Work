@@ -7,6 +7,7 @@ const repoRoot = process.cwd();
 const chatRouteSource = readFileSync(join(repoRoot, 'src/app/api/ai/chat/route.ts'), 'utf8');
 const askToolsSource = readFileSync(join(repoRoot, 'src/lib/ai/ask-praxis-tools.ts'), 'utf8');
 const exaSource = readFileSync(join(repoRoot, 'src/lib/ai/exa-agentic-search.ts'), 'utf8');
+const researchGraphSource = readFileSync(join(repoRoot, 'src/lib/research-graph/index.ts'), 'utf8');
 
 describe('Ask PRAXIS clean routing contract', () => {
   it('routes heavy work through the simple app spine instead of removed tool pages', () => {
@@ -39,5 +40,19 @@ describe('Ask PRAXIS clean routing contract', () => {
     expect(exaSource).toContain('EXA_API_KEY');
     expect(askToolsSource).toContain('premiumExaSearch');
     expect(askToolsSource).not.toContain('costDollars');
+  });
+
+  it('keeps Research graph as a free optional Ask extra without raw SQL or SPARQL inputs', () => {
+    expect(askToolsSource).toContain('researchGraphExtraEnabled');
+    expect(askToolsSource).toContain('researchGraphSearch');
+    expect(askToolsSource).toContain('runResearchGraphSearch');
+    expect(askToolsSource).toContain("gateTier(b.tier, 'free')");
+    expect(researchGraphSource).toContain('current_media_pulse');
+    expect(researchGraphSource).toContain('wikidata_entity_grounding');
+    expect(researchGraphSource).toContain('cross_source_context');
+    expect(researchGraphSource).toContain('event_timeline_bigquery');
+    expect(researchGraphSource).toContain('rejectRawResearchGraphQuery');
+    expect(researchGraphSource).not.toContain('inputSchema: z.object({ sql');
+    expect(researchGraphSource).not.toContain('inputSchema: z.object({ sparql');
   });
 });

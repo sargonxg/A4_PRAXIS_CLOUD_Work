@@ -86,6 +86,7 @@ export const POST = withAuth<ConversationTurnRouteContext>(async (request, user,
     }, { status: 402 });
   }
   const agenticSearchPremium = requestedAgenticSearchPremium(parsed.data.aiSettings);
+  const researchGraphExtra = requestedResearchGraphExtra(parsed.data.aiSettings);
   if (agenticSearchPremium && !meetsTier(tier, 'analyst')) {
     return NextResponse.json({
       error: 'Premium Exa agentic search requires a paid PRAXIS subscription.',
@@ -134,7 +135,7 @@ export const POST = withAuth<ConversationTurnRouteContext>(async (request, user,
     appliedCapsules,
     currentPath: parsed.data.currentPath ?? `/app/conversations/${cleanConversationId}?capsuleId=${encodeURIComponent(parsed.data.capsuleId)}`,
     currentToolId: parsed.data.currentToolId ?? 'ask-praxis',
-    aiSettings: parsed.data.aiSettings,
+    aiSettings: withResearchGraphSetting(parsed.data.aiSettings, researchGraphExtra),
   };
 
   const delegateRequest = new Request(new URL('/api/ai/ask-praxis', request.url), {
@@ -152,4 +153,15 @@ function cleanDocId(value: string): string {
 
 function requestedAgenticSearchPremium(value: unknown): boolean {
   return Boolean(value && typeof value === 'object' && (value as { agenticSearchPremium?: unknown }).agenticSearchPremium === true);
+}
+
+function requestedResearchGraphExtra(value: unknown): boolean {
+  return Boolean(value && typeof value === 'object' && (value as { researchGraphExtra?: unknown }).researchGraphExtra === true);
+}
+
+function withResearchGraphSetting(value: unknown, researchGraphExtra: boolean): unknown {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return { ...value, researchGraphExtra };
+  }
+  return { researchGraphExtra };
 }

@@ -199,6 +199,25 @@ export default function LearnPage() {
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8">
+        <div className="grid gap-4 md:grid-cols-2">
+          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Premium web</span>
+            <h2 className="mt-3 font-serif text-2xl font-medium text-slate-950">Exa finds high-quality open-web sources when a turn needs paid discovery.</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-700">
+              Premium web is the source-discovery lane for current, source-linked open-web research. It is separate from the free Research graph extra and remains available only when the user enables it for a paid turn.
+            </p>
+          </article>
+          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Research graph</span>
+            <h2 className="mt-3 font-serif text-2xl font-medium text-slate-950">GDELT + Wikidata add advisory entity and media signals.</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-700">
+              Research graph is free in v1 for signed-in users. It grounds entities with Wikidata labels, aliases, identifiers, and official links, then checks GDELT DOC/API for media pulse and relationship hints. It never mutates the canonical PRAXIS graph automatically; candidates stay review-gated.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           {capsuleCores.map((core) => (
             <article key={core.name} className="rounded-2xl border border-slate-200 bg-white/85 p-5">

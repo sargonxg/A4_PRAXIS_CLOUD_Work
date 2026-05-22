@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAskAnswerEnvelope,
   buildConversationDocumentPack,
+  buildResearchGraphSourcePreviewCards,
   buildSourcePreviewCards,
   conversationDocumentPackToMemoBlocks,
 } from '@/lib/ai/ask-answer-envelope';
@@ -218,6 +219,44 @@ describe('ask answer envelope', () => {
         sourceCardIds: ['doc-food:chunk-food'],
       }),
     ]);
+  });
+
+  it('carries Research graph advisory receipts into source previews and follow-up actions', () => {
+    const researchGraphReceipts = [
+      {
+        provider: 'gdelt-doc' as const,
+        queryKind: 'current_media_pulse' as const,
+        status: 'ready' as const,
+        filters: { topic: 'Red Sea shipping' },
+        generatedAt: '2026-05-22T12:00:00.000Z',
+        citations: ['https://api.gdeltproject.org/api/v2/doc/doc'],
+        sourceUrls: ['https://example.org/shipping'],
+        entityMatches: [],
+        mediaSeries: [{ date: '2026-05-21', value: 11 }],
+        eventSeries: [],
+        extractedSignals: [{ label: 'Media pulse', value: '11 matching articles', confidence: 0.6 }],
+        confidence: 0.62,
+        caveats: ['GDELT is advisory media signal, not canonical graph truth.'],
+        costPosture: 'free_open_data' as const,
+        advisoryOnly: true as const,
+      },
+    ];
+    const sourceCards = buildResearchGraphSourcePreviewCards(researchGraphReceipts);
+    const envelope = buildAskAnswerEnvelope({
+      prompt: 'What changed in Red Sea shipping coverage?',
+      answer: 'GDELT shows a media pulse around Red Sea shipping.',
+      intent: 'normal_answer',
+      sourceCards,
+      researchGraphReceipts,
+    });
+
+    expect(sourceCards[0]).toMatchObject({
+      label: 'Research Graph',
+      sourceType: 'research-graph',
+      url: 'https://example.org/shipping',
+    });
+    expect(envelope.researchGraphReceipts).toHaveLength(1);
+    expect(envelope.followUps).toContain('Promote Research graph candidates to a review-gated graph proposal.');
   });
 
   it('converts a conversation document pack into citation-preserving memo blocks', () => {

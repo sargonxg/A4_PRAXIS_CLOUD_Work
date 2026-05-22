@@ -2,6 +2,7 @@ import type { CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
 import type { SourceabilityLedgerSummary, SourceabilitySupportLabel } from '@/lib/agent-runtime/sourceability-ledger';
 import type { AskIntent } from '@/lib/ai/ask-conversation';
 import type { AskConversationOrchestrationReceipt } from '@/lib/ai/ask-orchestrator';
+import type { ResearchGraphReceipt } from '@/lib/research-graph';
 import type { MemoBlock } from '@/types/memo';
 
 export type SourcePreviewType =
@@ -10,6 +11,7 @@ export type SourcePreviewType =
   | 'corpus'
   | 'source-receipt'
   | 'document-digest'
+  | 'research-graph'
   | 'context-capsule'
   | 'ai-knowledge'
   | 'inference';
@@ -100,6 +102,7 @@ export interface AskAnswerEnvelope {
   generationReceipt?: AskGenerationReceipt;
   continuationActions: AskContinuationAction[];
   capsuleSuggestions: AskCapsuleSuggestionReceipt[];
+  researchGraphReceipts: ResearchGraphReceipt[];
   followUps: string[];
   documentPackCandidate: ConversationDocumentPack;
   orchestrationReceipt?: AskConversationOrchestrationReceipt;
@@ -134,6 +137,25 @@ export interface BuildSourcePreviewCardsInput {
     content?: string;
     confidence?: number;
   }>;
+}
+
+export function buildResearchGraphSourcePreviewCards(receipts: ResearchGraphReceipt[]): SourcePreviewCard[] {
+  return receipts.flatMap((receipt, receiptIndex) => {
+    const urls = receipt.sourceUrls.length
+      ? receipt.sourceUrls
+      : receipt.entityMatches.map((match) => `https://www.wikidata.org/wiki/${match.qid}`);
+    return urls.slice(0, 4).map((url, urlIndex) => ({
+      id: `research-graph:${receipt.queryKind}:${receiptIndex}:${urlIndex}`,
+      title: titleForResearchGraphSource(receipt, url),
+      label: 'Research Graph',
+      sourceType: 'research-graph' as const,
+      url,
+      quotePreview: researchGraphQuote(receipt),
+      locatorLabel: `${receipt.provider} / ${receipt.queryKind.replace(/_/g, ' ')}`,
+      citationLabel: 'advisory only',
+      confidence: clamp01(receipt.confidence || 0.45),
+    }));
+  });
 }
 
 export function buildSourcePreviewCards(input: BuildSourcePreviewCardsInput): SourcePreviewCard[] {
@@ -229,6 +251,7 @@ export function buildAskAnswerEnvelope(input: {
   orchestrationReceipt?: AskConversationOrchestrationReceipt;
   generationReceipt?: AskGenerationReceipt;
   capsuleSuggestions?: AskCapsuleSuggestionReceipt[];
+  researchGraphReceipts?: ResearchGraphReceipt[];
 }): AskAnswerEnvelope {
   const claimGrounding = groundClaims(input.answer, input.sourceCards);
   const claimLedgerSummary = summarizeClaimGrounding(claimGrounding);
@@ -258,7 +281,8 @@ export function buildAskAnswerEnvelope(input: {
     generationReceipt: input.generationReceipt,
     continuationActions: continuationActionsFor(input.intent),
     capsuleSuggestions: input.capsuleSuggestions ?? [],
-    followUps: followUpsFor(input.intent, input.sourceCards.length),
+    researchGraphReceipts: input.researchGraphReceipts ?? [],
+    followUps: followUpsFor(input.intent, input.sourceCards.length, input.researchGraphReceipts?.length ?? 0),
     documentPackCandidate: pack,
     orchestrationReceipt: input.orchestrationReceipt,
   };
@@ -421,12 +445,15 @@ function isAssumptionClaim(claim: string): boolean {
   return /\b(should|could|would|recommend|recommendation|assume|assumption|likely|may|might|next|verify|check|consider)\b/i.test(claim);
 }
 
-function followUpsFor(intent: AskIntent, sourceCount: number): string[] {
+function followUpsFor(intent: AskIntent, sourceCount: number, researchGraphReceiptCount = 0): string[] {
   const common = [
     'Check the weakest claim against attached sources.',
     'Turn this into a document pack for Memo Studio.',
     sourceCount > 0 ? 'Open the source previews and identify what is still missing.' : 'Find sources for the unsupported claims.',
   ];
+  if (researchGraphReceiptCount > 0) {
+    common.splice(2, 0, 'Promote Research graph candidates to a review-gated graph proposal.');
+  }
   if (intent === 'research_memo') return ['Tighten this into an options memo.', ...common].slice(0, 4);
   if (intent === 'sourceability_review') return ['Repair the highest-risk citation gap.', ...common].slice(0, 4);
   if (intent === 'red_team_review') return ['Rewrite this after the strongest objection.', ...common].slice(0, 4);
@@ -502,6 +529,30 @@ function locatorLabel(parts: Array<string | null | undefined>): string | undefin
 
 function receiptHref(sourceReceiptId: string): string {
   return `/app/library?receiptId=${encodeURIComponent(sourceReceiptId)}`;
+}
+
+function titleForResearchGraphSource(receipt: ResearchGraphReceipt, url: string): string {
+  const entity = receipt.entityMatches[0]?.label;
+  if (entity) return `${entity} research graph receipt`;
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return 'Research graph receipt';
+  }
+}
+
+function researchGraphQuote(receipt: ResearchGraphReceipt): string {
+  const signals = receipt.extractedSignals
+    .slice(0, 3)
+    .map((signal) => `${signal.label}: ${signal.value}`)
+    .join(' ');
+  if (signals) return excerpt(signals, 360);
+  const matches = receipt.entityMatches
+    .slice(0, 3)
+    .map((match) => `${match.label} (${match.qid})`)
+    .join(', ');
+  if (matches) return `Entity grounding candidates: ${matches}.`;
+  return receipt.caveats[0] ?? 'Research graph returned an advisory receipt.';
 }
 
 function extractionFallbackFor(status: string): string | undefined {

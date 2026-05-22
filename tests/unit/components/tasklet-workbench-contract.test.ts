@@ -588,6 +588,19 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('EXA_API_KEY');
   });
 
+  it('adds a free Research graph toggle beside Premium web without adding a top-level surface', () => {
+    expect(source).toContain('researchGraphExtraEnabled');
+    expect(source).toContain('setResearchGraphExtraEnabled');
+    expect(source).toContain('Research graph');
+    expect(source).toContain('GDELT + WD');
+    expect(source).toContain('entity grounding, aliases, identifiers, event/media pulse, and relationship hints; advisory receipts only');
+    expect(source).toContain('researchGraphExtra');
+    expect(source).toContain('What PRAXIS learned from Research graph');
+    expect(source).toContain('promote to graph proposal');
+    expect(source).not.toContain("href=\"/app/research-graph\"");
+    expect(primaryNavSource).not.toContain('research-graph');
+  });
+
   it('renders a filter-aware Featured Expert Picks shelf and build-your-own CTA', () => {
     expect(source).toContain('FEATURED_EXPERT_PICK_CAPSULE_IDS');
     for (const expectedId of [

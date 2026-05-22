@@ -14,6 +14,7 @@ import { gateTier, type SubscriptionTier } from '@/lib/api/tier';
 import { runExaAgenticSearch } from '@/lib/ai/exa-agentic-search';
 import { scrapeUrl } from '@/lib/ai/grounded-research';
 import { createGraphUpdateProposal, type GraphUpdateKind } from '@/lib/firebase/graph-updates-service';
+import { isResearchGraphServerEnabled, runResearchGraphSearch } from '@/lib/research-graph';
 
 export interface AskPraxisToolBindings {
   uid: string;
@@ -22,6 +23,7 @@ export interface AskPraxisToolBindings {
   tier: SubscriptionTier;
   isDemo: boolean;
   agenticSearchPremiumEnabled?: boolean;
+  researchGraphExtraEnabled?: boolean;
 }
 
 const TOOL_TIMEOUT_MS = 30_000;
@@ -214,6 +216,62 @@ export function makePremiumExaSearch(b: AskPraxisToolBindings) {
   });
 }
 
+export function makeResearchGraphSearch(b: AskPraxisToolBindings) {
+  return tool({
+    description:
+      'Free conversation extra: run approved Research graph templates for entity grounding, aliases, identifiers, GDELT media/event pulse, and relationship hints. Advisory receipts only; never mutates canonical PRAXIS graph state and never accepts raw SQL or SPARQL.',
+    inputSchema: z.object({
+      queryKind: z.enum(['current_media_pulse', 'wikidata_entity_grounding', 'cross_source_context', 'event_timeline_bigquery']),
+      topic: z.string().min(3).max(180).optional(),
+      entity: z.string().min(2).max(120).optional(),
+      entities: z.array(z.string().min(2).max(120)).max(8).optional(),
+      place: z.string().min(2).max(80).optional(),
+      startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      days: z.number().int().min(1).max(30).default(7),
+      maxResults: z.number().int().min(1).max(10).default(8),
+      reason: z.string().max(500).describe('Why this advisory research graph lookup is needed for the user-visible answer.'),
+    }),
+    execute: async ({ queryKind, topic, entity, entities, place, startDate, endDate, days, maxResults, reason }) => {
+      if (!b.researchGraphExtraEnabled || !isResearchGraphServerEnabled()) {
+        return {
+          ok: false,
+          requiresButton: 'researchGraphExtra',
+          message: 'Research graph is available only after the user turns on the Research graph button and the server enables RESEARCH_GRAPH_ENABLED.',
+          reason,
+        };
+      }
+      if (b.isDemo) {
+        return {
+          ok: false,
+          blockedReason: 'sample_mode_disabled',
+          message: 'Research graph is available to authenticated PRAXIS users, not sample/public turns.',
+          reason,
+        };
+      }
+      const gate = gateTier(b.tier, 'free');
+      if (!gate.ok) return { ok: false, requiresTier: gate.requiredTier, currentTier: gate.currentTier, reason };
+      const receipt = await runResearchGraphSearch({
+        queryKind,
+        topic,
+        entity,
+        entities,
+        place,
+        startDate,
+        endDate,
+        days,
+        maxResults,
+        actor: { isDemo: b.isDemo, tier: b.tier },
+      });
+      return {
+        ...receipt,
+        reason,
+        via: 'research-graph',
+      };
+    },
+  });
+}
+
 export function makeProposeGraphDelta(b: AskPraxisToolBindings) {
   return tool({
     description:
@@ -282,5 +340,6 @@ export function buildAskPraxisExtensions(b: AskPraxisToolBindings) {
     groundedSearchFetch: makeGroundedSearchFetch(b, sessionKey),
     runDeepResearch: makeRunDeepResearch(b),
     ...(b.agenticSearchPremiumEnabled ? { premiumExaSearch: makePremiumExaSearch(b) } : {}),
+    ...(b.researchGraphExtraEnabled && isResearchGraphServerEnabled() && !b.isDemo ? { researchGraphSearch: makeResearchGraphSearch(b) } : {}),
   };
 }
