@@ -351,6 +351,71 @@ type ContextHealth = {
   tone: string;
 };
 
+const GUIDE_CHAT_STORAGE_KEY = 'praxis-guide-chat-state:v1';
+const GUIDE_CHAT_MESSAGE_LIMIT = 40;
+const DEFAULT_GUIDE_CHAT_PROMPT = 'What is PRAXIS building around this capsule?';
+
+type GuideChatStorageState = {
+  messages: ChatMessage[];
+  prompt: string;
+  threadId: string | null;
+  capsuleId: string | null;
+  open: boolean;
+  updatedAt: string;
+};
+
+function isStoredGuideMessage(value: unknown): value is ChatMessage {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const candidate = value as { role?: unknown; text?: unknown };
+  return (candidate.role === 'user' || candidate.role === 'assistant') && typeof candidate.text === 'string';
+}
+
+function cleanStoredGuideMessages(value: unknown): ChatMessage[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(isStoredGuideMessage)
+    .map((message) => ({ role: message.role, text: message.text.slice(0, 8000) }))
+    .slice(-GUIDE_CHAT_MESSAGE_LIMIT);
+}
+
+function cleanStoredGuideString(value: unknown, maxLength: number): string {
+  return typeof value === 'string' ? value.slice(0, maxLength) : '';
+}
+
+function loadGuideChatState(): GuideChatStorageState | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(GUIDE_CHAT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+    const record = parsed as Record<string, unknown>;
+    return {
+      messages: cleanStoredGuideMessages(record.messages),
+      prompt: cleanStoredGuideString(record.prompt, 500) || DEFAULT_GUIDE_CHAT_PROMPT,
+      threadId: sanitizeConversationThreadId(cleanStoredGuideString(record.threadId, 120)),
+      capsuleId: cleanStoredGuideString(record.capsuleId, 120) || null,
+      open: Boolean(record.open),
+      updatedAt: cleanStoredGuideString(record.updatedAt, 64),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function persistGuideChatState(state: GuideChatStorageState) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(GUIDE_CHAT_STORAGE_KEY, JSON.stringify({
+      ...state,
+      messages: cleanStoredGuideMessages(state.messages),
+      prompt: state.prompt.slice(0, 500),
+    }));
+  } catch {
+    // Ignore private browsing and quota errors; the guide still works in memory.
+  }
+}
+
 const defaultRecentRuns = [
   { label: 'Open policy analysis', detail: 'Capsule discussion', status: 'active' },
   { label: 'Source check', detail: 'Evidence gaps', status: 'review' },
@@ -657,10 +722,11 @@ export function TaskletPraxisWorkbench({
   const [activeCapsules, setActiveCapsules] = useState<ActiveCapsuleChip[]>([STARTER_USER_CAPSULE_CHIP]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [guideMessages, setGuideMessages] = useState<ChatMessage[]>([]);
-  const [guidePrompt, setGuidePrompt] = useState('What is PRAXIS building around this capsule?');
+  const [guidePrompt, setGuidePrompt] = useState(DEFAULT_GUIDE_CHAT_PROMPT);
   const [guideThreadId, setGuideThreadId] = useState<string | null>(null);
   const [guideChatOpen, setGuideChatOpen] = useState(false);
   const [guideCapsuleId, setGuideCapsuleId] = useState<string | null>(null);
+  const [guideHydrated, setGuideHydrated] = useState(false);
   const [guideStreaming, setGuideStreaming] = useState(false);
   const [conversationThreadId, setConversationThreadId] = useState<string | null>(
     sanitizeConversationThreadId(initialConversationId),
@@ -814,6 +880,30 @@ export function TaskletPraxisWorkbench({
   useEffect(() => {
     setPublicCapsuleCardLimit(PUBLIC_CAPSULE_CARD_INITIAL_LIMIT);
   }, [capsuleDomainFilter, capsulePolicyTeamFilter, capsuleSearch, capsuleTypeFilter, isAuthenticated]);
+
+  useEffect(() => {
+    const restored = loadGuideChatState();
+    if (restored) {
+      setGuideMessages(restored.messages);
+      setGuidePrompt(restored.prompt || DEFAULT_GUIDE_CHAT_PROMPT);
+      setGuideThreadId(restored.threadId);
+      setGuideCapsuleId(restored.capsuleId);
+      setGuideChatOpen(Boolean(restored.open));
+    }
+    setGuideHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!guideHydrated) return;
+    persistGuideChatState({
+      messages: guideMessages,
+      prompt: guidePrompt,
+      threadId: guideThreadId,
+      capsuleId: guideCapsuleId,
+      open: guideChatOpen,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [guideCapsuleId, guideChatOpen, guideHydrated, guideMessages, guidePrompt, guideThreadId]);
 
   const activeCapsuleSummaryForStrip = selectedCapsule ?? capsuleSummaryForChip(activeCapsuleStack[0], userCapsules);
   const activeStarterForStrip = starterDefinitionForCapsule(activeCapsuleSummaryForStrip);
@@ -1054,9 +1144,9 @@ export function TaskletPraxisWorkbench({
     return [
       cleanPrompt,
       '',
-      'PRAXIS guide chat: answer as a lightweight product and capsule guide, not as the main agentic Ask PRAXIS thread.',
+      'PRAXIS guide, not the agentic Ask PRAXIS workspace: answer as a lightweight product and capsule guide.',
       'Frame what PRAXIS is building, how ContextCapsules work, what source gaps exist, and how the selected capsule should be used.',
-      'Do not mutate capsules, create agent runs, or claim that repository state changed. If real AI execution or saved work is needed, direct the user to the main Ask composer.',
+      'Do not mutate capsules, create agent runs, export memos, attach sources, or claim that repository state changed. Use the main Ask PRAXIS bar for agent runs, saved work, source operations, and real AI execution.',
       `Guide thread: ${threadId}`,
       `Scoped capsule: ${guideCapsuleForPrompt?.label ?? 'No capsule selected'}`,
       `Capsule purpose: ${capsuleMeta?.starterDefinition?.richProfile?.purpose ?? capsuleMeta?.summary ?? 'Explain PRAXIS and capsule use from the visible context.'}`,
@@ -1075,6 +1165,12 @@ export function TaskletPraxisWorkbench({
       setGuideCapsuleId(selectedCapsule?.capsuleId ?? null);
     }
     setGuideChatOpen(true);
+  }
+
+  function clearGuideChat() {
+    setGuideMessages([]);
+    setGuideThreadId(null);
+    setGuidePrompt(DEFAULT_GUIDE_CHAT_PROMPT);
   }
 
   async function sendGuideChat(overridePrompt?: string, scopedCapsule: PraxisCapsuleSummary | null = guideCapsule) {
@@ -3729,6 +3825,7 @@ export function TaskletPraxisWorkbench({
         onClose={() => setGuideChatOpen(false)}
         onPrompt={setGuidePrompt}
         onSubmit={() => void sendGuideChat()}
+        onClear={clearGuideChat}
       /> : null}
       {diagnosticsOpen ? (
         <WorkbenchDiagnosticsDrawer
@@ -7836,6 +7933,7 @@ function PraxisGuideChat({
   onClose,
   onPrompt,
   onSubmit,
+  onClear,
 }: {
   open: boolean;
   capsule: PraxisCapsuleSummary | null;
@@ -7847,6 +7945,7 @@ function PraxisGuideChat({
   onClose: () => void;
   onPrompt: (value: string) => void;
   onSubmit: () => void;
+  onClear: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -7868,39 +7967,46 @@ function PraxisGuideChat({
           role="dialog"
           aria-modal="false"
           aria-label="PRAXIS guide chat"
-          className="w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20"
+          className="flex max-h-[calc(100vh-2rem)] w-[min(42rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 md:max-h-[82vh]"
         >
-          <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-4 py-3">
+          <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-5 py-4">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-oxide)]">Guide chat</p>
-              <h2 className="mt-1 text-sm font-semibold text-slate-950">PRAXIS guide</h2>
-              <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-oxide)]">Guide assistant</p>
+              <h2 className="mt-1 text-lg font-semibold text-slate-950">PRAXIS guide, not the agentic Ask PRAXIS workspace</h2>
+              <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-500">
                 {capsule ? capsule.label : 'Ask what PRAXIS is building, how capsules work, or what source gaps to close.'}
               </p>
             </div>
-            <button type="button" aria-label="Close PRAXIS guide chat" onClick={onClose} className="rounded-md p-2 text-slate-500 hover:bg-white">
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex shrink-0 items-center gap-1">
+              {messages.length ? (
+                <button type="button" aria-label="Clear PRAXIS guide chat" onClick={onClear} className="rounded-md p-2 text-slate-500 hover:bg-white">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              ) : null}
+              <button type="button" aria-label="Close PRAXIS guide chat" onClick={onClose} className="rounded-md p-2 text-slate-500 hover:bg-white">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-          <div className="max-h-72 space-y-3 overflow-y-auto px-4 py-3">
+          <div className="min-h-[22rem] max-h-[52vh] flex-1 space-y-4 overflow-y-auto px-5 py-4">
             {messages.length ? messages.map((message, index) => (
               <article
                 key={`${message.role}-${index}`}
                 className={cn(
-                  'rounded-lg px-3 py-2 text-sm leading-6',
-                  message.role === 'user' ? 'ml-8 bg-slate-950 text-white' : 'mr-8 border border-slate-200 bg-slate-50 text-slate-800',
+                  'rounded-xl px-4 py-3 text-base leading-7',
+                  message.role === 'user' ? 'ml-10 bg-slate-950 text-white' : 'mr-10 border border-slate-200 bg-slate-50 text-slate-800',
                 )}
               >
                 {message.role === 'assistant' ? <AssistantMarkdown text={message.text || (isStreaming ? 'Reading the capsule...' : '')} /> : message.text}
               </article>
             )) : (
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-                Ask about PRAXIS, the selected capsule, source gaps, or how to use ContextCapsules. {isAuthenticated ? 'This guide uses a separate local thread.' : 'Submitting signs you in before the AI response runs.'}
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                Ask about PRAXIS, the selected capsule, source gaps, or how to use ContextCapsules. Use the main Ask PRAXIS bar for agent runs, saved work, source operations, and memos. {isAuthenticated ? 'This guide remembers its separate assistant thread.' : 'Submitting signs you in before the AI response runs.'}
               </div>
             )}
           </div>
           <form
-            className="border-t border-slate-200 p-3"
+            className="border-t border-slate-200 p-4"
             onSubmit={(event) => {
               event.preventDefault();
               onSubmit();
@@ -7909,19 +8015,19 @@ function PraxisGuideChat({
             <textarea
               value={prompt}
               onChange={(event) => onPrompt(event.target.value)}
-              rows={3}
+              rows={4}
               placeholder="Ask how to use this capsule, what PRAXIS is building, or what sources are missing"
-              className="w-full resize-none rounded-md border border-slate-200 px-3 py-2 text-sm leading-5 text-slate-800 outline-none focus:border-[color:var(--color-clay)]"
+              className="w-full resize-none rounded-md border border-slate-200 px-4 py-3 text-base leading-6 text-slate-800 outline-none focus:border-[color:var(--color-clay)]"
             />
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <span className="text-[11px] font-semibold text-slate-400">{isAuthenticated ? 'Separate from Ask PRAXIS' : 'Login required for response'}</span>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-slate-400">{isAuthenticated ? 'Separate from Ask PRAXIS; collapses without losing this conversation' : 'Login required for response'}</span>
               <button
                 type="submit"
                 data-testid="praxis-guide-chat-submit"
                 disabled={isStreaming || !prompt.trim()}
-                className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isStreaming ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUp className="h-3.5 w-3.5" />}
+                {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
                 Send
               </button>
             </div>
@@ -7931,10 +8037,10 @@ function PraxisGuideChat({
       <button
         type="button"
         onClick={onOpen}
-        className="inline-flex h-12 items-center gap-2 rounded-full border border-slate-200 bg-slate-950 px-4 text-sm font-semibold text-white shadow-lg shadow-slate-950/20 hover:bg-slate-800"
+        className="inline-flex h-[3.25rem] items-center gap-2 rounded-full border border-slate-200 bg-slate-950 px-5 py-3 text-base font-semibold text-white shadow-lg shadow-slate-950/20 hover:bg-slate-800"
       >
-        <MessageCircle className="h-4 w-4" />
-        Guide
+        <MessageCircle className="h-5 w-5" />
+        Guide assistant
       </button>
     </div>,
     document.body,
