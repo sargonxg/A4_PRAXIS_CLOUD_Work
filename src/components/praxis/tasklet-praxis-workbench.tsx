@@ -437,6 +437,8 @@ const askComposerPlaceholderPrompts = [
   'Run a red-team review for unsupported claims and weak assumptions.',
   'Turn this context into a briefing with receipts and follow-up tasks.',
 ] as const;
+const ASK_CAPSULE_SUGGESTION_DEBOUNCE_MS = 450;
+const ASK_CAPSULE_SUGGESTION_VISIBLE_MS = 30_000;
 
 const capsuleActionPrompts = [
   { label: 'Build capsule', prompt: 'Build a draft ContextCapsule from this prompt. Propose User, Situation, Source, Tool, and Output cores, source gaps, suggested tools, and apply/fork gates.' },
@@ -748,7 +750,6 @@ export function TaskletPraxisWorkbench({
   const [mobileContextSheetOpen, setMobileContextSheetOpen] = useState(false);
   const [contextComposerCollapsed, setContextComposerCollapsed] = useState(false);
   const [repositoryOpen, setRepositoryOpen] = useState(false);
-  const [repositoryModalCapsuleId, setRepositoryModalCapsuleId] = useState<string | null>(null);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [capsuleDetailTab, setCapsuleDetailTab] = useState<CapsuleDetailTab>('overview');
   const [builderOpen, setBuilderOpen] = useState(false);
@@ -764,6 +765,7 @@ export function TaskletPraxisWorkbench({
   const [focusedRunEvents, setFocusedRunEvents] = useState<AgentRunEventSummary[]>([]);
   const [focusedRunLoading, setFocusedRunLoading] = useState(false);
   const [focusedRunAction, setFocusedRunAction] = useState<string | null>(null);
+  const [debouncedSuggestionPrompt, setDebouncedSuggestionPrompt] = useState('');
   const [dismissedCapsuleSuggestionIds, setDismissedCapsuleSuggestionIds] = useState<string[]>([]);
   const [recentlyAppliedCapsuleId, setRecentlyAppliedCapsuleId] = useState<string | null>(null);
   const [builderLabel, setBuilderLabel] = useState('');
@@ -842,12 +844,6 @@ export function TaskletPraxisWorkbench({
   const activeCapsuleTaxonomyStats = isAuthenticated && !showingStarterFallback
     ? userCapsuleTaxonomyStats
     : publicCapsuleTaxonomyStats;
-  const repositoryModalCapsule = repositoryModalCapsuleId
-    ? visibleCapsuleCards.find((capsule) => capsule.capsuleId === repositoryModalCapsuleId)
-      ?? userCapsules.find((capsule) => capsule.capsuleId === repositoryModalCapsuleId)
-      ?? starterCapsuleSummaries.find((capsule) => capsule.capsuleId === repositoryModalCapsuleId)
-      ?? null
-    : null;
   const repositoryDocIds = new Set(selectedCapsule?.coreRefs.documentCoreIds ?? []);
   const visibleRepositoryDocuments = repositoryDocuments.filter((document) =>
     repositoryDocIds.size === 0 || repositoryDocIds.has(document.id),
@@ -855,13 +851,13 @@ export function TaskletPraxisWorkbench({
   const activeCapsuleIds = activeCapsuleStack.map((capsule) => capsule.id);
   const askCapsuleSuggestions = useMemo(
     () => rankAskCapsuleSuggestions({
-      prompt,
+      prompt: debouncedSuggestionPrompt,
       selectedAgentId: selectedAgent.id,
       activeCapsuleIds: [...activeCapsuleIds, ...dismissedCapsuleSuggestionIds],
       capsules: [...userCapsules, ...starterCapsuleSummaries].map(capsuleSuggestionInput),
-      limit: 2,
+      limit: 3,
     }),
-    [activeCapsuleIds, dismissedCapsuleSuggestionIds, prompt, selectedAgent.id, userCapsules],
+    [activeCapsuleIds, debouncedSuggestionPrompt, dismissedCapsuleSuggestionIds, selectedAgent.id, userCapsules],
   );
   const primaryCapsules = activeCapsuleStack.filter((capsule) => capsule.role === 'user' || capsule.role === 'situation' || capsule.role === 'output');
   const referenceCapsules = activeCapsuleStack.filter((capsule) => capsule.role === 'reference' || capsule.role === 'tool');
@@ -887,6 +883,15 @@ export function TaskletPraxisWorkbench({
   useEffect(() => {
     setPublicCapsuleCardLimit(PUBLIC_CAPSULE_CARD_INITIAL_LIMIT);
   }, [capsuleDomainFilter, capsulePolicyTeamFilter, capsuleSearch, capsuleTypeFilter, isAuthenticated]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const nextPrompt = prompt.trim();
+      setDebouncedSuggestionPrompt(hasMeaningfulAskPrompt(nextPrompt) ? nextPrompt : '');
+      setDismissedCapsuleSuggestionIds([]);
+    }, ASK_CAPSULE_SUGGESTION_DEBOUNCE_MS);
+    return () => window.clearTimeout(timeout);
+  }, [prompt]);
 
   useEffect(() => {
     const restored = loadGuideChatState();
@@ -2095,12 +2100,12 @@ export function TaskletPraxisWorkbench({
     setStatus(`${capsule.label} opened in the capsule inspector.`);
   }
 
-  function openRepositoryCapsuleModal(capsule: PraxisCapsuleSummary) {
+  function openRepositoryCapsuleInspector(capsule: PraxisCapsuleSummary) {
     selectCapsuleCard(capsule);
     setGuideCapsuleId(capsule.capsuleId);
     setGuidePrompt(`Ask about "${capsule.label}": source gaps, use cases, risks, or next action.`);
-    setRepositoryModalCapsuleId(capsule.capsuleId);
-    setStatus(`${capsule.label} opened from the capsule repository.`);
+    setInspectorOpen(true);
+    setStatus(`${capsule.label} opened from the capsule repository in the inspector.`);
   }
 
   async function archiveCapsuleCard(capsule: PraxisCapsuleSummary) {
@@ -3585,7 +3590,7 @@ export function TaskletPraxisWorkbench({
                       activeCapsuleId={currentCapsuleId}
                       isAuthenticated={isAuthenticated}
                       showingStarterFallback={showingStarterFallback}
-                      onOpen={(capsule) => openRepositoryCapsuleModal(capsule)}
+                      onOpen={(capsule) => openRepositoryCapsuleInspector(capsule)}
                       onCreate={openBuildYourOwnKnowledge}
                     />
                   ) : (
@@ -3739,7 +3744,7 @@ export function TaskletPraxisWorkbench({
                     activeCapsuleId={currentCapsuleId}
                     isAuthenticated={isAuthenticated}
                     showingStarterFallback
-                    onOpen={(capsule) => openRepositoryCapsuleModal(capsule)}
+                    onOpen={(capsule) => openRepositoryCapsuleInspector(capsule)}
                     onCreate={openBuildYourOwnKnowledge}
                   />
                 ) : (
@@ -3813,26 +3818,6 @@ export function TaskletPraxisWorkbench({
           }}
         />
       ) : null}
-      {repositoryModalCapsule ? (
-        <CapsuleRepositoryModal
-          capsule={repositoryModalCapsule}
-          policyTeam={selectedPolicyTeam}
-          repositoryDocuments={visibleRepositoryDocuments}
-          repositoryLoading={repositoryLoading}
-          chatMessages={guideMessages}
-          isAuthenticated={isAuthenticated}
-          isStreaming={guideStreaming}
-          runtimeProof={runtimeProof}
-          onClose={() => setRepositoryModalCapsuleId(null)}
-          onImprove={() => improveCapsuleCard(repositoryModalCapsule)}
-          onUseInAsk={() => openSelectedCapsuleInAsk(repositoryModalCapsule)}
-          onSources={() => { setRepositoryOpen(true); void refreshRepository(); }}
-          onCreate={openBuildYourOwnKnowledge}
-          onAskCapsule={(question) => void sendGuideChat(question, repositoryModalCapsule)}
-          onRateUsefulness={(rating) => void rateCapsuleUsefulness(repositoryModalCapsule, rating)}
-          onDownload={() => void downloadCapsulePackage(repositoryModalCapsule)}
-        />
-      ) : null}
       {inspectorOpen && selectedCapsule ? (
         <CapsuleInspectorSheet
           capsule={selectedCapsule}
@@ -3852,6 +3837,9 @@ export function TaskletPraxisWorkbench({
           }}
           onAskCapsule={(question) => {
             if (selectedCapsule) void sendGuideChat(question, selectedCapsule);
+          }}
+          onAdd={() => {
+            if (selectedCapsule) applyCapsuleCard(selectedCapsule);
           }}
           onRateUsefulness={(rating) => selectedCapsule ? void rateCapsuleUsefulness(selectedCapsule, rating) : undefined}
         />
@@ -4240,42 +4228,60 @@ function CapsuleSuggestionWidget({
   onAdd: (suggestion: AskCapsuleSuggestion<PraxisCapsuleSummary>) => void;
   onDismiss: (suggestion: AskCapsuleSuggestion<PraxisCapsuleSummary>) => void;
 }) {
-  if (!suggestions.length) return null;
+  const [visible, setVisible] = useState(false);
+  const [suggestionPaused, setSuggestionPaused] = useState(false);
+  useEffect(() => {
+    setVisible(Boolean(suggestions.length));
+  }, [suggestions]);
+  useEffect(() => {
+    if (!visible || suggestionPaused || !suggestions.length) return;
+    const timeout = window.setTimeout(() => setVisible(false), ASK_CAPSULE_SUGGESTION_VISIBLE_MS);
+    return () => window.clearTimeout(timeout);
+  }, [suggestions, suggestionPaused, visible]);
+  if (!suggestions.length || !visible) return null;
+  const visibleSuggestions = suggestions.slice(0, 3);
   return (
-    <section className="mx-4 mb-4 grid gap-2 rounded-lg border border-[color:var(--color-clay)]/25 bg-[color:var(--color-archive-paper-strong)] px-4 py-3 sm:mx-5" data-testid="ask-capsule-suggestion-widget">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <Sparkles className="h-4 w-4 shrink-0 text-[color:var(--color-oxide)]" />
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--color-oxide)]">Suggested capsules</p>
-        </div>
-        <span className="text-[11px] font-semibold text-slate-500">human-gated context</span>
-      </div>
-      <div className="grid gap-2 md:grid-cols-2">
-        {suggestions.map((suggestion) => (
-          <article key={suggestion.capsuleId} className="rounded-md border border-slate-200 bg-white p-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-950">{suggestion.label}</p>
-                <div className="mt-1 flex flex-wrap gap-1 text-[10px] font-semibold text-slate-500">
-                  <span className="rounded bg-slate-100 px-1.5 py-0.5">{suggestion.category}</span>
-                  <span className="rounded bg-slate-100 px-1.5 py-0.5">{suggestion.sourceReadinessSignal}</span>
-                </div>
-              </div>
-              <button type="button" aria-label={`Dismiss ${suggestion.label}`} onClick={() => onDismiss(suggestion)} className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-            <p className="mt-2 text-xs leading-5 text-slate-600">{suggestion.reason}</p>
-            <details className="mt-2">
-              <summary className="cursor-pointer text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">why this capsule</summary>
-              <p className="mt-1 text-xs leading-5 text-slate-600">{suggestion.whyThisCapsule}</p>
-              <p className="mt-1 text-xs leading-5 text-slate-600">{suggestion.whatItChangesForAgent}</p>
-            </details>
-            <button type="button" onClick={() => onAdd(suggestion)} className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">
-              <Plus className="h-3.5 w-3.5" />
-              Add
+    <section
+      className="mx-4 mb-3 -mt-1 sm:mx-5"
+      data-testid="ask-capsule-suggestion-widget"
+      onMouseEnter={() => setSuggestionPaused(true)}
+      onMouseLeave={() => setSuggestionPaused(false)}
+      onFocusCapture={() => setSuggestionPaused(true)}
+      onBlurCapture={(event) => {
+        const nextFocused = event.relatedTarget;
+        if (nextFocused instanceof Node && event.currentTarget.contains(nextFocused)) return;
+        setSuggestionPaused(false);
+      }}
+    >
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color:var(--color-clay)]/25 bg-[color:var(--color-archive-paper-strong)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-oxide)]">
+          <Sparkles className="h-3.5 w-3.5" />
+          human-gated context
+        </span>
+        {visibleSuggestions.map((suggestion) => (
+          <div
+            key={suggestion.capsuleId}
+            data-testid={`ask-capsule-suggestion-chip-${suggestion.capsuleId}`}
+            className="inline-flex max-w-[min(34rem,86vw)] shrink-0 items-center rounded-full border border-slate-200 bg-white shadow-sm shadow-slate-950/5 transition focus-within:border-[color:var(--color-clay)] hover:border-[color:var(--color-clay)]"
+          >
+            <button
+              type="button"
+              onClick={() => onAdd(suggestion)}
+              title={`why this capsule: ${suggestion.whyThisCapsule} ${suggestion.whatItChangesForAgent}`}
+              className="inline-flex min-w-0 items-center gap-2 py-1.5 pl-3 pr-2 text-left"
+            >
+              <span className="max-w-[15rem] truncate text-sm font-semibold text-slate-950 sm:max-w-[22rem]">{suggestion.label}</span>
+              <span className="hidden rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 sm:inline-flex">{suggestion.category}</span>
+              <span className="hidden rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 md:inline-flex">{suggestion.sourceReadinessSignal}</span>
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-950 px-2 py-0.5 text-[11px] font-semibold text-white">
+                <Plus className="h-3 w-3" />
+                Add
+              </span>
             </button>
-          </article>
+            <button type="button" aria-label={`Dismiss ${suggestion.label}`} onClick={() => onDismiss(suggestion)} className="mr-1 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
         ))}
       </div>
     </section>
@@ -4515,7 +4521,7 @@ function CapsuleRepositoryGrid({
 }) {
   return (
     <section
-      className="grid w-full min-w-0 gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(20rem,100%),1fr))]"
+      className="grid w-full min-w-0 gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(22rem,100%),1fr))]"
       data-testid="capsule-repository-grid"
       aria-label="Capsule repository"
     >
@@ -5151,6 +5157,15 @@ function capsuleSuggestionInput(capsule: PraxisCapsuleSummary) {
     recommendedToolIds: starterDefinition?.recommendedToolIds ?? capsule.coreRefs.toolCoreIds ?? [],
     capsule,
   };
+}
+
+function hasMeaningfulAskPrompt(value: string): boolean {
+  const clean = value.trim();
+  if (clean.length < 12) return false;
+  return clean
+    .split(/\s+/)
+    .filter((token) => /[a-z0-9]/i.test(token) && token.replace(/[^a-z0-9-]/gi, '').length > 2)
+    .length >= 3;
 }
 
 function capsuleGovernanceBadges(capsule: PraxisCapsuleSummary): Array<{ label: string; value: string; tone: string }> {
@@ -7879,6 +7894,7 @@ function CapsuleInspectorSheet({
   onImprove,
   onRepository,
   onAskCapsule,
+  onAdd,
   onRateUsefulness,
 }: {
   capsule: PraxisCapsuleSummary | null;
@@ -7890,6 +7906,7 @@ function CapsuleInspectorSheet({
   onImprove: () => void;
   onRepository: () => void;
   onAskCapsule: (question: string) => void;
+  onAdd: () => void;
   onRateUsefulness: (rating: number) => void;
 }) {
   const [inspectorPrompt, setInspectorPrompt] = useState('');
@@ -8295,12 +8312,17 @@ function CapsuleInspectorSheet({
             </ul>
           </div>
         ) : null}
-        {isAuthenticated ? (
-          <div className="mt-5 space-y-2">
+        <div className="mt-5 space-y-2">
+          <button type="button" onClick={onAdd} className="w-full rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+            Add to Ask
+          </button>
+          {isAuthenticated ? (
+            <>
             <button type="button" onClick={onRepository} className="w-full rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">Open repository</button>
             <button type="button" onClick={onImprove} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Improve capsule</button>
-          </div>
-        ) : null}
+            </>
+          ) : null}
+        </div>
       </aside>
     </div>,
     document.body,
