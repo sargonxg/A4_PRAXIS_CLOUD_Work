@@ -1,20 +1,20 @@
 {
   "ok": true,
-  "catalogVersion": "2026-05-22-expert-policy-capsules-v8",
-  "total": 129,
+  "catalogVersion": "2026-05-22-real-work-capsules-v9",
+  "total": 169,
   "counts": {
-    "situation": 43,
-    "tool": 55,
-    "output": 24,
-    "user": 7
+    "situation": 59,
+    "tool": 67,
+    "output": 30,
+    "user": 13
   },
   "expected": {
-    "total": 129,
+    "total": 169,
     "counts": {
-      "output": 24,
-      "situation": 43,
-      "tool": 55,
-      "user": 7
+      "output": 30,
+      "situation": 59,
+      "tool": 67,
+      "user": 13
     }
   },
   "failures": [],
@@ -210,6 +210,366 @@
     },
     {
       "starterId": "starter-user-multilateral-desk-officer",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-red-sea-maritime-logistics-risk",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-sudan-famine-access-civilian-protection",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-haiti-security-humanitarian-corridor",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-eastern-drc-minerals-protection-risk",
+      "category": "situation",
+      "domain": "critical-minerals",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-sahel-transition-regional-security",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-south-china-sea-maritime-incident-law",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-arctic-shipping-minerals-governance",
+      "category": "situation",
+      "domain": "critical-minerals",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-public-sector-ransomware-service-continuity",
+      "category": "situation",
+      "domain": "cyber-resilience",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-election-observation-information-integrity",
+      "category": "situation",
+      "domain": "election-integrity",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-migration-border-reception-capacity",
+      "category": "situation",
+      "domain": "migration-displacement",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-water-stress-transboundary-allocation",
+      "category": "situation",
+      "domain": "sustainability",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-power-grid-flexibility-critical-infrastructure",
+      "category": "situation",
+      "domain": "cyber-resilience",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-disaster-recovery-loss-damage-finance",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-public-health-infodemic-emergency-trust",
+      "category": "situation",
+      "domain": "public-health",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-forced-labor-import-supply-chain-risk",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-procurement-integrity-major-projects",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-source-reliability-triangulation-ladder",
+      "category": "tool",
+      "domain": "source-intake",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-stakeholder-veto-leverage-map",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-evidence-freshness-staleness-clock",
+      "category": "tool",
+      "domain": "source-intake",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-policy-option-triage-matrix",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-data-gap-interrogatory-builder",
+      "category": "tool",
+      "domain": "source-intake",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-legal-mandate-redline-check",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-corporate-exposure-heatmap",
+      "category": "tool",
+      "domain": "exposure-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-humanitarian-access-negotiation-checklist",
+      "category": "tool",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-scenario-indicator-watchlist",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-public-narrative-risk-premortem",
+      "category": "tool",
+      "domain": "election-integrity",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-board-assurance-question-set",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-counterparty-ownership-escalation-tree",
+      "category": "tool",
+      "domain": "exposure-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-crisis-daily-senior-brief",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-sanctions-exposure-note",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-humanitarian-donor-sitrep",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-board-decision-memo-pack",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-ministerial-question-period-brief",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-policy-implementation-roadmap",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-user-un-humanitarian-access-officer",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-user-sanctions-compliance-counsel",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-user-corporate-supply-chain-esg-lead",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-user-cabinet-policy-advisor",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-user-investigative-research-analyst",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-user-field-program-manager",
       "category": "user",
       "domain": "analyst-role",
       "sourceCount": 2,
