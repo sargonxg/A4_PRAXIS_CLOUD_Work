@@ -268,6 +268,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('{inspectorOpen && selectedCapsule ? (');
     expect(source).toContain('if (!capsule) return null;');
     expect(source).not.toContain('Select a capsule.');
+    expect(source).toContain('onSelect={openCapsuleInspector}');
+    expect(source).toContain('onSelect={() => openCapsuleInspector(capsule)}');
+    expect(source).toContain('aria-label={`Inspect ${capsule.label}`}');
     expect(source).toContain('onInspect={() => openCapsuleInspector(capsule)}');
     expect(source).not.toContain('onInspect={() => openGuideChatForCapsule(capsule)}');
   });
@@ -427,7 +430,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('function openGuideChatForCapsule');
     expect(source).toContain('function sendGuideChat');
     expect(source).toContain('onView');
-    expect(source).toContain('Details</button>');
+    expect(source).toContain('Read more</button>');
     expect(source).toContain('data-testid="capsule-inspector-chat-panel"');
     expect(source).toContain('data-testid="capsule-inspector-chat-button"');
     expect(source).toContain('data-testid="praxis-guide-chat"');
@@ -540,7 +543,10 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain("CapsuleEmptyState label=\"Loading capsules...\"");
     expect(source).toContain('compact={isCapsuleRepositoryPage || !isRepositoryPage}');
     expect(source).toContain('title={`Drag ${capsule.label} into context chain`}');
-    expect(source).toContain('line-clamp-2 min-h-[2.5rem] text-sm font-semibold text-slate-900');
+    expect(source).toContain('text-base font-semibold leading-6 text-slate-950');
+    expect(source).toContain('Categories');
+    expect(source).toContain('Read more</button>');
+    expect(source).toContain('line-clamp-2 text-sm leading-6 text-slate-600');
     expect(source).not.toContain('<span className="block truncate text-sm font-semibold text-slate-900">{capsule.label}</span>');
     expect(source).not.toContain('Add category');
     expect(source).not.toContain("CapsuleEmptyState label=\"No capsules found.\"");
@@ -641,6 +647,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Featured Expert Picks');
     expect(source).toContain("'featured-expert-picks-shelf'");
     expect(source).toContain("'intellectual-devices-shelf'");
+    expect(source).toContain('data-testid="capsule-wide-shelves"');
+    expect(source).toContain('data-testid="capsule-shelf-grid"');
+    expect(source).toContain('[grid-template-columns:repeat(auto-fit,minmax(min(21rem,100%),1fr))]');
     expect(source).toContain('data-testid={`featured-expert-pick-${capsule.capsuleId}`}');
     expect(source).toContain('data-testid="build-your-own-knowledge-cta"');
     expect(source).toContain('Build your own inheritable knowledge for your team or agents');
