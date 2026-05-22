@@ -2930,13 +2930,19 @@ export function TaskletPraxisWorkbench({
                   </section>
                 </div>
               ) : null}
-              <textarea
-                value={prompt}
-                onChange={(event) => setPrompt(event.target.value)}
-                rows={4}
-                placeholder={askComposerPlaceholder}
-                className="min-h-36 w-full resize-none bg-transparent px-6 py-6 text-xl text-slate-900 outline-none placeholder:text-slate-400"
-              />
+              <div className="praxis-composer-input-well mx-4 my-4 sm:mx-5">
+                <label className="block px-4 pt-3 font-mono text-[11px] font-semibold uppercase text-[color:var(--color-oxide)]" htmlFor="praxis-main-prompt">
+                  Write your prompt here
+                </label>
+                <textarea
+                  id="praxis-main-prompt"
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  rows={4}
+                  placeholder={askComposerPlaceholder}
+                  className="min-h-36 w-full resize-none bg-transparent px-4 pb-4 pt-2 text-base leading-7 text-slate-900 outline-none placeholder:text-slate-500 sm:text-xl sm:leading-8"
+                />
+              </div>
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/10 px-5 py-4">
                 <div className="flex items-center gap-2">
                   {actionIcons.map((action) => (
@@ -4773,7 +4779,7 @@ function CategoryAxisPanel({
   const visibleItems = showRepairStates ? items : items.filter((item) => !item.repairState);
   const filterCountTotal = visibleTotalCount ?? visibleItems.length;
   return (
-    <section className="praxis-workbench-panel p-3" aria-label={`${label} category map`}>
+    <section className="capsule-taxonomy-panel-solid praxis-workbench-panel p-3" aria-label={`${label} category map`}>
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-slate-900">{label}</p>
         <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">{filterCountTotal}</span>

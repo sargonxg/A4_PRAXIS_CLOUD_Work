@@ -24,4 +24,12 @@ describe('PRAXIS shared ordered-connection background', () => {
     expect(login).not.toContain('backgroundImage: `radial-gradient(circle at 1px 1px');
     expect(login).not.toContain('bg-[linear-gradient(rgba(15,23,42,0.035)_1px');
   });
+
+  it('keeps composer and taxonomy affordances opaque over the graph background', () => {
+    expect(globals).toContain('.praxis-composer-input-well');
+    expect(globals).toContain('.capsule-taxonomy-panel-solid');
+    expect(globals).toContain('var(--color-archive-paper-strong)');
+    expect(workbench).toContain('praxis-composer-input-well');
+    expect(workbench).toContain('capsule-taxonomy-panel-solid');
+  });
 });

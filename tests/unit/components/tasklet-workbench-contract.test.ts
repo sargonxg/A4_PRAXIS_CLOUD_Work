@@ -181,6 +181,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Sources/References');
     expect(source).toContain('capsuleDefaultRole(capsule)');
     expect(source).toContain('data-testid="capsule-taxonomy-surface"');
+    expect(source).toContain('capsule-taxonomy-panel-solid');
     expect(source).toContain('id="capsule-repository-section"');
     expect(source).toContain('Source pack');
     expect(source).toContain('Starter excerpts');
@@ -425,6 +426,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="capsule-studio-primary-actions"');
     expect(source).toContain('{!isCapsuleStudioMode ? (');
     expect(source).toContain('data-testid="praxis-main-composer"');
+    expect(source).toContain('praxis-composer-input-well');
+    expect(source).toContain('Write your prompt here');
     expect(source).toContain('isCapsuleStudioMode ? \'mt-6 sm:mt-8\'');
     expect(source).toContain('data-testid="capsule-studio-command-band"');
     expect(source).toContain('data-testid="capsule-studio-library"');
