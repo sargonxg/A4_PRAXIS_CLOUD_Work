@@ -8,8 +8,8 @@
     "hash": "8b4b8776da15df30cee6721093b01ab1"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\next-env.d.ts": {
-    "mtime": 1779404907.9665196,
-    "hash": "b698cdd97fe8e3bd16dcd74899ad7cef"
+    "mtime": 1779412055.9437447,
+    "hash": "29f60a376e12bf72b67d4994fcc84214"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\next.config.ts": {
     "mtime": 1778822811.539573,
@@ -2636,8 +2636,8 @@
     "hash": "ca0257f971b99dbb43ee1b549f855b10"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tasklet-praxis-workbench.tsx": {
-    "mtime": 1779404376.7488196,
-    "hash": "8886eb6a777ceed4620a011f7fe44166"
+    "mtime": 1779411540.095575,
+    "hash": "97404790b472df33969da6e1952771e1"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tasklet-workbench-conversation.ts": {
     "mtime": 1779242221.4093075,
@@ -2804,8 +2804,8 @@
     "hash": "e1461625176f0f455decdaceb7985426"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\agent-runtime\\worker.ts": {
-    "mtime": 1779404708.2834656,
-    "hash": "0c2ac3599043de3f0ad03f6f5a17199a"
+    "mtime": 1779405056.0591414,
+    "hash": "107cc8c8c22393fb595a44e0f9d44a78"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\agent-runtime\\workflow-plan.ts": {
     "mtime": 1779404454.2897317,
@@ -4444,8 +4444,8 @@
     "hash": "ec771fc52f5b96f4cb1fa572f513754c"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\e2e\\capsule-workspace-visual-diagnostics.spec.ts": {
-    "mtime": 1779398802.3637471,
-    "hash": "317a793094e48acedb27b602166daed8"
+    "mtime": 1779411590.1625447,
+    "hash": "788a3908278d80f14cef5e97b7bedea2"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\e2e\\golden-path.spec.ts": {
     "mtime": 1779211314.0368152,
@@ -4652,8 +4652,8 @@
     "hash": "3479f0658118d49db3ebb5ec4716c953"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\app\\capsule-factory-route-consolidation.test.ts": {
-    "mtime": 1779323148.3912535,
-    "hash": "8defdddfcf5759fa77b892672ca28eb6"
+    "mtime": 1779410872.7529094,
+    "hash": "91697ebb369fd00d3f42a8dcff39c9e8"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\app\\graph-staged-archive-routes.test.ts": {
     "mtime": 1779222367.7548728,
@@ -4724,8 +4724,8 @@
     "hash": "eee40dffb279a4d42b24d5eff22b3030"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\tasklet-workbench-contract.test.ts": {
-    "mtime": 1779404384.3082163,
-    "hash": "0f489de92205c6a89897b7af42af5636"
+    "mtime": 1779411481.9899886,
+    "hash": "d0a0b72375e27a7132d6341979bcc8bd"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\tasklet-workbench-conversation.test.ts": {
     "mtime": 1779247653.9027836,
@@ -5844,8 +5844,8 @@
     "hash": "03438003e7941914057dc32a2a61da05"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\agentic-research-evals\\2026-05-21-praxis-vs-generic-llm.md": {
-    "mtime": 1779404850.2535777,
-    "hash": "b243a844287efdc7eb3b05c38ebf1e0b"
+    "mtime": 1779405107.4885254,
+    "hash": "4a7a0e43d2a3d30deff8a1f32f0bd7e3"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\contributing\\AGENT_OWNERSHIP_MAP.md": {
     "mtime": 1778937847.7916496,
@@ -5888,8 +5888,8 @@
     "hash": "baa5b0bcd477e597fabfcf6a719a3319"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\product\\PRAXIS_AGENTIC_WORKFLOW_RELEASE_PLAN_2026-05-21.md": {
-    "mtime": 1779402988.198087,
-    "hash": "c2757f0e40569b2c6e8ed95945062f0f"
+    "mtime": 1779405510.0615592,
+    "hash": "5825f1e7828d73faceb9d300553f1fd2"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\product\\PRAXIS_ASK_CONTEXT_CAPSULE_COCKPIT_PLAN_2026-05-16.md": {
     "mtime": 1778898517.50877,

@@ -24,8 +24,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain("const [prompt, setPrompt] = useState('')");
     expect(source).toContain('setAskPlaceholderIndex');
     expect(source).toContain('placeholder={askComposerPlaceholder}');
-    expect(source).toContain('Ask for a cited policy brief from the active ContextCapsule.');
-    expect(source).toContain('Ask PRAXIS to check source gaps before drafting.');
+    expect(source).toContain('Draft a cited options memo from the active ContextCapsule.');
+    expect(source).toContain('Run a source-gap check before drafting the recommendation.');
     expect(source).not.toContain("const [prompt, setPrompt] = useState('Draft a sourced options memo from the active capsule.')");
     expect(source).not.toContain('placeholder="Describe a task or responsibility"');
   });
@@ -181,7 +181,6 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Sources/References');
     expect(source).toContain('capsuleDefaultRole(capsule)');
     expect(source).toContain('data-testid="capsule-taxonomy-surface"');
-    expect(source).toContain('data-testid="capsule-tool-output-lanes"');
     expect(source).toContain('id="capsule-repository-section"');
     expect(source).toContain('Source pack');
     expect(source).toContain('Starter excerpts');
@@ -196,8 +195,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Compatible Capsules');
     expect(source).toContain('Next: {bestNextAction}');
     expect(source).toContain('const purposeLine = richProfile?.purpose');
-    expect(source).toContain('Thinking devices');
-    expect(source).toContain('Artifacts');
+    expect(source).not.toContain('data-testid="capsule-tool-output-lanes"');
+    expect(source).not.toContain('Assumption checks, source checks, reasoning tools.');
+    expect(source).not.toContain('Two-pagers, diplomatic notes, briefs, handovers.');
     expect(source).toContain('All types');
     expect(source).toContain('Governance');
     expect(source).toContain('Policy Teams');
@@ -220,6 +220,26 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="workbench-red-flags"');
     expect(source).toContain('data-testid="workbench-diagnostics-drawer"');
     expect(source).toContain('data-testid="capsule-filter-receipt"');
+  });
+
+  it('keeps the Ask composer visually prominent without splitting the one-bar flow', () => {
+    expect(source).toContain('praxis-composer-focus-shell');
+    expect(source).toContain('Draft a cited options memo');
+    expect(source).toContain('source-gap check');
+    expect(source).toContain('handover');
+    expect(source).toContain('red-team review');
+    expect(source).toContain('data-testid="ask-capsule-workflow-preview"');
+  });
+
+  it('uses the capsule inspector sheet as the single capsule inspection surface', () => {
+    expect(source).toContain('function openCapsuleInspector');
+    expect(source).toContain('data-testid="capsule-inspector-sheet"');
+    expect(source).toContain('data-testid="capsule-inspector-chat-panel"');
+    expect(source).toContain('{inspectorOpen && selectedCapsule ? (');
+    expect(source).toContain('if (!capsule) return null;');
+    expect(source).not.toContain('Select a capsule.');
+    expect(source).toContain('onInspect={() => openCapsuleInspector(capsule)}');
+    expect(source).not.toContain('onInspect={() => openGuideChatForCapsule(capsule)}');
   });
 
   it('uses opaque operational panel classes for the capsule workspace', () => {
@@ -562,7 +582,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
   it('keeps repository compatibility inside the Capsules surface instead of a separate page model', () => {
     expect(repositoryPageSource).toContain("redirect('/app/capsules?lane=repository')");
     expect(source).toContain("initialPanel?: 'ask' | 'capsules' | 'repository'");
-    expect(source).toContain("const isRepositoryLane = isCapsuleRepositoryPage && factoryLane === 'sources'");
+    expect(source).toContain('data-testid="capsule-studio-source-section"');
+    expect(source).toContain('const isRepositoryLane = false');
     expect(source).toContain('initialFactoryLane?: CapsuleFactoryLaneId');
     expect(routeSource).toContain("lane === 'repository' || lane === 'sources' ? 'sources' : undefined");
     expect(source).toContain("href={isAuthenticated ? '/app/capsules?lane=repository'");

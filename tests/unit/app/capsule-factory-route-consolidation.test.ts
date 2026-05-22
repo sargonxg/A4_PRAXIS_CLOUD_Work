@@ -1,4 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const workbenchSource = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
+const capsuleRouteSource = readFileSync(join(process.cwd(), 'src/app/api/context/capsules/route.ts'), 'utf8');
+const capsuleServiceSource = readFileSync(join(process.cwd(), 'src/lib/context/capsule-service.ts'), 'utf8');
 
 const navigation = vi.hoisted(() => ({
   redirect: vi.fn((href: string) => {
@@ -42,5 +48,32 @@ describe('Capsules route consolidation', () => {
       label: 'Open Repository lane',
       href: '/app/capsules?lane=repository',
     });
+  });
+
+  it('keeps new capsule creation private by default', () => {
+    expect(capsuleServiceSource).toContain("body.visibility");
+    expect(capsuleServiceSource).toContain(": 'private'");
+    expect(capsuleRouteSource).toContain('createCapsule(user.uid');
+    expect(workbenchSource).toContain('New capsules start private.');
+    const createLiteBody = workbenchSource.slice(
+      workbenchSource.indexOf('async function createCapsuleLite'),
+      workbenchSource.indexOf('async function createCapsuleFromBuilder'),
+    );
+    expect(createLiteBody).not.toContain("visibility: 'public'");
+  });
+
+  it('keeps public/private actions on the existing visibility behavior', () => {
+    expect(workbenchSource).toContain("action: 'set-visibility'");
+    expect(workbenchSource).toContain("allowDownload: visibility === 'public' ? true");
+    expect(workbenchSource).toContain("allowClone: visibility === 'public' ? true");
+    expect(workbenchSource).toContain("allowCommunityRating: visibility === 'public' ? capsule.access?.allowCommunityRating ?? false : false");
+  });
+
+  it('keeps improve actions review-gated instead of direct canonical mutation', () => {
+    expect(workbenchSource).toContain("persistFactoryReviewDiff(diff, 'create-review-diff')");
+    expect(workbenchSource).toContain("action: 'create-review-diff'");
+    expect(workbenchSource).toContain('Return reviewable capsule improvements, not direct writes.');
+    expect(workbenchSource).toContain('Do not silently mutate the capsule');
+    expect(workbenchSource).not.toContain('setCapsuleVisibility(capsule, \'improve\'');
   });
 });
