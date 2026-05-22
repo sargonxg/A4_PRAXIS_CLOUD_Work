@@ -12,6 +12,18 @@ const primaryNavSource = readFileSync(join(process.cwd(), 'src/lib/navigation/pr
 const repositoryPageSource = readFileSync(join(process.cwd(), 'src/app/app/repository/page.tsx'), 'utf8');
 const routeSource = readFileSync(join(process.cwd(), 'src/app/app/capsules/page.tsx'), 'utf8');
 
+function extractSourceBlock(start: string, end: string): string {
+  const startIndex = workbenchSource.indexOf(start);
+  const endIndex = workbenchSource.indexOf(end, Math.max(startIndex, 0));
+  expect(startIndex).toBeGreaterThanOrEqual(0);
+  expect(endIndex).toBeGreaterThan(startIndex);
+  return workbenchSource.slice(startIndex, endIndex);
+}
+
+const suggestionWidgetSource = extractSourceBlock('function CapsuleSuggestionWidget', 'function AssistantMarkdown');
+const repositoryGridSource = extractSourceBlock('function CapsuleRepositoryGrid', 'function CapsuleRepositoryTile');
+const inspectorSheetSource = extractSourceBlock('function CapsuleInspectorSheet', 'function PraxisGuideChat');
+
 describe('Tasklet PRAXIS workbench contract', () => {
   it('keeps model routing TACITUS-owned in the main composer', () => {
     expect(source).toContain('TACITUS routes model, worker, and tools');
@@ -234,12 +246,28 @@ describe('Tasklet PRAXIS workbench contract', () => {
 
   it('shows local capsule suggestions near the Ask composer without auto-applying them', () => {
     expect(source).toContain("import { rankAskCapsuleSuggestions");
+    expect(source).toContain('const ASK_CAPSULE_SUGGESTION_DEBOUNCE_MS = 450');
+    expect(source).toContain('const ASK_CAPSULE_SUGGESTION_VISIBLE_MS = 30_000');
+    expect(source).toContain('function hasMeaningfulAskPrompt');
+    expect(source).toContain('const [debouncedSuggestionPrompt, setDebouncedSuggestionPrompt]');
+    expect(source).toContain('window.setTimeout(() => {');
+    expect(source).toContain('setDebouncedSuggestionPrompt(hasMeaningfulAskPrompt(nextPrompt) ? nextPrompt :');
     expect(source).toContain('const askCapsuleSuggestions = useMemo');
+    expect(source).toContain('prompt: debouncedSuggestionPrompt');
+    expect(source).toContain('limit: 3');
     expect(source).toContain('data-testid="ask-capsule-suggestion-widget"');
-    expect(source).toContain('why this capsule');
+    expect(suggestionWidgetSource).toContain('data-testid={`ask-capsule-suggestion-chip-${suggestion.capsuleId}`}');
+    expect(suggestionWidgetSource).toContain('title={`why this capsule: ${suggestion.whyThisCapsule} ${suggestion.whatItChangesForAgent}`}');
+    expect(suggestionWidgetSource).toContain('window.setTimeout(() => setVisible(false), ASK_CAPSULE_SUGGESTION_VISIBLE_MS)');
+    expect(suggestionWidgetSource).toContain('onMouseEnter={() => setSuggestionPaused(true)}');
+    expect(suggestionWidgetSource).toContain('onFocusCapture={() => setSuggestionPaused(true)}');
+    expect(suggestionWidgetSource).toContain('onMouseLeave={() => setSuggestionPaused(false)}');
+    expect(suggestionWidgetSource).toContain('onBlurCapture={(event) => {');
     expect(source).toContain('human-gated context');
     expect(source).toContain('onAdd={(suggestion) => applyCapsuleCard(suggestion.capsule)}');
     expect(source).toContain('autoApplied: false');
+    expect(suggestionWidgetSource).not.toContain('<article');
+    expect(suggestionWidgetSource).not.toContain('md:grid-cols-2');
     expect(source).not.toContain('useEffect(() => applyCapsuleCard(askCapsuleSuggestions');
   });
 
@@ -682,15 +710,41 @@ describe('Tasklet PRAXIS workbench contract', () => {
 
   it('simplifies the repository lane into filters, capsule tiles, and one popup workflow', () => {
     expect(source).toContain('data-testid="capsule-repository-grid"');
-    expect(source).toContain('data-testid="capsule-repository-modal"');
+    expect(repositoryGridSource).toContain('[grid-template-columns:repeat(auto-fit,minmax(min(22rem,100%),1fr))]');
+    expect(repositoryGridSource).toContain('data-testid="capsule-repository-create-card"');
     expect(source).toContain('data-testid="capsule-repository-open"');
-    expect(source).toContain('data-testid="capsule-repository-create-card"');
     expect(source).toContain('Open capsule');
     expect(source).toContain('Create new capsule');
-    expect(source).toContain('Chat with this capsule');
+    expect(source).toContain('function openRepositoryCapsuleInspector');
+    expect(source).toContain('onOpen={(capsule) => openRepositoryCapsuleInspector(capsule)}');
+    expect(source).toContain('data-testid="capsule-inspector-sheet"');
+    expect(source).toContain('data-testid="capsule-inspector-chat-panel"');
+    expect(source).toContain('Ask PRAXIS');
     expect(source).toContain('Improve safely');
+    expect(source).toContain('Add to Ask');
     expect(source).toContain('isCapsuleRepositoryPage && !isRepositoryLane');
     expect(source).toContain('isRepositoryLane ? (');
-    expect(source).toContain('onOpen={(capsule) => openRepositoryCapsuleModal(capsule)}');
+    expect(source).not.toContain('onOpen={(capsule) => openRepositoryCapsuleModal(capsule)}');
+  });
+
+  it('keeps repository inspection extensive inside the capsule inspector sheet', () => {
+    for (const expected of [
+      'Purpose',
+      'Source pack',
+      'Starter excerpts',
+      'Core refs',
+      'Tools/Thinking Devices',
+      'Recommended tools',
+      'Output targets',
+      'Review Gates',
+      'AI use guidance',
+      'Compatible Capsules',
+      'capsule-inspector-usefulness-rating',
+      'Ask PRAXIS',
+      'Improve capsule',
+      'Add to Ask',
+    ]) {
+      expect(inspectorSheetSource).toContain(expected);
+    }
   });
 });
