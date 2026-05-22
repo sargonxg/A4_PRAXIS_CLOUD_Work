@@ -2087,7 +2087,7 @@ const REAL_WORK_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
     detail: 'Use this when a policy, corporate, insurer, or logistics team needs dated, source-backed context on maritime disruption without turning incident reporting into legal, military, or investment advice.',
     tags: ['red-sea', 'maritime', 'logistics', 'trade', 'sanctions', 'team:economic-sanctions'],
     sourcePack: [
-      realWorkSource('unctad-trade-development-foresights-2026', 'UNCTAD Trade and Development Foresights 2026', 'https://unctad.org/publication/trade-and-development-foresights-2026-under-pressure-uncertainty-reshapes-global', 'multilateral', 'UNCTAD', '2026', 'Trade uncertainty, shipping, and global development risk baseline.'),
+      realWorkSource('unctad-trade-development-foresights-2026', 'UNCTAD Trade and Development Foresights 2026', 'https://unctad.org/publication/trade-and-development-foresights-2026-global-economy-faces-geopolitical-challenge', 'multilateral', 'UNCTAD', '2026', 'Trade uncertainty, shipping, and global development risk baseline.'),
       realWorkSource('imo-maritime-security', 'IMO maritime security resources', 'https://www.imo.org/en/OurWork/Security/Pages/MaritimeSecurity.aspx', 'multilateral', 'International Maritime Organization', '2026', 'Maritime security and shipping-risk governance source lane.'),
     ],
     recommendedToolIds: ['scenario-projector', 'sourceability', 'stakeholder-map'],
