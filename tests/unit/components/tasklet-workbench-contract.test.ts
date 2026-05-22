@@ -550,10 +550,29 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('const [guideMessages, setGuideMessages] = useState<ChatMessage[]>([])');
     expect(source).toContain('const [guidePrompt, setGuidePrompt] = useState');
     expect(source).toContain('const [guideThreadId, setGuideThreadId] = useState<string | null>(null)');
+    expect(source).toContain("const GUIDE_CHAT_STORAGE_KEY = 'praxis-guide-chat-state:v1'");
+    expect(source).toContain('type GuideChatStorageState');
+    expect(source).toContain('function loadGuideChatState');
+    expect(source).toContain('function persistGuideChatState');
+    expect(source).toContain('window.localStorage.getItem(GUIDE_CHAT_STORAGE_KEY)');
+    expect(source).toContain('window.localStorage.setItem(GUIDE_CHAT_STORAGE_KEY');
+    expect(source).toContain('setGuideChatOpen(Boolean(restored.open))');
+    expect(source).toContain('open: guideChatOpen');
     expect(source).toContain('sendPublicToLogin(`PRAXIS guide question');
     expect(source).toContain('setGuideMessages((current) => [...current, userMessage, { role:');
     expect(source).toContain('buildGuideChatPrompt(cleanPrompt, targetCapsule');
     expect(source).not.toContain('setActiveTab(\'analysis\');\n    setStatus(`${capsule.label} is ready in Ask PRAXIS.`);');
+  });
+
+  it('makes the guide chat a larger persistent assistant without replacing Ask PRAXIS', () => {
+    expect(source).toContain('w-[min(42rem,calc(100vw-2rem))]');
+    expect(source).toContain('min-h-[22rem] max-h-[52vh]');
+    expect(source).toContain('text-base leading-7');
+    expect(source).toContain('PRAXIS guide, not the agentic Ask PRAXIS workspace');
+    expect(source).toContain('Use the main Ask PRAXIS bar for agent runs');
+    expect(source).toContain('Guide assistant');
+    expect(source).toContain('aria-label="Clear PRAXIS guide chat"');
+    expect(source).toContain("currentToolId: 'praxis-guide-chat'");
   });
 
   it('exposes usefulness rating as a distinct capsule card and inspector contract', () => {
