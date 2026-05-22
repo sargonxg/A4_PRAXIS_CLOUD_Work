@@ -8,7 +8,7 @@ export function toLegacyDataStreamResponse(
   init?: ResponseInit,
   opts: {
     startData?: unknown[];
-    onFinishData?: (text: string) => unknown;
+    onFinishData?: (text: string) => unknown | unknown[];
   } = {},
 ): Response {
   const encoder = new TextEncoder();
@@ -32,8 +32,9 @@ export function toLegacyDataStreamResponse(
             }
           }
           const finishData = opts.onFinishData?.(fullText);
-          if (finishData !== undefined) {
-            controller.enqueue(encoder.encode(`2:${JSON.stringify(finishData)}\n`));
+          const finishItems = Array.isArray(finishData) ? finishData : finishData === undefined ? [] : [finishData];
+          for (const data of finishItems) {
+            controller.enqueue(encoder.encode(`2:${JSON.stringify(data)}\n`));
           }
           controller.enqueue(encoder.encode(`d:${JSON.stringify({ finishReason: 'stop' })}\n`));
         } catch (err) {

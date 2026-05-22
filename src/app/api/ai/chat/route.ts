@@ -1,4 +1,4 @@
-import { streamText, stepCountIs, type ModelMessage } from 'ai';
+import { streamText, stepCountIs, type FinishReason, type LanguageModelUsage, type ModelMessage } from 'ai';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
@@ -50,7 +50,7 @@ import {
   classifyAskIntent,
   type AskIntent,
 } from '@/lib/ai/ask-conversation';
-import { buildAskAnswerEnvelope, buildSourcePreviewCards, type AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
+import { buildAskAnswerEnvelope, buildSourcePreviewCards, type AskAnswerEnvelope, type AskCapsuleSuggestionReceipt, type AskGenerationReceipt } from '@/lib/ai/ask-answer-envelope';
 import {
   buildAskConversationOrchestrationReceipt,
   buildAskOrchestrationStatusEvents,
@@ -131,6 +131,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
       contextPackageId: z.string().optional(),
       capsuleId: z.string().optional(),
       appliedCapsules: z.unknown().optional(),
+      suggestedCapsules: z.unknown().optional(),
       activeContextStack: z.unknown().optional(),
       threadId: z.string().optional(),
       aiSettings: aiSettingsSchema,
@@ -138,8 +139,9 @@ export const POST = withCalibration('chat', 'ai_chat', {
 
     const validation = validateAiRequest(body, requestSchema);
     if (!validation.success) return validation.response;
-    const { messages, conflictContext, situation, currentToolId, currentPath, contextPackageId, capsuleId, appliedCapsules, activeContextStack, threadId, aiSettings } = validation.data;
+    const { messages, conflictContext, situation, currentToolId, currentPath, contextPackageId, capsuleId, appliedCapsules, suggestedCapsules, activeContextStack, threadId, aiSettings } = validation.data;
     const normalizedAppliedCapsules = normalizeAppliedCapsules(appliedCapsules);
+    const normalizedSuggestedCapsules = normalizeSuggestedCapsules(suggestedCapsules);
     if (!hasConversationCapsuleSignal({
       capsuleId,
       contextPackageId,
@@ -482,6 +484,7 @@ You have access to the user's active situation data. When answering questions:
       evidencePackReceipt,
       memoryPersistence: isAskThreadSqlConfigured() ? 'cloud-sql' : 'firestore',
     });
+    runtimeReceipt.suggestedCapsules = normalizedSuggestedCapsules;
     const askStartedAt = Date.now();
     const persistedHistory = await loadServerAskHistory({
       uid: _user.uid,
@@ -548,6 +551,8 @@ You have access to the user's active situation data. When answering questions:
         contextPackageId: contextPackageId ?? null,
       },
       orchestrationReceipt,
+      generationReceipt: runtimeReceipt.generationReceipt,
+      capsuleSuggestions: normalizedSuggestedCapsules,
     });
     const effectiveMessages = buildAskConversationMessages(
       messages,
@@ -694,13 +699,30 @@ You have access to the user's active situation data. When answering questions:
             system: systemPrompt,
             messages: effectiveMessages as unknown as ModelMessage[],
             tools,
+            maxOutputTokens: orchestrationReceipt.generationBudget.maxOutputTokens,
             stopWhen: stepCountIs(15),
           });
           for await (const text of result.textStream) {
             candidateText += text;
             yield text;
           }
-          runtimeReceipt = selectedReceipt;
+          const [finishReason, totalUsage] = await Promise.all([
+            Promise.resolve(result.finishReason).catch(() => null),
+            Promise.resolve(result.totalUsage).catch(() => null),
+          ]);
+          runtimeReceipt = {
+            ...selectedReceipt,
+            generationReceipt: buildAskGenerationReceipt({
+              receipt: orchestrationReceipt,
+              selectedModel: candidateModelId,
+              fallbackModel: selectedReceipt.fallbackFrom ?? null,
+              finishReason,
+              usage: totalUsage,
+              sourceCount: sourcePreviewCards.length,
+              capsuleCount: normalizedAppliedCapsules.length,
+              warningCount: runtimeReceipt.contextReceipt?.warnings.length ?? 0,
+            }),
+          };
           await persistSuccessfulAskOutput(candidateText);
           return;
         } catch (err) {
@@ -717,11 +739,36 @@ You have access to the user's active situation data. When answering questions:
     }
 
     return toLegacyDataStreamResponse(textStreamWithFallback(), undefined, {
-      startData: buildAskOrchestrationStatusEvents(orchestrationReceipt),
-      onFinishData: (text) => ({
-        type: 'answerEnvelope',
-        answerEnvelope: buildEnvelopeForText(text),
-      }),
+      startData: [
+        {
+          type: 'generationStatus',
+          phase: 'start',
+          selectedModel: orchestrationReceipt.generationBudget.selectedModelId,
+          budgetMode: orchestrationReceipt.generationBudget.mode,
+          maxOutputTokens: orchestrationReceipt.generationBudget.maxOutputTokens,
+          sourceCount: sourcePreviewCards.length,
+          capsuleCount: normalizedAppliedCapsules.length,
+          warningCount: runtimeReceipt.contextReceipt?.warnings.length ?? 0,
+        },
+        ...buildAskOrchestrationStatusEvents(orchestrationReceipt),
+      ],
+      onFinishData: (text) => [
+        {
+          type: 'generationStatus',
+          phase: 'final',
+          selectedModel: runtimeReceipt.generationReceipt?.selectedModel ?? runtimeReceipt.model,
+          fallbackModel: runtimeReceipt.generationReceipt?.fallbackModel ?? null,
+          finishReason: runtimeReceipt.generationReceipt?.finishReason ?? null,
+          usage: runtimeReceipt.generationReceipt?.usage ?? null,
+          sourceCount: sourcePreviewCards.length,
+          capsuleCount: normalizedAppliedCapsules.length,
+          warningCount: runtimeReceipt.contextReceipt?.warnings.length ?? 0,
+        },
+        {
+          type: 'answerEnvelope',
+          answerEnvelope: buildEnvelopeForText(text),
+        },
+      ],
     });
   } catch (err) {
     return handleRouteError(err, 'chat');
@@ -805,6 +852,8 @@ interface AskRuntimeReceipt extends Record<string, unknown> {
   contextReceipt?: ReturnType<typeof buildAskContextReceipt>;
   contextEnrichment?: ContextEnrichmentReceipt;
   orchestrationReceipt?: AskConversationOrchestrationReceipt;
+  generationReceipt?: AskGenerationReceipt;
+  suggestedCapsules?: AskCapsuleSuggestionReceipt[];
   answerEnvelope?: AskAnswerEnvelope;
 }
 
@@ -913,6 +962,52 @@ function formatAskRuntimeFailureMessage(error: unknown, attemptedModels: string[
     return `The selected model runtime and GA fallbacks were not accessible for this request (${models}). Last provider response: ${detail}`;
   }
   return `The Ask PRAXIS runtime failed after trying ${models}. Last error: ${detail}`;
+}
+
+function buildAskGenerationReceipt(input: {
+  receipt: AskConversationOrchestrationReceipt;
+  selectedModel: string;
+  fallbackModel: string | null;
+  finishReason: FinishReason | null;
+  usage: LanguageModelUsage | null;
+  sourceCount: number;
+  capsuleCount: number;
+  warningCount: number;
+}): AskGenerationReceipt {
+  return {
+    selectedModel: input.selectedModel,
+    fallbackModel: input.fallbackModel,
+    budgetMode: input.receipt.generationBudget.mode,
+    maxOutputTokens: input.receipt.generationBudget.maxOutputTokens,
+    finishReason: input.finishReason,
+    usage: input.usage ? {
+      inputTokens: input.usage.inputTokens,
+      outputTokens: input.usage.outputTokens,
+      totalTokens: input.usage.totalTokens,
+    } : null,
+    sourceCount: input.sourceCount,
+    capsuleCount: input.capsuleCount,
+    warningCount: input.warningCount,
+  };
+}
+
+function normalizeSuggestedCapsules(value: unknown): AskCapsuleSuggestionReceipt[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item): AskCapsuleSuggestionReceipt[] => {
+    if (!isRecord(item)) return [];
+    const capsuleId = stringValue(item.id) ?? stringValue(item.capsuleId);
+    const label = stringValue(item.label) ?? capsuleId;
+    if (!capsuleId || !label) return [];
+    return [{
+      capsuleId,
+      label,
+      category: stringValue(item.category) ?? 'reference',
+      reason: stringValue(item.reason) ?? 'Suggested from the Ask prompt.',
+      sourceReadinessSignal: stringValue(item.sourceReadinessSignal) ?? 'review before use',
+      score: numberValue(item.score) ?? undefined,
+      autoApplied: false,
+    }];
+  }).slice(0, 5);
 }
 
 function decorateAskRuntimeReceipt(
@@ -1535,6 +1630,14 @@ function previewJson(value: unknown): string {
 
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).slice(0, 50);
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim().slice(0, 240) : null;
+}
+
+function numberValue(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

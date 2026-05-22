@@ -24,6 +24,7 @@ const ConversationTurnSchema = z.object({
   messages: z.array(z.object({ role: z.enum(['user', 'assistant', 'system', 'tool']), content: z.unknown().optional(), text: z.unknown().optional() })).min(1),
   capsuleId: z.string().min(1).max(160).default('default'),
   appliedCapsules: z.unknown().optional(),
+  suggestedCapsules: z.unknown().optional(),
   currentToolId: z.string().optional(),
   currentPath: z.string().optional(),
   contextPackageId: z.string().optional(),

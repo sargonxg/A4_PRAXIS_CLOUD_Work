@@ -1,4 +1,5 @@
 import type { CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
+import type { SourceabilityLedgerSummary, SourceabilitySupportLabel } from '@/lib/agent-runtime/sourceability-ledger';
 import type { AskIntent } from '@/lib/ai/ask-conversation';
 import type { AskConversationOrchestrationReceipt } from '@/lib/ai/ask-orchestrator';
 import type { MemoBlock } from '@/types/memo';
@@ -35,7 +36,55 @@ export interface SourcePreviewCard {
 export interface ClaimGrounding {
   claim: string;
   grounding: 'source-backed' | 'ai-knowledge' | 'inference' | 'unsupported';
+  supportLabel: SourceabilitySupportLabel;
   sourceCardIds: string[];
+}
+
+export interface AskGenerationReceipt {
+  selectedModel: string;
+  fallbackModel: string | null;
+  budgetMode: 'standard' | 'long_context';
+  maxOutputTokens: number;
+  finishReason?: string | null;
+  usage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  } | null;
+  sourceCount?: number;
+  capsuleCount?: number;
+  warningCount?: number;
+}
+
+export interface AskSourceAuditSummary {
+  sourceCount: number;
+  sourceReceiptCount: number;
+  sourceTypes: SourcePreviewType[];
+  gapCount: number;
+  supportedClaimCount: number;
+  weakClaimCount: number;
+  unsupportedClaimCount: number;
+  contradictedClaimCount: number;
+  modelPriorClaimCount: number;
+  assumptionClaimCount: number;
+  sourcePosture: 'source_previews_attached' | 'model_prior_or_inference';
+  gapPosture: 'gaps_visible' | 'no_recorded_gaps';
+}
+
+export interface AskContinuationAction {
+  id: 'continue-as-memo' | 'expand-evidence-annex' | 'create-output-capsule';
+  label: string;
+  prompt: string;
+}
+
+export interface AskCapsuleSuggestionReceipt {
+  capsuleId: string;
+  label: string;
+  category: string;
+  reason: string;
+  sourceReadinessSignal: string;
+  score?: number;
+  autoApplied: false;
 }
 
 export interface AskAnswerEnvelope {
@@ -46,6 +95,11 @@ export interface AskAnswerEnvelope {
   };
   sourceCards: SourcePreviewCard[];
   claimGrounding: ClaimGrounding[];
+  claimLedgerSummary: SourceabilityLedgerSummary;
+  sourceAudit: AskSourceAuditSummary;
+  generationReceipt?: AskGenerationReceipt;
+  continuationActions: AskContinuationAction[];
+  capsuleSuggestions: AskCapsuleSuggestionReceipt[];
   followUps: string[];
   documentPackCandidate: ConversationDocumentPack;
   orchestrationReceipt?: AskConversationOrchestrationReceipt;
@@ -173,7 +227,11 @@ export function buildAskAnswerEnvelope(input: {
   gaps?: string[];
   provenance?: ConversationPackProvenance;
   orchestrationReceipt?: AskConversationOrchestrationReceipt;
+  generationReceipt?: AskGenerationReceipt;
+  capsuleSuggestions?: AskCapsuleSuggestionReceipt[];
 }): AskAnswerEnvelope {
+  const claimGrounding = groundClaims(input.answer, input.sourceCards);
+  const claimLedgerSummary = summarizeClaimGrounding(claimGrounding);
   const pack = buildConversationDocumentPack({
     title: titleForPrompt(input.prompt),
     prompt: input.prompt,
@@ -190,7 +248,16 @@ export function buildAskAnswerEnvelope(input: {
       sourcePosture: 'always_visible',
     },
     sourceCards: input.sourceCards,
-    claimGrounding: groundClaims(input.answer, input.sourceCards),
+    claimGrounding,
+    claimLedgerSummary,
+    sourceAudit: buildSourceAudit({
+      sourceCards: input.sourceCards,
+      gaps: input.gaps ?? [],
+      claimLedgerSummary,
+    }),
+    generationReceipt: input.generationReceipt,
+    continuationActions: continuationActionsFor(input.intent),
+    capsuleSuggestions: input.capsuleSuggestions ?? [],
     followUps: followUpsFor(input.intent, input.sourceCards.length),
     documentPackCandidate: pack,
     orchestrationReceipt: input.orchestrationReceipt,
@@ -270,18 +337,88 @@ function groundClaims(answer: string, sourceCards: SourcePreviewCard[]): ClaimGr
     .filter((claim) => claim.length > 12)
     .slice(0, 5);
   return claims.map((claim) => {
+    if (isAssumptionClaim(claim)) {
+      return {
+        claim,
+        grounding: 'inference',
+        supportLabel: 'assumption',
+        sourceCardIds: [],
+      };
+    }
     const matches = sourceCards
       .map((card) => ({ card, score: sourceabilityScore(claim, card) }))
       .filter((match) => match.score >= 0.3)
       .sort((a, b) => b.score - a.score)
       .slice(0, 3)
-      .map((match) => match.card.id);
+      .map((match) => match.card);
+    const bestConfidence = matches.reduce((max, card) => Math.max(max, card.confidence ?? 0), 0);
     return {
       claim,
-      grounding: matches.length > 0 ? 'source-backed' as const : 'unsupported' as const,
-      sourceCardIds: matches,
+      grounding: matches.length > 0 ? 'source-backed' as const : sourceCards.length ? 'unsupported' as const : 'ai-knowledge' as const,
+      supportLabel: matches.length > 0 ? (bestConfidence >= 0.7 ? 'supported' as const : 'weak' as const) : sourceCards.length ? 'unsupported' as const : 'model_prior' as const,
+      sourceCardIds: matches.map((card) => card.id),
     };
   });
+}
+
+function summarizeClaimGrounding(claims: ClaimGrounding[]): SourceabilityLedgerSummary {
+  return {
+    totalClaims: claims.length,
+    supportedClaims: claims.filter((item) => item.supportLabel === 'supported').length,
+    weakClaims: claims.filter((item) => item.supportLabel === 'weak').length,
+    unsupportedClaims: claims.filter((item) => item.supportLabel === 'unsupported').length,
+    contradictedClaims: claims.filter((item) => item.supportLabel === 'contradicted').length,
+    modelPriorClaims: claims.filter((item) => item.supportLabel === 'model_prior').length,
+    assumptionClaims: claims.filter((item) => item.supportLabel === 'assumption').length,
+  };
+}
+
+function buildSourceAudit(input: {
+  sourceCards: SourcePreviewCard[];
+  gaps: string[];
+  claimLedgerSummary: SourceabilityLedgerSummary;
+}): AskSourceAuditSummary {
+  return {
+    sourceCount: input.sourceCards.length,
+    sourceReceiptCount: input.sourceCards.filter((card) => Boolean(card.sourceReceiptId)).length,
+    sourceTypes: Array.from(new Set(input.sourceCards.map((card) => card.sourceType))),
+    gapCount: input.gaps.length,
+    supportedClaimCount: input.claimLedgerSummary.supportedClaims,
+    weakClaimCount: input.claimLedgerSummary.weakClaims,
+    unsupportedClaimCount: input.claimLedgerSummary.unsupportedClaims,
+    contradictedClaimCount: input.claimLedgerSummary.contradictedClaims,
+    modelPriorClaimCount: input.claimLedgerSummary.modelPriorClaims,
+    assumptionClaimCount: input.claimLedgerSummary.assumptionClaims,
+    sourcePosture: input.sourceCards.length ? 'source_previews_attached' : 'model_prior_or_inference',
+    gapPosture: input.gaps.length ? 'gaps_visible' : 'no_recorded_gaps',
+  };
+}
+
+function continuationActionsFor(intent: AskIntent): AskContinuationAction[] {
+  const memoPrompt = intent === 'research_memo'
+    ? 'Continue this as a structured research memo with headings, caveats, and source notes.'
+    : 'Continue this as a Memo Studio draft with the same evidence and caveats.';
+  return [
+    {
+      id: 'continue-as-memo',
+      label: 'Continue as memo',
+      prompt: memoPrompt,
+    },
+    {
+      id: 'expand-evidence-annex',
+      label: 'Expand evidence annex',
+      prompt: 'Expand the evidence annex: list supported, weak, unsupported, model-prior, and assumption claims with source gaps.',
+    },
+    {
+      id: 'create-output-capsule',
+      label: 'Create output capsule',
+      prompt: 'Create a review-gated Output Capsule from this answer, preserving sources, claim posture, and next checks.',
+    },
+  ];
+}
+
+function isAssumptionClaim(claim: string): boolean {
+  return /\b(should|could|would|recommend|recommendation|assume|assumption|likely|may|might|next|verify|check|consider)\b/i.test(claim);
 }
 
 function followUpsFor(intent: AskIntent, sourceCount: number): string[] {

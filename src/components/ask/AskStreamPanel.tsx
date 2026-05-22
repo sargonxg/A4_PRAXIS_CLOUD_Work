@@ -683,8 +683,10 @@ function initialAskWorkingTimeline(): AskOrchestrationStatusEvent[] {
   return [
     { type: 'orchestrationStatus', id: 'context', label: 'Reading capsule', status: 'active', detail: 'Checking the active capsule.' },
     { type: 'orchestrationStatus', id: 'triage', label: 'Planning workflow', status: 'pending', detail: 'Classifying the research path.' },
-    { type: 'orchestrationStatus', id: 'agent', label: 'Collecting sources', status: 'pending', detail: 'Choosing the source and policy agent path.' },
-    { type: 'orchestrationStatus', id: 'tools', label: 'Reviewing claims', status: 'pending', detail: 'Selecting safe tool routes and evidence checks.' },
+    { type: 'orchestrationStatus', id: 'agent', label: 'Source discovery', status: 'pending', detail: 'Choosing the source and policy agent path.' },
+    { type: 'orchestrationStatus', id: 'documents', label: 'Document retrieval', status: 'pending', detail: 'Checking attached source and document receipts.' },
+    { type: 'orchestrationStatus', id: 'tools', label: 'Claim review', status: 'pending', detail: 'Reviewing claims, selecting safe tool routes, and checking evidence.' },
+    { type: 'orchestrationStatus', id: 'language-policy', label: 'Language and policy review', status: 'pending', detail: 'Checking terminology, caveats, and unsupported claims.' },
     { type: 'orchestrationStatus', id: 'worker', label: 'Producing output', status: 'pending', detail: 'Deciding whether durable work is needed.' },
     { type: 'orchestrationStatus', id: 'draft', label: 'Saving receipts', status: 'pending', detail: 'Waiting to draft and save the answer.' },
   ];
@@ -811,16 +813,30 @@ function mergeWorkingTimeline(
     {
       type: 'orchestrationStatus' as const,
       id: 'agent' as const,
-      label: 'Collecting sources',
+      label: 'Source discovery',
       status: 'complete' as const,
       detail: `${receipt.routingDecision.userSafeLabels.policyAgent} selected.`,
     },
     {
       type: 'orchestrationStatus' as const,
+      id: 'documents' as const,
+      label: 'Document retrieval',
+      status: receipt.capsule.contextHealth === 'missing' ? 'warn' as const : 'complete' as const,
+      detail: `${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'} and ${receipt.capsule.sourcePreviewCount} source preview${receipt.capsule.sourcePreviewCount === 1 ? '' : 's'} attached.`,
+    },
+    {
+      type: 'orchestrationStatus' as const,
       id: 'tools' as const,
-      label: 'Reviewing claims',
+      label: 'Claim review',
       status: receipt.toolRouting.blockedToolIds.length ? 'warn' as const : 'complete' as const,
-      detail: `${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`,
+      detail: `Reviewing claims: ${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`,
+    },
+    {
+      type: 'orchestrationStatus' as const,
+      id: 'language-policy' as const,
+      label: 'Language and policy review',
+      status: receipt.languagePolicyReview?.required ? 'complete' as const : 'skipped' as const,
+      detail: receipt.languagePolicyReview?.required ? 'Sourceability and terminology review queued for this research/policy turn.' : 'Standard terminology check only; no specialist policy review needed.',
     },
     {
       type: 'orchestrationStatus' as const,
@@ -853,7 +869,7 @@ function AskWorkingTimeline({ events }: { events: AskOrchestrationStatusEvent[] 
   return (
     <section className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2" data-testid="ask-working-timeline">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">TACITUS routing</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Agent Activity</p>
         <span className="font-mono text-[10px] text-slate-500">live route</span>
       </div>
       <ol className="mt-2 grid gap-1.5 sm:grid-cols-2">

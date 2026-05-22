@@ -48,6 +48,7 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       'agent_router',
       'model_tier',
       'tool_router',
+      'language_policy',
       'worker',
       'draft',
     ]);
@@ -90,6 +91,16 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       requiresCurrentGrounding: true,
     });
     expect(receipt.routingDecision.userSafeLabels.modelTier).toBe('TACITUS selected deep reasoning');
+    expect(receipt.generationBudget).toMatchObject({
+      mode: 'long_context',
+      maxOutputTokens: 32768,
+      continuationRecommended: true,
+    });
+    expect(receipt.languagePolicyReview).toMatchObject({
+      required: true,
+      posture: 'research_policy_review',
+      checks: expect.arrayContaining(['terminology', 'unsupported-claims', 'primary-source-gap-language']),
+    });
   });
 
   it('routes capsule-building and formatting prompts to concrete worker modes', () => {
@@ -168,8 +179,10 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     expect(events.map((event) => event.label)).toEqual([
       'Reading capsule',
       'Planning workflow',
-      'Collecting sources',
-      'Reviewing claims',
+      'Source discovery',
+      'Document retrieval',
+      'Claim review',
+      'Language and policy review',
       'Producing output',
       'Saving receipts',
     ]);
@@ -178,9 +191,16 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       'complete',
       'complete',
       'complete',
+      'complete',
+      'complete',
       'queued',
       'active',
     ]);
+    expect(events.find((event) => event.id === 'language-policy')).toMatchObject({
+      detail: 'Sourceability and terminology review queued for this research/policy turn.',
+      sourceCount: 2,
+      warningCount: 3,
+    });
     expect(events.find((event) => event.id === 'worker')).toMatchObject({
       detail: 'Durable agent run queued for deeper work.',
       agentLabel: 'Sourceability Reviewer',

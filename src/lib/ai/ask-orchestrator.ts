@@ -5,11 +5,12 @@ import { agentToolRequiresApproval, getAgentToolDefinition } from '@/lib/agent-r
 import { buildAgentWorkflowPlan, type AgentWorkflowPlan } from '@/lib/agent-runtime/workflow-plan';
 import { getPolicyAgent, policyAgentRunIntent, type PolicyAgentOutputDestination, type PolicyAgentRunIntent } from '@/lib/product/policy-agents';
 import { buildTacitusRoutingDecision, type TacitusRoutingDecision } from '@/lib/ai/tacitus-routing-policy';
+import { getModelMatrixEntry } from '@/lib/ai/model-matrix';
 
 export type AskAgenticMode = 'direct_with_receipts' | 'queue_agent_run';
 export type AskOrchestrationComplexity = 'simple' | 'standard' | 'deep';
 export type AskSupervisorAction = 'direct_answer' | 'queue_agent_run';
-export type AskOrchestrationStageName = 'capsule' | 'triage' | 'agent_router' | 'model_tier' | 'tool_router' | 'worker' | 'draft';
+export type AskOrchestrationStageName = 'capsule' | 'triage' | 'agent_router' | 'model_tier' | 'tool_router' | 'language_policy' | 'worker' | 'draft';
 
 export interface AskOrchestrationStage {
   stage: AskOrchestrationStageName;
@@ -57,6 +58,9 @@ export interface AskConversationOrchestrationReceipt {
     groundingPosture: string;
     degradedReason: string | null;
   };
+  generationBudget: AskGenerationBudgetReceipt;
+  languagePolicyReview: AskLanguagePolicyReviewReceipt;
+  researchModePresets: AskResearchModePreset[];
   capsuleReadReceipt: CapsuleReadReceipt;
   workflowPlan: AgentWorkflowPlan;
   routingDecision: TacitusRoutingDecision;
@@ -74,8 +78,10 @@ export type AskOrchestrationStatusId =
   | 'context'
   | 'triage'
   | 'agent'
+  | 'documents'
   | 'model-tier'
   | 'tools'
+  | 'language-policy'
   | 'worker'
   | 'draft';
 
@@ -95,6 +101,8 @@ export interface AskOrchestrationStatusEvent {
   agentLabel?: string | null;
   selectedToolIds?: string[];
   sourceCount?: number;
+  capsuleCount?: number;
+  warningCount?: number;
   approvalGateCount?: number;
   outputTarget?: string | null;
   groundingPosture?: string;
@@ -102,6 +110,28 @@ export interface AskOrchestrationStatusEvent {
   degradedReason?: string | null;
   fallbackPosture?: string;
 }
+
+export interface AskGenerationBudgetReceipt {
+  mode: 'standard' | 'long_context';
+  taskKind: 'balanced' | 'long_context';
+  selectedModelId: string;
+  maxOutputTokens: number;
+  continuationRecommended: boolean;
+  continuationTargets: Array<'memo' | 'evidence_annex' | 'output_capsule'>;
+}
+
+export interface AskLanguagePolicyReviewReceipt {
+  required: boolean;
+  posture: 'standard_language_check' | 'research_policy_review';
+  checks: string[];
+}
+
+export type AskResearchModePreset =
+  | 'sourceability-review'
+  | 'current-research-memo'
+  | 'red-team-assumptions'
+  | 'policy-language-check'
+  | 'evidence-annex';
 
 export function buildAskConversationOrchestrationReceipt(input: {
   prompt: string;
@@ -141,6 +171,17 @@ export function buildAskConversationOrchestrationReceipt(input: {
     selectedToolIds,
     sourcePreviewCount: input.sourcePreviewCount,
     documentCount: input.contextReceipt.coreRefs.sourceDocumentCoreIds.length,
+  });
+  const generationBudget = buildAskGenerationBudgetReceipt({
+    complexity,
+    intent: input.intent,
+    selectedModelId: routingDecision.selectedModelId,
+  });
+  const languagePolicyReview = buildAskLanguagePolicyReview({
+    intent: input.intent,
+    complexity,
+    selectedToolIds,
+    activeGapCount,
   });
   const capsuleReadReceipt = buildCapsuleReadReceiptFromAsk({
     capsuleId: input.contextReceipt.capsuleId,
@@ -202,6 +243,9 @@ export function buildAskConversationOrchestrationReceipt(input: {
       blockedToolIds,
     },
     grounding,
+    generationBudget,
+    languagePolicyReview,
+    researchModePresets: researchModePresetsFor(input.intent, complexity),
     capsuleReadReceipt,
     workflowPlan,
     routingDecision,
@@ -239,6 +283,13 @@ export function buildAskConversationOrchestrationReceipt(input: {
         detail: `${selectedToolIds.length} tool route${selectedToolIds.length === 1 ? '' : 's'} selected; ${blockedToolIds.length} approval-gated.`,
       },
       {
+        stage: 'language_policy',
+        status: languagePolicyReview.required ? 'warn' : 'ok',
+        detail: languagePolicyReview.required
+          ? 'Language, terminology, sourceability, and policy caveat review required before export.'
+          : 'Standard terminology and policy-language checks attached.',
+      },
+      {
         stage: 'worker',
         status: shouldQueue ? 'warn' : 'ok',
         detail: shouldQueue
@@ -262,6 +313,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
   const groundingPosture = receipt.grounding.groundingPosture;
   const sourcePosture = receipt.grounding.sourcePosture;
   const degradedReason = receipt.grounding.degradedReason;
+  const warningCount = receipt.capsule.activeGapCount;
   const fallbackPosture = queuedRun?.status ?? (receipt.supervisor.action === 'queue_agent_run' ? 'queued' : 'synchronous');
   const agentStatus = queuedRun?.status === 'ledger_failed'
     ? 'failed'
@@ -297,23 +349,48 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     {
       type: 'orchestrationStatus',
       id: 'agent',
-      label: 'Collecting sources',
+      label: 'Source discovery',
       status: 'complete',
       detail: safeStatusDetail(`${receipt.routingDecision.userSafeLabels.policyAgent} selected.`),
       selectedToolIds,
       sourceCount: receipt.capsule.sourcePreviewCount,
+      capsuleCount: receipt.capsule.capsuleId ? 1 : 0,
       groundingPosture,
       sourcePosture,
       degradedReason,
     },
     {
       type: 'orchestrationStatus',
+      id: 'documents',
+      label: 'Document retrieval',
+      status: receipt.capsule.contextHealth === 'missing' ? 'warn' : 'complete',
+      detail: safeStatusDetail(`${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'} and ${receipt.capsule.sourcePreviewCount} source preview${receipt.capsule.sourcePreviewCount === 1 ? '' : 's'} attached.`),
+      sourceCount: receipt.capsule.sourcePreviewCount,
+      capsuleCount: receipt.capsule.capsuleId ? 1 : 0,
+      warningCount,
+    },
+    {
+      type: 'orchestrationStatus',
       id: 'tools',
-      label: 'Reviewing claims',
+      label: 'Claim review',
       status: receipt.toolRouting.blockedToolIds.length ? 'warn' : 'complete',
       detail: safeStatusDetail(`${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`),
       selectedToolIds,
       approvalGateCount: receipt.toolRouting.approvalRequiredToolIds.length,
+      sourceCount: receipt.capsule.sourcePreviewCount,
+      warningCount,
+    },
+    {
+      type: 'orchestrationStatus',
+      id: 'language-policy',
+      label: 'Language and policy review',
+      status: receipt.languagePolicyReview.required ? 'complete' : 'skipped',
+      detail: receipt.languagePolicyReview.required
+        ? 'Sourceability and terminology review queued for this research/policy turn.'
+        : 'Standard terminology check only; no specialist policy review needed.',
+      selectedToolIds,
+      sourceCount: receipt.capsule.sourcePreviewCount,
+      warningCount,
     },
     {
       type: 'orchestrationStatus',
@@ -329,6 +406,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
       agentLabel: policyAgent?.label ?? receipt.routingDecision.userSafeLabels.policyAgent,
       selectedToolIds,
       sourceCount: receipt.capsule.sourcePreviewCount,
+      warningCount,
       approvalGateCount: receipt.toolRouting.approvalRequiredToolIds.length,
       outputTarget,
       groundingPosture,
@@ -345,6 +423,55 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
       outputTarget,
     },
   ];
+}
+
+export function buildAskGenerationBudgetReceipt(input: {
+  complexity: AskOrchestrationComplexity;
+  intent: AskIntent;
+  selectedModelId: string;
+}): AskGenerationBudgetReceipt {
+  const longContext = input.complexity === 'deep'
+    || input.intent === 'research_memo'
+    || input.intent === 'sourceability_review'
+    || input.intent === 'red_team_review'
+    || input.intent === 'handover';
+  const taskKind = longContext ? 'long_context' : 'balanced';
+  const entry = getModelMatrixEntry(taskKind);
+  return {
+    mode: longContext ? 'long_context' : 'standard',
+    taskKind,
+    selectedModelId: input.selectedModelId,
+    maxOutputTokens: entry.maxTokens ?? (longContext ? 8192 : 4096),
+    continuationRecommended: longContext,
+    continuationTargets: longContext ? ['memo', 'evidence_annex', 'output_capsule'] : ['memo'],
+  };
+}
+
+function buildAskLanguagePolicyReview(input: {
+  intent: AskIntent;
+  complexity: AskOrchestrationComplexity;
+  selectedToolIds: string[];
+  activeGapCount: number;
+}): AskLanguagePolicyReviewReceipt {
+  const required = input.complexity === 'deep'
+    || input.intent !== 'normal_answer'
+    || input.selectedToolIds.includes('sourceability-reviewer')
+    || input.activeGapCount > 0;
+  return {
+    required,
+    posture: required ? 'research_policy_review' : 'standard_language_check',
+    checks: required
+      ? ['terminology', 'policy-neutrality', 'unsupported-claims', 'primary-source-gap-language']
+      : ['terminology', 'policy-neutrality'],
+  };
+}
+
+function researchModePresetsFor(intent: AskIntent, complexity: AskOrchestrationComplexity): AskResearchModePreset[] {
+  const presets: AskResearchModePreset[] = ['policy-language-check'];
+  if (intent === 'sourceability_review' || complexity === 'deep') presets.push('sourceability-review', 'evidence-annex');
+  if (intent === 'research_memo' || complexity === 'deep') presets.push('current-research-memo');
+  if (intent === 'red_team_review') presets.push('red-team-assumptions');
+  return Array.from(new Set(presets));
 }
 
 export function markAskOrchestrationRunQueued(

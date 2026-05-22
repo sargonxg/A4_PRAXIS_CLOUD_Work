@@ -197,4 +197,55 @@ describe('agent run API validation schema', () => {
     expect(JSON.stringify(dto)).not.toContain('internalSpendCents');
     expect(JSON.stringify(dto)).not.toContain('2500');
   });
+
+  it('preserves user-facing proof fields while dropping raw provider errors and secrets', () => {
+    const dto = toAgentRunOutput({
+      id: 'run-proof-1',
+      status: 'running',
+      capsuleId: 'cap-1',
+      createdAt: '2026-05-22T12:00:00.000Z',
+      updatedAt: '2026-05-22T12:01:00.000Z',
+      objective: 'Review claims.',
+      metadata: {
+        policyAgentId: 'sourceability-reviewer',
+        selectedToolIds: ['context-resolve', 'sourceability-reviewer'],
+        sourceCount: 4,
+        approvalGateCount: 1,
+        sourcePosture: 'Source receipts saved',
+        groundingPosture: 'Source review requested',
+        sourceabilityLedgerSummary: {
+          totalClaims: 6,
+          supportedClaims: 2,
+          weakClaims: 1,
+          unsupportedClaims: 1,
+          contradictedClaims: 0,
+          modelPriorClaims: 1,
+          assumptionClaims: 1,
+        },
+        rawProviderError: 'GOOGLE_API_KEY=secret stack trace',
+        serviceAccountEmail: 'praxis@appspot.gserviceaccount.com',
+        internalEstimatedCostCents: 9999,
+      },
+    } as never);
+
+    expect(dto).toMatchObject({
+      policyAgentLabel: 'Sourceability Reviewer',
+      selectedTools: ['context-resolve', 'sourceability-reviewer'],
+      sourceabilityLedgerSummary: {
+        totalClaims: 6,
+        unsupportedClaims: 1,
+        modelPriorClaims: 1,
+      },
+      contextReceipt: {
+        sourceCount: 4,
+        approvalGateCount: 1,
+        groundingPosture: 'Source review requested',
+      },
+    });
+    const serialized = JSON.stringify(dto);
+    expect(serialized).not.toContain('GOOGLE_API_KEY');
+    expect(serialized).not.toContain('stack trace');
+    expect(serialized).not.toContain('gserviceaccount.com');
+    expect(serialized).not.toContain('9999');
+  });
 });

@@ -108,6 +108,14 @@ describe('ask answer envelope', () => {
       intent: 'normal_answer',
       sourceCards,
       gaps: ['No current field confirmation.'],
+      generationReceipt: {
+        selectedModel: 'gemini-3.5-flash',
+        fallbackModel: null,
+        budgetMode: 'standard',
+        maxOutputTokens: 4096,
+        finishReason: 'stop',
+        usage: { inputTokens: 100, outputTokens: 240, totalTokens: 340 },
+      },
       provenance: {
         capsuleId: 'cap-1',
         capsuleVersion: 2,
@@ -118,6 +126,29 @@ describe('ask answer envelope', () => {
 
     expect(envelope.style.mode).toBe('claude_like_dialogue');
     expect(envelope.sourceCards.length).toBeGreaterThanOrEqual(1);
+    expect(envelope.generationReceipt).toMatchObject({
+      selectedModel: 'gemini-3.5-flash',
+      budgetMode: 'standard',
+      maxOutputTokens: 4096,
+      finishReason: 'stop',
+      usage: { inputTokens: 100, outputTokens: 240, totalTokens: 340 },
+    });
+    expect(envelope.sourceAudit).toMatchObject({
+      sourceCount: sourceCards.length,
+      gapCount: 1,
+      unsupportedClaimCount: 0,
+    });
+    expect(envelope.claimLedgerSummary).toMatchObject({
+      totalClaims: 2,
+      supportedClaims: 1,
+      unsupportedClaims: 0,
+      assumptionClaims: 1,
+    });
+    expect(envelope.continuationActions.map((action) => action.id)).toEqual([
+      'continue-as-memo',
+      'expand-evidence-annex',
+      'create-output-capsule',
+    ]);
     expect(envelope.claimGrounding[0]).toMatchObject({
       grounding: 'source-backed',
       sourceCardIds: ['doc-1:chunk-1'],
