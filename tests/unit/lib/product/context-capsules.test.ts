@@ -167,7 +167,7 @@ describe('context capsule product contract', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(129);
+    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(169);
     expect(starterIds.size).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
@@ -175,7 +175,7 @@ describe('context capsule product contract', () => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toEqual({ situation: 43, tool: 55, output: 24, user: 7 });
+    expect(categoryCounts).toEqual({ situation: 59, tool: 67, output: 30, user: 13 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
@@ -264,6 +264,78 @@ describe('context capsule product contract', () => {
       expect(starter?.category).toBe('output');
       expect(starter?.tags).toEqual(expect.arrayContaining(['drafting-style']));
       expect(starter?.recommendedToolIds).toContain('memo-drafter');
+    }
+  });
+
+  it('adds real-work v2 capsules for situations, tools, outputs, and expert user roles', () => {
+    const expectedSituationIds = [
+      'starter-situation-red-sea-maritime-logistics-risk',
+      'starter-situation-sudan-famine-access-civilian-protection',
+      'starter-situation-haiti-security-humanitarian-corridor',
+      'starter-situation-eastern-drc-minerals-protection-risk',
+      'starter-situation-sahel-transition-regional-security',
+      'starter-situation-south-china-sea-maritime-incident-law',
+      'starter-situation-arctic-shipping-minerals-governance',
+      'starter-situation-public-sector-ransomware-service-continuity',
+      'starter-situation-election-observation-information-integrity',
+      'starter-situation-migration-border-reception-capacity',
+      'starter-situation-water-stress-transboundary-allocation',
+      'starter-situation-power-grid-flexibility-critical-infrastructure',
+      'starter-situation-disaster-recovery-loss-damage-finance',
+      'starter-situation-public-health-infodemic-emergency-trust',
+      'starter-situation-forced-labor-import-supply-chain-risk',
+      'starter-situation-procurement-integrity-major-projects',
+    ];
+    const expectedToolIds = [
+      'starter-tool-source-reliability-triangulation-ladder',
+      'starter-tool-stakeholder-veto-leverage-map',
+      'starter-tool-evidence-freshness-staleness-clock',
+      'starter-tool-policy-option-triage-matrix',
+      'starter-tool-data-gap-interrogatory-builder',
+      'starter-tool-legal-mandate-redline-check',
+      'starter-tool-corporate-exposure-heatmap',
+      'starter-tool-humanitarian-access-negotiation-checklist',
+      'starter-tool-scenario-indicator-watchlist',
+      'starter-tool-public-narrative-risk-premortem',
+      'starter-tool-board-assurance-question-set',
+      'starter-tool-counterparty-ownership-escalation-tree',
+    ];
+    const expectedOutputIds = [
+      'starter-output-crisis-daily-senior-brief',
+      'starter-output-sanctions-exposure-note',
+      'starter-output-humanitarian-donor-sitrep',
+      'starter-output-board-decision-memo-pack',
+      'starter-output-ministerial-question-period-brief',
+      'starter-output-policy-implementation-roadmap',
+    ];
+    const expectedUserIds = [
+      'starter-user-un-humanitarian-access-officer',
+      'starter-user-sanctions-compliance-counsel',
+      'starter-user-corporate-supply-chain-esg-lead',
+      'starter-user-cabinet-policy-advisor',
+      'starter-user-investigative-research-analyst',
+      'starter-user-field-program-manager',
+    ];
+
+    for (const starterId of [...expectedSituationIds, ...expectedToolIds, ...expectedOutputIds, ...expectedUserIds]) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter, `${starterId} missing`).toBeTruthy();
+      expect(starter?.tags).toEqual(expect.arrayContaining(['real-work', 'v2-context', 'no-affiliation']));
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.excerpts.length, `${starterId} excerpts`).toBeGreaterThanOrEqual(2);
+      expect(starter?.suggestedQuestions.length, `${starterId} questions`).toBeGreaterThanOrEqual(3);
+      expect(starter?.suggestedNextActions.length, `${starterId} actions`).toBeGreaterThanOrEqual(3);
+      expect(starter?.richProfile.userJob, `${starterId} user job`).toMatch(/real work|workday|brief|decision|review|field|board|minister|case/i);
+      expect(starter?.richProfile.improves.join(' '), `${starterId} improves`).toMatch(/real|work|expert|decision|handover/i);
+      expect(starter?.humanReview?.limitations.join(' '), `${starterId} disclaimer`).toMatch(/not affiliated|not an affiliation|endorsement/i);
+      expect(buildCapsuleStarterPromptBlock(starterId)).toEqual(expect.stringContaining('not affiliated'));
+    }
+
+    for (const starterId of expectedToolIds) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter?.category).toBe('tool');
+      expect(starter?.tags).toEqual(expect.arrayContaining(['thinking-device', 'review-gated']));
+      expect(starter?.deviceProfile?.humanReviewGate).toMatch(/human|review|approval/i);
     }
   });
 

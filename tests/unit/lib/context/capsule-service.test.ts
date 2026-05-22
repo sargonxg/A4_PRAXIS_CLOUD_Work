@@ -483,6 +483,29 @@ describe('capsule service', () => {
       promotionRequired: 'review-card',
       postgresProjection: 'capsule-plus-proposals-only',
     });
+    expect(starterAdvisoryMemory?.memoryUseCases).toEqual(expect.arrayContaining([
+      expect.stringMatching(/recall|brief|review|similar/i),
+    ]));
+    expect(starterAdvisoryMemory?.cogneeRememberPolicy).toMatch(/remember|approved|review/i);
+    expect(starterAdvisoryMemory?.cogneeRecallPolicy).toMatch(/advisory|review/i);
+    expect(starterAdvisoryMemory?.sqlProjectionTargets).toEqual(expect.arrayContaining([
+      'capsule_plus.graph_proposals',
+      'capsule_plus.model_mappings',
+    ]));
+    expect(starterAdvisoryMemory?.realityCheck).toMatch(/real|work|review|decision|expert/i);
+    const realWorkStarterAdvisory = db.data.get('users/u1/capsules/starter-situation-red-sea-maritime-logistics-risk/advisoryMemoryHits/starter-advisory-context') as Record<string, unknown> | undefined;
+    expect(realWorkStarterAdvisory).toMatchObject({
+      capsuleId: 'starter-situation-red-sea-maritime-logistics-risk',
+      advisoryOnly: true,
+      cogneeMode: 'not-ingested',
+      promotionRequired: 'review-card',
+    });
+    expect(realWorkStarterAdvisory?.sqlProjectionTargets).toEqual(expect.arrayContaining([
+      'capsule_plus.graph_proposals',
+      'agent_runtime.capsule_read_receipts',
+    ]));
+    expect(db.data.has('users/u1/capsules/starter-situation-red-sea-maritime-logistics-risk/sources/unctad-trade-development-foresights-2026')).toBe(true);
+    expect(db.data.has('users/u1/capsules/starter-user-sanctions-compliance-counsel/sources/ofac-framework-compliance')).toBe(true);
 
     const resolved = await resolveInjectableContext({ uid: 'u1', capsuleId: 'starter-tool-source-pack-builder' }, deps(db));
     expect(resolved.promptBlock).toContain('[starter_capsule_definition]');
