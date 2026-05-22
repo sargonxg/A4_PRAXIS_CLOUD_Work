@@ -22,6 +22,19 @@ import {
 export type CapsuleScope = 'user' | 'situation' | 'team';
 export type CapsuleVisibility = 'private' | 'organization' | 'shared' | 'public' | 'unlisted';
 export type CapsuleTrustLevel = 'green' | 'amber' | 'red' | 'grey';
+export type CapsuleSchemaVersion = 1 | 2;
+export type CapsuleReviewState =
+  | 'draft'
+  | 'proposed'
+  | 'moderation_required'
+  | 'owner_review'
+  | 'accepted'
+  | 'applied'
+  | 'rejected'
+  | 'superseded';
+export type CapsuleReviewSourceType = 'user' | 'team' | 'public' | 'cognee' | 'agent' | 'ontology' | 'graph' | 'source-gap' | 'quality-audit';
+export type CapsuleReviewTarget = 'capsuleEnvelope' | 'anatomy' | 'ontologyStack' | 'graphProposal' | 'sourceGap' | 'advisoryMemory';
+export type CapsuleGateState = 'none' | CapsuleReviewState;
 export type CapsuleLockKind =
   | 'user'
   | 'situation'
@@ -103,10 +116,123 @@ export interface CapsuleTrustSemaphore {
   checkedAt: string;
 }
 
+export interface CapsuleReadinessSummary {
+  sourceBacked: boolean;
+  graphLinked: boolean;
+  advisoryMemoryHitCount: number;
+  graphProposalCount: number;
+  reviewCardCount: number;
+  forbiddenUseCount: number;
+  staleRuleCount: number;
+  reviewRequired: boolean;
+  updatedAt: string;
+}
+
+export interface CapsuleReviewEvidence {
+  id: string;
+  label: string;
+  advisory: boolean;
+  sourceType?: string;
+  url?: string | null;
+}
+
+export interface CapsuleReviewApplyMetadata {
+  reviewerUid: string;
+  appliedAt: string;
+  targetVersion: number;
+  diffHash: string;
+  confirmationReason: string;
+}
+
+export interface CapsuleReviewCard {
+  reviewCardId: string;
+  capsuleId: string;
+  ownerUid: string;
+  title: string;
+  sourceType: CapsuleReviewSourceType;
+  target: CapsuleReviewTarget;
+  state: CapsuleReviewState;
+  evidence: CapsuleReviewEvidence[];
+  proposedEnvelopePatch: Partial<Pick<PraxisCapsule,
+    'label'
+    | 'summary'
+    | 'activeOntologyStackId'
+    | 'activeReadContractId'
+    | 'latestGateState'
+    | 'lockedCoreKinds'
+    | 'coreRefs'
+    | 'readinessSummary'
+  >>;
+  applyMetadata: CapsuleReviewApplyMetadata | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCapsuleReviewCardInput {
+  reviewCardId?: string;
+  title: string;
+  sourceType: CapsuleReviewSourceType;
+  target: CapsuleReviewTarget;
+  state?: CapsuleReviewState;
+  publicProposalsEnabled?: boolean;
+  evidence?: CapsuleReviewEvidence[];
+  proposedEnvelopePatch?: CapsuleReviewCard['proposedEnvelopePatch'];
+}
+
+export interface CapsuleOntologySuggestion {
+  ontologyId: string;
+  label?: string;
+  evidenceIds?: string[];
+}
+
+export interface CapsuleOntologyRejection {
+  ontologyId: string;
+  reason: string;
+  rejectedAt: string;
+  evidenceIds?: string[];
+}
+
+export interface OntologyStackResolution {
+  stackId: string;
+  capsuleId: string;
+  activeOntologyIds: string[];
+  resolverInputs: {
+    primaryDomainOntologyId: string;
+    secondaryDomainOntologyId: string | null;
+    workOntologyId: string;
+  };
+  candidateSuggestions: CapsuleOntologySuggestion[];
+  rejectedSuggestions: CapsuleOntologyRejection[];
+  validation: {
+    maxActiveCaseOntologies: 3;
+    activeCaseOntologyCount: number;
+    shaclStatus: 'valid' | 'invalid';
+    messages: string[];
+  };
+  rationale: string;
+  ontologyVersions: Record<string, string>;
+  sourceEvidenceIds: string[];
+  resolvedAt: string;
+}
+
+export interface ResolveCapsuleOntologyStackInput {
+  capsuleId: string;
+  stackId?: string;
+  primaryDomainOntologyId: string;
+  secondaryDomainOntologyId?: string | null;
+  workOntologyId?: string | null;
+  candidateSuggestions?: CapsuleOntologySuggestion[];
+  rejectedSuggestions?: CapsuleOntologyRejection[];
+  ontologyVersions?: Record<string, string>;
+  sourceEvidenceIds?: string[];
+  resolvedAt?: string;
+}
+
 export interface PraxisCapsule {
   capsuleId: string;
   ownerUid: string;
   scope: CapsuleScope;
+  summary?: string;
   parentCapsuleId: string | null;
   forkedFromVersion: number | null;
   associatedCapsuleIds: string[];
@@ -119,11 +245,15 @@ export interface PraxisCapsule {
   access: CapsuleAccessPolicy;
   community: CapsuleCommunityProfile;
   trust: CapsuleTrustSemaphore;
+  activeOntologyStackId?: string;
+  activeReadContractId?: string;
+  readinessSummary?: CapsuleReadinessSummary;
+  latestGateState?: CapsuleGateState;
   starterSnapshot?: CapsuleStarterSnapshot | null;
   createdAt: string;
   updatedAt: string;
   archivedAt?: string | null;
-  schemaVersion: 1;
+  schemaVersion: CapsuleSchemaVersion;
   version: number;
   label: string;
 }
@@ -131,6 +261,7 @@ export interface PraxisCapsule {
 export interface CreateCapsuleInput {
   capsuleId?: string;
   label?: string;
+  summary?: string;
   scope?: CapsuleScope;
   associatedCapsuleIds?: string[];
   coreRefs?: Partial<CapsuleCoreRefs>;
@@ -140,6 +271,10 @@ export interface CreateCapsuleInput {
   access?: Partial<CapsuleAccessPolicy>;
   community?: Partial<CapsuleCommunityProfile>;
   starterSnapshot?: CapsuleStarterSnapshot | null;
+  activeOntologyStackId?: string | null;
+  activeReadContractId?: string | null;
+  readinessSummary?: Partial<CapsuleReadinessSummary>;
+  latestGateState?: CapsuleGateState;
 }
 
 export interface CapsuleCombineConflict {
@@ -262,9 +397,14 @@ export async function createCapsule(
     createdAt: timestamp,
     updatedAt: timestamp,
     archivedAt: null,
-    schemaVersion: 1,
+    schemaVersion: 2,
     version: 1,
     label: input.label ?? defaultCapsuleLabel(input.coreRefs),
+    summary: input.summary,
+    activeOntologyStackId: input.activeOntologyStackId,
+    activeReadContractId: input.activeReadContractId,
+    readinessSummary: input.readinessSummary,
+    latestGateState: input.latestGateState,
   });
   await ref.set(capsule, { merge: true });
   return capsule;
@@ -413,6 +553,153 @@ export async function promoteCapsuleSourceGaps(
     capsule: updated ?? capsule,
     proposals,
     reviewRequired: true,
+  };
+}
+
+export async function createCapsuleReviewCard(
+  uid: string,
+  capsuleId: string,
+  input: CreateCapsuleReviewCardInput,
+  deps?: CapsuleServiceDeps,
+): Promise<CapsuleReviewCard> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) throw new Error(`Capsule not found: ${capsuleId}`);
+  if (input.sourceType === 'public' && !input.publicProposalsEnabled) {
+    throw new Error('Public capsule proposals are not enabled for this workspace.');
+  }
+  const timestamp = nowIso(deps);
+  const state = input.sourceType === 'public'
+    ? 'moderation_required'
+    : normalizeReviewState(input.state ?? 'proposed');
+  const reviewCardId = cleanId(input.reviewCardId ?? `review-card-${stableId(`${uid}:${capsule.capsuleId}:${input.title}:${timestamp}`)}`, `review-card-${stableId(timestamp)}`);
+  const card: CapsuleReviewCard = {
+    reviewCardId,
+    capsuleId: capsule.capsuleId,
+    ownerUid: uid,
+    title: cleanText(input.title, 180) || 'Capsule review card',
+    sourceType: input.sourceType,
+    target: input.target,
+    state,
+    evidence: normalizeReviewEvidence(input.evidence ?? []),
+    proposedEnvelopePatch: normalizeReviewEnvelopePatch(input.proposedEnvelopePatch),
+    applyMetadata: null,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+  const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
+  await ref.collection('reviewCards').doc(card.reviewCardId).set(card, { merge: true });
+  const readinessSummary = normalizeReadinessSummary({
+    ...(capsule.readinessSummary ?? {}),
+    reviewCardCount: Math.max(capsule.readinessSummary?.reviewCardCount ?? 0, 0) + 1,
+    reviewRequired: true,
+  }, capsule.coreRefs, state, timestamp);
+  await ref.set({
+    latestGateState: state,
+    readinessSummary,
+    updatedAt: timestamp,
+  }, { merge: true });
+  return card;
+}
+
+export async function applyCapsuleReviewCard(
+  uid: string,
+  capsuleId: string,
+  reviewCardId: string,
+  metadata: Partial<CapsuleReviewApplyMetadata>,
+  deps?: CapsuleServiceDeps,
+): Promise<{ capsule: PraxisCapsule; card: CapsuleReviewCard } | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  const applyMetadata = normalizeApplyMetadata(metadata, capsule.version + 1, nowIso(deps));
+  const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
+  const cardRef = ref.collection('reviewCards').doc(cleanId(reviewCardId, 'review-card'));
+  const cardSnap = await cardRef.get();
+  if (!cardSnap.exists) return null;
+  const card = normalizeReviewCard(cardSnap.data(), capsule, cardRef.id);
+  const patch = card.proposedEnvelopePatch;
+  const updated = sanitizeCapsule({
+    ...capsule,
+    ...patch,
+    coreRefs: patch.coreRefs ? normalizeCoreRefs({ ...capsule.coreRefs, ...patch.coreRefs }) : capsule.coreRefs,
+    lockedCoreKinds: patch.lockedCoreKinds ?? capsule.lockedCoreKinds,
+    readinessSummary: {
+      ...(capsule.readinessSummary ?? {}),
+      ...(patch.readinessSummary ?? {}),
+      reviewCardCount: Math.max(capsule.readinessSummary?.reviewCardCount ?? 1, 1),
+    },
+    latestGateState: patch.latestGateState ?? 'applied',
+    version: applyMetadata.targetVersion,
+    updatedAt: applyMetadata.appliedAt,
+  });
+  const appliedCard: CapsuleReviewCard = {
+    ...card,
+    state: 'applied',
+    applyMetadata,
+    updatedAt: applyMetadata.appliedAt,
+  };
+  const batch = dbOf(deps).batch();
+  batch.set(ref.collection('versions').doc(`v${capsule.version}`), capsule, { merge: true });
+  batch.set(ref.collection('versions').doc(`v${updated.version}`), updated, { merge: true });
+  batch.set(ref, updated, { merge: true });
+  batch.set(cardRef, appliedCard, { merge: true });
+  await batch.commit();
+  await mirrorActiveContextStack(uid, updated, deps);
+  return { capsule: updated, card: appliedCard };
+}
+
+export function resolveCapsuleOntologyStack(input: ResolveCapsuleOntologyStackInput): OntologyStackResolution {
+  const resolvedAt = input.resolvedAt ?? new Date().toISOString();
+  const primary = cleanText(input.primaryDomainOntologyId, 160) || 'domain:general-policy';
+  const secondary = cleanText(input.secondaryDomainOntologyId, 160) || null;
+  const work = cleanText(input.workOntologyId, 160) || 'work:policy-analysis';
+  const activeCaseOntologies = uniqueStrings([primary, secondary, work].filter((value): value is string => Boolean(value))).slice(0, 3);
+  const activeOntologyIds = ['aco:base', ...activeCaseOntologies];
+  const candidates = normalizeOntologySuggestions(input.candidateSuggestions ?? []);
+  const rejectedFromCandidates = candidates
+    .filter((candidate) => !activeOntologyIds.includes(candidate.ontologyId))
+    .map((candidate): CapsuleOntologyRejection => ({
+      ontologyId: candidate.ontologyId,
+      reason: 'Candidate exceeds the active ontology stack cap.',
+      rejectedAt: resolvedAt,
+      evidenceIds: candidate.evidenceIds ?? [],
+    }));
+  const rejectedSuggestions = dedupeOntologyRejections([
+    ...(input.rejectedSuggestions ?? []),
+    ...rejectedFromCandidates,
+  ]);
+  const sourceEvidenceIds = uniqueStrings([
+    ...(input.sourceEvidenceIds ?? []),
+    ...candidates.flatMap((candidate) => candidate.evidenceIds ?? []),
+    ...rejectedSuggestions.flatMap((candidate) => candidate.evidenceIds ?? []),
+  ]);
+  const validationMessages = activeCaseOntologies.length > 3
+    ? ['Active ontology stack exceeds the PRAXIS cap.']
+    : ['Active ontology stack respects ACO + primary + optional secondary + work ontology.'];
+  return {
+    stackId: cleanId(input.stackId ?? `ontology-stack-${stableId(`${input.capsuleId}:${activeOntologyIds.join('|')}`)}`, 'ontology-stack-default'),
+    capsuleId: cleanId(input.capsuleId, DEFAULT_CONTEXT_STACK_ID),
+    activeOntologyIds,
+    resolverInputs: {
+      primaryDomainOntologyId: primary,
+      secondaryDomainOntologyId: secondary,
+      workOntologyId: work,
+    },
+    candidateSuggestions: candidates,
+    rejectedSuggestions,
+    validation: {
+      maxActiveCaseOntologies: 3,
+      activeCaseOntologyCount: activeCaseOntologies.length,
+      shaclStatus: activeCaseOntologies.length <= 3 ? 'valid' : 'invalid',
+      messages: validationMessages,
+    },
+    rationale: `Resolved ${activeOntologyIds.length} active ontology layer(s); extra candidates remain reviewable, not active context.`,
+    ontologyVersions: {
+      'aco:base': '2026-05',
+      ...Object.fromEntries(activeOntologyIds.filter((id) => id !== 'aco:base').map((id) => [id, input.ontologyVersions?.[id] ?? 'candidate'])),
+      ...(input.ontologyVersions ?? {}),
+    },
+    sourceEvidenceIds,
+    resolvedAt,
   };
 }
 
@@ -669,6 +956,7 @@ export async function bumpCapsuleVersion(
   const updated = sanitizeCapsule({
     ...capsule,
     label: patch.label ?? capsule.label,
+    summary: patch.summary ?? capsule.summary,
     scope: patch.scope ?? capsule.scope,
     associatedCapsuleIds: patch.associatedCapsuleIds
       ? uniqueStrings(cleanStringArray(patch.associatedCapsuleIds).filter((id) => id !== capsule.capsuleId)).slice(0, 20)
@@ -679,6 +967,10 @@ export async function bumpCapsuleVersion(
     health: computeCapsuleHealth({ ...capsule.coreRefs, ...(patch.coreRefs ?? {}) }),
     access: normalizeAccessPolicy({ ...capsule.access, ...(patch.access ?? {}) }),
     community: normalizeCommunityProfile({ ...capsule.community, ...(patch.community ?? {}) }),
+    activeOntologyStackId: patch.activeOntologyStackId ?? capsule.activeOntologyStackId,
+    activeReadContractId: patch.activeReadContractId ?? capsule.activeReadContractId,
+    readinessSummary: patch.readinessSummary ? { ...capsule.readinessSummary, ...patch.readinessSummary } : capsule.readinessSummary,
+    latestGateState: patch.latestGateState ?? capsule.latestGateState,
     version: capsule.version + 1,
     updatedAt: nowIso(deps),
   });
@@ -910,8 +1202,12 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
   const coreRefs = normalizeCoreRefs(isRecord(body.coreRefs) ? body.coreRefs : {});
   const ownerUid = stringOrNull(body.ownerUid) ?? 'unknown-owner';
   const capsuleId = stringOrNull(body.capsuleId) ?? DEFAULT_CONTEXT_STACK_ID;
+  const cleanCapsuleId = cleanId(capsuleId, DEFAULT_CONTEXT_STACK_ID);
   const version = typeof body.version === 'number' && Number.isFinite(body.version) ? Math.max(1, Math.floor(body.version)) : 1;
   const createdAt = stringOrNull(body.createdAt) ?? new Date(0).toISOString();
+  const updatedAt = stringOrNull(body.updatedAt) ?? createdAt;
+  const label = stringOrNull(body.label) ?? defaultCapsuleLabel(coreRefs);
+  const latestGateState = normalizeGateState(body.latestGateState);
   const provenanceBody = isRecord(body.provenance) ? body.provenance : {};
   const provenance: CapsuleProvenance = {
     source: provenanceBody.source === 'context-stack-migration' || provenanceBody.source === 'fork' || provenanceBody.source === 'combine' || provenanceBody.source === 'api' || provenanceBody.source === 'created'
@@ -923,12 +1219,13 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     notes: stringOrNull(provenanceBody.notes) ?? undefined,
   };
   const capsule: Omit<PraxisCapsule, 'trust'> = {
-    capsuleId: cleanId(capsuleId, DEFAULT_CONTEXT_STACK_ID),
+    capsuleId: cleanCapsuleId,
     ownerUid,
     scope: body.scope === 'team' || body.scope === 'situation' || body.scope === 'user' ? body.scope : inferScope(coreRefs),
+    summary: cleanText(body.summary, 600) || label,
     parentCapsuleId: stringOrNull(body.parentCapsuleId),
     forkedFromVersion: typeof body.forkedFromVersion === 'number' ? Math.max(1, Math.floor(body.forkedFromVersion)) : null,
-    associatedCapsuleIds: uniqueStrings(cleanStringArray(body.associatedCapsuleIds).filter((id) => id !== cleanId(capsuleId, DEFAULT_CONTEXT_STACK_ID))).slice(0, 20),
+    associatedCapsuleIds: uniqueStrings(cleanStringArray(body.associatedCapsuleIds).filter((id) => id !== cleanCapsuleId)).slice(0, 20),
     coreRefs,
     retrievalPolicy: normalizeRetrievalPolicy(isRecord(body.retrievalPolicy) ? body.retrievalPolicy : {}),
     health: isContextHealth(body.health) ? enrichContextHealth(body.health) : computeCapsuleHealth(coreRefs),
@@ -937,13 +1234,17 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     provenance,
     access: normalizeAccessPolicy(isRecord(body.access) ? body.access : {}),
     community: normalizeCommunityProfile(isRecord(body.community) ? body.community : {}),
+    activeOntologyStackId: cleanText(body.activeOntologyStackId, 120) || 'ontology-stack-default',
+    activeReadContractId: cleanText(body.activeReadContractId, 120) || 'read-contract-default',
+    readinessSummary: normalizeReadinessSummary(isRecord(body.readinessSummary) ? body.readinessSummary : null, coreRefs, latestGateState, updatedAt),
+    latestGateState,
     starterSnapshot: normalizeStarterSnapshot(body.starterSnapshot),
     createdAt,
-    updatedAt: stringOrNull(body.updatedAt) ?? createdAt,
+    updatedAt,
     archivedAt: stringOrNull(body.archivedAt),
-    schemaVersion: 1 as const,
+    schemaVersion: 2,
     version,
-    label: stringOrNull(body.label) ?? defaultCapsuleLabel(coreRefs),
+    label,
   };
   return {
     ...capsule,
@@ -1239,6 +1540,188 @@ function normalizeTrustSemaphore(input: Record<string, unknown> | null, health: 
     recommendations: cleanStringArray(input.recommendations).slice(0, 10),
     checkedAt: stringOrNull(input.checkedAt) ?? checkedAt,
   };
+}
+
+function normalizeReadinessSummary(
+  input: Record<string, unknown> | null,
+  coreRefs: CapsuleCoreRefs,
+  gateState: CapsuleGateState,
+  updatedAt: string,
+): CapsuleReadinessSummary {
+  const reviewRequired = typeof input?.reviewRequired === 'boolean'
+    ? input.reviewRequired
+    : gateState !== 'none' && gateState !== 'applied' && gateState !== 'accepted';
+  return {
+    sourceBacked: typeof input?.sourceBacked === 'boolean'
+      ? input.sourceBacked
+      : coreRefs.sourceCoreIds.length + coreRefs.documentCoreIds.length > 0,
+    graphLinked: typeof input?.graphLinked === 'boolean' ? input.graphLinked : Boolean(coreRefs.graphCoreId),
+    advisoryMemoryHitCount: nonnegativeInt(input?.advisoryMemoryHitCount) ?? 0,
+    graphProposalCount: nonnegativeInt(input?.graphProposalCount) ?? 0,
+    reviewCardCount: nonnegativeInt(input?.reviewCardCount) ?? 0,
+    forbiddenUseCount: nonnegativeInt(input?.forbiddenUseCount) ?? 0,
+    staleRuleCount: nonnegativeInt(input?.staleRuleCount) ?? 0,
+    reviewRequired,
+    updatedAt: stringOrNull(input?.updatedAt) ?? updatedAt,
+  };
+}
+
+function normalizeReviewCard(input: unknown, capsule: PraxisCapsule, fallbackId: string): CapsuleReviewCard {
+  const body = isRecord(input) ? input : {};
+  return {
+    reviewCardId: cleanId(stringOrNull(body.reviewCardId) ?? fallbackId, fallbackId),
+    capsuleId: capsule.capsuleId,
+    ownerUid: capsule.ownerUid,
+    title: cleanText(body.title, 180) || 'Capsule review card',
+    sourceType: normalizeReviewSourceType(body.sourceType),
+    target: normalizeReviewTarget(body.target),
+    state: normalizeReviewState(body.state),
+    evidence: normalizeReviewEvidence(Array.isArray(body.evidence) ? body.evidence : []),
+    proposedEnvelopePatch: normalizeReviewEnvelopePatch(isRecord(body.proposedEnvelopePatch) ? body.proposedEnvelopePatch : {}),
+    applyMetadata: normalizeExistingApplyMetadata(body.applyMetadata),
+    createdAt: stringOrNull(body.createdAt) ?? capsule.updatedAt,
+    updatedAt: stringOrNull(body.updatedAt) ?? capsule.updatedAt,
+  };
+}
+
+function normalizeReviewEvidence(values: unknown[]): CapsuleReviewEvidence[] {
+  return values.flatMap((value): CapsuleReviewEvidence[] => {
+    if (!isRecord(value)) return [];
+    const id = cleanText(value.id, 160);
+    if (!id) return [];
+    return [{
+      id,
+      label: cleanText(value.label, 240) || id,
+      advisory: value.advisory !== false,
+      sourceType: cleanText(value.sourceType, 80) || undefined,
+      url: stringOrNull(value.url),
+    }];
+  }).slice(0, 20);
+}
+
+function normalizeReviewEnvelopePatch(input: unknown): CapsuleReviewCard['proposedEnvelopePatch'] {
+  const body = isRecord(input) ? input : {};
+  const patch: CapsuleReviewCard['proposedEnvelopePatch'] = {};
+  const label = cleanText(body.label, 160);
+  const summary = cleanText(body.summary, 600);
+  const activeOntologyStackId = cleanText(body.activeOntologyStackId, 120);
+  const activeReadContractId = cleanText(body.activeReadContractId, 120);
+  const latestGateState = normalizeGateState(body.latestGateState);
+  if (label) patch.label = label;
+  if (summary) patch.summary = summary;
+  if (activeOntologyStackId) patch.activeOntologyStackId = activeOntologyStackId;
+  if (activeReadContractId) patch.activeReadContractId = activeReadContractId;
+  if (latestGateState !== 'none') patch.latestGateState = latestGateState;
+  if (isRecord(body.coreRefs)) patch.coreRefs = normalizeCoreRefs(body.coreRefs);
+  if (Array.isArray(body.lockedCoreKinds)) patch.lockedCoreKinds = uniqueLockKinds(cleanStringArray(body.lockedCoreKinds));
+  if (isRecord(body.readinessSummary)) {
+    patch.readinessSummary = normalizeReadinessSummary(body.readinessSummary, normalizeCoreRefs(body.coreRefs), latestGateState, new Date(0).toISOString());
+  }
+  return patch;
+}
+
+function normalizeApplyMetadata(
+  input: Partial<CapsuleReviewApplyMetadata>,
+  fallbackVersion: number,
+  fallbackAppliedAt: string,
+): CapsuleReviewApplyMetadata {
+  const reviewerUid = cleanText(input.reviewerUid, 160);
+  const diffHash = cleanText(input.diffHash, 240);
+  const confirmationReason = cleanText(input.confirmationReason, 600);
+  const targetVersion = typeof input.targetVersion === 'number' && Number.isInteger(input.targetVersion) && input.targetVersion > 0
+    ? input.targetVersion
+    : fallbackVersion;
+  if (!reviewerUid) throw new Error('Capsule review apply requires reviewer id.');
+  if (!diffHash) throw new Error('Capsule review apply requires a diff hash.');
+  if (!confirmationReason) throw new Error('Capsule review apply requires a confirmation reason.');
+  return {
+    reviewerUid,
+    appliedAt: stringOrNull(input.appliedAt) ?? fallbackAppliedAt,
+    targetVersion,
+    diffHash,
+    confirmationReason,
+  };
+}
+
+function normalizeExistingApplyMetadata(input: unknown): CapsuleReviewApplyMetadata | null {
+  if (!isRecord(input)) return null;
+  const reviewerUid = cleanText(input.reviewerUid, 160);
+  const diffHash = cleanText(input.diffHash, 240);
+  const confirmationReason = cleanText(input.confirmationReason, 600);
+  const appliedAt = stringOrNull(input.appliedAt);
+  const targetVersion = nonnegativeInt(input.targetVersion);
+  if (!reviewerUid || !diffHash || !confirmationReason || !appliedAt || !targetVersion) return null;
+  return { reviewerUid, appliedAt, targetVersion, diffHash, confirmationReason };
+}
+
+function normalizeReviewState(value: unknown): CapsuleReviewState {
+  return value === 'draft' ||
+    value === 'proposed' ||
+    value === 'moderation_required' ||
+    value === 'owner_review' ||
+    value === 'accepted' ||
+    value === 'applied' ||
+    value === 'rejected' ||
+    value === 'superseded'
+    ? value
+    : 'proposed';
+}
+
+function normalizeGateState(value: unknown): CapsuleGateState {
+  if (value === 'none' || value === null || typeof value === 'undefined') return 'none';
+  return normalizeReviewState(value);
+}
+
+function normalizeReviewSourceType(value: unknown): CapsuleReviewSourceType {
+  return value === 'user' ||
+    value === 'team' ||
+    value === 'public' ||
+    value === 'cognee' ||
+    value === 'agent' ||
+    value === 'ontology' ||
+    value === 'graph' ||
+    value === 'source-gap' ||
+    value === 'quality-audit'
+    ? value
+    : 'user';
+}
+
+function normalizeReviewTarget(value: unknown): CapsuleReviewTarget {
+  return value === 'capsuleEnvelope' ||
+    value === 'anatomy' ||
+    value === 'ontologyStack' ||
+    value === 'graphProposal' ||
+    value === 'sourceGap' ||
+    value === 'advisoryMemory'
+    ? value
+    : 'capsuleEnvelope';
+}
+
+function normalizeOntologySuggestions(values: CapsuleOntologySuggestion[]): CapsuleOntologySuggestion[] {
+  return values.flatMap((value): CapsuleOntologySuggestion[] => {
+    const ontologyId = cleanText(value.ontologyId, 160);
+    if (!ontologyId) return [];
+    return [{
+      ontologyId,
+      label: cleanText(value.label, 180) || ontologyId,
+      evidenceIds: uniqueStrings(value.evidenceIds ?? []).slice(0, 12),
+    }];
+  }).slice(0, 20);
+}
+
+function dedupeOntologyRejections(values: CapsuleOntologyRejection[]): CapsuleOntologyRejection[] {
+  const byId = new Map<string, CapsuleOntologyRejection>();
+  for (const value of values) {
+    const ontologyId = cleanText(value.ontologyId, 160);
+    if (!ontologyId || byId.has(ontologyId)) continue;
+    byId.set(ontologyId, {
+      ontologyId,
+      reason: cleanText(value.reason, 300) || 'Rejected during stack resolution.',
+      rejectedAt: stringOrNull(value.rejectedAt) ?? new Date(0).toISOString(),
+      evidenceIds: uniqueStrings(value.evidenceIds ?? []).slice(0, 12),
+    });
+  }
+  return Array.from(byId.values()).slice(0, 30);
 }
 
 function enrichContextHealth(health: ContextHealth): ContextHealth {
@@ -1654,6 +2137,10 @@ function stringOrNull(value: unknown): string | null {
 
 function longStringOrNull(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim().slice(0, 1200) : null;
+}
+
+function nonnegativeInt(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

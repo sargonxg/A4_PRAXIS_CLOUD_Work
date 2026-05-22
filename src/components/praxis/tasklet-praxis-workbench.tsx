@@ -104,6 +104,7 @@ import {
 } from '@/lib/product/context-capsules';
 import { recommendCapsuleTools, type CapsuleToolRecommendation } from '@/lib/tools/recommend';
 import { DEFAULT_CONTEXT_STACK_ID } from '@/lib/context/active-context-stack';
+import { rankAskCapsuleSuggestions, type AskCapsuleSuggestion } from '@/lib/context/capsule-suggestions';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useOrchestratorEvents, type OrchestratorEvent, type OrchestratorEventState } from '@/hooks/useOrchestratorEvents';
 import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-stream';
@@ -274,6 +275,7 @@ type PraxisCapsuleSummary = {
   label: string;
   scope: 'user' | 'situation' | 'team';
   version: number;
+  summary?: string | null;
   updatedAt: string;
   archivedAt?: string | null;
   activeForSituationIds?: string[];
@@ -282,6 +284,17 @@ type PraxisCapsuleSummary = {
   community?: { tags?: string[]; favorite?: boolean; userRating?: number | null; averageRating?: number | null; ratingCount?: number };
   trust?: { level?: string; score?: number; label?: string };
   access?: { visibility?: 'private' | 'team' | 'organization' | 'shared' | 'public' | 'unlisted'; allowDownload?: boolean; allowClone?: boolean; allowCommunityRating?: boolean };
+  activeOntologyStackId?: string | null;
+  activeReadContractId?: string | null;
+  latestGateState?: string | null;
+  readinessSummary?: {
+    sourceBacked?: boolean;
+    graphLinked?: boolean;
+    advisoryMemoryHitCount?: number;
+    graphProposalCount?: number;
+    reviewCardCount?: number;
+    reviewRequired?: boolean;
+  } | null;
   searchMatchReason?: string | null;
 };
 type CapsuleUsefulnessRating = {
@@ -679,6 +692,7 @@ export function TaskletPraxisWorkbench({
   const [focusedRunEvents, setFocusedRunEvents] = useState<AgentRunEventSummary[]>([]);
   const [focusedRunLoading, setFocusedRunLoading] = useState(false);
   const [focusedRunAction, setFocusedRunAction] = useState<string | null>(null);
+  const [dismissedCapsuleSuggestionIds, setDismissedCapsuleSuggestionIds] = useState<string[]>([]);
   const [recentlyAppliedCapsuleId, setRecentlyAppliedCapsuleId] = useState<string | null>(null);
   const [builderLabel, setBuilderLabel] = useState('');
   const [builderNotes, setBuilderNotes] = useState('');
@@ -754,6 +768,16 @@ export function TaskletPraxisWorkbench({
     repositoryDocIds.size === 0 || repositoryDocIds.has(document.id),
   );
   const activeCapsuleIds = activeCapsuleStack.map((capsule) => capsule.id);
+  const askCapsuleSuggestions = useMemo(
+    () => rankAskCapsuleSuggestions({
+      prompt,
+      selectedAgentId: selectedAgent.id,
+      activeCapsuleIds: [...activeCapsuleIds, ...dismissedCapsuleSuggestionIds],
+      capsules: [...userCapsules, ...starterCapsuleSummaries].map(capsuleSuggestionInput),
+      limit: 2,
+    }),
+    [activeCapsuleIds, dismissedCapsuleSuggestionIds, prompt, selectedAgent.id, userCapsules],
+  );
   const primaryCapsules = activeCapsuleStack.filter((capsule) => capsule.role === 'user' || capsule.role === 'situation' || capsule.role === 'output');
   const referenceCapsules = activeCapsuleStack.filter((capsule) => capsule.role === 'reference' || capsule.role === 'tool');
   const archivedCapsules = userCapsules.filter((capsule) => capsule.archivedAt).slice(0, 4);
@@ -1159,6 +1183,15 @@ export function TaskletPraxisWorkbench({
             id: capsule.id,
             label: capsule.label,
             role: capsule.role,
+          })),
+          suggestedCapsules: askCapsuleSuggestions.map((suggestion) => ({
+            id: suggestion.capsuleId,
+            label: suggestion.label,
+            category: suggestion.category,
+            reason: suggestion.reason,
+            sourceReadinessSignal: suggestion.sourceReadinessSignal,
+            score: suggestion.score,
+            autoApplied: false,
           })),
           currentToolId: 'ask-praxis',
           currentPath: currentConversationPath,
@@ -2936,6 +2969,7 @@ export function TaskletPraxisWorkbench({
                 </label>
                 <textarea
                   id="praxis-main-prompt"
+                  aria-label="Describe a task or responsibility"
                   value={prompt}
                   onChange={(event) => setPrompt(event.target.value)}
                   rows={4}
@@ -2943,6 +2977,11 @@ export function TaskletPraxisWorkbench({
                   className="min-h-36 w-full resize-none bg-transparent px-4 pb-4 pt-2 text-base leading-7 text-slate-900 outline-none placeholder:text-slate-500 sm:text-xl sm:leading-8"
                 />
               </div>
+              <CapsuleSuggestionWidget
+                suggestions={askCapsuleSuggestions}
+                onAdd={(suggestion) => applyCapsuleCard(suggestion.capsule)}
+                onDismiss={(suggestion) => setDismissedCapsuleSuggestionIds((current) => [...current, suggestion.capsuleId])}
+              />
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/10 px-5 py-4">
                 <div className="flex items-center gap-2">
                   {actionIcons.map((action) => (
@@ -3105,6 +3144,13 @@ export function TaskletPraxisWorkbench({
                       <>
                         <AssistantMarkdown text={message.text || 'Reading context...'} messageId={`assistant-${index}`} />
                         <ConversationReceiptSummary envelope={message.answerEnvelope} />
+                        <ConversationAgentActivityRail
+                          envelope={message.answerEnvelope}
+                          onAction={(actionPrompt) => {
+                            setPrompt(actionPrompt);
+                            setStatus('Continuation action loaded into the composer.');
+                          }}
+                        />
                         <ConversationSourcePreviewPanel
                           envelope={message.answerEnvelope}
                           messageId={`assistant-${index}`}
@@ -3625,6 +3671,7 @@ function ConversationReceiptSummary({ envelope }: { envelope?: AskAnswerEnvelope
   const receipt = envelope?.orchestrationReceipt;
   if (!receipt) return null;
   const queuedRun = receipt.supervisor.queuedRun;
+  const generationReceipt = envelope?.generationReceipt;
   return (
     <section className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2" data-testid="praxis-answer-receipt">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -3651,7 +3698,97 @@ function ConversationReceiptSummary({ envelope }: { envelope?: AskAnswerEnvelope
             Agent run: {queuedRun.runId === 'unavailable' ? queuedRun.status.replace(/_/g, ' ') : queuedRun.runId}
           </span>
         ) : null}
+        {generationReceipt ? (
+          <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-slate-600">
+            Generation: {generationReceipt.budgetMode} / {generationReceipt.maxOutputTokens}
+          </span>
+        ) : null}
       </div>
+    </section>
+  );
+}
+
+const continuationActionLabels = ['Continue as memo', 'Expand evidence annex', 'Create output capsule'] as const;
+
+function ConversationAgentActivityRail({ envelope, onAction }: { envelope?: AskAnswerEnvelope; onAction: (prompt: string) => void }) {
+  const receipt = envelope?.orchestrationReceipt;
+  const sourceAudit = envelope?.sourceAudit;
+  const claimLedger = envelope?.claimLedgerSummary;
+  const generationReceipt = envelope?.generationReceipt;
+  if (!receipt && !sourceAudit && !claimLedger && !generationReceipt) return null;
+  const languagePolicyReview = receipt?.languagePolicyReview;
+  const stages = receipt ? [
+    { label: 'Capsule read', detail: `${receipt.capsule.contextHealth} context, ${receipt.capsule.evidenceCount} evidence paragraphs.` },
+    { label: 'Workflow plan', detail: receipt.workflowPlan.workflowKind.replace(/_/g, ' ') },
+    { label: 'Source discovery', detail: `${receipt.capsule.sourcePreviewCount} source previews, ${receipt.capsule.activeGapCount} gaps.` },
+    { label: 'Document retrieval', detail: `${receipt.capsuleReadReceipt.documentCount} documents, ${receipt.capsuleReadReceipt.sourceCount} source receipts.` },
+    { label: 'Claim review', detail: `${claimLedger?.supportedClaims ?? 0} supported, ${claimLedger?.unsupportedClaims ?? 0} unsupported.` },
+    { label: 'Language and policy review', detail: languagePolicyReview?.required ? 'Terminology, sourceability, and gap language checked.' : 'Standard terminology check.' },
+    { label: 'Output save', detail: generationReceipt?.finishReason ? `Finished: ${generationReceipt.finishReason}` : 'Receipts saved with the answer.' },
+    { label: 'Approval gates', detail: `${receipt.toolRouting.approvalRequiredToolIds.length} approval gates.` },
+    { label: 'Durable AgentRun', detail: receipt.supervisor.queuedRun?.runId ?? 'No durable run needed.' },
+  ] : [];
+  return (
+    <section className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2" data-testid="praxis-answer-agent-activity">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Agent Activity</p>
+        {generationReceipt ? (
+          <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
+            {generationReceipt.selectedModel} / {generationReceipt.budgetMode}
+          </span>
+        ) : null}
+      </div>
+      {stages.length ? (
+        <ol className="mt-2 grid gap-1.5 sm:grid-cols-2">
+          {stages.map((stage) => (
+            <li key={stage.label} className="rounded-md border border-slate-200 bg-white px-2 py-1.5">
+              <p className="text-xs font-semibold text-slate-900">{stage.label}</p>
+              <p className="mt-0.5 text-[11px] leading-4 text-slate-600">{stage.detail}</p>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      {sourceAudit || claimLedger ? (
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          {sourceAudit ? (
+            <section className="rounded-md border border-slate-200 bg-white p-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Source audit</p>
+              <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-slate-600">
+                <span>{sourceAudit.sourceCount} sources</span>
+                <span>{sourceAudit.sourceReceiptCount} receipts</span>
+                <span>{sourceAudit.gapCount} gaps</span>
+                <span>{sourceAudit.sourcePosture.replace(/_/g, ' ')}</span>
+              </div>
+            </section>
+          ) : null}
+          {claimLedger ? (
+            <section className="rounded-md border border-slate-200 bg-white p-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Claim ledger</p>
+              <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-slate-600">
+                <span>Supported {claimLedger.supportedClaims}</span>
+                <span>Weak {claimLedger.weakClaims}</span>
+                <span>Unsupported {claimLedger.unsupportedClaims}</span>
+                <span>Model-prior {claimLedger.modelPriorClaims}</span>
+                <span>Assumptions {claimLedger.assumptionClaims}</span>
+              </div>
+            </section>
+          ) : null}
+        </div>
+      ) : null}
+      {envelope?.continuationActions?.length ? (
+        <div className="mt-2 flex flex-wrap gap-1.5" aria-label={continuationActionLabels.join(', ')}>
+          {envelope.continuationActions.map((action) => (
+            <button
+              key={action.id}
+              type="button"
+              onClick={() => onAction(action.prompt)}
+              className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -3723,6 +3860,57 @@ function ConversationSourcePreviewPanel({ envelope, messageId, onFollowUp }: { e
         </section>
       ) : null}
     </div>
+  );
+}
+
+function CapsuleSuggestionWidget({
+  suggestions,
+  onAdd,
+  onDismiss,
+}: {
+  suggestions: Array<AskCapsuleSuggestion<PraxisCapsuleSummary>>;
+  onAdd: (suggestion: AskCapsuleSuggestion<PraxisCapsuleSummary>) => void;
+  onDismiss: (suggestion: AskCapsuleSuggestion<PraxisCapsuleSummary>) => void;
+}) {
+  if (!suggestions.length) return null;
+  return (
+    <section className="mx-4 mb-4 grid gap-2 rounded-lg border border-[color:var(--color-clay)]/25 bg-[color:var(--color-archive-paper-strong)] px-4 py-3 sm:mx-5" data-testid="ask-capsule-suggestion-widget">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Sparkles className="h-4 w-4 shrink-0 text-[color:var(--color-oxide)]" />
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--color-oxide)]">Suggested capsules</p>
+        </div>
+        <span className="text-[11px] font-semibold text-slate-500">human-gated context</span>
+      </div>
+      <div className="grid gap-2 md:grid-cols-2">
+        {suggestions.map((suggestion) => (
+          <article key={suggestion.capsuleId} className="rounded-md border border-slate-200 bg-white p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-950">{suggestion.label}</p>
+                <div className="mt-1 flex flex-wrap gap-1 text-[10px] font-semibold text-slate-500">
+                  <span className="rounded bg-slate-100 px-1.5 py-0.5">{suggestion.category}</span>
+                  <span className="rounded bg-slate-100 px-1.5 py-0.5">{suggestion.sourceReadinessSignal}</span>
+                </div>
+              </div>
+              <button type="button" aria-label={`Dismiss ${suggestion.label}`} onClick={() => onDismiss(suggestion)} className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-slate-600">{suggestion.reason}</p>
+            <details className="mt-2">
+              <summary className="cursor-pointer text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">why this capsule</summary>
+              <p className="mt-1 text-xs leading-5 text-slate-600">{suggestion.whyThisCapsule}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-600">{suggestion.whatItChangesForAgent}</p>
+            </details>
+            <button type="button" onClick={() => onAdd(suggestion)} className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">
+              <Plus className="h-3.5 w-3.5" />
+              Add
+            </button>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -4240,6 +4428,67 @@ function capsuleCategoryMeta(capsule: PraxisCapsuleSummary) {
     category,
     taxonomy: resolveCapsuleTaxonomy(capsule),
   };
+}
+
+function capsuleSuggestionInput(capsule: PraxisCapsuleSummary) {
+  const starterDefinition = starterDefinitionForCapsule(capsule);
+  return {
+    capsuleId: capsule.capsuleId,
+    label: capsule.label,
+    summary: starterDefinition?.summary ?? capsule.searchMatchReason ?? capsuleCategoryMeta(capsule).summary,
+    tags: capsule.community?.tags ?? starterDefinition?.tags ?? [],
+    category: capsuleCategory(capsule),
+    sourcePosture: capsuleSourcePosture(capsule),
+    readiness: starterDefinition ? `${starterDefinition.readinessStars}/5` : capsule.health?.score ? `${capsule.health.score}/100` : capsule.trust?.label ?? 'review before use',
+    recommendedToolIds: starterDefinition?.recommendedToolIds ?? capsule.coreRefs.toolCoreIds ?? [],
+    capsule,
+  };
+}
+
+function capsuleGovernanceBadges(capsule: PraxisCapsuleSummary): Array<{ label: string; value: string; tone: string }> {
+  const meta = capsuleCategoryMeta(capsule);
+  const starter = meta.starterDefinition;
+  const audit = capsuleQualityAuditForSummary(capsule);
+  const ontology = [
+    meta.taxonomy.types[0]?.label,
+    meta.taxonomy.domains[0]?.label,
+    meta.taxonomy.policyTeams[0]?.label,
+  ].filter(Boolean).join(' / ') || 'Ontology pending';
+  const reviewGate = starter?.deviceProfile?.humanReviewGate
+    ?? starter?.agentWorkflow.approvalNotes
+    ?? capsule.health?.warnings?.[0]
+    ?? 'Review card clear';
+  const graphStatus = capsule.coreRefs.graphCoreId ? `Approved graph ${capsule.coreRefs.graphCoreId}` : 'Graph proposal pending';
+  const sourceability = audit ? `${Math.round(audit.scores.sourceability * 100)} sourceability` : 'Review card pending';
+  return [
+    { label: 'Gate', value: reviewGate, tone: 'border-teal-200 bg-teal-50 text-teal-800' },
+    { label: 'Ontology', value: ontology, tone: 'border-sky-200 bg-sky-50 text-sky-800' },
+    { label: 'Advisory', value: 'Firestore canonical; graph and memory enrichment advisory', tone: 'border-slate-200 bg-slate-50 text-slate-700' },
+    { label: 'Graph proposal', value: graphStatus, tone: 'border-violet-200 bg-violet-50 text-violet-800' },
+    { label: 'Review card', value: sourceability, tone: 'border-amber-200 bg-amber-50 text-amber-800' },
+  ];
+}
+
+function CapsuleGovernanceBadgeRail({ capsule, compact = false }: { capsule: PraxisCapsuleSummary; compact?: boolean }) {
+  const badges = capsuleGovernanceBadges(capsule);
+  return (
+    <div
+      className={cn('flex flex-wrap gap-1.5', compact ? 'mt-2' : 'mt-4')}
+      data-testid="capsule-governance-badges"
+      aria-label={`${capsule.label} governance badges`}
+    >
+      {badges.slice(0, compact ? 3 : badges.length).map((badge) => (
+        <span
+          key={badge.label}
+          title={badge.value}
+          className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', badge.tone)}
+        >
+          {badge.label}
+          <span className="sr-only">: {badge.value}</span>
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function renderCapsuleCategoryIcon(category: CapsuleStarterCategory | 'custom', className: string) {
@@ -5805,6 +6054,7 @@ function CapsuleCard({
           {deviceProfile ? <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">Thinking device</span> : null}
           <CapsuleStateBadge state={state} />
         </span>
+        <CapsuleGovernanceBadgeRail capsule={capsule} compact />
         <span className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500">
           <span>{policyTeamChip}</span>
           <span>quality {score}/100</span>
@@ -6929,6 +7179,7 @@ function CapsuleInspectorSheet({
   const reviewGate = deviceProfile?.humanReviewGate
     ?? meta?.starterDefinition?.agentWorkflow.approvalNotes
     ?? (warnings.length ? 'Human review recommended before output use.' : 'Review gate clear for normal use.');
+  const governanceBadges = capsule ? capsuleGovernanceBadges(capsule) : [];
   const recentChatMessages = chatMessages.slice(-4).filter((message) => message.text.trim());
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -7007,6 +7258,29 @@ function CapsuleInspectorSheet({
               ...(refs?.outputCoreIds ?? []),
             ].filter(Boolean).slice(0, 6).join(', ') || 'core refs pending'} />
             <InspectorRef label="Next action" value={bestNextAction} />
+          </div>
+        ) : null}
+        {capsule ? (
+          <div className="mt-5 rounded-lg border border-slate-200 p-3" data-testid="capsule-v2-inspector-tabs">
+            <div className="grid grid-cols-3 gap-1 rounded-md bg-slate-100 p-1 text-[11px] font-semibold text-slate-600 sm:grid-cols-6">
+              {['Anatomy', 'Sources', 'Ontology Stack', 'Graph', 'Review', 'Agent Read'].map((label) => (
+                <span key={label} className="rounded bg-white px-2 py-1.5 text-center shadow-sm">{label}</span>
+              ))}
+            </div>
+            <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600">
+              <InspectorRef label="Ontology Stack" value={meta?.taxonomy.policyTeams.map((facet) => facet.id).join(', ') || 'ontology-stack-default'} />
+              <InspectorRef label="Agent Read" value={`${meta?.starterDefinition?.agentWorkflow.preferredAgentId ?? 'default-agent'} read contract`} />
+              <InspectorRef label="Advisory memory" value={`${enrichmentReceipt.memoryHitCount} advisory memory hit(s)`} />
+              <InspectorRef label="Graph proposal" value={capsule.coreRefs.graphCoreId ? `approved graph ${capsule.coreRefs.graphCoreId}` : '1 review-gated graph proposal'} />
+              <InspectorRef label="Review card" value={audit ? '1 sourceability review card' : 'review card pending'} />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-1.5" data-testid="capsule-governance-badges">
+              {governanceBadges.map((badge) => (
+                <span key={badge.label} className={cn('rounded-md border px-2 py-1 text-[10px] font-semibold', badge.tone)}>
+                  {badge.label}: {badge.value}
+                </span>
+              ))}
+            </div>
           </div>
         ) : null}
         {isAuthenticated && usefulness ? (

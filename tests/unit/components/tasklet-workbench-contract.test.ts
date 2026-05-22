@@ -232,6 +232,30 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="ask-capsule-workflow-preview"');
   });
 
+  it('shows local capsule suggestions near the Ask composer without auto-applying them', () => {
+    expect(source).toContain("import { rankAskCapsuleSuggestions");
+    expect(source).toContain('const askCapsuleSuggestions = useMemo');
+    expect(source).toContain('data-testid="ask-capsule-suggestion-widget"');
+    expect(source).toContain('why this capsule');
+    expect(source).toContain('human-gated context');
+    expect(source).toContain('onAdd={(suggestion) => applyCapsuleCard(suggestion.capsule)}');
+    expect(source).toContain('autoApplied: false');
+    expect(source).not.toContain('useEffect(() => applyCapsuleCard(askCapsuleSuggestions');
+  });
+
+  it('renders per-answer agent activity, source audit, claim ledger, and continuation actions', () => {
+    expect(source).toContain('ConversationAgentActivityRail');
+    expect(source).toContain('data-testid="praxis-answer-agent-activity"');
+    expect(source).toContain('Claim ledger');
+    expect(source).toContain('Supported');
+    expect(source).toContain('Unsupported');
+    expect(source).toContain('Continue as memo');
+    expect(source).toContain('Expand evidence annex');
+    expect(source).toContain('Create output capsule');
+    expect(source).toContain('generationReceipt');
+    expect(source).toContain('sourceAudit');
+  });
+
   it('uses the capsule inspector sheet as the single capsule inspection surface', () => {
     expect(source).toContain('function openCapsuleInspector');
     expect(source).toContain('data-testid="capsule-inspector-sheet"');
@@ -241,6 +265,23 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('Select a capsule.');
     expect(source).toContain('onInspect={() => openCapsuleInspector(capsule)}');
     expect(source).not.toContain('onInspect={() => openGuideChatForCapsule(capsule)}');
+  });
+
+  it('surfaces v2 governance badges and inspector sections without adding a new capsule page', () => {
+    expect(source).toContain('function capsuleGovernanceBadges');
+    expect(source).toContain('data-testid="capsule-governance-badges"');
+    expect(source).toContain('Gate');
+    expect(source).toContain('Ontology');
+    expect(source).toContain('Advisory');
+    expect(source).toContain('Graph proposal');
+    expect(source).toContain('Review card');
+    expect(source).toContain('data-testid="capsule-v2-inspector-tabs"');
+    expect(source).toContain('Anatomy');
+    expect(source).toContain('Ontology Stack');
+    expect(source).toContain('Agent Read');
+    expect(source).toContain('read contract');
+    expect(source).not.toContain('/app/ontology');
+    expect(source).not.toContain('/app/community-review');
   });
 
   it('uses opaque operational panel classes for the capsule workspace', () => {

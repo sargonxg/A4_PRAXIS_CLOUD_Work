@@ -226,6 +226,47 @@ describe('context kernel', () => {
     expect(effective.promptBlock).toContain('[associated_capsules]');
   });
 
+  it('carries v2 governance state into the effective capsule prompt contract', async () => {
+    const db = new FakeFirestore();
+    await buildTurnCapsule({
+      uid: 'u1',
+      activeContextStack: { stackId: 'default', situationId: 'sit-governed', sourceIds: ['src-1'] },
+      activeGaps: ['Owner review card is still open.'],
+    }, deps(db));
+    const path = 'users/u1/capsules/default';
+    const current = db.data.get(path) ?? {};
+    db.data.set(path, {
+      ...current,
+      activeOntologyStackId: 'ontology-stack-1',
+      activeReadContractId: 'read-contract-1',
+      latestGateState: 'owner_review',
+      readinessSummary: {
+        sourceBacked: true,
+        graphLinked: false,
+        advisoryMemoryHitCount: 2,
+        graphProposalCount: 1,
+        reviewCardCount: 3,
+        reviewRequired: true,
+      },
+    });
+
+    const capsule = await buildTurnCapsule({ uid: 'u1', capsuleId: 'default', traceId: 'trace-governed' }, deps(db));
+    const effective = compileEffectiveCapsule(capsule, 'Draft an externally reviewable brief.');
+
+    expect(effective.governance).toMatchObject({
+      readContractRequired: true,
+      activeOntologyStackId: 'ontology-stack-1',
+      activeReadContractId: 'read-contract-1',
+      latestGateState: 'owner_review',
+      advisoryMemoryHitCount: 2,
+      graphProposalCount: 1,
+      reviewCardCount: 3,
+    });
+    expect(effective.promptBlock).toContain('[governed_context_v2]');
+    expect(effective.promptBlock).toContain('active_ontology_stack: ontology-stack-1');
+    expect(effective.promptBlock).toContain('latest_gate_state: owner_review');
+  });
+
   it('persists suggested action receipts under the owner scope', async () => {
     const db = new FakeFirestore();
     const capsule = await buildTurnCapsule({

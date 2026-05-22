@@ -123,6 +123,15 @@ export interface EffectiveCapsule {
     warnings: string[];
     missingSlots: EffectiveCapsuleSlotTrace['slot'][];
   };
+  governance: {
+    readContractRequired: true;
+    activeOntologyStackId: string;
+    activeReadContractId: string;
+    latestGateState: string;
+    advisoryMemoryHitCount: number;
+    graphProposalCount: number;
+    reviewCardCount: number;
+  };
   contentHash: string;
   promptBlock: string;
 }
@@ -349,6 +358,15 @@ export function compileEffectiveCapsule(capsule: TurnCapsule, objective?: string
       score: capsule.injectableContext.capsule.health.score,
       warnings: capsule.activeGaps,
       missingSlots,
+    },
+    governance: {
+      readContractRequired: true,
+      activeOntologyStackId: capsule.injectableContext.capsule.activeOntologyStackId ?? 'ontology-stack-default',
+      activeReadContractId: capsule.injectableContext.capsule.activeReadContractId ?? 'read-contract-default',
+      latestGateState: capsule.injectableContext.capsule.latestGateState ?? 'none',
+      advisoryMemoryHitCount: capsule.injectableContext.capsule.readinessSummary?.advisoryMemoryHitCount ?? 0,
+      graphProposalCount: capsule.injectableContext.capsule.readinessSummary?.graphProposalCount ?? 0,
+      reviewCardCount: capsule.injectableContext.capsule.readinessSummary?.reviewCardCount ?? 0,
     },
     contentHash: stableHash(hashInput),
     promptBlock: capsule.injectableContext.promptBlock,

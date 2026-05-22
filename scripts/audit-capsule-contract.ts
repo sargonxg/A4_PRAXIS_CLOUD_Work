@@ -85,8 +85,28 @@ if (!swapRoute.includes('lockedCoreKinds')) {
 }
 
 const capsuleService = read('src/lib/context/capsule-service.ts');
-for (const token of ['setCapsuleCoreLock', "collection('versions')", 'lockedCoreKinds', 'CapsuleTrustSemaphore', 'setCapsuleAccessPolicy', 'exportCapsuleCorePackage']) {
+for (const token of [
+  'setCapsuleCoreLock',
+  "collection('versions')",
+  'lockedCoreKinds',
+  'CapsuleTrustSemaphore',
+  'setCapsuleAccessPolicy',
+  'exportCapsuleCorePackage',
+  'schemaVersion: 2',
+  'CapsuleReviewCard',
+  "collection('reviewCards')",
+  'applyMetadata',
+  'resolveCapsuleOntologyStack',
+  'activeOntologyStackId',
+  'activeReadContractId',
+  'readinessSummary',
+]) {
   if (!capsuleService.includes(token)) failures.push(`capsule service must include ${token}`);
+}
+
+const readReceipt = read('src/lib/agent-runtime/capsule-read-receipt.ts');
+for (const token of ['AgentReadContract', 'buildAgentReadContractFromReceipt', 'advisoryLabels', 'humanGates', 'stopConditions', 'outputRestrictions']) {
+  if (!readReceipt.includes(token)) failures.push(`agent read contract missing ${token}`);
 }
 
 const corePackage = read('src/lib/context/core-package.ts');

@@ -2,6 +2,7 @@ import JSZip from 'jszip';
 import { describe, expect, it } from 'vitest';
 import {
   CapsulePlusBundleSchema,
+  CapsulePlusGraphProposalSchema,
   CapsulePlusGraphEdgeSchema,
   CapsulePlusGraphNodeSchema,
   buildCapsulePlusExportBundle,
@@ -116,6 +117,25 @@ describe('Capsule+ graph contract', () => {
       tags: ['domain:governance'],
       exportedAt: '2026-05-19T12:00:00.000Z',
     })).toBe('governance_AB34_2026.praxis');
+  });
+
+  it('keeps graph proposals tied to ontology stacks and review cards', () => {
+    const proposal = CapsulePlusGraphProposalSchema.parse({
+      proposalId: 'proposal-1',
+      capsuleId: 'cap-1',
+      ownerUid: 'u1',
+      graphVersion: 2,
+      ontologyStackId: 'ontology-stack-1',
+      reviewCardId: 'review-card-1',
+      nodes: [],
+      edges: [],
+      unsupportedClaims: ['Unsupported actor influence claim.'],
+      reviewState: 'proposed',
+      createdAt: '2026-05-19T12:00:00.000Z',
+    });
+
+    expect(proposal.ontologyStackId).toBe('ontology-stack-1');
+    expect(proposal.reviewCardId).toBe('review-card-1');
   });
 
   it('refuses malformed import bundles', async () => {

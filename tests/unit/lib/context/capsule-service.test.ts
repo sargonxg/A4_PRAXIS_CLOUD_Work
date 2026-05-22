@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   activateCapsule,
   archiveCapsule,
+  applyCapsuleReviewCard,
   attachCapsuleRefs,
   bumpCapsuleVersion,
   combineCapsules,
+  createCapsuleReviewCard,
   createCapsule,
   detachCapsuleRefs,
   exportCapsuleCorePackage,
@@ -14,11 +16,13 @@ import {
   listCapsules,
   promoteCapsuleSourceGaps,
   rateCapsule,
+  resolveCapsuleOntologyStack,
   saveContextStackCompat,
   seedStarterCapsules,
   setCapsuleAccessPolicy,
   setCapsuleCoreLock,
   setCapsuleFavorite,
+  sanitizeCapsule,
   swapCapsuleCore,
 } from '@/lib/context/capsule-service';
 import { parseCorePackage } from '@/lib/context/core-package';
@@ -609,6 +613,134 @@ describe('capsule service', () => {
     expect((note?.links as { sourceIds: string[] }).sourceIds).toContain('ask-source-1');
     expect(result?.capsule.trust.level).toBe('amber');
     expect(result?.capsule.trust.recommendations).toContain('Review proposed source-pack gaps before the next external handoff.');
+  });
+
+  it('normalizes v1 capsules into compact v2 envelopes without carrying append-heavy payloads', () => {
+    const normalized = sanitizeCapsule({
+      schemaVersion: 1,
+      capsuleId: 'cap-v1',
+      ownerUid: 'u1',
+      label: 'Legacy capsule',
+      version: 4,
+      coreRefs: {
+        situationCoreId: 'sit-1',
+        sourceCoreIds: ['src-1'],
+        graphCoreId: 'graph-1',
+      },
+      proposalQueue: [{ id: 'too-large' }],
+      graphProposals: [{ id: 'graph-large' }],
+      advisoryMemoryHits: [{ id: 'mem-large' }],
+      ontologyHistory: [{ id: 'history-large' }],
+    });
+
+    expect(normalized.schemaVersion).toBe(2);
+    expect(normalized.version).toBe(4);
+    expect(normalized.coreRefs.sourceCoreIds).toEqual(['src-1']);
+    expect(normalized.activeOntologyStackId).toBe('ontology-stack-default');
+    expect(normalized.activeReadContractId).toBe('read-contract-default');
+    expect(normalized.readinessSummary).toMatchObject({
+      sourceBacked: true,
+      graphLinked: true,
+      reviewRequired: false,
+    });
+    expect(Object.prototype.hasOwnProperty.call(normalized, 'proposalQueue')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(normalized, 'graphProposals')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(normalized, 'advisoryMemoryHits')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(normalized, 'ontologyHistory')).toBe(false);
+  });
+
+  it('keeps review-card proposals in a subcollection and requires explicit apply metadata', async () => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', { capsuleId: 'cap-review', label: 'Review card capsule' }, deps(db));
+    const card = await createCapsuleReviewCard('u1', capsule.capsuleId, {
+      title: 'Clarify source posture',
+      sourceType: 'source-gap',
+      state: 'owner_review',
+      target: 'capsuleEnvelope',
+      proposedEnvelopePatch: {
+        summary: 'Source posture clarified after review.',
+        latestGateState: 'owner_review',
+      },
+      evidence: [{ id: 'gap-1', label: 'Gap record', advisory: true }],
+    }, deps(db));
+
+    expect(card.state).toBe('owner_review');
+    expect(card.evidence.every((item) => item.advisory)).toBe(true);
+    expect(db.data.has(`users/u1/capsules/cap-review/reviewCards/${card.reviewCardId}`)).toBe(true);
+    await expect(applyCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, {
+      reviewerUid: 'reviewer-1',
+      targetVersion: capsule.version + 1,
+      diffHash: 'diff:clarify',
+    }, deps(db))).rejects.toThrow(/confirmation reason/i);
+
+    const applied = await applyCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, {
+      reviewerUid: 'reviewer-1',
+      appliedAt: '2026-05-14T01:00:00.000Z',
+      targetVersion: capsule.version + 1,
+      diffHash: 'diff:clarify',
+      confirmationReason: 'Owner accepted the source posture clarification.',
+    }, deps(db));
+
+    expect(applied?.card.state).toBe('applied');
+    expect(applied?.capsule.summary).toBe('Source posture clarified after review.');
+    expect(applied?.capsule.latestGateState).toBe('owner_review');
+    expect(applied?.capsule.version).toBe(2);
+    expect(db.data.get(`users/u1/capsules/cap-review/reviewCards/${card.reviewCardId}`)?.applyMetadata).toMatchObject({
+      reviewerUid: 'reviewer-1',
+      confirmationReason: 'Owner accepted the source posture clarification.',
+    });
+  });
+
+  it('requires a public proposal flag and moderation state before owner review', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: 'cap-public' }, deps(db));
+
+    await expect(createCapsuleReviewCard('u1', 'cap-public', {
+      title: 'Public source suggestion',
+      sourceType: 'public',
+      target: 'sourceGap',
+      evidence: [{ id: 'pub-src-1', label: 'Public suggestion', advisory: true }],
+    }, deps(db))).rejects.toThrow(/public capsule proposals are not enabled/i);
+
+    const publicCard = await createCapsuleReviewCard('u1', 'cap-public', {
+      title: 'Public source suggestion',
+      sourceType: 'public',
+      target: 'sourceGap',
+      publicProposalsEnabled: true,
+      evidence: [{ id: 'pub-src-1', label: 'Public suggestion', advisory: true }],
+    }, deps(db));
+
+    expect(publicCard.state).toBe('moderation_required');
+  });
+
+  it('resolves a capped ontology stack with candidate and rejection history', () => {
+    const resolution = resolveCapsuleOntologyStack({
+      capsuleId: 'cap-ontology',
+      primaryDomainOntologyId: 'domain:humanitarian-rights',
+      secondaryDomainOntologyId: 'domain:diplomacy',
+      workOntologyId: 'work:sourceability-review',
+      candidateSuggestions: [
+        { ontologyId: 'domain:humanitarian-rights', label: 'Humanitarian rights', evidenceIds: ['src-1'] },
+        { ontologyId: 'domain:diplomacy', label: 'Diplomacy', evidenceIds: ['src-2'] },
+        { ontologyId: 'domain:finance', label: 'Finance', evidenceIds: ['src-3'] },
+      ],
+      rejectedSuggestions: [{ ontologyId: 'domain:legacy', reason: 'Old stack', rejectedAt: '2026-05-13T00:00:00.000Z' }],
+      resolvedAt: '2026-05-14T00:00:00.000Z',
+    });
+
+    expect(resolution.activeOntologyIds).toEqual([
+      'aco:base',
+      'domain:humanitarian-rights',
+      'domain:diplomacy',
+      'work:sourceability-review',
+    ]);
+    expect(resolution.validation.maxActiveCaseOntologies).toBe(3);
+    expect(resolution.validation.activeCaseOntologyCount).toBe(3);
+    expect(resolution.validation.shaclStatus).toBe('valid');
+    expect(resolution.rejectedSuggestions.map((item) => item.ontologyId)).toEqual(expect.arrayContaining([
+      'domain:finance',
+      'domain:legacy',
+    ]));
   });
 });
 

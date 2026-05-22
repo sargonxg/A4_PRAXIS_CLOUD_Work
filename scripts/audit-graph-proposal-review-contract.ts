@@ -7,6 +7,7 @@ const graphProposeRoute = readFileSync(join(root, 'src/app/api/ai/graph-propose/
 const approveRoute = readFileSync(join(root, 'src/app/api/graph/proposals/[id]/approve/route.ts'), 'utf8');
 const rejectRoute = readFileSync(join(root, 'src/app/api/graph/proposals/[id]/reject/route.ts'), 'utf8');
 const graphService = readFileSync(join(root, 'src/lib/firebase/graph-updates-service.ts'), 'utf8');
+const capsulePlus = readFileSync(join(root, 'src/lib/capsule-plus/index.ts'), 'utf8');
 
 if (!graphProposeRoute.includes('createGraphUpdateProposal')) {
   failures.push('/api/ai/graph-propose must create review queue proposals');
@@ -22,6 +23,9 @@ if (!rejectRoute.includes('rejectProposal')) {
 }
 if (!graphService.includes("status: 'proposed'")) {
   failures.push('graph proposal creation must persist proposed status first');
+}
+if (!capsulePlus.includes('ontologyStackId') || !capsulePlus.includes('reviewCardId')) {
+  failures.push('Capsule+ graph proposals must reference ontologyStackId and reviewCardId');
 }
 
 if (failures.length > 0) {

@@ -69,6 +69,8 @@ export const CapsulePlusGraphProposalSchema = z.object({
   capsuleId: z.string().min(1).max(160),
   ownerUid: z.string().min(1).max(160),
   graphVersion: z.number().int().nonnegative(),
+  ontologyStackId: z.string().min(1).max(160).nullable().default(null),
+  reviewCardId: z.string().min(1).max(160).nullable().default(null),
   nodes: z.array(CapsulePlusGraphNodeSchema).default([]),
   edges: z.array(CapsulePlusGraphEdgeSchema).default([]),
   unsupportedClaims: z.array(z.string().min(1).max(300)).default([]),
