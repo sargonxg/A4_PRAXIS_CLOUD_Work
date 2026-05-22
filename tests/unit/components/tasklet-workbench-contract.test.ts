@@ -411,7 +411,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('typeId={capsuleTypeFilter}');
     expect(source).toContain('domainId={capsuleDomainFilter}');
     expect(source).toContain('policyTeamId={capsulePolicyTeamFilter}');
-    expect(source).toContain('{!isRepositoryLane ? <CapsuleTaxonomyFilterBar');
+    expect(source).toContain('<CapsuleTaxonomyFilterBar');
     expect(source).toContain('Source refs');
     expect(source).toContain('Document refs');
     expect(source).not.toContain('function capsuleTypeCount(');
@@ -631,7 +631,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(primaryNavSource).not.toContain('research-graph');
   });
 
-  it('renders a filter-aware Featured Expert Picks shelf and build-your-own CTA', () => {
+  it('keeps expert picks available outside the simplified capsule repository lane', () => {
     expect(source).toContain('FEATURED_EXPERT_PICK_CAPSULE_IDS');
     for (const expectedId of [
       'starter-situation-ai-governance-procurement',
@@ -673,10 +673,24 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(repositoryPageSource).toContain("redirect('/app/capsules?lane=repository')");
     expect(source).toContain("initialPanel?: 'ask' | 'capsules' | 'repository'");
     expect(source).toContain('data-testid="capsule-studio-source-section"');
-    expect(source).toContain('const isRepositoryLane = false');
+    expect(source).toContain("const isRepositoryLane = isCapsuleRepositoryPage && resolvedInitialFactoryLane === 'sources'");
     expect(source).toContain('initialFactoryLane?: CapsuleFactoryLaneId');
     expect(routeSource).toContain("lane === 'repository' || lane === 'sources' ? 'sources' : undefined");
     expect(source).toContain("href={isAuthenticated ? '/app/capsules?lane=repository'");
     expect(source).toContain('Find missing sources');
+  });
+
+  it('simplifies the repository lane into filters, capsule tiles, and one popup workflow', () => {
+    expect(source).toContain('data-testid="capsule-repository-grid"');
+    expect(source).toContain('data-testid="capsule-repository-modal"');
+    expect(source).toContain('data-testid="capsule-repository-open"');
+    expect(source).toContain('data-testid="capsule-repository-create-card"');
+    expect(source).toContain('Open capsule');
+    expect(source).toContain('Create new capsule');
+    expect(source).toContain('Chat with this capsule');
+    expect(source).toContain('Improve safely');
+    expect(source).toContain('isCapsuleRepositoryPage && !isRepositoryLane');
+    expect(source).toContain('isRepositoryLane ? (');
+    expect(source).toContain('onOpen={(capsule) => openRepositoryCapsuleModal(capsule)}');
   });
 });

@@ -167,7 +167,7 @@ describe('context capsule product contract', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(109);
+    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(129);
     expect(starterIds.size).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
@@ -175,7 +175,7 @@ describe('context capsule product contract', () => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toEqual({ situation: 33, tool: 50, output: 21, user: 5 });
+    expect(categoryCounts).toEqual({ situation: 43, tool: 55, output: 24, user: 7 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
@@ -199,6 +199,78 @@ describe('context capsule product contract', () => {
         expect([1, 2, 3]).toContain(source.reliabilityTier);
         expect(source.url).toMatch(/^https:\/\//);
       }
+    }
+  });
+
+  it('adds expert policy capsules with human-gated sources, reasoning tools, and drafting styles', () => {
+    const expectedSituationIds = [
+      'starter-situation-ukraine-reconstruction-integrity-finance',
+      'starter-situation-taiwan-strait-semiconductor-supply-chain-risk',
+      'starter-situation-lebanon-israel-unifil-ceasefire-monitoring',
+      'starter-situation-myanmar-humanitarian-access-asean',
+      'starter-situation-ethiopia-protection-conflict-watch',
+      'starter-situation-venezuela-oil-sanctions-election-risk',
+      'starter-situation-china-overcapacity-tariff-industrial-policy',
+      'starter-situation-debt-distress-imf-program-watch',
+      'starter-situation-corporate-ai-procurement-assurance',
+      'starter-situation-food-security-commodity-shock-watch',
+    ];
+    const expectedToolIds = [
+      'starter-tool-sanctions-exposure-triage-matrix',
+      'starter-tool-corporate-value-chain-due-diligence-map',
+      'starter-tool-fiscal-space-debt-stress-screen',
+      'starter-tool-geoeconomic-chokepoint-map',
+      'starter-tool-policy-drafting-style-selector',
+    ];
+    const expectedOutputIds = [
+      'starter-output-ministerial-submission-style',
+      'starter-output-corporate-board-risk-committee-pack',
+      'starter-output-sanctions-compliance-brief-style',
+    ];
+    const expectedUserIds = [
+      'starter-user-corporate-public-affairs-risk-lead',
+      'starter-user-multilateral-desk-officer',
+    ];
+
+    for (const starterId of [...expectedSituationIds, ...expectedToolIds, ...expectedOutputIds, ...expectedUserIds]) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter, `${starterId} missing`).toBeTruthy();
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.excerpts.length, `${starterId} excerpts`).toBeGreaterThanOrEqual(2);
+      expect(starter?.suggestedQuestions.length, `${starterId} questions`).toBeGreaterThanOrEqual(3);
+      expect(starter?.suggestedNextActions.length, `${starterId} actions`).toBeGreaterThanOrEqual(3);
+      expect(starter?.humanReview).toMatchObject({
+        status: 'human-reviewed',
+        humanReviewGate: expect.stringMatching(/human|review|approval/i),
+        sourcePackSummary: expect.any(String),
+      });
+      expect(starter?.inspectionSections.map((section) => section.label)).toContain('Human review');
+      expect(buildCapsuleStarterPromptBlock(starterId)).toEqual(expect.stringContaining('human_review_gate:'));
+    }
+
+    for (const starterId of expectedToolIds) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter?.category).toBe('tool');
+      expect(starter?.tags).toEqual(expect.arrayContaining(['thinking-device', 'review-gated']));
+      expect(starter?.deviceProfile).toMatchObject({
+        deviceKind: expect.any(String),
+        humanReviewGate: expect.stringMatching(/human|review|approval/i),
+      });
+      expect(starter?.deviceProfile?.methodSteps.length, `${starterId} method steps`).toBeGreaterThanOrEqual(4);
+    }
+
+    for (const starterId of expectedOutputIds) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter?.category).toBe('output');
+      expect(starter?.tags).toEqual(expect.arrayContaining(['drafting-style']));
+      expect(starter?.recommendedToolIds).toContain('memo-drafter');
+    }
+  });
+
+  it('keeps the first thirty visible starter cards human gated for the home capsule shelf', () => {
+    for (const starter of CAPSULE_STARTER_DEFINITIONS.slice(0, 30)) {
+      expect(starter.humanReview?.humanReviewGate, `${starter.starterId} gate`).toMatch(/human|review|approval/i);
+      expect(buildCapsuleStarterPromptBlock(starter.starterId)).toContain('human_review_gate:');
     }
   });
 

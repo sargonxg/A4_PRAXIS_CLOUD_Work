@@ -469,6 +469,20 @@ describe('capsule service', () => {
     expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/sources/un-sudan-atrocity-famine-risk')).toBe(true);
     expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/evaluations/starter-readiness')).toBe(true);
     expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/notes/starter-guidance')).toBe(true);
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-sanctions-exposure-triage-matrix')?.starterSnapshot?.deviceProfile?.deviceKind).toBe('sanctions-exposure-triage');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-corporate-ai-procurement-assurance')?.starterSnapshot?.humanReview?.humanReviewGate).toMatch(/human|review|approval/i);
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-corporate-board-risk-committee-pack')?.starterSnapshot?.tags).toContain('drafting-style');
+    expect(db.data.has('users/u1/capsules/starter-tool-sanctions-exposure-triage-matrix/sources/ofac-sanctions-list-service')).toBe(true);
+    expect(db.data.has('users/u1/capsules/starter-situation-corporate-ai-procurement-assurance/sources/nist-ai-rmf')).toBe(true);
+    expect(db.data.has('users/u1/capsules/starter-output-corporate-board-risk-committee-pack/notes/starter-guidance')).toBe(true);
+    const starterAdvisoryMemory = db.data.get('users/u1/capsules/starter-tool-sanctions-exposure-triage-matrix/advisoryMemoryHits/starter-advisory-context') as Record<string, unknown> | undefined;
+    expect(starterAdvisoryMemory).toMatchObject({
+      capsuleId: 'starter-tool-sanctions-exposure-triage-matrix',
+      advisoryOnly: true,
+      cogneeMode: 'not-ingested',
+      promotionRequired: 'review-card',
+      postgresProjection: 'capsule-plus-proposals-only',
+    });
 
     const resolved = await resolveInjectableContext({ uid: 'u1', capsuleId: 'starter-tool-source-pack-builder' }, deps(db));
     expect(resolved.promptBlock).toContain('[starter_capsule_definition]');

@@ -505,7 +505,7 @@ export interface CapsuleImprovementProposal {
   generatedBy: 'quality-audit' | 'cognee' | 'agent' | string;
 }
 
-export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-22-work-intent-policy-context-v7';
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-22-expert-policy-capsules-v8';
 
 export type CapsuleStarterSnapshot = Pick<
   CapsuleStarterDefinition,
@@ -949,7 +949,15 @@ function starter(
       ? buildStarterDeviceProfile(label)
       : undefined
   );
-  const humanReview = overrides?.humanReview;
+  const humanReview = overrides?.humanReview ?? humanReviewed(
+    `Human gate applied to ${label}: source posture, AI guardrails, domain limits, and approval triggers must stay visible before external use.`,
+    'PRAXIS expert capsule governance',
+    {
+      scope: `Reusable ${category} capsule for ${domain.replace(/-/g, ' ')} work.`,
+      sourcePackSummary: sourcePack.map((source) => source.label).slice(0, 3).join('; '),
+      humanReviewGate: 'Human review required before external publication, legal or financial reliance, canonical graph promotion, or high-stakes operational use.',
+    },
+  );
   return {
     starterId,
     category,
@@ -1808,6 +1816,314 @@ function reasoningGuideStarter(spec: ReasoningGuideDeviceSpec): CapsuleStarterDe
   );
 }
 
+const EXPERT_POLICY_CAPSULE_WAVE: CapsuleStarterDefinition[] = [
+  starter('starter-situation-ukraine-reconstruction-integrity-finance', 'situation', 'finance', 'Ukraine reconstruction integrity finance capsule', 'A reconstruction finance capsule for Ukraine recovery needs, donor facilities, corruption risk, procurement controls, and implementation confidence.', 'Use this when PRAXIS must brief reconstruction financing, donor conditionality, public procurement, corporate delivery risk, or integrity safeguards without flattening humanitarian, macro, and governance claims.', ['ukraine', 'reconstruction', 'integrity', 'donor-finance', 'procurement', 'corporate-risk', 'team:economic-sanctions', 'team:governance-public-sector'], { situationCoreId: 'starter-situation-ukraine-reconstruction-integrity-finance', pathCoreId: 'public-sector-policy', sourceCoreIds: ['world-bank-ukraine-rdna', 'eu-ukraine-facility'], toolCoreIds: ['grounded-research', 'sourceability', 'ach'], outputCoreIds: ['principals-decision-memo'] }, ['grounded-research', 'sourceability', 'ach'], ['principals-decision-memo', 'country-risk-card'], ['starter-tool-sourceability-matrix', 'starter-tool-policy-tradeoff-ledger', 'starter-output-corporate-board-risk-committee-pack'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'world-bank-ukraine-rdna', label: 'World Bank Ukraine recovery and reconstruction needs assessment', url: 'https://www.worldbank.org/en/country/ukraine/publication/updated-ukraine-recovery-and-reconstruction-needs-assessment-released', sourceType: 'multilateral', relevance: 'Primary multilateral baseline for recovery costs, sector damage, and reconstruction needs.', publisher: 'World Bank', date: '2025', reliabilityTier: 1 },
+      { id: 'eu-ukraine-facility', label: 'European Commission Ukraine Facility', url: 'https://neighbourhood-enlargement.ec.europa.eu/european-neighbourhood-policy/countries-region/ukraine/ukraine-facility_en', sourceType: 'official', relevance: 'EU financing, reform, investment, and accountability lane for Ukraine recovery support.', publisher: 'European Commission', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'world-bank-ukraine-rdna', text: 'Reconstruction analysis should separate damage estimates, recovery needs, financing gaps, sector assumptions, and the assessment date.' },
+      { sourceId: 'eu-ukraine-facility', text: 'Facility claims should identify reform conditions, investment channels, governance controls, and oversight responsibilities before drafting advice.' },
+    ],
+    suggestedQuestions: ['Which sector, facility, or procurement decision is in scope?', 'What integrity safeguard or corruption-risk claim needs source support?', 'Which donor, company, or ministry audience will use the output?'],
+    suggestedNextActions: ['Build a source matrix across RDNA, EU facility, procurement, and audit sources.', 'Run ACH on delivery bottlenecks versus political-risk explanations.', 'Draft a principals memo with funding, integrity, delivery, and evidence gaps separated.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'ukraine-reconstruction-integrity-finance', outputGoal: 'principals-decision-memo', approvalNotes: 'Human review required before statements about corruption, procurement exposure, sanctions, or donor compliance.' },
+    aiUseGuidance: 'Treat reconstruction numbers as dated estimates, not facts outside their source window. Keep donor conditions, corporate exposure, procurement integrity, and implementation feasibility separate.',
+  }),
+  starter('starter-situation-taiwan-strait-semiconductor-supply-chain-risk', 'situation', 'critical-minerals', 'Taiwan Strait semiconductor supply-chain risk capsule', 'A geoeconomic supply-chain capsule for Taiwan Strait tension, semiconductor dependency, rare-earth inputs, shipping exposure, and corporate contingency posture.', 'Use this when a policy or corporate team needs scenario-aware analysis of semiconductor or electronics supply-chain disruption without overstating military forecasts.', ['taiwan-strait', 'semiconductors', 'supply-chain', 'rare-earths', 'geoeconomics', 'corporate-risk', 'team:economic-sanctions', 'team:security-defence'], { situationCoreId: 'starter-situation-taiwan-strait-semiconductor-supply-chain-risk', pathCoreId: 'strategy-operations', sourceCoreIds: ['wto-global-trade-outlook-2026', 'iea-rare-earth-elements-2026'], toolCoreIds: ['scenario-projector', 'sourceability', 'stakeholder-map'], outputCoreIds: ['scenario-risk-dashboard-card'] }, ['scenario-projector', 'sourceability', 'stakeholder-map'], ['scenario-risk-dashboard-card', 'principals-decision-memo'], ['starter-tool-geoeconomic-chokepoint-map', 'starter-output-corporate-board-risk-committee-pack', 'starter-situation-critical-minerals-supply-chain'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'wto-global-trade-outlook-2026', label: 'WTO Global Trade Outlook and Statistics 2026', url: 'https://www.wto.org/english/res_e/publications_e/gtos0326_e.htm', sourceType: 'multilateral', relevance: 'Trade baseline for goods, services, policy uncertainty, and trade-flow sensitivity.', publisher: 'World Trade Organization', date: '2026-03', reliabilityTier: 1 },
+      { id: 'iea-rare-earth-elements-2026', label: 'IEA Rare Earth Elements analysis', url: 'https://www.iea.org/reports/rare-earth-elements', sourceType: 'multilateral', relevance: 'Critical input risk, supply concentration, and clean-tech manufacturing dependency baseline.', publisher: 'International Energy Agency', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'wto-global-trade-outlook-2026', text: 'Trade-disruption analysis should separate baseline trade forecasts, tariff policy uncertainty, sector exposure, and scenario assumptions.' },
+      { sourceId: 'iea-rare-earth-elements-2026', text: 'Rare-earth and strategic-mineral inputs should be treated as source-backed chokepoints, not generic supply-chain risk language.' },
+    ],
+    suggestedQuestions: ['Which product, supplier tier, geography, or decision horizon is in scope?', 'What exposure depends on Taiwan, rare-earth processing, shipping lanes, or customer demand?', 'Which scenario would trigger board or procurement action?'],
+    suggestedNextActions: ['Map chokepoints by component, jurisdiction, and substitute lead time.', 'Create scenario cards with indicators and confidence notes.', 'Draft a board risk pack with source-backed exposure and mitigation options.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'taiwan-strait-semiconductor-supply-chain', outputGoal: 'scenario-risk-dashboard-card', approvalNotes: 'Human review required before operational, market, security, or investment conclusions.' },
+    aiUseGuidance: 'Use scenario language and source dates. Do not predict conflict as fact; map exposure, indicators, corporate options, and confidence boundaries.',
+  }),
+  starter('starter-situation-lebanon-israel-unifil-ceasefire-monitoring', 'situation', 'diplomacy', 'Lebanon-Israel UNIFIL ceasefire monitoring capsule', 'A diplomacy and mandate capsule for UNIFIL, Security Council Resolution 1701, border incidents, de-escalation signals, and humanitarian spillover.', 'Use this when PRAXIS must track a ceasefire, mandate claim, or diplomatic option along the Blue Line with public sources and caveated escalation language.', ['lebanon', 'israel', 'unifil', 'ceasefire', 'mandate', 'blue-line', 'team:diplomatic', 'team:security-defence'], { situationCoreId: 'starter-situation-lebanon-israel-unifil-ceasefire-monitoring', pathCoreId: 'foreign-policy', sourceCoreIds: ['unifil-official', 'unsc-resolution-1701'], toolCoreIds: ['commitment-tracker', 'sourceability', 'scenario-projector'], outputCoreIds: ['legal-mandate-compliance-note'] }, ['commitment-tracker', 'sourceability', 'scenario-projector'], ['legal-mandate-compliance-note', 'talking-points'], ['starter-tool-ceasefire-monitoring-verification-matrix', 'starter-tool-legal-mandate-compliance-lens', 'starter-output-legal-mandate-compliance-note'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'unifil-official', label: 'UNIFIL official mission source', url: 'https://unifil.unmissions.org/', sourceType: 'multilateral', relevance: 'Mission mandate, public statements, and incident posture for Lebanon-Israel monitoring.', publisher: 'United Nations Peacekeeping', date: '2026', reliabilityTier: 1 },
+      { id: 'unsc-resolution-1701', label: 'UN Security Council Resolution 1701', url: 'https://undocs.org/S/RES/1701(2006)', sourceType: 'multilateral', relevance: 'Primary mandate text for ceasefire, Blue Line, and state/non-state obligations.', publisher: 'United Nations Security Council', date: '2006', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'unifil-official', text: 'Incident and de-escalation claims should identify whether the source is UNIFIL reporting, party statement, media account, or PRAXIS inference.' },
+      { sourceId: 'unsc-resolution-1701', text: 'Mandate analysis must separate controlling text, implementation practice, alleged violations, and legal or policy conclusions.' },
+    ],
+    suggestedQuestions: ['Which incident, mandate clause, or diplomatic signal is being assessed?', 'What source confirms timing, location, actor, and casualty or damage claims?', 'Does the answer need legal posture, options, or talking points?'],
+    suggestedNextActions: ['Build a commitment and incident table with source receipts.', 'Run mandate compliance lens before drafting conclusions.', 'Draft talking points with de-escalation and uncertainty language.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'unifil-ceasefire-monitoring', outputGoal: 'legal-mandate-compliance-note', approvalNotes: 'Human review required before mandate, violation, or escalation findings.' },
+    aiUseGuidance: 'Use mandate language carefully. Do not convert incidents into legal findings without sourceability, controlling text, and review.',
+  }),
+  starter('starter-situation-myanmar-humanitarian-access-asean', 'situation', 'humanitarian-rights', 'Myanmar humanitarian access and ASEAN track capsule', 'A humanitarian and diplomacy capsule for Myanmar access constraints, displacement, protection risk, ASEAN process limits, and cross-border response questions.', 'Use this when PRAXIS needs to distinguish humanitarian access, political process, protection risk, and diplomatic leverage in Myanmar.', ['myanmar', 'humanitarian-access', 'asean', 'displacement', 'protection', 'team:humanitarian', 'team:diplomatic'], { situationCoreId: 'starter-situation-myanmar-humanitarian-access-asean', pathCoreId: 'humanitarian-analysis', sourceCoreIds: ['ocha-myanmar', 'asean-five-point-consensus'], toolCoreIds: ['grounded-research', 'sourceability', 'stakeholder-map'], outputCoreIds: ['humanitarian-one-pager'] }, ['grounded-research', 'sourceability', 'stakeholder-map'], ['humanitarian-one-pager', 'principals-decision-memo'], ['starter-tool-joint-fact-finding-source-protocol', 'starter-tool-actor-leverage-veto-map', 'starter-output-humanitarian-access-brief'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'ocha-myanmar', label: 'OCHA Myanmar country operations', url: 'https://www.unocha.org/myanmar', sourceType: 'multilateral', relevance: 'Humanitarian needs, access constraints, and operational response source lane.', publisher: 'UN OCHA', date: '2026', reliabilityTier: 1 },
+      { id: 'asean-five-point-consensus', label: 'ASEAN Five-Point Consensus statement', url: 'https://asean.org/wp-content/uploads/Chairmans-Statement-on-the-ASEAN-Leaders-Meeting-24-April-2021-FINAL-a-1.pdf', sourceType: 'official', relevance: 'Diplomatic process baseline for ASEAN engagement, dialogue, and humanitarian assistance commitments.', publisher: 'ASEAN', date: '2021-04', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'ocha-myanmar', text: 'Access analysis should separate humanitarian needs, displacement, operational constraints, safety risk, and response coverage.' },
+      { sourceId: 'asean-five-point-consensus', text: 'Diplomatic-process claims should separate agreed principles, implementation progress, blockers, and external actor leverage.' },
+    ],
+    suggestedQuestions: ['Is the user asking about access, protection, diplomacy, or operational planning?', 'Which population, state or region, and time window are in scope?', 'What source differentiates need from access and response capacity?'],
+    suggestedNextActions: ['Build a source pack with OCHA, ASEAN, UNHCR, and local operational updates.', 'Map actors and leverage without assuming private intent.', 'Draft a humanitarian one-pager with access constraints and review gates.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'myanmar-humanitarian-access-asean', outputGoal: 'humanitarian-one-pager', approvalNotes: 'Human review required before protection, legal, or operational recommendations.' },
+    aiUseGuidance: 'Do not collapse political-process language into humanitarian access facts. Keep needs, access, protection, and diplomatic claims separate.',
+  }),
+  starter('starter-situation-ethiopia-protection-conflict-watch', 'situation', 'humanitarian-rights', 'Ethiopia protection and conflict watch capsule', 'A protection-risk capsule for Ethiopia conflict dynamics, access constraints, displacement, human-rights allegations, and cautious accountability language.', 'Use this when PRAXIS must brief Ethiopia conflict or protection issues with source-backed, non-inflammatory, review-gated language.', ['ethiopia', 'protection', 'conflict-watch', 'displacement', 'human-rights', 'team:humanitarian', 'team:human-rights-legal'], { situationCoreId: 'starter-situation-ethiopia-protection-conflict-watch', pathCoreId: 'humanitarian-analysis', sourceCoreIds: ['ocha-ethiopia', 'ohchr-ethiopia'], toolCoreIds: ['sourceability', 'contradiction-finder', 'ach'], outputCoreIds: ['evidence-sourceability-annex'] }, ['sourceability', 'contradiction-finder', 'ach'], ['evidence-sourceability-annex', 'humanitarian-one-pager'], ['starter-tool-sourceability-matrix', 'starter-tool-estimative-confidence-calibration-table', 'starter-output-evidence-sourceability-annex'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'ocha-ethiopia', label: 'OCHA Ethiopia country operations', url: 'https://www.unocha.org/ethiopia', sourceType: 'multilateral', relevance: 'Humanitarian needs, access, response, and displacement context for Ethiopia.', publisher: 'UN OCHA', date: '2026', reliabilityTier: 1 },
+      { id: 'ohchr-ethiopia', label: 'OHCHR Ethiopia country page', url: 'https://www.ohchr.org/en/countries/ethiopia', sourceType: 'multilateral', relevance: 'Human-rights reporting and accountability source lane.', publisher: 'OHCHR', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'ocha-ethiopia', text: 'Humanitarian claims require current location, population, need, access, and response-source separation.' },
+      { sourceId: 'ohchr-ethiopia', text: 'Rights allegations should keep allegation, source, verification status, threshold, and accountability language separate.' },
+    ],
+    suggestedQuestions: ['Which region, population, or allegation type is in scope?', 'What source verifies incident, need, or rights claim?', 'Does the output need operational, diplomatic, or accountability posture?'],
+    suggestedNextActions: ['Create an evidence annex with allegations, sources, confidence, and gaps.', 'Run contradiction finder across humanitarian and rights sources.', 'Draft cautious language with human review gates.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'ethiopia-protection-conflict-watch', outputGoal: 'evidence-sourceability-annex', approvalNotes: 'Human review required before atrocity, rights, or accountability claims.' },
+    aiUseGuidance: 'Use cautious sourceability language. Do not infer perpetrators, legal thresholds, or intent without review and primary evidence.',
+  }),
+  starter('starter-situation-venezuela-oil-sanctions-election-risk', 'situation', 'finance', 'Venezuela oil sanctions and election risk capsule', 'A sanctions and political-economy capsule for Venezuela oil exposure, OFAC posture, electoral risk, licensing assumptions, and corporate compliance caveats.', 'Use this when sanctions, energy exposure, election context, or corporate risk around Venezuela must be separated into legal, market, and policy layers.', ['venezuela', 'oil', 'sanctions', 'election-risk', 'licensing', 'corporate-compliance', 'team:economic-sanctions', 'team:diplomatic'], { situationCoreId: 'starter-situation-venezuela-oil-sanctions-election-risk', pathCoreId: 'economic-sanctions', sourceCoreIds: ['ofac-venezuela-sanctions', 'oas-venezuela'], toolCoreIds: ['sourceability', 'ach', 'memo-drafter'], outputCoreIds: ['legal-mandate-compliance-note'] }, ['sourceability', 'ach', 'memo-drafter'], ['legal-mandate-compliance-note', 'country-risk-card'], ['starter-tool-sanctions-exposure-triage-matrix', 'starter-output-sanctions-compliance-brief-style', 'starter-user-corporate-public-affairs-risk-lead'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'ofac-venezuela-sanctions', label: 'OFAC Venezuela-related sanctions', url: 'https://ofac.treasury.gov/sanctions-programs-and-country-information/venezuela-related-sanctions', sourceType: 'regulator', relevance: 'US sanctions program, licenses, and compliance source lane for Venezuela-related exposure.', publisher: 'U.S. Treasury OFAC', date: '2026', reliabilityTier: 1 },
+      { id: 'oas-venezuela', label: 'OAS Venezuela topic page', url: 'https://www.oas.org/en/topics/venezuela.asp', sourceType: 'multilateral', relevance: 'Regional institutional source lane for political and democratic context.', publisher: 'Organization of American States', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'ofac-venezuela-sanctions', text: 'Sanctions analysis must separate program authority, license status, entity exposure, transaction facts, and non-advice compliance caveats.' },
+      { sourceId: 'oas-venezuela', text: 'Political context should be presented as institutional posture and public reporting, not as a substitute for sanctions-law analysis.' },
+    ],
+    suggestedQuestions: ['Which entity, transaction, license, or sector is in scope?', 'What election or political assumption affects the risk analysis?', 'Who needs the output: legal, compliance, board, or public affairs?'],
+    suggestedNextActions: ['Build a sanctions exposure matrix with source date and license posture.', 'Separate oil-market assumptions from legal compliance claims.', 'Draft a non-advice compliance brief with approval gates.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'venezuela-oil-sanctions-election-risk', outputGoal: 'legal-mandate-compliance-note', approvalNotes: 'Human sanctions/legal review required before exposure or compliance conclusions.' },
+    aiUseGuidance: 'Never give legal advice. Treat sanctions references as source-backed context and force human review before compliance, licensing, or transaction conclusions.',
+  }),
+  starter('starter-situation-china-overcapacity-tariff-industrial-policy', 'situation', 'finance', 'China overcapacity, tariffs, and industrial policy capsule', 'A trade and industrial-policy capsule for overcapacity claims, tariff exposure, supply-chain effects, subsidy allegations, and corporate response options.', 'Use this when a corporation, ministry, or policy team needs a source-backed brief on trade measures and industrial policy without generic decoupling language.', ['china', 'overcapacity', 'tariffs', 'industrial-policy', 'trade-defense', 'corporate-risk', 'team:economic-sanctions', 'team:governance-public-sector'], { situationCoreId: 'starter-situation-china-overcapacity-tariff-industrial-policy', pathCoreId: 'economic-sanctions', sourceCoreIds: ['wto-global-trade-outlook-2026', 'eu-trade-defence'], toolCoreIds: ['grounded-research', 'sourceability', 'frame-narrative'], outputCoreIds: ['principals-decision-memo'] }, ['grounded-research', 'sourceability', 'frame-narrative'], ['principals-decision-memo', 'talking-points'], ['starter-tool-policy-tradeoff-ledger', 'starter-tool-geoeconomic-chokepoint-map', 'starter-output-ministerial-submission-style'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'wto-global-trade-outlook-2026', label: 'WTO Global Trade Outlook and Statistics 2026', url: 'https://www.wto.org/english/res_e/publications_e/gtos0326_e.htm', sourceType: 'multilateral', relevance: 'Trade forecast and policy uncertainty source lane for tariff and fragmentation analysis.', publisher: 'World Trade Organization', date: '2026-03', reliabilityTier: 1 },
+      { id: 'eu-trade-defence', label: 'European Commission trade defence', url: 'https://policy.trade.ec.europa.eu/enforcement-and-protection/trade-defence_en', sourceType: 'regulator', relevance: 'Official EU posture for trade defence instruments and procedural framing.', publisher: 'European Commission', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'wto-global-trade-outlook-2026', text: 'Trade-policy analysis should identify baseline forecasts, tariff measures, uncertainty, and sector exposure separately.' },
+      { sourceId: 'eu-trade-defence', text: 'Trade-defence claims need procedural posture, instrument type, source date, and affected product scope before conclusions.' },
+    ],
+    suggestedQuestions: ['Which sector, product code, geography, or tariff measure is in scope?', 'Is the user asking for policy options, corporate exposure, or messaging?', 'Which claim is evidence-backed versus political narrative?'],
+    suggestedNextActions: ['Build a tariff and measure timeline with source receipts.', 'Map corporate exposure and substitute options.', 'Draft a ministerial or board memo with tradeoffs and caveats.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'china-overcapacity-tariff-industrial-policy', outputGoal: 'principals-decision-memo', approvalNotes: 'Human review required before trade-law, market, or corporate strategy conclusions.' },
+    aiUseGuidance: 'Separate evidence from narrative. Do not overstate causality or legal posture in subsidy, dumping, tariff, or overcapacity claims.',
+  }),
+  starter('starter-situation-debt-distress-imf-program-watch', 'situation', 'finance', 'Debt distress and IMF program watch capsule', 'A sovereign-debt capsule for IMF program status, debt sustainability, financing gaps, creditor coordination, and social-risk caveats.', 'Use this when PRAXIS needs to brief debt distress, fiscal space, restructuring posture, or IMF program implications for a country or company.', ['debt-distress', 'imf-program', 'fiscal-space', 'creditors', 'country-risk', 'team:economic-sanctions', 'team:climate-development'], { situationCoreId: 'starter-situation-debt-distress-imf-program-watch', pathCoreId: 'economic-sanctions', sourceCoreIds: ['imf-dsa', 'world-bank-debt'], toolCoreIds: ['ach', 'sourceability', 'scenario-projector'], outputCoreIds: ['country-risk-card'] }, ['ach', 'sourceability', 'scenario-projector'], ['country-risk-card', 'principals-decision-memo'], ['starter-tool-fiscal-space-debt-stress-screen', 'starter-output-corporate-board-risk-committee-pack', 'starter-user-multilateral-desk-officer'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'imf-dsa', label: 'IMF debt sustainability analysis resources', url: 'https://www.imf.org/en/Publications/DSA', sourceType: 'multilateral', relevance: 'Primary IMF lane for debt sustainability analysis and program-related assumptions.', publisher: 'International Monetary Fund', date: '2026', reliabilityTier: 1 },
+      { id: 'world-bank-debt', label: 'World Bank international debt statistics', url: 'https://www.worldbank.org/en/programs/debt-statistics', sourceType: 'multilateral', relevance: 'External debt, creditor exposure, and country debt-data source lane.', publisher: 'World Bank', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'imf-dsa', text: 'Debt-program analysis should separate IMF program status, assumptions, risks, and stress tests from PRAXIS judgment.' },
+      { sourceId: 'world-bank-debt', text: 'Debt exposure claims should identify indicator date, creditor category, currency, and data-source limitations.' },
+    ],
+    suggestedQuestions: ['Which country, creditor, program review, or financing gap matters?', 'What date controls the debt and macro indicators?', 'What decision depends on the fiscal-space judgment?'],
+    suggestedNextActions: ['Run fiscal-space stress screen with dated indicators.', 'Use ACH for alternative explanations of stress.', 'Draft a country-risk card with social, creditor, and program caveats.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'debt-distress-imf-program-watch', outputGoal: 'country-risk-card', approvalNotes: 'Human financial and policy review required before investment, lending, or restructuring conclusions.' },
+    aiUseGuidance: 'Do not provide investment advice. Use dated macro and debt sources, show assumptions, and distinguish official program language from analysis.',
+  }),
+  starter('starter-situation-corporate-ai-procurement-assurance', 'situation', 'ai-governance', 'Corporate AI procurement assurance capsule', 'A corporate AI procurement capsule for vendor claims, model-risk controls, assurance artifacts, privacy posture, and board-ready decision gates.', 'Use this when a company or public buyer is evaluating AI tools, agents, or model services and needs source-backed governance rather than vendor marketing language.', ['corporate-ai', 'procurement', 'vendor-risk', 'assurance', 'privacy', 'board-risk', 'team:governance-public-sector', 'team:research-strategy'], { situationCoreId: 'starter-situation-corporate-ai-procurement-assurance', pathCoreId: 'governance-public-sector', sourceCoreIds: ['nist-ai-rmf', 'oecd-ai-principles'], toolCoreIds: ['sourceability', 'contradiction-finder', 'memo-drafter'], outputCoreIds: ['principals-decision-memo'] }, ['sourceability', 'contradiction-finder', 'memo-drafter'], ['principals-decision-memo', 'legal-mandate-compliance-note'], ['starter-tool-corporate-value-chain-due-diligence-map', 'starter-output-corporate-board-risk-committee-pack', 'starter-situation-us-federal-ai-governance-baseline'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'nist-ai-rmf', label: 'NIST AI Risk Management Framework', url: 'https://www.nist.gov/itl/ai-risk-management-framework', sourceType: 'official', relevance: 'Trustworthy AI risk framing and controls source lane.', publisher: 'NIST', date: '2023', reliabilityTier: 1 },
+      { id: 'oecd-ai-principles', label: 'OECD AI Principles', url: 'https://www.oecd-ilibrary.org/en/topics/ai-principles.html', sourceType: 'multilateral', relevance: 'International principles for trustworthy AI policy and governance.', publisher: 'OECD', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'nist-ai-rmf', text: 'AI procurement should turn vendor claims into map, measure, manage, and govern checks before approval.' },
+      { sourceId: 'oecd-ai-principles', text: 'AI governance analysis should keep accountability, transparency, robustness, and human-centered values visible.' },
+    ],
+    suggestedQuestions: ['What AI use case, vendor, data, and decision rights are in scope?', 'Which vendor claim lacks evidence or assurance artifact?', 'What board, procurement, privacy, or legal gate controls approval?'],
+    suggestedNextActions: ['Build a vendor claim-source matrix.', 'Run contradiction finder on marketing, contract, security, and model-card claims.', 'Draft a board decision memo with stop conditions and review gates.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'corporate-ai-procurement-assurance', outputGoal: 'principals-decision-memo', approvalNotes: 'Human governance, privacy, security, and legal review required before procurement recommendation.' },
+    aiUseGuidance: 'Treat vendor assertions as untrusted until sourced. Do not certify safety, compliance, accuracy, privacy, or fairness.',
+  }),
+  starter('starter-situation-food-security-commodity-shock-watch', 'situation', 'humanitarian-rights', 'Food security and commodity shock watch capsule', 'A food-security capsule for commodity prices, humanitarian need, import exposure, livelihoods, and operational response triggers.', 'Use this when PRAXIS must connect macro commodity shocks to food security, humanitarian planning, or public-policy options.', ['food-security', 'commodity-shock', 'prices', 'livelihoods', 'humanitarian', 'team:humanitarian', 'team:economic-sanctions'], { situationCoreId: 'starter-situation-food-security-commodity-shock-watch', pathCoreId: 'humanitarian-analysis', sourceCoreIds: ['fao-food-price-index', 'wfp-hunger-map'], toolCoreIds: ['grounded-research', 'scenario-projector', 'sourceability'], outputCoreIds: ['scenario-risk-dashboard-card'] }, ['grounded-research', 'scenario-projector', 'sourceability'], ['scenario-risk-dashboard-card', 'humanitarian-one-pager'], ['starter-tool-fiscal-space-debt-stress-screen', 'starter-output-scenario-risk-dashboard-card', 'starter-user-multilateral-desk-officer'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'fao-food-price-index', label: 'FAO Food Price Index', url: 'https://www.fao.org/worldfoodsituation/foodpricesindex/en/', sourceType: 'multilateral', relevance: 'Commodity-price and food-market baseline for shocks and trends.', publisher: 'Food and Agriculture Organization', date: '2026', reliabilityTier: 1 },
+      { id: 'wfp-hunger-map', label: 'WFP HungerMapLIVE', url: 'https://hungermap.wfp.org/', sourceType: 'multilateral', relevance: 'Food-security monitoring, hunger indicators, and operational risk context.', publisher: 'World Food Programme', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'fao-food-price-index', text: 'Commodity shock analysis should separate global price movement, local pass-through, import exposure, and source date.' },
+      { sourceId: 'wfp-hunger-map', text: 'Humanitarian food-security claims need current needs, geography, population, and response-source context.' },
+    ],
+    suggestedQuestions: ['Which commodity, country, population, and decision window are in scope?', 'Is the user asking for humanitarian response, fiscal policy, or corporate exposure?', 'Which indicator would trigger escalation or support?'],
+    suggestedNextActions: ['Build a dashboard with price, import, and food-security indicators.', 'Map fiscal and operational response options.', 'Draft a humanitarian or policy one-pager with confidence and source gaps.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'food-security-commodity-shock-watch', outputGoal: 'scenario-risk-dashboard-card', approvalNotes: 'Human review required before operational, market, or public-health recommendations.' },
+    aiUseGuidance: 'Do not infer hunger outcomes from price data alone. Keep market, import, household, and response indicators separate.',
+  }),
+  starter('starter-tool-sanctions-exposure-triage-matrix', 'tool', 'exposure-mapping', 'Sanctions exposure triage matrix', 'A review-gated tool capsule for mapping parties, regimes, lists, ownership, transactions, licenses, and red-flag source gaps.', 'Use this before any sanctions-sensitive memo, transaction review, corporate exposure note, or public affairs response.', ['sanctions', 'exposure', 'triage', 'compliance', 'thinking-device', 'review-gated', 'corporate-risk', 'team:economic-sanctions'], { toolCoreIds: ['sourceability', 'ach', 'memo-drafter'], objectiveCoreIds: ['build-sanctions-exposure-triage'], sourceCoreIds: ['ofac-sanctions-list-service', 'eu-sanctions-map'], outputCoreIds: ['legal-mandate-compliance-note'] }, ['sourceability', 'ach', 'memo-drafter'], ['legal-mandate-compliance-note', 'evidence-sourceability-annex'], ['starter-situation-venezuela-oil-sanctions-election-risk', 'starter-output-sanctions-compliance-brief-style', 'starter-tool-legal-mandate-compliance-lens'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'ofac-sanctions-list-service', label: 'OFAC Sanctions List Service', url: 'https://ofac.treasury.gov/sanctions-list-service', sourceType: 'regulator', relevance: 'US sanctions list data and update source for exposure triage.', publisher: 'U.S. Treasury OFAC', date: '2026', reliabilityTier: 1 },
+      { id: 'eu-sanctions-map', label: 'EU Sanctions Map', url: 'https://www.sanctionsmap.eu/', sourceType: 'official', relevance: 'EU restrictive-measures source lane by regime, actor, and legal act.', publisher: 'European Union', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'ofac-sanctions-list-service', text: 'Exposure triage must use current list data and preserve list date, party identity, aliases, ownership, and license assumptions.' },
+      { sourceId: 'eu-sanctions-map', text: 'EU sanctions posture should cite regime, legal act, affected parties, and measure type before conclusions.' },
+    ],
+    suggestedQuestions: ['Which entity, beneficial owner, transaction, good, service, or jurisdiction is in scope?', 'Which sanctions regime and list date controls the review?', 'What human legal or compliance gate is required?'],
+    suggestedNextActions: ['Create triage rows for party, regime, source, transaction, license, uncertainty, and reviewer.', 'Mark inferred ownership separately from sourced ownership.', 'Draft a non-advice compliance note with unresolved gaps.'],
+    agentWorkflow: { preferredAgentId: 'sourceability-reviewer', routeHint: 'sanctions-exposure-triage-matrix', outputGoal: 'legal-mandate-compliance-note', approvalNotes: 'Human sanctions counsel or compliance reviewer required before reliance.' },
+    aiUseGuidance: 'Use only as triage support. Never provide legal advice or final sanctions determinations; route uncertain items to human review.',
+    deviceProfile: buildStarterDeviceProfile('Sanctions exposure triage matrix', { deviceKind: 'sanctions-exposure-triage' }),
+  }),
+  starter('starter-tool-corporate-value-chain-due-diligence-map', 'tool', 'policy-review', 'Corporate value-chain due diligence map', 'A corporate-responsibility tool capsule for mapping value-chain risks, adverse impacts, leverage, remediation, and evidence gaps.', 'Use this when a company, investor, or policy team needs OECD/UNGP-style due diligence before drafting public or board language.', ['corporate', 'value-chain', 'due-diligence', 'human-rights', 'sustainability', 'thinking-device', 'review-gated', 'team:governance-public-sector'], { toolCoreIds: ['sourceability', 'stakeholder-map', 'memo-drafter'], objectiveCoreIds: ['map-corporate-value-chain-due-diligence'], sourceCoreIds: ['oecd-due-diligence-rbc', 'ohchr-ungp'], outputCoreIds: ['principals-decision-memo'] }, ['sourceability', 'stakeholder-map', 'memo-drafter'], ['principals-decision-memo', 'evidence-sourceability-annex'], ['starter-situation-corporate-ai-procurement-assurance', 'starter-output-corporate-board-risk-committee-pack', 'starter-user-corporate-public-affairs-risk-lead'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'oecd-due-diligence-rbc', label: 'OECD Due Diligence Guidance for Responsible Business Conduct', url: 'https://www.oecd-ilibrary.org/en/topics/due-diligence-for-responsible-business-conduct.html', sourceType: 'multilateral', relevance: 'Risk-based due diligence framework for corporate value chains.', publisher: 'OECD', date: '2026', reliabilityTier: 1 },
+      { id: 'ohchr-ungp', label: 'OHCHR UN Guiding Principles on Business and Human Rights', url: 'https://www.ohchr.org/sites/default/files/documents/publications/guidingprinciplesbusinesshr_en.pdf', sourceType: 'multilateral', relevance: 'Protect, respect, and remedy baseline for business and human-rights risk.', publisher: 'OHCHR', date: '2011', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'oecd-due-diligence-rbc', text: 'Due-diligence mapping should identify risk, severity, leverage, mitigation, tracking, communication, and remediation posture.' },
+      { sourceId: 'ohchr-ungp', text: 'Corporate human-rights analysis should separate responsibility to respect, state duty, remedy channels, and public-claim limits.' },
+    ],
+    suggestedQuestions: ['Which value-chain tier, supplier, geography, product, or adverse impact is in scope?', 'What leverage or remedy option is available?', 'What can the company safely say before human review?'],
+    suggestedNextActions: ['Map actors, impacts, leverage, evidence, and remediation gaps.', 'Separate sourced adverse-impact claims from risk hypotheses.', 'Draft a board-ready due-diligence memo with sourceability annex.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'corporate-value-chain-due-diligence-map', outputGoal: 'principals-decision-memo', approvalNotes: 'Human legal, sustainability, and communications review required before external claims.' },
+    aiUseGuidance: 'Do not certify due diligence or compliance. Treat this as a source-backed map for human experts and decision owners.',
+    deviceProfile: buildStarterDeviceProfile('Corporate value-chain due diligence map', { deviceKind: 'value-chain-due-diligence-map' }),
+  }),
+  starter('starter-tool-fiscal-space-debt-stress-screen', 'tool', 'exposure-mapping', 'Fiscal space and debt stress screen', 'A macro-policy tool capsule for testing fiscal space, debt stress, external financing, social tradeoffs, and data freshness.', 'Use this before country-risk cards, IMF program briefs, budget support memos, or corporate sovereign-exposure notes.', ['fiscal-space', 'debt-stress', 'country-risk', 'macro', 'thinking-device', 'review-gated', 'team:economic-sanctions'], { toolCoreIds: ['ach', 'sourceability', 'scenario-projector'], objectiveCoreIds: ['screen-fiscal-space-debt-stress'], sourceCoreIds: ['imf-dsa', 'world-bank-debt'], outputCoreIds: ['country-risk-card'] }, ['ach', 'sourceability', 'scenario-projector'], ['country-risk-card', 'scenario-risk-dashboard-card'], ['starter-situation-debt-distress-imf-program-watch', 'starter-situation-food-security-commodity-shock-watch', 'starter-output-corporate-board-risk-committee-pack'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'imf-dsa', label: 'IMF debt sustainability analysis resources', url: 'https://www.imf.org/en/Publications/DSA', sourceType: 'multilateral', relevance: 'Debt sustainability source lane for fiscal stress assumptions.', publisher: 'International Monetary Fund', date: '2026', reliabilityTier: 1 },
+      { id: 'world-bank-debt', label: 'World Bank international debt statistics', url: 'https://www.worldbank.org/en/programs/debt-statistics', sourceType: 'multilateral', relevance: 'Debt stock, flow, creditor, and country exposure data lane.', publisher: 'World Bank', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'imf-dsa', text: 'Fiscal-space screening should separate baseline, stress, uncertainty, policy adjustment, and program assumptions.' },
+      { sourceId: 'world-bank-debt', text: 'Debt-stress claims need dated creditor, currency, maturity, and external-financing evidence.' },
+    ],
+    suggestedQuestions: ['Which country, budget line, creditor, or shock is in scope?', 'What social or political tradeoff affects the fiscal-space judgment?', 'What data is stale or missing?'],
+    suggestedNextActions: ['Build a fiscal stress table with indicators, source dates, and assumptions.', 'Run ACH against alternative stress explanations.', 'Attach results to a country-risk card or dashboard.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'fiscal-space-debt-stress-screen', outputGoal: 'country-risk-card', approvalNotes: 'Human macro/finance review required before lending, investment, or fiscal recommendation.' },
+    aiUseGuidance: 'Do not infer solvency or investment action. Use dated indicators and show assumptions, uncertainty, and policy tradeoffs.',
+    deviceProfile: buildStarterDeviceProfile('Fiscal space and debt stress screen', { deviceKind: 'fiscal-space-debt-stress-screen' }),
+  }),
+  starter('starter-tool-geoeconomic-chokepoint-map', 'tool', 'options-mapping', 'Geoeconomic chokepoint map', 'A strategy tool capsule for mapping trade, minerals, shipping, technology, sanctions, and supplier chokepoints into decision options.', 'Use this when a policy or corporate team must turn geopolitical exposure into concrete options and indicators.', ['geoeconomics', 'chokepoints', 'trade', 'technology', 'supply-chain', 'thinking-device', 'review-gated', 'team:economic-sanctions'], { toolCoreIds: ['stakeholder-map', 'scenario-projector', 'sourceability'], objectiveCoreIds: ['map-geoeconomic-chokepoints'], sourceCoreIds: ['wto-global-trade-outlook-2026', 'iea-rare-earth-elements-2026'], outputCoreIds: ['scenario-risk-dashboard-card'] }, ['stakeholder-map', 'scenario-projector', 'sourceability'], ['scenario-risk-dashboard-card', 'principals-decision-memo'], ['starter-situation-taiwan-strait-semiconductor-supply-chain-risk', 'starter-situation-china-overcapacity-tariff-industrial-policy', 'starter-output-corporate-board-risk-committee-pack'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'wto-global-trade-outlook-2026', label: 'WTO Global Trade Outlook and Statistics 2026', url: 'https://www.wto.org/english/res_e/publications_e/gtos0326_e.htm', sourceType: 'multilateral', relevance: 'Trade and policy uncertainty baseline for geoeconomic exposure.', publisher: 'World Trade Organization', date: '2026-03', reliabilityTier: 1 },
+      { id: 'iea-critical-minerals', label: 'IEA critical minerals analysis', url: 'https://www.iea.org/topics/critical-minerals', sourceType: 'multilateral', relevance: 'Strategic mineral demand, concentration, and energy-transition dependency baseline.', publisher: 'International Energy Agency', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'wto-global-trade-outlook-2026', text: 'Chokepoint mapping should separate trade-policy uncertainty, tariff measures, route exposure, and scenario assumptions.' },
+      { sourceId: 'iea-critical-minerals', text: 'Critical-mineral chokepoints require material, processing, jurisdiction, demand, and substitute lead-time distinctions.' },
+    ],
+    suggestedQuestions: ['Which material, technology, shipping route, supplier, or sanctions regime is the chokepoint?', 'What decision changes if the chokepoint closes or tightens?', 'What indicators would warn early enough to act?'],
+    suggestedNextActions: ['Map chokepoints by actor, source, substitute, lead time, and decision option.', 'Create scenario indicators with confidence and source dates.', 'Draft board or principals options with mitigations and tradeoffs.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'geoeconomic-chokepoint-map', outputGoal: 'scenario-risk-dashboard-card', approvalNotes: 'Human review required before operational, trade, investment, or sanctions recommendations.' },
+    aiUseGuidance: 'Use as exposure mapping, not prediction. Label every causal link and option as sourced, inferred, or uncertain.',
+    deviceProfile: buildStarterDeviceProfile('Geoeconomic chokepoint map', { deviceKind: 'geoeconomic-chokepoint-map' }),
+  }),
+  starter('starter-tool-policy-drafting-style-selector', 'tool', 'output-brief', 'Policy drafting style selector', 'A drafting tool capsule for selecting ministerial, board, diplomatic, legal, humanitarian, public-affairs, or technical memo style with caveats preserved.', 'Use this when the same analysis must be converted into the right artifact language for a specific policy situation or corporate audience.', ['drafting-style', 'memo-writing', 'audience', 'policy-product', 'thinking-device', 'review-gated', 'team:research-strategy'], { toolCoreIds: ['memo-drafter', 'frame-narrative', 'sourceability'], objectiveCoreIds: ['select-policy-drafting-style'], outputCoreIds: ['principals-decision-memo'] }, ['memo-drafter', 'frame-narrative', 'sourceability'], ['principals-decision-memo', 'talking-points'], ['starter-output-ministerial-submission-style', 'starter-output-corporate-board-risk-committee-pack', 'starter-output-sanctions-compliance-brief-style'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'plain-language-gov', label: 'Plain language government guidance', url: 'https://www.plainlanguage.gov/guidelines/', sourceType: 'official', relevance: 'Clear public-sector writing baseline for concise, usable policy text.', publisher: 'U.S. Plain Language Action and Information Network', date: '2026', reliabilityTier: 1 },
+      { id: 'govuk-content-design', label: 'GOV.UK content design writing guidance', url: 'https://www.gov.uk/guidance/content-design/writing-for-gov-uk', sourceType: 'official', relevance: 'Public-service writing guidance for audience, structure, and action-oriented text.', publisher: 'UK Government Digital Service', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'plain-language-gov', text: 'Drafting style should make the decision, audience, action, caveat, and source posture clear.' },
+      { sourceId: 'govuk-content-design', text: 'Audience-specific writing should preserve the user need while removing unnecessary complexity and ambiguity.' },
+    ],
+    suggestedQuestions: ['Who is the decision owner and what format will they accept?', 'Which caveats must survive compression?', 'Is the output ministerial, board, diplomatic, legal, humanitarian, public, or technical?'],
+    suggestedNextActions: ['Choose drafting style before generating the final product.', 'Rewrite with required sections, tone, caveats, and source posture.', 'Send sensitive claims to human review before export.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'policy-drafting-style-selector', outputGoal: 'principals-decision-memo', approvalNotes: 'Human review required before public, legal, board, or ministerial use.' },
+    aiUseGuidance: 'Use this to adapt style without changing substance. Preserve caveats, source limits, assumptions, and approval gates.',
+    deviceProfile: buildStarterDeviceProfile('Policy drafting style selector', { deviceKind: 'policy-drafting-style-selector' }),
+  }),
+  starter('starter-output-ministerial-submission-style', 'output', 'output-brief', 'Ministerial submission style output capsule', 'An output capsule for ministerial submissions with decision, background, options, recommended line, risks, consultation, and implementation posture.', 'Use this when PRAXIS needs a public-sector decision product that is concise, source-backed, and safe for senior official review.', ['ministerial-submission', 'public-sector', 'decision-brief', 'implementation', 'drafting-style', 'team:governance-public-sector'], { outputCoreIds: ['principals-decision-memo'], productCoreIds: ['principals-decision-memo'], objectiveCoreIds: ['draft-ministerial-submission-style'] }, ['memo-drafter', 'sourceability', 'frame-narrative'], ['principals-decision-memo', 'talking-points'], ['starter-tool-policy-drafting-style-selector', 'starter-situation-china-overcapacity-tariff-industrial-policy', 'starter-user-multilateral-desk-officer'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'plain-language-gov', label: 'Plain language government guidance', url: 'https://www.plainlanguage.gov/guidelines/', sourceType: 'official', relevance: 'Clarity and decision-support writing baseline for public-sector outputs.', publisher: 'U.S. Plain Language Action and Information Network', date: '2026', reliabilityTier: 1 },
+      { id: 'oecd-governance', label: 'OECD public governance resources', url: 'https://www.oecd.org/governance/', sourceType: 'multilateral', relevance: 'Public governance context for policy decision products and implementation limits.', publisher: 'OECD', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'plain-language-gov', text: 'Ministerial text should make the decision, rationale, risks, and next action easy to find.' },
+      { sourceId: 'oecd-governance', text: 'Public-sector options should identify institutional capacity, affected stakeholders, and implementation constraints.' },
+    ],
+    suggestedQuestions: ['What decision does the minister or principal need to take?', 'Which options are viable and what is the recommended line?', 'What source gap or consultation risk blocks clearance?'],
+    suggestedNextActions: ['Draft decision, background, options, recommendation, risks, and implementation sections.', 'Attach sourceability annex for contested claims.', 'Run human clearance before external or ministerial use.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'ministerial-submission-style', outputGoal: 'principals-decision-memo', approvalNotes: 'Human official, legal, and policy clearance required before use.' },
+    aiUseGuidance: 'Use concise public-sector language. Do not hide uncertainty or consultation gaps to make the recommendation sound cleaner.',
+  }),
+  starter('starter-output-corporate-board-risk-committee-pack', 'output', 'output-brief', 'Corporate board risk committee pack output capsule', 'An output capsule for board risk committees with decision asks, exposure map, controls, scenarios, accountability, and assurance gaps.', 'Use this when a corporate or investor audience needs policy-risk analysis in board-ready language without pretending PRAXIS has certified controls.', ['board-risk', 'corporate', 'risk-committee', 'assurance', 'controls', 'drafting-style', 'team:research-strategy'], { outputCoreIds: ['principals-decision-memo', 'scenario-risk-dashboard-card'], productCoreIds: ['principals-decision-memo'], objectiveCoreIds: ['draft-board-risk-committee-pack'] }, ['memo-drafter', 'sourceability', 'scenario-projector'], ['principals-decision-memo', 'scenario-risk-dashboard-card'], ['starter-tool-policy-drafting-style-selector', 'starter-situation-corporate-ai-procurement-assurance', 'starter-user-corporate-public-affairs-risk-lead'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'oecd-corporate-governance', label: 'OECD corporate governance principles', url: 'https://www.oecd.org/corporate/principles-corporate-governance/', sourceType: 'multilateral', relevance: 'Board oversight and governance baseline for risk-committee style outputs.', publisher: 'OECD', date: '2023', reliabilityTier: 1 },
+      { id: 'ifrs-s1-s2', label: 'IFRS ISSB sustainability disclosure standards', url: 'https://www.ifrs.org/issued-standards/ifrs-sustainability-standards-navigator/', sourceType: 'standard-setter', relevance: 'Disclosure and investor-material risk baseline for board-facing packs.', publisher: 'IFRS Foundation', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'oecd-corporate-governance', text: 'Board packs should show oversight question, accountability owner, risk exposure, and decision needed.' },
+      { sourceId: 'ifrs-s1-s2', text: 'Investor-material risk language should preserve controls, metrics, assumptions, and disclosure boundaries.' },
+    ],
+    suggestedQuestions: ['What decision, oversight question, or risk appetite issue is before the board?', 'Which exposure, control, scenario, or assurance gap matters most?', 'What can management say without over-claiming?'],
+    suggestedNextActions: ['Draft decision ask, risk map, controls, scenarios, gaps, and management actions.', 'Attach source and evidence annex.', 'Route assurance and disclosure claims to human review.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'corporate-board-risk-committee-pack', outputGoal: 'principals-decision-memo', approvalNotes: 'Human legal, disclosure, assurance, and executive review required before board use.' },
+    aiUseGuidance: 'Use board-ready language without certification. Keep risk, control, owner, evidence, and action clear.',
+  }),
+  starter('starter-output-sanctions-compliance-brief-style', 'output', 'output-brief', 'Sanctions compliance brief style output capsule', 'An output capsule for sanctions-sensitive briefs with non-advice caveats, regime table, exposure facts, source dates, reviewer notes, and stop conditions.', 'Use this when a sanctions, export, or counterparty-risk analysis needs a carefully bounded compliance-style output.', ['sanctions', 'compliance-brief', 'non-advice', 'review-gate', 'drafting-style', 'team:economic-sanctions'], { outputCoreIds: ['legal-mandate-compliance-note', 'evidence-sourceability-annex'], productCoreIds: ['legal-mandate-compliance-note'], objectiveCoreIds: ['draft-sanctions-compliance-brief-style'] }, ['memo-drafter', 'sourceability', 'ach'], ['legal-mandate-compliance-note', 'evidence-sourceability-annex'], ['starter-tool-sanctions-exposure-triage-matrix', 'starter-situation-venezuela-oil-sanctions-election-risk', 'starter-tool-legal-mandate-compliance-lens'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'ofac-framework-compliance', label: 'OFAC framework for compliance commitments', url: 'https://ofac.treasury.gov/media/16331/download?inline', sourceType: 'regulator', relevance: 'US sanctions compliance program source lane.', publisher: 'U.S. Treasury OFAC', date: '2019', reliabilityTier: 1 },
+      { id: 'eu-sanctions-map', label: 'EU Sanctions Map', url: 'https://www.sanctionsmap.eu/', sourceType: 'official', relevance: 'EU sanctions regime and legal-act source lane.', publisher: 'European Union', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'ofac-framework-compliance', text: 'Compliance-style output should separate facts, source dates, risk indicators, reviewer notes, and non-advice caveats.' },
+      { sourceId: 'eu-sanctions-map', text: 'EU sanctions language should cite regime and measure type rather than generalizing across restrictive measures.' },
+    ],
+    suggestedQuestions: ['Which regime, entity, transaction, and jurisdiction are in scope?', 'What facts are known versus assumed?', 'Who must review before reliance?'],
+    suggestedNextActions: ['Draft regime table, exposure facts, sources, gaps, and stop conditions.', 'Add non-advice caveat and reviewer note.', 'Block finalization until human sanctions review.'],
+    agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'sanctions-compliance-brief-style', outputGoal: 'legal-mandate-compliance-note', approvalNotes: 'Human sanctions/legal review required before reliance or distribution.' },
+    aiUseGuidance: 'Use compliance style, not legal advice. Every exposure claim needs source, date, uncertainty, and review owner.',
+  }),
+  starter('starter-user-corporate-public-affairs-risk-lead', 'user', 'analyst-role', 'Corporate public affairs risk lead user capsule', 'A user capsule for corporate public affairs leaders balancing policy risk, regulatory exposure, board language, sustainability claims, and reputation constraints.', 'Use this when PRAXIS should answer for a corporate policy, public affairs, sustainability, or risk leader who needs defensible language and escalation triggers.', ['corporate', 'public-affairs', 'board-risk', 'reputation', 'regulatory', 'user-lens', 'team:research-strategy'], { userCoreId: 'starter-user-corporate-public-affairs-risk-lead', toolCoreIds: ['memo-drafter', 'sourceability', 'frame-narrative'], outputCoreIds: ['principals-decision-memo'] }, ['memo-drafter', 'sourceability', 'frame-narrative'], ['principals-decision-memo', 'talking-points'], ['starter-output-corporate-board-risk-committee-pack', 'starter-tool-corporate-value-chain-due-diligence-map', 'starter-situation-corporate-ai-procurement-assurance'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'oecd-due-diligence-rbc', label: 'OECD Due Diligence Guidance for Responsible Business Conduct', url: 'https://www.oecd-ilibrary.org/en/topics/due-diligence-for-responsible-business-conduct.html', sourceType: 'multilateral', relevance: 'Corporate due-diligence baseline for public-affairs and risk language.', publisher: 'OECD', date: '2026', reliabilityTier: 1 },
+      { id: 'eu-csrd-esrs', label: 'European Commission corporate sustainability reporting', url: 'https://finance.ec.europa.eu/capital-markets-union-and-financial-markets/company-reporting-and-auditing/company-reporting/corporate-sustainability-reporting_en', sourceType: 'regulator', relevance: 'Sustainability reporting and disclosure context for corporate claims.', publisher: 'European Commission', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'oecd-due-diligence-rbc', text: 'Corporate public-affairs language should preserve due-diligence limits, leverage, remediation, and evidence gaps.' },
+      { sourceId: 'eu-csrd-esrs', text: 'Sustainability and risk claims should remain consistent with disclosure boundaries and assurance posture.' },
+    ],
+    suggestedQuestions: ['Is the user asking for board language, public line, regulator posture, or internal escalation?', 'Which claim could create legal, disclosure, or reputation risk?', 'What evidence or approval is missing?'],
+    suggestedNextActions: ['Select board, public, or regulator drafting style.', 'Attach sourceability and review notes to risky claims.', 'Escalate legal, disclosure, and sanctions questions to human review.'],
+    agentWorkflow: { preferredAgentId: 'handover-builder', routeHint: 'corporate-public-affairs-risk-lead', outputGoal: 'principals-decision-memo', approvalNotes: 'Human legal, disclosure, and communications review required before external language.' },
+    aiUseGuidance: 'Favor defensible, source-backed language. Avoid over-promising, greenwashing, legal conclusions, or unreviewed public claims.',
+  }),
+  starter('starter-user-multilateral-desk-officer', 'user', 'analyst-role', 'Multilateral desk officer user capsule', 'A user capsule for UN, IFI, regional-organization, or diplomatic desk officers who need mandate-aware, source-backed, cautious policy products.', 'Use this when PRAXIS should write for a multilateral desk: mandate language, member-state positions, implementation limits, and careful confidence are more important than persuasion.', ['multilateral', 'desk-officer', 'mandate', 'diplomacy', 'implementation', 'user-lens', 'team:diplomatic'], { userCoreId: 'starter-user-multilateral-desk-officer', toolCoreIds: ['commitment-tracker', 'sourceability', 'memo-drafter'], outputCoreIds: ['principals-decision-memo', 'diplomatic-cable'] }, ['commitment-tracker', 'sourceability', 'memo-drafter'], ['principals-decision-memo', 'diplomatic-cable'], ['starter-output-ministerial-submission-style', 'starter-tool-legal-mandate-compliance-lens', 'starter-situation-lebanon-israel-unifil-ceasefire-monitoring'], {
+    readinessStars: 4,
+    sourcePack: [
+      { id: 'un-peacemaker', label: 'UN Peacemaker mediation resources', url: 'https://peacemaker.un.org/', sourceType: 'multilateral', relevance: 'Mediation, process design, and diplomatic support source lane.', publisher: 'United Nations', date: '2026', reliabilityTier: 1 },
+      { id: 'un-security-council', label: 'UN Security Council official site', url: 'https://main.un.org/securitycouncil/en', sourceType: 'multilateral', relevance: 'Mandate, resolution, sanctions, and committee source lane.', publisher: 'United Nations Security Council', date: '2026', reliabilityTier: 1 },
+    ],
+    excerpts: [
+      { sourceId: 'un-peacemaker', text: 'Desk-officer outputs should separate public process guidance, party positions, leverage, and confidential or inferred intent.' },
+      { sourceId: 'un-security-council', text: 'Mandate references should cite controlling text, date, body, and implementation boundary before policy conclusions.' },
+    ],
+    suggestedQuestions: ['Which mandate, member-state process, committee, or operational decision is in scope?', 'What public source controls the institutional posture?', 'What language must stay cautious because it is inferred or politically sensitive?'],
+    suggestedNextActions: ['Attach mandate and institutional source receipts.', 'Run commitment tracker or mandate lens before drafting.', 'Draft a desk-ready memo or cable with sourceability and caveats.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'multilateral-desk-officer', outputGoal: 'diplomatic-cable', approvalNotes: 'Human desk, legal, and political review required before external circulation.' },
+    aiUseGuidance: 'Write like a careful desk officer: mandate-aware, dated, source-backed, and explicit about what is unknown or politically sensitive.',
+  }),
+];
+
 export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
   starter('starter-situation-sustainability-transition', 'situation', 'sustainability', 'Sustainability transition capsule', 'A source-backed sustainability situation capsule for CSRD/ESRS-style reporting, transition risk, supply-chain exposure, and assurance gaps.', 'Use this when the work concerns climate-transition planning, sustainability reporting, supplier risk, or board-ready ESG posture. PRAXIS should separate regulatory requirements, company claims, value-chain evidence, and confidence gaps before drafting.', ['sustainability', 'csrd', 'esrs', 'issb', 'supply-chain'], { situationCoreId: 'starter-situation-sustainability-transition', pathCoreId: 'climate-development', sourceCoreIds: ['ifrs-s1-s2', 'eu-esrs'], toolCoreIds: ['grounded-research', 'sourceability'], outputCoreIds: ['country-risk-card'] }, ['grounded-research', 'sourceability', 'memo-drafter'], ['country-risk-card', 'options-memo'], ['starter-user-esg-sustainability-lead', 'starter-tool-source-pack-builder', 'starter-output-sustainability-risk-brief'], {
     readinessStars: 5,
@@ -1839,6 +2155,7 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'country-risk-source-pack-to-exposure-note', outputGoal: 'Finance exposure note with indicators, confidence, and unresolved data gaps.', approvalNotes: 'Do not present financial, legal, or sanctions conclusions as advice; keep review gates visible.' },
     aiUseGuidance: 'Treat numbers as dated evidence. Ask for missing time series, regulator sources, and sanctions lists before making exposure judgments.',
   }),
+  ...EXPERT_POLICY_CAPSULE_WAVE,
   starter('starter-situation-hr-harassment-policy', 'situation', 'hr', 'HR harassment policy capsule', 'An HR situation capsule for workplace violence and harassment, policy response, employer duties, rollout risk, and affected-group communication.', 'Use this for public employer-guidance-grounded HR policy work. PRAXIS should distinguish prevention duties, reporting channels, investigation posture, training needs, retaliation risk, and communications sequencing.', ['hr', 'workplace-harassment', 'policy-response', 'employer-guidance'], { situationCoreId: 'starter-situation-hr-harassment-policy', pathCoreId: 'hr-policy', sourceCoreIds: ['ilo-harassment-guide'], toolCoreIds: ['sourceability', 'contradiction-finder'], outputCoreIds: ['options-memo'] }, ['sourceability', 'contradiction-finder', 'memo-drafter'], ['options-memo', 'talking-points'], ['starter-user-hr-policy-owner', 'starter-tool-hr-policy-impact-reviewer', 'starter-output-hr-rollout-recommendation'], {
     readinessStars: 4,
     sourcePack: [

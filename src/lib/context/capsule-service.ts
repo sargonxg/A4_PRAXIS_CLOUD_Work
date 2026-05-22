@@ -1403,6 +1403,26 @@ async function writeStarterDetailRecords(
     catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
     updatedAt: timestamp,
   }, { merge: true });
+  batch.set(ref.collection('advisoryMemoryHits').doc('starter-advisory-context'), {
+    memoryHitId: 'starter-advisory-context',
+    capsuleId,
+    source: 'starter-catalog',
+    advisoryOnly: true,
+    cogneeMode: 'not-ingested',
+    recallOperation: 'recall',
+    promotionRequired: 'review-card',
+    postgresProjection: 'capsule-plus-proposals-only',
+    summary: [
+      'Starter source packs, excerpts, device profiles, and drafting guidance are seeded as advisory context.',
+      'Cognee remember/recall and Capsule+ graph rows may reference this posture, but cannot promote facts into canonical capsule state without review-card apply metadata.',
+    ].join(' '),
+    labels: ['starter-catalog', 'advisory-memory', 'human-gated', starterDefinition.category, starterDefinition.domain],
+    sourceIds: starterDefinition.sourcePack.map((source) => source.id),
+    recommendedToolIds: starterDefinition.recommendedToolIds,
+    reviewGate: starterDefinition.humanReview?.humanReviewGate ?? 'Human review required before promotion.',
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+    updatedAt: timestamp,
+  }, { merge: true });
   batch.set(ref.collection('notes').doc('starter-guidance'), {
     noteId: 'starter-guidance',
     capsuleId,

@@ -1,10 +1,10 @@
 # Capsule Depth Audit
 
 - Date: 2026-05-19
-- Catalog version: 2026-05-22-work-intent-policy-context-v7
+- Catalog version: 2026-05-22-expert-policy-capsules-v8
 - Result: pass
-- Total starters: 109
-- Category counts: situation 33, tool 50, output 21, user 5
+- Total starters: 129
+- Category counts: situation 43, tool 55, output 24, user 7
 
 ## Failures
 
@@ -14,6 +14,26 @@
 
 - starter-situation-sustainability-transition: situation, sustainability, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-finance-country-risk: situation, finance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-ukraine-reconstruction-integrity-finance: situation, finance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-taiwan-strait-semiconductor-supply-chain-risk: situation, critical-minerals, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-lebanon-israel-unifil-ceasefire-monitoring: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-myanmar-humanitarian-access-asean: situation, humanitarian-rights, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-ethiopia-protection-conflict-watch: situation, humanitarian-rights, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-venezuela-oil-sanctions-election-risk: situation, finance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-china-overcapacity-tariff-industrial-policy: situation, finance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-debt-distress-imf-program-watch: situation, finance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-corporate-ai-procurement-assurance: situation, ai-governance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-food-security-commodity-shock-watch: situation, humanitarian-rights, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-sanctions-exposure-triage-matrix: tool, exposure-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-corporate-value-chain-due-diligence-map: tool, policy-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-fiscal-space-debt-stress-screen: tool, exposure-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-geoeconomic-chokepoint-map: tool, options-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-policy-drafting-style-selector: tool, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-ministerial-submission-style: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-corporate-board-risk-committee-pack: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-sanctions-compliance-brief-style: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-user-corporate-public-affairs-risk-lead: user, analyst-role, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-user-multilateral-desk-officer: user, analyst-role, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-hr-harassment-policy: situation, hr, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-diplomatic-options: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-humanitarian-rights-access: situation, humanitarian-rights, sources 2, excerpts 2, compatible 3, richProfile yes

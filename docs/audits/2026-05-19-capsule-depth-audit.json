@@ -1,20 +1,20 @@
 {
   "ok": true,
-  "catalogVersion": "2026-05-22-work-intent-policy-context-v7",
-  "total": 109,
+  "catalogVersion": "2026-05-22-expert-policy-capsules-v8",
+  "total": 129,
   "counts": {
-    "situation": 33,
-    "tool": 50,
-    "output": 21,
-    "user": 5
+    "situation": 43,
+    "tool": 55,
+    "output": 24,
+    "user": 7
   },
   "expected": {
-    "total": 109,
+    "total": 129,
     "counts": {
-      "output": 21,
-      "situation": 33,
-      "tool": 50,
-      "user": 5
+      "output": 24,
+      "situation": 43,
+      "tool": 55,
+      "user": 7
     }
   },
   "failures": [],
@@ -32,6 +32,186 @@
       "starterId": "starter-situation-finance-country-risk",
       "category": "situation",
       "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-ukraine-reconstruction-integrity-finance",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-taiwan-strait-semiconductor-supply-chain-risk",
+      "category": "situation",
+      "domain": "critical-minerals",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-lebanon-israel-unifil-ceasefire-monitoring",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-myanmar-humanitarian-access-asean",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-ethiopia-protection-conflict-watch",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-venezuela-oil-sanctions-election-risk",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-china-overcapacity-tariff-industrial-policy",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-debt-distress-imf-program-watch",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-corporate-ai-procurement-assurance",
+      "category": "situation",
+      "domain": "ai-governance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-food-security-commodity-shock-watch",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-sanctions-exposure-triage-matrix",
+      "category": "tool",
+      "domain": "exposure-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-corporate-value-chain-due-diligence-map",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-fiscal-space-debt-stress-screen",
+      "category": "tool",
+      "domain": "exposure-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-geoeconomic-chokepoint-map",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-policy-drafting-style-selector",
+      "category": "tool",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-ministerial-submission-style",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-corporate-board-risk-committee-pack",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-sanctions-compliance-brief-style",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-user-corporate-public-affairs-risk-lead",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-user-multilateral-desk-officer",
+      "category": "user",
+      "domain": "analyst-role",
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
