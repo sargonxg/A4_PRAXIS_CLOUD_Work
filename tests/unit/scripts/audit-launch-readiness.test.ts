@@ -9,6 +9,9 @@ describe('audit-launch-readiness', () => {
   it('locks the public legal launch surface', () => {
     expect(REQUIRED_LEGAL_SLUGS).toEqual([
       'privacy',
+      'cookies',
+      'gdpr',
+      'data-processing',
       'terms',
       'security',
       'sub-processors',
@@ -58,7 +61,7 @@ describe('audit-launch-readiness', () => {
         "response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')",
         "response.headers.set('Permissions-Policy', 'camera=()')",
       ].join('\n'),
-      'src/app/(landing)/layout.tsx': '/legal/privacy /legal/terms /legal/security /legal/sub-processors /legal/data-retention',
+      'src/app/(landing)/layout.tsx': '/legal/privacy /legal/cookies /legal/gdpr /legal/data-processing /legal/terms /legal/security /legal/sub-processors /legal/data-retention',
       'src/app/legal/[slug]/page.tsx': 'generateStaticParams',
       'src/lib/legal/pages.ts': REQUIRED_LEGAL_SLUGS.map((slug) => `slug: '${slug}', pendingLegalReview: true`).join('\n'),
       'src/app/api/settings/api-keys/route.ts': 'listUserKeyStatuses; return NextResponse.json({ providers: PROVIDER_REGISTRY, statuses });',

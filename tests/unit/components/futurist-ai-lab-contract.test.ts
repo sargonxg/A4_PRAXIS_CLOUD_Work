@@ -47,11 +47,25 @@ describe('Futurist AI Lab visual and capsule UX contract', () => {
 
   it('keeps capsule state reachable on mobile through ContextChain controls', () => {
     expect(workbench).toContain('data-testid="mobile-context-chain-bar"');
+    expect(workbench).toContain('data-testid="mobile-context-chain-summary"');
+    expect(workbench).toContain('Open ContextChain');
+    expect(workbench).toContain('desktop-context-chain-canvas');
+    expect(workbench).toContain('hidden md:block');
     expect(workbench).toContain('data-testid="mobile-context-chain-sheet"');
+    expect(workbench).toContain('All capsules');
     expect(workbench).toContain('primaryCapsules');
     expect(workbench).toContain('referenceCapsules');
     expect(workbench).toContain('archivedCapsules');
     expect(workbench).toContain('selected-reference-capsules-preview');
+  });
+
+  it('keeps the public capsule shelf paginated instead of rendering every card at once', () => {
+    expect(workbench).toContain('PUBLIC_CAPSULE_CARD_INITIAL_LIMIT = 30');
+    expect(workbench).toContain('publicCapsuleCardLimit');
+    expect(workbench).toContain('visibleHomepageCapsuleCards');
+    expect(workbench).toContain('data-testid="homepage-capsule-load-more"');
+    expect(workbench).toContain('Load more capsules');
+    expect(workbench).toContain('Showing top');
   });
 
   it('uses stable sitemap timestamps and OG capsule/source/agent language', () => {
