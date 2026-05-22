@@ -3232,6 +3232,7 @@ export function TaskletPraxisWorkbench({
                             setStatus('Continuation action loaded into the composer.');
                           }}
                         />
+                        <ConversationTraceabilityPanel envelope={message.answerEnvelope} />
                         <ConversationSourcePreviewPanel
                           envelope={message.answerEnvelope}
                           messageId={`assistant-${index}`}
@@ -3890,6 +3891,60 @@ function ConversationAgentActivityRail({ envelope, onAction }: { envelope?: AskA
             </button>
           ))}
         </div>
+      ) : null}
+    </section>
+  );
+}
+
+function ConversationTraceabilityPanel({ envelope }: { envelope?: AskAnswerEnvelope }) {
+  const traceability = envelope?.traceabilitySummary;
+  if (!traceability) return null;
+  return (
+    <section className="mt-3 rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-600" data-testid="praxis-answer-traceability-panel">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Traceability</p>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[10px] text-slate-600">
+          {traceability.detectedIntent.replace(/_/g, ' ')}
+        </span>
+      </div>
+      <div className="mt-2 grid gap-2 sm:grid-cols-3">
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-2">
+          <p className="font-semibold text-slate-900">Policy context</p>
+          <p className="mt-1 leading-5">{traceability.selectedPolicyContext}</p>
+        </div>
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-2">
+          <p className="font-semibold text-slate-900">Capsules</p>
+          <p className="mt-1 leading-5">{traceability.activeCapsulesUsed.length ? traceability.activeCapsulesUsed.join(', ') : 'No active capsule recorded'}</p>
+        </div>
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-2">
+          <p className="font-semibold text-slate-900">Human review</p>
+          <p className="mt-1 leading-5">{traceability.humanReviewRecommendation}</p>
+        </div>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1">Sources {traceability.sourceCount}</span>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1">Source posture {traceability.sourcePosture}</span>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1">Unsupported {traceability.unsupportedClaimsCount}</span>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1">Assumptions {traceability.assumptionsCount}</span>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1">Confidence {traceability.confidencePosture}</span>
+      </div>
+      <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 font-semibold text-slate-700">
+        Next: {traceability.bestNextAction}
+      </p>
+      {traceability.activeCapsulesUsed.length ? (
+        <details className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
+          <summary className="cursor-pointer text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Details</summary>
+          <dl className="mt-2 grid gap-2 sm:grid-cols-2">
+            <div>
+              <dt className="font-semibold text-slate-900">Active capsules used</dt>
+              <dd className="mt-1 leading-5">{traceability.activeCapsulesUsed.join(', ')}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-slate-900">Review recommendation</dt>
+              <dd className="mt-1 leading-5">{traceability.humanReviewRecommendation}</dd>
+            </div>
+          </dl>
+        </details>
       ) : null}
     </section>
   );
@@ -7570,7 +7625,17 @@ function CapsuleInspectorSheet({
             <InspectorTextSection label="Decision Use" detail={[...richProfile.whenToUse, ...richProfile.decisionPrompts].slice(0, 5).join(' ')} />
             <InspectorTextSection label="Improvement Ideas" detail={[...richProfile.improves, ...richProfile.nextIdeas].slice(0, 6).join(' ')} />
             <InspectorTextSection label="Gaps/Risks" detail={[...richProfile.whenNotToUse, ...richProfile.riskCaveats, ...richProfile.evidenceRequirements].slice(0, 6).join(' ')} />
-            {humanReview ? <InspectorTextSection label="Human review" detail={`${humanReview.notes} ${humanReview.tooltip} Reviewed by ${humanReview.reviewedBy} on ${humanReview.reviewedAt}.`} /> : null}
+            {humanReview ? <InspectorTextSection label="Human review" detail={[
+              humanReview.notes,
+              humanReview.tooltip,
+              `Reviewed by ${humanReview.reviewedBy} on ${humanReview.reviewedAt}.`,
+              `Scope: ${humanReview.scope}.`,
+              `Jurisdiction: ${humanReview.jurisdiction}.`,
+              `Source pack: ${humanReview.sourcePackSummary}.`,
+              `Assumptions: ${humanReview.assumptions.join(' ')}`,
+              `Limitations: ${humanReview.limitations.join(' ')}`,
+              `Gate: ${humanReview.humanReviewGate}.`,
+            ].join(' ')} /> : null}
             <InspectorTextSection label="Run Recipe" detail={richProfile.agentInstructions} />
             <InspectorTextSection label="Compatible Capsules" detail={(compatible.length ? compatible : ['Any user capsule', 'Any tool capsule', 'Any output capsule']).join(', ')} />
           </div>

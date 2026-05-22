@@ -73,6 +73,19 @@ export interface AskSourceAuditSummary {
   gapPosture: 'gaps_visible' | 'no_recorded_gaps';
 }
 
+export interface AskTraceabilitySummary {
+  detectedIntent: string;
+  selectedPolicyContext: string;
+  activeCapsulesUsed: string[];
+  sourceCount: number;
+  sourcePosture: string;
+  unsupportedClaimsCount: number;
+  assumptionsCount: number;
+  confidencePosture: 'high' | 'medium' | 'low';
+  humanReviewRecommendation: string;
+  bestNextAction: string;
+}
+
 export interface AskContinuationAction {
   id: 'continue-as-memo' | 'expand-evidence-annex' | 'create-output-capsule';
   label: string;
@@ -99,6 +112,7 @@ export interface AskAnswerEnvelope {
   claimGrounding: ClaimGrounding[];
   claimLedgerSummary: SourceabilityLedgerSummary;
   sourceAudit: AskSourceAuditSummary;
+  traceabilitySummary: AskTraceabilitySummary;
   generationReceipt?: AskGenerationReceipt;
   continuationActions: AskContinuationAction[];
   capsuleSuggestions: AskCapsuleSuggestionReceipt[];
@@ -255,6 +269,11 @@ export function buildAskAnswerEnvelope(input: {
 }): AskAnswerEnvelope {
   const claimGrounding = groundClaims(input.answer, input.sourceCards);
   const claimLedgerSummary = summarizeClaimGrounding(claimGrounding);
+  const sourceAudit = buildSourceAudit({
+    sourceCards: input.sourceCards,
+    gaps: input.gaps ?? [],
+    claimLedgerSummary,
+  });
   const pack = buildConversationDocumentPack({
     title: titleForPrompt(input.prompt),
     prompt: input.prompt,
@@ -273,10 +292,11 @@ export function buildAskAnswerEnvelope(input: {
     sourceCards: input.sourceCards,
     claimGrounding,
     claimLedgerSummary,
-    sourceAudit: buildSourceAudit({
-      sourceCards: input.sourceCards,
-      gaps: input.gaps ?? [],
+    sourceAudit,
+    traceabilitySummary: buildAskTraceabilitySummary({
+      sourceAudit,
       claimLedgerSummary,
+      orchestrationReceipt: input.orchestrationReceipt,
     }),
     generationReceipt: input.generationReceipt,
     continuationActions: continuationActionsFor(input.intent),
@@ -285,6 +305,45 @@ export function buildAskAnswerEnvelope(input: {
     followUps: followUpsFor(input.intent, input.sourceCards.length, input.researchGraphReceipts?.length ?? 0),
     documentPackCandidate: pack,
     orchestrationReceipt: input.orchestrationReceipt,
+  };
+}
+
+export function buildAskTraceabilitySummary(input: {
+  sourceAudit: AskSourceAuditSummary;
+  claimLedgerSummary: SourceabilityLedgerSummary;
+  orchestrationReceipt?: AskConversationOrchestrationReceipt;
+}): AskTraceabilitySummary {
+  const workIntent = input.orchestrationReceipt?.triage.workIntent ?? null;
+  const policyContext = workIntent?.policyContext ?? null;
+  const activeCapsulesUsed = (workIntent?.activeCapsuleIds.length
+    ? workIntent.activeCapsuleIds
+    : input.orchestrationReceipt?.capsule.capsuleId
+      ? [input.orchestrationReceipt.capsule.capsuleId]
+      : []).slice(0, 5);
+  const unsupportedClaimsCount = input.claimLedgerSummary.unsupportedClaims;
+  const assumptionsCount = input.claimLedgerSummary.assumptionClaims + input.sourceAudit.gapCount;
+  const confidencePosture: AskTraceabilitySummary['confidencePosture'] =
+    input.sourceAudit.sourceCount >= 3 && unsupportedClaimsCount === 0
+      ? 'high'
+      : input.sourceAudit.sourceCount > 0 && unsupportedClaimsCount <= 1
+        ? 'medium'
+        : 'low';
+
+  return {
+    detectedIntent: workIntent?.intent ?? input.orchestrationReceipt?.triage.intent ?? 'general_answer',
+    selectedPolicyContext: policyContext
+      ? `${policyContext.presetLabel}${policyContext.subPresetLabel ? ` / ${policyContext.subPresetLabel}` : ''}`
+      : 'None inferred',
+    activeCapsulesUsed,
+    sourceCount: input.sourceAudit.sourceCount,
+    sourcePosture: input.sourceAudit.sourcePosture.replace(/_/g, ' '),
+    unsupportedClaimsCount,
+    assumptionsCount,
+    confidencePosture,
+    humanReviewRecommendation: workIntent?.humanReviewPosture.gate
+      ?? (unsupportedClaimsCount > 0 ? 'Human review recommended for unsupported claims.' : 'Standard review.'),
+    bestNextAction: workIntent?.suggestedNextActions[0]
+      ?? (input.sourceAudit.sourceCount > 0 ? 'Review the source previews and continue.' : 'Attach sources for the weakest claim.'),
   };
 }
 

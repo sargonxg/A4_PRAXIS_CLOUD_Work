@@ -451,6 +451,11 @@ describe('capsule service', () => {
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-evidence-dashboard-brief')?.coreRefs.productCoreIds).toContain('risk-monitor-card');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-data-quality-statistics')?.community.tags).toContain('team:research-strategy');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-haiti-gang-mss-access-watch')?.starterSnapshot?.humanReview?.status).toBe('human-reviewed');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-us-federal-ai-governance-baseline')?.starterSnapshot?.humanReview).toMatchObject({
+      jurisdiction: 'United States federal',
+      humanReviewGate: expect.stringMatching(/review|approval|human/i),
+      sourcePackSummary: expect.stringMatching(/federal|NIST|OMB/i),
+    });
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-mediator-batna-zopa-ripeness-map')?.starterSnapshot?.deviceProfile?.deviceKind).toBe('mediator-ripeness-map');
     const sudanStarter = capsules.find((capsule) => capsule.capsuleId === 'starter-situation-sudan-darfur-atrocity-access');
     expect(sudanStarter?.starterSnapshot?.sourcePack?.some((source) => source.id === 'un-sudan-atrocity-famine-risk')).toBe(true);

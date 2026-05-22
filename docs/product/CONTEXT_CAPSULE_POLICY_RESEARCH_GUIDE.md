@@ -1,6 +1,6 @@
 # ContextCapsule Policy Research Guide
 
-Date: 2026-05-15  
+Date: 2026-05-22
 Status: canonical product research and build guide
 
 ## Purpose
@@ -18,6 +18,93 @@ prompt -> capsule -> sources/tools -> memo/brief/handover
 ```
 
 The ContextCapsule is the working policy object that makes this possible.
+
+## Visible MVP: Intent, Policy Context, And Traceability
+
+The first visible MVP keeps Ask PRAXIS as the cockpit. The user sees one
+composer, the active ContextCapsule stack, source posture, and a few useful next
+actions. Behind that simple surface, PRAXIS derives a structured work plan for
+the turn:
+
+- detected work intent;
+- policy context preset and sub-preset when applicable;
+- active and recommended capsules;
+- recommended tools and methods;
+- human review posture;
+- traceability summary for the answer.
+
+The code-backed work intent router lives at
+`src/lib/ai/work-intent-router.ts`. Version 1 supports these modes:
+
+- `policy_memo`;
+- `pdf_report`;
+- `research_brief`;
+- `legal_policy_context`;
+- `stakeholder_map`;
+- `source_pack`;
+- `intellectual_tool`;
+- `expert_capsule`;
+- `general_answer` fallback.
+
+The router should integrate with existing Ask classification and orchestration.
+It must not create a separate top-level workspace, broad tool chooser, or new
+primary navigation item.
+
+## Policy Context Registry
+
+The policy context registry maps user language and capsule metadata to reviewable
+context presets. Version 1 presets are:
+
+- `us_federal`;
+- `us_state`;
+- `eu`;
+- `un_multilateral`;
+- `sector_specific`;
+- `organization_specific`;
+- `custom`.
+
+Each preset exposes a label, jurisdiction, level, source expectations, default
+review gate, recommended capsule/tool tags, and suggested next actions. U.S.
+federal work also supports sub-presets for executive policy, agency guidance,
+congressional materials, Federal Register posture, court/legal context,
+procurement, national security, civil rights, data/privacy, and AI governance.
+
+The phrase `analyze this from a U.S. federal AI governance perspective` should
+resolve to `us_federal` plus `ai_governance`, recommend the U.S. federal AI
+governance baseline capsule, and preserve a human AI governance review gate.
+
+## Human-Reviewed Capsule Metadata
+
+Human review is metadata on existing starter/runtime capsules, not a new capsule
+type. A human-reviewed capsule should be able to display:
+
+- scope;
+- author or publisher;
+- reviewed date;
+- review status;
+- jurisdiction;
+- assumptions;
+- limitations;
+- source pack summary;
+- human review gate.
+
+AI can propose capsule improvements, but AI-generated context must remain a
+review proposal until a human accepts it. Firestore ContextCapsules remain the
+canonical capsule state. Starter examples for this wave include U.S. AI
+governance baseline, Congressional testimony mode, UN sanctions context,
+Humanitarian access analysis, and PDF policy memo style.
+
+## Ask Traceability Panel
+
+Ask answers should include a compact traceability panel built from the answer
+envelope and orchestration receipt. It should show detected intent, selected
+policy context, active capsules used, source count and posture, unsupported
+claim count, assumptions count, confidence posture, human review recommendation,
+and the best next action.
+
+The panel can be expandable for details, but it must not expose raw hidden
+prompts, secrets, provider internals, raw cost details, or unapproved connector
+writes.
 
 ## Capsule Anatomy
 
@@ -247,6 +334,18 @@ Canvas:
    - Persist runs, tool calls, approvals, trace ids, and outputs.
    - Stream run steps where possible.
    - Gate external actions.
+
+## Future Improvements
+
+These ideas are intentionally deferred from the visible MVP and should not be
+represented as production-live until runtime, review, billing, and audit paths
+exist:
+
+- capsule marketplace with free and paid expert packs;
+- first-class PDF/report workflow beyond the current PDF-style output capsule;
+- research workspace with claim, evidence, and source matrices;
+- broader intellectual-tool auto-suggestion;
+- expert verification, ratings, licensing, and update SLAs.
 
 ## Documentation Rule
 

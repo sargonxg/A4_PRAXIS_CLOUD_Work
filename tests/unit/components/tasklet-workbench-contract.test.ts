@@ -246,6 +246,11 @@ describe('Tasklet PRAXIS workbench contract', () => {
   it('renders per-answer agent activity, source audit, claim ledger, and continuation actions', () => {
     expect(source).toContain('ConversationAgentActivityRail');
     expect(source).toContain('data-testid="praxis-answer-agent-activity"');
+    expect(source).toContain('ConversationTraceabilityPanel');
+    expect(source).toContain('data-testid="praxis-answer-traceability-panel"');
+    expect(source).toContain('Traceability');
+    expect(source).toContain('Policy context');
+    expect(source).toContain('Human review');
     expect(source).toContain('Claim ledger');
     expect(source).toContain('Supported');
     expect(source).toContain('Unsupported');

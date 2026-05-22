@@ -1,10 +1,10 @@
 # Capsule Depth Audit
 
 - Date: 2026-05-19
-- Catalog version: 2026-05-21-desk-officer-review-v6
+- Catalog version: 2026-05-22-work-intent-policy-context-v7
 - Result: pass
-- Total starters: 104
-- Category counts: situation 30, tool 50, output 19, user 5
+- Total starters: 109
+- Category counts: situation 33, tool 50, output 21, user 5
 
 ## Failures
 
@@ -18,6 +18,9 @@
 - starter-situation-diplomatic-options: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-humanitarian-rights-access: situation, humanitarian-rights, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-ai-governance-procurement: situation, ai-governance, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-situation-us-federal-ai-governance-baseline: situation, ai-governance, sources 3, excerpts 3, compatible 3, richProfile yes
+- starter-situation-un-sanctions-context: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-humanitarian-access-analysis: situation, humanitarian-rights, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-public-health-risk-communication: situation, public-health, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-critical-minerals-supply-chain: situation, critical-minerals, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-cyber-infrastructure-resilience: situation, cyber-resilience, sources 2, excerpts 2, compatible 3, richProfile yes
@@ -34,6 +37,8 @@
 - starter-output-diplomatic-options-memo: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-output-humanitarian-access-brief: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-output-ai-governance-risk-brief: output, ai-governance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-congressional-testimony-mode: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-pdf-policy-memo-style: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-output-health-risk-communications-plan: output, public-health, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-output-critical-minerals-exposure-map: output, critical-minerals, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-output-cyber-resilience-action-memo: output, cyber-resilience, sources 2, excerpts 2, compatible 3, richProfile yes

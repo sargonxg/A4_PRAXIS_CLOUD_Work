@@ -455,6 +455,13 @@ export interface CapsuleStarterHumanReview {
   reviewedBy: string;
   reviewedAt: string;
   notes: string;
+  scope: string;
+  authorOrPublisher: string;
+  jurisdiction: string;
+  assumptions: string[];
+  limitations: string[];
+  sourcePackSummary: string;
+  humanReviewGate: string;
 }
 
 export interface CapsuleQualityAuditScores {
@@ -498,7 +505,7 @@ export interface CapsuleImprovementProposal {
   generatedBy: 'quality-audit' | 'cognee' | 'agent' | string;
 }
 
-export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-21-desk-officer-review-v6';
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-22-work-intent-policy-context-v7';
 
 export type CapsuleStarterSnapshot = Pick<
   CapsuleStarterDefinition,
@@ -1001,7 +1008,19 @@ function starter(
   };
 }
 
-function humanReviewed(notes: string, reviewedBy = 'PRAXIS policy capsule review'): CapsuleStarterHumanReview {
+function humanReviewed(
+  notes: string,
+  reviewedBy = 'PRAXIS policy capsule review',
+  metadata: Partial<Pick<CapsuleStarterHumanReview,
+    'scope'
+    | 'authorOrPublisher'
+    | 'jurisdiction'
+    | 'assumptions'
+    | 'limitations'
+    | 'sourcePackSummary'
+    | 'humanReviewGate'
+  >> = {},
+): CapsuleStarterHumanReview {
   return {
     status: 'human-reviewed',
     label: 'Human reviewed',
@@ -1009,6 +1028,19 @@ function humanReviewed(notes: string, reviewedBy = 'PRAXIS policy capsule review
     reviewedBy,
     reviewedAt: CAPSULE_STARTER_CATALOG_VERSION,
     notes,
+    scope: metadata.scope ?? 'Reusable starter capsule operating context.',
+    authorOrPublisher: metadata.authorOrPublisher ?? reviewedBy,
+    jurisdiction: metadata.jurisdiction ?? 'Cross-jurisdictional / review before local use',
+    assumptions: metadata.assumptions ?? [
+      'Starter sources are a baseline, not a complete or current record.',
+      'User-provided sources and local facts can override starter defaults after review.',
+    ],
+    limitations: metadata.limitations ?? [
+      'Does not provide legal, financial, medical, or operational advice.',
+      'Requires source refresh before external publication or high-stakes use.',
+    ],
+    sourcePackSummary: metadata.sourcePackSummary ?? 'Starter source pack provides initial source lanes and must be refreshed before external use.',
+    humanReviewGate: metadata.humanReviewGate ?? 'Human review required before external export, canonical promotion, or high-stakes reliance.',
   };
 }
 
@@ -1869,6 +1901,59 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'ai-governance-procurement', outputGoal: 'AI governance risk brief with obligations, controls, evidence gaps, and review gates.', approvalNotes: 'Do not certify compliance or model safety; keep legal and technical assurance review-gated.' },
     aiUseGuidance: 'Be strict about claim type. Separate official obligations, best-practice frameworks, vendor assertions, local policy choices, and evidence gaps.',
   }),
+  starter('starter-situation-us-federal-ai-governance-baseline', 'situation', 'ai-governance', 'U.S. federal AI governance baseline', 'A U.S. federal AI governance capsule for OMB guidance, NIST risk framing, agency accountability, procurement posture, and oversight caveats.', 'Use this when the user asks for a U.S. federal AI governance perspective. PRAXIS should separate binding authority, agency policy, risk-framework guidance, procurement controls, and non-certification caveats.', ['us-federal', 'ai-governance', 'omb-ai-guidance', 'nist-ai-rmf', 'human-reviewed', 'team:research-strategy'], { situationCoreId: 'starter-situation-us-federal-ai-governance-baseline', pathCoreId: 'governance-public-sector', sourceCoreIds: ['omb-ai-governance-memo', 'nist-ai-rmf', 'federal-register-ai'], toolCoreIds: ['sourceability', 'grounded-research', 'contradiction-finder'], outputCoreIds: ['options-memo'] }, ['grounded-research', 'sourceability', 'memo-drafter'], ['options-memo', 'principals-decision-memo'], ['starter-tool-sourceability-audit-reviewer', 'starter-output-ai-governance-risk-brief', 'starter-output-congressional-testimony-mode'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'omb-ai-governance-memo', label: 'OMB federal AI governance guidance', url: 'https://www.whitehouse.gov/omb/', sourceType: 'official', relevance: 'Official U.S. federal management and agency AI governance source lane.', publisher: 'Office of Management and Budget', date: '2026', reliabilityTier: 1 },
+      { id: 'nist-ai-rmf', label: 'NIST AI Risk Management Framework', url: 'https://www.nist.gov/itl/ai-risk-management-framework', sourceType: 'official', relevance: 'Risk vocabulary for govern, map, measure, and manage AI-system controls.', publisher: 'NIST', date: '2023', reliabilityTier: 1 },
+      { id: 'federal-register-ai', label: 'Federal Register AI notices', url: 'https://www.federalregister.gov/', sourceType: 'official', relevance: 'Federal rulemaking and notice source lane for AI governance developments.', publisher: 'Federal Register', date: '2026', reliabilityTier: 1 },
+    ],
+    suggestedQuestions: ['Which U.S. federal agency, system, decision, and authority are in scope?', 'Which claims are legal authority, policy guidance, risk-framework guidance, or PRAXIS inference?', 'What OMB, NIST, Federal Register, or agency source must be attached before export?'],
+    suggestedNextActions: ['Attach OMB, NIST, agency, or Federal Register source receipts.', 'Map each AI governance claim to authority, control owner, evidence, and caveat.', 'Run sourceability review before memo, PDF, procurement, or testimony output.'],
+    agentWorkflow: { preferredAgentId: 'research-memo', routeHint: 'us-federal-ai-governance-baseline', outputGoal: 'U.S. federal AI governance memo with authority, framework, evidence, gaps, and review gates.', approvalNotes: 'Do not certify compliance, safety, fairness, or procurement readiness without authorized review.' },
+    aiUseGuidance: 'Treat U.S. federal AI governance as source-bound policy context. Use official sources first, separate authority from guidance, and keep legal/procurement assurance claims review-gated.',
+    humanReview: humanReviewed('Reviewed as a U.S. federal AI governance starter for OMB/NIST source posture, agency caveats, and non-certification language.', 'PRAXIS policy capsule review', {
+      scope: 'U.S. federal AI governance, agency policy, NIST risk framing, procurement posture, and oversight caveats.',
+      authorOrPublisher: 'OMB, NIST, Federal Register, and agency public-source lanes',
+      jurisdiction: 'United States federal',
+      assumptions: ['The user will attach current controlling OMB, NIST, agency, or Federal Register source receipts.', 'PRAXIS will not present governance analysis as legal advice, certification, or technical assurance.'],
+      limitations: ['Does not replace agency counsel, acquisition officials, privacy, civil-rights, or technical safety review.', 'Federal AI guidance changes frequently and must be refreshed before external use.'],
+      sourcePackSummary: 'Federal AI governance starter source pack centered on OMB, NIST, and Federal Register source lanes.',
+      humanReviewGate: 'Human AI governance review required before compliance, safety, procurement, testimony, or assurance claims.',
+    }),
+  }),
+  starter('starter-situation-un-sanctions-context', 'situation', 'diplomacy', 'UN sanctions context capsule', 'A UN sanctions context capsule for Security Council mandates, committee materials, listing posture, implementation caveats, and legal-review boundaries.', 'Use this when analysis touches UN sanctions exposure, listings, mandate language, or implementation posture. PRAXIS should separate source text, legal effect, implementation practice, and non-advice caveats.', ['un', 'sanctions', 'security-council', 'legal-policy-context', 'human-reviewed', 'team:legal-humanitarian'], { situationCoreId: 'starter-situation-un-sanctions-context', pathCoreId: 'diplomatic-options', sourceCoreIds: ['un-security-council-sanctions', 'un-sanctions-committees'], toolCoreIds: ['sourceability', 'sanctions-check', 'legal-mandate-compliance-lens'], outputCoreIds: ['options-memo'] }, ['grounded-research', 'sourceability', 'ach'], ['options-memo', 'principals-decision-memo'], ['starter-tool-legal-mandate-compliance-lens', 'starter-output-congressional-testimony-mode', 'starter-tool-sourceability-audit-reviewer'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'un-security-council-sanctions', label: 'UN Security Council sanctions', url: 'https://main.un.org/securitycouncil/en/sanctions/information', sourceType: 'multilateral', relevance: 'Official UN sanctions regime source lane.', publisher: 'United Nations Security Council', date: '2026', reliabilityTier: 1 },
+      { id: 'un-sanctions-committees', label: 'UN sanctions committees', url: 'https://main.un.org/securitycouncil/en/sanctions/committees', sourceType: 'multilateral', relevance: 'Committee-specific listing and implementation source lane.', publisher: 'United Nations Security Council', date: '2026', reliabilityTier: 1 },
+    ],
+    suggestedQuestions: ['Which regime, entity, listing, or mandate language is in scope?', 'Which claim is a direct UN source fact versus implementation inference?', 'What legal or compliance review remains required?'],
+    suggestedNextActions: ['Attach Security Council and committee source receipts.', 'Map regime, listing basis, implementation caveat, and evidence gaps.', 'Keep sanctions conclusions in non-advice review language.'],
+    humanReview: humanReviewed('Reviewed as a sanctions-context starter with legal-effect and implementation caveats.', 'PRAXIS sanctions and mandate review', {
+      scope: 'UN sanctions source posture, listing context, mandate language, and implementation caveats.',
+      authorOrPublisher: 'United Nations Security Council public source lanes',
+      jurisdiction: 'United Nations / multilateral',
+      sourcePackSummary: 'UN Security Council and committee source lanes for sanctions context.',
+      humanReviewGate: 'Human sanctions and legal review required before exposure, listing, or legal-effect claims.',
+    }),
+  }),
+  starter('starter-situation-humanitarian-access-analysis', 'situation', 'humanitarian-rights', 'Humanitarian access analysis capsule', 'A humanitarian access capsule for OCHA concepts, operational constraints, affected populations, protection risks, and source-confidence boundaries.', 'Use this when the user asks for humanitarian access analysis or protection-sensitive operational context. PRAXIS should separate access constraints, rights/accountability claims, personal data, and operational recommendations.', ['humanitarian-access', 'ocha', 'protection', 'rights', 'human-reviewed', 'team:legal-humanitarian'], { situationCoreId: 'starter-situation-humanitarian-access-analysis', pathCoreId: 'humanitarian-analysis', sourceCoreIds: ['ocha-access', 'reliefweb-humanitarian-updates'], toolCoreIds: ['sourceability', 'stakeholder-map', 'grounded-research'], outputCoreIds: ['humanitarian-one-pager'] }, ['grounded-research', 'sourceability', 'stakeholder-map'], ['humanitarian-one-pager', 'options-memo'], ['starter-output-humanitarian-access-brief', 'starter-tool-sourceability-audit-reviewer', 'starter-user-humanitarian-legal-investigator'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'ocha-access', label: 'OCHA humanitarian access guidance', url: 'https://knowledge.base.unocha.org/wiki/spaces/imtoolbox/pages/1410072577/Humanitarian%2BAccess', sourceType: 'multilateral', relevance: 'Operational access concepts and constraints.', publisher: 'OCHA', date: '2026', reliabilityTier: 1 },
+      { id: 'reliefweb-humanitarian-updates', label: 'ReliefWeb humanitarian updates', url: 'https://reliefweb.int/', sourceType: 'public-library', relevance: 'Humanitarian situation reporting source lane for dated operational context.', publisher: 'ReliefWeb', date: '2026', reliabilityTier: 1 },
+    ],
+    suggestedQuestions: ['Which affected population, actor, route, or access constraint is in scope?', 'Which claims are operational facts versus rights or accountability conclusions?', 'What personal-data or protection sensitivities must stay out of public output?'],
+    suggestedNextActions: ['Attach OCHA, ReliefWeb, cluster, or operational source receipts.', 'Separate access constraints from rights/accountability claims.', 'Draft the access brief with confidence levels and review gates.'],
+    humanReview: humanReviewed('Reviewed as a humanitarian access starter with protection, source-confidence, and legal-threshold caveats.', 'PRAXIS humanitarian review', {
+      scope: 'Humanitarian access constraints, affected-population posture, protection risks, and source-confidence boundaries.',
+      authorOrPublisher: 'OCHA, ReliefWeb, and humanitarian public-source lanes',
+      jurisdiction: 'Humanitarian / multilateral',
+      sourcePackSummary: 'OCHA and humanitarian reporting source lanes for operational access analysis.',
+      humanReviewGate: 'Human humanitarian and protection review required before operational recommendations or accountability claims.',
+    }),
+  }),
   starter('starter-situation-public-health-risk-communication', 'situation', 'public-health', 'Public health risk communication capsule', 'A crisis communication capsule for public health emergencies, misinformation pressure, community engagement, and operational message discipline.', 'Use this when leaders need a source-backed public health communication plan. PRAXIS should separate what is known, what is uncertain, who is affected, trusted channels, message risks, and monitoring feedback loops.', ['public-health', 'risk-communication', 'emergency', 'misinformation', 'community-engagement'], { situationCoreId: 'starter-situation-public-health-risk-communication', pathCoreId: 'crisis-management', sourceCoreIds: ['who-ercc', 'who-rcce'], toolCoreIds: ['grounded-research', 'sourceability', 'memo-drafter'], outputCoreIds: ['options-memo'] }, ['grounded-research', 'sourceability', 'memo-drafter'], ['options-memo', 'talking-points'], ['starter-tool-source-pack-builder', 'starter-output-health-risk-communications-plan', 'starter-output-diplomatic-options-memo'], {
     readinessStars: 5,
     sourcePack: [
@@ -2009,6 +2094,38 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     suggestedNextActions: ['Draft obligations, risks, controls, evidence gaps, and owner asks.', 'Run sourceability on compliance and safety claims.', 'Prepare review gates for legal, procurement, and technical owners.'],
     agentWorkflow: { preferredAgentId: 'output-formatter', routeHint: 'ai-governance-risk-output', outputGoal: 'AI governance risk brief with controls, source support, unresolved questions, and review gates.', approvalNotes: 'Do not certify compliance, fairness, accuracy, or safety.' },
     aiUseGuidance: 'Write as a governance artifact: decision, system, risks, controls, evidence, owner, gap, and review status.',
+  }),
+  starter('starter-output-congressional-testimony-mode', 'output', 'output-brief', 'Congressional testimony mode output capsule', 'An output capsule for hearing testimony, prepared statements, QFR posture, record evidence, and review-gated policy claims.', 'Use this when the product should support testimony or hearing preparation. PRAXIS should keep official sources, jurisdiction, caveats, and human review gates visible before any external statement.', ['congressional-testimony', 'hearing', 'prepared-statement', 'qfr', 'human-reviewed', 'team:research-strategy'], { outputCoreIds: ['talking-points', 'principals-decision-memo'], productCoreIds: ['talking-points', 'principals-decision-memo'], objectiveCoreIds: ['draft-congressional-testimony-mode'] }, ['memo-drafter', 'sourceability', 'grounded-research'], ['talking-points', 'principals-decision-memo'], ['starter-situation-us-federal-ai-governance-baseline', 'starter-tool-sourceability-audit-reviewer', 'starter-output-principals-decision-memo'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'congress-hearings', label: 'Congress.gov committee and hearing materials', url: 'https://www.congress.gov/', sourceType: 'official', relevance: 'Official congressional record and legislative source lane.', publisher: 'Congress.gov', date: '2026', reliabilityTier: 1 },
+      { id: 'govinfo-hearings', label: 'GovInfo congressional hearings', url: 'https://www.govinfo.gov/app/collection/chrg', sourceType: 'official', relevance: 'Official hearing transcript and prepared-statement source lane.', publisher: 'GovInfo', date: '2026', reliabilityTier: 1 },
+    ],
+    suggestedQuestions: ['Who is the witness, committee, topic, and record audience?', 'Which statements need source backing, legal clearance, or agency approval?', 'Which QFR or opposition questions should be prepared separately?'],
+    suggestedNextActions: ['Build a statement outline with source IDs for each material claim.', 'Prepare QFR-ready caveats and record citations.', 'Run sourceability and human review before circulation.'],
+    humanReview: humanReviewed('Reviewed as a testimony-output starter with public-record, sourceability, and approval-gate emphasis.', 'PRAXIS public testimony review', {
+      scope: 'Congressional testimony, prepared statement, QFR, and official-record posture.',
+      authorOrPublisher: 'Congress.gov, GovInfo, and user-provided record sources',
+      jurisdiction: 'United States federal',
+      sourcePackSummary: 'Official congressional source lanes for testimony and hearing preparation.',
+      humanReviewGate: 'Human review required before external testimony, public-record claims, or legal/policy commitments.',
+    }),
+  }),
+  starter('starter-output-pdf-policy-memo-style', 'output', 'output-brief', 'PDF policy memo style output capsule', 'An output capsule for export-ready PDF policy memos with executive summary, citations, caveats, source annex, and approval posture.', 'Use this when Ask PRAXIS should turn context into a polished PDF-style memo. PRAXIS should keep citation support, unsupported claims, assumptions, and human review status visible before export.', ['pdf-report', 'policy-memo', 'source-annex', 'export-ready', 'human-reviewed', 'team:program-delivery'], { outputCoreIds: ['options-memo'], productCoreIds: ['options-memo'], objectiveCoreIds: ['draft-pdf-policy-memo-style'] }, ['memo-drafter', 'sourceability', 'grounded-research'], ['options-memo', 'principals-decision-memo'], ['starter-tool-sourceability-audit-reviewer', 'starter-output-evidence-sourceability-annex', 'starter-output-principals-decision-memo'], {
+    readinessStars: 5,
+    sourcePack: [
+      { id: 'praxis-sourceability-standard', label: 'PRAXIS sourceability standard', url: 'https://praxis.tacitus.me/learn', sourceType: 'public-library', relevance: 'Product sourceability and receipt posture for export-ready outputs.', publisher: 'PRAXIS by TACITUS', date: '2026', reliabilityTier: 2 },
+      { id: 'plain-language-federal', label: 'PlainLanguage.gov guidance', url: 'https://www.plainlanguage.gov/', sourceType: 'official', relevance: 'U.S. public-writing clarity source lane for policy memo readability.', publisher: 'PlainLanguage.gov', date: '2026', reliabilityTier: 1 },
+    ],
+    suggestedQuestions: ['Who is the PDF memo audience, decision, and approval owner?', 'Which claims require source IDs, caveats, or annex notes?', 'What must be excluded until human review is complete?'],
+    suggestedNextActions: ['Draft the PDF memo outline with source and caveat slots.', 'Run sourceability and claim ledger review before export.', 'Attach a source annex and approval gate summary.'],
+    humanReview: humanReviewed('Reviewed as an export-output starter for citation discipline, source annex posture, and human approval gates.', 'PRAXIS output review', {
+      scope: 'Export-ready policy memo structure, citation posture, source annex, and review gate.',
+      authorOrPublisher: 'PRAXIS sourceability and public-writing source lanes',
+      jurisdiction: 'Cross-jurisdictional / audience-specific',
+      sourcePackSummary: 'PRAXIS sourceability and plain-language source lanes for PDF memo export.',
+      humanReviewGate: 'Human review required before PDF export, external circulation, or final approval.',
+    }),
   }),
   starter('starter-output-health-risk-communications-plan', 'output', 'public-health', 'Health risk communications plan output capsule', 'An output capsule for public health messages, audience segmentation, uncertainty language, rumor risk, channels, and approval gates.', 'Use this when the work product should become a practical risk-communication plan or talking-points pack grounded in public health emergency guidance.', ['public-health', 'communications-plan', 'risk-communication', 'talking-points'], { outputCoreIds: ['talking-points'], productCoreIds: ['talking-points'], objectiveCoreIds: ['draft-health-risk-communications-plan'] }, ['memo-drafter', 'sourceability', 'grounded-research'], ['talking-points', 'options-memo'], ['starter-situation-public-health-risk-communication', 'starter-tool-source-pack-builder', 'starter-output-cyber-resilience-action-memo'], {
     suggestedQuestions: ['Who is the audience and what action should they take?', 'What uncertainty must be named clearly?', 'Which claims require source or public health authority review?'],
@@ -2633,6 +2750,13 @@ export function buildCapsuleStarterPromptBlock(
     `source_excerpts: ${starterDefinition.excerpts.length ? starterDefinition.excerpts.map((excerpt) => `${excerpt.sourceId}: ${excerpt.text}`).join(' ; ') : 'none'}`,
     ...(starterDefinition.humanReview ? [
       `human_review: ${starterDefinition.humanReview.label}|${starterDefinition.humanReview.status}|${starterDefinition.humanReview.reviewedBy}|${starterDefinition.humanReview.reviewedAt}|${starterDefinition.humanReview.notes}`,
+      `human_review_scope: ${starterDefinition.humanReview.scope}`,
+      `human_review_author_or_publisher: ${starterDefinition.humanReview.authorOrPublisher}`,
+      `human_review_jurisdiction: ${starterDefinition.humanReview.jurisdiction}`,
+      `human_review_assumptions: ${starterDefinition.humanReview.assumptions.join(' | ')}`,
+      `human_review_limitations: ${starterDefinition.humanReview.limitations.join(' | ')}`,
+      `human_review_source_pack_summary: ${starterDefinition.humanReview.sourcePackSummary}`,
+      `human_review_gate: ${starterDefinition.humanReview.humanReviewGate}`,
     ] : []),
     `recommended_tools: ${starterDefinition.recommendedToolIds.length ? starterDefinition.recommendedToolIds.join(', ') : 'none'}`,
     `output_targets: ${starterDefinition.outputProductIds.length ? starterDefinition.outputProductIds.join(', ') : 'none'}`,

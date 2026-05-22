@@ -60,6 +60,7 @@ import {
 import { createAgentRun } from '@/lib/agent-runtime/postgres';
 import { enqueueAgentRunDispatch } from '@/lib/agent-runtime/cloud-tasks';
 import { destinationHref } from '@/lib/product/policy-agents';
+import { formatWorkIntentPromptBlock } from '@/lib/ai/work-intent-router';
 import { DEFAULT_SELECTED_CORE_IDS, type CapsuleAgentExecutionContext, type SelectedCoreIds } from '@/lib/agent-runtime/types';
 import { resolveGroundingPlan } from '@/lib/agent-runtime/grounding-adapter';
 import {
@@ -533,6 +534,11 @@ You have access to the user's active situation data. When answering questions:
       ]).length,
       contextPackageId,
       userSelectedModelId: aiSettings?.model ?? null,
+      activeCapsules: normalizedAppliedCapsules.map((capsule) => ({
+        capsuleId: capsule.id,
+        label: capsule.label,
+        tags: [capsule.role],
+      })),
     });
     runtimeReceipt = {
       ...runtimeReceipt,
@@ -554,6 +560,7 @@ You have access to the user's active situation data. When answering questions:
     });
     runtimeReceipt.orchestrationReceipt = orchestrationReceipt;
     runtimeReceipt.routeDecision = buildAskRouteDecisionReceipt(orchestrationReceipt);
+    systemPrompt += '\n\n' + formatWorkIntentPromptBlock(orchestrationReceipt.triage.workIntent);
     const sourceCardsForEnvelope = () => [
       ...sourcePreviewCards,
       ...buildResearchGraphSourcePreviewCards(researchGraphReceipts),

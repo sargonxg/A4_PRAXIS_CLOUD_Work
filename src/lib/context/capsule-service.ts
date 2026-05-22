@@ -1350,7 +1350,11 @@ function buildStarterSnapshot(starterDefinition: CapsuleStarterDefinition): Caps
       },
     } : {}),
     ...(starterDefinition.humanReview ? {
-      humanReview: { ...starterDefinition.humanReview },
+      humanReview: {
+        ...starterDefinition.humanReview,
+        assumptions: [...starterDefinition.humanReview.assumptions],
+        limitations: [...starterDefinition.humanReview.limitations],
+      },
     } : {}),
     combinesWellWith: [...starterDefinition.combinesWellWith],
   };
@@ -2103,6 +2107,17 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
         reviewedBy: stringOrNull(humanReviewRecord.reviewedBy) ?? 'unknown',
         reviewedAt: stringOrNull(humanReviewRecord.reviewedAt) ?? 'unknown',
         notes: longStringOrNull(humanReviewRecord.notes) ?? 'No human review notes were provided.',
+        scope: longStringOrNull(humanReviewRecord.scope) ?? 'Reusable starter capsule operating context.',
+        authorOrPublisher: stringOrNull(humanReviewRecord.authorOrPublisher) ?? stringOrNull(humanReviewRecord.reviewedBy) ?? 'unknown',
+        jurisdiction: stringOrNull(humanReviewRecord.jurisdiction) ?? 'Cross-jurisdictional / review before local use',
+        assumptions: cleanLongStringArrayWithFallback(humanReviewRecord.assumptions, [
+          'Starter sources are a baseline, not a complete or current record.',
+        ], 8),
+        limitations: cleanLongStringArrayWithFallback(humanReviewRecord.limitations, [
+          'Requires source refresh before external publication or high-stakes use.',
+        ], 8),
+        sourcePackSummary: longStringOrNull(humanReviewRecord.sourcePackSummary) ?? 'Starter source pack provides initial source lanes and must be refreshed before external use.',
+        humanReviewGate: longStringOrNull(humanReviewRecord.humanReviewGate) ?? 'Human review required before external export, canonical promotion, or high-stakes reliance.',
       },
     } : {}),
     combinesWellWith: cleanStringArray(value.combinesWellWith).slice(0, 20),

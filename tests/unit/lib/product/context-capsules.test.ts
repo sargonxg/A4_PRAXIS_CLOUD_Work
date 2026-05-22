@@ -167,7 +167,7 @@ describe('context capsule product contract', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(104);
+    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(109);
     expect(starterIds.size).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
@@ -175,7 +175,7 @@ describe('context capsule product contract', () => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toEqual({ situation: 30, tool: 50, output: 19, user: 5 });
+    expect(categoryCounts).toEqual({ situation: 33, tool: 50, output: 21, user: 5 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
@@ -244,6 +244,35 @@ describe('context capsule product contract', () => {
       expect(starter?.tags).toEqual(expect.arrayContaining(['thinking-device', 'review-gated']));
       expect(starter?.deviceProfile?.humanReviewGate).toMatch(/human|review|approval/i);
       expect(starter?.combinesWellWith.some((id) => id.startsWith('starter-situation-'))).toBe(true);
+    }
+  });
+
+  it('adds policy-work visible MVP starter examples with complete human-reviewed metadata', () => {
+    const expectedStarterIds = [
+      'starter-situation-us-federal-ai-governance-baseline',
+      'starter-output-congressional-testimony-mode',
+      'starter-situation-un-sanctions-context',
+      'starter-situation-humanitarian-access-analysis',
+      'starter-output-pdf-policy-memo-style',
+    ];
+
+    for (const starterId of expectedStarterIds) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter, `${starterId} missing`).toBeTruthy();
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.suggestedNextActions.length, `${starterId} next actions`).toBeGreaterThanOrEqual(3);
+      expect(starter?.humanReview).toMatchObject({
+        status: 'human-reviewed',
+        scope: expect.any(String),
+        authorOrPublisher: expect.any(String),
+        jurisdiction: expect.any(String),
+        assumptions: expect.arrayContaining([expect.any(String)]),
+        limitations: expect.arrayContaining([expect.any(String)]),
+        sourcePackSummary: expect.any(String),
+        humanReviewGate: expect.stringMatching(/review|approval|human/i),
+      });
+      expect(buildCapsuleStarterPromptBlock(starterId)).toEqual(expect.stringContaining('human_review_gate:'));
+      expect(buildCapsuleStarterPromptBlock(starterId)).toEqual(expect.stringContaining('human_review_limitations:'));
     }
   });
 

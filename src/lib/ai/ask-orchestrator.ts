@@ -6,6 +6,7 @@ import { buildAgentWorkflowPlan, type AgentWorkflowPlan } from '@/lib/agent-runt
 import { getPolicyAgent, policyAgentRunIntent, type PolicyAgentOutputDestination, type PolicyAgentRunIntent } from '@/lib/product/policy-agents';
 import { buildTacitusRoutingDecision, type TacitusRoutingDecision } from '@/lib/ai/tacitus-routing-policy';
 import { getModelMatrixEntry } from '@/lib/ai/model-matrix';
+import { buildWorkIntentPlan, type WorkIntentCapsuleInput, type WorkIntentMode, type WorkIntentPlan } from '@/lib/ai/work-intent-router';
 
 export type AskAgenticMode = 'direct_with_receipts' | 'queue_agent_run';
 export type AskOrchestrationComplexity = 'simple' | 'standard' | 'deep';
@@ -31,6 +32,7 @@ export interface AskConversationOrchestrationReceipt {
   traceId: string | null;
   triage: {
     intent: AskIntent;
+    workIntent: WorkIntentPlan;
     runIntent: PolicyAgentRunIntent;
     complexity: AskOrchestrationComplexity;
     agenticMode: AskAgenticMode;
@@ -143,7 +145,17 @@ export function buildAskConversationOrchestrationReceipt(input: {
   selectedPolicyAgentId?: string | null;
   userSelectedModelId?: string | null;
   requestedOutputType?: string | null;
+  explicitWorkMode?: WorkIntentMode | null;
+  activeCapsules?: WorkIntentCapsuleInput[];
 }): AskConversationOrchestrationReceipt {
+  const workIntent = buildWorkIntentPlan({
+    prompt: input.prompt,
+    activeCapsules: input.activeCapsules ?? workIntentCapsulesFromReceipt(input.contextReceipt),
+    selectedSourceIds: input.contextReceipt.coreRefs.sourceDocumentCoreIds,
+    attachedSourceCount: input.sourcePreviewCount,
+    explicitMode: input.explicitWorkMode ?? null,
+    contextHealth: input.contextReceipt.health,
+  });
   const complexity = classifyComplexity(input.prompt, input.intent, input.contextReceipt, input.activeGapCount ?? 0);
   const routingDecision = buildTacitusRoutingDecision({
     prompt: input.prompt,
@@ -153,7 +165,7 @@ export function buildAskConversationOrchestrationReceipt(input: {
     capsuleHealth: input.contextReceipt.health,
     sourcePreviewCount: input.sourcePreviewCount,
     activeGapCount: input.activeGapCount ?? input.contextReceipt.warnings.length,
-    requestedOutputType: input.requestedOutputType,
+    requestedOutputType: input.requestedOutputType ?? (workIntent.outputTarget === 'pdf_report' ? workIntent.outputTarget : null),
   });
   const policyAgentId = routingDecision.policyAgentId;
   const selectedToolIds = routingDecision.toolRoute.selectedToolIds;
@@ -221,6 +233,7 @@ export function buildAskConversationOrchestrationReceipt(input: {
     traceId: input.contextReceipt.traceId,
     triage: {
       intent: input.intent,
+      workIntent,
       runIntent: policyAgentRunIntent(policyAgentId),
       complexity,
       agenticMode: shouldQueue ? 'queue_agent_run' : 'direct_with_receipts',
@@ -303,6 +316,13 @@ export function buildAskConversationOrchestrationReceipt(input: {
       },
     ],
   };
+}
+
+function workIntentCapsulesFromReceipt(contextReceipt: AskContextReceipt): WorkIntentCapsuleInput[] {
+  return [
+    ...(contextReceipt.capsuleId ? [{ capsuleId: contextReceipt.capsuleId }] : []),
+    ...contextReceipt.referenceCapsuleIds.map((capsuleId) => ({ capsuleId })),
+  ];
 }
 
 export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrchestrationReceipt): AskOrchestrationStatusEvent[] {

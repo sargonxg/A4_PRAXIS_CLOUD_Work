@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildAskAnswerEnvelope,
+  buildAskTraceabilitySummary,
   buildConversationDocumentPack,
   buildResearchGraphSourcePreviewCards,
   buildSourcePreviewCards,
   conversationDocumentPackToMemoBlocks,
 } from '@/lib/ai/ask-answer-envelope';
+import { buildAskConversationOrchestrationReceipt } from '@/lib/ai/ask-orchestrator';
 import type { CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
+import type { AskContextReceipt } from '@/lib/ai/ask-conversation';
 
 describe('ask answer envelope', () => {
   it('normalizes evidence-pack paragraphs into always-visible source cards', () => {
@@ -156,6 +159,44 @@ describe('ask answer envelope', () => {
     });
     expect(envelope.followUps).toContain('Check the weakest claim against attached sources.');
     expect(envelope.documentPackCandidate.provenance.capsuleId).toBe('cap-1');
+  });
+
+  it('summarizes intent, policy context, capsules, source posture, and review gate for traceability', () => {
+    const sourceCards = buildSourcePreviewCards({ evidencePack: evidencePack() });
+    const orchestrationReceipt = buildAskConversationOrchestrationReceipt({
+      prompt: 'Analyze this from a U.S. federal AI governance perspective and prepare a memo.',
+      intent: 'research_memo',
+      contextReceipt: contextReceipt({ health: 'thin', warnings: ['No current OMB source attached.'] }),
+      sourcePreviewCount: sourceCards.length,
+      activeGapCount: 1,
+      activeCapsules: [
+        { capsuleId: 'starter-situation-us-federal-ai-governance-baseline', label: 'U.S. federal AI governance baseline', tags: ['ai-governance', 'us-federal'] },
+      ],
+    });
+    const envelope = buildAskAnswerEnvelope({
+      prompt: 'Analyze this from a U.S. federal AI governance perspective and prepare a memo.',
+      answer: 'Federal AI governance review should separate OMB guidance, NIST risk framing, procurement controls, and agency implementation gaps.',
+      intent: 'research_memo',
+      sourceCards,
+      gaps: ['No current OMB source attached.'],
+      orchestrationReceipt,
+    });
+
+    expect(envelope.traceabilitySummary).toEqual(buildAskTraceabilitySummary({
+      sourceAudit: envelope.sourceAudit,
+      claimLedgerSummary: envelope.claimLedgerSummary,
+      orchestrationReceipt,
+    }));
+    expect(envelope.traceabilitySummary).toMatchObject({
+      detectedIntent: 'legal_policy_context',
+      selectedPolicyContext: 'U.S. federal / AI governance',
+      activeCapsulesUsed: ['starter-situation-us-federal-ai-governance-baseline'],
+      sourceCount: sourceCards.length,
+      unsupportedClaimsCount: 0,
+      humanReviewRecommendation: expect.stringMatching(/review/i),
+    });
+    expect(envelope.traceabilitySummary.assumptionsCount).toBeGreaterThanOrEqual(1);
+    expect(envelope.traceabilitySummary.bestNextAction).toBeTruthy();
   });
 
   it('grounds claims against matching source previews instead of assigning the first three cards heuristically', () => {
@@ -356,4 +397,32 @@ function evidencePack(): CapsuleEvidencePack {
       memoryCount: 0,
     },
   } as unknown as CapsuleEvidencePack;
+}
+
+function contextReceipt(overrides: Partial<AskContextReceipt> = {}): AskContextReceipt {
+  return {
+    capsuleId: 'cap-1',
+    capsuleVersion: 2,
+    threadId: 'ask-cap-1',
+    traceId: 'trace-1',
+    health: 'ready',
+    coreRefs: {
+      userCoreId: 'user-core',
+      situationCoreId: 'sit-1',
+      sourceDocumentCoreIds: ['doc-1'],
+      graphCoreId: null,
+      memoryCoreId: null,
+      outputCoreIds: ['memo-1'],
+    },
+    referenceCapsuleIds: [],
+    referenceCapsuleCount: 0,
+    missingReferenceCapsuleIds: [],
+    retrievalLayers: ['capsule-core-refs', 'source-receipts'],
+    evidenceCount: 1,
+    historyTurnCount: 0,
+    memoryPersistence: 'firestore',
+    warnings: [],
+    stages: [],
+    ...overrides,
+  };
 }

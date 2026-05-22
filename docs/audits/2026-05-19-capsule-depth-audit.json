@@ -1,18 +1,18 @@
 {
   "ok": true,
-  "catalogVersion": "2026-05-21-desk-officer-review-v6",
-  "total": 104,
+  "catalogVersion": "2026-05-22-work-intent-policy-context-v7",
+  "total": 109,
   "counts": {
-    "situation": 30,
+    "situation": 33,
     "tool": 50,
-    "output": 19,
+    "output": 21,
     "user": 5
   },
   "expected": {
-    "total": 104,
+    "total": 109,
     "counts": {
-      "output": 19,
-      "situation": 30,
+      "output": 21,
+      "situation": 33,
       "tool": 50,
       "user": 5
     }
@@ -70,6 +70,33 @@
       "domain": "ai-governance",
       "sourceCount": 3,
       "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-us-federal-ai-governance-baseline",
+      "category": "situation",
+      "domain": "ai-governance",
+      "sourceCount": 3,
+      "excerptCount": 3,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-un-sanctions-context",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-humanitarian-access-analysis",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
       "compatibleCount": 3,
       "richProfile": true
     },
@@ -212,6 +239,24 @@
       "starterId": "starter-output-ai-governance-risk-brief",
       "category": "output",
       "domain": "ai-governance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-congressional-testimony-mode",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-pdf-policy-memo-style",
+      "category": "output",
+      "domain": "output-brief",
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
