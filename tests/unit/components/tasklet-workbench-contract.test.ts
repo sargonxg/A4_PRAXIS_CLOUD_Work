@@ -76,40 +76,68 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain("target={external ? '_blank' : undefined}");
   });
 
-  it('defines explainable selected-span targets with follow-up prompts', () => {
+  it('defines selected text actions with advanced labels hidden behind intent', () => {
     for (const expected of [
-      'support check',
-      'informal power',
-      'decision question',
+      'Ask PRAXIS',
+      'Save to capsule',
+      'Source-check',
+      'Add to memo',
     ]) {
       expect(source).toContain(expected);
     }
 
     expect(source).toContain("'sourceability'");
-    expect(source).toContain("'human-friction'");
-    expect(source).toContain("'open-question'");
-    expect(source).not.toContain("id: 'temporality'");
-    expect(source).not.toContain("id: 'causality'");
-    expect(source).not.toContain("id: 'rules'");
-    expect(source).not.toContain('decision horizon');
-    expect(source).toContain('askPrompt');
+    expect(source).toContain("'causality'");
+    expect(source).toContain("'rules'");
+    expect(source).toContain("'temporality'");
+    expect(source).toContain('Advanced label');
+    expect(source).toContain('advancedLabel');
+    expect(source).toContain("defaultAdvancedLabel = 'sourceability'");
+    expect(source).not.toContain("'human-friction'");
+    expect(source).not.toContain("'open-question'");
+    expect(source).not.toContain("label: 'Human friction'");
+    expect(source).not.toContain("label: 'Open question'");
+    expect(source).toContain('prefillComposerFromSelection');
     expect(source).toContain('sourceCheckPrompt');
     expect(source).toContain('memoNote');
-    expect(source).toContain('Turn into memo note');
+    expect(source).not.toContain('Turn into memo note');
   });
 
-  it('keeps selected text available through span attach success and failure states', () => {
+  it('uses a tiny selected text trigger before opening the compact menu', () => {
     expect(source).toContain('selectedSpanStatus');
-    expect(source).toContain('data-testid="text-span-core-popover"');
-    expect(source).toContain('role="dialog"');
-    expect(source).toContain('Use selected text');
-    expect(source).toContain('Save or inspect this passage');
-    expect(source).toContain('Ask PRAXIS about this span');
-    expect(source).toContain('Source-check this span');
-    expect(source).toContain('Clear selection');
-    expect(source).toContain('setAttachedSpan');
+    expect(source).toContain('selectionRect');
+    expect(source).toContain('selectionZone');
+    expect(source).toContain('selectedSpanMenuOpen');
+    expect(source).toContain('data-testid="text-span-trigger"');
+    expect(source).toContain('Use in PRAXIS');
+    expect(source).toContain('data-testid="text-span-action-menu"');
+    expect(source).toContain('role="menu"');
+    expect(source).toContain('setSelectedSpanMenuOpen(true)');
+    expect(source).toContain('Saved as evidence span');
+    expect(source).toContain('Added to memo');
+    expect(source).not.toContain('data-testid="text-span-core-popover"');
+    expect(source).not.toContain('Save or inspect this passage');
+    expect(source).not.toContain('Ask PRAXIS about this span');
     expect(source).not.toContain('Attach to active capsule');
-    expect(source).not.toContain("setSelectedText('');\n    setSelectedMessageId(null);\n    setStatus(`Selected text attached");
+  });
+
+  it('captures selected text only from explicit meaningful zones', () => {
+    for (const zone of [
+      'data-selection-zone="assistant-answer"',
+      'data-selection-zone="source-preview"',
+      'data-selection-zone="repository-text"',
+      'data-selection-zone="source-pack"',
+      'data-selection-zone="memo-text"',
+    ]) {
+      expect(source).toContain(zone);
+    }
+
+    expect(source).toContain("closest('[data-selection-zone]')");
+    expect(source).toContain('getSelectionZoneElement');
+    expect(source).toContain('handleDocumentSelection');
+    expect(source).not.toContain('onMouseUp={() => handleMessageSelection');
+    expect(source).not.toContain('<Metric data-selection-zone');
+    expect(source).not.toContain('<button data-selection-zone');
   });
 
   it('uses specific Ask PRAXIS failure guidance instead of a generic dead end', () => {
@@ -364,41 +392,33 @@ describe('Tasklet PRAXIS workbench contract', () => {
 
   it('renders app capsules as a first-class dense repository surface', () => {
     expect(source).toContain('const isCapsuleRepositoryPage = initialPanel ===');
-    expect(source).toContain('Manage reusable ContextCapsules');
     expect(source).toContain("id: 'sources', label: 'Sources'");
-    expect(source).toContain('data-testid="capsule-factory-repository-lane"');
     expect(source).toContain("href={isAuthenticated ? '/app/capsules?lane=repository'");
     expect(source).toContain('data-testid="document-repository-section"');
     expect(source).toContain('Attach</button>');
     expect(source).toContain('Detach</button>');
   });
 
-  it('reframes /app/capsules as capsule-centered management with reviewable AI changes', () => {
-    expect(source).toContain('const isCapsuleFactoryMode = isCapsuleRepositoryPage');
-    expect(source).toContain('data-testid="capsule-factory-header"');
-    expect(source).toContain('data-testid="capsule-factory-actions"');
-    expect(source).toContain('{!isCapsuleFactoryMode ? (');
+  it('reframes /app/capsules as a simple Capsule Studio with reviewable AI changes', () => {
+    expect(source).toContain('const isCapsuleStudioMode = isCapsuleRepositoryPage');
+    expect(source).toContain('data-testid="capsule-studio-header"');
+    expect(source).toContain('data-testid="capsule-studio-primary-actions"');
+    expect(source).toContain('{!isCapsuleStudioMode ? (');
     expect(source).toContain('data-testid="praxis-main-composer"');
-    expect(source).toContain('isCapsuleFactoryMode ? \'mt-6 sm:mt-8\'');
-    expect(source).toContain('Manage reusable ContextCapsules');
-    expect(source).toContain('data-testid="capsule-factory-command-band"');
-    expect(source).toContain('Manage the capsules your policy work depends on.');
-    expect(source).toContain('Library');
-    expect(source).toContain('Create capsule');
-    expect(source).toContain('Build your own capsule');
-    expect(source).toContain('Inspect capsule');
-    expect(source).toContain('Improve safely');
-    expect(source).toContain('Submit for improvement');
-    expect(source).toContain('What is inside?');
-    expect(source).toContain('Find source gaps');
-    expect(source).toContain('How should I use this?');
-    expect(source).toContain('Chat with this capsule');
-    expect(source).toContain('factorySidebarItems');
-    expect(source).toContain('Library');
-    expect(source).toContain('Create');
-    expect(source).toContain('Inspect');
-    expect(source).toContain('Improve');
+    expect(source).toContain('isCapsuleStudioMode ? \'mt-6 sm:mt-8\'');
+    expect(source).toContain('data-testid="capsule-studio-command-band"');
+    expect(source).toContain('data-testid="capsule-studio-library"');
+    expect(source).toContain('data-testid="capsule-studio-workspace"');
+    expect(source).toContain('data-testid="capsule-studio-review-queue"');
+    expect(source).toContain('Build capsule');
+    expect(source).toContain('Use in Ask');
+    expect(source).toContain('Review improvements');
+    expect(source).toContain('Details');
     expect(source).toContain('Sources');
+    expect(source).toContain('Improve safely');
+    expect(source).toContain('data-testid="capsule-studio-chat-panel"');
+    expect(source).not.toContain('data-testid="capsule-factory-sidebar"');
+    expect(source).not.toContain('factorySidebarItems');
     expect(source).toContain('factoryBuilderLanes');
     expect(source).toContain('Inspect anatomy');
     expect(source).toContain('Add sources');
@@ -418,6 +438,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Download .praxis');
     expect(source).toContain('Make private');
     expect(source).toContain('Make public');
+    expect(source).not.toContain('aria-label="Capsule factory navigation"');
+    expect(source).not.toContain('Capsule Factory');
   });
 
   it('shows sanitized runtime proof inside the active capsule/run area', () => {

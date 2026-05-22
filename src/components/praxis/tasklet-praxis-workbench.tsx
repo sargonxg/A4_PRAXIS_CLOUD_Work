@@ -244,20 +244,16 @@ type AgentRunDetail = {
   toolCalls?: unknown[];
   approvals?: AgentApprovalSummary[];
 };
-type SpanTargetCore = 'sourceability' | 'human-friction' | 'open-question';
+type SpanTargetCore = 'sourceability' | 'causality' | 'rules' | 'temporality';
 type SpanAttachStatus = 'idle' | 'pending' | 'success' | 'error';
+type SelectionZone = 'assistant-answer' | 'source-preview' | 'repository-text' | 'source-pack' | 'memo-text';
+type SelectionRect = { top: number; left: number; width: number; height: number };
 type SpanTargetDefinition = {
   id: SpanTargetCore;
   label: string;
   note: string;
-  helper: string;
-  askPrompt: string;
   sourceCheckPrompt?: string;
   memoNote: string;
-};
-type AttachedSpanState = {
-  target: SpanTargetDefinition;
-  text: string;
 };
 type CapsuleCoreRefs = {
   userCoreId?: string | null;
@@ -371,31 +367,33 @@ const capsuleActionPrompts = [
   { label: 'Red-team review', prompt: 'Red-team the active capsule and draft. Identify unsupported claims, missing actors, weak assumptions, and decision risks.' },
 ] as const;
 
+const defaultAdvancedLabel = 'sourceability' satisfies SpanTargetCore;
+
 const spanTargets: SpanTargetDefinition[] = [
   {
     id: 'sourceability',
     label: 'Sourceability',
     note: 'Mark claim/evidence needing support check.',
-    helper: 'Use for claims, quotes, or evidence that need source verification.',
-    askPrompt: 'Explain the source posture of this selected span. Separate supported claims, unsupported claims, and the next sources to add.',
     sourceCheckPrompt: 'Source-check this span against the active capsule. Identify missing citations, weak evidence, and the exact support needed.',
     memoNote: 'Sourceability note: claim/evidence needing support check.',
   },
   {
-    id: 'human-friction',
-    label: 'Human friction',
-    note: 'Mark incentives, resistance, approvals, fatigue, or informal power.',
-    helper: 'Use for incentives, resistance, approvals, fatigue, informal power, and implementation blockers.',
-    askPrompt: 'Analyze the human friction in this selected span. Identify incentives, resistance, approvals, fatigue, informal power, and likely blockers.',
-    memoNote: 'Human friction note: incentives, resistance, approvals, fatigue, or informal power.',
+    id: 'causality',
+    label: 'Causality',
+    note: 'Mark causal claim, driver, mechanism, or alternative explanation.',
+    memoNote: 'Causality note: causal claim, driver, mechanism, or alternative explanation.',
   },
   {
-    id: 'open-question',
-    label: 'Open question',
-    note: 'Mark unresolved issue, missing source, or decision question.',
-    helper: 'Use for unresolved issues, missing sources, decision questions, and follow-up research needs.',
-    askPrompt: 'Turn this selected span into an answerable policy research question. State what is unresolved, what evidence is missing, and how to decide.',
-    memoNote: 'Open question note: unresolved issue, missing source, or decision question.',
+    id: 'rules',
+    label: 'Rules',
+    note: 'Mark rule, constraint, mandate, exception, or compliance issue.',
+    memoNote: 'Rules note: rule, constraint, mandate, exception, or compliance issue.',
+  },
+  {
+    id: 'temporality',
+    label: 'Temporality',
+    note: 'Mark date, sequence, deadline, freshness concern, or decision window.',
+    memoNote: 'Temporality note: date, sequence, deadline, freshness concern, or decision window.',
   },
 ] satisfies SpanTargetDefinition[];
 
@@ -454,13 +452,18 @@ const capsuleDomainFilters = [
   { id: 'other', label: 'Other' },
 ] as const;
 
-const factorySidebarItems: Array<{ id: CapsuleFactoryLaneId; label: string; icon: LucideIcon; filter?: string }> = [
-  { id: 'library', label: 'Library', icon: Library, filter: 'all' },
-  { id: 'create', label: 'Create', icon: Plus },
-  { id: 'inspect', label: 'Inspect', icon: BookOpen },
-  { id: 'improve', label: 'Improve', icon: Sparkles },
-  { id: 'sources', label: 'Sources', icon: Database, filter: 'all' },
+const capsuleStudioReviewLanes: Array<{ id: 'improve' | 'sources' | 'output'; label: string; helper: string }> = [
+  { id: 'improve', label: 'Improve', helper: 'Review proposed capsule changes before applying.' },
+  { id: 'sources', label: 'Sources', helper: 'Close source gaps and unsupported claims.' },
+  { id: 'output', label: 'Output', helper: 'Check whether the capsule is ready to produce a memo, brief, or handover.' },
 ];
+
+const capsuleBuilderStarts = [
+  { id: 'describe', label: 'Describe the work', detail: 'Name, job-to-be-done, audience/team, and output goal.' },
+  { id: 'sources', label: 'Add sources', detail: 'Paste notes, links, and repository material.' },
+  { id: 'starter', label: 'Start from a capsule', detail: 'Fork a starter, expert pick, or saved capsule.' },
+  { id: 'combine', label: 'Combine capsules', detail: 'Merge situation, tool, source, and output capsules.' },
+] as const;
 
 const factoryBuilderLanes = [
   {
@@ -626,7 +629,7 @@ export function TaskletPraxisWorkbench({
   const showWorkbenchNavigation = mode === 'app' || isAuthenticated;
   const isRepositoryPage = initialPanel === 'repository' && mode === 'app';
   const isCapsuleRepositoryPage = initialPanel === 'capsules' && mode === 'app';
-  const isCapsuleFactoryMode = isCapsuleRepositoryPage;
+  const isCapsuleStudioMode = isCapsuleRepositoryPage;
   const showHomepageFactoryCta = !initialPanel && mode === 'app';
   const resolvedInitialFactoryLane: CapsuleFactoryLaneId = initialFactoryLane ?? 'library';
   const [prompt, setPrompt] = useState('');
@@ -653,7 +656,7 @@ export function TaskletPraxisWorkbench({
   const [capsuleDomainFilter, setCapsuleDomainFilter] = useState('all');
   const [capsulePolicyTeamFilter, setCapsulePolicyTeamFilter] = useState('all');
   const [factoryLane, setFactoryLane] = useState<CapsuleFactoryLaneId>(resolvedInitialFactoryLane);
-  const isRepositoryLane = isCapsuleRepositoryPage && factoryLane === 'sources';
+  const isRepositoryLane = false;
   const [factoryReviewDiffs, setFactoryReviewDiffs] = useState<CapsuleFactoryReviewDiff[]>([]);
   const [userCapsules, setUserCapsules] = useState<PraxisCapsuleSummary[]>([]);
   const [capsulesLoading, setCapsulesLoading] = useState(false);
@@ -683,9 +686,12 @@ export function TaskletPraxisWorkbench({
   const [builderCategoryId, setBuilderCategoryId] = useState<string>(POLICY_TEAM_CATEGORIES[0]?.id ?? 'research-strategy');
   const [selectedText, setSelectedText] = useState('');
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
+  const [selectionZone, setSelectionZone] = useState<SelectionZone | null>(null);
+  const [selectedSpanMenuOpen, setSelectedSpanMenuOpen] = useState(false);
+  const [advancedLabel, setAdvancedLabel] = useState<SpanTargetCore>(defaultAdvancedLabel);
   const [selectedSpanStatus, setSelectedSpanStatus] = useState<SpanAttachStatus>('idle');
   const [selectedSpanMessage, setSelectedSpanMessage] = useState('');
-  const [attachedSpan, setAttachedSpan] = useState<AttachedSpanState | null>(null);
   const [agenticSearchPremiumEnabled, setAgenticSearchPremiumEnabled] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const starterSeededRef = useRef(false);
@@ -1278,17 +1284,85 @@ export function TaskletPraxisWorkbench({
     void sendToPraxis(selectedAgent, previous.text);
   }
 
-  function handleMessageSelection(messageId: string) {
-    const selection = window.getSelection()?.toString().trim() ?? '';
-    if (selection.length < 3) return;
-    setSelectedText(selection.slice(0, 2000));
-    setSelectedMessageId(messageId);
+  const clearSelectedSpan = useCallback(() => {
+    setSelectedText('');
+    setSelectedMessageId(null);
+    setSelectionRect(null);
+    setSelectionZone(null);
+    setSelectedSpanMenuOpen(false);
     setSelectedSpanStatus('idle');
     setSelectedSpanMessage('');
-    setAttachedSpan(null);
-  }
+  }, []);
 
-  async function bindSelectedSpan(targetCore: SpanTargetCore) {
+  const handleDocumentSelection = useCallback((event?: Event) => {
+    const target = event?.target;
+    if (target instanceof Element && target.closest('[data-selection-popover], [data-selection-trigger]')) return;
+    const selection = window.getSelection();
+    const cleanText = selection?.toString().trim() ?? '';
+    if (!selection || selection.rangeCount === 0 || cleanText.length < 3) {
+      if (target instanceof Element && !target.closest('[data-selection-zone]')) clearSelectedSpan();
+      return;
+    }
+
+    const anchorZone = getSelectionZoneElement(selection.anchorNode);
+    const focusZone = getSelectionZoneElement(selection.focusNode);
+    const range = selection.getRangeAt(0);
+    const commonZone = getSelectionZoneElement(range.commonAncestorContainer);
+    const zoneElement = commonZone ?? anchorZone;
+    const zone = selectionZoneFromElement(zoneElement);
+    if (!zone || !anchorZone || !focusZone || anchorZone !== focusZone) {
+      clearSelectedSpan();
+      return;
+    }
+
+    const rect = range.getBoundingClientRect();
+    const firstRect = range.getClientRects()[0];
+    const nextRect = (rect.width || rect.height) ? rect : firstRect;
+    if (!nextRect) {
+      clearSelectedSpan();
+      return;
+    }
+
+    setSelectedText(cleanText.slice(0, 2000));
+    setSelectedMessageId(zoneElement?.dataset.selectionMessageId ?? null);
+    setSelectionZone(zone);
+    setSelectionRect({
+      top: nextRect.top,
+      left: nextRect.left,
+      width: nextRect.width,
+      height: nextRect.height,
+    });
+    setSelectedSpanMenuOpen(false);
+    setAdvancedLabel(defaultAdvancedLabel);
+    setSelectedSpanStatus('idle');
+    setSelectedSpanMessage('');
+  }, [clearSelectedSpan]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') clearSelectedSpan();
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!selectedText) return;
+      const target = event.target;
+      if (target instanceof Element && target.closest('[data-selection-popover], [data-selection-trigger], [data-selection-zone]')) return;
+      clearSelectedSpan();
+    }
+
+    document.addEventListener('mouseup', handleDocumentSelection);
+    document.addEventListener('keyup', handleDocumentSelection);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    return () => {
+      document.removeEventListener('mouseup', handleDocumentSelection);
+      document.removeEventListener('keyup', handleDocumentSelection);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+    };
+  }, [clearSelectedSpan, handleDocumentSelection, selectedText]);
+
+  async function bindSelectedSpan(targetCore: SpanTargetCore = advancedLabel) {
     if (!selectedText.trim()) return;
     if (requireAuthForAction(`Attach this selected text to ${targetCore}: ${selectedText}`)) return;
     const target = spanTargets.find((item) => item.id === targetCore);
@@ -1297,7 +1371,6 @@ export function TaskletPraxisWorkbench({
     const note = buildSelectedSpanNote(target, cleanText);
     setSelectedSpanStatus('pending');
     setSelectedSpanMessage(`Attaching selected text to ${target.label}...`);
-    setAttachedSpan(null);
     const response = await fetch(`/api/context/capsules/${encodeURIComponent(currentCapsuleId)}/spans`, {
       method: 'POST',
       credentials: 'include',
@@ -1305,7 +1378,7 @@ export function TaskletPraxisWorkbench({
       body: JSON.stringify({
         text: cleanText,
         targetCore,
-        sourceType: selectedMessageId?.startsWith('assistant') ? 'assistant-message' : 'document-selection',
+        sourceType: sourceTypeForSelectionZone(selectionZone),
         messageId: selectedMessageId,
         note,
       }),
@@ -1318,38 +1391,35 @@ export function TaskletPraxisWorkbench({
       setStatus(`Span attach failed: ${detail}`);
       return;
     }
-    setAttachedSpan({ target, text: cleanText });
     setSelectedSpanStatus('success');
-    setSelectedSpanMessage(`Attached to ${target.label}. Ask PRAXIS, source-check it, turn it into a memo note, or clear the selection.`);
-    setStatus(`Selected text attached to ${target.label}.`);
+    setSelectedSpanMessage('Saved as evidence span');
+    setStatus('Saved as evidence span');
     await refreshCapsules(currentCapsuleId);
   }
 
-  function clearSelectedSpan() {
-    setSelectedText('');
-    setSelectedMessageId(null);
-    setSelectedSpanStatus('idle');
-    setSelectedSpanMessage('');
-    setAttachedSpan(null);
-  }
-
-  function askAboutAttachedSpan(mode: 'ask' | 'source-check') {
-    const span = attachedSpan;
-    if (!span) return;
-    const promptText = [
-      mode === 'source-check' && span.target.sourceCheckPrompt ? span.target.sourceCheckPrompt : span.target.askPrompt,
-      '',
-      `Selected span (${span.target.label}):`,
-      span.text,
-    ].join('\n');
+  function prefillComposerFromSelection(mode: 'ask' | 'source-check') {
+    if (!selectedText.trim()) return;
+    const promptText = mode === 'source-check'
+      ? [
+          'Source-check this selected passage in the active capsule context. Identify unsupported claims, missing citations, weak evidence, and exact sources needed:',
+          '',
+          quoteSelectedText(selectedText.trim()),
+        ].join('\n')
+      : [
+          'Analyze this selected passage in the active capsule context:',
+          '',
+          quoteSelectedText(selectedText.trim()),
+        ].join('\n');
     setPrompt(promptText);
-    void sendToPraxis(selectedAgent, promptText);
+    setStatus(mode === 'source-check' ? 'Source-check prompt loaded into the composer.' : 'Selected passage loaded into the composer.');
+    setSelectedSpanMenuOpen(false);
   }
 
   async function turnAttachedSpanIntoMemoNote() {
-    const span = attachedSpan;
-    if (!span) return;
-    if (requireAuthForAction(`Turn this selected span into a memo note:\n\n${span.text}`)) return;
+    if (!selectedText.trim()) return;
+    const target = spanTargets.find((item) => item.id === advancedLabel) ?? spanTargets[0]!;
+    const cleanText = selectedText.trim();
+    if (requireAuthForAction(`Turn this selected span into a memo note:\n\n${cleanText}`)) return;
     setSelectedSpanStatus('pending');
     setSelectedSpanMessage('Writing a memo note into the active capsule...');
     const response = await fetch(`/api/context/capsules/${encodeURIComponent(currentCapsuleId)}/notes`, {
@@ -1357,10 +1427,10 @@ export function TaskletPraxisWorkbench({
       credentials: 'include',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        type: span.target.id === 'sourceability' ? 'source_note' : 'analyst_note',
-        title: `${span.target.label} span note`,
-        body: `${span.target.memoNote}\n\n${span.text}`,
-        tags: ['selected-span', span.target.id],
+        type: target.id === 'sourceability' ? 'source_note' : 'analyst_note',
+        title: `${target.label} selected passage`,
+        body: `${target.memoNote}\n\n${cleanText}`,
+        tags: ['selected-span', target.id],
       }),
     });
     const payload = await response.json().catch(() => ({}));
@@ -1372,8 +1442,8 @@ export function TaskletPraxisWorkbench({
       return;
     }
     setSelectedSpanStatus('success');
-    setSelectedSpanMessage(`Memo note saved from the ${span.target.label} span.`);
-    setStatus('Memo note saved to the active capsule.');
+    setSelectedSpanMessage('Added to memo');
+    setStatus('Added to memo');
   }
 
   async function uploadDocument(files: FileList | null) {
@@ -2388,9 +2458,28 @@ export function TaskletPraxisWorkbench({
     else sendPublicToLogin(nextPrompt, capsuleFactoryAgent);
   }
 
+  function useSelectedCapsuleInAsk(capsule?: PraxisCapsuleSummary | null) {
+    const target = capsule ?? selectedCapsule ?? userCapsules[0] ?? starterCapsuleSummaries[0];
+    if (!target) return;
+    selectCapsuleCard(target);
+    const askPath = `/app?capsuleId=${encodeURIComponent(target.capsuleId)}`;
+    router.push(isAuthenticated ? askPath : `/login?mode=signup&redirect=${encodeURIComponent(askPath)}`);
+  }
+
   function openWorkbenchSearch(query?: string) {
     window.dispatchEvent(new CustomEvent('open-praxis-search', { detail: { query } }));
   }
+
+  const selectionViewportWidth = typeof window === 'undefined' ? 1024 : window.innerWidth;
+  const selectionAnchorLeft = selectionRect
+    ? Math.max(12, Math.min(selectionRect.left + (selectionRect.width / 2), selectionViewportWidth - 168))
+    : 12;
+  const selectionTriggerStyle = selectionRect
+    ? { left: selectionAnchorLeft, top: Math.max(12, selectionRect.top - 46) }
+    : undefined;
+  const selectionMenuStyle = selectionRect
+    ? { left: Math.max(12, Math.min(selectionAnchorLeft - 160, selectionViewportWidth - 344)), top: Math.max(12, selectionRect.top + selectionRect.height + 10) }
+    : undefined;
 
   return (
     <section className={cn('civic-atelier-shell cartographic-grid praxis-checker-constellation od-praxis-surface min-h-screen text-[color:var(--color-deep-ink)]', className)} data-testid="tasklet-praxis-workbench">
@@ -2510,12 +2599,10 @@ export function TaskletPraxisWorkbench({
             <Link href={isAuthenticated ? '/app' : '/'} className="flex items-center gap-2 text-lg font-semibold lg:hidden">
               <PraxisBrandChip compact />
             </Link>
-            {isCapsuleFactoryMode ? (
-              <nav className="ml-auto hidden items-center gap-5 text-sm font-semibold text-slate-500 md:flex" aria-label="Capsule factory navigation">
+            {isCapsuleStudioMode ? (
+              <nav className="ml-auto hidden items-center gap-5 text-sm font-semibold text-slate-500 md:flex" aria-label="Capsule Studio navigation">
                 <Link href={isAuthenticated ? '/app' : '/'} className="hover:text-slate-900">Home</Link>
                 <Link href={isAuthenticated ? '/app/capsules' : '/login?mode=signup&redirect=%2Fapp%2Fcapsules'} className="text-slate-950">Capsules</Link>
-                <button type="button" onClick={() => setFactoryLane('library')} className="hover:text-slate-900">Library</button>
-                <button type="button" onClick={() => setFactoryLane('sources')} className="hover:text-slate-900">Sources</button>
               </nav>
             ) : (
               <nav className="ml-auto hidden items-center gap-8 text-sm font-semibold text-slate-500 md:flex">
@@ -2531,17 +2618,17 @@ export function TaskletPraxisWorkbench({
             </div>
           </header> : null}
 
-          <div className={cn('mx-auto flex max-w-6xl flex-col items-center', isCapsuleFactoryMode ? 'mt-6 sm:mt-8' : showWorkbenchNavigation ? 'mt-14 sm:mt-18' : 'mt-8 sm:mt-12')}>
-            {isCapsuleFactoryMode ? (
-              <section className="w-full" data-testid="capsule-factory-header">
+          <div className={cn('mx-auto flex max-w-6xl flex-col items-center', isCapsuleStudioMode ? 'mt-6 sm:mt-8' : showWorkbenchNavigation ? 'mt-14 sm:mt-18' : 'mt-8 sm:mt-12')}>
+            {isCapsuleStudioMode ? (
+              <section className="w-full" data-testid="capsule-studio-header">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--color-oxide)]">Capsule Factory</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--color-oxide)]">Capsule Studio</p>
                     <h1 className="mt-2 font-serif text-4xl font-semibold tracking-tight text-[color:var(--color-deep-ink)] sm:text-5xl">
-                      Build and steward ContextCapsules.
+                      Build and use trusted capsules.
                     </h1>
                     <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                      A capsule-only workspace for library work, creation, inspection, safe improvement, and source-to-claim review.
+                      One library, one selected capsule, one guided build flow, and one review queue.
                     </p>
                   </div>
                   <div className="grid min-w-[min(100%,22rem)] gap-2 sm:grid-cols-2">
@@ -2551,33 +2638,41 @@ export function TaskletPraxisWorkbench({
                     <Metric label="Review queue" value={factoryReviewDiffs.filter((diff) => diff.reviewState === 'reviewed').length} />
                   </div>
                 </div>
-                <div className="mt-5 flex flex-wrap gap-2" data-testid="capsule-factory-actions">
-                  {factorySidebarItems.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => {
-                        setFactoryLane(item.id);
-                        if (item.id === 'create') setBuilderOpen(true);
-                        if (item.id === 'inspect') setInspectorOpen(true);
-                        if (item.id === 'sources') {
-                          setRepositoryOpen(true);
-                          void refreshRepository();
-                        }
-                      }}
-                      className={cn(
-                        'inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold',
-                        factoryLane === item.id ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
-                      )}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {item.label}
-                    </button>
-                  ))}
+                <div className="mt-5 flex flex-wrap gap-2" data-testid="capsule-studio-primary-actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (requireAuthForAction('Build a new PRAXIS ContextCapsule.')) return;
+                      setBuilderOpen(true);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Build capsule
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => useSelectedCapsuleInAsk(selectedCapsule)}
+                    className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                    Use in Ask
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const lane = factoryBuilderLanes.find((item) => item.id === 'improve') ?? factoryBuilderLanes[0];
+                      reviewFactoryLane(lane);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-md border border-[color:var(--color-clay)]/30 bg-white px-3 py-2 text-sm font-semibold text-[color:var(--color-oxide)] hover:bg-[color:var(--color-mineral-soft)]"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Review improvements
+                  </button>
                 </div>
               </section>
             ) : null}
-            {!isCapsuleFactoryMode ? (
+            {!isCapsuleStudioMode ? (
             <>
             <p className="receipt-slip flex items-center gap-2 rounded-md px-3 py-1.5 font-mono text-xs font-semibold">
               <Sparkles className="h-4 w-4 text-[color:var(--color-oxide)]" />
@@ -2985,7 +3080,6 @@ export function TaskletPraxisWorkbench({
                 {chatMessages.map((message, index) => (
                   <article
                     key={`${message.role}-${index}`}
-                    onMouseUp={() => handleMessageSelection(`${message.role}-${index}`)}
                     className={cn(
                       'rounded-lg px-4 py-3 text-sm leading-6 shadow-sm',
                       message.role === 'user' ? 'ml-auto max-w-[82%] bg-slate-950 text-white shadow-black/10' : 'mr-auto max-w-[92%] border border-slate-200 bg-white text-slate-900 shadow-black/5',
@@ -2996,10 +3090,11 @@ export function TaskletPraxisWorkbench({
                     </div>
                     {message.role === 'assistant' ? (
                       <>
-                        <AssistantMarkdown text={message.text || 'Reading context...'} />
+                        <AssistantMarkdown text={message.text || 'Reading context...'} messageId={`assistant-${index}`} />
                         <ConversationReceiptSummary envelope={message.answerEnvelope} />
                         <ConversationSourcePreviewPanel
                           envelope={message.answerEnvelope}
+                          messageId={`assistant-${index}`}
                           onFollowUp={(followUp) => {
                             setPrompt(followUp);
                             setStatus('Follow-up loaded into the composer.');
@@ -3019,72 +3114,75 @@ export function TaskletPraxisWorkbench({
                   </article>
                 ))}
               </section>
-              {selectedText ? (
-                <div className="fixed inset-x-3 bottom-4 z-[80] mx-auto max-w-xl sm:bottom-6" role="dialog" aria-modal="false" aria-label="Use selected text in PRAXIS" data-testid="text-span-core-popover">
-                  <div className="rounded-xl border border-[color:var(--color-clay)]/35 bg-[color:var(--color-archive-paper-strong)] p-3 shadow-2xl shadow-slate-950/20 ring-1 ring-white/70">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-oxide)]">Use selected text</p>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">Save or inspect this passage in the active capsule.</p>
-                        <blockquote className="mt-2 max-h-24 overflow-y-auto rounded-md border border-[color:var(--color-clay)]/20 bg-white px-3 py-2 text-sm leading-6 text-slate-700">
-                          {selectedText}
-                        </blockquote>
-                      </div>
-                      <button type="button" aria-label="Clear selected text" onClick={clearSelectedSpan} className="rounded p-1 text-slate-500 hover:bg-white">
-                        <X className="h-4 w-4" />
-                      </button>
+              {selectedText && selectionRect && !selectedSpanMenuOpen ? (
+                <button
+                  type="button"
+                  title="Use selected text in PRAXIS"
+                  aria-label="Use selected text in PRAXIS"
+                  data-selection-trigger
+                  data-testid="text-span-trigger"
+                  style={selectionTriggerStyle}
+                  onClick={() => setSelectedSpanMenuOpen(true)}
+                  className="fixed z-[80] inline-flex max-w-[calc(100vw-1.5rem)] -translate-x-1/2 items-center gap-1.5 rounded-md border border-[color:var(--color-clay)]/35 bg-white px-2.5 py-1.5 text-xs font-semibold text-[color:var(--color-oxide)] shadow-lg shadow-slate-950/15 hover:bg-[color:var(--color-archive-paper-strong)]"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Use in PRAXIS</span>
+                </button>
+              ) : null}
+              {selectedText && selectionRect && selectedSpanMenuOpen ? (
+                <div
+                  className="fixed z-[80] w-[min(20rem,calc(100vw-1.5rem))] rounded-lg border border-[color:var(--color-clay)]/35 bg-[color:var(--color-archive-paper-strong)] p-3 shadow-2xl shadow-slate-950/20 ring-1 ring-white/70"
+                  role="menu"
+                  aria-label="Selected text actions"
+                  data-selection-popover
+                  data-testid="text-span-action-menu"
+                  style={selectionMenuStyle}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-oxide)]">Use selected text</p>
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600">{selectedText}</p>
                     </div>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                      {spanTargets.map((target) => (
-                        <button
-                          key={target.id}
-                          type="button"
-                          disabled={selectedSpanStatus === 'pending'}
-                          onClick={() => void bindSelectedSpan(target.id)}
-                          className={cn(
-                            'rounded-md bg-white px-3 py-2 text-left text-xs shadow-sm ring-1 ring-slate-200 hover:ring-[color:var(--color-clay)]',
-                            attachedSpan?.target.id === target.id ? 'ring-[color:var(--color-clay)] text-[color:var(--color-oxide)]' : 'text-slate-700',
-                            selectedSpanStatus === 'pending' ? 'cursor-wait opacity-70' : '',
-                          )}
-                        >
-                          <span className="block font-semibold">{target.label}</span>
-                          <span className="mt-1 block leading-5 text-slate-500">{target.helper}</span>
-                        </button>
-                      ))}
-                    </div>
-                    {selectedSpanMessage ? (
-                      <p
-                        className={cn(
-                          'mt-3 rounded-md px-3 py-2 text-xs font-medium',
-                          selectedSpanStatus === 'error' ? 'bg-rose-50 text-rose-700' : selectedSpanStatus === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-white text-slate-600',
-                        )}
-                      >
-                        {selectedSpanMessage}
-                      </p>
-                    ) : (
-                      <p className="mt-3 text-xs leading-5 text-slate-500">
-                        Saving keeps this excerpt with the active capsule. It will not run AI until you choose a follow-up.
-                      </p>
-                    )}
-                    {attachedSpan ? (
-                      <div className="mt-3 flex flex-wrap gap-2 border-t border-[color:var(--color-clay)]/20 pt-3">
-                        <button type="button" onClick={() => askAboutAttachedSpan('ask')} className="rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
-                          Ask PRAXIS about this span
-                        </button>
-                        {attachedSpan.target.id === 'sourceability' ? (
-                          <button type="button" onClick={() => askAboutAttachedSpan('source-check')} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-                            Source-check this span
-                          </button>
-                        ) : null}
-                        <button type="button" onClick={() => void turnAttachedSpanIntoMemoNote()} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-                          Turn into memo note
-                        </button>
-                        <button type="button" onClick={clearSelectedSpan} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50">
-                          Clear selection
-                        </button>
-                      </div>
-                    ) : null}
+                    <button type="button" aria-label="Clear selected text" onClick={clearSelectedSpan} className="rounded p-1 text-slate-500 hover:bg-white">
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button type="button" role="menuitem" onClick={() => prefillComposerFromSelection('ask')} className="rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+                      Ask PRAXIS
+                    </button>
+                    <button type="button" role="menuitem" disabled={selectedSpanStatus === 'pending'} onClick={() => void bindSelectedSpan(advancedLabel)} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-70">
+                      Save to capsule
+                    </button>
+                    <button type="button" role="menuitem" onClick={() => prefillComposerFromSelection('source-check')} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                      Source-check
+                    </button>
+                    <button type="button" role="menuitem" disabled={selectedSpanStatus === 'pending'} onClick={() => void turnAttachedSpanIntoMemoNote()} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-70">
+                      Add to memo
+                    </button>
+                  </div>
+                  <label className="mt-3 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Advanced label
+                    <select
+                      value={advancedLabel}
+                      onChange={(event) => setAdvancedLabel(event.target.value as SpanTargetCore)}
+                      className="mt-1 block w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold normal-case tracking-normal text-slate-700 outline-none focus:border-[color:var(--color-clay)]"
+                    >
+                      {spanTargets.map((target) => (
+                        <option key={target.id} value={target.id}>{target.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  {selectedSpanMessage ? (
+                    <p
+                      className={cn(
+                        'mt-3 rounded-md px-3 py-2 text-xs font-medium',
+                        selectedSpanStatus === 'error' ? 'bg-rose-50 text-rose-700' : selectedSpanStatus === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-white text-slate-600',
+                      )}
+                    >
+                      {selectedSpanMessage}
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
               </>
@@ -3094,7 +3192,7 @@ export function TaskletPraxisWorkbench({
 
             <section
               id="capsule-repository-section"
-              className={cn('w-full max-w-5xl', isCapsuleFactoryMode ? 'mt-6' : 'mt-12')}
+              className={cn('w-full max-w-5xl', isCapsuleStudioMode ? 'mt-6' : 'mt-12')}
               data-testid={isRepositoryPage ? 'capsule-repository-page' : 'capsule-manager'}
             >
               <span className="sr-only" data-testid="capsule-manager">Capsule manager</span>
@@ -3565,7 +3663,7 @@ function ConversationReceiptSummary({ envelope }: { envelope?: AskAnswerEnvelope
     </section>
   );
 }
-function ConversationSourcePreviewPanel({ envelope, onFollowUp }: { envelope?: AskAnswerEnvelope; onFollowUp: (followUp: string) => void }) {
+function ConversationSourcePreviewPanel({ envelope, messageId, onFollowUp }: { envelope?: AskAnswerEnvelope; messageId?: string; onFollowUp: (followUp: string) => void }) {
   const sourceCards = envelope?.sourceCards ?? [];
   const followUps = envelope?.followUps ?? [];
   if (sourceCards.length === 0 && followUps.length === 0) return null;
@@ -3597,7 +3695,7 @@ function ConversationSourcePreviewPanel({ envelope, onFollowUp }: { envelope?: A
                     {Math.round((card.confidence ?? 0) * 100)}%
                   </span>
                 </div>
-                <blockquote className="mt-2 border-l-2 border-diplomatic-blue/40 pl-2 text-xs leading-5 text-slate-700">
+                <blockquote className="mt-2 border-l-2 border-diplomatic-blue/40 pl-2 text-xs leading-5 text-slate-700" data-selection-zone="source-preview" data-selection-message-id={messageId}>
                   {card.quotePreview || 'No quote preview available.'}
                 </blockquote>
                 <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-slate-500">
@@ -3636,9 +3734,9 @@ function ConversationSourcePreviewPanel({ envelope, onFollowUp }: { envelope?: A
   );
 }
 
-function AssistantMarkdown({ text }: { text: string }) {
+function AssistantMarkdown({ text, messageId }: { text: string; messageId?: string }) {
   return (
-    <div className="space-y-3 text-sm leading-6 text-slate-800" data-testid="praxis-answer-markdown">
+    <div className="space-y-3 text-sm leading-6 text-slate-800" data-testid="praxis-answer-markdown" data-selection-zone="assistant-answer" data-selection-message-id={messageId}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -3866,10 +3964,40 @@ function escapeHtml(value: string): string {
 function buildSelectedSpanNote(target: SpanTargetDefinition, text: string): string {
   return [
     `${target.label}: ${target.note}`,
-    target.helper,
-    `Follow-up: ${target.askPrompt}`,
     `Excerpt: ${text.slice(0, 520)}`,
   ].join('\n');
+}
+
+function quoteSelectedText(text: string): string {
+  return text
+    .split(/\r?\n/)
+    .map((line) => `> ${line}`)
+    .join('\n');
+}
+
+function getSelectionZoneElement(node: Node | null): HTMLElement | null {
+  const element = node instanceof Element ? node : node?.parentElement;
+  return element?.closest('[data-selection-zone]') ?? null;
+}
+
+function selectionZoneFromElement(element: HTMLElement | null): SelectionZone | null {
+  const zone = element?.dataset.selectionZone;
+  if (
+    zone === 'assistant-answer'
+    || zone === 'source-preview'
+    || zone === 'repository-text'
+    || zone === 'source-pack'
+    || zone === 'memo-text'
+  ) {
+    return zone;
+  }
+  return null;
+}
+
+function sourceTypeForSelectionZone(zone: SelectionZone | null): 'assistant-message' | 'document-selection' | 'manual-note' {
+  if (zone === 'assistant-answer' || zone === 'source-preview') return 'assistant-message';
+  if (zone === 'memo-text') return 'manual-note';
+  return 'document-selection';
 }
 
 async function fetchCapsuleLibrary(): Promise<PraxisCapsuleSummary[]> {
@@ -4795,13 +4923,13 @@ function CapsuleFactorySidebar({
   onSelect,
 }: {
   activeLane: CapsuleFactoryLaneId;
-  onSelect: (item: (typeof factorySidebarItems)[number]) => void;
+  onSelect: (item: (typeof factoryBuilderLanes)[number]) => void;
 }) {
   return (
-    <aside className="dossier-spine rounded-lg border p-2 shadow-sm shadow-slate-950/[0.03]" data-testid="capsule-factory-sidebar">
+    <aside className="dossier-spine rounded-lg border p-2 shadow-sm shadow-slate-950/[0.03]" data-testid="capsule-studio-secondary-rail">
       <p className="px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-oxide)]">Capsules</p>
       <nav aria-label="Capsule management views" className="space-y-1">
-        {factorySidebarItems.map((item) => (
+        {factoryBuilderLanes.map((item) => (
           <button
             key={item.id}
             type="button"
@@ -4811,8 +4939,8 @@ function CapsuleFactorySidebar({
               activeLane === item.id ? 'bg-slate-950 text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950',
             )}
           >
-            <item.icon className={cn('h-4 w-4 shrink-0', activeLane === item.id ? 'text-white/80' : 'text-slate-400')} />
-            <span className="min-w-0 truncate">{item.label}</span>
+            <span className={cn('h-2 w-2 shrink-0 rounded-full', activeLane === item.id ? 'bg-white/80' : 'bg-slate-300')} />
+            <span className="min-w-0 truncate">{item.title}</span>
           </button>
         ))}
       </nav>
@@ -4851,7 +4979,7 @@ function CapsuleFactoryLanePanel({
   onApply: (diff: CapsuleFactoryReviewDiff) => void;
   onReject: (diff: CapsuleFactoryReviewDiff) => void;
 }) {
-  const laneLabel = factorySidebarItems.find((item) => item.id === activeLane)?.label ?? 'Catalog';
+  const laneLabel = factoryBuilderLanes.find((item) => item.id === activeLane)?.title ?? 'Capsule review';
   const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
   const openDiffs = reviewDiffs.filter((diff) => diff.reviewState !== 'rejected').slice(0, 3);
   return (
@@ -4956,7 +5084,7 @@ function CapsuleFactoryLanePanel({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-slate-900">{diff.laneTitle}</p>
-                  <p className="mt-1 text-[11px] leading-5 text-slate-500">{diff.proposedCapsule.summary}</p>
+                  <p className="mt-1 text-[11px] leading-5 text-slate-500" data-selection-zone="memo-text">{diff.proposedCapsule.summary}</p>
                 </div>
                 <span className={cn('rounded-md px-2 py-1 text-[11px] font-semibold', factoryReviewStateClass(diff.reviewState))}>{diff.reviewState}</span>
               </div>
@@ -5726,7 +5854,7 @@ function CapsuleDetailPanel({
           </div>
           {repositoryLoading ? <p className="text-xs text-slate-500">Loading repository...</p> : null}
           {repositoryDocuments.slice(0, 4).map((document) => (
-            <div key={document.id} className="rounded-md border border-slate-200 px-3 py-2">
+            <div key={document.id} className="rounded-md border border-slate-200 px-3 py-2" data-selection-zone="repository-text">
               <p className="truncate text-xs font-semibold text-slate-800">{document.title}</p>
               <p className="mt-1 text-[11px] text-slate-400">{document.status} · {document.chunkCount ?? 0} chunks · {document.fileType}</p>
             </div>
@@ -6385,7 +6513,7 @@ function DocumentRepositorySection({
           return (
             <article key={document.id} className="rounded-lg border border-slate-200 p-3">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <div className="min-w-0" data-selection-zone="repository-text">
                   <p className="truncate text-sm font-semibold text-slate-900">{document.title}</p>
                   <p className="mt-1 text-xs text-slate-500">
                     {document.fileType} · {document.status} · {document.chunkCount ?? 0} chunks · {document.entityCount ?? 0} entities
@@ -6404,7 +6532,7 @@ function DocumentRepositorySection({
           );
         })}
         {!loading && !documents.length ? documentRefs.map((documentId) => (
-          <article key={documentId} className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-500">
+          <article key={documentId} className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-500" data-selection-zone="repository-text">
             Attached document ref: <span className="font-mono text-xs">{documentId}</span>
           </article>
         )) : null}
@@ -6465,7 +6593,7 @@ function RepositorySheet({
             {documents.map((document) => (
               <article key={document.id} className="rounded-lg border border-slate-200 p-3">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  <div className="min-w-0" data-selection-zone="repository-text">
                     <p className="truncate text-sm font-semibold text-slate-900">{document.title}</p>
                     <p className="mt-1 text-xs text-slate-500">{document.fileType} · {document.status} · {document.chunkCount ?? 0} chunks</p>
                   </div>
@@ -6478,7 +6606,7 @@ function RepositorySheet({
               </article>
             ))}
             {!loading && documents.length === 0 ? documentRefs.map((documentId) => (
-              <article key={documentId} className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-500">
+              <article key={documentId} className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-500" data-selection-zone="repository-text">
                 Attached document ref: <span className="font-mono text-xs">{documentId}</span>
               </article>
             )) : null}
@@ -6774,7 +6902,7 @@ function CapsuleInspectorSheet({
             </div>
             <div className="mt-3 grid gap-2">
               {starterSourcePack.slice(0, 5).map((source) => (
-                <a key={source.id} href={source.url} target="_blank" rel="noreferrer" className="rounded-md border border-slate-200 p-2 text-xs hover:bg-slate-50">
+                <a key={source.id} href={source.url} target="_blank" rel="noreferrer" className="rounded-md border border-slate-200 p-2 text-xs hover:bg-slate-50" data-selection-zone="source-pack">
                   <span className="block font-semibold text-slate-800">{source.label}</span>
                   <span className="mt-1 block leading-5 text-slate-500">{source.publisher ?? 'Public source'} · tier {source.reliabilityTier ?? 'review'} · {source.relevance}</span>
                 </a>
@@ -6787,7 +6915,7 @@ function CapsuleInspectorSheet({
             <p className="text-xs font-semibold uppercase text-slate-400">Starter excerpts</p>
             <div className="mt-3 space-y-2">
               {starterExcerpts.slice(0, 4).map((excerpt, index) => (
-                <p key={`${excerpt.sourceId}-${index}`} className="rounded-md bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+                <p key={`${excerpt.sourceId}-${index}`} className="rounded-md bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600" data-selection-zone="source-pack">
                   <span className="font-mono text-[11px] font-semibold text-slate-400">{excerpt.sourceId}</span> {excerpt.text}
                 </p>
               ))}
@@ -6798,7 +6926,7 @@ function CapsuleInspectorSheet({
           <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 p-4">
             <div>
               <p className="text-xs font-semibold uppercase text-slate-400">AI use guidance</p>
-              {starterGuidance ? <p className="mt-1 text-xs leading-5 text-slate-500">{starterGuidance}</p> : null}
+              {starterGuidance ? <p className="mt-1 text-xs leading-5 text-slate-500" data-selection-zone="source-pack">{starterGuidance}</p> : null}
             </div>
             {starterQuestions.length ? (
               <div>
