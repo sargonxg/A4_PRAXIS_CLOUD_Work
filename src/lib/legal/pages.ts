@@ -1,5 +1,8 @@
 export type LegalPageSlug =
   | 'privacy'
+  | 'cookies'
+  | 'gdpr'
+  | 'data-processing'
   | 'terms'
   | 'security'
   | 'sub-processors'
@@ -46,6 +49,95 @@ export const legalPages: LegalPage[] = [
         body: [
           'Authenticated users can export or delete account data through the product-supported routes where available. Deletion requests are handled as account deletion and workspace erasure workflows.',
           'Security or privacy requests can be sent to security@tacitus.me.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'cookies',
+    title: 'Cookie Notice',
+    summary: 'How PRAXIS uses essential cookies, authentication storage, analytics settings, and future consent controls.',
+    updatedAt: '2026-05-22',
+    pendingLegalReview: true,
+    sections: [
+      {
+        heading: 'Essential Cookies',
+        body: [
+          'PRAXIS uses essential cookies and browser storage to keep users signed in, protect sessions, remember interface state, and route authenticated requests safely.',
+          'Essential cookies are required for the service and are not used to sell personal information or build third-party advertising profiles.',
+        ],
+      },
+      {
+        heading: 'Analytics and Product Telemetry',
+        body: [
+          'PRAXIS may collect privacy-conscious product telemetry to understand reliability, page performance, feature adoption, and abuse patterns.',
+          'Where non-essential analytics are introduced, PRAXIS will maintain appropriate consent and opt-out controls for users and regions that require them.',
+        ],
+      },
+      {
+        heading: 'Managing Cookies',
+        body: [
+          'Users can manage cookies through browser settings. Blocking essential cookies may prevent sign-in, workspace access, or secure product flows from working correctly.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'gdpr',
+    title: 'GDPR and Privacy Rights',
+    summary: 'Current GDPR-style rights posture for access, correction, export, deletion, objection, restriction, and support requests.',
+    updatedAt: '2026-05-22',
+    pendingLegalReview: true,
+    sections: [
+      {
+        heading: 'Rights Requests',
+        body: [
+          'Where GDPR or similar privacy law applies, users may request access, correction, export, deletion, restriction, objection, or portability for personal data processed by PRAXIS.',
+          'Requests can be sent to security@tacitus.me. PRAXIS may need to verify account ownership before acting on a request.',
+        ],
+      },
+      {
+        heading: 'Workspace and Generated Data',
+        body: [
+          'ContextCapsules, uploaded documents, source receipts, conversations, generated outputs, and audit trails may contain user-provided or user-derived personal data.',
+          'Deletion and export workflows are handled at the account or workspace level where supported, subject to legal, security, billing, abuse-prevention, and backup-integrity exceptions.',
+        ],
+      },
+      {
+        heading: 'International Processing',
+        body: [
+          'The current production baseline uses United States infrastructure unless a separate enterprise arrangement states otherwise.',
+          'EU residency, transfer-impact review, and expanded DPA support remain tracked launch-readiness items for regulated deployments.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'data-processing',
+    title: 'Data Processing Addendum',
+    summary: 'Customer-data processing roles, instructions, sub-processors, security controls, retention, deletion, and support channels.',
+    updatedAt: '2026-05-22',
+    pendingLegalReview: true,
+    sections: [
+      {
+        heading: 'Processing Roles',
+        body: [
+          'For customer workspace data, PRAXIS generally acts as a processor or service provider acting on user instructions, while the customer remains responsible for lawful input data and review of outputs.',
+          'For account administration, security, billing, abuse prevention, and service operations, PRAXIS may act as an independent controller where applicable law recognizes that role.',
+        ],
+      },
+      {
+        heading: 'Processing Instructions',
+        body: [
+          'PRAXIS processes customer data to provide authenticated workspaces, ContextCapsules, document handling, retrieval, AI-assisted analysis, output generation, receipts, reliability monitoring, and support.',
+          'AI model and infrastructure sub-processors are limited to the public sub-processor list and operational providers needed to run the service.',
+        ],
+      },
+      {
+        heading: 'Security, Retention, and Deletion',
+        body: [
+          'PRAXIS applies server-side secret handling, role-based service access, encrypted provider-key storage, production security headers, audit receipts, and reliability controls as part of its baseline.',
+          'Retention and deletion follow the public data-retention page, subject to security, legal, billing, abuse-prevention, and backup-integrity obligations.',
         ],
       },
     ],

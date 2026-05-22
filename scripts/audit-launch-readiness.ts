@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url';
 
 export const REQUIRED_LEGAL_SLUGS = [
   'privacy',
+  'cookies',
+  'gdpr',
+  'data-processing',
   'terms',
   'security',
   'sub-processors',
@@ -24,6 +27,9 @@ const LIVE_HEADER_PATHS = [
   '/login',
   '/pricing',
   '/legal/privacy',
+  '/legal/cookies',
+  '/legal/gdpr',
+  '/legal/data-processing',
   '/legal/terms',
   '/app',
   '/api/health',

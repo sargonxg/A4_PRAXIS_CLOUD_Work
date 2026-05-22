@@ -513,6 +513,8 @@ const factoryBuilderLanes = [
 
 const STARTER_CAPSULE_UPDATED_AT = '2026-05-18T00:00:00.000Z';
 const starterCapsuleSummaries = CAPSULE_STARTER_DEFINITIONS.map(starterDefinitionToCapsuleSummary);
+const PUBLIC_CAPSULE_CARD_INITIAL_LIMIT = 30;
+const PUBLIC_CAPSULE_CARD_INCREMENT = 30;
 const FEATURED_EXPERT_PICK_CAPSULE_IDS = [
   'starter-situation-haiti-gang-mss-access-watch',
   'starter-situation-moldova-energy-hybrid-resilience',
@@ -670,6 +672,7 @@ export function TaskletPraxisWorkbench({
   const [capsuleTypeFilter, setCapsuleTypeFilter] = useState('all');
   const [capsuleDomainFilter, setCapsuleDomainFilter] = useState('all');
   const [capsulePolicyTeamFilter, setCapsulePolicyTeamFilter] = useState('all');
+  const [publicCapsuleCardLimit, setPublicCapsuleCardLimit] = useState(PUBLIC_CAPSULE_CARD_INITIAL_LIMIT);
   const [factoryLane, setFactoryLane] = useState<CapsuleFactoryLaneId>(resolvedInitialFactoryLane);
   const isRepositoryLane = false;
   const [factoryReviewDiffs, setFactoryReviewDiffs] = useState<CapsuleFactoryReviewDiff[]>([]);
@@ -763,6 +766,12 @@ export function TaskletPraxisWorkbench({
     filteredStarterCapsules,
     selectedCapsuleTypeFilter: capsuleTypeFilter,
   });
+  const isHomepageCapsuleShelf = !initialPanel && !isRepositoryPage && !isCapsuleRepositoryPage;
+  const visibleHomepageCapsuleCards = isHomepageCapsuleShelf
+    ? visibleCapsuleCards.slice(0, publicCapsuleCardLimit)
+    : visibleCapsuleCards;
+  const displayedCapsuleCards = isHomepageCapsuleShelf ? visibleHomepageCapsuleCards : visibleCapsuleCards;
+  const hasMoreHomepageCapsules = isHomepageCapsuleShelf && visibleHomepageCapsuleCards.length < visibleCapsuleCards.length;
   const activeCapsuleTaxonomyStats = isAuthenticated && !showingStarterFallback
     ? userCapsuleTaxonomyStats
     : publicCapsuleTaxonomyStats;
@@ -801,6 +810,11 @@ export function TaskletPraxisWorkbench({
     selectedAgent.label,
     'sourceability reviewer before memo/PDF output',
   ];
+
+  useEffect(() => {
+    setPublicCapsuleCardLimit(PUBLIC_CAPSULE_CARD_INITIAL_LIMIT);
+  }, [capsuleDomainFilter, capsulePolicyTeamFilter, capsuleSearch, capsuleTypeFilter, isAuthenticated]);
+
   const activeCapsuleSummaryForStrip = selectedCapsule ?? capsuleSummaryForChip(activeCapsuleStack[0], userCapsules);
   const activeStarterForStrip = starterDefinitionForCapsule(activeCapsuleSummaryForStrip);
   const activeCapsuleSourceCount = activeStarterForStrip?.sourcePack.length
@@ -2770,17 +2784,34 @@ export function TaskletPraxisWorkbench({
                   type="button"
                   data-testid="mobile-context-chain-bar"
                   onClick={() => setMobileContextSheetOpen(true)}
-                  className="capsule-chain-node capsule-state-active mb-4 flex min-h-14 w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left md:hidden"
+                  className="capsule-chain-node capsule-state-active mb-3 flex min-h-14 w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left md:hidden"
                 >
                   <span className="min-w-0">
                     <span className="block font-mono text-[10px] font-semibold uppercase text-slate-300">Active ContextChain</span>
                     <span className="mt-0.5 block truncate text-sm font-semibold text-white">{activeCapsuleForStrip?.label ?? 'No capsule opened'}</span>
                   </span>
-                  <span className="shrink-0 rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] font-semibold text-[color:var(--color-lab-cyan)]">
-                    {activeCapsuleReadiness}
+                  <span className="flex shrink-0 flex-col items-end gap-1">
+                    <span className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] font-semibold text-[color:var(--color-lab-cyan)]">
+                      {activeCapsuleReadiness}
+                    </span>
+                    <span className="text-[11px] font-semibold text-white/80">Open ContextChain</span>
                   </span>
                 </button>
-                <div className="flex flex-wrap items-start justify-between gap-3" data-testid="capsule-context-composer">
+                <div data-testid="mobile-context-chain-summary" className="mb-4 grid grid-cols-3 gap-2 md:hidden">
+                  <span className="rounded-md border border-slate-200 bg-white px-2 py-2 text-center">
+                    <span className="block text-[10px] font-semibold uppercase text-slate-400">All capsules</span>
+                    <span className="mt-0.5 block text-sm font-semibold text-slate-950">{activeCapsuleStack.length}</span>
+                  </span>
+                  <span className="rounded-md border border-slate-200 bg-white px-2 py-2 text-center">
+                    <span className="block text-[10px] font-semibold uppercase text-slate-400">Open slots</span>
+                    <span className="mt-0.5 block text-sm font-semibold text-slate-950">{openChainSlots.length}</span>
+                  </span>
+                  <span className="rounded-md border border-slate-200 bg-white px-2 py-2 text-center">
+                    <span className="block text-[10px] font-semibold uppercase text-slate-400">Health</span>
+                    <span className="mt-0.5 block text-sm font-semibold text-slate-950">{contextHealth.label}</span>
+                  </span>
+                </div>
+                <div className="hidden flex-wrap items-start justify-between gap-3 md:flex" data-testid="capsule-context-composer">
                   <div className="min-w-0 flex-1" data-testid="active-capsule-strip">
                     <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
                       <span className="rounded-md bg-slate-950 px-2 py-1 text-white">Context Chain</span>
@@ -2850,7 +2881,8 @@ export function TaskletPraxisWorkbench({
                   </div>
                 </div>
                 {!contextComposerCollapsed ? (
-                  <ContextChainDropzone>
+                  <div className="hidden md:block" data-testid="desktop-context-chain-canvas">
+                    <ContextChainDropzone>
                     <div className="context-chain relative mt-4 overflow-x-auto rounded-xl p-3 shadow-sm shadow-black/5">
                       <div className="pointer-events-none absolute left-7 right-7 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-[color:var(--color-mineral)]/35 via-[color:var(--color-civic-blue)]/35 to-[color:var(--color-mineral)]/25" aria-hidden />
                       <SortableContext items={activeCapsuleIds} strategy={horizontalListSortingStrategy}>
@@ -2885,9 +2917,10 @@ export function TaskletPraxisWorkbench({
                         </div>
                       </SortableContext>
                     </div>
-                  </ContextChainDropzone>
+                    </ContextChainDropzone>
+                  </div>
                 ) : null}
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="mt-3 hidden flex-wrap items-center gap-2 md:flex">
                   <SourcePostureChip
                     label={repositoryDocuments.length ? 'Sources ready' : 'Sources needed'}
                     state={repositoryDocuments.length ? 'ready' : 'review'}
@@ -2901,7 +2934,7 @@ export function TaskletPraxisWorkbench({
                     Browse capsules
                   </button>
                 </div>
-                <div className="mt-3 grid gap-2 rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-600" data-testid="ask-capsule-workflow-preview">
+                <div className="mt-3 hidden gap-2 rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-600 md:grid" data-testid="ask-capsule-workflow-preview">
                   <div>
                     <p className="font-semibold uppercase tracking-[0.14em] text-slate-400">PRAXIS will read</p>
                     <div className="mt-1 flex flex-wrap gap-1.5">
@@ -2927,6 +2960,9 @@ export function TaskletPraxisWorkbench({
                       <div>
                         <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-[color:var(--color-lab-line)]">ContextChain</p>
                         <h2 className="mt-1 text-lg font-semibold text-slate-950">Capsule selector</h2>
+                        <p className="mt-1 text-sm text-slate-600">
+                          All capsules: {activeCapsuleStack.length} active, {openChainSlots.length} open slot{openChainSlots.length === 1 ? '' : 's'}.
+                        </p>
                       </div>
                       <button type="button" aria-label="Close ContextChain selector" onClick={() => setMobileContextSheetOpen(false)} className="rounded-md p-2 text-slate-500 hover:bg-slate-100">
                         <X className="h-4 w-4" />
@@ -3417,7 +3453,7 @@ export function TaskletPraxisWorkbench({
                     {capsulesLoading && !filteredUserCapsules.length ? (
                       <CapsuleEmptyState label="Loading capsules..." />
                     ) : null}
-                    {visibleCapsuleCards.map((capsule) => (
+                    {displayedCapsuleCards.map((capsule) => (
                       <CapsuleCard
                         key={capsule.capsuleId}
                         capsule={capsule}
@@ -3437,10 +3473,20 @@ export function TaskletPraxisWorkbench({
                         onArchive={() => void archiveCapsuleCard(capsule)}
                       />
                     ))}
-                    {!capsulesLoading && !visibleCapsuleCards.length ? (
+                    {!capsulesLoading && !displayedCapsuleCards.length ? (
                       <CapsuleEmptyState label="No starter capsules match that search." />
                     ) : null}
                   </div> : null}
+                  {!isRepositoryLane && isHomepageCapsuleShelf ? (
+                    <HomepageCapsuleLoadMore
+                      visibleCount={visibleHomepageCapsuleCards.length}
+                      totalCount={visibleCapsuleCards.length}
+                      hasMore={hasMoreHomepageCapsules}
+                      onMore={() => {
+                        setPublicCapsuleCardLimit((count) => Math.min(count + PUBLIC_CAPSULE_CARD_INCREMENT, visibleCapsuleCards.length));
+                      }}
+                    />
+                  ) : null}
                   {isRepositoryLane ? (
                     <div className="mt-4">
                       <DocumentRepositorySection
@@ -3580,7 +3626,7 @@ export function TaskletPraxisWorkbench({
                   onArchive={(capsule) => void archiveCapsuleCard(capsule)}
                 />
                 <div className="mt-4 grid w-full min-w-0 gap-3 md:grid-cols-[repeat(2,minmax(0,1fr))] lg:grid-cols-[repeat(3,minmax(0,1fr))]" data-testid="tasklet-capsule-cards">
-                  {visibleCapsuleCards.map((capsule) => (
+                  {displayedCapsuleCards.map((capsule) => (
                     <CapsuleCard
                       key={capsule.capsuleId}
                       capsule={capsule}
@@ -3600,8 +3646,18 @@ export function TaskletPraxisWorkbench({
                       onArchive={() => void archiveCapsuleCard(capsule)}
                     />
                   ))}
-                  {!visibleCapsuleCards.length ? <CapsuleEmptyState label="No starter capsules match that search." /> : null}
+                  {!displayedCapsuleCards.length ? <CapsuleEmptyState label="No starter capsules match that search." /> : null}
                 </div>
+                {isHomepageCapsuleShelf ? (
+                  <HomepageCapsuleLoadMore
+                    visibleCount={visibleHomepageCapsuleCards.length}
+                    totalCount={visibleCapsuleCards.length}
+                    hasMore={hasMoreHomepageCapsules}
+                    onMore={() => {
+                      setPublicCapsuleCardLimit((count) => Math.min(count + PUBLIC_CAPSULE_CARD_INCREMENT, visibleCapsuleCards.length));
+                    }}
+                  />
+                ) : null}
                 </>
               )}
             </section>
@@ -5033,6 +5089,43 @@ function CapsuleEmptyState({ label }: { label: string }) {
   return (
     <div className="praxis-workbench-panel rounded-lg border-dashed p-6 text-sm font-semibold text-slate-500">
       {label}
+    </div>
+  );
+}
+
+function HomepageCapsuleLoadMore({
+  visibleCount,
+  totalCount,
+  hasMore,
+  onMore,
+}: {
+  visibleCount: number;
+  totalCount: number;
+  hasMore: boolean;
+  onMore: () => void;
+}) {
+  if (totalCount <= PUBLIC_CAPSULE_CARD_INITIAL_LIMIT) return null;
+
+  return (
+    <div
+      className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600"
+      data-testid="homepage-capsule-limit-receipt"
+    >
+      <span className="font-semibold">
+        Showing top {visibleCount} of {totalCount} capsules.
+      </span>
+      {hasMore ? (
+        <button
+          type="button"
+          onClick={onMore}
+          data-testid="homepage-capsule-load-more"
+          className="inline-flex min-h-10 items-center rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+        >
+          Load more capsules
+        </button>
+      ) : (
+        <span className="text-xs font-semibold uppercase text-slate-400">Full filtered set shown</span>
+      )}
     </div>
   );
 }

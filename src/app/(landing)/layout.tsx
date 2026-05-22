@@ -16,6 +16,9 @@ const navLinks = [
 
 const legalLinks = [
   { label: "Privacy", href: "/legal/privacy" },
+  { label: "Cookies", href: "/legal/cookies" },
+  { label: "GDPR", href: "/legal/gdpr" },
+  { label: "DPA", href: "/legal/data-processing" },
   { label: "Terms", href: "/legal/terms" },
   { label: "Security", href: "/legal/security" },
   { label: "Sub-processors", href: "/legal/sub-processors" },
