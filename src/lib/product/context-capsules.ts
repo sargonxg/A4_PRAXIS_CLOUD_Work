@@ -505,7 +505,8 @@ export interface CapsuleImprovementProposal {
   generatedBy: 'quality-audit' | 'cognee' | 'agent' | string;
 }
 
-export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-22-expert-policy-capsules-v8';
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-22-real-work-capsules-v9';
+const CAPSULE_NO_AFFILIATION_LIMITATION = 'PRAXIS is not affiliated with, endorsed by, or speaking for any organization named in this capsule, its sources, or its examples.';
 
 export type CapsuleStarterSnapshot = Pick<
   CapsuleStarterDefinition,
@@ -1029,6 +1030,10 @@ function humanReviewed(
     | 'humanReviewGate'
   >> = {},
 ): CapsuleStarterHumanReview {
+  const baseLimitations = metadata.limitations ?? [
+    'Does not provide legal, financial, medical, or operational advice.',
+    'Requires source refresh before external publication or high-stakes use.',
+  ];
   return {
     status: 'human-reviewed',
     label: 'Human reviewed',
@@ -1043,10 +1048,7 @@ function humanReviewed(
       'Starter sources are a baseline, not a complete or current record.',
       'User-provided sources and local facts can override starter defaults after review.',
     ],
-    limitations: metadata.limitations ?? [
-      'Does not provide legal, financial, medical, or operational advice.',
-      'Requires source refresh before external publication or high-stakes use.',
-    ],
+    limitations: uniqueStrings([...baseLimitations, CAPSULE_NO_AFFILIATION_LIMITATION]),
     sourcePackSummary: metadata.sourcePackSummary ?? 'Starter source pack provides initial source lanes and must be refreshed before external use.',
     humanReviewGate: metadata.humanReviewGate ?? 'Human review required before external export, canonical promotion, or high-stakes reliance.',
   };
@@ -1816,6 +1818,1119 @@ function reasoningGuideStarter(spec: ReasoningGuideDeviceSpec): CapsuleStarterDe
   );
 }
 
+interface RealWorkCapsuleSpec {
+  starterId: string;
+  category: CapsuleStarterCategory;
+  domain: CapsuleStarterDomain;
+  label: string;
+  summary: string;
+  detail: string;
+  tags: string[];
+  sourcePack: CapsuleStarterSource[];
+  recommendedToolIds: string[];
+  outputProductIds: string[];
+  combinesWellWith: string[];
+  userJob: string;
+  realWorkUse: string;
+  decisionFocus: string;
+  draftingStyle: string;
+  pathCoreId?: PolicyPathId;
+  deviceKind?: string;
+  reasoningOperation?: string;
+  readinessStars?: CapsuleStarterDefinition['readinessStars'];
+}
+
+function realWorkSource(
+  id: string,
+  label: string,
+  url: string,
+  sourceType: CapsuleStarterSource['sourceType'],
+  publisher: string,
+  date: string,
+  relevance: string,
+  reliabilityTier: CapsuleStarterSource['reliabilityTier'] = 1,
+): CapsuleStarterSource {
+  return { id, label, url, sourceType, publisher, date, relevance, reliabilityTier };
+}
+
+function defaultPathForRealWork(domain: CapsuleStarterDomain): PolicyPathId {
+  switch (domain) {
+    case 'finance':
+    case 'critical-minerals':
+    case 'exposure-mapping':
+      return 'economic-sanctions';
+    case 'humanitarian-rights':
+    case 'migration-displacement':
+      return 'humanitarian-analysis';
+    case 'public-health':
+      return 'crisis-management';
+    case 'cyber-resilience':
+    case 'election-integrity':
+      return 'information-cyber';
+    case 'sustainability':
+      return 'climate-development';
+    case 'policy-review':
+    case 'options-mapping':
+    case 'audit-review':
+      return 'public-sector-policy';
+    case 'output-brief':
+      return 'generic-policy';
+    case 'analyst-role':
+      return 'research-direction';
+    case 'diplomacy':
+      return 'foreign-policy';
+    case 'hr':
+      return 'hr-policy';
+    case 'ai-governance':
+      return 'legal-compliance';
+    case 'source-intake':
+    default:
+      return 'generic-policy';
+  }
+}
+
+function objectiveIdForRealWork(starterId: string): string {
+  return starterId.replace(/^starter-(situation|tool|output|user)-/, '');
+}
+
+function realWorkCoreRefs(spec: RealWorkCapsuleSpec): CapsuleCoreRefsLike {
+  const sourceCoreIds = spec.sourcePack.map((source) => source.id);
+  const objectiveCoreIds = [objectiveIdForRealWork(spec.starterId)];
+  if (spec.category === 'situation') {
+    return {
+      situationCoreId: spec.starterId,
+      pathCoreId: spec.pathCoreId ?? defaultPathForRealWork(spec.domain),
+      sourceCoreIds,
+      toolCoreIds: spec.recommendedToolIds,
+      outputCoreIds: spec.outputProductIds,
+      objectiveCoreIds,
+    };
+  }
+  if (spec.category === 'tool') {
+    return {
+      toolCoreIds: spec.recommendedToolIds,
+      sourceCoreIds,
+      objectiveCoreIds,
+      outputCoreIds: spec.outputProductIds,
+    };
+  }
+  if (spec.category === 'output') {
+    return {
+      outputCoreIds: spec.outputProductIds,
+      productCoreIds: spec.outputProductIds,
+      sourceCoreIds,
+      toolCoreIds: spec.recommendedToolIds,
+      objectiveCoreIds,
+    };
+  }
+  return {
+    userCoreId: spec.starterId,
+    sourceCoreIds,
+    toolCoreIds: spec.recommendedToolIds,
+    outputCoreIds: spec.outputProductIds,
+    objectiveCoreIds,
+  };
+}
+
+function realWorkStarter(spec: RealWorkCapsuleSpec): CapsuleStarterDefinition {
+  const sourcePack = normalizeStarterSourcePack(spec.sourcePack);
+  const baseRichProfile = buildStarterRichProfile({
+    starterId: spec.starterId,
+    category: spec.category,
+    domain: spec.domain,
+    label: spec.label,
+    summary: spec.summary,
+    detail: spec.detail,
+    sourcePack,
+    recommendedToolIds: spec.recommendedToolIds,
+    outputProductIds: spec.outputProductIds,
+  });
+  const richProfile: CapsuleStarterRichProfile = {
+    ...baseRichProfile,
+    userJob: `Represent real work for ${spec.userJob}`,
+    whenToUse: uniqueStrings([
+      spec.realWorkUse,
+      `Use when a human expert needs reusable context, source limits, and drafting posture before PRAXIS generates ${spec.outputProductIds[0] ?? 'an output'}.`,
+      ...baseRichProfile.whenToUse,
+    ]),
+    improves: uniqueStrings([
+      'Real work handover: preserves expert context, source checks, and decision constraints across agents.',
+      `Expert drafting: keeps the answer tied to ${spec.draftingStyle}.`,
+      `Decision quality: makes ${spec.decisionFocus} reviewable before output generation.`,
+      ...baseRichProfile.improves,
+    ]),
+    sourceIndications: uniqueStrings([
+      ...baseRichProfile.sourceIndications,
+      `${sourcePack[0]?.label ?? spec.label} and ${sourcePack[1]?.label ?? 'the corroborating source'} are starter lanes only; refresh before live reliance.`,
+    ]),
+    evidenceRequirements: uniqueStrings([
+      ...baseRichProfile.evidenceRequirements,
+      'Separate approved, disputed, stale, advisory, and forbidden claims before using this capsule in an agent run.',
+      'Treat Cognee recall, graph proposals, and SQL projection rows as review-card evidence until a human applies them.',
+    ]),
+    riskCaveats: uniqueStrings([
+      CAPSULE_NO_AFFILIATION_LIMITATION,
+      `Reality check: ${spec.userJob}`,
+      ...baseRichProfile.riskCaveats,
+    ]),
+    decisionPrompts: uniqueStrings([
+      spec.decisionFocus,
+      ...baseRichProfile.decisionPrompts,
+    ]),
+    nextIdeas: uniqueStrings([
+      'Create review cards for disputed claims, stale sources, Cognee memory hits, graph proposals, or SQL projection candidates.',
+      'Attach the active user, situation, tool, output, and source capsules before drafting.',
+      ...baseRichProfile.nextIdeas,
+    ]),
+    agentInstructions: `${spec.label}: Reality check: ${spec.userJob}. Use this v2 capsule as human-gated context, not as truth. Start with approved versus disputed claims, inspect ${sourcePack[0]?.id ?? 'source-1'} and ${sourcePack[1]?.id ?? 'source-2'}, keep ${spec.decisionFocus.toLowerCase()} visible, use Cognee recall only as advisory evidence, project graph or SQL rows only as proposals, and stop for human review before external export or canonical promotion. Drafting style: ${spec.draftingStyle}`,
+  };
+  const tags = uniqueStrings([
+    ...spec.tags,
+    'real-work',
+    'v2-context',
+    'no-affiliation',
+    ...(spec.category === 'tool' ? ['thinking-device', 'review-gated'] : []),
+  ]);
+  return starter(
+    spec.starterId,
+    spec.category,
+    spec.domain,
+    spec.label,
+    spec.summary,
+    spec.detail,
+    tags,
+    realWorkCoreRefs({ ...spec, sourcePack }),
+    spec.recommendedToolIds,
+    spec.outputProductIds,
+    spec.combinesWellWith,
+    {
+      sourcePack,
+      readinessStars: spec.readinessStars ?? (spec.category === 'situation' ? 5 : 4),
+      excerpts: sourcePack.map((source) => ({
+        sourceId: source.id,
+        text: `${source.label} supports ${spec.label} as starter context for ${spec.decisionFocus.toLowerCase()}; verify freshness, scope, and source limits before reliance.`,
+      })),
+      suggestedQuestions: [
+        `What real work decision, brief, review, or handover will ${spec.label} support?`,
+        `Which claims in ${spec.label} are approved, disputed, stale, advisory, or forbidden?`,
+        `Which source, Cognee recall, graph proposal, or SQL projection should become a review card before drafting?`,
+      ],
+      suggestedNextActions: [
+        `Refresh the source pack for ${spec.label} and mark stale or missing evidence.`,
+        `Run ${spec.recommendedToolIds[0] ?? 'sourceability'} with the active user, situation, and output capsules attached.`,
+        `Draft ${spec.outputProductIds[0] ?? 'options-memo'} in ${spec.draftingStyle} with human review gates and no-affiliation disclaimer visible.`,
+      ],
+      agentWorkflow: {
+        preferredAgentId: spec.category === 'output' ? 'output-formatter' : spec.category === 'tool' ? 'sourceability-reviewer' : spec.category === 'user' ? 'handover-builder' : 'research-memo',
+        routeHint: objectiveIdForRealWork(spec.starterId),
+        outputGoal: `${spec.outputProductIds[0] ?? 'options-memo'} for ${spec.label}`,
+        approvalNotes: `Human review required before external use, canonical graph promotion, Cognee remember(), SQL projection apply, or reliance on ${spec.label}.`,
+      },
+      aiUseGuidance: `Use ${spec.label} as v2 real-work context. Verify sources, label advisory memory, keep review-card promotion required, and preserve the no-affiliation disclaimer. ${CAPSULE_NO_AFFILIATION_LIMITATION}`,
+      richProfile,
+      ...(spec.category === 'tool' ? {
+        deviceProfile: buildStarterDeviceProfile(spec.label, {
+          deviceKind: spec.deviceKind ?? objectiveIdForRealWork(spec.starterId),
+          reasoningOperation: spec.reasoningOperation ?? `turn ${spec.decisionFocus.toLowerCase()} into a reviewable reasoning device`,
+          methodSteps: [
+            `Name the real work question and the decision owner before applying ${spec.label}.`,
+            'Separate facts, assumptions, source gaps, inferred judgments, and stop conditions.',
+            'Create review-card candidates for Cognee recall hits, graph proposal rows, and SQL mapping rows.',
+            'Draft only after confidence, stale-source status, and human review gates are visible.',
+          ],
+          expectedOutputs: [
+            `${spec.label} table with claims, evidence, caveats, owners, and next actions.`,
+            'Review queue entries for unsupported claims, stale evidence, and proposed graph or memory promotions.',
+          ],
+          disconfirmingChecks: [
+            'Name the source or actor perspective most likely to overturn the current finding.',
+            'Identify the claim that would become forbidden or stale if the operating context changes.',
+          ],
+          crossCapsulePairings: spec.combinesWellWith.slice(0, 3),
+          humanReviewGate: 'Human review or owner approval is required before applying this reasoning device to external advice, final outputs, Cognee remember(), graph promotion, or SQL projection writes.',
+          sourceabilityRequirements: [
+            'Every decision-critical row must cite a source receipt, document, or explicit uncertainty note.',
+            'Memory hits, model mappings, and graph rows remain advisory until a review card is applied.',
+          ],
+        }),
+      } : {}),
+      humanReview: humanReviewed(
+        `Reviewed as a v2 real-work capsule for ${spec.userJob}.`,
+        'PRAXIS real-work capsule review',
+        {
+          scope: spec.realWorkUse,
+          assumptions: [
+            'Starter context represents a reusable working frame, not a complete factual record.',
+            'Named organizations are source examples or operating contexts, not PRAXIS affiliations, endorsements, or representations.',
+            'User-provided documents, jurisdictional facts, and source updates can override starter defaults after review.',
+          ],
+          limitations: [
+            'Does not provide legal, financial, medical, security, humanitarian, operational, or compliance advice.',
+            'Requires source refresh, owner review, and review-card apply metadata before external publication, high-stakes use, Cognee remember(), graph promotion, or SQL projection writes.',
+            CAPSULE_NO_AFFILIATION_LIMITATION,
+          ],
+          sourcePackSummary: sourcePack.map((source) => source.label).slice(0, 3).join('; '),
+          humanReviewGate: 'Human review required before external publication, high-stakes reliance, canonical state mutation, Cognee remember(), graph promotion, or SQL projection apply.',
+        },
+      ),
+    },
+  );
+}
+
+const REAL_WORK_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
+  realWorkStarter({
+    starterId: 'starter-situation-red-sea-maritime-logistics-risk',
+    category: 'situation',
+    domain: 'finance',
+    label: 'Red Sea maritime logistics risk capsule',
+    summary: 'A real-work logistics and trade-risk capsule for Red Sea shipping disruption, insurance cost, rerouting, sanctions exposure, and senior brief needs.',
+    detail: 'Use this when a policy, corporate, insurer, or logistics team needs dated, source-backed context on maritime disruption without turning incident reporting into legal, military, or investment advice.',
+    tags: ['red-sea', 'maritime', 'logistics', 'trade', 'sanctions', 'team:economic-sanctions'],
+    sourcePack: [
+      realWorkSource('unctad-trade-development-foresights-2026', 'UNCTAD Trade and Development Foresights 2026', 'https://unctad.org/publication/trade-and-development-foresights-2026-under-pressure-uncertainty-reshapes-global', 'multilateral', 'UNCTAD', '2026', 'Trade uncertainty, shipping, and global development risk baseline.'),
+      realWorkSource('imo-maritime-security', 'IMO maritime security resources', 'https://www.imo.org/en/OurWork/Security/Pages/MaritimeSecurity.aspx', 'multilateral', 'International Maritime Organization', '2026', 'Maritime security and shipping-risk governance source lane.'),
+    ],
+    recommendedToolIds: ['scenario-projector', 'sourceability', 'stakeholder-map'],
+    outputProductIds: ['risk-monitor-card', 'daily-read'],
+    combinesWellWith: ['starter-tool-scenario-indicator-watchlist', 'starter-output-crisis-daily-senior-brief', 'starter-user-corporate-supply-chain-esg-lead'],
+    userJob: 'a real work analyst briefing leadership on shipping disruption, rerouting, insurance, counterparty, and source-confidence questions',
+    realWorkUse: 'Use when a team needs a briefable operating picture for Red Sea logistics risk, not a generic geopolitical summary.',
+    decisionFocus: 'What changed in maritime risk, which exposure is decision-relevant, and what needs review before action?',
+    draftingStyle: 'concise crisis-operations brief with dated indicators, source caveats, and escalation triggers',
+    pathCoreId: 'economic-sanctions',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-sudan-famine-access-civilian-protection',
+    category: 'situation',
+    domain: 'humanitarian-rights',
+    label: 'Sudan famine, access, and civilian protection capsule',
+    summary: 'A humanitarian real-work capsule for Sudan food insecurity, access obstruction, civilian protection, displacement, and donor sitrep drafting.',
+    detail: 'Use this when humanitarian or policy teams need to separate needs, access, protection, response capacity, and attribution-sensitive claims before drafting.',
+    tags: ['sudan', 'famine', 'humanitarian-access', 'protection', 'displacement', 'team:humanitarian'],
+    sourcePack: [
+      realWorkSource('ocha-sudan', 'OCHA Sudan country operations', 'https://www.unocha.org/sudan', 'multilateral', 'UN OCHA', '2026', 'Humanitarian needs, response, access, and operational source lane for Sudan.'),
+      realWorkSource('ipc-sudan', 'IPC Sudan acute food insecurity analysis', 'https://www.ipcinfo.org/ipc-country-analysis/details-map/en/c/1159433/', 'multilateral', 'Integrated Food Security Phase Classification', '2025', 'Food security classification and famine-risk source lane.'),
+    ],
+    recommendedToolIds: ['grounded-research', 'sourceability', 'contradiction-finder'],
+    outputProductIds: ['humanitarian-one-pager', 'evidence-sourceability-annex'],
+    combinesWellWith: ['starter-tool-humanitarian-access-negotiation-checklist', 'starter-output-humanitarian-donor-sitrep', 'starter-user-un-humanitarian-access-officer'],
+    userJob: 'a real work humanitarian analyst preparing a donor brief, access note, or protection handover under uncertainty',
+    realWorkUse: 'Use when needs, access, protection, and response evidence must be separated before a humanitarian output.',
+    decisionFocus: 'Which population, access constraint, and protection claim is supported enough for a donor or operations review?',
+    draftingStyle: 'humanitarian sitrep style with affected population, access, response, gaps, and do-no-harm caveats',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-haiti-security-humanitarian-corridor',
+    category: 'situation',
+    domain: 'humanitarian-rights',
+    label: 'Haiti security and humanitarian corridor capsule',
+    summary: 'A Haiti real-work capsule for insecurity, humanitarian access, mission posture, corridor planning, protection risk, and source-confident briefings.',
+    detail: 'Use this when a team needs to discuss access corridors, mission context, humanitarian delivery, and civilian impact without over-claiming control or operational feasibility.',
+    tags: ['haiti', 'security', 'humanitarian-corridor', 'access', 'protection', 'team:crisis-ops'],
+    sourcePack: [
+      realWorkSource('ocha-haiti', 'OCHA Haiti country operations', 'https://www.unocha.org/haiti', 'multilateral', 'UN OCHA', '2026', 'Humanitarian needs, access, response, and civilian-impact reporting lane.'),
+      realWorkSource('binuh-unmission', 'BINUH United Nations Integrated Office in Haiti', 'https://binuh.unmissions.org/', 'multilateral', 'United Nations', '2026', 'UN mission, political, security, and mandate context for Haiti.'),
+    ],
+    recommendedToolIds: ['stakeholder-map', 'sourceability', 'scenario-projector'],
+    outputProductIds: ['humanitarian-one-pager', 'risk-monitor-card'],
+    combinesWellWith: ['starter-tool-humanitarian-access-negotiation-checklist', 'starter-output-humanitarian-donor-sitrep', 'starter-user-field-program-manager'],
+    userJob: 'a real work crisis or field program team reviewing access corridors, partner safety, and donor-facing caveats',
+    realWorkUse: 'Use when humanitarian access and security context need to travel together into a field or donor brief.',
+    decisionFocus: 'Which corridor, actor, risk, and response constraint is actionable enough for a reviewed next step?',
+    draftingStyle: 'field-aware access brief with safety, protection, logistics, and source-confidence sections',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-eastern-drc-minerals-protection-risk',
+    category: 'situation',
+    domain: 'critical-minerals',
+    label: 'Eastern DRC minerals and protection risk capsule',
+    summary: 'A real-work capsule for eastern DRC conflict, mineral supply-chain exposure, civilian protection, mission context, and corporate due-diligence drafting.',
+    detail: 'Use this when security, ESG, compliance, or humanitarian teams need to keep mineral exposure, protection risk, and source limitations distinct.',
+    tags: ['drc', 'critical-minerals', 'protection', 'supply-chain', 'conflict', 'team:human-rights-legal'],
+    sourcePack: [
+      realWorkSource('monusco-official', 'MONUSCO official mission source', 'https://monusco.unmissions.org/', 'multilateral', 'United Nations Peacekeeping', '2026', 'Mission mandate, protection, and stabilization reporting source lane.'),
+      realWorkSource('ocha-drc', 'OCHA Democratic Republic of the Congo operations', 'https://www.unocha.org/democratic-republic-congo', 'multilateral', 'UN OCHA', '2026', 'Humanitarian needs, access, displacement, and response source lane.'),
+    ],
+    recommendedToolIds: ['stakeholder-map', 'sourceability', 'ach'],
+    outputProductIds: ['country-risk-card', 'humanitarian-one-pager'],
+    combinesWellWith: ['starter-tool-corporate-exposure-heatmap', 'starter-tool-source-reliability-triangulation-ladder', 'starter-user-corporate-supply-chain-esg-lead'],
+    userJob: 'a real work ESG, security, or protection analyst separating mineral exposure from humanitarian and rights claims',
+    realWorkUse: 'Use when conflict, protection, and mineral supply-chain context must inform a reviewed corporate or policy note.',
+    decisionFocus: 'Which exposure or protection claim can be supported, and which remains disputed or advisory?',
+    draftingStyle: 'due-diligence and protection-risk note with claim-source tables and review gates',
+    pathCoreId: 'human-rights-accountability',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-sahel-transition-regional-security',
+    category: 'situation',
+    domain: 'diplomacy',
+    label: 'Sahel transition and regional security capsule',
+    summary: 'A Sahel real-work capsule for transition politics, regional organizations, security cooperation, sanctions posture, and diplomatic options.',
+    detail: 'Use this when a desk, donor, or risk team needs source-backed regional context and cautious language on transition authorities, regional responses, and security tradeoffs.',
+    tags: ['sahel', 'transition', 'regional-security', 'ecowas', 'diplomacy', 'team:diplomatic'],
+    sourcePack: [
+      realWorkSource('ecowas-official', 'ECOWAS official source', 'https://ecowas.int/', 'multilateral', 'ECOWAS', '2026', 'Regional organization source lane for political, sanctions, and mediation posture.'),
+      realWorkSource('unowas-official', 'UNOWAS official source', 'https://unowas.unmissions.org/', 'multilateral', 'United Nations Office for West Africa and the Sahel', '2026', 'UN regional political and security context source lane.'),
+    ],
+    recommendedToolIds: ['stakeholder-map', 'coalition-detector', 'sourceability'],
+    outputProductIds: ['diplomatic-cable', 'country-risk-card'],
+    combinesWellWith: ['starter-tool-stakeholder-veto-leverage-map', 'starter-output-ministerial-question-period-brief', 'starter-user-cabinet-policy-advisor'],
+    userJob: 'a real work regional desk officer preparing a transition, sanctions, or security cooperation brief',
+    realWorkUse: 'Use when regional mandate, transition, and security context need a single reviewable frame.',
+    decisionFocus: 'Which actors, vetoes, mandates, and leverage points matter for the next diplomatic or policy option?',
+    draftingStyle: 'desk-officer cable with actor map, mandate posture, options, and cautious confidence language',
+    pathCoreId: 'foreign-policy',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-south-china-sea-maritime-incident-law',
+    category: 'situation',
+    domain: 'diplomacy',
+    label: 'South China Sea maritime incident and law capsule',
+    summary: 'A maritime-law real-work capsule for incidents, UNCLOS posture, ASEAN documents, escalation risk, and talking-point discipline.',
+    detail: 'Use this when a user needs to brief maritime incidents, diplomatic reactions, or legal posture while separating facts, claims, law, and inferred intent.',
+    tags: ['south-china-sea', 'maritime-law', 'unclos', 'asean', 'incident', 'team:diplomatic'],
+    sourcePack: [
+      realWorkSource('unclos-doalos', 'UN DOALOS UNCLOS overview', 'https://www.un.org/depts/los/convention_agreements/convention_overview_convention.htm', 'multilateral', 'United Nations Division for Ocean Affairs and the Law of the Sea', '2026', 'Law-of-the-sea treaty and legal context source lane.'),
+      realWorkSource('asean-doc-south-china-sea', 'ASEAN Declaration on Conduct in the South China Sea', 'https://asean.org/declaration-on-the-conduct-of-parties-in-the-south-china-sea-2/', 'official', 'ASEAN', '2002', 'Regional diplomatic conduct baseline for South China Sea posture.'),
+    ],
+    recommendedToolIds: ['sourceability', 'commitment-tracker', 'frame-narrative'],
+    outputProductIds: ['legal-mandate-compliance-note', 'talking-points'],
+    combinesWellWith: ['starter-tool-legal-mandate-redline-check', 'starter-output-ministerial-question-period-brief', 'starter-user-cabinet-policy-advisor'],
+    userJob: 'a real work maritime, diplomatic, or legal-policy analyst briefing an incident without making unreviewed legal findings',
+    realWorkUse: 'Use when incident facts, diplomatic posture, and legal language must be separated before drafting.',
+    decisionFocus: 'Which incident facts are sourced, which legal terms are safe, and which escalation claims require review?',
+    draftingStyle: 'legal-policy briefing style with fact-law separation and careful talking points',
+    pathCoreId: 'legal-compliance',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-arctic-shipping-minerals-governance',
+    category: 'situation',
+    domain: 'critical-minerals',
+    label: 'Arctic shipping, minerals, and governance capsule',
+    summary: 'An Arctic real-work capsule for polar shipping, critical minerals, indigenous and environmental governance, safety rules, and scenario monitoring.',
+    detail: 'Use this when policy, corporate, or research teams need Arctic context that does not flatten shipping safety, minerals, environmental, and governance questions.',
+    tags: ['arctic', 'shipping', 'critical-minerals', 'governance', 'polar-code', 'team:climate-development'],
+    sourcePack: [
+      realWorkSource('imo-polar-code', 'IMO Polar Code', 'https://www.imo.org/en/OurWork/Safety/Pages/polar-code.aspx', 'multilateral', 'International Maritime Organization', '2026', 'Safety and environmental requirements for polar waters source lane.'),
+      realWorkSource('arctic-council', 'Arctic Council official source', 'https://arctic-council.org/', 'multilateral', 'Arctic Council', '2026', 'Regional cooperation and Arctic governance source lane.'),
+    ],
+    recommendedToolIds: ['scenario-projector', 'stakeholder-map', 'sourceability'],
+    outputProductIds: ['scenario-risk-dashboard-card', 'country-risk-card'],
+    combinesWellWith: ['starter-tool-scenario-indicator-watchlist', 'starter-tool-corporate-exposure-heatmap', 'starter-output-board-decision-memo-pack'],
+    userJob: 'a real work policy or corporate analyst reviewing Arctic shipping, mineral exposure, and governance constraints',
+    realWorkUse: 'Use when Arctic operating context must combine safety rules, governance, environment, and supply-chain exposure.',
+    decisionFocus: 'Which Arctic route, project, actor, or environmental constraint changes the decision?',
+    draftingStyle: 'scenario dashboard style with rule references, stakeholder lanes, and monitored indicators',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-public-sector-ransomware-service-continuity',
+    category: 'situation',
+    domain: 'cyber-resilience',
+    label: 'Public sector ransomware and service continuity capsule',
+    summary: 'A cyber-resilience real-work capsule for public service continuity, ransomware impact, recovery priorities, critical infrastructure dependencies, and leadership briefings.',
+    detail: 'Use this when a public agency, municipal team, or policy office needs operationally careful context without incident-response or legal advice.',
+    tags: ['ransomware', 'public-sector', 'service-continuity', 'critical-infrastructure', 'cyber', 'team:information-cyber'],
+    sourcePack: [
+      realWorkSource('cisa-cpg', 'CISA Cross-Sector Cybersecurity Performance Goals', 'https://www.cisa.gov/cross-sector-cybersecurity-performance-goals', 'official', 'CISA', '2026', 'Cyber resilience and baseline protective control source lane.'),
+      realWorkSource('nist-csf', 'NIST Cybersecurity Framework', 'https://www.nist.gov/cyberframework', 'official', 'NIST', '2026', 'Cyber governance, identify, protect, detect, respond, and recover vocabulary.'),
+    ],
+    recommendedToolIds: ['scenario-projector', 'sourceability', 'memo-drafter'],
+    outputProductIds: ['risk-monitor-card', 'principals-decision-memo'],
+    combinesWellWith: ['starter-tool-board-assurance-question-set', 'starter-output-crisis-daily-senior-brief', 'starter-user-field-program-manager'],
+    userJob: 'a real work public-sector continuity lead briefing service impacts, dependencies, recovery priorities, and escalation needs',
+    realWorkUse: 'Use when ransomware context must support leadership decisions while preserving incident-response and legal boundaries.',
+    decisionFocus: 'Which services, dependencies, controls, and communications require immediate review?',
+    draftingStyle: 'incident leadership brief with continuity priorities, controls, source gaps, and stop conditions',
+    pathCoreId: 'crisis-management',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-election-observation-information-integrity',
+    category: 'situation',
+    domain: 'election-integrity',
+    label: 'Election observation and information integrity capsule',
+    summary: 'An election real-work capsule for observation method, information integrity, administrative risk, narrative monitoring, and public-confidence language.',
+    detail: 'Use this when analysts must distinguish official results, observation findings, social narratives, administrative issues, and unsupported allegations.',
+    tags: ['elections', 'observation', 'information-integrity', 'narratives', 'democracy', 'team:information-cyber'],
+    sourcePack: [
+      realWorkSource('osce-odihr-handbook', 'OSCE/ODIHR election observation handbook', 'https://www.osce.org/odihr/elections/68439', 'multilateral', 'OSCE/ODIHR', '2010', 'Election observation methodology and assessment baseline.'),
+      realWorkSource('idea-electoral-integrity', 'International IDEA electoral processes resources', 'https://www.idea.int/theme/electoral-processes', 'multilateral', 'International IDEA', '2026', 'Comparative electoral process and democratic resilience source lane.', 2),
+    ],
+    recommendedToolIds: ['sourceability', 'frame-narrative', 'contradiction-finder'],
+    outputProductIds: ['electoral-risk-card', 'narrative-monitor'],
+    combinesWellWith: ['starter-tool-public-narrative-risk-premortem', 'starter-output-crisis-daily-senior-brief', 'starter-user-investigative-research-analyst'],
+    userJob: 'a real work election or information-integrity analyst preparing a public-risk brief with allegation discipline',
+    realWorkUse: 'Use when election observation and narrative claims must stay sourceable and non-inflammatory.',
+    decisionFocus: 'Which observation finding, administrative issue, or narrative risk is supported enough to brief?',
+    draftingStyle: 'election-risk note with observation method, allegation thresholds, and public-confidence caveats',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-migration-border-reception-capacity',
+    category: 'situation',
+    domain: 'migration-displacement',
+    label: 'Migration border reception capacity capsule',
+    summary: 'A migration real-work capsule for border reception capacity, displacement data, protection needs, service pressure, and policy tradeoffs.',
+    detail: 'Use this when humanitarian, local-government, or policy teams need to separate flows, capacity, protection obligations, and public service constraints.',
+    tags: ['migration', 'border-reception', 'capacity', 'displacement', 'protection', 'team:humanitarian'],
+    sourcePack: [
+      realWorkSource('unhcr-operational-data', 'UNHCR operational data portal', 'https://data.unhcr.org/', 'multilateral', 'UNHCR', '2026', 'Operational refugee and displacement data source lane.'),
+      realWorkSource('iom-displacement', 'IOM Displacement Tracking Matrix', 'https://dtm.iom.int/', 'multilateral', 'International Organization for Migration', '2026', 'Mobility, flow, and displacement tracking source lane.'),
+    ],
+    recommendedToolIds: ['grounded-research', 'sourceability', 'scenario-projector'],
+    outputProductIds: ['humanitarian-one-pager', 'options-memo'],
+    combinesWellWith: ['starter-tool-policy-option-triage-matrix', 'starter-output-policy-implementation-roadmap', 'starter-user-field-program-manager'],
+    userJob: 'a real work reception, humanitarian, or policy manager comparing capacity, service pressure, and protection duties',
+    realWorkUse: 'Use when migration data, reception capacity, and policy choices need a shared source-backed frame.',
+    decisionFocus: 'Which capacity bottleneck, population need, or policy option requires the next decision?',
+    draftingStyle: 'implementation options memo with capacity, protection, data gaps, and service impacts',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-water-stress-transboundary-allocation',
+    category: 'situation',
+    domain: 'sustainability',
+    label: 'Water stress and transboundary allocation capsule',
+    summary: 'A water real-work capsule for scarcity, basin allocation, agriculture exposure, climate stress, and diplomatic or development options.',
+    detail: 'Use this when water availability, allocation, agriculture, and cross-border governance need a source-backed situation frame.',
+    tags: ['water-stress', 'transboundary', 'allocation', 'climate', 'agriculture', 'team:climate-development'],
+    sourcePack: [
+      realWorkSource('fao-aquastat', 'FAO AQUASTAT', 'https://www.fao.org/aquastat/en/', 'multilateral', 'FAO', '2026', 'Water resources, withdrawals, and agricultural water source lane.'),
+      realWorkSource('wmo-water-resources', 'WMO State of Global Water Resources', 'https://wmo.int/publication-series/state-of-global-water-resources', 'multilateral', 'World Meteorological Organization', '2026', 'Hydrological monitoring, water-resource state, and climate signal source lane.'),
+    ],
+    recommendedToolIds: ['scenario-projector', 'stakeholder-map', 'sourceability'],
+    outputProductIds: ['country-risk-card', 'options-memo'],
+    combinesWellWith: ['starter-tool-stakeholder-veto-leverage-map', 'starter-output-policy-implementation-roadmap', 'starter-user-cabinet-policy-advisor'],
+    userJob: 'a real work development or diplomacy analyst briefing allocation tradeoffs and water-stress evidence',
+    realWorkUse: 'Use when water stress, sector exposure, and cross-border governance must be reviewed before advice.',
+    decisionFocus: 'Which basin, allocation dispute, sector exposure, and data gap changes the recommended option?',
+    draftingStyle: 'development policy memo with basin facts, stakeholders, options, and uncertainty notes',
+    pathCoreId: 'climate-development',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-power-grid-flexibility-critical-infrastructure',
+    category: 'situation',
+    domain: 'cyber-resilience',
+    label: 'Power grid flexibility and critical infrastructure capsule',
+    summary: 'A grid real-work capsule for electricity reliability, flexibility, transition constraints, critical infrastructure risk, and investment-policy questions.',
+    detail: 'Use this when grid reliability, clean-energy integration, security, and public investment choices need one reviewable operating picture.',
+    tags: ['power-grid', 'critical-infrastructure', 'energy-security', 'flexibility', 'resilience', 'team:climate-development'],
+    sourcePack: [
+      realWorkSource('iea-electricity-grids', 'IEA electricity grids and secure energy transitions', 'https://www.iea.org/reports/electricity-grids-and-secure-energy-transitions', 'multilateral', 'International Energy Agency', '2023', 'Grid investment, flexibility, bottlenecks, and transition-security source lane.'),
+      realWorkSource('cisa-energy-sector', 'CISA energy sector critical infrastructure', 'https://www.cisa.gov/topics/critical-infrastructure-security-and-resilience/critical-infrastructure-sectors/energy-sector', 'official', 'CISA', '2026', 'Energy-sector critical infrastructure and resilience source lane.'),
+    ],
+    recommendedToolIds: ['scenario-projector', 'sourceability', 'ach'],
+    outputProductIds: ['risk-monitor-card', 'principals-decision-memo'],
+    combinesWellWith: ['starter-tool-scenario-indicator-watchlist', 'starter-output-board-decision-memo-pack', 'starter-user-cabinet-policy-advisor'],
+    userJob: 'a real work energy, infrastructure, or policy analyst briefing reliability, investment, and resilience tradeoffs',
+    realWorkUse: 'Use when grid constraints and critical infrastructure risk shape a policy or board decision.',
+    decisionFocus: 'Which reliability, flexibility, security, or investment constraint needs escalation?',
+    draftingStyle: 'infrastructure decision memo with indicators, tradeoffs, controls, and owner actions',
+    pathCoreId: 'climate-development',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-disaster-recovery-loss-damage-finance',
+    category: 'situation',
+    domain: 'finance',
+    label: 'Disaster recovery and loss-damage finance capsule',
+    summary: 'A disaster-finance real-work capsule for recovery needs, risk reduction, loss-and-damage framing, reconstruction finance, and donor decision support.',
+    detail: 'Use this when a government, donor, insurer, or NGO needs to separate damage, needs, financing gap, risk reduction, and implementation capacity.',
+    tags: ['disaster-recovery', 'loss-and-damage', 'finance', 'resilience', 'reconstruction', 'team:climate-development'],
+    sourcePack: [
+      realWorkSource('undrr-sendai-framework', 'UNDRR Sendai Framework', 'https://www.undrr.org/publication/sendai-framework-disaster-risk-reduction-2015-2030', 'multilateral', 'UNDRR', '2015', 'Disaster-risk reduction, resilience, and governance baseline.'),
+      realWorkSource('world-bank-disaster-risk', 'World Bank disaster risk management', 'https://www.worldbank.org/en/topic/disasterriskmanagement', 'multilateral', 'World Bank', '2026', 'Recovery, resilience finance, and disaster risk management source lane.'),
+    ],
+    recommendedToolIds: ['sourceability', 'scenario-projector', 'memo-drafter'],
+    outputProductIds: ['principals-decision-memo', 'country-risk-card'],
+    combinesWellWith: ['starter-tool-policy-option-triage-matrix', 'starter-output-policy-implementation-roadmap', 'starter-user-field-program-manager'],
+    userJob: 'a real work donor, recovery, or finance analyst preparing a recovery decision note with implementation caveats',
+    realWorkUse: 'Use when recovery finance claims need damage, needs, resilience, and implementation context in one capsule.',
+    decisionFocus: 'Which recovery cost, finance instrument, implementation risk, or resilience claim is decision-relevant?',
+    draftingStyle: 'donor finance memo with needs, instruments, delivery risk, and source-confidence notes',
+    pathCoreId: 'climate-development',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-public-health-infodemic-emergency-trust',
+    category: 'situation',
+    domain: 'public-health',
+    label: 'Public health infodemic and emergency trust capsule',
+    summary: 'A public-health real-work capsule for emergency communication, misinformation risk, community trust, rumor feedback, and policy messaging.',
+    detail: 'Use this when a health or government team needs to draft cautious emergency communications and trust-building messages without medical advice.',
+    tags: ['public-health', 'infodemic', 'risk-communication', 'trust', 'emergency', 'team:crisis-ops'],
+    sourcePack: [
+      realWorkSource('who-ercc', 'WHO emergency risk communication resources', 'https://www.who.int/emergencies/risk-communications', 'multilateral', 'World Health Organization', '2026', 'Emergency risk communication source lane.'),
+      realWorkSource('who-rcce', 'WHO risk communication and community engagement resources', 'https://www.who.int/teams/risk-communication', 'multilateral', 'World Health Organization', '2026', 'Community engagement, feedback, and trust source lane.'),
+    ],
+    recommendedToolIds: ['frame-narrative', 'sourceability', 'contradiction-finder'],
+    outputProductIds: ['narrative-monitor', 'talking-points'],
+    combinesWellWith: ['starter-tool-public-narrative-risk-premortem', 'starter-output-crisis-daily-senior-brief', 'starter-user-cabinet-policy-advisor'],
+    userJob: 'a real work public-health communicator or policy lead preparing trust-sensitive emergency language',
+    realWorkUse: 'Use when health communication must separate facts, uncertainty, public concerns, and unsupported claims.',
+    decisionFocus: 'Which message, rumor, audience concern, or trust barrier needs a reviewed response?',
+    draftingStyle: 'risk-communication brief with uncertainty language, community feedback, and stop conditions',
+    pathCoreId: 'crisis-management',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-forced-labor-import-supply-chain-risk',
+    category: 'situation',
+    domain: 'humanitarian-rights',
+    label: 'Forced labor import and supply-chain risk capsule',
+    summary: 'A forced-labor real-work capsule for import risk, supply-chain due diligence, rights sources, customs posture, and corporate escalation.',
+    detail: 'Use this when compliance, ESG, legal, or sourcing teams need to organize forced-labor risk without making legal determinations.',
+    tags: ['forced-labor', 'imports', 'supply-chain', 'due-diligence', 'customs', 'team:human-rights-legal'],
+    sourcePack: [
+      realWorkSource('ilo-forced-labour', 'ILO forced labour resources', 'https://www.ilo.org/topics/forced-labour-modern-slavery-and-trafficking-persons', 'multilateral', 'International Labour Organization', '2026', 'Forced labour, modern slavery, and trafficking source lane.'),
+      realWorkSource('cbp-uflpa', 'CBP Uyghur Forced Labor Prevention Act resources', 'https://www.cbp.gov/trade/forced-labor/UFLPA', 'regulator', 'U.S. Customs and Border Protection', '2026', 'US import enforcement and forced-labor compliance source lane.'),
+    ],
+    recommendedToolIds: ['sourceability', 'contradiction-finder', 'memo-drafter'],
+    outputProductIds: ['legal-mandate-compliance-note', 'evidence-sourceability-annex'],
+    combinesWellWith: ['starter-tool-counterparty-ownership-escalation-tree', 'starter-tool-corporate-exposure-heatmap', 'starter-user-sanctions-compliance-counsel'],
+    userJob: 'a real work compliance or ESG lead reviewing supplier facts, import exposure, and escalation thresholds',
+    realWorkUse: 'Use when forced-labor risk must be represented with evidence, jurisdictional limits, and non-advice caveats.',
+    decisionFocus: 'Which supplier, shipment, jurisdiction, source, and escalation path needs human review?',
+    draftingStyle: 'compliance-style note with facts, red flags, source limits, and legal-review gates',
+    pathCoreId: 'human-rights-accountability',
+  }),
+  realWorkStarter({
+    starterId: 'starter-situation-procurement-integrity-major-projects',
+    category: 'situation',
+    domain: 'finance',
+    label: 'Procurement integrity for major projects capsule',
+    summary: 'A public-procurement real-work capsule for integrity controls, competition, delivery risk, conflicts, auditability, and major project governance.',
+    detail: 'Use this when public-sector or donor teams need to evaluate procurement integrity and delivery risk without accusing parties or bypassing legal review.',
+    tags: ['procurement', 'integrity', 'major-projects', 'anti-corruption', 'delivery-risk', 'team:governance-public-sector'],
+    sourcePack: [
+      realWorkSource('oecd-public-procurement', 'OECD public procurement resources', 'https://www.oecd.org/gov/public-procurement/', 'multilateral', 'OECD', '2026', 'Public procurement integrity, value-for-money, and governance source lane.'),
+      realWorkSource('world-bank-procurement', 'World Bank procurement for projects and programs', 'https://www.worldbank.org/en/projects-operations/products-and-services/procurement-projects-programs', 'multilateral', 'World Bank', '2026', 'Project procurement, safeguards, and implementation source lane.'),
+    ],
+    recommendedToolIds: ['sourceability', 'ach', 'memo-drafter'],
+    outputProductIds: ['principals-decision-memo', 'governance-index'],
+    combinesWellWith: ['starter-tool-board-assurance-question-set', 'starter-output-policy-implementation-roadmap', 'starter-user-cabinet-policy-advisor'],
+    userJob: 'a real work procurement, donor, or governance analyst preparing an integrity and delivery-risk review',
+    realWorkUse: 'Use when procurement context needs controls, evidence, delivery risk, and review status separated.',
+    decisionFocus: 'Which control weakness, conflict risk, source gap, or delivery issue changes the recommendation?',
+    draftingStyle: 'governance review memo with controls, evidence, alternatives, and escalation notes',
+    pathCoreId: 'public-sector-policy',
+  }),
+];
+
+const REAL_WORK_TOOL_CAPSULES: CapsuleStarterDefinition[] = [
+  realWorkStarter({
+    starterId: 'starter-tool-source-reliability-triangulation-ladder',
+    category: 'tool',
+    domain: 'source-intake',
+    label: 'Source reliability triangulation ladder',
+    summary: 'A thinking-device capsule for ranking sources, triangulating contested claims, and turning weak evidence into review-card tasks.',
+    detail: 'Use this tool when analysts need to move from single-source claims to an inspectable ladder of primary, corroborating, contradictory, stale, and missing evidence.',
+    tags: ['sourceability', 'triangulation', 'evidence', 'thinking-device', 'review-gated'],
+    sourcePack: [
+      realWorkSource('ifrc-emergency-needs-assessment', 'IFRC guidelines for emergency needs assessment', 'https://www.ifrc.org/document/guidelines-emergency-needs-assessment', 'multilateral', 'IFRC', '2026', 'Assessment and evidence-collection source lane for operational claims.', 2),
+      realWorkSource('praxis-sourceability-method', 'PRAXIS sourceability method', 'https://praxis.tacitus.me/learn#sourceability', 'public-library', 'PRAXIS starter catalog', CAPSULE_STARTER_CATALOG_VERSION, 'PRAXIS method for claim-source review, receipts, and promotion gates.', 3),
+    ],
+    recommendedToolIds: ['sourceability', 'grounded-research', 'contradiction-finder'],
+    outputProductIds: ['evidence-sourceability-annex', 'options-memo'],
+    combinesWellWith: ['starter-tool-evidence-freshness-staleness-clock', 'starter-output-crisis-daily-senior-brief', 'starter-user-investigative-research-analyst'],
+    userJob: 'a real work researcher reviewing whether a claim is strong enough for a brief, decision, or handover',
+    realWorkUse: 'Use when evidence quality determines whether PRAXIS may draft confidently or must create review cards.',
+    decisionFocus: 'Which source tier supports each claim, and what must be triangulated before promotion?',
+    draftingStyle: 'evidence annex style with claim rows, source tiers, contradictions, and action owners',
+    deviceKind: 'source-reliability-triangulation-ladder',
+    reasoningOperation: 'rank source reliability and triangulate contested claims before drafting',
+  }),
+  realWorkStarter({
+    starterId: 'starter-tool-stakeholder-veto-leverage-map',
+    category: 'tool',
+    domain: 'options-mapping',
+    label: 'Stakeholder veto and leverage map',
+    summary: 'A thinking-device capsule for mapping actors, vetoes, leverage, incentives, red lines, and coalition paths in policy work.',
+    detail: 'Use this tool when a policy option depends on who can block, fund, authorize, delay, implement, or legitimize a course of action.',
+    tags: ['stakeholders', 'leverage', 'vetoes', 'coalitions', 'thinking-device', 'review-gated'],
+    sourcePack: [
+      realWorkSource('un-peacemaker', 'UN Peacemaker mediation resources', 'https://peacemaker.un.org/', 'multilateral', 'United Nations', '2026', 'Mediation and stakeholder process design source lane.'),
+      realWorkSource('oecd-governance', 'OECD public governance resources', 'https://www.oecd.org/governance/', 'multilateral', 'OECD', '2026', 'Public governance, institutions, and implementation context source lane.'),
+    ],
+    recommendedToolIds: ['stakeholder-map', 'position-vs-interest', 'coalition-detector'],
+    outputProductIds: ['actor-dossier', 'negotiation-prep-book'],
+    combinesWellWith: ['starter-situation-sahel-transition-regional-security', 'starter-output-policy-implementation-roadmap', 'starter-user-cabinet-policy-advisor'],
+    userJob: 'a real work advisor preparing an actor map, negotiation note, or implementation strategy for a contested decision',
+    realWorkUse: 'Use when stakeholder power and vetoes matter more than generic issue description.',
+    decisionFocus: 'Who can block or enable the option, and what leverage or red line changes the path?',
+    draftingStyle: 'actor map and negotiation-prep style with positions, interests, leverage, and risks',
+    deviceKind: 'stakeholder-veto-leverage-map',
+    reasoningOperation: 'turn stakeholder power into a reviewable veto and leverage map',
+  }),
+  realWorkStarter({
+    starterId: 'starter-tool-evidence-freshness-staleness-clock',
+    category: 'tool',
+    domain: 'source-intake',
+    label: 'Evidence freshness and staleness clock',
+    summary: 'A thinking-device capsule for marking source dates, stale assumptions, update cadence, and decision deadlines before reuse.',
+    detail: 'Use this tool when policy or crisis work changes quickly and old evidence can make an otherwise polished answer unsafe.',
+    tags: ['freshness', 'staleness', 'time', 'monitoring', 'thinking-device', 'review-gated'],
+    sourcePack: [
+      realWorkSource('google-grounded-search-docs', 'Google Search grounding overview', 'https://cloud.google.com/vertex-ai/generative-ai/docs/grounding/overview', 'official', 'Google Cloud', '2026', 'Grounding and source-refresh source lane for current information retrieval.'),
+      realWorkSource('praxis-sourceability-method', 'PRAXIS sourceability method', 'https://praxis.tacitus.me/learn#sourceability', 'public-library', 'PRAXIS starter catalog', CAPSULE_STARTER_CATALOG_VERSION, 'PRAXIS source freshness and citation posture method.', 3),
+    ],
+    recommendedToolIds: ['sourceability', 'grounded-research', 'scenario-projector'],
+    outputProductIds: ['daily-read', 'risk-monitor-card'],
+    combinesWellWith: ['starter-tool-source-reliability-triangulation-ladder', 'starter-output-crisis-daily-senior-brief', 'starter-situation-red-sea-maritime-logistics-risk'],
+    userJob: 'a real work analyst deciding whether a capsule can be reused today or must be refreshed before a brief',
+    realWorkUse: 'Use when freshness, update cadence, and decision timing determine whether context is safe to reuse.',
+    decisionFocus: 'Which facts are current, stale, fast-moving, or blocked pending source refresh?',
+    draftingStyle: 'monitoring clock style with as-of dates, expiry rules, triggers, and refresh tasks',
+    deviceKind: 'evidence-freshness-staleness-clock',
+    reasoningOperation: 'classify evidence by freshness, expiry, and decision timing',
+  }),
+  realWorkStarter({
+    starterId: 'starter-tool-policy-option-triage-matrix',
+    category: 'tool',
+    domain: 'options-mapping',
+    label: 'Policy option triage matrix',
+    summary: 'A thinking-device capsule for sorting options by legality, feasibility, cost, speed, stakeholder support, risk, and evidence quality.',
+    detail: 'Use this tool when a user needs a decision-ready option set rather than a long issue essay.',
+    tags: ['policy-options', 'triage', 'feasibility', 'decision', 'thinking-device', 'review-gated'],
+    sourcePack: [
+      realWorkSource('oecd-governance', 'OECD public governance resources', 'https://www.oecd.org/governance/', 'multilateral', 'OECD', '2026', 'Governance and implementation context for policy options.'),
+      realWorkSource('plain-language-gov', 'Plain language government guidance', 'https://www.plainlanguage.gov/guidelines/', 'official', 'U.S. Plain Language Action and Information Network', '2026', 'Plain decision-support writing baseline.'),
+    ],
+    recommendedToolIds: ['ach', 'memo-drafter', 'sourceability'],
+    outputProductIds: ['options-memo', 'principals-decision-memo'],
+    combinesWellWith: ['starter-output-policy-implementation-roadmap', 'starter-user-cabinet-policy-advisor', 'starter-situation-procurement-integrity-major-projects'],
+    userJob: 'a real work policy advisor narrowing a messy issue into viable options for a decision meeting',
+    realWorkUse: 'Use when PRAXIS must produce options that a real decision owner can compare and clear.',
+    decisionFocus: 'Which options survive legality, feasibility, timing, cost, risk, and sourceability checks?',
+    draftingStyle: 'options matrix style with recommendation, tradeoffs, assumptions, and clearance needs',
+    deviceKind: 'policy-option-triage-matrix',
+    reasoningOperation: 'triage policy options into reviewable decision rows',
+  }),
+  realWorkStarter({
+    starterId: 'starter-tool-data-gap-interrogatory-builder',
+    category: 'tool',
+    domain: 'source-intake',
+    label: 'Data gap interrogatory builder',
+    summary: 'A thinking-device capsule for converting missing information into precise questions, source requests, owner tasks, and stop conditions.',
+    detail: 'Use this tool when a draft answer hides missing facts that should instead become a structured follow-up plan.',
+    tags: ['data-gaps', 'interrogatory', 'questions', 'source-requests', 'thinking-device', 'review-gated'],
+    sourcePack: [
+      realWorkSource('ifrc-emergency-needs-assessment', 'IFRC guidelines for emergency needs assessment', 'https://www.ifrc.org/document/guidelines-emergency-needs-assessment', 'multilateral', 'IFRC', '2026', 'Needs assessment and information-gap source lane.', 2),
+      realWorkSource('sphere-handbook', 'Sphere Handbook', 'https://spherestandards.org/handbook/', 'standard-setter', 'Sphere Association', '2018', 'Humanitarian standards and minimum information needs source lane.'),
+    ],
+    recommendedToolIds: ['grounded-research', 'sourceability', 'ask-praxis'],
+    outputProductIds: ['evidence-sourceability-annex', 'humanitarian-one-pager'],
+    combinesWellWith: ['starter-user-field-program-manager', 'starter-output-humanitarian-donor-sitrep', 'starter-tool-source-reliability-triangulation-ladder'],
+    userJob: 'a real work analyst or program manager turning unknowns into questions that another person can answer',
+    realWorkUse: 'Use when the most valuable output is a better question set and source request, not a confident answer.',
+    decisionFocus: 'Which missing data blocks a decision, who can answer it, and what source would count?',
+    draftingStyle: 'interrogatory checklist with missing facts, source owners, deadlines, and stop conditions',
+    deviceKind: 'data-gap-interrogatory-builder',
+    reasoningOperation: 'convert data gaps into reviewable questions and source requests',
+  }),
+  realWorkStarter({
+    starterId: 'starter-tool-legal-mandate-redline-check',
+    category: 'tool',
+    domain: 'policy-review',
+    label: 'Legal mandate redline check',
+    summary: 'A thinking-device capsule for separating mandate text, legal claims, policy judgment, forbidden advice, and escalation thresholds.',
+    detail: 'Use this tool when an output touches legal authority, sanctions, mandate compliance, procurement rules, or sensitive regulatory language.',
+    tags: ['legal-mandate', 'redlines', 'compliance', 'review', 'thinking-device', 'review-gated'],
+    sourcePack: [
+      realWorkSource('un-security-council', 'UN Security Council official site', 'https://main.un.org/securitycouncil/en', 'multilateral', 'United Nations Security Council', '2026', 'Mandate, resolutions, sanctions, and committee source lane.'),
+      realWorkSource('unclos-doalos', 'UN DOALOS UNCLOS overview', 'https://www.un.org/depts/los/convention_agreements/convention_overview_convention.htm', 'multilateral', 'United Nations Division for Ocean Affairs and the Law of the Sea', '2026', 'Treaty and law-of-the-sea source lane.'),
+    ],
+    recommendedToolIds: ['commitment-tracker', 'sourceability', 'contradiction-finder'],
+    outputProductIds: ['legal-mandate-compliance-note', 'evidence-sourceability-annex'],
+    combinesWellWith: ['starter-situation-south-china-sea-maritime-incident-law', 'starter-output-sanctions-exposure-note', 'starter-user-sanctions-compliance-counsel'],
+    userJob: 'a real work legal-policy reviewer identifying what PRAXIS can draft and what must stop for counsel or mandate review',
+    realWorkUse: 'Use when legal or mandate language must be bounded before a model drafts confident prose.',
+    decisionFocus: 'Which language is safe as source summary, which is legal judgment, and which is forbidden without review?',
+    draftingStyle: 'redline note with mandate text, safe language, escalation points, and non-advice caveats',
+    deviceKind: 'legal-mandate-redline-check',
+    reasoningOperation: 'separate legal text, policy inference, and forbidden advice before drafting',
+  }),
+  realWorkStarter({
+    starterId: 'starter-tool-corporate-exposure-heatmap',
+    category: 'tool',
+    domain: 'exposure-mapping',
+    label: 'Corporate exposure heatmap',
+    summary: 'A thinking-device capsule for mapping company exposure by geography, supplier tier, issue, source confidence, control owner, and escalation.',
+    detail: 'Use this tool when corporate policy, ESG, sanctions, or supply-chain teams need an evidence-backed heatmap rather than broad risk language.',
+    tags: ['corporate-risk', 'exposure', 'supply-chain', 'esg', 'heatmap', 'thinking-device', 'review-gated'],
+    sourcePack: [
+      realWorkSource('oecd-corporate-governance', 'OECD corporate governance principles', 'https://www.oecd.org/corporate/principles-corporate-governance/', 'multilateral', 'OECD', '2023', 'Board oversight and corporate governance source lane.'),
+      realWorkSource('ohchr-ungp', 'UN Guiding Principles on Business and Human Rights', 'https://www.ohchr.org/sites/default/files/documents/publications/guidingprinciplesbusinesshr_en.pdf', 'multilateral', 'OHCHR', '2011', 'Business and human-rights due diligence source lane.'),
+    ],
+    recommendedToolIds: ['sourceability', 'stakeholder-map', 'memo-drafter'],
+    outputProductIds: ['scenario-risk-dashboard-card', 'principals-decision-memo'],
+    combinesWellWith: ['starter-user-corporate-supply-chain-esg-lead', 'starter-output-board-decision-memo-pack', 'starter-situation-forced-labor-import-supply-chain-risk'],
+    userJob: 'a real work corporate risk or ESG lead preparing exposure, owner, and escalation rows for management review',
+    realWorkUse: 'Use when corporate exposure must be mapped by evidence and owner before board or executive language.',
+    decisionFocus: 'Which exposure is material, sourced, controllable, and ready for escalation?',
+    draftingStyle: 'board heatmap style with exposure rows, controls, owners, and assurance gaps',
+    deviceKind: 'corporate-exposure-heatmap',
+    reasoningOperation: 'map corporate exposure into sourced heatmap rows and escalation owners',
+  }),
+  realWorkStarter({
+    starterId: 'starter-tool-humanitarian-access-negotiation-checklist',
+    category: 'tool',
+    domain: 'humanitarian-rights',
+    label: 'Humanitarian access negotiation checklist',
+    summary: 'A thinking-device capsule for access constraints, parties, assurances, principles, delivery modalities, protection risks, and negotiation asks.',
+    detail: 'Use this tool when humanitarian access language needs operational structure without revealing sensitive tactics or making unsafe recommendations.',
+    tags: ['humanitarian-access', 'negotiation', 'protection', 'field', 'thinking-device', 'review-gated'],
+    sourcePack: [
+      realWorkSource('ocha-access', 'OCHA humanitarian access guidance', 'https://knowledge.base.unocha.org/wiki/spaces/imtoolbox/pages/1410072577/Humanitarian%2BAccess', 'multilateral', 'UN OCHA', '2026', 'Humanitarian access concepts, constraints, and operating posture.'),
+      realWorkSource('sphere-handbook', 'Sphere Handbook', 'https://spherestandards.org/handbook/', 'standard-setter', 'Sphere Association', '2018', 'Humanitarian principles and standards source lane.'),
+    ],
+    recommendedToolIds: ['stakeholder-map', 'position-vs-interest', 'sourceability'],
+    outputProductIds: ['humanitarian-one-pager', 'negotiation-prep-book'],
+    combinesWellWith: ['starter-situation-sudan-famine-access-civilian-protection', 'starter-output-humanitarian-donor-sitrep', 'starter-user-un-humanitarian-access-officer'],
+    userJob: 'a real work humanitarian access officer preparing a reviewed negotiation brief, not operational instructions',
+    realWorkUse: 'Use when access constraints and humanitarian principles must structure a safe brief or donor update.',
+    decisionFocus: 'Which access constraint, party, assurance, and risk must be reviewed before an ask is made?',
+    draftingStyle: 'access negotiation checklist with principles, actors, risks, asks, and redacted details',
+    deviceKind: 'humanitarian-access-negotiation-checklist',
+    reasoningOperation: 'structure humanitarian access constraints into reviewable negotiation questions',
+  }),
+  realWorkStarter({
+    starterId: 'starter-tool-scenario-indicator-watchlist',
+    category: 'tool',
+    domain: 'options-mapping',
+    label: 'Scenario indicator watchlist',
+    summary: 'A thinking-device capsule for linking scenarios to observable indicators, thresholds, confidence changes, and decision triggers.',
+    detail: 'Use this tool when scenario work needs monitorable signals instead of static speculation.',
+    tags: ['scenario', 'indicators', 'watchlist', 'monitoring', 'thinking-device', 'review-gated'],
+    sourcePack: [
+      realWorkSource('undrr-sendai-framework', 'UNDRR Sendai Framework', 'https://www.undrr.org/publication/sendai-framework-disaster-risk-reduction-2015-2030', 'multilateral', 'UNDRR', '2015', 'Risk monitoring, preparedness, and resilience baseline.'),
+      realWorkSource('iea-electricity-grids', 'IEA electricity grids and secure energy transitions', 'https://www.iea.org/reports/electricity-grids-and-secure-energy-transitions', 'multilateral', 'International Energy Agency', '2023', 'Infrastructure bottlenecks and transition indicators source lane.'),
+    ],
+    recommendedToolIds: ['scenario-projector', 'ach', 'sourceability'],
+    outputProductIds: ['scenario-risk-dashboard-card', 'daily-read'],
+    combinesWellWith: ['starter-situation-arctic-shipping-minerals-governance', 'starter-output-crisis-daily-senior-brief', 'starter-tool-evidence-freshness-staleness-clock'],
+    userJob: 'a real work analyst building a watchlist that tells a team when assumptions or decisions should change',
+    realWorkUse: 'Use when scenarios need indicators, thresholds, and source refresh rules attached.',
+    decisionFocus: 'Which indicator would make the team update confidence, escalate, or change course?',
+    draftingStyle: 'watchlist table with scenario, indicator, source, threshold, and owner',
+    deviceKind: 'scenario-indicator-watchlist',
+    reasoningOperation: 'connect scenarios to observable indicators and decision triggers',
+  }),
+  realWorkStarter({
+    starterId: 'starter-tool-public-narrative-risk-premortem',
+    category: 'tool',
+    domain: 'election-integrity',
+    label: 'Public narrative risk premortem',
+    summary: 'A thinking-device capsule for testing how public messaging, policy claims, or crisis updates could be misunderstood, weaponized, or overclaimed.',
+    detail: 'Use this tool before publishing sensitive language on elections, public health, conflict, corporate risk, or humanitarian crises.',
+    tags: ['narrative', 'premortem', 'communications', 'misinformation', 'thinking-device', 'review-gated'],
+    sourcePack: [
+      realWorkSource('who-rcce', 'WHO risk communication and community engagement resources', 'https://www.who.int/teams/risk-communication', 'multilateral', 'World Health Organization', '2026', 'Risk communication and community trust source lane.'),
+      realWorkSource('govuk-content-design', 'GOV.UK content design writing guidance', 'https://www.gov.uk/guidance/content-design/writing-for-gov-uk', 'official', 'UK Government Digital Service', '2026', 'Public-service writing guidance for clarity and user needs.'),
+    ],
+    recommendedToolIds: ['frame-narrative', 'contradiction-finder', 'sourceability'],
+    outputProductIds: ['narrative-monitor', 'talking-points'],
+    combinesWellWith: ['starter-situation-public-health-infodemic-emergency-trust', 'starter-output-ministerial-question-period-brief', 'starter-user-cabinet-policy-advisor'],
+    userJob: 'a real work communications, public affairs, or policy lead reviewing how a message could fail before publication',
+    realWorkUse: 'Use when public-facing language must be stress-tested for misunderstanding, harm, or unsupported claims.',
+    decisionFocus: 'Which phrase, claim, audience, or missing caveat creates narrative risk?',
+    draftingStyle: 'premortem table with audience readings, misuse risk, repair language, and approval owner',
+    deviceKind: 'public-narrative-risk-premortem',
+    reasoningOperation: 'stress-test public narrative risk before drafting or publication',
+  }),
+  realWorkStarter({
+    starterId: 'starter-tool-board-assurance-question-set',
+    category: 'tool',
+    domain: 'audit-review',
+    label: 'Board assurance question set',
+    summary: 'A thinking-device capsule for turning risk claims into board-level assurance questions, control owners, evidence asks, and disclosure caveats.',
+    detail: 'Use this tool when leadership needs to know what management can substantiate before a board or risk committee discussion.',
+    tags: ['board', 'assurance', 'controls', 'risk-committee', 'thinking-device', 'review-gated'],
+    sourcePack: [
+      realWorkSource('oecd-corporate-governance', 'OECD corporate governance principles', 'https://www.oecd.org/corporate/principles-corporate-governance/', 'multilateral', 'OECD', '2023', 'Board oversight and governance source lane.'),
+      realWorkSource('ifrs-s1-s2', 'IFRS ISSB sustainability and climate disclosure standards', 'https://www.ifrs.org/issued-standards/ifrs-sustainability-standards-navigator/', 'standard-setter', 'IFRS Foundation', '2026', 'Investor-material risk and disclosure source lane.'),
+    ],
+    recommendedToolIds: ['sourceability', 'memo-drafter', 'ach'],
+    outputProductIds: ['principals-decision-memo', 'scenario-risk-dashboard-card'],
+    combinesWellWith: ['starter-output-board-decision-memo-pack', 'starter-user-corporate-supply-chain-esg-lead', 'starter-tool-corporate-exposure-heatmap'],
+    userJob: 'a real work board, risk, or assurance lead converting a claim into questions management can answer',
+    realWorkUse: 'Use when a risk claim must become board-safe questions, evidence asks, and control owner tasks.',
+    decisionFocus: 'What can the board reasonably rely on, and what assurance or evidence is missing?',
+    draftingStyle: 'board assurance checklist with oversight question, evidence, control owner, and caveat',
+    deviceKind: 'board-assurance-question-set',
+    reasoningOperation: 'convert claims into board assurance questions and owner tasks',
+  }),
+  realWorkStarter({
+    starterId: 'starter-tool-counterparty-ownership-escalation-tree',
+    category: 'tool',
+    domain: 'exposure-mapping',
+    label: 'Counterparty ownership escalation tree',
+    summary: 'A thinking-device capsule for sorting counterparty facts, ownership gaps, sanctions screen results, source confidence, and escalation thresholds.',
+    detail: 'Use this tool when sanctions, procurement, supplier, or investment work depends on who controls or benefits from a counterparty.',
+    tags: ['counterparty', 'ownership', 'sanctions', 'supplier-risk', 'thinking-device', 'review-gated'],
+    sourcePack: [
+      realWorkSource('ofac-sanctions-list-service', 'OFAC sanctions list service', 'https://ofac.treasury.gov/sanctions-list-service', 'regulator', 'U.S. Treasury OFAC', '2026', 'US sanctions list lookup and screening source lane.'),
+      realWorkSource('fatf-risk-based-approach', 'FATF risk-based approach guidance', 'https://www.fatf-gafi.org/en/topics/risk-based-approach.html', 'standard-setter', 'FATF', '2026', 'Financial crime and risk-based review source lane.'),
+    ],
+    recommendedToolIds: ['sourceability', 'contradiction-finder', 'ach'],
+    outputProductIds: ['legal-mandate-compliance-note', 'evidence-sourceability-annex'],
+    combinesWellWith: ['starter-user-sanctions-compliance-counsel', 'starter-output-sanctions-exposure-note', 'starter-situation-forced-labor-import-supply-chain-risk'],
+    userJob: 'a real work compliance analyst escalating uncertain counterparty ownership, beneficial control, or sanctions exposure',
+    realWorkUse: 'Use when ownership and counterparty facts need review before sanctions, procurement, or supplier decisions.',
+    decisionFocus: 'Which ownership fact, list result, or control inference triggers escalation?',
+    draftingStyle: 'compliance escalation tree with facts, gaps, sources, reviewers, and stop conditions',
+    deviceKind: 'counterparty-ownership-escalation-tree',
+    reasoningOperation: 'map counterparty ownership evidence into escalation decisions',
+  }),
+];
+
+const REAL_WORK_OUTPUT_CAPSULES: CapsuleStarterDefinition[] = [
+  realWorkStarter({
+    starterId: 'starter-output-crisis-daily-senior-brief',
+    category: 'output',
+    domain: 'output-brief',
+    label: 'Crisis daily senior brief output capsule',
+    summary: 'A real-work output capsule for concise daily crisis briefs with changes, implications, decisions, source gaps, and watchlist triggers.',
+    detail: 'Use this when senior leaders need a short, repeatable brief that preserves what changed, what matters, what is uncertain, and what needs approval.',
+    tags: ['daily-brief', 'crisis', 'senior-leaders', 'watchlist', 'drafting-style'],
+    sourcePack: [
+      realWorkSource('ocha-access', 'OCHA humanitarian access guidance', 'https://knowledge.base.unocha.org/wiki/spaces/imtoolbox/pages/1410072577/Humanitarian%2BAccess', 'multilateral', 'UN OCHA', '2026', 'Crisis access and operational constraint source lane.'),
+      realWorkSource('plain-language-gov', 'Plain language government guidance', 'https://www.plainlanguage.gov/guidelines/', 'official', 'U.S. Plain Language Action and Information Network', '2026', 'Clear public-sector writing baseline.'),
+    ],
+    recommendedToolIds: ['memo-drafter', 'sourceability', 'scenario-projector'],
+    outputProductIds: ['daily-read', 'morning-brief'],
+    combinesWellWith: ['starter-tool-evidence-freshness-staleness-clock', 'starter-tool-scenario-indicator-watchlist', 'starter-situation-red-sea-maritime-logistics-risk'],
+    userJob: 'a real work crisis team preparing a daily senior brief under time pressure with review gates',
+    realWorkUse: 'Use when an agent must produce a senior brief rather than a broad background memo.',
+    decisionFocus: 'What changed, why it matters, what decision is needed, and what remains unresolved?',
+    draftingStyle: 'daily senior brief with top changes, decision asks, risks, gaps, and watchlist',
+  }),
+  realWorkStarter({
+    starterId: 'starter-output-sanctions-exposure-note',
+    category: 'output',
+    domain: 'output-brief',
+    label: 'Sanctions exposure note output capsule',
+    summary: 'A real-work output capsule for sanctions-sensitive notes with facts, regimes, dates, exposure, non-advice caveats, reviewers, and stop conditions.',
+    detail: 'Use this when PRAXIS must organize sanctions exposure context for compliance review without providing legal advice.',
+    tags: ['sanctions', 'exposure-note', 'compliance', 'non-advice', 'drafting-style'],
+    sourcePack: [
+      realWorkSource('ofac-framework-compliance', 'OFAC framework for compliance commitments', 'https://ofac.treasury.gov/media/16331/download?inline', 'regulator', 'U.S. Treasury OFAC', '2019', 'US sanctions compliance program source lane.'),
+      realWorkSource('eu-sanctions-map', 'EU Sanctions Map', 'https://www.sanctionsmap.eu/', 'official', 'European Union', '2026', 'EU sanctions regime and legal-act source lane.'),
+    ],
+    recommendedToolIds: ['sourceability', 'ach', 'memo-drafter'],
+    outputProductIds: ['legal-mandate-compliance-note', 'evidence-sourceability-annex'],
+    combinesWellWith: ['starter-tool-counterparty-ownership-escalation-tree', 'starter-user-sanctions-compliance-counsel', 'starter-situation-forced-labor-import-supply-chain-risk'],
+    userJob: 'a real work sanctions compliance reviewer preparing facts and caveats for counsel or control owner review',
+    realWorkUse: 'Use when sanctions exposure context needs careful structure, source dates, and non-advice limits.',
+    decisionFocus: 'Which regime, counterparty, transaction, source date, and reviewer determine the next step?',
+    draftingStyle: 'sanctions compliance note with regime table, facts, caveats, reviewers, and stop conditions',
+  }),
+  realWorkStarter({
+    starterId: 'starter-output-humanitarian-donor-sitrep',
+    category: 'output',
+    domain: 'output-brief',
+    label: 'Humanitarian donor sitrep output capsule',
+    summary: 'A real-work output capsule for donor situation reports with needs, access, response, gaps, risks, protection caveats, and asks.',
+    detail: 'Use this when a donor-facing humanitarian update needs operational structure and source discipline.',
+    tags: ['humanitarian', 'donor', 'sitrep', 'access', 'drafting-style'],
+    sourcePack: [
+      realWorkSource('ocha-access', 'OCHA humanitarian access guidance', 'https://knowledge.base.unocha.org/wiki/spaces/imtoolbox/pages/1410072577/Humanitarian%2BAccess', 'multilateral', 'UN OCHA', '2026', 'Humanitarian access and response source lane.'),
+      realWorkSource('sphere-handbook', 'Sphere Handbook', 'https://spherestandards.org/handbook/', 'standard-setter', 'Sphere Association', '2018', 'Humanitarian standards and accountability source lane.'),
+    ],
+    recommendedToolIds: ['memo-drafter', 'sourceability', 'grounded-research'],
+    outputProductIds: ['humanitarian-one-pager', 'country-one-pager'],
+    combinesWellWith: ['starter-user-un-humanitarian-access-officer', 'starter-tool-humanitarian-access-negotiation-checklist', 'starter-situation-sudan-famine-access-civilian-protection'],
+    userJob: 'a real work humanitarian program or donor officer preparing a field-informed sitrep for review',
+    realWorkUse: 'Use when a humanitarian update must be concise, sourceable, and operationally safe.',
+    decisionFocus: 'What need, access constraint, response gap, risk, or donor ask is supported enough to include?',
+    draftingStyle: 'donor sitrep with needs, access, response, gaps, protection, asks, and caveats',
+  }),
+  realWorkStarter({
+    starterId: 'starter-output-board-decision-memo-pack',
+    category: 'output',
+    domain: 'output-brief',
+    label: 'Board decision memo pack output capsule',
+    summary: 'A real-work output capsule for board packs with decision ask, exposure map, controls, scenarios, assurance questions, and management actions.',
+    detail: 'Use this when corporate or nonprofit leadership needs a board-ready pack that does not overstate assurance or certification.',
+    tags: ['board', 'decision-memo', 'risk', 'assurance', 'drafting-style'],
+    sourcePack: [
+      realWorkSource('oecd-corporate-governance', 'OECD corporate governance principles', 'https://www.oecd.org/corporate/principles-corporate-governance/', 'multilateral', 'OECD', '2023', 'Board oversight and corporate governance baseline.'),
+      realWorkSource('plain-language-gov', 'Plain language government guidance', 'https://www.plainlanguage.gov/guidelines/', 'official', 'U.S. Plain Language Action and Information Network', '2026', 'Clear decision-support writing baseline.'),
+    ],
+    recommendedToolIds: ['memo-drafter', 'sourceability', 'scenario-projector'],
+    outputProductIds: ['principals-decision-memo', 'scenario-risk-dashboard-card'],
+    combinesWellWith: ['starter-tool-board-assurance-question-set', 'starter-tool-corporate-exposure-heatmap', 'starter-user-corporate-supply-chain-esg-lead'],
+    userJob: 'a real work board or executive team preparing a decision memo pack with evidence and assurance caveats',
+    realWorkUse: 'Use when a board pack must convert complex policy risk into clear decisions and owner actions.',
+    decisionFocus: 'What decision is requested, what evidence supports it, and what assurance remains missing?',
+    draftingStyle: 'board pack style with decision ask, exposure, controls, scenarios, assurance, and actions',
+  }),
+  realWorkStarter({
+    starterId: 'starter-output-ministerial-question-period-brief',
+    category: 'output',
+    domain: 'output-brief',
+    label: 'Ministerial question period brief output capsule',
+    summary: 'A real-work output capsule for ministerial QP preparation with lines, facts, anticipated questions, risks, bridging language, and source caveats.',
+    detail: 'Use this when a public-sector user needs defensible, concise lines that survive scrutiny without hiding uncertainty.',
+    tags: ['ministerial', 'question-period', 'talking-points', 'public-sector', 'drafting-style'],
+    sourcePack: [
+      realWorkSource('plain-language-gov', 'Plain language government guidance', 'https://www.plainlanguage.gov/guidelines/', 'official', 'U.S. Plain Language Action and Information Network', '2026', 'Clear public-sector writing baseline.'),
+      realWorkSource('govuk-content-design', 'GOV.UK content design writing guidance', 'https://www.gov.uk/guidance/content-design/writing-for-gov-uk', 'official', 'UK Government Digital Service', '2026', 'Audience-aware government writing source lane.'),
+    ],
+    recommendedToolIds: ['memo-drafter', 'frame-narrative', 'sourceability'],
+    outputProductIds: ['talking-points', 'principals-decision-memo'],
+    combinesWellWith: ['starter-tool-public-narrative-risk-premortem', 'starter-user-cabinet-policy-advisor', 'starter-situation-election-observation-information-integrity'],
+    userJob: 'a real work ministerial or senior official support team preparing lines for public scrutiny and review',
+    realWorkUse: 'Use when a user needs question-period lines, anticipated challenges, and safe caveats.',
+    decisionFocus: 'Which line is defensible, which fact needs source support, and which question needs an approved response?',
+    draftingStyle: 'ministerial QP brief with approved lines, anticipated questions, bridges, and caveats',
+  }),
+  realWorkStarter({
+    starterId: 'starter-output-policy-implementation-roadmap',
+    category: 'output',
+    domain: 'output-brief',
+    label: 'Policy implementation roadmap output capsule',
+    summary: 'A real-work output capsule for implementation plans with owners, sequencing, dependencies, risks, metrics, consultation, and governance gates.',
+    detail: 'Use this when a policy decision needs to become a practical roadmap rather than a high-level recommendation.',
+    tags: ['implementation', 'roadmap', 'owners', 'governance', 'drafting-style'],
+    sourcePack: [
+      realWorkSource('oecd-governance', 'OECD public governance resources', 'https://www.oecd.org/governance/', 'multilateral', 'OECD', '2026', 'Public governance and implementation source lane.'),
+      realWorkSource('world-bank-procurement', 'World Bank procurement for projects and programs', 'https://www.worldbank.org/en/projects-operations/products-and-services/procurement-projects-programs', 'multilateral', 'World Bank', '2026', 'Project delivery and procurement implementation source lane.'),
+    ],
+    recommendedToolIds: ['memo-drafter', 'stakeholder-map', 'sourceability'],
+    outputProductIds: ['options-memo', 'principals-decision-memo'],
+    combinesWellWith: ['starter-tool-policy-option-triage-matrix', 'starter-situation-procurement-integrity-major-projects', 'starter-user-cabinet-policy-advisor'],
+    userJob: 'a real work product, policy, or program lead turning a decision into owner actions and delivery gates',
+    realWorkUse: 'Use when implementation details, ownership, dependencies, and metrics matter more than policy rhetoric.',
+    decisionFocus: 'Who owns each action, what sequence is realistic, and what risk blocks delivery?',
+    draftingStyle: 'implementation roadmap with phases, owners, dependencies, metrics, and review gates',
+  }),
+];
+
+const REAL_WORK_USER_CAPSULES: CapsuleStarterDefinition[] = [
+  realWorkStarter({
+    starterId: 'starter-user-un-humanitarian-access-officer',
+    category: 'user',
+    domain: 'analyst-role',
+    label: 'UN humanitarian access officer user capsule',
+    summary: 'A user-role capsule for humanitarian access officers who need principled, source-backed, operationally safe drafts and review handovers.',
+    detail: 'Use this to make PRAXIS answer like an access officer: careful about principles, parties, operational sensitivity, protection, and donor language.',
+    tags: ['user-lens', 'humanitarian-access', 'un', 'field', 'principles', 'team:humanitarian'],
+    sourcePack: [
+      realWorkSource('ocha-access', 'OCHA humanitarian access guidance', 'https://knowledge.base.unocha.org/wiki/spaces/imtoolbox/pages/1410072577/Humanitarian%2BAccess', 'multilateral', 'UN OCHA', '2026', 'Humanitarian access concepts and constraints source lane.'),
+      realWorkSource('sphere-handbook', 'Sphere Handbook', 'https://spherestandards.org/handbook/', 'standard-setter', 'Sphere Association', '2018', 'Humanitarian standards and accountability source lane.'),
+    ],
+    recommendedToolIds: ['stakeholder-map', 'sourceability', 'memo-drafter'],
+    outputProductIds: ['humanitarian-one-pager', 'negotiation-prep-book'],
+    combinesWellWith: ['starter-tool-humanitarian-access-negotiation-checklist', 'starter-output-humanitarian-donor-sitrep', 'starter-situation-sudan-famine-access-civilian-protection'],
+    userJob: 'a real work field or access officer needing safe, principled, source-backed context for negotiation, donor, or handover work',
+    realWorkUse: 'Use when PRAXIS should inherit a humanitarian access role lens and operational caution.',
+    decisionFocus: 'What access constraint, principle, party, and protection risk should shape the answer?',
+    draftingStyle: 'field access style with principles, operational caveats, source limits, and clear asks',
+  }),
+  realWorkStarter({
+    starterId: 'starter-user-sanctions-compliance-counsel',
+    category: 'user',
+    domain: 'analyst-role',
+    label: 'Sanctions compliance counsel user capsule',
+    summary: 'A user-role capsule for sanctions compliance counsel who need source-dated facts, non-advice caveats, escalation rules, and reviewer discipline.',
+    detail: 'Use this to make PRAXIS produce compliance-support material that clearly stops short of legal advice and keeps counsel review central.',
+    tags: ['user-lens', 'sanctions', 'compliance', 'counsel', 'non-advice', 'team:economic-sanctions'],
+    sourcePack: [
+      realWorkSource('ofac-framework-compliance', 'OFAC framework for compliance commitments', 'https://ofac.treasury.gov/media/16331/download?inline', 'regulator', 'U.S. Treasury OFAC', '2019', 'US sanctions compliance program source lane.'),
+      realWorkSource('eu-sanctions-map', 'EU Sanctions Map', 'https://www.sanctionsmap.eu/', 'official', 'European Union', '2026', 'EU sanctions regime and legal-act source lane.'),
+    ],
+    recommendedToolIds: ['sourceability', 'contradiction-finder', 'memo-drafter'],
+    outputProductIds: ['legal-mandate-compliance-note', 'evidence-sourceability-annex'],
+    combinesWellWith: ['starter-tool-counterparty-ownership-escalation-tree', 'starter-output-sanctions-exposure-note', 'starter-situation-forced-labor-import-supply-chain-risk'],
+    userJob: 'a real work sanctions compliance counsel reviewing facts, regimes, source dates, and escalation before reliance',
+    realWorkUse: 'Use when PRAXIS should operate in counsel-support mode with non-advice boundaries.',
+    decisionFocus: 'Which fact, regime, jurisdiction, or counterparty issue requires counsel review?',
+    draftingStyle: 'compliance counsel style with facts, regime table, caveats, reviewer notes, and stop conditions',
+  }),
+  realWorkStarter({
+    starterId: 'starter-user-corporate-supply-chain-esg-lead',
+    category: 'user',
+    domain: 'analyst-role',
+    label: 'Corporate supply-chain ESG lead user capsule',
+    summary: 'A user-role capsule for supply-chain and ESG leaders balancing due diligence, supplier evidence, board language, and disclosure risk.',
+    detail: 'Use this when PRAXIS should answer for a corporate operator who needs practical evidence rows, escalation triggers, and defensible language.',
+    tags: ['user-lens', 'corporate', 'supply-chain', 'esg', 'due-diligence', 'team:research-strategy'],
+    sourcePack: [
+      realWorkSource('oecd-due-diligence-rbc', 'OECD due diligence for responsible business conduct', 'https://www.oecd-ilibrary.org/en/topics/due-diligence-for-responsible-business-conduct.html', 'multilateral', 'OECD', '2026', 'Responsible business conduct and due-diligence source lane.'),
+      realWorkSource('ohchr-ungp', 'UN Guiding Principles on Business and Human Rights', 'https://www.ohchr.org/sites/default/files/documents/publications/guidingprinciplesbusinesshr_en.pdf', 'multilateral', 'OHCHR', '2011', 'Business and human-rights due diligence source lane.'),
+    ],
+    recommendedToolIds: ['sourceability', 'stakeholder-map', 'memo-drafter'],
+    outputProductIds: ['principals-decision-memo', 'scenario-risk-dashboard-card'],
+    combinesWellWith: ['starter-tool-corporate-exposure-heatmap', 'starter-output-board-decision-memo-pack', 'starter-situation-eastern-drc-minerals-protection-risk'],
+    userJob: 'a real work corporate supply-chain ESG lead preparing supplier, board, and due-diligence context for review',
+    realWorkUse: 'Use when PRAXIS should balance evidence, due diligence, board communication, and disclosure caveats.',
+    decisionFocus: 'Which supplier, issue, evidence gap, leverage path, or disclosure risk needs escalation?',
+    draftingStyle: 'corporate ESG decision style with supplier rows, leverage, evidence, and board caveats',
+  }),
+  realWorkStarter({
+    starterId: 'starter-user-cabinet-policy-advisor',
+    category: 'user',
+    domain: 'analyst-role',
+    label: 'Cabinet policy advisor user capsule',
+    summary: 'A user-role capsule for cabinet or senior public-sector advisors who need concise options, stakeholder risk, legal boundaries, and implementation realism.',
+    detail: 'Use this when PRAXIS should write for a senior advisor preparing advice that can survive clearance, scrutiny, and implementation.',
+    tags: ['user-lens', 'cabinet', 'policy-advisor', 'minister', 'implementation', 'team:governance-public-sector'],
+    sourcePack: [
+      realWorkSource('oecd-governance', 'OECD public governance resources', 'https://www.oecd.org/governance/', 'multilateral', 'OECD', '2026', 'Public governance and implementation context source lane.'),
+      realWorkSource('plain-language-gov', 'Plain language government guidance', 'https://www.plainlanguage.gov/guidelines/', 'official', 'U.S. Plain Language Action and Information Network', '2026', 'Clear decision-support writing baseline.'),
+    ],
+    recommendedToolIds: ['memo-drafter', 'stakeholder-map', 'sourceability'],
+    outputProductIds: ['principals-decision-memo', 'talking-points'],
+    combinesWellWith: ['starter-tool-policy-option-triage-matrix', 'starter-output-ministerial-question-period-brief', 'starter-output-policy-implementation-roadmap'],
+    userJob: 'a real work cabinet policy advisor preparing ministerial advice, implementation options, and scrutiny-safe language',
+    realWorkUse: 'Use when PRAXIS should compress complex analysis into advice for a senior decision owner.',
+    decisionFocus: 'What decision is required, what options are viable, and what risk or clearance blocks action?',
+    draftingStyle: 'ministerial advice style with decision, options, recommendation, risks, implementation, and caveats',
+  }),
+  realWorkStarter({
+    starterId: 'starter-user-investigative-research-analyst',
+    category: 'user',
+    domain: 'analyst-role',
+    label: 'Investigative research analyst user capsule',
+    summary: 'A user-role capsule for investigators who need claim-source discipline, allegation thresholds, contradiction checks, and defensible handovers.',
+    detail: 'Use this when PRAXIS should behave like a careful research analyst: separate allegations, evidence, verification status, and inference.',
+    tags: ['user-lens', 'investigative-research', 'sourceability', 'allegations', 'handover', 'team:research-strategy'],
+    sourcePack: [
+      realWorkSource('ohchr-library-search', 'OHCHR public reporting library', 'https://searchlibrary.ohchr.org/', 'public-library', 'OHCHR', '2026', 'Human-rights reporting and public source discovery lane.', 2),
+      realWorkSource('praxis-claim-source-alignment', 'PRAXIS claim-source alignment method', 'https://praxis.tacitus.me/learn#claim-source-alignment', 'public-library', 'PRAXIS starter catalog', CAPSULE_STARTER_CATALOG_VERSION, 'Review pattern for supported, weak, unsupported, and stale claims.', 3),
+    ],
+    recommendedToolIds: ['sourceability', 'contradiction-finder', 'grounded-research'],
+    outputProductIds: ['evidence-sourceability-annex', 'actor-dossier'],
+    combinesWellWith: ['starter-tool-source-reliability-triangulation-ladder', 'starter-situation-election-observation-information-integrity', 'starter-output-crisis-daily-senior-brief'],
+    userJob: 'a real work investigative research analyst building source-backed case files and handovers for review',
+    realWorkUse: 'Use when PRAXIS must keep allegations, source confidence, contradictions, and inference separate.',
+    decisionFocus: 'Which claim is supported, contradicted, stale, or unresolved enough to become a review card?',
+    draftingStyle: 'investigative handover style with claim tables, sources, confidence, contradictions, and next evidence',
+  }),
+  realWorkStarter({
+    starterId: 'starter-user-field-program-manager',
+    category: 'user',
+    domain: 'analyst-role',
+    label: 'Field program manager user capsule',
+    summary: 'A user-role capsule for field program managers balancing delivery, partner capacity, access, budget, safety, and donor reporting.',
+    detail: 'Use this when PRAXIS should convert analysis into practical field actions, risks, resource needs, and reporting language.',
+    tags: ['user-lens', 'field', 'program-management', 'donor', 'delivery', 'team:crisis-ops'],
+    sourcePack: [
+      realWorkSource('ifrc-emergency-needs-assessment', 'IFRC guidelines for emergency needs assessment', 'https://www.ifrc.org/document/guidelines-emergency-needs-assessment', 'multilateral', 'IFRC', '2026', 'Field assessment and operational planning source lane.', 2),
+      realWorkSource('sphere-handbook', 'Sphere Handbook', 'https://spherestandards.org/handbook/', 'standard-setter', 'Sphere Association', '2018', 'Humanitarian standards and accountability source lane.'),
+    ],
+    recommendedToolIds: ['memo-drafter', 'sourceability', 'scenario-projector'],
+    outputProductIds: ['humanitarian-one-pager', 'options-memo'],
+    combinesWellWith: ['starter-output-humanitarian-donor-sitrep', 'starter-tool-data-gap-interrogatory-builder', 'starter-situation-haiti-security-humanitarian-corridor'],
+    userJob: 'a real work field program manager making delivery, partner, safety, and donor-reporting decisions',
+    realWorkUse: 'Use when PRAXIS should translate context into field-ready tasks, risks, and reporting gaps.',
+    decisionFocus: 'Which delivery bottleneck, partner risk, data gap, or donor ask needs a next action?',
+    draftingStyle: 'field program style with actions, owners, risks, resources, evidence gaps, and donor lines',
+  }),
+];
+
+const REAL_WORK_CONTEXT_CAPSULE_WAVE: CapsuleStarterDefinition[] = [
+  ...REAL_WORK_SITUATION_CAPSULES,
+  ...REAL_WORK_TOOL_CAPSULES,
+  ...REAL_WORK_OUTPUT_CAPSULES,
+  ...REAL_WORK_USER_CAPSULES,
+];
+
 const EXPERT_POLICY_CAPSULE_WAVE: CapsuleStarterDefinition[] = [
   starter('starter-situation-ukraine-reconstruction-integrity-finance', 'situation', 'finance', 'Ukraine reconstruction integrity finance capsule', 'A reconstruction finance capsule for Ukraine recovery needs, donor facilities, corruption risk, procurement controls, and implementation confidence.', 'Use this when PRAXIS must brief reconstruction financing, donor conditionality, public procurement, corporate delivery risk, or integrity safeguards without flattening humanitarian, macro, and governance claims.', ['ukraine', 'reconstruction', 'integrity', 'donor-finance', 'procurement', 'corporate-risk', 'team:economic-sanctions', 'team:governance-public-sector'], { situationCoreId: 'starter-situation-ukraine-reconstruction-integrity-finance', pathCoreId: 'public-sector-policy', sourceCoreIds: ['world-bank-ukraine-rdna', 'eu-ukraine-facility'], toolCoreIds: ['grounded-research', 'sourceability', 'ach'], outputCoreIds: ['principals-decision-memo'] }, ['grounded-research', 'sourceability', 'ach'], ['principals-decision-memo', 'country-risk-card'], ['starter-tool-sourceability-matrix', 'starter-tool-policy-tradeoff-ledger', 'starter-output-corporate-board-risk-committee-pack'], {
     readinessStars: 5,
@@ -2156,6 +3271,7 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     aiUseGuidance: 'Treat numbers as dated evidence. Ask for missing time series, regulator sources, and sanctions lists before making exposure judgments.',
   }),
   ...EXPERT_POLICY_CAPSULE_WAVE,
+  ...REAL_WORK_CONTEXT_CAPSULE_WAVE,
   starter('starter-situation-hr-harassment-policy', 'situation', 'hr', 'HR harassment policy capsule', 'An HR situation capsule for workplace violence and harassment, policy response, employer duties, rollout risk, and affected-group communication.', 'Use this for public employer-guidance-grounded HR policy work. PRAXIS should distinguish prevention duties, reporting channels, investigation posture, training needs, retaliation risk, and communications sequencing.', ['hr', 'workplace-harassment', 'policy-response', 'employer-guidance'], { situationCoreId: 'starter-situation-hr-harassment-policy', pathCoreId: 'hr-policy', sourceCoreIds: ['ilo-harassment-guide'], toolCoreIds: ['sourceability', 'contradiction-finder'], outputCoreIds: ['options-memo'] }, ['sourceability', 'contradiction-finder', 'memo-drafter'], ['options-memo', 'talking-points'], ['starter-user-hr-policy-owner', 'starter-tool-hr-policy-impact-reviewer', 'starter-output-hr-rollout-recommendation'], {
     readinessStars: 4,
     sourcePack: [

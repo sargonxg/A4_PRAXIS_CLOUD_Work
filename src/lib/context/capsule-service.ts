@@ -1412,6 +1412,20 @@ async function writeStarterDetailRecords(
     recallOperation: 'recall',
     promotionRequired: 'review-card',
     postgresProjection: 'capsule-plus-proposals-only',
+    memoryUseCases: [
+      `Recall similar ${starterDefinition.domain.replace(/-/g, ' ')} work without treating recall as truth.`,
+      'Brief agents on source gaps, review gates, and reusable real-work context before drafting.',
+      'Review candidate graph or SQL projection rows before canonical promotion.',
+    ],
+    cogneeRememberPolicy: 'Use remember() only for approved, session-safe, owner-scoped capsule context after human review; never remember disputed or private facts from starter defaults.',
+    cogneeRecallPolicy: 'Use recall() for advisory retrieval, similar-case prompts, and source-gap suggestions; recall output must become review-card evidence before promotion.',
+    sqlProjectionTargets: [
+      'capsule_plus.graph_proposals',
+      'capsule_plus.model_mappings',
+      'agent_runtime.capsule_read_receipts',
+    ],
+    reviewCardTargets: ['source-gaps', 'memory-hits', 'graph-proposals', 'model-mappings'],
+    realityCheck: `Real work review: ${starterDefinition.richProfile.userJob}`,
     summary: [
       'Starter source packs, excerpts, device profiles, and drafting guidance are seeded as advisory context.',
       'Cognee remember/recall and Capsule+ graph rows may reference this posture, but cannot promote facts into canonical capsule state without review-card apply metadata.',
