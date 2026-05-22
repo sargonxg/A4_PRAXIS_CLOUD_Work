@@ -5213,7 +5213,7 @@ function CapsuleFactoryLanePanel({
   const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
   const openDiffs = reviewDiffs.filter((diff) => diff.reviewState !== 'rejected').slice(0, 3);
   return (
-    <section className="specimen-card rounded-lg p-4 shadow-sm shadow-slate-950/[0.03]" data-testid="capsule-factory-workshop">
+    <section className="specimen-card rounded-lg p-4 shadow-sm shadow-slate-950/[0.03]" data-testid="capsule-studio-workspace">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-oxide)]">{laneLabel}</p>
@@ -5290,7 +5290,7 @@ function CapsuleFactoryLanePanel({
           </div>
         </div>
       ) : (
-      <div className="mt-4 grid gap-2 md:grid-cols-3">
+      <div className="mt-4 grid gap-2 md:grid-cols-3" data-testid="capsule-studio-library">
         {factoryBuilderLanes.map((lane) => (
           <article key={lane.id} className="rounded-lg border border-slate-200 p-3">
             <p className="text-xs font-semibold text-slate-900">{lane.title}</p>
@@ -5308,7 +5308,7 @@ function CapsuleFactoryLanePanel({
       </div>
       )}
       {openDiffs.length ? (
-        <div className="mt-4 grid gap-2" data-testid="capsule-factory-review-diffs">
+        <div className="mt-4 grid gap-2" data-testid="capsule-studio-review-queue">
           {openDiffs.map((diff) => (
             <article key={diff.diffId} className="rounded-lg border border-[color:var(--color-clay)]/20 bg-[color:var(--color-archive-paper)] p-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -5381,7 +5381,7 @@ function CapsuleFactoryInspectLane({
         <FactoryCommandCell label="Trust/readiness" value={readinessLabel} />
         <FactoryCommandCell label="Starter excerpts" value={starter?.sourcePack[0]?.label ?? meta?.summary ?? 'select a capsule'} />
       </div>
-      <div className="rounded-lg border border-[color:var(--color-clay)]/20 bg-[color:var(--color-archive-paper)] p-3">
+      <div className="rounded-lg border border-[color:var(--color-clay)]/20 bg-[color:var(--color-archive-paper)] p-3" data-testid="capsule-studio-chat-panel">
         <p className="text-xs font-semibold text-slate-900">Chat with this capsule</p>
         <p className="mt-1 text-[11px] leading-5 text-slate-600">
           Capsule chat is scoped to the selected capsule. It can explain use, gaps, and anatomy; any mutation stays review-gated.

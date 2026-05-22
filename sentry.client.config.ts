@@ -13,7 +13,7 @@ Sentry.init({
   environment: process.env.NODE_ENV,
 
   // Only send errors in production
-  beforeSend(event) {
+  beforeSend(event: Sentry.Event) {
     if (process.env.NODE_ENV !== 'production') return null;
     return event;
   },
