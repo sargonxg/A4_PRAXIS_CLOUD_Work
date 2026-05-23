@@ -14,6 +14,8 @@ import {
   CAPSULE_OUTPUT_PRODUCTS,
   CAPSULE_STARTER_DEFINITIONS,
   CAPSULE_TAXONOMY_AXES,
+  HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY,
+  HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS,
   CONTEXT_CAPSULE_TEMPLATES,
   POLICY_PATH_PROFILES,
   POLICY_TEAM_CATEGORIES,
@@ -167,7 +169,7 @@ describe('context capsule product contract', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(169);
+    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(175);
     expect(starterIds.size).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
@@ -175,7 +177,7 @@ describe('context capsule product contract', () => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toEqual({ situation: 59, tool: 67, output: 30, user: 13 });
+    expect(categoryCounts).toEqual({ situation: 65, tool: 67, output: 30, user: 13 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
@@ -199,6 +201,56 @@ describe('context capsule product contract', () => {
         expect([1, 2, 3]).toContain(source.reliabilityTier);
         expect(source.url).toMatch(/^https:\/\//);
       }
+    }
+  });
+
+  it('features Human-Gated Policy Judgment Capsules as sourceable flagship seeds', () => {
+    expect(HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY).toMatchObject({
+      id: 'human-gated-policy-judgment',
+      label: 'Human-Gated Policy Judgment Capsules',
+    });
+    expect(HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS).toEqual([
+      'starter-situation-crisis-strategy-room-human-gated',
+      'starter-situation-un-mandate-renewal-strategy',
+      'starter-situation-humanitarian-access-negotiation',
+      'starter-situation-sourceable-country-risk-judgment',
+      'starter-situation-mediation-process-memory',
+      'starter-situation-narrative-legitimacy-audit',
+    ]);
+
+    for (const starterId of HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+
+      expect(starter, `${starterId} missing`).toBeTruthy();
+      expect(starter?.tags).toEqual(expect.arrayContaining([
+        'flagship',
+        'human-gated',
+        'policy-judgment',
+        'review-gated',
+        'sourceability',
+        'no-invented-approval',
+      ]));
+      expect(starter?.humanReview).toMatchObject({
+        status: 'draft',
+        label: 'Needs human review',
+        reviewedBy: 'Human review pending',
+        reviewedAt: 'not-reviewed',
+        humanReviewGate: expect.stringMatching(/human review required/i),
+      });
+      expect(starter?.sourcePack.length, `${starterId} source placeholders`).toBeGreaterThanOrEqual(2);
+      expect(starter?.sourcePack.every((source) => source.publisher === 'Source placeholder')).toBe(true);
+      expect(starter?.excerpts.every((excerpt) => excerpt.text.toLowerCase().includes('placeholder'))).toBe(true);
+      expect(starter?.outputProductIds.length, `${starterId} output contracts`).toBeGreaterThanOrEqual(1);
+      expect(starter?.agentWorkflow.approvalNotes).toMatch(/cannot publish|human review/i);
+      expect(starter?.suggestedNextActions.join(' ')).toMatch(/sourceability|review|claim/i);
+      expect(starter?.inspectionSections.map((section) => section.label)).toEqual(expect.arrayContaining([
+        'Human Gate',
+        'Claim Ledger',
+        'Output Contracts',
+      ]));
+      expect(buildCapsuleStarterPromptBlock(starterId)).toContain('gate_status: needs_review');
+      expect(buildCapsuleStarterPromptBlock(starterId)).toContain('claim_ledger: placeholders_only');
+      expect(buildCapsuleStarterPromptBlock(starterId)).toContain('agent_permission: may draft and suggest, cannot publish');
     }
   });
 

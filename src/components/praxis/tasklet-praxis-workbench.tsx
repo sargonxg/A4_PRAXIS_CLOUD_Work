@@ -87,6 +87,8 @@ import {
 import {
   CAPSULE_STARTER_DEFINITIONS,
   CAPSULE_CONNECTOR_REGISTRY,
+  HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY,
+  HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS,
   POLICY_TEAM_CATEGORIES,
   buildCapsuleTaxonomyStats,
   categoryTagsForPolicyTeam,
@@ -108,6 +110,10 @@ import { recommendCapsuleTools, type CapsuleToolRecommendation } from '@/lib/too
 import { DEFAULT_CONTEXT_STACK_ID } from '@/lib/context/active-context-stack';
 import { rankAskCapsuleSuggestions, type AskCapsuleSuggestion } from '@/lib/context/capsule-suggestions';
 import type { CapsuleInventorySummary } from '@/lib/context/capsule-service';
+import { deriveCapsuleQuality, type CapsuleQualityResult } from '@/lib/context/capsule-quality';
+import { buildCapsuleImproveProposals, normalizeContextCapsuleV2, type ContextCapsuleV2 } from '@/lib/context/capsule-v2';
+import { deriveContextChainHealth } from '@/lib/context/context-chain-health';
+import { deriveHumanGateBadges, deriveHumanGateStatus } from '@/lib/context/human-gate';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useOrchestratorEvents, type OrchestratorEvent, type OrchestratorEventState } from '@/hooks/useOrchestratorEvents';
 import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-stream';
@@ -553,6 +559,17 @@ const capsuleBuilderStarts = [
   { id: 'combine', label: 'Combine capsules', detail: 'Merge situation, tool, source, and output capsules.' },
 ] as const;
 
+const capsuleBuilderSections = [
+  'Identity',
+  'Operating Context',
+  'Source Posture',
+  'Reasoning Scaffold',
+  'Output Contracts',
+  'Human Gate',
+  'Agent Permissions',
+  'Review and Publish',
+] as const;
+
 const factoryBuilderLanes = [
   {
     id: 'inspect',
@@ -842,6 +859,9 @@ export function TaskletPraxisWorkbench({
   const publicCapsuleTaxonomyStats = buildCapsuleTaxonomyStats(starterCapsuleSummaries);
   const filteredUserCapsules = filterUserCapsules(userCapsules, capsuleSearch, capsuleTypeFilter, capsuleDomainFilter, capsulePolicyTeamFilter);
   const filteredStarterCapsules = filterStarterCapsules(capsuleSearch, capsuleTypeFilter, capsuleDomainFilter, capsulePolicyTeamFilter);
+  const filteredHumanGatedPolicyCapsuleCards = filterStarterCapsules(capsuleSearch, capsuleTypeFilter, capsuleDomainFilter, capsulePolicyTeamFilter)
+    .filter((capsule) => HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS.some((id) => id === capsule.capsuleId))
+    .sort((a, b) => HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS.indexOf(a.capsuleId as (typeof HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS)[number]) - HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS.indexOf(b.capsuleId as (typeof HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS)[number]));
   const filteredFeaturedCapsuleCards = filterStarterCapsules(capsuleSearch, capsuleTypeFilter, capsuleDomainFilter, capsulePolicyTeamFilter)
     .filter((capsule) => FEATURED_EXPERT_PICK_CAPSULE_IDS.some((id) => id === capsule.capsuleId))
     .sort((a, b) => FEATURED_EXPERT_PICK_CAPSULE_IDS.indexOf(a.capsuleId as (typeof FEATURED_EXPERT_PICK_CAPSULE_IDS)[number]) - FEATURED_EXPERT_PICK_CAPSULE_IDS.indexOf(b.capsuleId as (typeof FEATURED_EXPERT_PICK_CAPSULE_IDS)[number]));
@@ -2186,10 +2206,16 @@ export function TaskletPraxisWorkbench({
       return;
     }
     selectCapsuleCard(capsule);
+    const v2Capsule = capsuleV2ForSummary(capsule);
+    const proposals = buildCapsuleImproveProposals(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT })
+      .slice(0, 6)
+      .map((proposal) => `${humanizeIdentifier(proposal.action)}: ${proposal.rationale}`);
     const nextPrompt = [
       `Improve the starter ContextCapsule "${capsule.label}".`,
       capsuleCategoryMeta(capsule).detail,
-      'Ask what is missing, recommend source receipts, name useful tools, and explain what should be forked before drafting.',
+      `Human gate status: ${humanGateStatusLabel(deriveHumanGateStatus(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT }))}.`,
+      'AI suggestions must stay as review-gated proposed edits and must not overwrite approved body content.',
+      proposals.length ? `Proposed review cards:\n${proposals.join('\n')}` : 'Propose missing source, audience, caveat, output contract, stale-content, human-review, source-pack fork, or ContextChain attachment cards.',
     ].join('\n');
     setPrompt(nextPrompt);
     if (isAuthenticated) void sendToPraxis(selectedAgent, nextPrompt);
@@ -2424,12 +2450,18 @@ export function TaskletPraxisWorkbench({
     selectUserCapsule(target);
     const refs = target.coreRefs ?? {};
     const team = policyTeamCategoryForTags(target.community?.tags);
+    const v2Capsule = capsuleV2ForSummary(target);
+    const proposals = buildCapsuleImproveProposals(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT })
+      .slice(0, 6)
+      .map((proposal) => `${humanizeIdentifier(proposal.action)}: ${proposal.rationale}`);
     const nextPrompt = [
       `Improve the ContextCapsule "${target.label}".`,
       `Capsule id: ${target.capsuleId}.`,
       team ? `Policy team category: ${team.label}.` : 'Policy team category: not assigned.',
       `Sources: ${refs.sourceCoreIds?.length ?? 0}. Documents: ${refs.documentCoreIds?.length ?? 0}. Tools: ${refs.toolCoreIds?.length ?? 0}.`,
-      'Ask only for missing information, suggest useful documents, recommend the best PRAXIS tools, and update the capsule plan before drafting anything.',
+      `Human gate status: ${humanGateStatusLabel(deriveHumanGateStatus(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT }))}.`,
+      'Return review-gated proposed edits only. For human-gated capsules, do not overwrite approved body content.',
+      proposals.length ? `Proposed review cards:\n${proposals.join('\n')}` : 'Ask only for missing information, useful documents, source receipts, output contracts, review gates, and ContextChain attachment.',
     ].join('\n');
     setPrompt(nextPrompt);
     void sendToPraxis(selectedAgent, nextPrompt);
@@ -3659,6 +3691,21 @@ export function TaskletPraxisWorkbench({
               {!isRepositoryLane ? (
                 <div className="mt-6 grid w-full min-w-0 gap-4" data-testid="capsule-wide-shelves">
                   <FeaturedExpertPicksShelf
+                    capsules={filteredHumanGatedPolicyCapsuleCards}
+                    title={HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY.label}
+                    subtitle={HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY.summary}
+                    isAuthenticated={isAuthenticated}
+                    onBuildOwn={openBuildYourOwnKnowledge}
+                    onSelect={openCapsuleInspector}
+                    onAdd={applyCapsuleCard}
+                    onView={viewCapsuleCard}
+                    onInspect={openCapsuleInspector}
+                    onImprove={improveCapsuleCard}
+                    onRateUsefulness={rateCapsuleUsefulness}
+                    onDownload={(capsule) => void downloadCapsulePackage(capsule)}
+                    onArchive={(capsule) => void archiveCapsuleCard(capsule)}
+                  />
+                  <FeaturedExpertPicksShelf
                     capsules={filteredFeaturedCapsuleCards}
                     title="Featured Expert Picks"
                     subtitle="Handpicked knowledge capsules for serious policy work."
@@ -4688,6 +4735,10 @@ function CapsuleRepositoryTile({
   const state = capsuleState(capsule);
   const role = capsuleDefaultRole(capsule);
   const domainAccent = capsuleDomainAccent(meta.starterDefinition?.domain ?? meta.taxonomy.domains[0]?.id ?? 'other');
+  const v2Capsule = capsuleV2ForSummary(capsule);
+  const v2Quality = deriveCapsuleQuality(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT });
+  const humanGateStatus = deriveHumanGateStatus(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT });
+  const unsupportedClaims = capsuleUnsupportedClaimCount(capsule);
   const categories = [
     meta.taxonomy.types[0]?.label ?? capsuleRoleLabel(role),
     meta.taxonomy.domains[0]?.label ?? capsule.scope,
@@ -4733,9 +4784,16 @@ function CapsuleRepositoryTile({
       <span className="mt-3 block line-clamp-2 text-sm leading-6 text-slate-600">
         {meta.starterDefinition?.richProfile?.purpose ?? meta.summary}
       </span>
+      <span className="mt-3 grid grid-cols-2 gap-1.5 text-[11px] font-semibold text-slate-600" data-testid="capsule-repository-v2-scoreboard">
+        <span className="rounded-md bg-slate-50 px-2 py-1">Quality {v2Quality.score}/100</span>
+        <span className="rounded-md bg-slate-50 px-2 py-1">Gate {humanGateStatusLabel(humanGateStatus)}</span>
+        <span className="rounded-md bg-slate-50 px-2 py-1">Unsupported {unsupportedClaims}</span>
+        <span className="rounded-md bg-slate-50 px-2 py-1">Fork {humanizeIdentifier(v2Capsule.forkability)}</span>
+      </span>
       <span className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-4 text-xs font-semibold text-slate-500">
         <span>{counts.sources + counts.documents} source ref{counts.sources + counts.documents === 1 ? '' : 's'}</span>
         <span>{counts.tools} tool{counts.tools === 1 ? '' : 's'}</span>
+        <span>{v2Capsule.agentPermissions.canDraft ? 'agent-operable' : 'agent-blocked'}</span>
         <span className="rounded-md bg-slate-950 px-2.5 py-1.5 text-white">Open capsule</span>
       </span>
     </button>
@@ -5210,6 +5268,172 @@ function capsuleQualityAuditForSummary(capsule: PraxisCapsuleSummary | null): Ca
   return starterDefinition ? runCapsuleStarterQualityAudit(starterDefinition) : null;
 }
 
+function capsuleV2ForSummary(capsule: PraxisCapsuleSummary): ContextCapsuleV2 {
+  const starter = starterDefinitionForCapsule(capsule);
+  const tags = starter?.tags ?? capsule.community?.tags ?? [];
+  const sourceRefs = starter?.sourcePack.map((source) => ({
+    sourceId: source.id,
+    label: source.label,
+    url: source.url,
+    publisher: source.publisher ?? null,
+    date: source.date ?? null,
+    reliabilityTier: source.reliabilityTier ?? null,
+    stale: false,
+  })) ?? (capsule.coreRefs.sourceCoreIds ?? []).map((sourceId) => ({
+    sourceId,
+    label: sourceId,
+  }));
+  const sourceIds = new Set(sourceRefs.map((source) => source.sourceId));
+  const humanReview = starter?.humanReview;
+  const isHumanGatedSeed = tags.includes('human-gated') || HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS.some((id) => id === capsule.capsuleId);
+  const isDraftGate = isHumanGatedSeed || humanReview?.status === 'draft';
+  const outputIds = uniqueIds([
+    ...(starter?.outputProductIds ?? []),
+    ...(capsule.coreRefs.outputCoreIds ?? []),
+    ...(capsule.coreRefs.productCoreIds ?? []),
+  ]);
+  const claimLedger = starter?.excerpts.map((excerpt, index) => ({
+    claimId: `starter-claim-${index + 1}`,
+    text: excerpt.text,
+    support: isHumanGatedSeed || !sourceIds.has(excerpt.sourceId) ? 'needs_source' : 'supported',
+    sourceRefIds: sourceIds.has(excerpt.sourceId) ? [excerpt.sourceId] : [],
+    caveat: isHumanGatedSeed ? 'Placeholder claim: replace with a dated source excerpt before human review.' : undefined,
+  })) ?? [];
+  const starterQuality = starter ? starter.readinessStars * 20 : capsule.health?.score ?? capsule.trust?.score ?? 60;
+
+  return normalizeContextCapsuleV2({
+    ...capsule,
+    capsuleClass: starter?.category === 'tool'
+      ? 'thinking_device'
+      : starter?.category === 'output'
+        ? 'artifact'
+        : starter?.category === 'user'
+          ? 'workflow'
+          : isHumanGatedSeed
+            ? 'human_gated'
+            : capsule.coreRefs.sourceCoreIds?.length && !capsule.coreRefs.situationCoreId
+              ? 'source_pack'
+              : 'situation',
+    capsuleMode: capsule.archivedAt
+      ? 'archived'
+      : isHumanGatedSeed || humanReview
+        ? 'human_gated'
+        : starter
+          ? 'starter'
+          : 'team_private',
+    domainTags: starter ? [starter.domain, ...tags.filter((tag) => !tag.startsWith('team:')).slice(0, 6)] : tags,
+    audience: starter?.agentWorkflow.outputGoal ? [starter.agentWorkflow.outputGoal] : policyAudienceFromTags(tags),
+    useCase: starter?.summary ?? capsule.summary ?? capsule.label,
+    purpose: starter?.richProfile.purpose ?? capsule.summary ?? capsule.label,
+    bestNextAction: starter?.suggestedNextActions[0] ?? capsule.health?.warnings?.[0] ?? 'Run sourceability before final use.',
+    decisionHorizon: capsule.coreRefs.timeCoreId ?? (isHumanGatedSeed ? 'Review before final output' : starter?.richProfile.decisionPrompts[0] ?? null),
+    updateCadence: isHumanGatedSeed ? 'Review before reuse' : starter ? 'As source receipts change' : null,
+    sourcePosture: {
+      posture: sourceRefs.length ? 'source_backed' : 'needs_sources',
+      requiredSourceTypes: sourceRefs.length ? ['official', 'multilateral', 'public-library'] : ['source receipt'],
+      freshnessWindowDays: 90,
+      notes: isHumanGatedSeed ? 'Placeholder source lanes require current receipts before review.' : undefined,
+    },
+    evidenceRequirements: starter?.richProfile.evidenceRequirements ?? [],
+    claimLedger,
+    sourceRefs,
+    reasoningScaffold: {
+      publicMethod: starter?.deviceProfile?.methodSteps ?? starter?.richProfile.qualityRubric ?? [],
+      caveats: [
+        ...(starter?.richProfile.riskCaveats ?? []),
+        ...(isHumanGatedSeed ? ['No real human or institutional approval is claimed by this seed.'] : []),
+      ],
+    },
+    outputContracts: outputIds.map((outputId) => ({
+      outputId,
+      label: humanizeIdentifier(outputId),
+      artifactType: outputArtifactType(outputId),
+      citationRequired: true,
+      reviewRequired: Boolean(isHumanGatedSeed || humanReview || outputId),
+    })),
+    agentPermissions: {
+      canSuggest: true,
+      canSource: true,
+      canFork: true,
+      canDraft: true,
+      canPublish: false,
+    },
+    reviewState: {
+      status: isDraftGate ? 'needs_review' : humanReview ? 'approved' : 'draft',
+      reviewerId: isDraftGate ? null : humanReview?.reviewedBy ?? null,
+      reviewerName: isDraftGate ? null : humanReview?.reviewedBy ?? null,
+      reviewedAt: isDraftGate ? null : humanReview?.reviewedAt ?? null,
+      approvalId: isDraftGate ? null : humanReview ? `starter-review-${starter?.starterId}` : null,
+    },
+    qualityBreakdown: { score: starterQuality },
+    capsuleHealth: {
+      status: capsule.health?.blockers?.length ? 'blocked' : starterQuality >= 80 ? 'ready' : 'usable',
+      score: starterQuality,
+      diagnostics: capsule.health?.warnings ?? [],
+    },
+    provenance: {
+      createdBy: starter ? 'starter-catalog' : 'workspace-user',
+      createdAt: capsule.updatedAt,
+      source: starter ? 'starter-catalog' : 'workspace',
+      humanAuthorId: isDraftGate ? null : humanReview?.authorOrPublisher ?? null,
+      humanAuthorName: isDraftGate ? null : humanReview?.authorOrPublisher ?? null,
+      humanAuthoredAt: isDraftGate ? null : humanReview?.reviewedAt ?? null,
+      authoredSubstantiveBody: Boolean(humanReview && !isDraftGate),
+    },
+    editorialLog: [],
+    visibility: capsule.access?.visibility === 'public' ? 'public' : capsule.access?.visibility === 'unlisted' ? 'unlisted' : capsule.access?.visibility === 'organization' ? 'organization' : capsule.access?.visibility === 'team' || capsule.access?.visibility === 'shared' ? 'team' : 'private',
+    forkability: capsule.access?.allowClone === false ? 'disabled' : isHumanGatedSeed || humanReview ? 'review_required' : 'allowed',
+    reuseTerms: isHumanGatedSeed ? 'Fork with source receipts and named human review before final use.' : 'Reuse with source and review attribution.',
+    humanGate: {
+      required: Boolean(isHumanGatedSeed || humanReview),
+      gateStatus: isDraftGate ? 'needs_review' : humanReview ? 'approved' : 'not_required',
+      authorId: isDraftGate ? null : humanReview?.authorOrPublisher ?? null,
+      authorName: isDraftGate ? null : humanReview?.authorOrPublisher ?? null,
+      authoredAt: isDraftGate ? null : humanReview?.reviewedAt ?? null,
+      reviewerId: isDraftGate ? null : humanReview?.reviewedBy ?? null,
+      reviewerName: isDraftGate ? null : humanReview?.reviewedBy ?? null,
+      reviewedAt: isDraftGate ? null : humanReview?.reviewedAt ?? null,
+    },
+  }, { now: STARTER_CAPSULE_UPDATED_AT });
+}
+
+function policyAudienceFromTags(tags: string[]): string[] {
+  const teamTags = tags.filter((tag) => tag.startsWith('team:')).map((tag) => humanizeIdentifier(tag.slice('team:'.length)));
+  return teamTags.length ? teamTags : [];
+}
+
+function humanizeIdentifier(value: string): string {
+  return value
+    .replaceAll(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function outputArtifactType(outputId: string): ContextCapsuleV2['outputContracts'][number]['artifactType'] {
+  if (/memo|submission|note/i.test(outputId)) return 'memo';
+  if (/brief|cable|one-pager/i.test(outputId)) return 'brief';
+  if (/annex|matrix/i.test(outputId)) return 'annex';
+  if (/dashboard|card/i.test(outputId)) return 'dashboard';
+  if (/handover|memory/i.test(outputId)) return 'handover';
+  if (/source/i.test(outputId)) return 'source_pack';
+  return 'other';
+}
+
+function capsuleV2QualityForSummary(capsule: PraxisCapsuleSummary | null): CapsuleQualityResult | null {
+  return capsule ? deriveCapsuleQuality(capsuleV2ForSummary(capsule), { now: STARTER_CAPSULE_UPDATED_AT }) : null;
+}
+
+function capsuleUnsupportedClaimCount(capsule: PraxisCapsuleSummary): number {
+  return capsuleV2ForSummary(capsule).claimLedger.filter((claim) =>
+    claim.support === 'unsupported' ||
+    claim.support === 'needs_source' ||
+    claim.sourceRefIds.length === 0
+  ).length;
+}
+
+function humanGateStatusLabel(status: ReturnType<typeof deriveHumanGateStatus>): string {
+  return status.replaceAll('_', ' ');
+}
+
 function capsuleImprovementProposalsForSummary(capsule: PraxisCapsuleSummary | null): CapsuleImprovementProposal[] {
   const audit = capsuleQualityAuditForSummary(capsule);
   return audit ? proposeCapsuleImprovementsFromQualityAudit(audit, { evidenceSourceIds: [`audit:${audit.starterId}`], generatedBy: 'quality-audit' }).slice(0, 4) : [];
@@ -5298,6 +5522,9 @@ function capsuleGovernanceBadges(capsule: PraxisCapsuleSummary): Array<{ label: 
   const meta = capsuleCategoryMeta(capsule);
   const starter = meta.starterDefinition;
   const audit = capsuleQualityAuditForSummary(capsule);
+  const v2Capsule = capsuleV2ForSummary(capsule);
+  const humanGateStatus = deriveHumanGateStatus(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT });
+  const humanGateBadges = deriveHumanGateBadges(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT });
   const ontology = [
     meta.taxonomy.types[0]?.label,
     meta.taxonomy.domains[0]?.label,
@@ -5310,12 +5537,25 @@ function capsuleGovernanceBadges(capsule: PraxisCapsuleSummary): Array<{ label: 
   const graphStatus = capsule.coreRefs.graphCoreId ? `Approved graph ${capsule.coreRefs.graphCoreId}` : 'Graph proposal pending';
   const sourceability = audit ? `${Math.round(audit.scores.sourceability * 100)} sourceability` : 'Review card pending';
   return [
+    { label: 'Human Gate', value: humanGateStatusLabel(humanGateStatus), tone: humanGateStatus === 'human_gated' || humanGateStatus === 'expert_pick_human_gated' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : humanGateStatus === 'not_required' ? 'border-slate-200 bg-slate-50 text-slate-700' : 'border-amber-200 bg-amber-50 text-amber-800' },
+    ...humanGateBadges.map((badge) => ({
+      label: badge.label,
+      value: badge.detail,
+      tone: humanGateBadgeTone(badge.tone),
+    })),
     { label: 'Gate', value: reviewGate, tone: 'border-teal-200 bg-teal-50 text-teal-800' },
     { label: 'Ontology', value: ontology, tone: 'border-sky-200 bg-sky-50 text-sky-800' },
     { label: 'Advisory', value: 'Firestore canonical; graph and memory enrichment advisory', tone: 'border-slate-200 bg-slate-50 text-slate-700' },
     { label: 'Graph proposal', value: graphStatus, tone: 'border-violet-200 bg-violet-50 text-violet-800' },
     { label: 'Review card', value: sourceability, tone: 'border-amber-200 bg-amber-50 text-amber-800' },
   ];
+}
+
+function humanGateBadgeTone(tone: 'neutral' | 'success' | 'warning' | 'danger'): string {
+  if (tone === 'success') return 'border-emerald-200 bg-emerald-50 text-emerald-800';
+  if (tone === 'warning') return 'border-amber-200 bg-amber-50 text-amber-800';
+  if (tone === 'danger') return 'border-rose-200 bg-rose-50 text-rose-800';
+  return 'border-slate-200 bg-slate-50 text-slate-700';
 }
 
 function CapsuleGovernanceBadgeRail({ capsule, compact = false }: { capsule: PraxisCapsuleSummary; compact?: boolean }) {
@@ -6733,8 +6973,14 @@ function FeaturedExpertPicksShelf({
   onDelete?: (capsule: PraxisCapsuleSummary) => void;
   onArchive: (capsule: PraxisCapsuleSummary) => void;
 }) {
+  const isExpertPickShelf = title === 'Featured Expert Picks';
+  const shelfTestId = title === 'Intellectual Devices'
+    ? 'intellectual-devices-shelf'
+    : title === HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY.label
+      ? 'human-gated-policy-judgment-shelf'
+      : 'featured-expert-picks-shelf';
   return (
-    <section className="praxis-shelf-panel cartographic-grid w-full p-4" data-testid={title === 'Intellectual Devices' ? 'intellectual-devices-shelf' : 'featured-expert-picks-shelf'}>
+    <section className="praxis-shelf-panel cartographic-grid w-full p-4" data-testid={shelfTestId}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-oxide)]">{title}</p>
@@ -6752,7 +6998,7 @@ function FeaturedExpertPicksShelf({
               active={false}
               mutable={false}
               compact
-              expertPick
+              expertPick={isExpertPickShelf}
               onSelect={() => onSelect(capsule)}
               onAdd={() => onAdd(capsule)}
               onView={() => onView(capsule)}
@@ -6880,7 +7126,6 @@ function CapsuleCard({
   const state = capsuleState(capsule);
   const meta = capsuleCategoryMeta(capsule);
   const defaultRole = capsuleDefaultRole(capsule);
-  const score = capsule.trust?.score ?? capsule.health?.score ?? 0;
   const typeChip = meta.taxonomy.types[0]?.label ?? capsuleRoleLabel(defaultRole);
   const domainChip = meta.taxonomy.domains[0]?.label ?? capsule.scope;
   const domainAccent = capsuleDomainAccent(meta.starterDefinition?.domain ?? meta.taxonomy.domains[0]?.id ?? 'other');
@@ -6888,6 +7133,10 @@ function CapsuleCard({
   const richProfile = meta.starterDefinition?.richProfile;
   const deviceProfile = meta.starterDefinition?.deviceProfile;
   const humanReview = meta.starterDefinition?.humanReview;
+  const v2Capsule = capsuleV2ForSummary(capsule);
+  const v2Quality = deriveCapsuleQuality(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT });
+  const humanGateStatus = deriveHumanGateStatus(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT });
+  const unsupportedClaims = capsuleUnsupportedClaimCount(capsule);
   const purposeLine = richProfile?.purpose ?? meta.summary;
   const bestNextAction = richProfile?.nextIdeas[0] ?? capsule.health?.warnings?.[0] ?? 'Inspect source gaps before relying on this capsule.';
   const usefulness = buildCapsuleUsefulnessRating(capsule, mutable);
@@ -6950,9 +7199,16 @@ function CapsuleCard({
         <CapsuleGovernanceBadgeRail capsule={capsule} compact />
         <span className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500">
           <span>{policyTeamChip}</span>
-          <span>quality {score}/100</span>
+          <span>quality {v2Quality.score}/100</span>
           <span>{counts.documents + counts.sources} source ref{counts.documents + counts.sources === 1 ? '' : 's'}</span>
+          <span>{unsupportedClaims} unsupported</span>
           {counts.outputs ? <span>{counts.outputs} output{counts.outputs === 1 ? '' : 's'}</span> : null}
+        </span>
+        <span className="mt-2 grid grid-cols-2 gap-1.5 text-[11px] font-semibold text-slate-600">
+          <span className="rounded-md bg-white px-2 py-1">Gate {humanGateStatusLabel(humanGateStatus)}</span>
+          <span className="rounded-md bg-white px-2 py-1">{v2Capsule.agentPermissions.canDraft ? 'agent-operable' : 'agent-blocked'}</span>
+          <span className="rounded-md bg-white px-2 py-1">Fork {humanizeIdentifier(v2Capsule.forkability)}</span>
+          <span className="rounded-md bg-white px-2 py-1">Freshness {v2Capsule.expiry ? 'expires' : 'review'}</span>
         </span>
         <span className="mt-3 block line-clamp-2 text-sm leading-6 text-slate-600">{purposeLine}</span>
         <span className="mt-2 block line-clamp-1 rounded-md bg-white px-2 py-1.5 text-[11px] font-semibold text-slate-700">
@@ -7837,6 +8093,16 @@ function CapsuleBuilderDialog({
             </button>
           ))}
         </div>
+        <div className="mt-5 rounded-lg border border-slate-200 bg-white p-3" data-testid="capsule-builder-v2-sections">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Capsule v2 sections</p>
+          <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
+            {capsuleBuilderSections.map((section) => (
+              <span key={section} className="rounded-md bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700">
+                {section}
+              </span>
+            ))}
+          </div>
+        </div>
         <div className="mt-5 grid gap-4">
           <label className="grid gap-1.5">
             <span className="text-xs font-semibold uppercase text-slate-500">Capsule name</span>
@@ -8073,6 +8339,15 @@ function CapsuleInspectorSheet({
   const audit = capsuleQualityAuditForSummary(capsule);
   const enrichmentReceipt = buildCapsuleEnrichmentReceipt(capsule);
   const proposals = capsuleImprovementProposalsForSummary(capsule);
+  const v2Capsule = capsule ? capsuleV2ForSummary(capsule) : null;
+  const v2Quality = capsuleV2QualityForSummary(capsule);
+  const humanGateStatus = v2Capsule ? deriveHumanGateStatus(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT }) : 'not_required';
+  const chainHealth = v2Capsule ? deriveContextChainHealth({ activeCapsule: v2Capsule, referenceCapsules: [], now: STARTER_CAPSULE_UPDATED_AT }) : null;
+  const v2ImproveProposals = v2Capsule ? buildCapsuleImproveProposals(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT }) : [];
+  const unsupportedClaims = capsule ? capsuleUnsupportedClaimCount(capsule) : 0;
+  const qualityBreakdownSummary = v2Quality
+    ? v2Quality.breakdown.map((item) => `${item.label} ${item.score}/${item.maxScore}`).join(' / ')
+    : 'custom capsule audit pending';
   const sourcePosture = capsule ? capsuleSourcePosture(capsule) : 'No capsule selected';
   const reasoningStyle = capsule ? capsuleReasoningStyle(capsule) : 'No capsule selected';
   const bestNextAction = richProfile?.nextIdeas[0]
@@ -8128,6 +8403,8 @@ function CapsuleInspectorSheet({
             <span className={cn('rounded-md border px-2 py-1 text-xs font-semibold', meta.soft)}>{meta.label}</span>
             <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-xs font-semibold text-slate-500">v{capsule?.version ?? 0}</span>
             <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-500">{capsule?.trust?.label ?? 'Trust pending'}</span>
+            {v2Capsule ? <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Human Gate: {humanGateStatusLabel(humanGateStatus)}</span> : null}
+            {v2Quality ? <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-800">Quality {v2Quality.score}/100</span> : null}
             {humanReview ? (
               <span
                 data-testid="capsule-inspector-human-reviewed-badge"
@@ -8149,9 +8426,13 @@ function CapsuleInspectorSheet({
           <div className="mt-4 grid gap-2 md:grid-cols-2" data-testid="capsule-anatomy-summary">
             <InspectorRef label="Readiness" value={readinessLabel} />
             <InspectorRef label="Source posture" value={`${sourcePosture} (${counts.sources + counts.documents} refs)`} />
-            <InspectorRef label="Quality audit" value={audit
-              ? `taxonomy ${Math.round(audit.scores.taxonomy * 100)} / sourceability ${Math.round(audit.scores.sourceability * 100)} / agent ${Math.round(audit.scores.agentUsability * 100)}`
-              : 'custom capsule audit pending'} />
+            <InspectorRef label="Quality audit" value={qualityBreakdownSummary} />
+            <InspectorRef label="Capsule class" value={v2Capsule ? humanizeIdentifier(v2Capsule.capsuleClass) : null} />
+            <InspectorRef label="Review state" value={v2Capsule ? humanizeIdentifier(v2Capsule.reviewState.status) : null} />
+            <InspectorRef label="Human gate" value={humanGateStatusLabel(humanGateStatus)} />
+            <InspectorRef label="Unsupported claims" value={String(unsupportedClaims)} />
+            <InspectorRef label="ContextChain health" value={chainHealth ? `${chainHealth.chainStrength} / ${chainHealth.safeUseLabel}` : null} />
+            <InspectorRef label="Forkability" value={v2Capsule ? humanizeIdentifier(v2Capsule.forkability) : null} />
             <InspectorRef label="Review gate" value={reviewGate} />
             <InspectorRef label="Core refs" value={[
               refs?.userCoreId,
@@ -8186,6 +8467,50 @@ function CapsuleInspectorSheet({
                 </span>
               ))}
             </div>
+          </div>
+        ) : null}
+        {v2Quality ? (
+          <div className="mt-5 rounded-lg border border-slate-200 p-4" data-testid="capsule-quality-breakdown">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-400">Sourceability quality score</p>
+                <p className="mt-1 text-sm leading-6 text-slate-600">Completeness, source support, freshness, review, output, and agent operability.</p>
+              </div>
+              <span className="rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white">{v2Quality.score}/100</span>
+            </div>
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              {v2Quality.breakdown.map((item) => (
+                <div key={item.id} className="rounded-md bg-slate-50 px-3 py-2">
+                  <span className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-800">
+                    <span>{item.label}</span>
+                    <span>{item.score}/{item.maxScore}</span>
+                  </span>
+                  {item.diagnostics.length ? (
+                    <span className="mt-1 block text-[11px] leading-5 text-amber-700">
+                      {item.diagnostics.map((diagnostic) => diagnostic.code).join(', ')}
+                    </span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+            {v2Quality.diagnostics.length ? (
+              <p className="mt-3 text-xs leading-5 text-amber-700">
+                Diagnostics: {v2Quality.diagnostics.map((diagnostic) => diagnostic.code).join(', ')}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+        {chainHealth ? (
+          <div className="mt-5 rounded-lg border border-slate-200 p-4" data-testid="capsule-context-chain-health">
+            <p className="text-xs font-semibold uppercase text-slate-400">ContextChain health</p>
+            <div className="mt-3 grid gap-2 md:grid-cols-3">
+              <InspectorRef label="Chain strength" value={chainHealth.chainStrength} />
+              <InspectorRef label="Safe use" value={chainHealth.safeUseLabel} />
+              <InspectorRef label="Recommended next action" value={chainHealth.recommendedNextAction} />
+            </div>
+            {chainHealth.diagnostics.length ? (
+              <p className="mt-3 text-xs leading-5 text-amber-700">{chainHealth.diagnostics.join(' ')}</p>
+            ) : null}
           </div>
         ) : null}
         {isAuthenticated && usefulness ? (
@@ -8355,7 +8680,16 @@ function CapsuleInspectorSheet({
             <section className="rounded-lg border border-slate-200 p-3">
               <p className="text-xs font-semibold uppercase text-slate-400">Proposed next improvements</p>
               <div className="mt-2 grid gap-1.5">
-                {(proposals.length ? proposals : [{ proposalId: 'no-proposals', target: 'suggestedNextActions', rationale: 'No review-gated proposal is needed from the current quality audit.' }]).slice(0, 3).map((proposal) => (
+                {(v2ImproveProposals.length
+                  ? v2ImproveProposals.map((proposal) => ({
+                    proposalId: proposal.proposalId,
+                    target: humanizeIdentifier(proposal.action),
+                    rationale: proposal.rationale,
+                  }))
+                  : proposals.length
+                    ? proposals
+                    : [{ proposalId: 'no-proposals', target: 'suggestedNextActions', rationale: 'No review-gated proposal is needed from the current quality audit.' }]
+                ).slice(0, 5).map((proposal) => (
                   <p key={proposal.proposalId} className="rounded-md bg-slate-50 px-2 py-1.5 text-xs leading-5 text-slate-600">
                     <span className="font-semibold text-slate-800">{proposal.target}</span>: {proposal.rationale}
                   </p>
@@ -8466,13 +8800,17 @@ function CapsuleInspectorSheet({
           </div>
         ) : null}
         <div className="mt-5 space-y-2">
-          <button type="button" onClick={onAdd} className="w-full rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">
-            Add to Ask
+          <button type="button" aria-label="Add to Ask" onClick={onAdd} className="w-full rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+            Use
           </button>
           {isAuthenticated ? (
             <>
-            <button type="button" onClick={onRepository} className="w-full rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">Open repository</button>
-            <button type="button" onClick={onImprove} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Improve capsule</button>
+            <button type="button" onClick={() => askFromInspector(`Inspect "${capsule?.label}" as a ContextCapsule v2 object: identity, source posture, reasoning scaffold, output contracts, human gate, agent permissions, and review state.`)} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Inspect</button>
+            <button type="button" aria-label="Improve capsule" onClick={onImprove} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Improve</button>
+            <button type="button" onClick={() => askFromInspector(`Prepare a review-gated fork plan for "${capsule?.label}". Preserve approved body, source receipts, human-gate metadata, and reuse terms.`)} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Fork</button>
+            <button type="button" onClick={onRepository} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Attach Sources</button>
+            <button type="button" onClick={() => askFromInspector(`Run sourceability for "${capsule?.label}". Return unsupported claims, missing source refs, stale refs, and proposed review cards only.`)} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Run Sourceability</button>
+            <button type="button" onClick={onAdd} className="w-full rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">Save to Chain</button>
             </>
           ) : null}
         </div>

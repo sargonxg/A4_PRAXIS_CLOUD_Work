@@ -552,6 +552,22 @@ export interface CapsuleImprovementProposal {
   generatedBy: 'quality-audit' | 'cognee' | 'agent' | string;
 }
 
+export const HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS = [
+  'starter-situation-crisis-strategy-room-human-gated',
+  'starter-situation-un-mandate-renewal-strategy',
+  'starter-situation-humanitarian-access-negotiation',
+  'starter-situation-sourceable-country-risk-judgment',
+  'starter-situation-mediation-process-memory',
+  'starter-situation-narrative-legitimacy-audit',
+] as const;
+
+export const HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY = {
+  id: 'human-gated-policy-judgment',
+  label: 'Human-Gated Policy Judgment Capsules',
+  summary: 'Flagship source-aware policy judgment capsules with placeholder gates, claim-ledger scaffolds, output contracts, and no invented approval.',
+  starterIds: HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS,
+} as const;
+
 export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-22-real-work-capsules-v9';
 const CAPSULE_NO_AFFILIATION_LIMITATION = 'PRAXIS is not affiliated with, endorsed by, or speaking for any organization named in this capsule, its sources, or its examples.';
 
@@ -956,6 +972,7 @@ type CapsuleStarterOverrides = Partial<Pick<
   | 'deviceProfile'
   | 'humanReview'
   | 'ontologyOverlay'
+  | 'inspectionSections'
 >>;
 
 function normalizeStarterTags(
@@ -1202,7 +1219,7 @@ function starter(
     ...(deviceProfile ? { deviceProfile } : {}),
     ...(humanReview ? { humanReview } : {}),
     ontologyOverlay,
-    inspectionSections: [
+    inspectionSections: overrides?.inspectionSections ?? [
       { label: 'Purpose', detail: richProfile.purpose },
       { label: 'Sources', detail: richProfile.sourceIndications.slice(0, 3).join(' ') },
       ...(humanReview ? [
@@ -3456,7 +3473,241 @@ const EXPERT_POLICY_CAPSULE_WAVE: CapsuleStarterDefinition[] = [
   }),
 ];
 
+interface HumanGatedPolicyJudgmentStarterInput {
+  starterId: (typeof HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS)[number];
+  domain: CapsuleStarterDomain;
+  label: string;
+  summary: string;
+  detail: string;
+  tags: string[];
+  sourceLaneIds: [string, string];
+  sourceLaneLabels: [string, string];
+  coreRefs: CapsuleCoreRefsLike;
+  outputProductIds: string[];
+  combinesWellWith: string[];
+  decisionFocus: string;
+}
+
+function humanGatedPolicyJudgmentStarter(input: HumanGatedPolicyJudgmentStarterInput): CapsuleStarterDefinition {
+  const sourcePack: CapsuleStarterSource[] = input.sourceLaneIds.map((sourceId, index) => ({
+    id: sourceId,
+    label: input.sourceLaneLabels[index],
+    url: `https://example.test/praxis/${sourceId}`,
+    sourceType: 'public-library',
+    relevance: `Placeholder lane for ${input.label}; attach current authoritative receipts before relying on this capsule.`,
+    publisher: 'Source placeholder',
+    date: 'pending',
+    reliabilityTier: 3,
+  }));
+  const humanReview: CapsuleStarterHumanReview = {
+    status: 'draft',
+    label: 'Needs human review',
+    tooltip: 'Needs human review: this flagship seed contains safe placeholder metadata only and must not be displayed as approved.',
+    reviewedBy: 'Human review pending',
+    reviewedAt: 'not-reviewed',
+    notes: 'Safe placeholder gate only; no real human or institutional approval is claimed.',
+    scope: `${input.label} flagship policy-judgment seed with sourceability and output-contract scaffolding.`,
+    authorOrPublisher: 'PRAXIS starter scaffold',
+    jurisdiction: 'Context-specific / attach current source receipts before use',
+    assumptions: [
+      'Source lanes are placeholders until a user attaches current receipts.',
+      'Claim ledger entries are scaffolds, not approved factual findings.',
+    ],
+    limitations: [
+      'No real human, institutional, legal, operational, or diplomatic approval is claimed.',
+      'Requires sourceability and named human review before publication, export, or agent handoff.',
+      CAPSULE_NO_AFFILIATION_LIMITATION,
+    ],
+    sourcePackSummary: 'Placeholder source lanes only; replace with current authoritative source receipts before external use.',
+    humanReviewGate: 'Human review required before publication, export, canonical graph promotion, or high-stakes reliance.',
+  };
+
+  return starter(
+    input.starterId,
+    'situation',
+    input.domain,
+    input.label,
+    input.summary,
+    input.detail,
+    [
+      'flagship',
+      'human-gated',
+      'policy-judgment',
+      'review-gated',
+      'sourceability',
+      'no-invented-approval',
+      ...input.tags,
+    ],
+    input.coreRefs,
+    ['grounded-research', 'sourceability', 'memo-drafter'],
+    input.outputProductIds,
+    input.combinesWellWith,
+    {
+      readinessStars: 4,
+      sourcePack,
+      excerpts: sourcePack.map((source) => ({
+        sourceId: source.id,
+        text: `Placeholder claim-ledger lane for ${input.label}: replace this placeholder with a dated source excerpt before review.`,
+      })),
+      suggestedQuestions: [
+        `Which claim inside ${input.label} must be sourced before any output is drafted?`,
+        `Who is the named human reviewer for ${input.decisionFocus}?`,
+        'Which output contract should be used after sourceability and review are complete?',
+      ],
+      suggestedNextActions: [
+        'Run sourceability against every placeholder claim before drafting.',
+        'Attach current source receipts and mark unsupported claims as open questions.',
+        'Request named human review before share, publish, fork-to-library, or final output use.',
+      ],
+      agentWorkflow: {
+        preferredAgentId: 'sourceability-reviewer',
+        routeHint: 'human-gated-policy-judgment',
+        outputGoal: input.outputProductIds[0] ?? 'principals-decision-memo',
+        approvalNotes: 'Agents may suggest, source, fork, or draft review cards, but cannot publish human-gated capsules without human review.',
+      },
+      aiUseGuidance: `Use ${input.label} as a review-gated scaffold. Verify sources, keep placeholder claims visible, request human approval, and do not treat this seed as an approved judgment.`,
+      humanReview,
+      inspectionSections: [
+        { label: 'Purpose', detail: input.summary },
+        { label: 'Human Gate', detail: 'Gate status: needs_review. Safe placeholder author/reviewer metadata only; no real approval claimed.' },
+        { label: 'Claim Ledger', detail: 'claim_ledger: placeholders_only. Convert weak claims into sourced claims or open questions before drafting.' },
+        { label: 'Output Contracts', detail: `Output contracts: ${input.outputProductIds.join(', ')}. Sourceability and human review are required before final output.` },
+        { label: 'Decision Use', detail: input.decisionFocus },
+        { label: 'Improvement Ideas', detail: 'Attach missing sources, add caveats, request human review, fork into a source pack, or attach to the current ContextChain.' },
+        { label: 'Gaps/Risks', detail: 'Unsupported, stale, or placeholder claims block publication-ready status.' },
+        { label: 'Run Recipe', detail: `Agent permission: may draft and suggest, cannot publish. Start with sourceability, then human review, then ${input.outputProductIds[0] ?? 'output contract'}.` },
+        { label: 'Compatible Capsules', detail: input.combinesWellWith.join(', ') },
+      ],
+    },
+  );
+}
+
+const HUMAN_GATED_POLICY_JUDGMENT_CAPSULES: CapsuleStarterDefinition[] = [
+  humanGatedPolicyJudgmentStarter({
+    starterId: 'starter-situation-crisis-strategy-room-human-gated',
+    domain: 'diplomacy',
+    label: 'Crisis Strategy Room - Human-Gated Decision Frame',
+    summary: 'A flagship crisis strategy capsule for turning urgent source receipts, assumptions, options, risks, and review decisions into a principals-ready decision frame.',
+    detail: 'Use this when a policy team needs a serious crisis-room frame without claiming real institutional approval. PRAXIS should stage claims, source gaps, options, escalation triggers, and output contracts for human review before drafting.',
+    tags: ['crisis', 'strategy-room', 'decision-frame', 'principals', 'team:crisis-ops', 'team:diplomatic'],
+    sourceLaneIds: ['crisis-official-source-lane', 'crisis-situation-update-lane'],
+    sourceLaneLabels: ['Official crisis source lane', 'Current situation update lane'],
+    coreRefs: {
+      situationCoreId: 'starter-situation-crisis-strategy-room-human-gated',
+      pathCoreId: 'crisis-management',
+      sourceCoreIds: ['crisis-official-source-lane', 'crisis-situation-update-lane'],
+      toolCoreIds: ['sourceability', 'ach', 'scenario-projector'],
+      outputCoreIds: ['principals-decision-memo'],
+    },
+    outputProductIds: ['principals-decision-memo', 'evidence-sourceability-annex'],
+    combinesWellWith: ['starter-tool-estimative-confidence-calibration-table', 'starter-tool-policy-tradeoff-ledger', 'starter-output-principals-decision-memo'],
+    decisionFocus: 'what principals can decide now, what remains unsupported, and which source checks must happen first',
+  }),
+  humanGatedPolicyJudgmentStarter({
+    starterId: 'starter-situation-un-mandate-renewal-strategy',
+    domain: 'diplomacy',
+    label: 'UN Mandate Renewal Strategy Capsule',
+    summary: 'A flagship mandate-renewal capsule for sourceable Security Council posture, negotiating risks, member-state signals, mandate language, and review-gated recommendations.',
+    detail: 'Use this when a team is preparing for a UN mandate renewal, extension, drawdown, or reporting cycle. PRAXIS should keep source text, political inference, legal review, and drafting recommendations separated.',
+    tags: ['un', 'mandate-renewal', 'security-council', 'multilateral', 'team:diplomatic', 'team:legal'],
+    sourceLaneIds: ['un-mandate-source-lane', 'un-council-deliberation-lane'],
+    sourceLaneLabels: ['UN mandate source lane', 'Council deliberation source lane'],
+    coreRefs: {
+      situationCoreId: 'starter-situation-un-mandate-renewal-strategy',
+      pathCoreId: 'foreign-policy',
+      sourceCoreIds: ['un-mandate-source-lane', 'un-council-deliberation-lane'],
+      toolCoreIds: ['sourceability', 'legal-mandate-compliance-lens', 'memo-drafter'],
+      outputCoreIds: ['diplomatic-cable'],
+    },
+    outputProductIds: ['diplomatic-cable', 'legal-mandate-compliance-note'],
+    combinesWellWith: ['starter-tool-legal-mandate-compliance-lens', 'starter-tool-ceasefire-monitoring-verification-matrix', 'starter-output-legal-mandate-compliance-note'],
+    decisionFocus: 'which mandate claims are sourced, which are political judgments, and which language needs legal or desk review',
+  }),
+  humanGatedPolicyJudgmentStarter({
+    starterId: 'starter-situation-humanitarian-access-negotiation',
+    domain: 'humanitarian-rights',
+    label: 'Humanitarian Access Negotiation Capsule',
+    summary: 'A flagship access-negotiation capsule for mapping access constraints, affected populations, controlling actors, source confidence, and review-gated operational asks.',
+    detail: 'Use this when humanitarian access analysis could inform sensitive negotiation, protection, or operational language. PRAXIS should separate access facts, inferred incentives, rights claims, personal data, and operational recommendations.',
+    tags: ['humanitarian-access', 'negotiation', 'protection', 'source-confidence', 'team:humanitarian', 'team:legal-humanitarian'],
+    sourceLaneIds: ['access-constraint-source-lane', 'affected-population-source-lane'],
+    sourceLaneLabels: ['Access constraint source lane', 'Affected population source lane'],
+    coreRefs: {
+      situationCoreId: 'starter-situation-humanitarian-access-negotiation',
+      pathCoreId: 'humanitarian-analysis',
+      sourceCoreIds: ['access-constraint-source-lane', 'affected-population-source-lane'],
+      toolCoreIds: ['sourceability', 'stakeholder-map', 'position-vs-interest'],
+      outputCoreIds: ['humanitarian-one-pager'],
+    },
+    outputProductIds: ['humanitarian-one-pager', 'negotiation-prep-book'],
+    combinesWellWith: ['starter-tool-humanitarian-access-negotiation-checklist', 'starter-tool-mediator-batna-zopa-ripeness-map', 'starter-output-humanitarian-access-brief'],
+    decisionFocus: 'which access asks can be supported, which actor assumptions are uncertain, and what protection review is required',
+  }),
+  humanGatedPolicyJudgmentStarter({
+    starterId: 'starter-situation-sourceable-country-risk-judgment',
+    domain: 'finance',
+    label: 'Sourceable Country Risk Judgment Capsule',
+    summary: 'A flagship country-risk capsule for converting dated indicators, source confidence, exposure assumptions, and caveats into a reviewable policy judgment.',
+    detail: 'Use this when a team needs a country-risk judgment that can survive sourceability review. PRAXIS should keep indicators, dates, assumptions, alternative explanations, and financial/legal non-advice caveats visible.',
+    tags: ['country-risk', 'sourceable-judgment', 'indicators', 'finance', 'team:economic-sanctions', 'team:research-strategy'],
+    sourceLaneIds: ['country-risk-indicator-lane', 'country-risk-judgment-source-lane'],
+    sourceLaneLabels: ['Country risk indicator lane', 'Country risk judgment source lane'],
+    coreRefs: {
+      situationCoreId: 'starter-situation-sourceable-country-risk-judgment',
+      pathCoreId: 'economic-sanctions',
+      sourceCoreIds: ['country-risk-indicator-lane', 'country-risk-judgment-source-lane'],
+      toolCoreIds: ['sourceability', 'ach', 'scenario-projector'],
+      outputCoreIds: ['country-risk-card'],
+    },
+    outputProductIds: ['country-risk-card', 'evidence-sourceability-annex'],
+    combinesWellWith: ['starter-tool-fiscal-space-debt-stress-screen', 'starter-tool-estimative-confidence-calibration-table', 'starter-output-evidence-sourceability-annex'],
+    decisionFocus: 'which risk judgment is supported, which indicators are stale, and what caveat must travel with the output',
+  }),
+  humanGatedPolicyJudgmentStarter({
+    starterId: 'starter-situation-mediation-process-memory',
+    domain: 'diplomacy',
+    label: 'Mediation Process Memory Capsule',
+    summary: 'A flagship mediation-memory capsule for preserving process history, commitments, party positions, review-sensitive assumptions, and handover-ready open questions.',
+    detail: 'Use this when a mediation or dialogue process needs durable memory that agents can inherit safely. PRAXIS should separate agreed facts, disputed accounts, inferred interests, commitments, and private editorial notes.',
+    tags: ['mediation', 'process-memory', 'commitments', 'handover', 'team:diplomatic', 'team:research-strategy'],
+    sourceLaneIds: ['mediation-process-record-lane', 'commitment-source-lane'],
+    sourceLaneLabels: ['Mediation process record lane', 'Commitment source lane'],
+    coreRefs: {
+      situationCoreId: 'starter-situation-mediation-process-memory',
+      pathCoreId: 'conflict-resolution',
+      sourceCoreIds: ['mediation-process-record-lane', 'commitment-source-lane'],
+      toolCoreIds: ['commitment-tracker', 'sourceability', 'stakeholder-map'],
+      outputCoreIds: ['negotiation-prep-book'],
+      memoryCoreId: 'mediation-process-memory-placeholder',
+    },
+    outputProductIds: ['negotiation-prep-book', 'diplomatic-cable'],
+    combinesWellWith: ['starter-tool-mediator-batna-zopa-ripeness-map', 'starter-tool-joint-fact-finding-source-protocol', 'starter-output-negotiation-prep-book'],
+    decisionFocus: 'which process memory is agreed, disputed, stale, private, or ready for agent handover',
+  }),
+  humanGatedPolicyJudgmentStarter({
+    starterId: 'starter-situation-narrative-legitimacy-audit',
+    domain: 'diplomacy',
+    label: 'Narrative and Legitimacy Audit Capsule',
+    summary: 'A flagship narrative-legitimacy capsule for auditing claims, audiences, legitimacy risks, counter-narratives, source gaps, and review-gated public language.',
+    detail: 'Use this when policy language could affect legitimacy, trust, diplomatic posture, or public narrative. PRAXIS should separate sourced facts, framing choices, audience risk, inferred motives, and approval constraints.',
+    tags: ['narrative', 'legitimacy', 'public-language', 'framing-risk', 'team:diplomatic', 'team:public-affairs'],
+    sourceLaneIds: ['narrative-claim-source-lane', 'audience-risk-source-lane'],
+    sourceLaneLabels: ['Narrative claim source lane', 'Audience risk source lane'],
+    coreRefs: {
+      situationCoreId: 'starter-situation-narrative-legitimacy-audit',
+      pathCoreId: 'public-affairs',
+      sourceCoreIds: ['narrative-claim-source-lane', 'audience-risk-source-lane'],
+      toolCoreIds: ['sourceability', 'frame-narrative', 'contradiction-finder'],
+      outputCoreIds: ['talking-points'],
+    },
+    outputProductIds: ['talking-points', 'principals-decision-memo'],
+    combinesWellWith: ['starter-tool-narrative-frame-audit', 'starter-tool-public-narrative-risk-premortem', 'starter-output-ministerial-question-period-brief'],
+    decisionFocus: 'which narrative claims are sourced, which frames carry legitimacy risk, and what public language needs approval',
+  }),
+];
+
 export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
+  ...HUMAN_GATED_POLICY_JUDGMENT_CAPSULES,
   starter('starter-situation-sustainability-transition', 'situation', 'sustainability', 'Sustainability transition capsule', 'A source-backed sustainability situation capsule for CSRD/ESRS-style reporting, transition risk, supply-chain exposure, and assurance gaps.', 'Use this when the work concerns climate-transition planning, sustainability reporting, supplier risk, or board-ready ESG posture. PRAXIS should separate regulatory requirements, company claims, value-chain evidence, and confidence gaps before drafting.', ['sustainability', 'csrd', 'esrs', 'issb', 'supply-chain'], { situationCoreId: 'starter-situation-sustainability-transition', pathCoreId: 'climate-development', sourceCoreIds: ['ifrs-s1-s2', 'eu-esrs'], toolCoreIds: ['grounded-research', 'sourceability'], outputCoreIds: ['country-risk-card'] }, ['grounded-research', 'sourceability', 'memo-drafter'], ['country-risk-card', 'options-memo'], ['starter-user-esg-sustainability-lead', 'starter-tool-source-pack-builder', 'starter-output-sustainability-risk-brief'], {
     readinessStars: 5,
     sourcePack: [
@@ -4395,6 +4646,12 @@ export function buildCapsuleStarterPromptBlock(
     `starter_summary: ${starterDefinition.summary}`,
     `starter_detail: ${starterDefinition.detail}`,
     `starter_tags: ${starterDefinition.tags.join(', ')}`,
+    ...(starterDefinition.tags.includes('human-gated') ? [
+      `seed_family: ${HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY.label}`,
+      `gate_status: ${starterDefinition.humanReview?.status === 'draft' ? 'needs_review' : 'reviewed'}`,
+      'claim_ledger: placeholders_only',
+      'agent_permission: may draft and suggest, cannot publish',
+    ] : []),
     `readiness_stars: ${starterDefinition.readinessStars}/5 source-readiness confidence`,
     `source_pack: ${starterDefinition.sourcePack.length ? starterDefinition.sourcePack.map((source) => `${source.id}|${source.label}|${source.publisher ?? 'unknown publisher'}|${source.date ?? 'unknown date'}|tier${source.reliabilityTier ?? 'unknown'}|${source.url}|${source.relevance}`).join(' ; ') : 'none'}`,
     `source_excerpts: ${starterDefinition.excerpts.length ? starterDefinition.excerpts.map((excerpt) => `${excerpt.sourceId}: ${excerpt.text}`).join(' ; ') : 'none'}`,
