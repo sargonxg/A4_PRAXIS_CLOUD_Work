@@ -1088,28 +1088,32 @@ function buildStarterRichProfile(input: {
     user: `Use ${label} to encode the user's mandate, tone, red lines, evidentiary threshold, and preferred PRAXIS outputs.`,
   };
   const categoryJob: Record<CapsuleStarterCategory, string> = {
-    situation: `Help the user understand what is happening in ${domainLabel}, what changed, who can act, and which decision should be made next.`,
-    tool: `Help the user run ${primaryTool} or ${secondaryTool} against a known capsule instead of relying on unstructured reasoning.`,
-    output: `Help the user turn grounded context into a finished ${primaryOutput} with enough structure for review and reuse.`,
-    user: `Help PRAXIS adapt answers to a role-specific operating style while keeping evidence standards and boundaries explicit.`,
+    situation: `Help a human expert doing real work understand what is happening in ${domainLabel}, what changed, who can act, and which decision should be made next.`,
+    tool: `Help a human expert doing real work run ${primaryTool} or ${secondaryTool} against a known capsule instead of relying on unstructured reasoning.`,
+    output: `Help a human expert doing real work turn grounded context into a finished ${primaryOutput} with enough structure for review and reuse.`,
+    user: `Help PRAXIS adapt answers to a human expert's role-specific operating style while keeping evidence standards and boundaries explicit.`,
   };
   const categoryUse: Record<CapsuleStarterCategory, string[]> = {
     situation: [
+      `Use when a human expert's real work needs reusable context, approved claims, disputed claims, stale assumptions, advisory memory, and forbidden-use boundaries.`,
       `Use when a ${domainLabel} question needs actor mapping, facts, dates, and source limits before advice.`,
       `Use when the user needs PRAXIS to compare plausible options or escalation paths for ${label}.`,
       `Use when a brief, dashboard, or memo should inherit this situation context across turns.`,
     ],
     tool: [
+      `Use when a human expert's workday needs a named reasoning device with review-card outputs before a final answer.`,
       `Use when ${label} should perform a defined check before drafting or recommendation.`,
       `Use when inputs are available but claims, assumptions, chronology, or sourceability need review.`,
       `Use when PRAXIS should produce an auditable intermediate finding with ${primaryTool}.`,
     ],
     output: [
+      `Use when a human expert needs an artifact style that preserves real work caveats, approvals, and handover instructions.`,
       `Use when the target artifact is ${primaryOutput} and the audience needs a clean decision product.`,
       `Use when sections, citations, assumptions, and approval notes should be stable across drafts.`,
       `Use when handoff quality matters more than open-ended exploration.`,
     ],
     user: [
+      `Use when the capsule should represent a real human expert's mandate, tolerance for uncertainty, and review style.`,
       `Use when PRAXIS should answer as ${label} rather than as a generic assistant.`,
       `Use when tone, mandate, red lines, or evidentiary thresholds should persist across work.`,
       `Use when routing decisions should reflect the user's preferred outputs and review style.`,
@@ -1139,6 +1143,7 @@ function buildStarterRichProfile(input: {
     whenToUse: categoryUse[category],
     whenNotToUse: categoryAvoid[category],
     improves: [
+      `${label} improves real work handover by telling agents what a human expert has approved, disputed, marked stale, kept advisory, or forbidden.`,
       `${label} improves retrieval by anchoring ${domainLabel} work to named sources, tools, and outputs instead of generic chat context.`,
       `${label} improves reviewability by carrying explicit evidence needs, caveats, and approval posture into Ask PRAXIS.`,
       `${label} improves reuse by making ${primaryOutput} and ${primaryTool} routing available to future turns and combined capsules.`,
@@ -1149,13 +1154,17 @@ function buildStarterRichProfile(input: {
       `Treat the source pack as indications for ${domainLabel}, not as a complete bibliography.`,
     ],
     evidenceRequirements: [
+      `Separate approved, disputed, stale, advisory, and forbidden claims in ${label} before generating or reusing an answer.`,
       `Attach at least one current source that directly supports the main claim or recommendation in ${label}.`,
       `Record dates, jurisdiction, actor names, and confidence limits before using ${label} for ${primaryOutput}.`,
       `Flag unsupported claims and route them through ${primaryTool} or sourceability review before handoff.`,
+      `Treat Cognee recall, graph proposal rows, model mappings, and SQL projections as advisory until a review-card apply step is complete.`,
     ],
     riskCaveats: [
+      CAPSULE_NO_AFFILIATION_LIMITATION,
       `${label} can become stale if the source pack is not refreshed before time-sensitive decisions.`,
       `${label} may hide contested assumptions unless PRAXIS asks for counterevidence and dissenting actor incentives.`,
+      `${label} should not let Cognee memory, graph proposals, or SQL projections mutate canonical state without human review.`,
     ],
     decisionPrompts: [
       `What decision does ${label} support, and what would change that decision?`,
@@ -1163,6 +1172,7 @@ function buildStarterRichProfile(input: {
       `Which claim in ${label} is weakest, newest, or most dependent on a single source?`,
     ],
     nextIdeas: [
+      `Create review cards for Cognee recall hits, graph proposals, SQL projection candidates, stale evidence, and disputed claims in ${label}.`,
       `Run ${primaryTool} on ${label} and save the finding as a capsule note.`,
       `Attach a fresh source or document that tests the strongest assumption in ${label}.`,
       `Pair ${label} with ${primaryOutput} so the next PRAXIS response has a concrete handoff target.`,
@@ -1173,7 +1183,7 @@ function buildStarterRichProfile(input: {
       `Actionability: the next PRAXIS step, tool route, and output target are clear.`,
       `Review posture: risks, caveats, and approval gates are visible before export.`,
     ],
-    agentInstructions: `When ${label} is active, start by restating its purpose in one line, inspect ${firstSource} and ${secondSource}, run ${primaryTool}${secondaryTool !== primaryTool ? ` or ${secondaryTool}` : ''} for gaps, produce ${primaryOutput}, and stop for approval before external export or connector writes. Context detail: ${detail}`,
+    agentInstructions: `When ${label} is active, treat it as real work context created for a human expert. Start by restating its purpose in one line, separate approved, disputed, stale, advisory, and forbidden claims, inspect ${firstSource} and ${secondSource}, run ${primaryTool}${secondaryTool !== primaryTool ? ` or ${secondaryTool}` : ''} for gaps, keep Cognee recall, graph rows, and SQL projections advisory until review-card apply metadata exists, produce ${primaryOutput}, and stop for approval before external export or connector writes. Context detail: ${detail}`,
   };
 }
 
