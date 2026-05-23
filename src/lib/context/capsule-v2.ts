@@ -2,6 +2,7 @@ import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import type { CapsuleStarterSnapshot } from '@/lib/product/context-capsules';
 import type { HumanGateStatus } from '@/lib/context/human-gate';
 
+// Keep the v2 layer migration-free: legacy capsules normalize here before UI or agent use.
 export type ContextCapsuleClass =
   | 'situation'
   | 'thinking_device'
