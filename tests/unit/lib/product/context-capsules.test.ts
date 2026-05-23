@@ -346,6 +346,34 @@ describe('context capsule product contract', () => {
     }
   });
 
+  it('upgrades existing starter capsules with real human expert context-creation posture', () => {
+    const legacyStarterIds = [
+      'starter-situation-hr-harassment-policy',
+      'starter-tool-assumption-stress-test',
+      'starter-output-principals-decision-memo',
+      'starter-user-hr-policy-owner',
+    ];
+
+    for (const starterId of legacyStarterIds) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter, `${starterId} missing`).toBeTruthy();
+      const profileText = [
+        starter?.richProfile.userJob,
+        starter?.richProfile.agentInstructions,
+        ...(starter?.richProfile.whenToUse ?? []),
+        ...(starter?.richProfile.improves ?? []),
+        ...(starter?.richProfile.evidenceRequirements ?? []),
+        ...(starter?.richProfile.riskCaveats ?? []),
+        ...(starter?.richProfile.nextIdeas ?? []),
+      ].join(' ');
+
+      expect(profileText, `${starterId} human expert posture`).toMatch(/human expert|real work|workday|handover/i);
+      expect(profileText, `${starterId} context creation posture`).toMatch(/approved|disputed|stale|advisory|forbidden/i);
+      expect(profileText, `${starterId} advisory memory posture`).toMatch(/Cognee|recall|review-card|graph|SQL/i);
+      expect(buildCapsuleStarterPromptBlock(starterId), `${starterId} prompt posture`).toEqual(expect.stringContaining('not affiliated'));
+    }
+  });
+
   it('adds desk-officer situation and intellectual-tool capsules with human review markings', () => {
     const expectedSituationIds = [
       'starter-situation-haiti-gang-mss-access-watch',
