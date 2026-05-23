@@ -107,6 +107,7 @@ import {
 import { recommendCapsuleTools, type CapsuleToolRecommendation } from '@/lib/tools/recommend';
 import { DEFAULT_CONTEXT_STACK_ID } from '@/lib/context/active-context-stack';
 import { rankAskCapsuleSuggestions, type AskCapsuleSuggestion } from '@/lib/context/capsule-suggestions';
+import type { CapsuleInventorySummary } from '@/lib/context/capsule-service';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useOrchestratorEvents, type OrchestratorEvent, type OrchestratorEventState } from '@/hooks/useOrchestratorEvents';
 import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-stream';
@@ -298,6 +299,11 @@ type PraxisCapsuleSummary = {
     reviewRequired?: boolean;
   } | null;
   searchMatchReason?: string | null;
+};
+type CapsuleLibraryPayload = {
+  capsules: PraxisCapsuleSummary[];
+  summary: CapsuleInventorySummary | null;
+  persisted: boolean;
 };
 type CapsuleUsefulnessRating = {
   userRating: number | null;
@@ -745,6 +751,7 @@ export function TaskletPraxisWorkbench({
   const isRepositoryLane = isCapsuleRepositoryPage && resolvedInitialFactoryLane === 'sources';
   const [factoryReviewDiffs, setFactoryReviewDiffs] = useState<CapsuleFactoryReviewDiff[]>([]);
   const [userCapsules, setUserCapsules] = useState<PraxisCapsuleSummary[]>([]);
+  const [capsuleInventorySummary, setCapsuleInventorySummary] = useState<CapsuleInventorySummary | null>(null);
   const [capsulesLoading, setCapsulesLoading] = useState(false);
   const [capsuleBrowserOpen, setCapsuleBrowserOpen] = useState(false);
   const [mobileContextSheetOpen, setMobileContextSheetOpen] = useState(false);
@@ -819,7 +826,18 @@ export function TaskletPraxisWorkbench({
         recentToolIds: selectedToolIds,
       })
     : [];
-  const userCapsuleTaxonomyStats = buildCapsuleTaxonomyStats(userCapsules);
+  const localUserCapsuleTaxonomyStats = buildCapsuleTaxonomyStats(userCapsules);
+  const userCapsuleTaxonomyStats = capsuleInventorySummary ? {
+    ...localUserCapsuleTaxonomyStats,
+    totalCapsules: capsuleInventorySummary.storedCapsules,
+    visibleCapsules: capsuleInventorySummary.activeCapsules,
+    archivedCapsules: capsuleInventorySummary.archivedCapsules,
+    sourceReferences: capsuleInventorySummary.sourceReferences,
+    documentReferences: capsuleInventorySummary.documentReferences,
+    types: capsuleInventorySummary.byType,
+    domains: capsuleInventorySummary.byDomain,
+    policyTeams: capsuleInventorySummary.byPolicyTeam,
+  } : localUserCapsuleTaxonomyStats;
   const publicCapsuleTaxonomyStats = buildCapsuleTaxonomyStats(starterCapsuleSummaries);
   const filteredUserCapsules = filterUserCapsules(userCapsules, capsuleSearch, capsuleTypeFilter, capsuleDomainFilter, capsulePolicyTeamFilter);
   const filteredStarterCapsules = filterStarterCapsules(capsuleSearch, capsuleTypeFilter, capsuleDomainFilter, capsulePolicyTeamFilter);
@@ -1663,8 +1681,10 @@ export function TaskletPraxisWorkbench({
     if (!isAuthenticated) return;
     setCapsulesLoading(true);
     try {
-      let next = await fetchCapsuleLibrary();
-      const visibleCount = next.filter((capsule) => !capsule.archivedAt).length;
+      let library = await fetchCapsuleLibrary();
+      let next = library.capsules;
+      setCapsuleInventorySummary(library.summary);
+      const visibleCount = library.summary?.activeCapsules ?? next.filter((capsule) => !capsule.archivedAt).length;
       if (!starterSeededRef.current && visibleCount < CAPSULE_STARTER_DEFINITIONS.length) {
         starterSeededRef.current = true;
         const seedResponse = await fetch('/api/context/capsules', {
@@ -1675,7 +1695,9 @@ export function TaskletPraxisWorkbench({
         });
         const seedPayload = await seedResponse.json().catch(() => ({}));
         if (!seedResponse.ok) throw new Error(seedPayload?.error ?? 'starter capsule seed failed');
-        next = await fetchCapsuleLibrary();
+        library = await fetchCapsuleLibrary();
+        next = library.capsules;
+        setCapsuleInventorySummary(library.summary);
       }
       setUserCapsules(next);
       const selected = selectCapsuleId
@@ -4894,11 +4916,26 @@ function sourceTypeForSelectionZone(zone: SelectionZone | null): 'assistant-mess
   return 'document-selection';
 }
 
-async function fetchCapsuleLibrary(): Promise<PraxisCapsuleSummary[]> {
+async function fetchCapsuleLibrary(): Promise<CapsuleLibraryPayload> {
   const response = await fetch('/api/context/capsules?includeArchived=true', { credentials: 'include' });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload?.error ?? 'capsule list failed');
-  return Array.isArray(payload?.capsules) ? payload.capsules as PraxisCapsuleSummary[] : [];
+  return {
+    capsules: Array.isArray(payload?.capsules) ? payload.capsules as PraxisCapsuleSummary[] : [],
+    summary: isCapsuleInventorySummary(payload?.summary) ? payload.summary : null,
+    persisted: payload?.persisted === true,
+  };
+}
+
+function isCapsuleInventorySummary(value: unknown): value is CapsuleInventorySummary {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const summary = value as Partial<CapsuleInventorySummary>;
+  return typeof summary.activeCapsules === 'number' &&
+    typeof summary.storedCapsules === 'number' &&
+    typeof summary.archivedCapsules === 'number' &&
+    Array.isArray(summary.byType) &&
+    Array.isArray(summary.byDomain) &&
+    Array.isArray(summary.byPolicyTeam);
 }
 
 function ensureDefaultCapsuleStack(
@@ -5511,11 +5548,15 @@ function publicCapsuleMatchesPolicyTeam(capsule: (typeof COCKPIT_CAPSULE_LIBRARY
 
 function capsuleCounts(capsule: PraxisCapsuleSummary) {
   return {
-    sources: capsule.coreRefs.sourceCoreIds?.length ?? 0,
-    documents: capsule.coreRefs.documentCoreIds?.length ?? 0,
-    tools: capsule.coreRefs.toolCoreIds?.length ?? 0,
-    outputs: (capsule.coreRefs.outputCoreIds?.length ?? 0) + (capsule.coreRefs.productCoreIds?.length ?? 0),
+    sources: countUniqueCoreRefs(capsule.coreRefs.sourceCoreIds),
+    documents: countUniqueCoreRefs(capsule.coreRefs.documentCoreIds),
+    tools: countUniqueCoreRefs(capsule.coreRefs.toolCoreIds),
+    outputs: countUniqueCoreRefs([...(capsule.coreRefs.outputCoreIds ?? []), ...(capsule.coreRefs.productCoreIds ?? [])]),
   };
+}
+
+function countUniqueCoreRefs(values: string[] | undefined): number {
+  return new Set((values ?? []).map((value) => value.trim()).filter(Boolean)).size;
 }
 
 function CapsuleMap({
@@ -7926,6 +7967,7 @@ function CapsuleInspectorSheet({
   const richProfile = meta?.starterDefinition?.richProfile ?? null;
   const deviceProfile = meta?.starterDefinition?.deviceProfile ?? null;
   const humanReview = meta?.starterDefinition?.humanReview ?? null;
+  const ontologyOverlay = meta?.starterDefinition?.ontologyOverlay ?? null;
   const compatible = meta?.starterDefinition?.combinesWellWith
     .map((id) => CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === id)?.label ?? id)
     .slice(0, 4) ?? [];
@@ -8033,10 +8075,11 @@ function CapsuleInspectorSheet({
               ))}
             </div>
             <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600">
-              <InspectorRef label="Ontology Stack" value={meta?.taxonomy.policyTeams.map((facet) => facet.id).join(', ') || 'ontology-stack-default'} />
+              <InspectorRef label="Ontology Stack" value={ontologyOverlay ? `${ontologyOverlay.baseOntologyIds.join(', ')} / ${ontologyOverlay.workOntologyId}` : meta?.taxonomy.policyTeams.map((facet) => facet.id).join(', ') || 'ontology-stack-default'} />
               <InspectorRef label="Agent Read" value={`${meta?.starterDefinition?.agentWorkflow.preferredAgentId ?? 'default-agent'} read contract`} />
               <InspectorRef label="Advisory memory" value={`${enrichmentReceipt.memoryHitCount} advisory memory hit(s)`} />
-              <InspectorRef label="Graph proposal" value={capsule.coreRefs.graphCoreId ? `approved graph ${capsule.coreRefs.graphCoreId}` : '1 review-gated graph proposal'} />
+              <InspectorRef label="Cognee mode" value={ontologyOverlay ? `${ontologyOverlay.cognee.mode} / ${ontologyOverlay.cognee.searchModes.join(', ')}` : `advisory memory ${enrichmentReceipt.cognee}`} />
+              <InspectorRef label="Graph proposal" value={capsule.coreRefs.graphCoreId ? `approved graph ${capsule.coreRefs.graphCoreId}` : ontologyOverlay ? ontologyOverlay.graphSeed.proposalLabel : '1 review-gated graph proposal'} />
               <InspectorRef label="Review card" value={audit ? '1 sourceability review card' : 'review card pending'} />
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5" data-testid="capsule-governance-badges">
@@ -8124,6 +8167,19 @@ function CapsuleInspectorSheet({
             <InspectorTextSection label="Decision Use" detail={[...richProfile.whenToUse, ...richProfile.decisionPrompts].slice(0, 5).join(' ')} />
             <InspectorTextSection label="Improvement Ideas" detail={[...richProfile.improves, ...richProfile.nextIdeas].slice(0, 6).join(' ')} />
             <InspectorTextSection label="Gaps/Risks" detail={[...richProfile.whenNotToUse, ...richProfile.riskCaveats, ...richProfile.evidenceRequirements].slice(0, 6).join(' ')} />
+            {ontologyOverlay ? <InspectorTextSection label="Dynamic ontology" detail={[
+              `Overlay ${ontologyOverlay.overlayId}.`,
+              `Base ontologies: ${ontologyOverlay.baseOntologyIds.join(', ')}.`,
+              `Work ontology: ${ontologyOverlay.workOntologyId}.`,
+              `Node hints: ${ontologyOverlay.ontologyNodeHints.slice(0, 8).join(', ')}.`,
+              `Cognee: ${ontologyOverlay.cognee.mode}, ${ontologyOverlay.cognee.datasetScope}, max candidate confidence ${ontologyOverlay.cognee.maxCandidateConfidence}.`,
+            ].join(' ')} /> : null}
+            {ontologyOverlay ? <InspectorTextSection label="Embedded graph seed" detail={[
+              ontologyOverlay.graphSeed.proposalLabel,
+              `Nodes: ${ontologyOverlay.graphNodeTypes.join(', ')}.`,
+              `Edges: ${ontologyOverlay.graphEdgeTypes.join(', ')}.`,
+              `Gate: ${ontologyOverlay.graphSeed.reviewGate}`,
+            ].join(' ')} /> : null}
             {humanReview ? <InspectorTextSection label="Human review" detail={[
               humanReview.notes,
               humanReview.tooltip,

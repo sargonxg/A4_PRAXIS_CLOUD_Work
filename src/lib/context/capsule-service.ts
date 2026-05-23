@@ -309,6 +309,54 @@ export interface SeedStarterCapsulesResult {
   capsules: PraxisCapsule[];
 }
 
+export interface CapsuleInventoryBucket {
+  id: string;
+  label: string;
+  count: number;
+}
+
+export type CapsuleInventoryWarningSeverity = 'info' | 'warning' | 'error';
+
+export interface CapsuleInventoryIntegrityWarning {
+  capsuleId: string;
+  severity: CapsuleInventoryWarningSeverity;
+  reason:
+    | 'core_refs_normalized'
+    | 'missing_required_envelope_fields'
+    | 'legacy_v1_normalized_to_v2'
+    | 'archived_capsule_has_active_situations'
+    | 'starter_missing_snapshot'
+    | 'starter_missing_detail_hints';
+  detail?: string;
+}
+
+export interface CapsuleInventorySummary {
+  storedCapsules: number;
+  activeCapsules: number;
+  archivedCapsules: number;
+  starterCapsules: number;
+  userCreatedCapsules: number;
+  publicCapsules: number;
+  privateCapsules: number;
+  sourceReferences: number;
+  documentReferences: number;
+  toolReferences: number;
+  outputReferences: number;
+  byType: CapsuleInventoryBucket[];
+  byDomain: CapsuleInventoryBucket[];
+  byPolicyTeam: CapsuleInventoryBucket[];
+  integrityWarnings: CapsuleInventoryIntegrityWarning[];
+}
+
+export interface CapsuleInventoryResult {
+  capsules: PraxisCapsule[];
+  summary: CapsuleInventorySummary;
+}
+
+export interface CapsuleInventorySummaryOptions {
+  rawCapsules?: unknown[];
+}
+
 export interface CapsuleSourceGapProposal {
   proposalId: string;
   capsuleId: string;
@@ -432,6 +480,154 @@ export async function listCapsules(
     capsule.coreRefs.situationCoreId === situationId ||
     capsule.activeForSituationIds.includes(situationId),
   );
+}
+
+export async function listCapsuleInventory(
+  uid: string,
+  input: { situationId?: string; includeArchived?: boolean } = {},
+  deps?: CapsuleServiceDeps,
+): Promise<CapsuleInventoryResult> {
+  const snap = await capsulesCollection(uid, deps).limit(100).get();
+  const rows = snap.docs
+    .map((doc) => {
+      const raw = { ...doc.data(), capsuleId: doc.id };
+      return { raw, capsule: sanitizeCapsule(raw) };
+    })
+    .filter(({ capsule }) => {
+      if (!input.situationId) return true;
+      return capsule.coreRefs.situationCoreId === input.situationId ||
+        capsule.activeForSituationIds.includes(input.situationId);
+    });
+  const storedCapsules = rows.map((row) => row.capsule);
+  const summary = buildCapsuleInventorySummary(storedCapsules, {
+    rawCapsules: rows.map((row) => row.raw),
+  });
+  const capsules = sortCapsulesForLibrary(storedCapsules)
+    .filter((capsule) => input.includeArchived || !capsule.archivedAt);
+  return { capsules, summary };
+}
+
+export function createEmptyCapsuleInventorySummary(): CapsuleInventorySummary {
+  return {
+    storedCapsules: 0,
+    activeCapsules: 0,
+    archivedCapsules: 0,
+    starterCapsules: 0,
+    userCreatedCapsules: 0,
+    publicCapsules: 0,
+    privateCapsules: 0,
+    sourceReferences: 0,
+    documentReferences: 0,
+    toolReferences: 0,
+    outputReferences: 0,
+    byType: [],
+    byDomain: [],
+    byPolicyTeam: [],
+    integrityWarnings: [],
+  };
+}
+
+export function buildCapsuleInventorySummary(
+  inputCapsules: PraxisCapsule[],
+  options: CapsuleInventorySummaryOptions = {},
+): CapsuleInventorySummary {
+  const summary = createEmptyCapsuleInventorySummary();
+  const capsules = inputCapsules.map((capsule) => sanitizeCapsule(capsule));
+  const rawCapsules = options.rawCapsules ?? [];
+  const rawByCapsuleId = new Map<string, unknown>();
+  for (const rawCapsule of rawCapsules) {
+    const rawRecord = isRecord(rawCapsule) ? rawCapsule : {};
+    const rawCapsuleId = stringOrNull(rawRecord.capsuleId);
+    if (rawCapsuleId) rawByCapsuleId.set(cleanId(rawCapsuleId, DEFAULT_CONTEXT_STACK_ID), rawCapsule);
+  }
+  const sourceReferenceIds = new Set<string>();
+  const documentReferenceIds = new Set<string>();
+  const toolReferenceIds = new Set<string>();
+  const outputReferenceIds = new Set<string>();
+  const typeBuckets = new Map<string, CapsuleInventoryBucket>();
+  const domainBuckets = new Map<string, CapsuleInventoryBucket>();
+  const policyTeamBuckets = new Map<string, CapsuleInventoryBucket>();
+
+  summary.storedCapsules = capsules.length;
+
+  capsules.forEach((capsule, index) => {
+    const rawCapsule = rawByCapsuleId.get(capsule.capsuleId) ?? rawCapsules[index] ?? capsule;
+    const isArchived = Boolean(capsule.archivedAt);
+    const isStarter = capsule.community.tags.includes('starter') || Boolean(capsule.starterSnapshot?.starterId);
+    const collapsedCoreRefSlots = new Set<string>();
+    reportEnvelopeIntegrity(summary.integrityWarnings, capsule, rawCapsule);
+    const sourceRefs = normalizedCoreRefList(capsule, rawCapsule, 'sourceCoreIds', collapsedCoreRefSlots);
+    const documentRefs = normalizedCoreRefList(capsule, rawCapsule, 'documentCoreIds', collapsedCoreRefSlots);
+    const toolRefs = normalizedCoreRefList(capsule, rawCapsule, 'toolCoreIds', collapsedCoreRefSlots);
+    const outputRefs = uniqueStrings([
+      ...normalizedCoreRefList(capsule, rawCapsule, 'outputCoreIds', collapsedCoreRefSlots),
+      ...normalizedCoreRefList(capsule, rawCapsule, 'productCoreIds', collapsedCoreRefSlots),
+    ]);
+
+    if (collapsedCoreRefSlots.size) {
+      summary.integrityWarnings.push({
+        capsuleId: capsule.capsuleId,
+        severity: 'info',
+        reason: 'core_refs_normalized',
+        detail: `Collapsed duplicate or empty core refs in ${Array.from(collapsedCoreRefSlots).sort().join(', ')}.`,
+      });
+    }
+    if (isArchived && capsule.activeForSituationIds.length) {
+      summary.integrityWarnings.push({
+        capsuleId: capsule.capsuleId,
+        severity: 'warning',
+        reason: 'archived_capsule_has_active_situations',
+        detail: `Archived capsule still lists active situation ids: ${capsule.activeForSituationIds.join(', ')}.`,
+      });
+    }
+    if (isStarter && !capsule.starterSnapshot) {
+      summary.integrityWarnings.push({
+        capsuleId: capsule.capsuleId,
+        severity: 'warning',
+        reason: 'starter_missing_snapshot',
+        detail: 'Starter-tagged capsule is missing starterSnapshot.',
+      });
+    } else if (isStarter && capsule.starterSnapshot) {
+      const missingHints = starterSnapshotMissingHints(capsule.starterSnapshot);
+      if (missingHints.length) {
+        summary.integrityWarnings.push({
+          capsuleId: capsule.capsuleId,
+          severity: 'info',
+          reason: 'starter_missing_detail_hints',
+          detail: `Starter snapshot is missing ${missingHints.join(', ')} hints.`,
+        });
+      }
+    }
+
+    if (isArchived) {
+      summary.archivedCapsules += 1;
+      return;
+    }
+
+    summary.activeCapsules += 1;
+    if (isStarter) summary.starterCapsules += 1;
+    else summary.userCreatedCapsules += 1;
+    if (capsule.access.visibility === 'public') summary.publicCapsules += 1;
+    else summary.privateCapsules += 1;
+    for (const id of sourceRefs) sourceReferenceIds.add(id);
+    for (const id of documentRefs) documentReferenceIds.add(id);
+    for (const id of toolRefs) toolReferenceIds.add(id);
+    for (const id of outputRefs) outputReferenceIds.add(id);
+
+    const taxonomy = resolveCapsuleTaxonomy(capsule);
+    for (const facet of taxonomy.types) addInventoryBucket(typeBuckets, facet.id, facet.label);
+    for (const facet of taxonomy.domains) addInventoryBucket(domainBuckets, facet.id, facet.label);
+    for (const facet of taxonomy.policyTeams) addInventoryBucket(policyTeamBuckets, facet.id, facet.label);
+  });
+
+  summary.sourceReferences = sourceReferenceIds.size;
+  summary.documentReferences = documentReferenceIds.size;
+  summary.toolReferences = toolReferenceIds.size;
+  summary.outputReferences = outputReferenceIds.size;
+  summary.byType = sortInventoryBuckets(typeBuckets);
+  summary.byDomain = sortInventoryBuckets(domainBuckets);
+  summary.byPolicyTeam = sortInventoryBuckets(policyTeamBuckets);
+  return summary;
 }
 
 export async function seedStarterCapsules(
@@ -1339,6 +1535,28 @@ function buildStarterSnapshot(starterDefinition: CapsuleStarterDefinition): Caps
       nextIdeas: [...starterDefinition.richProfile.nextIdeas],
       qualityRubric: [...starterDefinition.richProfile.qualityRubric],
     },
+    ...(starterDefinition.ontologyOverlay ? {
+      ontologyOverlay: {
+        ...starterDefinition.ontologyOverlay,
+        baseOntologyIds: [...starterDefinition.ontologyOverlay.baseOntologyIds],
+        graphNodeTypes: [...starterDefinition.ontologyOverlay.graphNodeTypes],
+        graphEdgeTypes: [...starterDefinition.ontologyOverlay.graphEdgeTypes],
+        ontologyNodeHints: [...starterDefinition.ontologyOverlay.ontologyNodeHints],
+        sourceAffinity: [...starterDefinition.ontologyOverlay.sourceAffinity],
+        cognee: {
+          ...starterDefinition.ontologyOverlay.cognee,
+          searchModes: [...starterDefinition.ontologyOverlay.cognee.searchModes],
+        },
+        graphSeed: {
+          ...starterDefinition.ontologyOverlay.graphSeed,
+          nodeTemplates: [...starterDefinition.ontologyOverlay.graphSeed.nodeTemplates],
+          edgeTemplates: [...starterDefinition.ontologyOverlay.graphSeed.edgeTemplates],
+          evidenceRequired: [...starterDefinition.ontologyOverlay.graphSeed.evidenceRequired],
+        },
+        promotionRules: [...starterDefinition.ontologyOverlay.promotionRules],
+        forbiddenClaims: [...starterDefinition.ontologyOverlay.forbiddenClaims],
+      },
+    } : {}),
     ...(starterDefinition.deviceProfile ? {
       deviceProfile: {
         ...starterDefinition.deviceProfile,
@@ -1476,6 +1694,82 @@ function sortCapsulesForLibrary(capsules: PraxisCapsule[]): PraxisCapsule[] {
     if (archivedDelta) return archivedDelta;
     return Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
   });
+}
+
+function reportEnvelopeIntegrity(
+  warnings: CapsuleInventoryIntegrityWarning[],
+  capsule: PraxisCapsule,
+  rawCapsule: unknown,
+) {
+  const raw = isRecord(rawCapsule) ? rawCapsule : null;
+  if (!raw) return;
+  const requiredChecks: Array<[string, boolean]> = [
+    ['capsuleId', typeof raw.capsuleId === 'string' && raw.capsuleId.trim().length > 0],
+    ['ownerUid', typeof raw.ownerUid === 'string' && raw.ownerUid.trim().length > 0],
+    ['coreRefs', isRecord(raw.coreRefs)],
+    ['createdAt', typeof raw.createdAt === 'string' && raw.createdAt.trim().length > 0],
+    ['updatedAt', typeof raw.updatedAt === 'string' && raw.updatedAt.trim().length > 0],
+    ['schemaVersion', raw.schemaVersion === 1 || raw.schemaVersion === 2],
+    ['version', typeof raw.version === 'number' && Number.isFinite(raw.version)],
+    ['label', typeof raw.label === 'string' && raw.label.trim().length > 0],
+  ];
+  const missing = requiredChecks.filter(([, valid]) => !valid).map(([field]) => field);
+  if (missing.length) {
+    warnings.push({
+      capsuleId: capsule.capsuleId,
+      severity: 'warning',
+      reason: 'missing_required_envelope_fields',
+      detail: `Missing or invalid envelope fields: ${missing.join(', ')}.`,
+    });
+  }
+  if (raw.schemaVersion === 1) {
+    warnings.push({
+      capsuleId: capsule.capsuleId,
+      severity: 'info',
+      reason: 'legacy_v1_normalized_to_v2',
+      detail: 'Legacy v1 capsule envelope was normalized to schemaVersion 2 for inventory output.',
+    });
+  }
+}
+
+function normalizedCoreRefList(
+  capsule: PraxisCapsule,
+  rawCapsule: unknown,
+  slot: 'sourceCoreIds' | 'documentCoreIds' | 'toolCoreIds' | 'outputCoreIds' | 'productCoreIds',
+  collapsedSlots: Set<string>,
+): string[] {
+  const raw = isRecord(rawCapsule) ? rawCapsule : {};
+  const rawCoreRefs = isRecord(raw.coreRefs) ? raw.coreRefs : {};
+  const fallback = capsule.coreRefs[slot] ?? [];
+  const rawValue = Object.prototype.hasOwnProperty.call(rawCoreRefs, slot) ? rawCoreRefs[slot] : fallback;
+  const values = Array.isArray(rawValue) ? rawValue : fallback;
+  const stringValues = values.filter((item): item is string => typeof item === 'string');
+  const trimmedValues = stringValues.map((item) => item.trim()).filter((item) => item.length > 0);
+  const normalized = uniqueStrings(trimmedValues);
+  const hasInvalidOrEmpty = values.some((item) => typeof item !== 'string' || item.trim().length === 0);
+  if (hasInvalidOrEmpty || normalized.length !== trimmedValues.length) collapsedSlots.add(slot);
+  return normalized;
+}
+
+function starterSnapshotMissingHints(snapshot: CapsuleStarterSnapshot): string[] {
+  const missing: string[] = [];
+  if (!snapshot.sourcePack.length) missing.push('sourcePack');
+  if (!snapshot.suggestedQuestions.length) missing.push('suggestedQuestions');
+  if (!snapshot.richProfile?.evidenceRequirements.length) missing.push('richProfile');
+  return missing;
+}
+
+function addInventoryBucket(map: Map<string, CapsuleInventoryBucket>, id: string, label: string) {
+  const current = map.get(id);
+  map.set(id, {
+    id,
+    label,
+    count: (current?.count ?? 0) + 1,
+  });
+}
+
+function sortInventoryBuckets(map: Map<string, CapsuleInventoryBucket>): CapsuleInventoryBucket[] {
+  return Array.from(map.values()).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
 
 function normalizeCoreRefs(input: Partial<CapsuleCoreRefs> | unknown): CapsuleCoreRefs {
@@ -2034,6 +2328,7 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
   const richProfileRecord = isRecord(value.richProfile) ? value.richProfile : {};
   const deviceProfileRecord = isRecord(value.deviceProfile) ? value.deviceProfile : null;
   const humanReviewRecord = isRecord(value.humanReview) ? value.humanReview : null;
+  const ontologyOverlayRecord = isRecord(value.ontologyOverlay) ? value.ontologyOverlay : null;
   const richProfile = {
     purpose: longStringOrNull(richProfileRecord.purpose) ?? stringOrNull(value.summary) ?? label,
     userJob: longStringOrNull(richProfileRecord.userJob) ?? stringOrNull(value.detail) ?? label,
@@ -2106,6 +2401,7 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
       'Each inferred incentive, causal link, or implementation risk must be labeled as inference until reviewed.',
     ]),
   } satisfies NonNullable<CapsuleStarterSnapshot['deviceProfile']> : null;
+  const ontologyOverlay = ontologyOverlayRecord ? normalizeStarterOntologyOverlay(ontologyOverlayRecord, starterId, label) : null;
   return {
     catalogVersion: stringOrNull(value.catalogVersion) ?? 'unknown',
     starterId,
@@ -2130,6 +2426,7 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     },
     aiUseGuidance: stringOrNull(value.aiUseGuidance) ?? '',
     richProfile,
+    ...(ontologyOverlay ? { ontologyOverlay } : {}),
     ...(deviceProfile ? { deviceProfile } : {}),
     ...(humanReviewRecord ? {
       humanReview: {
@@ -2155,6 +2452,72 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
       },
     } : {}),
     combinesWellWith: cleanStringArray(value.combinesWellWith).slice(0, 20),
+  };
+}
+
+function normalizeStarterOntologyOverlay(
+  value: Record<string, unknown>,
+  starterId: string,
+  label: string,
+): NonNullable<CapsuleStarterSnapshot['ontologyOverlay']> {
+  const cognee = isRecord(value.cognee) ? value.cognee : {};
+  const graphSeed = isRecord(value.graphSeed) ? value.graphSeed : {};
+  const baseOntologyIds = cleanStringArrayWithFallback(value.baseOntologyIds, ['active-conflict', 'negotiation-mediation'], 4)
+    .filter((item) => [
+      'active-conflict',
+      'frozen-conflict',
+      'negotiation-mediation',
+      'counter-terrorism',
+      'humanitarian-crisis',
+      'political-transition',
+      'sanctions-economic-statecraft',
+      'strategic-competition',
+      'cyber-hybrid',
+      'forced-displacement',
+    ].includes(item)) as NonNullable<CapsuleStarterSnapshot['ontologyOverlay']>['baseOntologyIds'];
+  const searchModes = cleanStringArrayWithFallback(cognee.searchModes, ['CHUNKS', 'GRAPH_COMPLETION', 'SUMMARIES'], 4)
+    .filter((item) => ['CHUNKS', 'GRAPH_COMPLETION', 'SUMMARIES', 'NATURAL_LANGUAGE'].includes(item)) as NonNullable<CapsuleStarterSnapshot['ontologyOverlay']>['cognee']['searchModes'];
+  const mode = cognee.mode === 'recall-only' || cognee.mode === 'write-candidates-after-review'
+    ? cognee.mode
+    : 'disabled-first';
+  const workOntologyId = value.workOntologyId === 'domestic-policy-analysis' || value.workOntologyId === 'corporate-strategic-analysis'
+    ? value.workOntologyId
+    : 'foreign-policy-research';
+  const maxCandidateConfidence = typeof cognee.maxCandidateConfidence === 'number'
+    ? Math.max(0, Math.min(0.6, cognee.maxCandidateConfidence))
+    : 0.6;
+
+  return {
+    overlayId: stringOrNull(value.overlayId) ?? `${starterId}-ontology-overlay-v1`,
+    baseOntologyIds: baseOntologyIds.length ? baseOntologyIds : ['active-conflict', 'negotiation-mediation'],
+    workOntologyId,
+    graphNodeTypes: cleanStringArrayWithFallback(value.graphNodeTypes, ['Actor', 'Claim', 'Source', 'Risk'], 12),
+    graphEdgeTypes: cleanStringArrayWithFallback(value.graphEdgeTypes, ['SUPPORTED_BY', 'CONTRADICTS', 'TRIGGERS_REVIEW'], 12),
+    ontologyNodeHints: cleanStringArrayWithFallback(value.ontologyNodeHints, ['Actor', 'Claim', 'Source'], 16),
+    sourceAffinity: cleanStringArray(value.sourceAffinity).slice(0, 16),
+    cognee: {
+      mode,
+      datasetScope: 'owner-capsule',
+      searchModes: searchModes.length ? searchModes : ['CHUNKS', 'GRAPH_COMPLETION', 'SUMMARIES'],
+      ontologyFileStrategy: longStringOrNull(cognee.ontologyFileStrategy) ?? 'Use the backend ontology stack resolver.',
+      customPromptHint: longStringOrNull(cognee.customPromptHint) ?? `Extract reviewable ${label} candidates only.`,
+      maxCandidateConfidence,
+    },
+    graphSeed: {
+      proposalLabel: stringOrNull(graphSeed.proposalLabel) ?? `${label} embedded graph proposal`,
+      nodeTemplates: cleanLongStringArrayWithFallback(graphSeed.nodeTemplates, ['Claim: source-backed candidate'], 16),
+      edgeTemplates: cleanLongStringArrayWithFallback(graphSeed.edgeTemplates, ['SUPPORTED_BY: source-backed relationship candidate'], 16),
+      evidenceRequired: cleanLongStringArrayWithFallback(graphSeed.evidenceRequired, [
+        'At least one source receipt, attached document, or run receipt is required for every proposed graph row.',
+      ], 8),
+      reviewGate: longStringOrNull(graphSeed.reviewGate) ?? 'Human review required before graph promotion.',
+    },
+    promotionRules: cleanLongStringArrayWithFallback(value.promotionRules, [
+      'Firestore ContextCapsules remain canonical; advisory memory and graph rows require human review.',
+    ], 8),
+    forbiddenClaims: cleanLongStringArrayWithFallback(value.forbiddenClaims, [
+      'Do not promote unsupported, stale, private, or high-stakes conclusions into canonical graph state.',
+    ], 8),
   };
 }
 

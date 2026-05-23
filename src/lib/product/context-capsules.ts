@@ -402,6 +402,52 @@ export interface CapsuleStarterDeviceProfile {
   sourceabilityRequirements: string[];
 }
 
+export type CapsuleStarterOntologyCaseType =
+  | 'active-conflict'
+  | 'frozen-conflict'
+  | 'negotiation-mediation'
+  | 'counter-terrorism'
+  | 'humanitarian-crisis'
+  | 'political-transition'
+  | 'sanctions-economic-statecraft'
+  | 'strategic-competition'
+  | 'cyber-hybrid'
+  | 'forced-displacement';
+
+export type CapsuleStarterWorkOntologyId =
+  | 'foreign-policy-research'
+  | 'domestic-policy-analysis'
+  | 'corporate-strategic-analysis';
+
+export type CapsuleStarterCogneeSearchMode = 'CHUNKS' | 'GRAPH_COMPLETION' | 'SUMMARIES' | 'NATURAL_LANGUAGE';
+
+export interface CapsuleStarterOntologyOverlay {
+  overlayId: string;
+  baseOntologyIds: CapsuleStarterOntologyCaseType[];
+  workOntologyId: CapsuleStarterWorkOntologyId;
+  graphNodeTypes: string[];
+  graphEdgeTypes: string[];
+  ontologyNodeHints: string[];
+  sourceAffinity: string[];
+  cognee: {
+    mode: 'disabled-first' | 'recall-only' | 'write-candidates-after-review';
+    datasetScope: 'owner-capsule';
+    searchModes: CapsuleStarterCogneeSearchMode[];
+    ontologyFileStrategy: string;
+    customPromptHint: string;
+    maxCandidateConfidence: number;
+  };
+  graphSeed: {
+    proposalLabel: string;
+    nodeTemplates: string[];
+    edgeTemplates: string[];
+    evidenceRequired: string[];
+    reviewGate: string;
+  };
+  promotionRules: string[];
+  forbiddenClaims: string[];
+}
+
 export type CapsuleStarterDomain =
   | 'sustainability'
   | 'finance'
@@ -444,6 +490,7 @@ export interface CapsuleStarterDefinition {
   richProfile: CapsuleStarterRichProfile;
   deviceProfile?: CapsuleStarterDeviceProfile;
   humanReview?: CapsuleStarterHumanReview;
+  ontologyOverlay?: CapsuleStarterOntologyOverlay;
   inspectionSections: CapsuleStarterInspectionSection[];
   combinesWellWith: string[];
 }
@@ -529,6 +576,7 @@ export type CapsuleStarterSnapshot = Pick<
   | 'richProfile'
   | 'deviceProfile'
   | 'humanReview'
+  | 'ontologyOverlay'
   | 'combinesWellWith'
 > & {
   catalogVersion: string;
@@ -907,6 +955,7 @@ type CapsuleStarterOverrides = Partial<Pick<
   | 'richProfile'
   | 'deviceProfile'
   | 'humanReview'
+  | 'ontologyOverlay'
 >>;
 
 function normalizeStarterTags(
@@ -915,6 +964,151 @@ function normalizeStarterTags(
   tags: string[],
 ): string[] {
   return uniqueStrings(['starter', category, `type:${category}`, domain, `domain:${domain}`, ...tags]);
+}
+
+const DOMAIN_ONTOLOGY_STACKS: Record<CapsuleStarterDomain, CapsuleStarterOntologyCaseType[]> = {
+  sustainability: ['strategic-competition', 'humanitarian-crisis'],
+  finance: ['sanctions-economic-statecraft', 'strategic-competition'],
+  hr: ['political-transition', 'negotiation-mediation'],
+  diplomacy: ['negotiation-mediation', 'active-conflict'],
+  'humanitarian-rights': ['humanitarian-crisis', 'forced-displacement'],
+  'ai-governance': ['cyber-hybrid', 'political-transition'],
+  'public-health': ['humanitarian-crisis', 'forced-displacement'],
+  'critical-minerals': ['strategic-competition', 'sanctions-economic-statecraft'],
+  'cyber-resilience': ['cyber-hybrid', 'strategic-competition'],
+  'migration-displacement': ['forced-displacement', 'humanitarian-crisis'],
+  'election-integrity': ['political-transition', 'cyber-hybrid'],
+  'source-intake': ['active-conflict', 'negotiation-mediation'],
+  'exposure-mapping': ['sanctions-economic-statecraft', 'strategic-competition'],
+  'policy-review': ['political-transition', 'negotiation-mediation'],
+  'options-mapping': ['negotiation-mediation', 'political-transition'],
+  'audit-review': ['active-conflict', 'strategic-competition'],
+  'analyst-role': ['active-conflict', 'negotiation-mediation'],
+  'output-brief': ['active-conflict', 'negotiation-mediation'],
+};
+
+const ONTOLOGY_NODE_HINTS: Record<CapsuleStarterOntologyCaseType, string[]> = {
+  'active-conflict': ['State', 'NonStateArmedGroup', 'Frontline', 'TerritorialClaim', 'CeasefireCommitment'],
+  'frozen-conflict': ['DeFactoAuthority', 'RecognitionClaim', 'MonitoringMechanism', 'FrozenLineOfContact'],
+  'negotiation-mediation': ['Party', 'Mediator', 'Position', 'Interest', 'BATNA', 'ZOPA', 'AgendaItem'],
+  'counter-terrorism': ['ThreatClaim', 'OperationalCapability', 'FinancingChannel', 'DesignationEvent'],
+  'humanitarian-crisis': ['AffectedPopulation', 'AccessCorridor', 'ProtectionRisk', 'NeedsAssessment', 'DeliveryConstraint'],
+  'political-transition': ['TransitionalAuthority', 'ElectoralActor', 'LegitimacyClaim', 'InstitutionalReformEvent'],
+  'sanctions-economic-statecraft': ['SanctionedActor', 'SanctionsMeasure', 'EvasionRoute', 'EconomicPressureClaim'],
+  'strategic-competition': ['StrategicActor', 'InfluenceAsset', 'RedLine', 'AllianceCommitment', 'DeterrenceClaim'],
+  'cyber-hybrid': ['ThreatActor', 'InfrastructureNode', 'AttributionClaim', 'HybridOperation', 'ResilienceCommitment'],
+  'forced-displacement': ['DisplacedGroup', 'HostCommunity', 'ReturnConstraint', 'ProtectionClaim', 'Route'],
+};
+
+function ontologyCaseTypesForStarter(
+  domain: CapsuleStarterDomain,
+  tags: string[],
+): CapsuleStarterOntologyCaseType[] {
+  const text = `${domain} ${tags.join(' ')}`.toLowerCase();
+  const stack = [...DOMAIN_ONTOLOGY_STACKS[domain]];
+  if (text.includes('ceasefire') || text.includes('mediation') || text.includes('negotiation')) stack.unshift('negotiation-mediation');
+  if (text.includes('humanitarian') || text.includes('access') || text.includes('famine') || text.includes('protection')) stack.unshift('humanitarian-crisis');
+  if (text.includes('displacement') || text.includes('migration') || text.includes('refugee')) stack.unshift('forced-displacement');
+  if (text.includes('sanction') || text.includes('counterparty') || text.includes('debt')) stack.unshift('sanctions-economic-statecraft');
+  if (text.includes('cyber') || text.includes('hybrid') || text.includes('ransomware') || text.includes('infrastructure')) stack.unshift('cyber-hybrid');
+  if (text.includes('election') || text.includes('transition') || text.includes('governance')) stack.unshift('political-transition');
+  return uniqueStrings(stack).slice(0, 3) as CapsuleStarterOntologyCaseType[];
+}
+
+function workOntologyForStarter(
+  domain: CapsuleStarterDomain,
+  tags: string[],
+): CapsuleStarterWorkOntologyId {
+  const text = `${domain} ${tags.join(' ')}`.toLowerCase();
+  if (text.includes('corporate') || text.includes('board') || text.includes('supply-chain') || text.includes('esg') || text.includes('supplier')) {
+    return 'corporate-strategic-analysis';
+  }
+  if (text.includes('cabinet') || text.includes('public-sector') || text.includes('ministerial') || text.includes('procurement') || domain === 'ai-governance' || domain === 'policy-review') {
+    return 'domestic-policy-analysis';
+  }
+  return 'foreign-policy-research';
+}
+
+function graphNodeTypesForStarter(
+  category: CapsuleStarterCategory,
+  tags: string[],
+): string[] {
+  const text = tags.join(' ').toLowerCase();
+  const nodes = ['Actor', 'Claim', 'Source', 'Risk', 'OpenQuestion'];
+  if (category === 'situation') nodes.push('Event', 'Decision', 'Rule');
+  if (category === 'tool') nodes.push('Rule', 'Decision', 'Output');
+  if (category === 'output') nodes.push('Output', 'Decision');
+  if (category === 'user') nodes.push('Decision', 'Output');
+  if (text.includes('deadline') || text.includes('clock') || text.includes('freshness') || text.includes('stale')) nodes.push('Deadline');
+  if (text.includes('commitment') || text.includes('ceasefire') || text.includes('mandate') || text.includes('agreement')) nodes.push('Commitment');
+  return uniqueStrings(nodes).slice(0, 9);
+}
+
+function buildStarterOntologyOverlay(input: {
+  starterId: string;
+  category: CapsuleStarterCategory;
+  domain: CapsuleStarterDomain;
+  label: string;
+  tags: string[];
+  sourcePack: CapsuleStarterSource[];
+  recommendedToolIds: string[];
+  outputProductIds: string[];
+}): CapsuleStarterOntologyOverlay {
+  const baseOntologyIds = ontologyCaseTypesForStarter(input.domain, input.tags);
+  const graphNodeTypes = graphNodeTypesForStarter(input.category, input.tags);
+  const ontologyNodeHints = uniqueStrings(baseOntologyIds.flatMap((id) => ONTOLOGY_NODE_HINTS[id])).slice(0, 12);
+  const graphEdgeTypes = uniqueStrings([
+    'SUPPORTED_BY',
+    'CONTRADICTS',
+    'INVOLVES',
+    'CONSTRAINS',
+    'DEPENDS_ON',
+    'TRIGGERS_REVIEW',
+    input.category === 'situation' ? 'PRECEDES' : 'CITED_BY',
+    input.category === 'tool' ? 'OWNED_BY' : 'SUPPORTS',
+  ]).slice(0, 8);
+  const sourceAffinity = input.sourcePack.map((source) => source.id).slice(0, 8);
+  const primaryTool = input.recommendedToolIds[0] ?? 'ask-praxis';
+  const primaryOutput = input.outputProductIds[0] ?? 'options-memo';
+  return {
+    overlayId: `${input.starterId}-ontology-overlay-v1`,
+    baseOntologyIds,
+    workOntologyId: workOntologyForStarter(input.domain, input.tags),
+    graphNodeTypes,
+    graphEdgeTypes,
+    ontologyNodeHints,
+    sourceAffinity,
+    cognee: {
+      mode: input.tags.includes('v2-context') || input.tags.includes('real-work') ? 'write-candidates-after-review' : 'recall-only',
+      datasetScope: 'owner-capsule',
+      searchModes: ['CHUNKS', 'GRAPH_COMPLETION', 'SUMMARIES'],
+      ontologyFileStrategy: 'Use the backend ontology stack resolver for the selected case type; never import Cognee directly in the frontend or Next route.',
+      customPromptHint: `Extract only reviewable ${input.label} candidates for ${primaryTool} and ${primaryOutput}: actors, claims, sources, risks, decisions, rules, dates, and open questions. Label unsupported or stale material instead of promoting it.`,
+      maxCandidateConfidence: 0.6,
+    },
+    graphSeed: {
+      proposalLabel: `${input.label} embedded graph proposal`,
+      nodeTemplates: graphNodeTypes.map((type) => `${type}: review-gated ${input.label} candidate`),
+      edgeTemplates: graphEdgeTypes.map((type) => `${type}: source-backed relationship candidate`),
+      evidenceRequired: [
+        'At least one source receipt, attached document, or run receipt is required for every proposed graph row.',
+        'Claims from Cognee recall are advisory until a human applies the review card.',
+        'Unsupported claims stay as OpenQuestion or Risk nodes, not canonical facts.',
+      ],
+      reviewGate: 'Human review required before graph promotion, Cognee remember(), SQL projection apply, or external export.',
+    },
+    promotionRules: [
+      'Firestore ContextCapsules remain canonical; Cognee recall and graph rows are advisory until a review card is applied.',
+      'Cognee-derived candidates may not exceed 0.600 confidence before human review.',
+      'Promote only sourced Claim, Source, Actor, Risk, Decision, Rule, Event, OpenQuestion, Output, Deadline, or Commitment rows through the graph proposal workflow.',
+      'Keep owner and capsule dataset scoping on every recall, cognify, and proposal operation.',
+    ],
+    forbiddenClaims: [
+      'Do not state legal, financial, medical, operational, or attribution conclusions as PRAXIS facts without expert review.',
+      'Do not promote private, sensitive, stale, or single-source material into canonical graph state.',
+      'Do not treat ontology fit, graph centrality, or Cognee recall as evidence by itself.',
+    ],
+  };
 }
 
 function starter(
@@ -959,6 +1153,16 @@ function starter(
       humanReviewGate: 'Human review required before external publication, legal or financial reliance, canonical graph promotion, or high-stakes operational use.',
     },
   );
+  const ontologyOverlay = overrides?.ontologyOverlay ?? buildStarterOntologyOverlay({
+    starterId,
+    category,
+    domain,
+    label,
+    tags,
+    sourcePack,
+    recommendedToolIds,
+    outputProductIds,
+  });
   return {
     starterId,
     category,
@@ -997,6 +1201,7 @@ function starter(
     richProfile,
     ...(deviceProfile ? { deviceProfile } : {}),
     ...(humanReview ? { humanReview } : {}),
+    ontologyOverlay,
     inspectionSections: [
       { label: 'Purpose', detail: richProfile.purpose },
       { label: 'Sources', detail: richProfile.sourceIndications.slice(0, 3).join(' ') },
@@ -1013,6 +1218,8 @@ function starter(
       { label: 'Gaps/Risks', detail: richProfile.riskCaveats.slice(0, 2).join(' ') },
       { label: 'Run Recipe', detail: richProfile.agentInstructions },
       { label: 'Compatible Capsules', detail: combinesWellWith.length ? combinesWellWith.join(', ') : 'Attach a user capsule, a tool capsule, and an output capsule before external handoff.' },
+      { label: 'Dynamic Ontology', detail: `${ontologyOverlay.overlayId}: ${ontologyOverlay.baseOntologyIds.join(', ')} plus ${ontologyOverlay.workOntologyId}; Cognee ${ontologyOverlay.cognee.mode} remains review-gated.` },
+      { label: 'Embedded Graph', detail: `${ontologyOverlay.graphSeed.proposalLabel}: ${ontologyOverlay.graphNodeTypes.join(', ')} nodes and ${ontologyOverlay.graphEdgeTypes.join(', ')} edges staged as proposals only.` },
     ],
   };
 }
@@ -4238,6 +4445,19 @@ export function buildCapsuleStarterPromptBlock(
       `device_agent_instructions: ${starterDefinition.deviceProfile.agentInstructions}`,
       `device_sourceability_requirements: ${starterDefinition.deviceProfile.sourceabilityRequirements.join(' | ')}`,
     ] : []),
+    ...(starterDefinition.ontologyOverlay ? [
+      `ontology_overlay_id: ${starterDefinition.ontologyOverlay.overlayId}`,
+      `ontology_base_ids: ${starterDefinition.ontologyOverlay.baseOntologyIds.join(', ')}`,
+      `work_ontology_id: ${starterDefinition.ontologyOverlay.workOntologyId}`,
+      `ontology_node_hints: ${starterDefinition.ontologyOverlay.ontologyNodeHints.join(' | ')}`,
+      `embedded_graph_node_types: ${starterDefinition.ontologyOverlay.graphNodeTypes.join(', ')}`,
+      `embedded_graph_edge_types: ${starterDefinition.ontologyOverlay.graphEdgeTypes.join(', ')}`,
+      `embedded_graph_seed: ${starterDefinition.ontologyOverlay.graphSeed.proposalLabel}; ${starterDefinition.ontologyOverlay.graphSeed.reviewGate}`,
+      `cognee_overlay_mode: ${starterDefinition.ontologyOverlay.cognee.mode}; dataset_scope=${starterDefinition.ontologyOverlay.cognee.datasetScope}; search_modes=${starterDefinition.ontologyOverlay.cognee.searchModes.join(', ')}; max_candidate_confidence=${starterDefinition.ontologyOverlay.cognee.maxCandidateConfidence}`,
+      `cognee_custom_prompt_hint: ${starterDefinition.ontologyOverlay.cognee.customPromptHint}`,
+      `ontology_promotion_rules: ${starterDefinition.ontologyOverlay.promotionRules.join(' | ')}`,
+      `ontology_forbidden_claims: ${starterDefinition.ontologyOverlay.forbiddenClaims.join(' | ')}`,
+    ] : []),
     `combines_well_with: ${starterDefinition.combinesWellWith.length ? starterDefinition.combinesWellWith.join(', ') : 'none'}`,
     ...('inspectionSections' in starterDefinition ? starterDefinition.inspectionSections.map((section) => `starter_section_${stableReceiptPart(section.label)}: ${section.detail}`) : []),
     'runtime_rule: Treat this starter definition as reusable operating context for Ask PRAXIS, tool routing, agent runs, and output drafting.',
@@ -4983,10 +5203,11 @@ export function buildCapsuleTaxonomyStats(capsules: CapsuleTaxonomyStatsInput[])
     const taxonomy = resolveCapsuleTaxonomy(capsule);
     const isArchived = Boolean(capsule.archivedAt);
     if (isArchived) archivedCapsules += 1;
-    sourceReferences += capsule.coreRefs?.sourceCoreIds?.length ?? 0;
-    documentReferences += capsule.coreRefs?.documentCoreIds?.length ?? 0;
 
     if (isArchived) continue;
+
+    sourceReferences += uniqueStrings(capsule.coreRefs?.sourceCoreIds ?? []).length;
+    documentReferences += uniqueStrings(capsule.coreRefs?.documentCoreIds ?? []).length;
 
     for (const facet of taxonomy.types) {
       if (!facet.repairState) addFacet(typeCounts, facet);

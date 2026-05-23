@@ -314,6 +314,10 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="capsule-v2-inspector-tabs"');
     expect(source).toContain('Anatomy');
     expect(source).toContain('Ontology Stack');
+    expect(source).toContain('Dynamic ontology');
+    expect(source).toContain('Embedded graph seed');
+    expect(source).toContain('ontologyOverlay');
+    expect(source).toContain('Cognee mode');
     expect(source).toContain('Agent Read');
     expect(source).toContain('read contract');
     expect(source).not.toContain('/app/ontology');
@@ -443,6 +447,20 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Source refs');
     expect(source).toContain('Document refs');
     expect(source).not.toContain('function capsuleTypeCount(');
+  });
+
+  it('uses the server capsule inventory summary for authenticated repository counts', () => {
+    expect(source).toContain('import type { CapsuleInventorySummary');
+    expect(source).toContain('const [capsuleInventorySummary, setCapsuleInventorySummary]');
+    expect(source).toContain('capsuleInventorySummary ? {');
+    expect(source).toContain('activeCapsules');
+    expect(source).toContain('archivedCapsules');
+    expect(source).toContain('sourceReferences');
+    expect(source).toContain('documentReferences');
+    expect(source).toContain('setCapsuleInventorySummary(library.summary');
+    expect(source).toContain('countUniqueCoreRefs');
+    expect(source).toContain('userCapsuleCount={userCapsuleTaxonomyStats.visibleCapsules}');
+    expect(source).toContain('archivedCount={userCapsuleTaxonomyStats.archivedCapsules}');
   });
 
   it('keeps capsule filter counts tied to real visible capsules instead of summed facets', () => {

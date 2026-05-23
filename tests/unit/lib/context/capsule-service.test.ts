@@ -5,14 +5,17 @@ import {
   applyCapsuleReviewCard,
   attachCapsuleRefs,
   bumpCapsuleVersion,
+  buildCapsuleInventorySummary,
   combineCapsules,
   createCapsuleReviewCard,
+  createEmptyCapsuleInventorySummary,
   createCapsule,
   detachCapsuleRefs,
   exportCapsuleCorePackage,
   forkCapsule,
   getCapsule,
   getOrMigrateDefaultCapsule,
+  listCapsuleInventory,
   listCapsules,
   promoteCapsuleSourceGaps,
   rateCapsule,
@@ -291,6 +294,107 @@ describe('capsule service', () => {
     expect(visible.map((capsule) => capsule.capsuleId)).not.toContain('cap-archive');
     expect(withArchived.map((capsule) => capsule.capsuleId)).toContain('cap-archive');
     expect(db.data.has('users/u1/capsules/cap-archive/versions/v2')).toBe(true);
+  });
+
+  it('builds an active inventory summary while keeping archived capsules separately counted', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', {
+      capsuleId: 'cap-active',
+      label: 'Active public capsule',
+      access: { visibility: 'public' },
+      community: { tags: ['type:situation', 'domain:diplomacy', 'team:diplomatic'] },
+      coreRefs: {
+        situationCoreId: 'sit-1',
+        sourceCoreIds: ['src-1', 'src-1'],
+        documentCoreIds: ['doc-1'],
+        toolCoreIds: ['ask-praxis', 'ask-praxis'],
+        outputCoreIds: ['options-memo'],
+        productCoreIds: ['options-memo'],
+      },
+    }, deps(db));
+    await createCapsule('u1', {
+      capsuleId: 'cap-archived',
+      label: 'Archived capsule',
+      access: { visibility: 'private' },
+      community: { tags: ['type:tool', 'domain:audit-review', 'team:research-strategy'] },
+      coreRefs: {
+        sourceCoreIds: ['archived-src'],
+        documentCoreIds: ['archived-doc'],
+        toolCoreIds: ['sourceability'],
+        outputCoreIds: ['archived-output'],
+      },
+    }, deps(db));
+    await archiveCapsule('u1', 'cap-archived', deps(db));
+
+    const inventory = await listCapsuleInventory('u1', {}, deps(db));
+    const withArchived = await listCapsuleInventory('u1', { includeArchived: true }, deps(db));
+
+    expect(inventory.capsules.map((capsule) => capsule.capsuleId)).toEqual(['cap-active']);
+    expect(withArchived.capsules.map((capsule) => capsule.capsuleId)).toEqual(['cap-active', 'cap-archived']);
+    expect(inventory.summary).toMatchObject({
+      storedCapsules: 2,
+      activeCapsules: 1,
+      archivedCapsules: 1,
+      publicCapsules: 1,
+      privateCapsules: 0,
+      sourceReferences: 1,
+      documentReferences: 1,
+      toolReferences: 1,
+      outputReferences: 1,
+    });
+    expect(inventory.summary.byType.find((item) => item.id === 'situation')?.count).toBe(1);
+    expect(inventory.summary.byDomain.find((item) => item.id === 'audit-review')).toBeUndefined();
+    expect(inventory.summary.integrityWarnings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ capsuleId: 'cap-active', reason: 'core_refs_normalized' }),
+    ]));
+  });
+
+  it('reports advisory inventory integrity warnings without mutating stored capsules', () => {
+    const empty = createEmptyCapsuleInventorySummary();
+    expect(empty).toMatchObject({
+      storedCapsules: 0,
+      activeCapsules: 0,
+      archivedCapsules: 0,
+      sourceReferences: 0,
+      documentReferences: 0,
+      toolReferences: 0,
+      outputReferences: 0,
+    });
+
+    const rawLegacyStarter = {
+      schemaVersion: 1,
+      capsuleId: 'legacy-starter',
+      ownerUid: 'u1',
+      label: 'Legacy starter',
+      createdAt: '2026-05-01T00:00:00.000Z',
+      updatedAt: '2026-05-01T00:00:00.000Z',
+      version: 1,
+      archivedAt: '2026-05-13T00:00:00.000Z',
+      activeForSituationIds: ['sit-legacy'],
+      community: { tags: ['starter', 'type:situation', 'domain:diplomacy'] },
+      coreRefs: {
+        sourceCoreIds: ['src-1', 'src-1', ''],
+        documentCoreIds: ['doc-1', 'doc-1'],
+      },
+    };
+    const summary = buildCapsuleInventorySummary([sanitizeCapsule(rawLegacyStarter)], {
+      rawCapsules: [rawLegacyStarter],
+    });
+
+    expect(summary).toMatchObject({
+      storedCapsules: 1,
+      activeCapsules: 0,
+      archivedCapsules: 1,
+      starterCapsules: 0,
+      sourceReferences: 0,
+      documentReferences: 0,
+    });
+    expect(summary.integrityWarnings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ capsuleId: 'legacy-starter', reason: 'legacy_v1_normalized_to_v2' }),
+      expect.objectContaining({ capsuleId: 'legacy-starter', reason: 'core_refs_normalized' }),
+      expect.objectContaining({ capsuleId: 'legacy-starter', reason: 'archived_capsule_has_active_situations' }),
+      expect.objectContaining({ capsuleId: 'legacy-starter', reason: 'starter_missing_snapshot' }),
+    ]));
   });
 
   it('attaches source and document receipts into capsule slots', async () => {

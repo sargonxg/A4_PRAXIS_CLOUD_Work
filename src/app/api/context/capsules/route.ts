@@ -7,8 +7,9 @@ import {
   combineCapsules,
   createCapsule,
   createCapsuleFromCorePackage,
+  createEmptyCapsuleInventorySummary,
   forkCapsule,
-  listCapsules,
+  listCapsuleInventory,
   seedStarterCapsules,
 } from '@/lib/context/capsule-service';
 import { parseCorePackage } from '@/lib/context/core-package';
@@ -90,13 +91,19 @@ const SeedStartersSchema = z.object({
 
 export const GET = withAuth(async (request, user) => {
   try {
-    if (user.isDemo) return NextResponse.json({ capsules: [], persisted: false });
+    if (user.isDemo) {
+      return NextResponse.json({
+        capsules: [],
+        summary: createEmptyCapsuleInventorySummary(),
+        persisted: false,
+      });
+    }
     const url = new URL(request.url);
-    const capsules = await listCapsules(user.uid, {
+    const inventory = await listCapsuleInventory(user.uid, {
       situationId: url.searchParams.get('situationId') ?? undefined,
       includeArchived: url.searchParams.get('includeArchived') === 'true',
     });
-    return NextResponse.json({ capsules, persisted: true });
+    return NextResponse.json({ ...inventory, persisted: true });
   } catch (err) {
     return handleRouteError(err, 'context/capsules/list');
   }

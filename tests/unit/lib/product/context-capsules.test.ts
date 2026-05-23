@@ -346,6 +346,41 @@ describe('context capsule product contract', () => {
     }
   });
 
+  it('adds dynamic ontology and embedded graph overlays to starter capsules', () => {
+    const expectedFeaturedIds = [
+      'starter-situation-sudan-famine-access-civilian-protection',
+      'starter-tool-humanitarian-access-negotiation-checklist',
+      'starter-output-humanitarian-donor-sitrep',
+      'starter-user-un-humanitarian-access-officer',
+      'starter-situation-corporate-ai-procurement-assurance',
+    ];
+
+    for (const starterId of expectedFeaturedIds) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter, `${starterId} missing`).toBeTruthy();
+      expect(starter?.ontologyOverlay, `${starterId} ontology overlay`).toMatchObject({
+        overlayId: `${starterId}-ontology-overlay-v1`,
+      });
+      expect(starter?.ontologyOverlay?.baseOntologyIds.length, `${starterId} base ontology ids`).toBeGreaterThanOrEqual(1);
+      expect(starter?.ontologyOverlay?.workOntologyId, `${starterId} work ontology`).toMatch(/foreign-policy|domestic-policy|corporate-strategic/);
+      expect(starter?.ontologyOverlay?.cognee).toMatchObject({
+        datasetScope: 'owner-capsule',
+        maxCandidateConfidence: 0.6,
+      });
+      expect(starter?.ontologyOverlay?.cognee.mode, `${starterId} cognee mode`).toMatch(/recall-only|write-candidates-after-review/);
+      expect(starter?.ontologyOverlay?.graphSeed.reviewGate, `${starterId} graph gate`).toMatch(/Human review/i);
+      expect(starter?.ontologyOverlay?.promotionRules.join(' '), `${starterId} promotion rules`).toMatch(/Firestore|canonical|review/i);
+      expect(starter?.ontologyOverlay?.forbiddenClaims.join(' '), `${starterId} forbidden claims`).toMatch(/unsupported|stale|canonical|review/i);
+      expect(starter?.inspectionSections.map((section) => section.label)).toEqual(expect.arrayContaining(['Dynamic Ontology', 'Embedded Graph']));
+
+      const promptBlock = buildCapsuleStarterPromptBlock(starterId);
+      expect(promptBlock).toContain('ontology_overlay_id:');
+      expect(promptBlock).toContain('embedded_graph_seed:');
+      expect(promptBlock).toContain('cognee_overlay_mode:');
+      expect(promptBlock).toContain('ontology_promotion_rules:');
+    }
+  });
+
   it('upgrades existing starter capsules with real human expert context-creation posture', () => {
     const legacyStarterIds = [
       'starter-situation-hr-harassment-policy',
@@ -697,7 +732,7 @@ describe('context capsule product contract', () => {
       scope: 'situation',
       community: { tags: ['type:situation', 'domain:custom-statistics', 'team:unknown-statistics-team'] },
       coreRefs: {
-        sourceCoreIds: ['src-1', 'src-2'],
+        sourceCoreIds: ['src-1', 'src-2', 'src-2'],
         documentCoreIds: ['doc-1'],
         toolCoreIds: ['ach'],
         outputCoreIds: ['options-memo'],
@@ -717,7 +752,7 @@ describe('context capsule product contract', () => {
     expect(nextStats.totalCapsules).toBe(baseStats.totalCapsules + 2);
     expect(nextStats.visibleCapsules).toBe(baseStats.visibleCapsules + 1);
     expect(nextStats.archivedCapsules).toBe(baseStats.archivedCapsules + 1);
-    expect(nextStats.sourceReferences).toBe(baseStats.sourceReferences + 3);
+    expect(nextStats.sourceReferences).toBe(baseStats.sourceReferences + 2);
     expect(nextStats.documentReferences).toBe(baseStats.documentReferences + 1);
     expect(nextStats.types.find((facet) => facet.id === 'situation')?.count).toBeGreaterThan(baseStats.types.find((facet) => facet.id === 'situation')?.count ?? 0);
     expect(nextStats.thinkingDevices.find((item) => item.id === 'ach')?.count)

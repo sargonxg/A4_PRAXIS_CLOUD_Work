@@ -59,6 +59,7 @@
     "audit:next-moves": "tsx scripts/audit-next-moves.ts",
     "audit:context-health": "tsx scripts/audit-context-health.ts",
     "audit:capsule-depth": "tsx scripts/audit-capsule-depth.ts",
+    "audit:capsule-inventory": "tsx scripts/audit-capsule-inventory.ts",
     "audit:capsule-contract": "tsx scripts/audit-capsule-contract.ts",
     "audit:capsule-memory-contract": "tsx scripts/audit-capsule-memory-contract.ts",
     "audit:output-capsule-storage": "tsx scripts/audit-output-capsule-storage.ts",
