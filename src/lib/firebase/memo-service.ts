@@ -11,6 +11,16 @@ export interface SaveMemoDraftInput {
   graphSnapshotId: string;
   status?: MemoStatus;
   changeNote?: string;
+  capsuleId?: string | null;
+  capsuleVersion?: number | null;
+  conversationId?: string | null;
+  runId?: string | null;
+  outputTarget?: string | null;
+  sourceReceiptIds?: string[];
+  sourceReceipts?: unknown[];
+  unsupportedClaims?: string[];
+  claimChecks?: unknown[];
+  outputCapsuleId?: string | null;
 }
 
 export interface MemoDraftRecord {
@@ -61,8 +71,20 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
     createdAt: existing?.memo.createdAt ?? now,
     updatedAt: now,
   };
+  const memoMetadata = {
+    ...(input.capsuleId ? { capsuleId: input.capsuleId } : {}),
+    ...(typeof input.capsuleVersion === 'number' ? { capsuleVersion: input.capsuleVersion } : {}),
+    ...(input.conversationId ? { conversationId: input.conversationId } : {}),
+    ...(input.runId ? { runId: input.runId } : {}),
+    ...(input.outputTarget ? { outputTarget: input.outputTarget } : {}),
+    ...(input.sourceReceiptIds ? { sourceReceiptIds: input.sourceReceiptIds } : {}),
+    ...(input.sourceReceipts ? { sourceReceipts: input.sourceReceipts } : {}),
+    ...(input.unsupportedClaims ? { unsupportedClaims: input.unsupportedClaims } : {}),
+    ...(input.claimChecks ? { claimChecks: input.claimChecks } : {}),
+    ...(input.outputCapsuleId ? { outputCapsuleId: input.outputCapsuleId } : {}),
+  };
 
-  await memoRef.set({ ...memo, updatedAtServer: FieldValue.serverTimestamp() }, { merge: true });
+  await memoRef.set({ ...memo, ...memoMetadata, updatedAtServer: FieldValue.serverTimestamp() }, { merge: true });
   await memoRef.collection('versions').doc(version.id).set(version);
   return { memo, versions: [...(existing?.versions ?? []), version] };
 }

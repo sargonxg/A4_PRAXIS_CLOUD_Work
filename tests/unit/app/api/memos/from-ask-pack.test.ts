@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const saveMemoDraft = vi.fn();
+const saveOutputCapsule = vi.fn();
 
 vi.mock('@/lib/api/with-auth', () => ({
   withAuth: (handler: (request: Request, user: { uid: string; isDemo: boolean }) => Promise<Response>) => (
@@ -10,6 +11,10 @@ vi.mock('@/lib/api/with-auth', () => ({
 
 vi.mock('@/lib/firebase/memo-service', () => ({
   saveMemoDraft: (uid: string, input: unknown) => saveMemoDraft(uid, input),
+}));
+
+vi.mock('@/lib/output-capsules/storage', () => ({
+  saveOutputCapsule: (uid: string, input: unknown) => saveOutputCapsule(uid, input),
 }));
 
 const { POST } = await import('@/app/api/memos/from-ask-pack/route');
@@ -53,20 +58,28 @@ function validPayload() {
       provenance: {
         capsuleId: 'cap-1',
         capsuleVersion: 2,
+        conversationId: 'thread-1',
         threadId: 'thread-1',
+        runId: 'run-1',
         model: 'vertex-test',
         provider: 'google-vertex',
         contextPackageId: 'ctx-1',
+        sourceReceiptIds: ['receipt-1'],
+        unsupportedClaims: ['No field confirmation.'],
+        outputTarget: 'memo',
         generatedAt: '2026-05-17T12:00:00.000Z',
       },
     },
+    outputTarget: 'memo',
   };
 }
 
 describe('/api/memos/from-ask-pack', () => {
   beforeEach(() => {
     saveMemoDraft.mockReset();
+    saveOutputCapsule.mockReset();
     saveMemoDraft.mockResolvedValue({ memoId: 'memo-1', href: '/app/write?memoId=memo-1' });
+    saveOutputCapsule.mockResolvedValue({ id: 'out-1' });
   });
 
   it('returns memo blocks in demo mode without persisting', async () => {
@@ -77,6 +90,7 @@ describe('/api/memos/from-ask-pack', () => {
     expect(body).toMatchObject({ success: true, mode: 'demo-local', memo: null });
     expect(body.blocks.find((block: { id: string }) => block.id === 'pack-sources').items[0]).toContain('Source receipt: receipt-1');
     expect(saveMemoDraft).not.toHaveBeenCalled();
+    expect(saveOutputCapsule).not.toHaveBeenCalled();
   });
 
   it('persists a citation-preserving Memo Studio draft for authenticated users', async () => {
@@ -91,7 +105,30 @@ describe('/api/memos/from-ask-pack', () => {
       title: 'Ask pack',
       graphSnapshotId: 'sit-1:ask-pack:turn-1',
       status: 'draft',
+      capsuleId: 'cap-1',
+      capsuleVersion: 2,
+      conversationId: 'thread-1',
+      runId: 'run-1',
+      outputTarget: 'memo',
     }));
+    expect(saveOutputCapsule).toHaveBeenCalledWith('user-1', expect.objectContaining({
+      contextCapsuleId: 'cap-1',
+      templateId: 'options-memo',
+      payload: expect.objectContaining({
+        title: 'Ask pack',
+        sections: expect.arrayContaining([
+          expect.objectContaining({ heading: 'Artifact metadata' }),
+        ]),
+      }),
+      citations: expect.arrayContaining([
+        expect.objectContaining({ sourceReceiptId: 'receipt-1' }),
+      ]),
+      provenance: expect.objectContaining({
+        createdBy: 'ask-praxis',
+        traceId: 'thread-1:run-1',
+      }),
+    }));
+    expect(body.outputCapsule).toMatchObject({ id: 'out-1' });
   });
 
   it('rejects packs without an answer', async () => {
@@ -102,5 +139,17 @@ describe('/api/memos/from-ask-pack', () => {
 
     expect(res.status).toBe(400);
     expect(saveMemoDraft).not.toHaveBeenCalled();
+    expect(saveOutputCapsule).not.toHaveBeenCalled();
+  });
+
+  it('requires a capsule read receipt before creating grounded artifacts', async () => {
+    const payload = validPayload();
+    (payload.pack.provenance as { capsuleId: string | null }).capsuleId = null;
+
+    const res = await POST(request(payload));
+
+    expect(res.status).toBe(400);
+    expect(saveMemoDraft).not.toHaveBeenCalled();
+    expect(saveOutputCapsule).not.toHaveBeenCalled();
   });
 });

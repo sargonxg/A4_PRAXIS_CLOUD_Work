@@ -131,13 +131,26 @@ export interface ConversationDocumentPack {
   provenance: ConversationPackProvenance;
 }
 
+export type AskDocumentPackOutputTarget =
+  | 'ask-response'
+  | 'source-note'
+  | 'memo'
+  | 'brief'
+  | 'docx-pdf'
+  | 'handover';
+
 export interface ConversationPackProvenance {
   capsuleId?: string | null;
   capsuleVersion?: number | null;
+  conversationId?: string | null;
   threadId?: string | null;
+  runId?: string | null;
   model?: string | null;
   provider?: string | null;
   contextPackageId?: string | null;
+  sourceReceiptIds?: string[];
+  unsupportedClaims?: string[];
+  outputTarget?: AskDocumentPackOutputTarget;
   generatedAt?: string;
 }
 
@@ -274,13 +287,22 @@ export function buildAskAnswerEnvelope(input: {
     gaps: input.gaps ?? [],
     claimLedgerSummary,
   });
+  const queuedRunId = input.orchestrationReceipt?.supervisor.queuedRun?.runId;
   const pack = buildConversationDocumentPack({
     title: titleForPrompt(input.prompt),
     prompt: input.prompt,
     answer: input.answer,
     sourceCards: input.sourceCards,
     gaps: input.gaps ?? [],
-    provenance: input.provenance ?? {},
+    unsupportedClaims: claimGrounding
+      .filter((claim) => claim.supportLabel === 'unsupported')
+      .map((claim) => claim.claim),
+    provenance: {
+      ...input.provenance,
+      conversationId: input.provenance?.conversationId ?? input.provenance?.threadId ?? null,
+      runId: input.provenance?.runId ?? (queuedRunId && queuedRunId !== 'unavailable' ? queuedRunId : null),
+      outputTarget: input.provenance?.outputTarget ?? 'ask-response',
+    },
   });
 
   return {
@@ -353,8 +375,17 @@ export function buildConversationDocumentPack(input: {
   answer: string;
   sourceCards: SourcePreviewCard[];
   gaps?: string[];
+  unsupportedClaims?: string[];
   provenance?: ConversationPackProvenance;
 }): ConversationDocumentPack {
+  const sourceReceiptIds = uniqueStrings([
+    ...(input.provenance?.sourceReceiptIds ?? []),
+    ...input.sourceCards.map((card) => card.sourceReceiptId).filter(isString),
+  ]);
+  const unsupportedClaims = uniqueStrings([
+    ...(input.provenance?.unsupportedClaims ?? []),
+    ...(input.unsupportedClaims ?? []),
+  ]);
   return {
     title: input.title.trim() || 'Ask PRAXIS document pack',
     prompt: input.prompt,
@@ -363,13 +394,20 @@ export function buildConversationDocumentPack(input: {
     gaps: input.gaps ?? [],
     provenance: {
       ...input.provenance,
+      conversationId: input.provenance?.conversationId ?? input.provenance?.threadId ?? null,
+      sourceReceiptIds,
+      unsupportedClaims,
+      outputTarget: input.provenance?.outputTarget ?? 'ask-response',
       generatedAt: input.provenance?.generatedAt ?? new Date().toISOString(),
     },
   };
 }
 
 export function conversationDocumentPackToMemoBlocks(pack: ConversationDocumentPack): MemoBlock[] {
-  const sourceReceiptIds = uniqueStrings(pack.sourceCards.map((card) => card.sourceReceiptId).filter(isString));
+  const sourceReceiptIds = uniqueStrings([
+    ...(pack.provenance.sourceReceiptIds ?? []),
+    ...pack.sourceCards.map((card) => card.sourceReceiptId).filter(isString),
+  ]);
   const citations = sourceReceiptIds.length
     ? [{ nodeIds: [], sourceReceiptIds, surface: 'footnote' as const }]
     : [];
@@ -385,19 +423,35 @@ export function conversationDocumentPackToMemoBlocks(pack: ConversationDocumentP
   const gapItems = pack.gaps.length ? pack.gaps : ['No explicit source gap was recorded for this turn.'];
   const provenance = [
     pack.provenance.capsuleId ? `Capsule: ${pack.provenance.capsuleId}${pack.provenance.capsuleVersion ? ` v${pack.provenance.capsuleVersion}` : ''}` : null,
+    pack.provenance.conversationId ? `Conversation: ${pack.provenance.conversationId}` : null,
     pack.provenance.threadId ? `Thread: ${pack.provenance.threadId}` : null,
+    pack.provenance.runId ? `Run: ${pack.provenance.runId}` : null,
     pack.provenance.model ? `Model: ${pack.provenance.model}` : null,
     pack.provenance.provider ? `Provider: ${pack.provenance.provider}` : null,
     pack.provenance.contextPackageId ? `Context package: ${pack.provenance.contextPackageId}` : null,
+    sourceReceiptIds.length ? `Source receipts: ${sourceReceiptIds.join(', ')}` : null,
+    pack.provenance.unsupportedClaims?.length ? `Unsupported claims: ${pack.provenance.unsupportedClaims.length}` : null,
+    pack.provenance.outputTarget ? `Output target: ${pack.provenance.outputTarget}` : null,
     pack.provenance.generatedAt ? `Generated: ${pack.provenance.generatedAt}` : null,
   ].filter(isString);
+  const artifactMetadata = {
+    conversationId: pack.provenance.conversationId ?? pack.provenance.threadId ?? null,
+    runId: pack.provenance.runId ?? null,
+    capsuleId: pack.provenance.capsuleId ?? null,
+    capsuleVersion: pack.provenance.capsuleVersion ?? null,
+    sourceReceiptIds,
+    unsupportedClaims: pack.provenance.unsupportedClaims ?? [],
+    gaps: pack.gaps,
+    timestamp: pack.provenance.generatedAt ?? new Date().toISOString(),
+    outputTarget: pack.provenance.outputTarget ?? 'ask-response',
+  };
 
   return [
     block('pack-heading', 'heading', pack.title, [], {}),
-    block('pack-answer', 'paragraph', pack.answer || 'No answer text was captured.', citations, { prompt: pack.prompt }),
+    block('pack-answer', 'paragraph', pack.answer || 'No answer text was captured.', citations, { prompt: pack.prompt, artifactMetadata }),
     block('pack-sources', 'bullets', '', citations, {}, 'Source previews', sourceItems),
     block('pack-gaps', 'bullets', '', [], {}, 'Gaps and review notes', gapItems),
-    block('pack-provenance', 'bullets', '', [], {}, 'Provenance', provenance.length ? provenance : ['No provenance was attached.']),
+    block('pack-provenance', 'bullets', '', [], artifactMetadata, 'Provenance', provenance.length ? provenance : ['No provenance was attached.']),
   ];
 }
 

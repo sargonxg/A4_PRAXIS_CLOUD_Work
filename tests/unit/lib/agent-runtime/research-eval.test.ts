@@ -6,13 +6,18 @@ import {
 import { describe, expect, it } from 'vitest';
 
 describe('agentic research eval harness', () => {
-  it('defines the five fixed proof scenarios', () => {
+  it('defines the ten fixed proof scenarios', () => {
     expect(AGENTIC_RESEARCH_EVAL_SCENARIOS.map((scenario) => scenario.id)).toEqual([
       'current-events',
       'conflict-policy-research',
       'claim-source-discovery',
       'contradiction-uncertainty',
       'capsule-grounded-research',
+      'memo-pdf-output',
+      'sourceability-ledger',
+      'multi-agent-review',
+      'handover-package',
+      'degraded-grounding',
     ]);
   });
 

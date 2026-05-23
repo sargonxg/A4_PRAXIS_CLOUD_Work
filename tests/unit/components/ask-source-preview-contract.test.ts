@@ -27,7 +27,7 @@ describe('Ask source preview panel contract', () => {
   });
 
   it('shows TACITUS routing stages without a normal model picker', () => {
-    expect(source).toContain('Capsule read');
+    expect(source).toContain('Reading capsule');
     expect(source).toContain('Document retrieval');
     expect(source).toContain('TACITUS routing');
     expect(source).not.toContain('aria-label="Ask PRAXIS model"');

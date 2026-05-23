@@ -111,7 +111,7 @@ import type { CapsuleInventorySummary } from '@/lib/context/capsule-service';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useOrchestratorEvents, type OrchestratorEvent, type OrchestratorEventState } from '@/hooks/useOrchestratorEvents';
 import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-stream';
-import type { AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
+import type { AskAnswerEnvelope, AskDocumentPackOutputTarget } from '@/lib/ai/ask-answer-envelope';
 import {
   answerEnvelopeFromDataStreamLine,
   buildConversationPath,
@@ -741,6 +741,7 @@ export function TaskletPraxisWorkbench({
   );
   const [conversationLoadedFor, setConversationLoadedFor] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [assistantArtifactSavingKey, setAssistantArtifactSavingKey] = useState<string | null>(null);
   const [status, setStatus] = useState('Ask PRAXIS can answer directly or choose the right tool from your capsule.');
   const [capsuleSearch, setCapsuleSearch] = useState('');
   const [capsuleTypeFilter, setCapsuleTypeFilter] = useState('all');
@@ -1132,29 +1133,6 @@ export function TaskletPraxisWorkbench({
     }
   }
 
-  function buildChatPrompt(cleanPrompt: string, threadId: string): string {
-    const capsuleStack = activeCapsuleStack
-      .map((capsule) => `${capsule.role.toUpperCase()}: ${capsule.label} (${capsule.id})`)
-      .join('\n');
-    return [
-      cleanPrompt,
-      '',
-      'PRAXIS routing: choose the simplest safe answer path first. If the user needs source checking, memo drafting, handover, red-team review, capsule building, or deeper tools, route internally and record the decision.',
-      `Available tool capsules: ${availableToolIds.join(', ')}`,
-      `Active ContextCapsule stack:\n${capsuleStack}`,
-      `Conversation thread: ${threadId}`,
-      agenticSearchPremiumEnabled && canUseAgenticSearchPremium
-        ? 'Paid extra enabled: Exa agentic search may be used for current web evidence when materially useful. Keep source URLs visible and do not expose provider cost.'
-        : 'Paid extra disabled: do not use Exa agentic search for this turn.',
-      researchGraphExtraEnabled && canUseResearchGraphExtra
-        ? 'Free extra enabled: Research graph may use GDELT + WD advisory receipts for entity grounding, aliases, identifiers, event/media pulse, and relationship hints. Keep "What PRAXIS learned from Research graph" separate from canonical graph claims.'
-        : 'Free extra disabled: do not use Research graph for this turn.',
-      '',
-      'Behave like a normal chat assistant first. Answer directly when enough context exists. If a tool, upload, connector, source check, memo, or capsule update would help, decide that yourself and explain the next step plainly.',
-      'Format the answer for a policy team: start with a short answer, then use concise headings for Findings, Source posture, Gaps, and Next actions when relevant. Do not fabricate citations; name source gaps plainly.',
-    ].join('\n');
-  }
-
   function ensureGuideThread(): string {
     if (guideThreadId) return guideThreadId;
     const nextThreadId = createConversationThreadId();
@@ -1312,17 +1290,17 @@ export function TaskletPraxisWorkbench({
     const nextThreadId = ensureConversationThread();
     await ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsuleStack);
     const userMessage: ChatMessage = { role: 'user', text: cleanPrompt };
-    const enrichedPrompt = buildChatPrompt(cleanPrompt, nextThreadId);
     setChatMessages((current) => [...current, userMessage, { role: 'assistant', text: '' }]);
 
     try {
       const currentConversationPath = buildConversationPath(currentCapsuleId, nextThreadId);
+      const turnMetadata = buildStructuredAskTurnMetadata(cleanPrompt, agent, nextThreadId, currentConversationPath);
       const response = await fetch(`/api/conversations/${encodeURIComponent(nextThreadId)}/turns`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          messages: [...chatMessages, { ...userMessage, text: enrichedPrompt }].map((message) => ({
+          messages: [...chatMessages, userMessage].map((message) => ({
             role: message.role,
             content: message.text,
           })),
@@ -1344,6 +1322,7 @@ export function TaskletPraxisWorkbench({
           })),
           currentToolId: 'ask-praxis',
           currentPath: currentConversationPath,
+          turnMetadata,
           activeContextStack,
           aiSettings: {
             provider: 'vertex',
@@ -1426,10 +1405,44 @@ export function TaskletPraxisWorkbench({
     }
   }
 
-  async function saveAssistantMessage(message: ChatMessage, index: number, mode: 'source-note' | 'memo-draft' = 'source-note') {
+  function buildStructuredAskTurnMetadata(
+    cleanPrompt: string,
+    agent: PolicyAgentDefinition,
+    threadId: string,
+    currentConversationPath: string,
+  ) {
+    return {
+      selectedAgentId: agent.id,
+      selectedAgentLabel: agent.label,
+      capsuleId: currentCapsuleId,
+      capsuleVersion: selectedCapsule?.version ?? null,
+      requestedOutputTarget: agent.outputDestination ?? null,
+      analysisDepth: agent.id === 'research-memo' || agent.id === 'capsule-factory' ? 'deep' : 'standard',
+      toggles: {
+        agenticSearchPremium: agenticSearchPremiumEnabled && canUseAgenticSearchPremium,
+        researchGraphExtra: researchGraphExtraEnabled && canUseResearchGraphExtra,
+      },
+      availableToolIds,
+      activeCapsules: activeCapsuleStack.map((capsule) => ({
+        id: capsule.id,
+        label: capsule.label,
+        role: capsule.role,
+      })),
+      conversationId: threadId,
+      currentPath: currentConversationPath,
+      promptPreview: cleanPrompt.slice(0, 500),
+      artifactActionRequest: null,
+    };
+  }
+
+  async function saveAssistantMessage(message: ChatMessage, index: number, outputTarget: AskDocumentPackOutputTarget = 'source-note') {
     if (!message.text.trim()) return;
+    if (message.answerEnvelope?.documentPackCandidate) {
+      await saveAssistantArtifactFromPack(message, index, outputTarget);
+      return;
+    }
     if (requireAuthForAction(`Save this PRAXIS response to a capsule:\n\n${message.text.slice(0, 1200)}`)) return;
-    const title = mode === 'memo-draft' ? `PRAXIS memo draft ${index + 1}` : `PRAXIS saved response ${index + 1}`;
+    const title = outputTarget === 'memo' || outputTarget === 'brief' ? `PRAXIS memo draft ${index + 1}` : `PRAXIS source note ${index + 1}`;
     const response = await fetch('/api/documents/upload', {
       method: 'POST',
       credentials: 'include',
@@ -1438,7 +1451,7 @@ export function TaskletPraxisWorkbench({
         title,
         html: `<article><h1>${escapeHtml(title)}</h1><pre>${escapeHtml(message.text)}</pre></article>`,
         situationId: currentCapsuleId,
-        toolId: mode === 'memo-draft' ? 'memo-studio' : 'ask-praxis',
+        toolId: outputTarget === 'memo' || outputTarget === 'brief' ? 'memo-studio' : 'ask-praxis',
       }),
     });
     const payload = await response.json().catch(() => ({}));
@@ -1458,6 +1471,78 @@ export function TaskletPraxisWorkbench({
     setStatus(`${title} saved to the active capsule repository.`);
     await refreshCapsules(currentCapsuleId);
     await refreshRepository();
+  }
+
+  async function saveAssistantArtifactFromPack(
+    message: ChatMessage,
+    index: number,
+    outputTarget: AskDocumentPackOutputTarget,
+  ) {
+    const pack = message.answerEnvelope?.documentPackCandidate;
+    if (!pack) return;
+    if (requireAuthForAction(`Create a PRAXIS artifact from this assistant response:\n\n${message.text.slice(0, 1200)}`)) return;
+    const savingKey = `${index}:${outputTarget}`;
+    setAssistantArtifactSavingKey(savingKey);
+    try {
+      const enrichedPack = {
+        ...pack,
+        provenance: {
+          ...pack.provenance,
+          conversationId: pack.provenance.conversationId ?? conversationThreadId,
+          threadId: pack.provenance.threadId ?? conversationThreadId,
+          outputTarget,
+        },
+      };
+      const response = await fetch('/api/memos/from-ask-pack', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          pack: enrichedPack,
+          situationId: currentCapsuleId,
+          askTurnId: conversationThreadId ?? `assistant-${index + 1}`,
+          outputTarget: outputTarget === 'ask-response' ? 'source-note' : outputTarget,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setStatus(payload?.error ? `Artifact failed: ${payload.error}` : 'Artifact failed.');
+        return;
+      }
+      const memoId = memoIdFromAskPackResponse(payload);
+      const outputCapsuleId = typeof payload?.outputCapsule?.id === 'string' ? payload.outputCapsule.id : null;
+      if ((outputTarget === 'docx-pdf' || outputTarget === 'handover') && memoId) {
+        const handoverResponse = await fetch(`/api/memos/${encodeURIComponent(memoId)}/handover-package`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+        const handoverPayload = await handoverResponse.json().catch(() => ({}));
+        if (handoverResponse.ok && typeof handoverPayload?.signedUrl === 'string') {
+          window.location.assign(handoverPayload.signedUrl);
+          return;
+        }
+        setStatus(handoverPayload?.error ? `Export package failed: ${handoverPayload.error}` : 'Memo artifact created; export package is not available yet.');
+      } else {
+        setStatus(outputCapsuleId ? `Artifact saved with OutputCapsule ${outputCapsuleId}.` : 'Artifact saved from this assistant response.');
+      }
+      if (memoId) router.push(`/app/write?memoId=${encodeURIComponent(memoId)}`);
+      await refreshCapsules(currentCapsuleId);
+      await refreshRepository();
+    } finally {
+      setAssistantArtifactSavingKey(null);
+    }
+  }
+
+  function memoIdFromAskPackResponse(payload: unknown): string | null {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+    const record = payload as Record<string, unknown>;
+    if (typeof record.memoId === 'string') return record.memoId;
+    if (record.memo && typeof record.memo === 'object' && !Array.isArray(record.memo)) {
+      const memo = record.memo as Record<string, unknown>;
+      if (typeof memo.id === 'string') return memo.id;
+      if (typeof memo.memoId === 'string') return memo.memoId;
+    }
+    return null;
   }
 
   function retryFromMessage(index: number) {
@@ -2942,6 +3027,7 @@ export function TaskletPraxisWorkbench({
 
             <div className="praxis-composer-focus-shell od-praxis-panel mt-6 w-full max-w-5xl rounded-xl" data-testid="praxis-main-composer">
               <div className="border-b border-black/10 px-5 py-4" data-testid="capsule-context-bar">
+                <span className="sr-only">Active ContextCapsule stack</span>
                 <button
                   type="button"
                   data-testid="mobile-context-chain-bar"
@@ -3406,9 +3492,12 @@ export function TaskletPraxisWorkbench({
                         <MessageActionRow
                           onCopy={() => void navigator.clipboard?.writeText(message.text)}
                           onRetry={() => retryFromMessage(index)}
-                          onSave={() => void saveAssistantMessage(message, index)}
-                          onMemo={() => void saveAssistantMessage(message, index, 'memo-draft')}
+                          onSaveSourceNote={() => void saveAssistantMessage(message, index, 'source-note')}
+                          onMemo={() => void saveAssistantMessage(message, index, 'memo')}
+                          onExport={() => void saveAssistantMessage(message, index, 'docx-pdf')}
+                          onHandover={() => void saveAssistantMessage(message, index, 'handover')}
                           onSourceCheck={() => void sendToPraxis(selectedAgent, `Source-check this answer in the active conversation against the active capsule. Identify weak claims, missing citations, and stale assumptions.\n\n${message.text}`)}
+                          savingTarget={assistantArtifactSavingKey?.startsWith(`${index}:`) ? assistantArtifactSavingKey.split(':')[1] ?? null : null}
                         />
                       </>
                     ) : (
@@ -7660,23 +7749,31 @@ function formatEventTime(value: string): string {
 function MessageActionRow({
   onCopy,
   onRetry,
-  onSave,
+  onSaveSourceNote,
   onMemo,
+  onExport,
+  onHandover,
   onSourceCheck,
+  savingTarget,
 }: {
   onCopy: () => void;
   onRetry: () => void;
-  onSave: () => void;
+  onSaveSourceNote: () => void;
   onMemo: () => void;
+  onExport: () => void;
+  onHandover: () => void;
   onSourceCheck: () => void;
+  savingTarget?: string | null;
 }) {
   return (
     <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3" data-testid="message-action-row">
       <IconTextButton icon={Copy} label="Copy" onClick={onCopy} />
       <IconTextButton icon={RefreshCcw} label="Retry" onClick={onRetry} />
-      <IconTextButton icon={Save} label="Save to capsule" onClick={onSave} />
-      <IconTextButton icon={FileText} label="Create memo" onClick={onMemo} />
-      <IconTextButton icon={ShieldCheck} label="Source-check" onClick={onSourceCheck} />
+      <IconTextButton icon={Save} label="Save source note" onClick={onSaveSourceNote} disabled={Boolean(savingTarget)} busy={savingTarget === 'source-note'} />
+      <IconTextButton icon={FileText} label="Create memo" onClick={onMemo} disabled={Boolean(savingTarget)} busy={savingTarget === 'memo'} />
+      <IconTextButton icon={Download} label="Export DOCX/PDF" onClick={onExport} disabled={Boolean(savingTarget)} busy={savingTarget === 'docx-pdf'} />
+      <IconTextButton icon={Clipboard} label="Create handover" onClick={onHandover} disabled={Boolean(savingTarget)} busy={savingTarget === 'handover'} />
+      <IconTextButton icon={ShieldCheck} label="Source-check this answer" onClick={onSourceCheck} />
     </div>
   );
 }
@@ -8585,10 +8682,22 @@ function AgentActionDrawer({
   );
 }
 
-function IconTextButton({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; onClick: () => void }) {
+function IconTextButton({
+  icon: Icon,
+  label,
+  onClick,
+  disabled = false,
+  busy = false,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  busy?: boolean;
+}) {
   return (
-    <button type="button" onClick={onClick} className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-      <Icon className="h-3.5 w-3.5" />
+    <button type="button" onClick={onClick} disabled={disabled} className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60">
+      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Icon className="h-3.5 w-3.5" />}
       {label}
     </button>
   );

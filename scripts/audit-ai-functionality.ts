@@ -21,8 +21,14 @@ function requireIncludes(path: string, markers: string[]) {
   }
 }
 
+function requireAnyIncludes(path: string, markers: string[], label: string) {
+  const text = read(path);
+  if (!markers.some((marker) => text.includes(marker))) {
+    failures.push(`${path} missing marker group ${label}: ${markers.join(' or ')}`);
+  }
+}
+
 requireIncludes('src/app/api/ai/chat/route.ts', [
-  'buildTurnCapsule',
   'effectiveSituationId',
   'contextMode: \'praxis_lite\'',
   'retrievedDocumentIds',
@@ -33,6 +39,7 @@ requireIncludes('src/app/api/ai/chat/route.ts', [
   'toolInvocations',
   'persistAskThreadTurnSql',
 ]);
+requireAnyIncludes('src/app/api/ai/chat/route.ts', ['buildTurnCapsule', 'buildEnrichedTurnCapsule'], 'capsule turn builder');
 
 requireIncludes('src/app/api/ai/ask-praxis/route.ts', [
   'export { POST } from \'../chat/route\'',

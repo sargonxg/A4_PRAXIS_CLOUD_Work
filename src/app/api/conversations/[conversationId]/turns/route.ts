@@ -31,6 +31,7 @@ const ConversationTurnSchema = z.object({
   situation: z.unknown().optional(),
   conflictContext: z.string().optional(),
   activeContextStack: z.unknown().optional(),
+  turnMetadata: z.unknown().optional(),
   aiSettings: z.unknown(),
 });
 
