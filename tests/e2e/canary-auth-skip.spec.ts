@@ -39,7 +39,7 @@ test.describe('canary auth onboarding skip path', () => {
     }
 
     await expect(page).toHaveURL(/\/app/);
-    const askInput = page.locator('textarea[placeholder*="Ask PRAXIS"], textarea[placeholder*="Describe"]').first();
+    const askInput = page.getByLabel(/Describe a task or responsibility/i);
     await expect(askInput).toBeVisible({ timeout: 20_000 });
     await askInput.fill('Canary smoke: confirm the workspace is reachable after Finish later.');
     await expect(askInput).toHaveValue('Canary smoke: confirm the workspace is reachable after Finish later.');

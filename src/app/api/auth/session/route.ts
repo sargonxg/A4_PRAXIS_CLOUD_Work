@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyIdToken } from '@/lib/firebase/admin';
-import { isUserOnboarded } from '@/lib/firebase/analyst-profile-admin';
+import { hasUserSkippedOnboarding, isUserOnboarded } from '@/lib/firebase/analyst-profile-admin';
 import { signCookie, verifyCookie } from '@/lib/auth/cookie-signer';
 import { getAdminPrincipalAccess } from '@/lib/auth/admin-gate';
 
@@ -23,6 +23,20 @@ function cookieOptionsForRequest(request: Request) {
     ...BASE_COOKIE_OPTIONS,
     secure: process.env.NODE_ENV === 'production' ? !isLocalhost || isHttps : isHttps,
   };
+}
+
+async function readExistingOnboardingSkippedCookie(): Promise<boolean> {
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get(SESSION_COOKIE);
+    if (!sessionCookie?.value) return false;
+    const verified = verifyCookie(sessionCookie.value);
+    if (!verified) return false;
+    const parsed = JSON.parse(verified) as { onboardingSkipped?: unknown };
+    return parsed.onboardingSkipped === true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -94,6 +108,18 @@ export async function POST(request: Request) {
         console.warn('[auth/session] Could not resolve onboarded flag for uid:', verifiedUser.uid, err instanceof Error ? err.message : String(err));
       }
 
+      let onboardingSkipped = false;
+      if (!onboarded) {
+        onboardingSkipped = await readExistingOnboardingSkippedCookie();
+        if (!onboardingSkipped) {
+          try {
+            onboardingSkipped = await hasUserSkippedOnboarding(verifiedUser.uid);
+          } catch (err) {
+            console.warn('[auth/session] Could not resolve onboarding skip flag for uid:', verifiedUser.uid, err instanceof Error ? err.message : String(err));
+          }
+        }
+      }
+
       const adminAccess = getAdminPrincipalAccess(verifiedUser);
 
       // Token is valid — store in cookie for subsequent requests (includes onboarded flag for middleware)
@@ -104,6 +130,7 @@ export async function POST(request: Request) {
           token: body.token,
           onboarded,
           onboardingComplete: onboarded,
+          onboardingSkipped,
           issuedAt: Date.now(),
           user: {
             uid: verifiedUser.uid,
@@ -168,6 +195,7 @@ export async function GET() {
           isDemo: false,
           admin: data.admin === true,
           onboardingComplete: data.onboardingComplete === true || data.onboarded === true,
+          onboardingSkipped: data.onboardingSkipped === true,
         },
       });
     }

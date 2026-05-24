@@ -107,6 +107,15 @@ export async function incrementOnboardingSkip(uid: string): Promise<void> {
   );
 }
 
+export async function hasUserSkippedOnboarding(uid: string): Promise<boolean> {
+  const db = getAdminDbOrThrow();
+  const ref = db.collection(USERS).doc(uid).collection(PROFILE).doc(PROFILE_DOC);
+  const snap = await ref.get();
+  if (!snap.exists) return false;
+  const meta = (snap.data() as AnalystProfile | undefined)?.meta;
+  return typeof meta?.skipCount === 'number' && meta.skipCount > 0;
+}
+
 /**
  * Returns true if the user has completed onboarding.
  * Reads profile/analyst.meta.completedAt as canonical source.

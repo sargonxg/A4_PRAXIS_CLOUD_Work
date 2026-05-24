@@ -6,7 +6,12 @@ vi.mock('@/lib/firebase/admin', () => ({
   getAdminDbOrThrow: vi.fn(),
 }));
 
-import { getAnalystProfile, upsertAnalystProfile, completeAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
+import {
+  completeAnalystProfile,
+  getAnalystProfile,
+  hasUserSkippedOnboarding,
+  upsertAnalystProfile,
+} from '@/lib/firebase/analyst-profile-admin';
 import { adminDb, getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { DEFAULT_ANALYST_PROFILE } from '@/types/analyst-profile';
 
@@ -64,6 +69,20 @@ describe('analyst-profile-admin', () => {
     expect(profileDoc.ref.set).toHaveBeenCalledWith(expect.objectContaining({
       identity: { role: 'un_official', seniority: 'senior', org: 'UN', team: 'DPPA' },
     }), { merge: true });
+  });
+
+  it('hasUserSkippedOnboarding returns true when the analyst profile has a skip count', async () => {
+    const profileDoc = makeDocStub({ ...DEFAULT_ANALYST_PROFILE, meta: { ...DEFAULT_ANALYST_PROFILE.meta, skipCount: 1 } });
+    const db = {
+      collection: vi.fn(() => ({
+        doc: vi.fn(() => ({
+          collection: vi.fn(() => ({ doc: vi.fn(() => profileDoc.ref) })),
+        })),
+      })),
+    };
+    (getAdminDbOrThrow as unknown as ReturnType<typeof vi.fn>).mockReturnValue(db);
+
+    await expect(hasUserSkippedOnboarding('u1')).resolves.toBe(true);
   });
 
   it('completeAnalystProfile bumps version, writes snapshot, marks profile completed atomically', async () => {
