@@ -242,7 +242,7 @@ export async function buildTurnCapsule(
     },
     userCore: refs.userCoreId ?? null,
     situationCore: refs.situationCoreId ?? null,
-    sourceDocumentCore: [...refs.sourceCoreIds, ...refs.documentCoreIds],
+    sourceDocumentCore: uniqueStrings([...refs.sourceCoreIds, ...refs.documentCoreIds]),
     graphCore: refs.graphCoreId ?? null,
     memoryCore: refs.memoryCoreId ?? null,
     outputCore: refs.outputCoreIds,
@@ -306,9 +306,12 @@ export function buildCapsuleRetrievalPlan(
     '## Active Capsule Retrieval Plan',
     `Capsule: ${capsule.capsuleId} v${capsule.capsuleVersion}`,
     `Repository: ${repositoryDocumentIds.length} document ref(s), ${sourceReceiptIds.length} source receipt ref(s), ${chunkCount} chunk(s), ${repository?.retrievalBackend ?? 'local-hybrid'} backend, freshness ${repository?.freshness ?? inferRepositoryFreshness(repositoryDocumentIds, sourceReceiptIds)}.`,
+    'ContextChain block priority: userCore, situation, sources, thinkingDevices, output.',
+    ...formatRetrievalContextBlocks(capsule.injectableContext.stack.contextBlocks),
     'Read order:',
     ...layers.map((layer) => `- ${layer.priority}. ${layer.label}: ${layer.status}${layer.refIds.length ? ` (${layer.refIds.slice(0, 8).join(', ')})` : ''}`),
     'Answer from capsule core refs first, then associated reference capsule summaries, then repository documents/chunks and source receipts, then graph/time/memory/recent run/output history. Treat missing layers as explicit evidence gaps.',
+    'Use model knowledge, online reading, or retrieval only to supplement, verify, or fill gaps outside the governed capsule blocks, and label that outside context clearly.',
   ];
 
   return {
@@ -327,6 +330,21 @@ export function buildCapsuleRetrievalPlan(
     layers,
     promptBlock: promptLines.join('\n'),
   };
+}
+
+function formatRetrievalContextBlocks(blocks: TurnCapsule['injectableContext']['stack']['contextBlocks']): string[] {
+  return [
+    `- userCore block: ${formatRetrievalBlockItems(blocks.userCore)}`,
+    `- situation block: ${formatRetrievalBlockItems(blocks.situation)}`,
+    `- sources block: ${formatRetrievalBlockItems(blocks.sources)}`,
+    `- thinkingDevices block: ${formatRetrievalBlockItems(blocks.thinkingDevices)}`,
+    `- output block: ${formatRetrievalBlockItems(blocks.output)}`,
+  ];
+}
+
+function formatRetrievalBlockItems(items: TurnCapsule['injectableContext']['stack']['contextBlocks']['sources']): string {
+  if (!items.length) return 'none';
+  return items.map((item) => `${item.id}${item.primary ? ' (primary)' : ' (secondary)'}`).join(', ');
 }
 
 export function suggestNextActions(capsule: TurnCapsule, surface: 'ask' | 'drafting' = 'ask'): SemanticNextAction[] {

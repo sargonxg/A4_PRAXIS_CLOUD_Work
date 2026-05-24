@@ -138,7 +138,7 @@ export function buildThinCapsuleFallback(input: ConversationCapsuleSignalInput):
       'rule: Do not answer as ungrounded generic chat. Make the thin fallback visible and identify the missing capsule record as a context gap.',
       '</praxis-context-capsule-fallback>',
       '',
-      buildCapsulePromptBlock(capsule, { resolvedAt: now, situationId: stack.situationId }),
+      buildCapsulePromptBlock(capsule, { resolvedAt: now, situationId: stack.situationId, activeContextStack: stack }),
     ].join('\n'),
     sharePath: `/app?capsuleId=${encodeURIComponent(capsuleId)}`,
     resolvedAt: now,

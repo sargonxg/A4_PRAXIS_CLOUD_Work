@@ -4,6 +4,7 @@ import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import {
   DEFAULT_CONTEXT_STACK_ID,
   defaultActiveContextStack,
+  sanitizeActiveContextStack,
   type ActiveContextStackState,
 } from '@/lib/context/active-context-stack';
 import {
@@ -96,7 +97,7 @@ export const PUT = withAuth(async (req, user) => {
 });
 
 function sanitizeNamedStack(input: Partial<ActiveContextStackState>): ActiveContextStackState {
-  return {
+  return sanitizeActiveContextStack({
     stackId: typeof input.stackId === 'string' && input.stackId.trim()
       ? input.stackId.trim().replace(/[^\w:.-]/g, '-').slice(0, 120)
       : DEFAULT_CONTEXT_STACK_ID,
@@ -109,9 +110,8 @@ function sanitizeNamedStack(input: Partial<ActiveContextStackState>): ActiveCont
     outputGoal: input.outputGoal ?? null,
     evidenceGaps: Array.isArray(input.evidenceGaps) ? input.evidenceGaps : [],
     canvasLayout: input.canvasLayout ?? {},
-    updatedAt: new Date().toISOString(),
-    schemaVersion: 1,
-  };
+    contextBlocks: input.contextBlocks,
+  });
 }
 
 async function getActiveStackPointer(uid: string): Promise<ActiveContextStackState | null> {

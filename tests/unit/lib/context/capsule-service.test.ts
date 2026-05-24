@@ -238,6 +238,17 @@ describe('capsule service', () => {
         sourceIds: ['src-1', 'src-2'],
         documentIds: ['doc-1'],
         outputGoal: 'options-memo',
+        contextBlocks: {
+          userCore: [{ id: 'policy-analyst', label: 'Policy analyst' }],
+          situation: [{ id: 'indo-pacific-2026', label: 'Indo-Pacific watch' }],
+          sources: [
+            { id: 'src-1', label: 'Official source pack' },
+            { id: 'src-2', label: 'Newswire source pack' },
+            { id: 'doc-1', label: 'Uploaded brief' },
+          ],
+          thinkingDevices: [{ id: 'sourceability-matrix', label: 'Sourceability matrix' }],
+          output: [{ id: 'options-memo', label: 'Options memo' }],
+        },
       },
       situationId: 'indo-pacific-2026',
     }, deps(db));
@@ -250,6 +261,9 @@ describe('capsule service', () => {
     expect(resolved.promptBlock).toContain('situation_core: indo-pacific-2026');
     expect(resolved.promptBlock).toContain('source_cores: src-1, src-2');
     expect(resolved.promptBlock).toContain('document_cores: doc-1');
+    expect(resolved.promptBlock).toContain('[context_chain_blocks]');
+    expect(resolved.promptBlock).toContain('thinking_devices: sourceability-matrix [primary] Sourceability matrix');
+    expect(resolved.promptBlock).toContain('Outside model knowledge, online reading, and retrieval are supplemental only.');
     expect(resolved.sharePath).toBe('/app?capsuleId=default');
   });
 

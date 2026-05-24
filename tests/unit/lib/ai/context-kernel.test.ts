@@ -14,6 +14,16 @@ describe('context kernel', () => {
         sourceIds: ['source-1'],
         documentIds: ['doc-1'],
         outputGoal: 'memo',
+        contextBlocks: {
+          userCore: [{ id: 'user-core-1', label: 'Policy director' }],
+          situation: [{ id: 'situation-core-1', label: 'Primary crisis room' }],
+          sources: [
+            { id: 'source-1', label: 'Source pack' },
+            { id: 'doc-1', label: 'Document pack' },
+          ],
+          thinkingDevices: [{ id: 'tool-sourceability', label: 'Sourceability review' }],
+          output: [{ id: 'memo', label: 'Options memo' }],
+        },
       },
       memoryItems: [
         { id: 'mem-1', type: 'semantic', text: 'Use concise ministerial prose.', capsuleId: '__global__' },
@@ -30,6 +40,9 @@ describe('context kernel', () => {
     expect(capsule.situationCore).toBe('situation-core-1');
     expect(capsule.sourceDocumentCore).toEqual(['source-1', 'doc-1']);
     expect(capsule.injectableContext.promptBlock).toContain('<praxis-context-capsule>');
+    expect(capsule.injectableContext.promptBlock).toContain('[context_chain_blocks]');
+    expect(capsule.injectableContext.promptBlock).toContain('sources: source-1 [primary] Source pack; doc-1 [secondary] Document pack');
+    expect(capsule.injectableContext.promptBlock).toContain('Capsules are the principal governed context.');
     expect(capsule.memory.semantic.map((item) => item.id)).toEqual(['mem-1']);
     expect(capsule.memory.episodic).toEqual([]);
     expect(capsule.memory.procedural.map((item) => item.id)).toEqual(['mem-3']);
@@ -46,6 +59,7 @@ describe('context kernel', () => {
     ]);
     expect(capsule.retrievalPlan.repository.documentIds).toEqual(['doc-1']);
     expect(capsule.retrievalPlan.repository.sourceReceiptIds).toEqual(['source-1']);
+    expect(capsule.retrievalPlan.promptBlock).toContain('ContextChain block priority: userCore, situation, sources, thinkingDevices, output.');
     expect(capsule.retrievalPlan.promptBlock).toContain('Answer from capsule core refs first');
   });
 

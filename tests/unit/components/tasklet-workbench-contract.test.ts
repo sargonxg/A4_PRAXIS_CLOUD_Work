@@ -25,6 +25,8 @@ function extractSourceBlock(start: string, end: string): string {
 const suggestionWidgetSource = extractSourceBlock('function CapsuleSuggestionWidget', 'function AssistantMarkdown');
 const repositoryGridSource = extractSourceBlock('function CapsuleRepositoryGrid', 'function CapsuleRepositoryTile');
 const inspectorSheetSource = extractSourceBlock('function CapsuleInspectorSheet', 'function PraxisGuideChat');
+const contextBarSource = extractSourceBlock('data-testid="capsule-context-bar"', 'data-testid="ask-capsule-workflow-preview"');
+const humanGatedExampleSource = extractSourceBlock('function HumanGatedPolicyFamilyPanel', 'function PublicFullLibraryCta');
 
 describe('Tasklet PRAXIS workbench contract', () => {
   it('keeps model routing TACITUS-owned in the main composer', () => {
@@ -417,15 +419,17 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('Model knowledge is the default baseline');
     expect(source).toContain('data-testid="context-health-indicator"');
     expect(source).toContain('Save context capsule');
-    expect(source).toContain('onRemove={() => removeCapsule(capsule.id)}');
+    expect(source).toContain('onRemove={(capsule) => removeCapsule(capsule.id)}');
   });
 
-  it('sends ordered live capsule stacks without automatic combine persistence', () => {
+  it('sends ordered live capsule blocks without automatic combine persistence', () => {
     expect(source).toContain('appliedCapsules: activeCapsuleStack.map');
     expect(source).toContain('const activeContextStack = buildActiveContextStack(');
-    expect(source).toContain('const outputCapsule = activeCapsuleStack.find');
-    expect(source).toContain('const situationCapsule = activeCapsuleStack.find');
-    expect(source).toContain('sourceIds: activeCapsuleStack.filter((capsule) => capsule.role ===');
+    expect(source).toContain('const contextBlocks = buildActiveContextBlocks(activeCapsuleStack)');
+    expect(source).toContain('const outputCapsule = contextBlocks.output[0]');
+    expect(source).toContain('const situationCapsule = contextBlocks.situation[0]');
+    expect(source).toContain('sourceIds: contextBlocks.sources.map((capsule) => capsule.id)');
+    expect(source).toContain('contextBlocks,');
     expect(source).toContain('userModelId: userCapsule?.id ?? null');
     expect(source).toContain('saveCombinedCapsuleStack');
     expect(source).toContain('Add at least two capsules before saving a retrievable context capsule.');
@@ -460,27 +464,36 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Improve');
   });
 
-  it('adds a provenance-only ContextChain map and live readiness strip inside the existing workbench', () => {
-    expect(source).toContain('function ContextChainMap');
-    expect(source).toContain('data-testid="context-chain-map"');
-    expect(source).toContain('User Core');
-    expect(source).toContain('Situation');
-    expect(source).toContain('Sources');
-    expect(source).toContain('Thinking device');
-    expect(source).toContain('Output');
-    expect(source).toContain('source-backed');
-    expect(source).toContain('needs sources');
-    expect(source).toContain('human-gated');
-    expect(source).toContain('needs review');
-    expect(source).toContain('output-ready');
-    expect(source).toContain('exploratory only');
-    expect(source).toContain('function LiveReadinessStrip');
-    expect(source).toContain('data-testid="live-readiness-strip"');
-    expect(source).toContain('Capsule health');
+  it('uses one canonical ContextChain builder with readiness labels folded into blocks', () => {
+    expect(source).toContain('function ContextChainBlockLane');
+    expect(source).toContain('function ContextChainProvenanceMap');
+    expect(contextBarSource).toContain('data-testid="desktop-context-chain-canvas"');
+    expect(source).toContain('data-testid={`context-chain-block-${block.id}`}');
+    expect(source).toContain('primary/reference capsule');
     expect(source).toContain('Source posture');
     expect(source).toContain('Review gate');
     expect(source).toContain('Output readiness');
-    expect(source).toContain('Agent permission');
+    expect(source).toContain('Agent/tool route');
+    expect(source).toContain('data-context-block-apply-state');
+    expect(contextBarSource).not.toContain('<ContextChainMap');
+    expect(contextBarSource).not.toContain('<ContextChainProvenanceMap');
+    expect(source).not.toContain('function LiveReadinessStrip');
+    expect(source).not.toContain('data-testid="live-readiness-strip"');
+  });
+
+  it('keeps the Human-Gated example panel compact and action-oriented', () => {
+    expect(source).toContain('const humanGatedExampleCapsules = starterCapsuleSummaries.filter(isHumanGatedPolicyJudgmentCapsule)');
+    expect(source).toContain('capsules={humanGatedExampleCapsules}');
+    expect(humanGatedExampleSource).toContain('capsules.find(isHumanGatedPolicyJudgmentCapsule)');
+    expect(humanGatedExampleSource).toContain('Example capsule family');
+    expect(humanGatedExampleSource).toContain('Human-Gated Policy Judgment Capsule');
+    expect(humanGatedExampleSource).toContain('This is a working example');
+    expect(humanGatedExampleSource).toContain('Use example');
+    expect(humanGatedExampleSource).toContain('Inspect');
+    expect(humanGatedExampleSource).toContain('Sign in for full library');
+    expect(humanGatedExampleSource).not.toContain('Dossier stack');
+    expect(humanGatedExampleSource).not.toContain('DossierStackMetric');
+    expect(humanGatedExampleSource).not.toContain('<ContextChainMap');
   });
 
   it('sends the active context chain into manual agent-run creation', () => {
@@ -513,6 +526,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('useDraggable');
     expect(source).toContain('useDroppable');
     expect(source).toContain('data-testid="capsule-context-dropzone"');
+    expect(source).toContain('context-block:${block.id}');
+    expect(source).toContain('setCapsuleBrowserTargetRole(block.addRole)');
+    expect(source).toContain('setRecentlyAppliedBlockId');
     expect(source).toContain('data-testid="capsule-browser-modal"');
     expect(source).toContain('filterBar={');
     expect(source).toContain('setCapsuleBrowserOpen(true)');

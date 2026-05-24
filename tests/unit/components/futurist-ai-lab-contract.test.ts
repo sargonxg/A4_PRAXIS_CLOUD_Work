@@ -60,22 +60,21 @@ describe('Futurist AI Lab visual and capsule UX contract', () => {
   });
 
   it('compresses the public homepage into a staged governed-intelligence demo', () => {
-    expect(workbench).toContain('HUMAN_GATED_POLICY_JUDGMENT_FAMILY');
     expect(workbench).toContain('PUBLIC_FLAGSHIP_CAPSULE_LIMIT = 6');
     expect(workbench).toContain('PUBLIC_THINKING_DEVICE_LIMIT = 3');
-    expect(workbench).toContain('Crisis Strategy Room');
     expect(workbench).toContain('data-testid="human-gated-policy-family"');
     expect(workbench).toContain('data-testid="human-gated-example-panel"');
     expect(workbench).toContain('Example capsule family');
+    expect(workbench).toContain('Human-Gated Policy Judgment Capsule');
     expect(workbench).toContain('This is a working example');
-    expect(workbench).toContain('Use this example capsule');
-    expect(workbench).toContain('Inspect example');
+    expect(workbench).toContain('Use example');
+    expect(workbench).toContain('Inspect');
     expect(workbench).toContain('data-testid="public-flagship-capsules"');
     expect(workbench).toContain('data-testid="public-thinking-devices"');
     expect(workbench).toContain('data-testid="public-full-library-cta"');
     expect(workbench).toContain('Selected capsules to use');
     expect(workbench).toContain('Selected thinking devices to use');
-    expect(workbench).toContain('Sign in to see the full capsule library');
+    expect(workbench).toContain('Sign in for full library');
     expect(workbench).toContain('visibleHomepageCapsuleCards');
     expect(workbench).not.toContain('data-testid="homepage-capsule-load-more"');
     expect(workbench).not.toContain('Load more capsules');

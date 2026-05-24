@@ -154,6 +154,7 @@ type TaskletPraxisWorkbenchProps = {
 
 type PolicyNeedTabId = (typeof POLICY_NEED_TABS)[number]['id'];
 type CapsuleRole = 'user' | 'situation' | 'tool' | 'output' | 'reference';
+type ContextChainBlockId = 'userCore' | 'situation' | 'sources' | 'thinkingDevices' | 'output';
 type CapsuleDetailTab = 'overview' | 'sources' | 'ai' | 'settings';
 type CapsuleFactoryReviewState = 'draft' | 'reviewed' | 'applied' | 'rejected';
 type CapsuleFactoryReviewDiff = {
@@ -337,6 +338,12 @@ type ActiveCapsuleChip = {
   toolId?: string;
   templateId?: string;
 };
+type ActiveContextBlockCapsulePayload = ActiveCapsuleChip & {
+  capsuleId: string;
+  primary: boolean;
+  order: number;
+};
+type ActiveContextBlocksPayload = Record<ContextChainBlockId, ActiveContextBlockCapsulePayload[]>;
 type ActiveContextStackPayload = {
   stackId: 'default';
   capsuleId: string;
@@ -347,6 +354,7 @@ type ActiveContextStackPayload = {
   outputGoal: string | null;
   evidenceGaps: [];
   canvasLayout: Record<string, never>;
+  contextBlocks: ActiveContextBlocksPayload;
   schemaVersion: 1;
   updatedAt: string;
 };
@@ -362,6 +370,15 @@ type ContextHealth = {
   label: 'Baseline' | 'Ready' | 'Grounded' | 'Operational';
   detail: string;
   tone: string;
+};
+type ContextChainBlockLaneModel = {
+  id: ContextChainBlockId;
+  label: string;
+  helper: string;
+  action: string;
+  addRole: CapsuleRole;
+  capsules: ActiveCapsuleChip[];
+  readiness: Array<{ label: 'Source posture' | 'Review gate' | 'Output readiness' | 'Agent/tool route'; value: string }>;
 };
 
 const GUIDE_CHAT_STORAGE_KEY = 'praxis-guide-chat-state:v1';
@@ -606,12 +623,6 @@ const STARTER_CAPSULE_UPDATED_AT = '2026-05-23T00:00:00.000Z';
 const starterCapsuleSummaries = CAPSULE_STARTER_DEFINITIONS.map(starterDefinitionToCapsuleSummary);
 const PUBLIC_FLAGSHIP_CAPSULE_LIMIT = 6;
 const PUBLIC_THINKING_DEVICE_LIMIT = 3;
-const HUMAN_GATED_POLICY_JUDGMENT_FAMILY = {
-  title: 'Human-Gated Policy Judgment Capsules',
-  room: 'Crisis Strategy Room',
-  summary: 'A public preview family that shows how PRAXIS keeps source-backed context, thinking devices, draft outputs, and human gates together before an agent acts.',
-  stamp: 'human-gated / source-backed / reviewable',
-};
 const FEATURED_EXPERT_PICK_CAPSULE_IDS = [
   'starter-situation-us-fy2027-budget-sequestration-watch',
   'starter-situation-eu-ai-act-2026-implementation-simplification',
@@ -656,11 +667,11 @@ const STARTER_USER_CAPSULE_CHIP: ActiveCapsuleChip = {
   role: 'user',
 };
 
-const capsuleChainSlots: Array<{ role: CapsuleRole; label: string; helper: string; action: string }> = [
-  { role: 'situation', label: 'Situation', helper: 'Add the case, issue, or operating context.', action: 'Add context' },
-  { role: 'reference', label: 'Sources/References', helper: 'Attach source packs, documents, or related capsules.', action: 'Attach sources' },
-  { role: 'tool', label: 'Tools', helper: 'Add reasoning tools and checks.', action: 'Add checks' },
-  { role: 'output', label: 'Output', helper: 'Choose the memo, brief, handover, or artifact goal.', action: 'Choose output' },
+const capsuleChainSlots: Array<{ id: ContextChainBlockId; role: CapsuleRole; label: string; helper: string; action: string }> = [
+  { id: 'situation', role: 'situation', label: 'Situation', helper: 'Add the case, issue, or operating context.', action: 'Add context' },
+  { id: 'sources', role: 'reference', label: 'Sources/References', helper: 'Attach source packs, documents, or related capsules.', action: 'Attach sources' },
+  { id: 'thinkingDevices', role: 'tool', label: 'Tools', helper: 'Add reasoning tools and checks.', action: 'Add checks' },
+  { id: 'output', role: 'output', label: 'Output', helper: 'Choose the memo, brief, handover, or artifact goal.', action: 'Choose output' },
 ];
 
 function buildFactoryReviewDiff(
@@ -784,6 +795,7 @@ export function TaskletPraxisWorkbench({
   const [capsuleInventorySummary, setCapsuleInventorySummary] = useState<CapsuleInventorySummary | null>(null);
   const [capsulesLoading, setCapsulesLoading] = useState(false);
   const [capsuleBrowserOpen, setCapsuleBrowserOpen] = useState(false);
+  const [capsuleBrowserTargetRole, setCapsuleBrowserTargetRole] = useState<CapsuleRole | null>(null);
   const [mobileContextSheetOpen, setMobileContextSheetOpen] = useState(false);
   const [contextComposerCollapsed, setContextComposerCollapsed] = useState(false);
   const [repositoryOpen, setRepositoryOpen] = useState(false);
@@ -805,6 +817,7 @@ export function TaskletPraxisWorkbench({
   const [debouncedSuggestionPrompt, setDebouncedSuggestionPrompt] = useState('');
   const [dismissedCapsuleSuggestionIds, setDismissedCapsuleSuggestionIds] = useState<string[]>([]);
   const [recentlyAppliedCapsuleId, setRecentlyAppliedCapsuleId] = useState<string | null>(null);
+  const [recentlyAppliedBlockId, setRecentlyAppliedBlockId] = useState<ContextChainBlockId | null>(null);
   const [builderLabel, setBuilderLabel] = useState('');
   const [builderNotes, setBuilderNotes] = useState('');
   const [builderLinks, setBuilderLinks] = useState('');
@@ -842,6 +855,7 @@ export function TaskletPraxisWorkbench({
     }),
     [activeCapsules, selectedCapsule, userCapsules],
   );
+  const contextBlocks = buildActiveContextBlocks(activeCapsuleStack);
   const activeContextStack = buildActiveContextStack(currentCapsuleId, activeCapsuleStack);
   const contextHealth = getContextHealth(activeCapsuleStack);
   const selectedToolIds = activeCapsuleStack
@@ -891,6 +905,7 @@ export function TaskletPraxisWorkbench({
   const visibleHomepageCapsuleCards = isPublicHomepageCapsuleShelf
     ? filteredFeaturedCapsuleCards.slice(0, PUBLIC_FLAGSHIP_CAPSULE_LIMIT)
     : visibleCapsuleCards;
+  const humanGatedExampleCapsules = starterCapsuleSummaries.filter(isHumanGatedPolicyJudgmentCapsule);
   const visibleHomepageThinkingDevices = isPublicHomepageCapsuleShelf
     ? filteredIntellectualDeviceCards.slice(0, PUBLIC_THINKING_DEVICE_LIMIT)
     : filteredIntellectualDeviceCards;
@@ -916,11 +931,16 @@ export function TaskletPraxisWorkbench({
     }),
     [activeCapsuleIds, debouncedSuggestionPrompt, dismissedCapsuleSuggestionIds, selectedAgent.id, userCapsules],
   );
-  const primaryCapsules = activeCapsuleStack.filter((capsule) => capsule.role === 'user' || capsule.role === 'situation' || capsule.role === 'output');
-  const referenceCapsules = activeCapsuleStack.filter((capsule) => capsule.role === 'reference' || capsule.role === 'tool');
+  const primaryCapsules = [...contextBlocks.userCore, ...contextBlocks.situation, ...contextBlocks.output];
+  const referenceCapsules = [...contextBlocks.sources, ...contextBlocks.thinkingDevices];
   const archivedCapsules = userCapsules.filter((capsule) => capsule.archivedAt).slice(0, 4);
-  const filledChainRoles = new Set(activeCapsuleStack.map((capsule) => capsule.role));
-  const openChainSlots = capsuleChainSlots.filter((slot) => !filledChainRoles.has(slot.role));
+  const openChainSlots = capsuleChainSlots.filter((slot) => contextBlocks[slot.id].length === 0);
+  const contextChainBlockLanes = buildContextChainBlockLanes({
+    contextBlocks,
+    contextHealth,
+    sourceCount: activeCapsuleStack.filter((capsule) => capsule.role === 'reference').length,
+    selectedAgent,
+  });
   const activeCapsuleForStrip = selectedCapsule ?? activeCapsuleStack[0] ?? null;
   const canUseAgenticSearchPremium = isPaidSubscription(user?.subscription);
   const canUseResearchGraphExtra = isAuthenticated;
@@ -1087,7 +1107,10 @@ export function TaskletPraxisWorkbench({
 
   useEffect(() => {
     if (!recentlyAppliedCapsuleId) return;
-    const timeout = window.setTimeout(() => setRecentlyAppliedCapsuleId(null), 900);
+    const timeout = window.setTimeout(() => {
+      setRecentlyAppliedCapsuleId(null);
+      setRecentlyAppliedBlockId(null);
+    }, 900);
     return () => window.clearTimeout(timeout);
   }, [recentlyAppliedCapsuleId]);
 
@@ -1105,8 +1128,14 @@ export function TaskletPraxisWorkbench({
     return false;
   }
 
-  function markContextApplied(capsuleIdToMark: string) {
+  function markContextApplied(capsuleIdToMark: string, role?: CapsuleRole) {
     setRecentlyAppliedCapsuleId(capsuleIdToMark);
+    setRecentlyAppliedBlockId(role ? contextBlockIdForRole(role) : null);
+  }
+
+  function openCapsuleBrowserForRole(role: CapsuleRole | null = null) {
+    setCapsuleBrowserTargetRole(role);
+    setCapsuleBrowserOpen(true);
   }
 
   function ensureConversationThread(): string {
@@ -2177,7 +2206,7 @@ export function TaskletPraxisWorkbench({
     const chip = { ...capsuleToChip(capsule), role };
     if (role === 'situation') setCurrentCapsuleId(chip.id);
     setActiveCapsules((current) => applyCapsuleToStack(current, chip));
-    markContextApplied(chip.id);
+    markContextApplied(chip.id, role);
     const categoryReview = capsuleCategory(capsule) === 'custom' ? ' Review its category before relying on it.' : '';
     setStatus(`${chip.label} added to the context chain as ${capsuleRoleLabel(role)}.${categoryReview}`);
   }
@@ -2207,10 +2236,13 @@ export function TaskletPraxisWorkbench({
     const chip = { ...capsuleToChip(capsule), role };
     if (role === 'situation') setCurrentCapsuleId(chip.id);
     setActiveCapsules((current) => applyCapsuleToStack(current, chip));
-    markContextApplied(chip.id);
+    markContextApplied(chip.id, role);
     const categoryReview = capsuleCategory(capsule) === 'custom' ? ' Review its category before relying on it.' : '';
     setStatus(`${chip.label} added to the context chain as ${capsuleRoleLabel(role)}.${categoryReview}`);
-    if (capsuleBrowserOpen) setCapsuleBrowserOpen(false);
+    if (capsuleBrowserOpen) {
+      setCapsuleBrowserOpen(false);
+      setCapsuleBrowserTargetRole(null);
+    }
   }
 
   function improveCapsuleCard(capsule: PraxisCapsuleSummary) {
@@ -2677,7 +2709,8 @@ export function TaskletPraxisWorkbench({
   }
 
   function removeCapsule(id: string) {
-    markContextApplied(id);
+    const removedCapsule = activeCapsuleStack.find((capsule) => capsule.id === id);
+    markContextApplied(id, removedCapsule?.role);
     setActiveCapsules((current) => {
       const nextStack = current.filter((capsule) => capsule.id !== id);
       if (currentCapsuleId === id) {
@@ -2696,9 +2729,20 @@ export function TaskletPraxisWorkbench({
     if (activeId.startsWith('capsule-card:')) {
       const capsuleIdFromCard = activeId.replace('capsule-card:', '');
       const capsule = visibleCapsuleCards.find((item) => item.capsuleId === capsuleIdFromCard);
-      if (capsule && (overId === 'capsule-context-dropzone' || activeCapsuleIds.includes(overId))) {
-        applyCapsuleCard(capsule, capsuleDefaultRole(capsule));
+      const blockRole = contextRoleForDroppableId(overId);
+      if (capsule && (overId === 'capsule-context-dropzone' || activeCapsuleIds.includes(overId) || blockRole)) {
+        applyCapsuleCard(capsule, blockRole ?? capsuleDefaultRole(capsule));
       }
+      return;
+    }
+
+    const blockRole = contextRoleForDroppableId(overId);
+    if (blockRole && activeCapsuleIds.includes(activeId)) {
+      setActiveCapsules((current) => current.map((capsule) =>
+        capsule.id === activeId ? { ...capsule, role: blockRole } : capsule,
+      ));
+      if (blockRole === 'situation') setCurrentCapsuleId(activeId);
+      markContextApplied(activeId, blockRole);
       return;
     }
 
@@ -2707,7 +2751,7 @@ export function TaskletPraxisWorkbench({
       const oldIndex = current.findIndex((capsule) => capsule.id === activeId);
       const newIndex = current.findIndex((capsule) => capsule.id === overId);
       if (oldIndex < 0 || newIndex < 0) return current;
-      markContextApplied(activeId);
+      markContextApplied(activeId, current[oldIndex]?.role);
       return arrayMove(current, oldIndex, newIndex);
     });
   }
@@ -3029,15 +3073,6 @@ export function TaskletPraxisWorkbench({
                 )}
               </section>
             ) : null}
-            {isCapsuleStudioMode ? (
-              <LiveReadinessStrip
-                capsule={selectedCapsule}
-                contextHealth={contextHealth}
-                runtimeProof={runtimeProof}
-                sourceCount={activeCapsuleSourceCount}
-                selectedAgent={selectedAgent}
-              />
-            ) : null}
             {!isCapsuleStudioMode ? (
             <>
             <p className="receipt-slip flex items-center gap-2 rounded-md px-3 py-1.5 font-mono text-xs font-semibold">
@@ -3059,13 +3094,6 @@ export function TaskletPraxisWorkbench({
               </button>
               <WorkbenchDiagnosticsStrip flags={workbenchRedFlags} onOpen={() => setDiagnosticsOpen(true)} />
             </div>
-            <LiveReadinessStrip
-              capsule={activeCapsuleSummaryForStrip}
-              contextHealth={contextHealth}
-              runtimeProof={runtimeProof}
-              sourceCount={activeCapsuleSourceCount}
-              selectedAgent={selectedAgent}
-            />
             <h1 className="mt-7 max-w-4xl text-center font-serif text-5xl font-semibold tracking-tight text-[color:var(--color-deep-ink)] sm:text-6xl">
               What can PRAXIS do for you?
             </h1>
@@ -3194,35 +3222,26 @@ export function TaskletPraxisWorkbench({
                   <div className="hidden md:block" data-testid="desktop-context-chain-canvas">
                     <ContextChainDropzone>
                     <div className="context-chain relative mt-4 overflow-x-auto rounded-xl p-3 shadow-sm shadow-black/5">
-                      <div className="pointer-events-none absolute left-7 right-7 top-1/2 h-px -translate-y-1/2 bg-gradient-to-r from-[color:var(--color-mineral)]/35 via-[color:var(--color-civic-blue)]/35 to-[color:var(--color-mineral)]/25" aria-hidden />
                       <SortableContext items={activeCapsuleIds} strategy={horizontalListSortingStrategy}>
-                        <div className="relative flex min-w-full items-stretch gap-3">
-                          {activeCapsuleStack.map((capsule, index) => (
-                            <SortableCapsuleBlock
-                              key={capsule.id}
-                              capsule={capsule}
-                              index={index}
-                              reviewCategory={capsuleNeedsCategoryReview(capsule, userCapsules)}
-                              onOpen={() => {
+                        <div className="relative grid min-w-[980px] grid-cols-5 gap-3">
+                          {contextChainBlockLanes.map((block) => (
+                            <ContextChainBlockLane
+                              key={block.id}
+                              block={block}
+                              userCapsules={userCapsules}
+                              recentlyAppliedCapsuleId={recentlyAppliedCapsuleId}
+                              recentlyAppliedBlockId={recentlyAppliedBlockId}
+                              onAdd={() => {
+                                setCapsuleBrowserTargetRole(block.addRole);
+                                openCapsuleBrowserForRole(block.addRole);
+                              }}
+                              onOpen={(capsule) => {
                                 setCurrentCapsuleId(capsule.id);
                                 setActiveTab('capsules');
                                 setInspectorOpen(true);
                               }}
-                              onRemove={() => removeCapsule(capsule.id)}
-                              isRecentlyApplied={recentlyAppliedCapsuleId === capsule.id}
+                              onRemove={(capsule) => removeCapsule(capsule.id)}
                             />
-                          ))}
-                          {openChainSlots.map((slot) => (
-                            <button
-                              key={slot.role}
-                              type="button"
-                              onClick={() => setCapsuleBrowserOpen(true)}
-                              className="praxis-workbench-panel relative min-w-0 flex-1 basis-40 rounded-lg border-dashed p-3 text-left text-xs text-slate-500 transition hover:border-[color:var(--color-oxide)] hover:bg-white"
-                            >
-                              <span className="block font-semibold text-slate-700">{slot.label}</span>
-                              <span className="mt-1 block leading-5">{slot.helper}</span>
-                              <span className="mt-3 inline-flex rounded-md bg-slate-950 px-2 py-1 text-[11px] font-semibold text-white">{slot.action}</span>
-                            </button>
                           ))}
                         </div>
                       </SortableContext>
@@ -3230,22 +3249,14 @@ export function TaskletPraxisWorkbench({
                     </ContextChainDropzone>
                   </div>
                 ) : null}
-                <ContextChainMap
-                  capsule={activeCapsuleSummaryForStrip}
-                  activeCapsuleStack={activeCapsuleStack}
-                  contextHealth={contextHealth}
-                  sourceCount={activeCapsuleSourceCount}
-                  selectedAgent={selectedAgent}
-                  compact
-                />
                 <div className="mt-3 hidden flex-wrap items-center gap-2 md:flex">
                   <SourcePostureChip
                     label={repositoryDocuments.length ? 'Sources ready' : 'Sources needed'}
                     state={repositoryDocuments.length ? 'ready' : 'review'}
                   />
                   <button
-                    type="button"
-                    onClick={() => setCapsuleBrowserOpen(true)}
+                      type="button"
+                    onClick={() => openCapsuleBrowserForRole(null)}
                     className="inline-flex items-center gap-2 rounded-md border border-dashed border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-[color:var(--color-archive-paper-strong)]"
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -3319,7 +3330,7 @@ export function TaskletPraxisWorkbench({
                       ) : null}
                       <button type="button" onClick={() => {
                         setMobileContextSheetOpen(false);
-                        setCapsuleBrowserOpen(true);
+                        openCapsuleBrowserForRole(null);
                       }} className="min-h-11 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white">
                         Browse capsule library
                       </button>
@@ -3458,7 +3469,7 @@ export function TaskletPraxisWorkbench({
                     <button
                       type="button"
                       role="menuitem"
-                      onClick={() => setCapsuleBrowserOpen(true)}
+                      onClick={() => openCapsuleBrowserForRole(null)}
                       className="w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50"
                     >
                       Add capsule context
@@ -3750,12 +3761,8 @@ export function TaskletPraxisWorkbench({
               {isPublicHomepageCapsuleShelf ? (
                 <div className="mt-6">
                   <HumanGatedPolicyFamilyPanel
-                    capsules={visibleHomepageCapsuleCards}
-                    thinkingDevices={visibleHomepageThinkingDevices}
+                    capsules={humanGatedExampleCapsules}
                     selectedCapsule={activeCapsuleSummaryForStrip}
-                    contextHealth={contextHealth}
-                    sourceCount={activeCapsuleSourceCount}
-                    selectedAgent={selectedAgent}
                     isAuthenticated={isAuthenticated}
                     onUseExample={applyCapsuleCard}
                     onInspectExample={openCapsuleInspector}
@@ -4135,8 +4142,11 @@ export function TaskletPraxisWorkbench({
               }}
             />
           }
-          onClose={() => setCapsuleBrowserOpen(false)}
-          onSelect={(capsule) => applyCapsuleCard(capsule)}
+          onClose={() => {
+            setCapsuleBrowserOpen(false);
+            setCapsuleBrowserTargetRole(null);
+          }}
+          onSelect={(capsule) => applyCapsuleCard(capsule, capsuleBrowserTargetRole ?? capsuleDefaultRole(capsule))}
         />
       ) : null}
       </DndContext>
@@ -4652,11 +4662,90 @@ function ContextChainDropzone({ children }: { children: ReactNode }) {
   );
 }
 
+function ContextChainBlockLane({
+  block,
+  userCapsules,
+  recentlyAppliedCapsuleId,
+  recentlyAppliedBlockId,
+  onAdd,
+  onOpen,
+  onRemove,
+}: {
+  block: ContextChainBlockLaneModel;
+  userCapsules: PraxisCapsuleSummary[];
+  recentlyAppliedCapsuleId: string | null;
+  recentlyAppliedBlockId: ContextChainBlockId | null;
+  onAdd: () => void;
+  onOpen: (capsule: ActiveCapsuleChip) => void;
+  onRemove: (capsule: ActiveCapsuleChip) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: `context-block:${block.id}` });
+  const blockApplied = recentlyAppliedBlockId === block.id;
+  return (
+    <section
+      ref={setNodeRef}
+      data-testid={`context-chain-block-${block.id}`}
+      data-context-block-apply-state={blockApplied ? 'applied' : 'idle'}
+      className={cn(
+        'relative min-w-0 rounded-lg border border-slate-200 bg-white/90 p-3 text-left shadow-sm transition',
+        isOver && 'ring-2 ring-[color:var(--color-oxide)]/35 ring-offset-2 ring-offset-white',
+        blockApplied && 'context-apply-pulse ring-2 ring-emerald-300 ring-offset-2 ring-offset-white',
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-oxide)]">{block.label}</p>
+          <p className="mt-1 text-[11px] leading-4 text-slate-500">primary/reference capsule</p>
+        </div>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
+          {block.capsules.length}
+        </span>
+      </div>
+      <div className="mt-3 grid gap-1.5 text-[10px] font-semibold text-slate-600">
+        {block.readiness.map((item) => (
+          <span key={item.label} className="min-w-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1">
+            <span className="text-slate-400">{item.label}: </span>
+            <span className="text-slate-700">{item.value}</span>
+          </span>
+        ))}
+      </div>
+      <div className="mt-3 grid gap-2">
+        {block.capsules.map((capsule, index) => (
+          <SortableCapsuleBlock
+            key={capsule.id}
+            capsule={capsule}
+            index={index}
+            reviewCategory={capsuleNeedsCategoryReview(capsule, userCapsules)}
+            onOpen={() => onOpen(capsule)}
+            onRemove={() => onRemove(capsule)}
+            isPrimary={index === 0}
+            isRecentlyApplied={recentlyAppliedCapsuleId === capsule.id}
+          />
+        ))}
+        {!block.capsules.length ? (
+          <p className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-2 py-3 text-xs leading-5 text-slate-500">
+            {block.helper}
+          </p>
+        ) : null}
+      </div>
+      <button
+        type="button"
+        onClick={onAdd}
+        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold text-slate-600 hover:bg-[color:var(--color-archive-paper-strong)]"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        {block.action}
+      </button>
+    </section>
+  );
+}
+
 function SortableCapsuleBlock({
   capsule,
   index,
   reviewCategory,
   isRecentlyApplied,
+  isPrimary = false,
   onOpen,
   onRemove,
 }: {
@@ -4664,6 +4753,7 @@ function SortableCapsuleBlock({
   index: number;
   reviewCategory: boolean;
   isRecentlyApplied: boolean;
+  isPrimary?: boolean;
   onOpen: () => void;
   onRemove: () => void;
 }) {
@@ -4674,7 +4764,7 @@ function SortableCapsuleBlock({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        'praxis-card-panel relative min-w-0 flex-1 basis-48 rounded-lg border p-3 shadow-sm transition',
+        'praxis-card-panel relative min-w-0 rounded-md border p-2.5 shadow-sm transition',
         capsuleRoleStyles[capsule.role],
         isRecentlyApplied && 'context-apply-pulse ring-2 ring-emerald-300 ring-offset-2 ring-offset-white',
         isDragging && 'z-10 opacity-80 shadow-lg',
@@ -4688,7 +4778,7 @@ function SortableCapsuleBlock({
           className="min-w-0 text-left"
           onClick={onOpen}
         >
-          <span className="block text-[11px] font-semibold uppercase text-current/70">{index === 0 ? 'Active' : roleLabel}</span>
+          <span className="block text-[11px] font-semibold uppercase text-current/70">{isPrimary ? 'Primary' : `${roleLabel} ${index + 1}`}</span>
           <span className="mt-1 block truncate text-sm font-semibold">{capsule.label}</span>
         </button>
         <div className="flex shrink-0 items-center gap-1">
@@ -5247,20 +5337,46 @@ function ensureDefaultCapsuleStack(
   return uniqueCapsuleStack(activeStack).slice(0, 8);
 }
 
+function buildActiveContextBlocks(activeCapsuleStack: ActiveCapsuleChip[]): ActiveContextBlocksPayload {
+  return {
+    userCore: blockPayloadForRole(activeCapsuleStack, 'user'),
+    situation: blockPayloadForRole(activeCapsuleStack, 'situation'),
+    sources: blockPayloadForRole(activeCapsuleStack, 'reference'),
+    thinkingDevices: blockPayloadForRole(activeCapsuleStack, 'tool'),
+    output: blockPayloadForRole(activeCapsuleStack, 'output'),
+  };
+}
+
+function blockPayloadForRole(activeCapsuleStack: ActiveCapsuleChip[], role: CapsuleRole): ActiveContextBlockCapsulePayload[] {
+  return activeCapsuleStack
+    .filter((capsule) => capsule.role === role)
+    .map((capsule, order) => ({
+      ...capsule,
+      id: capsule.id,
+      capsuleId: capsule.id,
+      label: capsule.label,
+      role: capsule.role,
+      primary: order === 0,
+      order,
+    }));
+}
+
 function buildActiveContextStack(currentCapsuleId: string, activeCapsuleStack: ActiveCapsuleChip[]): ActiveContextStackPayload {
-  const userCapsule = activeCapsuleStack.find((capsule) => capsule.role === 'user');
-  const situationCapsule = activeCapsuleStack.find((capsule) => capsule.role === 'situation');
-  const outputCapsule = activeCapsuleStack.find((capsule) => capsule.role === 'output');
+  const contextBlocks = buildActiveContextBlocks(activeCapsuleStack);
+  const userCapsule = contextBlocks.userCore[0];
+  const situationCapsule = contextBlocks.situation[0];
+  const outputCapsule = contextBlocks.output[0];
   return {
     stackId: 'default',
     capsuleId: currentCapsuleId,
     userModelId: userCapsule?.id ?? null,
     situationId: situationCapsule?.id ?? null,
-    sourceIds: activeCapsuleStack.filter((capsule) => capsule.role === 'reference').map((capsule) => capsule.id),
+    sourceIds: contextBlocks.sources.map((capsule) => capsule.id),
     documentIds: [],
     outputGoal: outputCapsule?.label ?? null,
     evidenceGaps: [],
     canvasLayout: {},
+    contextBlocks,
     schemaVersion: 1,
     updatedAt: new Date().toISOString(),
   };
@@ -5272,9 +5388,93 @@ function selectedCoreIdsFromContextStack(activeContextStack: ActiveContextStackP
     situationCoreId: activeContextStack.situationId,
     sourceCoreIds: activeContextStack.sourceIds,
     documentCoreIds: activeContextStack.documentIds,
-    toolCoreIds: [],
-    outputCoreIds: activeContextStack.outputGoal ? [activeContextStack.outputGoal] : [],
+    toolCoreIds: activeContextStack.contextBlocks.thinkingDevices.map((capsule) => capsule.id),
+    outputCoreIds: activeContextStack.contextBlocks.output.length
+      ? activeContextStack.contextBlocks.output.map((capsule) => capsule.id)
+      : activeContextStack.outputGoal ? [activeContextStack.outputGoal] : [],
   };
+}
+
+function buildContextChainBlockLanes(input: {
+  contextBlocks: ActiveContextBlocksPayload;
+  contextHealth: ContextHealth;
+  sourceCount: number;
+  selectedAgent: PolicyAgentDefinition;
+}): ContextChainBlockLaneModel[] {
+  const sourcePosture = input.sourceCount ? 'source-backed' : 'needs sources';
+  const reviewGate = input.contextHealth.label === 'Baseline' ? 'needs review' : 'human-gated';
+  const outputReadiness = input.contextBlocks.output.length ? 'output-ready' : 'exploratory only';
+  const agentRoute = input.contextBlocks.thinkingDevices[0]?.label ?? input.selectedAgent.label;
+  const readiness = (overrides: Partial<Record<ContextChainBlockLaneModel['readiness'][number]['label'], string>> = {}) => [
+    { label: 'Source posture' as const, value: overrides['Source posture'] ?? sourcePosture },
+    { label: 'Review gate' as const, value: overrides['Review gate'] ?? reviewGate },
+    { label: 'Output readiness' as const, value: overrides['Output readiness'] ?? outputReadiness },
+    { label: 'Agent/tool route' as const, value: overrides['Agent/tool route'] ?? agentRoute },
+  ];
+  return [
+    {
+      id: 'userCore',
+      label: 'User Core',
+      helper: 'The analyst posture and model-use baseline.',
+      action: 'Swap user',
+      addRole: 'user',
+      capsules: input.contextBlocks.userCore,
+      readiness: readiness({ 'Review gate': 'profile baseline' }),
+    },
+    {
+      id: 'situation',
+      label: 'Situation',
+      helper: 'Add the case, issue, or operating context.',
+      action: 'Add context',
+      addRole: 'situation',
+      capsules: input.contextBlocks.situation,
+      readiness: readiness({ 'Review gate': input.contextBlocks.situation.length ? reviewGate : 'needs situation' }),
+    },
+    {
+      id: 'sources',
+      label: 'Sources',
+      helper: 'Attach source packs, documents, or related capsules.',
+      action: 'Attach sources',
+      addRole: 'reference',
+      capsules: input.contextBlocks.sources,
+      readiness: readiness({ 'Source posture': sourcePosture }),
+    },
+    {
+      id: 'thinkingDevices',
+      label: 'Thinking Devices',
+      helper: 'Add reasoning tools and checks.',
+      action: 'Add checks',
+      addRole: 'tool',
+      capsules: input.contextBlocks.thinkingDevices,
+      readiness: readiness({ 'Agent/tool route': agentRoute }),
+    },
+    {
+      id: 'output',
+      label: 'Output',
+      helper: 'Choose the memo, brief, handover, or artifact goal.',
+      action: 'Choose output',
+      addRole: 'output',
+      capsules: input.contextBlocks.output,
+      readiness: readiness({ 'Output readiness': outputReadiness }),
+    },
+  ];
+}
+
+function contextBlockIdForRole(role: CapsuleRole): ContextChainBlockId {
+  if (role === 'user') return 'userCore';
+  if (role === 'reference') return 'sources';
+  if (role === 'tool') return 'thinkingDevices';
+  return role;
+}
+
+function contextRoleForDroppableId(id: string): CapsuleRole | null {
+  if (!id.startsWith('context-block:')) return null;
+  const blockId = id.replace('context-block:', '') as ContextChainBlockId;
+  if (blockId === 'userCore') return 'user';
+  if (blockId === 'sources') return 'reference';
+  if (blockId === 'thinkingDevices') return 'tool';
+  if (blockId === 'situation' || blockId === 'output') return blockId;
+  return null;
 }
 
 function getContextHealth(activeCapsuleStack: ActiveCapsuleChip[]): ContextHealth {
@@ -5387,6 +5587,11 @@ function starterDefinitionToCapsuleSummary(starter: CapsuleStarterDefinition): P
 function starterDefinitionForCapsule(capsule: PraxisCapsuleSummary | null): CapsuleStarterDefinition | null {
   if (!capsule) return null;
   return CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === capsule.capsuleId) ?? null;
+}
+
+function isHumanGatedPolicyJudgmentCapsule(capsule: PraxisCapsuleSummary): boolean {
+  const tags = capsule.community?.tags ?? [];
+  return tags.includes('human-gated') || HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS.some((id) => id === capsule.capsuleId);
 }
 
 function buildCapsuleUsefulnessRating(capsule: PraxisCapsuleSummary, mutable: boolean): CapsuleUsefulnessRating {
@@ -6104,7 +6309,7 @@ function CapsuleMap({
   );
 }
 
-function ContextChainMap({
+function ContextChainProvenanceMap({
   capsule,
   activeCapsuleStack = [],
   contextHealth,
@@ -6137,7 +6342,7 @@ function ContextChainMap({
     {
       id: 'situation',
       label: 'Situation',
-      value: situationChip?.label ?? capsule?.label ?? 'Crisis Strategy Room',
+      value: situationChip?.label ?? capsule?.label ?? 'Selected situation',
       state: situationChip || capsule ? 'selected' : 'needs review',
     },
     {
@@ -6163,8 +6368,8 @@ function ContextChainMap({
   return (
     <section
       className={cn('context-chain relative overflow-hidden rounded-xl p-3', compact ? 'mt-3' : 'mt-4')}
-      data-testid="context-chain-map"
-      aria-label="ContextChain Map provenance and readiness"
+      data-testid="context-chain-provenance-map"
+      aria-label="ContextChain provenance and readiness"
     >
       <div className="pointer-events-none absolute left-6 right-6 top-1/2 h-px -translate-y-1/2 bg-[color:var(--color-mineral)]/25" aria-hidden />
       <ol className={cn('relative grid gap-2', compact ? 'grid-cols-1 sm:grid-cols-5' : 'grid-cols-1 md:grid-cols-5')}>
@@ -6181,205 +6386,71 @@ function ContextChainMap({
         ))}
       </ol>
       <p className="sr-only">
-        ContextChain Map shows state and provenance only; it does not expose hidden chain-of-thought.
+        ContextChain provenance map shows state and provenance only; it does not expose hidden chain-of-thought.
       </p>
-    </section>
-  );
-}
-
-function LiveReadinessStrip({
-  capsule,
-  contextHealth,
-  runtimeProof,
-  sourceCount,
-  selectedAgent,
-}: {
-  capsule: PraxisCapsuleSummary | null;
-  contextHealth: ContextHealth;
-  runtimeProof: RuntimeProof;
-  sourceCount: number;
-  selectedAgent: PolicyAgentDefinition;
-}) {
-  const counts = capsule ? capsuleCounts(capsule) : { sources: 0, documents: 0, tools: 0, outputs: 0 };
-  const starter = capsule ? starterDefinitionForCapsule(capsule) : null;
-  const cells = [
-    { label: 'Capsule health', value: contextHealth.label, state: contextHealth.label === 'Baseline' ? 'watch' : 'ready' },
-    { label: 'Source posture', value: sourceCount || counts.sources + counts.documents ? 'source-backed' : 'needs sources', state: sourceCount || counts.sources + counts.documents ? 'ready' : 'review' },
-    { label: 'Review gate', value: starter?.humanReview ? 'human-gated' : capsule?.health?.warnings?.length ? 'needs review' : 'review ready', state: starter?.humanReview ? 'ready' : 'review' },
-    { label: 'Output readiness', value: counts.outputs ? 'output-ready' : 'exploratory only', state: counts.outputs ? 'ready' : 'watch' },
-    { label: 'Agent permission', value: runtimeProof.queuedRunId ? runtimeProof.workerStatus.replaceAll('_', ' ') : selectedAgent.riskLevel, state: runtimeProof.queuedRunId ? 'ready' : 'review' },
-  ];
-
-  return (
-    <section
-      className="receipt-slip mt-4 grid w-full max-w-5xl gap-2 rounded-md p-3 font-mono text-[11px] sm:grid-cols-5"
-      data-testid="live-readiness-strip"
-      aria-label="Live Readiness Strip"
-    >
-      {cells.map((cell) => (
-        <span key={cell.label} className="min-w-0 rounded-md border border-white/10 bg-white/5 px-2 py-2">
-          <span className="block uppercase tracking-[0.12em] text-white/50">{cell.label}</span>
-          <span className="mt-1 block truncate font-semibold text-white" title={cell.value}>{cell.value}</span>
-          <span className="sr-only">{cell.state}</span>
-        </span>
-      ))}
     </section>
   );
 }
 
 function HumanGatedPolicyFamilyPanel({
   capsules,
-  thinkingDevices,
   selectedCapsule,
-  contextHealth,
-  sourceCount,
-  selectedAgent,
   isAuthenticated,
   onUseExample,
   onInspectExample,
   onOpenFullLibrary,
 }: {
   capsules: PraxisCapsuleSummary[];
-  thinkingDevices: PraxisCapsuleSummary[];
   selectedCapsule: PraxisCapsuleSummary | null;
-  contextHealth: ContextHealth;
-  sourceCount: number;
-  selectedAgent: PolicyAgentDefinition;
   isAuthenticated: boolean;
   onUseExample: (capsule: PraxisCapsuleSummary) => void;
   onInspectExample: (capsule: PraxisCapsuleSummary) => void;
   onOpenFullLibrary: () => void;
 }) {
-  const familySourceCount = capsules.reduce((total, capsule) => {
-    const counts = capsuleCounts(capsule);
-    return total + counts.sources + counts.documents;
-  }, 0);
-  const averageScore = capsules.length
-    ? Math.round(capsules.reduce((total, capsule) => total + (capsule.trust?.score ?? capsule.health?.score ?? 80), 0) / capsules.length)
-    : 0;
-  const exampleCapsule = selectedCapsule ?? capsules[0] ?? null;
-  const exampleCounts = exampleCapsule ? capsuleCounts(exampleCapsule) : null;
-  const capabilityRows = [
-    ['Load context', 'Adds situation, sources, thinking device, and output readiness to the ContextChain.'],
-    ['Inspect gates', 'Shows source refs, stale claims, unsupported claims, quality, and human-review posture.'],
-    ['Draft safely', 'Lets an agent prepare output while human-gated capsules keep changes reviewable.'],
-  ];
+  const exampleCapsule = capsules.find(isHumanGatedPolicyJudgmentCapsule) ?? selectedCapsule ?? capsules[0] ?? null;
 
   return (
-    <section className="human-gated-example-panel cartographic-grid w-full max-w-full overflow-hidden rounded-xl border border-[color:var(--color-clay)]/40 bg-[color:var(--color-mineral-soft)] p-4 shadow-sm" data-testid="human-gated-policy-family">
-      <div className="grid max-w-full gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]" data-testid="human-gated-example-panel">
-        <div className="min-w-0 max-w-full">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md border border-[color:var(--color-oxide)]/30 bg-white/75 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-oxide)]">
-              Example capsule family
-            </span>
-            <span className="break-words text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-deep-ink)] opacity-70">
-              {HUMAN_GATED_POLICY_JUDGMENT_FAMILY.title}
-            </span>
-          </div>
-          <h2 className="mt-2 break-words font-serif text-3xl font-semibold tracking-tight text-slate-950">
-            {HUMAN_GATED_POLICY_JUDGMENT_FAMILY.room}
-          </h2>
-          <p className="mt-2 max-w-3xl break-words text-sm leading-6 text-slate-600">
-            {HUMAN_GATED_POLICY_JUDGMENT_FAMILY.summary}
+    <section className="human-gated-example-panel cartographic-grid w-full max-w-full overflow-hidden rounded-lg border border-[color:var(--color-clay)]/40 bg-[color:var(--color-mineral-soft)] p-3 shadow-sm" data-testid="human-gated-policy-family">
+      <div className="flex flex-wrap items-start justify-between gap-3" data-testid="human-gated-example-panel">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-oxide)]">Example capsule family</p>
+          <h2 className="mt-1 text-lg font-semibold leading-6 text-slate-950">Human-Gated Policy Judgment Capsule</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-700">
+            This is a working example: load it into the ContextChain, inspect its gates, or sign in to fork it into the full library.
           </p>
-          <p className="mt-2 max-w-3xl break-words text-sm leading-6 text-slate-700">
-            This is a working example: load the capsule into Ask PRAXIS, inspect its gates and sources, or sign in to fork it into the full library.
-          </p>
-          <div className="mt-4 grid max-w-full gap-2 [grid-template-columns:repeat(auto-fit,minmax(min(12rem,100%),1fr))]">
-            <DossierStackMetric label="review stamp" value={HUMAN_GATED_POLICY_JUDGMENT_FAMILY.stamp} />
-            <DossierStackMetric label="source count" value={`${familySourceCount} refs`} />
-            <DossierStackMetric label="quality score" value={`${averageScore || 80}/100`} />
-          </div>
-          <div className="mt-4 grid max-w-full gap-2 [grid-template-columns:repeat(auto-fit,minmax(min(13rem,100%),1fr))]">
-            {capabilityRows.map(([label, detail]) => (
-              <p key={label} className="rounded-md border border-white/60 bg-white/70 px-3 py-2 text-xs leading-5 text-slate-600">
-                <span className="block font-semibold text-slate-950">{label}</span>
-                {detail}
-              </p>
-            ))}
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {thinkingDevices.slice(0, PUBLIC_THINKING_DEVICE_LIMIT).map((device) => (
-              <span key={device.capsuleId} className="max-w-full break-words rounded-md border border-[color:var(--color-clay)]/25 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700">
-                {device.label}
-              </span>
-            ))}
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2" data-testid="human-gated-example-actions">
-            {exampleCapsule ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => onUseExample(exampleCapsule)}
-                  className="inline-flex min-h-10 items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-                >
-                  <ArrowUp className="h-4 w-4" />
-                  Use this example capsule
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onInspectExample(exampleCapsule)}
-                  className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[color:var(--color-clay)]/35 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-[color:var(--color-archive-paper-strong)]"
-                >
-                  <Search className="h-4 w-4" />
-                  Inspect example
-                </button>
-              </>
-            ) : null}
-            <button
-              type="button"
-              onClick={onOpenFullLibrary}
-              className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[color:var(--color-mineral)]/25 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-white"
-            >
-              <Library className="h-4 w-4" />
-              {isAuthenticated ? 'Open full capsule library' : 'Sign in to see the full capsule library'}
-            </button>
-          </div>
         </div>
-        <div className="dossier-spine min-w-0 max-w-full overflow-hidden rounded-lg border p-3">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-oxide)]">Dossier stack</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">
-            Click a dossier to inspect the example capsule before using it.
-          </p>
-          <div className="mt-3 space-y-2">
-            {capsules.slice(0, 3).map((capsule, index) => (
+        <div className="flex shrink-0 flex-wrap gap-2" data-testid="human-gated-example-actions">
+          {exampleCapsule ? (
+            <>
               <button
-                key={capsule.capsuleId}
                 type="button"
-                onClick={() => onInspectExample(capsule)}
-                className="specimen-card relative block w-full max-w-full rounded-lg p-3 text-left hover:border-[color:var(--color-clay)]/50"
-                style={{ transform: `translateX(${index * 6}px)` }}
+                onClick={() => onUseExample(exampleCapsule)}
+                className="inline-flex min-h-10 items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
               >
-                <p className="truncate text-xs font-semibold text-slate-950">{capsule.label}</p>
-                <p className="mt-1 font-mono text-[10px] text-slate-500">{capsuleCounts(capsule).sources + capsuleCounts(capsule).documents} sources / gate ready</p>
+                <ArrowUp className="h-4 w-4" />
+                Use example
               </button>
-            ))}
-          </div>
-          {exampleCounts ? (
-            <p className="mt-3 rounded-md border border-[color:var(--color-mineral)]/20 bg-white/70 px-2 py-1.5 font-mono text-[10px] text-slate-600">
-              Example selected: {exampleCounts.sources + exampleCounts.documents} refs / {exampleCounts.tools} tools / {exampleCounts.outputs} outputs
-            </p>
+              <button
+                type="button"
+                onClick={() => onInspectExample(exampleCapsule)}
+                className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[color:var(--color-clay)]/35 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-[color:var(--color-archive-paper-strong)]"
+              >
+                <Search className="h-4 w-4" />
+                Inspect
+              </button>
+            </>
           ) : null}
+          <button
+            type="button"
+            onClick={onOpenFullLibrary}
+            className="inline-flex min-h-10 items-center gap-2 rounded-md border border-[color:var(--color-mineral)]/25 bg-white/75 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-white"
+          >
+            <Library className="h-4 w-4" />
+            {isAuthenticated ? 'Open full library' : 'Sign in for full library'}
+          </button>
         </div>
       </div>
-      <ContextChainMap
-        capsule={exampleCapsule}
-        contextHealth={contextHealth}
-        sourceCount={sourceCount || familySourceCount}
-        selectedAgent={selectedAgent}
-        compact
-      />
     </section>
-  );
-}
-
-function DossierStackMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <span className="receipt-slip min-w-0 rounded-md px-3 py-2 font-mono text-[11px]">
-      <span className="block uppercase tracking-[0.14em] text-white/50">{label}</span>
-      <span className="mt-1 block truncate font-semibold text-white" title={value}>{value}</span>
-    </span>
   );
 }
 
@@ -9038,7 +9109,7 @@ function CapsuleInspectorSheet({
           <Metric label="Tools" value={counts.tools} />
           <Metric label="Outputs" value={counts.outputs} />
         </div>
-        <ContextChainMap
+        <ContextChainProvenanceMap
           capsule={capsule}
           contextHealth={contextHealth}
           sourceCount={counts.sources + counts.documents}

@@ -111,6 +111,10 @@ describe('/api/memos/from-ask-pack', () => {
       runId: 'run-1',
       outputTarget: 'memo',
     }));
+    const memoDraftInput = saveMemoDraft.mock.calls[0][1] as { blocks: Array<Record<string, unknown>> };
+    for (const block of memoDraftInput.blocks) {
+      expect(Object.values(block)).not.toContain(undefined);
+    }
     expect(saveOutputCapsule).toHaveBeenCalledWith('user-1', expect.objectContaining({
       contextCapsuleId: 'cap-1',
       templateId: 'options-memo',

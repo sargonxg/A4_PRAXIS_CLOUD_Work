@@ -1381,6 +1381,16 @@ export function capsuleToStack(capsule: PraxisCapsule): ActiveContextStackState 
     sourceIds: capsule.coreRefs.sourceCoreIds,
     documentIds: capsule.coreRefs.documentCoreIds,
     outputGoal: capsule.coreRefs.outputCoreIds[0] ?? null,
+    contextBlocks: {
+      userCore: capsule.coreRefs.userCoreId ? [{ id: capsule.coreRefs.userCoreId, role: 'user' }] : [],
+      situation: capsule.coreRefs.situationCoreId ? [{ id: capsule.coreRefs.situationCoreId, role: 'situation' }] : [],
+      sources: [
+        ...capsule.coreRefs.sourceCoreIds.map((id) => ({ id, role: 'source' })),
+        ...capsule.coreRefs.documentCoreIds.map((id) => ({ id, role: 'document' })),
+      ],
+      thinkingDevices: (capsule.coreRefs.toolCoreIds ?? []).map((id) => ({ id, role: 'tool' })),
+      output: capsule.coreRefs.outputCoreIds.map((id) => ({ id, role: 'output' })),
+    },
   });
 }
 
@@ -1390,7 +1400,10 @@ export function stackToCoreRefs(stack: ActiveContextStackState): CapsuleCoreRefs
     situationCoreId: stack.situationId,
     sourceCoreIds: stack.sourceIds,
     documentCoreIds: stack.documentIds,
-    outputCoreIds: stack.outputGoal ? [stack.outputGoal] : [],
+    outputCoreIds: stack.contextBlocks.output.length
+      ? stack.contextBlocks.output.map((item) => item.id)
+      : stack.outputGoal ? [stack.outputGoal] : [],
+    toolCoreIds: stack.contextBlocks.thinkingDevices.map((item) => item.id),
   });
 }
 

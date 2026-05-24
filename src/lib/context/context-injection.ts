@@ -1,6 +1,7 @@
 import {
   DEFAULT_CONTEXT_STACK_ID,
   sanitizeActiveContextStack,
+  type ActiveContextBlocks,
   type ActiveContextStackState,
 } from '@/lib/context/active-context-stack';
 import {
@@ -17,7 +18,7 @@ export interface InjectableContextInput {
   uid: string;
   capsuleId?: string | null;
   contextPackageId?: string | null;
-  activeContextStack?: Partial<ActiveContextStackState> | null;
+  activeContextStack?: unknown;
   situationId?: string | null;
 }
 
@@ -46,15 +47,20 @@ export async function resolveInjectableContext(
     capsule = await getCapsule(input.uid, pointer, deps);
   }
 
+  let resolvedStack = incomingStack;
   if (!capsule && incomingStack && incomingStack.stackId === DEFAULT_CONTEXT_STACK_ID) {
-    capsule = (await saveContextStackCompat(input.uid, incomingStack, deps)).capsule;
+    const saved = await saveContextStackCompat(input.uid, incomingStack, deps);
+    capsule = saved.capsule;
+    resolvedStack = saved.stack;
   }
 
   if (!capsule) {
     capsule = (await getOrMigrateDefaultCapsule(input.uid, deps)).capsule;
   }
 
-  const stack = capsuleToStack(capsule);
+  const stack = resolvedStack
+    ? sanitizeActiveContextStack({ ...capsuleToStack(capsule), ...resolvedStack })
+    : capsuleToStack(capsule);
   const resolvedAt = new Date().toISOString();
   const associated = await resolveAssociatedCapsules(input.uid, capsule, deps);
   return {
@@ -66,6 +72,7 @@ export async function resolveInjectableContext(
     promptBlock: buildCapsulePromptBlock(capsule, {
       resolvedAt,
       situationId: input.situationId,
+      activeContextStack: stack,
       associatedCapsules: associated.capsules,
       missingAssociatedCapsuleIds: associated.missingIds,
     }),
@@ -90,6 +97,7 @@ export function buildCapsulePromptBlock(
   input: {
     resolvedAt?: string;
     situationId?: string | null;
+    activeContextStack?: ActiveContextStackState | null;
     associatedCapsules?: PraxisCapsule[];
     missingAssociatedCapsuleIds?: string[];
   } = {},
@@ -135,6 +143,7 @@ export function buildCapsulePromptBlock(
     '',
     buildCapsuleStarterPromptBlock(capsule.capsuleId, capsule.starterSnapshot),
     buildAssociatedCapsulesPromptBlock(input.associatedCapsules ?? [], input.missingAssociatedCapsuleIds ?? []),
+    buildContextChainBlocksPromptBlock(input.activeContextStack?.contextBlocks),
     '[retrieval_policy]',
     `layers: ${capsule.retrievalPolicy.layers.join(', ')}`,
     `limit: ${capsule.retrievalPolicy.limit}`,
@@ -143,6 +152,9 @@ export function buildCapsulePromptBlock(
     '',
     '[rules]',
     'Use this ContextCapsule Lite as the inherited working context for the answer.',
+    'Capsules are the principal governed context.',
+    'Outside model knowledge, online reading, and retrieval are supplemental only.',
+    'Use outside information only to supplement, verify, or fill explicit gaps, and clearly mark when a claim comes from outside the capsule.',
     'Treat associated capsules as reference-only context. Do not merge their cores, documents, tools, or outputs into the primary capsule.',
     'Treat ContextCapsule Lite as the current PRAXIS-built lightweight institutional-memory object; full DIALECTICA-built capsules may arrive through the adapter later.',
     'Respect locked cores as fixed context. Do not suggest swapping them unless the user asks to unlock.',
@@ -163,6 +175,36 @@ export function buildCapsulePromptBlock(
   }
 
   return lines.join('\n');
+}
+
+function buildContextChainBlocksPromptBlock(blocks: ActiveContextBlocks | undefined): string {
+  if (!blocks) {
+    return [
+      '[context_chain_blocks]',
+      'user_core: none',
+      'situation: none',
+      'sources: none',
+      'thinking_devices: none',
+      'output: none',
+      '',
+    ].join('\n');
+  }
+  return [
+    '[context_chain_blocks]',
+    `user_core: ${formatContextBlockItems(blocks.userCore)}`,
+    `situation: ${formatContextBlockItems(blocks.situation)}`,
+    `sources: ${formatContextBlockItems(blocks.sources)}`,
+    `thinking_devices: ${formatContextBlockItems(blocks.thinkingDevices)}`,
+    `output: ${formatContextBlockItems(blocks.output)}`,
+    '',
+  ].join('\n');
+}
+
+function formatContextBlockItems(items: ActiveContextBlocks[keyof ActiveContextBlocks]): string {
+  if (!items.length) return 'none';
+  return items
+    .map((item) => `${item.id} [${item.primary ? 'primary' : 'secondary'}]${item.label ? ` ${item.label}` : ''}`)
+    .join('; ');
 }
 
 async function resolveAssociatedCapsules(

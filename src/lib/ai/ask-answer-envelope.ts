@@ -583,7 +583,15 @@ function block(
   title?: string,
   items?: string[],
 ): MemoBlock {
-  return { id, type, content, citations, metadata, title, items };
+  return {
+    id,
+    type,
+    content,
+    citations,
+    metadata,
+    ...(title ? { title } : {}),
+    ...(items ? { items } : {}),
+  };
 }
 
 function groundClaims(answer: string, sourceCards: SourcePreviewCard[]): ClaimGrounding[] {
