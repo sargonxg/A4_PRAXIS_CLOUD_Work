@@ -710,6 +710,7 @@ const STARTER_USER_CAPSULE_CHIP: ActiveCapsuleChip = {
   code: 'USER',
   role: 'user',
 };
+const MAX_ACTIVE_CONTEXT_CAPSULES = 12;
 
 const capsuleChainSlots: Array<{ id: ContextChainBlockId; role: CapsuleRole; label: string; helper: string; action: string }> = [
   { id: 'situation', role: 'situation', label: 'Situation', helper: 'Add the case, issue, or operating context.', action: 'Add context' },
@@ -4854,7 +4855,7 @@ function ContextChainBlockLane({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-oxide)]">{block.label}</p>
-          <p className="mt-1 text-[11px] leading-4 text-slate-500">primary/reference capsule</p>
+          <p className="mt-1 text-[11px] leading-4 text-slate-500">Primary + references; add one or more capsules here.</p>
         </div>
         <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
           {block.capsules.length}
@@ -5493,7 +5494,7 @@ function ensureDefaultCapsuleStack(
   input: { userCapsules: PraxisCapsuleSummary[]; selectedCapsule: PraxisCapsuleSummary | null },
 ): ActiveCapsuleChip[] {
   void input;
-  return uniqueCapsuleStack(activeStack).slice(0, 8);
+  return uniqueCapsuleStack(activeStack).slice(0, MAX_ACTIVE_CONTEXT_CAPSULES);
 }
 
 function buildActiveContextBlocks(activeCapsuleStack: ActiveCapsuleChip[]): ActiveContextBlocksPayload {
@@ -5671,10 +5672,15 @@ function getContextHealth(activeCapsuleStack: ActiveCapsuleChip[]): ContextHealt
 }
 
 function applyCapsuleToStack(current: ActiveCapsuleChip[], chip: ActiveCapsuleChip): ActiveCapsuleChip[] {
-  const next = chip.role === 'reference' || chip.role === 'tool'
-    ? [...current.filter((item) => item.id !== chip.id), chip]
-    : [chip, ...current.filter((item) => item.id !== chip.id && item.role !== chip.role)];
-  return uniqueCapsuleStack(next).slice(0, 8);
+  const withoutCurrentCapsule = current.filter((item) => item.id !== chip.id);
+  const firstRoleIndex = withoutCurrentCapsule.findIndex((item) => item.role === chip.role);
+  const next = [...withoutCurrentCapsule];
+  if (firstRoleIndex >= 0) {
+    next.splice(firstRoleIndex, 0, chip);
+  } else {
+    next.push(chip);
+  }
+  return uniqueCapsuleStack(next).slice(0, MAX_ACTIVE_CONTEXT_CAPSULES);
 }
 
 function uniqueCapsuleStack(stack: ActiveCapsuleChip[]): ActiveCapsuleChip[] {

@@ -2672,8 +2672,8 @@
     "hash": "ca0257f971b99dbb43ee1b549f855b10"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tasklet-praxis-workbench.tsx": {
-    "mtime": 1779645864.68899,
-    "hash": "9b8857c17be3e52670e1db227cb1f48c"
+    "mtime": 1779647657.854135,
+    "hash": "0443241826f162f64de90dfab40ad56a"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tasklet-workbench-conversation.ts": {
     "mtime": 1779242221.4093075,
@@ -4816,8 +4816,8 @@
     "hash": "eee40dffb279a4d42b24d5eff22b3030"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\tasklet-workbench-contract.test.ts": {
-    "mtime": 1779643526.0876164,
-    "hash": "beee2d60498164dcb9823f80ebae698e"
+    "mtime": 1779647777.8857977,
+    "hash": "ceff782752a7bd4633ee71f3860a82dd"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\tasklet-workbench-conversation.test.ts": {
     "mtime": 1779247653.9027836,
@@ -5856,7 +5856,7 @@
     "hash": "b3e8b2991061e723703308f5bc8f16a0"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-19-capsule-depth-audit.md": {
-    "mtime": 1779645840.2155,
+    "mtime": 1779646750.7663724,
     "hash": "d98891c6c07585e61043be60fadfab1c"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-19-capsule-discussion-filter-diagnostic.md": {
@@ -5971,13 +5971,9 @@
     "mtime": 1779586007.656772,
     "hash": "1697007af68e049796b37c768ade30f6"
   },
-  "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-24-agentic-search-redflags.md": {
-    "mtime": 1779645711.6284997,
-    "hash": "fd0648fbe6bd4013943172d16795a39c"
-  },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-24-DEEP_PRESHIP_CHECKLIST.md": {
-    "mtime": 1779637631.2346644,
-    "hash": "2c2a9266e85c9a67e9a7f8fd0d31d770"
+    "mtime": 1779646978.354505,
+    "hash": "e075ce37fd82263b1ef27f688e6ed396"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\tool-contracts-2026-05-16.md": {
     "mtime": 1778962490.8568892,
@@ -6012,7 +6008,7 @@
     "hash": "3bba6bb41f82c25382c360dafd612461"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\tool-contracts-2026-05-24.md": {
-    "mtime": 1779637231.8433535,
+    "mtime": 1779646625.7226326,
     "hash": "107c69d4c04217defc4f6f3415adcaa4"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\agentic-research-evals\\2026-05-20-praxis-vs-generic-llm.md": {

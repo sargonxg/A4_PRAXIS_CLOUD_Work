@@ -27,6 +27,9 @@ const repositoryGridSource = extractSourceBlock('function CapsuleRepositoryGrid'
 const inspectorSheetSource = extractSourceBlock('function CapsuleInspectorSheet', 'function PraxisGuideChat');
 const contextBarSource = extractSourceBlock('data-testid="capsule-context-bar"', 'data-testid="ask-capsule-workflow-preview"');
 const humanGatedExampleSource = extractSourceBlock('function HumanGatedPolicyFamilyPanel', 'function PublicFullLibraryCta');
+const activeContextStackHelperSource = extractSourceBlock('function buildActiveContextBlocks', 'function selectedCoreIdsFromContextStack');
+const applyCapsuleToStackSource = extractSourceBlock('function applyCapsuleToStack', 'function uniqueCapsuleStack');
+const contextChainLaneSource = extractSourceBlock('function ContextChainBlockLane', 'function SortableCapsuleBlock');
 
 describe('Tasklet PRAXIS workbench contract', () => {
   it('keeps model routing TACITUS-owned in the main composer', () => {
@@ -468,6 +471,27 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('void combineCapsuleLiteStack(current.slice(0, 5));');
   });
 
+  it('keeps every composer section capable of one or multiple capsules', () => {
+    expect(source).toContain('type ActiveContextBlocksPayload = Record<ContextChainBlockId, ActiveContextBlockCapsulePayload[]>');
+    for (const roleMapping of [
+      "userCore: blockPayloadForRole(activeCapsuleStack, 'user')",
+      "situation: blockPayloadForRole(activeCapsuleStack, 'situation')",
+      "sources: blockPayloadForRole(activeCapsuleStack, 'reference')",
+      "thinkingDevices: blockPayloadForRole(activeCapsuleStack, 'tool')",
+      "output: blockPayloadForRole(activeCapsuleStack, 'output')",
+    ]) {
+      expect(activeContextStackHelperSource).toContain(roleMapping);
+    }
+    expect(activeContextStackHelperSource).toContain('primary: order === 0');
+    expect(activeContextStackHelperSource).toContain('order,');
+    expect(applyCapsuleToStackSource).toContain('const withoutCurrentCapsule = current.filter((item) => item.id !== chip.id)');
+    expect(applyCapsuleToStackSource).toContain('firstRoleIndex');
+    expect(applyCapsuleToStackSource).not.toContain('item.role !== chip.role');
+    expect(contextChainLaneSource).toContain('block.capsules.map');
+    expect(contextChainLaneSource).toContain('{block.capsules.length}');
+    expect(contextChainLaneSource).toContain('Primary + references');
+  });
+
   it('keeps the default context chain empty except for the user model baseline', () => {
     expect(source).not.toContain('Model knowledge is the default baseline. Add capsules, sources, or web search to make PRAXIS more specific, current, and reusable.');
     expect(source).toContain("const activeCapsuleForStrip = selectedCapsule ?? activeCapsuleStack[0] ?? null");
@@ -500,7 +524,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('function ContextChainProvenanceMap');
     expect(contextBarSource).toContain('data-testid="desktop-context-chain-canvas"');
     expect(source).toContain('data-testid={`context-chain-block-${block.id}`}');
-    expect(source).toContain('primary/reference capsule');
+    expect(source).toContain('Primary + references');
     expect(source).toContain('Source posture');
     expect(source).toContain('Review gate');
     expect(source).toContain('Output readiness');
