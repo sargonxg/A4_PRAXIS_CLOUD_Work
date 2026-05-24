@@ -128,6 +128,8 @@ describe('/api/memos/from-ask-pack', () => {
         traceId: 'thread-1:run-1',
       }),
     }));
+    const outputCapsuleInput = saveOutputCapsule.mock.calls[0][1] as { citations: Array<Record<string, unknown>> };
+    expect(outputCapsuleInput.citations[0]).not.toHaveProperty('uri');
     expect(body.outputCapsule).toMatchObject({ id: 'out-1' });
   });
 

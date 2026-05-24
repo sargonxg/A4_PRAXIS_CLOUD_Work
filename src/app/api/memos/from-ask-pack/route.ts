@@ -151,8 +151,8 @@ function buildOutputCapsuleInput(
   const citations = pack.sourceCards.map((card, index) => ({
     id: card.sourceReceiptId ?? card.id ?? `source-${index + 1}`,
     title: card.title,
-    uri: card.url,
-    sourceReceiptId: card.sourceReceiptId,
+    ...(card.url ? { uri: card.url } : {}),
+    ...(card.sourceReceiptId ? { sourceReceiptId: card.sourceReceiptId } : {}),
     confidence: card.confidence,
   }));
   const citationIds = citations.map((citation) => citation.id);
