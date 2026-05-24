@@ -49,6 +49,53 @@ export const CompositePackPayloadSchema = BasePayloadSchema.extend({
   })).default([]),
 });
 
+export const BoardExecutivePackPayloadSchema = BasePayloadSchema.extend({
+  meetingBrief: z.string().min(1),
+  agenda: z.array(z.string()).default([]),
+  roster: z.array(z.object({
+    participantId: z.string().min(1),
+    label: z.string().min(1),
+    lens: z.string().min(1),
+  })).default([]),
+  transcript: z.array(z.object({
+    turnId: z.string().min(1),
+    round: z.number().int().positive(),
+    participantId: z.string().min(1),
+    state: z.string().min(1),
+    claim: z.string().min(1),
+    evidenceRefs: z.array(z.string()).default([]),
+    critique: z.string().optional(),
+    recommendation: z.string().optional(),
+    confidence: z.enum(['high', 'medium', 'low']),
+  })).default([]),
+  topicClusters: z.array(z.object({
+    topic: z.string().min(1),
+    mentions: z.number().int().nonnegative(),
+    participantIds: z.array(z.string()).default([]),
+  })).default([]),
+  consensus: z.array(z.string()).default([]),
+  divergences: z.array(z.string()).default([]),
+  risks: z.array(z.string()).default([]),
+  openQuestions: z.array(z.string()).default([]),
+  evidenceStats: z.object({
+    sourceCount: z.number().int().nonnegative(),
+    documentCount: z.number().int().nonnegative(),
+    sourcedParagraphCount: z.number().int().nonnegative(),
+    unsupportedClaimCount: z.number().int().nonnegative(),
+  }),
+  confidenceDistribution: z.object({
+    high: z.number().int().nonnegative(),
+    medium: z.number().int().nonnegative(),
+    low: z.number().int().nonnegative(),
+  }),
+  nextActions: z.array(z.object({
+    action: z.string().min(1),
+    owner: z.string().min(1),
+    urgency: z.string().min(1),
+  })).default([]),
+  memoId: z.string().min(1).optional(),
+});
+
 export const OUTPUT_CAPSULE_PAYLOAD_SCHEMAS = {
   'daily-read-v1': DailyReadPayloadSchema,
   'morning-brief-v1': DailyReadPayloadSchema,
@@ -64,6 +111,7 @@ export const OUTPUT_CAPSULE_PAYLOAD_SCHEMAS = {
   'options-memo-v1': BasePayloadSchema,
   'diplomatic-cable-v1': BasePayloadSchema,
   'talking-points-v1': BasePayloadSchema,
+  'board-executive-pack-v1': BoardExecutivePackPayloadSchema,
   'country-pack-v1': CompositePackPayloadSchema,
 } as const;
 

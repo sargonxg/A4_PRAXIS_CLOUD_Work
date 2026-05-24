@@ -52,6 +52,7 @@ describe('OutputCapsules', () => {
       'risk-monitor-card',
       'electoral-risk-card',
       'governance-index',
+      'board-executive-pack',
       'options-memo',
       'diplomatic-cable',
       'talking-points',
@@ -142,6 +143,44 @@ describe('OutputCapsules', () => {
     });
 
     expect(quality.blockers).toContain('unsupported-claims-unresolved');
+  });
+
+  it('validates board-executive pack payloads produced by boardroom runs', () => {
+    const parsed = validateOutputCapsulePayload('board-executive-pack-v1', {
+      title: 'Boardroom pack',
+      summary: 'Chair synthesis with evidence posture.',
+      meetingBrief: 'Boardroom brief for the active capsule.',
+      agenda: ['Context brief', 'Chair synthesis'],
+      roster: [{ participantId: 'synthesis-chair', label: 'Synthesis Chair', lens: 'Chair' }],
+      transcript: [{
+        turnId: 'run-1:r1:legal',
+        round: 1,
+        participantId: 'legal',
+        state: 'speaking',
+        claim: 'Legal lens requires a sourceability check.',
+        evidenceRefs: ['source:1'],
+        confidence: 'medium',
+      }],
+      topicClusters: [{ topic: 'Evidence coverage', mentions: 1, participantIds: ['legal'] }],
+      consensus: ['Keep source gaps visible.'],
+      divergences: ['Red Team remains conditional.'],
+      risks: ['Unsupported claims need review.'],
+      openQuestions: ['Who approves the pack?'],
+      evidenceStats: {
+        sourceCount: 1,
+        documentCount: 0,
+        sourcedParagraphCount: 0,
+        unsupportedClaimCount: 0,
+      },
+      confidenceDistribution: { high: 0, medium: 1, low: 0 },
+      nextActions: [{ action: 'Review the pack.', owner: 'chair', urgency: 'short-term' }],
+      memoId: 'memo-1',
+    });
+
+    expect(parsed).toMatchObject({
+      meetingBrief: 'Boardroom brief for the active capsule.',
+      memoId: 'memo-1',
+    });
   });
 
   it('keeps draft/review possible but blocks approval and shipping when quality is not clean', () => {
