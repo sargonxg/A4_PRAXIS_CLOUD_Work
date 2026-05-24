@@ -21,6 +21,7 @@ import {
   type AgentRuntimeMirrorDeps,
 } from '@/lib/agent-runtime/mirror';
 import { runCapsuleFactoryDraft, type CapsuleFactoryDeps } from '@/lib/agent-runtime/capsule-factory';
+import { buildBoardroomOutput, boardroomParticipantLabel, type BoardroomOutput } from '@/lib/boardroom/schema';
 
 export type ExecuteAgentRunPayload = {
   runId: string;
@@ -35,7 +36,7 @@ export type ExecuteAgentRunPayload = {
 export type ExecuteAgentRunResult = {
   runId: string;
   status: AgentRun['status'];
-  executionMode: 'noop' | 'capsule-factory' | 'research-memo' | 'output-formatter' | 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder';
+  executionMode: 'noop' | 'capsule-factory' | 'research-memo' | 'boardroom-discussion' | 'output-formatter' | 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder';
   traceId: string;
   idempotent?: boolean;
   outputHref?: string;
@@ -70,6 +71,9 @@ export async function executeAgentRun(
   }
   if (policyAgent?.id === 'research-memo') {
     return executeResearchMemoAgentRun(payload, { ...deps, getRun: async () => run });
+  }
+  if (policyAgent?.id === 'boardroom-discussion') {
+    return executeBoardroomAgentRun(payload, { ...deps, getRun: async () => run });
   }
   if (policyAgent?.id === 'output-formatter') {
     return executeOutputFormatterAgentRun(payload, { ...deps, getRun: async () => run });
@@ -590,6 +594,238 @@ async function executeResearchMemoAgentRun(
         attempt: payload.attempt,
         error: err instanceof Error ? err.message : String(err),
         executionStage,
+      },
+    }).catch(() => null);
+    throw new AgentWorkerError('Agent run execution failed', 500);
+  }
+}
+
+async function executeBoardroomAgentRun(
+  payload: ExecuteAgentRunPayload,
+  deps: WorkerDeps = {},
+): Promise<ExecuteAgentRunResult> {
+  const getRun = deps.getRun ?? getAgentRun;
+  const updateStatus = deps.updateStatus ?? updateAgentRunStatus;
+  const persistMemo = deps.saveMemoDraft ?? saveMemoDraft;
+  const persistOutputCapsule = deps.saveOutputCapsule ?? saveOutputCapsule;
+  const persistToolCall = deps.appendToolCall ?? appendAgentToolCall;
+  const run = await getRun(payload.ownerUid, payload.runId);
+  if (!run) {
+    throw new AgentWorkerError('Agent run not found', 404);
+  }
+  if (run.traceId !== payload.traceId || run.capsuleId !== payload.capsuleId) {
+    throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
+  }
+  if (run.status === 'succeeded') {
+    return {
+      runId: run.id,
+      status: run.status,
+      executionMode: 'boardroom-discussion',
+      traceId: run.traceId,
+      outputHref: outputHrefFromMetadata(run.metadata, `/app/boardroom?runId=${encodeURIComponent(run.id)}`),
+      idempotent: true,
+    };
+  }
+  if (run.status !== 'queued' && run.status !== 'running') {
+    throw new AgentWorkerError(`Agent run cannot be executed from ${run.status}`, 409);
+  }
+
+  let running = run;
+  try {
+    if (run.status !== 'running') {
+      const next = await updateStatus({
+        ownerUid: run.ownerUid,
+        runId: run.id,
+        toStatus: 'running',
+        message: 'Boardroom Discussion accepted the queued capsule run.',
+        data: {
+          dispatchId: payload.dispatchId,
+          attempt: payload.attempt,
+          requestedAt: payload.requestedAt,
+        },
+      });
+      if (!next) throw new AgentWorkerError('Agent run disappeared before execution', 404);
+      running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
+    }
+
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'context_resolved',
+      message: 'Boardroom Discussion resolved the active ContextCapsule and boardroom spec.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        workerContext: buildCapsuleWorkerContext(running),
+        executionMode: 'boardroom-discussion',
+      },
+    }, deps);
+
+    const boardroom = buildBoardroomOutput({
+      runId: running.id,
+      capsuleId: running.capsuleId,
+      objective: running.objective,
+      metadata: running.metadata,
+      selectedCoreIds: running.selectedCoreIds,
+      createdAt: running.createdAt,
+    });
+
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'boardroom.brief_created',
+      message: 'Boardroom Discussion created the meeting brief and agenda.',
+      data: {
+        meetingBrief: boardroom.meetingBrief,
+        agenda: boardroom.agenda,
+        roster: boardroom.roster,
+      },
+    }, deps);
+
+    for (const turn of boardroom.transcript) {
+      await mirrorWorkerEvent(running, {
+        substrate: 'praxis',
+        phase: `boardroom.turn.${turn.participantId}`,
+        message: `${boardroomParticipantLabel(turn.participantId)} completed boardroom turn ${turn.round}.`,
+        data: {
+          turn,
+          state: turn.state,
+          confidence: turn.confidence,
+        },
+      }, deps);
+    }
+
+    await persistToolCall(makeAgentToolCall({
+      runId: running.id,
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      toolId: 'boardroom-deliberation',
+      risk: getAgentToolDefinition('boardroom-deliberation').risk,
+      status: 'succeeded',
+      input: {
+        objective: running.objective,
+        participantIds: boardroom.roster.map((participant) => participant.participantId),
+      },
+      output: {
+        transcriptTurnCount: boardroom.transcript.length,
+        topicClusterCount: boardroom.topicClusters.length,
+        confidenceDistribution: boardroom.confidenceDistribution,
+      },
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    }));
+
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'boardroom.synthesis_created',
+      message: 'Synthesis Chair created the final boardroom synthesis.',
+      data: {
+        finalSynthesis: boardroom.finalSynthesis,
+        consensus: boardroom.consensus,
+        divergences: boardroom.divergences,
+        risks: boardroom.risks,
+        openQuestions: boardroom.openQuestions,
+        evidenceStats: boardroom.evidenceStats,
+      },
+    }, deps);
+
+    const memoRecord = await persistMemo(running.ownerUid, {
+      caseId: running.selectedCoreIds.situationCoreId ?? running.capsuleId,
+      templateId: 'policy-memo',
+      title: `Boardroom pack - ${running.objective.slice(0, 72)}`,
+      graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:boardroom`,
+      changeNote: `Created by Boardroom Discussion run ${running.id}.`,
+      capsuleId: running.capsuleId,
+      runId: running.id,
+      outputTarget: 'board_executive_pack',
+      sourceReceiptIds: stringArray(running.metadata.sourceReceiptIds),
+      blocks: buildBoardroomMemoBlocks(running, boardroom),
+    });
+
+    await persistToolCall(makeAgentToolCall({
+      runId: running.id,
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      toolId: 'board-executive-pack',
+      risk: getAgentToolDefinition('board-executive-pack').risk,
+      status: 'succeeded',
+      input: { objective: running.objective },
+      output: { memoId: memoRecord.memo.id, evidenceStats: boardroom.evidenceStats },
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    }));
+
+    const outputCapsule = await persistOutputCapsule(
+      running.ownerUid,
+      buildBoardroomOutputCapsuleInput(running, boardroom, memoRecord.memo.id),
+    );
+    if (outputCapsule) {
+      await persistToolCall(makeAgentToolCall({
+        runId: running.id,
+        ownerUid: running.ownerUid,
+        capsuleId: running.capsuleId,
+        toolId: 'output-capsule-save',
+        risk: getAgentToolDefinition('output-capsule-save').risk,
+        status: 'succeeded',
+        input: { memoId: memoRecord.memo.id, templateId: 'board-executive-pack' },
+        output: { outputCapsuleId: outputCapsule.id },
+        startedAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+      }));
+    }
+
+    const outputHref = outputCapsule?.id
+      ? `/app/boardroom?runId=${encodeURIComponent(running.id)}&memoId=${encodeURIComponent(memoRecord.memo.id)}&outputCapsuleId=${encodeURIComponent(outputCapsule.id)}`
+      : `/app/boardroom?runId=${encodeURIComponent(running.id)}&memoId=${encodeURIComponent(memoRecord.memo.id)}`;
+
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'boardroom.artifact_created',
+      message: 'Boardroom Discussion persisted a Memo Studio draft and board-executive OutputCapsule.',
+      data: {
+        memoId: memoRecord.memo.id,
+        outputCapsuleId: outputCapsule?.id ?? null,
+        outputHref,
+        boardroomOutput: boardroom,
+      },
+    }, deps);
+
+    const succeeded = await updateStatus({
+      ownerUid: running.ownerUid,
+      runId: running.id,
+      toStatus: 'succeeded',
+      message: 'Boardroom Discussion completed the capsule-grounded board pack.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        executionMode: 'boardroom-discussion',
+        memoId: memoRecord.memo.id,
+        outputCapsuleId: outputCapsule?.id ?? null,
+        outputHref,
+        boardroomOutput: boardroom,
+        sourceCount: boardroom.evidenceStats.sourceCount,
+        documentCount: boardroom.evidenceStats.documentCount,
+      },
+    });
+
+    return {
+      runId: succeeded?.id ?? running.id,
+      status: succeeded?.status ?? 'succeeded',
+      executionMode: 'boardroom-discussion',
+      traceId: running.traceId,
+      outputHref,
+      memoId: memoRecord.memo.id,
+      outputCapsuleId: outputCapsule?.id,
+    };
+  } catch (err) {
+    if (err instanceof AgentWorkerError) throw err;
+    await updateStatus({
+      ownerUid: running.ownerUid,
+      runId: running.id,
+      toStatus: 'failed',
+      message: 'Boardroom Discussion failed before creating the board pack.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        error: err instanceof Error ? err.message : String(err),
       },
     }).catch(() => null);
     throw new AgentWorkerError('Agent run execution failed', 500);
@@ -1383,6 +1619,168 @@ function buildOutputCapsuleInput(
       createdBy: running.ownerUid,
       toolIds: ['capsule-evidence-pack', 'policy-memo', 'sourceability-reviewer'],
       agentIds: ['research-memo', running.id],
+      traceId: running.traceId,
+    },
+  };
+}
+
+function buildBoardroomMemoBlocks(
+  running: AgentRun,
+  boardroom: BoardroomOutput,
+): SaveMemoDraftInput['blocks'] {
+  const baseMetadata = {
+    runId: running.id,
+    policyAgentId: 'boardroom-discussion',
+    capsuleId: running.capsuleId,
+    traceId: running.traceId,
+  };
+  return [
+    {
+      id: 'boardroom-title',
+      type: 'heading',
+      title: 'Boardroom pack',
+      content: running.objective,
+      citations: [],
+      metadata: baseMetadata,
+    },
+    {
+      id: 'boardroom-brief',
+      type: 'paragraph',
+      title: 'Meeting brief',
+      content: boardroom.meetingBrief,
+      citations: [],
+      metadata: baseMetadata,
+    },
+    {
+      id: 'boardroom-roster',
+      type: 'bullets',
+      title: 'Participant roster',
+      content: '',
+      items: boardroom.roster.map((participant) => `${participant.label}: ${participant.lens}`),
+      citations: [],
+      metadata: baseMetadata,
+    },
+    {
+      id: 'boardroom-transcript',
+      type: 'bullets',
+      title: 'Turn transcript',
+      content: '',
+      items: boardroom.transcript.map((turn) => [
+        `R${turn.round} ${boardroomParticipantLabel(turn.participantId)} (${turn.confidence})`,
+        turn.claim,
+        turn.critique ? `Critique: ${turn.critique}` : null,
+        turn.recommendation ? `Recommendation: ${turn.recommendation}` : null,
+      ].filter(Boolean).join(' - ')),
+      citations: [],
+      metadata: {
+        ...baseMetadata,
+        turnCount: boardroom.transcript.length,
+      },
+    },
+    {
+      id: 'boardroom-synthesis',
+      type: 'paragraph',
+      title: 'Chair synthesis',
+      content: boardroom.finalSynthesis,
+      citations: [],
+      metadata: {
+        ...baseMetadata,
+        consensus: boardroom.consensus,
+        divergences: boardroom.divergences,
+        risks: boardroom.risks,
+        openQuestions: boardroom.openQuestions,
+      },
+    },
+    {
+      id: 'boardroom-evidence-stats',
+      type: 'bullets',
+      title: 'Evidence and confidence stats',
+      content: '',
+      items: [
+        `${boardroom.evidenceStats.sourceCount} source reference(s).`,
+        `${boardroom.evidenceStats.documentCount} document reference(s).`,
+        `${boardroom.evidenceStats.unsupportedClaimCount} unsupported claim marker(s).`,
+        `Confidence distribution: high ${boardroom.confidenceDistribution.high}, medium ${boardroom.confidenceDistribution.medium}, low ${boardroom.confidenceDistribution.low}.`,
+      ],
+      citations: [],
+      metadata: {
+        ...baseMetadata,
+        evidenceStats: boardroom.evidenceStats,
+        confidenceDistribution: boardroom.confidenceDistribution,
+      },
+    },
+    {
+      id: 'boardroom-next-actions',
+      type: 'bullets',
+      title: 'Next actions',
+      content: '',
+      items: boardroom.nextActions.map((item) => `${item.urgency}: ${item.action} (${item.owner})`),
+      citations: [],
+      metadata: baseMetadata,
+    },
+  ];
+}
+
+function buildBoardroomOutputCapsuleInput(
+  running: AgentRun,
+  boardroom: BoardroomOutput,
+  memoId: string,
+): SaveOutputCapsuleInput {
+  const citations = [
+    ...stringArray(running.metadata.sourceReceiptIds).map((sourceReceiptId, index) => ({
+      id: `src-${index + 1}`,
+      title: sourceReceiptId,
+      sourceReceiptId,
+      confidence: 0.7,
+    })),
+    ...running.selectedCoreIds.documentCoreIds.map((documentId, index) => ({
+      id: `doc-${index + 1}`,
+      title: documentId,
+      confidence: 0.6,
+    })),
+  ];
+  const gaps = [
+    ...boardroom.openQuestions.map((question, index) => ({
+      id: `open-question-${index + 1}`,
+      claim: question,
+      reason: 'Boardroom run left this as an open question.',
+      severity: 'medium' as const,
+    })),
+    ...(boardroom.evidenceStats.unsupportedClaimCount ? [{
+      id: 'sourceability-gap-1',
+      claim: 'Some boardroom claims remain weakly sourced.',
+      reason: 'The run had limited source receipts or relied on capsule context only.',
+      severity: 'high' as const,
+    }] : []),
+  ];
+  return {
+    id: `run-${running.id}-board-executive-pack`,
+    situationId: running.selectedCoreIds.situationCoreId ?? running.capsuleId,
+    contextCapsuleId: running.capsuleId,
+    templateId: 'board-executive-pack',
+    payload: {
+      title: `Boardroom pack - ${running.objective.slice(0, 80)}`,
+      summary: boardroom.finalSynthesis,
+      meetingBrief: boardroom.meetingBrief,
+      agenda: boardroom.agenda,
+      roster: boardroom.roster,
+      transcript: boardroom.transcript,
+      topicClusters: boardroom.topicClusters,
+      consensus: boardroom.consensus,
+      divergences: boardroom.divergences,
+      risks: boardroom.risks,
+      openQuestions: boardroom.openQuestions,
+      evidenceStats: boardroom.evidenceStats,
+      confidenceDistribution: boardroom.confidenceDistribution,
+      nextActions: boardroom.nextActions,
+      memoId,
+    },
+    citations,
+    gaps,
+    provenance: {
+      createdBy: running.ownerUid,
+      toolIds: ['context-resolve', 'boardroom-deliberation', 'board-executive-pack', 'output-capsule-save'],
+      agentIds: ['boardroom-discussion', running.id],
       traceId: running.traceId,
     },
   };

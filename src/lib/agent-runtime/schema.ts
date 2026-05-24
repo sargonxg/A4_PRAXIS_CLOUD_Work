@@ -84,6 +84,12 @@ export const AgentRunOutputSchema = z.object({
   groundingPosture: z.string().nullable().optional(),
   degradedReason: z.string().nullable().optional(),
   approvalGateCount: z.number().int().nonnegative().optional(),
+  artifactIds: z.array(z.string()).optional(),
+  latestMirroredEvent: z.object({
+    eventType: z.string(),
+    message: z.string().nullable(),
+    createdAt: z.string(),
+  }).nullable().optional(),
   readiness: z.enum(['live', 'queued', 'planned', 'gated']).nullable().optional(),
   riskLevel: z.enum(['low', 'medium', 'high']).nullable().optional(),
   contextReceipt: z.object({
@@ -153,6 +159,8 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
   const capsuleReadReceipt = isRecord(run.metadata?.capsuleReadReceipt) ? run.metadata.capsuleReadReceipt as unknown as CapsuleReadReceipt : undefined;
   const workflowPlan = isRecord(run.metadata?.workflowPlan) ? run.metadata.workflowPlan as unknown as AgentWorkflowPlan : undefined;
   const sourceabilityLedgerSummary = normalizeSourceabilityLedgerSummary(run.metadata?.sourceabilityLedgerSummary);
+  const artifactIds = normalizeArtifactIds(run.metadata);
+  const latestMirroredEvent = normalizeLatestMirroredEvent(run.metadata?.latestMirroredEvent);
   return AgentRunOutputSchema.parse({
     runId: run.id,
     status: run.status,
@@ -174,6 +182,8 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
     groundingPosture,
     degradedReason,
     approvalGateCount,
+    artifactIds,
+    latestMirroredEvent,
     readiness: policyAgent?.readiness ?? null,
     riskLevel: policyAgent?.riskLevel ?? null,
     contextReceipt: {
@@ -224,6 +234,39 @@ function normalizeSourceabilityLedgerSummary(value: unknown): SourceabilityLedge
     assumptionClaims: nonnegativeInt(value.assumptionClaims) ?? 0,
   };
   return summary;
+}
+
+function normalizeArtifactIds(metadata: Record<string, unknown> | undefined): string[] {
+  if (!metadata) return [];
+  return Array.from(new Set([
+    ...stringArray(metadata.artifactIds),
+    ...stringArray(metadata.createdArtifactIds),
+    ...[
+      metadata.memoId,
+      metadata.outputCapsuleId,
+      metadata.handoverPackageId,
+      metadata.documentId,
+      metadata.exportId,
+    ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0),
+  ].map((value) => value.trim()).filter(Boolean)));
+}
+
+function normalizeLatestMirroredEvent(value: unknown): AgentRunOutput['latestMirroredEvent'] | null {
+  if (!isRecord(value)) return null;
+  const eventType = typeof value.eventType === 'string' && value.eventType.trim()
+    ? value.eventType.trim()
+    : typeof value.type === 'string' && value.type.trim()
+      ? value.type.trim()
+      : null;
+  const createdAt = typeof value.createdAt === 'string' && value.createdAt.trim()
+    ? value.createdAt.trim()
+    : null;
+  if (!eventType || !createdAt) return null;
+  return {
+    eventType,
+    message: typeof value.message === 'string' && value.message.trim() ? value.message.trim() : null,
+    createdAt,
+  };
 }
 
 function destinationLabel(destination: PolicyAgentOutputDestination): string {

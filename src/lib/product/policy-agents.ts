@@ -24,6 +24,7 @@ export type PolicyAgentRunIntent =
   | 'normal_answer'
   | 'capsule_factory'
   | 'research_memo'
+  | 'boardroom_discussion'
   | 'sourceability_review'
   | 'format_output'
   | 'red_team_review'
@@ -106,6 +107,21 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     allowedTools: ['context-resolve', 'document-retrieve', 'grounded-search', 'policy-memo', 'sourceability-reviewer'],
     capsuleSlots: ['user', 'situation', 'sources', 'documents', 'outputs'],
     actionLabel: 'Run memo agent',
+  },
+  {
+    id: 'boardroom-discussion',
+    label: 'Boardroom Discussion',
+    category: 'analysis',
+    description: 'Runs a chair-led, capsule-grounded boardroom deliberation with participant lenses, transcript proof, evidence stats, and a board-executive pack.',
+    requiredCores: ['User Core', 'Situation Core', 'Source Core', 'Document Core', 'Output Core'],
+    inputTypes: ['prompt', 'capsule', 'documents', 'source receipts', 'participant lenses'],
+    outputDestination: 'library',
+    approvalLevel: 'confirm',
+    readiness: 'live',
+    riskLevel: 'medium',
+    allowedTools: ['context-resolve', 'capsule-evidence-pack', 'document-retrieve', 'boardroom-deliberation', 'sourceability-reviewer', 'red-team-review', 'board-executive-pack', 'output-capsule-save'],
+    capsuleSlots: ['user', 'situation', 'sources', 'documents', 'tools', 'outputs', 'memory'],
+    actionLabel: 'Open boardroom',
   },
   {
     id: 'output-formatter',
@@ -218,6 +234,8 @@ export function policyAgentRunIntent(agentId: string | null | undefined): Policy
       return 'capsule_factory';
     case 'research-memo':
       return 'research_memo';
+    case 'boardroom-discussion':
+      return 'boardroom_discussion';
     case 'sourceability-reviewer':
       return 'sourceability_review';
     case 'output-formatter':

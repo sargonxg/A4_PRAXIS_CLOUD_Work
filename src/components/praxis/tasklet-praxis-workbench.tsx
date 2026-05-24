@@ -256,6 +256,30 @@ type AgentRunDetail = {
   toolCalls?: unknown[];
   approvals?: AgentApprovalSummary[];
 };
+type CreatedWorkKind =
+  | 'ask_document_pack'
+  | 'output_capsule'
+  | 'memo_draft'
+  | 'handover_package'
+  | 'tool_run_artifact'
+  | 'agent_run';
+type CreatedWorkSummary = {
+  id: string;
+  kind: CreatedWorkKind;
+  title: string;
+  status: string;
+  capsuleId: string | null;
+  conversationId: string | null;
+  runId: string | null;
+  createdAt: string;
+  primaryAction: {
+    label: string;
+    href: string;
+  };
+  receiptIds: string[];
+  outputCapsuleId?: string | null;
+  mode: 'live' | 'demo';
+};
 type SpanTargetCore = 'sourceability' | 'causality' | 'rules' | 'temporality';
 type SpanAttachStatus = 'idle' | 'pending' | 'success' | 'error';
 type SelectionZone = 'assistant-answer' | 'source-preview' | 'repository-text' | 'source-pack' | 'memo-text';
@@ -451,6 +475,26 @@ const defaultRecentRuns = [
   { label: 'Source check', detail: 'Evidence gaps', status: 'review' },
   { label: 'Options memo', detail: 'Drafting context', status: 'draft' },
 ];
+
+function demoCreatedWorkFromRecentRuns(
+  recentRuns: Array<{ label: string; detail: string; status: string }>,
+  currentCapsuleId: string,
+): CreatedWorkSummary[] {
+  const now = new Date().toISOString();
+  return (recentRuns.length ? recentRuns : defaultRecentRuns).slice(0, 4).map((run, index) => ({
+    id: `demo-created-work-${index + 1}`,
+    kind: index === 0 ? 'ask_document_pack' : index === 1 ? 'tool_run_artifact' : 'output_capsule',
+    title: run.label,
+    status: run.status,
+    capsuleId: currentCapsuleId || 'demo-capsule',
+    conversationId: index === 0 ? 'demo-conversation' : null,
+    runId: index > 0 ? `demo-run-${index}` : null,
+    createdAt: now,
+    primaryAction: { label: 'Open demo', href: '/login?mode=signup' },
+    receiptIds: run.detail ? [`demo:${run.detail}`] : [],
+    mode: 'demo',
+  }));
+}
 
 const actionIcons = [
   { label: 'Attach document', icon: Paperclip, kind: 'upload' },
@@ -807,6 +851,8 @@ export function TaskletPraxisWorkbench({
   const [repositoryLoading, setRepositoryLoading] = useState(false);
   const [savedConversations, setSavedConversations] = useState<SavedConversationSummary[]>([]);
   const [savedConversationsLoading, setSavedConversationsLoading] = useState(false);
+  const [createdWork, setCreatedWork] = useState<CreatedWorkSummary[]>([]);
+  const [createdWorkLoading, setCreatedWorkLoading] = useState(false);
   const [agentRuns, setAgentRuns] = useState<AgentRunSummary[]>([]);
   const [agentRunsLoading, setAgentRunsLoading] = useState(false);
   const [agentRunCreating, setAgentRunCreating] = useState(false);
@@ -1175,6 +1221,40 @@ export function TaskletPraxisWorkbench({
     router.push(href);
   }
 
+  function openCreatedWorkItem(item: CreatedWorkSummary) {
+    if (!isAuthenticated && item.mode === 'demo') {
+      sendPublicToLogin(`Open this PRAXIS created work item: ${item.title}`);
+      return;
+    }
+    const href = item.primaryAction.href;
+    if (/^https?:\/\//i.test(href)) {
+      window.location.assign(href);
+      return;
+    }
+    router.push(href);
+  }
+
+  function actOnCreatedWorkItem(item: CreatedWorkSummary, action: 'attach' | 'memo' | 'receipts') {
+    if (!isAuthenticated && item.mode === 'demo') {
+      sendPublicToLogin(`Continue from this PRAXIS created work item: ${item.title}`);
+      return;
+    }
+    const receiptLine = item.receiptIds.length ? `\nReceipts: ${item.receiptIds.join(', ')}` : '';
+    const lineageLine = [
+      item.capsuleId ? `Capsule: ${item.capsuleId}` : null,
+      item.conversationId ? `Conversation: ${item.conversationId}` : null,
+      item.runId ? `Run: ${item.runId}` : null,
+      item.outputCapsuleId ? `OutputCapsule: ${item.outputCapsuleId}` : null,
+    ].filter(Boolean).join(' / ');
+    const promptByAction = {
+      attach: `Attach this created work item to the active ContextCapsule and preserve provenance.\n\n${item.kind}: ${item.title}\n${lineageLine}${receiptLine}`,
+      memo: `Continue this created work item as a Memo Studio draft with source gaps, caveats, and next actions.\n\n${item.kind}: ${item.title}\n${lineageLine}${receiptLine}`,
+      receipts: `Inspect the receipts and provenance for this created work item. Identify unsupported claims, gaps, output target, and whether it is safe to export.\n\n${item.kind}: ${item.title}\n${lineageLine}${receiptLine}`,
+    } satisfies Record<typeof action, string>;
+    setPrompt(promptByAction[action]);
+    setStatus(action === 'receipts' ? 'Created Work receipt inspection loaded into the composer.' : 'Created Work action loaded into the composer.');
+  }
+
   async function copyConversationLink() {
     if (!isAuthenticated) {
       sendPublicToLogin(prompt.trim() || 'Start a PRAXIS conversation.');
@@ -1446,6 +1526,7 @@ export function TaskletPraxisWorkbench({
       setStatus(`Conversation saved at this link with ${contextLabel}.`);
       void refreshCapsules();
       void refreshSavedConversations();
+      void refreshCreatedWork();
       try {
         window.localStorage.removeItem(PENDING_TASKLET_PROMPT_KEY);
         window.localStorage.removeItem(PENDING_POLICY_AGENT_ID_KEY);
@@ -1534,6 +1615,7 @@ export function TaskletPraxisWorkbench({
     setStatus(`${title} saved to the active capsule repository.`);
     await refreshCapsules(currentCapsuleId);
     await refreshRepository();
+    await refreshCreatedWork();
   }
 
   async function saveAssistantArtifactFromPack(
@@ -1591,6 +1673,7 @@ export function TaskletPraxisWorkbench({
       if (memoId) router.push(`/app/write?memoId=${encodeURIComponent(memoId)}`);
       await refreshCapsules(currentCapsuleId);
       await refreshRepository();
+      await refreshCreatedWork();
     } finally {
       setAssistantArtifactSavingKey(null);
     }
@@ -1909,6 +1992,32 @@ export function TaskletPraxisWorkbench({
     void refreshSavedConversations();
   }, [isAuthenticated, refreshSavedConversations]);
 
+  const refreshCreatedWork = useCallback(async () => {
+    if (!isAuthenticated) {
+      setCreatedWork(demoCreatedWorkFromRecentRuns(recentRuns, currentCapsuleId));
+      setCreatedWorkLoading(false);
+      return;
+    }
+    setCreatedWorkLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: '10' });
+      if (currentCapsuleId) params.set('capsuleId', currentCapsuleId);
+      const response = await fetch(`/api/created-work?${params.toString()}`, { credentials: 'include' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error ?? 'created work list failed');
+      setCreatedWork(Array.isArray(payload?.items) ? payload.items as CreatedWorkSummary[] : []);
+    } catch (err) {
+      setStatus(err instanceof Error ? `Created Work unavailable: ${err.message}` : 'Created Work unavailable.');
+      setCreatedWork([]);
+    } finally {
+      setCreatedWorkLoading(false);
+    }
+  }, [currentCapsuleId, isAuthenticated, recentRuns]);
+
+  useEffect(() => {
+    void refreshCreatedWork();
+  }, [refreshCreatedWork]);
+
   const loadConversationHistory = useCallback(async (capsuleIdToLoad: string, threadIdToLoad: string) => {
     if (!isAuthenticated || !capsuleIdToLoad || !threadIdToLoad) return;
     const loadKey = `${capsuleIdToLoad}:${threadIdToLoad}`;
@@ -2062,6 +2171,7 @@ export function TaskletPraxisWorkbench({
       }
       void loadFocusedRunDetails(focusedRunId, { showLoading: true });
       void refreshAgentRuns();
+      void refreshCreatedWork();
     } catch (err) {
       setStatus(err instanceof Error ? `Agent action failed: ${err.message}` : 'Agent action failed.');
     } finally {
@@ -2147,6 +2257,7 @@ export function TaskletPraxisWorkbench({
       }
       router.push(`/agents/${encodeURIComponent(run.runId)}`);
       void refreshAgentRuns();
+      void refreshCreatedWork();
     } catch (err) {
       setStatus(err instanceof Error ? `Agent run failed: ${err.message}` : 'Agent run failed.');
     } finally {
@@ -2915,6 +3026,12 @@ export function TaskletPraxisWorkbench({
               )) : null}
             </div>
           </div>
+          <CreatedWorkRail
+            items={createdWork}
+            loading={createdWorkLoading}
+            onOpen={openCreatedWorkItem}
+            onAction={actOnCreatedWorkItem}
+          />
           {isAuthenticated ? (
           <div className="mt-8">
             <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">Agent runs <ChevronDown className="h-3 w-3" /></p>
@@ -3068,6 +3185,14 @@ export function TaskletPraxisWorkbench({
                         <Sparkles className="h-4 w-4" />
                         Review improvements
                       </button>
+                      <Link
+                        href="/app/boardroom"
+                        data-testid="capsule-studio-boardroom-action"
+                        className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        <BrainCircuit className="h-4 w-4" />
+                        Boardroom
+                      </Link>
                     </div>
                   </>
                 )}
@@ -3112,6 +3237,16 @@ export function TaskletPraxisWorkbench({
               >
                 <WandSparkles className="h-4 w-4" />
                 Open Capsules
+              </Link>
+            ) : null}
+            {isAuthenticated ? (
+              <Link
+                href="/app/boardroom"
+                data-testid="open-boardroom-workspace-cta"
+                className="mt-3 inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+              >
+                <BrainCircuit className="h-4 w-4" />
+                Open Boardroom
               </Link>
             ) : null}
 
@@ -9663,6 +9798,85 @@ function InspectorTextSection({ label, detail }: { label: string; detail: string
       <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
     </section>
   );
+}
+
+function CreatedWorkRail({
+  items,
+  loading,
+  onOpen,
+  onAction,
+}: {
+  items: CreatedWorkSummary[];
+  loading: boolean;
+  onOpen: (item: CreatedWorkSummary) => void;
+  onAction: (item: CreatedWorkSummary, action: 'attach' | 'memo' | 'receipts') => void;
+}) {
+  return (
+    <section className="mt-8" data-testid="created-work-rail">
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">Created Work <ChevronDown className="h-3 w-3" /></p>
+        <span className="text-[11px] font-semibold text-slate-400">{loading ? 'loading' : `${items.length} shown`}</span>
+      </div>
+      <div className="mt-3 space-y-2">
+        {items.slice(0, 6).map((item) => (
+          <article key={`${item.kind}:${item.id}`} className="rounded-md border border-black/10 bg-white/55 p-2 text-left shadow-sm">
+            <button type="button" onClick={() => onOpen(item)} className="block w-full min-w-0 text-left">
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                <FileText className="h-3 w-3" />
+                {createdWorkKindLabel(item.kind)}
+              </span>
+              <span className="mt-1 block line-clamp-2 text-sm font-semibold leading-5 text-slate-900">{item.title}</span>
+              <span className="mt-1 block truncate text-[11px] text-slate-500">
+                {item.status} / {item.capsuleId ?? 'no capsule'} / {formatCreatedWorkDate(item.createdAt)}
+              </span>
+            </button>
+            <div className="mt-2 flex flex-wrap gap-1">
+              <button type="button" onClick={() => onOpen(item)} className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] font-semibold text-slate-700 hover:bg-slate-50">
+                Open
+              </button>
+              <button type="button" onClick={() => onAction(item, 'attach')} className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] font-semibold text-slate-700 hover:bg-slate-50">
+                Attach to capsule
+              </button>
+              <button type="button" onClick={() => onAction(item, 'memo')} className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] font-semibold text-slate-700 hover:bg-slate-50">
+                Continue as memo
+              </button>
+              <button type="button" onClick={() => onAction(item, 'receipts')} className="rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[10px] font-semibold text-slate-700 hover:bg-slate-50">
+                Inspect receipts
+              </button>
+            </div>
+          </article>
+        ))}
+        {!loading && items.length === 0 ? (
+          <span className="block rounded-md border border-dashed border-black/10 px-2 py-2 text-xs font-semibold text-slate-500">
+            No created work yet
+          </span>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function createdWorkKindLabel(kind: CreatedWorkKind): string {
+  switch (kind) {
+    case 'ask_document_pack':
+      return 'Ask pack';
+    case 'output_capsule':
+      return 'OutputCapsule';
+    case 'memo_draft':
+      return 'Memo draft';
+    case 'handover_package':
+      return 'Handover';
+    case 'tool_run_artifact':
+      return 'Tool artifact';
+    case 'agent_run':
+      return 'Agent run';
+  }
+}
+
+function formatCreatedWorkDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'date open';
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 function AgentActionDrawer({

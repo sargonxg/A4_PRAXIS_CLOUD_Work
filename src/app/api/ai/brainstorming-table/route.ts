@@ -29,88 +29,18 @@ import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { searchSituationCorpus } from '@/lib/intelligence/corpus-search';
-import { AGENT_REGISTRY, DEFAULT_BRAINSTORMING_PANEL, type AgentPersonaId } from '@/lib/agents/registry';
+import {
+  BRAINSTORMING_PERSONAS,
+  BRAINSTORMING_PERSONA_IDS,
+  BrainstormingTableSchema,
+  type BrainstormingPersonaId,
+} from '@/lib/boardroom/brainstorming-table';
 import { getDocumentById } from '@/lib/firebase/documents-service';
 import type { Situation } from '@/types/situation';
 
+export { BRAINSTORMING_PERSONAS, BrainstormingTableSchema, type BrainstormingPersonaId };
+
 export const maxDuration = 90;
-
-// ---------------------------------------------------------------------------
-// Persona registry — sourced from src/lib/agents/registry.ts so every consumer
-// (this route, future agent routes, docs, tests) shares the same vocabulary.
-// ---------------------------------------------------------------------------
-
-export type BrainstormingPersonaId = Extract<
-  AgentPersonaId,
-  'mediator' | 'humanitarian' | 'legal' | 'media' | 'security' | 'red-team'
->;
-
-const PERSONA_IDS = DEFAULT_BRAINSTORMING_PANEL as unknown as [
-  BrainstormingPersonaId,
-  ...BrainstormingPersonaId[]
-];
-
-export const BRAINSTORMING_PERSONAS = PERSONA_IDS.map((id) => {
-  const p = AGENT_REGISTRY[id];
-  return { id: p.id as BrainstormingPersonaId, label: p.label, rolePrompt: p.rolePrompt };
-}) as ReadonlyArray<{ id: BrainstormingPersonaId; label: string; rolePrompt: string }>;
-
-// ---------------------------------------------------------------------------
-// Output schema
-// ---------------------------------------------------------------------------
-
-const TurnSchema = z.object({
-  turnId: z.string(),
-  persona: z.enum(PERSONA_IDS),
-  claim: z.string().min(10),
-  evidence: z
-    .array(
-      z.object({
-        sourceType: z.enum(['argus', 'sources', 'documents', 'graph', 'tool-output', 'situation', 'web', 'reasoning']),
-        sourceId: z.string().optional(),
-        excerpt: z.string(),
-      })
-    )
-    .min(0),
-  critique: z.string().optional(),
-  recommendation: z.string().optional(),
-  confidence: z.enum(['high', 'medium', 'low']),
-  status: z.enum(['proposed', 'challenged', 'accepted', 'rejected']),
-});
-
-const SynthesisSchema = z.object({
-  bluf: z.string().min(20),
-  consensusPoints: z.array(z.string()),
-  divergences: z.array(z.string()),
-  optionsForDecision: z.array(
-    z.object({
-      label: z.string(),
-      tradeoffs: z.string(),
-      preferredBy: z.array(z.enum(PERSONA_IDS)).optional(),
-    })
-  ),
-  openQuestions: z.array(z.string()),
-  nextActions: z.array(
-    z.object({
-      action: z.string(),
-      owner: z.enum(['analyst', 'mission', 'donor', 'cluster-lead', 'red-team', 'researcher']).optional(),
-      urgency: z.enum(['immediate', 'short-term', 'medium-term']),
-    })
-  ),
-});
-
-export const BrainstormingTableSchema = z.object({
-  question: z.string(),
-  generatedAt: z.string(),
-  personas: z.array(z.enum(PERSONA_IDS)),
-  turns: z.array(TurnSchema).min(2),
-  synthesis: SynthesisSchema,
-  retrievalTrace: z.object({
-    layersSearched: z.array(z.string()),
-    itemCount: z.number().nonnegative(),
-    durationMs: z.number().nonnegative(),
-  }).optional(),
-});
 
 // ---------------------------------------------------------------------------
 // Demo response
@@ -190,7 +120,7 @@ export const POST = withCalibration('brainstorming-table', 'ai_brainstorming_tab
     const requestSchema = z.object({
       question: z.string().min(5).max(800),
       situation: z.any().optional(),
-      personas: z.array(z.enum(PERSONA_IDS)).max(BRAINSTORMING_PERSONAS.length).optional(),
+      personas: z.array(z.enum(BRAINSTORMING_PERSONA_IDS)).max(BRAINSTORMING_PERSONAS.length).optional(),
       sourceText: z.string().max(20000).optional(),
       sourceLabel: z.string().max(160).optional(),
       selectedDocumentIds: z.array(z.string().min(1)).max(5).optional(),

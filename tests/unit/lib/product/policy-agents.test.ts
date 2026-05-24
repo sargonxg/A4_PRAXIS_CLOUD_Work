@@ -15,6 +15,7 @@ describe('PRAXIS policy agent registry', () => {
     expect(PRAXIS_POLICY_AGENTS.map((agent) => agent.id)).toEqual([
       'capsule-factory',
       'research-memo',
+      'boardroom-discussion',
       'output-formatter',
       'daily-brief',
       'conflict-monitor',
@@ -76,6 +77,7 @@ describe('PRAXIS policy agent registry', () => {
     expect(launcher.outputDestination).toBe('memo_studio');
     expect(gate.status).toBe('required');
     expect(policyAgentRunIntent('research-memo')).toBe('research_memo');
+    expect(policyAgentRunIntent('boardroom-discussion')).toBe('boardroom_discussion');
     expect(policyAgentRunIntent('capsule-factory')).toBe('capsule_factory');
     expect(policyAgentRunIntent('output-formatter')).toBe('format_output');
     expect(policyAgentRunIntent('red-team-analyst')).toBe('red_team_review');

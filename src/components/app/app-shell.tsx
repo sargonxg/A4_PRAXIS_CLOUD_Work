@@ -35,6 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isOnePageCockpit =
     pathname === '/app' ||
+    pathname === '/app/boardroom' ||
     pathname === '/app/capsules' ||
     pathname === '/app/settings' ||
     pathname === '/app/repository' ||

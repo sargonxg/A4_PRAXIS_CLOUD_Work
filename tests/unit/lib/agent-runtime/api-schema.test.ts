@@ -99,6 +99,8 @@ describe('agent run API validation schema', () => {
       degradedReason: null,
       approvalGateCount: 0,
       outputTargetLabel: null,
+      artifactIds: [],
+      latestMirroredEvent: null,
     });
     expect(AgentRunOutputSchema.safeParse(dto).success).toBe(true);
     expect('internalSpendCents' in dto).toBe(false);
@@ -247,5 +249,44 @@ describe('agent run API validation schema', () => {
     expect(serialized).not.toContain('stack trace');
     expect(serialized).not.toContain('gserviceaccount.com');
     expect(serialized).not.toContain('9999');
+  });
+
+  it('exposes artifact ids and latest mirrored event as safe process-rail fields', () => {
+    const dto = toAgentRunOutput({
+      id: 'run-artifacts-1',
+      status: 'succeeded',
+      capsuleId: 'cap-1',
+      createdAt: '2026-05-24T12:00:00.000Z',
+      updatedAt: '2026-05-24T12:05:00.000Z',
+      objective: 'Create a handover package.',
+      metadata: {
+        policyAgentId: 'handover-builder',
+        outputDestination: 'handover',
+        artifactIds: ['memo-1', 'out-1'],
+        memoId: 'memo-1',
+        outputCapsuleId: 'out-1',
+        handoverPackageId: 'handover-1',
+        latestMirroredEvent: {
+          eventType: 'praxis.output_created',
+          message: 'Handover output persisted.',
+          createdAt: '2026-05-24T12:04:59.000Z',
+          rawProviderPayload: 'secret provider payload',
+        },
+      },
+    } as never);
+
+    expect(dto).toMatchObject({
+      policyAgentLabel: 'Handover Builder',
+      outputDestination: 'handover',
+      outputTargetLabel: 'Handover',
+      artifactIds: ['memo-1', 'out-1', 'handover-1'],
+      latestMirroredEvent: {
+        eventType: 'praxis.output_created',
+        message: 'Handover output persisted.',
+        createdAt: '2026-05-24T12:04:59.000Z',
+      },
+    });
+    expect(JSON.stringify(dto)).not.toContain('rawProviderPayload');
+    expect(JSON.stringify(dto)).not.toContain('secret provider payload');
   });
 });
