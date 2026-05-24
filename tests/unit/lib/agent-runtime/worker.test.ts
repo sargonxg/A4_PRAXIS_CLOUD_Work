@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { executeAgentRun, executeNoopAgentRun, type ExecuteAgentRunPayload } from '@/lib/agent-runtime/worker';
+import { AgentWorkerError, executeAgentRun, executeNoopAgentRun, type ExecuteAgentRunPayload } from '@/lib/agent-runtime/worker';
 import type { AgentRun } from '@/lib/agent-runtime/types';
 
 const payload: ExecuteAgentRunPayload = {
@@ -102,6 +102,49 @@ describe('agent runtime no-op worker', () => {
     })).rejects.toThrow('Agent run execution failed');
 
     expect(transitions).toEqual(['running', 'failed']);
+  });
+
+  it('preserves structured diagnostics on internal worker failures', async () => {
+    const statusEvents: Array<{ status: AgentRun['status']; data: Record<string, unknown> | undefined }> = [];
+
+    try {
+      await executeAgentRun(payload, {
+        getRun: async () => makeRun('queued', { policyAgentId: 'research-memo' }),
+        updateStatus: async (input) => {
+          statusEvents.push({ status: input.toStatus, data: input.data });
+          return makeRun(input.toStatus, { policyAgentId: 'research-memo' });
+        },
+        appendEvent: async (event) => event,
+        appendToolCall: async (toolCall) => toolCall,
+        appendApproval: async (approval) => approval,
+        buildEvidencePack: async () => {
+          throw new Error('synthetic evidence pack failure with token=secret');
+        },
+      });
+      throw new Error('expected executeAgentRun to fail');
+    } catch (err) {
+      expect(err).toBeInstanceOf(AgentWorkerError);
+      expect((err as AgentWorkerError).diagnostic).toMatchObject({
+        category: 'evidence_pack_failed',
+        runId: 'run-1',
+        policyAgentId: 'research-memo',
+        executionMode: 'research-memo',
+        failedPhase: 'evidence-pack',
+        dispatchId: 'dispatch-1',
+        attempt: 1,
+        traceId: 'trace-1',
+      });
+    }
+
+    const failed = statusEvents.find((event) => event.status === 'failed');
+    expect(failed?.data?.failure).toMatchObject({
+      category: 'evidence_pack_failed',
+      runId: 'run-1',
+      policyAgentId: 'research-memo',
+      executionMode: 'research-memo',
+      failedPhase: 'evidence-pack',
+    });
+    expect(JSON.stringify(failed?.data)).not.toContain('token=secret');
   });
 
   it('routes research-memo runs into memo and output capsule receipts', async () => {

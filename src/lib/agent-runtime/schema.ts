@@ -161,6 +161,9 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
   const sourceabilityLedgerSummary = normalizeSourceabilityLedgerSummary(run.metadata?.sourceabilityLedgerSummary);
   const artifactIds = normalizeArtifactIds(run.metadata);
   const latestMirroredEvent = normalizeLatestMirroredEvent(run.metadata?.latestMirroredEvent);
+  const outputHref = typeof run.metadata?.outputHref === 'string' && run.metadata.outputHref.startsWith('/app')
+    ? run.metadata.outputHref
+    : outputDestination ? destinationHref(outputDestination) : null;
   return AgentRunOutputSchema.parse({
     runId: run.id,
     status: run.status,
@@ -171,7 +174,7 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
     policyAgentId,
     policyAgentLabel: policyAgent?.label ?? null,
     outputDestination,
-    outputHref: outputDestination ? destinationHref(outputDestination) : null,
+    outputHref,
     outputTargetLabel: outputDestination ? destinationLabel(outputDestination) : null,
     selectedTools,
     searchPlan,

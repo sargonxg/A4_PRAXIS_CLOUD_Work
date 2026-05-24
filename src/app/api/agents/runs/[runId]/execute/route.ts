@@ -33,8 +33,24 @@ export async function POST(request: Request, context: { params: Promise<{ runId:
     return NextResponse.json(await executeAgentRun(payload));
   } catch (err) {
     if (err instanceof AgentWorkerError) {
+      if (err.status >= 500) {
+        console.error('[agent-worker] Agent run execution failed', err.diagnostic ?? {
+          runId: payload.runId,
+          status: err.status,
+          traceId: payload.traceId,
+          dispatchId: payload.dispatchId,
+          attempt: payload.attempt,
+        });
+      }
       return NextResponse.json({ error: err.message }, { status: err.status });
     }
+    console.error('[agent-worker] Agent run execution failed', {
+      runId: payload.runId,
+      traceId: payload.traceId,
+      dispatchId: payload.dispatchId,
+      attempt: payload.attempt,
+      errorName: err instanceof Error ? err.name : typeof err,
+    });
     return NextResponse.json({ error: 'Agent run execution failed' }, { status: 500 });
   }
 }

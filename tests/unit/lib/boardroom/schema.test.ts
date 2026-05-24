@@ -46,6 +46,16 @@ describe('boardroom schemas and AgentRun mapping', () => {
       capsuleId: 'cap-1',
       directContext: 'The board needs a decision by Friday.',
       selectedDocumentIds: ['doc-1', 'doc-2'],
+      selectedSources: [
+        {
+          documentId: 'doc-2',
+          sourceCoreId: 'source-core-2',
+          sourceReceiptId: 'receipt-2',
+          label: 'Friday pasted brief',
+          kind: 'pasted-text',
+          fileType: 'txt',
+        },
+      ],
       participantIds: ['mediator', 'legal', 'security', 'red-team'],
       maxRounds: 3,
     });
@@ -78,7 +88,7 @@ describe('boardroom schemas and AgentRun mapping', () => {
     expect(input.selectedCoreIds).toMatchObject({
       situationCoreId: 'sit-1',
       documentCoreIds: ['existing-doc', 'doc-1', 'doc-2'],
-      sourceCoreIds: ['src-1'],
+      sourceCoreIds: ['src-1', 'source-core-2'],
     });
     expect(input.metadata).toMatchObject({
       policyAgentId: 'boardroom-discussion',
@@ -95,7 +105,24 @@ describe('boardroom schemas and AgentRun mapping', () => {
         maxRounds: 3,
         participantIds: ['synthesis-chair', 'mediator', 'legal', 'security', 'red-team'],
         selectedDocumentIds: ['doc-1', 'doc-2'],
+        selectedSources: [
+          expect.objectContaining({
+            documentId: 'doc-2',
+            sourceReceiptId: 'receipt-2',
+            label: 'Friday pasted brief',
+            kind: 'pasted-text',
+          }),
+        ],
       },
+      sourceReceiptIds: ['receipt-2'],
+      selectedSources: [
+        expect.objectContaining({
+          documentId: 'doc-2',
+          sourceCoreId: 'source-core-2',
+          sourceReceiptId: 'receipt-2',
+          label: 'Friday pasted brief',
+        }),
+      ],
       modelPolicy: 'praxis_frontier_deep_model_policy',
     });
     expect(JSON.stringify(input)).not.toMatch(/\bgemini\b|\bclaude\b|\bgpt-\d/i);

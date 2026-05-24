@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { executeAgentRun, type ExecuteAgentRunPayload } from '@/lib/agent-runtime/worker';
+import { AgentWorkerError, executeAgentRun, type ExecuteAgentRunPayload } from '@/lib/agent-runtime/worker';
 import type { AgentRun } from '@/lib/agent-runtime/types';
+import type { BoardroomOutput } from '@/lib/boardroom/schema';
 
 const payload: ExecuteAgentRunPayload = {
   runId: 'run-boardroom-1',
@@ -73,12 +74,27 @@ describe('boardroom-discussion worker', () => {
     const transitions: AgentRun['status'][] = [];
     const toolCalls: string[] = [];
     const mirrored: string[] = [];
+    const liveRunnerCalls: string[] = [];
 
     const result = await executeAgentRun(payload, {
       getRun: async () => makeRun('queued'),
       updateStatus: async (input) => {
         transitions.push(input.toStatus);
         return makeRun(input.toStatus);
+      },
+      buildEvidencePack: async (input) => {
+        expect(input).toMatchObject({
+          ownerUid: 'user-1',
+          capsuleId: 'cap-1',
+          objective: 'Should the board approve the operating posture?',
+        });
+        return makeEvidencePack();
+      },
+      runBoardroomDiscussion: async (input) => {
+        liveRunnerCalls.push(input.run.id);
+        expect(input.evidencePack.packId).toBe('pack-boardroom-1');
+        expect(input.payload.dispatchId).toBe('dispatch-boardroom-1');
+        return makeBoardroomOutput();
       },
       appendToolCall: async (toolCall) => {
         toolCalls.push(`${toolCall.toolId}:${toolCall.status}`);
@@ -105,6 +121,7 @@ describe('boardroom-discussion worker', () => {
     });
 
     expect(transitions).toEqual(['running', 'succeeded']);
+    expect(liveRunnerCalls).toEqual(['run-boardroom-1']);
     expect(result).toMatchObject({
       runId: 'run-boardroom-1',
       status: 'succeeded',
@@ -127,4 +144,125 @@ describe('boardroom-discussion worker', () => {
       'boardroom.artifact_created',
     ]));
   });
+
+  it('fails the AgentRun visibly when the live boardroom runner fails', async () => {
+    const transitions: Array<{ status: AgentRun['status']; data: Record<string, unknown> | undefined }> = [];
+
+    try {
+      await executeAgentRun(payload, {
+        getRun: async () => makeRun('queued'),
+        updateStatus: async (input) => {
+          transitions.push({ status: input.toStatus, data: input.data });
+          return makeRun(input.toStatus);
+        },
+        appendEvent: async (event) => event,
+        appendToolCall: async (toolCall) => toolCall,
+        buildEvidencePack: async () => makeEvidencePack(),
+        runBoardroomDiscussion: async () => {
+          throw new Error('live model unavailable api_key=secret');
+        },
+      });
+      throw new Error('expected boardroom worker to fail');
+    } catch (err) {
+      expect(err).toBeInstanceOf(AgentWorkerError);
+      expect((err as AgentWorkerError).diagnostic).toMatchObject({
+        executionMode: 'boardroom-discussion',
+        failedPhase: 'boardroom-live-discussion',
+        runId: 'run-boardroom-1',
+      });
+    }
+
+    const failed = transitions.find((event) => event.status === 'failed');
+    expect(failed?.data?.failure).toMatchObject({
+      executionMode: 'boardroom-discussion',
+      failedPhase: 'boardroom-live-discussion',
+    });
+    expect(JSON.stringify(failed?.data)).not.toContain('api_key=secret');
+  });
 });
+
+function makeBoardroomOutput(): BoardroomOutput {
+  return {
+    meetingBrief: 'Boardroom brief for cap-1.',
+    agenda: ['Context brief', 'Participant turns', 'Chair synthesis'],
+    roster: [
+      { participantId: 'synthesis-chair', label: 'Synthesis Chair', lens: 'Chair' },
+      { participantId: 'legal', label: 'Legal Analyst', lens: 'Authority' },
+      { participantId: 'security', label: 'Security/Risk Analyst', lens: 'Risk' },
+    ],
+    transcript: [
+      {
+        turnId: 'run-boardroom-1:r1:legal',
+        round: 1,
+        participantId: 'legal',
+        state: 'speaking',
+        claim: 'The posture needs a legal review gate.',
+        evidenceRefs: ['receipt-1'],
+        confidence: 'medium',
+        recommendation: 'Keep authorization constraints visible.',
+      },
+      {
+        turnId: 'run-boardroom-1:r1:security',
+        round: 1,
+        participantId: 'security',
+        state: 'speaking',
+        claim: 'The posture needs risk sequencing.',
+        evidenceRefs: ['document:doc-1'],
+        confidence: 'medium',
+        recommendation: 'Stage the decision with monitoring triggers.',
+      },
+    ],
+    topicClusters: [{ topic: 'Decision posture', mentions: 2, participantIds: ['legal', 'security'] }],
+    consensus: ['Proceed only with review gates attached.'],
+    divergences: ['Legal wants authorization first; security wants phased execution.'],
+    risks: ['Source coverage still needs human review.'],
+    openQuestions: ['Who signs off on the final pack?'],
+    evidenceStats: { sourceCount: 1, documentCount: 1, sourcedParagraphCount: 1, unsupportedClaimCount: 0 },
+    confidenceDistribution: { high: 0, medium: 2, low: 0 },
+    nextActions: [{ action: 'Review the board pack.', owner: 'chair', urgency: 'short-term' }],
+    finalSynthesis: 'Proceed with a reviewable board pack and preserve dissent.',
+  };
+}
+
+function makeEvidencePack() {
+  return {
+    packId: 'pack-boardroom-1',
+    ownerUid: 'user-1',
+    capsuleId: 'cap-1',
+    objective: 'Should the board approve the operating posture?',
+    builtAt: '2026-05-24T12:00:00.000Z',
+    activeCapsule: {
+      capsuleId: 'cap-1',
+      label: 'Crisis posture capsule',
+      version: 3,
+      coreRefs: { sourceCoreIds: ['src-1'], documentCoreIds: ['doc-1'] },
+    },
+    knowledgeDocuments: [],
+    sourceReceiptIds: ['receipt-1'],
+    sourcedParagraphs: [{
+      id: 'p1',
+      documentId: 'doc-1',
+      chunkId: 'chunk-1',
+      sourceReceiptId: 'receipt-1',
+      pageRef: null,
+      paragraphRef: 'para-1',
+      charStart: 0,
+      charEnd: 120,
+      excerpt: 'Board wants a decision by Friday.',
+      score: 0.8,
+      confidence: 0.8,
+      citationLabel: '[D1:para-1]',
+    }],
+    documentDigests: [],
+    outputHistory: [],
+    memories: [],
+    openGaps: [],
+    receipts: {
+      sourcesUsed: 1,
+      paragraphsUsed: 1,
+      unsupportedGaps: [],
+      outputHistoryCount: 0,
+      memoryCount: 0,
+    },
+  } as never;
+}

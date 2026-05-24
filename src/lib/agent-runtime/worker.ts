@@ -21,7 +21,12 @@ import {
   type AgentRuntimeMirrorDeps,
 } from '@/lib/agent-runtime/mirror';
 import { runCapsuleFactoryDraft, type CapsuleFactoryDeps } from '@/lib/agent-runtime/capsule-factory';
-import { buildBoardroomOutput, boardroomParticipantLabel, type BoardroomOutput } from '@/lib/boardroom/schema';
+import { boardroomParticipantLabel, type BoardroomOutput } from '@/lib/boardroom/schema';
+import {
+  BOARDROOM_MODEL_POLICY_ID,
+  runLiveBoardroomDiscussion,
+  type LiveBoardroomRunnerInput,
+} from '@/lib/boardroom/live-runner';
 
 export type ExecuteAgentRunPayload = {
   runId: string;
@@ -33,10 +38,33 @@ export type ExecuteAgentRunPayload = {
   requestedAt: string;
 };
 
+export type AgentRunExecutionMode =
+  | 'noop'
+  | 'capsule-factory'
+  | 'research-memo'
+  | 'boardroom-discussion'
+  | 'output-formatter'
+  | 'sourceability-reviewer'
+  | 'red-team-analyst'
+  | 'handover-builder';
+
+export type AgentWorkerFailureDiagnostic = {
+  category: string;
+  runId: string;
+  policyAgentId: string | null;
+  executionMode: AgentRunExecutionMode;
+  failedPhase: string;
+  dispatchId: string;
+  attempt: number;
+  traceId: string;
+  errorName: string;
+  errorMessage: string;
+};
+
 export type ExecuteAgentRunResult = {
   runId: string;
   status: AgentRun['status'];
-  executionMode: 'noop' | 'capsule-factory' | 'research-memo' | 'boardroom-discussion' | 'output-formatter' | 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder';
+  executionMode: AgentRunExecutionMode;
   traceId: string;
   idempotent?: boolean;
   outputHref?: string;
@@ -51,6 +79,7 @@ type WorkerDeps = {
   saveMemoDraft?: (uid: string, input: SaveMemoDraftInput) => Promise<{ memo: { id: string } }>;
   saveOutputCapsule?: (uid: string, input: SaveOutputCapsuleInput) => Promise<{ id: string } | null>;
   buildEvidencePack?: typeof buildCapsuleEvidencePack;
+  runBoardroomDiscussion?: (input: LiveBoardroomRunnerInput) => Promise<BoardroomOutput>;
   appendToolCall?: typeof appendAgentToolCall;
   appendApproval?: typeof appendAgentApproval;
 } & AgentRuntimeMirrorDeps & CapsuleFactoryDeps;
@@ -111,6 +140,7 @@ export async function executeNoopAgentRun(
   }
 
   let running = run;
+  let executionStage = 'starting';
   try {
     if (run.status !== 'running') {
       const next = await updateStatus({
@@ -128,6 +158,7 @@ export async function executeNoopAgentRun(
       running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
     }
 
+    executionStage = 'context-resolved';
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'context_resolved',
@@ -140,6 +171,7 @@ export async function executeNoopAgentRun(
       },
     }, deps);
 
+    executionStage = 'noop-step';
     await (deps.runNoopStep?.(running, payload) ?? Promise.resolve());
 
     await mirrorWorkerEvent(running, {
@@ -154,6 +186,7 @@ export async function executeNoopAgentRun(
       },
     }, deps);
 
+    executionStage = 'succeeded-transition';
     const succeeded = await updateStatus({
       ownerUid: running.ownerUid,
       runId: running.id,
@@ -174,18 +207,15 @@ export async function executeNoopAgentRun(
     };
   } catch (err) {
     if (err instanceof AgentWorkerError) throw err;
-    await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'failed',
+    return failAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'noop',
+      failedPhase: executionStage,
       message: 'No-op agent worker failed before completion.',
-      data: {
-        dispatchId: payload.dispatchId,
-        attempt: payload.attempt,
-        error: err instanceof Error ? err.message : String(err),
-      },
-    }).catch(() => null);
-    throw new AgentWorkerError('Agent run execution failed', 500);
+      err,
+    });
   }
 }
 
@@ -217,6 +247,7 @@ async function executeCapsuleFactoryAgentRun(
   }
 
   let running = run;
+  let executionStage = 'starting';
   try {
     if (run.status !== 'running') {
       const next = await updateStatus({
@@ -235,6 +266,7 @@ async function executeCapsuleFactoryAgentRun(
       running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
     }
 
+    executionStage = 'context-resolved';
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'context_resolved',
@@ -247,9 +279,11 @@ async function executeCapsuleFactoryAgentRun(
       },
     }, deps);
 
+    executionStage = 'capsule-draft';
     const draftOutput = await runCapsuleFactoryDraft(running, deps);
     const outputHref = '/app/capsules';
 
+    executionStage = 'succeeded-transition';
     const succeeded = await updateStatus({
       ownerUid: running.ownerUid,
       runId: running.id,
@@ -273,19 +307,15 @@ async function executeCapsuleFactoryAgentRun(
     };
   } catch (err) {
     if (err instanceof AgentWorkerError) throw err;
-    await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'failed',
+    return failAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'capsule-factory',
+      failedPhase: executionStage,
       message: 'Capsule AI failed before draft capsule persistence.',
-      data: {
-        dispatchId: payload.dispatchId,
-        attempt: payload.attempt,
-        executionMode: 'capsule-factory',
-        error: err instanceof Error ? err.message : String(err),
-      },
-    }).catch(() => null);
-    throw new AgentWorkerError('Agent run execution failed', 500);
+      err,
+    });
   }
 }
 
@@ -584,19 +614,15 @@ async function executeResearchMemoAgentRun(
     };
   } catch (err) {
     if (err instanceof AgentWorkerError) throw err;
-    await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'failed',
+    return failAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'research-memo',
+      failedPhase: executionStage,
       message: 'Research Memo Agent failed before creating a memo draft.',
-      data: {
-        dispatchId: payload.dispatchId,
-        attempt: payload.attempt,
-        error: err instanceof Error ? err.message : String(err),
-        executionStage,
-      },
-    }).catch(() => null);
-    throw new AgentWorkerError('Agent run execution failed', 500);
+      err,
+    });
   }
 }
 
@@ -609,6 +635,8 @@ async function executeBoardroomAgentRun(
   const persistMemo = deps.saveMemoDraft ?? saveMemoDraft;
   const persistOutputCapsule = deps.saveOutputCapsule ?? saveOutputCapsule;
   const persistToolCall = deps.appendToolCall ?? appendAgentToolCall;
+  const buildEvidencePack = deps.buildEvidencePack ?? buildCapsuleEvidencePack;
+  const runBoardroomDiscussion = deps.runBoardroomDiscussion ?? runLiveBoardroomDiscussion;
   const run = await getRun(payload.ownerUid, payload.runId);
   if (!run) {
     throw new AgentWorkerError('Agent run not found', 404);
@@ -631,6 +659,7 @@ async function executeBoardroomAgentRun(
   }
 
   let running = run;
+  let executionStage = 'starting';
   try {
     if (run.status !== 'running') {
       const next = await updateStatus({
@@ -648,6 +677,7 @@ async function executeBoardroomAgentRun(
       running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
     }
 
+    executionStage = 'context-resolved';
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'context_resolved',
@@ -660,25 +690,41 @@ async function executeBoardroomAgentRun(
       },
     }, deps);
 
-    const boardroom = buildBoardroomOutput({
-      runId: running.id,
+    executionStage = 'evidence-pack';
+    const evidencePack = await buildEvidencePack({
+      ownerUid: running.ownerUid,
       capsuleId: running.capsuleId,
       objective: running.objective,
-      metadata: running.metadata,
-      selectedCoreIds: running.selectedCoreIds,
-      createdAt: running.createdAt,
+      maxParagraphs: 12,
     });
 
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'boardroom.brief_created',
-      message: 'Boardroom Discussion created the meeting brief and agenda.',
+      message: 'Boardroom Discussion created the live meeting brief from the active capsule evidence pack.',
       data: {
-        meetingBrief: boardroom.meetingBrief,
-        agenda: boardroom.agenda,
-        roster: boardroom.roster,
+        modelPolicy: BOARDROOM_MODEL_POLICY_ID,
+        evidencePackId: evidencePack.packId,
+        activeCapsule: {
+          capsuleId: evidencePack.activeCapsule.capsuleId,
+          label: evidencePack.activeCapsule.label,
+          version: evidencePack.activeCapsule.version,
+        },
+        sourceCount: evidencePack.sourceReceiptIds.length,
+        documentCount: running.selectedCoreIds.documentCoreIds.length,
+        sourcedParagraphCount: evidencePack.sourcedParagraphs.length,
+        openGaps: evidencePack.openGaps,
       },
     }, deps);
+
+    executionStage = 'boardroom-live-discussion';
+    const boardroomStartedAt = Date.now();
+    const boardroom = await runBoardroomDiscussion({
+      run: running,
+      payload,
+      evidencePack,
+    });
+    const boardroomLatencyMs = Date.now() - boardroomStartedAt;
 
     for (const turn of boardroom.transcript) {
       await mirrorWorkerEvent(running, {
@@ -686,9 +732,15 @@ async function executeBoardroomAgentRun(
         phase: `boardroom.turn.${turn.participantId}`,
         message: `${boardroomParticipantLabel(turn.participantId)} completed boardroom turn ${turn.round}.`,
         data: {
+          modelPolicy: BOARDROOM_MODEL_POLICY_ID,
+          participantId: turn.participantId,
+          round: turn.round,
           turn,
           state: turn.state,
           confidence: turn.confidence,
+          evidenceRefs: turn.evidenceRefs,
+          sourceCount: boardroom.evidenceStats.sourceCount,
+          documentCount: boardroom.evidenceStats.documentCount,
         },
       }, deps);
     }
@@ -708,6 +760,8 @@ async function executeBoardroomAgentRun(
         transcriptTurnCount: boardroom.transcript.length,
         topicClusterCount: boardroom.topicClusters.length,
         confidenceDistribution: boardroom.confidenceDistribution,
+        modelPolicy: BOARDROOM_MODEL_POLICY_ID,
+        latencyMs: boardroomLatencyMs,
       },
       startedAt: new Date().toISOString(),
       completedAt: new Date().toISOString(),
@@ -718,6 +772,8 @@ async function executeBoardroomAgentRun(
       phase: 'boardroom.synthesis_created',
       message: 'Synthesis Chair created the final boardroom synthesis.',
       data: {
+        modelPolicy: BOARDROOM_MODEL_POLICY_ID,
+        latencyMs: boardroomLatencyMs,
         finalSynthesis: boardroom.finalSynthesis,
         consensus: boardroom.consensus,
         divergences: boardroom.divergences,
@@ -727,6 +783,7 @@ async function executeBoardroomAgentRun(
       },
     }, deps);
 
+    executionStage = 'memo-persist';
     const memoRecord = await persistMemo(running.ownerUid, {
       caseId: running.selectedCoreIds.situationCoreId ?? running.capsuleId,
       templateId: 'policy-memo',
@@ -753,6 +810,7 @@ async function executeBoardroomAgentRun(
       completedAt: new Date().toISOString(),
     }));
 
+    executionStage = 'output-capsule-persist';
     const outputCapsule = await persistOutputCapsule(
       running.ownerUid,
       buildBoardroomOutputCapsuleInput(running, boardroom, memoRecord.memo.id),
@@ -784,10 +842,15 @@ async function executeBoardroomAgentRun(
         memoId: memoRecord.memo.id,
         outputCapsuleId: outputCapsule?.id ?? null,
         outputHref,
+        modelPolicy: BOARDROOM_MODEL_POLICY_ID,
+        latencyMs: boardroomLatencyMs,
+        artifactIds: [memoRecord.memo.id, outputCapsule?.id].filter((item): item is string => Boolean(item)),
+        finalStatus: 'succeeded',
         boardroomOutput: boardroom,
       },
     }, deps);
 
+    executionStage = 'succeeded-transition';
     const succeeded = await updateStatus({
       ownerUid: running.ownerUid,
       runId: running.id,
@@ -803,6 +866,10 @@ async function executeBoardroomAgentRun(
         boardroomOutput: boardroom,
         sourceCount: boardroom.evidenceStats.sourceCount,
         documentCount: boardroom.evidenceStats.documentCount,
+        sourceReceiptIds: stringArray(running.metadata.sourceReceiptIds),
+        modelPolicy: BOARDROOM_MODEL_POLICY_ID,
+        latencyMs: boardroomLatencyMs,
+        artifactIds: [memoRecord.memo.id, outputCapsule?.id].filter((item): item is string => Boolean(item)),
       },
     });
 
@@ -817,18 +884,15 @@ async function executeBoardroomAgentRun(
     };
   } catch (err) {
     if (err instanceof AgentWorkerError) throw err;
-    await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'failed',
+    return failAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'boardroom-discussion',
+      failedPhase: executionStage,
       message: 'Boardroom Discussion failed before creating the board pack.',
-      data: {
-        dispatchId: payload.dispatchId,
-        attempt: payload.attempt,
-        error: err instanceof Error ? err.message : String(err),
-      },
-    }).catch(() => null);
-    throw new AgentWorkerError('Agent run execution failed', 500);
+      err,
+    });
   }
 }
 
@@ -861,6 +925,7 @@ async function executeOutputFormatterAgentRun(
   }
 
   let running = run;
+  let executionStage = 'starting';
   try {
     if (run.status !== 'running') {
       const next = await updateStatus({
@@ -878,6 +943,7 @@ async function executeOutputFormatterAgentRun(
       running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
     }
 
+    executionStage = 'context-resolved';
     const workerContext = buildCapsuleWorkerContext(running);
     const loop = buildOutputFormatterReasoningLoop(running);
     await mirrorWorkerEvent(running, {
@@ -891,7 +957,9 @@ async function executeOutputFormatterAgentRun(
         executionMode: 'output-formatter',
       },
     }, deps);
+    executionStage = 'workflow-proof';
     const { capsuleReadReceipt, workflowPlan } = await emitCapsuleReadAndWorkflowPlan(running, deps);
+    executionStage = 'sourceability-ledger';
     const sourceabilityLedger = buildSourceabilityLedgerFromRun(running, {
       outputTarget: 'memo_studio',
     });
@@ -937,6 +1005,7 @@ async function executeOutputFormatterAgentRun(
     const sourceCount = running.selectedCoreIds.sourceCoreIds.length + running.selectedCoreIds.documentCoreIds.length;
     const caseId = running.selectedCoreIds.situationCoreId ?? running.capsuleId;
     const title = `Formatted work product - ${running.objective.slice(0, 72)}`;
+    executionStage = 'memo-persist';
     const memoRecord = await persistMemo(running.ownerUid, {
       caseId,
       templateId: 'policy-memo',
@@ -1023,6 +1092,7 @@ async function executeOutputFormatterAgentRun(
       },
     }, deps);
 
+    executionStage = 'succeeded-transition';
     const succeeded = await updateStatus({
       ownerUid: running.ownerUid,
       runId: running.id,
@@ -1050,18 +1120,15 @@ async function executeOutputFormatterAgentRun(
     };
   } catch (err) {
     if (err instanceof AgentWorkerError) throw err;
-    await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'failed',
+    return failAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'output-formatter',
+      failedPhase: executionStage,
       message: 'Output Formatter failed before creating a formatted work product.',
-      data: {
-        dispatchId: payload.dispatchId,
-        attempt: payload.attempt,
-        error: err instanceof Error ? err.message : String(err),
-      },
-    }).catch(() => null);
-    throw new AgentWorkerError('Agent run execution failed', 500);
+      err,
+    });
   }
 }
 
@@ -1096,6 +1163,7 @@ async function executeReviewAgentRun(
   }
 
   let running = run;
+  let executionStage = 'starting';
   try {
     if (run.status !== 'running') {
       const next = await updateStatus({
@@ -1113,6 +1181,7 @@ async function executeReviewAgentRun(
       running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
     }
 
+    executionStage = 'context-resolved';
     const toolId = reviewAgentToolId(executionMode);
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
@@ -1125,12 +1194,15 @@ async function executeReviewAgentRun(
         executionMode,
       },
     }, deps);
+    executionStage = 'workflow-proof';
     const { capsuleReadReceipt, workflowPlan } = await emitCapsuleReadAndWorkflowPlan(running, deps);
+    executionStage = 'sourceability-ledger';
     const sourceabilityLedger = buildSourceabilityLedgerFromRun(running, {
       outputTarget: executionMode === 'handover-builder' ? 'handover' : 'memo_studio',
     });
     await emitSourceabilityLedger(running, sourceabilityLedger, deps);
 
+    executionStage = 'tool-call-persist';
     await persistToolCall(makeAgentToolCall({
       runId: running.id,
       ownerUid: running.ownerUid,
@@ -1144,6 +1216,7 @@ async function executeReviewAgentRun(
       completedAt: new Date().toISOString(),
     }));
 
+    executionStage = 'memo-persist';
     const memoRecord = await persistMemo(running.ownerUid, {
       caseId: running.selectedCoreIds.situationCoreId ?? running.capsuleId,
       templateId: 'policy-memo',
@@ -1170,6 +1243,7 @@ async function executeReviewAgentRun(
       },
     }, deps);
 
+    executionStage = 'succeeded-transition';
     const succeeded = await updateStatus({
       ownerUid: running.ownerUid,
       runId: running.id,
@@ -1197,19 +1271,97 @@ async function executeReviewAgentRun(
     };
   } catch (err) {
     if (err instanceof AgentWorkerError) throw err;
-    await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'failed',
+    return failAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode,
+      failedPhase: executionStage,
       message: `${reviewAgentLabel(executionMode)} failed before creating a receipt.`,
-      data: {
-        dispatchId: payload.dispatchId,
-        attempt: payload.attempt,
-        error: err instanceof Error ? err.message : String(err),
-      },
-    }).catch(() => null);
-    throw new AgentWorkerError('Agent run execution failed', 500);
+      err,
+    });
   }
+}
+
+async function failAgentRunExecution(input: {
+  updateStatus: typeof updateAgentRunStatus;
+  running: AgentRun;
+  payload: ExecuteAgentRunPayload;
+  executionMode: AgentRunExecutionMode;
+  failedPhase: string;
+  message: string;
+  err: unknown;
+  data?: Record<string, unknown>;
+}): Promise<never> {
+  const failure = buildAgentWorkerFailureDiagnostic({
+    run: input.running,
+    payload: input.payload,
+    executionMode: input.executionMode,
+    failedPhase: input.failedPhase,
+    err: input.err,
+  });
+
+  await input.updateStatus({
+    ownerUid: input.running.ownerUid,
+    runId: input.running.id,
+    toStatus: 'failed',
+    message: input.message,
+    data: {
+      ...input.data,
+      dispatchId: input.payload.dispatchId,
+      attempt: input.payload.attempt,
+      executionMode: input.executionMode,
+      failedPhase: input.failedPhase,
+      failure,
+      error: failure.errorMessage,
+    },
+  }).catch(() => null);
+
+  throw new AgentWorkerError('Agent run execution failed', 500, failure);
+}
+
+export function buildAgentWorkerFailureDiagnostic(input: {
+  run: AgentRun;
+  payload: ExecuteAgentRunPayload;
+  executionMode: AgentRunExecutionMode;
+  failedPhase: string;
+  err: unknown;
+}): AgentWorkerFailureDiagnostic {
+  return {
+    category: categorizeWorkerFailure(input.executionMode, input.failedPhase),
+    runId: input.run.id,
+    policyAgentId: typeof input.run.metadata?.policyAgentId === 'string' ? input.run.metadata.policyAgentId : null,
+    executionMode: input.executionMode,
+    failedPhase: input.failedPhase,
+    dispatchId: input.payload.dispatchId,
+    attempt: input.payload.attempt,
+    traceId: input.run.traceId,
+    errorName: input.err instanceof Error ? input.err.name : typeof input.err,
+    errorMessage: sanitizeWorkerErrorMessage(input.err),
+  };
+}
+
+function categorizeWorkerFailure(executionMode: AgentRunExecutionMode, failedPhase: string): string {
+  if (failedPhase === 'evidence-pack') return 'evidence_pack_failed';
+  if (failedPhase === 'sourceability-ledger') return 'sourceability_ledger_failed';
+  if (failedPhase === 'memo-persist') return 'memo_persist_failed';
+  if (failedPhase === 'output-capsule-persist') return 'output_capsule_persist_failed';
+  if (failedPhase === 'succeeded-transition') return 'status_transition_failed';
+  if (failedPhase.includes('approval')) return 'approval_gate_failed';
+  if (failedPhase.includes('search')) return 'search_evidence_failed';
+  if (failedPhase.includes('workflow')) return 'workflow_proof_failed';
+  if (failedPhase.includes('context')) return 'context_resolution_failed';
+  return `${executionMode.replace(/-/g, '_')}_failed`;
+}
+
+function sanitizeWorkerErrorMessage(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  return raw
+    .replace(/(authorization:\s*bearer\s+)[^\s,;]+/gi, '$1[REDACTED]')
+    .replace(/\b(token|secret|password|api[_-]?key|key)=([^&\s,;]+)/gi, '$1=[REDACTED]')
+    .replace(/\bAIza[0-9A-Za-z_-]+/g, '[REDACTED]')
+    .replace(/-----BEGIN [^-]+-----[\s\S]*?-----END [^-]+-----/g, '[REDACTED]')
+    .slice(0, 500);
 }
 
 function outputHrefFromMetadata(metadata: Record<string, unknown>, fallback: string): string {
@@ -1903,7 +2055,8 @@ function buildReviewMemoBlocks(
 }
 
 export class AgentWorkerError extends Error {
-  constructor(message: string, readonly status: number) {
+  constructor(message: string, readonly status: number, readonly diagnostic?: AgentWorkerFailureDiagnostic) {
     super(message);
+    this.name = 'AgentWorkerError';
   }
 }

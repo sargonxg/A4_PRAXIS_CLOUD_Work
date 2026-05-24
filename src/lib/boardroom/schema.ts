@@ -38,6 +38,19 @@ export type BoardroomParticipant = {
   critic: boolean;
 };
 
+export const BoardroomSourceRefSchema = z.object({
+  documentId: z.string().trim().min(1).max(240).optional(),
+  sourceCoreId: z.string().trim().min(1).max(240).optional(),
+  sourceReceiptId: z.string().trim().min(1).max(240).optional(),
+  receiptId: z.string().trim().min(1).max(240).optional(),
+  label: z.string().trim().min(1).max(240),
+  kind: z.enum(['uploaded-document', 'pasted-text', 'capsule-source']).default('uploaded-document'),
+  fileType: z.string().trim().min(1).max(32).optional(),
+  size: z.number().int().nonnegative().optional(),
+});
+
+export type BoardroomSourceRef = z.infer<typeof BoardroomSourceRefSchema>;
+
 export const BOARDROOM_PARTICIPANTS: Record<BoardroomParticipantId, BoardroomParticipant> =
   Object.fromEntries(BOARDROOM_PARTICIPANT_IDS.map((id) => {
     const persona = AGENT_REGISTRY[id as AgentPersonaId];
@@ -52,6 +65,7 @@ export const BoardroomRunRequestSchema = z.object({
   contextStackId: z.string().trim().min(1).max(240).nullable().optional(),
   directContext: z.string().trim().max(24000).optional(),
   selectedDocumentIds: z.array(z.string().trim().min(1).max(240)).max(12).default([]),
+  selectedSources: z.array(BoardroomSourceRefSchema).max(24).default([]),
   participantIds: z.array(z.string().trim().min(1).max(80)).optional()
     .transform((value, ctx) => {
       try {
@@ -160,7 +174,17 @@ export function buildBoardroomAgentRunInput(input: {
   const documentCoreIds = uniqueStrings([
     ...(input.selectedCoreIds?.documentCoreIds ?? []),
     ...input.request.selectedDocumentIds,
+    ...input.request.selectedSources.flatMap((source) => source.documentId ? [source.documentId] : []),
   ]);
+  const sourceCoreIds = uniqueStrings([
+    ...(input.selectedCoreIds?.sourceCoreIds ?? []),
+    ...input.request.selectedSources.flatMap((source) => source.sourceCoreId ? [source.sourceCoreId] : []),
+  ]);
+  const selectedSources = sanitizeSelectedSources(input.request.selectedSources);
+  const sourceReceiptIds = uniqueStrings(selectedSources.flatMap((source) => [
+    source.sourceReceiptId,
+    source.receiptId,
+  ].filter((value): value is string => Boolean(value))));
   const selectedToolIds = selectedToolsForBoardroom(input.request);
   const maxStep = Math.min(40, input.request.participantIds.length * input.request.maxRounds + 9);
   return {
@@ -171,6 +195,7 @@ export function buildBoardroomAgentRunInput(input: {
     selectedCoreIds: {
       ...(input.selectedCoreIds ?? {}),
       documentCoreIds,
+      sourceCoreIds,
     },
     triggerType: 'manual',
     objective: input.request.question,
@@ -187,7 +212,13 @@ export function buildBoardroomAgentRunInput(input: {
       source: 'boardroom-workspace',
       modelPolicy: 'praxis_frontier_deep_model_policy',
       boardroomSpec: sanitizeBoardroomSpec(input.request),
-      sourcePosture: input.request.selectedDocumentIds.length ? 'Attached documents requested' : 'Capsule sources requested',
+      selectedSources,
+      sourceReceiptIds,
+      sourcePosture: sourceReceiptIds.length
+        ? `${sourceReceiptIds.length} source receipt(s) attached`
+        : documentCoreIds.length
+          ? 'Attached documents requested'
+          : 'Capsule sources requested',
     },
   };
 }
@@ -213,12 +244,15 @@ export function buildBoardroomOutput(input: {
   const spec = resolveBoardroomSpecFromMetadata(input.metadata, input.objective);
   const participants = spec.participantIds.map((id) => BOARDROOM_PARTICIPANTS[id]);
   const sourceReceiptIds = stringArray(input.metadata.sourceReceiptIds);
+  const selectedSources = normalizeSelectedSources(input.metadata.selectedSources);
   const documentIds = uniqueStrings([
     ...(input.selectedCoreIds.documentCoreIds ?? []),
     ...spec.selectedDocumentIds,
+    ...selectedSources.flatMap((source) => source.documentId ? [source.documentId] : []),
   ]);
   const evidenceRefs = uniqueStrings([
     ...sourceReceiptIds,
+    ...selectedSources.flatMap((source) => source.sourceReceiptId ? [source.sourceReceiptId] : []),
     ...documentIds.map((id) => `document:${id}`),
     ...(input.selectedCoreIds.sourceCoreIds ?? []).map((id) => `source:${id}`),
   ]).slice(0, 8);
@@ -340,10 +374,11 @@ function buildTurn(input: {
 }
 
 function selectedToolsForBoardroom(request: BoardroomRunRequest): string[] {
+  const hasDocuments = request.selectedDocumentIds.length || request.selectedSources.some((source) => source.documentId);
   return uniqueStrings([
     'context-resolve',
     'capsule-evidence-pack',
-    ...(request.selectedDocumentIds.length ? ['document-retrieve'] : []),
+    ...(hasDocuments ? ['document-retrieve'] : []),
     'boardroom-deliberation',
     ...(request.participantIds.includes('red-team') ? ['red-team-review'] : []),
     'sourceability-reviewer',
@@ -359,10 +394,24 @@ function sanitizeBoardroomSpec(request: BoardroomRunRequest) {
     contextStackId: request.contextStackId ?? null,
     directContext: request.directContext ?? null,
     selectedDocumentIds: request.selectedDocumentIds,
+    selectedSources: sanitizeSelectedSources(request.selectedSources),
     participantIds: request.participantIds,
     maxRounds: request.maxRounds,
     outputTarget: request.outputTarget,
   };
+}
+
+function sanitizeSelectedSources(value: BoardroomSourceRef[]): BoardroomSourceRef[] {
+  return value.map((source) => ({
+    ...(source.documentId ? { documentId: source.documentId } : {}),
+    ...(source.sourceCoreId ? { sourceCoreId: source.sourceCoreId } : {}),
+    ...(source.sourceReceiptId ? { sourceReceiptId: source.sourceReceiptId } : {}),
+    ...(source.receiptId ? { receiptId: source.receiptId } : {}),
+    label: source.label,
+    kind: source.kind,
+    ...(source.fileType ? { fileType: source.fileType } : {}),
+    ...(typeof source.size === 'number' ? { size: source.size } : {}),
+  }));
 }
 
 function personaToBoardroomParticipant(persona: AgentPersona): BoardroomParticipant {
@@ -400,6 +449,11 @@ function stableBoardroomIdempotencyKey(ownerUid: string, capsuleId: string, requ
       question: request.question,
       participantIds: request.participantIds,
       selectedDocumentIds: request.selectedDocumentIds,
+      selectedSources: request.selectedSources.map((source) => ({
+        documentId: source.documentId ?? null,
+        sourceReceiptId: source.sourceReceiptId ?? source.receiptId ?? null,
+        label: source.label,
+      })),
       maxRounds: request.maxRounds,
       nowBucket: Math.floor(Date.now() / 60_000),
     }))
@@ -410,6 +464,14 @@ function stableBoardroomIdempotencyKey(ownerUid: string, capsuleId: string, requ
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function normalizeSelectedSources(value: unknown): BoardroomSourceRef[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    const parsed = BoardroomSourceRefSchema.safeParse(item);
+    return parsed.success ? [parsed.data] : [];
+  });
 }
 
 function uniqueStrings(values: string[]): string[] {

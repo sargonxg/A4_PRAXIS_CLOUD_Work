@@ -28,6 +28,10 @@ export type DoctorCheckResult = {
   remediation?: string[];
 };
 
+type DoctorCheckResultWithSupplemental = DoctorCheckResult & {
+  supplementalChecks?: DoctorCheckResult[];
+};
+
 export type CanaryArtifact = {
   tag: string;
   kind: string;
@@ -581,7 +585,9 @@ export async function runPraxisDoctor(deps: RunDeps): Promise<DoctorReport> {
   });
 
   if (options.mode === 'canary' && canaryPlan.enabled) {
-    checks.push(await runAuthenticatedCanary(fetchImpl, options, env, canaryPlan));
+    const canaryCheck = await runAuthenticatedCanary(fetchImpl, options, env, canaryPlan);
+    const { supplementalChecks, ...primaryCanaryCheck } = canaryCheck;
+    checks.push(primaryCanaryCheck, ...(supplementalChecks ?? []));
   }
 
   const artifactFreshness = buildArtifactFreshness({
@@ -620,7 +626,7 @@ async function runAuthenticatedCanary(
   options: DoctorOptions,
   env: NodeJS.ProcessEnv | Record<string, string | undefined>,
   canaryPlan: ReturnType<typeof buildCanaryPlan>
-): Promise<DoctorCheckResult> {
+): Promise<DoctorCheckResultWithSupplemental> {
   const steps: CanaryStepResult[] = [];
   const apiKey = env.NEXT_PUBLIC_FIREBASE_API_KEY || env.FIREBASE_WEB_API_KEY;
   if (!apiKey) {
@@ -1032,6 +1038,55 @@ async function runAuthenticatedCanary(
     });
   }
 
+  const streamResponse = await fetchImpl(`${options.baseUrl}/api/agents/runs/${encodeURIComponent(runId)}/stream`, {
+    method: 'GET',
+    headers: { Cookie: cookieHeader },
+  });
+  const streamPayload = await readResponse(streamResponse);
+  const streamText = typeof streamPayload === 'string' ? streamPayload : JSON.stringify(streamPayload);
+  const streamVerified = streamResponse.ok
+    && streamText.includes(runId)
+    && /succeeded|status_transition|run\.succeeded|agent_run\.completed/.test(streamText);
+  const streamStatus = streamResponse.ok ? (streamVerified ? 'PASS' : 'FAIL') : canaryHttpStatus(streamResponse.status);
+  const streamCheck: DoctorCheckResult = {
+    id: 'canary-agent-run-stream',
+    lane: 'authenticated-full-canary',
+    status: streamStatus,
+    summary: streamVerified
+      ? `AgentRun ${runId} stream verified after Cloud Tasks execution.`
+      : `AgentRun ${runId} stream verification failed after Cloud Tasks execution.`,
+    evidence: [{
+      runId,
+      httpStatus: streamResponse.status,
+      eventBytes: streamText.length,
+      preview: streamText.slice(0, 500),
+    }],
+    remediation: streamVerified ? undefined : [
+      'Verify /api/agents/runs/{runId}/stream returns terminal AgentRun events for the canary user',
+      'Inspect agent_run_events rows for the canary run id',
+    ],
+  };
+  steps.push({
+    step: 'agent-run-stream',
+    status: streamStatus,
+    httpStatus: streamResponse.status,
+    id: runId,
+    detail: streamVerified
+      ? 'AgentRun stream returned terminal worker proof.'
+      : 'AgentRun stream did not return terminal worker proof.',
+  });
+  if (streamStatus !== 'PASS') {
+    return canaryResult({
+      status: streamStatus,
+      canaryPlan,
+      steps,
+      summary: `AgentRun ${runId} completed but stream verification failed`,
+      evidence: [streamPayload],
+      remediation: streamCheck.remediation,
+      supplementalChecks: [streamCheck],
+    });
+  }
+
   const memoResponse = await fetchImpl(`${options.baseUrl}/api/memos/from-ask-pack`, {
     method: 'POST',
     headers: authHeaders,
@@ -1137,6 +1192,7 @@ async function runAuthenticatedCanary(
       memoId,
       cleanup: 'planned',
     }],
+    supplementalChecks: [streamCheck],
   });
 }
 
@@ -1147,7 +1203,8 @@ function canaryResult(input: {
   summary: string;
   evidence?: unknown[];
   remediation?: string[];
-}): DoctorCheckResult {
+  supplementalChecks?: DoctorCheckResult[];
+}): DoctorCheckResultWithSupplemental {
   return {
     id: 'canary-authenticated-golden-path',
     lane: 'authenticated-full-canary',
@@ -1163,6 +1220,7 @@ function canaryResult(input: {
       },
     ],
     remediation: input.remediation,
+    supplementalChecks: input.supplementalChecks,
   };
 }
 

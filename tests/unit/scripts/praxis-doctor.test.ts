@@ -353,6 +353,13 @@ describe('runPraxisDoctor', () => {
           persisted: true,
         });
       }
+      if (url.endsWith('/api/agents/runs/run-canary-1/stream')) {
+        return textResponse(200, [
+          'event: status_transition',
+          'data: {"runId":"run-canary-1","status":"succeeded"}',
+          '',
+        ].join('\n'));
+      }
       if (url.endsWith('/api/memos/from-ask-pack')) {
         return jsonResponse(200, { success: true, memo: { memoId: 'canary-memo' }, versions: [] });
       }
@@ -386,6 +393,11 @@ describe('runPraxisDoctor', () => {
       id: 'canary-authenticated-golden-path',
       status: 'PASS',
       summary: expect.stringContaining('AgentRun run-canary-1'),
+    }));
+    expect(report.checks).toContainEqual(expect.objectContaining({
+      id: 'canary-agent-run-stream',
+      status: 'PASS',
+      summary: expect.stringContaining('stream verified'),
     }));
     expect(report.artifacts).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'context-capsule', id: 'praxis-doctor-canary-20260517T120000000Z' }),

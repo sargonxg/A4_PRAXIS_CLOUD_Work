@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Sparkles,
   Target,
+  UsersRound,
   Wrench,
 } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
@@ -39,6 +40,7 @@ const ICONS: Record<PrimaryNavIcon, typeof Home> = {
   Settings,
   Boxes,
   ShieldCheck,
+  UsersRound,
   Cog,
 };
 

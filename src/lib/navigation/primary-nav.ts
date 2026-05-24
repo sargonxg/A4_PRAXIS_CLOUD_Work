@@ -1,8 +1,8 @@
 /**
  * PRAXIS navigation map.
  *
- * The visible PRAXIS app is one cockpit route: /app, centered on the
- * capsule manager. Pricing and release notes stay public routes.
+ * The visible PRAXIS app keeps Home and Capsules as the main cockpit, with
+ * Boardroom exposed as a live agent workspace inside the same app shell.
  */
 
 export type PrimaryNavIcon =
@@ -16,6 +16,7 @@ export type PrimaryNavIcon =
   | 'Settings'
   | 'Boxes'
   | 'ShieldCheck'
+  | 'UsersRound'
   | 'Cog';
 
 export interface PrimaryNavItem {
@@ -45,6 +46,7 @@ export const NAV_GROUPS: readonly PrimaryNavGroup[] = [
     items: [
       { id: 'home', label: 'Home', icon: 'Home', href: '/app', shortcut: 'g h', hint: 'Ask from the active capsule' },
       { id: 'capsules', label: 'Capsules', icon: 'FolderKanban', href: '/app/capsules', shortcut: 'g c', hint: 'Manage, improve, source, and download reusable capsules' },
+      { id: 'boardroom', label: 'Boardroom', icon: 'UsersRound', href: '/app/boardroom', shortcut: 'g b', hint: 'Run a live capsule-grounded agent discussion' },
     ],
   },
 ] as const;

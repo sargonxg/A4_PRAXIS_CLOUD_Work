@@ -95,6 +95,14 @@ describe('/api/boardroom/runs route', () => {
         capsuleId: 'cap-1',
         directContext: 'Board wants a decision by Friday.',
         selectedDocumentIds: ['doc-1'],
+        selectedSources: [{
+          documentId: 'doc-1',
+          sourceCoreId: 'source-core-doc-1',
+          sourceReceiptId: 'receipt-doc-1',
+          label: 'Uploaded posture note',
+          kind: 'uploaded-document',
+          fileType: 'txt',
+        }],
         participantIds: ['legal', 'security'],
       }),
     }));
@@ -113,15 +121,26 @@ describe('/api/boardroom/runs route', () => {
       objective: 'Should the board approve the operating posture?',
       selectedCoreIds: expect.objectContaining({
         situationCoreId: 'situation-core',
-        sourceCoreIds: ['source-core'],
+        sourceCoreIds: ['source-core', 'source-core-doc-1'],
         documentCoreIds: ['doc-1'],
       }),
       metadata: expect.objectContaining({
         policyAgentId: 'boardroom-discussion',
         outputDestination: 'library',
+        sourceReceiptIds: ['receipt-doc-1'],
+        selectedSources: [expect.objectContaining({
+          documentId: 'doc-1',
+          sourceReceiptId: 'receipt-doc-1',
+          label: 'Uploaded posture note',
+        })],
         boardroomSpec: expect.objectContaining({
           participantIds: ['synthesis-chair', 'legal', 'security'],
           directContext: 'Board wants a decision by Friday.',
+          selectedSources: [expect.objectContaining({
+            documentId: 'doc-1',
+            sourceReceiptId: 'receipt-doc-1',
+            label: 'Uploaded posture note',
+          })],
         }),
       }),
     }));
