@@ -3,6 +3,18 @@ import { cookies } from 'next/headers';
 import { verifyIdToken, getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { DEFAULT_AI_SETTINGS, type AISettings } from '@/lib/firebase/firestore';
 import { isModelPreferenceValue } from '@/lib/ai/model-preferences';
+import { verifyCookie } from '@/lib/auth/cookie-signer';
+
+function parseSessionCookie(value: string): Record<string, unknown> | null {
+  const verified = verifyCookie(value);
+  if (!verified) return null;
+  try {
+    const parsed = JSON.parse(verified);
+    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function GET() {
   try {
@@ -12,12 +24,15 @@ export async function GET() {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const data = JSON.parse(session.value);
+    const data = parseSessionCookie(session.value);
+    if (!data) {
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
     if (data.demo) {
       return NextResponse.json({ settings: DEFAULT_AI_SETTINGS });
     }
 
-    if (!data.token) {
+    if (typeof data.token !== 'string') {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
@@ -48,12 +63,15 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const sessionData = JSON.parse(session.value);
+    const sessionData = parseSessionCookie(session.value);
+    if (!sessionData) {
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
     if (sessionData.demo) {
       return NextResponse.json({ success: true }); // No-op for demo
     }
 
-    if (!sessionData.token) {
+    if (typeof sessionData.token !== 'string') {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
