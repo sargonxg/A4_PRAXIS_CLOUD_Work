@@ -169,7 +169,7 @@ describe('context capsule product contract', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(175);
+    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(205);
     expect(starterIds.size).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
@@ -177,11 +177,19 @@ describe('context capsule product contract', () => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toEqual({ situation: 65, tool: 67, output: 30, user: 13 });
+    expect(categoryCounts).toEqual({ situation: 85, tool: 72, output: 35, user: 13 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
       expect(starter.tags).toEqual(expect.arrayContaining(['starter', starter.category, `type:${starter.category}`, `domain:${starter.domain}`]));
+      expect(starter.tags).toEqual(expect.arrayContaining([
+        'real-work',
+        'v2-context',
+        'human-gated',
+        'review-card',
+        'sourceable-workflow',
+        'no-affiliation',
+      ]));
       expect(starter.domain).toBeTruthy();
       expect(starter.summary.length).toBeGreaterThan(20);
       expect(starter.detail.length).toBeGreaterThan(40);
@@ -191,7 +199,15 @@ describe('context capsule product contract', () => {
       expect(starter.suggestedQuestions.length).toBeGreaterThanOrEqual(2);
       expect(starter.suggestedNextActions.length).toBeGreaterThanOrEqual(3);
       expect(starter.aiUseGuidance.length).toBeGreaterThan(40);
+      expect(starter.aiUseGuidance).toMatch(/source|review|human|approval/i);
+      expect(starter.richProfile.evidenceRequirements.join(' ')).toMatch(/approved|disputed|stale|advisory|forbidden|review/i);
       expect(starter.agentWorkflow.preferredAgentId).toBeTruthy();
+      expect(starter.agentWorkflow.approvalNotes).toMatch(/approval|review|human/i);
+      if (starter.category === 'tool') {
+        expect(starter.tags).toEqual(expect.arrayContaining(['thinking-device', 'review-gated']));
+        expect(starter.deviceProfile?.humanReviewGate, `${starter.starterId} device gate`).toMatch(/human|review|approval/i);
+        expect(starter.inspectionSections.map((section) => section.label)).toContain('Tools/Thinking Devices');
+      }
       expect(starter.sourcePack.length, `${starter.starterId} source pack`).toBeGreaterThanOrEqual(2);
       expect(starter.excerpts.length, `${starter.starterId} excerpts`).toBeGreaterThanOrEqual(2);
       for (const source of starter.sourcePack) {
@@ -912,6 +928,74 @@ describe('context capsule product contract', () => {
       expect(starter.sourcePack.every((source) => source.url.startsWith('https://'))).toBe(true);
       expect(starter.excerpts.every((excerpt) => excerpt.sourceId && excerpt.text.length > 30)).toBe(true);
     }
+  });
+
+  it('adds current-affairs human-gated situation and tool-output capsules', () => {
+    const expectedSituationIds = [
+      'starter-situation-us-fy2027-budget-sequestration-watch',
+      'starter-situation-us-appropriations-continuing-resolution-risk',
+      'starter-situation-us-china-section-301-tariff-forced-labor',
+      'starter-situation-eu-ai-act-2026-implementation-simplification',
+      'starter-situation-us-ai-export-control-compute-diffusion',
+      'starter-situation-data-center-grid-load-interconnection',
+      'starter-situation-critical-minerals-domestic-supply-chain-2026',
+      'starter-situation-eu-cbam-definitive-regime-exporter-risk',
+      'starter-situation-eu-sustainability-omnibus-csrd-csddd',
+      'starter-situation-aca-marketplace-subsidy-affordability-2026',
+      'starter-situation-us-measles-outbreak-vaccine-confidence-2026',
+      'starter-situation-h5n1-dairy-food-safety-2026',
+      'starter-situation-us-border-asylum-encounters-2026',
+      'starter-situation-us-h1b-workforce-selection-modernization',
+      'starter-situation-us-housing-affordability-supply-homelessness',
+      'starter-situation-federal-student-loan-repayment-transition',
+      'starter-situation-kids-online-safety-coppa-age-assurance',
+      'starter-situation-us-stablecoin-digital-asset-legislation',
+      'starter-situation-2026-election-security-administration-watch',
+      'starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026',
+    ];
+    const expectedToolOutputIds = [
+      'starter-tool-legislative-authority-deadline-tracker',
+      'starter-tool-regulatory-compliance-deadline-matrix',
+      'starter-tool-fiscal-distributional-impact-screen',
+      'starter-tool-infrastructure-load-permitting-watchlist',
+      'starter-tool-public-health-trust-signal-map',
+      'starter-output-legislative-deadline-decision-brief',
+      'starter-output-regulatory-implementation-playbook',
+      'starter-output-domestic-policy-impact-one-pager',
+      'starter-output-board-public-affairs-risk-watch',
+      'starter-output-current-affairs-source-refresh-docket',
+    ];
+    const byId = new Map(CAPSULE_STARTER_DEFINITIONS.map((starter) => [starter.starterId, starter]));
+
+    for (const starterId of expectedSituationIds) {
+      const starter = byId.get(starterId);
+      expect(starter, `${starterId} missing`).toBeTruthy();
+      expect(starter?.category, `${starterId} category`).toBe('situation');
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.excerpts.length, `${starterId} excerpts`).toBeGreaterThanOrEqual(2);
+      expect(starter?.readinessStars, `${starterId} readiness`).toBeGreaterThanOrEqual(4);
+      expect(starter?.humanReview?.humanReviewGate, `${starterId} gate`).toMatch(/human|review|approval/i);
+      expect(starter?.aiUseGuidance, `${starterId} guidance`).toMatch(/source|approval|verify|review/i);
+      expect(starter?.sourcePack.every((source) => source.url.startsWith('https://')), `${starterId} urls`).toBe(true);
+    }
+
+    for (const starterId of expectedToolOutputIds) {
+      const starter = byId.get(starterId);
+      expect(starter, `${starterId} missing`).toBeTruthy();
+      expect(['tool', 'output'], `${starterId} category`).toContain(starter?.category);
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.excerpts.length, `${starterId} excerpts`).toBeGreaterThanOrEqual(2);
+      expect(starter?.recommendedToolIds.length, `${starterId} tools`).toBeGreaterThanOrEqual(2);
+      expect(starter?.outputProductIds.length, `${starterId} outputs`).toBeGreaterThanOrEqual(1);
+      expect(starter?.humanReview?.humanReviewGate, `${starterId} gate`).toMatch(/human|review|approval/i);
+      expect(starter?.aiUseGuidance, `${starterId} guidance`).toMatch(/source|approval|verify|review/i);
+    }
+
+    const promptBlock = buildCapsuleStarterPromptBlock('starter-situation-eu-ai-act-2026-implementation-simplification');
+    expect(promptBlock).toContain('[starter_capsule_definition]');
+    expect(promptBlock).toContain('source_pack:');
+    expect(promptBlock).toContain('human_review:');
+    expect(promptBlock).toContain('ai_use_guidance:');
   });
 
   it('adds the capsule data and inspection starter wave without weakening metadata', () => {

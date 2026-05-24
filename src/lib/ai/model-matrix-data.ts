@@ -1,0 +1,101 @@
+export const modelMatrix = {
+  version: 'pack15-2026-05-20-gemini-3.5-flash',
+  platform: {
+    enterpriseAgentPlatform: 'gemini-enterprise',
+    developerModelRuntime: 'vertex-ai',
+    agentRuntime: 'gemini-enterprise-agent-platform-runtime',
+    localDeveloperFallback: 'google-ai-studio',
+    defaultRegion: 'global',
+    vectorSearchPosture: 'pgvector-primary-vertex-vector-search-ready-secondary',
+  },
+  taskKinds: {
+    balanced: {
+      provider: 'vertex',
+      model: 'gemini-3.5-flash',
+      maxTokens: 4096,
+      temperature: 0.3,
+      costClass: 'medium',
+    },
+    complex_reasoning: {
+      provider: 'vertex',
+      model: 'gemini-3.1-pro-preview',
+      maxTokens: 8192,
+      temperature: 0.2,
+      costClass: 'expensive',
+    },
+    cheap_classify: {
+      provider: 'vertex',
+      model: 'gemini-3.5-flash',
+      maxTokens: 1024,
+      temperature: 0,
+      costClass: 'cheap',
+    },
+    long_context: {
+      provider: 'vertex',
+      model: 'gemini-3.1-pro-preview',
+      maxTokens: 32768,
+      temperature: 0.2,
+      costClass: 'expensive_long',
+    },
+    writing_quality: {
+      provider: 'vertex',
+      model: 'gemini-3.1-pro-preview',
+      maxTokens: 4096,
+      temperature: 0.4,
+      costClass: 'expensive',
+    },
+    embeddings_text: {
+      provider: 'vertex',
+      model: 'text-embedding-005',
+      dimensions: 768,
+      costClass: 'cheap',
+    },
+    embeddings_long: {
+      provider: 'vertex',
+      model: 'text-embedding-005',
+      dimensions: 768,
+      costClass: 'cheap',
+    },
+  },
+  fallbackProvider: {
+    'google-ai-studio': {
+      balanced: 'gemini-3.5-flash',
+      complex_reasoning: 'gemini-3.1-pro-preview',
+      cheap_classify: 'gemini-3.5-flash',
+      long_context: 'gemini-3.1-pro-preview',
+      writing_quality: 'gemini-3.1-pro-preview',
+      embeddings_text: 'text-embedding-005',
+      embeddings_long: 'text-embedding-005',
+    },
+  },
+  runtimePolicies: {
+    askPraxis: {
+      frontierPrimary: {
+        chat: 'balanced',
+        deep: 'complex_reasoning',
+      },
+      stableFallback: {
+        chat: [
+          'gemini-2.5-flash',
+        ],
+        deep: [
+          'gemini-2.5-pro',
+          'gemini-2.5-flash',
+        ],
+        cheap: [
+          'gemini-2.5-flash-lite',
+          'gemini-2.5-flash',
+        ],
+      },
+      stableModelLabels: {
+        'gemini-2.5-pro': 'Gemini 2.5 Pro',
+        'gemini-2.5-flash': 'Gemini 2.5 Flash',
+        'gemini-2.5-flash-lite': 'Gemini 2.5 Flash-Lite',
+      },
+      vertexLocationPolicy: {
+        frontierGemini3Location: 'global',
+        stableFallbackLocation: 'us-central1',
+      },
+    },
+  },
+};

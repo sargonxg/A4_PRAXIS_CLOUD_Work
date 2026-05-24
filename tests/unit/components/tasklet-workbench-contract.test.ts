@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 const workbenchSource = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
 const conversationHelperSource = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-workbench-conversation.ts'), 'utf8');
+const askStreamPanelSource = readFileSync(join(process.cwd(), 'src/components/ask/AskStreamPanel.tsx'), 'utf8');
+const askArtifactPreviewSource = readFileSync(join(process.cwd(), 'src/components/ask/AskArtifactPreview.tsx'), 'utf8');
 const source = `${workbenchSource}\n${conversationHelperSource}`;
 const instrumentSource = readFileSync(join(process.cwd(), 'src/components/ui/instrument.tsx'), 'utf8');
 const visualSource = `${workbenchSource}\n${instrumentSource}`;
@@ -47,6 +49,27 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain("fetch('/api/ai/ask-praxis'");
     expect(source).toContain("currentToolId: 'ask-praxis'");
     expect(source).toContain('appliedCapsules: activeCapsuleStack.map');
+  });
+
+  it('keeps authenticated Ask clients on the saved conversation route', () => {
+    expect(askStreamPanelSource).toContain('/api/conversations/${encodeURIComponent(nextThreadId)}/turns');
+    expect(askStreamPanelSource).toContain('currentPath: buildConversationPath(capsuleId, nextThreadId)');
+    expect(`${workbenchSource}\n${askStreamPanelSource}`).not.toContain("fetch('/api/ai/ask-praxis'");
+  });
+
+  it('renders document-pack artifacts in-window instead of forcing Memo Studio navigation', () => {
+    expect(`${workbenchSource}\n${askStreamPanelSource}`).toContain('<AskArtifactPreview');
+    expect(`${workbenchSource}\n${askStreamPanelSource}`).not.toContain("window.location.assign('/app/write')");
+    expect(askArtifactPreviewSource).toContain('data-testid="ask-artifact-preview"');
+    expect(askArtifactPreviewSource).toContain('Draft document pack');
+    expect(askArtifactPreviewSource).toContain('Copy');
+    expect(askArtifactPreviewSource).toContain('Revise in chat');
+    expect(askArtifactPreviewSource).toContain('Save to Memo Studio');
+    expect(askArtifactPreviewSource).toContain('Save as Output Capsule');
+    expect(askArtifactPreviewSource).toContain('Attach answer to capsule');
+    expect(askArtifactPreviewSource).toContain('/api/memos/from-ask-pack');
+    expect(askArtifactPreviewSource).toContain('/api/output-capsules');
+    expect(askArtifactPreviewSource).toContain('navigator.clipboard?.writeText');
   });
 
   it('keeps conversation URLs capsule-scoped for sends and copied links', () => {
@@ -289,6 +312,17 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('sourceAudit');
   });
 
+  it('shows governed agent process proof without creating a separate cockpit', () => {
+    expect(source).toContain('Context selected');
+    expect(source).toContain('Sourceability review');
+    expect(source).toContain('Tool route');
+    expect(source).toContain('Agent queued/running');
+    expect(source).toContain('Output drafted');
+    expect(source).toContain('Human review gate');
+    expect(source).not.toContain('/app/agent-cockpit');
+    expect(source).not.toContain('Agent cockpit');
+  });
+
   it('uses the capsule inspector sheet as the single capsule inspection surface', () => {
     expect(source).toContain('function openCapsuleInspector');
     expect(source).toContain('data-testid="capsule-inspector-sheet"');
@@ -322,6 +356,36 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('read contract');
     expect(source).not.toContain('/app/ontology');
     expect(source).not.toContain('/app/community-review');
+  });
+
+  it('adds capsule X-Ray, sourceability scoreboard, review queue, and fork trail to existing capsule surfaces', () => {
+    expect(source).toContain('function CapsuleXRayScoreboard');
+    expect(source).toContain('data-testid="capsule-xray-scoreboard"');
+    expect(source).toContain('Capsule X-Ray');
+    expect(source).toContain('Sourceability scoreboard');
+    expect(source).toContain('Capsule class and mode');
+    expect(source).toContain('Purpose');
+    expect(source).toContain('Audience');
+    expect(source).toContain('Best next action');
+    expect(source).toContain('Source refs');
+    expect(source).toContain('Stale sources');
+    expect(source).toContain('Claim ledger');
+    expect(source).toContain('Unsupported claims');
+    expect(source).toContain('Quality breakdown');
+    expect(source).toContain('Human gate');
+    expect(source).toContain('Output contracts');
+    expect(source).toContain('Agent permissions');
+    expect(source).toContain('Evidence meters');
+    expect(source).toContain('data-testid="capsule-review-queue"');
+    expect(source).toContain('proposed AI improvements');
+    expect(source).toContain('missing sources');
+    expect(source).toContain('stale claims');
+    expect(source).toContain('unsupported claims');
+    expect(source).toContain('publish blockers');
+    expect(source).toContain('human-review requests');
+    expect(source).toContain('function ForkTrail');
+    expect(source).toContain('data-testid="fork-trail"');
+    expect(source).toContain('starter -> fork -> edits -> gate');
   });
 
   it('uses opaque operational panel classes for the capsule workspace', () => {
@@ -394,6 +458,29 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Share');
     expect(source).toContain('Download');
     expect(source).toContain('Improve');
+  });
+
+  it('adds a provenance-only ContextChain map and live readiness strip inside the existing workbench', () => {
+    expect(source).toContain('function ContextChainMap');
+    expect(source).toContain('data-testid="context-chain-map"');
+    expect(source).toContain('User Core');
+    expect(source).toContain('Situation');
+    expect(source).toContain('Sources');
+    expect(source).toContain('Thinking device');
+    expect(source).toContain('Output');
+    expect(source).toContain('source-backed');
+    expect(source).toContain('needs sources');
+    expect(source).toContain('human-gated');
+    expect(source).toContain('needs review');
+    expect(source).toContain('output-ready');
+    expect(source).toContain('exploratory only');
+    expect(source).toContain('function LiveReadinessStrip');
+    expect(source).toContain('data-testid="live-readiness-strip"');
+    expect(source).toContain('Capsule health');
+    expect(source).toContain('Source posture');
+    expect(source).toContain('Review gate');
+    expect(source).toContain('Output readiness');
+    expect(source).toContain('Agent permission');
   });
 
   it('sends the active context chain into manual agent-run creation', () => {

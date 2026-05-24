@@ -1,10 +1,10 @@
 # Capsule Depth Audit
 
 - Date: 2026-05-19
-- Catalog version: 2026-05-22-real-work-capsules-v9
+- Catalog version: 2026-05-23-human-gated-workflows-v12
 - Result: pass
-- Total starters: 169
-- Category counts: situation 59, tool 67, output 30, user 13
+- Total starters: 199
+- Category counts: situation 79, tool 72, output 35, user 13
 
 ## Failures
 
@@ -74,6 +74,36 @@
 - starter-user-cabinet-policy-advisor: user, analyst-role, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-user-investigative-research-analyst: user, analyst-role, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-user-field-program-manager: user, analyst-role, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-us-fy2027-budget-sequestration-watch: situation, finance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-us-appropriations-continuing-resolution-risk: situation, finance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-us-china-section-301-tariff-forced-labor: situation, finance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-eu-ai-act-2026-implementation-simplification: situation, ai-governance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-us-ai-export-control-compute-diffusion: situation, ai-governance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-data-center-grid-load-interconnection: situation, cyber-resilience, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-critical-minerals-domestic-supply-chain-2026: situation, critical-minerals, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-eu-cbam-definitive-regime-exporter-risk: situation, sustainability, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-eu-sustainability-omnibus-csrd-csddd: situation, sustainability, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-aca-marketplace-subsidy-affordability-2026: situation, public-health, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-us-measles-outbreak-vaccine-confidence-2026: situation, public-health, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-h5n1-dairy-food-safety-2026: situation, public-health, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-us-border-asylum-encounters-2026: situation, migration-displacement, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-us-h1b-workforce-selection-modernization: situation, migration-displacement, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-us-housing-affordability-supply-homelessness: situation, finance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-federal-student-loan-repayment-transition: situation, finance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-kids-online-safety-coppa-age-assurance: situation, ai-governance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-us-stablecoin-digital-asset-legislation: situation, finance, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-2026-election-security-administration-watch: situation, election-integrity, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-legislative-authority-deadline-tracker: tool, policy-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-regulatory-compliance-deadline-matrix: tool, policy-review, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-fiscal-distributional-impact-screen: tool, exposure-mapping, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-infrastructure-load-permitting-watchlist: tool, cyber-resilience, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-tool-public-health-trust-signal-map: tool, public-health, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-legislative-deadline-decision-brief: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-regulatory-implementation-playbook: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-domestic-policy-impact-one-pager: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-board-public-affairs-risk-watch: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
+- starter-output-current-affairs-source-refresh-docket: output, output-brief, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-hr-harassment-policy: situation, hr, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-diplomatic-options: situation, diplomacy, sources 2, excerpts 2, compatible 3, richProfile yes
 - starter-situation-humanitarian-rights-access: situation, humanitarian-rights, sources 2, excerpts 2, compatible 3, richProfile yes

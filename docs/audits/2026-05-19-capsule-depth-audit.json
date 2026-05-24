@@ -1,19 +1,19 @@
 {
   "ok": true,
-  "catalogVersion": "2026-05-22-real-work-capsules-v9",
-  "total": 169,
+  "catalogVersion": "2026-05-23-human-gated-workflows-v12",
+  "total": 199,
   "counts": {
-    "situation": 59,
-    "tool": 67,
-    "output": 30,
+    "situation": 79,
+    "tool": 72,
+    "output": 35,
     "user": 13
   },
   "expected": {
-    "total": 169,
+    "total": 199,
     "counts": {
-      "output": 30,
-      "situation": 59,
-      "tool": 67,
+      "output": 35,
+      "situation": 79,
+      "tool": 72,
       "user": 13
     }
   },
@@ -572,6 +572,276 @@
       "starterId": "starter-user-field-program-manager",
       "category": "user",
       "domain": "analyst-role",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-us-fy2027-budget-sequestration-watch",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-us-appropriations-continuing-resolution-risk",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-us-china-section-301-tariff-forced-labor",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-eu-ai-act-2026-implementation-simplification",
+      "category": "situation",
+      "domain": "ai-governance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-us-ai-export-control-compute-diffusion",
+      "category": "situation",
+      "domain": "ai-governance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-data-center-grid-load-interconnection",
+      "category": "situation",
+      "domain": "cyber-resilience",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-critical-minerals-domestic-supply-chain-2026",
+      "category": "situation",
+      "domain": "critical-minerals",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-eu-cbam-definitive-regime-exporter-risk",
+      "category": "situation",
+      "domain": "sustainability",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-eu-sustainability-omnibus-csrd-csddd",
+      "category": "situation",
+      "domain": "sustainability",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-aca-marketplace-subsidy-affordability-2026",
+      "category": "situation",
+      "domain": "public-health",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-us-measles-outbreak-vaccine-confidence-2026",
+      "category": "situation",
+      "domain": "public-health",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-h5n1-dairy-food-safety-2026",
+      "category": "situation",
+      "domain": "public-health",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-us-border-asylum-encounters-2026",
+      "category": "situation",
+      "domain": "migration-displacement",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-us-h1b-workforce-selection-modernization",
+      "category": "situation",
+      "domain": "migration-displacement",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-us-housing-affordability-supply-homelessness",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-federal-student-loan-repayment-transition",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-kids-online-safety-coppa-age-assurance",
+      "category": "situation",
+      "domain": "ai-governance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-us-stablecoin-digital-asset-legislation",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-2026-election-security-administration-watch",
+      "category": "situation",
+      "domain": "election-integrity",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-legislative-authority-deadline-tracker",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-regulatory-compliance-deadline-matrix",
+      "category": "tool",
+      "domain": "policy-review",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-fiscal-distributional-impact-screen",
+      "category": "tool",
+      "domain": "exposure-mapping",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-infrastructure-load-permitting-watchlist",
+      "category": "tool",
+      "domain": "cyber-resilience",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-tool-public-health-trust-signal-map",
+      "category": "tool",
+      "domain": "public-health",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-legislative-deadline-decision-brief",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-regulatory-implementation-playbook",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-domestic-policy-impact-one-pager",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-board-public-affairs-risk-watch",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true
+    },
+    {
+      "starterId": "starter-output-current-affairs-source-refresh-docket",
+      "category": "output",
+      "domain": "output-brief",
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,

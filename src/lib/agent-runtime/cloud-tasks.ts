@@ -1,6 +1,7 @@
 import { makeAgentRunEvent, normalizePointer } from '@/lib/agent-runtime/state';
 import { appendAgentRunEvent, getAgentRun } from '@/lib/agent-runtime/postgres';
 import { publishPraxisEvent } from '@/lib/events/praxis-events';
+import { CloudTasksClient } from '@google-cloud/tasks';
 
 type CloudTasksClientLike = {
   createTask(input: { parent: string; task: AgentRunTask }): Promise<[{ name?: string | null }, ...unknown[]]>;
@@ -188,7 +189,6 @@ type AgentRunTask = {
 
 async function getCloudTasksClient(): Promise<CloudTasksClientLike> {
   if (!tasksClient) {
-    const { CloudTasksClient } = await import('@google-cloud/tasks');
     tasksClient = new CloudTasksClient() as unknown as CloudTasksClientLike;
   }
   return tasksClient!;

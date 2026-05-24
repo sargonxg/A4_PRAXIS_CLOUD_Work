@@ -5,9 +5,10 @@
 #     --source=infrastructure/triggers/frontend-main.yaml \
 #     --project=praxisbytacitus
 #
-# The trigger filters on commit message; only pushes whose HEAD commit message
-# contains the literal token `[deploy]` will run the frontend Cloud Build.
-# Routine work (docs, audits, graphify, visuals-in-progress) does not redeploy.
+# The trigger filters on the HEAD commit message via a Cloud Build payload
+# binding; only pushes whose commit message contains the literal token
+# `[deploy]` will run the frontend Cloud Build. Routine work (docs, audits,
+# graphify, visuals-in-progress) does not redeploy.
 
 name: frontend-main-on-push
 description: Opt-in deploy of praxis-frontend on push to main when the commit message contains [deploy].
@@ -25,11 +26,10 @@ includedFiles:
   - "package.json"
   - "package-lock.json"
   - "cloudbuild.frontend.yaml"
-# Commit-message gate. Cloud Build accepts a regex over the HEAD commit message
-# via the `tags` field once trigger filtering is enabled. We keep the gate in
-# the cloudbuild step itself as a defensive double-check.
+filter: 'build.substitutions["_COMMIT_MESSAGE"].contains("[deploy]")'
 tags:
   - praxis-frontend
   - opt-in-deploy
 substitutions:
   _DEPLOY_TOKEN: "[deploy]"
+  _COMMIT_MESSAGE: "$(push.head_commit.message)"

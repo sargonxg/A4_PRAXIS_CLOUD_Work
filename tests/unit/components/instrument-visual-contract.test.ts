@@ -13,6 +13,7 @@ const settings = readFileSync(join(root, 'src/components/settings/account-settin
 const onboardingPreview = readFileSync(join(root, 'src/app/onboarding/live-preview.tsx'), 'utf8');
 const docs = readFileSync(join(root, 'docs/contributing/DESIGN_SYSTEM.md'), 'utf8');
 const design = readFileSync(join(root, 'DESIGN.md'), 'utf8');
+const verifyDesign = readFileSync(join(root, 'scripts/verify-design-shipped.mjs'), 'utf8');
 
 describe('Futurist AI Lab visual contract', () => {
   it('defines the shared atelier primitive module and CSS hooks', () => {
@@ -114,5 +115,21 @@ describe('Futurist AI Lab visual contract', () => {
     expect(workbench).toContain('context-chain');
     expect(workbench).not.toContain('text-[#ca4a25]');
     expect(workbench).not.toContain('border-[#ff714d]');
+  });
+
+  it('verifies shipped Civic Atelier markers instead of stale landing utilities', () => {
+    for (const marker of [
+      'civic-atelier-shell',
+      'cartographic-grid',
+      'specimen-card',
+      'receipt-slip',
+      'context-chain',
+      'PRAXIS brand mark',
+    ]) {
+      expect(verifyDesign).toContain(marker);
+    }
+
+    expect(verifyDesign).not.toContain('section-rhythm');
+    expect(verifyDesign).not.toContain('surface-glass');
   });
 });

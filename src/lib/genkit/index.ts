@@ -2,7 +2,7 @@ import { googleAI, vertexAI } from '@genkit-ai/google-genai';
 import { enableGoogleCloudTelemetry } from '@genkit-ai/google-cloud';
 import { genkit } from 'genkit';
 import { loadEnvConfig } from '@next/env';
-import modelMatrix from '@/lib/ai/MODEL_MATRIX.json';
+import { modelMatrix } from '@/lib/ai/model-matrix-data';
 import { GenkitClassifyPathOutputSchema } from '@/lib/genkit/schemas/classify-path';
 import { GenkitSourceabilityOutputSchema } from '@/lib/genkit/schemas/sourceability';
 import { GenkitSituationIntelligenceSchema } from '@/lib/genkit/schemas/situation-intelligence';

@@ -607,6 +607,14 @@ body {
   background-size: 32px 32px, 32px 32px, 32px 32px;
 }
 
+.human-gated-example-panel.cartographic-grid {
+  border-color: color-mix(in srgb, var(--color-clay) 44%, var(--color-mineral-soft));
+  background-color: color-mix(in srgb, var(--color-mineral-soft) 76%, var(--color-archive-paper-strong));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 74%, transparent),
+    0 18px 42px color-mix(in srgb, var(--color-clay) 11%, transparent);
+}
+
 .dossier-spine {
   border-color: color-mix(in srgb, var(--color-mineral) 22%, transparent);
   background: color-mix(in srgb, var(--color-archive-paper) 88%, white);
@@ -663,6 +671,15 @@ body {
     linear-gradient(90deg, transparent 48%, color-mix(in srgb, var(--color-lab-cyan) 18%, transparent), transparent 68%),
     linear-gradient(90deg, transparent 68%, color-mix(in srgb, var(--color-gold-500) 20%, transparent), transparent);
   opacity: 0.65;
+}
+
+.landing-sticky-collision-zone {
+  scroll-margin-top: 7rem;
+}
+
+#capsule-repository-section,
+[data-testid="capsule-manager"] {
+  scroll-margin-top: 7.5rem;
 }
 
 .futurist-ai-lab {

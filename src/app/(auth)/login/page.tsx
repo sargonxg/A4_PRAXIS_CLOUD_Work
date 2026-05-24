@@ -221,7 +221,7 @@ function LoginForm() {
   }
 
   return (
-    <div className="praxis-checker-constellation min-h-screen text-slate-950">
+    <div className="civic-atelier-shell cartographic-grid praxis-checker-constellation min-h-screen text-slate-950">
       <div className="grid min-h-screen lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.72fr)]">
         <section className="relative hidden overflow-hidden border-r border-slate-200/80 lg:block">
           <div className="relative flex min-h-screen flex-col p-8">
@@ -578,7 +578,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="praxis-checker-constellation flex min-h-screen items-center justify-center">
+        <div className="civic-atelier-shell cartographic-grid praxis-checker-constellation flex min-h-screen items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-[color:var(--color-rose-gold)]" />
         </div>
       }

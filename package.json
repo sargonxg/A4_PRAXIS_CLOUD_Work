@@ -34,6 +34,7 @@
     "audit:ai-provider-isolation": "tsx scripts/audit-ai-provider-isolation.ts",
     "audit:ai-provider-vertex-default": "tsx scripts/audit-ai-provider-vertex-default.ts",
     "audit:ask-cockpit-runtime": "tsx scripts/audit-ask-cockpit-runtime.ts",
+    "audit:ask-same-window-contract": "tsx scripts/audit-ask-same-window-contract.ts",
     "audit:tasklet-mvp-foundation": "tsx scripts/audit-tasklet-mvp-foundation.ts",
     "audit:tasklet-policy-workbench": "tsx scripts/audit-tasklet-policy-workbench.ts",
     "audit:deep-preship": "tsx scripts/audit-deep-preship.ts",

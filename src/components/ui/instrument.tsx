@@ -274,7 +274,7 @@ export function PublicPageShell({
   maxWidth?: string;
 }) {
   return (
-    <main className="landing-light instrument-public-shell min-h-screen px-5 py-10 text-[color:var(--color-ink)]">
+    <main className="landing-light instrument-public-shell civic-atelier-shell cartographic-grid min-h-screen px-5 py-10 text-[color:var(--color-ink)]">
       <div className={cn('mx-auto', maxWidth)}>{children}</div>
     </main>
   );

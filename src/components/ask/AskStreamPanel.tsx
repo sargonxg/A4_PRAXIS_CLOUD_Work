@@ -31,6 +31,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
+import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
 import { InterruptCard, type InterruptRequest } from '@/components/ask/InterruptCard';
 import { CoreSwapDrawer } from '@/components/cores/CoreSwapDrawer';
 import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
@@ -41,6 +42,7 @@ import type { AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
 import type { AskOrchestrationStatusEvent } from '@/lib/ai/ask-orchestrator';
 import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
 import { buildAskTimelineMessages, type AskTimelineMessage } from '@/lib/ai/ask-conversation';
+import { buildConversationPath } from '@/components/praxis/tasklet-workbench-conversation';
 import { agentRailStageFromEvent, useOrchestratorEvents } from '@/hooks/useOrchestratorEvents';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
@@ -234,6 +236,27 @@ export function AskStreamPanel({
       abortRef.current = controller;
       const timestamp = Date.now();
       const assistantId = `live-${timestamp}-assistant`;
+      if (!capsuleId || !threadId) {
+        setTimelineMessages((current) => [
+          ...current,
+          {
+            id: `live-${timestamp}-user`,
+            role: 'user',
+            content: trimmedText,
+            createdAt: new Date(timestamp).toISOString(),
+          },
+          {
+            id: assistantId,
+            role: 'assistant',
+            content: 'Ask PRAXIS needs an active ContextCapsule before it can save a conversation turn.',
+            createdAt: new Date(timestamp).toISOString(),
+            streaming: false,
+          },
+        ]);
+        setThinking(false);
+        return;
+      }
+      const nextThreadId = threadId;
       setTimelineMessages((current) => [
         ...current,
         {
@@ -255,19 +278,28 @@ export function AskStreamPanel({
       ]);
 
       try {
+        const conversationMessages = [
+          ...timelineMessages
+            .filter((message) => message.content.trim().length > 0)
+            .map((message) => ({ role: message.role, content: message.content })),
+          { role: 'user' as const, content: trimmedText },
+        ];
         const requestBody = {
-          messages: [{ role: 'user' as const, content: trimmedText }],
+          messages: conversationMessages,
           ...(activeSituation?.name ? { situation: activeSituation } : {}),
-          ...(capsuleId && threadId ? { capsuleId, threadId } : {}),
+          capsuleId,
+          threadId: nextThreadId,
           ...(contextPackageId ? { contextPackageId } : {}),
           ...(activeContextStack ? { activeContextStack } : {}),
+          currentToolId: 'ask-praxis',
+          currentPath: buildConversationPath(capsuleId, nextThreadId),
           aiSettings: {
             provider: 'vertex',
             analysisDepth: 'standard' as const,
           },
         };
 
-        const res = await fetch('/api/ai/ask-praxis', {
+        const res = await fetch(`/api/conversations/${encodeURIComponent(nextThreadId)}/turns`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'content-type': 'application/json', accept: 'text/event-stream, text/plain' },
@@ -369,7 +401,7 @@ export function AskStreamPanel({
         updateTimelineMessage(setTimelineMessages, assistantId, { streaming: false });
       }
     },
-    [thinking, capsuleId, threadId, contextPackageId, activeContextStack, activeSituation, loadHistory],
+    [thinking, capsuleId, threadId, contextPackageId, activeContextStack, activeSituation, loadHistory, timelineMessages],
   );
 
   const draftDocumentPack = useCallback(async (message: AskPanelMessage) => {
@@ -388,7 +420,9 @@ export function AskStreamPanel({
         }),
       });
       if (res.ok) {
-        window.location.assign('/app/write');
+        updateTimelineMessage(setTimelineMessages, message.id, {
+          content: `${message.content}\n\n_Document pack saved to Memo Studio._`,
+        });
       } else {
         updateTimelineMessage(setTimelineMessages, message.id, {
           content: `${message.content}\n\n_Document pack could not be saved (${res.status})._`,
@@ -516,6 +550,7 @@ export function AskStreamPanel({
                 transition={reduceMotion ? { duration: 0 } : { ...SPRING, delay: idx * 0.05 }}
               >
                 <AskMessageBubble
+                  capsuleId={capsuleId}
                   message={message}
                   onDraftPack={draftDocumentPack}
                   onFollowUp={(followUp) => setPrompt(followUp)}
@@ -702,11 +737,13 @@ function isAskOrchestrationStatusEvent(value: unknown): value is AskOrchestratio
 }
 
 function AskMessageBubble({
+  capsuleId,
   message,
   onDraftPack,
   onFollowUp,
   packSaving,
 }: {
+  capsuleId?: string | null;
   message: AskPanelMessage;
   onDraftPack: (message: AskPanelMessage) => void;
   onFollowUp: (followUp: string) => void;
@@ -749,6 +786,17 @@ function AskMessageBubble({
         <AskQueuedAgentRunPanel queuedRun={message.queuedRun ?? workingTimeline.find((event) => event.id === 'worker' && Boolean(event.runId)) ?? null} />
         <OrchestrationReceiptPanel envelope={message.answerEnvelope} />
         <AnswerSourcePreviewPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
+        {!message.streaming && message.content && message.answerEnvelope?.documentPackCandidate ? (
+          <AskArtifactPreview
+            answer={message.content}
+            capsuleId={capsuleId ?? message.answerEnvelope.documentPackCandidate.provenance.capsuleId}
+            onRevise={(revisionPrompt) => onFollowUp(revisionPrompt)}
+            onSaveToMemoStudio={() => onDraftPack(message)}
+            pack={message.answerEnvelope.documentPackCandidate}
+            saving={packSaving}
+            turnId={message.turnId ?? message.id}
+          />
+        ) : null}
 
         {stages.length ? (
           <details className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2">
@@ -767,17 +815,6 @@ function AskMessageBubble({
               <FileText className="h-3.5 w-3.5" />
               Send to Memo Studio
             </Link>
-            {message.answerEnvelope?.documentPackCandidate ? (
-              <button
-                type="button"
-                onClick={() => onDraftPack(message)}
-                disabled={packSaving}
-                className="inline-flex items-center gap-2 rounded-md border border-diplomatic-blue bg-white px-3 py-1.5 text-xs font-semibold text-diplomatic-blue hover:bg-slate-50 disabled:opacity-60"
-              >
-                {packSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
-                Draft document pack
-              </button>
-            ) : null}
             <Link href="/app/contexts" className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">
               Review context
             </Link>

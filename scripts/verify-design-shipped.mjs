@@ -2,12 +2,14 @@
 /**
  * verify-design-shipped.mjs — post-deploy sanity check.
  *
- * Fetches the live landing URL and asserts the PRAXIS design system shipped:
- *  - btn-capsule-primary class is present in the HTML
- *  - section-rhythm wrapper is present
- *  - surface-glass utility appears
- *  - font-serif class appears
- *  - PRAXIS by TACITUS appears in nav
+ * Fetches the live landing URL and asserts the current Civic Atelier design
+ * system shipped:
+ *  - civic-atelier-shell is present on the workbench
+ *  - cartographic-grid is present on mapped workbench surfaces
+ *  - specimen-card capsule objects are rendered
+ *  - receipt-slip proof strips are rendered
+ *  - context-chain provenance map is rendered
+ *  - PRAXIS brand mark appears in nav
  *
  * Usage: BASE_URL=https://praxis.tacitus.me node scripts/verify-design-shipped.mjs
  * Defaults to https://praxis.tacitus.me when BASE_URL is unset.
@@ -16,10 +18,11 @@
 const BASE_URL = process.env.BASE_URL ?? "https://praxis.tacitus.me";
 
 const ASSERTIONS = [
-  { name: "btn-capsule-primary", pattern: /btn-capsule-primary/ },
-  { name: "section-rhythm", pattern: /section-rhythm/ },
-  { name: "surface-glass", pattern: /surface-glass/ },
-  { name: "font-serif", pattern: /font-serif/ },
+  { name: "civic-atelier-shell", pattern: /civic-atelier-shell/ },
+  { name: "cartographic-grid", pattern: /cartographic-grid/ },
+  { name: "specimen-card", pattern: /specimen-card/ },
+  { name: "receipt-slip", pattern: /receipt-slip/ },
+  { name: "context-chain", pattern: /context-chain/ },
   { name: "PRAXIS brand mark", pattern: /PRAXIS/ },
 ];
 

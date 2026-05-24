@@ -68,7 +68,7 @@ export default function LandingLayout({
       />
 
       {/* Floating capsule navbar — rounded, glass, deliberate */}
-      <div className="sticky top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
+      <div className="landing-sticky-collision-zone sticky top-0 z-50 px-3 pb-2 pt-3 sm:px-5 sm:pb-3 sm:pt-4">
         <header
           className={cn(
             "mx-auto max-w-[1180px] rounded-full transition-all duration-500 ease-out",

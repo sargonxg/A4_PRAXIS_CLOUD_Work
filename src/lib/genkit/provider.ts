@@ -1,4 +1,4 @@
-import modelMatrix from '@/lib/ai/MODEL_MATRIX.json';
+import { modelMatrix } from '@/lib/ai/model-matrix-data';
 
 export type GenkitGoogleProviderKind = 'vertex' | 'google-ai';
 

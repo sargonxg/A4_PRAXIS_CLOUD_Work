@@ -469,7 +469,7 @@ export async function listCapsules(
   input: { situationId?: string; includeArchived?: boolean } = {},
   deps?: CapsuleServiceDeps,
 ): Promise<PraxisCapsule[]> {
-  const snap = await capsulesCollection(uid, deps).limit(100).get();
+  const snap = await capsulesCollection(uid, deps).get();
   const capsules = snap.docs
     .map((doc) => sanitizeCapsule({ ...doc.data(), capsuleId: doc.id }))
     .filter((capsule) => input.includeArchived || !capsule.archivedAt);
@@ -487,7 +487,7 @@ export async function listCapsuleInventory(
   input: { situationId?: string; includeArchived?: boolean } = {},
   deps?: CapsuleServiceDeps,
 ): Promise<CapsuleInventoryResult> {
-  const snap = await capsulesCollection(uid, deps).limit(100).get();
+  const snap = await capsulesCollection(uid, deps).get();
   const rows = snap.docs
     .map((doc) => {
       const raw = { ...doc.data(), capsuleId: doc.id };
@@ -1405,6 +1405,7 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
   const label = stringOrNull(body.label) ?? defaultCapsuleLabel(coreRefs);
   const latestGateState = normalizeGateState(body.latestGateState);
   const provenanceBody = isRecord(body.provenance) ? body.provenance : {};
+  const provenanceNotes = stringOrNull(provenanceBody.notes);
   const provenance: CapsuleProvenance = {
     source: provenanceBody.source === 'context-stack-migration' || provenanceBody.source === 'fork' || provenanceBody.source === 'combine' || provenanceBody.source === 'api' || provenanceBody.source === 'created'
       ? provenanceBody.source
@@ -1412,8 +1413,8 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     createdBy: stringOrNull(provenanceBody.createdBy) ?? ownerUid,
     parentCapsuleId: stringOrNull(provenanceBody.parentCapsuleId),
     forkedFromVersion: typeof provenanceBody.forkedFromVersion === 'number' ? Math.max(1, Math.floor(provenanceBody.forkedFromVersion)) : null,
-    notes: stringOrNull(provenanceBody.notes) ?? undefined,
   };
+  if (provenanceNotes) provenance.notes = provenanceNotes;
   const capsule: Omit<PraxisCapsule, 'trust'> = {
     capsuleId: cleanCapsuleId,
     ownerUid,
@@ -2422,9 +2423,9 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
       preferredAgentId: stringOrNull(workflow.preferredAgentId) ?? 'research-memo',
       routeHint: stringOrNull(workflow.routeHint) ?? 'starter-capsule',
       outputGoal: stringOrNull(workflow.outputGoal) ?? 'options-memo',
-      approvalNotes: stringOrNull(workflow.approvalNotes) ?? 'Require human review before external export.',
+      approvalNotes: longStringOrNull(workflow.approvalNotes) ?? 'Require human review before external export.',
     },
-    aiUseGuidance: stringOrNull(value.aiUseGuidance) ?? '',
+    aiUseGuidance: longStringOrNull(value.aiUseGuidance) ?? '',
     richProfile,
     ...(ontologyOverlay ? { ontologyOverlay } : {}),
     ...(deviceProfile ? { deviceProfile } : {}),

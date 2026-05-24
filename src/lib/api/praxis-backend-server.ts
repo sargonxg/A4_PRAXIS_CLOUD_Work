@@ -20,8 +20,15 @@ async function getBackendIdToken(): Promise<string | null> {
   if (!process.env.NEXT_PUBLIC_PRAXIS_BACKEND_URL) return null;
   try {
     const client = await _auth.getIdTokenClient(process.env.NEXT_PUBLIC_PRAXIS_BACKEND_URL);
-    const headers = await client.getRequestHeaders();
-    return headers.get('Authorization')?.replace('Bearer ', '') ?? null;
+    const headers = await client.getRequestHeaders() as unknown as {
+      get?: (name: string) => string | null;
+      Authorization?: string;
+      authorization?: string;
+    };
+    const authorization = typeof headers.get === 'function'
+      ? headers.get('Authorization')
+      : headers.Authorization ?? headers.authorization;
+    return authorization?.replace('Bearer ', '') ?? null;
   } catch {
     return null; // local dev without ADC — fall through gracefully
   }

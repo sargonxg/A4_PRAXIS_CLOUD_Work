@@ -1,4 +1,4 @@
-import matrix from './MODEL_MATRIX.json';
+import { modelMatrix as matrix } from './model-matrix-data';
 
 export type TaskKind = keyof typeof matrix.taskKinds;
 export type AIProviderRuntime = 'vertex' | 'google';

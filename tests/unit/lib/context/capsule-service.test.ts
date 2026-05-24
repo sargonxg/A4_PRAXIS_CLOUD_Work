@@ -68,6 +68,17 @@ describe('capsule service', () => {
     expect(await getCapsule('u2', 'cap-1', deps(db))).toBeNull();
   });
 
+  it('omits absent provenance notes instead of storing Firestore-rejected undefined values', async () => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', {
+      capsuleId: 'cap-no-notes',
+      provenance: { source: 'api', createdBy: 'u1' },
+    }, deps(db));
+
+    expect(capsule.provenance).not.toHaveProperty('notes');
+    expect(db.data.get('users/u1/capsules/cap-no-notes')?.provenance).not.toHaveProperty('notes');
+  });
+
   it('records fork lineage without activating the fork', async () => {
     const db = new FakeFirestore();
     const parent = await createCapsule('u1', {
@@ -544,7 +555,21 @@ describe('capsule service', () => {
     expect(capsules.filter((capsule) => capsule.community.favorite && (capsule.community.averageRating ?? 0) >= 4.8)).toHaveLength(first.created);
     expect(capsules.filter((capsule) => capsule.community.ratingCount >= 10)).toHaveLength(first.created);
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-source-pack-builder')?.coreRefs.toolCoreIds).toContain('grounded-research');
-    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-assumption-audit')?.community.tags).toEqual(expect.arrayContaining(['type:tool', 'domain:audit-review']));
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-assumption-audit')?.community.tags).toEqual(expect.arrayContaining([
+      'type:tool',
+      'domain:audit-review',
+      'real-work',
+      'v2-context',
+      'human-gated',
+      'review-card',
+      'sourceable-workflow',
+      'no-affiliation',
+      'thinking-device',
+      'review-gated',
+    ]));
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-assumption-audit')?.starterSnapshot?.deviceProfile?.humanReviewGate).toMatch(/human|review|approval/i);
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-assumption-audit')?.starterSnapshot?.aiUseGuidance).toContain('no-affiliation boundaries visible before external use');
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-assumption-audit')?.starterSnapshot?.agentWorkflow.approvalNotes).toContain('SQL projection writes');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-two-page-brief')?.coreRefs.outputCoreIds).toContain('options-memo');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-mediation-track')?.community.tags).toContain('team:diplomatic');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-diplomatic-options-memo')?.coreRefs.outputCoreIds).toContain('diplomatic-cable');
@@ -610,6 +635,14 @@ describe('capsule service', () => {
     ]));
     expect(db.data.has('users/u1/capsules/starter-situation-red-sea-maritime-logistics-risk/sources/unctad-trade-development-foresights-2026')).toBe(true);
     expect(db.data.has('users/u1/capsules/starter-user-sanctions-compliance-counsel/sources/ofac-framework-compliance')).toBe(true);
+    const currentAffairsAiAct = capsules.find((capsule) => capsule.capsuleId === 'starter-situation-eu-ai-act-2026-implementation-simplification');
+    expect(currentAffairsAiAct?.starterSnapshot?.humanReview?.humanReviewGate).toMatch(/human|review|approval/i);
+    expect(currentAffairsAiAct?.starterSnapshot?.sourcePack?.some((source) => source.id === 'ec-ai-act-framework')).toBe(true);
+    expect(db.data.has('users/u1/capsules/starter-situation-eu-ai-act-2026-implementation-simplification/sources/ec-ai-act-framework')).toBe(true);
+    expect(db.data.has('users/u1/capsules/starter-situation-eu-ai-act-2026-implementation-simplification/advisoryMemoryHits/starter-advisory-context')).toBe(true);
+    const currentAffairsTool = capsules.find((capsule) => capsule.capsuleId === 'starter-tool-legislative-authority-deadline-tracker');
+    expect(currentAffairsTool?.starterSnapshot?.deviceProfile?.deviceKind).toBe('legislative-authority-deadline-tracker');
+    expect(db.data.has('users/u1/capsules/starter-tool-legislative-authority-deadline-tracker/sources/congress-119-appropriations-source')).toBe(true);
 
     const resolved = await resolveInjectableContext({ uid: 'u1', capsuleId: 'starter-tool-source-pack-builder' }, deps(db));
     expect(resolved.promptBlock).toContain('[starter_capsule_definition]');
@@ -918,14 +951,14 @@ class FakeFirestore {
 }
 
 class FakeCollection {
-  constructor(private db: FakeFirestore, private path: string) {}
+  constructor(private db: FakeFirestore, private path: string, private maxDocs?: number) {}
 
   doc(id = `doc-${this.db.data.size + 1}`) {
     return new FakeDoc(this.db, `${this.path}/${id}`, id);
   }
 
-  limit() {
-    return this;
+  limit(maxDocs: number) {
+    return new FakeCollection(this.db, this.path, maxDocs);
   }
 
   orderBy() {
@@ -937,7 +970,7 @@ class FakeCollection {
     const docs = Array.from(this.db.data.entries())
       .filter(([path]) => path.startsWith(prefix) && !path.slice(prefix.length).includes('/'))
       .map(([path, value]) => new FakeSnapshot(true, value, path.split('/').pop() ?? 'unknown'));
-    return { docs };
+    return { docs: typeof this.maxDocs === 'number' ? docs.slice(0, this.maxDocs) : docs };
   }
 }
 
