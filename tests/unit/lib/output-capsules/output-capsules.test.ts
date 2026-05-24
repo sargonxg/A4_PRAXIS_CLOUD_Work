@@ -183,6 +183,52 @@ describe('OutputCapsules', () => {
     });
   });
 
+  it('strips undefined optional fields before persisting boardroom output capsules', () => {
+    const record = createOutputCapsuleRecord({
+      id: 'board-pack-1',
+      ownerUid: 'u1',
+      templateId: 'board-executive-pack',
+      payload: {
+        title: 'Boardroom pack',
+        summary: 'Chair synthesis with evidence posture.',
+        meetingBrief: 'Boardroom brief for the active capsule.',
+        agenda: ['Context brief'],
+        roster: [{ participantId: 'legal', label: 'Legal Analyst', lens: 'Legal' }],
+        transcript: [{
+          turnId: 'run-1:r1:legal',
+          round: 1,
+          participantId: 'legal',
+          state: 'speaking',
+          claim: 'Legal lens requires a sourceability check.',
+          evidenceRefs: ['source:1'],
+          critique: undefined,
+          recommendation: 'Review before sharing.',
+          confidence: 'medium',
+        }],
+        topicClusters: [],
+        consensus: [],
+        divergences: [],
+        risks: [],
+        openQuestions: [],
+        evidenceStats: {
+          sourceCount: 1,
+          documentCount: 0,
+          sourcedParagraphCount: 0,
+          unsupportedClaimCount: 0,
+        },
+        confidenceDistribution: { high: 0, medium: 1, low: 0 },
+        nextActions: [],
+      },
+      citations: [{ id: 'c1', title: 'Source', uri: undefined }],
+      provenance: { createdBy: 'test', toolIds: ['boardroom-deliberation'], agentIds: ['boardroom-discussion'], profileVersion: undefined },
+    });
+
+    const turn = (record.payload as { transcript: Array<Record<string, unknown>> }).transcript[0];
+    expect(turn).not.toHaveProperty('critique');
+    expect(record.citations[0]).not.toHaveProperty('uri');
+    expect(record.provenance).not.toHaveProperty('profileVersion');
+  });
+
   it('keeps draft/review possible but blocks approval and shipping when quality is not clean', () => {
     const blocked = createOutputCapsuleRecord({
       id: 'blocked',

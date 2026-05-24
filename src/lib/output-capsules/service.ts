@@ -23,9 +23,9 @@ export interface CreateOutputCapsuleInput {
 export function createOutputCapsuleRecord(input: CreateOutputCapsuleInput): OutputCapsuleRecord {
   const template = getOutputCapsuleTemplate(input.templateId);
   if (!template) throw new Error(`Unknown OutputCapsule template: ${input.templateId}`);
-  const payload = validateOutputCapsulePayload(template.schemaId, input.payload);
-  const citations = input.citations ?? [];
-  const gaps = input.gaps ?? [];
+  const payload = stripUndefinedDeep(validateOutputCapsulePayload(template.schemaId, input.payload));
+  const citations = stripUndefinedDeep(input.citations ?? []);
+  const gaps = stripUndefinedDeep(input.gaps ?? []);
   const citationCoverage = estimateCitationCoverage(payload, citations);
   const quality = evaluateOutputCapsuleQuality({
     template,
@@ -51,7 +51,7 @@ export function createOutputCapsuleRecord(input: CreateOutputCapsuleInput): Outp
     citations,
     gaps,
     inputCapsules: [],
-    provenance: input.provenance,
+    provenance: stripUndefinedDeep(input.provenance),
     quality,
     version: 1,
     parentVersionId: null,
@@ -146,4 +146,18 @@ function titleFromPayload(payload: unknown) {
 
 function summaryFromPayload(payload: unknown) {
   return typeof payload === 'object' && payload !== null && 'summary' in payload ? String((payload as { summary?: unknown }).summary ?? '') : '';
+}
+
+function stripUndefinedDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => stripUndefinedDeep(item)) as T;
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, entryValue]) => entryValue !== undefined)
+        .map(([key, entryValue]) => [key, stripUndefinedDeep(entryValue)]),
+    ) as T;
+  }
+  return value;
 }
