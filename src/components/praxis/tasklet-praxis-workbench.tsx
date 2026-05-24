@@ -3550,6 +3550,13 @@ export function TaskletPraxisWorkbench({
                             setStatus('Continuation action loaded into the composer.');
                           }}
                         />
+                        <ConversationGroundingReceiptPanel
+                          envelope={message.answerEnvelope}
+                          onAction={(actionPrompt) => {
+                            setPrompt(actionPrompt);
+                            setStatus('Grounding review action loaded into the composer.');
+                          }}
+                        />
                         <ConversationTraceabilityPanel envelope={message.answerEnvelope} />
                         <ConversationSourcePreviewPanel
                           envelope={message.answerEnvelope}
@@ -4178,6 +4185,7 @@ function ConversationReceiptSummary({ envelope }: { envelope?: AskAnswerEnvelope
 }
 
 const continuationActionLabels = ['Continue as memo', 'Expand evidence annex', 'Create output capsule'] as const;
+const groundingReviewActionLabels = ['Promote supported claim', 'Mark disputed', 'Create source gap', 'Save as memo', 'Create output capsule'] as const;
 
 function ConversationAgentActivityRail({ envelope, onAction }: { envelope?: AskAnswerEnvelope; onAction: (prompt: string) => void }) {
   const receipt = envelope?.orchestrationReceipt;
@@ -4252,6 +4260,73 @@ function ConversationAgentActivityRail({ envelope, onAction }: { envelope?: AskA
               className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
             >
               {action.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function ConversationGroundingReceiptPanel({ envelope, onAction }: { envelope?: AskAnswerEnvelope; onAction: (prompt: string) => void }) {
+  const receipt = envelope?.groundingReceipt;
+  if (!receipt) return null;
+  const docket = envelope?.sourceRefreshDocket;
+  const memory = envelope?.memoryReceipt;
+  const claimLedger = envelope?.claimLedger ?? [];
+  const suggestions = envelope?.reviewCardSuggestions ?? [];
+  return (
+    <section className="mt-3 rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-600" data-testid="praxis-capsule-grounding-receipt">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Capsule grounding receipt</p>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[10px] text-slate-600">
+          {receipt.capsuleId} v{receipt.capsuleVersion}
+        </span>
+      </div>
+      <div className="mt-2 grid gap-2 sm:grid-cols-4">
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-2">
+          <p className="font-semibold text-slate-900">Claim ledger</p>
+          <p className="mt-1 leading-5">Supported {receipt.supportedClaims}, weak {receipt.weakClaims}, unsupported {receipt.unsupportedClaims}, stale {receipt.staleClaims}</p>
+        </div>
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-2">
+          <p className="font-semibold text-slate-900">Sources</p>
+          <p className="mt-1 leading-5">{receipt.sourceExcerptCount} excerpts; {docket?.needsRefresh ? 'refresh needed' : 'current for this answer'}</p>
+        </div>
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-2">
+          <p className="font-semibold text-slate-900">Cognee</p>
+          <p className="mt-1 leading-5">{memory?.cogneeStatus ?? receipt.cogneeStatus}; {receipt.memoryHitCount} advisory memory hit{receipt.memoryHitCount === 1 ? '' : 's'}</p>
+        </div>
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-2">
+          <p className="font-semibold text-slate-900">Review gate</p>
+          <p className="mt-1 leading-5">{receipt.humanReviewRequired ? 'Human review required' : 'Standard review'}</p>
+        </div>
+      </div>
+      {claimLedger.length ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {claimLedger.slice(0, 8).map((claim) => (
+            <span key={claim.claimId} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px]">
+              {claim.status.replace(/_/g, ' ')}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {receipt.nextRepairActions.length ? (
+        <div className="mt-2 grid gap-1">
+          {receipt.nextRepairActions.slice(0, 3).map((action) => (
+            <p key={action} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 font-semibold text-slate-700">Next: {action}</p>
+          ))}
+        </div>
+      ) : null}
+      {suggestions.length ? (
+        <div className="mt-2 flex flex-wrap gap-1.5" aria-label={groundingReviewActionLabels.join(', ')}>
+          {suggestions.slice(0, 5).map((suggestion) => (
+            <button
+              key={suggestion.id}
+              type="button"
+              onClick={() => onAction(suggestion.prompt)}
+              className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-white"
+            >
+              {suggestion.label}
             </button>
           ))}
         </div>

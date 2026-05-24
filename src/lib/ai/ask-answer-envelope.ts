@@ -2,6 +2,7 @@ import type { CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
 import type { SourceabilityLedgerSummary, SourceabilitySupportLabel } from '@/lib/agent-runtime/sourceability-ledger';
 import type { AskIntent } from '@/lib/ai/ask-conversation';
 import type { AskConversationOrchestrationReceipt } from '@/lib/ai/ask-orchestrator';
+import type { ContextEnrichmentReceipt } from '@/lib/knowledge/context-enrichment-adapter';
 import type { ResearchGraphReceipt } from '@/lib/research-graph';
 import type { MemoBlock } from '@/types/memo';
 
@@ -40,6 +41,90 @@ export interface ClaimGrounding {
   grounding: 'source-backed' | 'ai-knowledge' | 'inference' | 'unsupported';
   supportLabel: SourceabilitySupportLabel;
   sourceCardIds: string[];
+}
+
+export type ClaimStatus =
+  | 'supported'
+  | 'weak'
+  | 'unsupported'
+  | 'stale'
+  | 'advisory_memory'
+  | 'model_prior';
+
+export interface CapsuleClaimLedgerItem {
+  claimId: string;
+  text: string;
+  status: ClaimStatus;
+  sourceIds: string[];
+  memoryIds: string[];
+  confidence: 'low' | 'medium' | 'high';
+  freshness: 'current' | 'stale' | 'unknown';
+  reviewState: 'none' | 'proposed' | 'owner_review' | 'applied' | 'rejected';
+}
+
+export interface CapsuleGroundingReceipt {
+  capsuleId: string;
+  capsuleVersion: number;
+  catalogVersion?: string;
+  sourceExcerptCount: number;
+  cogneeStatus: 'enabled' | 'disabled' | 'degraded';
+  memoryHitCount: number;
+  supportedClaims: number;
+  weakClaims: number;
+  unsupportedClaims: number;
+  staleClaims: number;
+  humanReviewRequired: boolean;
+  nextRepairActions: string[];
+}
+
+export interface CapsuleMemoryReceipt {
+  cogneeStatus: 'enabled' | 'disabled' | 'degraded';
+  memoryHitCount: number;
+  memoryIds: string[];
+  ignoredMemoryIds: string[];
+  advisoryOnly: true;
+  promotionRequired: 'review-card';
+  warnings: string[];
+  writebackProposalIds: string[];
+}
+
+export interface CapsuleSourceRefreshDocketItem {
+  sourceId: string;
+  title: string;
+  url?: string;
+  status: 'refreshed' | 'needs_refresh' | 'missing' | 'stale' | 'source_gap';
+  lastCheckedAt: string | null;
+  excerptCount: number;
+  gap?: string;
+}
+
+export interface CapsuleSourceRefreshDocket {
+  capsuleId: string;
+  capsuleVersion: number;
+  generatedAt: string;
+  items: CapsuleSourceRefreshDocketItem[];
+  sourceIds: string[];
+  excerptSourceIds: string[];
+  staleSourceIds: string[];
+  missingEvidenceGaps: string[];
+  lastRefreshedAt: string | null;
+  needsRefresh: boolean;
+  nextActions: string[];
+}
+
+export interface CapsuleReviewCardSuggestion {
+  id: string;
+  label: string;
+  action:
+    | 'promote_supported_claim'
+    | 'mark_disputed'
+    | 'create_source_gap'
+    | 'save_as_memo'
+    | 'create_output_capsule';
+  target: 'claim' | 'source_gap' | 'memory_hit' | 'memo' | 'output_capsule';
+  evidenceIds: string[];
+  requiresHumanReview: boolean;
+  prompt: string;
 }
 
 export interface AskGenerationReceipt {
@@ -113,6 +198,11 @@ export interface AskAnswerEnvelope {
   claimLedgerSummary: SourceabilityLedgerSummary;
   sourceAudit: AskSourceAuditSummary;
   traceabilitySummary: AskTraceabilitySummary;
+  groundingReceipt: CapsuleGroundingReceipt;
+  claimLedger: CapsuleClaimLedgerItem[];
+  sourceRefreshDocket: CapsuleSourceRefreshDocket;
+  memoryReceipt: CapsuleMemoryReceipt;
+  reviewCardSuggestions: CapsuleReviewCardSuggestion[];
   generationReceipt?: AskGenerationReceipt;
   continuationActions: AskContinuationAction[];
   capsuleSuggestions: AskCapsuleSuggestionReceipt[];
@@ -148,6 +238,7 @@ export interface ConversationPackProvenance {
   model?: string | null;
   provider?: string | null;
   contextPackageId?: string | null;
+  catalogVersion?: string | null;
   sourceReceiptIds?: string[];
   unsupportedClaims?: string[];
   outputTarget?: AskDocumentPackOutputTarget;
@@ -279,9 +370,32 @@ export function buildAskAnswerEnvelope(input: {
   generationReceipt?: AskGenerationReceipt;
   capsuleSuggestions?: AskCapsuleSuggestionReceipt[];
   researchGraphReceipts?: ResearchGraphReceipt[];
+  contextEnrichment?: ContextEnrichmentReceipt;
 }): AskAnswerEnvelope {
   const claimGrounding = groundClaims(input.answer, input.sourceCards);
   const claimLedgerSummary = summarizeClaimGrounding(claimGrounding);
+  const memoryReceipt = buildCapsuleMemoryReceipt(input.contextEnrichment);
+  const claimLedger = buildCapsuleClaimLedger(claimGrounding, memoryReceipt);
+  const sourceRefreshDocket = buildCapsuleSourceRefreshDocket({
+    capsuleId: input.provenance?.capsuleId ?? input.orchestrationReceipt?.capsule.capsuleId ?? null,
+    capsuleVersion: input.provenance?.capsuleVersion ?? null,
+    sourceCards: input.sourceCards,
+    gaps: input.gaps ?? [],
+  });
+  const groundingReceipt = buildCapsuleGroundingReceipt({
+    capsuleId: sourceRefreshDocket.capsuleId,
+    capsuleVersion: sourceRefreshDocket.capsuleVersion,
+    catalogVersion: input.provenance?.catalogVersion ?? undefined,
+    sourceCards: input.sourceCards,
+    claimLedger,
+    memoryReceipt,
+    sourceRefreshDocket,
+  });
+  const reviewCardSuggestions = buildCapsuleReviewCardSuggestions({
+    claimLedger,
+    sourceRefreshDocket,
+    memoryReceipt,
+  });
   const sourceAudit = buildSourceAudit({
     sourceCards: input.sourceCards,
     gaps: input.gaps ?? [],
@@ -315,6 +429,11 @@ export function buildAskAnswerEnvelope(input: {
     claimGrounding,
     claimLedgerSummary,
     sourceAudit,
+    groundingReceipt,
+    claimLedger,
+    sourceRefreshDocket,
+    memoryReceipt,
+    reviewCardSuggestions,
     traceabilitySummary: buildAskTraceabilitySummary({
       sourceAudit,
       claimLedgerSummary,
@@ -554,6 +673,220 @@ function continuationActionsFor(intent: AskIntent): AskContinuationAction[] {
   ];
 }
 
+function buildCapsuleMemoryReceipt(enrichment?: ContextEnrichmentReceipt): CapsuleMemoryReceipt {
+  const memoryIds = uniqueStrings(enrichment?.memoryItemIds ?? []);
+  return {
+    cogneeStatus: enrichment?.cognee ?? 'disabled',
+    memoryHitCount: enrichment?.memoryHitCount ?? memoryIds.length,
+    memoryIds,
+    ignoredMemoryIds: [],
+    advisoryOnly: true,
+    promotionRequired: 'review-card',
+    warnings: enrichment?.warnings ?? [],
+    writebackProposalIds: enrichment?.writebackProposalIds ?? [],
+  };
+}
+
+function buildCapsuleClaimLedger(
+  claimGrounding: ClaimGrounding[],
+  memoryReceipt: CapsuleMemoryReceipt,
+): CapsuleClaimLedgerItem[] {
+  const sourceClaims = claimGrounding.map((claim, index): CapsuleClaimLedgerItem => {
+    const status = claimStatusForSupportLabel(claim.supportLabel);
+    return {
+      claimId: `claim:${stableTinyHash(`${index}:${claim.claim}:${claim.sourceCardIds.join('|')}`)}`,
+      text: claim.claim,
+      status,
+      sourceIds: claim.sourceCardIds,
+      memoryIds: [],
+      confidence: confidenceForStatus(status),
+      freshness: claim.sourceCardIds.length ? 'current' : 'unknown',
+      reviewState: status === 'supported' ? 'none' : 'owner_review',
+    };
+  });
+  const memoryClaims = memoryReceipt.memoryIds.map((memoryId): CapsuleClaimLedgerItem => ({
+    claimId: `claim:${stableTinyHash(`memory:${memoryId}`)}`,
+    text: `Advisory memory hit ${memoryId}; not canonical until a review card is applied.`,
+    status: 'advisory_memory',
+    sourceIds: [],
+    memoryIds: [memoryId],
+    confidence: 'low',
+    freshness: 'unknown',
+    reviewState: 'proposed',
+  }));
+  return [...sourceClaims, ...memoryClaims].slice(0, 12);
+}
+
+function buildCapsuleSourceRefreshDocket(input: {
+  capsuleId?: string | null;
+  capsuleVersion?: number | null;
+  sourceCards: SourcePreviewCard[];
+  gaps: string[];
+}): CapsuleSourceRefreshDocket {
+  const generatedAt = new Date().toISOString();
+  const sourceItems: CapsuleSourceRefreshDocketItem[] = input.sourceCards.map((card) => ({
+    sourceId: card.sourceReceiptId ?? card.id,
+    title: card.title,
+    url: card.url,
+    status: 'refreshed',
+    lastCheckedAt: generatedAt,
+    excerptCount: card.quotePreview ? 1 : 0,
+  }));
+  const gapItems: CapsuleSourceRefreshDocketItem[] = input.gaps.map((gap, index) => ({
+    sourceId: `source-gap:${stableTinyHash(`${index}:${gap}`)}`,
+    title: 'Source gap',
+    status: 'source_gap',
+    lastCheckedAt: null,
+    excerptCount: 0,
+    gap,
+  }));
+  const items = [...sourceItems, ...gapItems].slice(0, 16);
+  const needsRefresh = input.gaps.length > 0 || input.sourceCards.length === 0;
+  return {
+    capsuleId: input.capsuleId ?? 'unknown-capsule',
+    capsuleVersion: input.capsuleVersion ?? 0,
+    generatedAt,
+    items,
+    sourceIds: uniqueStrings(sourceItems.map((item) => item.sourceId)),
+    excerptSourceIds: uniqueStrings(sourceItems.filter((item) => item.excerptCount > 0).map((item) => item.sourceId)),
+    staleSourceIds: [],
+    missingEvidenceGaps: input.gaps,
+    lastRefreshedAt: sourceItems.length ? generatedAt : null,
+    needsRefresh,
+    nextActions: needsRefresh
+      ? ['Refresh source-pack URLs and create source gaps for missing evidence before external use.']
+      : ['Review source excerpts and promote only supported claims.'],
+  };
+}
+
+function buildCapsuleGroundingReceipt(input: {
+  capsuleId: string;
+  capsuleVersion: number;
+  catalogVersion?: string;
+  sourceCards: SourcePreviewCard[];
+  claimLedger: CapsuleClaimLedgerItem[];
+  memoryReceipt: CapsuleMemoryReceipt;
+  sourceRefreshDocket: CapsuleSourceRefreshDocket;
+}): CapsuleGroundingReceipt {
+  const supportedClaims = input.claimLedger.filter((claim) => claim.status === 'supported').length;
+  const weakClaims = input.claimLedger.filter((claim) => claim.status === 'weak' || claim.status === 'advisory_memory').length;
+  const unsupportedClaims = input.claimLedger.filter((claim) => claim.status === 'unsupported' || claim.status === 'model_prior').length;
+  const staleClaims = input.claimLedger.filter((claim) => claim.status === 'stale').length + input.sourceRefreshDocket.staleSourceIds.length;
+  const humanReviewRequired = weakClaims > 0
+    || unsupportedClaims > 0
+    || staleClaims > 0
+    || input.memoryReceipt.memoryHitCount > 0
+    || input.sourceRefreshDocket.needsRefresh;
+  return {
+    capsuleId: input.capsuleId,
+    capsuleVersion: input.capsuleVersion,
+    ...(input.catalogVersion ? { catalogVersion: input.catalogVersion } : {}),
+    sourceExcerptCount: input.sourceCards.length,
+    cogneeStatus: input.memoryReceipt.cogneeStatus,
+    memoryHitCount: input.memoryReceipt.memoryHitCount,
+    supportedClaims,
+    weakClaims,
+    unsupportedClaims,
+    staleClaims,
+    humanReviewRequired,
+    nextRepairActions: nextGroundingRepairActions({
+      weakClaims,
+      unsupportedClaims,
+      staleClaims,
+      memoryHitCount: input.memoryReceipt.memoryHitCount,
+      needsRefresh: input.sourceRefreshDocket.needsRefresh,
+    }),
+  };
+}
+
+function buildCapsuleReviewCardSuggestions(input: {
+  claimLedger: CapsuleClaimLedgerItem[];
+  sourceRefreshDocket: CapsuleSourceRefreshDocket;
+  memoryReceipt: CapsuleMemoryReceipt;
+}): CapsuleReviewCardSuggestion[] {
+  const supported = input.claimLedger.find((claim) => claim.status === 'supported');
+  const disputed = input.claimLedger.find((claim) => claim.status === 'unsupported' || claim.status === 'weak' || claim.status === 'model_prior');
+  const memory = input.claimLedger.find((claim) => claim.status === 'advisory_memory');
+  const gap = input.sourceRefreshDocket.missingEvidenceGaps[0] ?? 'Create a source gap for the weakest unsupported claim.';
+  return [
+    {
+      id: `review-suggestion:${stableTinyHash(`promote:${supported?.claimId ?? 'none'}`)}`,
+      label: 'Promote supported claim',
+      action: 'promote_supported_claim',
+      target: 'claim',
+      evidenceIds: supported?.sourceIds ?? [],
+      requiresHumanReview: true,
+      prompt: 'Create a review card to promote this supported claim into canonical capsule context.',
+    },
+    {
+      id: `review-suggestion:${stableTinyHash(`dispute:${disputed?.claimId ?? memory?.claimId ?? 'none'}`)}`,
+      label: 'Mark disputed',
+      action: 'mark_disputed',
+      target: disputed ? 'claim' : 'memory_hit',
+      evidenceIds: disputed?.sourceIds.length ? disputed.sourceIds : input.memoryReceipt.memoryIds,
+      requiresHumanReview: true,
+      prompt: 'Create a review card marking this claim or memory hit as disputed until better evidence is attached.',
+    },
+    {
+      id: `review-suggestion:${stableTinyHash(`gap:${gap}`)}`,
+      label: 'Create source gap',
+      action: 'create_source_gap',
+      target: 'source_gap',
+      evidenceIds: input.sourceRefreshDocket.sourceIds,
+      requiresHumanReview: true,
+      prompt: gap,
+    },
+    {
+      id: 'review-suggestion:save-as-memo',
+      label: 'Save as memo',
+      action: 'save_as_memo',
+      target: 'memo',
+      evidenceIds: input.sourceRefreshDocket.excerptSourceIds,
+      requiresHumanReview: false,
+      prompt: 'Save this answer as a memo draft while preserving sources, gaps, and grounding receipt metadata.',
+    },
+    {
+      id: 'review-suggestion:create-output-capsule',
+      label: 'Create output capsule',
+      action: 'create_output_capsule',
+      target: 'output_capsule',
+      evidenceIds: input.sourceRefreshDocket.excerptSourceIds,
+      requiresHumanReview: true,
+      prompt: 'Create a review-gated Output Capsule preserving claim posture, source excerpts, memory receipt, and next repair actions.',
+    },
+  ];
+}
+
+function claimStatusForSupportLabel(label: SourceabilitySupportLabel): ClaimStatus {
+  if (label === 'supported') return 'supported';
+  if (label === 'weak') return 'weak';
+  if (label === 'unsupported' || label === 'contradicted') return 'unsupported';
+  return 'model_prior';
+}
+
+function confidenceForStatus(status: ClaimStatus): CapsuleClaimLedgerItem['confidence'] {
+  if (status === 'supported') return 'high';
+  if (status === 'weak') return 'medium';
+  return 'low';
+}
+
+function nextGroundingRepairActions(input: {
+  weakClaims: number;
+  unsupportedClaims: number;
+  staleClaims: number;
+  memoryHitCount: number;
+  needsRefresh: boolean;
+}): string[] {
+  const actions = [
+    input.needsRefresh ? 'Refresh source-pack URLs or record source gaps for missing evidence.' : null,
+    input.unsupportedClaims > 0 ? 'Attach sources or mark unsupported claims as open questions.' : null,
+    input.weakClaims > 0 ? 'Promote only reviewed supported claims; keep weak claims visible.' : null,
+    input.staleClaims > 0 ? 'Refresh stale source claims before external reliance.' : null,
+    input.memoryHitCount > 0 ? 'Turn useful Cognee memory hits into review cards before canonical promotion.' : null,
+  ].filter(isString);
+  return actions.length ? actions : ['Review source excerpts before saving or exporting.'];
+}
+
 function isAssumptionClaim(claim: string): boolean {
   return /\b(should|could|would|recommend|recommendation|assume|assumption|likely|may|might|next|verify|check|consider)\b/i.test(claim);
 }
@@ -677,6 +1010,15 @@ function extractionFallbackFor(status: string): string | undefined {
 
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+function stableTinyHash(value: string): string {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
 function isString(value: unknown): value is string {

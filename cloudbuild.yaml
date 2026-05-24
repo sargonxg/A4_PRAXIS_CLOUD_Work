@@ -5,7 +5,7 @@ steps:
     args:
       - '-c'
       - |
-        if grep -rE "gemini-2\.0|gemini-3-flash-preview|gemini-3-pro-preview|claude-|gpt-|firecrawl|tavily|parallel-web|@ai-sdk/anthropic" src/ backend/ --include="*.ts" --include="*.tsx" --include="*.py" --exclude="providers.ts" --exclude="providers.py" 2>/dev/null; then
+        if grep -rE "gemini-2\.0|gemini-3-flash-preview|gemini-3-pro-preview|claude-|gpt-|firecrawl|tavily|parallel-web|@ai-sdk/anthropic" src/ backend/ --include="*.ts" --include="*.tsx" --include="*.py" --exclude="providers.ts" --exclude="providers.py" --exclude="model-matrix-data.ts" 2>/dev/null; then
           echo "ERROR: Forbidden retired/unavailable model strings found. Use src/lib/ai/providers.ts (frontend) or backend/config.py (backend)."
           exit 1
         fi

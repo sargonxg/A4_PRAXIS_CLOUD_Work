@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildAgentRunTask,
+  getAgentRunTasksCreateUrl,
   getAgentRunTasksQueuePath,
   makeAgentRunDispatchPayload,
 } from '@/lib/agent-runtime/cloud-tasks';
@@ -30,6 +31,12 @@ describe('agent runtime Cloud Tasks dispatch', () => {
 
   it('uses the canonical agent-runs queue by default', () => {
     expect(getAgentRunTasksQueuePath()).toBe('projects/praxisbytacitus/locations/us-central1/queues/agent-runs');
+  });
+
+  it('targets the Cloud Tasks REST create endpoint without the Node client package', () => {
+    expect(getAgentRunTasksCreateUrl('projects/p/locations/l/queues/q')).toBe(
+      'https://cloudtasks.googleapis.com/v2/projects/p/locations/l/queues/q/tasks',
+    );
   });
 
   it('creates an HTTP task with OIDC and base64 JSON payload', () => {

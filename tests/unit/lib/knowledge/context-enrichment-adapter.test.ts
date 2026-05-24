@@ -55,6 +55,7 @@ describe('context enrichment adapter', () => {
     expect(capsule.memory.semantic.map((item) => item.id)).toEqual(['cognee:hit-1']);
     expect(capsule.enrichment.receipt.cognee).toBe('enabled');
     expect(capsule.enrichment.receipt.memoryItemIds).toEqual(['cognee:hit-1']);
+    expect(capsule.enrichment.receipt.writebackProposalIds).toEqual(['review-card:cognee:hit-1']);
     expect(db.data.has('users/u1/capsules/default')).toBe(true);
     expect(db.data.has('users/u1/capsules/default/memories/cognee:hit-1')).toBe(false);
   });

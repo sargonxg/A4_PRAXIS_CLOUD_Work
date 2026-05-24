@@ -10,6 +10,13 @@ import {
 } from '@/lib/context/context-injection';
 import type { CapsuleServiceDeps } from '@/lib/context/capsule-service';
 import type { CapsuleRepositoryMetadata } from '@/lib/product/context-capsules';
+import type {
+  CapsuleClaimLedgerItem,
+  CapsuleGroundingReceipt,
+  CapsuleMemoryReceipt,
+  CapsuleSourceRefreshDocket,
+  CapsuleSourceRefreshDocketItem,
+} from '@/lib/ai/ask-answer-envelope';
 
 export type MemoryType = 'semantic' | 'episodic' | 'procedural';
 
@@ -131,6 +138,22 @@ export interface EffectiveCapsule {
     advisoryMemoryHitCount: number;
     graphProposalCount: number;
     reviewCardCount: number;
+  };
+  sourceExcerpts: Array<{
+    sourceId: string;
+    title: string;
+    citation?: string;
+    excerpt: string;
+  }>;
+  claimLedger: CapsuleClaimLedgerItem[];
+  sourceRefreshDocket: CapsuleSourceRefreshDocket;
+  memoryReceipt: CapsuleMemoryReceipt;
+  groundingReceipt: CapsuleGroundingReceipt;
+  reviewRequirements: {
+    humanReviewRequired: boolean;
+    requiredBeforeExternalUse: boolean;
+    gates: string[];
+    nextRepairActions: string[];
   };
   contentHash: string;
   promptBlock: string;
@@ -334,6 +357,12 @@ export function compileEffectiveCapsule(capsule: TurnCapsule, objective?: string
     slot('objective', refs.objectiveCoreIds ?? []),
   ];
   const missingSlots = slotTrace.filter((item) => item.status === 'missing').map((item) => item.slot);
+  const sourceExcerpts = buildEffectiveSourceExcerpts(capsule);
+  const memoryReceipt = buildEffectiveMemoryReceipt(capsule);
+  const claimLedger = buildEffectiveClaimLedger(capsule, sourceExcerpts, memoryReceipt);
+  const sourceRefreshDocket = buildEffectiveSourceRefreshDocket(capsule, sourceExcerpts);
+  const groundingReceipt = buildEffectiveGroundingReceipt(capsule, claimLedger, sourceExcerpts, memoryReceipt, sourceRefreshDocket);
+  const reviewRequirements = buildEffectiveReviewRequirements(groundingReceipt, sourceRefreshDocket, memoryReceipt);
   const hashInput = JSON.stringify({
     capsuleId: capsule.capsuleId,
     capsuleVersion: capsule.capsuleVersion,
@@ -341,6 +370,7 @@ export function compileEffectiveCapsule(capsule: TurnCapsule, objective?: string
     slotTrace,
     warnings: capsule.activeGaps,
     injectionKey: capsule.injectableContext.injectionKey,
+    groundingReceipt,
   });
 
   return {
@@ -368,8 +398,198 @@ export function compileEffectiveCapsule(capsule: TurnCapsule, objective?: string
       graphProposalCount: capsule.injectableContext.capsule.readinessSummary?.graphProposalCount ?? 0,
       reviewCardCount: capsule.injectableContext.capsule.readinessSummary?.reviewCardCount ?? 0,
     },
+    sourceExcerpts,
+    claimLedger,
+    sourceRefreshDocket,
+    memoryReceipt,
+    groundingReceipt,
+    reviewRequirements,
     contentHash: stableHash(hashInput),
     promptBlock: capsule.injectableContext.promptBlock,
+  };
+}
+
+function buildEffectiveSourceExcerpts(capsule: TurnCapsule): EffectiveCapsule['sourceExcerpts'] {
+  return capsule.retrievedEvidence
+    .map((evidence) => ({
+      sourceId: evidence.id,
+      title: evidence.title,
+      ...(evidence.citation ? { citation: evidence.citation } : {}),
+      excerpt: evidence.excerpt ?? evidence.citation ?? evidence.title,
+    }))
+    .filter((source) => source.sourceId && source.excerpt)
+    .slice(0, 12);
+}
+
+function buildEffectiveMemoryReceipt(capsule: TurnCapsule): CapsuleMemoryReceipt {
+  const receipt = capsule.enrichment?.receipt;
+  const receiptMemoryIds = receipt?.memoryItemIds ?? [];
+  const visibleMemoryIds = Object.values(capsule.memory)
+    .flat()
+    .map((item) => item.id)
+    .filter((id) => id.startsWith('cognee:'));
+  const memoryIds = uniqueStrings([...receiptMemoryIds, ...visibleMemoryIds]);
+  return {
+    cogneeStatus: receipt?.cognee ?? 'disabled',
+    memoryHitCount: receipt?.memoryHitCount ?? memoryIds.length,
+    memoryIds,
+    ignoredMemoryIds: [],
+    advisoryOnly: true,
+    promotionRequired: 'review-card',
+    warnings: receipt?.warnings ?? [],
+    writebackProposalIds: receipt?.writebackProposalIds ?? [],
+  };
+}
+
+function buildEffectiveClaimLedger(
+  capsule: TurnCapsule,
+  sourceExcerpts: EffectiveCapsule['sourceExcerpts'],
+  memoryReceipt: CapsuleMemoryReceipt,
+): CapsuleClaimLedgerItem[] {
+  const sourceClaims = sourceExcerpts.map((source): CapsuleClaimLedgerItem => ({
+    claimId: `claim:${stableHash(`${capsule.capsuleId}:${source.sourceId}:${source.excerpt}`).slice(6)}`,
+    text: source.excerpt,
+    status: 'supported',
+    sourceIds: [source.sourceId],
+    memoryIds: [],
+    confidence: 'high',
+    freshness: 'current',
+    reviewState: 'none',
+  }));
+  const gapClaims = capsule.activeGaps.map((gap): CapsuleClaimLedgerItem => ({
+    claimId: `claim:${stableHash(`${capsule.capsuleId}:gap:${gap}`).slice(6)}`,
+    text: gap,
+    status: 'unsupported',
+    sourceIds: [],
+    memoryIds: [],
+    confidence: 'low',
+    freshness: 'unknown',
+    reviewState: 'owner_review',
+  }));
+  const memoryClaims = memoryReceipt.memoryIds.map((memoryId): CapsuleClaimLedgerItem => ({
+    claimId: `claim:${stableHash(`${capsule.capsuleId}:memory:${memoryId}`).slice(6)}`,
+    text: `Advisory memory hit ${memoryId}; review-card apply metadata is required before canonical use.`,
+    status: 'advisory_memory',
+    sourceIds: [],
+    memoryIds: [memoryId],
+    confidence: 'low',
+    freshness: 'unknown',
+    reviewState: 'proposed',
+  }));
+  return [...sourceClaims, ...gapClaims, ...memoryClaims].slice(0, 16);
+}
+
+function buildEffectiveSourceRefreshDocket(
+  capsule: TurnCapsule,
+  sourceExcerpts: EffectiveCapsule['sourceExcerpts'],
+): CapsuleSourceRefreshDocket {
+  const generatedAt = new Date().toISOString();
+  const sourceItems: CapsuleSourceRefreshDocketItem[] = sourceExcerpts.map((source) => ({
+    sourceId: source.sourceId,
+    title: source.title,
+    status: 'refreshed',
+    lastCheckedAt: generatedAt,
+    excerptCount: 1,
+  }));
+  const missingSourceIds = capsule.sourceDocumentCore
+    .filter((sourceId) => !sourceItems.some((item) => item.sourceId === sourceId));
+  const missingItems: CapsuleSourceRefreshDocketItem[] = missingSourceIds.map((sourceId) => ({
+    sourceId,
+    title: sourceId,
+    status: 'needs_refresh',
+    lastCheckedAt: null,
+    excerptCount: 0,
+    gap: 'Source core is attached but no source excerpt was used in this turn.',
+  }));
+  const gapItems: CapsuleSourceRefreshDocketItem[] = capsule.activeGaps.map((gap) => ({
+    sourceId: `source-gap:${stableHash(`${capsule.capsuleId}:${gap}`).slice(6)}`,
+    title: 'Source gap',
+    status: 'source_gap',
+    lastCheckedAt: null,
+    excerptCount: 0,
+    gap,
+  }));
+  const items = [...sourceItems, ...missingItems, ...gapItems].slice(0, 20);
+  const staleSourceIds = items
+    .filter((item) => item.status === 'needs_refresh' || item.status === 'stale')
+    .map((item) => item.sourceId);
+  const needsRefresh = staleSourceIds.length > 0 || capsule.activeGaps.length > 0 || sourceExcerpts.length === 0;
+  return {
+    capsuleId: capsule.capsuleId,
+    capsuleVersion: capsule.capsuleVersion,
+    generatedAt,
+    items,
+    sourceIds: uniqueStrings(items.filter((item) => item.status !== 'source_gap').map((item) => item.sourceId)),
+    excerptSourceIds: uniqueStrings(sourceItems.map((item) => item.sourceId)),
+    staleSourceIds: uniqueStrings(staleSourceIds),
+    missingEvidenceGaps: capsule.activeGaps,
+    lastRefreshedAt: sourceItems.length ? generatedAt : null,
+    needsRefresh,
+    nextActions: needsRefresh
+      ? ['Refresh or attach source excerpts for stale and missing source lanes.']
+      : ['Review source excerpts before claim promotion.'],
+  };
+}
+
+function buildEffectiveGroundingReceipt(
+  capsule: TurnCapsule,
+  claimLedger: CapsuleClaimLedgerItem[],
+  sourceExcerpts: EffectiveCapsule['sourceExcerpts'],
+  memoryReceipt: CapsuleMemoryReceipt,
+  sourceRefreshDocket: CapsuleSourceRefreshDocket,
+): CapsuleGroundingReceipt {
+  const supportedClaims = claimLedger.filter((claim) => claim.status === 'supported').length;
+  const weakClaims = claimLedger.filter((claim) => claim.status === 'weak' || claim.status === 'advisory_memory').length;
+  const unsupportedClaims = claimLedger.filter((claim) => claim.status === 'unsupported' || claim.status === 'model_prior').length;
+  const staleClaims = claimLedger.filter((claim) => claim.status === 'stale').length + sourceRefreshDocket.staleSourceIds.length;
+  const nextRepairActions = uniqueStrings([
+    sourceRefreshDocket.needsRefresh ? 'Refresh stale or missing source lanes before external use.' : '',
+    unsupportedClaims > 0 ? 'Create source gaps or attach evidence for unsupported claims.' : '',
+    memoryReceipt.memoryHitCount > 0 ? 'Create review-card proposals before using Cognee memory as canonical context.' : '',
+  ]).length
+    ? uniqueStrings([
+        sourceRefreshDocket.needsRefresh ? 'Refresh stale or missing source lanes before external use.' : '',
+        unsupportedClaims > 0 ? 'Create source gaps or attach evidence for unsupported claims.' : '',
+        memoryReceipt.memoryHitCount > 0 ? 'Create review-card proposals before using Cognee memory as canonical context.' : '',
+      ])
+    : ['Review source excerpts before saving or exporting.'];
+  return {
+    capsuleId: capsule.capsuleId,
+    capsuleVersion: capsule.capsuleVersion,
+    ...(capsule.injectableContext.capsule.starterSnapshot?.catalogVersion
+      ? { catalogVersion: capsule.injectableContext.capsule.starterSnapshot.catalogVersion }
+      : {}),
+    sourceExcerptCount: sourceExcerpts.length,
+    cogneeStatus: memoryReceipt.cogneeStatus,
+    memoryHitCount: memoryReceipt.memoryHitCount,
+    supportedClaims,
+    weakClaims,
+    unsupportedClaims,
+    staleClaims,
+    humanReviewRequired: weakClaims > 0
+      || unsupportedClaims > 0
+      || staleClaims > 0
+      || memoryReceipt.memoryHitCount > 0
+      || sourceRefreshDocket.needsRefresh,
+    nextRepairActions,
+  };
+}
+
+function buildEffectiveReviewRequirements(
+  groundingReceipt: CapsuleGroundingReceipt,
+  sourceRefreshDocket: CapsuleSourceRefreshDocket,
+  memoryReceipt: CapsuleMemoryReceipt,
+): EffectiveCapsule['reviewRequirements'] {
+  const gates = uniqueStrings([
+    groundingReceipt.humanReviewRequired ? 'human-review' : '',
+    sourceRefreshDocket.needsRefresh ? 'source-refresh' : '',
+    memoryReceipt.memoryHitCount > 0 ? 'memory-review-card' : '',
+  ]);
+  return {
+    humanReviewRequired: groundingReceipt.humanReviewRequired,
+    requiredBeforeExternalUse: groundingReceipt.humanReviewRequired,
+    gates,
+    nextRepairActions: groundingReceipt.nextRepairActions,
   };
 }
 

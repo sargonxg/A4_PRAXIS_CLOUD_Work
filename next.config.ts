@@ -36,7 +36,6 @@ const nextConfig: NextConfig = {
     'neo4j-driver',
     'firebase-admin',
     '@google-cloud/firestore',
-    '@google-cloud/tasks',
     'google-auth-library',
     'google-gax',
     '@google-cloud/common',

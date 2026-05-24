@@ -26,6 +26,16 @@ describe('Ask source preview panel contract', () => {
     expect(source).toContain('Tool router');
   });
 
+  it('renders the capsule grounding receipt and human review actions from the answer envelope', () => {
+    expect(source).toContain('CapsuleGroundingReceiptPanel');
+    expect(source).toContain('groundingReceipt');
+    expect(source).toContain('Claim ledger');
+    expect(source).toContain('Memory');
+    expect(source).toContain('Promote supported claim');
+    expect(source).toContain('Create source gap');
+    expect(source).toContain('Create output capsule');
+  });
+
   it('shows TACITUS routing stages without a normal model picker', () => {
     expect(source).toContain('Reading capsule');
     expect(source).toContain('Document retrieval');

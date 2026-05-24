@@ -91,6 +91,7 @@ export async function buildEnrichedTurnCapsule(
         cogneeEnabled: recall.status === 'enabled',
         cogneeStatus: recall.status,
         memoryItemIds: memoryItems.map((item) => item.id),
+        writebackProposalIds: memoryItems.map((item) => `review-card:${item.id}`),
         warnings: recall.warning ? [recall.warning] : [],
       }),
       memoryHitCount: memoryItems.length,

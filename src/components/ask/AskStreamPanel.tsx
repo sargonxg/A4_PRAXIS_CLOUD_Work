@@ -157,6 +157,8 @@ const TOOL_COMMANDS = [
   { label: 'Memo', command: '/memo ', icon: History },
 ] as const;
 
+const groundingReviewActionLabels = ['Promote supported claim', 'Mark disputed', 'Create source gap', 'Save as memo', 'Create output capsule'] as const;
+
 export function AskStreamPanel({
   capsuleId,
   contextPackageId,
@@ -785,6 +787,7 @@ function AskMessageBubble({
         <AskWorkingTimeline events={workingTimeline} />
         <AskQueuedAgentRunPanel queuedRun={message.queuedRun ?? workingTimeline.find((event) => event.id === 'worker' && Boolean(event.runId)) ?? null} />
         <OrchestrationReceiptPanel envelope={message.answerEnvelope} />
+        <CapsuleGroundingReceiptPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
         <AnswerSourcePreviewPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
         {!message.streaming && message.content && message.answerEnvelope?.documentPackCandidate ? (
           <AskArtifactPreview
@@ -1163,6 +1166,73 @@ function OrchestrationReceiptPanel({ envelope }: { envelope?: AskAnswerEnvelope 
           ))}
         </div>
       </details>
+    </section>
+  );
+}
+
+function CapsuleGroundingReceiptPanel({ envelope, onFollowUp }: { envelope?: AskAnswerEnvelope; onFollowUp: (followUp: string) => void }) {
+  const receipt = envelope?.groundingReceipt;
+  if (!receipt) return null;
+  const memory = envelope?.memoryReceipt;
+  const docket = envelope?.sourceRefreshDocket;
+  const claimLedger = envelope?.claimLedger ?? [];
+  const suggestions = envelope?.reviewCardSuggestions ?? [];
+  return (
+    <section className="mt-3 rounded-md border border-slate-200 bg-white p-2" data-testid="capsule-grounding-receipt">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Capsule grounding receipt</p>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
+          {receipt.capsuleId} v{receipt.capsuleVersion}
+        </span>
+      </div>
+      <div className="mt-2 grid gap-2 sm:grid-cols-3">
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Claim ledger</p>
+          <p className="mt-1 text-[11px] leading-4 text-slate-700">
+            Supported {receipt.supportedClaims} / weak {receipt.weakClaims} / unsupported {receipt.unsupportedClaims} / stale {receipt.staleClaims}
+          </p>
+        </div>
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Memory</p>
+          <p className="mt-1 text-[11px] leading-4 text-slate-700">
+            Cognee {memory?.cogneeStatus ?? receipt.cogneeStatus}; {receipt.memoryHitCount} advisory hit{receipt.memoryHitCount === 1 ? '' : 's'}
+          </p>
+        </div>
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Refresh docket</p>
+          <p className="mt-1 text-[11px] leading-4 text-slate-700">
+            {receipt.sourceExcerptCount} excerpts; {docket?.needsRefresh ? 'needs refresh' : 'current for this turn'}
+          </p>
+        </div>
+      </div>
+      {claimLedger.length ? (
+        <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-slate-600">
+          {claimLedger.slice(0, 6).map((claim) => (
+            <span key={claim.claimId} className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5">
+              {claim.status.replace(/_/g, ' ')}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {receipt.nextRepairActions.length ? (
+        <ul className="mt-2 grid gap-1 text-[11px] leading-4 text-slate-600">
+          {receipt.nextRepairActions.slice(0, 3).map((action) => <li key={action}>Next: {action}</li>)}
+        </ul>
+      ) : null}
+      {suggestions.length ? (
+        <div className="mt-2 flex flex-wrap gap-1.5" aria-label={groundingReviewActionLabels.join(', ')}>
+          {suggestions.slice(0, 5).map((suggestion) => (
+            <button
+              key={suggestion.id}
+              type="button"
+              onClick={() => onFollowUp(suggestion.prompt)}
+              className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-white"
+            >
+              {suggestion.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }

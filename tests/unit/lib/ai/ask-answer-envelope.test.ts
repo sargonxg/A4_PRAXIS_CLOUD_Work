@@ -161,6 +161,71 @@ describe('ask answer envelope', () => {
     expect(envelope.documentPackCandidate.provenance.capsuleId).toBe('cap-1');
   });
 
+  it('returns a capsule grounding receipt, detailed claim ledger, memory receipt, refresh docket, and review-card suggestions', () => {
+    const sourceCards = buildSourcePreviewCards({ evidencePack: evidencePack() });
+    const envelope = buildAskAnswerEnvelope({
+      prompt: 'What changed and what should we do?',
+      answer: 'Access restrictions are the immediate operational issue. A separate claim about telecom outages is not in the attached sources. The monitoring cell should verify whether these restrictions are temporary or becoming routine.',
+      intent: 'normal_answer',
+      sourceCards,
+      gaps: ['No current field confirmation.'],
+      provenance: {
+        capsuleId: 'starter-situation-eu-ai-act-2026-implementation-simplification',
+        capsuleVersion: 12,
+        catalogVersion: '2026-05-23-human-gated-workflows-v12',
+      },
+      contextEnrichment: {
+        firestore: 'ready',
+        canonicalStatus: 'firestore-canonical',
+        cognee: 'enabled',
+        graphiti: 'deferred',
+        memoryItemIds: ['cognee:hit-1'],
+        memoryHitCount: 1,
+        writebackProposalIds: ['review-card:cognee:hit-1'],
+        warnings: [],
+      },
+    });
+
+    expect(envelope.groundingReceipt).toMatchObject({
+      capsuleId: 'starter-situation-eu-ai-act-2026-implementation-simplification',
+      capsuleVersion: 12,
+      catalogVersion: '2026-05-23-human-gated-workflows-v12',
+      sourceExcerptCount: sourceCards.length,
+      cogneeStatus: 'enabled',
+      memoryHitCount: 1,
+      humanReviewRequired: true,
+    });
+    expect(envelope.claimLedger.map((claim) => claim.status)).toEqual(expect.arrayContaining([
+      'supported',
+      'unsupported',
+      'model_prior',
+      'advisory_memory',
+    ]));
+    expect(envelope.claimLedger.find((claim) => claim.status === 'advisory_memory')).toMatchObject({
+      sourceIds: [],
+      memoryIds: ['cognee:hit-1'],
+      reviewState: 'proposed',
+    });
+    expect(envelope.memoryReceipt).toMatchObject({
+      cogneeStatus: 'enabled',
+      memoryHitCount: 1,
+      advisoryOnly: true,
+      promotionRequired: 'review-card',
+    });
+    expect(envelope.sourceRefreshDocket).toMatchObject({
+      capsuleId: 'starter-situation-eu-ai-act-2026-implementation-simplification',
+      needsRefresh: true,
+    });
+    expect(envelope.sourceRefreshDocket.missingEvidenceGaps).toContain('No current field confirmation.');
+    expect(envelope.reviewCardSuggestions.map((suggestion) => suggestion.action)).toEqual(expect.arrayContaining([
+      'promote_supported_claim',
+      'mark_disputed',
+      'create_source_gap',
+      'save_as_memo',
+      'create_output_capsule',
+    ]));
+  });
+
   it('summarizes intent, policy context, capsules, source posture, and review gate for traceability', () => {
     const sourceCards = buildSourcePreviewCards({ evidencePack: evidencePack() });
     const orchestrationReceipt = buildAskConversationOrchestrationReceipt({

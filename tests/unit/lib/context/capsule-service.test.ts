@@ -34,6 +34,7 @@ import type { ActiveContextStackState } from '@/lib/context/active-context-stack
 import {
   CAPSULE_STARTER_CATALOG_VERSION,
   CAPSULE_STARTER_DEFINITIONS,
+  CAPSULE_WOW_DEMO_STARTER_IDS,
 } from '@/lib/product/context-capsules';
 
 describe('capsule service', () => {
@@ -640,6 +641,20 @@ describe('capsule service', () => {
     expect(currentAffairsAiAct?.starterSnapshot?.sourcePack?.some((source) => source.id === 'ec-ai-act-framework')).toBe(true);
     expect(db.data.has('users/u1/capsules/starter-situation-eu-ai-act-2026-implementation-simplification/sources/ec-ai-act-framework')).toBe(true);
     expect(db.data.has('users/u1/capsules/starter-situation-eu-ai-act-2026-implementation-simplification/advisoryMemoryHits/starter-advisory-context')).toBe(true);
+    for (const starterId of CAPSULE_WOW_DEMO_STARTER_IDS) {
+      const sourceRefreshDocket = db.data.get(`users/u1/capsules/${starterId}/sourceRefreshDockets/wow-demo`);
+      expect(sourceRefreshDocket, `${starterId} source refresh docket`).toMatchObject({
+        capsuleId: starterId,
+        docketId: 'wow-demo',
+        catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+        needsRefresh: true,
+        humanReviewRequired: true,
+      });
+      expect((sourceRefreshDocket?.items as unknown[])?.length).toBeGreaterThanOrEqual(2);
+      expect(sourceRefreshDocket?.nextRepairActions).toEqual(expect.arrayContaining([
+        expect.stringMatching(/refresh|source|gap/i),
+      ]));
+    }
     const currentAffairsTool = capsules.find((capsule) => capsule.capsuleId === 'starter-tool-legislative-authority-deadline-tracker');
     expect(currentAffairsTool?.starterSnapshot?.deviceProfile?.deviceKind).toBe('legislative-authority-deadline-tracker');
     expect(db.data.has('users/u1/capsules/starter-tool-legislative-authority-deadline-tracker/sources/congress-119-appropriations-source')).toBe(true);

@@ -13,6 +13,7 @@ import { DEFAULT_CORPUS_LAYERS, DEFAULT_CORPUS_LIMIT } from '@/types/corpus';
 import {
   CAPSULE_STARTER_CATALOG_VERSION,
   CAPSULE_STARTER_DEFINITIONS,
+  CAPSULE_WOW_DEMO_STARTER_IDS,
   normalizeCapsuleTaxonomyTags,
   resolveCapsuleTaxonomy,
   type CapsuleStarterDefinition,
@@ -1599,9 +1600,45 @@ async function writeStarterDetailRecords(
       date: source.date ?? null,
       reliabilityTier: source.reliabilityTier ?? null,
       relevance: source.relevance,
+      snippet: source.relevance,
+      refreshStatus: CAPSULE_WOW_DEMO_STARTER_IDS.includes(starterDefinition.starterId as typeof CAPSULE_WOW_DEMO_STARTER_IDS[number])
+        ? 'needs_refresh'
+        : 'seeded',
+      lastRefreshedAt: null,
+      needsRefresh: CAPSULE_WOW_DEMO_STARTER_IDS.includes(starterDefinition.starterId as typeof CAPSULE_WOW_DEMO_STARTER_IDS[number]),
       starterDefinitionId: starterDefinition.starterId,
       catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
       seededAt: timestamp,
+    }, { merge: true });
+  }
+  if (CAPSULE_WOW_DEMO_STARTER_IDS.includes(starterDefinition.starterId as typeof CAPSULE_WOW_DEMO_STARTER_IDS[number])) {
+    batch.set(ref.collection('sourceRefreshDockets').doc('wow-demo'), {
+      docketId: 'wow-demo',
+      capsuleId,
+      starterDefinitionId: starterDefinition.starterId,
+      catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+      generatedAt: timestamp,
+      lastRefreshedAt: null,
+      needsRefresh: true,
+      humanReviewRequired: true,
+      cogneePosture: 'advisory-only',
+      items: starterDefinition.sourcePack.map((source) => ({
+        sourceId: source.id,
+        title: source.label,
+        url: source.url,
+        publisher: source.publisher ?? null,
+        sourceType: source.sourceType,
+        status: 'needs_refresh',
+        lastCheckedAt: null,
+        excerpt: source.relevance,
+        gap: 'Starter source lane must be refreshed or verified before external use.',
+      })),
+      missingEvidenceGaps: starterDefinition.sourcePack.map((source) => `${source.label} needs a dated refresh receipt before external reliance.`),
+      nextRepairActions: [
+        'Refresh source-pack URLs and store dated source snippets before external use.',
+        'Create source-gap review cards for any source that cannot be fetched.',
+        'Keep Cognee recall advisory until a human applies the review card.',
+      ],
     }, { merge: true });
   }
   batch.set(ref.collection('evaluations').doc('starter-readiness'), {

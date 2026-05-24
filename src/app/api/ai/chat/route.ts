@@ -604,11 +604,13 @@ You have access to the user's active situation data. When answering questions:
         model: String(runtimeReceipt.model ?? ''),
         provider: String(runtimeReceipt.provider ?? ''),
         contextPackageId: contextPackageId ?? null,
+        catalogVersion: (capsuleContext?.capsule ?? turnCapsule?.injectableContext.capsule)?.starterSnapshot?.catalogVersion ?? null,
       },
       orchestrationReceipt,
       generationReceipt: runtimeReceipt.generationReceipt,
       capsuleSuggestions: normalizedSuggestedCapsules,
       researchGraphReceipts,
+      contextEnrichment: turnCapsule?.enrichment?.receipt,
     });
     const effectiveMessages = buildAskConversationMessages(
       messages,

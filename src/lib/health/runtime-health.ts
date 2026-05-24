@@ -123,30 +123,17 @@ async function checkAgentTaskQueue(): Promise<RuntimeHealthCheck> {
   const queuePath = `projects/${project}/locations/${location}/queues/${queue}`;
   const startedAt = Date.now();
 
-  try {
-    const { CloudTasksClient } = await import('@google-cloud/tasks');
-    const client = new CloudTasksClient();
-    await client.getQueue({ name: queuePath });
-    return {
-      id: 'agent_queue',
-      label: 'Agent task queue',
-      status: 'ok',
-      latencyMs: Date.now() - startedAt,
-      detail: queuePath,
-    };
-  } catch (error) {
-    const restCheck = await checkAgentTaskQueueViaMetadata(queuePath, startedAt);
-    if (restCheck) return restCheck;
+  const restCheck = await checkAgentTaskQueueViaMetadata(queuePath, startedAt);
+  if (restCheck) return restCheck;
 
-    return {
-      id: 'agent_queue',
-      label: 'Agent task queue',
-      status: 'down',
-      latencyMs: Date.now() - startedAt,
-      detail: error instanceof Error ? error.message : String(error),
-      repairAction: `Create or grant access to ${queuePath}.`,
-    };
-  }
+  return {
+    id: 'agent_queue',
+    label: 'Agent task queue',
+    status: 'down',
+    latencyMs: Date.now() - startedAt,
+    detail: queuePath,
+    repairAction: `Create or grant access to ${queuePath}.`,
+  };
 }
 
 async function checkAgentTaskQueueViaMetadata(queuePath: string, startedAt: number): Promise<RuntimeHealthCheck | null> {

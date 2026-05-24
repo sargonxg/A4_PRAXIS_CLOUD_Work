@@ -183,6 +183,77 @@ describe('context kernel', () => {
     expect(effective.promptBlock).toContain('<praxis-context-capsule>');
   });
 
+  it('compiles source excerpts, claim ledger, memory receipt, refresh docket, and review requirements into the effective capsule', async () => {
+    const db = new FakeFirestore();
+    const capsule = await buildTurnCapsule({
+      uid: 'u1',
+      traceId: 'trace-grounding',
+      activeContextStack: {
+        stackId: 'default',
+        userModelId: 'user-core-1',
+        situationId: 'situation-core-1',
+        sourceIds: ['source-1'],
+        documentIds: ['doc-1'],
+      },
+      retrievedEvidence: [
+        {
+          id: 'source-1',
+          title: 'Official update',
+          citation: 'Official update / p.1',
+          excerpt: 'The source confirms the implementation deadline changed.',
+        },
+      ],
+      activeGaps: ['No refreshed source for the operational impact claim.'],
+      memoryItems: [
+        { id: 'cognee:hit-1', type: 'semantic', text: 'Prior advisory memory about the deadline.', capsuleId: 'default' },
+      ],
+    }, deps(db));
+    const enriched = {
+      ...capsule,
+      enrichment: {
+        receipt: {
+          firestore: 'ready' as const,
+          canonicalStatus: 'firestore-canonical' as const,
+          cognee: 'enabled' as const,
+          graphiti: 'deferred' as const,
+          memoryItemIds: ['cognee:hit-1'],
+          memoryHitCount: 1,
+          writebackProposalIds: ['review-card:cognee:hit-1'],
+          warnings: [],
+        },
+        memoryHitCount: 1,
+      },
+    };
+
+    const effective = compileEffectiveCapsule(enriched, 'What changed and what should we do?');
+
+    expect(effective.sourceExcerpts).toEqual([
+      expect.objectContaining({
+        sourceId: 'source-1',
+        title: 'Official update',
+        excerpt: 'The source confirms the implementation deadline changed.',
+      }),
+    ]);
+    expect(effective.claimLedger.map((claim) => claim.status)).toEqual(expect.arrayContaining([
+      'supported',
+      'unsupported',
+      'advisory_memory',
+    ]));
+    expect(effective.memoryReceipt).toMatchObject({
+      cogneeStatus: 'enabled',
+      memoryHitCount: 1,
+      advisoryOnly: true,
+    });
+    expect(effective.sourceRefreshDocket).toMatchObject({
+      capsuleId: 'default',
+      needsRefresh: true,
+    });
+    expect(effective.reviewRequirements).toMatchObject({
+      humanReviewRequired: true,
+      requiredBeforeExternalUse: true,
+    });
+  });
+
   it('keeps associated capsules as reference context in retrieval and effective capsule metadata', async () => {
     const db = new FakeFirestore();
     await buildTurnCapsule({

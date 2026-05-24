@@ -741,6 +741,17 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Firestore canonical');
   });
 
+  it('keeps capsule grounding receipts inside the existing Ask PRAXIS conversation panels', () => {
+    expect(source).toContain('ConversationGroundingReceiptPanel');
+    expect(source).toContain('groundingReceipt');
+    expect(source).toContain('Capsule grounding receipt');
+    expect(source).toContain('Cognee');
+    expect(source).toContain('Promote supported claim');
+    expect(source).toContain('Mark disputed');
+    expect(source).toContain('Create source gap');
+    expect(source).not.toContain("href=\"/app/grounding\"");
+  });
+
   it('adds a paid-only Exa agentic search toggle to conversation sends', () => {
     expect(source).toContain('agenticSearchPremiumEnabled');
     expect(source).toContain('canUseAgenticSearchPremium');

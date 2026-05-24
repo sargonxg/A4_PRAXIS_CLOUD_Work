@@ -568,6 +568,14 @@ export const HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY = {
   starterIds: HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS,
 } as const;
 
+export const CAPSULE_WOW_DEMO_STARTER_IDS = [
+  'starter-situation-eu-ai-act-2026-implementation-simplification',
+  'starter-situation-us-fy2027-budget-sequestration-watch',
+  'starter-situation-h5n1-dairy-food-safety-2026',
+  'starter-situation-data-center-grid-load-interconnection',
+  'starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026',
+] as const;
+
 export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-23-human-gated-workflows-v12';
 const CAPSULE_NO_AFFILIATION_LIMITATION = 'PRAXIS is not affiliated with, endorsed by, or speaking for any organization named in this capsule, its sources, or its examples.';
 

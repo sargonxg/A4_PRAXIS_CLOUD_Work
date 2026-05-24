@@ -1,13 +1,6 @@
 import { makeAgentRunEvent, normalizePointer } from '@/lib/agent-runtime/state';
 import { appendAgentRunEvent, getAgentRun } from '@/lib/agent-runtime/postgres';
 import { publishPraxisEvent } from '@/lib/events/praxis-events';
-import { CloudTasksClient } from '@google-cloud/tasks';
-
-type CloudTasksClientLike = {
-  createTask(input: { parent: string; task: AgentRunTask }): Promise<[{ name?: string | null }, ...unknown[]]>;
-};
-
-let tasksClient: CloudTasksClientLike | null = null;
 
 export type AgentRunDispatchPayload = {
   runId: string;
@@ -58,6 +51,11 @@ export function getAgentRunTasksQueuePath(): string {
     || 'us-central1';
   const queue = process.env.AGENT_RUN_TASKS_QUEUE || 'agent-runs';
   return `projects/${project}/locations/${location}/queues/${queue}`;
+}
+
+export function getAgentRunTasksCreateUrl(queuePath = getAgentRunTasksQueuePath()): string {
+  const baseUrl = process.env.CLOUD_TASKS_API_BASE_URL || 'https://cloudtasks.googleapis.com/v2';
+  return `${baseUrl.replace(/\/+$/, '')}/${queuePath}/tasks`;
 }
 
 export function getAgentRunExecuteUrl(runId: string): string {
@@ -129,8 +127,7 @@ export async function enqueueAgentRunDispatch(input: {
     audience: process.env.AGENT_RUN_WORKER_OIDC_AUDIENCE || targetUrl,
   });
 
-  const client = await getCloudTasksClient();
-  const [created] = await client.createTask({ parent: queuePath, task });
+  const created = await createCloudTask({ parent: queuePath, task });
 
   await appendAgentRunEvent(makeAgentRunEvent({
     runId: run.id,
@@ -187,11 +184,44 @@ type AgentRunTask = {
   };
 };
 
-async function getCloudTasksClient(): Promise<CloudTasksClientLike> {
-  if (!tasksClient) {
-    tasksClient = new CloudTasksClient() as unknown as CloudTasksClientLike;
+async function createCloudTask(input: { parent: string; task: AgentRunTask }): Promise<{ name?: string | null }> {
+  const accessToken = await getMetadataAccessToken();
+  const response = await fetch(getAgentRunTasksCreateUrl(input.parent), {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ task: input.task }),
+    cache: 'no-store',
+    signal: AbortSignal.timeout(10_000),
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Cloud Tasks enqueue failed with HTTP ${response.status}: ${text.slice(0, 500)}`);
   }
-  return tasksClient!;
+  if (!text) return {};
+  return JSON.parse(text) as { name?: string | null };
+}
+
+async function getMetadataAccessToken(): Promise<string> {
+  const configuredToken = process.env.CLOUD_TASKS_ACCESS_TOKEN;
+  if (configuredToken) return configuredToken;
+
+  const response = await fetch('http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token', {
+    headers: { 'Metadata-Flavor': 'Google' },
+    cache: 'no-store',
+    signal: AbortSignal.timeout(5_000),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`Cloud Tasks metadata token request failed with HTTP ${response.status}: ${text.slice(0, 300)}`);
+  }
+  const payload = await response.json() as { access_token?: string };
+  if (!payload.access_token) {
+    throw new Error('Cloud Tasks metadata token response did not include an access token.');
+  }
+  return payload.access_token;
 }
 
 function cryptoRandomDispatchId(runId: string, traceId: string): string {
