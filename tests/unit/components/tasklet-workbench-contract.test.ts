@@ -95,6 +95,28 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source.indexOf('savedConversations.slice(0, 6).map')).toBeLessThan(source.indexOf('agentRuns.length ? agentRuns.slice(0, 5).map'));
   });
 
+  it('renders one Created Work rail that normalizes existing artifacts without a new dashboard', () => {
+    expect(source).toContain('type CreatedWorkSummary');
+    expect(source).toContain('const [createdWork, setCreatedWork]');
+    expect(source).toContain("fetch(`/api/created-work?${params.toString()}`");
+    expect(source).toContain('function CreatedWorkRail');
+    expect(source).toContain('data-testid="created-work-rail"');
+    expect(source).toContain('data-testid="public-created-work-rail"');
+    expect(source).toContain('!showWorkbenchNavigation');
+    expect(source).toContain('Created Work');
+    expect(source).toContain('Open');
+    expect(source).toContain('Attach to capsule');
+    expect(source).toContain('Continue as memo');
+    expect(source).toContain('Inspect receipts');
+    expect(source).toContain('output_capsule');
+    expect(source).toContain('memo_draft');
+    expect(source).toContain('handover_package');
+    expect(source).toContain('ask_document_pack');
+    expect(source).toContain('tool_run_artifact');
+    expect(source).not.toContain('/app/artifacts');
+    expect(source).not.toContain('/app/agent-dashboard');
+  });
+
   it('keeps retry/source-check actions on the active conversation thread', () => {
     expect(source).toContain('const nextThreadId = ensureConversationThread()');
     expect(source).toContain("onSourceCheck={() => void sendToPraxis(selectedAgent, `Source-check this answer in the active conversation");
@@ -352,7 +374,16 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Ontology Stack');
     expect(source).toContain('Dynamic ontology');
     expect(source).toContain('Embedded graph seed');
+    expect(source).toContain('Workflow');
+    expect(source).toContain('Reasoning scaffold');
+    expect(source).toContain('Cognee memory benefit');
+    expect(source).toContain('Ontology/graph seed');
+    expect(source).toContain('Generation contract');
+    expect(source).toContain('Human review gates');
+    expect(source).toContain('Why this improves answers');
     expect(source).toContain('ontologyOverlay');
+    expect(source).toContain('intelligenceProfile');
+    expect(source).toContain('cogneeProfile');
     expect(source).toContain('Cognee mode');
     expect(source).toContain('Agent Read');
     expect(source).toContain('read contract');
@@ -870,6 +901,10 @@ describe('Tasklet PRAXIS workbench contract', () => {
       'Output targets',
       'Review Gates',
       'AI use guidance',
+      'Workflow',
+      'Reasoning scaffold',
+      'Cognee memory benefit',
+      'Generation contract',
       'Compatible Capsules',
       'capsule-inspector-usefulness-rating',
       'Ask PRAXIS',

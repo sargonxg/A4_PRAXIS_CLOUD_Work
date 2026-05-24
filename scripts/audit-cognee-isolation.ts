@@ -84,6 +84,21 @@ for (const marker of ["process.env.COGNEE_ENABLED === 'true'", 'COGNEE_BACKEND_U
   if (!featureRoute.includes(marker)) failures.push(`src/app/api/health/features/route.ts missing marker: ${marker}`);
 }
 
+const contextCapsules = readFileSync(path.join(root, 'src/lib/product/context-capsules.ts'), 'utf8');
+for (const marker of [
+  'CapsuleCogneeProfile',
+  'buildCapsuleCogneeSeedPack',
+  "datasetScope: 'owner-capsule'",
+  'advisoryOnly: true',
+  "canonicalTruth: 'Firestore ContextCapsules'",
+  "enabledByEnv: 'COGNEE_ENABLED=true'",
+  "backendUrlEnv: 'COGNEE_BACKEND_URL'",
+  'reviewCardProposal',
+  'Do not mutate graph state or ontology files',
+]) {
+  if (!contextCapsules.includes(marker)) failures.push(`starter Cognee profile contract missing marker: ${marker}`);
+}
+
 const cogneeSetupSql = readFileSync(path.join(root, 'backend/migrations/sql/cognee_database_setup.sql'), 'utf8');
 for (const marker of ['CREATE ROLE praxis_cognee_app', 'current_tenant()', 'REVOKE ALL ON DATABASE praxis_cognee FROM praxis_app']) {
   if (!cogneeSetupSql.includes(marker)) failures.push(`cognee_database_setup.sql missing marker: ${marker}`);

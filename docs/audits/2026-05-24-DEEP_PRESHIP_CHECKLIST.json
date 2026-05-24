@@ -1,8 +1,8 @@
 {
   "date": "2026-05-24",
   "summary": {
-    "pass": 140,
-    "warn": 1,
+    "pass": 139,
+    "warn": 2,
     "blocked": 0,
     "total": 141
   },
@@ -1027,9 +1027,9 @@
       "id": "vertex-banned-gpt-",
       "section": "7. Vertex Gemini integration",
       "title": "No banned direct model marker gpt-",
-      "status": "PASS",
-      "evidence": "gpt- marker not found.",
-      "remediation": "None."
+      "status": "WARN",
+      "evidence": "gpt- marker found; run audit:model-strings for allowlist context.",
+      "remediation": "Move direct model strings into the approved provider matrix or update the allowlist audit."
     },
     {
       "id": "vertex-banned-claude-",

@@ -381,6 +381,129 @@ export interface CapsuleStarterRichProfile {
   agentInstructions: string;
 }
 
+export type CapsuleIntelligenceKind = 'situation' | 'thinking-device' | 'user-workflow' | 'output-artifact';
+
+export interface CapsuleIntelligenceProfile {
+  profileId: string;
+  capsuleKind: CapsuleIntelligenceKind;
+  curated?: boolean;
+  humanWorkflow: {
+    userJob: string;
+    decisionMoment: string;
+    workingCadence: string;
+    stakeholderPressure: string;
+    redLines: string[];
+  };
+  reasoningScaffold: {
+    steps: string[];
+    disconfirmingChecks: string[];
+    uncertaintyHandling: string;
+    failureModes: string[];
+    outputGrammar: string[];
+  };
+  contextMap: {
+    actors: string[];
+    claims: string[];
+    rules: string[];
+    risks: string[];
+    timelines: string[];
+    sources: string[];
+    decisions: string[];
+    openQuestions: string[];
+  };
+  generationContract: {
+    goodAnswerIncludes: string[];
+    mustNotClaim: string[];
+    reviewGates: string[];
+    outputPath: string;
+  };
+  usefulFollowUps: string[];
+  whyThisImprovesAnswers: string;
+}
+
+export type CapsuleCogneeSeedDocumentKind =
+  | 'workflow-brief'
+  | 'ontology-node-guide'
+  | 'source-lane-guide'
+  | 'forbidden-claim-guide'
+  | 'output-rubric';
+
+export interface CapsuleCogneeSeedDocument {
+  id: string;
+  kind: CapsuleCogneeSeedDocumentKind;
+  title: string;
+  body: string;
+  advisoryOnly: true;
+}
+
+export interface CapsuleCogneeProfile {
+  profileId: string;
+  curated?: boolean;
+  whyCogneeHelps: string;
+  datasetScope: 'owner-capsule';
+  advisoryOnly: true;
+  canonicalTruth: 'Firestore ContextCapsules';
+  searchModes: CapsuleStarterCogneeSearchMode[];
+  ontologyHints: {
+    baseOntologyIds: CapsuleStarterOntologyCaseType[];
+    workOntologyId: CapsuleStarterWorkOntologyId;
+    nodeHints: string[];
+    edgeHints: string[];
+  };
+  seedDocuments: CapsuleCogneeSeedDocument[];
+  customExtractionPrompt: string;
+  expectedNodeCandidates: string[];
+  expectedEdgeCandidates: string[];
+  confidenceCap: 0.6;
+  reviewCardPromotionRules: string[];
+  liveAcceptance: {
+    enabledByEnv: 'COGNEE_ENABLED=true';
+    backendUrlEnv: 'COGNEE_BACKEND_URL';
+    operations: string[];
+  };
+}
+
+export interface CapsuleCogneeSeedPack {
+  starterId: string;
+  profileId: string;
+  datasetScope: 'owner-capsule';
+  advisoryOnly: true;
+  canonicalTruth: 'Firestore ContextCapsules';
+  documents: Array<{
+    id: string;
+    title: string;
+    content: string;
+    metadata: {
+      kind: CapsuleCogneeSeedDocumentKind;
+      starterId: string;
+      profileId: string;
+      advisoryOnly: true;
+      canonicalTruth: 'Firestore ContextCapsules';
+      promotionRequired: 'review-card';
+    };
+  }>;
+  cognifyPlan: {
+    operation: string;
+    disabledSafe: true;
+    liveGate: {
+      enabledByEnv: 'COGNEE_ENABLED=true';
+      backendUrlEnv: 'COGNEE_BACKEND_URL';
+    };
+    searchModes: CapsuleStarterCogneeSearchMode[];
+    customExtractionPrompt: string;
+    mustNotDo: string[];
+  };
+  reviewCardProposal: {
+    sourceType: 'cognee';
+    target: 'advisoryMemory';
+    state: 'proposed';
+    promotionRequired: 'review-card';
+    starterId: string;
+    profileId: string;
+    sourceDocumentIds: string[];
+  };
+}
+
 export interface CapsuleStarterDeviceProfile {
   deviceKind: string;
   reasoningOperation: string;
@@ -488,6 +611,8 @@ export interface CapsuleStarterDefinition {
   agentWorkflow: CapsuleStarterAgentWorkflow;
   aiUseGuidance: string;
   richProfile: CapsuleStarterRichProfile;
+  intelligenceProfile: CapsuleIntelligenceProfile;
+  cogneeProfile: CapsuleCogneeProfile;
   deviceProfile?: CapsuleStarterDeviceProfile;
   humanReview?: CapsuleStarterHumanReview;
   ontologyOverlay?: CapsuleStarterOntologyOverlay;
@@ -576,7 +701,7 @@ export const CAPSULE_WOW_DEMO_STARTER_IDS = [
   'starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026',
 ] as const;
 
-export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-23-human-gated-workflows-v12';
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-24-capsule-intelligence-v13';
 const CAPSULE_NO_AFFILIATION_LIMITATION = 'PRAXIS is not affiliated with, endorsed by, or speaking for any organization named in this capsule, its sources, or its examples.';
 
 export type CapsuleStarterSnapshot = Pick<
@@ -598,6 +723,8 @@ export type CapsuleStarterSnapshot = Pick<
   | 'agentWorkflow'
   | 'aiUseGuidance'
   | 'richProfile'
+  | 'intelligenceProfile'
+  | 'cogneeProfile'
   | 'deviceProfile'
   | 'humanReview'
   | 'ontologyOverlay'
@@ -977,6 +1104,8 @@ type CapsuleStarterOverrides = Partial<Pick<
   | 'agentWorkflow'
   | 'aiUseGuidance'
   | 'richProfile'
+  | 'intelligenceProfile'
+  | 'cogneeProfile'
   | 'deviceProfile'
   | 'humanReview'
   | 'ontologyOverlay'
@@ -1150,6 +1279,493 @@ function buildStarterOntologyOverlay(input: {
   };
 }
 
+interface StarterIntelligenceBuilderInput {
+  starterId: string;
+  category: CapsuleStarterCategory;
+  domain: CapsuleStarterDomain;
+  label: string;
+  summary: string;
+  detail: string;
+  tags: string[];
+  sourcePack: CapsuleStarterSource[];
+  recommendedToolIds: string[];
+  outputProductIds: string[];
+  richProfile: CapsuleStarterRichProfile;
+  deviceProfile?: CapsuleStarterDeviceProfile;
+  humanReview?: CapsuleStarterHumanReview;
+  ontologyOverlay: CapsuleStarterOntologyOverlay;
+}
+
+interface CuratedWowDemoProfilePatch {
+  decisionMoment: string;
+  steps: string[];
+  rules: string[];
+  actors: string[];
+  risks: string[];
+  timelines: string[];
+  decisions: string[];
+  openQuestions: string[];
+  mustNotClaim: string[];
+  followUps: string[];
+  why: string;
+  nodeCandidates: string[];
+  edgeCandidates: string[];
+  extractionPrompt: string;
+}
+
+function intelligenceKindForCategory(category: CapsuleStarterCategory): CapsuleIntelligenceKind {
+  if (category === 'tool') return 'thinking-device';
+  if (category === 'user') return 'user-workflow';
+  if (category === 'output') return 'output-artifact';
+  return 'situation';
+}
+
+function curatedWowDemoProfilePatch(starterId: string): CuratedWowDemoProfilePatch | null {
+  const patches: Record<string, CuratedWowDemoProfilePatch> = {
+    'starter-situation-eu-ai-act-2026-implementation-simplification': {
+      decisionMoment: 'A compliance, public-affairs, or product-risk team needs to brief whether it is a provider, deployer, importer, distributor, or GPAI actor; which high-risk obligations are live; which AI Office guidance or simplification claims are only guidance; and where legal-review stops the answer.',
+      steps: [
+        'Classify the role first: provider, deployer, importer, distributor, product manufacturer, or GPAI actor.',
+        'Separate AI Act legal text, AI Office guidance, standards work, simplification proposals, and market-practice interpretation.',
+        'Map high-risk system obligations, GPAI obligations, prohibited-practice exposure, dates, and documentation gaps into separate rows.',
+        'State which answer elements require legal-review before operational reliance or external communication.',
+      ],
+      rules: ['AI Act role classification', 'high-risk system obligations', 'GPAI obligations', 'AI Office guidance status', 'legal-review stop'],
+      actors: ['AI provider', 'AI deployer', 'GPAI model provider', 'AI Office', 'national competent authority', 'legal-review owner'],
+      risks: ['misclassified role', 'missed implementation date', 'unsupported simplification claim', 'overstated compliance assurance'],
+      timelines: ['AI Act phased applicability dates', 'AI Office guidance milestones', 'standards and code-of-practice updates'],
+      decisions: ['role classification', 'source refresh need', 'compliance workplan gate', 'external communication approval'],
+      openQuestions: ['Which system is in scope?', 'Which legal entity is the provider or deployer?', 'Which AI Office or Commission source is current?', 'What legal-review gate remains?'],
+      mustNotClaim: ['Do not claim AI Act compliance, role status, high-risk exemption, or GPAI readiness without legal-review and current source receipts.'],
+      followUps: [
+        'Which exact system and legal entity are we classifying?',
+        'Are we briefing a provider, deployer, or GPAI model owner?',
+        'What AI Office source has the freshest implementation guidance?',
+        'Which high-risk obligations need a document gap list?',
+        'What wording must wait for legal-review?',
+      ],
+      why: 'This profile helps the model distinguish role classification, legal obligations, AI Office guidance, simplification posture, and review stops instead of flattening the AI Act into generic compliance advice.',
+      nodeCandidates: ['AI system', 'provider', 'deployer', 'GPAI model', 'high-risk obligation', 'AI Office guidance', 'legal-review gate'],
+      edgeCandidates: ['CLASSIFIED_AS_ROLE', 'SUBJECT_TO_OBLIGATION', 'SUPPORTED_BY_AI_OFFICE_SOURCE', 'REQUIRES_LEGAL_REVIEW'],
+      extractionPrompt: 'Extract reviewable advisory owner-capsule candidates for EU AI Act work: provider/deployer/GPAI roles, high-risk obligations, AI Office guidance, implementation dates, simplification claims, and legal-review gates. Firestore remains canonical.',
+    },
+    'starter-situation-us-fy2027-budget-sequestration-watch': {
+      decisionMoment: 'A budget, appropriations, or agency-exposure team needs to explain what is only a President budget proposal, what is an order or sequestration report, what still requires appropriations authority, which budget account is exposed, and which agency exposure should be monitored.',
+      steps: [
+        'Label each budget item as proposal, order, enacted appropriation, report, table, account exposure, or agency interpretation.',
+        'Tie every amount or cut claim to a budget account, statutory authority, fiscal year, and source date.',
+        'Separate sequestration-order mechanics from appropriations negotiations and agency operating exposure.',
+        'End with the decision owner, next Hill or OMB watchpoint, and what cannot be relied on until enacted.',
+      ],
+      rules: ['proposal versus enacted appropriations', 'sequestration order status', 'budget account exposure', 'agency exposure lane', 'appropriations authority'],
+      actors: ['OMB', 'appropriations committee', 'agency budget office', 'program office', 'congressional staff'],
+      risks: ['treating a proposal as law', 'mixing account and program exposure', 'missing an order or report update', 'overstating agency authority'],
+      timelines: ['FY2027 President budget release', 'appropriations cycle', 'sequestration order and report dates', 'continuing-resolution deadlines'],
+      decisions: ['which budget accounts need monitoring', 'which proposal claims require caveats', 'which agency exposure deserves a briefing note'],
+      openQuestions: ['Is the claim in a budget proposal, order, or appropriation?', 'Which account is exposed?', 'Which agency has implementation authority?', 'What date controls the assumption?'],
+      mustNotClaim: ['Do not claim enacted appropriations, sequestration effect, or agency authority from a proposal or budget table without current legal and budget-account source support.'],
+      followUps: [
+        'Which agency or budget account is the decision owner worried about?',
+        'Is the claim from a proposal, an order, or enacted appropriations?',
+        'What would change if Congress passes a different account level?',
+        'Which program exposure needs a one-page briefing?',
+        'What should we monitor before the next appropriations deadline?',
+      ],
+      why: 'This profile helps the model distinguish proposal, order, appropriations authority, budget account, and agency exposure so fiscal answers do not overstate legal effect.',
+      nodeCandidates: ['budget proposal', 'sequestration order', 'appropriations authority', 'budget account', 'agency exposure', 'program risk'],
+      edgeCandidates: ['PROPOSES_FUNDING', 'AFFECTS_BUDGET_ACCOUNT', 'REQUIRES_APPROPRIATION', 'EXPOSES_AGENCY'],
+      extractionPrompt: 'Extract reviewable advisory owner-capsule candidates for FY2027 budget work: proposals, orders, appropriations authority, budget accounts, agency exposure, dates, and account-level caveats. Firestore remains canonical.',
+    },
+    'starter-situation-h5n1-dairy-food-safety-2026': {
+      decisionMoment: 'A public-health, food-safety, or agriculture operations team needs to separate herd surveillance, food safety, raw milk warnings, worker exposure, and state status before deciding what to monitor, brief, or escalate.',
+      steps: [
+        'Split claims into herd surveillance, food safety, raw milk, worker exposure, state status, and consumer-risk lanes.',
+        'Attach USDA, FDA, CDC, and state source dates before stating spread, safety, or exposure posture.',
+        'Identify where pasteurized-product evidence differs from raw milk risk and occupational exposure guidance.',
+        'End with a monitoring cadence, state-status caveat, and worker-safety or food-safety action path.',
+      ],
+      rules: ['herd surveillance lane', 'food safety lane', 'raw milk warning', 'worker exposure guidance', 'state status refresh'],
+      actors: ['USDA APHIS', 'FDA', 'CDC', 'state animal health official', 'dairy worker', 'processor or retailer'],
+      risks: ['conflating herd detection with food safety', 'stale state status', 'understated raw milk risk', 'unsupported worker-exposure claim'],
+      timelines: ['National Milk Testing Strategy updates', 'state detection dates', 'CDC worker guidance refreshes', 'FDA food-safety updates'],
+      decisions: ['state monitoring cadence', 'raw milk caveat wording', 'worker-exposure briefing', 'source refresh before public use'],
+      openQuestions: ['Which state status is current?', 'Are we discussing pasteurized products or raw milk?', 'Which worker-exposure guidance applies?', 'What surveillance data is missing?'],
+      mustNotClaim: ['Do not claim food safety, raw milk safety, herd prevalence, worker exposure risk, or state status without current USDA, FDA, CDC, or state source support.'],
+      followUps: [
+        'Which state or supply-chain node is in scope?',
+        'Are we briefing herd surveillance, food safety, or worker exposure?',
+        'What is the latest raw milk warning we can cite?',
+        'Which source lane is stale or missing?',
+        'What monitoring action should happen before the next update?',
+      ],
+      why: 'This profile helps the model distinguish herd surveillance, food safety, raw milk, worker exposure, and state status so public-health answers do not conflate separate evidence standards.',
+      nodeCandidates: ['herd surveillance update', 'food safety claim', 'raw milk warning', 'worker exposure guidance', 'state status', 'dairy detection'],
+      edgeCandidates: ['REPORTED_BY_AGENCY', 'AFFECTS_STATE_STATUS', 'CONSTRAINS_FOOD_SAFETY_CLAIM', 'REQUIRES_WORKER_PROTECTION_REVIEW'],
+      extractionPrompt: 'Extract reviewable advisory owner-capsule candidates for H5N1 dairy work: herd surveillance, food safety, raw milk, worker exposure, state status, dated USDA/FDA/CDC sources, and review gates. Firestore remains canonical.',
+    },
+    'starter-situation-data-center-grid-load-interconnection': {
+      decisionMoment: 'An infrastructure, utility, public-affairs, or siting team needs to separate load growth, interconnection, transmission planning, cost allocation, reliability, and community risk before deciding whether a data-center claim needs engineering, regulatory, or stakeholder review.',
+      steps: [
+        'Separate load growth forecast, interconnection request, transmission planning need, cost allocation question, reliability risk, and community impact.',
+        'Anchor every grid claim to DOE, FERC, regional transmission, utility, or state-source dates.',
+        'Identify who bears costs, who approves interconnection or transmission, and which reliability standard or planning process is implicated.',
+        'End with the next evidence repair: load data, queue status, cost allocation proceeding, or community-risk review.',
+      ],
+      rules: ['load growth evidence', 'large-load interconnection status', 'transmission planning process', 'cost allocation rule', 'community risk lane'],
+      actors: ['data-center customer', 'utility', 'regional transmission organization', 'FERC', 'state regulator', 'community stakeholder'],
+      risks: ['overstated load growth', 'queue-status confusion', 'unsupported cost-allocation claim', 'reliability or community impact blind spot'],
+      timelines: ['load forecast horizon', 'interconnection queue milestone', 'transmission planning cycle', 'FERC docket date', 'state siting deadline'],
+      decisions: ['which proceeding to monitor', 'which load forecast to refresh', 'whether cost allocation needs legal or regulatory review', 'what community question needs escalation'],
+      openQuestions: ['Which region and utility are in scope?', 'Is this a forecast, a queue request, or an approved interconnection?', 'Who pays for network upgrades?', 'Which community impact is source-backed?'],
+      mustNotClaim: ['Do not claim approved load, interconnection feasibility, cost allocation, reliability impact, or community effect without current proceeding or planning evidence.'],
+      followUps: [
+        'Which balancing area, utility, or RTO/ISO is in scope?',
+        'Is the load growth claim forecasted, contracted, or approved?',
+        'What interconnection or transmission-planning source is current?',
+        'Who might bear cost allocation under the relevant rule?',
+        'Which community risk needs a separate evidence lane?',
+      ],
+      why: 'This profile helps the model distinguish load growth, interconnection, transmission planning, cost allocation, reliability, and community risk so grid answers do not collapse technical and regulatory questions.',
+      nodeCandidates: ['load growth forecast', 'large-load interconnection request', 'transmission planning need', 'cost allocation dispute', 'reliability risk', 'community risk'],
+      edgeCandidates: ['DRIVES_INTERCONNECTION_NEED', 'REQUIRES_TRANSMISSION_PLANNING', 'SHIFTS_COST_ALLOCATION', 'AFFECTS_COMMUNITY'],
+      extractionPrompt: 'Extract reviewable advisory owner-capsule candidates for data-center grid work: load growth, interconnection, transmission planning, cost allocation, reliability, community risk, proceedings, and evidence dates. Firestore remains canonical.',
+    },
+    'starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026': {
+      decisionMoment: 'A foreign-policy, reconstruction, or finance team needs to separate ceasefire mechanics, reconstruction needs, EU facility financing, IMF program constraints, war-economy realities, and reform conditions before briefing what changed and what to do next.',
+      steps: [
+        'Separate ceasefire mechanics from reconstruction needs, EU Ukraine Facility financing, IMF EFF conditions, war-economy constraints, and reform milestones.',
+        'Attach World Bank, EU, IMF, and official Ukrainian or partner-source dates before stating financing or reform posture.',
+        'Map which commitments are security, fiscal, reconstruction, governance, or donor-coordination claims.',
+        'End with decision options: monitor, fund, condition, message, or hold for source refresh.',
+      ],
+      rules: ['ceasefire mechanics lane', 'reconstruction needs assessment', 'EU Ukraine Facility financing', 'IMF EFF conditions', 'war-economy constraint', 'reform condition'],
+      actors: ['Government of Ukraine', 'EU', 'IMF', 'World Bank', 'donor coordination body', 'security actor'],
+      risks: ['treating ceasefire talks as settlement', 'overstating financing availability', 'missing war-economy constraints', 'uncited reform-condition claim'],
+      timelines: ['ceasefire proposal date', 'RDNA assessment date', 'EU facility payment cycle', 'IMF review milestone', 'reform deadline'],
+      decisions: ['what can be briefed now', 'which financing claim needs refresh', 'which reform condition gates support', 'which ceasefire assumption is too weak'],
+      openQuestions: ['What ceasefire mechanism is actually proposed?', 'Which reconstruction figure is current?', 'Which EU or IMF financing condition applies?', 'What war-economy constraint changes the recommendation?'],
+      mustNotClaim: ['Do not claim ceasefire terms, reconstruction financing, EU or IMF disbursement, war-economy capacity, or reform compliance without current source support and review.'],
+      followUps: [
+        'Are we briefing ceasefire mechanics, reconstruction finance, or reform conditions?',
+        'Which RDNA, EU Facility, or IMF source is current?',
+        'What war-economy constraint changes the recommendation?',
+        'Which financing claim should stay caveated?',
+        'What reform condition needs a claim-source row?',
+      ],
+      why: 'This profile helps the model distinguish ceasefire mechanics, reconstruction needs, EU and IMF financing, war-economy constraints, and reform conditions instead of producing a generic Ukraine update.',
+      nodeCandidates: ['ceasefire mechanism', 'reconstruction need', 'EU Ukraine Facility payment', 'IMF EFF condition', 'war-economy constraint', 'reform milestone'],
+      edgeCandidates: ['CONDITIONS_FINANCING', 'SUPPORTS_RECONSTRUCTION_NEED', 'CONSTRAINS_WAR_ECONOMY', 'REQUIRES_REFORM'],
+      extractionPrompt: 'Extract reviewable advisory owner-capsule candidates for Ukraine work: ceasefire mechanics, reconstruction needs, EU financing, IMF conditions, war-economy constraints, reform milestones, and dated source lanes. Firestore remains canonical.',
+    },
+  };
+
+  return patches[starterId] ?? null;
+}
+
+function buildStarterIntelligenceProfile(input: StarterIntelligenceBuilderInput): CapsuleIntelligenceProfile {
+  const domainLabel = input.domain.replace(/-/g, ' ');
+  const primaryTool = input.recommendedToolIds[0] ?? 'ask-praxis';
+  const primaryOutput = input.outputProductIds[0] ?? 'options-memo';
+  const capsuleKind = intelligenceKindForCategory(input.category);
+  const curatedPatch = curatedWowDemoProfilePatch(input.starterId);
+  const actorBase: Record<CapsuleStarterCategory, string[]> = {
+    situation: ['decision owner', 'affected actor', 'implementing agency', 'source owner', 'review approver'],
+    tool: ['analyst using the device', 'decision owner', 'sourceability reviewer', 'output drafter', 'approver'],
+    user: ['human capsule owner', 'team lead', 'stakeholder audience', 'sourceability reviewer', 'approval owner'],
+    output: ['artifact author', 'target audience', 'review approver', 'sourceability reviewer', 'handoff recipient'],
+  };
+  const baseSteps: Record<CapsuleStarterCategory, string[]> = {
+    situation: [
+      `Open with what changed in ${input.label}, what remains uncertain, and why a human decision owner would care now.`,
+      'Split actors, dated claims, rules, risks, source lanes, decisions, and open questions before recommending action.',
+      'Check whether each important claim is source-backed, stale, advisory memory, or unsupported.',
+      `Convert the answer into a next ${primaryOutput} path with explicit review-card gates.`,
+    ],
+    tool: [
+      `Name the analytical operation ${input.label} is performing before producing conclusions.`,
+      'Check the input contract: scope, decision owner, source posture, dates, target output, and missing facts.',
+      'Run the method steps, then actively test the strongest contrary evidence or misuse scenario.',
+      `Emit the expected output grammar so ${primaryTool} can route the result into reviewable work.`,
+    ],
+    user: [
+      `Apply ${input.label} as a human workflow lens, not as a fictional persona or authority.`,
+      'Respect mandate, tone, stakeholder constraints, decision authority, and source thresholds.',
+      'Name where the role can decide, where it can recommend, and where it needs approval.',
+      `Route the answer toward ${primaryOutput} while preserving the user role's red lines.`,
+    ],
+    output: [
+      `Treat ${input.label} as an artifact contract with audience, sections, caveats, evidence rules, and approval state.`,
+      'Choose only claims with adequate support for the artifact body and push weak claims into notes or gaps.',
+      'Preserve grounding receipts, source IDs, caveats, and review-card status through handoff.',
+      `End with the exact ${primaryOutput} structure or next drafting action.`,
+    ],
+  };
+  const baseMustNotClaim = [
+    'Do not treat Cognee recall, ontology fit, graph centrality, or starter defaults as canonical facts without a review-card promotion.',
+    'Do not make legal, medical, financial, operational, safety, or attribution claims without source support and human review.',
+    'Do not hide unsupported, stale, disputed, advisory, or forbidden claims inside confident prose.',
+  ];
+  const baseFollowUps = [
+    `What decision does the human owner need ${input.label} to support today?`,
+    'Which source lane is current enough to support the strongest claim?',
+    'Which assumption would change the recommendation if it fails?',
+    `Should PRAXIS turn this into a ${primaryOutput}, a source gap list, or a review card?`,
+    'Which stakeholder will challenge this answer first, and on what evidence?',
+    'What should remain advisory until a human applies the review card?',
+  ];
+  const contextSources = input.sourcePack
+    .slice(0, 5)
+    .map((source) => `${source.id}: ${source.publisher ?? 'source lane'} ${source.date ?? 'date review required'}`);
+
+  return {
+    profileId: `${input.starterId}-intelligence-v1`,
+    capsuleKind,
+    ...(curatedPatch ? { curated: true } : {}),
+    humanWorkflow: {
+      userJob: `Human workflow: ${input.richProfile.userJob}`,
+      decisionMoment: curatedPatch?.decisionMoment
+        ?? `A human ${domainLabel} practitioner needs ${input.label} to turn scattered context into a decision-ready workflow: what changed, which claims can be used, which sources must be refreshed, what output path is appropriate, and what must stop for review.`,
+      workingCadence: `Use this capsule during intake, first answer, source repair, memo drafting, and handoff; refresh dated sources before each external use and keep review-card state visible across turns.`,
+      stakeholderPressure: `The answer may be read by a manager, counsel, policy lead, public-affairs owner, field team, or external stakeholder who will challenge unsupported claims, missing caveats, and unclear decision authority.`,
+      redLines: [
+        'Keep Firestore ContextCapsules canonical; advisory memory and graph rows are not facts until reviewed.',
+        'Stop before external publication, compliance reliance, public messaging, or operational action without source and human review.',
+        'Do not erase uncertainty, stale assumptions, source gaps, stakeholder constraints, or no-affiliation boundaries.',
+        ...(input.humanReview ? [input.humanReview.humanReviewGate] : []),
+      ],
+    },
+    reasoningScaffold: {
+      steps: uniqueStrings([...(curatedPatch?.steps ?? []), ...baseSteps[input.category]]).slice(0, 8),
+      disconfirmingChecks: uniqueStrings([
+        'Name the source, actor, date, or assumption most likely to invalidate the answer.',
+        'Ask what an informed stakeholder would dispute, and separate that dispute from source-backed claims.',
+        input.category === 'tool'
+          ? 'Check whether the device is being used to force a conclusion instead of exposing evidence quality.'
+          : 'Check whether a missing current source turns the recommendation into a source-gap or monitoring action.',
+      ]).slice(0, 5),
+      uncertaintyHandling: `Use explicit labels: supported, weak, unsupported, stale, advisory-memory, and human-judgment. Put weak claims into repair actions instead of hiding them in ${primaryOutput}.`,
+      failureModes: [
+        'Flattening actors, rules, dates, claims, and recommendations into one generic answer.',
+        'Promoting advisory memory, generated graph rows, or starter-source assumptions as canonical truth.',
+        'Skipping the review gate because the capsule label sounds expert or familiar.',
+        ...(input.deviceProfile?.failureModes.slice(0, 2) ?? []),
+      ],
+      outputGrammar: uniqueStrings([
+        'Start with a workflow-aware frame: decision owner, decision moment, source posture, and current caveat.',
+        'Use a claim ledger or short rows for actors, rules, risks, timelines, sources, decisions, and open questions.',
+        'End with next repair actions, output recommendation, and human review gate.',
+        ...(input.deviceProfile?.outputGrammar.slice(0, 2) ?? []),
+      ]).slice(0, 6),
+    },
+    contextMap: {
+      actors: uniqueStrings([...(curatedPatch?.actors ?? []), ...actorBase[input.category]]).slice(0, 10),
+      claims: [
+        `What changed or matters in ${input.label}.`,
+        `Which claims are supported, weak, unsupported, stale, advisory memory, or human judgment.`,
+        `Which claim belongs in ${primaryOutput} versus a source-gap or review-card lane.`,
+      ],
+      rules: uniqueStrings([
+        ...(curatedPatch?.rules ?? []),
+        'Firestore canonical state',
+        'review-card promotion',
+        'source freshness',
+        'no-affiliation boundary',
+        input.ontologyOverlay.workOntologyId,
+      ]).slice(0, 10),
+      risks: uniqueStrings([
+        ...(curatedPatch?.risks ?? []),
+        'source gap',
+        'stale assumption',
+        'unsupported inference',
+        'stakeholder challenge',
+        'external-use overclaim',
+      ]).slice(0, 10),
+      timelines: uniqueStrings([
+        ...(curatedPatch?.timelines ?? []),
+        'source as-of date',
+        'decision deadline',
+        'review-card apply date',
+        'next source refresh',
+      ]).slice(0, 10),
+      sources: contextSources.length ? contextSources : ['starter source lanes require refresh before external reliance'],
+      decisions: uniqueStrings([
+        ...(curatedPatch?.decisions ?? []),
+        'answer now with caveats',
+        'refresh sources first',
+        'create review card',
+        `draft ${primaryOutput}`,
+        'hold for human approval',
+      ]).slice(0, 10),
+      openQuestions: uniqueStrings([
+        ...(curatedPatch?.openQuestions ?? []),
+        'What current source would change the conclusion?',
+        'Which stakeholder has decision authority?',
+        'Which claim must remain advisory?',
+        'What output should be produced next?',
+      ]).slice(0, 10),
+    },
+    generationContract: {
+      goodAnswerIncludes: [
+        'A workflow-aware frame that names the human job, decision moment, and stakeholder pressure.',
+        'A source-lane caveat with dated assumptions and missing evidence called out.',
+        'A compact claim ledger or equivalent separation of supported, weak, unsupported, stale, and advisory-memory claims.',
+        'A next output path and review-card gates before canonical promotion or external use.',
+        `Useful follow-up questions tailored to ${input.label}, not generic chat prompts.`,
+      ],
+      mustNotClaim: uniqueStrings([...(curatedPatch?.mustNotClaim ?? []), ...baseMustNotClaim]).slice(0, 8),
+      reviewGates: uniqueStrings([
+        input.humanReview?.humanReviewGate ?? 'Human review required before external export, canonical promotion, or high-stakes reliance.',
+        'Source refresh required before relying on dated or current-affairs claims.',
+        'Review-card approval required before Cognee recall, graph proposals, or SQL projections become canonical.',
+      ]).slice(0, 6),
+      outputPath: `Default output path: use ${primaryTool} to produce or repair ${primaryOutput}; save unsupported claims as source gaps or review-card proposals before handoff.`,
+    },
+    usefulFollowUps: uniqueStrings([...(curatedPatch?.followUps ?? []), ...baseFollowUps]).slice(0, 8),
+    whyThisImprovesAnswers: curatedPatch?.why
+      ?? `This helps the model distinguish workflow, ontology, source posture, advisory memory, review gates, and output path so ${input.label} produces sourceable real-work answers instead of generic prose.`,
+  };
+}
+
+function buildCapsuleCogneeSeedDocuments(input: {
+  starterId: string;
+  label: string;
+  intelligenceProfile: CapsuleIntelligenceProfile;
+  ontologyOverlay: CapsuleStarterOntologyOverlay;
+}): CapsuleCogneeSeedDocument[] {
+  const { starterId, label, intelligenceProfile, ontologyOverlay } = input;
+  return [
+    {
+      id: `${starterId}-seed-workflow-brief`,
+      kind: 'workflow-brief',
+      title: `${label} workflow brief`,
+      body: [
+        intelligenceProfile.humanWorkflow.userJob,
+        intelligenceProfile.humanWorkflow.decisionMoment,
+        `Cadence: ${intelligenceProfile.humanWorkflow.workingCadence}`,
+        `Stakeholder pressure: ${intelligenceProfile.humanWorkflow.stakeholderPressure}`,
+        'Advisory only: Cognee can recall this as workflow memory, but Firestore ContextCapsules remain canonical.',
+      ].join('\n'),
+      advisoryOnly: true,
+    },
+    {
+      id: `${starterId}-seed-ontology-node-guide`,
+      kind: 'ontology-node-guide',
+      title: `${label} ontology node guide`,
+      body: [
+        `Base ontology: ${ontologyOverlay.baseOntologyIds.join(', ')}.`,
+        `Work ontology: ${ontologyOverlay.workOntologyId}.`,
+        `Node hints: ${ontologyOverlay.graphNodeTypes.join(', ')}; ${ontologyOverlay.ontologyNodeHints.slice(0, 8).join(', ')}.`,
+        `Edge hints: ${ontologyOverlay.graphEdgeTypes.join(', ')}.`,
+        'Rows are embedded proposals only until a human applies the review card.',
+      ].join('\n'),
+      advisoryOnly: true,
+    },
+    {
+      id: `${starterId}-seed-source-lane-guide`,
+      kind: 'source-lane-guide',
+      title: `${label} source lane guide`,
+      body: [
+        `Context sources: ${intelligenceProfile.contextMap.sources.join('; ')}.`,
+        `Timelines: ${intelligenceProfile.contextMap.timelines.join('; ')}.`,
+        'Use Cognee search modes for recall and source reuse, then refresh live source lanes before external reliance.',
+      ].join('\n'),
+      advisoryOnly: true,
+    },
+    {
+      id: `${starterId}-seed-forbidden-claim-guide`,
+      kind: 'forbidden-claim-guide',
+      title: `${label} forbidden claim guide`,
+      body: [
+        `Forbidden claims: ${intelligenceProfile.generationContract.mustNotClaim.join(' ')}`,
+        `Promotion rules: ${ontologyOverlay.promotionRules.join(' ')}`,
+        'Unsupported, stale, private, or high-stakes claims must stay as review-card proposals or source gaps.',
+      ].join('\n'),
+      advisoryOnly: true,
+    },
+    {
+      id: `${starterId}-seed-output-rubric`,
+      kind: 'output-rubric',
+      title: `${label} output rubric`,
+      body: [
+        `Good answer includes: ${intelligenceProfile.generationContract.goodAnswerIncludes.join(' ')}`,
+        `Output grammar: ${intelligenceProfile.reasoningScaffold.outputGrammar.join(' ')}`,
+        `Review gates: ${intelligenceProfile.generationContract.reviewGates.join(' ')}`,
+      ].join('\n'),
+      advisoryOnly: true,
+    },
+  ];
+}
+
+function buildStarterCogneeProfile(input: StarterIntelligenceBuilderInput & {
+  intelligenceProfile: CapsuleIntelligenceProfile;
+}): CapsuleCogneeProfile {
+  const curatedPatch = curatedWowDemoProfilePatch(input.starterId);
+  const searchModes = uniqueStrings([...input.ontologyOverlay.cognee.searchModes, 'CHUNKS', 'GRAPH_COMPLETION', 'SUMMARIES', 'NATURAL_LANGUAGE'])
+    .filter((mode): mode is CapsuleStarterCogneeSearchMode => ['CHUNKS', 'GRAPH_COMPLETION', 'SUMMARIES', 'NATURAL_LANGUAGE'].includes(mode))
+    .slice(0, 4);
+  const expectedNodeCandidates = uniqueStrings([
+    ...(curatedPatch?.nodeCandidates ?? []),
+    ...input.ontologyOverlay.graphNodeTypes,
+    ...input.ontologyOverlay.ontologyNodeHints,
+    'Claim',
+    'Source',
+    'Decision',
+    'OpenQuestion',
+    'ReviewGate',
+  ]).slice(0, 14);
+  const expectedEdgeCandidates = uniqueStrings([
+    ...(curatedPatch?.edgeCandidates ?? []),
+    ...input.ontologyOverlay.graphEdgeTypes,
+    'SUPPORTED_BY',
+    'CONTRADICTS',
+    'REQUIRES_REVIEW',
+    'PROMOTED_BY_REVIEW_CARD',
+  ]).slice(0, 12);
+
+  return {
+    profileId: `${input.starterId}-cognee-v1`,
+    ...(curatedPatch ? { curated: true } : {}),
+    whyCogneeHelps: `Cognee helps ${input.label} through semantic recall, graph-shaped memory, ontology-aware entity extraction, source reuse, and cross-turn continuity, while keeping every recalled item advisory until human review.`,
+    datasetScope: 'owner-capsule',
+    advisoryOnly: true,
+    canonicalTruth: 'Firestore ContextCapsules',
+    searchModes,
+    ontologyHints: {
+      baseOntologyIds: [...input.ontologyOverlay.baseOntologyIds],
+      workOntologyId: input.ontologyOverlay.workOntologyId,
+      nodeHints: expectedNodeCandidates,
+      edgeHints: expectedEdgeCandidates,
+    },
+    seedDocuments: buildCapsuleCogneeSeedDocuments({
+      starterId: input.starterId,
+      label: input.label,
+      intelligenceProfile: input.intelligenceProfile,
+      ontologyOverlay: input.ontologyOverlay,
+    }),
+    customExtractionPrompt: curatedPatch?.extractionPrompt
+      ?? `Extract reviewable advisory owner-capsule candidates for ${input.label}: actors, claims, rules, risks, timelines, sources, decisions, open questions, output needs, and review gates. Firestore ContextCapsules remain canonical; Cognee results require review-card promotion.`,
+    expectedNodeCandidates,
+    expectedEdgeCandidates,
+    confidenceCap: 0.6,
+    reviewCardPromotionRules: [
+      'Create a review-card proposal before any Cognee hit affects canonical ContextCapsule fields.',
+      'A human reviewer must confirm source support, freshness, tenant scope, and capsule ownership before promotion.',
+      'Promotion may target advisoryMemory, graphProposal, sourceGap, or modelMapping records; never mutate ontology files directly.',
+      'Reject or demote candidates that are unsupported, private, stale, duplicated, or outside the owner-capsule dataset scope.',
+    ],
+    liveAcceptance: {
+      enabledByEnv: 'COGNEE_ENABLED=true',
+      backendUrlEnv: 'COGNEE_BACKEND_URL',
+      operations: [
+        'Add advisory seed documents to the selected owner-capsule dataset.',
+        'Run cognify on the isolated Cognee backend only when the live gate is configured.',
+        'Search with CHUNKS, GRAPH_COMPLETION, SUMMARIES, and NATURAL_LANGUAGE to verify advisory recall.',
+        'Emit review-card proposals; do not write canonical graph state or mutate ontology files.',
+      ],
+    },
+  };
+}
+
 function starter(
   starterId: string,
   category: CapsuleStarterCategory,
@@ -1207,6 +1823,39 @@ function starter(
     recommendedToolIds,
     outputProductIds,
   });
+  const intelligenceProfile = overrides?.intelligenceProfile ?? buildStarterIntelligenceProfile({
+    starterId,
+    category,
+    domain,
+    label,
+    summary,
+    detail,
+    tags: starterTags,
+    sourcePack,
+    recommendedToolIds,
+    outputProductIds,
+    richProfile,
+    ...(deviceProfile ? { deviceProfile } : {}),
+    ...(humanReview ? { humanReview } : {}),
+    ontologyOverlay,
+  });
+  const cogneeProfile = overrides?.cogneeProfile ?? buildStarterCogneeProfile({
+    starterId,
+    category,
+    domain,
+    label,
+    summary,
+    detail,
+    tags: starterTags,
+    sourcePack,
+    recommendedToolIds,
+    outputProductIds,
+    richProfile,
+    ...(deviceProfile ? { deviceProfile } : {}),
+    ...(humanReview ? { humanReview } : {}),
+    ontologyOverlay,
+    intelligenceProfile,
+  });
   const baseAgentWorkflow = overrides?.agentWorkflow ?? {
     preferredAgentId: category === 'output' ? 'output-formatter' : 'research-memo',
     routeHint: category === 'tool' ? 'tool-router' : 'capsule-supervisor',
@@ -1251,10 +1900,13 @@ function starter(
     agentWorkflow,
     aiUseGuidance,
     richProfile,
+    intelligenceProfile,
+    cogneeProfile,
     ...(deviceProfile ? { deviceProfile } : {}),
     ...(humanReview ? { humanReview } : {}),
     ontologyOverlay,
-    inspectionSections: overrides?.inspectionSections ?? [
+    inspectionSections: [
+      ...(overrides?.inspectionSections ?? []),
       { label: 'Purpose', detail: richProfile.purpose },
       { label: 'Sources', detail: richProfile.sourceIndications.slice(0, 3).join(' ') },
       ...(humanReview ? [
@@ -1272,6 +1924,13 @@ function starter(
       { label: 'Compatible Capsules', detail: combinesWellWith.length ? combinesWellWith.join(', ') : 'Attach a user capsule, a tool capsule, and an output capsule before external handoff.' },
       { label: 'Dynamic Ontology', detail: `${ontologyOverlay.overlayId}: ${ontologyOverlay.baseOntologyIds.join(', ')} plus ${ontologyOverlay.workOntologyId}; Cognee ${ontologyOverlay.cognee.mode} remains review-gated.` },
       { label: 'Embedded Graph', detail: `${ontologyOverlay.graphSeed.proposalLabel}: ${ontologyOverlay.graphNodeTypes.join(', ')} nodes and ${ontologyOverlay.graphEdgeTypes.join(', ')} edges staged as proposals only.` },
+      { label: 'Workflow', detail: `${intelligenceProfile.humanWorkflow.userJob} ${intelligenceProfile.humanWorkflow.decisionMoment}` },
+      { label: 'Reasoning scaffold', detail: intelligenceProfile.reasoningScaffold.steps.slice(0, 5).join(' ') },
+      { label: 'Cognee memory benefit', detail: cogneeProfile.whyCogneeHelps },
+      { label: 'Ontology/graph seed', detail: `${cogneeProfile.ontologyHints.baseOntologyIds.join(', ')} / ${cogneeProfile.ontologyHints.workOntologyId}; nodes ${cogneeProfile.expectedNodeCandidates.slice(0, 8).join(', ')}; review-card proposals only.` },
+      { label: 'Generation contract', detail: `${intelligenceProfile.generationContract.goodAnswerIncludes.slice(0, 4).join(' ')} ${intelligenceProfile.generationContract.outputPath}` },
+      { label: 'Human review gates', detail: intelligenceProfile.generationContract.reviewGates.join(' ') },
+      { label: 'Why this improves answers', detail: intelligenceProfile.whyThisImprovesAnswers },
     ],
   };
 }
@@ -3204,7 +3863,7 @@ const CURRENT_AFFAIRS_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
     tags: ['budget', 'appropriations', 'sequestration', 'us-domestic-policy', 'fy2027', 'team:governance-public-sector'],
     sourcePack: [
       realWorkSource('omb-fy2027-budget', 'OMB FY2027 President budget materials', 'https://www.whitehouse.gov/omb/information-resources/budget/', 'official', 'Office of Management and Budget', '2026', 'Official budget proposal and supporting tables for FY2027 baseline claims.'),
-      realWorkSource('omb-sequestration-reports-2026', 'OMB sequestration reports', 'https://www.whitehouse.gov/omb/information-for-agencies/reports/', 'official', 'Office of Management and Budget', '2026', 'Official sequestration and budget enforcement report lane for agency impact checks.'),
+      realWorkSource('omb-sequestration-reports-2027', 'OMB FY2027 sequestration reports and orders', 'https://www.whitehouse.gov/omb/information-resources/legislative/sequestration-reports-and-orders/', 'official', 'Office of Management and Budget', '2026-04', 'Official sequestration and budget enforcement report lane for agency impact checks.'),
     ],
     recommendedToolIds: ['sourceability', 'memo-drafter', 'scenario-projector'],
     outputProductIds: ['principals-decision-memo', 'options-memo'],
@@ -3313,8 +3972,8 @@ const CURRENT_AFFAIRS_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
     detail: 'Use this when PRAXIS must connect AI/data-center growth to grid capacity, transmission planning, public utility proceedings, community concerns, and energy-efficiency claims.',
     tags: ['data-centers', 'grid-load', 'interconnection', 'electricity', 'infrastructure', 'team:crisis-ops'],
     sourcePack: [
-      realWorkSource('doe-data-centers-servers', 'DOE data centers and servers energy use', 'https://www.energy.gov/eere/buildings/data-centers-and-servers', 'official', 'U.S. Department of Energy', '2026', 'Official DOE energy-efficiency and electricity-use baseline for data center claims.'),
-      realWorkSource('ferc-transmission-planning-1920', 'FERC transmission planning and cost allocation final rule explainer', 'https://www.ferc.gov/explainer-transmission-planning-and-cost-allocation-final-rule', 'regulator', 'Federal Energy Regulatory Commission', '2025', 'Transmission planning and cost-allocation source lane for long-term grid capacity claims.'),
+      realWorkSource('doe-data-center-electricity-demand', 'DOE clean energy resources for data center electricity demand', 'https://www.energy.gov/oe/clean-energy-resources-meet-data-center-electricity-demand', 'official', 'U.S. Department of Energy', '2026', 'Official DOE lane for data-center load growth, resource adequacy, demand flexibility, and grid planning claims.'),
+      realWorkSource('ferc-large-load-interconnection-2026', 'FERC large-load interconnection docket', 'https://www.ferc.gov/news-events/news/ferc-act-large-load-interconnection-docket-june-2026', 'regulator', 'Federal Energy Regulatory Commission', '2026', 'Federal regulatory lane for large-load interconnection, transmission infrastructure, and cost-allocation reform claims.'),
     ],
     recommendedToolIds: ['scenario-projector', 'stakeholder-map', 'sourceability'],
     outputProductIds: ['scenario-risk-dashboard-card', 'risk-monitor-card'],
@@ -3446,7 +4105,8 @@ const CURRENT_AFFAIRS_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
     tags: ['h5n1', 'avian-influenza', 'dairy', 'food-safety', 'agriculture', 'team:crisis-ops'],
     sourcePack: [
       realWorkSource('fda-h5n1-dairy-cattle', 'FDA investigation of H5N1 virus in dairy cattle', 'https://www.fda.gov/food/alerts-advisories-safety-information/investigation-avian-influenza-h5n1-virus-dairy-cattle', 'official', 'U.S. Food and Drug Administration', '2026', 'Official food-safety and dairy-product source lane for H5N1 claims.'),
-      realWorkSource('usda-aphis-hpai-livestock', 'USDA APHIS HPAI detections in livestock', 'https://www.aphis.usda.gov/livestock-poultry-disease/avian/avian-influenza/hpai-detections/livestock', 'official', 'USDA Animal and Plant Health Inspection Service', '2026', 'Official animal-health detections source for livestock and dairy-cattle status.'),
+      realWorkSource('usda-national-milk-testing-strategy', 'USDA APHIS National Milk Testing Strategy', 'https://www.aphis.usda.gov/livestock-poultry-disease/avian/avian-influenza/hpai-detections/livestock/nmts', 'official', 'USDA Animal and Plant Health Inspection Service', '2026-04-20', 'Official herd-surveillance and state-status source for dairy-cattle H5N1 testing posture.'),
+      realWorkSource('cdc-h5-current-situation', 'CDC A(H5) bird flu current situation', 'https://www.cdc.gov/bird-flu/situation-summary/index.html', 'official', 'Centers for Disease Control and Prevention', '2026', 'Official public-health and worker-exposure source lane for human-risk posture.'),
     ],
     recommendedToolIds: ['sourceability', 'scenario-projector', 'memo-drafter'],
     outputProductIds: ['risk-monitor-card', 'daily-read'],
@@ -3621,8 +4281,9 @@ const CURRENT_AFFAIRS_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
     detail: 'Use this when PRAXIS must connect ceasefire or diplomatic claims to recovery needs, infrastructure damage, donor finance, security constraints, and dated multilateral evidence.',
     tags: ['ukraine', 'ceasefire', 'reconstruction', 'war-economy', 'donor-risk', 'team:diplomatic'],
     sourcePack: [
-      realWorkSource('un-ukraine-2026', 'United Nations Ukraine country page', 'https://ukraine.un.org/en', 'multilateral', 'United Nations Ukraine', '2026', 'UN country-team source lane for humanitarian, development, and coordination context.'),
-      realWorkSource('world-bank-ukraine-rdna-2026', 'World Bank Ukraine recovery and reconstruction needs assessment', 'https://www.worldbank.org/en/country/ukraine/publication/updated-ukraine-recovery-and-reconstruction-needs-assessment-released', 'multilateral', 'World Bank', '2026', 'Multilateral recovery-cost and reconstruction-needs baseline for dated claims.'),
+      realWorkSource('world-bank-ukraine-rdna5-2026', 'World Bank RDNA5 Ukraine recovery and reconstruction needs assessment', 'https://www.worldbank.org/en/news/press-release/2026/02/23/updated-ukraine-recovery-and-reconstruction-needs-assessment-released', 'multilateral', 'World Bank', '2026-02-23', 'Multilateral recovery-cost and reconstruction-needs baseline for dated claims.'),
+      realWorkSource('eu-ukraine-facility', 'European Commission Ukraine Facility', 'https://commission.europa.eu/topics/eu-solidarity-ukraine/eu-assistance-ukraine/ukraine-facility_en', 'multilateral', 'European Commission', '2026-04-24', 'EU financing, reform, accession, and reconstruction support lane for donor-condition claims.'),
+      realWorkSource('imf-ukraine-eff-2026', 'IMF Ukraine Extended Fund Facility approval', 'https://www.imf.org/en/news/articles/2026/02/26/pr-26066-ukraine-imf-executive-board-approves-usd-8point1-billion-under-an-eff-arrangement', 'multilateral', 'International Monetary Fund', '2026-02-26', 'Macroeconomic stability, financing gap, reform, and war-economy source lane for Ukraine claims.'),
     ],
     recommendedToolIds: ['sourceability', 'scenario-projector', 'memo-drafter'],
     outputProductIds: ['principals-decision-memo', 'scenario-risk-dashboard-card'],
@@ -5350,6 +6011,8 @@ export function buildCapsuleStarterPromptBlock(
     ? starterSnapshot
     : getCapsuleStarterDefinition(capsuleId);
   if (!starterDefinition) return null;
+  const intelligenceProfile = starterDefinition.intelligenceProfile ?? null;
+  const cogneeProfile = starterDefinition.cogneeProfile ?? null;
   return [
     '[starter_capsule_definition]',
     `starter_id: ${starterDefinition.starterId}`,
@@ -5395,6 +6058,46 @@ export function buildCapsuleStarterPromptBlock(
     `rich_next_ideas: ${starterDefinition.richProfile.nextIdeas.join(' | ')}`,
     `rich_quality_rubric: ${starterDefinition.richProfile.qualityRubric.join(' | ')}`,
     `rich_agent_instructions: ${starterDefinition.richProfile.agentInstructions}`,
+    ...(intelligenceProfile ? [
+      `intelligence_profile_id: ${intelligenceProfile.profileId}`,
+      `intelligence_kind: ${intelligenceProfile.capsuleKind}`,
+      `human_workflow_user_job: ${intelligenceProfile.humanWorkflow.userJob}`,
+      `human_workflow_decision_moment: ${intelligenceProfile.humanWorkflow.decisionMoment}`,
+      `human_workflow_working_cadence: ${intelligenceProfile.humanWorkflow.workingCadence}`,
+      `human_workflow_stakeholder_pressure: ${intelligenceProfile.humanWorkflow.stakeholderPressure}`,
+      `human_workflow_red_lines: ${intelligenceProfile.humanWorkflow.redLines.join(' | ')}`,
+      `reasoning_scaffold_steps: ${intelligenceProfile.reasoningScaffold.steps.join(' | ')}`,
+      `reasoning_disconfirming_checks: ${intelligenceProfile.reasoningScaffold.disconfirmingChecks.join(' | ')}`,
+      `reasoning_uncertainty_handling: ${intelligenceProfile.reasoningScaffold.uncertaintyHandling}`,
+      `reasoning_failure_modes: ${intelligenceProfile.reasoningScaffold.failureModes.join(' | ')}`,
+      `reasoning_output_grammar: ${intelligenceProfile.reasoningScaffold.outputGrammar.join(' | ')}`,
+      `context_map_actors: ${intelligenceProfile.contextMap.actors.join(' | ')}`,
+      `context_map_claims: ${intelligenceProfile.contextMap.claims.join(' | ')}`,
+      `context_map_rules: ${intelligenceProfile.contextMap.rules.join(' | ')}`,
+      `context_map_risks: ${intelligenceProfile.contextMap.risks.join(' | ')}`,
+      `context_map_timelines: ${intelligenceProfile.contextMap.timelines.join(' | ')}`,
+      `context_map_sources: ${intelligenceProfile.contextMap.sources.join(' | ')}`,
+      `context_map_decisions: ${intelligenceProfile.contextMap.decisions.join(' | ')}`,
+      `context_map_open_questions: ${intelligenceProfile.contextMap.openQuestions.join(' | ')}`,
+      `generation_contract_good_answer_includes: ${intelligenceProfile.generationContract.goodAnswerIncludes.join(' | ')}`,
+      `generation_contract_must_not_claim: ${intelligenceProfile.generationContract.mustNotClaim.join(' | ')}`,
+      `generation_contract_review_gates: ${intelligenceProfile.generationContract.reviewGates.join(' | ')}`,
+      `generation_contract_output_path: ${intelligenceProfile.generationContract.outputPath}`,
+      `useful_followups: ${intelligenceProfile.usefulFollowUps.join(' | ')}`,
+      `why_this_improves_answers: ${intelligenceProfile.whyThisImprovesAnswers}`,
+    ] : []),
+    ...(cogneeProfile ? [
+      `cognee_profile_id: ${cogneeProfile.profileId}`,
+      `cognee_advisory_only: ${cogneeProfile.advisoryOnly}`,
+      `cognee_canonical_truth: ${cogneeProfile.canonicalTruth}`,
+      `cognee_why_it_helps: ${cogneeProfile.whyCogneeHelps}`,
+      `cognee_seed_documents: ${cogneeProfile.seedDocuments.map((document) => `${document.kind}:${document.title}`).join(' | ')}`,
+      `cognee_expected_node_candidates: ${cogneeProfile.expectedNodeCandidates.join(' | ')}`,
+      `cognee_expected_edge_candidates: ${cogneeProfile.expectedEdgeCandidates.join(' | ')}`,
+      `cognee_confidence_cap: ${cogneeProfile.confidenceCap}`,
+      `cognee_review_card_promotion_rules: ${cogneeProfile.reviewCardPromotionRules.join(' | ')}`,
+      `cognee_live_acceptance: ${cogneeProfile.liveAcceptance.enabledByEnv}; ${cogneeProfile.liveAcceptance.backendUrlEnv}; ${cogneeProfile.liveAcceptance.operations.join(' | ')}`,
+    ] : []),
     ...(starterDefinition.deviceProfile ? [
       `device_kind: ${starterDefinition.deviceProfile.deviceKind}`,
       `device_reasoning_operation: ${starterDefinition.deviceProfile.reasoningOperation}`,
@@ -5434,6 +6137,58 @@ export function buildCapsuleStarterPromptBlock(
     'runtime_rule: Preserve user edits on the persisted capsule, but use this starter definition to explain what the capsule is for and how to improve it.',
     '',
   ].join('\n');
+}
+
+export function buildCapsuleCogneeSeedPack(starter: CapsuleStarterDefinition | CapsuleStarterSnapshot): CapsuleCogneeSeedPack {
+  const cogneeProfile = starter.cogneeProfile;
+  if (!cogneeProfile) {
+    throw new Error(`Cannot build Cognee seed pack for starter ${starter.starterId} without a Cognee profile.`);
+  }
+
+  return {
+    starterId: starter.starterId,
+    profileId: cogneeProfile.profileId,
+    datasetScope: cogneeProfile.datasetScope,
+    advisoryOnly: cogneeProfile.advisoryOnly,
+    canonicalTruth: cogneeProfile.canonicalTruth,
+    documents: cogneeProfile.seedDocuments.map((document) => ({
+      id: document.id,
+      title: document.title,
+      content: document.body,
+      metadata: {
+        kind: document.kind,
+        starterId: starter.starterId,
+        profileId: cogneeProfile.profileId,
+        advisoryOnly: true,
+        canonicalTruth: cogneeProfile.canonicalTruth,
+        promotionRequired: 'review-card',
+      },
+    })),
+    cognifyPlan: {
+      operation: `add advisory seed documents, cognify the owner-capsule dataset, then search ${cogneeProfile.searchModes.join(', ')} for advisory recall`,
+      disabledSafe: true,
+      liveGate: {
+        enabledByEnv: cogneeProfile.liveAcceptance.enabledByEnv,
+        backendUrlEnv: cogneeProfile.liveAcceptance.backendUrlEnv,
+      },
+      searchModes: [...cogneeProfile.searchModes],
+      customExtractionPrompt: cogneeProfile.customExtractionPrompt,
+      mustNotDo: [
+        'Do not write canonical ContextCapsule state from Cognee output.',
+        'Do not mutate graph state or ontology files without review-card approval.',
+        'Do not remember private, disputed, or high-stakes claims from starter defaults.',
+      ],
+    },
+    reviewCardProposal: {
+      sourceType: 'cognee',
+      target: 'advisoryMemory',
+      state: 'proposed',
+      promotionRequired: 'review-card',
+      starterId: starter.starterId,
+      profileId: cogneeProfile.profileId,
+      sourceDocumentIds: cogneeProfile.seedDocuments.map((document) => document.id),
+    },
+  };
 }
 
 export const POLICY_USER_ARCHETYPES = [

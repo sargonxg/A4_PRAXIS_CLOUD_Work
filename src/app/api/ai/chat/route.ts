@@ -605,6 +605,8 @@ You have access to the user's active situation data. When answering questions:
         provider: String(runtimeReceipt.provider ?? ''),
         contextPackageId: contextPackageId ?? null,
         catalogVersion: (capsuleContext?.capsule ?? turnCapsule?.injectableContext.capsule)?.starterSnapshot?.catalogVersion ?? null,
+        intelligenceProfileId: (capsuleContext?.capsule ?? turnCapsule?.injectableContext.capsule)?.starterSnapshot?.intelligenceProfile?.profileId ?? null,
+        cogneeProfileId: (capsuleContext?.capsule ?? turnCapsule?.injectableContext.capsule)?.starterSnapshot?.cogneeProfile?.profileId ?? null,
       },
       orchestrationReceipt,
       generationReceipt: runtimeReceipt.generationReceipt,

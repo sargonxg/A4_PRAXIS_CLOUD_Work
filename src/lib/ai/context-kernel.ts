@@ -447,8 +447,11 @@ function buildEffectiveMemoryReceipt(capsule: TurnCapsule): CapsuleMemoryReceipt
     .map((item) => item.id)
     .filter((id) => id.startsWith('cognee:'));
   const memoryIds = uniqueStrings([...receiptMemoryIds, ...visibleMemoryIds]);
+  const cogneeProfileId = capsule.injectableContext.capsule.starterSnapshot?.cogneeProfile?.profileId ?? undefined;
   return {
     cogneeStatus: receipt?.cognee ?? 'disabled',
+    ...(cogneeProfileId ? { cogneeProfileId } : {}),
+    usedCogneeAdvisoryMemory: Boolean(cogneeProfileId || (receipt?.memoryHitCount ?? memoryIds.length) > 0),
     memoryHitCount: receipt?.memoryHitCount ?? memoryIds.length,
     memoryIds,
     ignoredMemoryIds: [],
@@ -577,6 +580,14 @@ function buildEffectiveGroundingReceipt(
     ...(capsule.injectableContext.capsule.starterSnapshot?.catalogVersion
       ? { catalogVersion: capsule.injectableContext.capsule.starterSnapshot.catalogVersion }
       : {}),
+    ...(capsule.injectableContext.capsule.starterSnapshot?.intelligenceProfile?.profileId
+      ? { intelligenceProfileId: capsule.injectableContext.capsule.starterSnapshot.intelligenceProfile.profileId }
+      : {}),
+    ...(capsule.injectableContext.capsule.starterSnapshot?.cogneeProfile?.profileId
+      ? { cogneeProfileId: capsule.injectableContext.capsule.starterSnapshot.cogneeProfile.profileId }
+      : {}),
+    usedCapsuleIntelligenceProfile: Boolean(capsule.injectableContext.capsule.starterSnapshot?.intelligenceProfile?.profileId),
+    usedCogneeAdvisoryMemory: Boolean(memoryReceipt.usedCogneeAdvisoryMemory),
     sourceExcerptCount: sourceExcerpts.length,
     cogneeStatus: memoryReceipt.cogneeStatus,
     memoryHitCount: memoryReceipt.memoryHitCount,

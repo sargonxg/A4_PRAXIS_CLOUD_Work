@@ -1,18 +1,18 @@
 {
   "ok": true,
-  "catalogVersion": "2026-05-23-human-gated-workflows-v12",
-  "total": 199,
+  "catalogVersion": "2026-05-24-capsule-intelligence-v13",
+  "total": 205,
   "counts": {
-    "situation": 79,
+    "situation": 85,
     "tool": 72,
     "output": 35,
     "user": 13
   },
   "expected": {
-    "total": 199,
+    "total": 205,
     "counts": {
       "output": 35,
-      "situation": 79,
+      "situation": 85,
       "tool": 72,
       "user": 13
     }
@@ -20,13 +20,81 @@
   "failures": [],
   "capsules": [
     {
+      "starterId": "starter-situation-crisis-strategy-room-human-gated",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-situation-un-mandate-renewal-strategy",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-situation-humanitarian-access-negotiation",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-situation-sourceable-country-risk-judgment",
+      "category": "situation",
+      "domain": "finance",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-situation-mediation-process-memory",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-situation-narrative-legitimacy-audit",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 2,
+      "excerptCount": 2,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
       "starterId": "starter-situation-sustainability-transition",
       "category": "situation",
       "domain": "sustainability",
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-finance-country-risk",
@@ -35,7 +103,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-ukraine-reconstruction-integrity-finance",
@@ -44,7 +114,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-taiwan-strait-semiconductor-supply-chain-risk",
@@ -53,7 +125,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-lebanon-israel-unifil-ceasefire-monitoring",
@@ -62,7 +136,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-myanmar-humanitarian-access-asean",
@@ -71,7 +147,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-ethiopia-protection-conflict-watch",
@@ -80,7 +158,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-venezuela-oil-sanctions-election-risk",
@@ -89,7 +169,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-china-overcapacity-tariff-industrial-policy",
@@ -98,7 +180,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-debt-distress-imf-program-watch",
@@ -107,7 +191,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-corporate-ai-procurement-assurance",
@@ -116,7 +202,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-food-security-commodity-shock-watch",
@@ -125,7 +213,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-sanctions-exposure-triage-matrix",
@@ -134,7 +224,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-corporate-value-chain-due-diligence-map",
@@ -143,7 +235,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-fiscal-space-debt-stress-screen",
@@ -152,7 +246,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-geoeconomic-chokepoint-map",
@@ -161,7 +257,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-policy-drafting-style-selector",
@@ -170,7 +268,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-ministerial-submission-style",
@@ -179,7 +279,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-corporate-board-risk-committee-pack",
@@ -188,7 +290,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-sanctions-compliance-brief-style",
@@ -197,7 +301,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-user-corporate-public-affairs-risk-lead",
@@ -206,7 +312,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-user-multilateral-desk-officer",
@@ -215,7 +323,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-red-sea-maritime-logistics-risk",
@@ -224,7 +334,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-sudan-famine-access-civilian-protection",
@@ -233,7 +345,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-haiti-security-humanitarian-corridor",
@@ -242,7 +356,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-eastern-drc-minerals-protection-risk",
@@ -251,7 +367,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-sahel-transition-regional-security",
@@ -260,7 +378,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-south-china-sea-maritime-incident-law",
@@ -269,7 +389,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-arctic-shipping-minerals-governance",
@@ -278,7 +400,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-public-sector-ransomware-service-continuity",
@@ -287,7 +411,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-election-observation-information-integrity",
@@ -296,7 +422,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-migration-border-reception-capacity",
@@ -305,7 +433,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-water-stress-transboundary-allocation",
@@ -314,7 +444,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-power-grid-flexibility-critical-infrastructure",
@@ -323,7 +455,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-disaster-recovery-loss-damage-finance",
@@ -332,7 +466,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-public-health-infodemic-emergency-trust",
@@ -341,7 +477,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-forced-labor-import-supply-chain-risk",
@@ -350,7 +488,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-procurement-integrity-major-projects",
@@ -359,7 +499,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-source-reliability-triangulation-ladder",
@@ -368,7 +510,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-stakeholder-veto-leverage-map",
@@ -377,7 +521,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-evidence-freshness-staleness-clock",
@@ -386,7 +532,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-policy-option-triage-matrix",
@@ -395,7 +543,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-data-gap-interrogatory-builder",
@@ -404,7 +554,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-legal-mandate-redline-check",
@@ -413,7 +565,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-corporate-exposure-heatmap",
@@ -422,7 +576,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-humanitarian-access-negotiation-checklist",
@@ -431,7 +587,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-scenario-indicator-watchlist",
@@ -440,7 +598,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-public-narrative-risk-premortem",
@@ -449,7 +609,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-board-assurance-question-set",
@@ -458,7 +620,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-counterparty-ownership-escalation-tree",
@@ -467,7 +631,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-crisis-daily-senior-brief",
@@ -476,7 +642,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-sanctions-exposure-note",
@@ -485,7 +653,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-humanitarian-donor-sitrep",
@@ -494,7 +664,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-board-decision-memo-pack",
@@ -503,7 +675,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-ministerial-question-period-brief",
@@ -512,7 +686,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-policy-implementation-roadmap",
@@ -521,7 +697,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-user-un-humanitarian-access-officer",
@@ -530,7 +708,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-user-sanctions-compliance-counsel",
@@ -539,7 +719,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-user-corporate-supply-chain-esg-lead",
@@ -548,7 +730,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-user-cabinet-policy-advisor",
@@ -557,7 +741,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-user-investigative-research-analyst",
@@ -566,7 +752,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-user-field-program-manager",
@@ -575,7 +763,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-us-fy2027-budget-sequestration-watch",
@@ -584,7 +774,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-us-appropriations-continuing-resolution-risk",
@@ -593,7 +785,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-us-china-section-301-tariff-forced-labor",
@@ -602,7 +796,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-eu-ai-act-2026-implementation-simplification",
@@ -611,7 +807,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-us-ai-export-control-compute-diffusion",
@@ -620,7 +818,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-data-center-grid-load-interconnection",
@@ -629,7 +829,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-critical-minerals-domestic-supply-chain-2026",
@@ -638,7 +840,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-eu-cbam-definitive-regime-exporter-risk",
@@ -647,7 +851,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-eu-sustainability-omnibus-csrd-csddd",
@@ -656,7 +862,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-aca-marketplace-subsidy-affordability-2026",
@@ -665,7 +873,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-us-measles-outbreak-vaccine-confidence-2026",
@@ -674,16 +884,20 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-h5n1-dairy-food-safety-2026",
       "category": "situation",
       "domain": "public-health",
-      "sourceCount": 2,
-      "excerptCount": 2,
+      "sourceCount": 3,
+      "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-us-border-asylum-encounters-2026",
@@ -692,7 +906,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-us-h1b-workforce-selection-modernization",
@@ -701,7 +917,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-us-housing-affordability-supply-homelessness",
@@ -710,7 +928,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-federal-student-loan-repayment-transition",
@@ -719,7 +939,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-kids-online-safety-coppa-age-assurance",
@@ -728,7 +950,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-us-stablecoin-digital-asset-legislation",
@@ -737,7 +961,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-2026-election-security-administration-watch",
@@ -746,16 +972,20 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026",
       "category": "situation",
       "domain": "diplomacy",
-      "sourceCount": 2,
-      "excerptCount": 2,
+      "sourceCount": 3,
+      "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-legislative-authority-deadline-tracker",
@@ -764,7 +994,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-regulatory-compliance-deadline-matrix",
@@ -773,7 +1005,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-fiscal-distributional-impact-screen",
@@ -782,7 +1016,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-infrastructure-load-permitting-watchlist",
@@ -791,7 +1027,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-public-health-trust-signal-map",
@@ -800,7 +1038,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-legislative-deadline-decision-brief",
@@ -809,7 +1049,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-regulatory-implementation-playbook",
@@ -818,7 +1060,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-domestic-policy-impact-one-pager",
@@ -827,7 +1071,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-board-public-affairs-risk-watch",
@@ -836,7 +1082,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-current-affairs-source-refresh-docket",
@@ -845,7 +1093,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-hr-harassment-policy",
@@ -854,7 +1104,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-diplomatic-options",
@@ -863,7 +1115,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-humanitarian-rights-access",
@@ -872,7 +1126,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-ai-governance-procurement",
@@ -881,7 +1137,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-us-federal-ai-governance-baseline",
@@ -890,7 +1148,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-un-sanctions-context",
@@ -899,7 +1159,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-humanitarian-access-analysis",
@@ -908,7 +1170,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-public-health-risk-communication",
@@ -917,7 +1181,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-critical-minerals-supply-chain",
@@ -926,7 +1192,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-cyber-infrastructure-resilience",
@@ -935,7 +1203,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-displacement-border-protection",
@@ -944,7 +1214,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-election-integrity-information",
@@ -953,7 +1225,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-source-pack-builder",
@@ -962,7 +1236,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-financial-exposure-mapper",
@@ -971,7 +1247,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-hr-policy-impact-reviewer",
@@ -980,7 +1258,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-diplomacy-options-mapper",
@@ -989,7 +1269,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-sourceability-audit-reviewer",
@@ -998,7 +1280,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-sustainability-risk-brief",
@@ -1007,7 +1291,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-finance-exposure-note",
@@ -1016,7 +1302,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-hr-rollout-recommendation",
@@ -1025,7 +1313,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-diplomatic-options-memo",
@@ -1034,7 +1324,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-humanitarian-access-brief",
@@ -1043,7 +1335,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-ai-governance-risk-brief",
@@ -1052,7 +1346,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-congressional-testimony-mode",
@@ -1061,7 +1357,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-pdf-policy-memo-style",
@@ -1070,7 +1368,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-health-risk-communications-plan",
@@ -1079,7 +1379,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-critical-minerals-exposure-map",
@@ -1088,7 +1390,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-cyber-resilience-action-memo",
@@ -1097,7 +1401,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-user-esg-sustainability-lead",
@@ -1106,7 +1412,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-user-finance-risk-analyst",
@@ -1115,7 +1423,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-user-hr-policy-owner",
@@ -1124,7 +1434,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-user-diplomatic-desk-officer",
@@ -1133,7 +1445,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-user-humanitarian-legal-investigator",
@@ -1142,7 +1456,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-assumption-audit",
@@ -1151,7 +1467,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-source-gap-triage",
@@ -1160,7 +1478,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-decision-clock-monitor",
@@ -1169,7 +1489,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-statistical-baseline-builder",
@@ -1178,7 +1500,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-indicator-shift-detector",
@@ -1187,7 +1511,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-statistical-annex",
@@ -1196,7 +1522,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-evidence-dashboard-brief",
@@ -1205,7 +1533,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-data-quality-statistics",
@@ -1214,7 +1544,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-two-page-brief",
@@ -1223,7 +1555,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-diplomatic-note",
@@ -1232,7 +1566,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-meeting-talking-points",
@@ -1241,7 +1577,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-mediation-track",
@@ -1250,7 +1588,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-sanctions-exposure",
@@ -1259,7 +1599,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-humanitarian-access-update",
@@ -1268,7 +1610,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-sudan-darfur-atrocity-access",
@@ -1277,7 +1621,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-eastern-drc-m23-mandate-watch",
@@ -1286,7 +1632,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-gaza-ceasefire-aid-reconstruction",
@@ -1295,7 +1643,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-red-sea-houthi-shipping-risk",
@@ -1304,7 +1654,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-essequibo-legal-diplomatic-dispute",
@@ -1313,7 +1665,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-sourceability-matrix",
@@ -1322,7 +1676,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-temporal-causal-map",
@@ -1331,7 +1687,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-actor-leverage-veto-map",
@@ -1340,7 +1698,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-legal-mandate-compliance-lens",
@@ -1349,7 +1709,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-negotiation-ripeness-decision-clock",
@@ -1358,7 +1720,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-assumption-stress-test",
@@ -1367,7 +1731,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-counterfactual-pivot-check",
@@ -1376,7 +1742,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-competing-hypotheses-matrix",
@@ -1385,7 +1753,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-stakeholder-incentive-map",
@@ -1394,7 +1764,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-spoiler-blocker-scan",
@@ -1403,7 +1775,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-policy-tradeoff-ledger",
@@ -1412,7 +1786,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-implementation-feasibility-gate",
@@ -1421,7 +1797,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-second-order-effects-map",
@@ -1430,7 +1808,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-pre-mortem-failure-review",
@@ -1439,7 +1819,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-escalation-ladder-deescalation-path",
@@ -1448,7 +1830,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-toulmin-argument-scaffold",
@@ -1457,7 +1841,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-stasis-question-ladder",
@@ -1466,7 +1852,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-hermeneutic-circle-reader",
@@ -1475,7 +1863,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-reflective-equilibrium-workbench",
@@ -1484,7 +1874,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-abductive-explanation-generator",
@@ -1493,7 +1885,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-argument-scheme-critical-questions",
@@ -1502,7 +1896,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-pragma-dialectical-discussion-map",
@@ -1511,7 +1907,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-audience-adherence-map",
@@ -1520,7 +1918,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-ethos-logos-pathos-kairos-lens",
@@ -1529,7 +1929,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-wicked-problem-boundary-map",
@@ -1538,7 +1940,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-conceptual-distinction-builder",
@@ -1547,7 +1951,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-category-error-detector",
@@ -1556,7 +1962,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-burden-of-proof-allocator",
@@ -1565,7 +1973,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-steelman-ironman-red-team-triad",
@@ -1574,7 +1984,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-narrative-frame-audit",
@@ -1583,7 +1995,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-moral-tradeoff-matrix",
@@ -1592,7 +2006,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-institutional-logic-lens",
@@ -1601,7 +2017,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-epistemic-trust-ledger",
@@ -1610,7 +2028,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-analogy-fitness-test",
@@ -1619,7 +2039,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-decision-rhetoric-converter",
@@ -1628,7 +2050,9 @@
       "sourceCount": 3,
       "excerptCount": 3,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-haiti-gang-mss-access-watch",
@@ -1637,7 +2061,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-sahel-aes-ecowas-transition-watch",
@@ -1646,7 +2072,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-kosovo-serbia-normalization-implementation",
@@ -1655,7 +2083,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-armenia-azerbaijan-peace-connectivity",
@@ -1664,7 +2094,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-yemen-roadmap-ceasefire-economy",
@@ -1673,7 +2105,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-libya-ceasefire-elections-institutions",
@@ -1682,7 +2116,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-baltic-undersea-infrastructure-resilience",
@@ -1691,7 +2127,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-south-china-sea-ayungin-resupply",
@@ -1700,7 +2138,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-moldova-energy-hybrid-resilience",
@@ -1709,7 +2149,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-situation-gerd-nile-water-diplomacy",
@@ -1718,7 +2160,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-mediator-batna-zopa-ripeness-map",
@@ -1727,7 +2171,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-ceasefire-monitoring-verification-matrix",
@@ -1736,7 +2182,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-joint-fact-finding-source-protocol",
@@ -1745,7 +2193,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-principal-ask-payrise-negotiation-prep",
@@ -1754,7 +2204,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 4,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-tool-estimative-confidence-calibration-table",
@@ -1763,7 +2215,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-principals-decision-memo",
@@ -1772,7 +2226,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-negotiation-prep-book",
@@ -1781,7 +2237,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-legal-mandate-compliance-note",
@@ -1790,7 +2248,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-evidence-sourceability-annex",
@@ -1799,7 +2259,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     },
     {
       "starterId": "starter-output-scenario-risk-dashboard-card",
@@ -1808,7 +2270,9 @@
       "sourceCount": 2,
       "excerptCount": 2,
       "compatibleCount": 3,
-      "richProfile": true
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
     }
   ]
 }

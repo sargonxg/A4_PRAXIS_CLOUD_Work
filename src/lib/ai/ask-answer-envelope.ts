@@ -66,6 +66,10 @@ export interface CapsuleGroundingReceipt {
   capsuleId: string;
   capsuleVersion: number;
   catalogVersion?: string;
+  intelligenceProfileId?: string;
+  cogneeProfileId?: string;
+  usedCapsuleIntelligenceProfile: boolean;
+  usedCogneeAdvisoryMemory: boolean;
   sourceExcerptCount: number;
   cogneeStatus: 'enabled' | 'disabled' | 'degraded';
   memoryHitCount: number;
@@ -79,6 +83,8 @@ export interface CapsuleGroundingReceipt {
 
 export interface CapsuleMemoryReceipt {
   cogneeStatus: 'enabled' | 'disabled' | 'degraded';
+  cogneeProfileId?: string;
+  usedCogneeAdvisoryMemory: boolean;
   memoryHitCount: number;
   memoryIds: string[];
   ignoredMemoryIds: string[];
@@ -232,6 +238,8 @@ export type AskDocumentPackOutputTarget =
 export interface ConversationPackProvenance {
   capsuleId?: string | null;
   capsuleVersion?: number | null;
+  intelligenceProfileId?: string | null;
+  cogneeProfileId?: string | null;
   conversationId?: string | null;
   threadId?: string | null;
   runId?: string | null;
@@ -374,7 +382,7 @@ export function buildAskAnswerEnvelope(input: {
 }): AskAnswerEnvelope {
   const claimGrounding = groundClaims(input.answer, input.sourceCards);
   const claimLedgerSummary = summarizeClaimGrounding(claimGrounding);
-  const memoryReceipt = buildCapsuleMemoryReceipt(input.contextEnrichment);
+  const memoryReceipt = buildCapsuleMemoryReceipt(input.contextEnrichment, input.provenance);
   const claimLedger = buildCapsuleClaimLedger(claimGrounding, memoryReceipt);
   const sourceRefreshDocket = buildCapsuleSourceRefreshDocket({
     capsuleId: input.provenance?.capsuleId ?? input.orchestrationReceipt?.capsule.capsuleId ?? null,
@@ -386,6 +394,7 @@ export function buildAskAnswerEnvelope(input: {
     capsuleId: sourceRefreshDocket.capsuleId,
     capsuleVersion: sourceRefreshDocket.capsuleVersion,
     catalogVersion: input.provenance?.catalogVersion ?? undefined,
+    provenance: input.provenance,
     sourceCards: input.sourceCards,
     claimLedger,
     memoryReceipt,
@@ -681,10 +690,13 @@ function continuationActionsFor(intent: AskIntent): AskContinuationAction[] {
   ];
 }
 
-function buildCapsuleMemoryReceipt(enrichment?: ContextEnrichmentReceipt): CapsuleMemoryReceipt {
+function buildCapsuleMemoryReceipt(enrichment?: ContextEnrichmentReceipt, provenance?: ConversationPackProvenance): CapsuleMemoryReceipt {
   const memoryIds = uniqueStrings(enrichment?.memoryItemIds ?? []);
+  const cogneeProfileId = provenance?.cogneeProfileId ?? undefined;
   return {
     cogneeStatus: enrichment?.cognee ?? 'disabled',
+    ...(cogneeProfileId ? { cogneeProfileId } : {}),
+    usedCogneeAdvisoryMemory: Boolean(cogneeProfileId || memoryIds.length || enrichment?.memoryHitCount),
     memoryHitCount: enrichment?.memoryHitCount ?? memoryIds.length,
     memoryIds,
     ignoredMemoryIds: [],
@@ -771,6 +783,7 @@ function buildCapsuleGroundingReceipt(input: {
   capsuleId: string;
   capsuleVersion: number;
   catalogVersion?: string;
+  provenance?: ConversationPackProvenance;
   sourceCards: SourcePreviewCard[];
   claimLedger: CapsuleClaimLedgerItem[];
   memoryReceipt: CapsuleMemoryReceipt;
@@ -789,6 +802,12 @@ function buildCapsuleGroundingReceipt(input: {
     capsuleId: input.capsuleId,
     capsuleVersion: input.capsuleVersion,
     ...(input.catalogVersion ? { catalogVersion: input.catalogVersion } : {}),
+    ...(input.provenance?.intelligenceProfileId ? { intelligenceProfileId: input.provenance.intelligenceProfileId } : {}),
+    ...(input.provenance?.cogneeProfileId || input.memoryReceipt.cogneeProfileId
+      ? { cogneeProfileId: input.provenance?.cogneeProfileId ?? input.memoryReceipt.cogneeProfileId }
+      : {}),
+    usedCapsuleIntelligenceProfile: Boolean(input.provenance?.intelligenceProfileId),
+    usedCogneeAdvisoryMemory: Boolean(input.memoryReceipt.usedCogneeAdvisoryMemory),
     sourceExcerptCount: input.sourceCards.length,
     cogneeStatus: input.memoryReceipt.cogneeStatus,
     memoryHitCount: input.memoryReceipt.memoryHitCount,

@@ -33,6 +33,8 @@ for (const category of ['situation', 'tool', 'output', 'user']) {
 
 const capsuleReports = CAPSULE_STARTER_DEFINITIONS.map((starter) => {
   const profile = starter.richProfile;
+  const intelligenceProfile = starter.intelligenceProfile;
+  const cogneeProfile = starter.cogneeProfile;
   const sourceIds = new Set(starter.sourcePack.map((source) => source.id));
   const labels = starter.inspectionSections.map((section) => section.label);
   const text = [
@@ -48,6 +50,15 @@ const capsuleReports = CAPSULE_STARTER_DEFINITIONS.map((starter) => {
     ...(profile?.decisionPrompts ?? []),
     ...(profile?.nextIdeas ?? []),
     ...(profile?.qualityRubric ?? []),
+    intelligenceProfile?.humanWorkflow.userJob,
+    intelligenceProfile?.humanWorkflow.decisionMoment,
+    intelligenceProfile?.humanWorkflow.workingCadence,
+    intelligenceProfile?.humanWorkflow.stakeholderPressure,
+    intelligenceProfile?.reasoningScaffold.uncertaintyHandling,
+    intelligenceProfile?.generationContract.outputPath,
+    intelligenceProfile?.whyThisImprovesAnswers,
+    cogneeProfile?.whyCogneeHelps,
+    cogneeProfile?.customExtractionPrompt,
   ].filter(Boolean).join(' ').toLowerCase();
 
   check(starter.sourcePack.length >= 2, `${starter.starterId} needs at least two source pack records`);
@@ -62,6 +73,9 @@ const capsuleReports = CAPSULE_STARTER_DEFINITIONS.map((starter) => {
   for (const excerpt of starter.excerpts) check(sourceIds.has(excerpt.sourceId), `${starter.starterId} excerpt references missing source ${excerpt.sourceId}`);
   for (const requiredLabel of ['Purpose', 'Sources', 'Decision Use', 'Improvement Ideas', 'Gaps/Risks', 'Run Recipe', 'Compatible Capsules']) {
     check(labels.includes(requiredLabel), `${starter.starterId} missing inspection section ${requiredLabel}`);
+  }
+  for (const requiredLabel of ['Workflow', 'Reasoning scaffold', 'Cognee memory benefit', 'Ontology/graph seed', 'Generation contract', 'Human review gates', 'Why this improves answers']) {
+    check(labels.includes(requiredLabel), `${starter.starterId} missing intelligence inspection section ${requiredLabel}`);
   }
   if (!profile) {
     failures.push(`${starter.starterId} missing richProfile`);
@@ -80,6 +94,31 @@ const capsuleReports = CAPSULE_STARTER_DEFINITIONS.map((starter) => {
     check(profile.agentInstructions.includes(starter.label), `${starter.starterId} rich agentInstructions must name the capsule`);
     for (const fragment of genericFragments) check(!text.includes(fragment), `${starter.starterId} contains generic fragment: ${fragment}`);
   }
+  if (!intelligenceProfile) {
+    failures.push(`${starter.starterId} missing intelligenceProfile`);
+  } else {
+    check(intelligenceProfile.profileId === `${starter.starterId}-intelligence-v1`, `${starter.starterId} intelligenceProfile id mismatch`);
+    check(intelligenceProfile.humanWorkflow.decisionMoment.length > 50, `${starter.starterId} intelligence decision moment too short`);
+    check(intelligenceProfile.humanWorkflow.redLines.length >= 3, `${starter.starterId} intelligence red lines incomplete`);
+    check(intelligenceProfile.reasoningScaffold.steps.length >= 4, `${starter.starterId} intelligence reasoning steps incomplete`);
+    check(intelligenceProfile.reasoningScaffold.disconfirmingChecks.length >= 2, `${starter.starterId} intelligence disconfirming checks incomplete`);
+    check(intelligenceProfile.generationContract.goodAnswerIncludes.length >= 4, `${starter.starterId} intelligence generation contract incomplete`);
+    check(intelligenceProfile.generationContract.mustNotClaim.join(' ').match(/canonical|Cognee|legal|medical|financial|unsupported|review/i) !== null, `${starter.starterId} intelligence forbidden-claim rules incomplete`);
+    check(intelligenceProfile.usefulFollowUps.length >= 5 && intelligenceProfile.usefulFollowUps.length <= 8, `${starter.starterId} useful follow-ups must be 5-8`);
+  }
+  if (!cogneeProfile) {
+    failures.push(`${starter.starterId} missing cogneeProfile`);
+  } else {
+    check(cogneeProfile.profileId === `${starter.starterId}-cognee-v1`, `${starter.starterId} cogneeProfile id mismatch`);
+    check(cogneeProfile.datasetScope === 'owner-capsule', `${starter.starterId} cognee dataset scope must be owner-capsule`);
+    check(cogneeProfile.advisoryOnly === true, `${starter.starterId} cognee profile must be advisory`);
+    check(cogneeProfile.canonicalTruth === 'Firestore ContextCapsules', `${starter.starterId} cognee canonical truth must remain Firestore`);
+    check(cogneeProfile.seedDocuments.length >= 5, `${starter.starterId} cognee seed pack incomplete`);
+    check(cogneeProfile.seedDocuments.every((document) => document.advisoryOnly), `${starter.starterId} cognee seed docs must be advisory`);
+    check(cogneeProfile.expectedNodeCandidates.length >= 5, `${starter.starterId} cognee node candidates incomplete`);
+    check(cogneeProfile.expectedEdgeCandidates.length >= 4, `${starter.starterId} cognee edge candidates incomplete`);
+    check(cogneeProfile.reviewCardPromotionRules.join(' ').match(/review-card|human|canonical|promotion/i) !== null, `${starter.starterId} cognee review-card rules incomplete`);
+  }
 
   return {
     starterId: starter.starterId,
@@ -89,6 +128,8 @@ const capsuleReports = CAPSULE_STARTER_DEFINITIONS.map((starter) => {
     excerptCount: starter.excerpts.length,
     compatibleCount: starter.combinesWellWith.length,
     richProfile: Boolean(profile),
+    intelligenceProfile: Boolean(intelligenceProfile),
+    cogneeProfile: Boolean(cogneeProfile),
   };
 });
 
@@ -121,7 +162,7 @@ writeFileSync(mdPath, [
   '',
   '## Coverage',
   '',
-  ...capsuleReports.map((report) => `- ${report.starterId}: ${report.category}, ${report.domain}, sources ${report.sourceCount}, excerpts ${report.excerptCount}, compatible ${report.compatibleCount}, richProfile ${report.richProfile ? 'yes' : 'no'}`),
+  ...capsuleReports.map((report) => `- ${report.starterId}: ${report.category}, ${report.domain}, sources ${report.sourceCount}, excerpts ${report.excerptCount}, compatible ${report.compatibleCount}, richProfile ${report.richProfile ? 'yes' : 'no'}, intelligenceProfile ${report.intelligenceProfile ? 'yes' : 'no'}, cogneeProfile ${report.cogneeProfile ? 'yes' : 'no'}`),
   '',
 ].join('\n'));
 

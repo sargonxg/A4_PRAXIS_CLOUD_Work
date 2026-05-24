@@ -745,11 +745,16 @@ describe('capsule service', () => {
     expect(capsule?.community.tags).toEqual(expect.arrayContaining(['user-added-tag', 'type:situation', 'domain:diplomacy']));
     expect(capsule?.starterSnapshot?.catalogVersion).toBe(CAPSULE_STARTER_CATALOG_VERSION);
     expect(capsule?.starterSnapshot?.richProfile?.decisionPrompts.length).toBeGreaterThanOrEqual(3);
+    expect(capsule?.starterSnapshot?.intelligenceProfile?.humanWorkflow.decisionMoment).toMatch(/decision|brief|review|workflow/i);
+    expect(capsule?.starterSnapshot?.cogneeProfile?.advisoryOnly).toBe(true);
+    expect(capsule?.starterSnapshot?.cogneeProfile?.seedDocuments.every((document) => document.advisoryOnly)).toBe(true);
     expect(capsule?.version).toBe(8);
     expect(db.data.get(`${path}/evaluations/starter-readiness`)?.evidenceRequirements).toEqual(expect.arrayContaining([
       expect.stringContaining('Attach at least one current source'),
     ]));
     expect(db.data.get(`${path}/notes/starter-guidance`)?.body).toEqual(expect.stringContaining('Best next action:'));
+    expect(db.data.get(`${path}/advisoryMemoryHits/starter-cognee-seed-pack`)?.advisoryOnly).toBe(true);
+    expect(db.data.get(`${path}/advisoryMemoryHits/starter-cognee-seed-pack`)?.promotionRequired).toBe('review-card');
 
     await seedStarterCapsules('u1', deps(db));
     const afterSecondRun = await getCapsule('u1', 'starter-situation-diplomatic-options', deps(db));
@@ -778,6 +783,8 @@ describe('capsule service', () => {
         ...((existing.starterSnapshot ?? {}) as Record<string, unknown>),
         catalogVersion: '2026-05-19-capsule-depth-v4',
         deviceProfile: undefined,
+        intelligenceProfile: undefined,
+        cogneeProfile: undefined,
       },
     });
 
@@ -789,6 +796,8 @@ describe('capsule service', () => {
     expect(capsule?.trust.label).toBe('User review pending');
     expect(capsule?.starterSnapshot?.deviceProfile?.methodSteps.length).toBeGreaterThanOrEqual(4);
     expect(capsule?.starterSnapshot?.deviceProfile?.humanReviewGate).toMatch(/review|approval|human/i);
+    expect(capsule?.starterSnapshot?.intelligenceProfile?.reasoningScaffold.steps.length).toBeGreaterThanOrEqual(4);
+    expect(capsule?.starterSnapshot?.cogneeProfile?.datasetScope).toBe('owner-capsule');
     expect(capsule?.version).toBe(5);
   });
 

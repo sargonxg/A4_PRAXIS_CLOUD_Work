@@ -13,6 +13,7 @@ import {
   CAPSULE_CONNECTOR_IDEAS,
   CAPSULE_OUTPUT_PRODUCTS,
   CAPSULE_STARTER_DEFINITIONS,
+  CAPSULE_WOW_DEMO_STARTER_IDS,
   CAPSULE_TAXONOMY_AXES,
   HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY,
   HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS,
@@ -20,6 +21,7 @@ import {
   POLICY_PATH_PROFILES,
   POLICY_TEAM_CATEGORIES,
   buildCapsuleTaxonomyStats,
+  buildCapsuleCogneeSeedPack,
   buildCapsuleStarterPromptBlock,
   capsuleAttachmentCounts,
   capsuleSlotReadiness,
@@ -447,6 +449,115 @@ describe('context capsule product contract', () => {
       expect(promptBlock).toContain('cognee_overlay_mode:');
       expect(promptBlock).toContain('ontology_promotion_rules:');
     }
+  });
+
+  it('adds intelligence and advisory Cognee profiles to every starter capsule', () => {
+    const kindByCategory = {
+      situation: 'situation',
+      tool: 'thinking-device',
+      user: 'user-workflow',
+      output: 'output-artifact',
+    } as const;
+
+    for (const starter of CAPSULE_STARTER_DEFINITIONS) {
+      const profile = starter.intelligenceProfile;
+      const cognee = starter.cogneeProfile;
+
+      expect(profile.profileId, `${starter.starterId} intelligence profile id`).toBe(`${starter.starterId}-intelligence-v1`);
+      expect(profile.capsuleKind, `${starter.starterId} intelligence kind`).toBe(kindByCategory[starter.category]);
+      expect(profile.humanWorkflow.userJob, `${starter.starterId} human workflow job`).toMatch(/human|analyst|lead|owner|officer|staff|practitioner|manager|counsel|director|team/i);
+      expect(profile.humanWorkflow.decisionMoment.length, `${starter.starterId} decision moment`).toBeGreaterThan(50);
+      expect(profile.humanWorkflow.workingCadence.length, `${starter.starterId} working cadence`).toBeGreaterThan(35);
+      expect(profile.humanWorkflow.stakeholderPressure.length, `${starter.starterId} stakeholder pressure`).toBeGreaterThan(35);
+      expect(profile.humanWorkflow.redLines.length, `${starter.starterId} red lines`).toBeGreaterThanOrEqual(3);
+      expect(profile.reasoningScaffold.steps.length, `${starter.starterId} reasoning steps`).toBeGreaterThanOrEqual(4);
+      expect(profile.reasoningScaffold.disconfirmingChecks.length, `${starter.starterId} disconfirming checks`).toBeGreaterThanOrEqual(2);
+      expect(profile.reasoningScaffold.failureModes.length, `${starter.starterId} failure modes`).toBeGreaterThanOrEqual(2);
+      expect(profile.reasoningScaffold.outputGrammar.length, `${starter.starterId} output grammar`).toBeGreaterThanOrEqual(3);
+      expect(profile.generationContract.goodAnswerIncludes.length, `${starter.starterId} good answer includes`).toBeGreaterThanOrEqual(4);
+      expect(profile.generationContract.mustNotClaim.join(' '), `${starter.starterId} must not claim`).toMatch(/canonical|Cognee|legal|medical|financial|unsupported|review/i);
+      expect(profile.generationContract.reviewGates.join(' '), `${starter.starterId} review gates`).toMatch(/human|review|approval|source/i);
+      expect(profile.usefulFollowUps.length, `${starter.starterId} useful followups`).toBeGreaterThanOrEqual(5);
+      expect(profile.usefulFollowUps.length, `${starter.starterId} useful followups cap`).toBeLessThanOrEqual(8);
+      expect(profile.whyThisImprovesAnswers, `${starter.starterId} answer improvement explanation`).toMatch(/distinguish|separate|source|review|memory|ontology|workflow/i);
+
+      expect(cognee.profileId, `${starter.starterId} cognee profile id`).toBe(`${starter.starterId}-cognee-v1`);
+      expect(cognee.datasetScope, `${starter.starterId} cognee dataset scope`).toBe('owner-capsule');
+      expect(cognee.advisoryOnly, `${starter.starterId} cognee advisory`).toBe(true);
+      expect(cognee.canonicalTruth, `${starter.starterId} canonical truth`).toBe('Firestore ContextCapsules');
+      expect(cognee.whyCogneeHelps, `${starter.starterId} cognee benefit`).toMatch(/semantic recall|graph-shaped memory|ontology-aware|source reuse|cross-turn/i);
+      expect(cognee.searchModes, `${starter.starterId} search modes`).toEqual(expect.arrayContaining(['CHUNKS', 'GRAPH_COMPLETION']));
+      expect(cognee.seedDocuments.map((document) => document.kind), `${starter.starterId} seed kinds`).toEqual(expect.arrayContaining([
+        'workflow-brief',
+        'ontology-node-guide',
+        'source-lane-guide',
+        'forbidden-claim-guide',
+        'output-rubric',
+      ]));
+      expect(cognee.seedDocuments.every((document) => document.advisoryOnly), `${starter.starterId} seed advisory`).toBe(true);
+      expect(cognee.customExtractionPrompt, `${starter.starterId} extraction prompt`).toMatch(/reviewable|advisory|canonical|owner-capsule/i);
+      expect(cognee.expectedNodeCandidates.length, `${starter.starterId} node candidates`).toBeGreaterThanOrEqual(5);
+      expect(cognee.expectedEdgeCandidates.length, `${starter.starterId} edge candidates`).toBeGreaterThanOrEqual(4);
+      expect(cognee.confidenceCap, `${starter.starterId} confidence cap`).toBe(0.6);
+      expect(cognee.reviewCardPromotionRules.join(' '), `${starter.starterId} review-card rules`).toMatch(/review-card|human|canonical|promotion/i);
+      expect(cognee.liveAcceptance.enabledByEnv, `${starter.starterId} live acceptance env`).toBe('COGNEE_ENABLED=true');
+      expect(cognee.liveAcceptance.backendUrlEnv, `${starter.starterId} live acceptance backend`).toBe('COGNEE_BACKEND_URL');
+    }
+  });
+
+  it('curates intelligence profiles for the five wow-demo current-affairs capsules', () => {
+    const expectations: Record<string, RegExp> = {
+      'starter-situation-eu-ai-act-2026-implementation-simplification': /provider|deployer|high-risk|GPAI|AI Office|legal-review/i,
+      'starter-situation-us-fy2027-budget-sequestration-watch': /proposal|order|appropriations|budget account|agency exposure/i,
+      'starter-situation-h5n1-dairy-food-safety-2026': /herd surveillance|food safety|raw milk|worker exposure|state status/i,
+      'starter-situation-data-center-grid-load-interconnection': /load growth|interconnection|transmission planning|cost allocation|community/i,
+      'starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026': /ceasefire|reconstruction|EU|IMF|war-economy|reform/i,
+    };
+
+    for (const starterId of CAPSULE_WOW_DEMO_STARTER_IDS) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter, `${starterId} missing`).toBeTruthy();
+      expect(starter?.intelligenceProfile.curated, `${starterId} curated intelligence`).toBe(true);
+      expect(starter?.cogneeProfile.curated, `${starterId} curated cognee`).toBe(true);
+      const text = [
+        starter?.intelligenceProfile.humanWorkflow.decisionMoment,
+        starter?.intelligenceProfile.reasoningScaffold.steps.join(' '),
+        starter?.intelligenceProfile.contextMap.rules.join(' '),
+        starter?.intelligenceProfile.generationContract.mustNotClaim.join(' '),
+        starter?.cogneeProfile.customExtractionPrompt,
+        starter?.cogneeProfile.expectedNodeCandidates.join(' '),
+      ].join(' ');
+      expect(text, `${starterId} curated profile text`).toMatch(expectations[starterId]);
+      expect(starter?.sourcePack.map((source) => source.url).join(' '), `${starterId} official source lane`).toMatch(/whitehouse|omb|digital-strategy|ec\.europa|aphis|fda|cdc|energy\.gov|ferc|worldbank|imf/i);
+    }
+  });
+
+  it('builds disabled-safe Cognee seed packs without canonical writes', () => {
+    const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === 'starter-situation-eu-ai-act-2026-implementation-simplification')!;
+    const seedPack = buildCapsuleCogneeSeedPack(starter);
+
+    expect(seedPack).toMatchObject({
+      starterId: starter.starterId,
+      datasetScope: 'owner-capsule',
+      advisoryOnly: true,
+      canonicalTruth: 'Firestore ContextCapsules',
+      reviewCardProposal: {
+        sourceType: 'cognee',
+        target: 'advisoryMemory',
+        state: 'proposed',
+      },
+    });
+    expect(seedPack.documents.length).toBeGreaterThanOrEqual(5);
+    expect(seedPack.documents.every((document) => document.metadata.advisoryOnly)).toBe(true);
+    expect(seedPack.cognifyPlan).toMatchObject({
+      disabledSafe: true,
+      liveGate: {
+        enabledByEnv: 'COGNEE_ENABLED=true',
+        backendUrlEnv: 'COGNEE_BACKEND_URL',
+      },
+    });
+    expect(seedPack.cognifyPlan.operation).toMatch(/add.*cognify.*search/i);
+    expect(seedPack.cognifyPlan.mustNotDo.join(' ')).toMatch(/canonical|graph state|ontology file/i);
   });
 
   it('upgrades existing starter capsules with real human expert context-creation posture', () => {

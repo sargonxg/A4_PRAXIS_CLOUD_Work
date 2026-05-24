@@ -3655,6 +3655,17 @@ export function TaskletPraxisWorkbench({
               </div>
             </div>
 
+            {!showWorkbenchNavigation ? (
+              <div className="w-full max-w-5xl" data-testid="public-created-work-rail">
+                <CreatedWorkRail
+                  items={createdWork}
+                  loading={createdWorkLoading}
+                  onOpen={openCreatedWorkItem}
+                  onAction={actOnCreatedWorkItem}
+                />
+              </div>
+            ) : null}
+
             {chatMessages.length ? (
               <>
               <section className="praxis-workbench-panel mt-5 w-full max-w-5xl space-y-3 p-4" data-testid="praxis-chat-thread">
@@ -4439,13 +4450,26 @@ function ConversationGroundingReceiptPanel({ envelope, onAction }: { envelope?: 
         </div>
         <div className="rounded-md border border-slate-200 bg-slate-50 p-2">
           <p className="font-semibold text-slate-900">Cognee</p>
-          <p className="mt-1 leading-5">{memory?.cogneeStatus ?? receipt.cogneeStatus}; {receipt.memoryHitCount} advisory memory hit{receipt.memoryHitCount === 1 ? '' : 's'}</p>
+          <p className="mt-1 leading-5">
+            {memory?.cogneeStatus ?? receipt.cogneeStatus}; {receipt.memoryHitCount} advisory memory hit{receipt.memoryHitCount === 1 ? '' : 's'}.
+            {' '}
+            {receipt.usedCogneeAdvisoryMemory ? 'Cognee advisory memory profile active.' : 'No Cognee advisory memory used.'}
+          </p>
         </div>
         <div className="rounded-md border border-slate-200 bg-slate-50 p-2">
           <p className="font-semibold text-slate-900">Review gate</p>
-          <p className="mt-1 leading-5">{receipt.humanReviewRequired ? 'Human review required' : 'Standard review'}</p>
+          <p className="mt-1 leading-5">
+            {receipt.humanReviewRequired ? 'Human review required' : 'Standard review'}.
+            {' '}
+            {receipt.usedCapsuleIntelligenceProfile ? 'Capsule intelligence profile used.' : 'No starter intelligence profile recorded.'}
+          </p>
         </div>
       </div>
+      {(receipt.intelligenceProfileId || receipt.cogneeProfileId) ? (
+        <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 font-mono text-[10px] leading-5 text-slate-500">
+          {receipt.intelligenceProfileId ? `intelligenceProfile ${receipt.intelligenceProfileId}` : 'intelligenceProfile not recorded'}; {receipt.cogneeProfileId ? `cogneeProfile ${receipt.cogneeProfileId}` : 'cogneeProfile not recorded'}
+        </p>
+      ) : null}
       {claimLedger.length ? (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {claimLedger.slice(0, 8).map((claim) => (
@@ -9150,6 +9174,8 @@ function CapsuleInspectorSheet({
   const starterGuidance = meta?.starterDefinition?.aiUseGuidance ?? null;
   const starterReadiness = meta?.starterDefinition?.readinessStars ?? null;
   const richProfile = meta?.starterDefinition?.richProfile ?? null;
+  const intelligenceProfile = meta?.starterDefinition?.intelligenceProfile ?? null;
+  const cogneeProfile = meta?.starterDefinition?.cogneeProfile ?? null;
   const deviceProfile = meta?.starterDefinition?.deviceProfile ?? null;
   const humanReview = meta?.starterDefinition?.humanReview ?? null;
   const ontologyOverlay = meta?.starterDefinition?.ontologyOverlay ?? null;
@@ -9294,6 +9320,8 @@ function CapsuleInspectorSheet({
               <InspectorRef label="Agent Read" value={`${meta?.starterDefinition?.agentWorkflow.preferredAgentId ?? 'default-agent'} read contract`} />
               <InspectorRef label="Advisory memory" value={`${enrichmentReceipt.memoryHitCount} advisory memory hit(s)`} />
               <InspectorRef label="Cognee mode" value={ontologyOverlay ? `${ontologyOverlay.cognee.mode} / ${ontologyOverlay.cognee.searchModes.join(', ')}` : `advisory memory ${enrichmentReceipt.cognee}`} />
+              <InspectorRef label="Intelligence profile" value={intelligenceProfile ? `${intelligenceProfile.capsuleKind} / ${intelligenceProfile.profileId}` : null} />
+              <InspectorRef label="Cognee seed pack" value={cogneeProfile ? `${cogneeProfile.datasetScope} / ${cogneeProfile.seedDocuments.length} advisory seed docs` : null} />
               <InspectorRef label="Graph proposal" value={capsule.coreRefs.graphCoreId ? `approved graph ${capsule.coreRefs.graphCoreId}` : ontologyOverlay ? ontologyOverlay.graphSeed.proposalLabel : '1 review-gated graph proposal'} />
               <InspectorRef label="Review card" value={audit ? '1 sourceability review card' : 'review card pending'} />
             </div>
@@ -9423,6 +9451,41 @@ function CapsuleInspectorSheet({
             <InspectorTextSection label="Source posture" detail={sourcePosture} />
             <InspectorTextSection label="Reasoning style" detail={reasoningStyle} />
             <InspectorTextSection label="Sources" detail={richProfile.sourceIndications.join(' ')} />
+            {intelligenceProfile ? <InspectorTextSection label="Workflow" detail={[
+              intelligenceProfile.humanWorkflow.userJob,
+              intelligenceProfile.humanWorkflow.decisionMoment,
+              intelligenceProfile.humanWorkflow.workingCadence,
+              intelligenceProfile.humanWorkflow.stakeholderPressure,
+              `Red lines: ${intelligenceProfile.humanWorkflow.redLines.join(' ')}`,
+            ].join(' ')} /> : null}
+            {intelligenceProfile ? <InspectorTextSection label="Reasoning scaffold" detail={[
+              `Steps: ${intelligenceProfile.reasoningScaffold.steps.join(' ')}`,
+              `Checks: ${intelligenceProfile.reasoningScaffold.disconfirmingChecks.join(' ')}`,
+              `Uncertainty: ${intelligenceProfile.reasoningScaffold.uncertaintyHandling}`,
+              `Failure modes: ${intelligenceProfile.reasoningScaffold.failureModes.join(' ')}`,
+              `Output grammar: ${intelligenceProfile.reasoningScaffold.outputGrammar.join(' ')}`,
+            ].join(' ')} /> : null}
+            {cogneeProfile ? <InspectorTextSection label="Cognee memory benefit" detail={[
+              cogneeProfile.whyCogneeHelps,
+              `Dataset scope: ${cogneeProfile.datasetScope}.`,
+              `Search modes: ${cogneeProfile.searchModes.join(', ')}.`,
+              `Seed docs: ${cogneeProfile.seedDocuments.map((document) => document.kind).join(', ')}.`,
+              `Canonical truth: ${cogneeProfile.canonicalTruth}.`,
+            ].join(' ')} /> : null}
+            {cogneeProfile ? <InspectorTextSection label="Ontology/graph seed" detail={[
+              `Base ontology: ${cogneeProfile.ontologyHints.baseOntologyIds.join(', ')}.`,
+              `Work ontology: ${cogneeProfile.ontologyHints.workOntologyId}.`,
+              `Node hints: ${cogneeProfile.ontologyHints.nodeHints.slice(0, 10).join(', ')}.`,
+              `Edge hints: ${cogneeProfile.ontologyHints.edgeHints.slice(0, 8).join(', ')}.`,
+              `Cognee prompt hint: ${cogneeProfile.customExtractionPrompt}`,
+            ].join(' ')} /> : null}
+            {intelligenceProfile ? <InspectorTextSection label="Generation contract" detail={[
+              `Good answer: ${intelligenceProfile.generationContract.goodAnswerIncludes.join(' ')}`,
+              `Must not claim: ${intelligenceProfile.generationContract.mustNotClaim.join(' ')}`,
+              `Output path: ${intelligenceProfile.generationContract.outputPath}`,
+            ].join(' ')} /> : null}
+            {intelligenceProfile ? <InspectorTextSection label="Human review gates" detail={intelligenceProfile.generationContract.reviewGates.join(' ')} /> : null}
+            {intelligenceProfile ? <InspectorTextSection label="Why this improves answers" detail={intelligenceProfile.whyThisImprovesAnswers} /> : null}
             <InspectorTextSection label="Decision Use" detail={[...richProfile.whenToUse, ...richProfile.decisionPrompts].slice(0, 5).join(' ')} />
             <InspectorTextSection label="Improvement Ideas" detail={[...richProfile.improves, ...richProfile.nextIdeas].slice(0, 6).join(' ')} />
             <InspectorTextSection label="Gaps/Risks" detail={[...richProfile.whenNotToUse, ...richProfile.riskCaveats, ...richProfile.evidenceRequirements].slice(0, 6).join(' ')} />

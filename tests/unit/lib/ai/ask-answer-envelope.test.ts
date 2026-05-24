@@ -173,6 +173,8 @@ describe('ask answer envelope', () => {
         capsuleId: 'starter-situation-eu-ai-act-2026-implementation-simplification',
         capsuleVersion: 12,
         catalogVersion: '2026-05-23-human-gated-workflows-v12',
+        intelligenceProfileId: 'starter-situation-eu-ai-act-2026-implementation-simplification-intelligence-v1',
+        cogneeProfileId: 'starter-situation-eu-ai-act-2026-implementation-simplification-cognee-v1',
       },
       contextEnrichment: {
         firestore: 'ready',
@@ -193,6 +195,10 @@ describe('ask answer envelope', () => {
       sourceExcerptCount: sourceCards.length,
       cogneeStatus: 'enabled',
       memoryHitCount: 1,
+      intelligenceProfileId: 'starter-situation-eu-ai-act-2026-implementation-simplification-intelligence-v1',
+      cogneeProfileId: 'starter-situation-eu-ai-act-2026-implementation-simplification-cognee-v1',
+      usedCapsuleIntelligenceProfile: true,
+      usedCogneeAdvisoryMemory: true,
       humanReviewRequired: true,
     });
     expect(envelope.claimLedger.map((claim) => claim.status)).toEqual(expect.arrayContaining([
@@ -211,6 +217,8 @@ describe('ask answer envelope', () => {
       memoryHitCount: 1,
       advisoryOnly: true,
       promotionRequired: 'review-card',
+      cogneeProfileId: 'starter-situation-eu-ai-act-2026-implementation-simplification-cognee-v1',
+      usedCogneeAdvisoryMemory: true,
     });
     expect(envelope.sourceRefreshDocket).toMatchObject({
       capsuleId: 'starter-situation-eu-ai-act-2026-implementation-simplification',

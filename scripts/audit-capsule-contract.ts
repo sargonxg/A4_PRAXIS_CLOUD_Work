@@ -103,6 +103,46 @@ for (const token of [
 ]) {
   if (!capsuleService.includes(token)) failures.push(`capsule service must include ${token}`);
 }
+for (const token of [
+  'intelligenceProfile',
+  'cogneeProfile',
+  "advisoryMemoryHits').doc('starter-cognee-seed-pack')",
+  'buildCapsuleCogneeSeedPack',
+]) {
+  if (!capsuleService.includes(token)) failures.push(`capsule service must preserve starter intelligence/Cognee metadata: ${token}`);
+}
+
+const contextCapsules = read('src/lib/product/context-capsules.ts');
+for (const token of [
+  'CapsuleIntelligenceProfile',
+  'CapsuleCogneeProfile',
+  'buildCapsuleCogneeSeedPack',
+  'intelligence_profile_id',
+  'human_workflow_decision_moment',
+  'reasoning_scaffold_steps',
+  'generation_contract_review_gates',
+  'cognee_profile_id',
+  'cognee_seed_documents',
+  'cognee_review_card_promotion_rules',
+]) {
+  if (!contextCapsules.includes(token)) failures.push(`starter prompt/profile contract missing ${token}`);
+}
+
+const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
+for (const token of [
+  'Workflow',
+  'Reasoning scaffold',
+  'Cognee memory benefit',
+  'Ontology/graph seed',
+  'Generation contract',
+  'Human review gates',
+  'Why this improves answers',
+  'usedCapsuleIntelligenceProfile',
+  'usedCogneeAdvisoryMemory',
+]) {
+  if (!workbench.includes(token)) failures.push(`capsule inspector/Ask receipt missing ${token}`);
+}
+if (workbench.includes('/app/ontology')) failures.push('capsule intelligence work must not add /app/ontology as a top-level surface');
 
 const readReceipt = read('src/lib/agent-runtime/capsule-read-receipt.ts');
 for (const token of ['AgentReadContract', 'buildAgentReadContractFromReceipt', 'advisoryLabels', 'humanGates', 'stopConditions', 'outputRestrictions']) {

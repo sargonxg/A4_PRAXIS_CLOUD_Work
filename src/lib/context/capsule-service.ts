@@ -14,6 +14,8 @@ import {
   CAPSULE_STARTER_CATALOG_VERSION,
   CAPSULE_STARTER_DEFINITIONS,
   CAPSULE_WOW_DEMO_STARTER_IDS,
+  buildCapsuleCogneeSeedPack,
+  getCapsuleStarterDefinition,
   normalizeCapsuleTaxonomyTags,
   resolveCapsuleTaxonomy,
   type CapsuleStarterDefinition,
@@ -1550,6 +1552,8 @@ function buildStarterSnapshot(starterDefinition: CapsuleStarterDefinition): Caps
       nextIdeas: [...starterDefinition.richProfile.nextIdeas],
       qualityRubric: [...starterDefinition.richProfile.qualityRubric],
     },
+    intelligenceProfile: cloneSerializable(starterDefinition.intelligenceProfile),
+    cogneeProfile: cloneSerializable(starterDefinition.cogneeProfile),
     ...(starterDefinition.ontologyOverlay ? {
       ontologyOverlay: {
         ...starterDefinition.ontologyOverlay,
@@ -1706,6 +1710,17 @@ async function writeStarterDetailRecords(
     catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
     updatedAt: timestamp,
   }, { merge: true });
+  const cogneeSeedPack = buildCapsuleCogneeSeedPack(starterDefinition);
+  batch.set(ref.collection('advisoryMemoryHits').doc('starter-cognee-seed-pack'), {
+    memoryHitId: 'starter-cognee-seed-pack',
+    capsuleId,
+    source: 'starter-catalog',
+    sourceType: 'cognee',
+    promotionRequired: 'review-card',
+    ...cogneeSeedPack,
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+    updatedAt: timestamp,
+  }, { merge: true });
   batch.set(ref.collection('notes').doc('starter-guidance'), {
     noteId: 'starter-guidance',
     capsuleId,
@@ -1807,6 +1822,8 @@ function starterSnapshotMissingHints(snapshot: CapsuleStarterSnapshot): string[]
   if (!snapshot.sourcePack.length) missing.push('sourcePack');
   if (!snapshot.suggestedQuestions.length) missing.push('suggestedQuestions');
   if (!snapshot.richProfile?.evidenceRequirements.length) missing.push('richProfile');
+  if (!snapshot.intelligenceProfile?.humanWorkflow?.decisionMoment) missing.push('intelligenceProfile');
+  if (!snapshot.cogneeProfile?.seedDocuments?.length) missing.push('cogneeProfile');
   return missing;
 }
 
@@ -2344,6 +2361,7 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
   const domain = stringOrNull(value.domain);
   const label = stringOrNull(value.label);
   if (!starterId || !category || !domain || !label) return null;
+  const catalogStarter = getCapsuleStarterDefinition(starterId);
   const sourcePack = Array.isArray(value.sourcePack)
     ? value.sourcePack.filter(isRecord).map((source) => {
       const sourceType: CapsuleStarterSnapshot['sourcePack'][number]['sourceType'] =
@@ -2453,6 +2471,17 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     ]),
   } satisfies NonNullable<CapsuleStarterSnapshot['deviceProfile']> : null;
   const ontologyOverlay = ontologyOverlayRecord ? normalizeStarterOntologyOverlay(ontologyOverlayRecord, starterId, label) : null;
+  const intelligenceProfile = isRecord(value.intelligenceProfile)
+    ? cloneSerializable(value.intelligenceProfile as unknown as CapsuleStarterSnapshot['intelligenceProfile'])
+    : catalogStarter?.intelligenceProfile
+      ? cloneSerializable(catalogStarter.intelligenceProfile)
+      : null;
+  const cogneeProfile = isRecord(value.cogneeProfile)
+    ? cloneSerializable(value.cogneeProfile as unknown as CapsuleStarterSnapshot['cogneeProfile'])
+    : catalogStarter?.cogneeProfile
+      ? cloneSerializable(catalogStarter.cogneeProfile)
+      : null;
+  if (!intelligenceProfile || !cogneeProfile) return null;
   return {
     catalogVersion: stringOrNull(value.catalogVersion) ?? 'unknown',
     starterId,
@@ -2477,6 +2506,8 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     },
     aiUseGuidance: longStringOrNull(value.aiUseGuidance) ?? '',
     richProfile,
+    intelligenceProfile,
+    cogneeProfile,
     ...(ontologyOverlay ? { ontologyOverlay } : {}),
     ...(deviceProfile ? { deviceProfile } : {}),
     ...(humanReviewRecord ? {
@@ -2604,6 +2635,10 @@ function longStringOrNull(value: unknown): string | null {
 
 function nonnegativeInt(value: unknown): number | null {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
+}
+
+function cloneSerializable<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

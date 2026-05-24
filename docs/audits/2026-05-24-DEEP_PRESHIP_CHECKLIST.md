@@ -2,7 +2,7 @@
 
 Date: 2026-05-24
 
-Summary: 140 PASS, 1 WARN, 0 BLOCKED across 141 static pre-ship checks.
+Summary: 139 PASS, 2 WARN, 0 BLOCKED across 141 static pre-ship checks.
 
 This audit is deliberately conservative: live staging checks, Cloud SQL restore tests, load tests, browser sessions, and Vertex billing comparisons remain blocked until run against staging/production credentials and datasets.
 
@@ -187,7 +187,7 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 |---|---|---|---|
 | PASS | Allowed model gemini-3.5-flash present | gemini-3.5-flash appears in source. | Confirm model routing matrix if this is intentional. |
 | PASS | Allowed model gemini-3.1-pro-preview present | gemini-3.1-pro-preview appears in source. | Confirm model routing matrix if this is intentional. |
-| PASS | No banned direct model marker gpt- | gpt- marker not found. | None. |
+| WARN | No banned direct model marker gpt- | gpt- marker found; run audit:model-strings for allowlist context. | Move direct model strings into the approved provider matrix or update the allowlist audit. |
 | PASS | No banned direct model marker claude- | claude- marker not found. | None. |
 | PASS | No banned direct model marker gemini-1. | gemini-1. marker not found. | None. |
 | WARN | No banned direct model marker gemini-2. | gemini-2. marker found; run audit:model-strings for allowlist context. | Move direct model strings into the approved provider matrix or update the allowlist audit. |
