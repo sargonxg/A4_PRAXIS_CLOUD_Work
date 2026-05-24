@@ -402,7 +402,6 @@ type ContextChainBlockLaneModel = {
   action: string;
   addRole: CapsuleRole;
   capsules: ActiveCapsuleChip[];
-  readiness: Array<{ label: 'Source posture' | 'Review gate' | 'Output readiness' | 'Agent/tool route'; value: string }>;
 };
 
 const GUIDE_CHAT_STORAGE_KEY = 'praxis-guide-chat-state:v1';
@@ -982,12 +981,7 @@ export function TaskletPraxisWorkbench({
   const referenceCapsules = [...contextBlocks.sources, ...contextBlocks.thinkingDevices];
   const archivedCapsules = userCapsules.filter((capsule) => capsule.archivedAt).slice(0, 4);
   const openChainSlots = capsuleChainSlots.filter((slot) => contextBlocks[slot.id].length === 0);
-  const contextChainBlockLanes = buildContextChainBlockLanes({
-    contextBlocks,
-    contextHealth,
-    sourceCount: activeCapsuleStack.filter((capsule) => capsule.role === 'reference').length,
-    selectedAgent,
-  });
+  const contextChainBlockLanes = buildContextChainBlockLanes({ contextBlocks });
   const activeCapsuleForStrip = selectedCapsule ?? activeCapsuleStack[0] ?? null;
   const canUseAgenticSearchPremium = isPaidSubscription(user?.subscription);
   const canUseResearchGraphExtra = isAuthenticated;
@@ -4855,19 +4849,7 @@ function ContextChainBlockLane({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-oxide)]">{block.label}</p>
-          <p className="mt-1 text-[11px] leading-4 text-slate-500">Primary + references; add one or more capsules here.</p>
         </div>
-        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
-          {block.capsules.length}
-        </span>
-      </div>
-      <div className="mt-3 grid gap-1.5 text-[10px] font-semibold text-slate-600">
-        {block.readiness.map((item) => (
-          <span key={item.label} className="min-w-0 rounded-md border border-slate-200 bg-slate-50 px-2 py-1">
-            <span className="text-slate-400">{item.label}: </span>
-            <span className="text-slate-700">{item.value}</span>
-          </span>
-        ))}
       </div>
       <div className="mt-3 grid gap-2">
         {block.capsules.map((capsule, index) => (
@@ -5557,20 +5539,7 @@ function selectedCoreIdsFromContextStack(activeContextStack: ActiveContextStackP
 
 function buildContextChainBlockLanes(input: {
   contextBlocks: ActiveContextBlocksPayload;
-  contextHealth: ContextHealth;
-  sourceCount: number;
-  selectedAgent: PolicyAgentDefinition;
 }): ContextChainBlockLaneModel[] {
-  const sourcePosture = input.sourceCount ? 'source-backed' : 'needs sources';
-  const reviewGate = input.contextHealth.label === 'Baseline' ? 'needs review' : 'human-gated';
-  const outputReadiness = input.contextBlocks.output.length ? 'output-ready' : 'exploratory only';
-  const agentRoute = input.contextBlocks.thinkingDevices[0]?.label ?? input.selectedAgent.label;
-  const readiness = (overrides: Partial<Record<ContextChainBlockLaneModel['readiness'][number]['label'], string>> = {}) => [
-    { label: 'Source posture' as const, value: overrides['Source posture'] ?? sourcePosture },
-    { label: 'Review gate' as const, value: overrides['Review gate'] ?? reviewGate },
-    { label: 'Output readiness' as const, value: overrides['Output readiness'] ?? outputReadiness },
-    { label: 'Agent/tool route' as const, value: overrides['Agent/tool route'] ?? agentRoute },
-  ];
   return [
     {
       id: 'userCore',
@@ -5579,7 +5548,6 @@ function buildContextChainBlockLanes(input: {
       action: 'Swap user',
       addRole: 'user',
       capsules: input.contextBlocks.userCore,
-      readiness: readiness({ 'Review gate': 'profile baseline' }),
     },
     {
       id: 'situation',
@@ -5588,7 +5556,6 @@ function buildContextChainBlockLanes(input: {
       action: 'Add context',
       addRole: 'situation',
       capsules: input.contextBlocks.situation,
-      readiness: readiness({ 'Review gate': input.contextBlocks.situation.length ? reviewGate : 'needs situation' }),
     },
     {
       id: 'sources',
@@ -5597,7 +5564,6 @@ function buildContextChainBlockLanes(input: {
       action: 'Attach sources',
       addRole: 'reference',
       capsules: input.contextBlocks.sources,
-      readiness: readiness({ 'Source posture': sourcePosture }),
     },
     {
       id: 'thinkingDevices',
@@ -5606,7 +5572,6 @@ function buildContextChainBlockLanes(input: {
       action: 'Add checks',
       addRole: 'tool',
       capsules: input.contextBlocks.thinkingDevices,
-      readiness: readiness({ 'Agent/tool route': agentRoute }),
     },
     {
       id: 'output',
@@ -5615,7 +5580,6 @@ function buildContextChainBlockLanes(input: {
       action: 'Choose output',
       addRole: 'output',
       capsules: input.contextBlocks.output,
-      readiness: readiness({ 'Output readiness': outputReadiness }),
     },
   ];
 }

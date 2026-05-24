@@ -41,7 +41,12 @@ describe('context kernel', () => {
     expect(capsule.sourceDocumentCore).toEqual(['source-1', 'doc-1']);
     expect(capsule.injectableContext.promptBlock).toContain('<praxis-context-capsule>');
     expect(capsule.injectableContext.promptBlock).toContain('[context_chain_blocks]');
+    expect(capsule.injectableContext.promptBlock).toContain('Read every context_chain_blocks item in order; primary items lead the answer and secondary items remain governing context.');
+    expect(capsule.injectableContext.promptBlock).toContain('user_core: user-core-1 [primary] Policy director');
+    expect(capsule.injectableContext.promptBlock).toContain('situation: situation-core-1 [primary] Primary crisis room');
     expect(capsule.injectableContext.promptBlock).toContain('sources: source-1 [primary] Source pack; doc-1 [secondary] Document pack');
+    expect(capsule.injectableContext.promptBlock).toContain('thinking_devices: tool-sourceability [primary] Sourceability review');
+    expect(capsule.injectableContext.promptBlock).toContain('output: memo [primary] Options memo');
     expect(capsule.injectableContext.promptBlock).toContain('Capsules are the principal governed context.');
     expect(capsule.memory.semantic.map((item) => item.id)).toEqual(['mem-1']);
     expect(capsule.memory.episodic).toEqual([]);

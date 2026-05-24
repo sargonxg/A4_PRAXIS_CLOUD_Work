@@ -181,6 +181,7 @@ function buildContextChainBlocksPromptBlock(blocks: ActiveContextBlocks | undefi
   if (!blocks) {
     return [
       '[context_chain_blocks]',
+      'Read every context_chain_blocks item in order; primary items lead the answer and secondary items remain governing context.',
       'user_core: none',
       'situation: none',
       'sources: none',
@@ -191,6 +192,7 @@ function buildContextChainBlocksPromptBlock(blocks: ActiveContextBlocks | undefi
   }
   return [
     '[context_chain_blocks]',
+    'Read every context_chain_blocks item in order; primary items lead the answer and secondary items remain governing context.',
     `user_core: ${formatContextBlockItems(blocks.userCore)}`,
     `situation: ${formatContextBlockItems(blocks.situation)}`,
     `sources: ${formatContextBlockItems(blocks.sources)}`,

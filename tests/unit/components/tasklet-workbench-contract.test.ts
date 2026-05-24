@@ -30,6 +30,7 @@ const humanGatedExampleSource = extractSourceBlock('function HumanGatedPolicyFam
 const activeContextStackHelperSource = extractSourceBlock('function buildActiveContextBlocks', 'function selectedCoreIdsFromContextStack');
 const applyCapsuleToStackSource = extractSourceBlock('function applyCapsuleToStack', 'function uniqueCapsuleStack');
 const contextChainLaneSource = extractSourceBlock('function ContextChainBlockLane', 'function SortableCapsuleBlock');
+const contextChainBlockLanesSource = extractSourceBlock('function buildContextChainBlockLanes', 'function contextBlockIdForRole');
 
 describe('Tasklet PRAXIS workbench contract', () => {
   it('keeps model routing TACITUS-owned in the main composer', () => {
@@ -488,8 +489,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(applyCapsuleToStackSource).toContain('firstRoleIndex');
     expect(applyCapsuleToStackSource).not.toContain('item.role !== chip.role');
     expect(contextChainLaneSource).toContain('block.capsules.map');
-    expect(contextChainLaneSource).toContain('{block.capsules.length}');
-    expect(contextChainLaneSource).toContain('Primary + references');
+    expect(contextChainLaneSource).not.toContain('{block.capsules.length}');
+    expect(contextChainLaneSource).not.toContain('Primary + references');
+    expect(contextChainLaneSource).not.toContain('block.readiness.map');
   });
 
   it('keeps the default context chain empty except for the user model baseline', () => {
@@ -519,16 +521,17 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Improve');
   });
 
-  it('uses one canonical ContextChain builder with readiness labels folded into blocks', () => {
+  it('uses one canonical ContextChain builder without noisy readiness chrome inside blocks', () => {
     expect(source).toContain('function ContextChainBlockLane');
     expect(source).toContain('function ContextChainProvenanceMap');
     expect(contextBarSource).toContain('data-testid="desktop-context-chain-canvas"');
     expect(source).toContain('data-testid={`context-chain-block-${block.id}`}');
-    expect(source).toContain('Primary + references');
-    expect(source).toContain('Source posture');
-    expect(source).toContain('Review gate');
-    expect(source).toContain('Output readiness');
-    expect(source).toContain('Agent/tool route');
+    expect(contextChainLaneSource).not.toContain('Primary + references');
+    expect(contextChainLaneSource).not.toContain('Source posture');
+    expect(contextChainLaneSource).not.toContain('Review gate');
+    expect(contextChainLaneSource).not.toContain('Output readiness');
+    expect(contextChainLaneSource).not.toContain('Agent/tool route');
+    expect(contextChainBlockLanesSource).not.toContain('readiness');
     expect(source).toContain('data-context-block-apply-state');
     expect(contextBarSource).not.toContain('<ContextChainMap');
     expect(contextBarSource).not.toContain('<ContextChainProvenanceMap');

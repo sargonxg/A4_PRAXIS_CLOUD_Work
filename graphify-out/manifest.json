@@ -2672,8 +2672,8 @@
     "hash": "ca0257f971b99dbb43ee1b549f855b10"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tasklet-praxis-workbench.tsx": {
-    "mtime": 1779647657.854135,
-    "hash": "0443241826f162f64de90dfab40ad56a"
+    "mtime": 1779648699.5006382,
+    "hash": "28cae08902b3a9e2b7deca87b28edc25"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tasklet-workbench-conversation.ts": {
     "mtime": 1779242221.4093075,
@@ -3368,8 +3368,8 @@
     "hash": "7c71736a84ddd43fced6187274549fd5"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\context\\context-injection.ts": {
-    "mtime": 1779636079.8485165,
-    "hash": "44c9e0d6c0d48a734f881ce7f8e919fe"
+    "mtime": 1779648705.6099968,
+    "hash": "c493a1ebc10f12ab7ab9da433ccb8a8c"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\src\\lib\\context\\core-objects.ts": {
     "mtime": 1778855840.476828,
@@ -4816,8 +4816,8 @@
     "hash": "eee40dffb279a4d42b24d5eff22b3030"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\tasklet-workbench-contract.test.ts": {
-    "mtime": 1779647777.8857977,
-    "hash": "ceff782752a7bd4633ee71f3860a82dd"
+    "mtime": 1779648643.069157,
+    "hash": "9be410e93355fe273abc12b85ac2c2b7"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\tasklet-workbench-conversation.test.ts": {
     "mtime": 1779247653.9027836,
@@ -4940,8 +4940,8 @@
     "hash": "41fae162a702be36906b3e43526e7f43"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\ai\\context-kernel.test.ts": {
-    "mtime": 1779635172.6369739,
-    "hash": "fe4c990ba8ee2fed26e77f78c7c1cd7b"
+    "mtime": 1779648650.6522646,
+    "hash": "8a3457360cb08604bd96eca8e394d29d"
   },
   "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\ai\\diplomatic-drafting-service.test.ts": {
     "mtime": 1778429930.683175,
