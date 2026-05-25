@@ -20,18 +20,21 @@ Status: canonical index for the current app structure
    - Canonical guide for building policy/statecraft ContextCapsules.
    - Defines core anatomy, generic versus path-bound users, personas,
      combination rules, tools, connectors, outputs, and usable app shape.
-5. [`TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./TASKLET_RESEARCH_INTAKE_2026-05-15.md)
+5. [`CONTEXT_CAPSULE_V3_HUMAN_GATED_CONTEXT_INFRASTRUCTURE.md`](./CONTEXT_CAPSULE_V3_HUMAN_GATED_CONTEXT_INFRASTRUCTURE.md)
+   - Canonical v3 contract for human-gated capsules, Cognee advisory memory,
+     review-card-only agents, marketplace gates, and `/learn` positioning.
+6. [`TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./TASKLET_RESEARCH_INTAKE_2026-05-15.md)
    - Intake note for the external Tasklet-class browser-agent research.
    - Records what PRAXIS adopted, deferred, or rejected.
-6. [`PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md)
+7. [`PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md)
    - Senior-engineering coherence check across app structure, docs, substrate,
      and build order.
-7. [`PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md`](./PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md)
+8. [`PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md`](./PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md)
    - Repo-grounded map for using ADK as the long-running worker substrate and
      Genkit as the typed flow/tool/eval substrate while keeping
      ContextCapsules, Firestore app state, and the Cloud SQL run ledger
      PRAXIS-owned.
-8. [`PRAXIS_FUNDING_AND_PITCH_PACK.md`](./PRAXIS_FUNDING_AND_PITCH_PACK.md)
+9. [`PRAXIS_FUNDING_AND_PITCH_PACK.md`](./PRAXIS_FUNDING_AND_PITCH_PACK.md)
    - Funder-facing PRAXIS explanation pack with the 300-character elevator
      pitch, business model, funding needs, and textual pitch deck.
 

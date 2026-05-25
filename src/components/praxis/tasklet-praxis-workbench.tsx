@@ -89,6 +89,9 @@ import {
 import {
   CAPSULE_STARTER_DEFINITIONS,
   CAPSULE_CONNECTOR_REGISTRY,
+  CONTEXT_CAPSULE_V3_PRODUCT_SECTIONS,
+  CONTEXT_CAPSULE_V3_SHELVES,
+  CONTEXT_CAPSULE_V3_TRUST_BADGES,
   HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY,
   HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS,
   POLICY_TEAM_CATEGORIES,
@@ -114,6 +117,7 @@ import { rankAskCapsuleSuggestions, type AskCapsuleSuggestion } from '@/lib/cont
 import type { CapsuleInventorySummary } from '@/lib/context/capsule-service';
 import { deriveCapsuleQuality, type CapsuleQualityResult } from '@/lib/context/capsule-quality';
 import { buildCapsuleImproveProposals, normalizeContextCapsuleV2, type ContextCapsuleV2 } from '@/lib/context/capsule-v2';
+import { CAPSULE_V3_AGENT_ROLES, canPublishCapsuleV3, deriveCapsuleV3QualityAudit, normalizeContextCapsuleV3 } from '@/lib/context/capsule-v3';
 import { deriveContextChainHealth } from '@/lib/context/context-chain-health';
 import { deriveHumanGateBadges, deriveHumanGateStatus } from '@/lib/context/human-gate';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -9190,6 +9194,10 @@ function CapsuleInspectorSheet({
   const humanGateStatus = v2Capsule ? deriveHumanGateStatus(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT }) : 'not_required';
   const chainHealth = v2Capsule ? deriveContextChainHealth({ activeCapsule: v2Capsule, referenceCapsules: [], now: STARTER_CAPSULE_UPDATED_AT }) : null;
   const v2ImproveProposals = v2Capsule ? buildCapsuleImproveProposals(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT }) : [];
+  const v3Capsule = v2Capsule ? normalizeContextCapsuleV3(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT }) : null;
+  const v3Quality = v3Capsule ? deriveCapsuleV3QualityAudit(v3Capsule, { now: STARTER_CAPSULE_UPDATED_AT }) : null;
+  const v3PublishGate = v3Capsule ? canPublishCapsuleV3(v3Capsule, { actor: 'human', now: STARTER_CAPSULE_UPDATED_AT }) : null;
+  const reviewCardOnlyAgentIds = CAPSULE_V3_AGENT_ROLES.map((role) => role.id);
   const unsupportedClaims = capsule ? capsuleUnsupportedClaimCount(capsule) : 0;
   const qualityBreakdownSummary = v2Quality
     ? v2Quality.breakdown.map((item) => `${item.label} ${item.score}/${item.maxScore}`).join(' / ')
@@ -9347,6 +9355,81 @@ function CapsuleInspectorSheet({
                 </span>
               ))}
             </div>
+          </div>
+        ) : null}
+        {v3Capsule && v3Quality && v3PublishGate ? (
+          <div className="mt-5 rounded-lg border border-slate-200 p-4" data-testid="capsule-v3-human-gated-context">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-400">A Wikipedia for agents</p>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  ContextCapsule v3 keeps Firestore canonical while AI, Cognee, graph extraction, and capsule agents create review cards before any canonical change.
+                </p>
+              </div>
+              <span className="rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white">
+                v3 {v3Quality.score}/100
+              </span>
+            </div>
+            <div className="mt-3 grid gap-2 md:grid-cols-2">
+              <InspectorRef label="Human tacit knowledge" value={`${v3Capsule.evaluation.tacitKnowledgeScore}/100 / ${v3Capsule.humanTacitKnowledge.redLines.length} red line(s)`} />
+              <InspectorRef label="Source spine" value={`${v3Capsule.sourceSpine.score}/100 / ${v3Capsule.sourceSpine.sourceIds.length} source receipt(s)`} />
+              <InspectorRef label="Claim ledger" value={`${v3Capsule.claimLedger.supportedClaims.length} supported / ${v3Capsule.claimLedger.unsupportedClaims.length} unsupported`} />
+              <InspectorRef label="Reasoning scaffold" value={`${v3Capsule.reasoningScaffold.publicMethod.length} public step(s) / private reasoning redacted`} />
+              <InspectorRef label="Agent operating contract" value={`${v3Capsule.agentOperatingContract.allowedActions.length} allowed action(s) / ${v3Capsule.agentOperatingContract.stopConditions.length} stop condition(s)`} />
+              <InspectorRef label="Memory posture" value={`${v3Capsule.memoryPosture.cogneeMode} / ${v3Capsule.memoryPosture.cogneeDatasetId}`} />
+              <InspectorRef label="Marketplace readiness" value={`${v3Capsule.evaluation.marketplaceReadinessScore}/100 / ${v3PublishGate.status}`} />
+              <InspectorRef label="Output contracts" value={`${v3Capsule.outputContracts.length} output contract(s)`} />
+              <InspectorRef label="Review-card-only agents" value={`${reviewCardOnlyAgentIds.length} agents / review-card-only`} />
+              <InspectorRef label="reviewCardOnlyAgentIds" value={reviewCardOnlyAgentIds.slice(0, 4).join(', ')} />
+              <InspectorRef label="agentsMayMutateCanonical" value={String(v3Capsule.governance.agentsMayMutateCanonical)} />
+              <InspectorRef label="Publish blockers" value={v3PublishGate.issues.map((issue) => issue.code).slice(0, 4).join(', ') || 'marketplace gate clear'} />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {CONTEXT_CAPSULE_V3_PRODUCT_SECTIONS.map((section) => (
+                <span key={section.id} title={section.detail} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600">
+                  {section.label}
+                </span>
+              ))}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {CONTEXT_CAPSULE_V3_SHELVES.map((shelf) => {
+                const active = v3Capsule.marketplaceProfile.shelves.includes(shelf.id);
+                return (
+                  <span
+                    key={shelf.id}
+                    title={shelf.detail}
+                    className={cn(
+                      'rounded-md border px-2 py-1 text-[10px] font-semibold',
+                      active ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-500',
+                    )}
+                  >
+                    {shelf.label}
+                  </span>
+                );
+              })}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {CONTEXT_CAPSULE_V3_TRUST_BADGES.map((badge) => {
+                const active = v3Capsule.marketplaceProfile.trustBadges.includes(badge.id);
+                return (
+                  <span
+                    key={badge.id}
+                    title={badge.detail}
+                    className={cn(
+                      'rounded-md border px-2 py-1 text-[10px] font-semibold',
+                      active ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-slate-200 bg-white text-slate-500',
+                    )}
+                  >
+                    {badge.label}
+                  </span>
+                );
+              })}
+            </div>
+            {v3Quality.diagnostics.length ? (
+              <p className="mt-3 text-xs leading-5 text-amber-700">
+                Review cards required for {v3Quality.reviewCardTargets.map(humanizeIdentifier).join(', ')}. Diagnostics: {v3Quality.diagnostics.slice(0, 3).join(' ')}
+              </p>
+            ) : null}
           </div>
         ) : null}
         {v2Quality ? (

@@ -2,6 +2,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { buildCorePackage, type PraxisCorePackageV1 } from '@/lib/context/core-package';
+import { normalizeContextCapsuleV3, type ContextCapsuleV3 } from '@/lib/context/capsule-v3';
 import {
   DEFAULT_CONTEXT_STACK_ID,
   defaultActiveContextStack,
@@ -41,7 +42,7 @@ export type CapsuleReviewState =
   | 'rejected'
   | 'superseded';
 export type CapsuleReviewSourceType = 'user' | 'team' | 'public' | 'cognee' | 'agent' | 'ontology' | 'graph' | 'source-gap' | 'quality-audit' | 'intake';
-export type CapsuleReviewTarget = 'capsuleEnvelope' | 'anatomy' | 'ontologyStack' | 'graphProposal' | 'sourceGap' | 'advisoryMemory' | 'tableCandidate' | 'artifactLink';
+export type CapsuleReviewTarget = 'capsuleEnvelope' | 'anatomy' | 'ontologyStack' | 'graphProposal' | 'sourceGap' | 'advisoryMemory' | 'claimLedger' | 'agentInstructions' | 'tableCandidate' | 'artifactLink';
 export type CapsuleGateState = 'none' | CapsuleReviewState;
 export type CapsuleLockKind =
   | 'user'
@@ -1523,6 +1524,10 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
   };
 }
 
+export function buildContextCapsuleV3(input: PraxisCapsule | unknown): ContextCapsuleV3 {
+  return normalizeContextCapsuleV3(sanitizeCapsule(input));
+}
+
 function starterToCreateInput(uid: string, starterDefinition: CapsuleStarterDefinition): CreateCapsuleInput {
   return {
     capsuleId: starterDefinition.starterId,
@@ -2152,6 +2157,8 @@ function normalizeReviewTarget(value: unknown): CapsuleReviewTarget {
     value === 'graphProposal' ||
     value === 'sourceGap' ||
     value === 'advisoryMemory' ||
+    value === 'claimLedger' ||
+    value === 'agentInstructions' ||
     value === 'tableCandidate' ||
     value === 'artifactLink'
     ? value

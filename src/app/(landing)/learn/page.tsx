@@ -198,6 +198,41 @@ export default function LearnPage() {
         </div>
       </section>
 
+      <section className="mx-auto grid w-full max-w-6xl gap-5 px-5 pb-16 sm:px-8 lg:grid-cols-[0.85fr_1.15fr]">
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Human-gated context</span>
+          <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950 sm:text-4xl">
+            A Wikipedia for Agentic Context
+          </h2>
+          <p className="mt-4 text-sm leading-6 text-slate-700 sm:text-base sm:leading-7">
+            ContextCapsules are reusable context objects, not prompts. They preserve the parts of policy work that a capable analyst would normally carry in their head: sources, assumptions, tacit knowledge, reasoning devices, review gates, and allowed agent behavior.
+          </p>
+          <p className="mt-3 text-sm leading-6 text-slate-700 sm:text-base sm:leading-7">
+            Agents can inherit a capsule safely because claims, sources, memories, and limitations are labeled. The capsule says what is known, what is only remembered, what is stale, what is disputed, and what an agent must stop and hand back for review.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
+            <h3 className="font-serif text-xl font-medium text-slate-950">Human review makes truth canonical</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-700">
+              AI and Cognee can suggest improvements, recall advisory memory, find source gaps, or draft review cards, but human review decides what becomes canonical in the capsule.
+            </p>
+          </article>
+          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
+            <h3 className="font-serif text-xl font-medium text-slate-950">Community capsules stay inspectable</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-700">
+              Marketplace and community capsules should be forkable and inspectable, with provenance and review state visible before a team relies on them.
+            </p>
+          </article>
+          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5 sm:col-span-2">
+            <h3 className="font-serif text-xl font-medium text-slate-950">What the capsule carries</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-700">
+              The capsule carries source spines, claim ledgers, tacit constraints, output contracts, allowed tools, forbidden actions, review checkpoints, memory receipts, and stale or rejected inferences as labeled context.
+            </p>
+          </article>
+        </div>
+      </section>
+
       <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8">
         <div className="grid gap-4 md:grid-cols-2">
           <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">

@@ -338,6 +338,77 @@ export const CAPSULE_TAXONOMY_AXES: CapsuleTaxonomyAxis[] = [
   },
 ];
 
+export type ContextCapsuleV3ProductSectionId =
+  | 'identity'
+  | 'businessUseCase'
+  | 'humanTacitKnowledge'
+  | 'sourceSpine'
+  | 'claimLedger'
+  | 'reasoningScaffold'
+  | 'agentOperatingContract'
+  | 'memoryPosture'
+  | 'governance'
+  | 'marketplaceProfile'
+  | 'outputContracts'
+  | 'evaluation';
+
+export const CONTEXT_CAPSULE_V3_PRODUCT_SECTIONS: Array<{ id: ContextCapsuleV3ProductSectionId; label: string; detail: string }> = [
+  { id: 'identity', label: 'Identity', detail: 'Canonical capsule id, owner, version, class, visibility, forkability, and Firestore truth pointer.' },
+  { id: 'businessUseCase', label: 'Business value', detail: 'Audience, purpose, decision horizon, cadence, use case, and best next action.' },
+  { id: 'humanTacitKnowledge', label: 'Tacit knowledge', detail: 'Assumptions, hidden constraints, red lines, habits, approval politics, heuristics, sensitivities, caveats, and recurring decisions.' },
+  { id: 'sourceSpine', label: 'Source spine', detail: 'Source refs, freshness, independence, gaps, stale refs, and source-support score.' },
+  { id: 'claimLedger', label: 'Claim ledger', detail: 'Supported, weak, unsupported, disputed, stale, inferred, and forbidden claims.' },
+  { id: 'reasoningScaffold', label: 'Reasoning scaffold', detail: 'Public method and caveats with private notes and hidden reasoning redacted.' },
+  { id: 'agentOperatingContract', label: 'Agent contract', detail: 'Allowed actions, forbidden actions, source requirements, review checkpoints, tools, handoff, and stop conditions.' },
+  { id: 'memoryPosture', label: 'Memory posture', detail: 'Canonical facts, advisory Cognee recall, session memory, graph proposals, stale assumptions, disputes, and rejected inferences.' },
+  { id: 'governance', label: 'Governance', detail: 'Human gate, approval receipt, review-card targets, and the rule that agents cannot mutate canonical state.' },
+  { id: 'marketplaceProfile', label: 'Marketplace profile', detail: 'Shelves, trust badges, reuse terms, moderation summary, and publish gates.' },
+  { id: 'outputContracts', label: 'Output contracts', detail: 'Expected artifact types, citation posture, and review requirements.' },
+  { id: 'evaluation', label: 'Evaluation', detail: 'Tacit knowledge, source spine, operability, marketplace, and freshness scores.' },
+];
+
+export type ContextCapsuleV3ShelfId =
+  | 'human-gated'
+  | 'expert-pick'
+  | 'agent-ready'
+  | 'source-backed'
+  | 'needs-refresh'
+  | 'tacit-knowledge-rich'
+  | 'marketplace-candidate'
+  | 'public-forkable';
+
+export const CONTEXT_CAPSULE_V3_SHELVES: Array<{ id: ContextCapsuleV3ShelfId; label: string; detail: string }> = [
+  { id: 'human-gated', label: 'Human-Gated', detail: 'Capsules with current or required human review gates.' },
+  { id: 'expert-pick', label: 'Expert Pick', detail: 'Curated capsules that meet higher review and usefulness thresholds.' },
+  { id: 'agent-ready', label: 'Agent-Ready', detail: 'Capsules with usable agent contracts, stop conditions, and output paths.' },
+  { id: 'source-backed', label: 'Source-Backed', detail: 'Capsules with source spine scores high enough for inspected reuse.' },
+  { id: 'needs-refresh', label: 'Needs Refresh', detail: 'Capsules with stale source, review, or memory assumptions.' },
+  { id: 'tacit-knowledge-rich', label: 'Tacit Knowledge Rich', detail: 'Capsules that preserve human assumptions, red lines, heuristics, and stakeholder context.' },
+  { id: 'marketplace-candidate', label: 'Marketplace Candidate', detail: 'Capsules close to public or team-share readiness.' },
+  { id: 'public-forkable', label: 'Public/Forkable', detail: 'Capsules intended for visible reuse with terms and provenance.' },
+];
+
+export type ContextCapsuleV3TrustBadgeId =
+  | 'human-written'
+  | 'human-reviewed'
+  | 'human-gated'
+  | 'ai-proposal'
+  | 'cognee-advisory'
+  | 'source-gap'
+  | 'stale'
+  | 'rejected-inference';
+
+export const CONTEXT_CAPSULE_V3_TRUST_BADGES: Array<{ id: ContextCapsuleV3TrustBadgeId; label: string; detail: string }> = [
+  { id: 'human-written', label: 'Human Written', detail: 'Substantive body metadata says a human authored the capsule.' },
+  { id: 'human-reviewed', label: 'Human Reviewed', detail: 'Reviewer metadata and approval receipt are present.' },
+  { id: 'human-gated', label: 'Human-Gated', detail: 'Human review controls final reuse, publication, or high-stakes reliance.' },
+  { id: 'ai-proposal', label: 'AI Proposal', detail: 'AI output is a reviewable proposal, not canonical capsule truth.' },
+  { id: 'cognee-advisory', label: 'Cognee Advisory', detail: 'Cognee recall/improve output is advisory until a review card is applied.' },
+  { id: 'source-gap', label: 'Source Gap', detail: 'A missing, weak, or stale source must be reviewed.' },
+  { id: 'stale', label: 'Stale', detail: 'Source, review, or assumption freshness needs renewal.' },
+  { id: 'rejected-inference', label: 'Rejected Inference', detail: 'A proposed inference was rejected and must not be revived silently.' },
+];
+
 export interface CapsuleStarterInspectionSection {
   label: string;
   detail: string;

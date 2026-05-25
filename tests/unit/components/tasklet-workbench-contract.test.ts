@@ -418,6 +418,26 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('/app/community-review');
   });
 
+  it('surfaces ContextCapsule v3 shelves, trust badges, agent contracts, memory posture, and marketplace gates in the existing inspector', () => {
+    expect(source).toContain('normalizeContextCapsuleV3');
+    expect(source).toContain('deriveCapsuleV3QualityAudit');
+    expect(source).toContain('CAPSULE_V3_AGENT_ROLES');
+    expect(source).toContain('CONTEXT_CAPSULE_V3_PRODUCT_SECTIONS');
+    expect(source).toContain('CONTEXT_CAPSULE_V3_SHELVES');
+    expect(source).toContain('CONTEXT_CAPSULE_V3_TRUST_BADGES');
+    expect(source).toContain('data-testid="capsule-v3-human-gated-context"');
+    expect(source).toContain('A Wikipedia for agents');
+    expect(source).toContain('Human tacit knowledge');
+    expect(source).toContain('Agent operating contract');
+    expect(source).toContain('Memory posture');
+    expect(source).toContain('Marketplace readiness');
+    expect(source).toContain('Review-card-only agents');
+    expect(source).toContain('agentsMayMutateCanonical');
+    expect(source).toContain('reviewCardOnlyAgentIds');
+    expect(source).toContain('review-card-only');
+    expect(source).not.toContain('/app/capsule-marketplace');
+  });
+
   it('adds capsule X-Ray, sourceability scoreboard, review queue, and fork trail to existing capsule surfaces', () => {
     expect(source).toContain('function CapsuleXRayScoreboard');
     expect(source).toContain('data-testid="capsule-xray-scoreboard"');

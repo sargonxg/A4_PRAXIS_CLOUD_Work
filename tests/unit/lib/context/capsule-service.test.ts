@@ -14,6 +14,7 @@ import {
   detachCapsuleRefs,
   exportCapsuleCorePackage,
   forkCapsule,
+  buildContextCapsuleV3,
   getCapsule,
   getOrMigrateDefaultCapsule,
   listCapsuleInventory,
@@ -886,6 +887,42 @@ describe('capsule service', () => {
     expect(db.data.get(cardPath)?.evidence).toEqual(expect.arrayContaining([
       expect.objectContaining({ advisory: true }),
     ]));
+  });
+
+  it('keeps v3 review-card targets service-compatible without promoting canonical writes', async () => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', {
+      capsuleId: 'cap-v3',
+      label: 'V3 capsule',
+      coreRefs: {
+        situationCoreId: 'sit-1',
+        sourceCoreIds: ['src-1'],
+        outputCoreIds: ['memo'],
+      },
+    }, deps(db));
+
+    const v3 = buildContextCapsuleV3(capsule);
+    expect(v3.schemaVersion).toBe(3);
+    expect(v3.governance.canonicalStore).toBe('Firestore ContextCapsules');
+    expect(v3.governance.agentsMayMutateCanonical).toBe(false);
+
+    const claimCard = await createCapsuleReviewCard('u1', capsule.capsuleId, {
+      title: 'Claim ledger review',
+      sourceType: 'agent',
+      target: 'claimLedger',
+      evidence: [{ id: 'claim-1', label: 'Weak claim', advisory: true }],
+    }, deps(db));
+    const instructionCard = await createCapsuleReviewCard('u1', capsule.capsuleId, {
+      title: 'Agent instruction review',
+      sourceType: 'agent',
+      target: 'agentInstructions',
+      evidence: [{ id: 'agent-contract', label: 'Stop condition', advisory: true }],
+    }, deps(db));
+
+    expect(claimCard.target).toBe('claimLedger');
+    expect(instructionCard.target).toBe('agentInstructions');
+    expect(claimCard.proposedEnvelopePatch).toEqual({});
+    expect(db.data.get('users/u1/capsules/cap-v3')?.version).toBe(1);
   });
 
   it('normalizes v1 capsules into compact v2 envelopes without carrying append-heavy payloads', () => {

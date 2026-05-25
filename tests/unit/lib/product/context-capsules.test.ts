@@ -15,6 +15,9 @@ import {
   CAPSULE_STARTER_DEFINITIONS,
   CAPSULE_WOW_DEMO_STARTER_IDS,
   CAPSULE_TAXONOMY_AXES,
+  CONTEXT_CAPSULE_V3_PRODUCT_SECTIONS,
+  CONTEXT_CAPSULE_V3_SHELVES,
+  CONTEXT_CAPSULE_V3_TRUST_BADGES,
   HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY,
   HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS,
   CONTEXT_CAPSULE_TEMPLATES,
@@ -454,6 +457,45 @@ describe('context capsule product contract', () => {
       expect(promptBlock).toContain('cognee_overlay_mode:');
       expect(promptBlock).toContain('ontology_promotion_rules:');
     }
+  });
+
+  it('defines the v3 human-gated context product sections, shelves, and trust badges', () => {
+    expect(CONTEXT_CAPSULE_V3_PRODUCT_SECTIONS.map((section) => section.id)).toEqual([
+      'identity',
+      'businessUseCase',
+      'humanTacitKnowledge',
+      'sourceSpine',
+      'claimLedger',
+      'reasoningScaffold',
+      'agentOperatingContract',
+      'memoryPosture',
+      'governance',
+      'marketplaceProfile',
+      'outputContracts',
+      'evaluation',
+    ]);
+    expect(CONTEXT_CAPSULE_V3_SHELVES.map((shelf) => shelf.label)).toEqual([
+      'Human-Gated',
+      'Expert Pick',
+      'Agent-Ready',
+      'Source-Backed',
+      'Needs Refresh',
+      'Tacit Knowledge Rich',
+      'Marketplace Candidate',
+      'Public/Forkable',
+    ]);
+    expect(CONTEXT_CAPSULE_V3_TRUST_BADGES.map((badge) => badge.label)).toEqual([
+      'Human Written',
+      'Human Reviewed',
+      'Human-Gated',
+      'AI Proposal',
+      'Cognee Advisory',
+      'Source Gap',
+      'Stale',
+      'Rejected Inference',
+    ]);
+    expect(CONTEXT_CAPSULE_V3_PRODUCT_SECTIONS.find((section) => section.id === 'memoryPosture')?.detail).toContain('advisory Cognee recall');
+    expect(CONTEXT_CAPSULE_V3_PRODUCT_SECTIONS.find((section) => section.id === 'governance')?.detail).toContain('agents cannot mutate canonical state');
   });
 
   it('adds intelligence and advisory Cognee profiles to every starter capsule', () => {

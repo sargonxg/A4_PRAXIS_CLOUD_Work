@@ -6,6 +6,10 @@ import {
   type PolicyAgentOutputDestination,
   type PolicyAgentRunIntent,
 } from '@/lib/product/policy-agents';
+import {
+  CAPSULE_V3_AGENT_ROLES,
+  type ContextCapsuleV3ReviewCardTarget,
+} from '@/lib/context/capsule-v3';
 
 export type AgentWorkflowKind =
   | 'direct_answer'
@@ -13,20 +17,18 @@ export type AgentWorkflowKind =
   | 'pdf_memo_output'
   | 'gap_fill'
   | 'multi_agent_review'
-  | 'handover';
+  | 'handover'
+  | 'capsule_governance';
 
 export interface AgentWorkflowPlan {
   version: 1;
   planId: string;
   workflowKind: AgentWorkflowKind;
-  processRail: [
-    'Reading capsule',
-    'Planning workflow',
-    'Checking evidence',
-    'Reviewing claims',
-    'Saving artifact',
-  ];
+  processRail: string[];
   requiredPolicyAgentIds: string[];
+  reviewCardOnlyAgentIds: string[];
+  reviewCardTargets: ContextCapsuleV3ReviewCardTarget[];
+  canonicalMutationPolicy: 'review-card-only' | 'not-applicable';
   selectedTools: string[];
   approvalRequiredToolIds: string[];
   outputTarget: PolicyAgentOutputDestination | null;
@@ -56,6 +58,7 @@ export function buildAgentWorkflowPlan(input: {
   const workflowKind = classifyWorkflowKind(input);
   const requiredPolicyAgentIds = normalizePolicyAgents(input.policyAgentId, workflowKind);
   const selectedTools = normalizeToolIds(input.selectedToolIds);
+  const capsuleGovernance = workflowKind === 'capsule_governance';
   const approvalRequiredToolIds = selectedTools.filter((toolId) => agentToolRequiresApproval(toolId));
   const requiresCurrentGrounding = selectedTools.includes('grounded-search') || selectedTools.includes('deep-search-agent');
   const requiresSourceabilityPass = selectedTools.includes('sourceability-reviewer')
@@ -70,8 +73,13 @@ export function buildAgentWorkflowPlan(input: {
     version: 1,
     planId: stablePlanId(workflowKind, input.capsuleReadReceipt.receiptId, selectedTools.join(',')),
     workflowKind,
-    processRail: AGENT_WORKFLOW_PROCESS_RAIL,
+    processRail: capsuleGovernance
+      ? [...AGENT_WORKFLOW_PROCESS_RAIL.slice(0, 4), 'Preparing review cards', 'Saving artifact']
+      : AGENT_WORKFLOW_PROCESS_RAIL,
     requiredPolicyAgentIds,
+    reviewCardOnlyAgentIds: capsuleGovernance ? CAPSULE_V3_AGENT_ROLES.map((role) => role.id) : [],
+    reviewCardTargets: capsuleGovernance ? ['advisoryMemory', 'sourceGap', 'graphProposal', 'claimLedger', 'agentInstructions'] : [],
+    canonicalMutationPolicy: capsuleGovernance ? 'review-card-only' : 'not-applicable',
     selectedTools,
     approvalRequiredToolIds,
     outputTarget,
@@ -89,6 +97,7 @@ function classifyWorkflowKind(input: {
   selectedToolIds: string[];
 }): AgentWorkflowKind {
   const text = input.prompt?.toLowerCase() ?? '';
+  if (input.runIntent === 'capsule_factory' || input.policyAgentId === 'capsule-factory') return 'capsule_governance';
   if (input.runIntent === 'handover' || input.policyAgentId === 'handover-builder') return 'handover';
   if (input.runIntent === 'research_memo' || input.selectedToolIds.some((toolId) => toolId === 'grounded-search' || toolId === 'deep-search-agent')) return 'current_research_brief';
   if (input.runIntent === 'format_output' || /\b(pdf|docx|memo|briefing pack|report|export|formatted)\b/.test(text)) return 'pdf_memo_output';
