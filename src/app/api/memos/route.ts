@@ -16,6 +16,16 @@ const SaveMemoSchema = MemoQuerySchema.extend({
   graphSnapshotId: z.string().min(1).max(300),
   status: MemoStatusSchema.optional(),
   changeNote: z.string().max(400).optional(),
+  capsuleId: z.string().max(240).nullable().optional(),
+  capsuleVersion: z.number().int().positive().nullable().optional(),
+  conversationId: z.string().max(240).nullable().optional(),
+  runId: z.string().max(240).nullable().optional(),
+  outputTarget: z.string().max(80).nullable().optional(),
+  sourceReceiptIds: z.array(z.string().max(240)).max(100).optional(),
+  sourceReceipts: z.array(z.unknown()).max(100).optional(),
+  unsupportedClaims: z.array(z.string().max(1000)).max(100).optional(),
+  claimChecks: z.array(z.unknown()).max(100).optional(),
+  outputCapsuleId: z.string().max(240).nullable().optional(),
 });
 
 export const GET = withAuth(async (request, user) => {

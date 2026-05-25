@@ -16,9 +16,10 @@ interface DashboardExampleCase {
 interface AskPraxisHomeProps {
   exampleCases: DashboardExampleCase[];
   marketplaceToolCount: number;
+  initialMemoId?: string | null;
 }
 
-export function AskPraxisHome({ exampleCases }: AskPraxisHomeProps) {
+export function AskPraxisHome({ exampleCases, initialMemoId }: AskPraxisHomeProps) {
   const userCases = useSituationStore((state) => state.situations);
   const activeSituation = useSituationStore((state) => state.activeSituation);
   const activeCase = activeSituation ?? userCases[0] ?? exampleCases[0];
@@ -28,6 +29,7 @@ export function AskPraxisHome({ exampleCases }: AskPraxisHomeProps) {
       mode="app"
       activeCapsuleName={activeCase?.name ?? 'No Situation selected'}
       capsuleId={activeCase?.id ?? 'default'}
+      initialMemoId={initialMemoId}
     />
   );
 }

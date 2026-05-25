@@ -588,6 +588,7 @@ function buildClaimLedger(v2: ContextCapsuleV2): ContextCapsuleClaimLedgerV3 {
 }
 
 function buildAgentOperatingContract(v2: ContextCapsuleV2): ContextCapsuleAgentOperatingContract {
+  const starterCuration = v2.starterSnapshot?.curationProfile;
   const allowedActions = [
     ...(v2.agentPermissions.canSuggest ? ['suggest'] : []),
     ...(v2.agentPermissions.canSource ? ['source'] : []),
@@ -604,7 +605,11 @@ function buildAgentOperatingContract(v2: ContextCapsuleV2): ContextCapsuleAgentO
   return {
     allowedActions,
     forbiddenActions: dedupeStrings(forbiddenActions),
-    sourceRequirements: v2.evidenceRequirements.length ? [...v2.evidenceRequirements] : ['Label unsupported claims and source gaps before final output.'],
+    sourceRequirements: v2.evidenceRequirements.length
+      ? [...v2.evidenceRequirements]
+      : starterCuration?.sourceRefreshStatus.primaryExternalSourceIds.length
+        ? [`Inspect primary external sources: ${starterCuration.sourceRefreshStatus.primaryExternalSourceIds.join(', ')}.`]
+        : ['Label unsupported claims and source gaps before final output.'],
     reviewCheckpoints: [
       ...(v2.humanGate.required ? ['human_review_gate'] : []),
       'sourceability_review',
@@ -619,9 +624,11 @@ function buildAgentOperatingContract(v2: ContextCapsuleV2): ContextCapsuleAgentO
     handoffInstructions: [
       `Use capsule ${v2.capsuleId}@v${v2.version}.`,
       'Carry source ids, caveats, and review card state into every output.',
+      ...(starterCuration?.compactAgentInstructions ?? []),
     ],
     stopConditions: [
       'Stop before external publish, graph mutation, credential use, or unsupported final claims.',
+      ...(starterCuration?.tacitKnowledge.redLines ?? []).slice(0, 3),
       ...(v2.humanGate.required ? ['Stop if the human gate is stale, missing reviewer metadata, or disputed.'] : []),
     ],
   };
@@ -761,21 +768,38 @@ function buildDefaultReviewCards(capsule: ContextCapsuleV3): ContextCapsuleV3Rev
 function normalizeTacitKnowledge(value: unknown, v2: ContextCapsuleV2): ContextCapsuleHumanTacitKnowledge {
   const body = isRecord(value) ? value : {};
   const intelligence = v2.starterSnapshot?.intelligenceProfile?.humanWorkflow;
+  const starterTacit = v2.starterSnapshot?.curationProfile?.tacitKnowledge;
   const redLines = cleanStringArray(body.redLines).length
     ? cleanStringArray(body.redLines)
     : [
+      ...(starterTacit?.redLines ?? []),
       ...(intelligence?.redLines ?? []),
       ...v2.reasoningScaffold.caveats.filter((item) => /do not|must not|no\b|review/i.test(item)),
     ];
   return {
-    workingAssumptions: withFallback(cleanStringArray(body.workingAssumptions), v2.claimLedger.filter((claim) => claim.support === 'partially_supported').map((claim) => claim.text)),
+    workingAssumptions: withFallback(cleanStringArray(body.workingAssumptions), [
+      ...(starterTacit?.workingAssumptions ?? []),
+      ...v2.claimLedger.filter((claim) => claim.support === 'partially_supported').map((claim) => claim.text),
+    ]),
     hiddenConstraints: withFallback(cleanStringArray(body.hiddenConstraints), v2.reasoningScaffold.privateNotes ?? []),
     redLines: withFallback(redLines, v2.reasoningScaffold.caveats),
     institutionalHabits: withFallback(cleanStringArray(body.institutionalHabits), v2.audience.map((audience) => `${audience} review habit`)),
-    approvalPolitics: withFallback(cleanStringArray(body.approvalPolitics), v2.humanGate.required ? ['Human gate controls final reuse and publication.'] : []),
-    practicalHeuristics: withFallback(cleanStringArray(body.practicalHeuristics), v2.reasoningScaffold.publicMethod),
-    stakeholderSensitivities: withFallback(cleanStringArray(body.stakeholderSensitivities), v2.audience),
-    caveats: withFallback(cleanStringArray(body.caveats), v2.reasoningScaffold.caveats),
+    approvalPolitics: withFallback(cleanStringArray(body.approvalPolitics), [
+      ...(starterTacit?.approvalPolitics ?? []),
+      ...(v2.humanGate.required ? ['Human gate controls final reuse and publication.'] : []),
+    ]),
+    practicalHeuristics: withFallback(cleanStringArray(body.practicalHeuristics), [
+      ...(starterTacit?.practicalHeuristics ?? []),
+      ...v2.reasoningScaffold.publicMethod,
+    ]),
+    stakeholderSensitivities: withFallback(cleanStringArray(body.stakeholderSensitivities), [
+      ...(starterTacit?.stakeholderSensitivities ?? []),
+      ...v2.audience,
+    ]),
+    caveats: withFallback(cleanStringArray(body.caveats), [
+      ...(starterTacit?.caveats ?? []),
+      ...v2.reasoningScaffold.caveats,
+    ]),
     recurringDecisions: withFallback(cleanStringArray(body.recurringDecisions), v2.bestNextAction ? [v2.bestNextAction] : []),
     promptlessKnowledge: withFallback(cleanStringArray(body.promptlessKnowledge), [v2.useCase, v2.purpose].filter(Boolean)),
   };

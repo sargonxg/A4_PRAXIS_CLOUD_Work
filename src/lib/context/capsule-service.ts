@@ -1615,6 +1615,7 @@ function buildStarterSnapshot(starterDefinition: CapsuleStarterDefinition): Caps
       nextIdeas: [...starterDefinition.richProfile.nextIdeas],
       qualityRubric: [...starterDefinition.richProfile.qualityRubric],
     },
+    curationProfile: cloneSerializable(starterDefinition.curationProfile),
     intelligenceProfile: cloneSerializable(starterDefinition.intelligenceProfile),
     cogneeProfile: cloneSerializable(starterDefinition.cogneeProfile),
     ...(starterDefinition.ontologyOverlay ? {
@@ -2564,7 +2565,12 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     : catalogStarter?.cogneeProfile
       ? cloneSerializable(catalogStarter.cogneeProfile)
       : null;
-  if (!intelligenceProfile || !cogneeProfile) return null;
+  const curationProfile = isRecord(value.curationProfile)
+    ? cloneSerializable(value.curationProfile as unknown as CapsuleStarterSnapshot['curationProfile'])
+    : catalogStarter?.curationProfile
+      ? cloneSerializable(catalogStarter.curationProfile)
+      : null;
+  if (!intelligenceProfile || !cogneeProfile || !curationProfile) return null;
   return {
     catalogVersion: stringOrNull(value.catalogVersion) ?? 'unknown',
     starterId,
@@ -2589,6 +2595,7 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     },
     aiUseGuidance: longStringOrNull(value.aiUseGuidance) ?? '',
     richProfile,
+    curationProfile,
     intelligenceProfile,
     cogneeProfile,
     ...(ontologyOverlay ? { ontologyOverlay } : {}),

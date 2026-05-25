@@ -78,7 +78,20 @@ describe('/api/memos/from-ask-pack', () => {
   beforeEach(() => {
     saveMemoDraft.mockReset();
     saveOutputCapsule.mockReset();
-    saveMemoDraft.mockResolvedValue({ memoId: 'memo-1', href: '/app/write?memoId=memo-1' });
+    saveMemoDraft.mockResolvedValue({
+      memo: {
+        id: 'memo-1',
+        caseId: 'sit-1',
+        ownerUid: 'user-1',
+        templateId: 'policy-memo',
+        title: 'Ask pack',
+        status: 'draft',
+        currentVersionId: 'v1',
+        createdAt: '2026-05-17T12:00:00.000Z',
+        updatedAt: '2026-05-17T12:00:00.000Z',
+      },
+      versions: [],
+    });
     saveOutputCapsule.mockResolvedValue({ id: 'out-1' });
   });
 

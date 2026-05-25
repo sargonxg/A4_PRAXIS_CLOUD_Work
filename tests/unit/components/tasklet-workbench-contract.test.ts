@@ -122,6 +122,25 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('/app/agent-dashboard');
   });
 
+  it('opens Created Work and Ask memo drafts in a lightweight popup editor with PRAXIS actions', () => {
+    expect(source).toContain('type MemoArtifactState');
+    expect(source).toContain('function MemoArtifactOverlay');
+    expect(source).toContain('data-testid="memo-artifact-overlay"');
+    expect(source).toContain('data-testid="memo-artifact-editor"');
+    expect(source).toContain('Keep as side artifact');
+    expect(source).toContain('Improve');
+    expect(source).toContain('Check sourceability');
+    expect(source).toContain('Inspect receipts');
+    expect(source).toContain('Unsupported claims');
+    expect(source).toContain('Ask PRAXIS conversation');
+    expect(source).toContain('openMemoArtifactFromCreatedWork');
+    expect(source).toContain('openMemoArtifactById');
+    expect(source).toContain('/api/memos/${encodeURIComponent(memoId)}');
+    expect(source).toContain('memoArtifactFromAskPack');
+    expect(source).toContain('setMemoArtifact');
+    expect(source).not.toContain('if (memoId) router.push(`/app/write?memoId=${encodeURIComponent(memoId)}`)');
+  });
+
   it('keeps retry/source-check actions on the active conversation thread', () => {
     expect(source).toContain('const nextThreadId = ensureConversationThread()');
     expect(source).toContain("onSourceCheck={() => void sendToPraxis(selectedAgent, `Source-check this answer in the active conversation");

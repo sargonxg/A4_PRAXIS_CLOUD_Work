@@ -452,6 +452,33 @@ export interface CapsuleStarterRichProfile {
   agentInstructions: string;
 }
 
+export interface CapsuleStarterTacitKnowledge {
+  workingAssumptions: string[];
+  redLines: string[];
+  approvalPolitics: string[];
+  practicalHeuristics: string[];
+  stakeholderSensitivities: string[];
+  caveats: string[];
+}
+
+export interface CapsuleStarterSourceRefreshStatus {
+  status: 'verified' | 'needs-refresh' | 'has-gaps';
+  verifiedAt: string;
+  primaryExternalSourceIds: string[];
+  internalMethodSourceIds: string[];
+  sourceGaps: string[];
+  verificationNotes: string;
+}
+
+export interface CapsuleStarterCurationProfile {
+  humanInspectionSummary: string;
+  agentUseSummary: string;
+  tacitKnowledge: CapsuleStarterTacitKnowledge;
+  sourceRefreshStatus: CapsuleStarterSourceRefreshStatus;
+  omitFromAgentContextNotes: string[];
+  compactAgentInstructions: string[];
+}
+
 export type CapsuleIntelligenceKind = 'situation' | 'thinking-device' | 'user-workflow' | 'output-artifact';
 
 export interface CapsuleIntelligenceProfile {
@@ -682,6 +709,7 @@ export interface CapsuleStarterDefinition {
   agentWorkflow: CapsuleStarterAgentWorkflow;
   aiUseGuidance: string;
   richProfile: CapsuleStarterRichProfile;
+  curationProfile: CapsuleStarterCurationProfile;
   intelligenceProfile: CapsuleIntelligenceProfile;
   cogneeProfile: CapsuleCogneeProfile;
   deviceProfile?: CapsuleStarterDeviceProfile;
@@ -760,7 +788,7 @@ export const HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS = [
 export const HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY = {
   id: 'human-gated-policy-judgment',
   label: 'Human-Gated Policy Judgment Capsules',
-  summary: 'Flagship source-aware policy judgment capsules with placeholder gates, claim-ledger scaffolds, output contracts, and no invented approval.',
+  summary: 'Flagship source-aware policy judgment capsules with refreshed external source spines, claim-ledger scaffolds, output contracts, and no invented approval.',
   starterIds: HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS,
 } as const;
 
@@ -772,8 +800,283 @@ export const CAPSULE_WOW_DEMO_STARTER_IDS = [
   'starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026',
 ] as const;
 
-export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-24-capsule-intelligence-v13';
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-25-capsule-consolidation-v14';
+export const CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS = 12_000;
+export const CAPSULE_STARTER_PROMPT_MAX_CHARS = 16_000;
 const CAPSULE_NO_AFFILIATION_LIMITATION = 'PRAXIS is not affiliated with, endorsed by, or speaking for any organization named in this capsule, its sources, or its examples.';
+
+export const CAPSULE_STARTER_SOURCE_REGISTRY: Record<string, CapsuleStarterSource> = {
+  'un-security-council-resolutions': {
+    id: 'un-security-council-resolutions',
+    label: 'UN Security Council resolutions',
+    url: 'https://main.un.org/securitycouncil/en/content/resolutions',
+    sourceType: 'multilateral',
+    publisher: 'United Nations Security Council',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Official Security Council resolution lane for mandates, renewals, sanctions, and crisis-room legal posture.',
+  },
+  'un-security-council-meetings-records': {
+    id: 'un-security-council-meetings-records',
+    label: 'UN Security Council meetings and records',
+    url: 'https://main.un.org/securitycouncil',
+    sourceType: 'multilateral',
+    publisher: 'United Nations Security Council',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Official Council meeting-record lane for member-state statements, deliberation posture, and procedural context.',
+  },
+  'un-documents': {
+    id: 'un-documents',
+    label: 'United Nations documents portal',
+    url: 'https://www.un.org/en/our-work/documents',
+    sourceType: 'multilateral',
+    publisher: 'United Nations',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Official UN documents access lane for mandates, resolutions, reports, and administrative issuances.',
+  },
+  'reliefweb-updates': {
+    id: 'reliefweb-updates',
+    label: 'ReliefWeb crisis updates',
+    url: 'https://reliefweb.int/updates',
+    sourceType: 'multilateral',
+    publisher: 'UN OCHA ReliefWeb',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'UN OCHA-managed crisis update lane for dated humanitarian and operating-environment reporting.',
+  },
+  'ocha-humanitarian-access': {
+    id: 'ocha-humanitarian-access',
+    label: 'OCHA humanitarian access guidance',
+    url: 'https://knowledge.base.unocha.org/wiki/spaces/imtoolbox/pages/1410072577/Humanitarian%2BAccess',
+    sourceType: 'multilateral',
+    publisher: 'UN OCHA',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Humanitarian access constraint, negotiation, and operational-context baseline.',
+  },
+  'icrc-customary-ihl-rule-55': {
+    id: 'icrc-customary-ihl-rule-55',
+    label: 'ICRC customary IHL Rule 55 on humanitarian relief access',
+    url: 'https://ihl-databases.icrc.org/en/customary-ihl/v1/rule55',
+    sourceType: 'public-library',
+    publisher: 'International Committee of the Red Cross',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'IHL source lane for humanitarian relief access claims and legal-review caveats.',
+  },
+  'imf-debt-sustainability-analysis': {
+    id: 'imf-debt-sustainability-analysis',
+    label: 'IMF debt sustainability analysis',
+    url: 'https://www.imf.org/external/pubs/ft/dsa/index.htm',
+    sourceType: 'multilateral',
+    publisher: 'International Monetary Fund',
+    date: '2025-11-21',
+    reliabilityTier: 1,
+    relevance: 'Macro-financial and debt-sustainability source lane for country-risk judgments.',
+  },
+  'world-bank-debt-statistics': {
+    id: 'world-bank-debt-statistics',
+    label: 'World Bank debt statistics',
+    url: 'https://www.worldbank.org/en/programs/debt-statistics',
+    sourceType: 'multilateral',
+    publisher: 'World Bank',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'External debt, creditor exposure, and country-risk indicator source lane.',
+  },
+  'un-effective-mediation-guidance': {
+    id: 'un-effective-mediation-guidance',
+    label: 'United Nations Guidance for Effective Mediation',
+    url: 'https://peacemaker.un.org/documents/united-nations-guidance-effective-mediation',
+    sourceType: 'multilateral',
+    publisher: 'United Nations Peacemaker',
+    date: '2012-06',
+    reliabilityTier: 1,
+    relevance: 'Mediation process fundamentals, consent, inclusivity, impartiality, and quality-agreement baseline.',
+  },
+  'un-mediation-resources': {
+    id: 'un-mediation-resources',
+    label: 'UN mediation guidance and practice resources',
+    url: 'https://peacemaker.un.org/en/resources/un-guidance-for-mediation',
+    sourceType: 'multilateral',
+    publisher: 'United Nations Peacemaker',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Mediation practice, process design, and process-memory source lane.',
+  },
+  'un-information-integrity-principles': {
+    id: 'un-information-integrity-principles',
+    label: 'United Nations Global Principles for Information Integrity',
+    url: 'https://www.un.org/en/information-integrity/global-principles',
+    sourceType: 'multilateral',
+    publisher: 'United Nations',
+    date: '2024',
+    reliabilityTier: 1,
+    relevance: 'Information integrity, societal trust, media pluralism, and transparency source lane for narrative-legitimacy review.',
+  },
+  'unesco-media-information-literacy': {
+    id: 'unesco-media-information-literacy',
+    label: 'UNESCO media and information literacy resources',
+    url: 'https://www.unesco.org/en/media-information-literacy',
+    sourceType: 'multilateral',
+    publisher: 'UNESCO',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Media literacy and information-ecosystem context for legitimacy, public-language, and narrative-risk work.',
+  },
+  'jhu-evaluating-sources': {
+    id: 'jhu-evaluating-sources',
+    label: 'Johns Hopkins Libraries evaluating sources guide',
+    url: 'https://guides.library.jhu.edu/evaluate/sources',
+    sourceType: 'public-library',
+    publisher: 'Johns Hopkins University Libraries',
+    date: '2024',
+    reliabilityTier: 2,
+    relevance: 'Public-library source-evaluation lane for authority, accuracy, bias, and fit-for-purpose review.',
+  },
+  'gpo-style-manual': {
+    id: 'gpo-style-manual',
+    label: 'GPO Style Manual',
+    url: 'https://www.govinfo.gov/features/new-edition-gpo-style-manual',
+    sourceType: 'official',
+    publisher: 'U.S. Government Publishing Office',
+    date: '2017-01-12',
+    reliabilityTier: 1,
+    relevance: 'Official federal writing-style lane for concise, reviewable public-sector outputs.',
+  },
+  'plain-language-gov': {
+    id: 'plain-language-gov',
+    label: 'Plain language government guidance',
+    url: 'https://www.plainlanguage.gov/guidelines/',
+    sourceType: 'official',
+    publisher: 'U.S. Plain Language Action and Information Network',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Public guidance for concise, usable government-facing writing.',
+  },
+  'crisis-official-source-lane': {
+    id: 'crisis-official-source-lane',
+    label: 'UN Security Council crisis source lane',
+    url: 'https://main.un.org/securitycouncil',
+    sourceType: 'multilateral',
+    publisher: 'United Nations Security Council',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Official Council meeting and record source lane for crisis-room decision framing.',
+  },
+  'crisis-situation-update-lane': {
+    id: 'crisis-situation-update-lane',
+    label: 'ReliefWeb crisis update lane',
+    url: 'https://reliefweb.int/updates',
+    sourceType: 'multilateral',
+    publisher: 'UN OCHA ReliefWeb',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Dated crisis update source lane for situational change, humanitarian context, and source freshness.',
+  },
+  'un-mandate-source-lane': {
+    id: 'un-mandate-source-lane',
+    label: 'UN Security Council resolutions lane',
+    url: 'https://main.un.org/securitycouncil/en/content/resolutions',
+    sourceType: 'multilateral',
+    publisher: 'United Nations Security Council',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Official mandate, renewal, and legal-authority source lane.',
+  },
+  'un-council-deliberation-lane': {
+    id: 'un-council-deliberation-lane',
+    label: 'UN Security Council deliberation records lane',
+    url: 'https://main.un.org/securitycouncil',
+    sourceType: 'multilateral',
+    publisher: 'United Nations Security Council',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Council meeting-record lane for member-state posture and political inference review.',
+  },
+  'access-constraint-source-lane': {
+    id: 'access-constraint-source-lane',
+    label: 'OCHA humanitarian access constraint lane',
+    url: 'https://knowledge.base.unocha.org/wiki/spaces/imtoolbox/pages/1410072577/Humanitarian%2BAccess',
+    sourceType: 'multilateral',
+    publisher: 'UN OCHA',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Operational access constraints, affected-area access, and negotiation-risk source lane.',
+  },
+  'affected-population-source-lane': {
+    id: 'affected-population-source-lane',
+    label: 'ICRC humanitarian relief access lane',
+    url: 'https://ihl-databases.icrc.org/en/customary-ihl/v1/rule55',
+    sourceType: 'public-library',
+    publisher: 'International Committee of the Red Cross',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Humanitarian relief access and affected-population protection source lane.',
+  },
+  'country-risk-indicator-lane': {
+    id: 'country-risk-indicator-lane',
+    label: 'World Bank country debt statistics lane',
+    url: 'https://www.worldbank.org/en/programs/debt-statistics',
+    sourceType: 'multilateral',
+    publisher: 'World Bank',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Country-risk indicator, debt, and exposure baseline.',
+  },
+  'country-risk-judgment-source-lane': {
+    id: 'country-risk-judgment-source-lane',
+    label: 'IMF debt sustainability analysis lane',
+    url: 'https://www.imf.org/external/pubs/ft/dsa/index.htm',
+    sourceType: 'multilateral',
+    publisher: 'International Monetary Fund',
+    date: '2025-11-21',
+    reliabilityTier: 1,
+    relevance: 'Country-risk judgment and macro-financial sustainability source lane.',
+  },
+  'mediation-process-record-lane': {
+    id: 'mediation-process-record-lane',
+    label: 'UN effective mediation guidance lane',
+    url: 'https://peacemaker.un.org/documents/united-nations-guidance-effective-mediation',
+    sourceType: 'multilateral',
+    publisher: 'United Nations Peacemaker',
+    date: '2012-06',
+    reliabilityTier: 1,
+    relevance: 'Mediation process memory, consent, inclusivity, impartiality, and agreement-quality source lane.',
+  },
+  'commitment-source-lane': {
+    id: 'commitment-source-lane',
+    label: 'UN mediation resources lane',
+    url: 'https://peacemaker.un.org/en/resources/un-guidance-for-mediation',
+    sourceType: 'multilateral',
+    publisher: 'United Nations Peacemaker',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Process guidance and commitment-tracking reference lane for mediation handover.',
+  },
+  'narrative-claim-source-lane': {
+    id: 'narrative-claim-source-lane',
+    label: 'UN information integrity principles lane',
+    url: 'https://www.un.org/en/information-integrity/global-principles',
+    sourceType: 'multilateral',
+    publisher: 'United Nations',
+    date: '2024',
+    reliabilityTier: 1,
+    relevance: 'Narrative, information integrity, transparency, and societal-trust source lane.',
+  },
+  'audience-risk-source-lane': {
+    id: 'audience-risk-source-lane',
+    label: 'UNESCO media and information literacy lane',
+    url: 'https://www.unesco.org/en/media-information-literacy',
+    sourceType: 'multilateral',
+    publisher: 'UNESCO',
+    date: '2026',
+    reliabilityTier: 1,
+    relevance: 'Audience risk, media literacy, and legitimacy-sensitive communication source lane.',
+  },
+};
 
 export type CapsuleStarterSnapshot = Pick<
   CapsuleStarterDefinition,
@@ -794,6 +1097,7 @@ export type CapsuleStarterSnapshot = Pick<
   | 'agentWorkflow'
   | 'aiUseGuidance'
   | 'richProfile'
+  | 'curationProfile'
   | 'intelligenceProfile'
   | 'cogneeProfile'
   | 'deviceProfile'
@@ -1358,6 +1662,7 @@ type CapsuleStarterOverrides = Partial<Pick<
   | 'agentWorkflow'
   | 'aiUseGuidance'
   | 'richProfile'
+  | 'curationProfile'
   | 'intelligenceProfile'
   | 'cogneeProfile'
   | 'deviceProfile'
@@ -2067,6 +2372,20 @@ function starter(
       humanReviewGate: 'Human review required before external publication, legal or financial reliance, canonical graph promotion, or high-stakes operational use.',
     },
   );
+  const curationProfile = overrides?.curationProfile ?? buildStarterCurationProfile({
+    starterId,
+    category,
+    domain,
+    label,
+    summary,
+    detail,
+    sourcePack,
+    recommendedToolIds,
+    outputProductIds,
+    richProfile,
+    ...(deviceProfile ? { deviceProfile } : {}),
+    ...(humanReview ? { humanReview } : {}),
+  });
   const ontologyOverlay = overrides?.ontologyOverlay ?? buildStarterOntologyOverlay({
     starterId,
     category,
@@ -2154,6 +2473,7 @@ function starter(
     agentWorkflow,
     aiUseGuidance,
     richProfile,
+    curationProfile,
     intelligenceProfile,
     cogneeProfile,
     ...(deviceProfile ? { deviceProfile } : {}),
@@ -2161,6 +2481,17 @@ function starter(
     ontologyOverlay,
     inspectionSections: [
       ...(overrides?.inspectionSections ?? []),
+      { label: 'Business use', detail: curationProfile.humanInspectionSummary },
+      { label: 'Source spine', detail: `Primary external sources: ${curationProfile.sourceRefreshStatus.primaryExternalSourceIds.join(', ')}. ${curationProfile.sourceRefreshStatus.verificationNotes}` },
+      { label: 'Tacit knowledge', detail: [
+        ...curationProfile.tacitKnowledge.workingAssumptions,
+        ...curationProfile.tacitKnowledge.redLines,
+        ...curationProfile.tacitKnowledge.approvalPolitics,
+      ].slice(0, 6).join(' ') },
+      { label: 'Claim/support posture', detail: richProfile.evidenceRequirements.slice(0, 4).join(' ') },
+      { label: 'Agent contract', detail: curationProfile.compactAgentInstructions.join(' ') },
+      { label: 'Review gates', detail: humanReview?.humanReviewGate ?? agentWorkflow.approvalNotes },
+      { label: 'Marketplace/share readiness', detail: 'Private by default. Public, forkable, or marketplace reuse requires human author/reviewer metadata, explicit reuse terms, source freshness, and no unsupported final claims.' },
       { label: 'Purpose', detail: richProfile.purpose },
       { label: 'Sources', detail: richProfile.sourceIndications.slice(0, 3).join(' ') },
       ...(humanReview ? [
@@ -2260,53 +2591,53 @@ function buildStarterRichProfile(input: {
     user: `Use ${label} to encode the user's mandate, tone, red lines, evidentiary threshold, and preferred PRAXIS outputs.`,
   };
   const categoryJob: Record<CapsuleStarterCategory, string> = {
-    situation: `Help a human expert doing real work understand what is happening in ${domainLabel}, what changed, who can act, and which decision should be made next.`,
-    tool: `Help a human expert doing real work run ${primaryTool} or ${secondaryTool} against a known capsule instead of relying on unstructured reasoning.`,
-    output: `Help a human expert doing real work turn grounded context into a finished ${primaryOutput} with enough structure for review and reuse.`,
-    user: `Help PRAXIS adapt answers to a human expert's role-specific operating style while keeping evidence standards and boundaries explicit.`,
+    situation: `Help a human expert doing ${label} work understand what is happening in ${domainLabel}, what changed, who can act, and which decision should be made next.`,
+    tool: `Help a human expert doing ${label} work run ${primaryTool} or ${secondaryTool} against a known capsule instead of relying on unstructured reasoning.`,
+    output: `Help a human expert using ${label} turn grounded context into a finished ${primaryOutput} with enough structure for review and reuse.`,
+    user: `Help PRAXIS adapt answers to the ${label} role-specific operating style while keeping evidence standards and boundaries explicit.`,
   };
   const categoryUse: Record<CapsuleStarterCategory, string[]> = {
     situation: [
-      `Use when a human expert's real work needs reusable context, approved claims, disputed claims, stale assumptions, advisory memory, and forbidden-use boundaries.`,
-      `Use when a ${domainLabel} question needs actor mapping, facts, dates, and source limits before advice.`,
+      `Use ${label} when real work needs reusable context, approved claims, disputed claims, stale assumptions, advisory memory, and forbidden-use boundaries.`,
+      `Use ${label} when a ${domainLabel} question needs actor mapping, facts, dates, and source limits before advice.`,
       `Use when the user needs PRAXIS to compare plausible options or escalation paths for ${label}.`,
-      `Use when a brief, dashboard, or memo should inherit this situation context across turns.`,
+      `Use when a brief, dashboard, or memo should inherit ${label} situation context across turns.`,
     ],
     tool: [
-      `Use when a human expert's workday needs a named reasoning device with review-card outputs before a final answer.`,
+      `Use ${label} when a human expert's workday needs a named reasoning device with review-card outputs before a final answer.`,
       `Use when ${label} should perform a defined check before drafting or recommendation.`,
-      `Use when inputs are available but claims, assumptions, chronology, or sourceability need review.`,
-      `Use when PRAXIS should produce an auditable intermediate finding with ${primaryTool}.`,
+      `Use ${label} when inputs are available but claims, assumptions, chronology, or sourceability need review.`,
+      `Use ${label} when PRAXIS should produce an auditable intermediate finding with ${primaryTool}.`,
     ],
     output: [
-      `Use when a human expert needs an artifact style that preserves real work caveats, approvals, and handover instructions.`,
+      `Use ${label} when a human expert needs an artifact style that preserves real work caveats, approvals, and handover instructions.`,
       `Use when the target artifact is ${primaryOutput} and the audience needs a clean decision product.`,
-      `Use when sections, citations, assumptions, and approval notes should be stable across drafts.`,
-      `Use when handoff quality matters more than open-ended exploration.`,
+      `Use ${label} when sections, citations, assumptions, and approval notes should be stable across drafts.`,
+      `Use ${label} when handoff quality matters more than open-ended exploration.`,
     ],
     user: [
-      `Use when the capsule should represent a real human expert's mandate, tolerance for uncertainty, and review style.`,
+      `Use ${label} when the capsule should represent a real human expert's mandate, tolerance for uncertainty, and review style.`,
       `Use when PRAXIS should answer as ${label} rather than as a generic assistant.`,
-      `Use when tone, mandate, red lines, or evidentiary thresholds should persist across work.`,
-      `Use when routing decisions should reflect the user's preferred outputs and review style.`,
+      `Use ${label} when tone, mandate, red lines, or evidentiary thresholds should persist across work.`,
+      `Use ${label} when routing decisions should reflect the user's preferred outputs and review style.`,
     ],
   };
   const categoryAvoid: Record<CapsuleStarterCategory, string[]> = {
     situation: [
       `Do not use ${label} as a final authority when recent events or jurisdiction-specific rules are missing.`,
-      `Do not use it alone for external publication without source refresh and human approval.`,
+      `Do not use ${label} alone for external publication without source refresh and human approval.`,
     ],
     tool: [
       `Do not run ${label} when the needed inputs are absent or the user is asking for a finished output directly.`,
-      `Do not treat the check as dispositive without review of weak evidence and counterexamples.`,
+      `Do not treat ${label} as dispositive without review of weak evidence and counterexamples.`,
     ],
     output: [
       `Do not use ${label} when the user still needs discovery, intake, or source collection first.`,
-      `Do not export the artifact until citations, caveats, and approval notes have been checked.`,
+      `Do not export ${label} until citations, caveats, and approval notes have been checked.`,
     ],
     user: [
       `Do not let ${label} override explicit user instructions in the current turn.`,
-      `Do not use role style to soften legal, safety, or evidentiary caveats.`,
+      `Do not use ${label} role style to soften legal, safety, or evidentiary caveats.`,
     ],
   };
   return {
@@ -2322,18 +2653,17 @@ function buildStarterRichProfile(input: {
     ],
     sourceIndications: [
       `${firstSource} is the first baseline to refresh for ${label}.`,
-      `${secondSource} should be used to corroborate or challenge the first baseline.`,
-      `Treat the source pack as indications for ${domainLabel}, not as a complete bibliography.`,
+      `${secondSource} should be used to corroborate or challenge the ${label} baseline.`,
+      `Treat the ${label} source pack as indications for ${domainLabel}, not as a complete bibliography.`,
     ],
     evidenceRequirements: [
       `Separate approved, disputed, stale, advisory, and forbidden claims in ${label} before generating or reusing an answer.`,
       `Attach at least one current source that directly supports the main claim or recommendation in ${label}.`,
       `Record dates, jurisdiction, actor names, and confidence limits before using ${label} for ${primaryOutput}.`,
-      `Flag unsupported claims and route them through ${primaryTool} or sourceability review before handoff.`,
-      `Treat Cognee recall, graph proposal rows, model mappings, and SQL projections as advisory until a review-card apply step is complete.`,
+      `Flag unsupported ${label} claims and route them through ${primaryTool} or sourceability review before handoff.`,
+      `Treat ${label} Cognee recall, graph proposal rows, model mappings, and SQL projections as advisory until a review-card apply step is complete.`,
     ],
     riskCaveats: [
-      CAPSULE_NO_AFFILIATION_LIMITATION,
       `${label} can become stale if the source pack is not refreshed before time-sensitive decisions.`,
       `${label} may hide contested assumptions unless PRAXIS asks for counterevidence and dissenting actor incentives.`,
       `${label} should not let Cognee memory, graph proposals, or SQL projections mutate canonical state without human review.`,
@@ -2350,12 +2680,92 @@ function buildStarterRichProfile(input: {
       `Pair ${label} with ${primaryOutput} so the next PRAXIS response has a concrete handoff target.`,
     ],
     qualityRubric: [
-      `Specificity: names the relevant ${domainLabel} actors, claims, and decision horizon.`,
-      `Sourceability: every material claim can be traced to a source, document, or explicit uncertainty note.`,
-      `Actionability: the next PRAXIS step, tool route, and output target are clear.`,
-      `Review posture: risks, caveats, and approval gates are visible before export.`,
+      `Specificity for ${label}: names the relevant ${domainLabel} actors, claims, and decision horizon.`,
+      `Sourceability for ${label}: every material claim can be traced to a source, document, or explicit uncertainty note.`,
+      `Actionability for ${label}: the next PRAXIS step, tool route, and output target are clear.`,
+      `Review posture for ${label}: risks, caveats, and approval gates are visible before export.`,
     ],
     agentInstructions: `When ${label} is active, treat it as real work context created for a human expert. Start by restating its purpose in one line, separate approved, disputed, stale, advisory, and forbidden claims, inspect ${firstSource} and ${secondSource}, run ${primaryTool}${secondaryTool !== primaryTool ? ` or ${secondaryTool}` : ''} for gaps, keep Cognee recall, graph rows, and SQL projections advisory until review-card apply metadata exists, produce ${primaryOutput}, and stop for approval before external export or connector writes. Context detail: ${detail}`,
+  };
+}
+
+function buildStarterCurationProfile(input: {
+  starterId: string;
+  category: CapsuleStarterCategory;
+  domain: CapsuleStarterDomain;
+  label: string;
+  summary: string;
+  detail: string;
+  sourcePack: CapsuleStarterSource[];
+  recommendedToolIds: string[];
+  outputProductIds: string[];
+  richProfile: CapsuleStarterRichProfile;
+  humanReview?: CapsuleStarterHumanReview;
+  deviceProfile?: CapsuleStarterDeviceProfile;
+}): CapsuleStarterCurationProfile {
+  const externalSources = input.sourcePack.filter((source) => !isPraxisInternalSource(source));
+  const internalSources = input.sourcePack.filter(isPraxisInternalSource);
+  const primaryExternalSourceIds = externalSources.slice(0, 3).map((source) => source.id);
+  const primarySourceLabels = externalSources.slice(0, 2).map((source) => source.label).join(' and ');
+  const primaryTool = input.recommendedToolIds[0] ?? 'sourceability';
+  const primaryOutput = input.outputProductIds[0] ?? 'reviewable output';
+  const humanGate = input.humanReview?.humanReviewGate ?? 'Human review required before external use.';
+  const domainLabel = input.domain.replace(/-/g, ' ');
+
+  return {
+    humanInspectionSummary: `${input.label}: ${input.summary} Inspect the source spine, tacit assumptions, approval gate, and next output target before reuse.`,
+    agentUseSummary: `Use ${input.label} as compact ${input.category} context for ${domainLabel} work: start from ${primarySourceLabels || 'the refreshed source spine'}, run ${primaryTool}, produce ${primaryOutput}, and stop when sources, approval, or scope are insufficient.`,
+    tacitKnowledge: {
+      workingAssumptions: [
+        `${input.label} is a starter frame, not the user's final factual record.`,
+        `${primarySourceLabels || 'The source spine'} is sufficient for first-pass orientation but must be refreshed for live reliance.`,
+      ],
+      redLines: uniqueStrings([
+        'Do not claim PRAXIS affiliation, endorsement, or authority for named organizations.',
+        'Do not publish, promote graph facts, write SQL projections, or remember Cognee outputs without review-card approval.',
+        humanGate,
+      ]),
+      approvalPolitics: [
+        input.humanReview?.status === 'draft'
+          ? 'Draft flagship posture: sources are refreshed, but named human approval is still pending.'
+          : 'Human review metadata travels with the capsule, but live source refresh remains required before high-stakes reliance.',
+        'Escalate when the output changes audience, jurisdiction, operational consequence, or public visibility.',
+      ],
+      practicalHeuristics: uniqueStrings([
+        `Begin with the two primary external sources: ${primaryExternalSourceIds.join(', ')}.`,
+        `Use ${primaryTool} before drafting; keep unsupported claims as open questions.`,
+        input.deviceProfile ? `Apply ${input.deviceProfile.deviceKind} as a scaffold, not as a conclusion generator.` : `Pair with ${primaryOutput} only after source gaps are named.`,
+      ]),
+      stakeholderSensitivities: [
+        `${input.label} may affect real decision owners, affected groups, reviewers, and source publishers.`,
+        'Separate factual claims, values, legal/compliance questions, and political judgments so stakeholders can review the right layer.',
+      ],
+      caveats: uniqueStrings([
+        input.richProfile.riskCaveats[0] ?? 'Source and review limits must remain visible.',
+        'Current affairs, legal, financial, health, humanitarian, and operational claims require live source review before reliance.',
+        'Advisory memory, graph proposals, and model mappings remain non-canonical until accepted by a human reviewer.',
+      ]),
+    },
+    sourceRefreshStatus: {
+      status: primaryExternalSourceIds.length >= 2 ? 'verified' : 'needs-refresh',
+      verifiedAt: CAPSULE_STARTER_CATALOG_VERSION,
+      primaryExternalSourceIds,
+      internalMethodSourceIds: internalSources.map((source) => source.id),
+      sourceGaps: primaryExternalSourceIds.length >= 2 ? [] : ['Add at least two external non-PRAXIS source refs.'],
+      verificationNotes: primaryExternalSourceIds.length >= 2
+        ? 'Starter source spine has at least two external non-PRAXIS sources; refresh live links before high-stakes use.'
+        : 'Starter source spine is incomplete and must be converted into a review-card source gap.',
+    },
+    omitFromAgentContextNotes: [
+      'Do not repeat full inspector prose, marketplace copy, or long boilerplate in the model prompt.',
+      'Use compact tacit notes, source ids, tool route, output target, and stop conditions instead.',
+      'Global no-affiliation and approval boundaries come from shared governance lines, not repeated rich-profile text.',
+    ],
+    compactAgentInstructions: [
+      `Inspect ${primaryExternalSourceIds.slice(0, 2).join(' and ')} first; mark gaps instead of inventing support.`,
+      `Run ${primaryTool} and draft toward ${primaryOutput} only after claim support is visible.`,
+      'Stop for human review before external publication, sensitive reliance, graph promotion, Cognee remember(), or connector writes.',
+    ],
   };
 }
 
@@ -2456,13 +2866,46 @@ function sourcePackForStarter(
   ]);
 }
 
+function sourceFromRegistry(sourceId: string, relevance?: string): CapsuleStarterSource {
+  const source = CAPSULE_STARTER_SOURCE_REGISTRY[sourceId];
+  if (!source) throw new Error(`Missing capsule source registry entry: ${sourceId}`);
+  return {
+    ...source,
+    ...(relevance ? { relevance } : {}),
+  };
+}
+
+function isPraxisInternalSource(source: CapsuleStarterSource): boolean {
+  return source.publisher === 'PRAXIS starter catalog' || source.url.includes('praxis.tacitus.me');
+}
+
+function ensureExternalSourceSpine(sources: CapsuleStarterSource[]): CapsuleStarterSource[] {
+  const seen = new Set<string>();
+  const deduped = sources.filter((source) => {
+    if (seen.has(source.id)) return false;
+    seen.add(source.id);
+    return true;
+  });
+  const externalCount = deduped.filter((source) => !isPraxisInternalSource(source)).length;
+  if (externalCount >= 2) return deduped;
+  for (const sourceId of ['jhu-evaluating-sources', 'gpo-style-manual', 'plain-language-gov']) {
+    if (deduped.filter((source) => !isPraxisInternalSource(source)).length >= 2) break;
+    if (!seen.has(sourceId)) {
+      deduped.push(sourceFromRegistry(sourceId));
+      seen.add(sourceId);
+    }
+  }
+  return deduped;
+}
+
 function normalizeStarterSourcePack(sources: CapsuleStarterSource[]): CapsuleStarterSource[] {
-  return sources.map((source) => ({
+  const normalized = sources.map((source) => ({
     ...source,
     publisher: source.publisher ?? publisherFromSource(source),
     date: source.date ?? CAPSULE_STARTER_CATALOG_VERSION,
     reliabilityTier: source.reliabilityTier ?? reliabilityTierFromSource(source.sourceType),
   }));
+  return ensureExternalSourceSpine(normalized);
 }
 
 function publisherFromSource(source: CapsuleStarterSource): string {
@@ -3132,11 +3575,11 @@ function realWorkStarter(spec: RealWorkCapsuleSpec): CapsuleStarterDefinition {
     userJob: `Represent real work for ${spec.userJob}`,
     whenToUse: uniqueStrings([
       spec.realWorkUse,
-      `Use when a human expert needs reusable context, source limits, and drafting posture before PRAXIS generates ${spec.outputProductIds[0] ?? 'an output'}.`,
+      `Use ${spec.label} when a human expert needs reusable context, source limits, and drafting posture before PRAXIS generates ${spec.outputProductIds[0] ?? 'an output'}.`,
       ...baseRichProfile.whenToUse,
     ]),
     improves: uniqueStrings([
-      'Real work handover: preserves expert context, source checks, and decision constraints across agents.',
+      `${spec.label} handover: preserves expert context, source checks, and decision constraints across agents.`,
       `Expert drafting: keeps the answer tied to ${spec.draftingStyle}.`,
       `Decision quality: makes ${spec.decisionFocus} reviewable before output generation.`,
       ...baseRichProfile.improves,
@@ -3147,11 +3590,10 @@ function realWorkStarter(spec: RealWorkCapsuleSpec): CapsuleStarterDefinition {
     ]),
     evidenceRequirements: uniqueStrings([
       ...baseRichProfile.evidenceRequirements,
-      'Separate approved, disputed, stale, advisory, and forbidden claims before using this capsule in an agent run.',
-      'Treat Cognee recall, graph proposals, and SQL projection rows as review-card evidence until a human applies them.',
+      `Separate approved, disputed, stale, advisory, and forbidden ${spec.label} claims before using this capsule in an agent run.`,
+      `Treat ${spec.label} Cognee recall, graph proposals, and SQL projection rows as review-card evidence until a human applies them.`,
     ]),
     riskCaveats: uniqueStrings([
-      CAPSULE_NO_AFFILIATION_LIMITATION,
       `Reality check: ${spec.userJob}`,
       ...baseRichProfile.riskCaveats,
     ]),
@@ -3160,8 +3602,8 @@ function realWorkStarter(spec: RealWorkCapsuleSpec): CapsuleStarterDefinition {
       ...baseRichProfile.decisionPrompts,
     ]),
     nextIdeas: uniqueStrings([
-      'Create review cards for disputed claims, stale sources, Cognee memory hits, graph proposals, or SQL projection candidates.',
-      'Attach the active user, situation, tool, output, and source capsules before drafting.',
+      `Create ${spec.label} review cards for disputed claims, stale sources, Cognee memory hits, graph proposals, or SQL projection candidates.`,
+      `Attach active user, situation, tool, output, and source capsules before drafting from ${spec.label}.`,
       ...baseRichProfile.nextIdeas,
     ]),
     agentInstructions: `${spec.label}: Reality check: ${spec.userJob}. Use this v2 capsule as human-gated context, not as truth. Start with approved versus disputed claims, inspect ${sourcePack[0]?.id ?? 'source-1'} and ${sourcePack[1]?.id ?? 'source-2'}, keep ${spec.decisionFocus.toLowerCase()} visible, use Cognee recall only as advisory evidence, project graph or SQL rows only as proposals, and stop for human review before external export or canonical promotion. Drafting style: ${spec.draftingStyle}`,
@@ -4139,7 +4581,7 @@ const CURRENT_AFFAIRS_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
     tags: ['appropriations', 'continuing-resolution', 'shutdown-risk', 'congress', 'domestic-policy', 'team:governance-public-sector'],
     sourcePack: [
       realWorkSource('congress-119-appropriations', 'Congress.gov 119th Congress appropriations tracker', 'https://www.congress.gov/appropriations/119th-congress', 'official', 'Congress.gov', '2026', 'Official congressional status lane for appropriations legislation and bill movement.'),
-      realWorkSource('gao-continuing-resolutions', 'GAO continuing resolutions and agency operations report', 'https://www.gao.gov/products/gao-23-106878', 'official', 'U.S. Government Accountability Office', '2023', 'Oversight baseline for operational risks when agencies work under continuing resolutions.'),
+      realWorkSource('gao-continuing-resolutions', 'GAO continuing resolutions and agency operations report', 'https://www.gao.gov/products/gao-22-104701', 'official', 'U.S. Government Accountability Office', '2022', 'Oversight baseline for operational risks when agencies work under continuing resolutions.'),
     ],
     recommendedToolIds: ['commitment-tracker', 'sourceability', 'memo-drafter'],
     outputProductIds: ['risk-monitor-card', 'principals-decision-memo'],
@@ -4204,8 +4646,8 @@ const CURRENT_AFFAIRS_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
     detail: 'Use this when PRAXIS must brief semiconductor, advanced computing, model-weight, cloud, or destination-control questions that require current BIS source checks and human legal review.',
     tags: ['ai-export-controls', 'semiconductors', 'advanced-computing', 'bis', 'national-security', 'team:information-cyber'],
     sourcePack: [
-      realWorkSource('bis-semiconductors-advanced-computing', 'BIS semiconductors and advanced computing controls', 'https://www.bis.gov/semiconductors-and-advanced-computing', 'regulator', 'Bureau of Industry and Security', '2026', 'Official BIS lane for advanced computing, semiconductor, and AI-related export control posture.'),
-      realWorkSource('bis-ear', 'Export Administration Regulations', 'https://www.bis.gov/regulations/export-administration-regulations-ear', 'regulator', 'Bureau of Industry and Security', '2026', 'Regulatory baseline for export-control definitions, licensing, and compliance review.'),
+      realWorkSource('bis-semiconductors-advanced-computing', 'BIS advanced computing integrated circuits diversion guidance', 'https://www.bis.gov/media/1576', 'regulator', 'Bureau of Industry and Security', '2026', 'Official BIS lane for advanced computing, semiconductor, and AI-related export control posture.'),
+      realWorkSource('bis-ear', 'Export Administration Regulations', 'https://media.bis.gov/regulations/ear', 'regulator', 'Bureau of Industry and Security', '2026', 'Regulatory baseline for export-control definitions, licensing, and compliance review.'),
     ],
     recommendedToolIds: ['sourceability', 'scenario-projector', 'memo-drafter'],
     outputProductIds: ['legal-mandate-compliance-note', 'country-risk-card'],
@@ -4271,7 +4713,7 @@ const CURRENT_AFFAIRS_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
     tags: ['cbam', 'carbon-border', 'eu', 'trade-compliance', 'climate-policy', 'team:climate-development'],
     sourcePack: [
       realWorkSource('ec-cbam', 'European Commission Carbon Border Adjustment Mechanism', 'https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en', 'regulator', 'European Commission', '2026', 'Primary EU CBAM policy source for scope, transition, and definitive-regime posture.'),
-      realWorkSource('ec-cbam-transitional-registry', 'CBAM transitional registry', 'https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism/cbam-transitional-registry_en', 'regulator', 'European Commission', '2026', 'Registry and reporting lane for importer and exporter data-quality questions.'),
+      realWorkSource('ec-cbam-transitional-registry', 'European Commission CBAM definitive regime page', 'https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en', 'regulator', 'European Commission', '2026', 'Registry and reporting lane for importer and exporter data-quality questions.'),
     ],
     recommendedToolIds: ['sourceability', 'commitment-tracker', 'memo-drafter'],
     outputProductIds: ['legal-mandate-compliance-note', 'principals-decision-memo'],
@@ -4314,8 +4756,8 @@ const CURRENT_AFFAIRS_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
     detail: 'Use this when PRAXIS needs to brief ACA marketplace affordability, enrollment snapshots, plan-year rules, subsidy timing, and household or state impact without giving benefits advice.',
     tags: ['aca', 'marketplace', 'health-policy', 'subsidies', 'affordability', 'team:governance-public-sector'],
     sourcePack: [
-      realWorkSource('cms-2026-marketplace-open-enrollment-final', 'CMS 2026 Marketplace Open Enrollment final national snapshot', 'https://www.cms.gov/newsroom/fact-sheets/marketplace-2026-open-enrollment-period-report-final-national-snapshot', 'official', 'Centers for Medicare and Medicaid Services', '2026', 'Official enrollment snapshot source for 2026 marketplace participation claims.'),
-      realWorkSource('cms-2026-nbpp-final-rule', 'CMS 2026 Notice of Benefit and Payment Parameters final rule fact sheet', 'https://www.cms.gov/newsroom/fact-sheets/2026-notice-benefit-and-payment-parameters-final-rule', 'official', 'Centers for Medicare and Medicaid Services', '2025', 'Official plan-year policy baseline for marketplace rules, eligibility, and payment parameters.'),
+      realWorkSource('cms-2026-marketplace-open-enrollment-final', 'CMS 2026 Marketplace Open Enrollment national snapshot', 'https://www.cms.gov/newsroom/fact-sheets/marketplace-2026-open-enrollment-period-report-national-snapshot-2', 'official', 'Centers for Medicare and Medicaid Services', '2026-01-28', 'Official enrollment snapshot source for 2026 marketplace participation claims.'),
+      realWorkSource('cms-2026-nbpp-final-rule', 'CMS 2026 Notice of Benefit and Payment Parameters final rule fact sheet', 'https://www.cms.gov/newsroom/fact-sheets/hhs-notice-benefit-and-payment-parameters-2026-final-rule', 'official', 'Centers for Medicare and Medicaid Services', '2025-01-13', 'Official plan-year policy baseline for marketplace rules, eligibility, and payment parameters.'),
     ],
     recommendedToolIds: ['sourceability', 'scenario-projector', 'memo-drafter'],
     outputProductIds: ['principals-decision-memo', 'talking-points'],
@@ -4403,8 +4845,8 @@ const CURRENT_AFFAIRS_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
     detail: 'Use this when PRAXIS must brief H-1B changes for talent planning, compliance, employee communication, or policy analysis without giving immigration-law advice.',
     tags: ['h1b', 'workforce', 'immigration', 'uscis', 'talent-planning', 'team:governance-public-sector'],
     sourcePack: [
-      realWorkSource('uscis-h1b-electronic-registration', 'USCIS H-1B electronic registration process', 'https://www.uscis.gov/working-in-the-united-states/h-1b-specialty-occupations/h-1b-electronic-registration-process', 'official', 'U.S. Citizenship and Immigration Services', '2026', 'Official registration, selection, and employer process source for H-1B planning.'),
-      realWorkSource('uscis-h1b-modernization-rule', 'DHS final rule strengthening H-1B classification program', 'https://www.uscis.gov/newsroom/alerts/dhs-final-rule-strengthening-h-1b-nonimmigrant-visa-classification-program', 'official', 'U.S. Citizenship and Immigration Services', '2025', 'Official modernization-rule source for program-integrity and eligibility-change claims.'),
+      realWorkSource('uscis-h1b-electronic-registration', 'USCIS H-1B electronic registration process', 'https://www.uscis.gov/working-in-the-united-states/temporary-workers/h-1b-specialty-occupations/h-1b-electronic-registration-process', 'official', 'U.S. Citizenship and Immigration Services', '2026', 'Official registration, selection, and employer process source for H-1B planning.'),
+      realWorkSource('uscis-h1b-modernization-rule', 'USCIS H-1B final rule and revised Form I-129 alert', 'https://www.uscis.gov/newsroom/alerts/h-1b-final-rule-h-2-final-rule-and-revised-form-i-129-effective-jan-17-2025', 'official', 'U.S. Citizenship and Immigration Services', '2025-01-15', 'Official modernization-rule source for program-integrity and eligibility-change claims.'),
     ],
     recommendedToolIds: ['sourceability', 'commitment-tracker', 'memo-drafter'],
     outputProductIds: ['legal-mandate-compliance-note', 'principals-decision-memo'],
@@ -4448,7 +4890,7 @@ const CURRENT_AFFAIRS_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
     tags: ['student-loans', 'repayment', 'borrowers', 'education-policy', 'household-finance', 'team:governance-public-sector'],
     sourcePack: [
       realWorkSource('federal-student-aid-repayment-plans', 'Federal Student Aid repayment plans', 'https://studentaid.gov/manage-loans/repayment/plans', 'official', 'Federal Student Aid', '2026', 'Official borrower-facing repayment-plan baseline for current eligibility and plan descriptions.'),
-      realWorkSource('ed-student-loans', 'U.S. Department of Education student loans updates', 'https://www.ed.gov/category/keyword/student-loans', 'official', 'U.S. Department of Education', '2026', 'Official policy and announcement lane for student-loan developments.'),
+      realWorkSource('ed-student-loans', 'Federal Student Aid loan repayment updates', 'https://studentaid.gov/articles/category/loan-repayment/', 'official', 'Federal Student Aid', '2026', 'Official policy and announcement lane for student-loan developments.'),
     ],
     recommendedToolIds: ['sourceability', 'frame-narrative', 'memo-drafter'],
     outputProductIds: ['talking-points', 'principals-decision-memo'],
@@ -4492,7 +4934,7 @@ const CURRENT_AFFAIRS_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
     tags: ['stablecoins', 'digital-assets', 'crypto', 'financial-regulation', 'congress', 'team:economic-sanctions'],
     sourcePack: [
       realWorkSource('congress-genius-act-s1582', 'Congress.gov GENIUS Act bill record', 'https://www.congress.gov/bill/119th-congress/senate-bill/1582', 'official', 'Congress.gov', '2026', 'Official legislative status lane for stablecoin bill text and actions.'),
-      realWorkSource('treasury-digital-assets', 'U.S. Treasury digital assets policy page', 'https://home.treasury.gov/policy-issues/financial-markets-financial-institutions-and-fiscal-service/digital-assets', 'official', 'U.S. Department of the Treasury', '2026', 'Official Treasury policy lane for digital assets, illicit finance, and financial-stability context.'),
+      realWorkSource('treasury-digital-assets', 'U.S. Treasury digital assets cybersecurity initiative', 'https://home.treasury.gov/news/press-releases/sb0437', 'official', 'U.S. Department of the Treasury', '2026-04-09', 'Official Treasury policy lane for digital assets, illicit finance, and financial-stability context.'),
     ],
     recommendedToolIds: ['sourceability', 'ach', 'memo-drafter'],
     outputProductIds: ['legal-mandate-compliance-note', 'principals-decision-memo'],
@@ -4610,7 +5052,7 @@ const CURRENT_AFFAIRS_TOOL_OUTPUT_CAPSULES: CapsuleStarterDefinition[] = [
     tags: ['fiscal-impact', 'distributional-impact', 'domestic-policy', 'equity', 'budget', 'team:governance-public-sector'],
     sourcePack: [
       realWorkSource('cbo', 'Congressional Budget Office', 'https://www.cbo.gov/', 'official', 'Congressional Budget Office', '2026', 'Official budgetary analysis lane for fiscal impact and scoring claims.'),
-      realWorkSource('treasury-policy-issues', 'U.S. Treasury policy issues', 'https://home.treasury.gov/policy-issues', 'official', 'U.S. Department of the Treasury', '2026', 'Official Treasury source lane for economic policy and financial-system context.'),
+      realWorkSource('treasury-policy-issues', 'U.S. Treasury financial markets and fiscal service policy issues', 'https://home.treasury.gov/policy-issues/financial-markets-financial-institutions-and-fiscal-service', 'official', 'U.S. Department of the Treasury', '2026', 'Official Treasury source lane for economic policy and financial-system context.'),
     ],
     recommendedToolIds: ['ach', 'sourceability', 'scenario-projector'],
     outputProductIds: ['principals-decision-memo', 'country-risk-card'],
@@ -4726,7 +5168,7 @@ const CURRENT_AFFAIRS_TOOL_OUTPUT_CAPSULES: CapsuleStarterDefinition[] = [
     tags: ['domestic-policy', 'impact', 'one-pager', 'households', 'public-sector', 'team:governance-public-sector'],
     sourcePack: [
       realWorkSource('cbo-domestic-policy-output', 'Congressional Budget Office', 'https://www.cbo.gov/', 'official', 'Congressional Budget Office', '2026', 'Fiscal-analysis source lane for domestic-policy impact claims.'),
-      realWorkSource('cms-marketplace-output', 'CMS 2026 Marketplace Open Enrollment final national snapshot', 'https://www.cms.gov/newsroom/fact-sheets/marketplace-2026-open-enrollment-period-report-final-national-snapshot', 'official', 'Centers for Medicare and Medicaid Services', '2026', 'Health-policy source lane for marketplace affordability and enrollment impact.'),
+      realWorkSource('cms-marketplace-output', 'CMS 2026 Marketplace Open Enrollment national snapshot', 'https://www.cms.gov/newsroom/fact-sheets/marketplace-2026-open-enrollment-period-report-national-snapshot-2', 'official', 'Centers for Medicare and Medicaid Services', '2026-01-28', 'Health-policy source lane for marketplace affordability and enrollment impact.'),
     ],
     recommendedToolIds: ['memo-drafter', 'sourceability', 'scenario-projector'],
     outputProductIds: ['country-one-pager', 'principals-decision-memo'],
@@ -4797,7 +5239,7 @@ const EXPERT_POLICY_CAPSULE_WAVE: CapsuleStarterDefinition[] = [
   starter('starter-situation-ukraine-reconstruction-integrity-finance', 'situation', 'finance', 'Ukraine reconstruction integrity finance capsule', 'A reconstruction finance capsule for Ukraine recovery needs, donor facilities, corruption risk, procurement controls, and implementation confidence.', 'Use this when PRAXIS must brief reconstruction financing, donor conditionality, public procurement, corporate delivery risk, or integrity safeguards without flattening humanitarian, macro, and governance claims.', ['ukraine', 'reconstruction', 'integrity', 'donor-finance', 'procurement', 'corporate-risk', 'team:economic-sanctions', 'team:governance-public-sector'], { situationCoreId: 'starter-situation-ukraine-reconstruction-integrity-finance', pathCoreId: 'public-sector-policy', sourceCoreIds: ['world-bank-ukraine-rdna', 'eu-ukraine-facility'], toolCoreIds: ['grounded-research', 'sourceability', 'ach'], outputCoreIds: ['principals-decision-memo'] }, ['grounded-research', 'sourceability', 'ach'], ['principals-decision-memo', 'country-risk-card'], ['starter-tool-sourceability-matrix', 'starter-tool-policy-tradeoff-ledger', 'starter-output-corporate-board-risk-committee-pack'], {
     readinessStars: 5,
     sourcePack: [
-      { id: 'world-bank-ukraine-rdna', label: 'World Bank Ukraine recovery and reconstruction needs assessment', url: 'https://www.worldbank.org/en/country/ukraine/publication/updated-ukraine-recovery-and-reconstruction-needs-assessment-released', sourceType: 'multilateral', relevance: 'Primary multilateral baseline for recovery costs, sector damage, and reconstruction needs.', publisher: 'World Bank', date: '2025', reliabilityTier: 1 },
+      { id: 'world-bank-ukraine-rdna', label: 'World Bank Ukraine recovery and reconstruction needs assessment', url: 'https://www.worldbank.org/en/news/press-release/2026/02/23/updated-ukraine-recovery-and-reconstruction-needs-assessment-released', sourceType: 'multilateral', relevance: 'Primary multilateral baseline for recovery costs, sector damage, and reconstruction needs.', publisher: 'World Bank', date: '2026-02-23', reliabilityTier: 1 },
       { id: 'eu-ukraine-facility', label: 'European Commission Ukraine Facility', url: 'https://neighbourhood-enlargement.ec.europa.eu/european-neighbourhood-policy/countries-region/ukraine/ukraine-facility_en', sourceType: 'official', relevance: 'EU financing, reform, investment, and accountability lane for Ukraine recovery support.', publisher: 'European Commission', date: '2026', reliabilityTier: 1 },
     ],
     excerpts: [
@@ -4843,7 +5285,7 @@ const EXPERT_POLICY_CAPSULE_WAVE: CapsuleStarterDefinition[] = [
     readinessStars: 5,
     sourcePack: [
       { id: 'ocha-myanmar', label: 'OCHA Myanmar country operations', url: 'https://www.unocha.org/myanmar', sourceType: 'multilateral', relevance: 'Humanitarian needs, access constraints, and operational response source lane.', publisher: 'UN OCHA', date: '2026', reliabilityTier: 1 },
-      { id: 'asean-five-point-consensus', label: 'ASEAN Five-Point Consensus statement', url: 'https://asean.org/wp-content/uploads/Chairmans-Statement-on-the-ASEAN-Leaders-Meeting-24-April-2021-FINAL-a-1.pdf', sourceType: 'official', relevance: 'Diplomatic process baseline for ASEAN engagement, dialogue, and humanitarian assistance commitments.', publisher: 'ASEAN', date: '2021-04', reliabilityTier: 1 },
+      { id: 'asean-five-point-consensus', label: 'ASEAN Five-Point Consensus statement', url: 'https://asean.org/wp-content/uploads/Chairmans-Statement-on-ALM-Five-Point-Consensus-24-April-2021-FINAL-a-1.pdf', sourceType: 'official', relevance: 'Diplomatic process baseline for ASEAN engagement, dialogue, and humanitarian assistance commitments.', publisher: 'ASEAN', date: '2021-04', reliabilityTier: 1 },
     ],
     excerpts: [
       { sourceId: 'ocha-myanmar', text: 'Access analysis should separate humanitarian needs, displacement, operational constraints, safety risk, and response coverage.' },
@@ -5117,28 +5559,23 @@ interface HumanGatedPolicyJudgmentStarterInput {
 }
 
 function humanGatedPolicyJudgmentStarter(input: HumanGatedPolicyJudgmentStarterInput): CapsuleStarterDefinition {
-  const sourcePack: CapsuleStarterSource[] = input.sourceLaneIds.map((sourceId, index) => ({
-    id: sourceId,
+  const sourcePack: CapsuleStarterSource[] = normalizeStarterSourcePack(input.sourceLaneIds.map((sourceId, index) => ({
+    ...sourceFromRegistry(sourceId),
     label: input.sourceLaneLabels[index],
-    url: `https://example.test/praxis/${sourceId}`,
-    sourceType: 'public-library',
-    relevance: `Placeholder lane for ${input.label}; attach current authoritative receipts before relying on this capsule.`,
-    publisher: 'Source placeholder',
-    date: 'pending',
-    reliabilityTier: 3,
-  }));
+    relevance: `${sourceFromRegistry(sourceId).relevance} Use as a refreshed external source lane for ${input.label}; verify as-of date before high-stakes reliance.`,
+  })));
   const humanReview: CapsuleStarterHumanReview = {
     status: 'draft',
     label: 'Needs human review',
-    tooltip: 'Needs human review: this flagship seed contains safe placeholder metadata only and must not be displayed as approved.',
+    tooltip: 'Needs human review: this flagship seed has refreshed source lanes but must not be displayed as approved.',
     reviewedBy: 'Human review pending',
     reviewedAt: 'not-reviewed',
-    notes: 'Safe placeholder gate only; no real human or institutional approval is claimed.',
+    notes: 'Source-refresh draft only; no real human or institutional approval is claimed.',
     scope: `${input.label} flagship policy-judgment seed with sourceability and output-contract scaffolding.`,
     authorOrPublisher: 'PRAXIS starter scaffold',
-    jurisdiction: 'Context-specific / attach current source receipts before use',
+    jurisdiction: 'Context-specific / refresh current source receipts before use',
     assumptions: [
-      'Source lanes are placeholders until a user attaches current receipts.',
+      'Source lanes are verified starter references, not a complete current source pack.',
       'Claim ledger entries are scaffolds, not approved factual findings.',
     ],
     limitations: [
@@ -5146,7 +5583,7 @@ function humanGatedPolicyJudgmentStarter(input: HumanGatedPolicyJudgmentStarterI
       'Requires sourceability and named human review before publication, export, or agent handoff.',
       CAPSULE_NO_AFFILIATION_LIMITATION,
     ],
-    sourcePackSummary: 'Placeholder source lanes only; replace with current authoritative source receipts before external use.',
+    sourcePackSummary: sourcePack.map((source) => `${source.label} (${source.publisher})`).join('; '),
     humanReviewGate: 'Human review required before publication, export, canonical graph promotion, or high-stakes reliance.',
   };
 
@@ -5175,7 +5612,7 @@ function humanGatedPolicyJudgmentStarter(input: HumanGatedPolicyJudgmentStarterI
       sourcePack,
       excerpts: sourcePack.map((source) => ({
         sourceId: source.id,
-        text: `Placeholder claim-ledger lane for ${input.label}: replace this placeholder with a dated source excerpt before review.`,
+        text: `${source.label} anchors ${input.label} as a sourceable draft lane; refresh live facts, dates, and jurisdiction before final review.`,
       })),
       suggestedQuestions: [
         `Which claim inside ${input.label} must be sourced before any output is drafted?`,
@@ -5183,7 +5620,7 @@ function humanGatedPolicyJudgmentStarter(input: HumanGatedPolicyJudgmentStarterI
         'Which output contract should be used after sourceability and review are complete?',
       ],
       suggestedNextActions: [
-        'Run sourceability against every placeholder claim before drafting.',
+        'Run sourceability against every material claim before drafting.',
         'Attach current source receipts and mark unsupported claims as open questions.',
         'Request named human review before share, publish, fork-to-library, or final output use.',
       ],
@@ -5193,16 +5630,16 @@ function humanGatedPolicyJudgmentStarter(input: HumanGatedPolicyJudgmentStarterI
         outputGoal: input.outputProductIds[0] ?? 'principals-decision-memo',
         approvalNotes: 'Agents may suggest, source, fork, or draft review cards, but cannot publish human-gated capsules without human review.',
       },
-      aiUseGuidance: `Use ${input.label} as a review-gated scaffold. Verify sources, keep placeholder claims visible, request human approval, and do not treat this seed as an approved judgment.`,
+      aiUseGuidance: `Use ${input.label} as a review-gated scaffold. Verify the refreshed source lanes, keep weak claims visible, request human approval, and do not treat this seed as an approved judgment.`,
       humanReview,
       inspectionSections: [
         { label: 'Purpose', detail: input.summary },
-        { label: 'Human Gate', detail: 'Gate status: needs_review. Safe placeholder author/reviewer metadata only; no real approval claimed.' },
-        { label: 'Claim Ledger', detail: 'claim_ledger: placeholders_only. Convert weak claims into sourced claims or open questions before drafting.' },
+        { label: 'Human Gate', detail: 'Gate status: needs_review. Source-refresh draft only; no real approval claimed.' },
+        { label: 'Claim Ledger', detail: 'claim_ledger: source_review_pending. Convert weak claims into sourced claims or open questions before drafting.' },
         { label: 'Output Contracts', detail: `Output contracts: ${input.outputProductIds.join(', ')}. Sourceability and human review are required before final output.` },
         { label: 'Decision Use', detail: input.decisionFocus },
         { label: 'Improvement Ideas', detail: 'Attach missing sources, add caveats, request human review, fork into a source pack, or attach to the current ContextChain.' },
-        { label: 'Gaps/Risks', detail: 'Unsupported, stale, or placeholder claims block publication-ready status.' },
+        { label: 'Gaps/Risks', detail: 'Unsupported, stale, or weak claims block publication-ready status.' },
         { label: 'Run Recipe', detail: `Agent permission: may draft and suggest, cannot publish. Start with sourceability, then human review, then ${input.outputProductIds[0] ?? 'output contract'}.` },
         { label: 'Compatible Capsules', detail: input.combinesWellWith.join(', ') },
       ],
@@ -5455,7 +5892,7 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     readinessStars: 5,
     sourcePack: [
       { id: 'un-security-council-sanctions', label: 'UN Security Council sanctions', url: 'https://main.un.org/securitycouncil/en/sanctions/information', sourceType: 'multilateral', relevance: 'Official UN sanctions regime source lane.', publisher: 'United Nations Security Council', date: '2026', reliabilityTier: 1 },
-      { id: 'un-sanctions-committees', label: 'UN sanctions committees', url: 'https://main.un.org/securitycouncil/en/sanctions/committees', sourceType: 'multilateral', relevance: 'Committee-specific listing and implementation source lane.', publisher: 'United Nations Security Council', date: '2026', reliabilityTier: 1 },
+      { id: 'un-sanctions-committees', label: 'UN Security Council standing and ad hoc committees', url: 'https://main.un.org/securitycouncil/en/content/repertoire/standing-and-ad-hoc-committees', sourceType: 'multilateral', relevance: 'Committee-specific listing and implementation source lane.', publisher: 'United Nations Security Council', date: '2026', reliabilityTier: 1 },
     ],
     suggestedQuestions: ['Which regime, entity, listing, or mandate language is in scope?', 'Which claim is a direct UN source fact versus implementation inference?', 'What legal or compliance review remains required?'],
     suggestedNextActions: ['Attach Security Council and committee source receipts.', 'Map regime, listing basis, implementation caveat, and evidence gaps.', 'Keep sanctions conclusions in non-advice review language.'],
@@ -5994,7 +6431,7 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
   starter('starter-situation-sahel-aes-ecowas-transition-watch', 'situation', 'diplomacy', 'Sahel AES-ECOWAS transition watch', 'A diplomatic desk capsule for AES, ECOWAS, UNOWAS, coastal spillover, transition timelines, counter-terrorism cooperation, and humanitarian stress.', 'Use this when PRAXIS must brief regional Sahel dynamics without treating military cooperation, regional diplomacy, humanitarian indicators, and political legitimacy as the same layer.', ['sahel', 'aes', 'ecowas', 'unowas', 'transition', 'coastal-spillover', 'team:diplomatic', 'team:security-defence'], { situationCoreId: 'starter-situation-sahel-aes-ecowas-transition-watch', pathCoreId: 'foreign-policy', sourceCoreIds: ['unowas-sahel-security-council-2025', 'unowas-mission'], toolCoreIds: ['stakeholder-map', 'sourceability', 'scenario-projector'], outputCoreIds: ['principals-decision-memo'] }, ['stakeholder-map', 'sourceability', 'scenario-projector'], ['principals-decision-memo', 'scenario-risk-dashboard-card', 'talking-points'], ['starter-tool-actor-leverage-veto-map', 'starter-tool-negotiation-ripeness-decision-clock', 'starter-output-principals-decision-memo'], {
     readinessStars: 5,
     sourcePack: [
-      { id: 'unowas-sahel-security-council-2025', label: 'UNOWAS Security Council briefing on West Africa and the Sahel', url: 'https://unowas.unmissions.org/en/security-council-special-representative-sim%C3%A3o-calls-collective-response-challenges-west', sourceType: 'multilateral', relevance: 'UN lane for regional security, humanitarian pressure, ECOWAS-AES cooperation, and preventive diplomacy.', publisher: 'UNOWAS', date: '2025-08-07', reliabilityTier: 1 },
+      { id: 'unowas-sahel-security-council-2025', label: 'UNOWAS Security Council briefing on West Africa and the Sahel', url: 'https://unowas.unmissions.org/en/news/unsc-dsrsg-freeman-warns-persistent-fragility-west-africa-and-sahel-and-calls-increased', sourceType: 'multilateral', relevance: 'UN lane for regional security, humanitarian pressure, ECOWAS-AES cooperation, and preventive diplomacy.', publisher: 'UNOWAS', date: '2025-12-18', reliabilityTier: 1 },
       { id: 'unowas-mission', label: 'UNOWAS mission and preventive diplomacy mandate', url: 'https://unowas.unmissions.org/', sourceType: 'multilateral', relevance: 'Mission baseline for preventive diplomacy, political dialogue, and regional conflict-prevention work.', publisher: 'UNOWAS', date: '2026', reliabilityTier: 1 },
     ],
     excerpts: [
@@ -6139,7 +6576,7 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     readinessStars: 5,
     sourcePack: [
       { id: 'un-guidance-effective-mediation', label: 'United Nations Guidance for Effective Mediation', url: 'https://peacemaker.un.org/en/documents/united-nations-guidance-effective-mediation-0', sourceType: 'multilateral', relevance: 'UN fundamentals for mediation preparedness, consent, impartiality, inclusivity, coherence, and agreement quality.', publisher: 'United Nations', date: '2012-07', reliabilityTier: 1 },
-      { id: 'harvard-pon-batna', label: 'Harvard Program on Negotiation BATNA resources', url: 'https://www.pon.harvard.edu/tag/batna/', sourceType: 'public-library', relevance: 'Negotiation method lane for best alternative, bargaining range, and negotiation preparation.', publisher: 'Harvard Program on Negotiation', date: '2026', reliabilityTier: 2 },
+      { id: 'harvard-pon-batna', label: 'Harvard Program on Negotiation BATNA resources', url: 'https://www.pon.harvard.edu/daily/batna/translate-your-batna-to-the-current-deal/', sourceType: 'public-library', relevance: 'Negotiation method lane for best alternative, bargaining range, and negotiation preparation.', publisher: 'Harvard Program on Negotiation', date: '2026', reliabilityTier: 2 },
     ],
     excerpts: [
       { sourceId: 'un-guidance-effective-mediation', text: 'UN mediation guidance grounds the tool in preparedness, consent, impartiality, inclusivity, and quality agreement design.' },
@@ -6189,7 +6626,7 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
   starter('starter-tool-principal-ask-payrise-negotiation-prep', 'tool', 'options-mapping', 'Principal ask and pay-rise negotiation prep', 'A negotiation tool capsule for preparing a boss conversation, raise request, scope expansion, BATNA, evidence packet, timing, and graceful fallback.', 'Use this for personal, managerial, or organizational negotiation prep where the user needs a serious ask without sounding entitled or underprepared. PRAXIS should structure evidence, constraints, interests, concessions, and next steps.', ['salary-negotiation', 'payrise', 'boss-conversation', 'principal-ask', 'batna', 'zopa', 'thinking-device', 'review-gated'], { toolCoreIds: ['position-vs-interest', 'sourceability', 'memo-drafter'], objectiveCoreIds: ['prepare-principal-ask'], outputCoreIds: ['talking-points'] }, ['position-vs-interest', 'sourceability', 'memo-drafter'], ['talking-points', 'negotiation-prep-book', 'options-memo'], ['starter-situation-hr-harassment-policy', 'starter-tool-mediator-batna-zopa-ripeness-map', 'starter-output-meeting-talking-points', 'starter-user-hr-policy-owner'], {
     readinessStars: 5,
     sourcePack: [
-      { id: 'harvard-pon-batna', label: 'Harvard Program on Negotiation BATNA resources', url: 'https://www.pon.harvard.edu/tag/batna/', sourceType: 'public-library', relevance: 'Negotiation preparation lane for alternatives, bargaining range, and disciplined asks.', publisher: 'Harvard Program on Negotiation', date: '2026', reliabilityTier: 2 },
+      { id: 'harvard-pon-batna', label: 'Harvard Program on Negotiation BATNA resources', url: 'https://www.pon.harvard.edu/daily/batna/translate-your-batna-to-the-current-deal/', sourceType: 'public-library', relevance: 'Negotiation preparation lane for alternatives, bargaining range, and disciplined asks.', publisher: 'Harvard Program on Negotiation', date: '2026', reliabilityTier: 2 },
       { id: 'acas-pay-deductions', label: 'Acas pay and deductions guidance', url: 'https://www.acas.org.uk/pay-and-deductions', sourceType: 'official', relevance: 'Employment-pay context lane for pay discussions, records, deductions, and workplace process caution.', publisher: 'Acas', date: '2026', reliabilityTier: 1 },
     ],
     excerpts: [
@@ -6206,7 +6643,7 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
   starter('starter-tool-estimative-confidence-calibration-table', 'tool', 'audit-review', 'Estimative confidence calibration table', 'An analytic tradecraft tool capsule for calibrated confidence, probability words, evidence strength, source freshness, dissent, and decision implications.', 'Use this when an answer has intelligence-style judgments, scenarios, warnings, or policy confidence claims. PRAXIS should force probability, evidence quality, confidence drivers, and dissent to be explicit.', ['confidence', 'estimative-language', 'probability', 'analytic-tradecraft', 'uncertainty', 'thinking-device', 'review-gated', 'team:research-strategy'], { toolCoreIds: ['ach', 'sourceability', 'contradiction-finder'], objectiveCoreIds: ['calibrate-estimative-confidence'], outputCoreIds: ['evidence-sourceability-annex'] }, ['ach', 'sourceability', 'contradiction-finder'], ['evidence-sourceability-annex', 'scenario-risk-dashboard-card', 'principals-decision-memo'], ['starter-situation-baltic-undersea-infrastructure-resilience', 'starter-tool-competing-hypotheses-matrix', 'starter-output-evidence-sourceability-annex'], {
     readinessStars: 5,
     sourcePack: [
-      { id: 'dni-analytic-standards', label: 'US Intelligence Community Directive 203 analytic standards', url: 'https://www.dni.gov/files/documents/ICD/ICD%20203%20Analytic%20Standards.pdf', sourceType: 'official', relevance: 'Analytic standards lane for sourcing, uncertainty, alternatives, and judgments.', publisher: 'Office of the Director of National Intelligence', date: '2015', reliabilityTier: 1 },
+      { id: 'dni-analytic-standards', label: 'US Intelligence Community Directive 203 analytic standards', url: 'https://www.dni.gov/files/documents/ICD/ICD-203.pdf', sourceType: 'official', relevance: 'Analytic standards lane for sourcing, uncertainty, alternatives, and judgments.', publisher: 'Office of the Director of National Intelligence', date: '2015', reliabilityTier: 1 },
       { id: 'un-guidance-effective-mediation', label: 'United Nations Guidance for Effective Mediation', url: 'https://peacemaker.un.org/en/documents/united-nations-guidance-effective-mediation-0', sourceType: 'multilateral', relevance: 'Decision-process context for uncertainty, mediator error, preparation, and quality agreement design.', publisher: 'United Nations', date: '2012-07', reliabilityTier: 1 },
     ],
     excerpts: [
@@ -6257,6 +6694,20 @@ export function getCapsuleStarterDefinition(capsuleId: string | null | undefined
   return CAPSULE_STARTER_DEFINITIONS.find((starterDefinition) => starterDefinition.starterId === capsuleId) ?? null;
 }
 
+function compactPromptText(value: string | null | undefined, maxLength = 360): string {
+  const text = (value ?? '').replace(/\s+/g, ' ').trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, Math.max(0, maxLength - 1)).trimEnd()}...`;
+}
+
+function compactPromptList(values: string[] | null | undefined, maxItems = 4, maxItemLength = 240): string {
+  const items = (values ?? [])
+    .map((value) => compactPromptText(value, maxItemLength))
+    .filter(Boolean)
+    .slice(0, maxItems);
+  return items.length ? items.join(' | ') : 'none';
+}
+
 export function buildCapsuleStarterPromptBlock(
   capsuleId: string | null | undefined,
   starterSnapshot?: CapsuleStarterSnapshot | null,
@@ -6267,128 +6718,235 @@ export function buildCapsuleStarterPromptBlock(
   if (!starterDefinition) return null;
   const intelligenceProfile = starterDefinition.intelligenceProfile ?? null;
   const cogneeProfile = starterDefinition.cogneeProfile ?? null;
-  return [
+  const curationProfile = starterDefinition.curationProfile;
+  const primarySources = curationProfile.sourceRefreshStatus.primaryExternalSourceIds
+    .slice(0, 3)
+    .join(', ') || 'source refresh required';
+  const sourcePackLine = starterDefinition.sourcePack
+    .slice(0, 5)
+    .map((source) => `${source.id}|${source.publisher ?? 'unknown'}|${source.date ?? 'unknown'}|tier${source.reliabilityTier ?? 'unknown'}`)
+    .join(' ; ');
+  const promptLines = [
     '[starter_capsule_definition]',
     `starter_id: ${starterDefinition.starterId}`,
     `starter_category: ${starterDefinition.category}`,
     `domain: ${starterDefinition.domain}`,
     `starter_label: ${starterDefinition.label}`,
     `starter_summary: ${starterDefinition.summary}`,
-    `starter_detail: ${starterDefinition.detail}`,
     `starter_tags: ${starterDefinition.tags.join(', ')}`,
     ...(starterDefinition.tags.includes('human-gated') ? [
       `seed_family: ${HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY.label}`,
       `gate_status: ${starterDefinition.humanReview?.status === 'draft' ? 'needs_review' : 'reviewed'}`,
-      'claim_ledger: placeholders_only',
+      'claim_ledger: source_review_pending',
+      'agent_permission: may draft and suggest, cannot publish',
+    ] : []),
+    `readiness_stars: ${starterDefinition.readinessStars}/5`,
+    `source_pack: ${sourcePackLine || 'none'}`,
+    `source_refresh_status: ${curationProfile.sourceRefreshStatus.status}; verified_at=${curationProfile.sourceRefreshStatus.verifiedAt}; primary_sources=${primarySources}`,
+    ...(starterDefinition.humanReview ? [
+      `human_review: ${starterDefinition.humanReview.label}|${starterDefinition.humanReview.status}|${starterDefinition.humanReview.reviewedBy}|${starterDefinition.humanReview.reviewedAt}`,
+      `human_review_limitations: ${starterDefinition.humanReview.limitations.join(' | ')}`,
+    ] : []),
+    `recommended_tools: ${starterDefinition.recommendedToolIds.join(', ') || 'none'}`,
+    `output_targets: ${starterDefinition.outputProductIds.join(', ') || 'none'}`,
+    `suggested_questions: ${starterDefinition.suggestedQuestions.slice(0, 3).join(' | ')}`,
+    `suggested_next_actions: ${starterDefinition.suggestedNextActions.slice(0, 3).join(' | ')}`,
+    `agent_workflow: preferred_agent=${starterDefinition.agentWorkflow.preferredAgentId}; route_hint=${starterDefinition.agentWorkflow.routeHint}; output_goal=${starterDefinition.agentWorkflow.outputGoal}`,
+    `ai_use_guidance: ${starterDefinition.aiUseGuidance}`,
+    `curation_human_summary: ${curationProfile.humanInspectionSummary}`,
+    `curation_agent_summary: ${curationProfile.agentUseSummary}`,
+    `tacit_assumptions: ${curationProfile.tacitKnowledge.workingAssumptions.join(' | ')}`,
+    `tacit_red_lines: ${curationProfile.tacitKnowledge.redLines.join(' | ')}`,
+    `tacit_approval_politics: ${curationProfile.tacitKnowledge.approvalPolitics.join(' | ')}`,
+    `tacit_heuristics: ${curationProfile.tacitKnowledge.practicalHeuristics.join(' | ')}`,
+    `tacit_sensitivities: ${curationProfile.tacitKnowledge.stakeholderSensitivities.join(' | ')}`,
+    `tacit_caveats: ${curationProfile.tacitKnowledge.caveats.join(' | ')}`,
+    `omit_from_agent_context: ${curationProfile.omitFromAgentContextNotes.join(' | ')}`,
+    `compact_agent_instructions: ${curationProfile.compactAgentInstructions.join(' | ')}`,
+    `human_review_gate: ${starterDefinition.humanReview?.humanReviewGate ?? 'Human review required before external use.'}`,
+    `governance: ${CAPSULE_NO_AFFILIATION_LIMITATION}`,
+    ...(intelligenceProfile ? [
+      `intelligence_profile_id: ${intelligenceProfile.profileId}`,
+      `human_workflow_decision_moment: ${intelligenceProfile.humanWorkflow.decisionMoment}`,
+      `reasoning_steps: ${intelligenceProfile.reasoningScaffold.steps.slice(0, 4).join(' | ')}`,
+      `generation_review_gates: ${intelligenceProfile.generationContract.reviewGates.slice(0, 3).join(' | ')}`,
+      `generation_output_path: ${intelligenceProfile.generationContract.outputPath}`,
+    ] : []),
+    ...(cogneeProfile ? [
+      `cognee_profile_id: ${cogneeProfile.profileId}`,
+      `cognee_advisory_only: ${cogneeProfile.advisoryOnly}`,
+      `cognee_review_rules: ${cogneeProfile.reviewCardPromotionRules.slice(0, 3).join(' | ')}`,
+    ] : []),
+    ...(starterDefinition.ontologyOverlay ? [
+      `ontology_overlay_id: ${starterDefinition.ontologyOverlay.overlayId}`,
+      `embedded_graph_seed: ${starterDefinition.ontologyOverlay.graphSeed.proposalLabel}; ${starterDefinition.ontologyOverlay.graphSeed.reviewGate}`,
+      `cognee_overlay_mode: ${starterDefinition.ontologyOverlay.cognee.mode}; dataset_scope=${starterDefinition.ontologyOverlay.cognee.datasetScope}`,
+      `ontology_promotion_rules: ${starterDefinition.ontologyOverlay.promotionRules.slice(0, 4).join(' | ')}`,
+      `ontology_forbidden_claims: ${starterDefinition.ontologyOverlay.forbiddenClaims.slice(0, 4).join(' | ')}`,
+    ] : []),
+    ...(starterDefinition.deviceProfile ? [
+      `device_kind: ${starterDefinition.deviceProfile.deviceKind}`,
+      `device_operation: ${starterDefinition.deviceProfile.reasoningOperation}`,
+      `device_reasoning_operation: ${starterDefinition.deviceProfile.reasoningOperation}`,
+      `device_activation_criteria: ${starterDefinition.deviceProfile.activationCriteria.slice(0, 4).join(' | ')}`,
+      `device_input_contract: ${starterDefinition.deviceProfile.inputContract.slice(0, 4).join(' | ')}`,
+      `device_output_grammar: ${starterDefinition.deviceProfile.outputGrammar.slice(0, 4).join(' | ')}`,
+      `device_method_steps: ${starterDefinition.deviceProfile.methodSteps.slice(0, 5).join(' | ')}`,
+      `device_best_inputs: ${starterDefinition.deviceProfile.bestInputs.slice(0, 4).join(' | ')}`,
+      `device_expected_outputs: ${starterDefinition.deviceProfile.expectedOutputs.slice(0, 4).join(' | ')}`,
+      `device_disconfirming_checks: ${starterDefinition.deviceProfile.disconfirmingChecks.slice(0, 4).join(' | ')}`,
+      `device_failure_modes: ${starterDefinition.deviceProfile.failureModes.slice(0, 4).join(' | ')}`,
+      `device_sourceability_requirements: ${starterDefinition.deviceProfile.sourceabilityRequirements.slice(0, 4).join(' | ')}`,
+      `device_human_review_gate: ${starterDefinition.deviceProfile.humanReviewGate}`,
+      `device_confidence_policy: ${starterDefinition.deviceProfile.confidencePolicy}`,
+      `device_forgetting_policy: ${starterDefinition.deviceProfile.forgettingPolicy}`,
+      `device_cross_capsule_pairings: ${starterDefinition.deviceProfile.crossCapsulePairings.slice(0, 5).join(' | ')}`,
+      `device_misuse_warnings: ${starterDefinition.deviceProfile.misuseWarnings.slice(0, 4).join(' | ')}`,
+      `device_review_gate_type: ${starterDefinition.deviceProfile.reviewGateType}`,
+      `device_agent_instructions: ${starterDefinition.deviceProfile.agentInstructions}`,
+    ] : []),
+    `combines_well_with: ${starterDefinition.combinesWellWith.join(', ') || 'none'}`,
+    'runtime_rule: Treat this starter definition as reusable operating context for Ask PRAXIS, tool routing, agent runs, and output drafting.',
+    'runtime_rule: Preserve user edits on the persisted capsule; keep source, review, and no-affiliation limits visible.',
+    '',
+  ];
+  return promptLines.join('\n');
+}
+
+export function buildCapsuleStarterPromptBlockLegacy(
+  capsuleId: string | null | undefined,
+  starterSnapshot?: CapsuleStarterSnapshot | null,
+): string | null {
+  const starterDefinition = starterSnapshot?.starterId === capsuleId
+    ? starterSnapshot
+    : getCapsuleStarterDefinition(capsuleId);
+  if (!starterDefinition) return null;
+  const intelligenceProfile = starterDefinition.intelligenceProfile ?? null;
+  const cogneeProfile = starterDefinition.cogneeProfile ?? null;
+  const curationProfile = starterDefinition.curationProfile;
+  const sourcePack = starterDefinition.sourcePack.slice(0, 5);
+  const lines = [
+    '[starter_capsule_definition]',
+    `starter_id: ${starterDefinition.starterId}`,
+    `starter_category: ${starterDefinition.category}`,
+    `domain: ${starterDefinition.domain}`,
+    `starter_label: ${starterDefinition.label}`,
+    `starter_summary: ${compactPromptText(starterDefinition.summary)}`,
+    `starter_detail: ${compactPromptText(starterDefinition.detail, 420)}`,
+    `starter_tags: ${starterDefinition.tags.join(', ')}`,
+    ...(starterDefinition.tags.includes('human-gated') ? [
+      `seed_family: ${HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY.label}`,
+      `gate_status: ${starterDefinition.humanReview?.status === 'draft' ? 'needs_review' : 'reviewed'}`,
+      `claim_ledger: ${starterDefinition.humanReview?.status === 'draft' ? 'source_review_pending' : 'source_backed_review_required'}`,
       'agent_permission: may draft and suggest, cannot publish',
     ] : []),
     `readiness_stars: ${starterDefinition.readinessStars}/5 source-readiness confidence`,
-    `source_pack: ${starterDefinition.sourcePack.length ? starterDefinition.sourcePack.map((source) => `${source.id}|${source.label}|${source.publisher ?? 'unknown publisher'}|${source.date ?? 'unknown date'}|tier${source.reliabilityTier ?? 'unknown'}|${source.url}|${source.relevance}`).join(' ; ') : 'none'}`,
-    `source_excerpts: ${starterDefinition.excerpts.length ? starterDefinition.excerpts.map((excerpt) => `${excerpt.sourceId}: ${excerpt.text}`).join(' ; ') : 'none'}`,
+    `source_pack: ${sourcePack.length ? sourcePack.map((source) => `${source.id}|${source.label}|${source.publisher ?? 'unknown publisher'}|${source.date ?? 'unknown date'}|tier${source.reliabilityTier ?? 'unknown'}|${source.url}|${compactPromptText(source.relevance, 180)}`).join(' ; ') : 'none'}`,
+    `source_excerpts: ${starterDefinition.excerpts.length ? starterDefinition.excerpts.slice(0, 3).map((excerpt) => `${excerpt.sourceId}: ${compactPromptText(excerpt.text, 180)}`).join(' ; ') : 'none'}`,
     ...(starterDefinition.humanReview ? [
-      `human_review: ${starterDefinition.humanReview.label}|${starterDefinition.humanReview.status}|${starterDefinition.humanReview.reviewedBy}|${starterDefinition.humanReview.reviewedAt}|${starterDefinition.humanReview.notes}`,
-      `human_review_scope: ${starterDefinition.humanReview.scope}`,
+      `human_review: ${starterDefinition.humanReview.label}|${starterDefinition.humanReview.status}|${starterDefinition.humanReview.reviewedBy}|${starterDefinition.humanReview.reviewedAt}|${compactPromptText(starterDefinition.humanReview.notes, 260)}`,
+      `human_review_scope: ${compactPromptText(starterDefinition.humanReview.scope, 260)}`,
       `human_review_author_or_publisher: ${starterDefinition.humanReview.authorOrPublisher}`,
       `human_review_jurisdiction: ${starterDefinition.humanReview.jurisdiction}`,
-      `human_review_assumptions: ${starterDefinition.humanReview.assumptions.join(' | ')}`,
-      `human_review_limitations: ${starterDefinition.humanReview.limitations.join(' | ')}`,
-      `human_review_source_pack_summary: ${starterDefinition.humanReview.sourcePackSummary}`,
+      `human_review_assumptions: ${compactPromptList(starterDefinition.humanReview.assumptions, 4, 180)}`,
+      `human_review_limitations: ${compactPromptList(starterDefinition.humanReview.limitations, 4, 180)}`,
+      `human_review_source_pack_summary: ${compactPromptText(starterDefinition.humanReview.sourcePackSummary, 260)}`,
       `human_review_gate: ${starterDefinition.humanReview.humanReviewGate}`,
     ] : []),
     `recommended_tools: ${starterDefinition.recommendedToolIds.length ? starterDefinition.recommendedToolIds.join(', ') : 'none'}`,
     `output_targets: ${starterDefinition.outputProductIds.length ? starterDefinition.outputProductIds.join(', ') : 'none'}`,
-    `suggested_questions: ${starterDefinition.suggestedQuestions.join(' | ')}`,
-    `suggested_next_actions: ${starterDefinition.suggestedNextActions.join(' | ')}`,
-    `agent_workflow: preferred_agent=${starterDefinition.agentWorkflow.preferredAgentId}; route_hint=${starterDefinition.agentWorkflow.routeHint}; output_goal=${starterDefinition.agentWorkflow.outputGoal}; approval_notes=${starterDefinition.agentWorkflow.approvalNotes}`,
-    `ai_use_guidance: ${starterDefinition.aiUseGuidance}`,
-    `rich_purpose: ${starterDefinition.richProfile.purpose}`,
-    `rich_user_job: ${starterDefinition.richProfile.userJob}`,
-    `rich_when_to_use: ${starterDefinition.richProfile.whenToUse.join(' | ')}`,
-    `rich_when_not_to_use: ${starterDefinition.richProfile.whenNotToUse.join(' | ')}`,
-    `rich_improves: ${starterDefinition.richProfile.improves.join(' | ')}`,
-    `rich_evidence_requirements: ${starterDefinition.richProfile.evidenceRequirements.join(' | ')}`,
-    `rich_risk_caveats: ${starterDefinition.richProfile.riskCaveats.join(' | ')}`,
-    `rich_decision_prompts: ${starterDefinition.richProfile.decisionPrompts.join(' | ')}`,
-    `rich_next_ideas: ${starterDefinition.richProfile.nextIdeas.join(' | ')}`,
-    `rich_quality_rubric: ${starterDefinition.richProfile.qualityRubric.join(' | ')}`,
-    `rich_agent_instructions: ${starterDefinition.richProfile.agentInstructions}`,
+    `suggested_questions: ${compactPromptList(starterDefinition.suggestedQuestions, 4, 180)}`,
+    `suggested_next_actions: ${compactPromptList(starterDefinition.suggestedNextActions, 5, 180)}`,
+    `agent_workflow: preferred_agent=${starterDefinition.agentWorkflow.preferredAgentId}; route_hint=${starterDefinition.agentWorkflow.routeHint}; output_goal=${compactPromptText(starterDefinition.agentWorkflow.outputGoal, 180)}; approval_notes=${compactPromptText(starterDefinition.agentWorkflow.approvalNotes, 260)}`,
+    `ai_use_guidance: ${compactPromptText(starterDefinition.aiUseGuidance, 360)}`,
+    `curation_human_summary: ${compactPromptText(curationProfile.humanInspectionSummary, 360)}`,
+    `curation_agent_summary: ${compactPromptText(curationProfile.agentUseSummary, 420)}`,
+    `source_refresh_status: ${curationProfile.sourceRefreshStatus.status}|${curationProfile.sourceRefreshStatus.verifiedAt}|primary=${curationProfile.sourceRefreshStatus.primaryExternalSourceIds.join(',')}|internal=${curationProfile.sourceRefreshStatus.internalMethodSourceIds.join(',') || 'none'}|gaps=${curationProfile.sourceRefreshStatus.sourceGaps.join(' | ') || 'none'}`,
+    `tacit_assumptions: ${compactPromptList(curationProfile.tacitKnowledge.workingAssumptions, 3, 180)}`,
+    `tacit_red_lines: ${compactPromptList(curationProfile.tacitKnowledge.redLines, 4, 180)}`,
+    `tacit_approval_politics: ${compactPromptList(curationProfile.tacitKnowledge.approvalPolitics, 3, 180)}`,
+    `tacit_heuristics: ${compactPromptList(curationProfile.tacitKnowledge.practicalHeuristics, 4, 180)}`,
+    `tacit_sensitivities: ${compactPromptList(curationProfile.tacitKnowledge.stakeholderSensitivities, 3, 180)}`,
+    `tacit_caveats: ${compactPromptList(curationProfile.tacitKnowledge.caveats, 4, 180)}`,
+    `omit_from_agent_context: ${compactPromptList(curationProfile.omitFromAgentContextNotes, 4, 180)}`,
+    `compact_agent_instructions: ${compactPromptList(curationProfile.compactAgentInstructions, 4, 180)}`,
+    `governance_boundary: ${CAPSULE_NO_AFFILIATION_LIMITATION} Agents may draft and suggest; humans approve external use and canonical promotion.`,
+    `rich_purpose: ${compactPromptText(starterDefinition.richProfile.purpose, 360)}`,
+    `rich_user_job: ${compactPromptText(starterDefinition.richProfile.userJob, 260)}`,
+    `rich_evidence_requirements: ${compactPromptList(starterDefinition.richProfile.evidenceRequirements, 4, 180)}`,
+    `rich_risk_caveats: ${compactPromptList(starterDefinition.richProfile.riskCaveats, 4, 180)}`,
+    `rich_agent_instructions: ${compactPromptText(starterDefinition.richProfile.agentInstructions, 520)}`,
     ...(intelligenceProfile ? [
       `intelligence_profile_id: ${intelligenceProfile.profileId}`,
       `intelligence_kind: ${intelligenceProfile.capsuleKind}`,
-      `human_workflow_user_job: ${intelligenceProfile.humanWorkflow.userJob}`,
-      `human_workflow_decision_moment: ${intelligenceProfile.humanWorkflow.decisionMoment}`,
-      `human_workflow_working_cadence: ${intelligenceProfile.humanWorkflow.workingCadence}`,
-      `human_workflow_stakeholder_pressure: ${intelligenceProfile.humanWorkflow.stakeholderPressure}`,
-      `human_workflow_red_lines: ${intelligenceProfile.humanWorkflow.redLines.join(' | ')}`,
-      `reasoning_scaffold_steps: ${intelligenceProfile.reasoningScaffold.steps.join(' | ')}`,
-      `reasoning_disconfirming_checks: ${intelligenceProfile.reasoningScaffold.disconfirmingChecks.join(' | ')}`,
-      `reasoning_uncertainty_handling: ${intelligenceProfile.reasoningScaffold.uncertaintyHandling}`,
-      `reasoning_failure_modes: ${intelligenceProfile.reasoningScaffold.failureModes.join(' | ')}`,
-      `reasoning_output_grammar: ${intelligenceProfile.reasoningScaffold.outputGrammar.join(' | ')}`,
-      `context_map_actors: ${intelligenceProfile.contextMap.actors.join(' | ')}`,
-      `context_map_claims: ${intelligenceProfile.contextMap.claims.join(' | ')}`,
-      `context_map_rules: ${intelligenceProfile.contextMap.rules.join(' | ')}`,
-      `context_map_risks: ${intelligenceProfile.contextMap.risks.join(' | ')}`,
-      `context_map_timelines: ${intelligenceProfile.contextMap.timelines.join(' | ')}`,
-      `context_map_sources: ${intelligenceProfile.contextMap.sources.join(' | ')}`,
-      `context_map_decisions: ${intelligenceProfile.contextMap.decisions.join(' | ')}`,
-      `context_map_open_questions: ${intelligenceProfile.contextMap.openQuestions.join(' | ')}`,
-      `generation_contract_good_answer_includes: ${intelligenceProfile.generationContract.goodAnswerIncludes.join(' | ')}`,
-      `generation_contract_must_not_claim: ${intelligenceProfile.generationContract.mustNotClaim.join(' | ')}`,
-      `generation_contract_review_gates: ${intelligenceProfile.generationContract.reviewGates.join(' | ')}`,
-      `generation_contract_output_path: ${intelligenceProfile.generationContract.outputPath}`,
-      `useful_followups: ${intelligenceProfile.usefulFollowUps.join(' | ')}`,
-      `why_this_improves_answers: ${intelligenceProfile.whyThisImprovesAnswers}`,
+      `human_workflow_decision_moment: ${compactPromptText(intelligenceProfile.humanWorkflow.decisionMoment, 280)}`,
+      `human_workflow_red_lines: ${compactPromptList(intelligenceProfile.humanWorkflow.redLines, 4, 160)}`,
+      `reasoning_scaffold_steps: ${compactPromptList(intelligenceProfile.reasoningScaffold.steps, 5, 160)}`,
+      `reasoning_disconfirming_checks: ${compactPromptList(intelligenceProfile.reasoningScaffold.disconfirmingChecks, 3, 160)}`,
+      `reasoning_uncertainty_handling: ${compactPromptText(intelligenceProfile.reasoningScaffold.uncertaintyHandling, 220)}`,
+      `generation_contract_good_answer_includes: ${compactPromptList(intelligenceProfile.generationContract.goodAnswerIncludes, 5, 160)}`,
+      `generation_contract_must_not_claim: ${compactPromptList(intelligenceProfile.generationContract.mustNotClaim, 5, 180)}`,
+      `generation_contract_review_gates: ${compactPromptList(intelligenceProfile.generationContract.reviewGates, 5, 160)}`,
+      `generation_contract_output_path: ${compactPromptText(intelligenceProfile.generationContract.outputPath, 180)}`,
+      `useful_followups: ${compactPromptList(intelligenceProfile.usefulFollowUps, 6, 140)}`,
+      `why_this_improves_answers: ${compactPromptText(intelligenceProfile.whyThisImprovesAnswers, 320)}`,
     ] : []),
     ...(cogneeProfile ? [
       `cognee_profile_id: ${cogneeProfile.profileId}`,
       `cognee_advisory_only: ${cogneeProfile.advisoryOnly}`,
       `cognee_canonical_truth: ${cogneeProfile.canonicalTruth}`,
-      `cognee_why_it_helps: ${cogneeProfile.whyCogneeHelps}`,
-      `cognee_seed_documents: ${cogneeProfile.seedDocuments.map((document) => `${document.kind}:${document.title}`).join(' | ')}`,
-      `cognee_expected_node_candidates: ${cogneeProfile.expectedNodeCandidates.join(' | ')}`,
-      `cognee_expected_edge_candidates: ${cogneeProfile.expectedEdgeCandidates.join(' | ')}`,
+      `cognee_why_it_helps: ${compactPromptText(cogneeProfile.whyCogneeHelps, 260)}`,
+      `cognee_seed_documents: ${cogneeProfile.seedDocuments.slice(0, 5).map((document) => `${document.kind}:${document.title}`).join(' | ')}`,
+      `cognee_expected_node_candidates: ${cogneeProfile.expectedNodeCandidates.slice(0, 8).join(' | ')}`,
+      `cognee_expected_edge_candidates: ${cogneeProfile.expectedEdgeCandidates.slice(0, 8).join(' | ')}`,
       `cognee_confidence_cap: ${cogneeProfile.confidenceCap}`,
-      `cognee_review_card_promotion_rules: ${cogneeProfile.reviewCardPromotionRules.join(' | ')}`,
-      `cognee_live_acceptance: ${cogneeProfile.liveAcceptance.enabledByEnv}; ${cogneeProfile.liveAcceptance.backendUrlEnv}; ${cogneeProfile.liveAcceptance.operations.join(' | ')}`,
+      `cognee_review_card_promotion_rules: ${compactPromptList(cogneeProfile.reviewCardPromotionRules, 4, 160)}`,
+      `cognee_live_acceptance: ${cogneeProfile.liveAcceptance.enabledByEnv}; ${cogneeProfile.liveAcceptance.backendUrlEnv}; ${compactPromptList(cogneeProfile.liveAcceptance.operations, 4, 160)}`,
     ] : []),
     ...(starterDefinition.deviceProfile ? [
       `device_kind: ${starterDefinition.deviceProfile.deviceKind}`,
       `device_reasoning_operation: ${starterDefinition.deviceProfile.reasoningOperation}`,
-      `device_activation_criteria: ${starterDefinition.deviceProfile.activationCriteria.join(' | ')}`,
-      `device_input_contract: ${starterDefinition.deviceProfile.inputContract.join(' | ')}`,
-      `device_output_grammar: ${starterDefinition.deviceProfile.outputGrammar.join(' | ')}`,
-      `device_method_steps: ${starterDefinition.deviceProfile.methodSteps.join(' | ')}`,
-      `device_best_inputs: ${starterDefinition.deviceProfile.bestInputs.join(' | ')}`,
-      `device_expected_outputs: ${starterDefinition.deviceProfile.expectedOutputs.join(' | ')}`,
-      `device_disconfirming_checks: ${starterDefinition.deviceProfile.disconfirmingChecks.join(' | ')}`,
-      `device_failure_modes: ${starterDefinition.deviceProfile.failureModes.join(' | ')}`,
+      `device_activation_criteria: ${compactPromptList(starterDefinition.deviceProfile.activationCriteria, 3, 160)}`,
+      `device_input_contract: ${compactPromptList(starterDefinition.deviceProfile.inputContract, 3, 160)}`,
+      `device_output_grammar: ${compactPromptList(starterDefinition.deviceProfile.outputGrammar, 4, 160)}`,
+      `device_method_steps: ${compactPromptList(starterDefinition.deviceProfile.methodSteps, 5, 160)}`,
+      `device_best_inputs: ${compactPromptList(starterDefinition.deviceProfile.bestInputs, 4, 160)}`,
+      `device_expected_outputs: ${compactPromptList(starterDefinition.deviceProfile.expectedOutputs, 4, 160)}`,
+      `device_disconfirming_checks: ${compactPromptList(starterDefinition.deviceProfile.disconfirmingChecks, 3, 160)}`,
+      `device_failure_modes: ${compactPromptList(starterDefinition.deviceProfile.failureModes, 3, 160)}`,
       `device_human_review_gate: ${starterDefinition.deviceProfile.humanReviewGate}`,
       `device_confidence_policy: ${starterDefinition.deviceProfile.confidencePolicy}`,
       `device_forgetting_policy: ${starterDefinition.deviceProfile.forgettingPolicy}`,
-      `device_cross_capsule_pairings: ${starterDefinition.deviceProfile.crossCapsulePairings.join(' | ')}`,
-      `device_misuse_warnings: ${starterDefinition.deviceProfile.misuseWarnings.join(' | ')}`,
+      `device_cross_capsule_pairings: ${compactPromptList(starterDefinition.deviceProfile.crossCapsulePairings, 5, 120)}`,
+      `device_misuse_warnings: ${compactPromptList(starterDefinition.deviceProfile.misuseWarnings, 3, 160)}`,
       `device_review_gate_type: ${starterDefinition.deviceProfile.reviewGateType}`,
-      `device_agent_instructions: ${starterDefinition.deviceProfile.agentInstructions}`,
-      `device_sourceability_requirements: ${starterDefinition.deviceProfile.sourceabilityRequirements.join(' | ')}`,
+      `device_agent_instructions: ${compactPromptText(starterDefinition.deviceProfile.agentInstructions, 300)}`,
+      `device_sourceability_requirements: ${compactPromptList(starterDefinition.deviceProfile.sourceabilityRequirements, 3, 160)}`,
     ] : []),
     ...(starterDefinition.ontologyOverlay ? [
       `ontology_overlay_id: ${starterDefinition.ontologyOverlay.overlayId}`,
       `ontology_base_ids: ${starterDefinition.ontologyOverlay.baseOntologyIds.join(', ')}`,
       `work_ontology_id: ${starterDefinition.ontologyOverlay.workOntologyId}`,
-      `ontology_node_hints: ${starterDefinition.ontologyOverlay.ontologyNodeHints.join(' | ')}`,
+      `ontology_node_hints: ${starterDefinition.ontologyOverlay.ontologyNodeHints.slice(0, 8).join(' | ')}`,
       `embedded_graph_node_types: ${starterDefinition.ontologyOverlay.graphNodeTypes.join(', ')}`,
       `embedded_graph_edge_types: ${starterDefinition.ontologyOverlay.graphEdgeTypes.join(', ')}`,
       `embedded_graph_seed: ${starterDefinition.ontologyOverlay.graphSeed.proposalLabel}; ${starterDefinition.ontologyOverlay.graphSeed.reviewGate}`,
       `cognee_overlay_mode: ${starterDefinition.ontologyOverlay.cognee.mode}; dataset_scope=${starterDefinition.ontologyOverlay.cognee.datasetScope}; search_modes=${starterDefinition.ontologyOverlay.cognee.searchModes.join(', ')}; max_candidate_confidence=${starterDefinition.ontologyOverlay.cognee.maxCandidateConfidence}`,
       `cognee_custom_prompt_hint: ${starterDefinition.ontologyOverlay.cognee.customPromptHint}`,
-      `ontology_promotion_rules: ${starterDefinition.ontologyOverlay.promotionRules.join(' | ')}`,
-      `ontology_forbidden_claims: ${starterDefinition.ontologyOverlay.forbiddenClaims.join(' | ')}`,
+      `ontology_promotion_rules: ${compactPromptList(starterDefinition.ontologyOverlay.promotionRules, 4, 160)}`,
+      `ontology_forbidden_claims: ${compactPromptList(starterDefinition.ontologyOverlay.forbiddenClaims, 4, 160)}`,
     ] : []),
     `combines_well_with: ${starterDefinition.combinesWellWith.length ? starterDefinition.combinesWellWith.join(', ') : 'none'}`,
-    ...('inspectionSections' in starterDefinition ? starterDefinition.inspectionSections.map((section) => `starter_section_${stableReceiptPart(section.label)}: ${section.detail}`) : []),
     'runtime_rule: Treat this starter definition as reusable operating context for Ask PRAXIS, tool routing, agent runs, and output drafting.',
     'runtime_rule: Preserve user edits on the persisted capsule, but use this starter definition to explain what the capsule is for and how to improve it.',
+    '',
+  ];
+  const block = lines.join('\n');
+  if (block.length <= CAPSULE_STARTER_PROMPT_MAX_CHARS) return block;
+  return [
+    block.slice(0, CAPSULE_STARTER_PROMPT_MAX_CHARS - 180).trimEnd(),
+    '',
+    'compact_truncation: prompt exceeded starter compact-context cap; inspect starterSnapshot for full curation profile.',
     '',
   ].join('\n');
 }

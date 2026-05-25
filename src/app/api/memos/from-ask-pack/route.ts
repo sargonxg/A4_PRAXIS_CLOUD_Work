@@ -113,7 +113,13 @@ export const POST = withAuth(async (request, user) => {
       outputCapsuleId: outputCapsule.id,
     });
 
-    return NextResponse.json({ success: true, ...record, outputCapsule });
+    return NextResponse.json({
+      success: true,
+      memoId: record.memo.id,
+      href: `/app/write?memoId=${encodeURIComponent(record.memo.id)}`,
+      ...record,
+      outputCapsule,
+    });
   } catch (err) {
     return handleRouteError(err, 'memos/from-ask-pack');
   }

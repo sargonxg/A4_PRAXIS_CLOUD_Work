@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "catalogVersion": "2026-05-25-capsule-consolidation-v14",
+  "total": 205,
+  "counts": {
+    "situation": 85,
+    "tool": 72,
+    "output": 35,
+    "user": 13
+  },
+  "sourceRegistryCount": 27,
+  "prompt": {
+    "averageLength": 10755,
+    "maxLength": 14115,
+    "warnTarget": 12000,
+    "hardCap": 16000
+  },
+  "failures": []
+}
