@@ -2,6 +2,7 @@ steps:
   # Fast path for frontend-only product/UI/tool-surface iterations.
   # Use the full cloudbuild.yaml when backend, worker, Cloud Function, IAM,
   # secrets, or infrastructure behavior changes.
+  # Deploy trigger marker: capsule context capture production rollout.
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
