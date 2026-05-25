@@ -9,7 +9,6 @@ import {
   deriveCapsuleV3QualityAudit,
   normalizeContextCapsuleV3,
   type CogneeAdvisoryReceipt,
-  type ContextCapsuleV3,
 } from '@/lib/context/capsule-v3';
 import { normalizeContextCapsuleV2, type ContextCapsuleV2 } from '@/lib/context/capsule-v2';
 
