@@ -12,7 +12,11 @@ import {
   CAPSULE_CONNECTOR_REGISTRY,
   CAPSULE_CONNECTOR_IDEAS,
   CAPSULE_OUTPUT_PRODUCTS,
+  CAPSULE_STARTER_CATALOG_VERSION,
   CAPSULE_STARTER_DEFINITIONS,
+  CAPSULE_STARTER_PROMPT_MAX_CHARS,
+  CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS,
+  CAPSULE_STARTER_SOURCE_REGISTRY,
   CAPSULE_WOW_DEMO_STARTER_IDS,
   CAPSULE_TAXONOMY_AXES,
   CONTEXT_CAPSULE_V3_PRODUCT_SECTIONS,
@@ -263,9 +267,11 @@ describe('context capsule product contract', () => {
         reviewedAt: 'not-reviewed',
         humanReviewGate: expect.stringMatching(/human review required/i),
       });
-      expect(starter?.sourcePack.length, `${starterId} source placeholders`).toBeGreaterThanOrEqual(2);
-      expect(starter?.sourcePack.every((source) => source.publisher === 'Source placeholder')).toBe(true);
-      expect(starter?.excerpts.every((excerpt) => excerpt.text.toLowerCase().includes('placeholder'))).toBe(true);
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.sourcePack.every((source) => source.publisher !== 'Source placeholder')).toBe(true);
+      expect(starter?.sourcePack.every((source) => source.url.startsWith('https://') && !source.url.includes('example.test'))).toBe(true);
+      expect(starter?.sourcePack.filter((source) => source.publisher !== 'PRAXIS starter catalog').length, `${starterId} external source count`).toBeGreaterThanOrEqual(2);
+      expect(starter?.excerpts.every((excerpt) => !excerpt.text.toLowerCase().includes('placeholder'))).toBe(true);
       expect(starter?.outputProductIds.length, `${starterId} output contracts`).toBeGreaterThanOrEqual(1);
       expect(starter?.agentWorkflow.approvalNotes).toMatch(/cannot publish|human review/i);
       expect(starter?.suggestedNextActions.join(' ')).toMatch(/sourceability|review|claim/i);
@@ -275,9 +281,92 @@ describe('context capsule product contract', () => {
         'Output Contracts',
       ]));
       expect(buildCapsuleStarterPromptBlock(starterId)).toContain('gate_status: needs_review');
-      expect(buildCapsuleStarterPromptBlock(starterId)).toContain('claim_ledger: placeholders_only');
+      expect(buildCapsuleStarterPromptBlock(starterId)).toContain('claim_ledger: source_review_pending');
       expect(buildCapsuleStarterPromptBlock(starterId)).toContain('agent_permission: may draft and suggest, cannot publish');
     }
+  });
+
+  it('consolidates starter source metadata and curation profiles across the full catalog', () => {
+    const externalSourceCount = (starter: (typeof CAPSULE_STARTER_DEFINITIONS)[number]) =>
+      starter.sourcePack.filter((source) => source.publisher !== 'PRAXIS starter catalog' && !source.url.includes('praxis.tacitus.me')).length;
+
+    expect(CAPSULE_STARTER_CATALOG_VERSION).toMatch(/capsule-consolidation/);
+    expect(Object.keys(CAPSULE_STARTER_SOURCE_REGISTRY).length).toBeGreaterThanOrEqual(10);
+
+    for (const starter of CAPSULE_STARTER_DEFINITIONS) {
+      expect(externalSourceCount(starter), `${starter.starterId} external source refs`).toBeGreaterThanOrEqual(2);
+      expect(starter.sourcePack.some((source) => source.publisher === 'Source placeholder'), `${starter.starterId} placeholder publisher`).toBe(false);
+      expect(starter.sourcePack.some((source) => source.url.includes('example.test')), `${starter.starterId} example.test source`).toBe(false);
+      expect(starter.curationProfile.humanInspectionSummary, `${starter.starterId} human summary`).toContain(starter.label);
+      expect(starter.curationProfile.agentUseSummary.length, `${starter.starterId} agent summary`).toBeGreaterThan(50);
+      expect(starter.curationProfile.sourceRefreshStatus.primaryExternalSourceIds.length, `${starter.starterId} primary sources`).toBeGreaterThanOrEqual(2);
+      expect(starter.curationProfile.sourceRefreshStatus.status, `${starter.starterId} source status`).toBe('verified');
+      expect(starter.curationProfile.omitFromAgentContextNotes.join(' '), `${starter.starterId} omit notes`).toMatch(/inspection|boilerplate|approval/i);
+      expect(starter.curationProfile.compactAgentInstructions.join(' '), `${starter.starterId} compact instructions`).toMatch(/source|review|stop/i);
+      expect(starter.curationProfile.tacitKnowledge.workingAssumptions.length, `${starter.starterId} assumptions`).toBeGreaterThanOrEqual(1);
+      expect(starter.curationProfile.tacitKnowledge.redLines.length, `${starter.starterId} red lines`).toBeGreaterThanOrEqual(1);
+      expect(starter.curationProfile.tacitKnowledge.approvalPolitics.length, `${starter.starterId} approval politics`).toBeGreaterThanOrEqual(1);
+      expect(starter.curationProfile.tacitKnowledge.practicalHeuristics.length, `${starter.starterId} heuristics`).toBeGreaterThanOrEqual(1);
+      expect(starter.curationProfile.tacitKnowledge.stakeholderSensitivities.length, `${starter.starterId} sensitivities`).toBeGreaterThanOrEqual(1);
+      expect(starter.curationProfile.tacitKnowledge.caveats.length, `${starter.starterId} caveats`).toBeGreaterThanOrEqual(1);
+
+      for (const source of starter.sourcePack) {
+        expect(source.publisher, `${starter.starterId} ${source.id} publisher`).toBeTruthy();
+        expect(source.date, `${starter.starterId} ${source.id} date`).toBeTruthy();
+        expect(source.reliabilityTier, `${starter.starterId} ${source.id} reliability`).toEqual(expect.any(Number));
+        expect(source.url, `${starter.starterId} ${source.id} url`).toMatch(/^https:\/\//);
+      }
+    }
+  });
+
+  it('emits compact starter prompt context instead of repeating inspector prose', () => {
+    const promptBlocks = CAPSULE_STARTER_DEFINITIONS.map((starter) => ({
+      starter,
+      promptBlock: buildCapsuleStarterPromptBlock(starter.starterId) ?? '',
+    }));
+    const averageLength = Math.round(promptBlocks.reduce((sum, item) => sum + item.promptBlock.length, 0) / promptBlocks.length);
+
+    expect(averageLength).toBeLessThanOrEqual(CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS);
+    for (const { starter, promptBlock } of promptBlocks) {
+      expect(promptBlock.length, `${starter.starterId} prompt length`).toBeLessThanOrEqual(CAPSULE_STARTER_PROMPT_MAX_CHARS);
+      expect(promptBlock, `${starter.starterId} no inspection sections`).not.toContain('starter_section_');
+      expect(promptBlock, `${starter.starterId} compact agent summary`).toContain('curation_agent_summary:');
+      expect(promptBlock, `${starter.starterId} tacit knowledge`).toContain('tacit_red_lines:');
+      expect(promptBlock, `${starter.starterId} omit notes`).toContain('omit_from_agent_context:');
+      expect(promptBlock, `${starter.starterId} governance`).toContain('not affiliated');
+    }
+  });
+
+  it('keeps repeated generic rich-profile sentences below the consolidation threshold', () => {
+    const repetitions = new Map<string, string[]>();
+
+    for (const starter of CAPSULE_STARTER_DEFINITIONS) {
+      const profile = starter.richProfile;
+      for (const text of [
+        profile.purpose,
+        profile.userJob,
+        profile.agentInstructions,
+        ...profile.whenToUse,
+        ...profile.whenNotToUse,
+        ...profile.improves,
+        ...profile.sourceIndications,
+        ...profile.evidenceRequirements,
+        ...profile.riskCaveats,
+        ...profile.decisionPrompts,
+        ...profile.nextIdeas,
+        ...profile.qualityRubric,
+      ]) {
+        const normalized = text.replace(/\s+/g, ' ').trim();
+        if (normalized.length < 60) continue;
+        repetitions.set(normalized, [...(repetitions.get(normalized) ?? []), starter.starterId]);
+      }
+    }
+
+    const overused = [...repetitions.entries()]
+      .filter(([, starterIds]) => starterIds.length > 12)
+      .map(([text, starterIds]) => ({ text, count: starterIds.length, examples: starterIds.slice(0, 3) }));
+
+    expect(overused).toEqual([]);
   });
 
   it('adds expert policy capsules with human-gated sources, reasoning tools, and drafting styles', () => {
