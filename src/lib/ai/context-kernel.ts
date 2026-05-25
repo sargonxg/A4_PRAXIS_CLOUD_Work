@@ -9,7 +9,10 @@ import {
   type InjectableContextInput,
 } from '@/lib/context/context-injection';
 import type { CapsuleServiceDeps } from '@/lib/context/capsule-service';
-import type { CapsuleRepositoryMetadata } from '@/lib/product/context-capsules';
+import type {
+  CapsuleContextCaptureProfile,
+  CapsuleRepositoryMetadata,
+} from '@/lib/product/context-capsules';
 import type {
   CapsuleClaimLedgerItem,
   CapsuleGroundingReceipt,
@@ -63,6 +66,8 @@ export interface TurnCapsule {
       cognee: 'enabled' | 'disabled' | 'degraded';
       graphiti: 'deferred';
       memoryItemIds: string[];
+      usedMemoryItemIds: string[];
+      ignoredMemoryItemIds: string[];
       memoryHitCount: number;
       writebackProposalIds: string[];
       warnings: string[];
@@ -74,8 +79,12 @@ export interface TurnCapsule {
 export type CapsuleRetrievalLayerId =
   | 'capsule-core-refs'
   | 'associated-capsules'
+  | 'ontology-bound-sources'
+  | 'usage-inference'
   | 'repository-documents'
   | 'source-receipts'
+  | 'advisory-cognee-memory'
+  | 'capsule-plus-graph'
   | 'graph-core'
   | 'time-core'
   | 'memory-core'
@@ -274,10 +283,16 @@ export function buildCapsuleRetrievalPlan(
   repository?: Partial<CapsuleRepositoryMetadata> | null,
 ): CapsuleRetrievalPlan {
   const refs = capsule.injectableContext.capsule.coreRefs;
+  const contextCaptureProfile = capsule.injectableContext.capsule.starterSnapshot?.contextCaptureProfile ?? null;
   const repositoryDocumentIds = uniqueStrings(repository?.documentIds ?? refs.documentCoreIds);
   const sourceReceiptIds = uniqueStrings(repository?.sourceReceiptIds ?? refs.sourceCoreIds);
   const storageObjectRefs = uniqueStrings(repository?.storageObjectRefs ?? []);
   const chunkCount = Math.max(0, Math.floor(repository?.chunkCount ?? 0));
+  const advisoryCogneeMemoryIds = uniqueStrings([
+    ...(contextCaptureProfile?.cogneeCapture.seedDocumentIds ?? []),
+    ...(capsule.enrichment?.receipt.usedMemoryItemIds ?? capsule.enrichment?.receipt.memoryItemIds ?? []),
+    ...Object.values(capsule.memory).flat().filter((item) => item.id.startsWith('cognee:')).map((item) => item.id),
+  ]);
   const layers: CapsuleRetrievalLayer[] = [
     retrievalLayer('capsule-core-refs', 'Capsule core refs', 1, [
       refs.userCoreId,
@@ -291,16 +306,32 @@ export function buildCapsuleRetrievalPlan(
       ...refs.outputCoreIds,
     ]),
     retrievalLayer('associated-capsules', 'Reference capsules', 2, referenceCapsuleRefs(capsule.injectableContext.associatedCapsules)),
-    retrievalLayer('repository-documents', 'Attached repository documents', 3, repositoryDocumentIds),
-    retrievalLayer('source-receipts', 'Attached source receipts', 4, sourceReceiptIds),
-    retrievalLayer('graph-core', 'Actor and graph core', 5, refs.graphCoreId ? [refs.graphCoreId] : []),
-    retrievalLayer('time-core', 'Time and watchlist core', 6, refs.timeCoreId ? [refs.timeCoreId] : []),
-    retrievalLayer('memory-core', 'Memory and handover core', 7, [
+    retrievalLayer('ontology-bound-sources', 'Ontology-bound sources', 3, contextCaptureProfile?.sourceBindings.map((binding) =>
+      `${binding.sourceId}:${binding.ontologyIds.join('+')}`,
+    ) ?? []),
+    retrievalLayer('usage-inference', 'Usage inference', 4, contextCaptureProfile ? [
+      contextCaptureProfile.profileId,
+      ...contextCaptureProfile.usageInference.activationSignals.slice(0, 3),
+      ...contextCaptureProfile.usageInference.userJobs.slice(0, 2),
+    ] : []),
+    retrievalLayer('repository-documents', 'Attached repository documents', 5, repositoryDocumentIds),
+    retrievalLayer('source-receipts', 'Attached source receipts', 6, sourceReceiptIds),
+    retrievalLayer('advisory-cognee-memory', 'Advisory Cognee memory', 7, advisoryCogneeMemoryIds),
+    retrievalLayer('capsule-plus-graph', 'Capsule+ graph capture', 8, contextCaptureProfile ? [
+      `${contextCaptureProfile.profileId}:graph-candidates`,
+      `nodes:${contextCaptureProfile.embeddedGraph.allowedNodeTypes.slice(0, 8).join(',')}`,
+      `edges:${contextCaptureProfile.embeddedGraph.allowedEdgeTypes.slice(0, 6).join(',')}`,
+      `provenance:${contextCaptureProfile.embeddedGraph.requiredProvenance.join('+')}`,
+      `review:${contextCaptureProfile.embeddedGraph.reviewState}`,
+    ] : []),
+    retrievalLayer('graph-core', 'Actor and graph core', 9, refs.graphCoreId ? [refs.graphCoreId] : []),
+    retrievalLayer('time-core', 'Time and watchlist core', 10, refs.timeCoreId ? [refs.timeCoreId] : []),
+    retrievalLayer('memory-core', 'Memory and handover core', 11, [
       refs.memoryCoreId,
       ...Object.values(capsule.memory).flat().map((item) => item.id),
     ]),
-    retrievalLayer('recent-runs', 'Recent run receipts', 8, capsule.recentToolOutputs),
-    retrievalLayer('output-history', 'Output capsule history', 9, refs.outputCoreIds),
+    retrievalLayer('recent-runs', 'Recent run receipts', 12, capsule.recentToolOutputs),
+    retrievalLayer('output-history', 'Output capsule history', 13, refs.outputCoreIds),
   ];
   const promptLines = [
     '## Active Capsule Retrieval Plan',
@@ -308,9 +339,10 @@ export function buildCapsuleRetrievalPlan(
     `Repository: ${repositoryDocumentIds.length} document ref(s), ${sourceReceiptIds.length} source receipt ref(s), ${chunkCount} chunk(s), ${repository?.retrievalBackend ?? 'local-hybrid'} backend, freshness ${repository?.freshness ?? inferRepositoryFreshness(repositoryDocumentIds, sourceReceiptIds)}.`,
     'ContextChain block priority: userCore, situation, sources, thinkingDevices, output.',
     ...formatRetrievalContextBlocks(capsule.injectableContext.stack.contextBlocks),
+    ...formatContextCapturePromptLines(contextCaptureProfile, capsule.enrichment?.receipt),
     'Read order:',
     ...layers.map((layer) => `- ${layer.priority}. ${layer.label}: ${layer.status}${layer.refIds.length ? ` (${layer.refIds.slice(0, 8).join(', ')})` : ''}`),
-    'Answer from capsule core refs first, then associated reference capsule summaries, then repository documents/chunks and source receipts, then graph/time/memory/recent run/output history. Treat missing layers as explicit evidence gaps.',
+    'Answer from capsule core refs first, then associated reference capsule summaries, ontology-bound source lanes, usage inference, repository documents/chunks and source receipts, advisory Cognee memory, Capsule+ graph candidates, then graph/time/memory/recent run/output history. Treat missing layers as explicit evidence gaps.',
     'Use model knowledge, online reading, or retrieval only to supplement, verify, or fill gaps outside the governed capsule blocks, and label that outside context clearly.',
   ];
 
@@ -342,9 +374,43 @@ function formatRetrievalContextBlocks(blocks: TurnCapsule['injectableContext']['
   ];
 }
 
+function formatContextCapturePromptLines(
+  profile: CapsuleContextCaptureProfile | null,
+  receipt?: {
+    memoryItemIds?: string[];
+    usedMemoryItemIds?: string[];
+    ignoredMemoryItemIds?: string[];
+    writebackProposalIds?: string[];
+  } | null,
+): string[] {
+  if (!profile) {
+    return [
+      'Ontology-bound sources: none',
+      'Usage inference: none',
+      'Advisory Cognee memory: disabled or no source-bound advisory hits',
+      'Capsule+ graph capture: no proposed graph profile',
+    ];
+  }
+  const usedMemoryIds = receipt?.usedMemoryItemIds ?? receipt?.memoryItemIds ?? [];
+  const ignoredMemoryIds = receipt?.ignoredMemoryItemIds ?? [];
+  return [
+    `Context capture profile: ${profile.profileId}`,
+    `Ontology-bound sources: ${compactList(profile.sourceBindings.map((binding) => `${binding.sourceId} [${binding.ontologyIds.join('+')} -> ${binding.expectedClaims.slice(0, 2).join('; ')}]`), 4)}`,
+    `Usage inference: signals=${compactList(profile.usageInference.activationSignals, 3)}; jobs=${compactList(profile.usageInference.userJobs, 2)}; contraindications=${compactList(profile.usageInference.contraindications, 3)}; confidence<=${profile.usageInference.confidenceThresholds.advisoryGenerationMaxConfidence} until evidence.`,
+    `Advisory Cognee memory: seed_docs=${compactList(profile.cogneeCapture.seedDocumentIds, 4)}; used=${compactList(usedMemoryIds, 4)}; ignored=${compactList(ignoredMemoryIds, 4)}; advisory_only=${profile.cogneeCapture.advisoryOnly}; promotion=review-card.`,
+    `Capsule+ graph capture: nodes=${profile.embeddedGraph.allowedNodeTypes.slice(0, 8).join(',')}; edges=${profile.embeddedGraph.allowedEdgeTypes.slice(0, 6).join(',')}; provenance=${profile.embeddedGraph.requiredProvenance.join('+')}; review_state=${profile.embeddedGraph.reviewState}; promotion_gate=${profile.embeddedGraph.promotionGate}`,
+    `Unsupported claim warnings: ${compactList(profile.generationImpact.unsupportedClaimWarnings, 3)}; evidence_required=${compactList(profile.generationImpact.evidenceRequiredBeforeConfidentGeneration, 3)}`,
+  ];
+}
+
 function formatRetrievalBlockItems(items: TurnCapsule['injectableContext']['stack']['contextBlocks']['sources']): string {
   if (!items.length) return 'none';
   return items.map((item) => `${item.id}${item.primary ? ' (primary)' : ' (secondary)'}`).join(', ');
+}
+
+function compactList(values: string[], limit: number): string {
+  const compact = values.map((value) => value.trim()).filter(Boolean).slice(0, limit);
+  return compact.length ? compact.join(' | ') : 'none';
 }
 
 export function suggestNextActions(capsule: TurnCapsule, surface: 'ask' | 'drafting' = 'ask'): SemanticNextAction[] {

@@ -611,7 +611,17 @@ describe('capsule service', () => {
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-sourceability-matrix')?.starterSnapshot?.outputProductIds).toContain('evidence-sourceability-annex');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-output-principals-decision-memo')?.starterSnapshot?.outputProductIds).toContain('principals-decision-memo');
     expect(db.data.has('users/u1/capsules/starter-situation-ai-governance-procurement/sources/nist-ai-rmf')).toBe(true);
+    expect(db.data.get('users/u1/capsules/starter-situation-ai-governance-procurement/sources/nist-ai-rmf')).toMatchObject({
+      ontologyIds: expect.arrayContaining(['governance']),
+      expectedClaims: expect.arrayContaining([expect.stringMatching(/rule|requirement|claim|source/i)]),
+      forbiddenInferences: expect.arrayContaining([expect.stringMatching(/unsupported|stale|single-source|Cognee|canonical/i)]),
+    });
     expect(db.data.has('users/u1/capsules/starter-situation-ai-governance-procurement/evaluations/starter-readiness')).toBe(true);
+    expect(db.data.get('users/u1/capsules/starter-situation-ai-governance-procurement/evaluations/starter-readiness')).toMatchObject({
+      contextCaptureProfileId: 'starter-situation-ai-governance-procurement-context-capture-v1',
+      graphCaptureReviewState: 'proposed',
+      graphPromotionGate: expect.stringMatching(/human|review-card|canonical/i),
+    });
     expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/sources/un-sudan-atrocity-famine-risk')).toBe(true);
     expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/evaluations/starter-readiness')).toBe(true);
     expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/notes/starter-guidance')).toBe(true);
@@ -628,6 +638,8 @@ describe('capsule service', () => {
       cogneeMode: 'not-ingested',
       promotionRequired: 'review-card',
       postgresProjection: 'capsule-plus-proposals-only',
+      usedMemoryReceiptField: 'usedMemoryItemIds',
+      ignoredMemoryReceiptField: 'ignoredMemoryItemIds',
     });
     expect(starterAdvisoryMemory?.memoryUseCases).toEqual(expect.arrayContaining([
       expect.stringMatching(/recall|brief|review|similar/i),
@@ -757,6 +769,7 @@ describe('capsule service', () => {
     expect(db.data.get(`${path}/notes/starter-guidance`)?.body).toEqual(expect.stringContaining('Best next action:'));
     expect(db.data.get(`${path}/advisoryMemoryHits/starter-cognee-seed-pack`)?.advisoryOnly).toBe(true);
     expect(db.data.get(`${path}/advisoryMemoryHits/starter-cognee-seed-pack`)?.promotionRequired).toBe('review-card');
+    expect(db.data.get(`${path}/advisoryMemoryHits/starter-cognee-seed-pack`)?.contextCaptureProfileId).toBe('starter-situation-diplomatic-options-context-capture-v1');
 
     await seedStarterCapsules('u1', deps(db));
     const afterSecondRun = await getCapsule('u1', 'starter-situation-diplomatic-options', deps(db));

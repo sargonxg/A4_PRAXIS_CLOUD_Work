@@ -954,7 +954,8 @@ function continuationActionsFor(intent: AskIntent): AskContinuationAction[] {
 }
 
 function buildCapsuleMemoryReceipt(enrichment?: ContextEnrichmentReceipt, provenance?: ConversationPackProvenance): CapsuleMemoryReceipt {
-  const memoryIds = uniqueStrings(enrichment?.memoryItemIds ?? []);
+  const memoryIds = uniqueStrings(enrichment?.usedMemoryItemIds ?? enrichment?.memoryItemIds ?? []);
+  const ignoredMemoryIds = uniqueStrings(enrichment?.ignoredMemoryItemIds ?? []);
   const cogneeProfileId = provenance?.cogneeProfileId ?? undefined;
   return {
     cogneeStatus: enrichment?.cognee ?? 'disabled',
@@ -962,7 +963,7 @@ function buildCapsuleMemoryReceipt(enrichment?: ContextEnrichmentReceipt, proven
     usedCogneeAdvisoryMemory: Boolean(cogneeProfileId || memoryIds.length || enrichment?.memoryHitCount),
     memoryHitCount: enrichment?.memoryHitCount ?? memoryIds.length,
     memoryIds,
-    ignoredMemoryIds: [],
+    ignoredMemoryIds,
     advisoryOnly: true,
     promotionRequired: 'review-card',
     warnings: enrichment?.warnings ?? [],

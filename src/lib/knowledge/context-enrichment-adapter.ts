@@ -17,6 +17,8 @@ export interface ContextEnrichmentReceipt {
   cognee: ContextEnrichmentCogneeStatus;
   graphiti: 'deferred';
   memoryItemIds: string[];
+  usedMemoryItemIds: string[];
+  ignoredMemoryItemIds: string[];
   memoryHitCount: number;
   writebackProposalIds: string[];
   warnings: string[];
@@ -78,7 +80,10 @@ export async function buildEnrichedTurnCapsule(
       query: input.query,
       limit: 6,
     });
-    const memoryItems = recall.hits.map((hit) => cogneeHitToMemoryItem(hit, baseCapsule.capsuleId));
+    const usableHits = recall.hits.filter(isUsableCogneeHit);
+    const ignoredHits = recall.hits.filter((hit) => !isUsableCogneeHit(hit));
+    const memoryItems = usableHits.map((hit) => cogneeHitToMemoryItem(hit, baseCapsule.capsuleId));
+    const ignoredMemoryItemIds = ignoredHits.map((hit) => `cognee:${hit.id}`);
     const enriched = memoryItems.length
       ? await buildTurnCapsule({
           ...input,
@@ -91,8 +96,13 @@ export async function buildEnrichedTurnCapsule(
         cogneeEnabled: recall.status === 'enabled',
         cogneeStatus: recall.status,
         memoryItemIds: memoryItems.map((item) => item.id),
+        usedMemoryItemIds: memoryItems.map((item) => item.id),
+        ignoredMemoryItemIds,
         writebackProposalIds: memoryItems.map((item) => `review-card:${item.id}`),
-        warnings: recall.warning ? [recall.warning] : [],
+        warnings: [
+          ...(recall.warning ? [recall.warning] : []),
+          ...(ignoredMemoryItemIds.length ? [`Ignored Cognee hits without provenance: ${ignoredMemoryItemIds.join(', ')}`] : []),
+        ],
       }),
       memoryHitCount: memoryItems.length,
     });
@@ -112,17 +122,23 @@ export function buildContextEnrichmentReceipt(input: {
   cogneeEnabled: boolean;
   cogneeStatus?: ContextEnrichmentCogneeStatus;
   memoryItemIds?: string[];
+  usedMemoryItemIds?: string[];
+  ignoredMemoryItemIds?: string[];
   writebackProposalIds?: string[];
   warnings?: string[];
 }): ContextEnrichmentReceipt {
   const memoryItemIds = input.memoryItemIds ?? [];
+  const usedMemoryItemIds = input.usedMemoryItemIds ?? memoryItemIds;
+  const ignoredMemoryItemIds = input.ignoredMemoryItemIds ?? [];
   return {
     firestore: 'ready',
     canonicalStatus: 'firestore-canonical',
     cognee: input.cogneeStatus ?? (input.cogneeEnabled ? 'enabled' : 'disabled'),
     graphiti: 'deferred',
     memoryItemIds,
-    memoryHitCount: memoryItemIds.length,
+    usedMemoryItemIds,
+    ignoredMemoryItemIds,
+    memoryHitCount: usedMemoryItemIds.length,
     writebackProposalIds: input.writebackProposalIds ?? [],
     warnings: input.warnings ?? [],
   };
@@ -199,4 +215,26 @@ function cogneeHitToMemoryItem(hit: MemoryHit, capsuleId: string): KernelMemoryI
     capsuleId,
     updatedAt: typeof hit.metadata?.updatedAt === 'string' ? hit.metadata.updatedAt : undefined,
   };
+}
+
+function isUsableCogneeHit(hit: MemoryHit): boolean {
+  return Boolean(hit.text?.trim()) && hasCogneeProvenance(hit);
+}
+
+function hasCogneeProvenance(hit: MemoryHit): boolean {
+  if (typeof hit.sourceId === 'string' && hit.sourceId.trim()) return true;
+  const metadata = hit.metadata ?? {};
+  return [
+    metadata.sourceId,
+    metadata.sourceIds,
+    metadata.documentId,
+    metadata.documentIds,
+    metadata.runId,
+    metadata.runIds,
+  ].some(hasStringProvenance);
+}
+
+function hasStringProvenance(value: unknown): boolean {
+  if (typeof value === 'string') return value.trim().length > 0;
+  return Array.isArray(value) && value.some((item) => typeof item === 'string' && item.trim().length > 0);
 }

@@ -1135,6 +1135,8 @@ function decorateAskRuntimeReceipt(
       cognee: 'disabled',
       graphiti: 'deferred',
       memoryItemIds: [],
+      usedMemoryItemIds: [],
+      ignoredMemoryItemIds: [],
       memoryHitCount: 0,
       writebackProposalIds: [],
       warnings: [],

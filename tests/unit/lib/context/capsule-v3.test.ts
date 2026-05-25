@@ -11,6 +11,7 @@ import {
   type CogneeAdvisoryReceipt,
 } from '@/lib/context/capsule-v3';
 import { normalizeContextCapsuleV2, type ContextCapsuleV2 } from '@/lib/context/capsule-v2';
+import { CAPSULE_STARTER_CATALOG_VERSION, CAPSULE_STARTER_DEFINITIONS } from '@/lib/product/context-capsules';
 
 describe('ContextCapsule v3 contract', () => {
   it('normalizes v2 capsules into the full human-gated v3 section contract', () => {
@@ -27,6 +28,11 @@ describe('ContextCapsule v3 contract', () => {
     expect(capsule.businessUseCase.bestNextAction).toBe('Run sourceability before drafting.');
     expect(capsule.humanTacitKnowledge.redLines).toContain('No procurement recommendation without legal review.');
     expect(capsule.sourceSpine.score).toBeGreaterThanOrEqual(80);
+    expect(capsule.contextCaptureProfile.profileId).toBe('starter-situation-us-federal-ai-governance-baseline-context-capture-v1');
+    expect(capsule.contextCaptureProfile.sourceBindings.length).toBeGreaterThanOrEqual(2);
+    expect(capsule.contextCaptureProfile.usageInference.activationSignals.length).toBeGreaterThanOrEqual(3);
+    expect(capsule.contextCaptureProfile.embeddedGraph.reviewState).toBe('proposed');
+    expect(capsule.contextCaptureProfile.generationImpact.suppresses.join(' ')).toMatch(/unsupported|stale|Cognee|canonical/i);
     expect(capsule.claimLedger.supportedClaims).toHaveLength(1);
     expect(capsule.reasoningScaffold.publicMethod).toContain('Separate obligations, assumptions, and procurement choices.');
     expect(capsule.agentOperatingContract.allowedActions).toEqual(expect.arrayContaining([
@@ -164,6 +170,8 @@ describe('ContextCapsule v3 contract', () => {
 });
 
 function makeCapsule(overrides: Partial<ContextCapsuleV2> = {}): ContextCapsuleV2 {
+  const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === 'starter-situation-us-federal-ai-governance-baseline');
+  if (!starter) throw new Error('Missing v3 starter fixture');
   return normalizeContextCapsuleV2({
     capsuleId: 'ai-governance-procurement',
     ownerUid: 'u1',
@@ -184,6 +192,10 @@ function makeCapsule(overrides: Partial<ContextCapsuleV2> = {}): ContextCapsuleV
       objectiveCoreIds: ['procurement-decision'],
       productCoreIds: [],
       memoryCoreId: 'memory-1',
+    },
+    starterSnapshot: {
+      ...starter,
+      catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
     },
     capsuleClass: 'human_gated',
     capsuleMode: 'human_gated',

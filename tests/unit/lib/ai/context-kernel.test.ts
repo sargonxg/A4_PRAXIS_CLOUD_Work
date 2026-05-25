@@ -54,8 +54,12 @@ describe('context kernel', () => {
     expect(capsule.retrievalPlan.layers.map((layer) => layer.id)).toEqual([
       'capsule-core-refs',
       'associated-capsules',
+      'ontology-bound-sources',
+      'usage-inference',
       'repository-documents',
       'source-receipts',
+      'advisory-cognee-memory',
+      'capsule-plus-graph',
       'graph-core',
       'time-core',
       'memory-core',
@@ -66,6 +70,10 @@ describe('context kernel', () => {
     expect(capsule.retrievalPlan.repository.sourceReceiptIds).toEqual(['source-1']);
     expect(capsule.retrievalPlan.promptBlock).toContain('ContextChain block priority: userCore, situation, sources, thinkingDevices, output.');
     expect(capsule.retrievalPlan.promptBlock).toContain('Answer from capsule core refs first');
+    expect(capsule.retrievalPlan.promptBlock).toContain('Ontology-bound sources:');
+    expect(capsule.retrievalPlan.promptBlock).toContain('Usage inference:');
+    expect(capsule.retrievalPlan.promptBlock).toContain('Advisory Cognee memory:');
+    expect(capsule.retrievalPlan.promptBlock).toContain('Capsule+ graph capture:');
   });
 
   it('builds an Ask PRAXIS retrieval plan from repository metadata before broader context layers', async () => {
@@ -99,13 +107,13 @@ describe('context kernel', () => {
     expect(plan.layers.slice(0, 3).map((layer) => layer.id)).toEqual([
       'capsule-core-refs',
       'associated-capsules',
-      'repository-documents',
+      'ontology-bound-sources',
     ]);
     expect(plan.layers.slice(0, 4).map((layer) => layer.id)).toEqual([
       'capsule-core-refs',
       'associated-capsules',
-      'repository-documents',
-      'source-receipts',
+      'ontology-bound-sources',
+      'usage-inference',
     ]);
     expect(plan.repository).toMatchObject({
       documentIds: ['doc-repo-1'],
@@ -118,6 +126,8 @@ describe('context kernel', () => {
     });
     expect(plan.layers.find((layer) => layer.id === 'memory-core')?.refIds).toContain('mem-1');
     expect(plan.layers.find((layer) => layer.id === 'recent-runs')?.refIds).toEqual(['run-1']);
+    expect(plan.layers.find((layer) => layer.id === 'repository-documents')?.priority).toBe(5);
+    expect(plan.layers.find((layer) => layer.id === 'advisory-cognee-memory')?.priority).toBe(7);
   });
 
   it('plans capability runs through canonical route families', async () => {
@@ -236,6 +246,8 @@ describe('context kernel', () => {
           cognee: 'enabled' as const,
           graphiti: 'deferred' as const,
           memoryItemIds: ['cognee:hit-1'],
+          usedMemoryItemIds: ['cognee:hit-1'],
+          ignoredMemoryItemIds: [],
           memoryHitCount: 1,
           writebackProposalIds: ['review-card:cognee:hit-1'],
           warnings: [],

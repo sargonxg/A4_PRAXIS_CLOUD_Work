@@ -191,6 +191,8 @@ describe('ask answer envelope', () => {
         cognee: 'enabled',
         graphiti: 'deferred',
         memoryItemIds: ['cognee:hit-1'],
+        usedMemoryItemIds: ['cognee:hit-1'],
+        ignoredMemoryItemIds: ['cognee:ignored-no-source'],
         memoryHitCount: 1,
         writebackProposalIds: ['review-card:cognee:hit-1'],
         warnings: [],
@@ -228,6 +230,7 @@ describe('ask answer envelope', () => {
       promotionRequired: 'review-card',
       cogneeProfileId: 'starter-situation-eu-ai-act-2026-implementation-simplification-cognee-v1',
       usedCogneeAdvisoryMemory: true,
+      ignoredMemoryIds: ['cognee:ignored-no-source'],
     });
     expect(envelope.contextDiagnostics).toMatchObject({
       activeCapsule: 'starter-situation-eu-ai-act-2026-implementation-simplification',

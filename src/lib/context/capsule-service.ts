@@ -1618,6 +1618,7 @@ function buildStarterSnapshot(starterDefinition: CapsuleStarterDefinition): Caps
     curationProfile: cloneSerializable(starterDefinition.curationProfile),
     intelligenceProfile: cloneSerializable(starterDefinition.intelligenceProfile),
     cogneeProfile: cloneSerializable(starterDefinition.cogneeProfile),
+    contextCaptureProfile: cloneSerializable(starterDefinition.contextCaptureProfile),
     ...(starterDefinition.ontologyOverlay ? {
       ontologyOverlay: {
         ...starterDefinition.ontologyOverlay,
@@ -1671,6 +1672,7 @@ async function writeStarterDetailRecords(
   const timestamp = nowIso(deps);
   const batch = dbOf(deps).batch();
   for (const source of starterDefinition.sourcePack) {
+    const sourceBinding = starterDefinition.contextCaptureProfile.sourceBindings.find((binding) => binding.sourceId === source.id);
     batch.set(ref.collection('sources').doc(cleanId(source.id, 'starter-source')), {
       sourceId: source.id,
       capsuleId,
@@ -1688,6 +1690,16 @@ async function writeStarterDetailRecords(
       lastRefreshedAt: null,
       needsRefresh: CAPSULE_WOW_DEMO_STARTER_IDS.includes(starterDefinition.starterId as typeof CAPSULE_WOW_DEMO_STARTER_IDS[number]),
       starterDefinitionId: starterDefinition.starterId,
+      ...(sourceBinding ? {
+        ontologyIds: sourceBinding.ontologyIds,
+        expectedEntities: sourceBinding.expectedEntities,
+        expectedClaims: sourceBinding.expectedClaims,
+        expectedEvents: sourceBinding.expectedEvents,
+        expectedDates: sourceBinding.expectedDates,
+        freshnessCadence: sourceBinding.freshnessCadence,
+        forbiddenInferences: sourceBinding.forbiddenInferences,
+        contextCaptureProfileId: starterDefinition.contextCaptureProfile.profileId,
+      } : {}),
       catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
       seededAt: timestamp,
     }, { merge: true });
@@ -1731,6 +1743,9 @@ async function writeStarterDetailRecords(
     rubric: starterDefinition.richProfile.qualityRubric.join(' '),
     evidenceRequirements: starterDefinition.richProfile.evidenceRequirements,
     riskCaveats: starterDefinition.richProfile.riskCaveats,
+    contextCaptureProfileId: starterDefinition.contextCaptureProfile.profileId,
+    graphCaptureReviewState: starterDefinition.contextCaptureProfile.embeddedGraph.reviewState,
+    graphPromotionGate: starterDefinition.contextCaptureProfile.embeddedGraph.promotionGate,
     links: {
       sourceIds: starterDefinition.sourcePack.map((source) => source.id),
       documentIds: [],
@@ -1749,6 +1764,8 @@ async function writeStarterDetailRecords(
     recallOperation: 'recall',
     promotionRequired: 'review-card',
     postgresProjection: 'capsule-plus-proposals-only',
+    usedMemoryReceiptField: starterDefinition.contextCaptureProfile.cogneeCapture.usedMemoryReceiptField,
+    ignoredMemoryReceiptField: starterDefinition.contextCaptureProfile.cogneeCapture.ignoredMemoryReceiptField,
     memoryUseCases: [
       `Recall similar ${starterDefinition.domain.replace(/-/g, ' ')} work without treating recall as truth.`,
       'Brief agents on source gaps, review gates, and reusable real-work context before drafting.',
@@ -1782,6 +1799,7 @@ async function writeStarterDetailRecords(
     sourceType: 'cognee',
     promotionRequired: 'review-card',
     ...cogneeSeedPack,
+    contextCaptureProfileId: starterDefinition.contextCaptureProfile.profileId,
     catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
     updatedAt: timestamp,
   }, { merge: true });
@@ -2570,7 +2588,12 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     : catalogStarter?.curationProfile
       ? cloneSerializable(catalogStarter.curationProfile)
       : null;
-  if (!intelligenceProfile || !cogneeProfile || !curationProfile) return null;
+  const contextCaptureProfile = isRecord(value.contextCaptureProfile)
+    ? cloneSerializable(value.contextCaptureProfile as unknown as CapsuleStarterSnapshot['contextCaptureProfile'])
+    : catalogStarter?.contextCaptureProfile
+      ? cloneSerializable(catalogStarter.contextCaptureProfile)
+      : null;
+  if (!intelligenceProfile || !cogneeProfile || !curationProfile || !contextCaptureProfile) return null;
   return {
     catalogVersion: stringOrNull(value.catalogVersion) ?? 'unknown',
     starterId,
@@ -2598,6 +2621,7 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     curationProfile,
     intelligenceProfile,
     cogneeProfile,
+    contextCaptureProfile,
     ...(ontologyOverlay ? { ontologyOverlay } : {}),
     ...(deviceProfile ? { deviceProfile } : {}),
     ...(humanReviewRecord ? {

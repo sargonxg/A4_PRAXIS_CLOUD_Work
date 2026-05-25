@@ -1,4 +1,6 @@
 import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
+import type { TacitusCorePrimitive } from '@/lib/graph/core-primitives';
+import type { OntologyId } from '@/lib/ontology/types';
 import type { DomainId } from '@/types/domain';
 
 export const PENDING_CONTEXT_CAPSULE_PROMPT_KEY = 'praxis.pendingContextCapsulePrompt';
@@ -425,6 +427,98 @@ export interface CapsuleStarterSource {
   reliabilityTier?: 1 | 2 | 3;
 }
 
+export interface CapsuleSourceOntologyBinding {
+  sourceId: string;
+  sourceType: CapsuleStarterSource['sourceType'];
+  ontologyIds: OntologyId[];
+  expectedEntities: string[];
+  expectedClaims: string[];
+  expectedEvents: string[];
+  expectedDates: string[];
+  freshnessCadence: string;
+  forbiddenInferences: string[];
+  captureRationale: string;
+}
+
+export interface CapsuleUsageInferenceProfile {
+  activationSignals: string[];
+  userJobs: string[];
+  outputFit: string[];
+  contraindications: string[];
+  nextBestActions: string[];
+  confidenceThresholds: {
+    confidentGenerationRequiresEvidence: number;
+    advisoryGenerationMaxConfidence: number;
+    cogneeRecallMaxConfidence: 0.6;
+  };
+}
+
+export type CapsuleEmbeddedGraphNodeType =
+  | 'Actor'
+  | 'Claim'
+  | 'Commitment'
+  | 'Decision'
+  | 'Deadline'
+  | 'Event'
+  | 'OpenQuestion'
+  | 'Output'
+  | 'Risk'
+  | 'Rule'
+  | 'Source';
+
+export type CapsuleEmbeddedGraphEdgeType =
+  | 'AUTHORED_BY'
+  | 'CITED_BY'
+  | 'CONSTRAINS'
+  | 'CONTRADICTS'
+  | 'DEPENDS_ON'
+  | 'INVOLVES'
+  | 'OWNED_BY'
+  | 'PRECEDES'
+  | 'SUPPORTED_BY'
+  | 'SUPPORTS'
+  | 'TRIGGERS_REVIEW';
+
+export interface CapsuleEmbeddedGraphProfile {
+  allowedNodeTypes: CapsuleEmbeddedGraphNodeType[];
+  allowedEdgeTypes: CapsuleEmbeddedGraphEdgeType[];
+  allowedAcoPrimitives: TacitusCorePrimitive[];
+  requiredProvenance: Array<'sourceIds' | 'documentIds' | 'runIds'>;
+  reviewState: 'proposed';
+  promotionGate: string;
+  proposalOnly: true;
+  confidenceCap: 0.6;
+  unsupportedClaimPolicy: string;
+}
+
+export interface CapsuleGenerationImprovementReceipt {
+  profileId: string;
+  improves: string[];
+  suppresses: string[];
+  evidenceRequiredBeforeConfidentGeneration: string[];
+  unsupportedClaimWarnings: string[];
+  advisoryOnly: true;
+  confidenceCap: 0.6;
+}
+
+export interface CapsuleContextCaptureProfile {
+  profileId: string;
+  sourceBindings: CapsuleSourceOntologyBinding[];
+  usageInference: CapsuleUsageInferenceProfile;
+  embeddedGraph: CapsuleEmbeddedGraphProfile;
+  generationImpact: CapsuleGenerationImprovementReceipt;
+  cogneeCapture: {
+    seedDocumentIds: string[];
+    advisoryOnly: true;
+    canonicalTruth: 'Firestore ContextCapsules';
+    usedMemoryReceiptField: 'usedMemoryItemIds';
+    ignoredMemoryReceiptField: 'ignoredMemoryItemIds';
+    reviewCardPromotionRequired: true;
+  };
+  reviewState: 'proposed';
+  canonicalTruth: 'Firestore ContextCapsules';
+}
+
 export interface CapsuleStarterExcerpt {
   sourceId: string;
   text: string;
@@ -522,6 +616,7 @@ export interface CapsuleIntelligenceProfile {
 export type CapsuleCogneeSeedDocumentKind =
   | 'workflow-brief'
   | 'ontology-node-guide'
+  | 'source-capture-guide'
   | 'source-lane-guide'
   | 'forbidden-claim-guide'
   | 'output-rubric';
@@ -532,6 +627,8 @@ export interface CapsuleCogneeSeedDocument {
   title: string;
   body: string;
   advisoryOnly: true;
+  sourceId?: string;
+  ontologyIds?: OntologyId[];
 }
 
 export interface CapsuleCogneeProfile {
@@ -575,9 +672,12 @@ export interface CapsuleCogneeSeedPack {
       kind: CapsuleCogneeSeedDocumentKind;
       starterId: string;
       profileId: string;
+      sourceId?: string | null;
+      ontologyIds?: OntologyId[];
       advisoryOnly: true;
       canonicalTruth: 'Firestore ContextCapsules';
       promotionRequired: 'review-card';
+      contextCaptureProfileId?: string | null;
     };
   }>;
   cognifyPlan: {
@@ -600,6 +700,7 @@ export interface CapsuleCogneeSeedPack {
     profileId: string;
     sourceDocumentIds: string[];
   };
+  contextCaptureProfileId?: string | null;
 }
 
 export interface CapsuleStarterDeviceProfile {
@@ -712,6 +813,7 @@ export interface CapsuleStarterDefinition {
   curationProfile: CapsuleStarterCurationProfile;
   intelligenceProfile: CapsuleIntelligenceProfile;
   cogneeProfile: CapsuleCogneeProfile;
+  contextCaptureProfile: CapsuleContextCaptureProfile;
   deviceProfile?: CapsuleStarterDeviceProfile;
   humanReview?: CapsuleStarterHumanReview;
   ontologyOverlay?: CapsuleStarterOntologyOverlay;
@@ -803,6 +905,14 @@ export const CAPSULE_WOW_DEMO_STARTER_IDS = [
 export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-25-capsule-consolidation-v14';
 export const CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS = 12_000;
 export const CAPSULE_STARTER_PROMPT_MAX_CHARS = 16_000;
+export const CAPSULE_CONTEXT_CAPTURE_FIXTURE_STARTER_IDS = [
+  'starter-situation-red-sea-houthi-shipping-risk',
+  'starter-situation-sudan-darfur-atrocity-access',
+  'starter-tool-sanctions-exposure-triage-matrix',
+  'starter-situation-us-federal-ai-governance-baseline',
+  'starter-tool-sourceability-matrix',
+  'starter-output-principals-decision-memo',
+] as const;
 const CAPSULE_NO_AFFILIATION_LIMITATION = 'PRAXIS is not affiliated with, endorsed by, or speaking for any organization named in this capsule, its sources, or its examples.';
 
 export const CAPSULE_STARTER_SOURCE_REGISTRY: Record<string, CapsuleStarterSource> = {
@@ -1100,6 +1210,7 @@ export type CapsuleStarterSnapshot = Pick<
   | 'curationProfile'
   | 'intelligenceProfile'
   | 'cogneeProfile'
+  | 'contextCaptureProfile'
   | 'deviceProfile'
   | 'humanReview'
   | 'ontologyOverlay'
@@ -1665,6 +1776,7 @@ type CapsuleStarterOverrides = Partial<Pick<
   | 'curationProfile'
   | 'intelligenceProfile'
   | 'cogneeProfile'
+  | 'contextCaptureProfile'
   | 'deviceProfile'
   | 'humanReview'
   | 'ontologyOverlay'
@@ -1836,6 +1948,163 @@ function buildStarterOntologyOverlay(input: {
       'Do not treat ontology fit, graph centrality, or Cognee recall as evidence by itself.',
     ],
   };
+}
+
+const CAPSULE_PLUS_CONTEXT_CAPTURE_NODE_TYPES: CapsuleEmbeddedGraphNodeType[] = [
+  'Actor',
+  'Claim',
+  'Commitment',
+  'Decision',
+  'Deadline',
+  'Event',
+  'OpenQuestion',
+  'Output',
+  'Risk',
+  'Rule',
+  'Source',
+];
+
+const CAPSULE_PLUS_CONTEXT_CAPTURE_EDGE_TYPES: CapsuleEmbeddedGraphEdgeType[] = [
+  'AUTHORED_BY',
+  'CITED_BY',
+  'CONSTRAINS',
+  'CONTRADICTS',
+  'DEPENDS_ON',
+  'INVOLVES',
+  'OWNED_BY',
+  'PRECEDES',
+  'SUPPORTED_BY',
+  'SUPPORTS',
+  'TRIGGERS_REVIEW',
+];
+
+const ACO_CONTEXT_CAPTURE_PRIMITIVES: TacitusCorePrimitive[] = [
+  'Actor',
+  'Claim',
+  'Interest',
+  'Constraint',
+  'Leverage',
+  'Commitment',
+  'Event',
+  'Narrative',
+];
+
+function ontologyIdsForStarterSource(input: {
+  domain: CapsuleStarterDomain;
+  tags: string[];
+  source: CapsuleStarterSource;
+}): OntologyId[] {
+  const text = `${input.domain} ${input.tags.join(' ')} ${input.source.label} ${input.source.publisher ?? ''} ${input.source.relevance} ${input.source.sourceType}`.toLowerCase();
+  const ids: OntologyId[] = [];
+  const add = (...values: OntologyId[]) => {
+    for (const value of values) ids.push(value);
+  };
+
+  if (/humanitarian|ocha|relief|protection|access|displacement|famine|wfp|unhcr|iom/.test(text)) add('humanitarian', 'human-rights');
+  if (/sanction|ofac|debt|imf|world bank|finance|fiscal|trade|tariff|market|commodity|economic/.test(text)) add('economic', 'legal');
+  if (/regulator|official|standard|omb|nist|federal|procurement|governance|agency|parliament|congress/.test(text) || ['official', 'regulator', 'standard-setter'].includes(input.source.sourceType)) add('governance', 'legal');
+  if (/ceasefire|mediat|negotiat|peace|unifil|mandate|security council|conflict|war|armed/.test(text)) add('conflict', 'mediation', 'legal');
+  if (/cyber|hybrid|security|defence|defense|infrastructure|maritime|military/.test(text)) add('security', 'conflict');
+  if (/narrative|information|election|legitimacy|public affairs|media|trust/.test(text)) add('narrative', 'governance');
+
+  if (ids.length === 0) {
+    if (input.domain === 'finance' || input.domain === 'critical-minerals') add('economic');
+    else if (input.domain === 'humanitarian-rights' || input.domain === 'migration-displacement' || input.domain === 'public-health') add('humanitarian', 'human-rights');
+    else if (input.domain === 'ai-governance' || input.domain === 'policy-review' || input.domain === 'audit-review') add('governance', 'legal');
+    else if (input.domain === 'cyber-resilience') add('security');
+    else if (input.domain === 'election-integrity') add('narrative', 'governance');
+    else add('conflict', 'governance');
+  }
+
+  return uniqueStrings(ids).slice(0, 3) as OntologyId[];
+}
+
+function expectedCaptureTargetsForSource(source: CapsuleStarterSource, ontologyIds: OntologyId[], label: string) {
+  const text = `${source.sourceType} ${source.label} ${source.publisher ?? ''} ${source.relevance} ${ontologyIds.join(' ')}`.toLowerCase();
+  const officialLike = ['official', 'regulator', 'standard-setter'].includes(source.sourceType);
+  const humanitarianLike = ontologyIds.includes('humanitarian') || /humanitarian|ocha|relief|access|protection|affected|displacement|famine/.test(text);
+  const financialLike = ontologyIds.includes('economic') || /sanction|debt|finance|fiscal|trade|tariff|market|commodity|risk/.test(text);
+
+  const expectedEntities = uniqueStrings([
+    officialLike ? 'issuing authority' : '',
+    officialLike ? 'covered actor or institution' : '',
+    officialLike ? 'regulated activity or decision owner' : '',
+    humanitarianLike ? 'affected population' : '',
+    humanitarianLike ? 'humanitarian actor' : '',
+    humanitarianLike ? 'access constraint' : '',
+    financialLike ? 'counterparty or exposed actor' : '',
+    financialLike ? 'risk driver' : '',
+    financialLike ? 'source authority' : '',
+    'source publisher',
+    `${label} actor`,
+  ]).slice(0, 8);
+
+  const expectedClaims = uniqueStrings([
+    officialLike ? 'rule, requirement, mandate, or decision claim' : '',
+    officialLike ? 'deadline, scope, exception, or authority claim' : '',
+    humanitarianLike ? 'need, access, protection, or operational constraint claim' : '',
+    humanitarianLike ? 'affected-population or service-delivery claim' : '',
+    financialLike ? 'risk, exposure, commitment, or compliance claim' : '',
+    financialLike ? 'source-backed financial or market-context claim' : '',
+    'source-backed claim with explicit source id and as-of date',
+    'claim boundary, caveat, or review-state that should not be inferred past the source',
+  ]).slice(0, 8);
+
+  const expectedEvents = uniqueStrings([
+    officialLike ? 'publication, guidance, decision, or deadline event' : '',
+    humanitarianLike ? 'access, displacement, incident, update, or needs-assessment event' : '',
+    financialLike ? 'listing, licensing, market, program, or exposure-change event' : '',
+    'source update event',
+  ]).slice(0, 6);
+
+  const expectedDates = uniqueStrings([
+    source.date ? `source date ${source.date}` : '',
+    'source as-of date',
+    officialLike ? 'effective date or deadline date' : '',
+    humanitarianLike ? 'situation update date' : '',
+    financialLike ? 'listing, program, or reporting date' : '',
+    'next review-card refresh date',
+  ]).slice(0, 6);
+
+  return { expectedEntities, expectedClaims, expectedEvents, expectedDates };
+}
+
+function freshnessCadenceForSource(source: CapsuleStarterSource, tags: string[]): string {
+  const text = `${source.label} ${source.relevance} ${tags.join(' ')}`.toLowerCase();
+  if (/daily|crisis|watch|incident|current|humanitarian|security|maritime|public-health/.test(text)) return 'refresh before each external answer and at least every 7 days during active monitoring';
+  if (/deadline|implementation|sanction|regulator|official|federal|legal|mandate/.test(text)) return 'refresh before external use and at least every 30 days while active';
+  if (/framework|standard|method|library|principle/.test(text)) return 'refresh on source update and re-check quarterly';
+  return 'refresh before high-stakes reliance and re-check monthly';
+}
+
+function forbiddenInferencesForSource(source: CapsuleStarterSource): string[] {
+  return [
+    `Do not infer facts from ${source.id} that are not supported by the cited source text.`,
+    'Do not promote stale, single-source, or unsupported claims into canonical ContextCapsules or Capsule+ graph rows.',
+    'Do not treat Cognee recall, ontology fit, or graph centrality as evidence by itself.',
+  ];
+}
+
+function buildSourceOntologyBindings(input: {
+  starterId: string;
+  label: string;
+  domain: CapsuleStarterDomain;
+  tags: string[];
+  sourcePack: CapsuleStarterSource[];
+}): CapsuleSourceOntologyBinding[] {
+  return input.sourcePack.map((source) => {
+    const ontologyIds = ontologyIdsForStarterSource({ domain: input.domain, tags: input.tags, source });
+    const targets = expectedCaptureTargetsForSource(source, ontologyIds, input.label);
+    return {
+      sourceId: source.id,
+      sourceType: source.sourceType,
+      ontologyIds,
+      ...targets,
+      freshnessCadence: freshnessCadenceForSource(source, input.tags),
+      forbiddenInferences: forbiddenInferencesForSource(source),
+      captureRationale: `Bind ${source.label} to ${ontologyIds.join(', ')} extraction for ${input.starterId}; capture only source-bound candidates with review-card provenance.`,
+    };
+  });
 }
 
 interface StarterIntelligenceBuilderInput {
@@ -2188,10 +2457,42 @@ function buildStarterIntelligenceProfile(input: StarterIntelligenceBuilderInput)
 function buildCapsuleCogneeSeedDocuments(input: {
   starterId: string;
   label: string;
+  domain: CapsuleStarterDomain;
+  tags: string[];
+  sourcePack: CapsuleStarterSource[];
   intelligenceProfile: CapsuleIntelligenceProfile;
   ontologyOverlay: CapsuleStarterOntologyOverlay;
 }): CapsuleCogneeSeedDocument[] {
   const { starterId, label, intelligenceProfile, ontologyOverlay } = input;
+  const sourceBindings = buildSourceOntologyBindings({
+    starterId,
+    label,
+    domain: input.domain,
+    tags: input.tags,
+    sourcePack: input.sourcePack,
+  });
+  const sourceDocuments: CapsuleCogneeSeedDocument[] = sourceBindings.map((binding) => {
+    const source = input.sourcePack.find((item) => item.id === binding.sourceId);
+    return {
+      id: `${starterId}-seed-source-${binding.sourceId}`,
+      kind: 'source-capture-guide',
+      title: `${source?.label ?? binding.sourceId} source capture guide`,
+      body: [
+        `Source id: ${binding.sourceId}.`,
+        `Ontology lenses: ${binding.ontologyIds.join(', ')}.`,
+        `Expected entities: ${binding.expectedEntities.join('; ')}.`,
+        `Expected claims: ${binding.expectedClaims.join('; ')}.`,
+        `Expected events: ${binding.expectedEvents.join('; ')}.`,
+        `Expected dates: ${binding.expectedDates.join('; ')}.`,
+        `Freshness cadence: ${binding.freshnessCadence}.`,
+        `Forbidden inferences: ${binding.forbiddenInferences.join(' ')}`,
+        'Advisory only: convert recall into review-card proposals before canonical use.',
+      ].join('\n'),
+      advisoryOnly: true,
+      sourceId: binding.sourceId,
+      ontologyIds: binding.ontologyIds,
+    };
+  });
   return [
     {
       id: `${starterId}-seed-workflow-brief`,
@@ -2230,6 +2531,7 @@ function buildCapsuleCogneeSeedDocuments(input: {
       ].join('\n'),
       advisoryOnly: true,
     },
+    ...sourceDocuments,
     {
       id: `${starterId}-seed-forbidden-claim-guide`,
       kind: 'forbidden-claim-guide',
@@ -2298,6 +2600,9 @@ function buildStarterCogneeProfile(input: StarterIntelligenceBuilderInput & {
     seedDocuments: buildCapsuleCogneeSeedDocuments({
       starterId: input.starterId,
       label: input.label,
+      domain: input.domain,
+      tags: input.tags,
+      sourcePack: input.sourcePack,
       intelligenceProfile: input.intelligenceProfile,
       ontologyOverlay: input.ontologyOverlay,
     }),
@@ -2322,6 +2627,115 @@ function buildStarterCogneeProfile(input: StarterIntelligenceBuilderInput & {
         'Emit review-card proposals; do not write canonical graph state or mutate ontology files.',
       ],
     },
+  };
+}
+
+function buildStarterContextCaptureProfile(input: StarterIntelligenceBuilderInput & {
+  intelligenceProfile: CapsuleIntelligenceProfile;
+  cogneeProfile: CapsuleCogneeProfile;
+}): CapsuleContextCaptureProfile {
+  const sourceBindings = buildSourceOntologyBindings({
+    starterId: input.starterId,
+    label: input.label,
+    domain: input.domain,
+    tags: input.tags,
+    sourcePack: input.sourcePack,
+  });
+  const allowedNodeTypes = uniqueStrings([
+    ...CAPSULE_PLUS_CONTEXT_CAPTURE_NODE_TYPES,
+    ...input.ontologyOverlay.graphNodeTypes.filter((nodeType) =>
+      (CAPSULE_PLUS_CONTEXT_CAPTURE_NODE_TYPES as string[]).includes(nodeType),
+    ),
+  ]) as CapsuleEmbeddedGraphNodeType[];
+  const allowedEdgeTypes = uniqueStrings([
+    ...input.ontologyOverlay.graphEdgeTypes.filter((edgeType) =>
+      (CAPSULE_PLUS_CONTEXT_CAPTURE_EDGE_TYPES as string[]).includes(edgeType),
+    ),
+    'SUPPORTED_BY',
+    'CONTRADICTS',
+    'TRIGGERS_REVIEW',
+    'CITED_BY',
+  ]) as CapsuleEmbeddedGraphEdgeType[];
+  const profileId = `${input.starterId}-context-capture-v1`;
+
+  return {
+    profileId,
+    sourceBindings,
+    usageInference: {
+      activationSignals: uniqueStrings([
+        ...input.richProfile.whenToUse,
+        ...input.tags.slice(0, 6).map((tag) => `User or capsule signal: ${tag}`),
+      ]).slice(0, 8),
+      userJobs: uniqueStrings([
+        input.richProfile.userJob,
+        input.intelligenceProfile.humanWorkflow.userJob,
+        input.intelligenceProfile.humanWorkflow.decisionMoment,
+      ]).slice(0, 5),
+      outputFit: uniqueStrings([
+        ...input.outputProductIds,
+        input.intelligenceProfile.generationContract.outputPath,
+      ]).slice(0, 6),
+      contraindications: uniqueStrings([
+        ...input.richProfile.whenNotToUse,
+        ...input.intelligenceProfile.generationContract.mustNotClaim,
+        'Unsupported, stale, private, or Cognee-derived claims must remain advisory until review.',
+      ]).slice(0, 8),
+      nextBestActions: uniqueStrings([
+        ...input.richProfile.nextIdeas,
+        'Refresh source-bound receipts before confident generation.',
+        'Create review-card proposals for graph, memory, and unsupported-claim candidates.',
+      ]).slice(0, 8),
+      confidenceThresholds: {
+        confidentGenerationRequiresEvidence: 0.72,
+        advisoryGenerationMaxConfidence: 0.6,
+        cogneeRecallMaxConfidence: 0.6,
+      },
+    },
+    embeddedGraph: {
+      allowedNodeTypes,
+      allowedEdgeTypes,
+      allowedAcoPrimitives: [...ACO_CONTEXT_CAPTURE_PRIMITIVES],
+      requiredProvenance: ['sourceIds', 'documentIds', 'runIds'],
+      reviewState: 'proposed',
+      promotionGate: 'Human review-card approval is required before canonical graph promotion.',
+      proposalOnly: true,
+      confidenceCap: 0.6,
+      unsupportedClaimPolicy: 'Unsupported claims stay as source gaps, OpenQuestion/Risk candidates, or rejected inferences until reviewed.',
+    },
+    generationImpact: {
+      profileId: `${profileId}-generation-impact`,
+      improves: uniqueStrings([
+        ...input.richProfile.improves,
+        input.intelligenceProfile.whyThisImprovesAnswers,
+        'Select source-bound ontology and graph candidates instead of stuffing raw source prose into the prompt.',
+      ]).slice(0, 8),
+      suppresses: uniqueStrings([
+        ...input.intelligenceProfile.generationContract.mustNotClaim,
+        'Suppress unsupported, stale, single-source, or Cognee-derived claims as canonical conclusions.',
+        'Suppress ontology-fit or graph-centrality claims unless a source/document/run receipt supports them.',
+      ]).slice(0, 8),
+      evidenceRequiredBeforeConfidentGeneration: uniqueStrings([
+        ...sourceBindings.slice(0, 4).map((binding) => `${binding.sourceId}: source id, as-of date, and ontology-bound extraction target`),
+        'At least one source, document, or run receipt for every confident factual claim.',
+        'Review-card proposal id for every Cognee or Capsule+ graph candidate.',
+      ]).slice(0, 8),
+      unsupportedClaimWarnings: uniqueStrings([
+        ...input.ontologyOverlay.forbiddenClaims,
+        'No unsupported, stale, or Cognee-derived claim can be marked canonical without human review.',
+      ]).slice(0, 8),
+      advisoryOnly: true,
+      confidenceCap: 0.6,
+    },
+    cogneeCapture: {
+      seedDocumentIds: input.cogneeProfile.seedDocuments.map((document) => document.id),
+      advisoryOnly: true,
+      canonicalTruth: 'Firestore ContextCapsules',
+      usedMemoryReceiptField: 'usedMemoryItemIds',
+      ignoredMemoryReceiptField: 'ignoredMemoryItemIds',
+      reviewCardPromotionRequired: true,
+    },
+    reviewState: 'proposed',
+    canonicalTruth: 'Firestore ContextCapsules',
   };
 }
 
@@ -2429,6 +2843,24 @@ function starter(
     ontologyOverlay,
     intelligenceProfile,
   });
+  const contextCaptureProfile = overrides?.contextCaptureProfile ?? buildStarterContextCaptureProfile({
+    starterId,
+    category,
+    domain,
+    label,
+    summary,
+    detail,
+    tags: starterTags,
+    sourcePack,
+    recommendedToolIds,
+    outputProductIds,
+    richProfile,
+    ...(deviceProfile ? { deviceProfile } : {}),
+    ...(humanReview ? { humanReview } : {}),
+    ontologyOverlay,
+    intelligenceProfile,
+    cogneeProfile,
+  });
   const baseAgentWorkflow = overrides?.agentWorkflow ?? {
     preferredAgentId: category === 'output' ? 'output-formatter' : 'research-memo',
     routeHint: category === 'tool' ? 'tool-router' : 'capsule-supervisor',
@@ -2476,6 +2908,7 @@ function starter(
     curationProfile,
     intelligenceProfile,
     cogneeProfile,
+    contextCaptureProfile,
     ...(deviceProfile ? { deviceProfile } : {}),
     ...(humanReview ? { humanReview } : {}),
     ontologyOverlay,
@@ -2510,6 +2943,7 @@ function starter(
       { label: 'Dynamic Ontology', detail: `${ontologyOverlay.overlayId}: ${ontologyOverlay.baseOntologyIds.join(', ')} plus ${ontologyOverlay.workOntologyId}; Cognee ${ontologyOverlay.cognee.mode} remains review-gated.` },
       { label: 'Embedded Graph', detail: `${ontologyOverlay.graphSeed.proposalLabel}: ${ontologyOverlay.graphNodeTypes.join(', ')} nodes and ${ontologyOverlay.graphEdgeTypes.join(', ')} edges staged as proposals only.` },
       { label: 'Workflow', detail: `${intelligenceProfile.humanWorkflow.userJob} ${intelligenceProfile.humanWorkflow.decisionMoment}` },
+      { label: 'Context capture', detail: `${contextCaptureProfile.profileId}: ${contextCaptureProfile.sourceBindings.length} ontology-bound source bindings; usage signals ${contextCaptureProfile.usageInference.activationSignals.slice(0, 3).join(', ')}.` },
       { label: 'Reasoning scaffold', detail: intelligenceProfile.reasoningScaffold.steps.slice(0, 5).join(' ') },
       { label: 'Cognee memory benefit', detail: cogneeProfile.whyCogneeHelps },
       { label: 'Ontology/graph seed', detail: `${cogneeProfile.ontologyHints.baseOntologyIds.join(', ')} / ${cogneeProfile.ontologyHints.workOntologyId}; nodes ${cogneeProfile.expectedNodeCandidates.slice(0, 8).join(', ')}; review-card proposals only.` },
@@ -6718,6 +7152,7 @@ export function buildCapsuleStarterPromptBlock(
   if (!starterDefinition) return null;
   const intelligenceProfile = starterDefinition.intelligenceProfile ?? null;
   const cogneeProfile = starterDefinition.cogneeProfile ?? null;
+  const contextCaptureProfile = starterDefinition.contextCaptureProfile ?? null;
   const curationProfile = starterDefinition.curationProfile;
   const primarySources = curationProfile.sourceRefreshStatus.primaryExternalSourceIds
     .slice(0, 3)
@@ -6732,7 +7167,7 @@ export function buildCapsuleStarterPromptBlock(
     `starter_category: ${starterDefinition.category}`,
     `domain: ${starterDefinition.domain}`,
     `starter_label: ${starterDefinition.label}`,
-    `starter_summary: ${starterDefinition.summary}`,
+    `starter_summary: ${compactPromptText(starterDefinition.summary, 200)}`,
     `starter_tags: ${starterDefinition.tags.join(', ')}`,
     ...(starterDefinition.tags.includes('human-gated') ? [
       `seed_family: ${HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY.label}`,
@@ -6743,67 +7178,75 @@ export function buildCapsuleStarterPromptBlock(
     `readiness_stars: ${starterDefinition.readinessStars}/5`,
     `source_pack: ${sourcePackLine || 'none'}`,
     `source_refresh_status: ${curationProfile.sourceRefreshStatus.status}; verified_at=${curationProfile.sourceRefreshStatus.verifiedAt}; primary_sources=${primarySources}`,
+    ...(contextCaptureProfile ? [
+      `context_capture_profile_id: ${contextCaptureProfile.profileId}`,
+      `ontology_bound_sources: ${contextCaptureProfile.sourceBindings.slice(0, 6).map((binding) => `${binding.sourceId}:${binding.ontologyIds.join('+')}`).join(' | ')}`,
+      `usage_activation_signals: ${compactPromptList(contextCaptureProfile.usageInference.activationSignals, 3, 120)}`,
+      `usage_contraindications: ${compactPromptList(contextCaptureProfile.usageInference.contraindications, 3, 120)}`,
+      `capsule_plus_graph_capture: nodes=${contextCaptureProfile.embeddedGraph.allowedNodeTypes.slice(0, 6).join(',')}; edges=${contextCaptureProfile.embeddedGraph.allowedEdgeTypes.slice(0, 4).join(',')}; provenance=${contextCaptureProfile.embeddedGraph.requiredProvenance.join('+')}; review_state=${contextCaptureProfile.embeddedGraph.reviewState}`,
+      `generation_impact: improves=${compactPromptList(contextCaptureProfile.generationImpact.improves, 2, 120)}; suppresses=${compactPromptList(contextCaptureProfile.generationImpact.suppresses, 2, 120)}`,
+    ] : []),
     ...(starterDefinition.humanReview ? [
       `human_review: ${starterDefinition.humanReview.label}|${starterDefinition.humanReview.status}|${starterDefinition.humanReview.reviewedBy}|${starterDefinition.humanReview.reviewedAt}`,
-      `human_review_limitations: ${starterDefinition.humanReview.limitations.join(' | ')}`,
+      `human_review_limitations: ${compactPromptList(starterDefinition.humanReview.limitations, 3, 140)}`,
     ] : []),
     `recommended_tools: ${starterDefinition.recommendedToolIds.join(', ') || 'none'}`,
     `output_targets: ${starterDefinition.outputProductIds.join(', ') || 'none'}`,
-    `suggested_questions: ${starterDefinition.suggestedQuestions.slice(0, 3).join(' | ')}`,
-    `suggested_next_actions: ${starterDefinition.suggestedNextActions.slice(0, 3).join(' | ')}`,
+    `suggested_questions: ${compactPromptList(starterDefinition.suggestedQuestions, 3, 120)}`,
+    `suggested_next_actions: ${compactPromptList(starterDefinition.suggestedNextActions, 3, 120)}`,
     `agent_workflow: preferred_agent=${starterDefinition.agentWorkflow.preferredAgentId}; route_hint=${starterDefinition.agentWorkflow.routeHint}; output_goal=${starterDefinition.agentWorkflow.outputGoal}`,
-    `ai_use_guidance: ${starterDefinition.aiUseGuidance}`,
-    `curation_human_summary: ${curationProfile.humanInspectionSummary}`,
-    `curation_agent_summary: ${curationProfile.agentUseSummary}`,
-    `tacit_assumptions: ${curationProfile.tacitKnowledge.workingAssumptions.join(' | ')}`,
-    `tacit_red_lines: ${curationProfile.tacitKnowledge.redLines.join(' | ')}`,
-    `tacit_approval_politics: ${curationProfile.tacitKnowledge.approvalPolitics.join(' | ')}`,
-    `tacit_heuristics: ${curationProfile.tacitKnowledge.practicalHeuristics.join(' | ')}`,
-    `tacit_sensitivities: ${curationProfile.tacitKnowledge.stakeholderSensitivities.join(' | ')}`,
-    `tacit_caveats: ${curationProfile.tacitKnowledge.caveats.join(' | ')}`,
-    `omit_from_agent_context: ${curationProfile.omitFromAgentContextNotes.join(' | ')}`,
-    `compact_agent_instructions: ${curationProfile.compactAgentInstructions.join(' | ')}`,
-    `human_review_gate: ${starterDefinition.humanReview?.humanReviewGate ?? 'Human review required before external use.'}`,
+    `ai_use_guidance: ${compactPromptText(starterDefinition.aiUseGuidance, 260)}`,
+    `curation_human_summary: ${compactPromptText(curationProfile.humanInspectionSummary, 180)}`,
+    `curation_agent_summary: ${compactPromptText(curationProfile.agentUseSummary, 220)}`,
+    `tacit_assumptions: ${compactPromptList(curationProfile.tacitKnowledge.workingAssumptions, 3, 160)}`,
+    `tacit_red_lines: ${compactPromptList(curationProfile.tacitKnowledge.redLines, 3, 160)}`,
+    `tacit_approval_politics: ${compactPromptList(curationProfile.tacitKnowledge.approvalPolitics, 3, 160)}`,
+    `tacit_heuristics: ${compactPromptList(curationProfile.tacitKnowledge.practicalHeuristics, 3, 160)}`,
+    `tacit_sensitivities: ${compactPromptList(curationProfile.tacitKnowledge.stakeholderSensitivities, 3, 160)}`,
+    `tacit_caveats: ${compactPromptList(curationProfile.tacitKnowledge.caveats, 3, 160)}`,
+    `omit_from_agent_context: ${compactPromptList(curationProfile.omitFromAgentContextNotes, 3, 160)}`,
+    `compact_agent_instructions: ${compactPromptList(curationProfile.compactAgentInstructions, 3, 160)}`,
+    `human_review_gate: ${compactPromptText(starterDefinition.humanReview?.humanReviewGate ?? 'Human review required before external use.', 220)}`,
     `governance: ${CAPSULE_NO_AFFILIATION_LIMITATION}`,
     ...(intelligenceProfile ? [
       `intelligence_profile_id: ${intelligenceProfile.profileId}`,
-      `human_workflow_decision_moment: ${intelligenceProfile.humanWorkflow.decisionMoment}`,
-      `reasoning_steps: ${intelligenceProfile.reasoningScaffold.steps.slice(0, 4).join(' | ')}`,
-      `generation_review_gates: ${intelligenceProfile.generationContract.reviewGates.slice(0, 3).join(' | ')}`,
-      `generation_output_path: ${intelligenceProfile.generationContract.outputPath}`,
+      `human_workflow_decision_moment: ${compactPromptText(intelligenceProfile.humanWorkflow.decisionMoment, 180)}`,
+      `reasoning_steps: ${compactPromptList(intelligenceProfile.reasoningScaffold.steps, 4, 120)}`,
+      `generation_review_gates: ${compactPromptList(intelligenceProfile.generationContract.reviewGates, 3, 120)}`,
+      `generation_output_path: ${compactPromptText(intelligenceProfile.generationContract.outputPath, 180)}`,
     ] : []),
     ...(cogneeProfile ? [
       `cognee_profile_id: ${cogneeProfile.profileId}`,
       `cognee_advisory_only: ${cogneeProfile.advisoryOnly}`,
-      `cognee_review_rules: ${cogneeProfile.reviewCardPromotionRules.slice(0, 3).join(' | ')}`,
+      `cognee_review_rules: ${compactPromptList(cogneeProfile.reviewCardPromotionRules, 3, 120)}`,
     ] : []),
     ...(starterDefinition.ontologyOverlay ? [
       `ontology_overlay_id: ${starterDefinition.ontologyOverlay.overlayId}`,
-      `embedded_graph_seed: ${starterDefinition.ontologyOverlay.graphSeed.proposalLabel}; ${starterDefinition.ontologyOverlay.graphSeed.reviewGate}`,
+      `embedded_graph_seed: ${compactPromptText(`${starterDefinition.ontologyOverlay.graphSeed.proposalLabel}; ${starterDefinition.ontologyOverlay.graphSeed.reviewGate}`, 180)}`,
       `cognee_overlay_mode: ${starterDefinition.ontologyOverlay.cognee.mode}; dataset_scope=${starterDefinition.ontologyOverlay.cognee.datasetScope}`,
-      `ontology_promotion_rules: ${starterDefinition.ontologyOverlay.promotionRules.slice(0, 4).join(' | ')}`,
-      `ontology_forbidden_claims: ${starterDefinition.ontologyOverlay.forbiddenClaims.slice(0, 4).join(' | ')}`,
+      `ontology_promotion_rules: ${compactPromptList(starterDefinition.ontologyOverlay.promotionRules, 3, 120)}`,
+      `ontology_forbidden_claims: ${compactPromptList(starterDefinition.ontologyOverlay.forbiddenClaims, 3, 120)}`,
     ] : []),
     ...(starterDefinition.deviceProfile ? [
       `device_kind: ${starterDefinition.deviceProfile.deviceKind}`,
-      `device_operation: ${starterDefinition.deviceProfile.reasoningOperation}`,
-      `device_reasoning_operation: ${starterDefinition.deviceProfile.reasoningOperation}`,
-      `device_activation_criteria: ${starterDefinition.deviceProfile.activationCriteria.slice(0, 4).join(' | ')}`,
-      `device_input_contract: ${starterDefinition.deviceProfile.inputContract.slice(0, 4).join(' | ')}`,
-      `device_output_grammar: ${starterDefinition.deviceProfile.outputGrammar.slice(0, 4).join(' | ')}`,
-      `device_method_steps: ${starterDefinition.deviceProfile.methodSteps.slice(0, 5).join(' | ')}`,
-      `device_best_inputs: ${starterDefinition.deviceProfile.bestInputs.slice(0, 4).join(' | ')}`,
-      `device_expected_outputs: ${starterDefinition.deviceProfile.expectedOutputs.slice(0, 4).join(' | ')}`,
-      `device_disconfirming_checks: ${starterDefinition.deviceProfile.disconfirmingChecks.slice(0, 4).join(' | ')}`,
-      `device_failure_modes: ${starterDefinition.deviceProfile.failureModes.slice(0, 4).join(' | ')}`,
-      `device_sourceability_requirements: ${starterDefinition.deviceProfile.sourceabilityRequirements.slice(0, 4).join(' | ')}`,
-      `device_human_review_gate: ${starterDefinition.deviceProfile.humanReviewGate}`,
-      `device_confidence_policy: ${starterDefinition.deviceProfile.confidencePolicy}`,
-      `device_forgetting_policy: ${starterDefinition.deviceProfile.forgettingPolicy}`,
-      `device_cross_capsule_pairings: ${starterDefinition.deviceProfile.crossCapsulePairings.slice(0, 5).join(' | ')}`,
-      `device_misuse_warnings: ${starterDefinition.deviceProfile.misuseWarnings.slice(0, 4).join(' | ')}`,
+      `device_operation: ${compactPromptText(starterDefinition.deviceProfile.reasoningOperation, 180)}`,
+      `device_reasoning_operation: ${compactPromptText(starterDefinition.deviceProfile.reasoningOperation, 180)}`,
+      `device_activation_criteria: ${compactPromptList(starterDefinition.deviceProfile.activationCriteria, 3, 120)}`,
+      `device_input_contract: ${compactPromptList(starterDefinition.deviceProfile.inputContract, 3, 120)}`,
+      `device_output_grammar: ${compactPromptList(starterDefinition.deviceProfile.outputGrammar, 3, 120)}`,
+      `device_method_steps: ${compactPromptList(starterDefinition.deviceProfile.methodSteps, 4, 120)}`,
+      `device_best_inputs: ${compactPromptList(starterDefinition.deviceProfile.bestInputs, 3, 120)}`,
+      `device_expected_outputs: ${compactPromptList(starterDefinition.deviceProfile.expectedOutputs, 3, 120)}`,
+      `device_disconfirming_checks: ${compactPromptList(starterDefinition.deviceProfile.disconfirmingChecks, 3, 120)}`,
+      `device_failure_modes: ${compactPromptList(starterDefinition.deviceProfile.failureModes, 3, 120)}`,
+      `device_sourceability_requirements: ${compactPromptList(starterDefinition.deviceProfile.sourceabilityRequirements, 3, 120)}`,
+      `device_human_review_gate: ${compactPromptText(starterDefinition.deviceProfile.humanReviewGate, 180)}`,
+      `device_confidence_policy: ${compactPromptText(starterDefinition.deviceProfile.confidencePolicy, 180)}`,
+      `device_forgetting_policy: ${compactPromptText(starterDefinition.deviceProfile.forgettingPolicy, 180)}`,
+      `device_cross_capsule_pairings: ${compactPromptList(starterDefinition.deviceProfile.crossCapsulePairings, 4, 100)}`,
+      `device_misuse_warnings: ${compactPromptList(starterDefinition.deviceProfile.misuseWarnings, 3, 120)}`,
       `device_review_gate_type: ${starterDefinition.deviceProfile.reviewGateType}`,
-      `device_agent_instructions: ${starterDefinition.deviceProfile.agentInstructions}`,
+      `device_agent_instructions: ${compactPromptText(starterDefinition.deviceProfile.agentInstructions, 220)}`,
     ] : []),
     `combines_well_with: ${starterDefinition.combinesWellWith.join(', ') || 'none'}`,
     'runtime_rule: Treat this starter definition as reusable operating context for Ask PRAXIS, tool routing, agent runs, and output drafting.',
@@ -6823,6 +7266,7 @@ export function buildCapsuleStarterPromptBlockLegacy(
   if (!starterDefinition) return null;
   const intelligenceProfile = starterDefinition.intelligenceProfile ?? null;
   const cogneeProfile = starterDefinition.cogneeProfile ?? null;
+  const contextCaptureProfile = starterDefinition.contextCaptureProfile ?? null;
   const curationProfile = starterDefinition.curationProfile;
   const sourcePack = starterDefinition.sourcePack.slice(0, 5);
   const lines = [
@@ -6843,6 +7287,14 @@ export function buildCapsuleStarterPromptBlockLegacy(
     `readiness_stars: ${starterDefinition.readinessStars}/5 source-readiness confidence`,
     `source_pack: ${sourcePack.length ? sourcePack.map((source) => `${source.id}|${source.label}|${source.publisher ?? 'unknown publisher'}|${source.date ?? 'unknown date'}|tier${source.reliabilityTier ?? 'unknown'}|${source.url}|${compactPromptText(source.relevance, 180)}`).join(' ; ') : 'none'}`,
     `source_excerpts: ${starterDefinition.excerpts.length ? starterDefinition.excerpts.slice(0, 3).map((excerpt) => `${excerpt.sourceId}: ${compactPromptText(excerpt.text, 180)}`).join(' ; ') : 'none'}`,
+    ...(contextCaptureProfile ? [
+      `context_capture_profile_id: ${contextCaptureProfile.profileId}`,
+      `ontology_bound_sources: ${contextCaptureProfile.sourceBindings.slice(0, 6).map((binding) => `${binding.sourceId}:${binding.ontologyIds.join('+')}:${binding.expectedClaims.slice(0, 2).join('/')}`).join(' | ')}`,
+      `usage_activation_signals: ${compactPromptList(contextCaptureProfile.usageInference.activationSignals, 4, 160)}`,
+      `usage_contraindications: ${compactPromptList(contextCaptureProfile.usageInference.contraindications, 4, 160)}`,
+      `capsule_plus_graph_capture: nodes=${contextCaptureProfile.embeddedGraph.allowedNodeTypes.slice(0, 8).join(',')}; edges=${contextCaptureProfile.embeddedGraph.allowedEdgeTypes.slice(0, 6).join(',')}; provenance=${contextCaptureProfile.embeddedGraph.requiredProvenance.join('+')}; review_state=${contextCaptureProfile.embeddedGraph.reviewState}; cap=${contextCaptureProfile.embeddedGraph.confidenceCap}`,
+      `generation_impact: improves=${compactPromptList(contextCaptureProfile.generationImpact.improves, 3, 160)}; suppresses=${compactPromptList(contextCaptureProfile.generationImpact.suppresses, 3, 160)}; evidence=${compactPromptList(contextCaptureProfile.generationImpact.evidenceRequiredBeforeConfidentGeneration, 3, 160)}`,
+    ] : []),
     ...(starterDefinition.humanReview ? [
       `human_review: ${starterDefinition.humanReview.label}|${starterDefinition.humanReview.status}|${starterDefinition.humanReview.reviewedBy}|${starterDefinition.humanReview.reviewedAt}|${compactPromptText(starterDefinition.humanReview.notes, 260)}`,
       `human_review_scope: ${compactPromptText(starterDefinition.humanReview.scope, 260)}`,
@@ -6971,9 +7423,12 @@ export function buildCapsuleCogneeSeedPack(starter: CapsuleStarterDefinition | C
         kind: document.kind,
         starterId: starter.starterId,
         profileId: cogneeProfile.profileId,
+        sourceId: document.sourceId ?? null,
+        ontologyIds: document.ontologyIds ?? [],
         advisoryOnly: true,
         canonicalTruth: cogneeProfile.canonicalTruth,
         promotionRequired: 'review-card',
+        contextCaptureProfileId: starter.contextCaptureProfile?.profileId ?? null,
       },
     })),
     cognifyPlan: {
@@ -7000,6 +7455,7 @@ export function buildCapsuleCogneeSeedPack(starter: CapsuleStarterDefinition | C
       profileId: cogneeProfile.profileId,
       sourceDocumentIds: cogneeProfile.seedDocuments.map((document) => document.id),
     },
+    contextCaptureProfileId: starter.contextCaptureProfile?.profileId ?? null,
   };
 }
 

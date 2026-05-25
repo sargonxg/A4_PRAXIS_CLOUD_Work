@@ -33,6 +33,7 @@ describe('context enrichment adapter', () => {
       status: 'enabled' as const,
       hits: [
         { id: 'hit-1', text: 'Prior reviewed assumption from memory.', score: 0.86, sourceId: 'src-1' },
+        { id: 'hit-ignored', text: 'Unproven memory without provenance.', score: 0.55 },
       ],
     }));
 
@@ -55,6 +56,8 @@ describe('context enrichment adapter', () => {
     expect(capsule.memory.semantic.map((item) => item.id)).toEqual(['cognee:hit-1']);
     expect(capsule.enrichment.receipt.cognee).toBe('enabled');
     expect(capsule.enrichment.receipt.memoryItemIds).toEqual(['cognee:hit-1']);
+    expect(capsule.enrichment.receipt.usedMemoryItemIds).toEqual(['cognee:hit-1']);
+    expect(capsule.enrichment.receipt.ignoredMemoryItemIds).toEqual(['cognee:hit-ignored']);
     expect(capsule.enrichment.receipt.writebackProposalIds).toEqual(['review-card:cognee:hit-1']);
     expect(db.data.has('users/u1/capsules/default')).toBe(true);
     expect(db.data.has('users/u1/capsules/default/memories/cognee:hit-1')).toBe(false);
@@ -96,6 +99,8 @@ describe('context enrichment adapter', () => {
       canonicalStatus: 'firestore-canonical',
       memoryHitCount: 0,
       writebackProposalIds: [],
+      usedMemoryItemIds: [],
+      ignoredMemoryItemIds: [],
     });
     expect(buildContextEnrichmentReceipt({ cogneeEnabled: true })).toMatchObject({
       firestore: 'ready',
@@ -104,6 +109,8 @@ describe('context enrichment adapter', () => {
       canonicalStatus: 'firestore-canonical',
       memoryHitCount: 0,
       writebackProposalIds: [],
+      usedMemoryItemIds: [],
+      ignoredMemoryItemIds: [],
     });
   });
 });

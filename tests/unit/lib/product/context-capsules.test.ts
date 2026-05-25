@@ -13,6 +13,7 @@ import {
   CAPSULE_CONNECTOR_IDEAS,
   CAPSULE_OUTPUT_PRODUCTS,
   CAPSULE_STARTER_CATALOG_VERSION,
+  CAPSULE_CONTEXT_CAPTURE_FIXTURE_STARTER_IDS,
   CAPSULE_STARTER_DEFINITIONS,
   CAPSULE_STARTER_PROMPT_MAX_CHARS,
   CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS,
@@ -319,6 +320,49 @@ describe('context capsule product contract', () => {
     }
   });
 
+  it('binds every starter source to context-capture, ontology, graph, Cognee, and generation rules', () => {
+    expect(CAPSULE_CONTEXT_CAPTURE_FIXTURE_STARTER_IDS).toEqual([
+      'starter-situation-red-sea-houthi-shipping-risk',
+      'starter-situation-sudan-darfur-atrocity-access',
+      'starter-tool-sanctions-exposure-triage-matrix',
+      'starter-situation-us-federal-ai-governance-baseline',
+      'starter-tool-sourceability-matrix',
+      'starter-output-principals-decision-memo',
+    ]);
+
+    for (const starter of CAPSULE_STARTER_DEFINITIONS) {
+      const profile = starter.contextCaptureProfile;
+      expect(profile?.profileId, `${starter.starterId} context capture id`).toBe(`${starter.starterId}-context-capture-v1`);
+      expect(profile?.sourceBindings.map((binding) => binding.sourceId).sort(), `${starter.starterId} source bindings`).toEqual(
+        starter.sourcePack.map((source) => source.id).sort(),
+      );
+      expect(profile?.usageInference.activationSignals.length, `${starter.starterId} activation signals`).toBeGreaterThanOrEqual(3);
+      expect(profile?.usageInference.contraindications.join(' '), `${starter.starterId} contraindications`).toMatch(/unsupported|stale|review|source/i);
+      expect(profile?.usageInference.confidenceThresholds.confidentGenerationRequiresEvidence, `${starter.starterId} confidence threshold`).toBeGreaterThanOrEqual(0.65);
+      expect(profile?.embeddedGraph.allowedNodeTypes, `${starter.starterId} graph nodes`).toEqual(expect.arrayContaining(['Actor', 'Claim', 'Event']));
+      expect(profile?.embeddedGraph.allowedEdgeTypes.length, `${starter.starterId} graph edges`).toBeGreaterThanOrEqual(4);
+      expect(profile?.embeddedGraph.requiredProvenance).toEqual(expect.arrayContaining(['sourceIds', 'documentIds', 'runIds']));
+      expect(profile?.embeddedGraph.reviewState).toBe('proposed');
+      expect(profile?.embeddedGraph.promotionGate).toMatch(/human|review-card|canonical/i);
+      expect(profile?.generationImpact.improves.length, `${starter.starterId} generation improves`).toBeGreaterThanOrEqual(3);
+      expect(profile?.generationImpact.suppresses.join(' '), `${starter.starterId} suppresses`).toMatch(/unsupported|stale|Cognee|canonical/i);
+      expect(profile?.generationImpact.evidenceRequiredBeforeConfidentGeneration.length, `${starter.starterId} evidence required`).toBeGreaterThanOrEqual(2);
+      expect(starter.cogneeProfile.seedDocuments.some((document) => document.kind === 'source-capture-guide'), `${starter.starterId} source Cognee docs`).toBe(true);
+      expect(starter.cogneeProfile.reviewCardPromotionRules.join(' '), `${starter.starterId} cognee promotion`).toMatch(/review-card|human|canonical/i);
+
+      for (const source of starter.sourcePack) {
+        const binding = profile?.sourceBindings.find((item) => item.sourceId === source.id);
+        expect(binding, `${starter.starterId} missing binding for ${source.id}`).toBeTruthy();
+        expect(binding?.ontologyIds.length, `${starter.starterId} ${source.id} ontology ids`).toBeGreaterThanOrEqual(1);
+        expect(binding?.expectedEntities.length, `${starter.starterId} ${source.id} entities`).toBeGreaterThanOrEqual(2);
+        expect(binding?.expectedClaims.length, `${starter.starterId} ${source.id} claims`).toBeGreaterThanOrEqual(2);
+        expect(binding?.expectedEvents.length, `${starter.starterId} ${source.id} events`).toBeGreaterThanOrEqual(1);
+        expect(binding?.expectedDates.length, `${starter.starterId} ${source.id} dates`).toBeGreaterThanOrEqual(1);
+        expect(binding?.forbiddenInferences.join(' '), `${starter.starterId} ${source.id} forbidden`).toMatch(/unsupported|stale|single-source|Cognee|canonical/i);
+      }
+    }
+  });
+
   it('emits compact starter prompt context instead of repeating inspector prose', () => {
     const promptBlocks = CAPSULE_STARTER_DEFINITIONS.map((starter) => ({
       starter,
@@ -334,6 +378,10 @@ describe('context capsule product contract', () => {
       expect(promptBlock, `${starter.starterId} tacit knowledge`).toContain('tacit_red_lines:');
       expect(promptBlock, `${starter.starterId} omit notes`).toContain('omit_from_agent_context:');
       expect(promptBlock, `${starter.starterId} governance`).toContain('not affiliated');
+      expect(promptBlock, `${starter.starterId} context capture`).toContain('context_capture_profile_id:');
+      expect(promptBlock, `${starter.starterId} ontology-bound sources`).toContain('ontology_bound_sources:');
+      expect(promptBlock, `${starter.starterId} usage inference`).toContain('usage_activation_signals:');
+      expect(promptBlock, `${starter.starterId} graph profile`).toContain('capsule_plus_graph_capture:');
     }
   });
 

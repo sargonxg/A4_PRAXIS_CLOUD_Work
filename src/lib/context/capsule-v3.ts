@@ -6,12 +6,15 @@ import {
   type ContextCapsuleSourceRef,
   type ContextCapsuleV2,
 } from '@/lib/context/capsule-v2';
+import type { CapsuleContextCaptureProfile } from '@/lib/product/context-capsules';
+import type { OntologyId } from '@/lib/ontology/types';
 
 export const CONTEXT_CAPSULE_V3_SECTION_IDS = [
   'identity',
   'businessUseCase',
   'humanTacitKnowledge',
   'sourceSpine',
+  'contextCaptureProfile',
   'claimLedger',
   'reasoningScaffold',
   'agentOperatingContract',
@@ -202,6 +205,7 @@ export interface ContextCapsuleV3 {
   };
   humanTacitKnowledge: ContextCapsuleHumanTacitKnowledge;
   sourceSpine: ContextCapsuleSourceSpine;
+  contextCaptureProfile: CapsuleContextCaptureProfile;
   claimLedger: ContextCapsuleClaimLedgerV3;
   reasoningScaffold: {
     publicMethod: string[];
@@ -353,6 +357,7 @@ export function normalizeContextCapsuleV3(input: ContextCapsuleV2 | unknown, opt
   const body = isRecord(input) ? input : {};
   const sourceSpine = buildSourceSpine(v2, options);
   const humanTacitKnowledge = normalizeTacitKnowledge(body.humanTacitKnowledge, v2);
+  const contextCaptureProfile = buildContextCaptureProfile(v2, sourceSpine);
   const claimLedger = buildClaimLedger(v2);
   const agentOperatingContract = buildAgentOperatingContract(v2);
   const memoryPosture = buildMemoryPosture(v2);
@@ -391,6 +396,7 @@ export function normalizeContextCapsuleV3(input: ContextCapsuleV2 | unknown, opt
     },
     humanTacitKnowledge,
     sourceSpine,
+    contextCaptureProfile,
     claimLedger,
     reasoningScaffold: {
       publicMethod: [...v2.reasoningScaffold.publicMethod],
@@ -567,6 +573,180 @@ function buildSourceSpine(v2: ContextCapsuleV2, options: ContextCapsuleNormalize
     freshnessWindowDays: v2.sourcePosture?.freshnessWindowDays ?? null,
     score,
   };
+}
+
+function buildContextCaptureProfile(
+  v2: ContextCapsuleV2,
+  sourceSpine: ContextCapsuleSourceSpine,
+): CapsuleContextCaptureProfile {
+  const starterProfile = v2.starterSnapshot?.contextCaptureProfile;
+  if (starterProfile) return cloneContextCaptureProfile(starterProfile);
+
+  const ontologyIds = inferContextCaptureOntologyIds(v2);
+  const sourceRefs = sourceSpine.sourceRefs.length
+    ? sourceSpine.sourceRefs
+    : [{
+      sourceId: `${v2.capsuleId}:source-gap`,
+      label: 'Source gap',
+      url: null,
+      publisher: null,
+      date: null,
+      reliabilityTier: null,
+      stale: false,
+    } satisfies ContextCapsuleSourceRef];
+  const sourceBindings = sourceRefs.map((source) => ({
+    sourceId: source.sourceId,
+    sourceType: 'official' as const,
+    ontologyIds,
+    expectedEntities: [
+      'actors named by the source',
+      'institutions, programs, jurisdictions, or output owners',
+    ],
+    expectedClaims: [
+      'source-backed claims, rules, risks, commitments, or decisions',
+      'claims that remain unsupported or stale until refreshed',
+    ],
+    expectedEvents: [
+      'dated actions, changes, reviews, decisions, or incidents',
+    ],
+    expectedDates: [
+      source.date ?? 'as-of date, publication date, deadline, or review date',
+    ],
+    freshnessCadence: v2.updateCadence ?? (source.stale ? 'refresh before use' : 'refresh before external or high-stakes use'),
+    forbiddenInferences: [
+      'Do not infer canonical facts without a source, document, or run receipt.',
+      'Do not treat advisory Cognee recall or graph candidates as reviewed truth.',
+      'Do not convert stale or missing-source claims into confident generation.',
+    ],
+    captureRationale: `Bind ${source.label} to ${ontologyIds.join(', ')} so extraction stays source-bound and reviewable.`,
+  }));
+  const profileId = `${v2.capsuleId}-context-capture-v1`;
+
+  return {
+    profileId,
+    sourceBindings,
+    usageInference: {
+      activationSignals: withFallback(v2.evidenceRequirements, [
+        'Use when the answer depends on source-bound claims, dates, actors, risks, or decisions.',
+        'Use when the capsule needs to decide which source lanes and graph candidates should enter generation.',
+      ]).slice(0, 8),
+      userJobs: withFallback([v2.useCase, v2.bestNextAction].filter(Boolean), [
+        'Produce a sourced answer while keeping unsupported claims visible.',
+      ]).slice(0, 5),
+      outputFit: withFallback(v2.outputContracts.map((contract) => contract.label), [
+        'memo',
+        'brief',
+        'sourceability review',
+      ]).slice(0, 6),
+      contraindications: [
+        'Do not use when no source, document, run receipt, or explicit source gap can be carried forward.',
+        'Do not use to promote advisory Cognee memory, graph candidates, stale claims, or unsupported inferences as canonical.',
+      ],
+      nextBestActions: [
+        'Refresh source receipts before confident generation.',
+        'Create review-card proposals for graph, Cognee memory, and unsupported-claim candidates.',
+        'Carry source gaps into the answer instead of hiding them.',
+      ],
+      confidenceThresholds: {
+        confidentGenerationRequiresEvidence: 0.72,
+        advisoryGenerationMaxConfidence: 0.6,
+        cogneeRecallMaxConfidence: 0.6,
+      },
+    },
+    embeddedGraph: {
+      allowedNodeTypes: ['Actor', 'Claim', 'Decision', 'Event', 'OpenQuestion', 'Risk', 'Rule', 'Source'],
+      allowedEdgeTypes: ['CITED_BY', 'CONTRADICTS', 'DEPENDS_ON', 'INVOLVES', 'SUPPORTED_BY', 'TRIGGERS_REVIEW'],
+      allowedAcoPrimitives: ['Actor', 'Claim', 'Interest', 'Constraint', 'Leverage', 'Commitment', 'Event', 'Narrative'],
+      requiredProvenance: ['sourceIds', 'documentIds', 'runIds'],
+      reviewState: 'proposed',
+      promotionGate: 'Human review-card approval is required before canonical graph promotion.',
+      proposalOnly: true,
+      confidenceCap: 0.6,
+      unsupportedClaimPolicy: 'Unsupported claims remain source gaps, OpenQuestion/Risk candidates, or rejected inferences until reviewed.',
+    },
+    generationImpact: {
+      profileId: `${profileId}-generation-impact`,
+      improves: [
+        'Select source-bound ontology and graph candidates before generation.',
+        'Expose source gaps and freshness constraints before confident answers.',
+      ],
+      suppresses: [
+        'Suppress unsupported, stale, single-source, or Cognee-derived claims as canonical conclusions.',
+        'Suppress graph-centrality and ontology-fit claims unless source/document/run provenance exists.',
+      ],
+      evidenceRequiredBeforeConfidentGeneration: [
+        'At least one source, document, or run receipt for every confident factual claim.',
+        'Review-card proposal id for every Cognee or Capsule+ graph candidate.',
+      ],
+      unsupportedClaimWarnings: [
+        'No unsupported, stale, or Cognee-derived claim can be marked canonical without human review.',
+      ],
+      advisoryOnly: true,
+      confidenceCap: 0.6,
+    },
+    cogneeCapture: {
+      seedDocumentIds: v2.starterSnapshot?.cogneeProfile?.seedDocuments.map((document) => document.id) ?? [],
+      advisoryOnly: true,
+      canonicalTruth: 'Firestore ContextCapsules',
+      usedMemoryReceiptField: 'usedMemoryItemIds',
+      ignoredMemoryReceiptField: 'ignoredMemoryItemIds',
+      reviewCardPromotionRequired: true,
+    },
+    reviewState: 'proposed',
+    canonicalTruth: 'Firestore ContextCapsules',
+  };
+}
+
+function cloneContextCaptureProfile(profile: CapsuleContextCaptureProfile): CapsuleContextCaptureProfile {
+  return {
+    ...profile,
+    sourceBindings: profile.sourceBindings.map((binding) => ({
+      ...binding,
+      ontologyIds: [...binding.ontologyIds],
+      expectedEntities: [...binding.expectedEntities],
+      expectedClaims: [...binding.expectedClaims],
+      expectedEvents: [...binding.expectedEvents],
+      expectedDates: [...binding.expectedDates],
+      forbiddenInferences: [...binding.forbiddenInferences],
+    })),
+    usageInference: {
+      ...profile.usageInference,
+      activationSignals: [...profile.usageInference.activationSignals],
+      userJobs: [...profile.usageInference.userJobs],
+      outputFit: [...profile.usageInference.outputFit],
+      contraindications: [...profile.usageInference.contraindications],
+      nextBestActions: [...profile.usageInference.nextBestActions],
+      confidenceThresholds: { ...profile.usageInference.confidenceThresholds },
+    },
+    embeddedGraph: {
+      ...profile.embeddedGraph,
+      allowedNodeTypes: [...profile.embeddedGraph.allowedNodeTypes],
+      allowedEdgeTypes: [...profile.embeddedGraph.allowedEdgeTypes],
+      allowedAcoPrimitives: [...profile.embeddedGraph.allowedAcoPrimitives],
+      requiredProvenance: [...profile.embeddedGraph.requiredProvenance],
+    },
+    generationImpact: {
+      ...profile.generationImpact,
+      improves: [...profile.generationImpact.improves],
+      suppresses: [...profile.generationImpact.suppresses],
+      evidenceRequiredBeforeConfidentGeneration: [...profile.generationImpact.evidenceRequiredBeforeConfidentGeneration],
+      unsupportedClaimWarnings: [...profile.generationImpact.unsupportedClaimWarnings],
+    },
+    cogneeCapture: {
+      ...profile.cogneeCapture,
+      seedDocumentIds: [...profile.cogneeCapture.seedDocumentIds],
+    },
+  };
+}
+
+function inferContextCaptureOntologyIds(v2: ContextCapsuleV2): OntologyId[] {
+  const text = `${v2.domainTags.join(' ')} ${v2.useCase} ${v2.summary}`.toLowerCase();
+  const ids: OntologyId[] = ['governance'];
+  if (/conflict|war|mediation|ceasefire|negotiation/.test(text)) ids.push('conflict', 'mediation', 'security');
+  if (/humanitarian|rights|atrocity|displacement|refugee|access/.test(text)) ids.push('humanitarian', 'human-rights');
+  if (/economic|finance|sanction|market|procurement|risk/.test(text)) ids.push('economic', 'legal');
+  if (/narrative|media|misinformation|story/.test(text)) ids.push('narrative');
+  return dedupeStrings(ids).slice(0, 5) as OntologyId[];
 }
 
 function buildClaimLedger(v2: ContextCapsuleV2): ContextCapsuleClaimLedgerV3 {
