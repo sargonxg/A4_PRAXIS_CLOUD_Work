@@ -369,7 +369,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     {
       type: 'orchestrationStatus',
       id: 'agent',
-      label: 'Source discovery',
+      label: 'Checking evidence',
       status: 'complete',
       detail: safeStatusDetail(`${receipt.routingDecision.userSafeLabels.policyAgent} selected.`),
       selectedToolIds,
@@ -382,7 +382,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     {
       type: 'orchestrationStatus',
       id: 'documents',
-      label: 'Document retrieval',
+      label: 'Checking evidence',
       status: receipt.capsule.contextHealth === 'missing' ? 'warn' : 'complete',
       detail: safeStatusDetail(`${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'} and ${receipt.capsule.sourcePreviewCount} source preview${receipt.capsule.sourcePreviewCount === 1 ? '' : 's'} attached.`),
       sourceCount: receipt.capsule.sourcePreviewCount,
@@ -392,7 +392,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     {
       type: 'orchestrationStatus',
       id: 'tools',
-      label: 'Claim review',
+      label: 'Reviewing claims',
       status: receipt.toolRouting.blockedToolIds.length ? 'warn' : 'complete',
       detail: safeStatusDetail(`${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`),
       selectedToolIds,
@@ -403,7 +403,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     {
       type: 'orchestrationStatus',
       id: 'language-policy',
-      label: 'Language and policy review',
+      label: 'Reviewing claims',
       status: receipt.languagePolicyReview.required ? 'complete' : 'skipped',
       detail: receipt.languagePolicyReview.required
         ? 'Sourceability and terminology review queued for this research/policy turn.'
@@ -415,7 +415,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     {
       type: 'orchestrationStatus',
       id: 'worker',
-      label: 'Producing output',
+      label: 'Saving artifact',
       status: agentStatus,
       detail: safeStatusDetail(agentDetail),
       runId: queuedRun?.runId && queuedRun.runId !== 'unavailable' ? queuedRun.runId : null,
@@ -437,7 +437,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
     {
       type: 'orchestrationStatus',
       id: 'draft',
-      label: 'Saving receipts',
+      label: 'Saving artifact',
       status: 'active',
       detail: 'Answer drafting started.',
       outputTarget,

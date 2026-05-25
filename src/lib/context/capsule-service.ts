@@ -14,12 +14,17 @@ import {
   CAPSULE_STARTER_CATALOG_VERSION,
   CAPSULE_STARTER_DEFINITIONS,
   CAPSULE_WOW_DEMO_STARTER_IDS,
+  buildCapsuleIntakeProposals,
   buildCapsuleCogneeSeedPack,
   getCapsuleStarterDefinition,
+  normalizeCapsuleIntakeContract,
   normalizeCapsuleTaxonomyTags,
   resolveCapsuleTaxonomy,
+  type CapsuleIntakeProposal,
   type CapsuleStarterDefinition,
   type CapsuleStarterSnapshot,
+  type ContextIntakeContract,
+  type NormalizeCapsuleIntakeContractInput,
 } from '@/lib/product/context-capsules';
 
 export type CapsuleScope = 'user' | 'situation' | 'team';
@@ -35,8 +40,8 @@ export type CapsuleReviewState =
   | 'applied'
   | 'rejected'
   | 'superseded';
-export type CapsuleReviewSourceType = 'user' | 'team' | 'public' | 'cognee' | 'agent' | 'ontology' | 'graph' | 'source-gap' | 'quality-audit';
-export type CapsuleReviewTarget = 'capsuleEnvelope' | 'anatomy' | 'ontologyStack' | 'graphProposal' | 'sourceGap' | 'advisoryMemory';
+export type CapsuleReviewSourceType = 'user' | 'team' | 'public' | 'cognee' | 'agent' | 'ontology' | 'graph' | 'source-gap' | 'quality-audit' | 'intake';
+export type CapsuleReviewTarget = 'capsuleEnvelope' | 'anatomy' | 'ontologyStack' | 'graphProposal' | 'sourceGap' | 'advisoryMemory' | 'tableCandidate' | 'artifactLink';
 export type CapsuleGateState = 'none' | CapsuleReviewState;
 export type CapsuleLockKind =
   | 'user'
@@ -383,6 +388,14 @@ export interface PromoteCapsuleSourceGapsInput {
 export interface PromoteCapsuleSourceGapsResult {
   capsule: PraxisCapsule;
   proposals: CapsuleSourceGapProposal[];
+  reviewRequired: true;
+}
+
+export interface CreateCapsuleIntakeReviewCardsResult {
+  capsule: PraxisCapsule;
+  intake: ContextIntakeContract;
+  proposals: CapsuleIntakeProposal[];
+  cards: CapsuleReviewCard[];
   reviewRequired: true;
 }
 
@@ -751,6 +764,51 @@ export async function promoteCapsuleSourceGaps(
   return {
     capsule: updated ?? capsule,
     proposals,
+    reviewRequired: true,
+  };
+}
+
+export async function createCapsuleIntakeReviewCards(
+  uid: string,
+  capsuleId: string,
+  input: NormalizeCapsuleIntakeContractInput,
+  deps?: CapsuleServiceDeps,
+): Promise<CreateCapsuleIntakeReviewCardsResult | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  const intake = normalizeCapsuleIntakeContract({
+    ...input,
+    capsuleId: capsule.capsuleId,
+    ownerId: uid,
+    normalizedAt: input.normalizedAt ?? nowIso(deps),
+  });
+  const proposals = buildCapsuleIntakeProposals(intake);
+  const cards: CapsuleReviewCard[] = [];
+  for (const proposal of proposals) {
+    const card = await createCapsuleReviewCard(uid, capsule.capsuleId, {
+      reviewCardId: `review-card-${stableId(`${uid}:${capsule.capsuleId}:${proposal.proposalId}`)}`,
+      title: proposal.title,
+      sourceType: reviewSourceTypeForIntakeProposal(proposal),
+      target: reviewTargetForIntakeProposal(proposal),
+      state: 'proposed',
+      evidence: proposal.evidenceIds.map((id) => ({
+        id,
+        label: id,
+        advisory: true,
+        sourceType: proposal.type,
+      })),
+      proposedEnvelopePatch: {
+        latestGateState: 'proposed',
+      },
+    }, deps);
+    cards.push(card);
+  }
+  const updated = await getCapsule(uid, capsule.capsuleId, deps);
+  return {
+    capsule: updated ?? capsule,
+    intake,
+    proposals,
+    cards,
     reviewRequired: true,
   };
 }
@@ -2081,7 +2139,8 @@ function normalizeReviewSourceType(value: unknown): CapsuleReviewSourceType {
     value === 'ontology' ||
     value === 'graph' ||
     value === 'source-gap' ||
-    value === 'quality-audit'
+    value === 'quality-audit' ||
+    value === 'intake'
     ? value
     : 'user';
 }
@@ -2092,9 +2151,26 @@ function normalizeReviewTarget(value: unknown): CapsuleReviewTarget {
     value === 'ontologyStack' ||
     value === 'graphProposal' ||
     value === 'sourceGap' ||
-    value === 'advisoryMemory'
+    value === 'advisoryMemory' ||
+    value === 'tableCandidate' ||
+    value === 'artifactLink'
     ? value
     : 'capsuleEnvelope';
+}
+
+function reviewSourceTypeForIntakeProposal(proposal: CapsuleIntakeProposal): CapsuleReviewSourceType {
+  if (proposal.type === 'source-gap') return 'source-gap';
+  if (proposal.type === 'graph-candidate') return 'graph';
+  if (proposal.type === 'memory-writeback') return 'cognee';
+  return 'intake';
+}
+
+function reviewTargetForIntakeProposal(proposal: CapsuleIntakeProposal): CapsuleReviewTarget {
+  if (proposal.type === 'source-gap') return 'sourceGap';
+  if (proposal.type === 'graph-candidate') return 'graphProposal';
+  if (proposal.type === 'memory-writeback') return 'advisoryMemory';
+  if (proposal.type === 'table-extraction') return 'tableCandidate';
+  return 'artifactLink';
 }
 
 function normalizeOntologySuggestions(values: CapsuleOntologySuggestion[]): CapsuleOntologySuggestion[] {

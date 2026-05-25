@@ -3,6 +3,7 @@ import type { CapsuleReadReceipt } from '@/lib/agent-runtime/capsule-read-receip
 import type { SourceabilityLedgerSummary } from '@/lib/agent-runtime/sourceability-ledger';
 import type { AgentWorkflowPlan } from '@/lib/agent-runtime/workflow-plan';
 import type { AgentRun } from '@/lib/agent-runtime/types';
+import { buildProofSummaryFromAgentRun } from '@/lib/proof/proof-summary';
 import { destinationHref, getPolicyAgent, type PolicyAgentOutputDestination } from '@/lib/product/policy-agents';
 
 export const AgentTriggerTypeSchema = z.enum([
@@ -70,6 +71,8 @@ export const AgentRunOutputSchema = z.object({
   outputDestination: z.enum(['memo_studio', 'canvas', 'library', 'handover']).nullable().optional(),
   outputHref: z.string().nullable().optional(),
   outputTargetLabel: z.string().nullable().optional(),
+  memoId: z.string().nullable().optional(),
+  outputCapsuleId: z.string().nullable().optional(),
   selectedTools: z.array(z.string()).optional(),
   searchPlan: z.object({
     queries: z.array(z.string()),
@@ -112,6 +115,36 @@ export const AgentRunOutputSchema = z.object({
     contradictedClaims: z.number().int().nonnegative(),
     modelPriorClaims: z.number().int().nonnegative(),
     assumptionClaims: z.number().int().nonnegative(),
+  }).optional(),
+  proofSummary: z.object({
+    contextHealth: z.enum(['ready', 'review', 'thin', 'missing', 'degraded']),
+    sourceCount: z.number().int().nonnegative(),
+    documentCount: z.number().int().nonnegative(),
+    unsupportedClaimCount: z.number().int().nonnegative(),
+    confidenceDistribution: z.object({
+      high: z.number().int().nonnegative(),
+      medium: z.number().int().nonnegative(),
+      low: z.number().int().nonnegative(),
+    }),
+    outputHref: z.string().nullable(),
+    memoId: z.string().nullable(),
+    outputCapsuleId: z.string().nullable(),
+    modelPolicyLabel: z.string(),
+    outputTarget: z.string().nullable(),
+    activeCapsule: z.string().nullable(),
+    appliedCapsules: z.array(z.string()),
+    sourceability: z.object({
+      totalClaims: z.number().int().nonnegative(),
+      supportedClaims: z.number().int().nonnegative(),
+      weakClaims: z.number().int().nonnegative(),
+      unsupportedClaims: z.number().int().nonnegative(),
+      contradictedClaims: z.number().int().nonnegative(),
+      modelPriorClaims: z.number().int().nonnegative(),
+      assumptionClaims: z.number().int().nonnegative(),
+    }),
+    degradedStates: z.array(z.string()),
+    improvementActions: z.array(z.string()),
+    exportBlocked: z.boolean(),
   }).optional(),
   factoryMetadata: z.object({
     factoryLane: z.string().nullable(),
@@ -161,9 +194,33 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
   const sourceabilityLedgerSummary = normalizeSourceabilityLedgerSummary(run.metadata?.sourceabilityLedgerSummary);
   const artifactIds = normalizeArtifactIds(run.metadata);
   const latestMirroredEvent = normalizeLatestMirroredEvent(run.metadata?.latestMirroredEvent);
+  const memoId = stringValue(run.metadata?.memoId);
+  const outputCapsuleId = stringValue(run.metadata?.outputCapsuleId);
+  const boardroomOutput = isRecord(run.metadata?.boardroomOutput) ? run.metadata.boardroomOutput : null;
   const outputHref = typeof run.metadata?.outputHref === 'string' && run.metadata.outputHref.startsWith('/app')
     ? run.metadata.outputHref
     : outputDestination ? destinationHref(outputDestination) : null;
+  const contextReceipt = {
+    activeCapsuleOrChain: appliedCapsules
+      .flatMap((item) => isRecord(item) && typeof item.label === 'string' ? [item.label] : [])
+      .slice(0, 4)
+      .join(' + ') || (typeof activeContextStack?.capsuleId === 'string' ? activeContextStack.capsuleId : run.capsuleId),
+    selectedTools,
+    outputDestination: outputDestination ?? null,
+    sourcePosture,
+    sourceCount,
+    approvalGateCount,
+    groundingPosture,
+    degradedReason,
+  };
+  const shouldExposeProofSummary = Boolean(
+    memoId
+    || outputCapsuleId
+    || boardroomOutput
+    || capsuleReadReceipt
+    || workflowPlan
+    || sourceabilityLedgerSummary,
+  );
   return AgentRunOutputSchema.parse({
     runId: run.id,
     status: run.status,
@@ -176,6 +233,8 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
     outputDestination,
     outputHref,
     outputTargetLabel: outputDestination ? destinationLabel(outputDestination) : null,
+    ...(memoId ? { memoId } : {}),
+    ...(outputCapsuleId ? { outputCapsuleId } : {}),
     selectedTools,
     searchPlan,
     sourceReceiptIds,
@@ -189,22 +248,38 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
     latestMirroredEvent,
     readiness: policyAgent?.readiness ?? null,
     riskLevel: policyAgent?.riskLevel ?? null,
-    contextReceipt: {
-      activeCapsuleOrChain: appliedCapsules
-        .flatMap((item) => isRecord(item) && typeof item.label === 'string' ? [item.label] : [])
-        .slice(0, 4)
-        .join(' + ') || (typeof activeContextStack?.capsuleId === 'string' ? activeContextStack.capsuleId : run.capsuleId),
-      selectedTools,
-      outputDestination: outputDestination ?? null,
-      sourcePosture,
-      sourceCount,
-      approvalGateCount,
-      groundingPosture,
-      degradedReason,
-    },
+    contextReceipt,
     ...(capsuleReadReceipt ? { capsuleReadReceipt } : {}),
     ...(workflowPlan ? { workflowPlan } : {}),
     ...(sourceabilityLedgerSummary ? { sourceabilityLedgerSummary } : {}),
+    ...(shouldExposeProofSummary ? {
+      proofSummary: buildProofSummaryFromAgentRun({
+        runId: run.id,
+        status: run.status,
+        capsuleId: run.capsuleId,
+        appliedCapsules,
+        selectedTools,
+        sourceReceiptIds,
+        sourceCount,
+        documentCount: run.selectedCoreIds?.documentCoreIds?.length ?? 0,
+        outputDestination,
+        outputHref,
+        memoId,
+        outputCapsuleId,
+        contextReceipt,
+        capsuleReadReceipt,
+        workflowPlan,
+        sourceabilityLedgerSummary,
+        sourcePosture,
+        groundingPosture,
+        degradedReason,
+        modelPolicy: run.metadata?.modelPolicy,
+        modelTier: run.metadata?.modelTier,
+        selectedModelId: run.metadata?.selectedModelId,
+        modelLifecycleTier: run.metadata?.modelLifecycleTier,
+        fallbackPosture: run.metadata?.fallbackPosture,
+      }, boardroomOutput),
+    } : {}),
     ...(factoryMetadata ? { factoryMetadata } : {}),
   });
 }
@@ -315,6 +390,10 @@ function normalizeFactoryMetadata(metadata: Record<string, unknown> | undefined)
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
 function nonnegativeInt(value: unknown): number | null {

@@ -26,14 +26,14 @@ describe('/app/boardroom workspace contract', () => {
     expect(componentSource).toContain('/api/agents/runs/${encodeURIComponent(runId)}/stream');
   });
 
-  it('renders boardroom in primary navigation inside the normal app shell', () => {
-    expect(primaryNavSource).toContain('/app/boardroom');
-    expect(primaryNavSource).toContain("id: 'boardroom'");
+  it('keeps boardroom out of primary navigation inside the normal app shell', () => {
+    expect(primaryNavSource).not.toContain('/app/boardroom');
+    expect(primaryNavSource).not.toContain("id: 'boardroom'");
     expect(appShellSource).not.toContain("pathname === '/app/boardroom'");
     expect(appShellSource).toContain('CoreContextStrip');
   });
 
-  it('keeps Home and Capsules launch compatibility alongside the sidebar entry', () => {
+  it('keeps Home and Capsules launch compatibility for the side workspace', () => {
     expect(workbenchSource).toContain('data-testid="open-boardroom-workspace-cta"');
     expect(workbenchSource).toContain('data-testid="capsule-studio-boardroom-action"');
     expect(workbenchSource).toContain("href=\"/app/boardroom\"");

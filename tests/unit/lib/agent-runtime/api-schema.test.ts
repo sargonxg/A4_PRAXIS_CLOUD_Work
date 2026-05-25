@@ -289,4 +289,59 @@ describe('agent run API validation schema', () => {
     expect(JSON.stringify(dto)).not.toContain('rawProviderPayload');
     expect(JSON.stringify(dto)).not.toContain('secret provider payload');
   });
+
+  it('includes compact UI-safe proof metadata for Boardroom artifacts', () => {
+    const dto = toAgentRunOutput({
+      id: 'run-boardroom-1',
+      status: 'succeeded',
+      capsuleId: 'cap-1',
+      createdAt: '2026-05-25T12:00:00.000Z',
+      updatedAt: '2026-05-25T12:05:00.000Z',
+      objective: 'Run a boardroom discussion.',
+      metadata: {
+        policyAgentId: 'boardroom-discussion',
+        outputDestination: 'library',
+        memoId: 'memo-boardroom-1',
+        outputCapsuleId: 'output-boardroom-1',
+        outputHref: '/app/boardroom?runId=run-boardroom-1&memoId=memo-boardroom-1&outputCapsuleId=output-boardroom-1',
+        modelPolicy: 'praxis_frontier_deep_model_policy',
+        boardroomOutput: {
+          evidenceStats: {
+            sourceCount: 2,
+            documentCount: 1,
+            sourcedParagraphCount: 4,
+            unsupportedClaimCount: 1,
+          },
+          confidenceDistribution: { high: 1, medium: 2, low: 1 },
+          openQuestions: ['Which source should be added?'],
+        },
+        sourceabilityLedgerSummary: {
+          totalClaims: 4,
+          supportedClaims: 1,
+          weakClaims: 1,
+          unsupportedClaims: 1,
+          contradictedClaims: 0,
+          modelPriorClaims: 1,
+          assumptionClaims: 0,
+        },
+      },
+    } as never);
+
+    expect(dto).toMatchObject({
+      memoId: 'memo-boardroom-1',
+      outputCapsuleId: 'output-boardroom-1',
+      proofSummary: {
+        sourceCount: 2,
+        documentCount: 1,
+        unsupportedClaimCount: 1,
+        memoId: 'memo-boardroom-1',
+        outputCapsuleId: 'output-boardroom-1',
+        outputHref: '/app/boardroom?runId=run-boardroom-1&memoId=memo-boardroom-1&outputCapsuleId=output-boardroom-1',
+        modelPolicyLabel: 'deep policy reasoning',
+        confidenceDistribution: { high: 1, medium: 2, low: 1 },
+        exportBlocked: true,
+      },
+    });
+    expect(JSON.stringify(dto.proofSummary)).not.toMatch(/gemini|vertex|google|gpt|claude/i);
+  });
 });

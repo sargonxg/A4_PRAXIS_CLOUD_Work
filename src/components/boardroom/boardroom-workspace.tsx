@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { buildProofSummaryFromAgentRun, type UiProofSummary } from '@/lib/proof/proof-summary';
 
 type ParticipantId =
   | 'synthesis-chair'
@@ -83,6 +84,9 @@ type AgentRunSummary = {
   capsuleId?: string;
   policyAgentLabel?: string | null;
   outputHref?: string | null;
+  memoId?: string | null;
+  outputCapsuleId?: string | null;
+  proofSummary?: UiProofSummary;
   sourceReceiptIds?: string[];
 };
 
@@ -166,6 +170,10 @@ export function BoardroomWorkspace() {
     () => turnsFromOutput(latestBoardroomOutput, events),
     [events, latestBoardroomOutput],
   );
+  const boardroomProofSummary = useMemo<UiProofSummary | null>(() => {
+    if (!run) return null;
+    return run.proofSummary ?? buildProofSummaryFromAgentRun(run, latestBoardroomOutput);
+  }, [latestBoardroomOutput, run]);
   const activeTurn = transcriptTurns.at(-1) ?? null;
   const evidenceChips = useMemo(
     () => buildEvidenceChips(readySources, transcriptTurns, run?.sourceReceiptIds),
@@ -627,6 +635,10 @@ export function BoardroomWorkspace() {
               <Metric label="Docs" value={numberFromPath(latestBoardroomOutput, ['evidenceStats', 'documentCount']) ?? readySources.length} />
             </div>
 
+            {boardroomProofSummary && run ? (
+              <BoardroomProofSummaryPanel run={run} summary={boardroomProofSummary} />
+            ) : null}
+
             {run?.outputHref ? (
               <Link href={run.outputHref} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-white">
                 <FileText className="h-4 w-4" />
@@ -654,6 +666,21 @@ export function BoardroomWorkspace() {
                 {!transcriptTurns.length ? (
                   <p className="rounded-md border border-dashed border-slate-200 p-3 text-xs text-slate-500">No transcript events yet.</p>
                 ) : null}
+              </div>
+            </section>
+
+            <section className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Meeting brief</p>
+              <p className="mt-2 rounded-md border border-slate-200 bg-white p-3 text-sm leading-6 text-slate-700">
+                {stringFromPath(latestBoardroomOutput, ['meetingBrief']) ?? run?.objective ?? 'Meeting brief will appear after the boardroom run starts.'}
+              </p>
+            </section>
+
+            <section className="mt-4" data-testid="boardroom-compare-lenses">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Compare lenses</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <SynthesisList title="Consensus" items={arrayFromPath(latestBoardroomOutput, ['consensus'])} />
+                <SynthesisList title="Divergences" items={arrayFromPath(latestBoardroomOutput, ['divergences'])} />
               </div>
             </section>
 
@@ -897,6 +924,50 @@ function isCapsuleSummary(value: unknown): value is CapsuleSummary {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function BoardroomProofSummaryPanel({ run, summary }: { run: AgentRunSummary; summary: UiProofSummary }) {
+  return (
+    <section className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3" data-testid="boardroom-proof-summary">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">PRAXIS read</p>
+        <span className={cn(
+          'rounded-md border px-2 py-1 text-xs font-semibold',
+          summary.contextHealth === 'ready'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+            : 'border-gold-200 bg-gold-50 text-gold-900',
+        )}>
+          {summary.contextHealth}
+        </span>
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <Metric label="Source coverage" value={`${summary.sourceCount} / ${summary.documentCount}`} />
+        <Metric label="Unsupported" value={summary.unsupportedClaimCount} />
+        <Metric label="Confidence" value={`${summary.confidenceDistribution.high}/${summary.confidenceDistribution.medium}/${summary.confidenceDistribution.low}`} />
+        <Metric label="Model policy" value={summary.modelPolicyLabel} />
+      </div>
+      <div className="mt-2 grid gap-1 text-[11px] leading-5 text-slate-600">
+        <p className="truncate">runId: {run.runId}</p>
+        <p className="truncate">memoId: {summary.memoId ?? run.memoId ?? 'pending'}</p>
+        <p className="truncate">outputCapsuleId: {summary.outputCapsuleId ?? run.outputCapsuleId ?? 'pending'}</p>
+      </div>
+      {summary.degradedStates.length ? (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {summary.degradedStates.map((state) => (
+            <span key={state} className="rounded-md border border-gold-200 bg-gold-50 px-1.5 py-0.5 text-[10px] font-semibold text-gold-900">
+              {state}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {summary.outputHref ? (
+        <Link href={summary.outputHref} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <FileText className="h-4 w-4" />
+          Open saved board pack
+        </Link>
+      ) : null}
+    </section>
+  );
 }
 
 function Metric({ label, value }: { label: string; value: string | number }) {

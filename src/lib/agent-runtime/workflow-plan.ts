@@ -22,10 +22,9 @@ export interface AgentWorkflowPlan {
   processRail: [
     'Reading capsule',
     'Planning workflow',
-    'Collecting sources',
+    'Checking evidence',
     'Reviewing claims',
-    'Producing output',
-    'Saving receipts',
+    'Saving artifact',
   ];
   requiredPolicyAgentIds: string[];
   selectedTools: string[];
@@ -40,10 +39,9 @@ export interface AgentWorkflowPlan {
 export const AGENT_WORKFLOW_PROCESS_RAIL: AgentWorkflowPlan['processRail'] = [
   'Reading capsule',
   'Planning workflow',
-  'Collecting sources',
+  'Checking evidence',
   'Reviewing claims',
-  'Producing output',
-  'Saving receipts',
+  'Saving artifact',
 ];
 
 export function buildAgentWorkflowPlan(input: {

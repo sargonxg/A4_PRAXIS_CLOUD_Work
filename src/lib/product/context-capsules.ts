@@ -916,6 +916,189 @@ export interface CapsuleIngestionReceipt {
   retrievalBackend: CapsuleRetrievalBackend;
 }
 
+export type CapsuleIntakeAttachmentType =
+  | 'pdf'
+  | 'docx'
+  | 'txt'
+  | 'markdown'
+  | 'html'
+  | 'csv'
+  | 'spreadsheet'
+  | 'webpage'
+  | 'source-receipt'
+  | 'artifact'
+  | 'other';
+
+export type CapsuleIntakeSourceLane =
+  | 'official'
+  | 'multilateral'
+  | 'legal'
+  | 'media'
+  | 'academic'
+  | 'field'
+  | 'internal'
+  | 'advisory-memory'
+  | 'model-prior'
+  | 'unknown';
+
+export type CapsuleIntakeDatePosture = 'current' | 'as-of' | 'historical' | 'rolling' | 'undated' | 'stale';
+export type CapsuleIntakeExtractionStatus = 'not-started' | 'queued' | 'parsed' | 'partial' | 'failed' | 'not-applicable';
+export type CapsuleIntakeReviewGate = 'none' | 'owner_review' | 'source_review' | 'graph_review' | 'memory_review' | 'human_review';
+
+export interface CapsuleIntakeAttachment {
+  attachmentId: string;
+  title: string;
+  attachmentType: CapsuleIntakeAttachmentType;
+  originalUri: string | null;
+  sourceLane: CapsuleIntakeSourceLane;
+  jurisdiction: string | null;
+  datePosture: CapsuleIntakeDatePosture;
+  reliabilityTier: 1 | 2 | 3 | null;
+  extractionStatus: CapsuleIntakeExtractionStatus;
+  documentId: string | null;
+  sourceReceiptId: string | null;
+  hasTables: boolean;
+  hasFigures: boolean;
+}
+
+export interface CapsuleIntakeArtifactLink {
+  artifactId: string;
+  kind: string;
+  title: string;
+  href: string | null;
+}
+
+export interface ContextIntakeContract {
+  contractId: string;
+  capsuleId: string;
+  ownerId: string;
+  sourceLane: CapsuleIntakeSourceLane;
+  jurisdiction: string | null;
+  datePosture: CapsuleIntakeDatePosture;
+  reliabilityTier: 1 | 2 | 3 | null;
+  outputTarget: string | null;
+  reviewGate: CapsuleIntakeReviewGate;
+  attachments: CapsuleIntakeAttachment[];
+  sourceGaps: string[];
+  graphCandidateHints: string[];
+  memoryWritebackCandidates: string[];
+  tableExtractionCandidates: string[];
+  artifactLinks: CapsuleIntakeArtifactLink[];
+  assumptions: string[];
+  normalizedAt: string;
+}
+
+export type CapsuleIntakeProposalType =
+  | 'source-gap'
+  | 'graph-candidate'
+  | 'memory-writeback'
+  | 'table-extraction'
+  | 'artifact-link';
+
+export interface CapsuleIntakeProposal {
+  proposalId: string;
+  capsuleId: string;
+  type: CapsuleIntakeProposalType;
+  title: string;
+  summary: string;
+  evidenceIds: string[];
+  reviewStatus: 'proposed';
+  canonicalMutation: false;
+  promotionRequired: 'review-card';
+  sourceLane: CapsuleIntakeSourceLane;
+  reliabilityTier: 1 | 2 | 3 | null;
+  createdAt: string;
+}
+
+export type CapsuleQualityReceiptState = 'ready' | 'weak' | 'needs_review';
+export type CapsuleQualityReceiptDimensionId =
+  | 'sourceability'
+  | 'freshness'
+  | 'attachment_coverage'
+  | 'graph_readiness'
+  | 'cognee_posture'
+  | 'output_readiness'
+  | 'unsupported_claim_risk';
+
+export interface CapsuleQualityReceiptDimension {
+  id: CapsuleQualityReceiptDimensionId;
+  label: string;
+  score: number;
+  state: CapsuleQualityReceiptState;
+  detail: string;
+  proposedCount?: number;
+  nextRepairAction?: string;
+}
+
+export interface CapsuleQualityReceipt {
+  receiptId: string;
+  capsuleId: string;
+  generatedAt: string;
+  overallScore: number;
+  overallState: CapsuleQualityReceiptState;
+  dimensions: CapsuleQualityReceiptDimension[];
+  nextRepairAction: string;
+  canonicalTruth: 'Firestore ContextCapsules';
+  cogneePosture: 'advisory-only';
+  graphPromotion: 'review-card-required';
+}
+
+export type CapsuleContextPackLaneId =
+  | 'mandate'
+  | 'situation'
+  | 'sources'
+  | 'documents'
+  | 'tables'
+  | 'graph-power-map'
+  | 'assumptions'
+  | 'gaps'
+  | 'output-contract'
+  | 'receipts';
+
+export interface CapsuleContextPackLane {
+  id: CapsuleContextPackLaneId;
+  label: string;
+  items: string[];
+  reviewRequired: boolean;
+}
+
+export interface CapsuleContextPack {
+  packId: string;
+  capsuleId: string;
+  capsuleLabel: string | null;
+  generatedAt: string;
+  lanes: CapsuleContextPackLane[];
+  receipts: {
+    qualityReceiptId: string | null;
+    repositoryUpdatedAt: string | null;
+    intakeContractId: string | null;
+  };
+}
+
+export type CapsuleArtifactIndexKind =
+  | 'upload'
+  | 'document'
+  | 'source-receipt'
+  | 'table-candidate'
+  | 'output'
+  | 'evaluation'
+  | 'memory'
+  | 'artifact-link';
+
+export interface CapsuleArtifactIndexItem {
+  artifactId: string;
+  kind: CapsuleArtifactIndexKind;
+  title: string;
+  href: string | null;
+  receiptIds: string[];
+  reviewState: 'attached' | 'proposed';
+}
+
+export interface CapsuleArtifactIndex {
+  capsuleId: string;
+  items: CapsuleArtifactIndexItem[];
+}
+
 export interface CapsuleCombinationRecipe {
   id: string;
   label: string;
@@ -7318,6 +7501,467 @@ export function createCapsuleIngestionReceipt(input: Omit<Partial<CapsuleIngesti
   };
 }
 
+export interface NormalizeCapsuleIntakeContractInput {
+  contractId?: string | null;
+  capsuleId?: string | null;
+  ownerId?: string | null;
+  sourceLane?: CapsuleIntakeSourceLane | string | null;
+  jurisdiction?: string | null;
+  datePosture?: CapsuleIntakeDatePosture | string | null;
+  reliabilityTier?: 1 | 2 | 3 | number | null;
+  outputTarget?: string | null;
+  reviewGate?: CapsuleIntakeReviewGate | string | null;
+  attachments?: Array<Partial<CapsuleIntakeAttachment> & {
+    attachmentId?: string | null;
+    attachmentType?: CapsuleIntakeAttachmentType | string | null;
+    originalUri?: string | null;
+  }>;
+  sourceGaps?: string[] | null;
+  graphCandidateHints?: string[] | null;
+  memoryWritebackCandidates?: string[] | null;
+  tableExtractionCandidates?: string[] | null;
+  artifactLinks?: Array<Partial<CapsuleIntakeArtifactLink> & { artifactId?: string | null }>;
+  assumptions?: string[] | null;
+  normalizedAt?: string | null;
+}
+
+export function normalizeCapsuleIntakeContract(input: NormalizeCapsuleIntakeContractInput = {}): ContextIntakeContract {
+  const capsuleId = intakeText(input.capsuleId, 160) || 'default';
+  const ownerId = intakeText(input.ownerId, 160) || 'unknown-owner';
+  const sourceLane = normalizeIntakeSourceLane(input.sourceLane);
+  const jurisdiction = intakeStringOrNull(input.jurisdiction, 180);
+  const datePosture = normalizeIntakeDatePosture(input.datePosture);
+  const reliabilityTier = normalizeIntakeReliabilityTier(input.reliabilityTier);
+  const outputTarget = intakeStringOrNull(input.outputTarget, 180);
+  const normalizedAt = intakeStringOrNull(input.normalizedAt, 80) ?? new Date(0).toISOString();
+  const sourceGaps = intakeStringList(input.sourceGaps, 600, 20);
+  const graphCandidateHints = intakeStringList(input.graphCandidateHints, 600, 20);
+  const memoryWritebackCandidates = intakeStringList(input.memoryWritebackCandidates, 600, 20);
+  const tableExtractionCandidates = intakeStringList(input.tableExtractionCandidates, 600, 20);
+  const assumptions = intakeStringList(input.assumptions, 600, 20);
+  const artifactLinks = (input.artifactLinks ?? []).flatMap((link, index): CapsuleIntakeArtifactLink[] => {
+    const artifactId = intakeText(link.artifactId, 160) || `artifact-${index + 1}`;
+    return [{
+      artifactId,
+      kind: intakeText(link.kind, 80) || 'artifact',
+      title: intakeText(link.title, 180) || artifactId,
+      href: intakeStringOrNull(link.href, 400),
+    }];
+  }).slice(0, 20);
+  const attachments = (input.attachments ?? []).flatMap((attachment, index): CapsuleIntakeAttachment[] => {
+    const attachmentId = intakeText(attachment.attachmentId, 160) || `attachment-${index + 1}`;
+    const attachmentSourceLane = normalizeIntakeSourceLane(attachment.sourceLane ?? sourceLane);
+    const attachmentDatePosture = normalizeIntakeDatePosture(attachment.datePosture ?? datePosture);
+    const attachmentReliabilityTier = normalizeIntakeReliabilityTier(attachment.reliabilityTier ?? reliabilityTier);
+    return [{
+      attachmentId,
+      title: intakeText(attachment.title, 180) || attachmentId,
+      attachmentType: normalizeIntakeAttachmentType(attachment.attachmentType),
+      originalUri: intakeStringOrNull(attachment.originalUri, 500),
+      sourceLane: attachmentSourceLane,
+      jurisdiction: intakeStringOrNull(attachment.jurisdiction, 180) ?? jurisdiction,
+      datePosture: attachmentDatePosture,
+      reliabilityTier: attachmentReliabilityTier,
+      extractionStatus: normalizeIntakeExtractionStatus(attachment.extractionStatus),
+      documentId: intakeStringOrNull(attachment.documentId, 160),
+      sourceReceiptId: intakeStringOrNull(attachment.sourceReceiptId, 160),
+      hasTables: attachment.hasTables === true,
+      hasFigures: attachment.hasFigures === true,
+    }];
+  }).slice(0, 50);
+  const reviewGate = normalizeIntakeReviewGate(input.reviewGate) ?? deriveIntakeReviewGate({
+    sourceGaps,
+    graphCandidateHints,
+    memoryWritebackCandidates,
+    tableExtractionCandidates,
+    artifactLinks,
+    attachments,
+  });
+  const contractId = intakeText(input.contractId, 180)
+    || `intake:${capsuleId}:${stableReceiptPart([
+      sourceLane,
+      jurisdiction ?? 'global',
+      outputTarget ?? 'output',
+      String(attachments.length),
+      String(sourceGaps.length + graphCandidateHints.length + memoryWritebackCandidates.length + tableExtractionCandidates.length + artifactLinks.length),
+    ].join(':'))}`;
+
+  return {
+    contractId,
+    capsuleId,
+    ownerId,
+    sourceLane,
+    jurisdiction,
+    datePosture,
+    reliabilityTier,
+    outputTarget,
+    reviewGate,
+    attachments,
+    sourceGaps,
+    graphCandidateHints,
+    memoryWritebackCandidates,
+    tableExtractionCandidates,
+    artifactLinks,
+    assumptions,
+    normalizedAt,
+  };
+}
+
+export function buildCapsuleIntakeProposals(intake: ContextIntakeContract): CapsuleIntakeProposal[] {
+  const evidenceIds = intakeEvidenceIds(intake);
+  const createdAt = intake.normalizedAt;
+  const makeProposal = (type: CapsuleIntakeProposalType, summary: string, index: number): CapsuleIntakeProposal => ({
+    proposalId: `intake:${intake.capsuleId}:${type}:${stableReceiptPart(`${summary}:${index}`)}`,
+    capsuleId: intake.capsuleId,
+    type,
+    title: intakeProposalTitle(type, summary),
+    summary,
+    evidenceIds,
+    reviewStatus: 'proposed',
+    canonicalMutation: false,
+    promotionRequired: 'review-card',
+    sourceLane: intake.sourceLane,
+    reliabilityTier: intake.reliabilityTier,
+    createdAt,
+  });
+
+  return [
+    ...intake.sourceGaps.map((gap, index) => makeProposal('source-gap', gap, index)),
+    ...intake.graphCandidateHints.map((hint, index) => makeProposal('graph-candidate', hint, index)),
+    ...intake.memoryWritebackCandidates.map((candidate, index) => makeProposal('memory-writeback', candidate, index)),
+    ...intake.tableExtractionCandidates.map((candidate, index) => makeProposal('table-extraction', candidate, index)),
+    ...intake.artifactLinks.map((link, index) => makeProposal('artifact-link', `${link.title}${link.href ? ` (${link.href})` : ''}`, index)),
+  ].slice(0, 80);
+}
+
+export function buildCapsuleQualityReceipt(input: {
+  capsuleId: string;
+  coreRefs?: CapsuleCoreRefsLike | null;
+  repository?: CapsuleRepositoryContract | null;
+  intake?: ContextIntakeContract | null;
+  cogneeStatus?: 'enabled' | 'disabled' | 'degraded' | 'unavailable' | null;
+  unsupportedClaimCount?: number;
+  staleSourceCount?: number;
+  now?: string;
+}): CapsuleQualityReceipt {
+  const capsuleId = intakeText(input.capsuleId, 160) || 'default';
+  const generatedAt = input.now ?? new Date(0).toISOString();
+  const coreRefs = input.coreRefs ?? {};
+  const repository = input.repository ?? null;
+  const intake = input.intake ?? null;
+  const sourceIds = uniqueStrings([
+    ...(coreRefs.sourceCoreIds ?? []),
+    ...(repository?.metadata.sourceReceiptIds ?? []),
+    ...(repository?.sourceRefs.map((source) => source.sourceReceiptId) ?? []),
+    ...(intake?.attachments.map((attachment) => attachment.sourceReceiptId ?? '') ?? []),
+  ]);
+  const documentIds = uniqueStrings([
+    ...(coreRefs.documentCoreIds ?? []),
+    ...(repository?.metadata.documentIds ?? []),
+    ...(repository?.documentRefs.map((document) => document.documentId) ?? []),
+    ...(intake?.attachments.map((attachment) => attachment.documentId ?? '') ?? []),
+  ]);
+  const sourceGaps = uniqueStrings([
+    ...(intake?.sourceGaps ?? []),
+    ...(repository?.sourceRefs.flatMap((source) => source.citationGaps) ?? []),
+  ]);
+  const graphProposalCount = intake?.graphCandidateHints.length ?? 0;
+  const tableProposalCount = intake?.tableExtractionCandidates.length ?? 0;
+  const unsupportedClaimCount = Math.max(0, Math.floor(input.unsupportedClaimCount ?? 0));
+  const staleSourceCount = Math.max(0, Math.floor(input.staleSourceCount ?? 0));
+  const cogneeStatus = input.cogneeStatus ?? 'disabled';
+  const hasParsedAttachment = intake?.attachments.some((attachment) => attachment.extractionStatus === 'parsed') ?? false;
+  const hasFailedAttachment = intake?.attachments.some((attachment) => attachment.extractionStatus === 'failed' || attachment.extractionStatus === 'partial') ?? false;
+  const hasOutput = Boolean(
+    intake?.outputTarget ||
+    coreRefs.outputCoreIds?.length ||
+    coreRefs.productCoreIds?.length ||
+    repository?.outputHistoryIds.length,
+  );
+  const dimensions: CapsuleQualityReceiptDimension[] = [
+    {
+      id: 'sourceability',
+      label: 'Sourceability',
+      score: sourceIds.length && !sourceGaps.length && unsupportedClaimCount === 0 ? 92 : sourceIds.length ? 62 : 28,
+      state: sourceGaps.length || unsupportedClaimCount > 0 ? 'needs_review' : sourceIds.length ? 'ready' : 'weak',
+      detail: sourceIds.length
+        ? `${sourceIds.length} source receipt lane(s); ${sourceGaps.length} source gap(s) visible.`
+        : 'No source receipts attached to the capsule.',
+      proposedCount: sourceGaps.length,
+      nextRepairAction: sourceGaps.length ? 'Review source gaps and attach source receipts.' : undefined,
+    },
+    {
+      id: 'freshness',
+      label: 'Freshness',
+      score: staleSourceCount > 0 || intake?.datePosture === 'stale' ? 38 : intake?.datePosture === 'current' || intake?.datePosture === 'as-of' || intake?.datePosture === 'rolling' || repository?.metadata.freshness === 'fresh' ? 86 : 58,
+      state: staleSourceCount > 0 || intake?.datePosture === 'stale' ? 'needs_review' : intake?.datePosture === 'current' || intake?.datePosture === 'as-of' || intake?.datePosture === 'rolling' || repository?.metadata.freshness === 'fresh' ? 'ready' : 'weak',
+      detail: staleSourceCount > 0 ? `${staleSourceCount} stale source(s) need refresh.` : `Date posture: ${intake?.datePosture ?? repository?.metadata.freshness ?? 'undated'}.`,
+      proposedCount: staleSourceCount,
+    },
+    {
+      id: 'attachment_coverage',
+      label: 'Attachment coverage',
+      score: hasFailedAttachment || tableProposalCount ? 56 : hasParsedAttachment || documentIds.length || (repository?.metadata.chunkCount ?? 0) > 0 ? 88 : 34,
+      state: hasFailedAttachment || tableProposalCount ? 'needs_review' : hasParsedAttachment || documentIds.length || (repository?.metadata.chunkCount ?? 0) > 0 ? 'ready' : 'weak',
+      detail: `${documentIds.length} document ref(s), ${repository?.metadata.chunkCount ?? 0} chunk(s), ${tableProposalCount} table extraction candidate(s).`,
+      proposedCount: tableProposalCount,
+      nextRepairAction: tableProposalCount ? 'Review table extraction candidates before using them as evidence.' : undefined,
+    },
+    {
+      id: 'graph_readiness',
+      label: 'Graph readiness',
+      score: coreRefs.graphCoreId ? 84 : graphProposalCount ? 48 : 52,
+      state: coreRefs.graphCoreId ? 'ready' : graphProposalCount ? 'needs_review' : 'weak',
+      detail: coreRefs.graphCoreId
+        ? `Approved graph core ${coreRefs.graphCoreId} is attached.`
+        : graphProposalCount
+          ? `${graphProposalCount} graph candidate(s) require review-card promotion.`
+          : 'No graph core attached; graph facts remain unpromoted.',
+      proposedCount: graphProposalCount,
+    },
+    {
+      id: 'cognee_posture',
+      label: 'Cognee posture',
+      score: cogneeStatus === 'degraded' ? 52 : 78,
+      state: cogneeStatus === 'degraded' ? 'weak' : 'ready',
+      detail: cogneeStatus === 'enabled'
+        ? 'Cognee enabled as advisory recall only; Firestore ContextCapsules remain canonical.'
+        : cogneeStatus === 'degraded'
+          ? 'Cognee degraded; advisory recall should be treated as unavailable.'
+          : 'Cognee disabled; advisory memory is not canonical and Firestore ContextCapsules remain canonical.',
+    },
+    {
+      id: 'output_readiness',
+      label: 'Output readiness',
+      score: hasOutput ? 86 : 42,
+      state: hasOutput ? 'ready' : 'weak',
+      detail: hasOutput ? `Output target ready: ${intake?.outputTarget ?? coreRefs.outputCoreIds?.[0] ?? coreRefs.productCoreIds?.[0] ?? 'capsule output'}.` : 'No output target or output core attached.',
+    },
+    {
+      id: 'unsupported_claim_risk',
+      label: 'Unsupported claim risk',
+      score: unsupportedClaimCount > 0 ? 30 : 90,
+      state: unsupportedClaimCount > 0 ? 'needs_review' : 'ready',
+      detail: unsupportedClaimCount > 0 ? `${unsupportedClaimCount} unsupported claim(s) must be reviewed.` : 'No unsupported claims recorded in the receipt input.',
+      proposedCount: unsupportedClaimCount,
+    },
+  ];
+  const overallState: CapsuleQualityReceiptState = dimensions.some((dimension) => dimension.state === 'needs_review')
+    ? 'needs_review'
+    : dimensions.some((dimension) => dimension.state === 'weak')
+      ? 'weak'
+      : 'ready';
+  const nextRepairAction = sourceGaps.length || unsupportedClaimCount > 0
+    ? 'Review source gaps and unsupported claims before promoting this capsule for long generation.'
+    : graphProposalCount > 0
+      ? 'Review graph candidates before treating actor or power-map facts as canonical.'
+      : tableProposalCount > 0
+        ? 'Review table extraction candidates and attach page references.'
+        : 'No blocking repair action; keep source dates current.';
+
+  return {
+    receiptId: `quality:${capsuleId}:${stableReceiptPart(`${generatedAt}:${overallState}:${dimensions.map((dimension) => `${dimension.id}:${dimension.state}`).join('|')}`)}`,
+    capsuleId,
+    generatedAt,
+    overallScore: Math.round(dimensions.reduce((sum, dimension) => sum + dimension.score, 0) / dimensions.length),
+    overallState,
+    dimensions,
+    nextRepairAction,
+    canonicalTruth: 'Firestore ContextCapsules',
+    cogneePosture: 'advisory-only',
+    graphPromotion: 'review-card-required',
+  };
+}
+
+export function buildCapsuleContextPack(input: {
+  capsuleId: string;
+  capsuleLabel?: string | null;
+  coreRefs?: CapsuleCoreRefsLike | null;
+  repository?: CapsuleRepositoryContract | null;
+  intake?: ContextIntakeContract | null;
+  qualityReceipt?: CapsuleQualityReceipt | null;
+  now?: string;
+}): CapsuleContextPack {
+  const capsuleId = intakeText(input.capsuleId, 160) || 'default';
+  const coreRefs = input.coreRefs ?? {};
+  const repository = input.repository ?? null;
+  const intake = input.intake ?? null;
+  const qualityReceipt = input.qualityReceipt ?? null;
+  const generatedAt = input.now ?? new Date(0).toISOString();
+  const sourceItems = uniqueStrings([
+    ...(coreRefs.sourceCoreIds ?? []),
+    ...(repository?.sourceRefs.flatMap((source) => [source.sourceReceiptId, source.label]) ?? []),
+    ...(intake?.attachments.flatMap((attachment) => [attachment.sourceReceiptId ?? '', attachment.title]) ?? []),
+  ]);
+  const documentItems = uniqueStrings([
+    ...(coreRefs.documentCoreIds ?? []),
+    ...(repository?.documentRefs.flatMap((document) => [document.documentId, document.title]) ?? []),
+    ...(intake?.attachments.flatMap((attachment) => [attachment.documentId ?? '', attachment.title]) ?? []),
+  ]);
+  const graphItems = uniqueStrings([
+    coreRefs.graphCoreId ?? '',
+    ...(intake?.graphCandidateHints ?? []),
+  ]);
+  const lanes: CapsuleContextPackLane[] = [
+    {
+      id: 'mandate',
+      label: 'Mandate',
+      items: uniqueStrings([input.capsuleLabel ?? '', intake?.outputTarget ?? '', intake?.jurisdiction ?? '']),
+      reviewRequired: false,
+    },
+    {
+      id: 'situation',
+      label: 'Situation',
+      items: uniqueStrings([coreRefs.situationCoreId ?? '', coreRefs.pathCoreId ?? '', intake?.jurisdiction ?? '']),
+      reviewRequired: false,
+    },
+    {
+      id: 'sources',
+      label: 'Sources',
+      items: sourceItems,
+      reviewRequired: Boolean(intake?.sourceGaps.length),
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      items: documentItems,
+      reviewRequired: Boolean(intake?.attachments.some((attachment) => attachment.extractionStatus === 'partial' || attachment.extractionStatus === 'failed')),
+    },
+    {
+      id: 'tables',
+      label: 'Tables',
+      items: uniqueStrings([
+        ...(intake?.tableExtractionCandidates ?? []),
+        ...(intake?.attachments.filter((attachment) => attachment.hasTables).map((attachment) => `${attachment.title}: table present`) ?? []),
+      ]),
+      reviewRequired: Boolean(intake?.tableExtractionCandidates.length),
+    },
+    {
+      id: 'graph-power-map',
+      label: 'Graph/power map',
+      items: graphItems,
+      reviewRequired: Boolean(!coreRefs.graphCoreId && intake?.graphCandidateHints.length),
+    },
+    {
+      id: 'assumptions',
+      label: 'Assumptions',
+      items: intake?.assumptions ?? [],
+      reviewRequired: Boolean(intake?.assumptions.length),
+    },
+    {
+      id: 'gaps',
+      label: 'Gaps',
+      items: intake?.sourceGaps ?? [],
+      reviewRequired: Boolean(intake?.sourceGaps.length),
+    },
+    {
+      id: 'output-contract',
+      label: 'Output contract',
+      items: uniqueStrings([intake?.outputTarget ?? '', ...(coreRefs.outputCoreIds ?? []), ...(coreRefs.productCoreIds ?? [])]),
+      reviewRequired: false,
+    },
+    {
+      id: 'receipts',
+      label: 'Receipts',
+      items: uniqueStrings([
+        qualityReceipt?.receiptId ?? '',
+        repository?.metadata.updatedAt ?? '',
+        intake?.contractId ?? '',
+      ]),
+      reviewRequired: qualityReceipt?.overallState === 'needs_review',
+    },
+  ];
+
+  return {
+    packId: `context-pack:${capsuleId}:${stableReceiptPart(generatedAt)}`,
+    capsuleId,
+    capsuleLabel: input.capsuleLabel ?? null,
+    generatedAt,
+    lanes,
+    receipts: {
+      qualityReceiptId: qualityReceipt?.receiptId ?? null,
+      repositoryUpdatedAt: repository?.metadata.updatedAt ?? null,
+      intakeContractId: intake?.contractId ?? null,
+    },
+  };
+}
+
+export function buildCapsuleArtifactIndex(input: {
+  capsuleId: string;
+  repository?: CapsuleRepositoryContract | null;
+  ingestionReceipts?: CapsuleIngestionReceipt[] | null;
+  intake?: ContextIntakeContract | null;
+}): CapsuleArtifactIndex {
+  const capsuleId = intakeText(input.capsuleId, 160) || 'default';
+  const repository = input.repository ?? null;
+  const intake = input.intake ?? null;
+  const intakeReceiptIds = intake ? intakeEvidenceIds(intake) : [];
+  const items: CapsuleArtifactIndexItem[] = [];
+  for (const receipt of input.ingestionReceipts ?? []) {
+    items.push({
+      artifactId: receipt.receiptId,
+      kind: 'upload',
+      title: receipt.originalUri || receipt.documentId || receipt.receiptId,
+      href: receipt.storedObjectPath,
+      receiptIds: uniqueStrings([receipt.receiptId, receipt.documentId ?? '', receipt.sourceReceiptId ?? '']),
+      reviewState: receipt.parserStatus === 'parsed' ? 'attached' : 'proposed',
+    });
+  }
+  for (const document of repository?.documentRefs ?? []) {
+    items.push({
+      artifactId: document.documentId,
+      kind: 'document',
+      title: document.title,
+      href: document.storageObjectRef,
+      receiptIds: uniqueStrings([document.documentId, ...document.sourceReceiptIds]),
+      reviewState: 'attached',
+    });
+  }
+  for (const source of repository?.sourceRefs ?? []) {
+    items.push({
+      artifactId: source.sourceReceiptId,
+      kind: 'source-receipt',
+      title: source.label,
+      href: source.uri,
+      receiptIds: [source.sourceReceiptId],
+      reviewState: source.citationGaps.length ? 'proposed' : 'attached',
+    });
+  }
+  for (const [index, table] of (intake?.tableExtractionCandidates ?? []).entries()) {
+    items.push({
+      artifactId: `table-candidate:${stableReceiptPart(`${capsuleId}:${table}:${index}`)}`,
+      kind: 'table-candidate',
+      title: table,
+      href: null,
+      receiptIds: intakeReceiptIds,
+      reviewState: 'proposed',
+    });
+  }
+  for (const outputId of repository?.outputHistoryIds ?? []) {
+    items.push({ artifactId: outputId, kind: 'output', title: outputId, href: null, receiptIds: [outputId], reviewState: 'attached' });
+  }
+  for (const evaluationId of repository?.evaluationIds ?? []) {
+    items.push({ artifactId: evaluationId, kind: 'evaluation', title: evaluationId, href: null, receiptIds: [evaluationId], reviewState: 'attached' });
+  }
+  for (const memoryId of repository?.memoryIds ?? []) {
+    items.push({ artifactId: memoryId, kind: 'memory', title: memoryId, href: null, receiptIds: [memoryId], reviewState: 'attached' });
+  }
+  for (const link of intake?.artifactLinks ?? []) {
+    items.push({
+      artifactId: link.artifactId,
+      kind: 'artifact-link',
+      title: link.title,
+      href: link.href,
+      receiptIds: [link.artifactId],
+      reviewState: 'proposed',
+    });
+  }
+  return {
+    capsuleId,
+    items: dedupeArtifactIndexItems(items).slice(0, 120),
+  };
+}
+
 export const CAPSULE_CONNECTOR_IDEAS: CapsuleConnectorIdea[] = [
   {
     id: 'library-upload',
@@ -7362,6 +8006,138 @@ export const CAPSULE_CONNECTOR_IDEAS: CapsuleConnectorIdea[] = [
     description: 'Read-only browser-use plus Steel.dev lane for pages that cannot be reached through APIs.',
   },
 ];
+
+function intakeText(value: unknown, maxLength: number): string {
+  return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ').slice(0, maxLength) : '';
+}
+
+function intakeStringOrNull(value: unknown, maxLength: number): string | null {
+  const text = intakeText(value, maxLength);
+  return text || null;
+}
+
+function intakeStringList(values: string[] | null | undefined, maxLength: number, limit: number): string[] {
+  return uniqueStrings((values ?? []).map((value) => intakeText(value, maxLength))).slice(0, limit);
+}
+
+function normalizeIntakeAttachmentType(value: unknown): CapsuleIntakeAttachmentType {
+  return value === 'pdf' ||
+    value === 'docx' ||
+    value === 'txt' ||
+    value === 'markdown' ||
+    value === 'html' ||
+    value === 'csv' ||
+    value === 'spreadsheet' ||
+    value === 'webpage' ||
+    value === 'source-receipt' ||
+    value === 'artifact' ||
+    value === 'other'
+    ? value
+    : 'other';
+}
+
+function normalizeIntakeSourceLane(value: unknown): CapsuleIntakeSourceLane {
+  return value === 'official' ||
+    value === 'multilateral' ||
+    value === 'legal' ||
+    value === 'media' ||
+    value === 'academic' ||
+    value === 'field' ||
+    value === 'internal' ||
+    value === 'advisory-memory' ||
+    value === 'model-prior' ||
+    value === 'unknown'
+    ? value
+    : 'unknown';
+}
+
+function normalizeIntakeDatePosture(value: unknown): CapsuleIntakeDatePosture {
+  return value === 'current' ||
+    value === 'as-of' ||
+    value === 'historical' ||
+    value === 'rolling' ||
+    value === 'undated' ||
+    value === 'stale'
+    ? value
+    : 'undated';
+}
+
+function normalizeIntakeExtractionStatus(value: unknown): CapsuleIntakeExtractionStatus {
+  return value === 'not-started' ||
+    value === 'queued' ||
+    value === 'parsed' ||
+    value === 'partial' ||
+    value === 'failed' ||
+    value === 'not-applicable'
+    ? value
+    : 'queued';
+}
+
+function normalizeIntakeReviewGate(value: unknown): CapsuleIntakeReviewGate | null {
+  return value === 'none' ||
+    value === 'owner_review' ||
+    value === 'source_review' ||
+    value === 'graph_review' ||
+    value === 'memory_review' ||
+    value === 'human_review'
+    ? value
+    : null;
+}
+
+function normalizeIntakeReliabilityTier(value: unknown): 1 | 2 | 3 | null {
+  return value === 1 || value === 2 || value === 3 ? value : null;
+}
+
+function deriveIntakeReviewGate(input: {
+  sourceGaps: string[];
+  graphCandidateHints: string[];
+  memoryWritebackCandidates: string[];
+  tableExtractionCandidates: string[];
+  artifactLinks: CapsuleIntakeArtifactLink[];
+  attachments: CapsuleIntakeAttachment[];
+}): CapsuleIntakeReviewGate {
+  if (
+    input.sourceGaps.length ||
+    input.graphCandidateHints.length ||
+    input.memoryWritebackCandidates.length ||
+    input.tableExtractionCandidates.length ||
+    input.artifactLinks.length
+  ) {
+    return 'human_review';
+  }
+  if (input.attachments.some((attachment) => attachment.extractionStatus === 'failed' || attachment.extractionStatus === 'partial')) return 'source_review';
+  return 'none';
+}
+
+function intakeEvidenceIds(intake: ContextIntakeContract): string[] {
+  return uniqueStrings([
+    intake.contractId,
+    ...intake.attachments.flatMap((attachment) => [
+      attachment.attachmentId,
+      attachment.documentId ?? '',
+      attachment.sourceReceiptId ?? '',
+      attachment.originalUri ?? '',
+    ]),
+  ]).slice(0, 30);
+}
+
+function intakeProposalTitle(type: CapsuleIntakeProposalType, summary: string): string {
+  const cleaned = intakeText(summary, 96);
+  if (type === 'source-gap') return cleaned ? `Source gap: ${cleaned}` : 'Source gap review';
+  if (type === 'graph-candidate') return cleaned ? `Graph candidate: ${cleaned}` : 'Graph candidate review';
+  if (type === 'memory-writeback') return cleaned ? `Advisory memory candidate: ${cleaned}` : 'Advisory memory review';
+  if (type === 'table-extraction') return cleaned ? `Table extraction: ${cleaned}` : 'Table extraction review';
+  return cleaned ? `Artifact link: ${cleaned}` : 'Artifact link review';
+}
+
+function dedupeArtifactIndexItems(items: CapsuleArtifactIndexItem[]): CapsuleArtifactIndexItem[] {
+  const byKey = new Map<string, CapsuleArtifactIndexItem>();
+  for (const item of items) {
+    const key = `${item.kind}:${item.artifactId}`;
+    if (!byKey.has(key)) byKey.set(key, item);
+  }
+  return Array.from(byKey.values());
+}
 
 function uniqueStrings(values: string[] | null | undefined): string[] {
   return Array.from(new Set((values ?? []).map((value) => value.trim()).filter(Boolean)));

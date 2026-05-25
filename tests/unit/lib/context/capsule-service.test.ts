@@ -8,6 +8,7 @@ import {
   buildCapsuleInventorySummary,
   combineCapsules,
   createCapsuleReviewCard,
+  createCapsuleIntakeReviewCards,
   createEmptyCapsuleInventorySummary,
   createCapsule,
   detachCapsuleRefs,
@@ -830,6 +831,61 @@ describe('capsule service', () => {
     expect((note?.links as { sourceIds: string[] }).sourceIds).toContain('ask-source-1');
     expect(result?.capsule.trust.level).toBe('amber');
     expect(result?.capsule.trust.recommendations).toContain('Review proposed source-pack gaps before the next external handoff.');
+  });
+
+  it('turns intake source, table, graph, memory, and artifact candidates into review cards without applying them', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', {
+      capsuleId: 'cap-intake',
+      label: 'Intake capsule',
+      coreRefs: { situationCoreId: 'sit-1', sourceCoreIds: ['src-existing'] },
+    }, deps(db));
+
+    const result = await createCapsuleIntakeReviewCards('u1', 'cap-intake', {
+      sourceLane: 'official',
+      jurisdiction: 'UN',
+      outputTarget: 'policy-memo',
+      sourceGaps: ['Need a second dated access source.'],
+      graphCandidateHints: ['Actor relation candidate: mediator -> access guarantee'],
+      memoryWritebackCandidates: ['Remember that access status must be caveated by date.'],
+      tableExtractionCandidates: ['Extract access constraints table.'],
+      artifactLinks: [{ artifactId: 'memo-1', kind: 'memo', title: 'Draft memo', href: '/app/write?memoId=memo-1' }],
+      attachments: [{
+        attachmentId: 'doc-1',
+        attachmentType: 'pdf',
+        title: 'Access update',
+        originalUri: 'gs://bucket/access.pdf',
+        extractionStatus: 'parsed',
+        documentId: 'doc-1',
+        sourceReceiptId: 'src-1',
+        hasTables: true,
+      }],
+    }, deps(db));
+
+    expect(result?.reviewRequired).toBe(true);
+    expect(result?.intake.reviewGate).toBe('human_review');
+    expect(result?.proposals.map((proposal) => proposal.type)).toEqual([
+      'source-gap',
+      'graph-candidate',
+      'memory-writeback',
+      'table-extraction',
+      'artifact-link',
+    ]);
+    expect(result?.cards).toHaveLength(5);
+    expect(result?.cards.every((card) => card.state === 'proposed')).toBe(true);
+    expect(result?.cards.map((card) => card.target)).toEqual(expect.arrayContaining([
+      'sourceGap',
+      'graphProposal',
+      'advisoryMemory',
+      'tableCandidate',
+      'artifactLink',
+    ]));
+    expect(db.data.get('users/u1/capsules/cap-intake')?.latestGateState).toBe('proposed');
+    expect((db.data.get('users/u1/capsules/cap-intake')?.coreRefs as { sourceCoreIds: string[] }).sourceCoreIds).toEqual(['src-existing']);
+    const cardPath = `users/u1/capsules/cap-intake/reviewCards/${result!.cards[0].reviewCardId}`;
+    expect(db.data.get(cardPath)?.evidence).toEqual(expect.arrayContaining([
+      expect.objectContaining({ advisory: true }),
+    ]));
   });
 
   it('normalizes v1 capsules into compact v2 envelopes without carrying append-heavy payloads', () => {

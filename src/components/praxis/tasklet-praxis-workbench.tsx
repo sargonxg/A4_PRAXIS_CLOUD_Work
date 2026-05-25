@@ -62,6 +62,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { AccountProfileButton } from '@/components/app/account-profile-button';
+import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
@@ -119,6 +120,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { useOrchestratorEvents, type OrchestratorEvent, type OrchestratorEventState } from '@/hooks/useOrchestratorEvents';
 import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-stream';
 import type { AskAnswerEnvelope, AskDocumentPackOutputTarget } from '@/lib/ai/ask-answer-envelope';
+import { modelPolicyLabelFor } from '@/lib/proof/proof-summary';
 import {
   answerEnvelopeFromDataStreamLine,
   buildConversationPath,
@@ -392,6 +394,7 @@ type SelectedContextCoreIds = {
 };
 type ContextHealth = {
   label: 'Baseline' | 'Ready' | 'Grounded' | 'Operational';
+  plainState: 'ready' | 'thin' | 'missing sources' | 'stale sources' | 'needs review';
   detail: string;
   tone: string;
 };
@@ -904,6 +907,7 @@ export function TaskletPraxisWorkbench({
   const contextBlocks = buildActiveContextBlocks(activeCapsuleStack);
   const activeContextStack = buildActiveContextStack(currentCapsuleId, activeCapsuleStack);
   const contextHealth = getContextHealth(activeCapsuleStack);
+  const plainContextHealthState = contextHealth.plainState;
   const selectedToolIds = activeCapsuleStack
     .filter((capsule) => capsule.role === 'tool')
     .map((capsule) => capsule.toolId ?? capsule.templateId ?? capsule.id);
@@ -3291,7 +3295,7 @@ export function TaskletPraxisWorkbench({
                         className={cn('rounded-md border px-2 py-1', contextHealth.tone)}
                         title={contextHealth.detail}
                       >
-                        Context health: {contextHealth.label}
+                        Context health: {plainContextHealthState}
                       </span>
                       <button
                         type="button"
@@ -3695,6 +3699,13 @@ export function TaskletPraxisWorkbench({
                       <>
                         <AssistantMarkdown text={message.text || 'Reading context...'} messageId={`assistant-${index}`} />
                         <ConversationReceiptSummary envelope={message.answerEnvelope} />
+                        <AnswerQualityStrip
+                          envelope={message.answerEnvelope}
+                          onAction={(actionPrompt) => {
+                            setPrompt(actionPrompt);
+                            setStatus('Answer quality action loaded into the composer.');
+                          }}
+                        />
                         <ConversationAgentActivityRail
                           envelope={message.answerEnvelope}
                           onAction={(actionPrompt) => {
@@ -4299,6 +4310,12 @@ function ConversationReceiptSummary({ envelope }: { envelope?: AskAnswerEnvelope
   if (!receipt) return null;
   const queuedRun = receipt.supervisor.queuedRun;
   const generationReceipt = envelope?.generationReceipt;
+  const generationModelPolicyLabel = generationReceipt
+    ? modelPolicyLabelFor({
+      selectedModelId: generationReceipt.selectedModel,
+      fallbackPosture: generationReceipt.fallbackModel ? 'fallback' : null,
+    })
+    : null;
   return (
     <section className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2" data-testid="praxis-answer-receipt">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -4327,7 +4344,7 @@ function ConversationReceiptSummary({ envelope }: { envelope?: AskAnswerEnvelope
         ) : null}
         {generationReceipt ? (
           <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-slate-600">
-            Generation: {generationReceipt.budgetMode} / {generationReceipt.maxOutputTokens}
+            Generation: {generationModelPolicyLabel} / {generationReceipt.budgetMode} / {generationReceipt.maxOutputTokens}
           </span>
         ) : null}
       </div>
@@ -4343,6 +4360,12 @@ function ConversationAgentActivityRail({ envelope, onAction }: { envelope?: AskA
   const sourceAudit = envelope?.sourceAudit;
   const claimLedger = envelope?.claimLedgerSummary;
   const generationReceipt = envelope?.generationReceipt;
+  const generationModelPolicyLabel = generationReceipt
+    ? modelPolicyLabelFor({
+      selectedModelId: generationReceipt.selectedModel,
+      fallbackPosture: generationReceipt.fallbackModel ? 'fallback' : null,
+    })
+    : null;
   if (!receipt && !sourceAudit && !claimLedger && !generationReceipt) return null;
   const languagePolicyReview = receipt?.languagePolicyReview;
   const stages = receipt ? [
@@ -4359,7 +4382,7 @@ function ConversationAgentActivityRail({ envelope, onAction }: { envelope?: AskA
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Agent Activity</p>
         {generationReceipt ? (
           <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
-            {generationReceipt.selectedModel} / {generationReceipt.budgetMode}
+            {generationModelPolicyLabel} / {generationReceipt.budgetMode}
           </span>
         ) : null}
       </div>
@@ -5607,9 +5630,11 @@ function getContextHealth(activeCapsuleStack: ActiveCapsuleChip[]): ContextHealt
   const hasSources = roles.has('reference');
   const hasTools = roles.has('tool');
   const hasOutput = roles.has('output');
+  const contextHealthPlainStates = ['ready', 'thin', 'missing sources', 'stale sources', 'needs review'] as const;
   if (hasSituation && hasSources && hasTools && hasOutput) {
     return {
       label: 'Operational',
+      plainState: contextHealthPlainStates[0],
       detail: 'Situation, references, checks, and output are set for agentic work.',
       tone: 'border-emerald-200 bg-emerald-50 text-emerald-800',
     };
@@ -5617,6 +5642,7 @@ function getContextHealth(activeCapsuleStack: ActiveCapsuleChip[]): ContextHealt
   if (hasSituation && hasSources && hasOutput) {
     return {
       label: 'Grounded',
+      plainState: contextHealthPlainStates[0],
       detail: 'Situation, references, and output are set for sourced Ask PRAXIS work.',
       tone: 'border-sky-200 bg-sky-50 text-sky-800',
     };
@@ -5624,12 +5650,14 @@ function getContextHealth(activeCapsuleStack: ActiveCapsuleChip[]): ContextHealt
   if (hasSituation && hasOutput) {
     return {
       label: 'Ready',
+      plainState: contextHealthPlainStates[2],
       detail: 'Situation and output are set. Add sources or checks for more specific work.',
       tone: 'border-amber-200 bg-amber-50 text-amber-800',
     };
   }
   return {
     label: 'Baseline',
+    plainState: activeCapsuleStack.length ? contextHealthPlainStates[4] : contextHealthPlainStates[1],
     detail: 'Only model knowledge and the user profile are active.',
     tone: 'border-slate-200 bg-slate-50 text-slate-700',
   };
@@ -9255,6 +9283,23 @@ function CapsuleInspectorSheet({
           repositoryDocuments={repositoryDocuments}
           agentRuns={agentRuns}
         />
+        <CapsuleQualityReceiptPanel
+          readinessLabel={readinessLabel}
+          unsupportedClaims={unsupportedClaims}
+          cogneeStatus={enrichmentReceipt.cognee}
+          graphProposalStatus={capsule?.coreRefs.graphCoreId ? `approved graph ${capsule.coreRefs.graphCoreId}` : 'review-gated graph proposal'}
+        />
+        <ContextPackLanePanel
+          contextHealth={contextHealth}
+          sourceCount={counts.sources + counts.documents}
+          sourcePosture={sourcePosture}
+          bestNextAction={bestNextAction}
+        />
+        <CapsuleArtifactIndexPanel
+          outputCount={counts.outputs}
+          toolCount={counts.tools}
+          bestNextAction={bestNextAction}
+        />
         {capsule ? (
           <div className="mt-4 grid gap-2 md:grid-cols-2" data-testid="capsule-anatomy-summary">
             <InspectorRef label="Readiness" value={readinessLabel} />
@@ -9687,6 +9732,81 @@ function CapsuleInspectorSheet({
       </aside>
     </div>,
     document.body,
+  );
+}
+
+function CapsuleQualityReceiptPanel({
+  readinessLabel,
+  unsupportedClaims,
+  cogneeStatus,
+  graphProposalStatus,
+}: {
+  readinessLabel: string;
+  unsupportedClaims: number;
+  cogneeStatus: string;
+  graphProposalStatus: string;
+}) {
+  return (
+    <section className="mt-5 rounded-lg border border-slate-200 p-3" data-testid="capsule-quality-receipt-panel">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase text-slate-400">Receipts</p>
+        <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-500">
+          Firestore canonical
+        </span>
+      </div>
+      <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600 md:grid-cols-2">
+        <InspectorRef label="Readiness" value={readinessLabel} />
+        <InspectorRef label="Unsupported claims" value={String(unsupportedClaims)} />
+        <InspectorRef label="Cognee advisory" value={cogneeStatus} />
+        <InspectorRef label="Graph proposal" value={graphProposalStatus || 'review-gated graph proposal'} />
+      </div>
+    </section>
+  );
+}
+
+function ContextPackLanePanel({
+  contextHealth,
+  sourceCount,
+  sourcePosture,
+  bestNextAction,
+}: {
+  contextHealth: ContextHealth;
+  sourceCount: number;
+  sourcePosture: string;
+  bestNextAction: string;
+}) {
+  return (
+    <section className="mt-3 rounded-lg border border-slate-200 p-3" data-testid="context-pack-lane-panel">
+      <p className="text-xs font-semibold uppercase text-slate-400">Build</p>
+      <div className="mt-2 grid gap-2 text-xs leading-5 text-slate-600 md:grid-cols-2">
+        <InspectorRef label="Inspect" value={`${contextHealth.plainState} / ${contextHealth.label}`} />
+        <InspectorRef label="Source posture" value={`${sourcePosture} (${sourceCount} refs)`} />
+        <InspectorRef label="Repair Actions" value={bestNextAction} />
+        <InspectorRef label="Context pack" value="Ask, Boardroom, and document intake share this receipt path." />
+      </div>
+    </section>
+  );
+}
+
+function CapsuleArtifactIndexPanel({
+  outputCount,
+  toolCount,
+  bestNextAction,
+}: {
+  outputCount: number;
+  toolCount: number;
+  bestNextAction: string;
+}) {
+  return (
+    <section className="mt-3 rounded-lg border border-slate-200 p-3" data-testid="capsule-artifact-index-panel">
+      <p className="text-xs font-semibold uppercase text-slate-400">Artifacts</p>
+      <div className="mt-2 grid gap-2 text-xs leading-5 text-slate-600 md:grid-cols-2">
+        <InspectorRef label="Outputs" value={`${outputCount} output contract${outputCount === 1 ? '' : 's'}`} />
+        <InspectorRef label="Tools" value={`${toolCount} tool route${toolCount === 1 ? '' : 's'}`} />
+        <InspectorRef label="Repair Actions" value={bestNextAction} />
+        <InspectorRef label="Next handoff" value="Memo draft, source gap, or Output Capsule." />
+      </div>
+    </section>
   );
 }
 

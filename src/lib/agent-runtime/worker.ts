@@ -698,6 +698,23 @@ async function executeBoardroomAgentRun(
       maxParagraphs: 12,
     });
 
+    executionStage = 'workflow-proof';
+    const outputTarget = outputDestinationFromMetadata(running.metadata);
+    const capsuleReadReceipt = buildCapsuleReadReceiptFromEvidencePack(evidencePack, {
+      selectedTools: selectedWorkflowToolIds(running),
+      outputTarget,
+      groundingPosture: evidencePack.sourceReceiptIds.length ? 'Capsule source receipts attached' : 'No source receipts attached',
+    });
+    const { workflowPlan } = await emitCapsuleReadAndWorkflowPlan(running, deps, { readReceipt: capsuleReadReceipt });
+
+    executionStage = 'sourceability-ledger';
+    const sourceabilityLedger = buildSourceabilityLedgerFromEvidencePack(evidencePack, {
+      agentRunId: running.id,
+      outputTarget,
+    });
+    await emitSourceabilityLedger(running, sourceabilityLedger, deps);
+
+    executionStage = 'boardroom-brief';
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'boardroom.brief_created',
@@ -705,6 +722,10 @@ async function executeBoardroomAgentRun(
       data: {
         modelPolicy: BOARDROOM_MODEL_POLICY_ID,
         evidencePackId: evidencePack.packId,
+        capsuleReadReceipt,
+        workflowPlan,
+        sourceabilityLedgerId: sourceabilityLedger.ledgerId,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
         activeCapsule: {
           capsuleId: evidencePack.activeCapsule.capsuleId,
           label: evidencePack.activeCapsule.label,
@@ -845,6 +866,9 @@ async function executeBoardroomAgentRun(
         modelPolicy: BOARDROOM_MODEL_POLICY_ID,
         latencyMs: boardroomLatencyMs,
         artifactIds: [memoRecord.memo.id, outputCapsule?.id].filter((item): item is string => Boolean(item)),
+        capsuleReadReceipt,
+        workflowPlan,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
         finalStatus: 'succeeded',
         boardroomOutput: boardroom,
       },
@@ -864,6 +888,9 @@ async function executeBoardroomAgentRun(
         outputCapsuleId: outputCapsule?.id ?? null,
         outputHref,
         boardroomOutput: boardroom,
+        capsuleReadReceipt,
+        workflowPlan,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
         sourceCount: boardroom.evidenceStats.sourceCount,
         documentCount: boardroom.evidenceStats.documentCount,
         sourceReceiptIds: stringArray(running.metadata.sourceReceiptIds),

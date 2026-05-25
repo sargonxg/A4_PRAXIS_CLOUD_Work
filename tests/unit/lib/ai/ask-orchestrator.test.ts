@@ -36,10 +36,9 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       processRail: [
         'Reading capsule',
         'Planning workflow',
-        'Collecting sources',
+        'Checking evidence',
         'Reviewing claims',
-        'Producing output',
-        'Saving receipts',
+        'Saving artifact',
       ],
     });
     expect(receipt.stages.map((stage) => stage.stage)).toEqual([
@@ -179,12 +178,12 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     expect(events.map((event) => event.label)).toEqual([
       'Reading capsule',
       'Planning workflow',
-      'Source discovery',
-      'Document retrieval',
-      'Claim review',
-      'Language and policy review',
-      'Producing output',
-      'Saving receipts',
+      'Checking evidence',
+      'Checking evidence',
+      'Reviewing claims',
+      'Reviewing claims',
+      'Saving artifact',
+      'Saving artifact',
     ]);
     expect(events.map((event) => event.status)).toEqual([
       'warn',

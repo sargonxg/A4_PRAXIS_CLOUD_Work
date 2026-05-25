@@ -28,8 +28,13 @@ import {
   categoryTagsForPolicyTeam,
   contextCapsuleLoginHref,
   createCapsuleIngestionReceipt,
+  buildCapsuleArtifactIndex,
+  buildCapsuleContextPack,
+  buildCapsuleIntakeProposals,
+  buildCapsuleQualityReceipt,
   getPolicyTeamCategory,
   normalizeCapsuleTaxonomyTags,
+  normalizeCapsuleIntakeContract,
   normalizeCapsuleRepositoryContract,
   normalizeCapsuleRepositoryMetadata,
   policyTeamCategoryForTags,
@@ -1343,6 +1348,207 @@ describe('context capsule product contract', () => {
     expect(gmailReceipt.parserStatus).toBe('queued');
     expect(gmailReceipt.documentId).toBeNull();
     expect(gmailReceipt.sourceReceiptId).toBeNull();
+  });
+
+  it('normalizes intake into reviewable additions instead of canonical mutations', () => {
+    const intake = normalizeCapsuleIntakeContract({
+      capsuleId: 'cap-1',
+      ownerId: 'user-1',
+      sourceLane: 'official',
+      jurisdiction: 'UN OCHA',
+      datePosture: 'current',
+      reliabilityTier: 1,
+      outputTarget: 'policy-memo',
+      sourceGaps: ['Confirm the latest crossing status from a second source.'],
+      attachments: [{
+        attachmentId: 'doc-1',
+        title: 'Access constraints brief.pdf',
+        attachmentType: 'pdf',
+        originalUri: 'gs://bucket/access-constraints.pdf',
+        sourceLane: 'official',
+        extractionStatus: 'parsed',
+        documentId: 'doc-1',
+        sourceReceiptId: 'src-1',
+        hasTables: true,
+        hasFigures: true,
+      }],
+      graphCandidateHints: ['Actor: convoy coordinator -> constraint: crossing access'],
+      memoryWritebackCandidates: ['The crossing status needs a dated operational caveat.'],
+      tableExtractionCandidates: ['Extract the access constraints table with page references.'],
+      artifactLinks: [{
+        artifactId: 'memo-1',
+        kind: 'memo',
+        title: 'Draft access memo',
+        href: '/app/write?memoId=memo-1',
+      }],
+    });
+    const proposals = buildCapsuleIntakeProposals(intake);
+
+    expect(intake.reviewGate).toBe('human_review');
+    expect(intake.attachments[0]).toMatchObject({
+      attachmentId: 'doc-1',
+      extractionStatus: 'parsed',
+      reliabilityTier: 1,
+      hasTables: true,
+      hasFigures: true,
+    });
+    expect(proposals.map((proposal) => proposal.type)).toEqual([
+      'source-gap',
+      'graph-candidate',
+      'memory-writeback',
+      'table-extraction',
+      'artifact-link',
+    ]);
+    expect(proposals.every((proposal) => proposal.reviewStatus === 'proposed')).toBe(true);
+    expect(proposals.every((proposal) => proposal.canonicalMutation === false)).toBe(true);
+    expect(proposals.every((proposal) => proposal.promotionRequired === 'review-card')).toBe(true);
+  });
+
+  it('builds a capsule quality receipt across sources, tables, graph, memory, and output readiness', () => {
+    const repository = normalizeCapsuleRepositoryContract({
+      metadata: {
+        capsuleId: 'cap-1',
+        ownerId: 'user-1',
+        documentIds: ['doc-1'],
+        sourceReceiptIds: ['src-1'],
+        chunkCount: 8,
+      },
+      documentRefs: [{ documentId: 'doc-1', title: 'Brief', chunkCount: 8, sourceReceiptIds: ['src-1'] }],
+      sourceRefs: [{ sourceReceiptId: 'src-1', label: 'Official update', reliabilityNote: 'Tier 1 official source.' }],
+      outputHistoryIds: ['out-1'],
+      memoryIds: ['mem-1'],
+    });
+    const intake = normalizeCapsuleIntakeContract({
+      capsuleId: 'cap-1',
+      ownerId: 'user-1',
+      outputTarget: 'policy-memo',
+      sourceGaps: ['Needs a current corroborating field source.'],
+      graphCandidateHints: ['Actor relation candidate'],
+      tableExtractionCandidates: ['Extract table 2'],
+      attachments: [{
+        attachmentId: 'doc-1',
+        attachmentType: 'pdf',
+        extractionStatus: 'parsed',
+        documentId: 'doc-1',
+        sourceReceiptId: 'src-1',
+        hasTables: true,
+      }],
+    });
+
+    const receipt = buildCapsuleQualityReceipt({
+      capsuleId: 'cap-1',
+      coreRefs: {
+        situationCoreId: 'sit-1',
+        sourceCoreIds: ['src-1'],
+        documentCoreIds: ['doc-1'],
+        outputCoreIds: ['policy-memo'],
+      },
+      repository,
+      intake,
+      cogneeStatus: 'disabled',
+      unsupportedClaimCount: 1,
+      staleSourceCount: 0,
+    });
+
+    expect(receipt.overallState).toBe('needs_review');
+    expect(receipt.dimensions.map((dimension) => dimension.id)).toEqual([
+      'sourceability',
+      'freshness',
+      'attachment_coverage',
+      'graph_readiness',
+      'cognee_posture',
+      'output_readiness',
+      'unsupported_claim_risk',
+    ]);
+    expect(receipt.dimensions.find((dimension) => dimension.id === 'graph_readiness')).toMatchObject({
+      state: 'needs_review',
+      proposedCount: 1,
+    });
+    expect(receipt.dimensions.find((dimension) => dimension.id === 'cognee_posture')?.detail).toMatch(/disabled.*advisory/i);
+    expect(receipt.nextRepairAction).toMatch(/source|review/i);
+  });
+
+  it('compiles long-generation context packs and artifact indexes from the same capsule contracts', () => {
+    const repository = normalizeCapsuleRepositoryContract({
+      metadata: {
+        capsuleId: 'cap-1',
+        ownerId: 'user-1',
+        documentIds: ['doc-1'],
+        sourceReceiptIds: ['src-1'],
+      },
+      documentRefs: [{ documentId: 'doc-1', title: 'Access brief', sourceReceiptIds: ['src-1'], chunkCount: 4 }],
+      sourceRefs: [{ sourceReceiptId: 'src-1', label: 'ReliefWeb access update' }],
+      outputHistoryIds: ['out-1'],
+      evaluationIds: ['eval-1'],
+      memoryIds: ['mem-1'],
+    });
+    const ingestionReceipt = createCapsuleIngestionReceipt({
+      capsuleId: 'cap-1',
+      ownerId: 'user-1',
+      sourceConnectorId: 'upload',
+      originalUri: 'gs://bucket/access.pdf',
+      documentId: 'doc-1',
+      sourceReceiptId: 'src-1',
+      parserStatus: 'parsed',
+    });
+    const intake = normalizeCapsuleIntakeContract({
+      capsuleId: 'cap-1',
+      ownerId: 'user-1',
+      jurisdiction: 'Sudan',
+      sourceLane: 'field',
+      outputTarget: 'handover',
+      sourceGaps: ['Need one current field verification.'],
+      assumptions: ['Access status may change within 48 hours.'],
+      tableExtractionCandidates: ['Access table'],
+      graphCandidateHints: ['Coordinator -> crossing access'],
+      attachments: [{ attachmentId: 'doc-1', attachmentType: 'pdf', extractionStatus: 'parsed', documentId: 'doc-1', sourceReceiptId: 'src-1', hasTables: true }],
+    });
+    const qualityReceipt = buildCapsuleQualityReceipt({
+      capsuleId: 'cap-1',
+      coreRefs: { situationCoreId: 'sit-1', sourceCoreIds: ['src-1'], documentCoreIds: ['doc-1'], outputCoreIds: ['handover'] },
+      repository,
+      intake,
+    });
+    const contextPack = buildCapsuleContextPack({
+      capsuleId: 'cap-1',
+      capsuleLabel: 'Access capsule',
+      coreRefs: { situationCoreId: 'sit-1', sourceCoreIds: ['src-1'], documentCoreIds: ['doc-1'], graphCoreId: null, outputCoreIds: ['handover'] },
+      repository,
+      intake,
+      qualityReceipt,
+    });
+    const artifactIndex = buildCapsuleArtifactIndex({
+      capsuleId: 'cap-1',
+      repository,
+      ingestionReceipts: [ingestionReceipt],
+      intake,
+    });
+
+    expect(contextPack.lanes.map((lane) => lane.id)).toEqual([
+      'mandate',
+      'situation',
+      'sources',
+      'documents',
+      'tables',
+      'graph-power-map',
+      'assumptions',
+      'gaps',
+      'output-contract',
+      'receipts',
+    ]);
+    expect(contextPack.lanes.find((lane) => lane.id === 'sources')?.items).toEqual(expect.arrayContaining(['src-1', 'ReliefWeb access update']));
+    expect(contextPack.lanes.find((lane) => lane.id === 'graph-power-map')?.reviewRequired).toBe(true);
+    expect(contextPack.receipts.qualityReceiptId).toBe(qualityReceipt.receiptId);
+    expect(artifactIndex.items.map((item) => item.kind)).toEqual(expect.arrayContaining([
+      'upload',
+      'document',
+      'source-receipt',
+      'table-candidate',
+      'output',
+      'evaluation',
+      'memory',
+    ]));
+    expect(artifactIndex.items.every((item) => item.reviewState === 'proposed' || item.reviewState === 'attached')).toBe(true);
   });
 
   it('combines only known capsule templates and preserves merge rules', () => {

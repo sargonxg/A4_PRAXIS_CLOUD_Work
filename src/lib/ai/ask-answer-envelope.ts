@@ -177,6 +177,52 @@ export interface AskTraceabilitySummary {
   bestNextAction: string;
 }
 
+export interface AskContextDiagnostics {
+  activeCapsule: string;
+  sourceLanesUsed: SourcePreviewType[];
+  sourceCount: number;
+  sourceReceiptCount: number;
+  sourceGapCount: number;
+  unsupportedClaimCount: number;
+  modelPriorClaimCount: number;
+  cogneeStatus: CapsuleMemoryReceipt['cogneeStatus'];
+  memoryPosture: 'advisory_used' | 'not_used';
+  graphProposalStatus: 'review_gated' | 'not_proposed';
+  outputReadiness: 'artifact_candidate' | 'not_ready';
+}
+
+export type AskContextReadinessState = 'ready' | 'thin' | 'missing_sources' | 'stale_sources' | 'needs_review';
+export type AskQueuedDeepRunStatus = 'queued' | 'recommended' | 'not_needed' | 'degraded';
+
+export interface AskAnswerQualitySummary {
+  contextReadiness: AskContextReadinessState;
+  sourceCount: number;
+  sourceReceiptCount: number;
+  sourceGapCount: number;
+  unsupportedClaimCount: number;
+  weakClaimCount: number;
+  confidencePosture: AskTraceabilitySummary['confidencePosture'];
+  queuedDeepRunStatus: AskQueuedDeepRunStatus;
+  recommendedNextAction: string;
+  memoHandoffReady: boolean;
+}
+
+export interface AskAgenticDepthRecommendation {
+  mode: AskQueuedDeepRunStatus;
+  label: string;
+  reason: string;
+  actionPrompt: string;
+  runId?: string | null;
+  outputHref?: string | null;
+}
+
+export interface AskContextRepairAction {
+  id: 'check-sources' | 'run-deeper-agent' | 'send-to-memo' | 'create-source-gap' | 'create-output-capsule';
+  label: string;
+  prompt: string;
+  priority: 'primary' | 'secondary' | 'optional';
+}
+
 export interface AskContinuationAction {
   id: 'continue-as-memo' | 'expand-evidence-annex' | 'create-output-capsule';
   label: string;
@@ -211,6 +257,10 @@ export interface AskAnswerEnvelope {
   reviewCardSuggestions: CapsuleReviewCardSuggestion[];
   generationReceipt?: AskGenerationReceipt;
   continuationActions: AskContinuationAction[];
+  contextDiagnostics: AskContextDiagnostics;
+  answerQualitySummary: AskAnswerQualitySummary;
+  agenticDepthRecommendation: AskAgenticDepthRecommendation;
+  contextRepairActions: AskContextRepairAction[];
   capsuleSuggestions: AskCapsuleSuggestionReceipt[];
   researchGraphReceipts: ResearchGraphReceipt[];
   followUps: string[];
@@ -427,6 +477,35 @@ export function buildAskAnswerEnvelope(input: {
       outputTarget: input.provenance?.outputTarget ?? 'ask-response',
     },
   });
+  const traceabilitySummary = buildAskTraceabilitySummary({
+    sourceAudit,
+    claimLedgerSummary,
+    orchestrationReceipt: input.orchestrationReceipt,
+  });
+  const agenticDepthRecommendation = buildAgenticDepthRecommendation(input.orchestrationReceipt, sourceAudit);
+  const answerQualitySummary = buildAnswerQualitySummary({
+    sourceAudit,
+    traceabilitySummary,
+    groundingReceipt,
+    sourceRefreshDocket,
+    documentPackCandidate: pack,
+    agenticDepthRecommendation,
+  });
+  const contextRepairActions = buildContextRepairActions({
+    sourceAudit,
+    traceabilitySummary,
+    sourceRefreshDocket,
+    agenticDepthRecommendation,
+    documentPackCandidate: pack,
+  });
+  const contextDiagnostics = buildAskContextDiagnostics({
+    sourceAudit,
+    sourceRefreshDocket,
+    memoryReceipt,
+    documentPackCandidate: pack,
+    provenance: input.provenance,
+    orchestrationReceipt: input.orchestrationReceipt,
+  });
 
   return {
     style: {
@@ -443,13 +522,13 @@ export function buildAskAnswerEnvelope(input: {
     sourceRefreshDocket,
     memoryReceipt,
     reviewCardSuggestions,
-    traceabilitySummary: buildAskTraceabilitySummary({
-      sourceAudit,
-      claimLedgerSummary,
-      orchestrationReceipt: input.orchestrationReceipt,
-    }),
+    traceabilitySummary,
     generationReceipt: input.generationReceipt,
     continuationActions: continuationActionsFor(input.intent),
+    contextDiagnostics,
+    answerQualitySummary,
+    agenticDepthRecommendation,
+    contextRepairActions,
     capsuleSuggestions: input.capsuleSuggestions ?? [],
     researchGraphReceipts: input.researchGraphReceipts ?? [],
     followUps: followUpsFor(input.intent, input.sourceCards.length, input.researchGraphReceipts?.length ?? 0),
@@ -495,6 +574,190 @@ export function buildAskTraceabilitySummary(input: {
     bestNextAction: workIntent?.suggestedNextActions[0]
       ?? (input.sourceAudit.sourceCount > 0 ? 'Review the source previews and continue.' : 'Attach sources for the weakest claim.'),
   };
+}
+
+function buildAskContextDiagnostics(input: {
+  sourceAudit: AskSourceAuditSummary;
+  sourceRefreshDocket: CapsuleSourceRefreshDocket;
+  memoryReceipt: CapsuleMemoryReceipt;
+  documentPackCandidate: ConversationDocumentPack;
+  provenance?: ConversationPackProvenance;
+  orchestrationReceipt?: AskConversationOrchestrationReceipt;
+}): AskContextDiagnostics {
+  const sourceLanesUsed: SourcePreviewType[] = input.sourceAudit.sourceTypes.length
+    ? input.sourceAudit.sourceTypes
+    : ['ai-knowledge'];
+  const activeCapsule = input.provenance?.capsuleId
+    ?? input.orchestrationReceipt?.capsule.capsuleId
+    ?? input.sourceRefreshDocket.capsuleId
+    ?? 'unknown-capsule';
+  return {
+    activeCapsule,
+    sourceLanesUsed,
+    sourceCount: input.sourceAudit.sourceCount,
+    sourceReceiptCount: input.sourceAudit.sourceReceiptCount,
+    sourceGapCount: Math.max(input.sourceAudit.gapCount, input.sourceRefreshDocket.missingEvidenceGaps.length),
+    unsupportedClaimCount: input.sourceAudit.unsupportedClaimCount,
+    modelPriorClaimCount: input.sourceAudit.modelPriorClaimCount + input.sourceAudit.assumptionClaimCount,
+    cogneeStatus: input.memoryReceipt.cogneeStatus,
+    memoryPosture: input.memoryReceipt.memoryHitCount > 0 || input.memoryReceipt.usedCogneeAdvisoryMemory
+      ? 'advisory_used'
+      : 'not_used',
+    graphProposalStatus: input.memoryReceipt.writebackProposalIds.length > 0 ? 'review_gated' : 'not_proposed',
+    outputReadiness: input.documentPackCandidate.answer || input.documentPackCandidate.prompt ? 'artifact_candidate' : 'not_ready',
+  };
+}
+
+function buildAnswerQualitySummary(input: {
+  sourceAudit: AskSourceAuditSummary;
+  traceabilitySummary: AskTraceabilitySummary;
+  groundingReceipt: CapsuleGroundingReceipt;
+  sourceRefreshDocket: CapsuleSourceRefreshDocket;
+  documentPackCandidate: ConversationDocumentPack;
+  agenticDepthRecommendation: AskAgenticDepthRecommendation;
+}): AskAnswerQualitySummary {
+  return {
+    contextReadiness: answerContextReadiness(input),
+    sourceCount: input.sourceAudit.sourceCount,
+    sourceReceiptCount: input.sourceAudit.sourceReceiptCount,
+    sourceGapCount: Math.max(input.sourceAudit.gapCount, input.sourceRefreshDocket.missingEvidenceGaps.length),
+    unsupportedClaimCount: input.sourceAudit.unsupportedClaimCount,
+    weakClaimCount: input.sourceAudit.weakClaimCount,
+    confidencePosture: input.traceabilitySummary.confidencePosture,
+    queuedDeepRunStatus: input.agenticDepthRecommendation.mode,
+    recommendedNextAction: input.traceabilitySummary.bestNextAction,
+    memoHandoffReady: Boolean(input.documentPackCandidate.answer || input.documentPackCandidate.prompt),
+  };
+}
+
+function answerContextReadiness(input: {
+  sourceAudit: AskSourceAuditSummary;
+  traceabilitySummary: AskTraceabilitySummary;
+  groundingReceipt: CapsuleGroundingReceipt;
+  sourceRefreshDocket: CapsuleSourceRefreshDocket;
+}): AskContextReadinessState {
+  if (input.sourceAudit.sourceCount === 0) return 'missing_sources';
+  if (input.groundingReceipt.staleClaims > 0 || input.sourceRefreshDocket.staleSourceIds.length > 0) return 'stale_sources';
+  if (
+    input.sourceAudit.gapCount > 0
+    || input.sourceAudit.unsupportedClaimCount > 0
+    || input.groundingReceipt.humanReviewRequired
+  ) {
+    return 'needs_review';
+  }
+  if (input.traceabilitySummary.confidencePosture === 'high') return 'ready';
+  return 'thin';
+}
+
+function buildAgenticDepthRecommendation(
+  receipt: AskConversationOrchestrationReceipt | undefined,
+  sourceAudit: AskSourceAuditSummary,
+): AskAgenticDepthRecommendation {
+  const queuedRun = receipt?.supervisor.queuedRun ?? null;
+  if (queuedRun?.runId && queuedRun.runId !== 'unavailable' && queuedRun.status !== 'ledger_failed' && queuedRun.status !== 'dispatch_failed') {
+    return {
+      mode: 'queued',
+      label: 'Deeper agent queued',
+      reason: 'PRAXIS created a durable AgentRun for deeper source work.',
+      actionPrompt: 'Open the queued AgentRun and continue from its latest receipt.',
+      runId: queuedRun.runId,
+      outputHref: queuedRun.outputHref ?? null,
+    };
+  }
+  if (
+    queuedRun?.runId === 'unavailable'
+    || queuedRun?.status === 'ledger_failed'
+    || queuedRun?.status === 'dispatch_failed'
+    || receipt?.supervisor.status === 'failed'
+  ) {
+    return {
+      mode: 'degraded',
+      label: 'Deep runtime unavailable',
+      reason: queuedRun?.error ?? receipt?.grounding.degradedReason ?? 'Durable agent runtime could not be confirmed for this turn.',
+      actionPrompt: 'Explain what deep runtime proof is missing, then continue synchronously with explicit caveats.',
+      runId: queuedRun?.runId ?? null,
+      outputHref: queuedRun?.outputHref ?? null,
+    };
+  }
+  if (receipt?.supervisor.action === 'queue_agent_run') {
+    return {
+      mode: 'recommended',
+      label: 'Deeper agent recommended',
+      reason: 'The prompt is complex enough for durable source retrieval or specialist review.',
+      actionPrompt: 'Run a deeper agent for this question, preserving capsule context, source gaps, and memo handoff metadata.',
+      runId: null,
+      outputHref: null,
+    };
+  }
+  return {
+    mode: sourceAudit.sourceCount === 0 ? 'recommended' : 'not_needed',
+    label: sourceAudit.sourceCount === 0 ? 'Deeper check recommended' : 'Direct answer sufficient',
+    reason: sourceAudit.sourceCount === 0
+      ? 'No source previews were attached, so a source check or deeper run should happen before reliance.'
+      : 'This answer stayed synchronous with visible receipts.',
+    actionPrompt: sourceAudit.sourceCount === 0
+      ? 'Run a deeper source check for this answer and return missing sources, weak claims, and next evidence steps.'
+      : 'Continue synchronously and preserve the source receipts.',
+    runId: null,
+    outputHref: null,
+  };
+}
+
+function buildContextRepairActions(input: {
+  sourceAudit: AskSourceAuditSummary;
+  traceabilitySummary: AskTraceabilitySummary;
+  sourceRefreshDocket: CapsuleSourceRefreshDocket;
+  agenticDepthRecommendation: AskAgenticDepthRecommendation;
+  documentPackCandidate: ConversationDocumentPack;
+}): AskContextRepairAction[] {
+  const actions: AskContextRepairAction[] = [];
+  const needsSourceRepair = input.sourceAudit.sourceCount === 0 || input.sourceAudit.gapCount > 0 || input.sourceRefreshDocket.needsRefresh;
+  if (needsSourceRepair) {
+    actions.push({
+      id: 'check-sources',
+      label: 'Check sources',
+      prompt: 'Check sources for this answer. Identify weak claims, missing citations, stale assumptions, and the next source to attach.',
+      priority: 'primary',
+    });
+  }
+  if (input.sourceAudit.unsupportedClaimCount > 0 || input.sourceRefreshDocket.missingEvidenceGaps.length > 0 || input.sourceAudit.sourceCount === 0) {
+    actions.push({
+      id: 'create-source-gap',
+      label: 'Create source gap',
+      prompt: input.sourceRefreshDocket.missingEvidenceGaps[0] ?? 'Create a source gap for the weakest unsupported or ungrounded claim in this answer.',
+      priority: needsSourceRepair ? 'primary' : 'secondary',
+    });
+  }
+  if (input.agenticDepthRecommendation.mode !== 'not_needed' || input.sourceAudit.sourceCount < 2) {
+    actions.push({
+      id: 'run-deeper-agent',
+      label: 'Run deeper agent',
+      prompt: input.agenticDepthRecommendation.actionPrompt,
+      priority: input.agenticDepthRecommendation.mode === 'queued' ? 'optional' : 'secondary',
+    });
+  }
+  actions.push({
+    id: 'send-to-memo',
+    label: 'Send to memo',
+    prompt: 'Continue this as a Memo Studio draft with sources, unsupported claims, caveats, and next checks preserved.',
+    priority: input.sourceAudit.sourceCount > 0 ? 'secondary' : 'optional',
+  });
+  actions.push({
+    id: 'create-output-capsule',
+    label: 'Create output capsule',
+    prompt: 'Create a review-gated Output Capsule from this answer, preserving sources, claim posture, and next checks.',
+    priority: input.traceabilitySummary.confidencePosture === 'high' ? 'secondary' : 'optional',
+  });
+  return dedupeRepairActions(actions).slice(0, 5);
+}
+
+function dedupeRepairActions(actions: AskContextRepairAction[]): AskContextRepairAction[] {
+  const seen = new Set<AskContextRepairAction['id']>();
+  return actions.filter((action) => {
+    if (seen.has(action.id)) return false;
+    seen.add(action.id);
+    return true;
+  });
 }
 
 export function buildConversationDocumentPack(input: {

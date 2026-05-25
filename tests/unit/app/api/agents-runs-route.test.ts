@@ -58,6 +58,48 @@ describe('/api/agents/runs route', () => {
     expect(json).not.toContain('ETIMEDOUT');
   });
 
+  it('auto-resolves default capsule run history instead of returning noisy 404s for new accounts', async () => {
+    mocks.getCapsule.mockResolvedValue(null);
+    mocks.getOrMigrateDefaultCapsule.mockResolvedValue({
+      capsule: {
+        capsuleId: 'default',
+        archivedAt: null,
+        coreRefs: {},
+      },
+      migrated: false,
+      persisted: true,
+    });
+    mocks.listAgentRunsForCapsule.mockResolvedValue([]);
+    const { GET } = await import('@/app/api/agents/runs/route');
+
+    const response = await GET(new Request('https://praxis.tacitus.me/api/agents/runs?capsuleId=default'));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ runs: [], persisted: true, capsuleResolved: true });
+    expect(mocks.getOrMigrateDefaultCapsule).toHaveBeenCalledWith('user-1');
+    expect(mocks.listAgentRunsForCapsule).toHaveBeenCalledWith('user-1', 'default', 25);
+  });
+
+  it('returns empty degraded run history when default capsule compatibility creation is unavailable', async () => {
+    mocks.getCapsule.mockResolvedValue(null);
+    mocks.getOrMigrateDefaultCapsule.mockRejectedValue(new Error('Firestore unavailable'));
+    const { GET } = await import('@/app/api/agents/runs/route');
+
+    const response = await GET(new Request('https://praxis.tacitus.me/api/agents/runs?capsuleId=default'));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      runs: [],
+      persisted: false,
+      degraded: true,
+      capsuleResolved: false,
+      detail: 'No active capsule exists yet. Agent run history will appear after the first capsule is created.',
+    });
+    expect(mocks.listAgentRunsForCapsule).not.toHaveBeenCalled();
+  });
+
   it('passes selected context-chain cores and receipt metadata into run creation', async () => {
     mocks.createAgentRun.mockResolvedValue({
       id: 'run-1',

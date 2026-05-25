@@ -137,6 +137,8 @@ describe('boardroom-discussion worker', () => {
     ]));
     expect(mirrored).toEqual(expect.arrayContaining([
       'context_resolved',
+      'capsule.read_receipt_created',
+      'sourceability.ledger_created',
       'boardroom.brief_created',
       'boardroom.turn.legal',
       'boardroom.turn.security',

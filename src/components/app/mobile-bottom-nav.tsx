@@ -2,7 +2,7 @@
 
 import type { ComponentType } from 'react';
 import Link from 'next/link';
-import { FolderKanban, Home, LibraryBig, Sparkles, UsersRound } from 'lucide-react';
+import { FolderKanban, Home, LibraryBig, Sparkles } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 import { NAV_GROUPS, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
@@ -13,7 +13,6 @@ const ICONS: Partial<Record<PrimaryNavIcon, ComponentType<{ className?: string }
   Sparkles,
   FolderKanban,
   LibraryBig,
-  UsersRound,
 };
 
 export function MobileBottomNav() {

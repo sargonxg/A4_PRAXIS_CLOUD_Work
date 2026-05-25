@@ -23,14 +23,34 @@ export const GET = withAuth(async (request, user) => {
     return NextResponse.json({ error: 'capsuleId is required', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const capsule = await getCapsule(user.uid, parsed.data.capsuleId);
+  let capsule = await getCapsule(user.uid, parsed.data.capsuleId);
+  let capsuleResolved = false;
+  if (!capsule && normalizePointer(parsed.data.capsuleId, 'default') === 'default') {
+    try {
+      const result = await getOrMigrateDefaultCapsule(user.uid);
+      capsule = result.capsule;
+      capsuleResolved = true;
+    } catch {
+      return NextResponse.json({
+        runs: [],
+        persisted: false,
+        degraded: true,
+        capsuleResolved: false,
+        detail: 'No active capsule exists yet. Agent run history will appear after the first capsule is created.',
+      });
+    }
+  }
   if (!capsule || capsule.archivedAt) {
     return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
   }
 
   try {
     const runs = await listAgentRunsForCapsule(user.uid, capsule.capsuleId, parsed.data.limit);
-    return NextResponse.json({ runs: runs.map(toAgentRunOutput), persisted: true });
+    return NextResponse.json({
+      runs: runs.map(toAgentRunOutput),
+      persisted: true,
+      ...(capsuleResolved ? { capsuleResolved: true } : {}),
+    });
   } catch (err) {
     return ledgerError(err);
   }

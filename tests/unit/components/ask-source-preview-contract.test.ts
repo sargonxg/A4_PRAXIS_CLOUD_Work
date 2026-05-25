@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 describe('Ask source preview panel contract', () => {
   const source = readFileSync(join(process.cwd(), 'src/components/ask/AskStreamPanel.tsx'), 'utf8');
+  const answerQualityStripSource = readFileSync(join(process.cwd(), 'src/components/ask/AnswerQualityStrip.tsx'), 'utf8');
 
   it('renders source locators, source receipt links, and extraction fallback labels', () => {
     expect(source).toContain('locatorLabel');
@@ -21,9 +22,22 @@ describe('Ask source preview panel contract', () => {
 
   it('renders compact orchestration receipts from the Ask answer envelope', () => {
     expect(source).toContain('OrchestrationReceiptPanel');
+    expect(source).toContain('ProofSummaryPanel');
+    expect(source).toContain('PRAXIS read');
+    expect(source).toContain('modelPolicyLabel');
     expect(source).toContain('orchestrationReceipt');
     expect(source).toContain('Agent run');
     expect(source).toContain('Tool router');
+  });
+
+  it('renders a compact answer-quality strip before detailed receipts', () => {
+    expect(source).toContain('AnswerQualityStrip');
+    expect(answerQualityStripSource).toContain('answerQualitySummary');
+    expect(answerQualityStripSource).toContain('agenticDepthRecommendation');
+    expect(answerQualityStripSource).toContain('contextRepairActions');
+    expect(answerQualityStripSource).toContain('contextDiagnostics');
+    expect(answerQualityStripSource).toContain('How PRAXIS used context');
+    expect(source.indexOf('AnswerQualityStrip')).toBeLessThan(source.indexOf('OrchestrationReceiptPanel'));
   });
 
   it('renders the capsule grounding receipt and human review actions from the answer envelope', () => {
@@ -38,9 +52,13 @@ describe('Ask source preview panel contract', () => {
 
   it('shows TACITUS routing stages without a normal model picker', () => {
     expect(source).toContain('Reading capsule');
-    expect(source).toContain('Document retrieval');
+    expect(source).toContain('Checking evidence');
+    expect(source).toContain('Reviewing claims');
+    expect(source).toContain('Saving artifact');
     expect(source).toContain('TACITUS routing');
     expect(source).not.toContain('aria-label="Ask PRAXIS model"');
     expect(source).not.toContain('setSelectedModel');
+    expect(source).not.toContain('const model = stringValue(runtime.model)');
+    expect(source).not.toContain('const model = runtime.model');
   });
 });

@@ -6,6 +6,7 @@ const workbenchSource = readFileSync(join(process.cwd(), 'src/components/praxis/
 const conversationHelperSource = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-workbench-conversation.ts'), 'utf8');
 const askStreamPanelSource = readFileSync(join(process.cwd(), 'src/components/ask/AskStreamPanel.tsx'), 'utf8');
 const askArtifactPreviewSource = readFileSync(join(process.cwd(), 'src/components/ask/AskArtifactPreview.tsx'), 'utf8');
+const answerQualityStripSource = readFileSync(join(process.cwd(), 'src/components/ask/AnswerQualityStrip.tsx'), 'utf8');
 const source = `${workbenchSource}\n${conversationHelperSource}`;
 const instrumentSource = readFileSync(join(process.cwd(), 'src/components/ui/instrument.tsx'), 'utf8');
 const visualSource = `${workbenchSource}\n${instrumentSource}`;
@@ -131,12 +132,34 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="praxis-chat-thread"');
     expect(source).toContain('answerEnvelopeFromDataStreamLine(line)');
     expect(source).toContain('ConversationReceiptSummary');
+    expect(source).toContain('AnswerQualityStrip');
+    expect(answerQualityStripSource).toContain('answerQualitySummary');
     expect(source).toContain('ConversationSourcePreviewPanel');
     expect(source).toContain('data-testid="praxis-answer-source-preview"');
     expect(source).toContain('Source receipt');
     expect(source).toContain('Follow-ups');
     expect(source).toContain('safeMarkdownHref(href)');
     expect(source).toContain("target={external ? '_blank' : undefined}");
+  });
+
+  it('surfaces plain context readiness states in the active capsule strip', () => {
+    expect(contextBarSource).toContain('plainContextHealthState');
+    for (const expected of ['ready', 'thin', 'missing sources', 'stale sources', 'needs review']) {
+      expect(workbenchSource).toContain(expected);
+    }
+  });
+
+  it('keeps Builder + Intake inside the capsule inspector sheet with receipts, artifacts, and repair actions', () => {
+    expect(inspectorSheetSource).toContain('CapsuleQualityReceiptPanel');
+    expect(inspectorSheetSource).toContain('ContextPackLanePanel');
+    expect(inspectorSheetSource).toContain('CapsuleArtifactIndexPanel');
+    for (const expected of ['Build', 'Inspect', 'Receipts', 'Artifacts', 'Repair Actions']) {
+      expect(inspectorSheetSource).toContain(expected);
+    }
+    expect(inspectorSheetSource).toContain('Firestore canonical');
+    expect(inspectorSheetSource).toContain('Cognee advisory');
+    expect(inspectorSheetSource).toContain('review-gated graph proposal');
+    expect(source).not.toContain('/app/context-studio');
   });
 
   it('defines selected text actions with advanced labels hidden behind intent', () => {

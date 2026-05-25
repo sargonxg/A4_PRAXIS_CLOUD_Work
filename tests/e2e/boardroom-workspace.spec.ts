@@ -32,6 +32,8 @@ test.describe('Boardroom live workspace', () => {
       capsuleId: capsule.capsuleId,
       policyAgentLabel: 'Boardroom',
       outputHref: '/app/boardroom?runId=run-boardroom-live',
+      memoId: 'memo-boardroom',
+      outputCapsuleId: 'output-boardroom',
       sourceReceiptIds: ['receipt-uploaded', 'receipt-pasted'],
     };
     const boardroomOutput = {
@@ -185,6 +187,9 @@ test.describe('Boardroom live workspace', () => {
     await expect(page.getByTestId('boardroom-run-panel')).toContainText(/Sequence access guarantees/i);
     await expect(page.getByTestId('boardroom-run-panel')).toContainText(/Proceed with a written corridor guarantee/i);
     await expect(page.getByTestId('boardroom-run-panel')).toContainText(/Draft the guarantee memo/i);
+    await expect(page.getByTestId('boardroom-proof-summary')).toContainText(/PRAXIS read/i);
+    await expect(page.getByTestId('boardroom-compare-lenses')).toContainText(/Consensus/i);
+    await expect(page.getByTestId('boardroom-compare-lenses')).toContainText(/Divergences/i);
     await expect(page.getByTestId('boardroom-evidence-chips')).toContainText(/uploaded-evidence\.txt/i);
     await expect(page.getByTestId('boardroom-evidence-chips')).toContainText(/boardroom-paste\.txt/i);
     await expect(page.getByRole('link', { name: /Open artifact/i })).toHaveAttribute('href', run.outputHref);

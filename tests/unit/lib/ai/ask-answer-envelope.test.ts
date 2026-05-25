@@ -159,6 +159,15 @@ describe('ask answer envelope', () => {
     });
     expect(envelope.followUps).toContain('Check the weakest claim against attached sources.');
     expect(envelope.documentPackCandidate.provenance.capsuleId).toBe('cap-1');
+    expect(envelope.contextDiagnostics).toMatchObject({
+      activeCapsule: 'cap-1',
+      unsupportedClaimCount: 0,
+      modelPriorClaimCount: 1,
+      cogneeStatus: 'disabled',
+      graphProposalStatus: 'not_proposed',
+      outputReadiness: 'artifact_candidate',
+    });
+    expect(envelope.contextDiagnostics.sourceLanesUsed).toContain('uploaded-document');
   });
 
   it('returns a capsule grounding receipt, detailed claim ledger, memory receipt, refresh docket, and review-card suggestions', () => {
@@ -220,6 +229,13 @@ describe('ask answer envelope', () => {
       cogneeProfileId: 'starter-situation-eu-ai-act-2026-implementation-simplification-cognee-v1',
       usedCogneeAdvisoryMemory: true,
     });
+    expect(envelope.contextDiagnostics).toMatchObject({
+      activeCapsule: 'starter-situation-eu-ai-act-2026-implementation-simplification',
+      cogneeStatus: 'enabled',
+      memoryPosture: 'advisory_used',
+      graphProposalStatus: 'review_gated',
+      outputReadiness: 'artifact_candidate',
+    });
     expect(envelope.sourceRefreshDocket).toMatchObject({
       capsuleId: 'starter-situation-eu-ai-act-2026-implementation-simplification',
       needsRefresh: true,
@@ -270,6 +286,111 @@ describe('ask answer envelope', () => {
     });
     expect(envelope.traceabilitySummary.assumptionsCount).toBeGreaterThanOrEqual(1);
     expect(envelope.traceabilitySummary.bestNextAction).toBeTruthy();
+  });
+
+  it('derives a compact answer-quality summary and context repair actions for weak context', () => {
+    const envelope = buildAskAnswerEnvelope({
+      prompt: 'What is the latest state of the ceasefire? Please be current.',
+      answer: 'The ceasefire appears fragile and a current field confirmation is needed before relying on this answer.',
+      intent: 'normal_answer',
+      sourceCards: [],
+      gaps: ['No current field confirmation.'],
+      orchestrationReceipt: buildAskConversationOrchestrationReceipt({
+        prompt: 'What is the latest state of the ceasefire? Please be current.',
+        intent: 'normal_answer',
+        contextReceipt: contextReceipt({
+          health: 'thin',
+          evidenceCount: 0,
+          coreRefs: {
+            ...contextReceipt().coreRefs,
+            sourceDocumentCoreIds: [],
+          },
+          warnings: ['No current field confirmation.'],
+        }),
+        sourcePreviewCount: 0,
+        activeGapCount: 1,
+      }),
+    });
+
+    expect(envelope.answerQualitySummary).toMatchObject({
+      contextReadiness: 'missing_sources',
+      sourceCount: 0,
+      sourceGapCount: 1,
+      confidencePosture: 'low',
+      memoHandoffReady: true,
+    });
+    expect(envelope.answerQualitySummary.recommendedNextAction).toMatch(/Attach|source/i);
+    expect(envelope.contextRepairActions.map((action) => action.id)).toEqual(expect.arrayContaining([
+      'check-sources',
+      'create-source-gap',
+      'run-deeper-agent',
+      'send-to-memo',
+      'create-output-capsule',
+    ]));
+    expect(envelope.contextRepairActions[0]).toMatchObject({
+      id: 'check-sources',
+      priority: 'primary',
+    });
+  });
+
+  it('keeps queued, degraded, and unnecessary deep-agent posture honest', () => {
+    const sourceCards = buildSourcePreviewCards({ evidencePack: evidencePack() });
+    const queuedReceipt = buildAskConversationOrchestrationReceipt({
+      prompt: 'Do a deep current multi-source memo.',
+      intent: 'research_memo',
+      contextReceipt: contextReceipt({ health: 'thin', evidenceCount: 1, warnings: ['Needs current source.'] }),
+      sourcePreviewCount: sourceCards.length,
+      activeGapCount: 1,
+    });
+    const queuedEnvelope = buildAskAnswerEnvelope({
+      prompt: 'Do a deep current multi-source memo.',
+      answer: 'Access restrictions are the immediate issue.',
+      intent: 'research_memo',
+      sourceCards,
+      orchestrationReceipt: {
+        ...queuedReceipt,
+        supervisor: {
+          ...queuedReceipt.supervisor,
+          status: 'dispatch_enqueued',
+          queuedRun: {
+            runId: 'run-1',
+            status: 'dispatch_enqueued',
+            outputHref: '/app?agentRunId=run-1',
+          },
+        },
+      },
+    });
+
+    expect(queuedEnvelope.agenticDepthRecommendation).toMatchObject({
+      mode: 'queued',
+      runId: 'run-1',
+      label: 'Deeper agent queued',
+    });
+    expect(queuedEnvelope.answerQualitySummary.queuedDeepRunStatus).toBe('queued');
+
+    const degradedEnvelope = buildAskAnswerEnvelope({
+      prompt: 'Do a deep current multi-source memo.',
+      answer: 'Access restrictions are the immediate issue.',
+      intent: 'research_memo',
+      sourceCards,
+      orchestrationReceipt: {
+        ...queuedReceipt,
+        supervisor: {
+          ...queuedReceipt.supervisor,
+          status: 'failed',
+          queuedRun: {
+            runId: 'unavailable',
+            status: 'ledger_failed',
+            error: 'ledger unavailable',
+          },
+        },
+      },
+    });
+    expect(degradedEnvelope.agenticDepthRecommendation).toMatchObject({
+      mode: 'degraded',
+      label: 'Deep runtime unavailable',
+    });
+    expect(degradedEnvelope.answerQualitySummary.queuedDeepRunStatus).toBe('degraded');
   });
 
   it('grounds claims against matching source previews instead of assigning the first three cards heuristically', () => {

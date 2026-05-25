@@ -31,6 +31,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
+import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
 import { InterruptCard, type InterruptRequest } from '@/components/ask/InterruptCard';
 import { CoreSwapDrawer } from '@/components/cores/CoreSwapDrawer';
@@ -40,6 +41,7 @@ import type { ActiveContextStackState } from '@/lib/context/active-context-stack
 import { ASK_ORCHESTRATION_OPTIONS } from '@/lib/ai/ask-runtime-catalog';
 import type { AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
 import type { AskOrchestrationStatusEvent } from '@/lib/ai/ask-orchestrator';
+import { buildProofSummaryFromAskEnvelope, modelPolicyLabelFor, type UiProofSummary } from '@/lib/proof/proof-summary';
 import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
 import { buildAskTimelineMessages, type AskTimelineMessage } from '@/lib/ai/ask-conversation';
 import { buildConversationPath } from '@/components/praxis/tasklet-workbench-conversation';
@@ -721,11 +723,11 @@ function initialAskWorkingTimeline(): AskOrchestrationStatusEvent[] {
     { type: 'orchestrationStatus', id: 'context', label: 'Reading capsule', status: 'active', detail: 'Checking the active capsule.' },
     { type: 'orchestrationStatus', id: 'triage', label: 'Planning workflow', status: 'pending', detail: 'Classifying the research path.' },
     { type: 'orchestrationStatus', id: 'agent', label: 'Source discovery', status: 'pending', detail: 'Choosing the source and policy agent path.' },
-    { type: 'orchestrationStatus', id: 'documents', label: 'Document retrieval', status: 'pending', detail: 'Checking attached source and document receipts.' },
-    { type: 'orchestrationStatus', id: 'tools', label: 'Claim review', status: 'pending', detail: 'Reviewing claims, selecting safe tool routes, and checking evidence.' },
+    { type: 'orchestrationStatus', id: 'documents', label: 'Checking evidence', status: 'pending', detail: 'Checking attached source and document receipts.' },
+    { type: 'orchestrationStatus', id: 'tools', label: 'Reviewing claims', status: 'pending', detail: 'Selecting safe tool routes and checking evidence.' },
     { type: 'orchestrationStatus', id: 'language-policy', label: 'Language and policy review', status: 'pending', detail: 'Checking terminology, caveats, and unsupported claims.' },
     { type: 'orchestrationStatus', id: 'worker', label: 'Producing output', status: 'pending', detail: 'Deciding whether durable work is needed.' },
-    { type: 'orchestrationStatus', id: 'draft', label: 'Saving receipts', status: 'pending', detail: 'Waiting to draft and save the answer.' },
+    { type: 'orchestrationStatus', id: 'draft', label: 'Saving artifact', status: 'pending', detail: 'Saving receipts and artifact metadata for the answer.' },
   ];
 }
 
@@ -763,6 +765,7 @@ function AskMessageBubble({
 
   const stages = message.stages?.filter((stage) => stage.stage !== 'synthesis' && stage.stage !== 'interrupt') ?? [];
   const workingTimeline = mergeWorkingTimeline(message.orchestrationEvents, message.answerEnvelope);
+  const proofSummary = message.answerEnvelope ? buildProofSummaryFromAskEnvelope(message.answerEnvelope) : null;
   return (
     <div className="flex justify-start">
       <article className="max-w-[88%] rounded-2xl rounded-bl-md border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm">
@@ -786,6 +789,8 @@ function AskMessageBubble({
         <TimelineMessageReceipt message={message} />
         <AskWorkingTimeline events={workingTimeline} />
         <AskQueuedAgentRunPanel queuedRun={message.queuedRun ?? workingTimeline.find((event) => event.id === 'worker' && Boolean(event.runId)) ?? null} />
+        <AnswerQualityStrip envelope={message.answerEnvelope} onAction={onFollowUp} />
+        {proofSummary ? <ProofSummaryPanel summary={proofSummary} /> : null}
         <OrchestrationReceiptPanel envelope={message.answerEnvelope} />
         <CapsuleGroundingReceiptPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
         <AnswerSourcePreviewPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
@@ -860,21 +865,21 @@ function mergeWorkingTimeline(
     {
       type: 'orchestrationStatus' as const,
       id: 'documents' as const,
-      label: 'Document retrieval',
+      label: 'Checking evidence',
       status: receipt.capsule.contextHealth === 'missing' ? 'warn' as const : 'complete' as const,
       detail: `${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'} and ${receipt.capsule.sourcePreviewCount} source preview${receipt.capsule.sourcePreviewCount === 1 ? '' : 's'} attached.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'tools' as const,
-      label: 'Claim review',
+      label: 'Language and policy review',
       status: receipt.toolRouting.blockedToolIds.length ? 'warn' as const : 'complete' as const,
       detail: `Reviewing claims: ${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`,
     },
     {
       type: 'orchestrationStatus' as const,
       id: 'language-policy' as const,
-      label: 'Language and policy review',
+      label: 'Reviewing claims',
       status: receipt.languagePolicyReview?.required ? 'complete' as const : 'skipped' as const,
       detail: receipt.languagePolicyReview?.required ? 'Sourceability and terminology review queued for this research/policy turn.' : 'Standard terminology check only; no specialist policy review needed.',
     },
@@ -893,14 +898,14 @@ function mergeWorkingTimeline(
     {
       type: 'orchestrationStatus' as const,
       id: 'draft' as const,
-      label: 'Saving receipts',
+      label: 'Saving artifact',
       status: 'complete' as const,
-      detail: 'Answer drafted with source and memo handoff metadata.',
+      detail: 'Saving receipts for the drafted answer, source proof, and memo handoff metadata.',
     },
   ];
   return timeline.map((event) => {
     if (event.id !== 'draft') return event;
-    return { ...event, status: 'complete', detail: 'Answer drafted with source and memo handoff metadata.' };
+    return { ...event, status: 'complete', detail: 'Saving receipts for the drafted answer, source proof, and memo handoff metadata.' };
   });
 }
 
@@ -1170,6 +1175,71 @@ function OrchestrationReceiptPanel({ envelope }: { envelope?: AskAnswerEnvelope 
   );
 }
 
+function ProofSummaryPanel({ summary }: { summary: UiProofSummary }) {
+  const modelPolicyLabel = summary.modelPolicyLabel;
+  return (
+    <section className="mt-3 rounded-md border border-slate-200 bg-white p-2" data-testid="ask-proof-summary">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">PRAXIS read</p>
+        <span className={cn(
+          'rounded-md border px-1.5 py-0.5 text-[10px] font-semibold',
+          summary.contextHealth === 'ready'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+            : 'border-gold-200 bg-gold-50 text-gold-900',
+        )}>
+          {summary.contextHealth} context
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-slate-700">
+          {summary.sourceCount} sources / {summary.documentCount} docs
+        </span>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-slate-700">
+          modelPolicyLabel: {modelPolicyLabel}
+        </span>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-slate-700">
+          unsupported: {summary.unsupportedClaimCount}
+        </span>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-slate-700">
+          confidence {summary.confidenceDistribution.high}/{summary.confidenceDistribution.medium}/{summary.confidenceDistribution.low}
+        </span>
+        {summary.outputTarget ? (
+          <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-slate-700">
+            output: {summary.outputTarget.replace(/_/g, ' ')}
+          </span>
+        ) : null}
+        {summary.outputHref ? (
+          <Link href={summary.outputHref} className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-semibold text-emerald-900 hover:bg-emerald-100">
+            saved artifact
+          </Link>
+        ) : null}
+        {summary.exportBlocked ? (
+          <span className="rounded-md border border-gold-200 bg-gold-50 px-1.5 py-0.5 font-semibold text-gold-900">
+            export needs review
+          </span>
+        ) : null}
+      </div>
+      {summary.degradedStates.length ? (
+        <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-gold-900">
+          {summary.degradedStates.map((state) => (
+            <span key={state} className="rounded-md border border-gold-200 bg-gold-50 px-1.5 py-0.5 font-semibold">
+              {state}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      <details className="mt-2">
+        <summary className="cursor-pointer text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+          What would improve this answer?
+        </summary>
+        <ul className="mt-1 grid gap-1 text-[11px] leading-4 text-slate-600">
+          {summary.improvementActions.map((action) => <li key={action}>{action}</li>)}
+        </ul>
+      </details>
+    </section>
+  );
+}
+
 function CapsuleGroundingReceiptPanel({ envelope, onFollowUp }: { envelope?: AskAnswerEnvelope; onFollowUp: (followUp: string) => void }) {
   const receipt = envelope?.groundingReceipt;
   if (!receipt) return null;
@@ -1314,7 +1384,17 @@ function TimelineMessageReceipt({ message }: { message: AskPanelMessage }) {
   const runtime = message.receipt?.runtime ?? {};
   const retrieval = isRecord(runtime.retrieval) ? runtime.retrieval : {};
   const contextReceipt = isRecord(runtime.contextReceipt) ? runtime.contextReceipt : null;
-  const model = stringValue(runtime.model) ?? stringValue(runtime.provider) ?? 'model pending';
+  const runtimeModelLabel = message.answerEnvelope
+    ? buildProofSummaryFromAskEnvelope(message.answerEnvelope, {
+      selectedModelId: runtime.model,
+      lifecycleTier: runtime.modelLifecycleTier,
+      fallbackPosture: runtime.fallbackFrom ? 'fallback' : null,
+    }).modelPolicyLabel
+    : modelPolicyLabelFor({
+      selectedModelId: runtime.model,
+      lifecycleTier: runtime.modelLifecycleTier,
+      fallbackPosture: runtime.fallbackFrom ? 'fallback' : null,
+    });
   const intent = stringValue(runtime.intent);
   const sourceCount = numberValue(retrieval.sourceDocumentCount) ?? contextReceiptSourceCount(contextReceipt);
   const gapCount = numberValue(retrieval.activeGapCount) ?? numberValue(retrieval.evidenceGapCount) ?? contextReceiptWarningCount(contextReceipt);
@@ -1328,7 +1408,7 @@ function TimelineMessageReceipt({ message }: { message: AskPanelMessage }) {
     <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
       <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
         <Cpu className="h-2.5 w-2.5" />
-        {model}
+        {runtimeModelLabel}
       </span>
       {intent ? (
         <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
@@ -1594,7 +1674,9 @@ function AskTurnReceipt({ turn }: { turn: AskThreadTurn }) {
   const retrieval = runtime.retrieval;
   const cores = runtime.contextCores;
   const contextReceipt = isRecord(runtime.contextReceipt) ? runtime.contextReceipt : null;
-  const model = runtime.model ?? runtime.provider ?? 'model recorded';
+  const runtimeModelLabel = runtime.answerEnvelope
+    ? buildProofSummaryFromAskEnvelope(runtime.answerEnvelope, { selectedModelId: runtime.model }).modelPolicyLabel
+    : modelPolicyLabelFor({ selectedModelId: runtime.model });
   const sourceCount = retrieval?.sourceDocumentCount ?? cores?.sourceDocumentCoreIds?.length ?? contextReceiptSourceCount(contextReceipt);
   const gapCount = retrieval?.activeGapCount ?? contextReceiptWarningCount(contextReceipt);
   const evidenceCount = numberValue(contextReceipt?.evidenceCount);
@@ -1604,7 +1686,7 @@ function AskTurnReceipt({ turn }: { turn: AskThreadTurn }) {
     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500">
       <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">
         <Cpu className="h-2.5 w-2.5" />
-        {model}
+        {runtimeModelLabel}
       </span>
       {runtime.intent ? (
         <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">

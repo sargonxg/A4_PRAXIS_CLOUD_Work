@@ -24,6 +24,7 @@ import { writeReadAuditEvents } from '@/lib/audit/read-ledger';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
 import { buildAskRuntimeFallbackCandidates, getAskRuntimeOption, isAskRuntimeModelAccessError } from '@/lib/ai/ask-runtime-catalog';
 import { getAskPraxisModelRuntimePolicy, type ModelRuntimePolicy } from '@/lib/ai/model-runtime-policy';
+import { modelPolicyLabelFor } from '@/lib/proof/proof-summary';
 import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock } from '@/lib/agent-runtime/evidence-pack';
 import { suggestNextActions, type TurnCapsule } from '@/lib/ai/context-kernel';
 import { buildEnrichedTurnCapsule, type ContextEnrichmentReceipt } from '@/lib/knowledge/context-enrichment-adapter';
@@ -804,7 +805,10 @@ You have access to the user's active situation data. When answering questions:
         {
           type: 'generationStatus',
           phase: 'start',
-          selectedModel: orchestrationReceipt.generationBudget.selectedModelId,
+          modelPolicyLabel: modelPolicyLabelFor({
+            selectedModelId: orchestrationReceipt.generationBudget.selectedModelId,
+            modelTier: orchestrationReceipt.routingDecision.modelTier,
+          }),
           budgetMode: orchestrationReceipt.generationBudget.mode,
           maxOutputTokens: orchestrationReceipt.generationBudget.maxOutputTokens,
           sourceCount: sourcePreviewCards.length,
@@ -817,8 +821,12 @@ You have access to the user's active situation data. When answering questions:
         {
           type: 'generationStatus',
           phase: 'final',
-          selectedModel: runtimeReceipt.generationReceipt?.selectedModel ?? runtimeReceipt.model,
-          fallbackModel: runtimeReceipt.generationReceipt?.fallbackModel ?? null,
+          modelPolicyLabel: modelPolicyLabelFor({
+            selectedModelId: runtimeReceipt.generationReceipt?.selectedModel ?? runtimeReceipt.model,
+            modelTier: orchestrationReceipt.routingDecision.modelTier,
+            lifecycleTier: runtimeReceipt.modelLifecycleTier,
+            fallbackPosture: runtimeReceipt.generationReceipt?.fallbackModel ? 'fallback' : null,
+          }),
           finishReason: runtimeReceipt.generationReceipt?.finishReason ?? null,
           usage: runtimeReceipt.generationReceipt?.usage ?? null,
           sourceCount: sourceCardsForEnvelope().length,
@@ -1038,13 +1046,11 @@ function selectAskRuntime(aiSettings: AiSettings, policy: ModelRuntimePolicy) {
   };
 }
 
-function formatAskRuntimeFailureMessage(error: unknown, attemptedModels: string[]): string {
-  const detail = error instanceof Error ? error.message : String(error || 'Unknown model error');
-  const models = attemptedModels.length ? attemptedModels.join(' -> ') : 'configured model';
+function formatAskRuntimeFailureMessage(error: unknown, _attemptedModels: string[]): string {
   if (isAskRuntimeModelAccessError(error)) {
-    return `The selected model runtime and GA fallbacks were not accessible for this request (${models}). Last provider response: ${detail}`;
+    return 'The PRAXIS model-policy route was not accessible for this request. Ask continued with a safe failure receipt; retry after runtime access is restored.';
   }
-  return `The Ask PRAXIS runtime failed after trying ${models}. Last error: ${detail}`;
+  return 'The Ask PRAXIS model-policy route failed before the answer could be completed.';
 }
 
 function buildAskGenerationReceipt(input: {
