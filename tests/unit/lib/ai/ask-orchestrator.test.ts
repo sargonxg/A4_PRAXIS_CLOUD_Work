@@ -41,6 +41,20 @@ describe('Ask PRAXIS conversation orchestrator', () => {
         'Saving artifact',
       ],
     });
+    expect(receipt.turnPlan).toMatchObject({
+      intent: 'quick_answer',
+      complexity: 'simple',
+      answerShape: 'short_answer',
+      requiredTools: ['context-resolve', 'capsule-evidence-pack'],
+      requiredAgents: [],
+      continuationPolicy: 'complete_now',
+    });
+    expect(receipt.turnPlan.statusRail).toEqual([
+      'Reading capsule',
+      'Planning workflow',
+      'Checking evidence',
+      'Drafting answer',
+    ]);
     expect(receipt.stages.map((stage) => stage.stage)).toEqual([
       'capsule',
       'triage',
@@ -100,6 +114,51 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       posture: 'research_policy_review',
       checks: expect.arrayContaining(['terminology', 'unsupported-claims', 'primary-source-gap-language']),
     });
+    expect(receipt.turnPlan).toMatchObject({
+      intent: 'policy_research',
+      complexity: 'multi_agent',
+      answerShape: 'research_memo',
+      requiredAgents: expect.arrayContaining(['research-memo', 'sourceability-reviewer']),
+      continuationPolicy: 'queue_agent',
+    });
+    expect(receipt.turnPlan.artifactPlan).toEqual(expect.arrayContaining([
+      'research_memo',
+      'evidence_annex',
+    ]));
+    expect(receipt.turnPlan.qualityBar).toEqual(expect.arrayContaining([
+      'sourceability',
+      'unsupported-claims',
+      'caveats',
+    ]));
+  });
+
+  it('plans table-shaped conflict asks as reviewable artifacts before generation', () => {
+    const receipt = buildAskConversationOrchestrationReceipt({
+      prompt: 'Create a table comparing conflict actors, current sources, and policy options for this crisis.',
+      intent: 'research_memo',
+      contextReceipt: contextReceipt({ health: 'thin', evidenceCount: 1 }),
+      sourcePreviewCount: 1,
+      activeGapCount: 2,
+    });
+
+    expect(receipt.turnPlan).toMatchObject({
+      intent: 'conflict_analysis',
+      complexity: 'multi_agent',
+      answerShape: 'table',
+      continuationPolicy: 'queue_agent',
+    });
+    expect(receipt.turnPlan.artifactPlan).toEqual(expect.arrayContaining([
+      'source_table',
+      'policy_options_table',
+      'evidence_annex',
+    ]));
+    expect(receipt.turnPlan.statusRail).toEqual([
+      'Reading capsule',
+      'Planning workflow',
+      'Checking evidence',
+      'Routing agents',
+      'Preparing artifact',
+    ]);
   });
 
   it('routes capsule-building and formatting prompts to concrete worker modes', () => {
