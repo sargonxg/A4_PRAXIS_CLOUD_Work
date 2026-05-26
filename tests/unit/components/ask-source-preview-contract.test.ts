@@ -37,7 +37,7 @@ describe('Ask source preview panel contract', () => {
     expect(source).toContain('statusRail');
     expect(source).toContain('artifactPlan');
     expect(source).toContain('continuationPolicy');
-    expect(source.indexOf('AskTurnPlanPanel')).toBeLessThan(source.indexOf('AnswerQualityStrip'));
+    expect(source.indexOf('<AskTurnPlanPanel')).toBeLessThan(source.indexOf('<AnswerQualityStrip'));
   });
 
   it('renders a compact answer-quality strip before detailed receipts', () => {
