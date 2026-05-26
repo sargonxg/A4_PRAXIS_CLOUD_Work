@@ -11,8 +11,9 @@ Scope: GitHub-main deploy proof, `praxis.tacitus.me`, Ask PRAXIS, agent runtime,
 - Canonical GitHub repo: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work`
 - Canonical branch: `main`
 - Launch URL: `https://praxis.tacitus.me`
-- Current deploy-source work: Cloud Build and Docker provenance are wired to expose source repo, branch, commit, trigger, build id, Cloud Run service, and Cloud Run revision through runtime health.
-- Remaining deploy-source blocker: the Cloud Build GitHub connection must finish GitHub OAuth before Cloud Build can create a GitHub-main trigger and prove production deploys from `main`.
+- Current deploy-source work: Cloud Build and Docker provenance expose source repo, branch, commit, trigger, build id, Cloud Run service, and Cloud Run revision through runtime health.
+- Verified GitHub-main deploy: `frontend-main-on-push` build `c0273ff4-cd5f-4abd-8bd2-f2237e9c1c63` deployed commit `b3f901513597c4819fc92ae17695f8e9d66b2fd4` to Cloud Run revision `praxis-frontend-00813-z5t`.
+- Cloudflare state: `tacitus.me` is active in Cloudflare; `praxis.tacitus.me` is DNS-only CNAME to `ghs.googlehosted.com`.
 
 ## Product Principle
 
@@ -47,6 +48,9 @@ Do not add a new top-level agent app, separate primary navigation surface, or se
 ## Phase 0 - Finish GitHub-Main Deploy Proof
 
 Goal: every production deploy to `praxis.tacitus.me` is traceable to GitHub `main`.
+
+Status: complete for the frontend path as of 2026-05-26. Keep the full-stack
+trigger as the heavier backend/infrastructure deploy path.
 
 Tasks:
 

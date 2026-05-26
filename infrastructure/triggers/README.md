@@ -7,6 +7,31 @@ Both triggers deploy only from GitHub `main`. They stamp Cloud Run with
 `PRAXIS_SOURCE_*` and `PRAXIS_BUILD_*` environment variables so the live runtime
 health payload can prove which GitHub commit is serving production.
 
+## Installed Production State
+
+As of 2026-05-26, production deploys are wired through the 2nd-gen GitHub
+connection:
+
+```text
+Connection: projects/praxisbytacitus/locations/us-central1/connections/praxis-github
+Repository: projects/praxisbytacitus/locations/us-central1/connections/praxis-github/repositories/A4_PRAXIS_CLOUD_Work
+Trigger: frontend-main-on-push -> cloudbuild.frontend.yaml
+Trigger: full-main-on-push -> cloudbuild.yaml
+Build service account: praxis-cloudbuild-deployer@praxisbytacitus.iam.gserviceaccount.com
+```
+
+The first verified GitHub-sourced frontend deploy was build
+`c0273ff4-cd5f-4abd-8bd2-f2237e9c1c63`, sourced from GitHub commit
+`b3f901513597c4819fc92ae17695f8e9d66b2fd4`, serving Cloud Run revision
+`praxis-frontend-00813-z5t`.
+
+Cloudflare is the authoritative DNS provider for `tacitus.me`. The production
+record is currently DNS-only:
+
+```text
+praxis.tacitus.me CNAME ghs.googlehosted.com TTL 600 proxied=false
+```
+
 ## One-time GitHub connection
 
 Cloud Build 2nd-gen GitHub triggers require a repository connection before
@@ -51,6 +76,37 @@ Repository resource:
 projects/praxisbytacitus/locations/us-central1/connections/praxis-github/repositories/A4_PRAXIS_CLOUD_Work
 ```
 
+## Build Deployer Service Account
+
+Second-generation triggers require a user-managed build service account. Do not
+use the legacy `852128226674@cloudbuild.gserviceaccount.com` account as the
+trigger service account; manual builds may still use it, but trigger runs reject
+it.
+
+Installed account:
+
+```text
+praxis-cloudbuild-deployer@praxisbytacitus.iam.gserviceaccount.com
+```
+
+Required project roles:
+
+```text
+roles/cloudbuild.builds.builder
+roles/artifactregistry.writer
+roles/run.admin
+roles/iam.serviceAccountUser
+roles/secretmanager.secretAccessor
+roles/secretmanager.viewer
+roles/cloudsql.viewer
+roles/cloudtasks.viewer
+roles/pubsub.viewer
+roles/serviceusage.serviceUsageConsumer
+roles/serviceusage.serviceUsageViewer
+roles/storage.admin
+roles/storage.objectViewer
+```
+
 ## Frontend Main Trigger
 
 **Behavior:** every push to `main` that changes frontend app or frontend build
@@ -71,6 +127,7 @@ gcloud builds triggers create github `
   --build-config=cloudbuild.frontend.yaml `
   --included-files="src/**,public/**,Dockerfile,next.config.*,tsconfig.json,package.json,package-lock.json,cloudbuild.frontend.yaml,infrastructure/triggers/frontend-main.yaml" `
   --include-logs-with-status `
+  --service-account=projects/praxisbytacitus/serviceAccounts/praxis-cloudbuild-deployer@praxisbytacitus.iam.gserviceaccount.com `
   --project=praxisbytacitus
 ```
 
@@ -96,6 +153,7 @@ gcloud builds triggers create github `
   --build-config=cloudbuild.yaml `
   --included-files="backend/**,cloud_functions/**,infrastructure/pgbouncer/**,infrastructure/triggers/full-main.yaml,cloudbuild.yaml" `
   --include-logs-with-status `
+  --service-account=projects/praxisbytacitus/serviceAccounts/praxis-cloudbuild-deployer@praxisbytacitus.iam.gserviceaccount.com `
   --project=praxisbytacitus
 ```
 
@@ -103,6 +161,16 @@ gcloud builds triggers create github `
 
 ```pwsh
 gcloud builds triggers list --project=praxisbytacitus --filter="name:(frontend-main OR full-main)"
+```
+
+Run the frontend trigger manually from the latest `main` commit when a docs-only
+commit needs to prove the deployment path:
+
+```pwsh
+gcloud builds triggers run frontend-main-on-push `
+  --region=us-central1 `
+  --branch=main `
+  --project=praxisbytacitus
 ```
 
 Verify live provenance after a deploy:
