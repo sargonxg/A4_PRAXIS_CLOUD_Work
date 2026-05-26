@@ -7,6 +7,7 @@ import { getPolicyAgent, policyAgentRunIntent, type PolicyAgentOutputDestination
 import { buildTacitusRoutingDecision, type TacitusRoutingDecision } from '@/lib/ai/tacitus-routing-policy';
 import { getModelMatrixEntry } from '@/lib/ai/model-matrix';
 import { buildWorkIntentPlan, type WorkIntentCapsuleInput, type WorkIntentMode, type WorkIntentPlan } from '@/lib/ai/work-intent-router';
+import { buildAskTurnPlan, type AskTurnPlan } from '@/lib/ai/ask-turn-plan';
 
 export type AskAgenticMode = 'direct_with_receipts' | 'queue_agent_run';
 export type AskOrchestrationComplexity = 'simple' | 'standard' | 'deep';
@@ -63,6 +64,7 @@ export interface AskConversationOrchestrationReceipt {
   generationBudget: AskGenerationBudgetReceipt;
   languagePolicyReview: AskLanguagePolicyReviewReceipt;
   researchModePresets: AskResearchModePreset[];
+  turnPlan: AskTurnPlan;
   capsuleReadReceipt: CapsuleReadReceipt;
   workflowPlan: AgentWorkflowPlan;
   routingDecision: TacitusRoutingDecision;
@@ -227,6 +229,19 @@ export function buildAskConversationOrchestrationReceipt(input: {
   for (const toolId of selectedToolIds) {
     getAgentToolDefinition(toolId);
   }
+  const turnPlan = buildAskTurnPlan({
+    prompt: input.prompt,
+    intent: input.intent,
+    orchestrationComplexity: complexity,
+    contextHealth: input.contextReceipt.health,
+    sourcePreviewCount: input.sourcePreviewCount,
+    activeGapCount,
+    selectedToolIds,
+    approvalRequiredToolIds,
+    generationBudget,
+    routingDecision,
+    workflowPlan,
+  });
 
   return {
     version: 1,
@@ -259,6 +274,7 @@ export function buildAskConversationOrchestrationReceipt(input: {
     generationBudget,
     languagePolicyReview,
     researchModePresets: researchModePresetsFor(input.intent, complexity),
+    turnPlan,
     capsuleReadReceipt,
     workflowPlan,
     routingDecision,
