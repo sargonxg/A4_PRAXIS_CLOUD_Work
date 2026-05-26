@@ -328,8 +328,10 @@ describe('ask answer envelope', () => {
       'create-source-gap',
       'run-deeper-agent',
       'send-to-memo',
-      'create-output-capsule',
     ]));
+    expect(envelope.contextRepairActions.map((action) => action.id)).not.toContain('create-output-capsule');
+    expect(envelope.contextRepairActions.map((action) => action.id)).toHaveLength(4);
+    expect(envelope.contextRepairActions.filter((action) => action.priority === 'primary')).toHaveLength(1);
     expect(envelope.contextRepairActions[0]).toMatchObject({
       id: 'check-sources',
       priority: 'primary',

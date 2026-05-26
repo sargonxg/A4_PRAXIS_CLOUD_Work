@@ -42,6 +42,12 @@ describe('Ask source preview panel contract', () => {
     expect(source.indexOf('<AskTurnPlanPanel')).toBeLessThan(source.indexOf('<AnswerQualityStrip'));
   });
 
+  it('uses the shared same-thread queued AgentRun panel instead of a local copy', () => {
+    expect(source).toContain("import { AskQueuedAgentRunPanel } from '@/components/ask/AskQueuedAgentRunPanel'");
+    expect(source).toContain('queuedRun={message.queuedRun ?? workingTimeline.find');
+    expect(source).not.toContain('function AskQueuedAgentRunPanel(');
+  });
+
   it('renders a compact answer-quality strip before detailed receipts', () => {
     expect(source).toContain('AnswerQualityStrip');
     expect(answerQualityStripSource).toContain('answerQualitySummary');

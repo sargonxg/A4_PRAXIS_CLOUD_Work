@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -7,6 +7,10 @@ const conversationHelperSource = readFileSync(join(process.cwd(), 'src/component
 const askStreamPanelSource = readFileSync(join(process.cwd(), 'src/components/ask/AskStreamPanel.tsx'), 'utf8');
 const askArtifactPreviewSource = readFileSync(join(process.cwd(), 'src/components/ask/AskArtifactPreview.tsx'), 'utf8');
 const answerQualityStripSource = readFileSync(join(process.cwd(), 'src/components/ask/AnswerQualityStrip.tsx'), 'utf8');
+const askQueuedAgentRunPanelPath = join(process.cwd(), 'src/components/ask/AskQueuedAgentRunPanel.tsx');
+const askQueuedAgentRunPanelSource = existsSync(askQueuedAgentRunPanelPath)
+  ? readFileSync(askQueuedAgentRunPanelPath, 'utf8')
+  : '';
 const source = `${workbenchSource}\n${conversationHelperSource}`;
 const instrumentSource = readFileSync(join(process.cwd(), 'src/components/ui/instrument.tsx'), 'utf8');
 const visualSource = `${workbenchSource}\n${instrumentSource}`;
@@ -162,6 +166,20 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('safeMarkdownHref(href)');
     expect(source).toContain("target={external ? '_blank' : undefined}");
     expect(source.indexOf('<AskTurnPlanPanel')).toBeLessThan(source.indexOf('<AnswerQualityStrip'));
+  });
+
+  it('renders same-thread deep work queue proof from persisted answer envelopes', () => {
+    expect(workbenchSource).toContain("from '@/components/ask/AskQueuedAgentRunPanel'");
+    expect(workbenchSource).toContain('AskQueuedAgentRunPanel, queuedAgentRunFromEnvelope');
+    expect(askStreamPanelSource).toContain("from '@/components/ask/AskQueuedAgentRunPanel'");
+    expect(askStreamPanelSource).toContain('AskQueuedAgentRunPanel');
+    expect(askStreamPanelSource).not.toContain('function AskQueuedAgentRunPanel(');
+    expect(workbenchSource).toContain('queuedRun={queuedAgentRunFromEnvelope(message.answerEnvelope)}');
+    expect(workbenchSource.indexOf('<AskTurnPlanPanel')).toBeLessThan(workbenchSource.indexOf('<AskQueuedAgentRunPanel'));
+    expect(workbenchSource.indexOf('<AskQueuedAgentRunPanel')).toBeLessThan(workbenchSource.indexOf('<AnswerQualityStrip'));
+    for (const expected of ['Deep work queue', 'source receipts', 'tools', 'gates', 'Retry', 'Cancel', 'Open run']) {
+      expect(askQueuedAgentRunPanelSource).toContain(expected);
+    }
   });
 
   it('surfaces plain context readiness states in the active capsule strip', () => {

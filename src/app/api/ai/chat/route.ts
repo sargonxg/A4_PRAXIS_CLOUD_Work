@@ -1576,6 +1576,8 @@ async function persistConversationTurn(input: {
       latestModel: input.runtime.model ?? null,
       latestToolCount: input.toolInvocations.length,
       latestFrameworkStepCount: input.frameworkSteps.length,
+      latestQueuedRunId: queuedRunIdFromAnswerEnvelope(input.runtime.answerEnvelope),
+      latestOrchestrationTraceId: input.runtime.orchestrationReceipt?.traceId ?? null,
       turnCount: FieldValue.increment(1),
       createdAt,
       updatedAt: now,
@@ -1585,6 +1587,12 @@ async function persistConversationTurn(input: {
       output: input.output,
       capsuleId: input.capsuleId,
       situationId: input.situationId,
+      answerEnvelope: input.runtime.answerEnvelope ?? null,
+      queuedRunId: queuedRunIdFromAnswerEnvelope(input.runtime.answerEnvelope),
+      runId: queuedRunIdFromAnswerEnvelope(input.runtime.answerEnvelope),
+      sourceAskThreadId: cleanConversationId,
+      conversationThreadId: cleanConversationId,
+      orchestrationTraceId: input.runtime.orchestrationReceipt?.traceId ?? null,
       runtime: input.runtime,
       routingReceipt: {
         intent: input.runtime.intent ?? 'direct_answer',
@@ -1626,6 +1634,11 @@ async function persistConversationTurn(input: {
       );
     }
   });
+}
+
+function queuedRunIdFromAnswerEnvelope(envelope: AskAnswerEnvelope | undefined): string | null {
+  const runId = envelope?.orchestrationReceipt?.supervisor.queuedRun?.runId;
+  return runId && runId !== 'unavailable' ? runId : null;
 }
 
 async function persistAskReadLedger(input: {

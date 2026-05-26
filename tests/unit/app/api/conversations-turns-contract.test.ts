@@ -3,6 +3,9 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const routeSource = readFileSync(join(process.cwd(), 'src/app/api/conversations/[conversationId]/turns/route.ts'), 'utf8');
+const chatRouteSource = readFileSync(join(process.cwd(), 'src/app/api/ai/chat/route.ts'), 'utf8');
+const answerEnvelopeSource = readFileSync(join(process.cwd(), 'src/lib/ai/ask-answer-envelope.ts'), 'utf8');
+const persistedEnvelopeContractSource = `${chatRouteSource}\n${answerEnvelopeSource}`;
 
 describe('conversation turns Ask PRAXIS contract', () => {
   it('delegates logged-in turns with the full capsule routing envelope', () => {
@@ -37,5 +40,23 @@ describe('conversation turns Ask PRAXIS contract', () => {
     expect(routeSource).toContain('requestedAgenticSearchPremium');
     expect(routeSource).not.toContain('research_graph_requires_subscription');
     expect(routeSource).not.toContain("meetsTier(tier, 'analyst') && requestedResearchGraph");
+  });
+
+  it('persists reload-critical Ask answer envelope fields as first-class saved turn data', () => {
+    expect(chatRouteSource).toContain('answerEnvelope: input.runtime.answerEnvelope');
+    expect(chatRouteSource).toContain('queuedRunId: queuedRunIdFromAnswerEnvelope(input.runtime.answerEnvelope)');
+    expect(chatRouteSource).toContain('runId: queuedRunIdFromAnswerEnvelope(input.runtime.answerEnvelope)');
+    expect(chatRouteSource).toContain('orchestrationTraceId: input.runtime.orchestrationReceipt?.traceId');
+    for (const expected of [
+      'orchestrationReceipt',
+      'answerQualitySummary',
+      'agenticDepthRecommendation',
+      'contextRepairActions',
+      'sourceCards',
+      'documentPackCandidate',
+      'supervisor.queuedRun',
+    ]) {
+      expect(persistedEnvelopeContractSource).toContain(expected);
+    }
   });
 });

@@ -40,6 +40,33 @@ describe('tasklet workbench conversation helpers', () => {
     });
   });
 
+  it('prefers first-class saved Ask answer envelopes while keeping legacy runtime fallback', () => {
+    const envelope = {
+      orchestrationReceipt: {
+        turnPlan: { summary: 'Plan the policy answer' },
+        supervisor: { queuedRun: { runId: 'run-1', status: 'dispatch_enqueued' } },
+      },
+      answerQualitySummary: { sourceCount: 3 },
+      agenticDepthRecommendation: { mode: 'queued', runId: 'run-1' },
+      contextRepairActions: [{ id: 'check-sources', label: 'Check sources' }],
+      sourceCards: [{ id: 'source-1', title: 'Primary source' }],
+      documentPackCandidate: { title: 'Answer pack' },
+    };
+    const messages = savedConversationTurnsToMessages([
+      {
+        prompt: 'What changed?',
+        output: 'A sourced answer.',
+        answerEnvelope: envelope as never,
+        runtime: { answerEnvelope: { followUps: ['legacy fallback only'] } },
+      },
+    ]);
+
+    expect(messages[1]).toMatchObject({
+      role: 'assistant',
+      answerEnvelope: envelope,
+    });
+  });
+
   it('parses answer envelopes from AI SDK data stream lines and rejects unsafe markdown links', () => {
     expect(answerEnvelopeFromDataStreamLine('2:{"type":"answerEnvelope","answerEnvelope":{"followUps":["Check weakest claim"]}}')).toMatchObject({
       followUps: ['Check weakest claim'],

@@ -64,6 +64,7 @@ import {
 import { AccountProfileButton } from '@/components/app/account-profile-button';
 import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
+import { AskQueuedAgentRunPanel, queuedAgentRunFromEnvelope } from '@/components/ask/AskQueuedAgentRunPanel';
 import { AskTurnPlanPanel } from '@/components/ask/AskTurnPlanPanel';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
@@ -3900,6 +3901,7 @@ export function TaskletPraxisWorkbench({
                             setStatus('PRAXIS plan action loaded into the composer.');
                           }}
                         />
+                        <AskQueuedAgentRunPanel queuedRun={queuedAgentRunFromEnvelope(message.answerEnvelope)} />
                         <AnswerQualityStrip
                           envelope={message.answerEnvelope}
                           onAction={(actionPrompt) => {

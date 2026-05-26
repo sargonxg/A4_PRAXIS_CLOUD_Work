@@ -217,7 +217,7 @@ export interface AskAgenticDepthRecommendation {
 }
 
 export interface AskContextRepairAction {
-  id: 'check-sources' | 'run-deeper-agent' | 'send-to-memo' | 'create-source-gap' | 'create-output-capsule';
+  id: 'check-sources' | 'run-deeper-agent' | 'send-to-memo' | 'create-source-gap';
   label: string;
   prompt: string;
   priority: 'primary' | 'secondary' | 'optional';
@@ -725,7 +725,7 @@ function buildContextRepairActions(input: {
       id: 'create-source-gap',
       label: 'Create source gap',
       prompt: input.sourceRefreshDocket.missingEvidenceGaps[0] ?? 'Create a source gap for the weakest unsupported or ungrounded claim in this answer.',
-      priority: needsSourceRepair ? 'primary' : 'secondary',
+      priority: needsSourceRepair ? 'secondary' : 'primary',
     });
   }
   if (input.agenticDepthRecommendation.mode !== 'not_needed' || input.sourceAudit.sourceCount < 2) {
@@ -742,13 +742,7 @@ function buildContextRepairActions(input: {
     prompt: 'Continue this as a Memo Studio draft with sources, unsupported claims, caveats, and next checks preserved.',
     priority: input.sourceAudit.sourceCount > 0 ? 'secondary' : 'optional',
   });
-  actions.push({
-    id: 'create-output-capsule',
-    label: 'Create output capsule',
-    prompt: 'Create a review-gated Output Capsule from this answer, preserving sources, claim posture, and next checks.',
-    priority: input.traceabilitySummary.confidencePosture === 'high' ? 'secondary' : 'optional',
-  });
-  return dedupeRepairActions(actions).slice(0, 5);
+  return withSinglePrimaryRepairAction(dedupeRepairActions(actions).slice(0, 4));
 }
 
 function dedupeRepairActions(actions: AskContextRepairAction[]): AskContextRepairAction[] {
@@ -757,6 +751,18 @@ function dedupeRepairActions(actions: AskContextRepairAction[]): AskContextRepai
     if (seen.has(action.id)) return false;
     seen.add(action.id);
     return true;
+  });
+}
+
+function withSinglePrimaryRepairAction(actions: AskContextRepairAction[]): AskContextRepairAction[] {
+  let primarySeen = false;
+  return actions.map((action) => {
+    if (action.priority !== 'primary') return action;
+    if (!primarySeen) {
+      primarySeen = true;
+      return action;
+    }
+    return { ...action, priority: 'secondary' };
   });
 }
 
