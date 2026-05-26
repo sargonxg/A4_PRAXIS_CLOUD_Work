@@ -3,29 +3,116 @@
 This directory holds GCP Cloud Build trigger definitions. Triggers are one-time
 imports; the YAML lives in the repo so the import is repeatable and audited.
 
-## frontend-main.yaml — push-to-main, opt-in via commit token
+Both triggers deploy only from GitHub `main`. They stamp Cloud Run with
+`PRAXIS_SOURCE_*` and `PRAXIS_BUILD_*` environment variables so the live runtime
+health payload can prove which GitHub commit is serving production.
 
-**Behavior:** every push to `main` that has the literal token `[deploy]` in the
-commit message (or in any commit in the push) runs `cloudbuild.frontend.yaml`
-and promotes the resulting revision to `praxis-frontend` Cloud Run service.
+## One-time GitHub connection
 
-The token gate keeps the trigger noise-free — docs, audits, and graphify
-refreshes do not redeploy. Add `[deploy]` to a commit message when the change
-should ship.
+Cloud Build 2nd-gen GitHub triggers require a repository connection before
+triggers can be created.
+
+```pwsh
+gcloud projects add-iam-policy-binding praxisbytacitus `
+  --member="serviceAccount:service-852128226674@gcp-sa-cloudbuild.iam.gserviceaccount.com" `
+  --role="roles/secretmanager.admin"
+
+gcloud builds connections create github praxis-github `
+  --region=us-central1 `
+  --project=praxisbytacitus
+```
+
+The connection command prints an OAuth URL. Open it while logged into the GitHub
+account that owns or administers `sargonxg/A4_PRAXIS_CLOUD_Work`, authorize
+Cloud Build, then verify:
+
+```pwsh
+gcloud builds connections describe praxis-github `
+  --region=us-central1 `
+  --project=praxisbytacitus `
+  --format="value(installationState.stage)"
+```
+
+Expected stage: `COMPLETE`.
+
+Then register the repository:
+
+```pwsh
+gcloud builds repositories create A4_PRAXIS_CLOUD_Work `
+  --connection=praxis-github `
+  --region=us-central1 `
+  --project=praxisbytacitus `
+  --remote-uri=https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git
+```
+
+Repository resource:
+
+```text
+projects/praxisbytacitus/locations/us-central1/connections/praxis-github/repositories/A4_PRAXIS_CLOUD_Work
+```
+
+## Frontend Main Trigger
+
+**Behavior:** every push to `main` that changes frontend app or frontend build
+files runs `cloudbuild.frontend.yaml` and promotes the resulting revision to
+`praxis-frontend` Cloud Run service.
+
+Docs-only, graphify-only, and unrelated operational notes do not deploy because
+the trigger uses `includedFiles`.
 
 ### One-time install
 
 ```pwsh
-gcloud builds triggers import `
-  --source=infrastructure/triggers/frontend-main.yaml `
+gcloud builds triggers create github `
+  --name=frontend-main-on-push `
+  --region=us-central1 `
+  --repository=projects/praxisbytacitus/locations/us-central1/connections/praxis-github/repositories/A4_PRAXIS_CLOUD_Work `
+  --branch-pattern="^main$" `
+  --build-config=cloudbuild.frontend.yaml `
+  --included-files="src/**,public/**,Dockerfile,next.config.*,tsconfig.json,package.json,package-lock.json,cloudbuild.frontend.yaml,infrastructure/triggers/frontend-main.yaml" `
+  --include-logs-with-status `
+  --project=praxisbytacitus
+```
+
+## Full Main Trigger
+
+**Behavior:** every push to `main` that changes backend, Cloud Function,
+pgbouncer, or full Cloud Build files runs `cloudbuild.yaml`, rebuilding and
+promoting backend, pgbouncer, and frontend images tagged with the GitHub commit
+SHA.
+
+Use this path for backend, worker, Cloud Function, Cloud SQL, secrets mounts, or
+runtime infrastructure behavior. Frontend-only Ask PRAXIS/product surface
+changes use `frontend-main.yaml`.
+
+### One-time install
+
+```pwsh
+gcloud builds triggers create github `
+  --name=full-main-on-push `
+  --region=us-central1 `
+  --repository=projects/praxisbytacitus/locations/us-central1/connections/praxis-github/repositories/A4_PRAXIS_CLOUD_Work `
+  --branch-pattern="^main$" `
+  --build-config=cloudbuild.yaml `
+  --included-files="backend/**,cloud_functions/**,infrastructure/pgbouncer/**,infrastructure/triggers/full-main.yaml,cloudbuild.yaml" `
+  --include-logs-with-status `
   --project=praxisbytacitus
 ```
 
 ### Verify
 
 ```pwsh
-gcloud builds triggers list --project=praxisbytacitus --filter="name:frontend-main"
+gcloud builds triggers list --project=praxisbytacitus --filter="name:(frontend-main OR full-main)"
 ```
+
+Verify live provenance after a deploy:
+
+```pwsh
+Invoke-RestMethod https://praxis.tacitus.me/api/health/runtime | ConvertTo-Json -Depth 6
+```
+
+The `build` object should report the GitHub repository, `main` branch, commit
+SHA, Cloud Build id, Cloud Run service, and Cloud Run revision.
 
 ### Manual deploy (still works)
 
@@ -37,16 +124,15 @@ gcloud builds submit `
 
 ## Coordinating with Codex + Claude
 
-Both agents commit to `main` directly. Without the gate, every routine commit
-would queue a Cloud Build run, racing each other and confusing rollout state.
-The `[deploy]` token gives the human (or the agent on the human's instruction)
-explicit control over when production updates.
+Both agents commit to `main` directly. Keep commits coherent because production
+deploys from matching `main` pushes. The trigger file scopes prevent docs-only
+and graphify-only commits from redeploying the app.
 
 Recommended pattern:
 
 ```text
-feat(landing): wire capsule strip into cockpit header [deploy]
+feat(ask): unify conversation turn rail
 ```
 
-Routine work (docs, graphify, audits, work-in-progress visuals) omits the
-token and stays staged on `main` until a `[deploy]` commit comes along.
+Backend or infrastructure commits exercise the full production build and should
+be treated as heavier release checkpoints.

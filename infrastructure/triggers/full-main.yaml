@@ -1,0 +1,25 @@
+# GCP Cloud Build trigger: deploy full PRAXIS stack from GitHub main.
+#
+# Install with the 2nd-gen GitHub connection commands in README.md. This file
+# records the intended trigger scope for review and audit.
+#
+# Every push to main that touches backend, worker, Cloud Function, or full
+# Cloud Build infrastructure files runs cloudbuild.yaml.
+
+name: full-main-on-push
+description: Deploy full PRAXIS Cloud Run stack from GitHub main when backend or infrastructure files change.
+filename: cloudbuild.yaml
+github:
+  owner: sargonxg
+  name: A4_PRAXIS_CLOUD_Work
+  push:
+    branch: ^main$
+includedFiles:
+  - "backend/**"
+  - "cloud_functions/**"
+  - "infrastructure/pgbouncer/**"
+  - "infrastructure/triggers/full-main.yaml"
+  - "cloudbuild.yaml"
+tags:
+  - praxis-full
+  - github-main-deploy

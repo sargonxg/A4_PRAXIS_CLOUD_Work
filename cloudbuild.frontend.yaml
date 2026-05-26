@@ -39,7 +39,8 @@ steps:
       - '-c'
       - >-
         docker build
-        -t us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend
+        -t us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:${_SOURCE_COMMIT}
+        -t us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:latest
         --build-arg NEXT_PUBLIC_PRAXIS_BACKEND_URL=$(cat /workspace/backend_url.txt)
         --build-arg NEXT_PUBLIC_SITE_URL=https://praxis.tacitus.me
         --build-arg NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA
@@ -51,13 +52,23 @@ steps:
         --build-arg NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-7R44KT7CDY
         --build-arg NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY=AQ.Ab8RN6IXTdhsDEQPADTuABwbGTCSfvNt16sMuy0Xc95Anrh6Pw
         --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${_GOOGLE_MAPS_KEY}
+        --build-arg NEXT_PUBLIC_PRAXIS_BUILD_SOURCE=${_BUILD_SOURCE}
+        --build-arg NEXT_PUBLIC_PRAXIS_SOURCE_REPO=${_SOURCE_REPO}
+        --build-arg NEXT_PUBLIC_PRAXIS_SOURCE_BRANCH=${_SOURCE_BRANCH}
+        --build-arg NEXT_PUBLIC_PRAXIS_SOURCE_COMMIT=${_SOURCE_COMMIT}
+        --build-arg NEXT_PUBLIC_PRAXIS_BUILD_ID=$BUILD_ID
         .
     id: 'build-frontend'
     waitFor: ['preflight-audit-routes', 'get-backend-url']
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend']
-    id: 'push-frontend'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:${_SOURCE_COMMIT}']
+    id: 'push-frontend-commit'
+    waitFor: ['build-frontend']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:latest']
+    id: 'push-frontend-latest'
     waitFor: ['build-frontend']
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -67,7 +78,7 @@ steps:
       - deploy
       - praxis-frontend
       - '--image'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:${_SOURCE_COMMIT}'
       - '--region'
       - us-central1
       - '--allow-unauthenticated'
@@ -80,7 +91,9 @@ steps:
       - '--max-instances'
       - '10'
       - '--set-env-vars'
-      - '^|^AI_PROVIDER=vertex|GOOGLE_VERTEX_PROJECT=praxisbytacitus|GOOGLE_VERTEX_LOCATION=us-central1|VERTEX_AGENT_LOCATION=us-central1|GOOGLE_CLOUD_PROJECT=praxisbytacitus|AGENT_RUN_TASKS_PROJECT=praxisbytacitus|AGENT_RUN_TASKS_LOCATION=us-central1|AGENT_RUN_TASKS_QUEUE=agent-runs|AGENT_RUN_WORKER_BASE_URL=https://praxis.tacitus.me|AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL=praxis-agents-sa@praxisbytacitus.iam.gserviceaccount.com|AGENT_RUN_WORKER_OIDC_AUDIENCE=https://praxis.tacitus.me|VERTEX_GROUNDING_GOOGLE_SEARCH_ENABLED=true|RESEARCH_GRAPH_ENABLED=true|ADMIN_EMAIL_ALLOWLIST=giulio@tacitus.me,giuliocatanzariti@gmail.com'
+      - '^|^AI_PROVIDER=vertex|GOOGLE_VERTEX_PROJECT=praxisbytacitus|GOOGLE_VERTEX_LOCATION=us-central1|VERTEX_AGENT_LOCATION=us-central1|GOOGLE_CLOUD_PROJECT=praxisbytacitus|AGENT_RUN_TASKS_PROJECT=praxisbytacitus|AGENT_RUN_TASKS_LOCATION=us-central1|AGENT_RUN_TASKS_QUEUE=agent-runs|AGENT_RUN_WORKER_BASE_URL=https://praxis.tacitus.me|AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL=praxis-agents-sa@praxisbytacitus.iam.gserviceaccount.com|AGENT_RUN_WORKER_OIDC_AUDIENCE=https://praxis.tacitus.me|VERTEX_GROUNDING_GOOGLE_SEARCH_ENABLED=true|RESEARCH_GRAPH_ENABLED=true|ADMIN_EMAIL_ALLOWLIST=giulio@tacitus.me,giuliocatanzariti@gmail.com|PRAXIS_BUILD_SOURCE=${_BUILD_SOURCE}|PRAXIS_SOURCE_REPO=${_SOURCE_REPO}|PRAXIS_SOURCE_BRANCH=${_SOURCE_BRANCH}|PRAXIS_SOURCE_COMMIT=${_SOURCE_COMMIT}|PRAXIS_BUILD_ID=$BUILD_ID'
+      - '--labels'
+      - 'source=${_BUILD_SOURCE},repo=a4-praxis-cloud-work,branch=${_SOURCE_BRANCH},commit=${_SOURCE_COMMIT}'
       - '--set-secrets'
       - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest,USER_KEY_MASTER=praxis-user-key-master:latest,VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest,PUBSUB_PUSH_SHARED_SECRET=praxis-pubsub-push-secret:latest,AGENT_RUNTIME_DATABASE_URL=praxis-agent-runtime-database-url:latest,EXA_API_KEY=praxis-exa-api-key:latest'
       - '--add-cloudsql-instances'
@@ -92,7 +105,7 @@ steps:
       - '--vpc-egress'
       - private-ranges-only
     id: 'deploy-frontend'
-    waitFor: ['push-frontend']
+    waitFor: ['push-frontend-commit', 'push-frontend-latest']
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
@@ -101,16 +114,22 @@ steps:
       - >-
         gcloud run services update praxis-frontend
         --region=us-central1
-        --update-env-vars=NEXT_PUBLIC_PRAXIS_BACKEND_URL=$(cat /workspace/backend_url.txt),NEXT_PUBLIC_SITE_URL=https://praxis.tacitus.me,NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA,NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=praxisbytacitus.firebaseapp.com,NEXT_PUBLIC_FIREBASE_PROJECT_ID=praxisbytacitus,NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=praxisbytacitus.firebasestorage.app,NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=852128226674,NEXT_PUBLIC_FIREBASE_APP_ID=1:852128226674:web:535f771c7a3568462c11eb,NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-7R44KT7CDY,NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY=AQ.Ab8RN6IXTdhsDEQPADTuABwbGTCSfvNt16sMuy0Xc95Anrh6Pw
+        --update-env-vars=NEXT_PUBLIC_PRAXIS_BACKEND_URL=$(cat /workspace/backend_url.txt),NEXT_PUBLIC_SITE_URL=https://praxis.tacitus.me,NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA,NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=praxisbytacitus.firebaseapp.com,NEXT_PUBLIC_FIREBASE_PROJECT_ID=praxisbytacitus,NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=praxisbytacitus.firebasestorage.app,NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=852128226674,NEXT_PUBLIC_FIREBASE_APP_ID=1:852128226674:web:535f771c7a3568462c11eb,NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-7R44KT7CDY,NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY=AQ.Ab8RN6IXTdhsDEQPADTuABwbGTCSfvNt16sMuy0Xc95Anrh6Pw,NEXT_PUBLIC_PRAXIS_BUILD_SOURCE=${_BUILD_SOURCE},NEXT_PUBLIC_PRAXIS_SOURCE_REPO=${_SOURCE_REPO},NEXT_PUBLIC_PRAXIS_SOURCE_BRANCH=${_SOURCE_BRANCH},NEXT_PUBLIC_PRAXIS_SOURCE_COMMIT=${_SOURCE_COMMIT},NEXT_PUBLIC_PRAXIS_BUILD_ID=$BUILD_ID
     id: 'set-frontend-env'
     waitFor: ['deploy-frontend']
 
 images:
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:${_SOURCE_COMMIT}'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:latest'
 
 substitutions:
+  _BUILD_SOURCE: '${TRIGGER_NAME:-local-submit}'
+  _SOURCE_REPO: 'sargonxg/A4_PRAXIS_CLOUD_Work'
+  _SOURCE_BRANCH: '${BRANCH_NAME:-local}'
+  _SOURCE_COMMIT: '${COMMIT_SHA:-manual}'
   _GOOGLE_MAPS_KEY: ''
 
 options:
+  dynamicSubstitutions: true
   logging: CLOUD_LOGGING_ONLY
   machineType: E2_HIGHCPU_8

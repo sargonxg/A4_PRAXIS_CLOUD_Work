@@ -10,11 +10,22 @@ export type RuntimeHealthCheck = {
   repairAction?: string;
 };
 
+export type RuntimeBuildProvenance = {
+  source: string;
+  repository: string;
+  branch: string;
+  commit: string;
+  buildId: string;
+  revision: string;
+  service: string;
+};
+
 export type RuntimeHealthSummary = {
   status: Exclude<RuntimeHealthStatus, 'unconfigured'>;
   summary: string;
   checkedAt: string;
   debugHref: '/app/settings?tab=system';
+  build: RuntimeBuildProvenance;
   checks: RuntimeHealthCheck[];
 };
 
@@ -37,6 +48,7 @@ export function buildRuntimeHealthSummary(
     summary: status === 'ok' ? 'Systems ready' : status === 'degraded' ? 'Some systems degraded' : 'Systems down',
     checkedAt: checkedAt.toISOString(),
     debugHref: '/app/settings?tab=system',
+    build: collectRuntimeBuildProvenance(),
     checks,
   };
 }
@@ -45,6 +57,7 @@ export function sanitizeRuntimeHealth(report: RuntimeHealthSummary): RuntimeHeal
   return {
     ...report,
     summary: redactPublicRuntimeString(report.summary),
+    build: sanitizeRuntimeBuildProvenance(report.build),
     checks: report.checks.map((check) => ({
       id: redactPublicRuntimeString(check.id),
       label: redactPublicRuntimeString(check.label),
@@ -90,6 +103,18 @@ export async function collectRuntimeHealth(): Promise<RuntimeHealthSummary> {
 
   checks[0] = { ...checks[0], latencyMs: Date.now() - startedAt };
   return buildRuntimeHealthSummary(checks);
+}
+
+export function collectRuntimeBuildProvenance(): RuntimeBuildProvenance {
+  return {
+    source: runtimePublicValue(process.env.PRAXIS_BUILD_SOURCE, 'unknown'),
+    repository: runtimePublicValue(process.env.PRAXIS_SOURCE_REPO, 'unknown'),
+    branch: runtimePublicValue(process.env.PRAXIS_SOURCE_BRANCH, 'unknown'),
+    commit: runtimePublicValue(process.env.PRAXIS_SOURCE_COMMIT, 'unknown'),
+    buildId: runtimePublicValue(process.env.PRAXIS_BUILD_ID, 'unknown'),
+    revision: runtimePublicValue(process.env.K_REVISION, 'local'),
+    service: runtimePublicValue(process.env.K_SERVICE, 'local'),
+  };
 }
 
 function checkAgentWorkerDispatch(): RuntimeHealthCheck {
@@ -172,4 +197,22 @@ function redactPublicRuntimeString(value: string): string {
     .replace(/-----BEGIN [^-]+-----[\s\S]*?-----END [^-]+-----/gi, '[redacted-secret]')
     .replace(/\b(stack\s+trace|traceback|exception)\b/gi, '[redacted-runtime-detail]')
     .replace(/\b[a-z0-9-]+\.run\.app\b/gi, '[redacted-url]');
+}
+
+function sanitizeRuntimeBuildProvenance(build: RuntimeBuildProvenance): RuntimeBuildProvenance {
+  return {
+    source: runtimePublicValue(build.source, 'unknown'),
+    repository: runtimePublicValue(build.repository, 'unknown'),
+    branch: runtimePublicValue(build.branch, 'unknown'),
+    commit: runtimePublicValue(build.commit, 'unknown'),
+    buildId: runtimePublicValue(build.buildId, 'unknown'),
+    revision: runtimePublicValue(build.revision, 'local'),
+    service: runtimePublicValue(build.service, 'local'),
+  };
+}
+
+function runtimePublicValue(value: string | null | undefined, fallback: string): string {
+  const trimmed = value?.trim();
+  if (!trimmed) return fallback;
+  return redactPublicRuntimeString(trimmed).slice(0, 160);
 }

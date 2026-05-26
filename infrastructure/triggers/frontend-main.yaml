@@ -1,17 +1,13 @@
-# GCP Cloud Build trigger: push to main, opt-in via [deploy] token.
+# GCP Cloud Build trigger: deploy frontend from GitHub main.
 #
-# Import once:
-#   gcloud builds triggers import \
-#     --source=infrastructure/triggers/frontend-main.yaml \
-#     --project=praxisbytacitus
+# Install with the 2nd-gen GitHub connection commands in README.md. This file
+# records the intended trigger scope for review and audit.
 #
-# The trigger filters on the HEAD commit message via a Cloud Build payload
-# binding; only pushes whose commit message contains the literal token
-# `[deploy]` will run the frontend Cloud Build. Routine work (docs, audits,
-# graphify, visuals-in-progress) does not redeploy.
+# Every push to main that touches the frontend surface or frontend build
+# contract runs cloudbuild.frontend.yaml and promotes praxis-frontend.
 
 name: frontend-main-on-push
-description: Opt-in deploy of praxis-frontend on push to main when the commit message contains [deploy].
+description: Deploy praxis-frontend from GitHub main when frontend app or build files change.
 filename: cloudbuild.frontend.yaml
 github:
   owner: sargonxg
@@ -21,15 +17,13 @@ github:
 includedFiles:
   - "src/**"
   - "public/**"
+  - "Dockerfile"
   - "next.config.*"
   - "tsconfig.json"
   - "package.json"
   - "package-lock.json"
   - "cloudbuild.frontend.yaml"
-filter: 'build.substitutions["_COMMIT_MESSAGE"].contains("[deploy]")'
+  - "infrastructure/triggers/frontend-main.yaml"
 tags:
   - praxis-frontend
-  - opt-in-deploy
-substitutions:
-  _DEPLOY_TOKEN: "[deploy]"
-  _COMMIT_MESSAGE: "$(push.head_commit.message)"
+  - github-main-deploy

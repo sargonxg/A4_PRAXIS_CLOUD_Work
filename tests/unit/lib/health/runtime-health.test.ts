@@ -21,6 +21,15 @@ describe('runtime health summary', () => {
       status: 'ok',
       summary: 'Systems ready',
       checkedAt: '2026-05-17T12:00:00.000Z',
+      build: {
+        source: 'unknown',
+        repository: 'unknown',
+        branch: 'unknown',
+        commit: 'unknown',
+        buildId: 'unknown',
+        revision: 'local',
+        service: 'local',
+      },
     });
   });
 
@@ -128,6 +137,33 @@ describe('runtime health summary', () => {
       label: 'Private backend at [redacted-service-account]',
       status: 'degraded',
       latencyMs: 9,
+    });
+  });
+
+  it('keeps sanitized build provenance in the public runtime payload', () => {
+    const report = buildRuntimeHealthSummary(okChecks, new Date('2026-05-17T12:00:00Z'));
+    report.build = {
+      source: 'github-main',
+      repository: 'https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work',
+      branch: 'main',
+      commit: 'e15041f4a0cf94febc7afa2b58690f34cba1fa2c',
+      buildId: 'build-123',
+      revision: 'praxis-frontend-00811-z59',
+      service: 'praxis-frontend',
+    };
+
+    const sanitized = sanitizeRuntimeHealth(report);
+    const json = JSON.stringify(sanitized);
+
+    expect(json).not.toContain('https://');
+    expect(sanitized.build).toMatchObject({
+      source: 'github-main',
+      repository: '[redacted-url]',
+      branch: 'main',
+      commit: 'e15041f4a0cf94febc7afa2b58690f34cba1fa2c',
+      buildId: 'build-123',
+      revision: 'praxis-frontend-00811-z59',
+      service: 'praxis-frontend',
     });
   });
 });
