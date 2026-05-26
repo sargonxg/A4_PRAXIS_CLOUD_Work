@@ -91,10 +91,17 @@ Proof:
 - `graphify update .` passed and refreshed `graphify-out` with 6,173 nodes, 11,619 edges, and 720 communities.
 - `git diff --check` passed with line-ending warnings only.
 
-Remote/deploy status:
-- No push or deploy was run in this slice because this turn did not include explicit approval to push, dispatch GitHub Actions, or update Cloud Run.
-- GitHub `persona-smoke`, Cloud Build `frontend-main-on-push`, commit-tagged Cloud Run serving proof, and the phase-100 canary remain pending for the pushed version of this slice.
+Remote proof:
+- GitHub `main` code/docs commit: `f9250c75493b01a926fe9a93948a7ec8548dc311`.
+- GitHub Actions `persona-smoke` run `26474486759` passed for `f9250c75`; the `personas` job completed in 3m12s.
+- Manual Cloud Build deploy attempt `0eb9829e-84fd-43c4-9be7-33c3eb2800da` failed before Docker build because PowerShell split the comma-separated substitution string; no image was deployed from that attempt.
+- Corrected manual Cloud Build `08fb0cb7-803a-4bf8-9718-7d6d3b4ecd3e` succeeded with quoted substitutions and built `us-central1-docker.pkg.dev/praxisbytacitus/praxis/praxis-frontend:f9250c75493b01a926fe9a93948a7ec8548dc311`.
+- Cloud Run `praxis-frontend` served revision `praxis-frontend-00823-pg5` at 100 percent traffic using the `f9250c75` image.
+- `https://praxis.tacitus.me/api/health/runtime` returned `status: ok`, build source `manual-codex`, commit `f9250c75493b01a926fe9a93948a7ec8548dc311`, build id `08fb0cb7-803a-4bf8-9718-7d6d3b4ecd3e`, and revision `praxis-frontend-00823-pg5`; Firestore, backend, Deep work queue, Agent task queue, Agent worker dispatch, and Agent platform were all `ok`.
+- `https://praxis.tacitus.me/api/health/agentic-search` returned `status: ready` with Cloud SQL run ledger, Cloud Tasks queue, worker auth, Vertex/Gemini runtime, ADK agent runtime, Genkit provider, Vertex Google Search grounding, Exa premium search, research graph, and route/runtime imports ready.
+- Public checks returned HTTP 200 for `https://praxis.tacitus.me/` and `https://praxis.tacitus.me/login`.
+- Canary monitor passed at phase 100: 9 samples, 0 errors, p95 2085 ms.
 
 Known caveats:
 - Existing lint warnings remain outside this slice; no new blocking lint errors were introduced.
-- The live runtime health proof is read-only and confirms current production health, not that this unpushed local commit is deployed.
+- `https://praxis.tacitus.me/api/health` still reports `cognee_memory: unconfigured` and `cogneeMode: disabled`; this is expected for this wave because Cognee remains optional advisory memory while Firestore and Cloud SQL remain canonical.
