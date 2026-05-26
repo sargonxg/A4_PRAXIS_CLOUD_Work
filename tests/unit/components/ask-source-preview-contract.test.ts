@@ -30,6 +30,16 @@ describe('Ask source preview panel contract', () => {
     expect(source).toContain('Tool router');
   });
 
+  it('renders the Ask turn plan as a simple in-thread plan before detailed receipts', () => {
+    expect(source).toContain('AskTurnPlanPanel');
+    expect(source).toContain('turnPlan');
+    expect(source).toContain('PRAXIS plan');
+    expect(source).toContain('statusRail');
+    expect(source).toContain('artifactPlan');
+    expect(source).toContain('continuationPolicy');
+    expect(source.indexOf('AskTurnPlanPanel')).toBeLessThan(source.indexOf('AnswerQualityStrip'));
+  });
+
   it('renders a compact answer-quality strip before detailed receipts', () => {
     expect(source).toContain('AnswerQualityStrip');
     expect(answerQualityStripSource).toContain('answerQualitySummary');
