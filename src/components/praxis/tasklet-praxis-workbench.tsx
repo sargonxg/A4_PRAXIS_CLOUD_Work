@@ -64,6 +64,7 @@ import {
 import { AccountProfileButton } from '@/components/app/account-profile-button';
 import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
+import { AskTurnPlanPanel } from '@/components/ask/AskTurnPlanPanel';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
 import { SourcePostureChip, WorkActionMenu } from '@/components/ui/instrument';
@@ -3892,6 +3893,13 @@ export function TaskletPraxisWorkbench({
                       <>
                         <AssistantMarkdown text={message.text || 'Reading context...'} messageId={`assistant-${index}`} />
                         <ConversationReceiptSummary envelope={message.answerEnvelope} />
+                        <AskTurnPlanPanel
+                          turnPlan={message.answerEnvelope?.orchestrationReceipt?.turnPlan}
+                          onFollowUp={(followUp) => {
+                            setPrompt(followUp);
+                            setStatus('PRAXIS plan action loaded into the composer.');
+                          }}
+                        />
                         <AnswerQualityStrip
                           envelope={message.answerEnvelope}
                           onAction={(actionPrompt) => {

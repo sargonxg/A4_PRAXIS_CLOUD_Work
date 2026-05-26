@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 describe('Ask source preview panel contract', () => {
   const source = readFileSync(join(process.cwd(), 'src/components/ask/AskStreamPanel.tsx'), 'utf8');
   const answerQualityStripSource = readFileSync(join(process.cwd(), 'src/components/ask/AnswerQualityStrip.tsx'), 'utf8');
+  const turnPlanPanelSource = readFileSync(join(process.cwd(), 'src/components/ask/AskTurnPlanPanel.tsx'), 'utf8');
 
   it('renders source locators, source receipt links, and extraction fallback labels', () => {
     expect(source).toContain('locatorLabel');
@@ -31,12 +32,13 @@ describe('Ask source preview panel contract', () => {
   });
 
   it('renders the Ask turn plan as a simple in-thread plan before detailed receipts', () => {
+    expect(source).toContain("import { AskTurnPlanPanel }");
     expect(source).toContain('AskTurnPlanPanel');
     expect(source).toContain('turnPlan');
-    expect(source).toContain('PRAXIS plan');
-    expect(source).toContain('statusRail');
-    expect(source).toContain('artifactPlan');
-    expect(source).toContain('continuationPolicy');
+    expect(turnPlanPanelSource).toContain('PRAXIS plan');
+    expect(turnPlanPanelSource).toContain('statusRail');
+    expect(turnPlanPanelSource).toContain('artifactPlan');
+    expect(turnPlanPanelSource).toContain('continuationPolicy');
     expect(source.indexOf('<AskTurnPlanPanel')).toBeLessThan(source.indexOf('<AnswerQualityStrip'));
   });
 
