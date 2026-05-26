@@ -151,6 +151,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="praxis-chat-thread"');
     expect(source).toContain('answerEnvelopeFromDataStreamLine(line)');
     expect(source).toContain('ConversationReceiptSummary');
+    expect(source).toContain('AskTurnPlanPanel');
+    expect(source).toContain('turnPlan={message.answerEnvelope?.orchestrationReceipt?.turnPlan}');
     expect(source).toContain('AnswerQualityStrip');
     expect(answerQualityStripSource).toContain('answerQualitySummary');
     expect(source).toContain('ConversationSourcePreviewPanel');
@@ -159,6 +161,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Follow-ups');
     expect(source).toContain('safeMarkdownHref(href)');
     expect(source).toContain("target={external ? '_blank' : undefined}");
+    expect(source.indexOf('<AskTurnPlanPanel')).toBeLessThan(source.indexOf('<AnswerQualityStrip'));
   });
 
   it('surfaces plain context readiness states in the active capsule strip', () => {
