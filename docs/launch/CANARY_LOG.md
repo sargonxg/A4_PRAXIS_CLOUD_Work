@@ -17,6 +17,7 @@ traffic split was used in this direct deploy path.
 | 100% | `praxis-frontend-00308-29d` | 2026-05-11T05:27Z | 2026-05-11T05:36Z | 0 | 272 ms | not measured | `tsx scripts/canary-monitor.ts --phase=100 --url=https://praxis.tacitus.me --samples=3` | pass |
 | 100% | `praxis-frontend-00310-bqx` | 2026-05-11T05:50Z | 2026-05-11T05:58Z | 0 | 192 ms | not measured | `tsx scripts/canary-monitor.ts --phase=100 --url=https://praxis.tacitus.me --samples=3` | pass after one cold-start latency retry |
 | 100% | `praxis-frontend-00813-z5t` | 2026-05-26T18:03Z | 2026-05-26T18:12Z | 0 | 546 ms | not measured | `npx tsx scripts/canary-monitor.ts --phase=100 --url=https://praxis.tacitus.me --samples=3`; `npm run audit:runtime-health-live` | pass; GitHub-main build `c0273ff4-cd5f-4abd-8bd2-f2237e9c1c63` from commit `b3f901513597c4819fc92ae17695f8e9d66b2fd4` |
+| 100% | `praxis-frontend-00815-gbt` | 2026-05-26T18:28Z | 2026-05-26T18:38Z | 0 | 1113 ms | not measured | `npx tsx scripts/canary-monitor.ts --phase=100 --url=https://praxis.tacitus.me --samples=3`; `/api/health/runtime`; GitHub Actions `persona-smoke` | pass after one post-deploy cold-start latency retry; GitHub-main build `2b6c951f-57ea-468d-ba22-e9ce80ee533d` from commit `09b30f1767c83a2043b136d18109949c8bccca4e`; `persona-smoke` run `26467247419` passed |
 
 ## Rollback Rule
 

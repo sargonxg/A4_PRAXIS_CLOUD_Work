@@ -2,7 +2,7 @@
 
 Date: 2026-05-26
 Owner: PRAXIS launch workstream
-Status: execution plan
+Status: execution underway
 Scope: GitHub-main deploy proof, `praxis.tacitus.me`, Ask PRAXIS, agent runtime, SQL/Firebase/Cognee/context stores, ContextCapsules, tools, artifacts, and public-launch gates.
 
 ## Current Checkpoint
@@ -12,7 +12,9 @@ Scope: GitHub-main deploy proof, `praxis.tacitus.me`, Ask PRAXIS, agent runtime,
 - Canonical branch: `main`
 - Launch URL: `https://praxis.tacitus.me`
 - Current deploy-source work: Cloud Build and Docker provenance expose source repo, branch, commit, trigger, build id, Cloud Run service, and Cloud Run revision through runtime health.
-- Verified GitHub-main deploy: `frontend-main-on-push` build `c0273ff4-cd5f-4abd-8bd2-f2237e9c1c63` deployed commit `b3f901513597c4819fc92ae17695f8e9d66b2fd4` to Cloud Run revision `praxis-frontend-00813-z5t`.
+- Latest verified GitHub-main deploy: `frontend-main-on-push` build `2b6c951f-57ea-468d-ba22-e9ce80ee533d` deployed commit `09b30f1767c83a2043b136d18109949c8bccca4e` to Cloud Run revision `praxis-frontend-00815-gbt`.
+- `persona-smoke` GitHub Actions run `26467247419` passed on commit `09b30f1767c83a2043b136d18109949c8bccca4e`.
+- Synthetic production canary passed on `praxis-frontend-00815-gbt`: 9 samples, 0 errors, p95 1113 ms, after one post-deploy cold-start latency retry.
 - Cloudflare state: `tacitus.me` is active in Cloudflare; `praxis.tacitus.me` is DNS-only CNAME to `ghs.googlehosted.com`.
 
 ## Product Principle
@@ -180,6 +182,14 @@ Acceptance:
 ## Phase 3 - Add An AskTurnPlan Before Generation
 
 Goal: every non-trivial answer has a clear plan before the model writes.
+
+Status: initial deterministic contract implemented in commit
+`09b30f1767c83a2043b136d18109949c8bccca4e`. The current implementation returns
+the typed `AskTurnPlan` on the Ask orchestration receipt and covers intent,
+complexity, answer shape, required tools, required agents, quality bar, status
+rail, artifact plan, and continuation policy. Next step is to surface the plan
+as user-friendly same-window status and persist the selected plan into the answer
+envelope / AgentRun ledger where the data model supports it.
 
 Create a shared plan contract:
 
@@ -353,22 +363,22 @@ Acceptance:
 
 ## What I Would Do Next, In Order
 
-1. Finish Cloud Build GitHub OAuth and create the `main` triggers.
-2. Run a GitHub-triggered frontend deploy and verify runtime health exposes the latest `main` commit.
-3. Add the authenticated same-thread Ask-to-AgentRun canary.
-4. Implement the same-window Ask conversation component consolidation.
-5. Add `AskTurnPlan` and deterministic triage.
-6. Add answer quality summary, context repair actions, and agentic depth recommendation.
-7. Add compact in-thread status/proof UI for agent runs and tool calls.
-8. Harden ContextCapsule browse/search/attach and source-gap repair.
-9. Add Cognee/graph readiness diagnostics with non-authoritative review gates.
-10. Run the full public-launch gate and update `docs/launch/CANARY_LOG.md`.
+1. Unblock the authenticated same-thread Ask-to-AgentRun canary with a disposable Firebase canary user and local ADC reauth.
+2. Implement the same-window Ask conversation component consolidation.
+3. Surface `AskTurnPlan` as friendly in-thread status, quality, artifact, and continuation chips.
+4. Persist the selected plan into the answer envelope and AgentRun ledger.
+5. Add answer quality summary, context repair actions, and agentic depth recommendation.
+6. Add compact in-thread status/proof UI for agent runs and tool calls.
+7. Harden ContextCapsule browse/search/attach and source-gap repair.
+8. Add Cognee/graph readiness diagnostics with non-authoritative review gates.
+9. Run the full public-launch gate and keep `docs/launch/CANARY_LOG.md` current.
+10. Keep `frontend-main-on-push`, `full-main-on-push`, and `persona-smoke` green on every launch-critical change.
 
 ## Launch Score Target
 
 Target before public sharing: 85/100 production readiness.
 
-Current expected cap until Phase 0 completes: 84/100, because the app can be live and healthy while deploy provenance is not yet proven from GitHub `main`.
+Current expected cap after Phase 0 completion: 86/100, because GitHub-main deploy provenance is now proven for the frontend path.
 
 Current expected cap until same-thread agent proof is verified: 84/100, because agentic value is present but not fully proven in the primary user flow.
 

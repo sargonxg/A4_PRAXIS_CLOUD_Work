@@ -25,6 +25,11 @@ The first verified GitHub-sourced frontend deploy was build
 `b3f901513597c4819fc92ae17695f8e9d66b2fd4`, serving Cloud Run revision
 `praxis-frontend-00813-z5t`.
 
+The latest verified GitHub-sourced frontend deploy in this setup pass was build
+`2b6c951f-57ea-468d-ba22-e9ce80ee533d`, sourced from GitHub commit
+`09b30f1767c83a2043b136d18109949c8bccca4e`, serving Cloud Run revision
+`praxis-frontend-00815-gbt`.
+
 Cloudflare is the authoritative DNS provider for `tacitus.me`. The production
 record is currently DNS-only:
 
