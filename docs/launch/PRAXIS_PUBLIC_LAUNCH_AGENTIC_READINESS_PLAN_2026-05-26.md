@@ -12,9 +12,9 @@ Scope: GitHub-main deploy proof, `praxis.tacitus.me`, Ask PRAXIS, agent runtime,
 - Canonical branch: `main`
 - Launch URL: `https://praxis.tacitus.me`
 - Current deploy-source work: Cloud Build and Docker provenance expose source repo, branch, commit, trigger, build id, Cloud Run service, and Cloud Run revision through runtime health.
-- Latest verified GitHub-main deploy: `frontend-main-on-push` build `2b6c951f-57ea-468d-ba22-e9ce80ee533d` deployed commit `09b30f1767c83a2043b136d18109949c8bccca4e` to Cloud Run revision `praxis-frontend-00815-gbt`.
-- `persona-smoke` GitHub Actions run `26467247419` passed on commit `09b30f1767c83a2043b136d18109949c8bccca4e`.
-- Synthetic production canary passed on `praxis-frontend-00815-gbt`: 9 samples, 0 errors, p95 1113 ms, after one post-deploy cold-start latency retry.
+- Latest verified GitHub-main deploy: `frontend-main-on-push` build `0f18f7a7-1026-47d3-a759-5bb37d15a14e` deployed commit `da3436da1d6b6b65dc80ec0a7da9636ea69ee2d4` to Cloud Run revision `praxis-frontend-00817-r5m`.
+- `persona-smoke` GitHub Actions run `26469680455` passed on commit `da3436da1d6b6b65dc80ec0a7da9636ea69ee2d4`.
+- Synthetic production canary passed on `praxis-frontend-00817-r5m`: 9 samples, 0 errors, p95 1131 ms, after one post-deploy cold-start latency retry.
 - Cloudflare state: `tacitus.me` is active in Cloudflare; `praxis.tacitus.me` is DNS-only CNAME to `ghs.googlehosted.com`.
 
 ## Product Principle
@@ -184,12 +184,14 @@ Acceptance:
 Goal: every non-trivial answer has a clear plan before the model writes.
 
 Status: initial deterministic contract implemented in commit
-`09b30f1767c83a2043b136d18109949c8bccca4e`. The current implementation returns
-the typed `AskTurnPlan` on the Ask orchestration receipt and covers intent,
-complexity, answer shape, required tools, required agents, quality bar, status
-rail, artifact plan, and continuation policy. Next step is to surface the plan
-as user-friendly same-window status and persist the selected plan into the answer
-envelope / AgentRun ledger where the data model supports it.
+`09b30f1767c83a2043b136d18109949c8bccca4e`, and the same-window Ask panel now
+surfaces the typed `AskTurnPlan` in commit
+`da3436da1d6b6b65dc80ec0a7da9636ea69ee2d4`. The current implementation covers
+intent, complexity, answer shape, required tools, required agents, quality bar,
+status rail, artifact plan, continuation policy, and simple follow-up actions.
+Next step is to persist the selected plan into the AgentRun ledger and any
+long-lived answer records that do not already carry it through the orchestration
+receipt.
 
 Create a shared plan contract:
 
@@ -365,14 +367,14 @@ Acceptance:
 
 1. Unblock the authenticated same-thread Ask-to-AgentRun canary with a disposable Firebase canary user and local ADC reauth.
 2. Implement the same-window Ask conversation component consolidation.
-3. Surface `AskTurnPlan` as friendly in-thread status, quality, artifact, and continuation chips.
-4. Persist the selected plan into the answer envelope and AgentRun ledger.
-5. Add answer quality summary, context repair actions, and agentic depth recommendation.
-6. Add compact in-thread status/proof UI for agent runs and tool calls.
-7. Harden ContextCapsule browse/search/attach and source-gap repair.
-8. Add Cognee/graph readiness diagnostics with non-authoritative review gates.
-9. Run the full public-launch gate and keep `docs/launch/CANARY_LOG.md` current.
-10. Keep `frontend-main-on-push`, `full-main-on-push`, and `persona-smoke` green on every launch-critical change.
+3. Persist the selected `AskTurnPlan` into the AgentRun ledger and long-lived answer records.
+4. Add answer quality summary, context repair actions, and agentic depth recommendation polish.
+5. Add compact in-thread status/proof UI for agent runs and tool calls.
+6. Harden ContextCapsule browse/search/attach and source-gap repair.
+7. Add Cognee/graph readiness diagnostics with non-authoritative review gates.
+8. Run the full public-launch gate and keep `docs/launch/CANARY_LOG.md` current.
+9. Keep `frontend-main-on-push`, `full-main-on-push`, and `persona-smoke` green on every launch-critical change.
+10. Decide whether docs-only pushes should intentionally skip deploys or whether runtime health must always track the absolute GitHub `main` HEAD.
 
 ## Launch Score Target
 
