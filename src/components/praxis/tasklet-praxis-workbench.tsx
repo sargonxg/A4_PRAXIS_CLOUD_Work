@@ -4266,7 +4266,13 @@ export function TaskletPraxisWorkbench({
                       onCreate={openBuildYourOwnKnowledge}
                     />
                   ) : (
-                  <div className={cn('praxis-enter-stagger mt-4 grid w-full min-w-0 gap-3 md:grid-cols-[repeat(2,minmax(0,1fr))]', isCapsuleRepositoryPage && 'lg:grid-cols-[repeat(3,minmax(0,1fr))]', isRepositoryPage && 'md:grid-cols-1')} data-testid="tasklet-capsule-cards">
+                  <div
+                    className={cn(
+                      'praxis-enter-stagger mt-4 grid w-full min-w-0 gap-3',
+                      isCapsuleRepositoryPage || isRepositoryPage ? 'md:grid-cols-1' : 'md:grid-cols-[repeat(2,minmax(0,1fr))]',
+                    )}
+                    data-testid="tasklet-capsule-cards"
+                  >
                     {capsulesLoading && !filteredUserCapsules.length ? (
                       <CapsuleEmptyState label="Loading capsules..." />
                     ) : null}
@@ -7009,12 +7015,17 @@ function CapsuleLoadingSkeleton({ label }: { label: string }) {
   }
 
   return (
-    <div className="praxis-enter-stagger col-span-full grid gap-3 sm:grid-cols-2" role="status" aria-label={label}>
+    <div
+      className="praxis-enter-stagger col-span-full grid min-w-0 gap-3"
+      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 14rem), 1fr))' }}
+      role="status"
+      aria-label={label}
+    >
       <span className="sr-only">{label}</span>
       {[0, 1, 2, 3].map((item) => (
-        <article key={item} className="specimen-card min-h-40 rounded-lg p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="grid flex-1 gap-2">
+        <article key={item} className="specimen-card min-h-40 min-w-0 rounded-lg p-4">
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <div className="grid min-w-0 flex-1 gap-2">
               <InstrumentSkeleton className="h-4 w-40 max-w-full rounded" />
               <InstrumentSkeleton className="h-3 w-full rounded" />
               <InstrumentSkeleton className="h-3 w-2/3 rounded" />

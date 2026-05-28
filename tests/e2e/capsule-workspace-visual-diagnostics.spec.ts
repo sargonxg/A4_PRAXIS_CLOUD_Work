@@ -29,16 +29,22 @@ test.describe('capsule workspace visual diagnostics', () => {
     await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
     await page.waitForURL(APP_OR_ONBOARDING, { timeout: 30_000 });
     if (page.url().includes('/onboarding')) test.skip(true, 'Fixture account still needs onboarding before capsule workspace diagnostics can run.');
+    await expect(page.getByTestId('tasklet-praxis-workbench')).toBeVisible({ timeout: 30_000 });
 
     for (const width of widths) {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
       await page.goto(`${BASE}/app/capsules`);
       await expect(page.getByTestId('tasklet-praxis-workbench')).toBeVisible({ timeout: 20_000 });
       await expect(page.getByTestId('capsule-studio-header')).toBeVisible();
-      await expect(page.getByTestId('capsule-studio-primary-actions')).toBeVisible();
-      await expect(page.getByRole('button', { name: /Build capsule/i })).toBeVisible();
-      await expect(page.getByRole('button', { name: /Use in Ask/i })).toBeVisible();
-      await expect(page.getByRole('button', { name: /Review improvements/i })).toBeVisible();
+      const primaryActions = page.getByTestId('capsule-studio-primary-actions');
+      const commandBand = page.getByTestId('capsule-studio-command-band');
+      await expect(primaryActions).toBeVisible();
+      await expect(primaryActions.getByRole('button', { name: /Build capsule/i })).toBeVisible();
+      await expect(primaryActions.getByRole('button', { name: /Use in Ask/i })).toBeVisible();
+      await expect(primaryActions.getByRole('button', { name: /Review improvements/i })).toBeVisible();
+      await expect(commandBand.getByRole('button', { name: /Build capsule/i })).toBeVisible();
+      await expect(commandBand.getByRole('button', { name: /Use in Ask/i })).toBeVisible();
+      await expect(commandBand.getByRole('button', { name: /Review improvements/i })).toBeVisible();
       await expect(page.getByTestId('praxis-main-composer')).toHaveCount(0);
       await expectNoDocumentOverflow(page, '/app/capsules', width);
       await expectNoInternalOverflow(page, '[data-testid="capsule-studio-command-band"]', width);
@@ -58,13 +64,14 @@ test.describe('capsule workspace visual diagnostics', () => {
 
       const firstCard = page.locator('[data-testid^="capsule-card-"]').first();
       await expect(firstCard.getByRole('button', { name: /^Add$/ })).toBeVisible();
-      await expect(firstCard.getByRole('button', { name: /Details/i })).toBeVisible();
+      await expect(firstCard.getByRole('button', { name: /Read more/i })).toBeVisible();
+      await expect(firstCard.getByRole('button', { name: /Inspect/i })).toBeVisible();
     }
 
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByTestId('capsule-studio-chat-panel')).toBeVisible();
     await expect(page.getByTestId('capsule-studio-source-section')).toBeVisible();
-    await page.getByRole('button', { name: /^Details$/i }).click();
+    await page.locator('[data-testid^="capsule-card-"]').first().getByRole('button', { name: /Inspect/i }).click();
     const inspector = page.getByTestId('capsule-inspector-sheet');
     await expect(inspector).toBeVisible();
     await expect(page.getByTestId('capsule-inspector-chat-panel')).toBeVisible();
