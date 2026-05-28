@@ -128,6 +128,7 @@ test.describe('Boardroom live workspace', () => {
     });
 
     await page.goto(`${BASE}/login?redirect=/app/boardroom`);
+    await page.evaluate(() => localStorage.setItem('praxis-tour-seen', 'true'));
     if (await page.getByRole('heading', { name: /Page not found/i }).isVisible().catch(() => false)) {
       test.skip(true, 'Local login route is unavailable in this dev server; Boardroom smoke requires the auth lane.');
     }
@@ -136,6 +137,7 @@ test.describe('Boardroom live workspace', () => {
     await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
     await page.waitForURL(APP_OR_ONBOARDING, { timeout: 20_000 });
     if (page.url().includes('/onboarding')) test.skip(true, 'Fixture account still needs onboarding before Boardroom smoke can run.');
+    await expect(page.locator('input[type=email]')).toHaveCount(0, { timeout: 30_000 });
 
     await page.goto(`${BASE}/app/boardroom`);
     await expect(page.getByTestId('boardroom-home-surface')).toBeVisible({ timeout: 20_000 });
@@ -145,7 +147,7 @@ test.describe('Boardroom live workspace', () => {
     await page.getByRole('button', { name: /Start boardroom/i }).click();
 
     await expect(page.getByTestId('boardroom-agent-stage')).toContainText(/succeeded/i, { timeout: 20_000 });
-    await expect(page.getByTestId('boardroom-run-panel')).toContainText(/Sequence access guarantees/i);
+    await expect(page.getByTestId('boardroom-run-panel')).toContainText(/Boardroom brief for corridor guarantees/i);
     await expect(page.getByTestId('boardroom-run-panel')).toContainText(/Proceed with a written corridor guarantee/i);
     await expect(page.getByTestId('boardroom-run-panel')).toContainText(/Draft the guarantee memo/i);
     await expect(page.getByTestId('boardroom-proof-summary')).toContainText(/Runtime proof/i);
