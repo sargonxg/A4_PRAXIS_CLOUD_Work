@@ -4,47 +4,33 @@ const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 const APP_OR_ONBOARDING = /\/(?:app|onboarding)/;
 
 test.describe('Boardroom live workspace', () => {
-  test('uploads sources, runs a mocked live discussion, and renders proof', async ({ page }) => {
+  test('starts a simplified live discussion and renders proof', async ({ page }) => {
     test.skip(
       !process.env.TEST_FIREBASE_EMAIL || !process.env.TEST_FIREBASE_PASSWORD,
       'TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set - skipping authenticated Boardroom smoke',
     );
 
-    const capsule = {
-      capsuleId: 'boardroom-capsule',
-      label: 'Somalia Humanitarian Corridor',
-      version: 7,
-      archivedAt: null,
-      latestGateState: 'ready',
-      readinessSummary: { status: 'ready', summary: 'Ready for deliberation', reviewCardCount: 3 },
-      coreRefs: {
-        situationCoreId: 'situation-boardroom',
-        sourceCoreIds: ['source-capsule-1'],
-        documentCoreIds: ['doc-capsule-1'],
-      },
-      activeForSituationIds: ['situation-boardroom'],
-      health: { score: 91, semaphore: 'green', warnings: [] },
-    };
     const run = {
       runId: 'run-boardroom-live',
       status: 'succeeded',
       objective: 'Decide how to sequence corridor guarantees.',
-      capsuleId: capsule.capsuleId,
+      capsuleId: 'default',
       policyAgentLabel: 'Boardroom',
       outputHref: '/app/boardroom?runId=run-boardroom-live',
       memoId: 'memo-boardroom',
       outputCapsuleId: 'output-boardroom',
-      sourceReceiptIds: ['receipt-uploaded', 'receipt-pasted'],
+      sourceReceiptIds: ['receipt-capsule'],
     };
     const boardroomOutput = {
+      meetingBrief: 'Boardroom brief for corridor guarantees.',
       transcript: [
         {
           turnId: 'turn-1',
           round: 1,
-          participantId: 'mediator',
+          participantId: 'source-scout',
           state: 'speaking',
           claim: 'Sequence access guarantees before public messaging.',
-          evidenceRefs: ['receipt-uploaded'],
+          evidenceRefs: ['receipt-capsule'],
           confidence: 'medium',
         },
         {
@@ -62,48 +48,30 @@ test.describe('Boardroom live workspace', () => {
       divergences: ['Security wants a narrower first phase.'],
       risks: ['Public deadline may outrun field verification.'],
       openQuestions: ['Who signs the escort exception?'],
-      nextActions: [{ action: 'Draft the guarantee memo', owner: 'Legal', urgency: 'today' }],
-      evidenceStats: { sourceCount: 2, documentCount: 2, paragraphCount: 5 },
+      nextActions: [{ action: 'Draft the guarantee memo', owner: 'legal', urgency: 'short-term' }],
+      evidenceStats: { sourceCount: 1, documentCount: 0, sourcedParagraphCount: 5, unsupportedClaimCount: 1 },
+      confidenceDistribution: { high: 1, medium: 1, low: 0 },
     };
-    let uploadCount = 0;
 
-    await page.route('**/api/context/capsules', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ created: 0, existing: 1, capsules: [capsule] }),
-      });
-    });
-    await page.route('**/api/documents/upload', async (route) => {
-      uploadCount += 1;
-      const pasted = uploadCount === 2;
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          documentId: pasted ? 'doc-pasted' : 'doc-uploaded',
-          coreRefs: { sourceCoreIds: [pasted ? 'source-pasted' : 'source-uploaded'] },
-          document: {
-            title: pasted ? 'boardroom-paste.txt' : 'uploaded-evidence.txt',
-            sourceCoreId: pasted ? 'source-pasted' : 'source-uploaded',
-            sourceReceiptId: pasted ? 'receipt-pasted' : 'receipt-uploaded',
-            fileType: 'txt',
-            size: 128,
-          },
-        }),
-      });
-    });
     await page.route('**/api/boardroom/runs', async (route) => {
       const body = route.request().postDataJSON() as {
         capsuleId?: string;
+        maxRounds?: number;
+        participantIds?: string[];
         selectedDocumentIds?: string[];
-        selectedSources?: Array<{ documentId: string; sourceReceiptId?: string; label?: string }>;
       };
-      expect(body.capsuleId).toBe(capsule.capsuleId);
-      expect(body.selectedDocumentIds).toEqual(['doc-pasted', 'doc-uploaded']);
-      expect(body.selectedSources?.map((source) => source.sourceReceiptId).sort()).toEqual([
-        'receipt-pasted',
-        'receipt-uploaded',
+      expect(body.capsuleId).toBeUndefined();
+      expect(body.selectedDocumentIds).toBeUndefined();
+      expect(body.maxRounds).toBe(2);
+      expect(body.participantIds).toEqual([
+        'synthesis-chair',
+        'source-scout',
+        'mediator',
+        'legal',
+        'security',
+        'humanitarian',
+        'media',
+        'red-team',
       ]);
       await route.fulfill({
         status: 201,
@@ -160,6 +128,9 @@ test.describe('Boardroom live workspace', () => {
     });
 
     await page.goto(`${BASE}/login?redirect=/app/boardroom`);
+    if (await page.getByRole('heading', { name: /Page not found/i }).isVisible().catch(() => false)) {
+      test.skip(true, 'Local login route is unavailable in this dev server; Boardroom smoke requires the auth lane.');
+    }
     await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
     await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
     await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
@@ -167,31 +138,19 @@ test.describe('Boardroom live workspace', () => {
     if (page.url().includes('/onboarding')) test.skip(true, 'Fixture account still needs onboarding before Boardroom smoke can run.');
 
     await page.goto(`${BASE}/app/boardroom`);
-    await expect(page.getByTestId('boardroom-capsule-selector')).toBeVisible({ timeout: 20_000 });
-    await page.getByTestId('boardroom-capsule-selector').selectOption(capsule.capsuleId);
-    await page.locator('input[type=file]').setInputFiles({
-      name: 'uploaded-evidence.txt',
-      mimeType: 'text/plain',
-      buffer: Buffer.from('uploaded corridor source'),
-    });
-    await expect(page.getByText(/uploaded-evidence\.txt attached/i)).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId('boardroom-home-surface')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId('boardroom-deep-research-agents')).toContainText(/Electa/i);
+    await expect(page.getByTestId('boardroom-deep-research-agents')).toContainText(/Deep research/i);
+    await page.getByTestId('boardroom-main-composer').fill('Decide how to sequence corridor guarantees.');
+    await page.getByRole('button', { name: /Start boardroom/i }).click();
 
-    await page.getByPlaceholder('Paste excerpt, board note, or source text.').fill('pasted field report');
-    await page.getByRole('button', { name: /Attach pasted source/i }).click();
-    await expect(page.getByText(/boardroom-paste\.txt attached/i)).toBeVisible({ timeout: 20_000 });
-
-    await page.getByPlaceholder('What decision should the board deliberate?').fill('Decide how to sequence corridor guarantees.');
-    await page.getByRole('button', { name: /Start live boardroom/i }).click();
-
-    await expect(page.getByTestId('boardroom-canvas')).toContainText(/succeeded/i, { timeout: 20_000 });
+    await expect(page.getByTestId('boardroom-agent-stage')).toContainText(/succeeded/i, { timeout: 20_000 });
     await expect(page.getByTestId('boardroom-run-panel')).toContainText(/Sequence access guarantees/i);
     await expect(page.getByTestId('boardroom-run-panel')).toContainText(/Proceed with a written corridor guarantee/i);
     await expect(page.getByTestId('boardroom-run-panel')).toContainText(/Draft the guarantee memo/i);
-    await expect(page.getByTestId('boardroom-proof-summary')).toContainText(/PRAXIS read/i);
+    await expect(page.getByTestId('boardroom-proof-summary')).toContainText(/Runtime proof/i);
     await expect(page.getByTestId('boardroom-compare-lenses')).toContainText(/Consensus/i);
     await expect(page.getByTestId('boardroom-compare-lenses')).toContainText(/Divergences/i);
-    await expect(page.getByTestId('boardroom-evidence-chips')).toContainText(/uploaded-evidence\.txt/i);
-    await expect(page.getByTestId('boardroom-evidence-chips')).toContainText(/boardroom-paste\.txt/i);
     await expect(page.getByRole('link', { name: /Open artifact/i })).toHaveAttribute('href', run.outputHref);
   });
 });

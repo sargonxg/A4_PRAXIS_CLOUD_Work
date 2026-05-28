@@ -34,6 +34,7 @@ yarn-error.log*
 .next-start-*.log
 .next-start-*.err.log
 .tmp-next-dev.*
+.tmp/
 
 # env files — NEVER commit secrets
 .env
