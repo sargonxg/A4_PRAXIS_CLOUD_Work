@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   BrainCircuit,
-  CheckCircle2,
   FileText,
   Gavel,
   Loader2,
@@ -581,15 +580,6 @@ function stringFromPath(value: unknown, path: string[]): string | null {
     current = current[key];
   }
   return typeof current === 'string' ? current : null;
-}
-
-function numberFromPath(value: unknown, path: string[]): number | null {
-  let current = value;
-  for (const key of path) {
-    if (!isRecord(current)) return null;
-    current = current[key];
-  }
-  return typeof current === 'number' && Number.isFinite(current) ? current : null;
 }
 
 function arrayFromPath(value: unknown, path: string[]): string[] {
