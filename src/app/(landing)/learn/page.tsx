@@ -281,7 +281,7 @@ export default function LearnPage() {
                   href={item.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-serif text-xl font-medium text-white underline decoration-amber-300/50 underline-offset-4 hover:decoration-amber-200"
+                  className="praxis-link font-serif text-xl font-medium text-white underline-offset-4 hover:decoration-amber-200"
                 >
                   {item.name}
                 </a>

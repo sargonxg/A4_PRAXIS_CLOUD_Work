@@ -4214,7 +4214,7 @@ export function TaskletPraxisWorkbench({
                       onCreate={openBuildYourOwnKnowledge}
                     />
                   ) : (
-                  <div className={cn('mt-4 grid w-full min-w-0 gap-3 md:grid-cols-[repeat(2,minmax(0,1fr))]', isCapsuleRepositoryPage && 'lg:grid-cols-[repeat(3,minmax(0,1fr))]', isRepositoryPage && 'md:grid-cols-1')} data-testid="tasklet-capsule-cards">
+                  <div className={cn('praxis-enter-stagger mt-4 grid w-full min-w-0 gap-3 md:grid-cols-[repeat(2,minmax(0,1fr))]', isCapsuleRepositoryPage && 'lg:grid-cols-[repeat(3,minmax(0,1fr))]', isRepositoryPage && 'md:grid-cols-1')} data-testid="tasklet-capsule-cards">
                     {capsulesLoading && !filteredUserCapsules.length ? (
                       <CapsuleEmptyState label="Loading capsules..." />
                     ) : null}
@@ -4361,7 +4361,7 @@ export function TaskletPraxisWorkbench({
                 isPublicHomepageCapsuleShelf ? (
                   <PublicFullLibraryCta isAuthenticated={isAuthenticated} onBuildOwn={openBuildYourOwnKnowledge} />
                 ) : (
-                <div className="mt-4 grid w-full min-w-0 gap-3 md:grid-cols-[repeat(2,minmax(0,1fr))] lg:grid-cols-[repeat(3,minmax(0,1fr))]" data-testid="tasklet-capsule-cards">
+                <div className="praxis-enter-stagger mt-4 grid w-full min-w-0 gap-3 md:grid-cols-[repeat(2,minmax(0,1fr))] lg:grid-cols-[repeat(3,minmax(0,1fr))]" data-testid="tasklet-capsule-cards">
                   {displayedCapsuleCards.map((capsule) => (
                     <CapsuleCard
                       key={capsule.capsuleId}
@@ -5304,7 +5304,7 @@ function CapsuleRepositoryGrid({
 }) {
   return (
     <section
-      className="grid w-full min-w-0 gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(22rem,100%),1fr))]"
+      className="praxis-enter-stagger grid w-full min-w-0 gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(22rem,100%),1fr))]"
       data-testid="capsule-repository-grid"
       aria-label="Capsule repository"
     >
@@ -10830,7 +10830,7 @@ function AgentActionDrawer({
             </button>
           </div>
         </div>
-        <div className="grid gap-3 overflow-y-auto p-5">
+        <div className="praxis-enter-stagger grid gap-3 overflow-y-auto p-5">
           <section className="rounded-lg border border-slate-200 p-3">
             <p className="text-xs font-semibold uppercase text-slate-400">Capsule agent</p>
             <select

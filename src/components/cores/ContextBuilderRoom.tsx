@@ -158,7 +158,7 @@ export function ContextBuilderRoom({ situationId, initialMode = 'repository' }: 
       ) : null}
 
       {mode === 'tools' || mode === 'repository' ? (
-        <section className="rounded-2xl border border-white/70 bg-white/90 p-4 shadow-sm shadow-navy-950/5 backdrop-blur" data-testid="context-tools-repository">
+        <section className="praxis-enter rounded-2xl border border-white/70 bg-white/90 p-4 shadow-sm shadow-navy-950/5 backdrop-blur" data-testid="context-tools-repository">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-700">Tools inside the context repository</p>
@@ -186,7 +186,7 @@ export function ContextBuilderRoom({ situationId, initialMode = 'repository' }: 
               ))}
             </div>
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="praxis-enter-stagger mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {filteredTools.map((tool) => (
               <RepositoryToolCard key={tool.id} tool={tool} activeCapsule={activeCapsule} situationId={situationId} />
             ))}

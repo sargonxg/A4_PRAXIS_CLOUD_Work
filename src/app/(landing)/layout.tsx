@@ -222,7 +222,7 @@ export default function LandingLayout({
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[color:var(--color-ink)]/65">
             <a
               href="mailto:hello@tacitus.me"
-              className="hover:text-[color:var(--color-ink)]"
+              className="praxis-link hover:text-[color:var(--color-ink)]"
             >
               Contact
             </a>
@@ -230,7 +230,7 @@ export default function LandingLayout({
               <Link
                 key={link.href}
                 href={link.href}
-                className="hover:text-[color:var(--color-ink)]"
+                className="praxis-link hover:text-[color:var(--color-ink)]"
               >
                 {link.label}
               </Link>
