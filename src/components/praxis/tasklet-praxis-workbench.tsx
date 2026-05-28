@@ -8333,7 +8333,6 @@ function CapsuleCard({
       <button
         type="button"
         onClick={onSelect}
-        aria-label={`Inspect ${capsule.label}`}
         className="block w-full flex-1 p-4 text-left"
         style={{ background: `linear-gradient(180deg, ${softColor(meta.color, 0.12)}, rgba(255,255,255,0) 46%)` }}
       >
