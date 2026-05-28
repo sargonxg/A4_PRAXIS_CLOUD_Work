@@ -423,7 +423,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('Select a capsule.');
     expect(source).toContain('onSelect={openCapsuleInspector}');
     expect(source).toContain('onSelect={() => openCapsuleInspector(capsule)}');
-    expect(source).toContain('aria-label={`Inspect ${capsule.label}`}');
+    expect(source).not.toContain('aria-label={`Inspect ${capsule.label}`}');
+    expect(source).toContain('onClick={onSelect}');
     expect(source).toContain('onInspect={() => openCapsuleInspector(capsule)}');
     expect(source).not.toContain('onInspect={() => openGuideChatForCapsule(capsule)}');
   });
