@@ -4,7 +4,7 @@ import { TaskletPraxisWorkbench } from "@/components/praxis/tasklet-praxis-workb
 
 export function Phase8WowLanding() {
   return (
-    <div className="app-first-futurist-shell relative min-h-screen overflow-hidden text-slate-900" data-testid="app-first-root">
+    <div className="app-first-futurist-shell praxis-enter relative min-h-screen overflow-hidden text-slate-900" data-testid="app-first-root">
       <TaskletPraxisWorkbench
         mode="public"
         activeCapsuleName="Middle East policy analysis"

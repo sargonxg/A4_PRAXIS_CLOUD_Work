@@ -1493,3 +1493,194 @@ body {
     transition: none !important;
   }
 }
+
+/* ============================================================================
+   PRAXIS Surface Polish Layer — v16.1
+   Appended last so it wins the cascade without touching tuned base rules.
+   Scope: app-wide refinement of motion, typography, focus, depth, and the
+   shared instrument primitives. Token-only, restrained per DESIGN.md:
+   no glow, no neon, no decorative gradients. Gold stays a rare action signal.
+   ========================================================================== */
+
+@theme inline {
+  /* Shared motion grammar — one set of curves for the whole product. */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 280ms;
+
+  /* Layered elevation — soft, paper-true depth instead of flat borders. */
+  --elevation-1: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.03);
+  --elevation-2: 0 2px 4px rgba(15, 23, 42, 0.05), 0 4px 12px rgba(15, 23, 42, 0.05);
+  --elevation-3: 0 4px 8px rgba(15, 23, 42, 0.06), 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+/* --- Typographic refinement (classical, legible, lightweight) --- */
+html {
+  text-rendering: optimizeLegibility;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "cv11" 1;
+  letter-spacing: -0.003em;
+}
+
+h1, h2, h3, h4,
+.font-serif,
+[class*="font-heading"] {
+  font-feature-settings: "kern" 1, "liga" 1, "dlig" 1;
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+}
+
+p, li {
+  text-wrap: pretty;
+}
+
+/* Mono evidence: aligned figures + ligature-free clarity for IDs/receipts. */
+.font-mono,
+code, kbd, samp, pre,
+[class*="receipt"],
+[class*="capsule-chain"] {
+  font-feature-settings: "kern" 1, "tnum" 1, "zero" 1;
+  font-variant-ligatures: none;
+}
+
+/* --- Focus: calmer ring, rounded, consistent everywhere --- */
+*:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-gold-500) 80%, transparent);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+@supports (outline-style: solid) {
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-gold-500) 16%, transparent);
+  }
+}
+
+/* --- Scrollbar: thinner, rounded, fades to presence on hover --- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  background-color: color-mix(in srgb, var(--color-navy-500) 55%, transparent);
+  transition: background-color var(--motion-base) var(--ease-standard);
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-navy-400);
+}
+.landing-light ::-webkit-scrollbar-thumb,
+.od-praxis-surface ::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-mineral) 38%, transparent);
+}
+* {
+  scrollbar-width: thin;
+}
+
+/* --- Instrument button: subtle hover lift + crisper active press --- */
+.instrument-button,
+.work-action-menu {
+  transition:
+    background var(--motion-base) var(--ease-standard),
+    border-color var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
+  will-change: transform;
+}
+.instrument-button:hover,
+.work-action-menu:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elevation-2);
+}
+.instrument-button:active,
+.work-action-menu:active {
+  transform: translateY(0);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.1);
+  transition-duration: var(--motion-fast);
+}
+.instrument-button-active {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-gold-500) 30%, transparent);
+}
+
+/* Icon nudge inside instrument buttons for a touch of life on hover. */
+.instrument-button svg,
+.work-action-menu svg {
+  transition: transform var(--motion-base) var(--ease-entrance);
+}
+.instrument-button:hover svg {
+  transform: translateX(0.5px) scale(1.02);
+}
+
+/* --- Specimen / window / surface depth on interaction --- */
+.specimen-card {
+  transition:
+    border-color var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-slow) var(--ease-standard),
+    transform var(--motion-slow) var(--ease-entrance);
+}
+.specimen-card:hover {
+  box-shadow: var(--elevation-3);
+  transform: translateY(-2px);
+}
+
+/* --- Opt-in entrance utilities (use deliberately; not auto-applied) --- */
+@keyframes praxis-fade-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.praxis-enter {
+  animation: praxis-fade-rise var(--motion-slow) var(--ease-entrance) both;
+}
+.praxis-enter-stagger > * {
+  animation: praxis-fade-rise var(--motion-slow) var(--ease-entrance) both;
+}
+.praxis-enter-stagger > *:nth-child(1) { animation-delay: 40ms; }
+.praxis-enter-stagger > *:nth-child(2) { animation-delay: 90ms; }
+.praxis-enter-stagger > *:nth-child(3) { animation-delay: 140ms; }
+.praxis-enter-stagger > *:nth-child(4) { animation-delay: 190ms; }
+.praxis-enter-stagger > *:nth-child(5) { animation-delay: 240ms; }
+.praxis-enter-stagger > *:nth-child(n+6) { animation-delay: 290ms; }
+
+/* Quiet underline-grow for inline text links (classic, not flashy). */
+.praxis-link {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 1px;
+  transition: background-size var(--motion-base) var(--ease-standard);
+}
+.praxis-link:hover {
+  background-size: 100% 1px;
+}
+
+/* --- Honor reduced motion for everything added above --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  .praxis-enter,
+  .praxis-enter-stagger > *,
+  .instrument-button,
+  .work-action-menu,
+  .specimen-card {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .instrument-button:hover,
+  .work-action-menu:hover,
+  .specimen-card:hover {
+    transform: none !important;
+  }
+}
