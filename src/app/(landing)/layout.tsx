@@ -88,6 +88,7 @@ export default function LandingLayout({
             <Link
               href="/"
               className="group flex shrink-0 items-center gap-2 sm:gap-3"
+              aria-label="PRAXIS home"
             >
               {/* Glyph chip — anchors the brand color in a rounded square */}
               <span className="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-[color:var(--color-rose-gold)]/40 bg-gradient-to-br from-[color:var(--color-gold-500)]/20 to-[color:var(--color-gold-500)]/5 transition-transform duration-500 group-hover:rotate-[8deg]">
