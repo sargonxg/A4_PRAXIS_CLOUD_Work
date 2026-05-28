@@ -76,7 +76,7 @@ export function StepPerspective({
     !!profile.perspective.audience;
 
   return (
-    <div className="space-y-6">
+    <div className="praxis-enter space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-navy-900">Your perspective</h3>
         <p className="mt-1 text-sm text-navy-500">

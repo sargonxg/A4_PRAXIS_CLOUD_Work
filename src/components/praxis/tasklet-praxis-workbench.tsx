@@ -25,6 +25,7 @@ import {
   horizontalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowUp,
   BookOpen,
@@ -68,7 +69,7 @@ import { AskQueuedAgentRunPanel, queuedAgentRunFromEnvelope } from '@/components
 import { AskTurnPlanPanel } from '@/components/ask/AskTurnPlanPanel';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
-import { SourcePostureChip, WorkActionMenu } from '@/components/ui/instrument';
+import { InstrumentSkeleton, SourcePostureChip, WorkActionMenu } from '@/components/ui/instrument';
 import {
   buildCapsuleSearchItem,
   capsuleSearchMatchReason,
@@ -741,6 +742,44 @@ const STARTER_USER_CAPSULE_CHIP: ActiveCapsuleChip = {
   role: 'user',
 };
 const MAX_ACTIVE_CONTEXT_CAPSULES = 12;
+const PRAXIS_MOTION_EASE: [number, number, number, number] = [0.4, 0, 0.2, 1];
+const PRAXIS_SHEET_TRANSITION = { type: 'spring' as const, stiffness: 420, damping: 38, mass: 0.72 };
+
+function fadeRiseMotionProps(reduceMotion: boolean | null, distance = 8) {
+  if (reduceMotion) {
+    return {
+      initial: false,
+      animate: { opacity: 1 },
+      exit: { opacity: 1 },
+      transition: { duration: 0 },
+    };
+  }
+
+  return {
+    initial: { opacity: 0, y: distance },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: Math.max(4, distance / 2) },
+    transition: { duration: 0.22, ease: PRAXIS_MOTION_EASE },
+  };
+}
+
+function sideSheetMotionProps(reduceMotion: boolean | null) {
+  if (reduceMotion) {
+    return {
+      initial: false,
+      animate: { opacity: 1 },
+      exit: { opacity: 1 },
+      transition: { duration: 0 },
+    };
+  }
+
+  return {
+    initial: { opacity: 0, x: 18 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: 18 },
+    transition: PRAXIS_SHEET_TRANSITION,
+  };
+}
 
 const capsuleChainSlots: Array<{ id: ContextChainBlockId; role: CapsuleRole; label: string; helper: string; action: string }> = [
   { id: 'situation', role: 'situation', label: 'Situation', helper: 'Add the case, issue, or operating context.', action: 'Add context' },
@@ -917,6 +956,7 @@ export function TaskletPraxisWorkbench({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const starterSeededRef = useRef(false);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
+  const reduceMotion = useReducedMotion();
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -3611,9 +3651,19 @@ export function TaskletPraxisWorkbench({
                   </div>
                 </div>
               </div>
+              <AnimatePresence initial={false}>
               {mobileContextSheetOpen ? (
-                <div className="fixed inset-0 z-50 flex items-end bg-black/35 md:hidden" role="dialog" aria-modal="true" aria-label="Mobile ContextChain selector">
-                  <section className="capsule-mobile-sheet max-h-[86vh] w-full overflow-y-auto rounded-t-xl p-4" data-testid="mobile-context-chain-sheet">
+                <motion.div
+                  className="fixed inset-0 z-50 flex items-end bg-black/35 md:hidden"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Mobile ContextChain selector"
+                  initial={reduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+                  transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
+                >
+                  <motion.section className="praxis-enter capsule-mobile-sheet max-h-[86vh] w-full overflow-y-auto rounded-t-xl p-4" data-testid="mobile-context-chain-sheet" {...fadeRiseMotionProps(reduceMotion, 12)}>
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-[color:var(--color-lab-line)]">ContextChain</p>
@@ -3664,9 +3714,10 @@ export function TaskletPraxisWorkbench({
                         Browse capsule library
                       </button>
                     </div>
-                  </section>
-                </div>
+                  </motion.section>
+                </motion.div>
               ) : null}
+              </AnimatePresence>
               <div className="praxis-composer-input-well mx-4 my-4 sm:mx-5">
                 <label className="block px-4 pt-3 font-mono text-[11px] font-semibold uppercase text-[color:var(--color-oxide)]" htmlFor="praxis-main-prompt">
                   Write your prompt here
@@ -3807,15 +3858,16 @@ export function TaskletPraxisWorkbench({
                   <button type="button" aria-label="Voice input" onClick={startVoiceInput} className="rounded-md p-2.5 text-slate-600 hover:bg-slate-100">
                     <Mic className="h-4 w-4" />
                   </button>
-                  <button
+                  <motion.button
                     type="button"
                     disabled={!prompt.trim() || isStreaming}
                     onClick={() => void sendToPraxis()}
                     className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-950 text-white shadow-sm shadow-black/10 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                     aria-label="Send to PRAXIS"
+                    whileTap={reduceMotion ? undefined : { scale: 0.96 }}
                   >
                     {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
-                  </button>
+                  </motion.button>
                 </div>
               </div>
               <div className="praxis-workbench-panel flex flex-wrap items-center justify-between gap-3 rounded-none border-x-0 border-b-0 border-t border-black/10 px-5 py-2 text-sm text-slate-500">
@@ -4127,7 +4179,7 @@ export function TaskletPraxisWorkbench({
               ) : null}
 
               {!isRepositoryLane ? (
-                <div className="mt-6 grid w-full min-w-0 gap-4" data-testid="capsule-wide-shelves">
+                <div className="praxis-enter-stagger mt-6 grid w-full min-w-0 gap-4" data-testid="capsule-wide-shelves">
                   {isPublicHomepageCapsuleShelf ? (
                     <FeaturedExpertPicksShelf
                       capsules={visibleFeaturedCapsuleCards}
@@ -4201,7 +4253,7 @@ export function TaskletPraxisWorkbench({
               ) : null}
 
               {isAuthenticated ? (
-                <div className={cn('mt-6 grid gap-4', !isRepositoryPage && !isCapsuleRepositoryPage && 'lg:grid-cols-[minmax(0,1fr)_320px]', isRepositoryPage && 'lg:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]', isCapsuleRepositoryPage && !isRepositoryLane && 'lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)_minmax(260px,320px)]', isRepositoryLane && 'grid-cols-1')}>
+                <div className={cn('praxis-enter-stagger mt-6 grid gap-4', !isRepositoryPage && !isCapsuleRepositoryPage && 'lg:grid-cols-[minmax(0,1fr)_320px]', isRepositoryPage && 'lg:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]', isCapsuleRepositoryPage && !isRepositoryLane && 'lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)_minmax(260px,320px)]', isRepositoryLane && 'grid-cols-1')}>
                   <div className="min-w-0" data-testid="capsule-studio-library">
                   {isRepositoryLane ? (
                     <CapsuleRepositoryGrid
@@ -4392,67 +4444,72 @@ export function TaskletPraxisWorkbench({
           </div>
         </main>
       </div>
-      {builderOpen ? (
-        <CapsuleBuilderDialog
-          label={builderLabel}
-          notes={builderNotes}
-          links={builderLinks}
-          categoryId={builderCategoryId}
-          onLabel={setBuilderLabel}
-          onNotes={setBuilderNotes}
-          onLinks={setBuilderLinks}
-          onCategory={setBuilderCategoryId}
-          onClose={() => setBuilderOpen(false)}
-          onCreate={() => void createCapsuleFromBuilder()}
-        />
-      ) : null}
-      {repositoryOpen ? (
-        <RepositorySheet
-          capsule={selectedCapsule}
-          documents={visibleRepositoryDocuments}
-          documentRefs={Array.from(repositoryDocIds)}
-          loading={repositoryLoading}
-          onClose={() => setRepositoryOpen(false)}
-          onRefresh={() => void refreshRepository()}
-          onUpload={() => fileInputRef.current?.click()}
-          onRun={(promptText) => {
-            setRepositoryOpen(false);
-            setPrompt(promptText);
-            void sendToPraxis(selectedAgent, promptText);
-          }}
-        />
-      ) : null}
-      {inspectorOpen && selectedCapsule ? (
-        <CapsuleInspectorSheet
-          capsule={selectedCapsule}
-          policyTeam={selectedPolicyTeam}
-          chatMessages={guideMessages}
-          contextHealth={contextHealth}
-          runtimeProof={runtimeProof}
-          repositoryDocuments={visibleRepositoryDocuments}
-          agentRuns={agentRuns}
-          selectedAgent={selectedAgent}
-          isAuthenticated={isAuthenticated}
-          isStreaming={guideStreaming}
-          onClose={() => setInspectorOpen(false)}
-          onImprove={() => {
-            setInspectorOpen(false);
-            improveCapsule();
-          }}
-          onRepository={() => {
-            setInspectorOpen(false);
-            setRepositoryOpen(true);
-            void refreshRepository();
-          }}
-          onAskCapsule={(question) => {
-            if (selectedCapsule) void sendGuideChat(question, selectedCapsule);
-          }}
-          onAdd={() => {
-            if (selectedCapsule) applyCapsuleCard(selectedCapsule);
-          }}
-          onRateUsefulness={(rating) => selectedCapsule ? void rateCapsuleUsefulness(selectedCapsule, rating) : undefined}
-        />
-      ) : null}
+      <AnimatePresence initial={false}>
+        {builderOpen ? (
+          <CapsuleBuilderDialog
+            key="capsule-builder"
+            label={builderLabel}
+            notes={builderNotes}
+            links={builderLinks}
+            categoryId={builderCategoryId}
+            onLabel={setBuilderLabel}
+            onNotes={setBuilderNotes}
+            onLinks={setBuilderLinks}
+            onCategory={setBuilderCategoryId}
+            onClose={() => setBuilderOpen(false)}
+            onCreate={() => void createCapsuleFromBuilder()}
+          />
+        ) : null}
+        {repositoryOpen ? (
+          <RepositorySheet
+            key="repository-sheet"
+            capsule={selectedCapsule}
+            documents={visibleRepositoryDocuments}
+            documentRefs={Array.from(repositoryDocIds)}
+            loading={repositoryLoading}
+            onClose={() => setRepositoryOpen(false)}
+            onRefresh={() => void refreshRepository()}
+            onUpload={() => fileInputRef.current?.click()}
+            onRun={(promptText) => {
+              setRepositoryOpen(false);
+              setPrompt(promptText);
+              void sendToPraxis(selectedAgent, promptText);
+            }}
+          />
+        ) : null}
+        {inspectorOpen && selectedCapsule ? (
+          <CapsuleInspectorSheet
+            key="capsule-inspector"
+            capsule={selectedCapsule}
+            policyTeam={selectedPolicyTeam}
+            chatMessages={guideMessages}
+            contextHealth={contextHealth}
+            runtimeProof={runtimeProof}
+            repositoryDocuments={visibleRepositoryDocuments}
+            agentRuns={agentRuns}
+            selectedAgent={selectedAgent}
+            isAuthenticated={isAuthenticated}
+            isStreaming={guideStreaming}
+            onClose={() => setInspectorOpen(false)}
+            onImprove={() => {
+              setInspectorOpen(false);
+              improveCapsule();
+            }}
+            onRepository={() => {
+              setInspectorOpen(false);
+              setRepositoryOpen(true);
+              void refreshRepository();
+            }}
+            onAskCapsule={(question) => {
+              if (selectedCapsule) void sendGuideChat(question, selectedCapsule);
+            }}
+            onAdd={() => {
+              if (selectedCapsule) applyCapsuleCard(selectedCapsule);
+            }}
+            onRateUsefulness={(rating) => selectedCapsule ? void rateCapsuleUsefulness(selectedCapsule, rating) : undefined}
+          />
+        ) : null}
+      </AnimatePresence>
       {!isCapsuleStudioMode ? <PraxisGuideChat
         open={guideChatOpen}
         capsule={guideCapsule}
@@ -4466,57 +4523,62 @@ export function TaskletPraxisWorkbench({
         onSubmit={() => void sendGuideChat()}
         onClear={clearGuideChat}
       /> : null}
-      {diagnosticsOpen ? (
-        <WorkbenchDiagnosticsDrawer
-          flags={workbenchRedFlags}
-          runtimeProof={runtimeProof}
-          onClose={() => setDiagnosticsOpen(false)}
-        />
-      ) : null}
-      {capsuleBrowserOpen ? (
-        <CapsuleBrowserDialog
-          capsules={visibleCapsuleCards}
-          loading={capsulesLoading}
-          filterBar={
-            <CapsuleTaxonomyFilterBar
-              stats={activeCapsuleTaxonomyStats}
-              query={capsuleSearch}
-              onQuery={setCapsuleSearch}
-              typeId={capsuleTypeFilter}
-              onType={setCapsuleTypeFilter}
-              domainId={capsuleDomainFilter}
-              onDomain={setCapsuleDomainFilter}
-              policyTeamId={capsulePolicyTeamFilter}
-              onPolicyTeam={setCapsulePolicyTeamFilter}
-              showRepairStates={isRepositoryPage}
-              onClear={() => {
-                setCapsuleSearch('');
-                setCapsuleTypeFilter('all');
-                setCapsuleDomainFilter('all');
-                setCapsulePolicyTeamFilter('all');
-              }}
-            />
-          }
-          onClose={() => {
-            setCapsuleBrowserOpen(false);
-            setCapsuleBrowserTargetRole(null);
-          }}
-          onSelect={(capsule) => applyCapsuleCard(capsule, capsuleBrowserTargetRole ?? capsuleDefaultRole(capsule))}
-        />
-      ) : null}
-      {memoArtifact ? (
-        <MemoArtifactOverlay
-          artifact={memoArtifact}
-          tab={memoArtifactTab}
-          loading={memoArtifactLoading}
-          saving={memoArtifactSaving}
-          onTab={setMemoArtifactTab}
-          onChange={setMemoArtifact}
-          onClose={() => setMemoArtifact(null)}
-          onSave={() => void saveMemoArtifactDraft()}
-          onPraxisAction={(action) => void runMemoArtifactPraxisAction(action)}
-        />
-      ) : null}
+      <AnimatePresence initial={false}>
+        {diagnosticsOpen ? (
+          <WorkbenchDiagnosticsDrawer
+            key="diagnostics-drawer"
+            flags={workbenchRedFlags}
+            runtimeProof={runtimeProof}
+            onClose={() => setDiagnosticsOpen(false)}
+          />
+        ) : null}
+        {capsuleBrowserOpen ? (
+          <CapsuleBrowserDialog
+            key="capsule-browser"
+            capsules={visibleCapsuleCards}
+            loading={capsulesLoading}
+            filterBar={
+              <CapsuleTaxonomyFilterBar
+                stats={activeCapsuleTaxonomyStats}
+                query={capsuleSearch}
+                onQuery={setCapsuleSearch}
+                typeId={capsuleTypeFilter}
+                onType={setCapsuleTypeFilter}
+                domainId={capsuleDomainFilter}
+                onDomain={setCapsuleDomainFilter}
+                policyTeamId={capsulePolicyTeamFilter}
+                onPolicyTeam={setCapsulePolicyTeamFilter}
+                showRepairStates={isRepositoryPage}
+                onClear={() => {
+                  setCapsuleSearch('');
+                  setCapsuleTypeFilter('all');
+                  setCapsuleDomainFilter('all');
+                  setCapsulePolicyTeamFilter('all');
+                }}
+              />
+            }
+            onClose={() => {
+              setCapsuleBrowserOpen(false);
+              setCapsuleBrowserTargetRole(null);
+            }}
+            onSelect={(capsule) => applyCapsuleCard(capsule, capsuleBrowserTargetRole ?? capsuleDefaultRole(capsule))}
+          />
+        ) : null}
+        {memoArtifact ? (
+          <MemoArtifactOverlay
+            key="memo-artifact"
+            artifact={memoArtifact}
+            tab={memoArtifactTab}
+            loading={memoArtifactLoading}
+            saving={memoArtifactSaving}
+            onTab={setMemoArtifactTab}
+            onChange={setMemoArtifact}
+            onClose={() => setMemoArtifact(null)}
+            onSave={() => void saveMemoArtifactDraft()}
+            onPraxisAction={(action) => void runMemoArtifactPraxisAction(action)}
+          />
+        ) : null}
+      </AnimatePresence>
       </DndContext>
     </section>
   );
@@ -5237,9 +5299,19 @@ function CapsuleBrowserDialog({
   onClose: () => void;
   onSelect: (capsule: PraxisCapsuleSummary) => void;
 }) {
+  const reduceMotion = useReducedMotion();
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Browse capsules">
-      <section className="max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20" data-testid="capsule-browser-modal">
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-6 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Browse capsules"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
+    >
+      <motion.section className="praxis-enter max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20" data-testid="capsule-browser-modal" {...fadeRiseMotionProps(reduceMotion)}>
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div>
             <p className="text-sm font-semibold text-slate-950">Browse capsules</p>
@@ -5280,8 +5352,8 @@ function CapsuleBrowserDialog({
           </div>
           {!loading && !capsules.length ? <CapsuleEmptyState label="No capsules match that search." /> : null}
         </div>
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   );
 }
 
@@ -6902,9 +6974,60 @@ function ConnectorCard({ connector, onUpload }: { connector: CapsuleConnectorDef
 }
 
 function CapsuleEmptyState({ label }: { label: string }) {
+  if (/^Loading/i.test(label)) return <CapsuleLoadingSkeleton label={label} />;
+
   return (
-    <div className="praxis-workbench-panel rounded-lg border-dashed p-6 text-sm font-semibold text-slate-500">
-      {label}
+    <div className="praxis-workbench-panel col-span-full flex items-start gap-3 rounded-lg border-dashed p-6 text-sm font-semibold text-slate-500">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-400">
+        <CircleHelp className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 pt-1">{label}</span>
+    </div>
+  );
+}
+
+function CapsuleLoadingSkeleton({ label }: { label: string }) {
+  const lower = label.toLowerCase();
+  const receiptLike = lower.includes('document') || lower.includes('repository') || lower.includes('source') || lower.includes('agent');
+
+  if (receiptLike) {
+    return (
+      <div className="col-span-full grid gap-2" role="status" aria-label={label}>
+        <span className="sr-only">{label}</span>
+        {[0, 1, 2].map((item) => (
+          <article key={item} className="receipt-slip rounded-md p-3">
+            <div className="flex items-center justify-between gap-3">
+              <InstrumentSkeleton dark className="h-3 w-28 rounded" />
+              <InstrumentSkeleton dark className="h-5 w-16 rounded-md" />
+            </div>
+            <InstrumentSkeleton dark className="mt-3 h-3 w-full rounded" />
+            <InstrumentSkeleton dark className="mt-2 h-3 w-2/3 rounded" />
+          </article>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="praxis-enter-stagger col-span-full grid gap-3 sm:grid-cols-2" role="status" aria-label={label}>
+      <span className="sr-only">{label}</span>
+      {[0, 1, 2, 3].map((item) => (
+        <article key={item} className="specimen-card min-h-40 rounded-lg p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="grid flex-1 gap-2">
+              <InstrumentSkeleton className="h-4 w-40 max-w-full rounded" />
+              <InstrumentSkeleton className="h-3 w-full rounded" />
+              <InstrumentSkeleton className="h-3 w-2/3 rounded" />
+            </div>
+            <InstrumentSkeleton className="h-8 w-8 rounded-md" />
+          </div>
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            <InstrumentSkeleton className="h-12 rounded-md" />
+            <InstrumentSkeleton className="h-12 rounded-md" />
+            <InstrumentSkeleton className="h-12 rounded-md" />
+          </div>
+        </article>
+      ))}
     </div>
   );
 }
@@ -7762,9 +7885,17 @@ function WorkbenchDiagnosticsDrawer({
   runtimeProof: RuntimeProof;
   onClose: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
   return (
-    <div className="fixed inset-0 z-40 bg-black/25" data-testid="workbench-diagnostics-drawer">
-      <aside className="ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-2xl">
+    <motion.div
+      className="fixed inset-0 z-40 bg-black/25"
+      data-testid="workbench-diagnostics-drawer"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
+    >
+      <motion.aside className="praxis-enter ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-2xl" {...sideSheetMotionProps(reduceMotion)}>
         <div className="border-b border-slate-200 p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -7801,8 +7932,8 @@ function WorkbenchDiagnosticsDrawer({
             </div>
           </section>
         </div>
-      </aside>
-    </div>
+      </motion.aside>
+    </motion.div>
   );
 }
 
@@ -7939,7 +8070,7 @@ function FeaturedExpertPicksShelf({
           {selectionLabel ? `${capsules.length} selected for public demo` : `${capsules.length} visible under current filter`}
         </span>
       </div>
-      <div className="mt-4 grid w-full min-w-0 items-stretch gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(21rem,100%),1fr))]" data-testid="capsule-shelf-grid">
+      <div className="praxis-enter-stagger mt-4 grid w-full min-w-0 items-stretch gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(21rem,100%),1fr))]" data-testid="capsule-shelf-grid">
         {capsules.map((capsule) => (
           <div key={capsule.capsuleId} className="min-w-0" data-testid={`featured-expert-pick-${capsule.capsuleId}`}>
             <CapsuleCard
@@ -8531,7 +8662,7 @@ function CapsuleDetailPanel({
             <p className="text-xs font-semibold text-slate-800">Vertex/Gemini RAG</p>
             <p className="mt-1 text-[11px] leading-5 text-slate-500">Optional RAG mirror. The default retrieval path still works without Vertex configuration.</p>
           </div>
-          {repositoryLoading ? <p className="text-xs text-slate-500">Loading repository...</p> : null}
+          {repositoryLoading ? <CapsuleEmptyState label="Loading repository..." /> : null}
           {repositoryDocuments.slice(0, 4).map((document) => (
             <div key={document.id} className="rounded-md border border-slate-200 px-3 py-2" data-selection-zone="repository-text">
               <p className="truncate text-xs font-semibold text-slate-800">{document.title}</p>
@@ -8543,11 +8674,7 @@ function CapsuleDetailPanel({
       ) : null}
       {detailTab === 'ai' ? (
         <div className="mt-4 space-y-3" data-testid="capsule-agent-lane">
-          {focusedRunLoading ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-500">
-              Opening selected agent run...
-            </div>
-          ) : null}
+          {focusedRunLoading ? <CapsuleEmptyState label="Loading agent run..." /> : null}
           {focusedRun ? (
             <FocusedAgentRunPanel
               detail={focusedRun}
@@ -9107,9 +9234,17 @@ function CapsuleBuilderDialog({
   onClose: () => void;
   onCreate: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-3 sm:items-center" data-testid="capsule-builder-dialog">
-      <section className="praxis-workbench-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto p-5 shadow-2xl">
+    <motion.div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-3 sm:items-center"
+      data-testid="capsule-builder-dialog"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
+    >
+      <motion.section className="praxis-enter praxis-workbench-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto p-5 shadow-2xl" {...fadeRiseMotionProps(reduceMotion)}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--color-oxide)]">Build Capsule</p>
@@ -9177,10 +9312,10 @@ function CapsuleBuilderDialog({
         </div>
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100">Cancel</button>
-          <button type="button" onClick={onCreate} className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Create capsule</button>
+          <motion.button type="button" onClick={onCreate} whileTap={reduceMotion ? undefined : { scale: 0.98 }} className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Create capsule</motion.button>
         </div>
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   );
 }
 
@@ -9281,9 +9416,17 @@ function RepositorySheet({
   onUpload: () => void;
   onRun: (prompt: string) => void;
 }) {
+  const reduceMotion = useReducedMotion();
   return (
-    <div className="fixed inset-0 z-40 bg-black/25" data-testid="capsule-repository-sheet">
-      <aside className="dossier-spine ml-auto flex h-full w-full max-w-xl flex-col shadow-2xl">
+    <motion.div
+      className="fixed inset-0 z-40 bg-black/25"
+      data-testid="capsule-repository-sheet"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
+    >
+      <motion.aside className="praxis-enter dossier-spine ml-auto flex h-full w-full max-w-xl flex-col shadow-2xl" {...sideSheetMotionProps(reduceMotion)}>
         <div className="border-b border-slate-200 p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -9333,8 +9476,8 @@ function RepositorySheet({
             )) : null}
           </div>
         </div>
-      </aside>
-    </div>
+      </motion.aside>
+    </motion.div>
   );
 }
 
@@ -9426,6 +9569,7 @@ function CapsuleInspectorSheet({
     ?? (warnings.length ? 'Human review recommended before output use.' : 'Review gate clear for normal use.');
   const governanceBadges = capsule ? capsuleGovernanceBadges(capsule) : [];
   const recentChatMessages = chatMessages.slice(-4).filter((message) => message.text.trim());
+  const reduceMotion = useReducedMotion();
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -9441,17 +9585,21 @@ function CapsuleInspectorSheet({
   }
   if (typeof document === 'undefined') return null;
   return createPortal(
-    <div
+    <motion.div
       className="fixed inset-0 z-40 bg-black/25"
       data-testid="capsule-inspector-sheet"
       role="dialog"
       aria-modal="true"
       aria-labelledby="capsule-inspector-title"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <aside className="dossier-spine ml-auto flex h-full w-full max-w-3xl flex-col overflow-y-auto p-5 shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
+      <motion.aside className="praxis-enter dossier-spine ml-auto flex h-full w-full max-w-3xl flex-col overflow-y-auto p-5 shadow-2xl" onMouseDown={(event) => event.stopPropagation()} {...sideSheetMotionProps(reduceMotion)}>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--color-oxide)]">Capsule inspector</p>
@@ -10024,8 +10172,8 @@ function CapsuleInspectorSheet({
             </>
           ) : null}
         </div>
-      </aside>
-    </div>,
+      </motion.aside>
+    </motion.div>,
     document.body,
   );
 }
@@ -10131,6 +10279,7 @@ function PraxisGuideChat({
   onClear: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
+  const reduceMotion = useReducedMotion();
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -10145,13 +10294,15 @@ function PraxisGuideChat({
   if (!mounted || typeof document === 'undefined') return null;
   return createPortal(
     <div className="fixed bottom-4 right-4 z-50 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-2" data-testid="praxis-guide-chat">
-      {open ? (
-        <section
-          role="dialog"
-          aria-modal="false"
-          aria-label="PRAXIS guide chat"
-          className="flex max-h-[calc(100vh-2rem)] w-[min(42rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 md:max-h-[82vh]"
-        >
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.section
+            role="dialog"
+            aria-modal="false"
+            aria-label="PRAXIS guide chat"
+            className="praxis-enter flex max-h-[calc(100vh-2rem)] w-[min(42rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 md:max-h-[82vh]"
+            {...fadeRiseMotionProps(reduceMotion, 10)}
+          >
           <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-5 py-4">
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-oxide)]">Guide assistant</p>
@@ -10215,8 +10366,9 @@ function PraxisGuideChat({
               </button>
             </div>
           </form>
-        </section>
-      ) : null}
+          </motion.section>
+        ) : null}
+      </AnimatePresence>
       <button
         type="button"
         onClick={onOpen}
@@ -10276,9 +10428,17 @@ function MemoArtifactOverlay({
     : sourceCount
       ? 'source-backed draft'
       : 'needs sources';
+  const reduceMotion = useReducedMotion();
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/30 px-3 py-4 backdrop-blur-sm sm:px-6" data-testid="memo-artifact-overlay">
-      <aside className="ml-auto flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl">
+    <motion.div
+      className="fixed inset-0 z-50 bg-slate-950/30 px-3 py-4 backdrop-blur-sm sm:px-6"
+      data-testid="memo-artifact-overlay"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
+    >
+      <motion.aside className="praxis-enter ml-auto flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl" {...sideSheetMotionProps(reduceMotion)}>
         <header className="border-b border-slate-200 px-4 py-3 sm:px-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
@@ -10412,8 +10572,8 @@ function MemoArtifactOverlay({
             </section>
           </aside>
         </div>
-      </aside>
-    </div>
+      </motion.aside>
+    </motion.div>
   );
 }
 
@@ -10816,9 +10976,17 @@ function AgentActionDrawer({
   onRun: (prompt: string) => void;
 }) {
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
+  const reduceMotion = useReducedMotion();
   return (
-    <div className="fixed inset-0 z-40 bg-black/25" data-testid="agent-action-drawer">
-      <aside className="ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-2xl">
+    <motion.div
+      className="fixed inset-0 z-40 bg-black/25"
+      data-testid="agent-action-drawer"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+      transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
+    >
+      <motion.aside className="praxis-enter ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-2xl" {...sideSheetMotionProps(reduceMotion)}>
         <div className="border-b border-slate-200 p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -10854,8 +11022,8 @@ function AgentActionDrawer({
             </button>
           ))}
         </div>
-      </aside>
-    </div>
+      </motion.aside>
+    </motion.div>
   );
 }
 
@@ -10881,9 +11049,18 @@ function IconTextButton({
 }
 
 function Metric({ label, value }: { label: string; value: number | string }) {
+  const reduceMotion = useReducedMotion();
   return (
     <span className="rounded-md border border-slate-200 p-2">
-      <span className="block text-lg font-semibold text-slate-900">{value}</span>
+      <motion.span
+        key={`${label}-${value}`}
+        className="block text-lg font-semibold text-slate-900"
+        initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
+      >
+        {value}
+      </motion.span>
       <span className="block text-[11px] font-semibold text-slate-400">{label}</span>
     </span>
   );

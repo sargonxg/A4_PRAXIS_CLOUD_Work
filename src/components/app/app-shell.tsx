@@ -13,7 +13,6 @@ import { SkipNudgeBanner } from '@/components/onboarding/skip-nudge-banner';
 import { OnboardingBanner } from '@/components/shared/onboarding-banner';
 import { GlobalSearch } from '@/components/shared/global-search';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
-import { Loader2 } from 'lucide-react';
 import { FloatingPraxis } from '@/components/app/floating-praxis';
 import { MobileBottomNav } from '@/components/app/mobile-bottom-nav';
 import { ActivityPanel } from '@/components/app/activity-panel';
@@ -24,6 +23,8 @@ import { CoreContextStrip } from '@/components/app/core-context-strip';
 import { LiveContextReadinessCard } from '@/components/app/live-context-readiness-card';
 import { CalibrationTransparencyModal } from '@/components/app/calibration-transparency-modal';
 import { useSituationStore } from '@/stores/situation-store';
+import { Skeleton } from '@/components/ui/skeleton';
+import { PraxisRouteTransition } from '@/components/ui/praxis-motion';
 
 type SearchOpenEvent = CustomEvent<{ query?: string }>;
 
@@ -128,25 +129,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // Show loading state while Firebase auth is initializing
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[var(--color-app-bg)]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-diplomatic-blue" />
-          <p className="text-sm text-navy-500">Loading PRAXIS...</p>
-        </div>
-      </div>
-    );
+    return <AppShellLoadingState label="Loading PRAXIS..." />;
   }
 
   if (!user) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[var(--color-app-bg)]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-diplomatic-blue" />
-          <p className="text-sm text-navy-500">Loading demo workspace...</p>
-        </div>
-      </div>
-    );
+    return <AppShellLoadingState label="Loading demo workspace..." />;
   }
 
   return (
@@ -156,7 +143,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="app-light h-screen overflow-y-auto bg-[#f3f5f1]" data-testid="praxis-one-page-app-shell">
           <ErrorBoundary>
             <ToolErrorBoundary>
-              {children}
+              <PraxisRouteTransition>
+                {children}
+              </PraxisRouteTransition>
             </ToolErrorBoundary>
           </ErrorBoundary>
           <AiErrorToast />
@@ -195,7 +184,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-6">
               <ErrorBoundary>
                 <ToolErrorBoundary>
-                  {children}
+                  <PraxisRouteTransition>
+                    {children}
+                  </PraxisRouteTransition>
                 </ToolErrorBoundary>
               </ErrorBoundary>
             </div>
@@ -251,6 +242,39 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
       </>
     </TooltipProvider>
+  );
+}
+
+function AppShellLoadingState({ label }: { label: string }) {
+  return (
+    <div className="app-light flex min-h-screen items-center justify-center bg-[var(--color-app-bg)] p-6">
+      <div className="praxis-enter w-full max-w-4xl space-y-5" role="status" aria-label={label}>
+        <span className="sr-only">{label}</span>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-lg" />
+          <div className="grid flex-1 gap-2">
+            <Skeleton className="h-4 w-44 rounded" />
+            <Skeleton className="h-3 w-72 max-w-full rounded" />
+          </div>
+        </div>
+        <div className="praxis-enter-stagger grid gap-4 md:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="specimen-card grid min-h-64 gap-3 rounded-lg p-4">
+            <Skeleton className="h-5 w-48 rounded" />
+            <Skeleton className="h-24 rounded-lg" />
+            <Skeleton className="h-16 rounded-lg" />
+          </div>
+          <div className="grid gap-3">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="receipt-slip rounded-md p-3">
+                <Skeleton className="praxis-skeleton-dark h-3 w-24 rounded" />
+                <Skeleton className="praxis-skeleton-dark mt-2 h-3 w-full rounded" />
+                <Skeleton className="praxis-skeleton-dark mt-2 h-3 w-2/3 rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

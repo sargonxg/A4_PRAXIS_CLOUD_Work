@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ComponentType, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ComponentType, type HTMLAttributes, type ReactNode } from 'react';
 import { ChevronDown, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -183,6 +183,22 @@ export function SourcePostureChip({
   return <span className={cn('source-posture-chip', `source-posture-chip-${state}`, className)}>{label}</span>;
 }
 
+export function InstrumentSkeleton({
+  className,
+  dark = false,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & {
+  dark?: boolean;
+}) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn('praxis-skeleton', dark && 'praxis-skeleton-dark', className)}
+      {...props}
+    />
+  );
+}
+
 export function WorkActionMenu({
   label = 'Work on this',
   children,
@@ -274,7 +290,7 @@ export function PublicPageShell({
   maxWidth?: string;
 }) {
   return (
-    <main className="landing-light instrument-public-shell civic-atelier-shell cartographic-grid min-h-screen px-5 py-10 text-[color:var(--color-ink)]">
+    <main className="landing-light instrument-public-shell civic-atelier-shell cartographic-grid praxis-enter min-h-screen px-5 py-10 text-[color:var(--color-ink)]">
       <div className={cn('mx-auto', maxWidth)}>{children}</div>
     </main>
   );

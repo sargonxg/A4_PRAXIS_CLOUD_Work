@@ -103,11 +103,11 @@ function PublicHeader() {
         <span className="font-serif text-xl font-semibold text-[color:var(--color-diplomatic-blue)]">PRAXIS</span>
       </Link>
       <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm font-semibold text-[color:var(--color-ink)]/65">
-        <Link href="/">Home</Link>
-        <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="hidden md:inline">Capsules</Link>
-        <Link href="/pricing" className="hidden md:inline">Pricing</Link>
-        <Link href="/learn" className="hidden md:inline">Learn</Link>
-        <Link href="/release-notes" className="hidden md:inline">Release notes</Link>
+        <Link href="/" className="praxis-link">Home</Link>
+        <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="praxis-link hidden md:inline">Capsules</Link>
+        <Link href="/pricing" className="praxis-link hidden md:inline">Pricing</Link>
+        <Link href="/learn" className="praxis-link hidden md:inline">Learn</Link>
+        <Link href="/release-notes" className="praxis-link hidden md:inline">Release notes</Link>
         <Link href="/login" className="rounded-full bg-white px-4 py-2 text-[color:var(--color-ink)]">Sign in</Link>
       </nav>
     </header>

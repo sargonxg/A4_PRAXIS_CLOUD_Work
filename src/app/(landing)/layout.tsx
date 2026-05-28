@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
 import { Menu, X } from "lucide-react";
 import { PraxisMark } from "@/components/brand/praxis-mark";
+import { PraxisRouteTransition } from "@/components/ui/praxis-motion";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -203,7 +204,9 @@ export default function LandingLayout({
       </div>
 
       {/* Page content */}
-      <main className="relative z-10">{children}</main>
+      <main className="relative z-10">
+        <PraxisRouteTransition>{children}</PraxisRouteTransition>
+      </main>
 
       {/* Footer — compact brand/contact row; public route navigation lives only in the header. */}
       <footer className="relative z-10 mt-24 px-3 pb-6 sm:px-5">

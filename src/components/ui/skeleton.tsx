@@ -7,9 +7,10 @@ function Skeleton({
   return (
     <div
       className={cn(
-        "animate-pulse rounded-md bg-navy-700/50",
+        "praxis-skeleton rounded-md bg-navy-700/50",
         className
       )}
+      aria-hidden="true"
       {...props}
     />
   );

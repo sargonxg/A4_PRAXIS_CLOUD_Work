@@ -33,7 +33,7 @@ export default async function LegalPage({ params }: LegalPageProps) {
       <div className="space-y-5">
         <Link
           href="/"
-          className="font-mono text-xs uppercase tracking-[0.16em] text-[color:var(--color-gold-700)]"
+          className="praxis-link font-mono text-xs uppercase tracking-[0.16em] text-[color:var(--color-gold-700)]"
         >
           PRAXIS by TACITUS
         </Link>
@@ -77,7 +77,7 @@ export default async function LegalPage({ params }: LegalPageProps) {
           <Link
             key={item.slug}
             href={`/legal/${item.slug}`}
-            className="rounded-md px-3 py-2 text-sm text-[color:var(--color-ink)]/68 transition hover:bg-white/55 hover:text-[color:var(--color-diplomatic-blue)]"
+            className="praxis-link rounded-md px-3 py-2 text-sm text-[color:var(--color-ink)]/68 transition hover:bg-white/55 hover:text-[color:var(--color-diplomatic-blue)]"
           >
             {item.title}
           </Link>

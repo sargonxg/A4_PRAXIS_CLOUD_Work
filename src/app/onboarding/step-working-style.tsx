@@ -64,7 +64,7 @@ export function StepWorkingStyle({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="praxis-enter space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-navy-900">Working style</h3>
         <p className="mt-1 text-sm text-navy-500">How you want PRAXIS to produce output.</p>

@@ -8,9 +8,19 @@ const globals = readFileSync(join(root, 'src/app/globals.css'), 'utf8');
 const button = readFileSync(join(root, 'src/components/ui/button.tsx'), 'utf8');
 const contextStrip = readFileSync(join(root, 'src/components/app/core-context-strip.tsx'), 'utf8');
 const workbench = readFileSync(join(root, 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
+const appShell = readFileSync(join(root, 'src/components/app/app-shell.tsx'), 'utf8');
+const appLoading = readFileSync(join(root, 'src/app/app/loading.tsx'), 'utf8');
+const skeleton = readFileSync(join(root, 'src/components/ui/skeleton.tsx'), 'utf8');
+const praxisMotion = readFileSync(join(root, 'src/components/ui/praxis-motion.tsx'), 'utf8');
+const landingLayout = readFileSync(join(root, 'src/app/(landing)/layout.tsx'), 'utf8');
+const pricing = readFileSync(join(root, 'src/app/pricing/page.tsx'), 'utf8');
+const legal = readFileSync(join(root, 'src/app/legal/[slug]/page.tsx'), 'utf8');
 const login = readFileSync(join(root, 'src/app/(auth)/login/page.tsx'), 'utf8');
 const settings = readFileSync(join(root, 'src/components/settings/account-settings-page.tsx'), 'utf8');
 const onboardingPreview = readFileSync(join(root, 'src/app/onboarding/live-preview.tsx'), 'utf8');
+const onboardingIdentity = readFileSync(join(root, 'src/app/onboarding/step-identity.tsx'), 'utf8');
+const onboardingPerspective = readFileSync(join(root, 'src/app/onboarding/step-perspective.tsx'), 'utf8');
+const onboardingWorkingStyle = readFileSync(join(root, 'src/app/onboarding/step-working-style.tsx'), 'utf8');
 const docs = readFileSync(join(root, 'docs/contributing/DESIGN_SYSTEM.md'), 'utf8');
 const design = readFileSync(join(root, 'DESIGN.md'), 'utf8');
 const verifyDesign = readFileSync(join(root, 'scripts/verify-design-shipped.mjs'), 'utf8');
@@ -25,6 +35,7 @@ describe('Futurist AI Lab visual contract', () => {
       'LivingContextRail',
       'StatusCell',
       'SourcePostureChip',
+      'InstrumentSkeleton',
       'WorkActionMenu',
       'PublicPageShell',
     ]) {
@@ -51,6 +62,11 @@ describe('Futurist AI Lab visual contract', () => {
       '.source-flow-line',
       '.ai-receipt-strip',
       '.capsule-mobile-sheet',
+      '.praxis-enter',
+      '.praxis-enter-stagger',
+      '.praxis-link',
+      '.praxis-skeleton',
+      '.praxis-skeleton-dark',
     ]) {
       expect(globals).toContain(className);
     }
@@ -82,6 +98,50 @@ describe('Futurist AI Lab visual contract', () => {
     expect(onboardingPreview).toContain('<LivingContextRail');
     expect(globals).toContain('@keyframes praxis-vellum-drift');
     expect(globals).toContain('prefers-reduced-motion: reduce');
+  });
+
+  it('keeps the v16.1 surface polish tokens and opt-in utilities available', () => {
+    for (const token of [
+      '--ease-standard',
+      '--ease-entrance',
+      '--ease-exit',
+      '--motion-fast',
+      '--motion-base',
+      '--motion-slow',
+      '--elevation-1',
+      '--elevation-2',
+      '--elevation-3',
+    ]) {
+      expect(globals).toContain(token);
+    }
+
+    expect(globals).toContain('@keyframes praxis-fade-rise');
+    expect(globals).toContain('@keyframes praxis-shimmer');
+    expect(globals).toContain('prefers-reduced-motion: reduce');
+    expect(globals).toContain('.praxis-skeleton-dark');
+    expect(skeleton).toContain('praxis-skeleton');
+    expect(instrument).toContain('praxis-skeleton-dark');
+  });
+
+  it('wires component polish through shared motion, skeletons, and public links', () => {
+    expect(praxisMotion).toContain('function PraxisRouteTransition');
+    expect(praxisMotion).toContain('useReducedMotion');
+    expect(appShell).toContain('<PraxisRouteTransition>');
+    expect(landingLayout).toContain('<PraxisRouteTransition>');
+    expect(appShell).toContain('AppShellLoadingState');
+    expect(appLoading).toContain('praxis-enter-stagger');
+    expect(workbench).toContain('AnimatePresence');
+    expect(workbench).toContain('motion.div');
+    expect(workbench).toContain('useReducedMotion');
+    expect(workbench).toContain('CapsuleLoadingSkeleton');
+    expect(workbench).toContain('InstrumentSkeleton');
+    expect(workbench).toContain('InstrumentSkeleton dark');
+    expect(workbench).toContain('data-testid="mobile-context-chain-sheet"');
+    expect(pricing).toContain('praxis-link');
+    expect(legal).toContain('praxis-link');
+    expect(onboardingIdentity).toContain('praxis-enter');
+    expect(onboardingPerspective).toContain('praxis-enter');
+    expect(onboardingWorkingStyle).toContain('praxis-enter');
   });
 
   it('loads Newsreader as the heading/display face while preserving compatibility aliases', () => {

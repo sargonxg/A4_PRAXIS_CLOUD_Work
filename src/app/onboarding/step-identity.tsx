@@ -38,7 +38,7 @@ export function StepIdentity({
   const valid = profile.identity.org.trim().length > 0 || profile.identity.role !== 'other';
 
   return (
-    <div className="space-y-6">
+    <div className="praxis-enter space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-navy-900">Who are you?</h3>
         <p className="mt-1 text-sm text-navy-500">Three quick fields. Takes 30 seconds.</p>

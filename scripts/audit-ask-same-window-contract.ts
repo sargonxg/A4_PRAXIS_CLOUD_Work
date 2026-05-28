@@ -42,7 +42,7 @@ requireIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
 requireIncludes('src/components/ask/AskArtifactPreview.tsx', [
   'data-testid="ask-artifact-preview"',
   'Draft document pack',
-  'Save to Memo Studio',
+  'Save to Work',
   'Save as Output Capsule',
   'Attach answer to capsule',
   '/api/memos/from-ask-pack',
