@@ -68,14 +68,14 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(`${workbenchSource}\n${askStreamPanelSource}`).not.toContain("fetch('/api/ai/ask-praxis'");
   });
 
-  it('renders document-pack artifacts in-window instead of forcing Memo Studio navigation', () => {
+  it('renders document-pack artifacts in-window instead of forcing separate Work navigation', () => {
     expect(`${workbenchSource}\n${askStreamPanelSource}`).toContain('<AskArtifactPreview');
     expect(`${workbenchSource}\n${askStreamPanelSource}`).not.toContain("window.location.assign('/app/write')");
     expect(askArtifactPreviewSource).toContain('data-testid="ask-artifact-preview"');
     expect(askArtifactPreviewSource).toContain('Draft document pack');
     expect(askArtifactPreviewSource).toContain('Copy');
     expect(askArtifactPreviewSource).toContain('Revise in chat');
-    expect(askArtifactPreviewSource).toContain('Save to Memo Studio');
+    expect(askArtifactPreviewSource).toContain('Save to Work');
     expect(askArtifactPreviewSource).toContain('Save as Output Capsule');
     expect(askArtifactPreviewSource).toContain('Attach answer to capsule');
     expect(askArtifactPreviewSource).toContain('/api/memos/from-ask-pack');
@@ -216,7 +216,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain("'causality'");
     expect(source).toContain("'rules'");
     expect(source).toContain("'temporality'");
-    expect(source).toContain('Advanced label');
+    expect(source).toContain('Context label');
     expect(source).toContain('advancedLabel');
     expect(source).toContain("defaultAdvancedLabel = 'sourceability'");
     expect(source).not.toContain("'human-friction'");

@@ -580,9 +580,9 @@ function buildTriageReasons(input: {
 function destinationLabel(destination: PolicyAgentOutputDestination | null): string | null {
   switch (destination) {
     case 'memo_studio':
-      return 'Memo Studio';
+      return 'Work';
     case 'canvas':
-      return 'Canvas';
+      return 'Context';
     case 'library':
       return 'Capsules';
     case 'handover':

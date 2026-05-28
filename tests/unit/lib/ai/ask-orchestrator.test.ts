@@ -42,6 +42,7 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       ],
     });
     expect(receipt.turnPlan).toMatchObject({
+      outputMode: 'quick_answer',
       intent: 'quick_answer',
       complexity: 'simple',
       answerShape: 'short_answer',
@@ -115,6 +116,7 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       checks: expect.arrayContaining(['terminology', 'unsupported-claims', 'primary-source-gap-language']),
     });
     expect(receipt.turnPlan).toMatchObject({
+      outputMode: 'policy_brief',
       intent: 'policy_research',
       complexity: 'multi_agent',
       answerShape: 'research_memo',
@@ -142,6 +144,7 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     });
 
     expect(receipt.turnPlan).toMatchObject({
+      outputMode: 'evidence_annex_memo_pack',
       intent: 'conflict_analysis',
       complexity: 'multi_agent',
       answerShape: 'table',
@@ -265,7 +268,7 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       selectedToolIds: expect.arrayContaining(['grounded-search', 'deep-search-agent']),
       sourceCount: 2,
       approvalGateCount: 0,
-      outputTarget: 'Memo Studio',
+      outputTarget: 'Work',
       groundingPosture: 'Grounding unavailable',
     });
     const serialized = JSON.stringify(events);

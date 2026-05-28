@@ -131,7 +131,7 @@ export function LiveContextReadinessCard() {
             ? `${actorCount} actors mapped.`
             : 'Map who can move, block, or absorb.',
         fixHref: '/app/canvas',
-        fixLabel: 'Open Canvas',
+        fixLabel: 'Open Context',
       },
       {
         id: 'time',

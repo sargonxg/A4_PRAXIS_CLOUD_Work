@@ -144,7 +144,7 @@ describe('agent run API validation schema', () => {
       sourcePosture: 'Grounded',
       sourceCount: 3,
       approvalGateCount: 1,
-      outputTargetLabel: 'Memo Studio',
+      outputTargetLabel: 'Work',
     });
   });
 

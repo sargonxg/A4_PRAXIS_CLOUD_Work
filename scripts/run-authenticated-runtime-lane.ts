@@ -1,4 +1,10 @@
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { loadEnvConfig } from '@next/env';
+
+loadEnvConfig(process.cwd());
 
 type Lane = 'preflight' | 'local' | 'product' | 'agent' | 'live' | 'all';
 
@@ -32,8 +38,9 @@ const localSmoke: Step[] = [
   step('Typecheck', 'npm', ['run', 'typecheck']),
   step('Production build', 'npm', ['run', 'build']),
   step('Golden-path smoke', 'npm', ['run', 'smoke:golden-path']),
-  step('Tasklet app smoke', 'npm', ['run', 'smoke:tasklet-app']),
+  step('Canary auth skip smoke', 'npx', ['playwright', 'test', 'tests/e2e/canary-auth-skip.spec.ts']),
   step('Ask capsule runtime smoke', 'npx', ['playwright', 'test', 'tests/e2e/ask-capsule-runtime.spec.ts']),
+  step('Same-thread AgentRun canary', 'npx', ['playwright', 'test', 'tests/e2e/ask-same-thread-agent-run.spec.ts']),
 ];
 
 const productSurface: Step[] = [
@@ -116,7 +123,11 @@ function runPreflight(): boolean {
 
 export function evaluateAuthenticatedRuntimePreflight(input: {
   env: NodeJS.ProcessEnv | Record<string, string | undefined>;
-  capture: (command: string, commandArgs: string[]) => { ok: boolean; output: string };
+  capture: (
+    command: string,
+    commandArgs: string[],
+    options?: { env?: Record<string, string> },
+  ) => { ok: boolean; output: string };
 }): AuthRuntimePreflightResult {
   const checks: Array<{ name: string; ok: boolean; detail: string; remediation?: string; envVar?: string }> = [];
 
@@ -166,11 +177,11 @@ export function evaluateAuthenticatedRuntimePreflight(input: {
     remediation: 'firebase login --reauth',
   });
 
-  const adc = input.capture('gcloud', ['auth', 'application-default', 'print-access-token', '--quiet']);
+  const adc = resolveAdcCheck(input);
   checks.push({
     name: 'Application Default Credentials',
     ok: adc.ok && adc.output.length > 0,
-    detail: adc.ok ? 'valid access token' : adc.output,
+    detail: adc.output,
     remediation: `gcloud auth application-default login --project=${expectedProject}`,
   });
 
@@ -188,6 +199,48 @@ export function evaluateAuthenticatedRuntimePreflight(input: {
     checks: normalized,
     missingEnvVars,
   };
+}
+
+function resolveAdcCheck(input: {
+  env: NodeJS.ProcessEnv | Record<string, string | undefined>;
+  capture: (
+    command: string,
+    commandArgs: string[],
+    options?: { env?: Record<string, string> },
+  ) => { ok: boolean; output: string };
+}): { ok: boolean; output: string } {
+  const adc = input.capture('gcloud', ['auth', 'application-default', 'print-access-token', '--quiet']);
+  if (adc.ok && adc.output.length > 0) {
+    return { ok: true, output: 'valid access token' };
+  }
+
+  const serviceAccountRaw = input.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (!serviceAccountRaw) return adc;
+
+  let tempDir = '';
+  try {
+    const parsed = JSON.parse(serviceAccountRaw);
+    if (parsed.private_key && typeof parsed.private_key === 'string') {
+      parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+    }
+    tempDir = mkdtempSync(join(tmpdir(), 'praxis-adc-'));
+    const credentialPath = join(tempDir, 'service-account.json');
+    writeFileSync(credentialPath, JSON.stringify(parsed), 'utf8');
+    const serviceAccountAdc = input.capture(
+      'gcloud',
+      ['auth', 'application-default', 'print-access-token', '--quiet'],
+      { env: { GOOGLE_APPLICATION_CREDENTIALS: credentialPath } },
+    );
+    if (serviceAccountAdc.ok && serviceAccountAdc.output.length > 0) {
+      return { ok: true, output: 'valid access token via FIREBASE_SERVICE_ACCOUNT_KEY service-account fallback' };
+    }
+  } catch {
+    // Keep the original ADC failure below; the service-account key is validated by Firebase Admin separately.
+  } finally {
+    if (tempDir) rmSync(tempDir, { recursive: true, force: true });
+  }
+
+  return adc;
 }
 
 function stepsForLane(selected: Lane): Step[] {
@@ -222,11 +275,19 @@ function runStep(item: Step): number {
   return result.status ?? 1;
 }
 
-function capture(command: string, commandArgs: string[]): { ok: boolean; output: string } {
+function capture(
+  command: string,
+  commandArgs: string[],
+  options: { env?: Record<string, string> } = {},
+): { ok: boolean; output: string } {
   const result = spawnSync(resolveBin(command), commandArgs, {
     encoding: 'utf8',
     shell: process.platform === 'win32',
     stdio: ['ignore', 'pipe', 'pipe'],
+    env: {
+      ...process.env,
+      ...(options.env ?? {}),
+    },
   });
   const stdout = (result.stdout || '').trim();
   const stderr = (result.stderr || '').trim();

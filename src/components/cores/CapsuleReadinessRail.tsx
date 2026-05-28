@@ -85,7 +85,7 @@ export function CapsuleReadinessRail({ capsule, onAxisActivate }: CapsuleReadine
         </header>
         <ul className="space-y-1 text-[11px] text-slate-700">
           <li>Ask PRAXIS reads every core slot above as context.</li>
-          <li>Suggested actions appear in Ask and Memo Studio.</li>
+          <li>Suggested actions appear in Ask and Work.</li>
           <li>Lock a core to pin it across reasoning turns.</li>
         </ul>
       </section>

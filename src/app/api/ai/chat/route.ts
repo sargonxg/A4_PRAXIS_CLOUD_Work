@@ -58,7 +58,7 @@ import {
   markAskOrchestrationRunQueued,
   type AskConversationOrchestrationReceipt,
 } from '@/lib/ai/ask-orchestrator';
-import { createAgentRun } from '@/lib/agent-runtime/postgres';
+import { createAgentRun, updateAgentRunMetadata } from '@/lib/agent-runtime/postgres';
 import { enqueueAgentRunDispatch } from '@/lib/agent-runtime/cloud-tasks';
 import { destinationHref } from '@/lib/product/policy-agents';
 import { formatWorkIntentPromptBlock } from '@/lib/ai/work-intent-router';
@@ -308,7 +308,7 @@ You are **Ask PRAXIS** — the central intelligence assistant of the PRAXIS plat
 TACITUS (Threat Assessment, Conflict Tracking, and Intelligence Utility System) is a technology company building AI-native tools for conflict resolution and international affairs. Founded by Giulio Catanzariti, TACITUS aims to make conflict data computable, actionable, and accessible to the people working to prevent and resolve violent conflict worldwide.
 
 PRAXIS is TACITUS's flagship conflict-intelligence workspace for turning situations, sources, graph primitives, and analyst context into cited assessments, briefings, and decision support. The platform at praxis.tacitus.me provides:
-- **${PRAXIS_CANONICAL_TOOLS.length} canonical capabilities** surfaced through the simple app spine: Home, Ask PRAXIS, Library, Memo Studio, Canvas, and Advanced
+- **${PRAXIS_CANONICAL_TOOLS.length} canonical capabilities** surfaced through the simple product spine: Home, Capsules, Ask PRAXIS, Context, Sources, Work, and Proof
 - **AI-powered research** using Google Cloud/Firebase/Vertex AI, grounded search, source-linked event reporting, humanitarian web reporting, humanitarian data, official multilateral news, economic institution, Wikipedia, and grounded Google Search
 - **Conflict Grammar framework** — 14-entity structured ontology (Actors, Claims, Interests, Constraints, Leverage, Commitments, Events, Narratives, Institutions, Norms, Resources, Risks, Policies, Grievances)
 - **Glasl 9-stage escalation model** for systematic conflict assessment
@@ -323,7 +323,7 @@ Learn more at tacitus.me. For questions about pricing, partnerships, or enterpri
 2. **Research with receipts** — Use the situation corpus first, then source/document retrieval and grounded fetches when needed. Thin or missing source coverage must become an evidence gap, not a fact.
 3. **Route internal capabilities safely** — Suggest or call only the safe tools available in this request: context resolution, source retrieval, claim/evidence review, graph proposals, memo drafting, tool suggestions, and context health repair.
 4. **Generate workspace outputs** — Draft briefings, risk assessments, options memos, handover notes, talking points, and graph-review proposals grounded in the active capsule/context package.
-5. **Guide users through the simple app spine** — Route normal users to Ask PRAXIS, Library, Memo Studio, Canvas, or Advanced rather than exposing internal implementation details.
+5. **Guide users through the simple app spine** — Route normal users to Home or Capsules; use Ask PRAXIS for questions, Context/Sources for evidence, Work for outputs, and Proof for receipts rather than exposing internal implementation details.
 6. **Adapt to the user's role**:
    - **Analyst**: Evidence-based assessments with confidence levels
    - **Mediator**: Process design, party positions, ZOPA/BATNA, CBMs
@@ -346,10 +346,11 @@ Learn more at tacitus.me. For questions about pricing, partnerships, or enterpri
 ## ABOUT YOU
 You are PRAXIS, the AI assistant built by TACITUS — the conflict intelligence platform for peace and security professionals. You are part of a comprehensive toolkit that includes:
 - **Ask PRAXIS**: the simple front door for context inspection, questions, evidence gaps, and tool routing
-- **Library**: source/document receipts, attached cores, and context intake
-- **Memo Studio**: reviewable drafting from the active User Core, Situation Core, capsule, and context package
-- **Canvas**: graph review, stakeholder mapping, scenario structure, and reviewable proposals
-- **Advanced**: traces, receipts, administrative review, and specialist/internal capabilities
+- **Capsules**: reusable ContextCapsules, source/document receipts, attached cores, and context intake
+- **Context**: active user, situation, graph, memory, and source posture used by the answer
+- **Sources**: source/document receipts, retrieval gaps, grounding posture, and sourceability review
+- **Work**: reviewable briefs, memos, handovers, output capsules, and graph-review proposals
+- **Proof**: traces, receipts, approval gates, runtime status, and specialist/internal capability evidence
 
 ${buildAskPraxisToolCatalogPrompt()}
 
@@ -1275,6 +1276,7 @@ async function maybeQueueAskAgentRun(input: {
         groundingPlan,
         groundingPosture,
         degradedReason,
+        dispatchEnqueueStatus: 'queued',
       },
     });
 
@@ -1286,6 +1288,16 @@ async function maybeQueueAskAgentRun(input: {
 
     try {
       const dispatch = await enqueueAgentRunDispatch({ ownerUid: input.uid, runId: run.id });
+      await updateAgentRunMetadata({
+        ownerUid: input.uid,
+        runId: run.id,
+        metadata: {
+          dispatchEnqueueStatus: 'dispatch_enqueued',
+          dispatchId: dispatch.payload.dispatchId,
+          dispatchLastAttemptAt: new Date().toISOString(),
+        },
+        message: 'AgentRun dispatch enqueued from Ask PRAXIS.',
+      }).catch((metadataErr) => console.warn('[chat] Ask orchestration dispatch metadata update failed:', metadataErr));
       queued = markAskOrchestrationRunQueued(queued, {
         runId: run.id,
         status: 'dispatch_enqueued',
@@ -1293,11 +1305,22 @@ async function maybeQueueAskAgentRun(input: {
         dispatchId: dispatch.payload.dispatchId,
       });
     } catch (err) {
+      const dispatchError = err instanceof Error ? err.message : String(err);
+      await updateAgentRunMetadata({
+        ownerUid: input.uid,
+        runId: run.id,
+        metadata: {
+          dispatchEnqueueStatus: 'dispatch_failed',
+          dispatchError,
+          dispatchLastAttemptAt: new Date().toISOString(),
+        },
+        message: 'AgentRun dispatch enqueue failed from Ask PRAXIS.',
+      }).catch((metadataErr) => console.warn('[chat] Ask orchestration dispatch failure metadata update failed:', metadataErr));
       queued = markAskOrchestrationRunQueued(queued, {
         runId: run.id,
         status: 'dispatch_failed',
         outputHref: receipt.supervisor.outputDestination ? destinationHref(receipt.supervisor.outputDestination) : null,
-        error: err instanceof Error ? err.message : String(err),
+        error: dispatchError,
       });
       console.warn('[chat] Ask orchestration dispatch failed; run remains queued:', err);
     }
@@ -1577,6 +1600,7 @@ async function persistConversationTurn(input: {
       latestToolCount: input.toolInvocations.length,
       latestFrameworkStepCount: input.frameworkSteps.length,
       latestQueuedRunId: queuedRunIdFromAnswerEnvelope(input.runtime.answerEnvelope),
+      latestAgentRunSnapshot: agentRunSnapshotFromAnswerEnvelope(input.runtime.answerEnvelope),
       latestOrchestrationTraceId: input.runtime.orchestrationReceipt?.traceId ?? null,
       turnCount: FieldValue.increment(1),
       createdAt,
@@ -1589,6 +1613,7 @@ async function persistConversationTurn(input: {
       situationId: input.situationId,
       answerEnvelope: input.runtime.answerEnvelope ?? null,
       queuedRunId: queuedRunIdFromAnswerEnvelope(input.runtime.answerEnvelope),
+      agentRunSnapshot: agentRunSnapshotFromAnswerEnvelope(input.runtime.answerEnvelope),
       runId: queuedRunIdFromAnswerEnvelope(input.runtime.answerEnvelope),
       sourceAskThreadId: cleanConversationId,
       conversationThreadId: cleanConversationId,
@@ -1639,6 +1664,25 @@ async function persistConversationTurn(input: {
 function queuedRunIdFromAnswerEnvelope(envelope: AskAnswerEnvelope | undefined): string | null {
   const runId = envelope?.orchestrationReceipt?.supervisor.queuedRun?.runId;
   return runId && runId !== 'unavailable' ? runId : null;
+}
+
+function agentRunSnapshotFromAnswerEnvelope(envelope: AskAnswerEnvelope | undefined): Record<string, unknown> | null {
+  const receipt = envelope?.orchestrationReceipt;
+  const queuedRun = receipt?.supervisor.queuedRun;
+  const runId = queuedRunIdFromAnswerEnvelope(envelope);
+  if (!receipt || !queuedRun || !runId) return null;
+  return {
+    version: 1,
+    runId,
+    status: queuedRun.status,
+    outputHref: queuedRun.outputHref ?? null,
+    traceId: receipt.traceId,
+    policyAgentId: receipt.supervisor.policyAgentId,
+    outputDestination: receipt.supervisor.outputDestination,
+    selectedToolIds: receipt.toolRouting.selectedToolIds,
+    sourcePreviewCount: receipt.capsule.sourcePreviewCount,
+    approvalGateCount: receipt.toolRouting.approvalRequiredToolIds.length,
+  };
 }
 
 async function persistAskReadLedger(input: {

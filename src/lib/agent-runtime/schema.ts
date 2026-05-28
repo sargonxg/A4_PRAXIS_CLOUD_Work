@@ -350,9 +350,9 @@ function normalizeLatestMirroredEvent(value: unknown): AgentRunOutput['latestMir
 function destinationLabel(destination: PolicyAgentOutputDestination): string {
   switch (destination) {
     case 'memo_studio':
-      return 'Memo Studio';
+      return 'Work';
     case 'canvas':
-      return 'Canvas';
+      return 'Context';
     case 'library':
       return 'Capsules';
     case 'handover':

@@ -43,6 +43,7 @@ export function AskTurnPlanPanel({
         ))}
       </ol>
       <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
+        <PlanChip label="Mode" value={turnPlan.outputMode ?? 'quick_answer'} />
         <PlanChip label="Intent" value={turnPlan.intent} />
         <PlanChip label="Continuation" value={turnPlan.continuationPolicy} />
         {capabilityChips.map((chip) => (

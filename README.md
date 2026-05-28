@@ -216,14 +216,17 @@ graphify update .
 
 ## Deploy
 
-The frontend deploy path is the Cloud Build fast path:
+The normal frontend deploy path is GitHub `main` -> GitHub Actions -> Cloud
+Build trigger -> Cloud Run. Manual local deploys are fallback only.
 
 ```bash
-npm run deploy:frontend:cloud
+npm run deploy:frontend:main-safe
 ```
 
-That builds the Next.js frontend, wires in the live backend URL, pushes the
-image, and deploys the `praxis-frontend` Cloud Run service.
+The fallback wrapper verifies local `main` is current with `origin/main`, passes
+the current commit into Cloud Build substitutions, and fails if runtime health
+does not report the same served commit. `npm run deploy:frontend:cloud` remains
+the lower-level Cloud Build command.
 
 The live app URL is:
 

@@ -457,6 +457,44 @@ export async function updateAgentRunStatus(input: {
   return run;
 }
 
+export async function updateAgentRunMetadata(input: {
+  ownerUid: string;
+  runId: string;
+  metadata: Record<string, unknown>;
+  message?: string | null;
+}): Promise<AgentRun | null> {
+  await ensureSchema();
+  const current = await getAgentRun(input.ownerUid, input.runId);
+  if (!current) return null;
+  const now = new Date();
+  const nextMetadata = {
+    ...current.metadata,
+    ...input.metadata,
+  };
+  const result = await getPool().query(
+    `
+      UPDATE agent_runs
+      SET metadata = $1, updated_at = $2
+      WHERE owner_uid = $3 AND id = $4
+      RETURNING *
+    `,
+    [JSON.stringify(nextMetadata), now, input.ownerUid, input.runId],
+  );
+  const run = result.rows[0] ? rowToAgentRun(result.rows[0]) : null;
+  if (run && input.message) {
+    await appendAgentRunEvent(makeAgentRunEvent({
+      runId: run.id,
+      ownerUid: run.ownerUid,
+      capsuleId: run.capsuleId,
+      eventType: 'metadata_updated',
+      message: input.message,
+      data: input.metadata,
+      traceId: run.traceId,
+    }));
+  }
+  return run;
+}
+
 function publishAgentRunEvent(
   eventType: PraxisEventType,
   run: AgentRun,

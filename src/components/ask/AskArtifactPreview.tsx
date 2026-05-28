@@ -124,7 +124,7 @@ export function AskArtifactPreview({
         />
         <ArtifactButton
           icon={saving ? Loader2 : Save}
-          label="Save to Memo Studio"
+          label="Save to Work"
           loading={saving}
           disabled={saving}
           onClick={() => void onSaveToMemoStudio()}

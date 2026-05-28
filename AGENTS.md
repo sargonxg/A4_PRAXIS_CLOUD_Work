@@ -56,6 +56,15 @@ old phase queues.
 
 - Project-local Codex config lives at [`.codex/config.toml`](./.codex/config.toml).
 - Multi-agent role layers live under [`.codex/agents/`](./.codex/agents/).
+- Start Codex work from [`docs/CODEX_SESSION_BRIEF.md`](./docs/CODEX_SESSION_BRIEF.md) when the task is non-trivial.
+- Use the local Codex preflight script before large work:
+
+```powershell
+& "$HOME\.codex\scripts\codex-ready.ps1" -Repo . -Mode quick
+```
+
+- The Codex operating runbook is [`docs/runbooks/CODEX_OPERATING_SYSTEM.md`](./docs/runbooks/CODEX_OPERATING_SYSTEM.md).
+- Split larger work through the lane files under [`docs/lanes/`](./docs/lanes/).
 - To merge missing ECC MCP servers into `~/.codex/config.toml`, run:
 
 ```bash

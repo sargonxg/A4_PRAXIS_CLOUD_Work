@@ -33,6 +33,7 @@ yarn-error.log*
 .pnpm-debug.log*
 .next-start-*.log
 .next-start-*.err.log
+.tmp-next-dev.*
 
 # env files — NEVER commit secrets
 .env

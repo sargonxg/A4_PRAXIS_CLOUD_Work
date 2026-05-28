@@ -10,19 +10,40 @@ max_depth = 1
 
 [agents.explorer]
 description = "Read-only codebase explorer for gathering evidence before changes are proposed."
-config_file = ".codex/agents/explorer.toml"
+config_file = "agents/explorer.toml"
 
 [agents.reviewer]
 description = "PR reviewer focused on correctness, security, and missing tests."
-config_file = ".codex/agents/reviewer.toml"
+config_file = "agents/reviewer.toml"
 
 [agents.docs_researcher]
 description = "Documentation specialist that verifies APIs, framework behavior, and release notes."
-config_file = ".codex/agents/docs-researcher.toml"
+config_file = "agents/docs-researcher.toml"
+
+[agents.release_manager]
+description = "PRAXIS release and deploy evidence checker for branch state, validation, Cloud Build, Cloud Run, and live proof."
+config_file = "agents/release-manager.toml"
+
+[agents.cloud_ops_auditor]
+description = "Read-only PRAXIS GCP/Firebase readiness auditor for auth, ADC, Cloud Run, IAM, secrets, and repo cloud scripts."
+config_file = "agents/cloud-ops-auditor.toml"
+
+[agents.frontend_qa]
+description = "Browser-facing PRAXIS QA reviewer for responsive UI, console errors, routes, and Playwright evidence."
+config_file = "agents/frontend-qa.toml"
+
+[agents.dependency_curator]
+description = "PRAXIS dependency update planner for outdated packages, audit findings, peer constraints, and lockfile risk."
+config_file = "agents/dependency-curator.toml"
+
+[agents.repo_cartographer]
+description = "PRAXIS repository mapper for source-of-truth docs, architecture seams, validation commands, and no-touch areas."
+config_file = "agents/repo-cartographer.toml"
 
 [mcp_servers.github]
-command = "npx"
-args = ["-y", "@modelcontextprotocol/server-github"]
+command = "powershell"
+args = ["-NoProfile", "-Command", "$env:GITHUB_PERSONAL_ACCESS_TOKEN = gh auth token; npx -y @modelcontextprotocol/server-github"]
+startup_timeout_sec = 30
 
 [mcp_servers.context7]
 command = "npx"
@@ -42,6 +63,14 @@ args = ["-y", "@modelcontextprotocol/server-memory"]
 [mcp_servers.sequential-thinking]
 command = "npx"
 args = ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+
+[mcp_servers.firebase]
+command = "npx"
+args = ["-y", "firebase-tools@latest", "mcp", "--dir", "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work", "--only", "core auth firestore storage"]
+
+[mcp_servers.serena]
+command = "uvx"
+args = ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--context", "codex", "--project", "C:\\Users\\giuli\\ANTIGRAVITY\\PRAXISMAY2026\\A4_PRAXIS_CLOUD_Work"]
 
 [mcp_servers.supabase]
 command = "npx"

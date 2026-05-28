@@ -33,7 +33,7 @@ const RESEARCH_MEMO_PLAN: PlannedStep[] = [
     id: 'draft-memo',
     phase: 'act',
     toolId: 'policy-memo',
-    message: 'Create a Memo Studio draft with source and gap receipts.',
+    message: 'Create a Work draft with source and gap receipts.',
   },
   {
     id: 'reflect-gaps',
@@ -63,7 +63,7 @@ const OUTPUT_FORMATTER_PLAN: PlannedStep[] = [
     id: 'format-work-product',
     phase: 'act',
     toolId: 'memo-formatter',
-    message: 'Create a structured Memo Studio draft that can export to Markdown, DOCX, PDF, or handover package.',
+    message: 'Create a structured Work draft that can export to Markdown, DOCX, PDF, or handover package.',
   },
   {
     id: 'preserve-citations',

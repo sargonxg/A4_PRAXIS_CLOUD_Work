@@ -599,7 +599,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
             ? `${activeCapsule.capsuleId}-v${activeCapsule.version}`
             : `memo-studio-${Date.now().toString(36)}`,
           status: 'draft',
-          changeNote: 'Saved from Memo Studio with active context capsule.',
+          changeNote: 'Saved from Work with active context capsule.',
         }),
       });
       if (!res.ok) throw new Error(`status ${res.status}`);
@@ -875,7 +875,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
 
       {/* Body */}
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        {/* Library rail */}
+        {/* Sources rail */}
         {libraryOpen && (
           <aside
             className={cn(
@@ -886,11 +886,11 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
             )}
           >
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8A5A00]">Library</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8A5A00]">Sources</p>
               <button
                 type="button"
                 onClick={() => setLibraryOpen(false)}
-                aria-label="Close library"
+                aria-label="Close sources"
                 className="text-slate-400 hover:text-slate-600"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
@@ -1320,7 +1320,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
         />
       </div>
 
-      {/* Mobile floating Library · Ask toggle (hidden at md+) */}
+      {/* Mobile floating Sources / Ask toggle (hidden at md+) */}
       <div className="pointer-events-none fixed inset-x-0 bottom-3 z-50 flex justify-center md:hidden">
         <div className="pointer-events-auto inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-1 py-1 shadow-lg">
           <button
@@ -1333,7 +1333,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
             )}
           >
             <Library className="h-3 w-3" />
-            Library
+            Sources
           </button>
           <button
             type="button"
@@ -1503,7 +1503,7 @@ function buildWriterInstruction(input: {
   return [
     input.prompt,
     '',
-    'Write for Memo Studio as an editable document, not a chat reply.',
+    'Write as an editable Work draft, not a chat reply.',
     `Document title: ${input.title}`,
     `Using: ${input.usingRow}`,
     `Selected cores: ${input.selectedCoreLabels.join(', ') || 'none selected'}`,

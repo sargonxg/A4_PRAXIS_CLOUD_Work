@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { authenticateFirebaseCanary, hasFirebaseCanaryCredentials } from './helpers/auth';
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
-const APP_OR_ONBOARDING = (url: URL) => url.pathname.startsWith('/app') || url.pathname.startsWith('/onboarding');
 
 test.describe('Ask PRAXIS capsule runtime smoke', () => {
-  test.skip(!process.env.TEST_FIREBASE_EMAIL || !process.env.TEST_FIREBASE_PASSWORD, 'TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set - skipping authenticated Ask capsule runtime smoke');
+  test.skip(!hasFirebaseCanaryCredentials(), 'TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set - skipping authenticated Ask capsule runtime smoke');
 
   test.setTimeout(120_000);
 
@@ -21,20 +21,13 @@ test.describe('Ask PRAXIS capsule runtime smoke', () => {
       });
     });
 
-    await page.goto(`${BASE}/login`);
-    await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
-    await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
-    await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
-    await page.waitForURL(APP_OR_ONBOARDING, { timeout: 20_000 });
-    if (page.url().includes('/onboarding')) {
-      test.skip(true, 'Fixture account still needs onboarding before Ask runtime smoke can run.');
-    }
+    await authenticateFirebaseCanary(page, BASE, '/app?panel=ask');
 
     await page.goto(`${BASE}/app?panel=ask`);
     await expect(page.getByText(/Context Chain/i)).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText(/Readiness Baseline|Context health|Generic analyst/i).first()).toBeVisible({ timeout: 20_000 });
 
-    const composer = page.locator('textarea[placeholder*="Ask PRAXIS"], textarea[placeholder*="Describe"]').first();
+    const composer = page.getByLabel(/Describe a task or responsibility/i);
     await composer.fill('What does the active capsule know, and what evidence is missing?');
     await page.getByRole('button', { name: /^(Send|Send to PRAXIS)$/i }).click();
 
@@ -80,18 +73,12 @@ test.describe('Ask PRAXIS capsule runtime smoke', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
     });
 
-    await page.goto(`${BASE}/login?redirect=/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
-    await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
-    await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
-    await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
-    await page.waitForURL(APP_OR_ONBOARDING, { timeout: 20_000 });
-    if (page.url().includes('/onboarding')) test.skip(true, 'Fixture account still needs onboarding before conversation smoke can run.');
+    await authenticateFirebaseCanary(page, BASE, `/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
 
     await page.goto(`${BASE}/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
-    await expect(page.getByText('Conversation workspace', { exact: true })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText(/Previous answer in this conversation workspace/i)).toBeVisible({ timeout: 20_000 });
 
-    const composer = page.locator('textarea[placeholder*="Describe"]').first();
+    const composer = page.getByLabel(/Describe a task or responsibility/i);
     await composer.fill('tell me about sudan');
     await page.getByRole('button', { name: /Send to PRAXIS/i }).click();
 
@@ -126,15 +113,10 @@ test.describe('Ask PRAXIS capsule runtime smoke', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
     });
 
-    await page.goto(`${BASE}/login?redirect=/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
-    await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
-    await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
-    await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
-    await page.waitForURL(APP_OR_ONBOARDING, { timeout: 20_000 });
-    if (page.url().includes('/onboarding')) test.skip(true, 'Fixture account still needs onboarding before conversation smoke can run.');
+    await authenticateFirebaseCanary(page, BASE, `/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
 
     await page.goto(`${BASE}/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
-    const composer = page.locator('textarea[placeholder*="Describe"], textarea[placeholder*="Ask PRAXIS"]').first();
+    const composer = page.getByLabel(/Describe a task or responsibility/i);
     await composer.fill('check the capsule failure path');
     await page.getByRole('button', { name: /Send to PRAXIS/i }).click();
 
@@ -240,12 +222,7 @@ test.describe('Ask PRAXIS capsule runtime smoke', () => {
       });
     });
 
-    await page.goto(`${BASE}/login?redirect=/app`);
-    await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
-    await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
-    await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
-    await page.waitForURL(APP_OR_ONBOARDING, { timeout: 20_000 });
-    if (page.url().includes('/onboarding')) test.skip(true, 'Fixture account still needs onboarding before runtime proof can run.');
+    await authenticateFirebaseCanary(page, BASE, `/app?capsuleId=${capsule.capsuleId}&panel=ask`);
 
     await page.goto(`${BASE}/app?capsuleId=${capsule.capsuleId}&panel=ask`);
     await expect(page.getByTestId('tasklet-praxis-workbench')).toBeVisible({ timeout: 20_000 });
@@ -260,7 +237,7 @@ test.describe('Ask PRAXIS capsule runtime smoke', () => {
     });
     await expect(page.getByText(/runtime-proof\.pdf attached/i)).toBeVisible({ timeout: 20_000 });
 
-    const composer = page.locator('textarea[placeholder*="Describe"]').first();
+    const composer = page.getByLabel(/Describe a task or responsibility/i);
     await composer.fill('What does the active capsule know after this upload?');
     await page.getByRole('button', { name: /Send to PRAXIS/i }).click();
     await expect(page.getByText(/sourceability gap receipt/i)).toBeVisible({ timeout: 20_000 });

@@ -22,14 +22,14 @@ const REAL_FEATURES = [
   { icon: Users, label: 'Capsule cores', description: 'Keep user, situation, sources, tools, and output visible.' },
   { icon: Wrench, label: 'AI routing', description: 'PRAXIS chooses memo, review, monitoring, or handover skills from one prompt.' },
   { icon: Search, label: 'Source receipts', description: 'Keep evidence and gaps attached to the output.' },
-  { icon: FileText, label: 'Memo Studio', description: 'Open the draft where the run finishes.' },
-  { icon: GitBranch, label: 'Canvas', description: 'Inspect actors, claims, and graph proposals when needed.' },
+  { icon: FileText, label: 'Work draft', description: 'Open the draft where the run finishes.' },
+  { icon: GitBranch, label: 'Context map', description: 'Inspect actors, claims, and graph proposals when needed.' },
 ];
 
 const WORKFLOW_STEPS = [
   { title: 'Choose capsule', description: 'Start with the active context: user, situation, sources, and output.' },
   { title: 'Run agent', description: 'Use one button; PRAXIS routes simple answers and deeper agentic work.' },
-  { title: 'Open output', description: 'Review the result in Memo Studio, Canvas, Library, or handover.' },
+  { title: 'Open work', description: 'Review the result in Work, Sources, Proof, or handover.' },
 ] as const;
 
 export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) {
@@ -75,7 +75,7 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
               PRAXIS works like a simple agent cockpit: choose a ContextCapsule, describe the policy task, send once, then review the output and receipt.
             </p>
             <p className="mt-3 text-xs font-medium text-navy-500">
-              Advanced tools stay behind approval gates; the main workspace stays simple.
+              Proof and review gates stay available; the main workspace stays simple.
             </p>
           </div>
 

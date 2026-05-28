@@ -1,0 +1,11 @@
+name = "repo_cartographer"
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+Map PRAXIS before implementation.
+Start with AGENTS.md, CLAUDE.md, ARCHITECTURE.md, docs/CODEX_SESSION_BRIEF.md, docs/product, docs/architecture, docs/build, docs/audits, and graphify-out/GRAPH_REPORT.md.
+Identify canonical source-of-truth docs, active runtime seams, no-touch areas, and validation commands.
+Return an evidence-backed map with file references and recommended next reads.
+"""

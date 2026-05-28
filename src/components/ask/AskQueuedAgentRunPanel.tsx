@@ -5,6 +5,14 @@ import { useCallback, useEffect, useState } from 'react';
 import type { AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
 import type { AskOrchestrationStatusEvent } from '@/lib/ai/ask-orchestrator';
 import { agentRailStageFromEvent, useOrchestratorEvents } from '@/hooks/useOrchestratorEvents';
+import {
+  agentRunLifecycleSteps,
+  canCancelAgentRunStatus,
+  canRetryAgentRunStatus,
+  shouldPollAgentRunStatus,
+  shouldStreamAgentRunStatus,
+  userSafeAgentRunError,
+} from '@/lib/agent-runtime/status';
 
 type RunSummary = {
   runId: string;
@@ -61,16 +69,31 @@ export function queuedAgentRunFromEnvelope(envelope?: AskAnswerEnvelope): AskOrc
   };
 }
 
-export function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrationStatusEvent | null }) {
-  const runId = queuedRun?.runId ?? null;
+export function AskQueuedAgentRunPanel({
+  queuedRun,
+  newestActive = true,
+}: {
+  queuedRun: AskOrchestrationStatusEvent | null;
+  newestActive?: boolean;
+}) {
+  const [overrideRunId, setOverrideRunId] = useState<string | null>(null);
+  const runId = overrideRunId ?? queuedRun?.runId ?? null;
   const [run, setRun] = useState<RunSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const actionStatus = run?.status ?? queuedRun?.fallbackPosture ?? queuedRun?.status ?? null;
+  const streamEnabled = Boolean(runId) && shouldStreamAgentRunStatus(actionStatus, { expanded, newestActive });
   const eventState = useOrchestratorEvents(runId ? `/api/agents/runs/${encodeURIComponent(runId)}/stream` : null, {
-    enabled: Boolean(runId),
+    enabled: streamEnabled,
     limit: 20,
     maxEvents: 8,
   });
+
+  useEffect(() => {
+    setOverrideRunId(null);
+    setRun(null);
+  }, [queuedRun?.runId]);
 
   const refresh = useCallback(async () => {
     if (!runId) return;
@@ -78,22 +101,23 @@ export function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrat
       const response = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}`, { credentials: 'include', cache: 'no-store' });
       const payload = await response.json().catch(() => ({})) as { run?: RunSummary; error?: string };
       if (!response.ok) {
-        setError(response.status === 503 ? 'Deep work queue is not configured in this environment.' : payload.error ?? `Agent run lookup failed (${response.status}).`);
+        setError(response.status === 503 ? userSafeAgentRunError(payload.error) : payload.error ?? `Agent run lookup failed (${response.status}).`);
         return;
       }
       setRun(payload.run ?? null);
       setError(null);
     } catch {
-      setError('Agent run status could not be refreshed.');
+      setError(userSafeAgentRunError('Agent run status network refresh failed'));
     }
   }, [runId]);
 
   useEffect(() => {
     if (!runId) return;
+    if ((!newestActive && !expanded) || !shouldPollAgentRunStatus(actionStatus)) return;
     void refresh();
     const interval = window.setInterval(() => void refresh(), 10_000);
     return () => window.clearInterval(interval);
-  }, [refresh, runId]);
+  }, [actionStatus, expanded, newestActive, refresh, runId]);
 
   const runAction = useCallback(async (action: 'retry' | 'cancel') => {
     if (!runId) return;
@@ -105,14 +129,15 @@ export function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrat
       });
       const payload = await response.json().catch(() => ({})) as { run?: RunSummary; error?: string };
       if (!response.ok) {
-        setError(payload.error ?? `${action} failed (${response.status}).`);
+        setError(payload.error ?? userSafeAgentRunError(`${action} failed (${response.status}).`));
         return;
       }
+      if (action === 'retry' && payload.run?.runId) setOverrideRunId(payload.run.runId);
       setRun(payload.run ?? run);
       setError(null);
       void refresh();
     } catch {
-      setError(`${action} could not reach the deep work queue.`);
+      setError(userSafeAgentRunError(`${action} could not reach the deep work queue.`));
     } finally {
       setActionPending(null);
     }
@@ -120,10 +145,11 @@ export function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrat
 
   if (!queuedRun || (!runId && queuedRun.status !== 'failed')) return null;
 
-  const status = run?.status ?? queuedRun.status;
-  const recentEvents = eventState.events.slice(-4).reverse();
-  const canCancel = queuedRun.canCancel && ['queued', 'running', 'waiting_approval', 'dispatch_enqueued'].includes(status);
-  const canRetry = queuedRun.canRetry || ['failed', 'cancelled', 'expired'].includes(status);
+  const status = actionStatus ?? queuedRun.status;
+  const recentEvents = expanded ? eventState.events.slice(-4).reverse() : [];
+  const canCancel = Boolean(runId) && canCancelAgentRunStatus(status);
+  const canRetry = Boolean(runId) && canRetryAgentRunStatus(status);
+  const lifecycle = agentRunLifecycleSteps(status);
   const selectedTools = run?.selectedTools ?? queuedRun.selectedToolIds ?? [];
   const sourceCount = run?.sourceCount ?? queuedRun.sourceCount ?? 0;
   const approvalGateCount = run?.approvalGateCount ?? queuedRun.approvalGateCount ?? 0;
@@ -166,6 +192,11 @@ export function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrat
               Open run
             </Link>
           ) : null}
+          {runId ? (
+            <button type="button" onClick={() => setExpanded((value) => !value)} className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50">
+              {expanded ? 'Hide details' : 'Details'}
+            </button>
+          ) : null}
           {canRetry ? (
             <button type="button" onClick={() => void runAction('retry')} disabled={Boolean(actionPending)} className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60">
               {actionPending === 'retry' ? 'Retrying...' : 'Retry'}
@@ -178,6 +209,13 @@ export function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrat
           ) : null}
         </div>
       </div>
+      <ol className="mt-2 grid gap-1 sm:grid-cols-6" data-testid="ask-agent-run-lifecycle">
+        {lifecycle.map((step) => (
+          <li key={step.id} className={agentRunLifecycleStepClass(step.state)}>
+            <span className="truncate">{step.label}</span>
+          </li>
+        ))}
+      </ol>
       {error ? <p className="mt-2 rounded-md border border-gold-200 bg-white px-2 py-1 text-xs text-gold-900">{error}</p> : null}
       {recentEvents.length ? (
         <div className="mt-2 space-y-1">
@@ -191,4 +229,12 @@ export function AskQueuedAgentRunPanel({ queuedRun }: { queuedRun: AskOrchestrat
       ) : null}
     </section>
   );
+}
+
+function agentRunLifecycleStepClass(state: 'pending' | 'active' | 'complete' | 'failed'): string {
+  const base = 'min-w-0 rounded-md border px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-[0.1em]';
+  if (state === 'complete') return `${base} border-emerald-200 bg-emerald-50 text-emerald-900`;
+  if (state === 'active') return `${base} border-blue-200 bg-white text-diplomatic-blue`;
+  if (state === 'failed') return `${base} border-red-200 bg-red-50 text-red-900`;
+  return `${base} border-slate-200 bg-white/70 text-slate-500`;
 }

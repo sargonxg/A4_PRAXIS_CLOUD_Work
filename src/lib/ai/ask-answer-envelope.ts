@@ -739,7 +739,7 @@ function buildContextRepairActions(input: {
   actions.push({
     id: 'send-to-memo',
     label: 'Send to memo',
-    prompt: 'Continue this as a Memo Studio draft with sources, unsupported claims, caveats, and next checks preserved.',
+    prompt: 'Continue this as a Work draft with sources, unsupported claims, caveats, and next checks preserved.',
     priority: input.sourceAudit.sourceCount > 0 ? 'secondary' : 'optional',
   });
   return withSinglePrimaryRepairAction(dedupeRepairActions(actions).slice(0, 4));
@@ -939,7 +939,7 @@ function buildSourceAudit(input: {
 function continuationActionsFor(intent: AskIntent): AskContinuationAction[] {
   const memoPrompt = intent === 'research_memo'
     ? 'Continue this as a structured research memo with headings, caveats, and source notes.'
-    : 'Continue this as a Memo Studio draft with the same evidence and caveats.';
+    : 'Continue this as a Work draft with the same evidence and caveats.';
   return [
     {
       id: 'continue-as-memo',
@@ -1191,7 +1191,7 @@ function isAssumptionClaim(claim: string): boolean {
 function followUpsFor(intent: AskIntent, sourceCount: number, researchGraphReceiptCount = 0): string[] {
   const common = [
     'Check the weakest claim against attached sources.',
-    'Turn this into a document pack for Memo Studio.',
+    'Turn this into a Work document pack.',
     sourceCount > 0 ? 'Open the source previews and identify what is still missing.' : 'Find sources for the unsupported claims.',
   ];
   if (researchGraphReceiptCount > 0) {

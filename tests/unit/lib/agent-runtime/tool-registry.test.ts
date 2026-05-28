@@ -15,6 +15,8 @@ describe('agent tool registry', () => {
       expect(tool.id).toBeTruthy();
       expect(tool.inputSchema).toBeTruthy();
       expect(tool.outputSchema).toBeTruthy();
+      expect(tool.inputSchema.safeParse({ unexpected: true }).success).toBe(false);
+      expect(tool.outputSchema.safeParse({ unexpected: true }).success).toBe(false);
       expect(['low', 'medium', 'high']).toContain(tool.risk);
       expect(Array.isArray(tool.requiredCores)).toBe(true);
       expect(tool.persistenceTarget).toBeTruthy();

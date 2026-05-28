@@ -30,8 +30,15 @@ export type AskTurnPlanContinuationPolicy =
   | 'ask_for_sources'
   | 'needs_human_review';
 
+export type AskTurnPlanOutputMode =
+  | 'quick_answer'
+  | 'sourceability_review'
+  | 'policy_brief'
+  | 'evidence_annex_memo_pack';
+
 export interface AskTurnPlan {
   version: 1;
+  outputMode: AskTurnPlanOutputMode;
   intent: AskTurnPlanIntent;
   complexity: AskTurnPlanComplexity;
   answerShape: AskTurnPlanAnswerShape;
@@ -60,9 +67,17 @@ export function buildAskTurnPlan(input: {
   const requiredAgents = normalizeAgents(input.routingDecision.policyAgentId, input.workflowPlan.requiredPolicyAgentIds);
   const answerShape = selectAnswerShape(text, input.intent, input.routingDecision.workerMode);
   const complexity = selectComplexity(input.orchestrationComplexity, requiredAgents, input.routingDecision.workerMode);
+  const outputMode = selectOutputMode({
+    answerShape,
+    intent: input.intent,
+    requiredAgents,
+    requiresSourceabilityPass: input.workflowPlan.requiresSourceabilityPass,
+    workerMode: input.routingDecision.workerMode,
+  });
 
   return {
     version: 1,
+    outputMode,
     intent: selectIntent(text, input.intent, input.routingDecision.workerMode),
     complexity,
     answerShape,
@@ -170,6 +185,28 @@ function buildArtifactPlan(
   if (answerShape === 'handover_pack' || workerMode === 'handover-builder') artifacts.add('handover_pack');
   if (answerShape === 'output_capsule' || workerMode === 'capsule-factory') artifacts.add('output_capsule');
   return Array.from(artifacts);
+}
+
+function selectOutputMode(input: {
+  answerShape: AskTurnPlanAnswerShape;
+  intent: AskIntent;
+  requiredAgents: string[];
+  requiresSourceabilityPass: boolean;
+  workerMode: TacitusRoutingDecision['workerMode'];
+}): AskTurnPlanOutputMode {
+  if (input.answerShape === 'table' || input.answerShape === 'evidence_annex' || input.answerShape === 'handover_pack') {
+    return 'evidence_annex_memo_pack';
+  }
+  if (input.intent === 'sourceability_review' || input.workerMode === 'sourceability-reviewer') {
+    return 'sourceability_review';
+  }
+  if (input.answerShape === 'research_memo' || input.answerShape === 'briefing' || input.workerMode === 'research-memo') {
+    return 'policy_brief';
+  }
+  if (input.requiresSourceabilityPass || input.requiredAgents.includes('sourceability-reviewer')) {
+    return 'sourceability_review';
+  }
+  return 'quick_answer';
 }
 
 function selectContinuationPolicy(input: {

@@ -15,6 +15,11 @@ $env:PLAYWRIGHT_BASE_URL="http://localhost:3000"
 gcloud auth application-default login --project=praxisbytacitus
 ```
 
+The lane also loads `.env.local`. If `TEST_FIREBASE_EMAIL` /
+`TEST_FIREBASE_PASSWORD` and `FIREBASE_SERVICE_ACCOUNT_KEY` are stored there,
+the preflight can validate ADC with a temporary service-account credential file
+when local user ADC has expired. The temporary file is deleted during preflight.
+
 Readiness check:
 
 ```powershell
@@ -50,13 +55,15 @@ This executes:
 npm run typecheck
 npm run build
 npm run smoke:golden-path
-npm run smoke:tasklet-app
+npx playwright test tests/e2e/canary-auth-skip.spec.ts
 npx playwright test tests/e2e/ask-capsule-runtime.spec.ts
+npx playwright test tests/e2e/ask-same-thread-agent-run.spec.ts
 ```
 
 Inspect login, onboarding skip, `/app`, `/app/capsules`,
 `/app/repository`, conversation routes, dead controls, bad redirects, missing
-headings, mobile navigation, and non-rendering panels.
+headings, mobile navigation, non-rendering panels, and same-thread AgentRun
+receipts.
 
 ## Product Surface Checks
 

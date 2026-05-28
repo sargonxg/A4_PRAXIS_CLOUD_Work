@@ -28,7 +28,7 @@ const CONNECTORS: readonly Connector[] = [
   { id: "grounded-search", label: "Grounded Search", category: "source", status: "live" },
   { id: "web-crawler", label: "Web crawler receipts", category: "source", status: "candidate" },
   { id: "wikipedia", label: "Wikipedia", category: "source", status: "live" },
-  { id: "library-upload", label: "Library Upload", category: "ingest", status: "live" },
+  { id: "library-upload", label: "Document Upload", category: "ingest", status: "live" },
   { id: "source-url", label: "Source URL", category: "ingest", status: "live" },
 ];
 

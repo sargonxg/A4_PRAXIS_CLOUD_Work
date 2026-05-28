@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
 import { getAgentRun, updateAgentRunStatus } from '@/lib/agent-runtime/postgres';
 import { GetAgentRunParamsSchema, toAgentRunOutput } from '@/lib/agent-runtime/schema';
+import { canCancelAgentRunStatus, userSafeAgentRunError } from '@/lib/agent-runtime/status';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +16,7 @@ export const POST = withAuth<{ params: Promise<{ runId: string }> }>(async (_req
   try {
     const run = await getAgentRun(user.uid, parsed.data.runId);
     if (!run) return NextResponse.json({ error: 'Agent run not found' }, { status: 404 });
-    if (!['queued', 'running', 'waiting_approval'].includes(run.status)) {
+    if (!canCancelAgentRunStatus(run.status)) {
       return NextResponse.json({ error: `Agent run cannot be cancelled from ${run.status}` }, { status: 409 });
     }
     const cancelled = await updateAgentRunStatus({
@@ -29,8 +30,8 @@ export const POST = withAuth<{ params: Promise<{ runId: string }> }>(async (_req
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (message.includes('Agent run ledger is not configured')) {
-      return NextResponse.json({ error: 'Agent run ledger is not configured' }, { status: 503 });
+      return NextResponse.json({ error: userSafeAgentRunError(message), detail: message }, { status: 503 });
     }
-    return NextResponse.json({ error: message }, { status: 409 });
+    return NextResponse.json({ error: userSafeAgentRunError(message), detail: message }, { status: 409 });
   }
 });

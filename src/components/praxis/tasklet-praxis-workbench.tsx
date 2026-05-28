@@ -1323,7 +1323,7 @@ export function TaskletPraxisWorkbench({
     ].filter(Boolean).join(' / ');
     const promptByAction = {
       attach: `Attach this created work item to the active ContextCapsule and preserve provenance.\n\n${item.kind}: ${item.title}\n${lineageLine}${receiptLine}`,
-      memo: `Continue this created work item as a Memo Studio draft with source gaps, caveats, and next actions.\n\n${item.kind}: ${item.title}\n${lineageLine}${receiptLine}`,
+      memo: `Continue this created work item as a Work draft with source gaps, caveats, and next actions.\n\n${item.kind}: ${item.title}\n${lineageLine}${receiptLine}`,
       receipts: `Inspect the receipts and provenance for this created work item. Identify unsupported claims, gaps, output target, and whether it is safe to export.\n\n${item.kind}: ${item.title}\n${lineageLine}${receiptLine}`,
     } satisfies Record<typeof action, string>;
     if (action === 'memo' || action === 'receipts') {
@@ -2492,7 +2492,7 @@ export function TaskletPraxisWorkbench({
     }
     if (panel === 'memo') setPrompt('Draft a memo from the active capsule.');
     if (panel === 'canvas') setInspectorOpen(true);
-    if (panel === 'advanced' || panel === 'ask') setStatus('Advanced routing details appear in saved conversation receipts after a PRAXIS turn runs.');
+    if (panel === 'advanced' || panel === 'ask') setStatus('Proof routing details appear in saved conversation receipts after a PRAXIS turn runs.');
     if (panel === 'account') setStatus('Account and runtime settings now live inside the PRAXIS cockpit.');
     if (memoIdParam) void openMemoArtifactById(memoIdParam);
   }, [currentCapsuleId, initialMemoId, isAuthenticated, refreshRepository]);
@@ -3385,7 +3385,7 @@ export function TaskletPraxisWorkbench({
                         className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                       >
                         <BrainCircuit className="h-4 w-4" />
-                        Boardroom
+                        Deep review
                       </Link>
                     </div>
                   </>
@@ -3440,7 +3440,7 @@ export function TaskletPraxisWorkbench({
                 className="mt-3 inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
               >
                 <BrainCircuit className="h-4 w-4" />
-                Open Boardroom
+                Start deep review
               </Link>
             ) : null}
 
@@ -3901,7 +3901,7 @@ export function TaskletPraxisWorkbench({
                             setStatus('PRAXIS plan action loaded into the composer.');
                           }}
                         />
-                        <AskQueuedAgentRunPanel queuedRun={queuedAgentRunFromEnvelope(message.answerEnvelope)} />
+                        <AskQueuedAgentRunPanel queuedRun={queuedAgentRunFromEnvelope(message.answerEnvelope)} newestActive={index === chatMessages.length - 1} />
                         <AnswerQualityStrip
                           envelope={message.answerEnvelope}
                           onAction={(actionPrompt) => {
@@ -4011,7 +4011,7 @@ export function TaskletPraxisWorkbench({
                     </button>
                   </div>
                   <label className="mt-3 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    Advanced label
+                    Context label
                     <select
                       value={advancedLabel}
                       onChange={(event) => setAdvancedLabel(event.target.value as SpanTargetCore)}
@@ -8529,7 +8529,7 @@ function CapsuleDetailPanel({
           </div>
           <div className="rounded-md border border-dashed border-slate-200 p-3">
             <p className="text-xs font-semibold text-slate-800">Vertex/Gemini RAG</p>
-            <p className="mt-1 text-[11px] leading-5 text-slate-500">Advanced optional mirror. The default retrieval path still works without Vertex configuration.</p>
+            <p className="mt-1 text-[11px] leading-5 text-slate-500">Optional RAG mirror. The default retrieval path still works without Vertex configuration.</p>
           </div>
           {repositoryLoading ? <p className="text-xs text-slate-500">Loading repository...</p> : null}
           {repositoryDocuments.slice(0, 4).map((document) => (
@@ -10077,7 +10077,7 @@ function ContextPackLanePanel({
         <InspectorRef label="Inspect" value={`${contextHealth.plainState} / ${contextHealth.label}`} />
         <InspectorRef label="Source posture" value={`${sourcePosture} (${sourceCount} refs)`} />
         <InspectorRef label="Repair Actions" value={bestNextAction} />
-        <InspectorRef label="Context pack" value="Ask, Boardroom, and document intake share this receipt path." />
+        <InspectorRef label="Context pack" value="Ask, deep review, and document intake share this receipt path." />
       </div>
     </section>
   );

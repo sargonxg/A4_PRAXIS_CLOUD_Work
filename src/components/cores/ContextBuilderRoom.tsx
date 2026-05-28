@@ -164,7 +164,7 @@ export function ContextBuilderRoom({ situationId, initialMode = 'repository' }: 
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-700">Tools inside the context repository</p>
               <h2 className="mt-1 text-lg font-semibold text-navy-950">Pick tools after the capsule has enough context.</h2>
               <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-700">
-                Tools do not create a second workspace. They read the active capsule, use its User/Situation/Source/Output cores, and route results back to Ask PRAXIS, Memo Studio, Canvas, or Library.
+                Tools do not create a second workspace. They read the active capsule, use its User/Situation/Source/Output cores, and route results back to Ask PRAXIS, Sources, Work, or Proof.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

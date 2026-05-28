@@ -68,10 +68,10 @@ Tasks:
 Acceptance:
 
 - `git rev-list --left-right --count origin/main...HEAD` is `0 0`.
-- GitHub Actions pass on the latest `main`.
+- GitHub Actions pass on the latest `main`, including `verify-main`.
 - Cloud Build trigger run succeeds from GitHub `main`.
 - Runtime health `build.commit` matches GitHub `main` HEAD.
-- Manual deploy path is documented as fallback only.
+- Manual deploy path is fallback only through `npm run deploy:frontend:main-safe`, which fails if Cloud Run serves a different commit.
 
 ## Phase 1 - Production Data-Plane Audit
 
@@ -373,7 +373,7 @@ Acceptance:
 6. Harden ContextCapsule browse/search/attach and source-gap repair.
 7. Add Cognee/graph readiness diagnostics with non-authoritative review gates.
 8. Run the full public-launch gate and keep `docs/launch/CANARY_LOG.md` current.
-9. Keep `frontend-main-on-push`, `full-main-on-push`, and `persona-smoke` green on every launch-critical change.
+9. Keep `verify-main`, `frontend-main-on-push`, `full-main-on-push`, and `persona-smoke` green on every launch-critical change.
 10. Decide whether docs-only pushes should intentionally skip deploys or whether runtime health must always track the absolute GitHub `main` HEAD.
 
 ## Launch Score Target

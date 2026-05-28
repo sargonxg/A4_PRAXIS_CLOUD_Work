@@ -513,8 +513,8 @@ function ContextComposer({
 
       <div className="mt-5 grid gap-2">
         <ComposerAction href={selectedCase ? `/app/contexts?situationId=${selectedCase.id}` : '/app/contexts'} icon={Plus} label="Attach sources or documents" wide />
-        <ComposerAction href="/app/write" icon={BookOpenText} label="Send answer to Memo Studio" wide />
-        <ComposerAction href="/app/tools" icon={ShieldCheck} label={`${marketplaceToolCount} tools contained in Advanced`} wide muted />
+        <ComposerAction href="/app/write" icon={BookOpenText} label="Save answer as Work" wide />
+        <ComposerAction href="/app/tools" icon={ShieldCheck} label={`${marketplaceToolCount} tools available with Proof`} wide muted />
       </div>
     </aside>
   );
@@ -580,7 +580,7 @@ function AskRunReadinessPanel({
         <ReadinessRow label="Genkit checks" value="Path classifier + Sourceability available" state="available" />
         <ReadinessRow
           label="Capsule tools"
-          value={marketplaceToolCount > 0 ? `${marketplaceToolCount} tools routable from Advanced` : 'Tool registry unavailable'}
+          value={marketplaceToolCount > 0 ? `${marketplaceToolCount} tools available with Proof` : 'Tool registry unavailable'}
           state={marketplaceToolCount > 0 ? 'available' : 'gap'}
         />
         <ReadinessRow label="ADK agents" value={adkStatus} state="planned" />
@@ -889,7 +889,7 @@ function buildCoreBricks({
     {
       id: 'tool',
       label: 'Tool Core',
-      value: 'Advanced registry',
+      value: 'Proof registry',
       detail: 'Selected PRAXIS tools, allowed actions, approvals, readiness, and receipts',
       href: '/app/tools',
       version: 'v1',

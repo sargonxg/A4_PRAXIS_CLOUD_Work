@@ -426,7 +426,7 @@ export function AskStreamPanel({
       });
       if (res.ok) {
         updateTimelineMessage(setTimelineMessages, message.id, {
-          content: `${message.content}\n\n_Document pack saved to Memo Studio._`,
+          content: `${message.content}\n\n_Document pack saved to Work._`,
         });
       } else {
         updateTimelineMessage(setTimelineMessages, message.id, {
@@ -480,7 +480,7 @@ export function AskStreamPanel({
             className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-navy-900 hover:bg-slate-50"
           >
             <FileText className="h-3.5 w-3.5" />
-            Send to Memo Studio
+            Save as Work
           </Link>
         </div>
 
@@ -557,6 +557,7 @@ export function AskStreamPanel({
                 <AskMessageBubble
                   capsuleId={capsuleId}
                   message={message}
+                  newestActive={idx === timelineMessages.length - 1}
                   onDraftPack={draftDocumentPack}
                   onFollowUp={(followUp) => setPrompt(followUp)}
                   packSaving={packSavingId === message.id}
@@ -744,12 +745,14 @@ function isAskOrchestrationStatusEvent(value: unknown): value is AskOrchestratio
 function AskMessageBubble({
   capsuleId,
   message,
+  newestActive,
   onDraftPack,
   onFollowUp,
   packSaving,
 }: {
   capsuleId?: string | null;
   message: AskPanelMessage;
+  newestActive: boolean;
   onDraftPack: (message: AskPanelMessage) => void;
   onFollowUp: (followUp: string) => void;
   packSaving: boolean;
@@ -790,7 +793,7 @@ function AskMessageBubble({
         <TimelineMessageReceipt message={message} />
         <AskWorkingTimeline events={workingTimeline} />
         <AskTurnPlanPanel turnPlan={message.answerEnvelope?.orchestrationReceipt?.turnPlan} onFollowUp={onFollowUp} />
-        <AskQueuedAgentRunPanel queuedRun={message.queuedRun ?? workingTimeline.find((event) => event.id === 'worker' && Boolean(event.runId)) ?? null} />
+        <AskQueuedAgentRunPanel queuedRun={message.queuedRun ?? workingTimeline.find((event) => event.id === 'worker' && Boolean(event.runId)) ?? null} newestActive={newestActive} />
         <AnswerQualityStrip envelope={message.answerEnvelope} onAction={onFollowUp} />
         {proofSummary ? <ProofSummaryPanel summary={proofSummary} /> : null}
         <OrchestrationReceiptPanel envelope={message.answerEnvelope} />
@@ -823,7 +826,7 @@ function AskMessageBubble({
           <div className="mt-3 flex flex-wrap gap-2">
             <Link href="/app/write" className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-800">
               <FileText className="h-3.5 w-3.5" />
-              Send to Memo Studio
+              Save as Work
             </Link>
             <Link href="/app/contexts" className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">
               Review context
@@ -1009,7 +1012,7 @@ function OrchestrationReceiptPanel({ envelope }: { envelope?: AskAnswerEnvelope 
       </div>
       <details className="mt-2">
         <summary className="cursor-pointer text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-          Advanced receipt
+          Proof receipt
         </summary>
         <div className="mt-2 grid gap-1 sm:grid-cols-2">
           {receipt.stages.map((stage) => (
@@ -1353,7 +1356,7 @@ function ChatContextReceipt({
         {sources?.value ?? '0 attached'}
       </span>
       <span className="rounded-md border border-slate-200 bg-white px-2 py-1 font-mono">
-        {tools?.value ?? 'tools from Advanced'}
+        {tools?.value ?? 'tools available'}
       </span>
       <span className="min-w-0 flex-1 truncate">Output: {outputGoal}</span>
     </div>
@@ -1852,7 +1855,7 @@ function StageCard({ event }: { event: StreamStage }) {
         <div className="mt-3 flex flex-wrap gap-2">
           <Link href="/app/write" className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-800">
             <FileText className="h-3.5 w-3.5" />
-            Send to Memo Studio
+            Save as Work
           </Link>
           <Link href="/app/contexts" className="inline-flex items-center gap-2 rounded-md border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-50">
             Review context

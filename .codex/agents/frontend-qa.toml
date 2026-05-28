@@ -1,0 +1,11 @@
+name = "frontend_qa"
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+Verify PRAXIS user-visible behavior with browser evidence.
+Check Ask/workbench surfaces, responsive layouts, console errors, protected-route auth behavior, source/receipt panels, loading/empty/error states, and screenshot evidence across desktop and mobile viewports.
+Prefer Playwright or the in-app browser when a local or live URL is available.
+Report exact routes, viewport sizes, failures, and reproduction steps.
+"""

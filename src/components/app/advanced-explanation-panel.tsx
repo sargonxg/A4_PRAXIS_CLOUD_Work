@@ -13,11 +13,11 @@ interface AdvancedExplanationPanelProps {
 }
 
 export function AdvancedExplanationPanel({
-  title = 'Advanced details',
+  title = 'Proof details',
   summary = 'Open for taxonomy, review gates, versioning, and trust posture.',
   items,
   actionHref,
-  actionLabel = 'Open Advanced',
+  actionLabel = 'Open Proof',
   defaultOpen = false,
 }: AdvancedExplanationPanelProps) {
   return (

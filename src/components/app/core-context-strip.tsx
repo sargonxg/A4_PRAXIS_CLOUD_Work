@@ -123,7 +123,7 @@ export function CoreContextStrip() {
       icon: FileText,
       label: 'Output',
       value: stack.outputGoal ?? 'Memo posture',
-      detail: stack.outputGoal ? 'Draft target saved' : 'Set in Memo Studio',
+      detail: stack.outputGoal ? 'Draft target saved' : 'Set work target',
       state: stack.outputGoal ? 'ready' as const : 'quiet' as const,
     },
     {

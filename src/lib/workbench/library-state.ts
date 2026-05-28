@@ -125,7 +125,7 @@ export function buildLibraryArtifacts(caseModule: CaseModule, caseId: string, sa
     id: `memo:${caseId}:current`,
     type: 'memo',
     title: memoTitle,
-    summary: 'Memo Studio draft artifact tied to the active graph snapshot and editable memo blocks.',
+    summary: 'Work draft artifact tied to the active graph snapshot and editable memo blocks.',
     date: situation.updatedAt,
     badge: 'versioned',
     meta: {

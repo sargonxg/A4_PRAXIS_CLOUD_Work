@@ -44,7 +44,7 @@ export function CoreLibraryWorkbench({ cores }: { cores: LibraryCore[] }) {
             <h2 className="text-lg font-semibold text-navy-950">Unified core library</h2>
           </div>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
-            Drag, swap, and reuse the same library elements across Ask PRAXIS, Memo Studio, Canvas, and handoff. User, situation, tool, objective, and product cores all become capsule context.
+            Drag, swap, and reuse the same context elements across Ask PRAXIS, Sources, Work, and handoff. User, situation, tool, objective, and product cores all become capsule context.
           </p>
         </div>
         <label className="relative block w-full max-w-sm">

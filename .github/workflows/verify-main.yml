@@ -1,0 +1,48 @@
+name: verify-main
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Focused Ask, workbench, and envelope tests
+        run: npx vitest run tests/unit/lib/ai/ask-answer-envelope.test.ts tests/unit/lib/ai/ask-orchestrator.test.ts tests/unit/components/tasklet-workbench-contract.test.ts tests/unit/components/ask-source-preview-contract.test.ts tests/unit/app/api/conversations-turns-contract.test.ts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Same-window Ask contract
+        run: npm run audit:ask-same-window-contract
+
+      - name: Agent process contract
+        run: npm run audit:agent-process-contract
+
+      - name: Capsule memory contract
+        run: npm run audit:capsule-memory-contract

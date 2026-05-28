@@ -59,7 +59,7 @@ function getContextGreeting(pathname: string, situationName?: string): string {
     'timeline': `You're on the Timeline. I can compress events into a decision narrative, flag escalation triggers, or trace a specific date.`,
     'humanitarian': `Humanitarian dashboard. I can pull a PIN/IDP read, surface protection risks, or compare cluster funding gaps.`,
     'commitments': `You're tracking commitments. I can score compliance, flag verification gaps, or sequence the next decision asks.`,
-    'sources': `Sources Library. I can audit reliability, suggest local NGO and humanitarian sources, or flag gap categories.`,
+    'sources': `Sources. I can audit reliability, suggest local NGO and humanitarian sources, or flag gap categories.`,
     'briefing': `Briefing Studio. I can draft a BLUF, source-grounded risk board, decision asks, and visible gaps.`,
     'advisory': `Review lane. I can compare mediation, humanitarian, security, legal, and red-team lenses while keeping disagreement visible.`,
     'graphops': `GraphOps. I can summarise graph health, propose repairs, or audit confidence on key edges.`,
@@ -713,13 +713,13 @@ export function FloatingPraxis({ hideLauncher = false }: { hideLauncher?: boolea
                       </div>
                       <div className="mt-3 flex flex-wrap justify-center gap-1.5">
                         <Link href="/app/contexts" className="rounded-full border border-navy-700 px-2.5 py-1 text-[11px] text-navy-300 hover:border-gold-600/40 hover:text-gold-300">
-                          Library
+                          Sources
                         </Link>
                         <Link href="/app/write" className="rounded-full border border-navy-700 px-2.5 py-1 text-[11px] text-navy-300 hover:border-gold-600/40 hover:text-gold-300">
-                          Memo Studio
+                          Work
                         </Link>
                         <Link href="/app/canvas" className="rounded-full border border-navy-700 px-2.5 py-1 text-[11px] text-navy-300 hover:border-gold-600/40 hover:text-gold-300">
-                          Canvas
+                          Context
                         </Link>
                       </div>
                     </div>

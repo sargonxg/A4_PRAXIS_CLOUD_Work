@@ -567,7 +567,7 @@ async function executeResearchMemoAgentRun(
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'memo_output_created',
-      message: 'Research Memo Agent created a Memo Studio draft and OutputCapsule with source and gap receipts.',
+      message: 'Research Memo Agent created a Work draft and OutputCapsule with source and gap receipts.',
       data: {
         memoId: memoRecord.memo.id,
         outputCapsuleId: outputCapsule?.id ?? null,
@@ -858,7 +858,7 @@ async function executeBoardroomAgentRun(
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'boardroom.artifact_created',
-      message: 'Boardroom Discussion persisted a Memo Studio draft and board-executive OutputCapsule.',
+      message: 'Boardroom Discussion persisted a Work draft and board-executive OutputCapsule.',
       data: {
         memoId: memoRecord.memo.id,
         outputCapsuleId: outputCapsule?.id ?? null,
@@ -1077,7 +1077,7 @@ async function executeOutputFormatterAgentRun(
           content: '',
           items: [
             sourceCount > 0 ? `${sourceCount} source/document core(s) available for citation review.` : 'No source/document cores are attached; keep citation gaps visible.',
-            'Use Memo Studio export for Markdown, DOCX, PDF, or handover package.',
+            'Use Work export for Markdown, DOCX, PDF, or handover package.',
             'Run Sourceability Reviewer before final circulation.',
           ],
           citations: [],
@@ -1108,7 +1108,7 @@ async function executeOutputFormatterAgentRun(
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'formatted_output_created',
-      message: 'Output Formatter created a Memo Studio draft with export readiness receipts.',
+      message: 'Output Formatter created a Work draft with export readiness receipts.',
       data: {
         memoId: memoRecord.memo.id,
         outputHref,
@@ -1697,7 +1697,7 @@ function buildMemoBlocks(
       title: 'Review actions',
       content: '',
       items: [
-        'Open Memo Studio and revise the draft against the evidence receipt.',
+        'Open Work and revise the draft against the evidence receipt.',
         'Run Sourceability Reviewer before final export.',
         'Promote graph changes only after human approval.',
       ],
@@ -2053,7 +2053,7 @@ function buildReviewMemoBlocks(
       title: 'Next actions',
       content: '',
       items: [
-        'Open this draft in Memo Studio for human review.',
+        'Open this draft in Work for human review.',
         'Resolve flagged gaps before final export or sharing.',
         'Keep the AgentRun stream attached as the runtime proof.',
       ],

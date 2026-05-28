@@ -129,7 +129,7 @@ export function LivePreview({ profile }: { profile: AnalystProfile }) {
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40',
         )}
       >
-        <span>Advanced: view system prompt block</span>
+        <span>Proof: view system prompt block</span>
         {showRaw ? (
           <ChevronUp className="h-3.5 w-3.5" />
         ) : (

@@ -55,8 +55,15 @@ describe('conversation turns Ask PRAXIS contract', () => {
       'sourceCards',
       'documentPackCandidate',
       'supervisor.queuedRun',
+      'agentRunSnapshot',
     ]) {
       expect(persistedEnvelopeContractSource).toContain(expected);
     }
+  });
+
+  it('persists a compact AgentRun snapshot on the saved conversation turn', () => {
+    expect(chatRouteSource).toContain('agentRunSnapshotFromAnswerEnvelope');
+    expect(chatRouteSource).toContain('latestAgentRunSnapshot: agentRunSnapshotFromAnswerEnvelope(input.runtime.answerEnvelope)');
+    expect(chatRouteSource).toContain('agentRunSnapshot: agentRunSnapshotFromAnswerEnvelope(input.runtime.answerEnvelope)');
   });
 });
