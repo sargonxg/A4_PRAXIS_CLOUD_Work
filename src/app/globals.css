@@ -1665,11 +1665,119 @@ code, kbd, samp, pre,
   background-size: 100% 1px;
 }
 
+/* --- Native form controls: brand + calm them everywhere --- */
+/* accent-color brands every native checkbox, radio, range, and progress in
+   one line. Selection is a civic/system signal per DESIGN.md → civic-blue. */
+html {
+  accent-color: var(--color-civic-blue);
+  caret-color: var(--color-civic-blue);
+}
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: pointer;
+  transition: box-shadow var(--motion-fast) var(--ease-standard);
+}
+input[type="range"] {
+  accent-color: var(--color-gold-600);
+}
+
+/* Disabled affordance baseline — consistent, never invisible. */
+button:disabled,
+[role="button"][aria-disabled="true"],
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Quiet hairline dividers. */
+hr {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-mineral) 34%, transparent),
+    transparent
+  );
+}
+.landing-light hr,
+.od-praxis-surface hr {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-mineral) 26%, transparent),
+    transparent
+  );
+}
+
+/* Light-surface text selection (base ::selection is tuned for dark navy). */
+.landing-light ::selection,
+.od-praxis-surface ::selection,
+.app-first-futurist-shell ::selection {
+  background-color: color-mix(in srgb, var(--color-civic-blue) 22%, transparent);
+  color: var(--color-deep-ink);
+}
+
+/* --- Loading skeleton: a quiet shimmer, on-brand and restrained --- */
+@keyframes praxis-shimmer {
+  0% { background-position: -160% 0; }
+  100% { background-position: 160% 0; }
+}
+.praxis-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-mineral-soft) 60%, var(--color-archive-paper));
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, white 55%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: praxis-shimmer 1.6s var(--ease-standard) infinite;
+}
+.praxis-skeleton-dark {
+  background: color-mix(in srgb, var(--color-lab-line) 40%, var(--color-lab-ink));
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-lab-cyan) 14%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+}
+
+/* Receipt slip: a hairline top sheen so dark strips read as crafted, not flat. */
+.receipt-slip,
+.ai-receipt-strip {
+  position: relative;
+}
+.receipt-slip::after,
+.ai-receipt-strip::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-lab-cyan) 30%, transparent),
+    transparent
+  );
+}
+
 /* --- Honor reduced motion for everything added above --- */
 @media (prefers-reduced-motion: reduce) {
   *,
   .praxis-enter,
   .praxis-enter-stagger > *,
+  .praxis-skeleton,
   .instrument-button,
   .work-action-menu,
   .specimen-card {
@@ -1677,6 +1785,9 @@ code, kbd, samp, pre,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .praxis-skeleton {
+    animation: none !important;
   }
   .instrument-button:hover,
   .work-action-menu:hover,
