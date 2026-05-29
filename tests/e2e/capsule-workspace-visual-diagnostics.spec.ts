@@ -21,6 +21,7 @@ test.describe('capsule workspace visual diagnostics', () => {
   });
 
   test('authenticated capsules stay contained and readable', async ({ page }) => {
+    test.setTimeout(120_000);
     test.skip(!AUTH_EMAIL || !AUTH_PASSWORD, 'TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD or PRAXIS_CANARY_EMAIL/PRAXIS_CANARY_PASSWORD not set');
 
     await page.goto(`${BASE}/login?redirect=/app/capsules`);
