@@ -67,6 +67,8 @@ import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
 import { AskQueuedAgentRunPanel, queuedAgentRunFromEnvelope } from '@/components/ask/AskQueuedAgentRunPanel';
 import { AskTurnPlanPanel } from '@/components/ask/AskTurnPlanPanel';
+import { ActivePolicyFileStrip } from '@/components/policy-work-file/ActivePolicyFileStrip';
+import { KnowledgeStructurePanel, knowledgeStructureFromAskEnvelope } from '@/components/policy-work-file/KnowledgeStructurePanel';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
 import { InstrumentSkeleton, SourcePostureChip, WorkActionMenu } from '@/components/ui/instrument';
@@ -128,6 +130,14 @@ import { useOrchestratorEvents, type OrchestratorEvent, type OrchestratorEventSt
 import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-stream';
 import type { AskAnswerEnvelope, AskDocumentPackOutputTarget, ConversationDocumentPack } from '@/lib/ai/ask-answer-envelope';
 import { modelPolicyLabelFor } from '@/lib/proof/proof-summary';
+import {
+  buildMemoSourceabilityRequest,
+  memoExportReadiness,
+  selectedMemoParagraph,
+  sourceabilityEvidenceGapsFromResult,
+  sourceSnippetsFromMemoReceipts,
+  type MemoSourceabilityResult,
+} from '@/lib/memo/sourceability-request';
 import type { MemoBlock } from '@/types/memo';
 import {
   answerEnvelopeFromDataStreamLine,
@@ -303,10 +313,13 @@ type MemoArtifactState = {
   conversationId: string | null;
   runId: string | null;
   outputCapsuleId: string | null;
+  outputTarget: string | null;
   sourceReceiptIds: string[];
   sourceReceipts: Array<Record<string, unknown>>;
   unsupportedClaims: string[];
   gaps: string[];
+  sourceabilityResult?: MemoSourceabilityResult | null;
+  sourceabilityCheckedText?: string | null;
   originLabel: string;
   originHref?: string | null;
   updatedAt: string;
@@ -1705,7 +1718,8 @@ export function TaskletPraxisWorkbench({
       return;
     }
     if (requireAuthForAction(`Save this PRAXIS response to a capsule:\n\n${message.text.slice(0, 1200)}`)) return;
-    const title = outputTarget === 'memo' || outputTarget === 'brief' ? `PRAXIS memo draft ${index + 1}` : `PRAXIS source note ${index + 1}`;
+    const draftTarget = outputTarget !== 'source-note' && outputTarget !== 'ask-response';
+    const title = draftTarget ? `PRAXIS memo draft ${index + 1}` : `PRAXIS source note ${index + 1}`;
     const response = await fetch('/api/documents/upload', {
       method: 'POST',
       credentials: 'include',
@@ -1714,7 +1728,7 @@ export function TaskletPraxisWorkbench({
         title,
         html: `<article><h1>${escapeHtml(title)}</h1><pre>${escapeHtml(message.text)}</pre></article>`,
         situationId: currentCapsuleId,
-        toolId: outputTarget === 'memo' || outputTarget === 'brief' ? 'memo-studio' : 'ask-praxis',
+        toolId: draftTarget ? 'memo-studio' : 'ask-praxis',
       }),
     });
     const payload = await response.json().catch(() => ({}));
@@ -1741,8 +1755,9 @@ export function TaskletPraxisWorkbench({
     message: ChatMessage,
     index: number,
     outputTarget: AskDocumentPackOutputTarget,
+    selectedPack?: ConversationDocumentPack,
   ) {
-    const pack = message.answerEnvelope?.documentPackCandidate;
+    const pack = selectedPack ?? message.answerEnvelope?.documentPackCandidate;
     if (!pack) return;
     if (requireAuthForAction(`Create a PRAXIS artifact from this assistant response:\n\n${message.text.slice(0, 1200)}`)) return;
     const savingKey = `${index}:${outputTarget}`;
@@ -1754,9 +1769,10 @@ export function TaskletPraxisWorkbench({
           ...pack.provenance,
           conversationId: pack.provenance.conversationId ?? conversationThreadId,
           threadId: pack.provenance.threadId ?? conversationThreadId,
-          outputTarget,
+          outputTarget: pack.provenance.outputTarget ?? outputTarget,
         },
       };
+      const selectedOutputTarget = enrichedPack.provenance.outputTarget ?? outputTarget;
       const response = await fetch('/api/memos/from-ask-pack', {
         method: 'POST',
         credentials: 'include',
@@ -1765,7 +1781,7 @@ export function TaskletPraxisWorkbench({
           pack: enrichedPack,
           situationId: currentCapsuleId,
           askTurnId: conversationThreadId ?? `assistant-${index + 1}`,
-          outputTarget: outputTarget === 'ask-response' ? 'source-note' : outputTarget,
+          outputTarget: selectedOutputTarget === 'ask-response' ? 'source-note' : selectedOutputTarget,
         }),
       });
       const payload = await response.json().catch(() => ({}));
@@ -1775,7 +1791,7 @@ export function TaskletPraxisWorkbench({
       }
       const memoId = memoIdFromAskPackResponse(payload);
       const outputCapsuleId = typeof payload?.outputCapsule?.id === 'string' ? payload.outputCapsule.id : null;
-      if ((outputTarget === 'docx-pdf' || outputTarget === 'handover') && memoId) {
+      if ((selectedOutputTarget === 'docx-pdf' || selectedOutputTarget === 'handover') && memoId) {
         const handoverResponse = await fetch(`/api/memos/${encodeURIComponent(memoId)}/handover-package`, {
           method: 'POST',
           credentials: 'include',
@@ -1798,6 +1814,11 @@ export function TaskletPraxisWorkbench({
       await refreshCapsules(currentCapsuleId);
       await refreshRepository();
       await refreshCreatedWork();
+      return {
+        href: typeof payload?.href === 'string' ? payload.href : null,
+        memoId,
+        outputCapsuleId,
+      };
     } finally {
       setAssistantArtifactSavingKey(null);
     }
@@ -1836,7 +1857,7 @@ export function TaskletPraxisWorkbench({
           capsuleVersion: memoArtifact.capsuleVersion,
           conversationId: memoArtifact.conversationId,
           runId: memoArtifact.runId,
-          outputTarget: 'memo',
+          outputTarget: memoArtifact.outputTarget ?? 'policy-memo',
           sourceReceiptIds: memoArtifact.sourceReceiptIds,
           sourceReceipts: memoArtifact.sourceReceipts,
           unsupportedClaims: memoArtifact.unsupportedClaims,
@@ -1871,10 +1892,13 @@ export function TaskletPraxisWorkbench({
 
   async function runMemoArtifactPraxisAction(action: 'improve' | 'sourceability' | 'redteam' | 'evidence') {
     if (!memoArtifact) return;
+    if (action === 'sourceability') {
+      await runMemoArtifactSourceabilityCheck();
+      return;
+    }
     if (requireAuthForAction(`Run PRAXIS memo action: ${action}\n\n${memoArtifact.title}`)) return;
     const promptByAction = {
       improve: 'Improve this policy memo draft. Preserve facts, caveats, source posture, and existing citations. Return a concise revised passage plus a short edit rationale.',
-      sourceability: 'Check this policy memo draft for sourceability. List supported claims, weak or unsupported claims, missing sources, stale evidence, and concrete next evidence actions.',
       redteam: 'Challenge this policy memo draft. Identify the strongest objections, risks, assumptions, and language that overstates the evidence.',
       evidence: 'Build an evidence improvement note for this draft. Prioritize the next sources, documents, interviews, or data that would materially improve confidence.',
     } satisfies Record<typeof action, string>;
@@ -1903,7 +1927,6 @@ export function TaskletPraxisWorkbench({
         : 'PRAXIS returned no memo note.';
       const heading = {
         improve: 'PRAXIS improvement pass',
-        sourceability: 'PRAXIS sourceability check',
         redteam: 'PRAXIS challenge pass',
         evidence: 'PRAXIS evidence actions',
       } satisfies Record<typeof action, string>;
@@ -1914,10 +1937,57 @@ export function TaskletPraxisWorkbench({
           updatedAt: new Date().toISOString(),
         }
         : current);
-      if (action === 'sourceability' || action === 'evidence') setMemoArtifactTab('sourceability');
+      if (action === 'evidence') setMemoArtifactTab('sourceability');
       setStatus(`${heading[action]} added to the memo side artifact.`);
     } catch (err) {
       setStatus(err instanceof Error ? `PRAXIS memo action failed: ${err.message}` : 'PRAXIS memo action failed.');
+    } finally {
+      setMemoArtifactLoading(false);
+    }
+  }
+
+  async function runMemoArtifactSourceabilityCheck(selectedText?: string | null) {
+    if (!memoArtifact) return;
+    if (requireAuthForAction(`Run sourceability for this memo paragraph:\n\n${selectedText ?? memoArtifact.title}`)) return;
+    setMemoArtifactLoading(true);
+    try {
+      const sourceSnippets = sourceSnippetsFromMemoReceipts(memoArtifact.sourceReceipts);
+      const request = buildMemoSourceabilityRequest({
+        memoId: memoArtifact.memoId,
+        selectedText,
+        memoBody: memoArtifact.body,
+        sourceSnippets,
+        sourceReceipts: memoArtifact.sourceReceipts,
+        capsuleId: memoArtifact.capsuleId ?? currentCapsuleId,
+        situationId: memoArtifact.caseId || currentCapsuleId,
+        outputTarget: memoArtifact.outputTarget ?? 'policy-memo',
+      });
+      const response = await fetch('/api/ai/sourceability', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(request),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof payload?.error === 'string' ? payload.error : `status ${response.status}`);
+      const result = payload as MemoSourceabilityResult;
+      setMemoArtifact((current) => {
+        if (!current) return current;
+        const checked: MemoSourceabilityResult = { ...result, checkedText: request.claimText };
+        return {
+          ...current,
+          sourceabilityResult: checked,
+          sourceabilityCheckedText: request.claimText,
+          unsupportedClaims: checked.status === 'unsupported'
+            ? uniqueStringList([...current.unsupportedClaims, request.claimText])
+            : current.unsupportedClaims,
+          updatedAt: new Date().toISOString(),
+        };
+      });
+      setMemoArtifactTab('sourceability');
+      setStatus(`Sourceability result: ${result.status.replace(/_/g, ' ')}.`);
+    } catch (err) {
+      setStatus(err instanceof Error ? `Sourceability check failed: ${err.message}` : 'Sourceability check failed.');
     } finally {
       setMemoArtifactLoading(false);
     }
@@ -3490,18 +3560,19 @@ export function TaskletPraxisWorkbench({
                 <button
                   type="button"
                   data-testid="mobile-context-chain-bar"
+                  aria-label="Open ContextChain"
                   onClick={() => setMobileContextSheetOpen(true)}
                   className="capsule-chain-node capsule-state-active mb-3 flex min-h-14 w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left md:hidden"
                 >
                   <span className="min-w-0">
-                    <span className="block font-mono text-[10px] font-semibold uppercase text-slate-300">Active ContextChain</span>
+                    <span className="block font-mono text-[10px] font-semibold uppercase text-slate-300">Active Context Chain</span>
                     <span className="mt-0.5 block truncate text-sm font-semibold text-white">{activeCapsuleForStrip?.label ?? 'No capsule opened'}</span>
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1">
                     <span className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] font-semibold text-[color:var(--color-lab-cyan)]">
                       {activeCapsuleReadiness}
                     </span>
-                    <span className="text-[11px] font-semibold text-white/80">Open ContextChain</span>
+                    <span className="text-[11px] font-semibold text-white/80">Open Context Chain</span>
                   </span>
                 </button>
                 <div data-testid="mobile-context-chain-summary" className="mb-4 grid grid-cols-3 gap-2 md:hidden">
@@ -3520,8 +3591,24 @@ export function TaskletPraxisWorkbench({
                 </div>
                 <div className="hidden flex-wrap items-start justify-between gap-3 md:flex" data-testid="capsule-context-composer">
                   <div className="min-w-0 flex-1" data-testid="active-capsule-strip">
+                    <ActivePolicyFileStrip
+                      file={{
+                        capsuleId: activeCapsuleSummaryForStrip?.capsuleId ?? currentCapsuleId,
+                        capsuleVersion: activeCapsuleSummaryForStrip?.version ?? null,
+                        title: activeCapsuleForStrip?.label ?? activeCapsuleSummaryForStrip?.label ?? null,
+                        domain: activeStarterForStrip?.domain ?? activeCapsuleSummaryForStrip?.scope ?? null,
+                  outputGoal: activeCapsuleSummaryForStrip?.coreRefs.outputCoreIds?.[0] ?? selectedAgent.outputDestination,
+                  outputTarget: 'policy-memo',
+                        sourceCount: activeCapsuleSourceCount,
+                        openQuestions: openChainSlots.length,
+                        unsupportedClaims: 0,
+                        nextAction: 'Open as Draft',
+                      }}
+                      onCreate={openBuildYourOwnKnowledge}
+                      className="mb-2"
+                    />
                     <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
-                      <span className="rounded-md bg-slate-950 px-2 py-1 text-white">Context Chain</span>
+                      <span className="rounded-md bg-slate-950 px-2 py-1 text-white">Active Policy File</span>
                       <span className="max-w-full truncate rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-900">
                         {activeCapsuleForStrip?.label ?? 'No capsule opened'}
                       </span>
@@ -3984,6 +4071,7 @@ export function TaskletPraxisWorkbench({
                             setStatus('Follow-up loaded into the composer.');
                           }}
                         />
+                        <KnowledgeStructurePanel buckets={knowledgeStructureFromAskEnvelope(message.answerEnvelope)} />
                         {message.answerEnvelope?.documentPackCandidate ? (
                           <AskArtifactPreview
                             answer={message.text}
@@ -3992,7 +4080,7 @@ export function TaskletPraxisWorkbench({
                               setPrompt(revisionPrompt);
                               setStatus('Revision loaded into the composer.');
                             }}
-                            onSaveToMemoStudio={() => saveAssistantArtifactFromPack(message, index, 'memo')}
+                            onSaveToMemoStudio={(selectedPack) => saveAssistantArtifactFromPack(message, index, selectedPack.provenance.outputTarget ?? 'policy-memo', selectedPack)}
                             pack={message.answerEnvelope.documentPackCandidate}
                             saving={assistantArtifactSavingKey === `${index}:memo`}
                             turnId={conversationThreadId ?? `assistant-${index}`}
@@ -4002,7 +4090,7 @@ export function TaskletPraxisWorkbench({
                           onCopy={() => void navigator.clipboard?.writeText(message.text)}
                           onRetry={() => retryFromMessage(index)}
                           onSaveSourceNote={() => void saveAssistantMessage(message, index, 'source-note')}
-                          onMemo={() => void saveAssistantMessage(message, index, 'memo')}
+                          onMemo={() => void saveAssistantMessage(message, index, 'policy-memo')}
                           onExport={() => void saveAssistantMessage(message, index, 'docx-pdf')}
                           onHandover={() => void saveAssistantMessage(message, index, 'handover')}
                           onSourceCheck={() => void sendToPraxis(selectedAgent, `Source-check this answer in the active conversation against the active capsule. Identify weak claims, missing citations, and stale assumptions.\n\n${message.text}`)}
@@ -4582,6 +4670,32 @@ export function TaskletPraxisWorkbench({
             onClose={() => setMemoArtifact(null)}
             onSave={() => void saveMemoArtifactDraft()}
             onPraxisAction={(action) => void runMemoArtifactPraxisAction(action)}
+            onSourceabilityCheck={(claimText) => void runMemoArtifactSourceabilityCheck(claimText)}
+            onInsertSourceabilityRewrite={() => {
+              setMemoArtifact((current) => {
+                const rewrite = current?.sourceabilityResult?.suggestedRewrite?.trim();
+                if (!current || !rewrite) return current;
+                const checkedText = current.sourceabilityCheckedText?.trim();
+                return {
+                  ...current,
+                  body: checkedText && current.body.includes(checkedText)
+                    ? current.body.replace(checkedText, rewrite)
+                    : appendMemoSection(current.body, 'Cautious rewrite', rewrite),
+                  updatedAt: new Date().toISOString(),
+                };
+              });
+            }}
+            onAddSourceabilityGap={() => {
+              setMemoArtifact((current) => {
+                if (!current?.sourceabilityResult) return current;
+                const issues = sourceabilityEvidenceGapsFromResult(current.sourceabilityResult);
+                return {
+                  ...current,
+                  gaps: uniqueStringList([...current.gaps, ...(issues.length ? issues : ['Sourceability issue needs review.'])]),
+                  updatedAt: new Date().toISOString(),
+                };
+              });
+            }}
           />
         ) : null}
       </AnimatePresence>
@@ -10420,6 +10534,9 @@ function MemoArtifactOverlay({
   onClose,
   onSave,
   onPraxisAction,
+  onSourceabilityCheck,
+  onInsertSourceabilityRewrite,
+  onAddSourceabilityGap,
 }: {
   artifact: MemoArtifactState;
   tab: MemoArtifactTab;
@@ -10430,15 +10547,32 @@ function MemoArtifactOverlay({
   onClose: () => void;
   onSave: () => void;
   onPraxisAction: (action: 'improve' | 'sourceability' | 'redteam' | 'evidence') => void;
+  onSourceabilityCheck: (claimText: string) => void;
+  onInsertSourceabilityRewrite: () => void;
+  onAddSourceabilityGap: () => void;
 }) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const unsupportedCount = artifact.unsupportedClaims.length;
   const sourceCount = artifact.sourceReceiptIds.length || artifact.sourceReceipts.length;
+  const sourceabilityResult = artifact.sourceabilityResult ?? null;
+  const exportReadiness = memoExportReadiness({
+    outputTarget: artifact.outputTarget,
+    sourceabilityResult,
+  });
   const sourceabilityStatus = unsupportedCount
     ? `${unsupportedCount} unsupported claim${unsupportedCount === 1 ? '' : 's'}`
     : sourceCount
       ? 'source-backed draft'
       : 'needs sources';
   const reduceMotion = useReducedMotion();
+  function selectedSourceabilityText() {
+    const textArea = textareaRef.current;
+    return selectedMemoParagraph(
+      artifact.body,
+      textArea?.selectionStart ?? 0,
+      textArea?.selectionEnd ?? 0,
+    );
+  }
   return (
     <motion.div
       className="fixed inset-0 z-50 bg-slate-950/30 px-3 py-4 backdrop-blur-sm sm:px-6"
@@ -10462,6 +10596,12 @@ function MemoArtifactOverlay({
               <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-semibold text-slate-500">
                 <span className="rounded-md border border-slate-200 px-2 py-1">{artifact.status || 'draft'}</span>
                 <span className="rounded-md border border-slate-200 px-2 py-1">{sourceabilityStatus}</span>
+                <span className={cn(
+                  'rounded-md border px-2 py-1',
+                  exportReadiness.ready ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-900',
+                )}>
+                  Export gate: {exportReadiness.label}
+                </span>
                 <span className="rounded-md border border-slate-200 px-2 py-1">Keep as side artifact</span>
               </div>
             </div>
@@ -10493,11 +10633,12 @@ function MemoArtifactOverlay({
               <section className="space-y-3">
                 <div className="flex flex-wrap gap-2">
                   <MemoPraxisActionButton icon={Sparkles} label="Improve" disabled={loading} onClick={() => onPraxisAction('improve')} />
-                  <MemoPraxisActionButton icon={ShieldCheck} label="Check sourceability" disabled={loading} onClick={() => onPraxisAction('sourceability')} />
+                  <MemoPraxisActionButton icon={ShieldCheck} label="Check sourceability" disabled={loading} onClick={() => onSourceabilityCheck(selectedSourceabilityText())} />
                   <MemoPraxisActionButton icon={CircleHelp} label="Challenge" disabled={loading} onClick={() => onPraxisAction('redteam')} />
                   <MemoPraxisActionButton icon={Search} label="Evidence actions" disabled={loading} onClick={() => onPraxisAction('evidence')} />
                 </div>
                 <textarea
+                  ref={textareaRef}
                   data-testid="memo-artifact-editor"
                   value={artifact.body}
                   onChange={(event) => onChange({ ...artifact, body: event.target.value, updatedAt: new Date().toISOString() })}
@@ -10534,10 +10675,48 @@ function MemoArtifactOverlay({
                 <section className="rounded-md border border-slate-200 p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Unsupported claims</p>
-                    <button type="button" onClick={() => onPraxisAction('sourceability')} disabled={loading} className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait">
+                    <button type="button" onClick={() => onSourceabilityCheck(selectedSourceabilityText())} disabled={loading} className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait">
                       Check sourceability
                     </button>
                   </div>
+                  {sourceabilityResult ? (
+                    <div className="mt-3 rounded-md border border-slate-200 bg-white p-3" data-testid="memo-sourceability-result">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {(['supported', 'weak', 'unsupported', 'needs_date_check'] as const).map((status) => (
+                          <span
+                            key={status}
+                            className={cn(
+                              'rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em]',
+                              sourceabilityResult.status === status
+                                ? 'border-slate-900 bg-slate-950 text-white'
+                                : 'border-slate-200 bg-slate-50 text-slate-500',
+                            )}
+                          >
+                            {status.replace(/_/g, ' ')}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-slate-700">{sourceabilityResult.explanation}</p>
+                      <div className="mt-3 grid gap-2 md:grid-cols-2">
+                        <SourceabilityResultList label="Supporting source ids" items={sourceabilityResult.supportingSourceIds} empty="No supporting source id." />
+                        <SourceabilityResultList label="Missing evidence" items={sourceabilityResult.missingEvidence} empty="No missing evidence recorded." />
+                        <SourceabilityResultList label="Warnings" items={sourceabilityResult.citationWarnings} empty="No citation warning." />
+                        <SourceabilityResultList label="Checked text" items={sourceabilityResult.checkedText ? [sourceabilityResult.checkedText] : []} empty="No checked text captured." />
+                      </div>
+                      <div className="mt-3 rounded-md bg-slate-50 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Cautious rewrite</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-700">{sourceabilityResult.suggestedRewrite}</p>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button type="button" onClick={onInsertSourceabilityRewrite} className="rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">
+                          Insert cautious rewrite
+                        </button>
+                        <button type="button" onClick={onAddSourceabilityGap} className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                          Add issue to evidence gaps
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                   <div className="mt-3 space-y-2">
                     {artifact.unsupportedClaims.length ? artifact.unsupportedClaims.map((claim, index) => (
                       <p key={`${claim}-${index}`} className="rounded-md bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950">{claim}</p>
@@ -10563,6 +10742,10 @@ function MemoArtifactOverlay({
             </div>
             <MemoArtifactInfoGrid artifact={artifact} compact />
             <section className="mt-4 rounded-md border border-slate-200 bg-white p-3">
+              <p className="text-xs font-semibold text-slate-800">Export gate</p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">{exportReadiness.detail}</p>
+            </section>
+            <section className="mt-4 rounded-md border border-slate-200 bg-white p-3">
               <p className="text-xs font-semibold text-slate-800">Preserved from the Ask PRAXIS conversation</p>
               <p className="mt-2 text-xs leading-5 text-slate-500">
                 This notepad keeps the answer text, capsule, output target, receipts, unsupported claims, and draft id together while you revise.
@@ -10580,6 +10763,7 @@ function MemoArtifactOverlay({
                 {!artifact.sourceReceipts.length ? <p className="text-xs leading-5 text-slate-500">No source preview cards were preserved.</p> : null}
               </div>
             </section>
+            <KnowledgeStructurePanel buckets={knowledgeStructureFromMemoArtifact(artifact)} />
           </aside>
         </div>
       </motion.aside>
@@ -10599,6 +10783,19 @@ function MemoArtifactTabButton({ label, active, onClick }: { label: string; acti
     >
       {label}
     </button>
+  );
+}
+
+function SourceabilityResultList({ label, items, empty }: { label: string; items: string[]; empty: string }) {
+  return (
+    <div className="rounded-md border border-slate-100 bg-slate-50 p-2">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">{label}</p>
+      <ul className="mt-1 space-y-1 text-xs leading-5 text-slate-600">
+        {items.length ? items.map((item, index) => (
+          <li key={`${label}-${index}`}>{item}</li>
+        )) : <li>{empty}</li>}
+      </ul>
+    </div>
   );
 }
 
@@ -10753,10 +10950,13 @@ function memoArtifactFromCreatedWork(item: CreatedWorkSummary, currentCapsuleId:
     conversationId: item.conversationId,
     runId: item.runId,
     outputCapsuleId: item.outputCapsuleId ?? null,
+    outputTarget: null,
     sourceReceiptIds: receiptIds,
     sourceReceipts: [],
     unsupportedClaims: [],
     gaps: receiptIds.length ? [] : ['Attach source receipts or source previews before relying on this draft.'],
+    sourceabilityResult: null,
+    sourceabilityCheckedText: null,
     originLabel: createdWorkKindLabel(item.kind),
     originHref: item.primaryAction.href,
     updatedAt: item.createdAt || new Date().toISOString(),
@@ -10796,10 +10996,13 @@ function memoArtifactFromAskPack(
     conversationId: pack.provenance.conversationId ?? pack.provenance.threadId ?? null,
     runId: pack.provenance.runId ?? null,
     outputCapsuleId: outputCapsuleId ?? stringFieldFromUnknown(outputCapsuleRecord?.id),
+    outputTarget: pack.provenance.outputTarget ?? null,
     sourceReceiptIds,
     sourceReceipts: pack.sourceCards.map((card) => ({ ...card })),
     unsupportedClaims,
     gaps: pack.gaps,
+    sourceabilityResult: null,
+    sourceabilityCheckedText: null,
     originLabel: 'Ask PRAXIS conversation',
     originHref: `/app?threadId=${encodeURIComponent(pack.provenance.conversationId ?? pack.provenance.threadId ?? '')}`,
     updatedAt: pack.provenance.generatedAt ?? new Date().toISOString(),
@@ -10840,6 +11043,7 @@ function memoArtifactFromMemoPayload(payload: unknown, fallback?: MemoArtifactSt
     conversationId: stringFieldFromUnknown(memo?.conversationId) ?? stringFieldFromUnknown(metadata?.conversationId) ?? fallback?.conversationId ?? null,
     runId: stringFieldFromUnknown(memo?.runId) ?? stringFieldFromUnknown(metadata?.runId) ?? fallback?.runId ?? null,
     outputCapsuleId: stringFieldFromUnknown(memo?.outputCapsuleId) ?? fallback?.outputCapsuleId ?? null,
+    outputTarget: stringFieldFromUnknown(memo?.outputTarget) ?? stringFieldFromUnknown(metadata?.outputTarget) ?? fallback?.outputTarget ?? null,
     sourceReceiptIds,
     sourceReceipts,
     unsupportedClaims,
@@ -10848,6 +11052,8 @@ function memoArtifactFromMemoPayload(payload: unknown, fallback?: MemoArtifactSt
       ...stringListFromUnknown(metadata?.gaps),
       ...(fallback?.gaps ?? []),
     ]),
+    sourceabilityResult: fallback?.sourceabilityResult ?? null,
+    sourceabilityCheckedText: fallback?.sourceabilityCheckedText ?? null,
     originLabel: 'Ask PRAXIS conversation',
     originHref: fallback?.originHref ?? null,
     updatedAt: stringFieldFromUnknown(memo?.updatedAt) ?? fallback?.updatedAt ?? new Date().toISOString(),
@@ -10895,7 +11101,10 @@ function memoArtifactBodyToBlocks(artifact: MemoArtifactState): MemoBlock[] {
           sourceReceiptIds: artifact.sourceReceiptIds,
           unsupportedClaims: artifact.unsupportedClaims,
           gaps: artifact.gaps,
+          sourceabilityResult: artifact.sourceabilityResult,
+          sourceabilityCheckedText: artifact.sourceabilityCheckedText,
           outputCapsuleId: artifact.outputCapsuleId,
+          outputTarget: artifact.outputTarget,
           updatedAt: artifact.updatedAt,
         },
       },
@@ -10908,6 +11117,8 @@ function memoArtifactBodyToBlocks(artifact: MemoArtifactState): MemoBlock[] {
       items: [
         `Source receipts: ${artifact.sourceReceiptIds.length ? artifact.sourceReceiptIds.join(', ') : 'none'}`,
         `Unsupported claims: ${artifact.unsupportedClaims.length}`,
+        artifact.sourceabilityResult ? `Latest check: ${artifact.sourceabilityResult.status}` : 'Latest check: not run',
+        `Export gate: ${memoExportReadiness({ outputTarget: artifact.outputTarget, sourceabilityResult: artifact.sourceabilityResult }).label}`,
         ...artifact.unsupportedClaims.map((claim) => `Unsupported: ${claim}`),
       ],
       citations,
@@ -10944,6 +11155,19 @@ function defaultMemoGaps(artifact: MemoArtifactState): string[] {
   if (!artifact.conversationId && !artifact.runId) gaps.push('Reconnect this draft to the Ask PRAXIS conversation or agent run that produced it.');
   if (!artifact.unsupportedClaims.length) gaps.push('Run a fresh sourceability check before high-polish export.');
   return gaps.length ? gaps : ['Confirm evidence freshness and source coverage before export.'];
+}
+
+function knowledgeStructureFromMemoArtifact(artifact: MemoArtifactState) {
+  return [
+    { label: 'Actors', items: artifact.body.split('\n').filter((line) => /\b(actor|stakeholder|institution)\b/i.test(line)).slice(0, 4), advisory: true },
+    { label: 'Institutions/rules', items: artifact.body.split('\n').filter((line) => /\b(rule|mandate|law|authority|compliance)\b/i.test(line)).slice(0, 4), advisory: true },
+    { label: 'Claims', items: artifact.unsupportedClaims.length ? artifact.unsupportedClaims : [artifact.sourceabilityCheckedText ?? 'No checked claim yet.'] },
+    { label: 'Evidence', items: artifact.sourceReceipts.map((source) => stringFieldFromUnknown(source.title) ?? stringFieldFromUnknown(source.label) ?? stringFieldFromUnknown(source.id) ?? '').filter(Boolean) },
+    { label: 'Risks/tradeoffs', items: artifact.gaps.filter((gap) => /\b(risk|tradeoff|gap|unsupported|caveat)\b/i.test(gap)), advisory: true },
+    { label: 'Options', items: artifact.body.split('\n').filter((line) => /\b(option|recommendation|next action)\b/i.test(line)).slice(0, 4), advisory: true },
+    { label: 'Decisions', items: artifact.outputCapsuleId ? [`OutputCapsule ${artifact.outputCapsuleId}`] : [], advisory: true },
+    { label: 'Open questions', items: artifact.gaps },
+  ];
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

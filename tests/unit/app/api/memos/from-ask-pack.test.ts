@@ -66,11 +66,11 @@ function validPayload() {
         contextPackageId: 'ctx-1',
         sourceReceiptIds: ['receipt-1'],
         unsupportedClaims: ['No field confirmation.'],
-        outputTarget: 'memo',
+        outputTarget: 'policy-memo',
         generatedAt: '2026-05-17T12:00:00.000Z',
       },
     },
-    outputTarget: 'memo',
+    outputTarget: 'policy-memo',
   };
 }
 
@@ -122,7 +122,7 @@ describe('/api/memos/from-ask-pack', () => {
       capsuleVersion: 2,
       conversationId: 'thread-1',
       runId: 'run-1',
-      outputTarget: 'memo',
+      outputTarget: 'policy-memo',
     }));
     const memoDraftInput = saveMemoDraft.mock.calls[0][1] as { blocks: Array<Record<string, unknown>> };
     for (const block of memoDraftInput.blocks) {
@@ -130,10 +130,11 @@ describe('/api/memos/from-ask-pack', () => {
     }
     expect(saveOutputCapsule).toHaveBeenCalledWith('user-1', expect.objectContaining({
       contextCapsuleId: 'cap-1',
-      templateId: 'options-memo',
+      templateId: 'principals-decision-memo',
       payload: expect.objectContaining({
         title: 'Ask pack',
         sections: expect.arrayContaining([
+          expect.objectContaining({ heading: 'Bottom line' }),
           expect.objectContaining({ heading: 'Artifact metadata' }),
         ]),
       }),

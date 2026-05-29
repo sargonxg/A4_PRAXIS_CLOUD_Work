@@ -83,6 +83,9 @@ function normalizeInput(input: GenkitSourceabilityInput): GenkitSourceabilityInp
     })).filter((snippet) => snippet.span.length > 0),
     capsuleId: input.capsuleId?.trim().slice(0, 160) || undefined,
     situationId: input.situationId?.trim().slice(0, 160) || undefined,
+    memoId: input.memoId?.trim().slice(0, 180) || undefined,
+    paragraphId: input.paragraphId?.trim().slice(0, 180) || undefined,
+    outputTarget: input.outputTarget?.trim().slice(0, 120) || undefined,
   };
 }
 

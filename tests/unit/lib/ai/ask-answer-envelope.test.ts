@@ -512,6 +512,7 @@ describe('ask answer envelope', () => {
         capsuleVersion: 2,
         threadId: 'ask-cap-1',
         model: 'vertex-test',
+        outputTarget: 'policy-memo',
       },
     });
 
@@ -519,15 +520,40 @@ describe('ask answer envelope', () => {
 
     expect(blocks.map((block) => block.id)).toEqual([
       'pack-heading',
-      'pack-answer',
+      'pack-output-target',
+      'pack-target-1',
+      'pack-target-2',
+      'pack-target-3',
+      'pack-target-4',
+      'pack-target-5',
       'pack-sources',
       'pack-gaps',
       'pack-provenance',
     ]);
-    expect(blocks[1].citations[0].sourceReceiptIds).toEqual(['receipt-1']);
-    expect(blocks[2].items?.[0]).toContain('p.4');
-    expect(blocks[2].items?.[0]).toContain('Source receipt: receipt-1');
+    expect(blocks[1].content).toContain('Policy memo');
+    expect(blocks[2].title).toBe('Bottom line');
+    expect(blocks[2].content).toBe('Access restrictions are the immediate operational issue.');
+    expect(blocks[2].citations[0].sourceReceiptIds).toEqual(['receipt-1']);
+    expect(blocks[3].title).toBe('Decision context');
+    expect(blocks[7].items?.[0]).toContain('p.4');
+    expect(blocks[7].items?.[0]).toContain('Source receipt: receipt-1');
     });
+
+  it('infers a first-class policy output target when Ask does not specify one', () => {
+    const pack = buildConversationDocumentPack({
+      title: 'Options analysis',
+      prompt: 'Prepare an options memo with tradeoffs and a recommendation.',
+      answer: 'Option A is faster, while option B has lower legal risk.',
+      sourceCards: [],
+      gaps: [],
+      provenance: {
+        capsuleId: 'cap-options',
+      },
+    });
+
+    expect(pack.provenance.outputTarget).toBe('options-memo');
+    expect(conversationDocumentPackToMemoBlocks(pack).map((block) => block.title)).toContain('Decision question');
+  });
 });
 
 function evidencePack(): CapsuleEvidencePack {

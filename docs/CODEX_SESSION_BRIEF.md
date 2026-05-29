@@ -4,7 +4,7 @@ Use this file at the start of Codex sessions in this checkout.
 
 ## Repository
 
-- Path: `C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work`
+- Path: `C:\Users\giuli\A4_PRAXIS_CLOUD_Work`
 - Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
 - Primary branch: `main`
 - Canonical cloud project: `praxisbytacitus`
@@ -38,7 +38,7 @@ Use this file at the start of Codex sessions in this checkout.
 git fetch origin
 git status --short --branch
 git rev-list --left-right --count origin/main...HEAD
-& "$HOME\.codex\scripts\codex-ready.ps1" -Repo "C:\Users\giuli\ANTIGRAVITY\PRAXISMAY2026\A4_PRAXIS_CLOUD_Work" -Mode quick
+& "$HOME\.codex\scripts\codex-ready.ps1" -Repo "C:\Users\giuli\A4_PRAXIS_CLOUD_Work" -Mode quick
 ```
 
 If ADC fails:

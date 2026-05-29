@@ -35,13 +35,15 @@ import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
 import { AskQueuedAgentRunPanel } from '@/components/ask/AskQueuedAgentRunPanel';
 import { AskTurnPlanPanel } from '@/components/ask/AskTurnPlanPanel';
+import { ActivePolicyFileStrip } from '@/components/policy-work-file/ActivePolicyFileStrip';
+import { KnowledgeStructurePanel, knowledgeStructureFromAskEnvelope } from '@/components/policy-work-file/KnowledgeStructurePanel';
 import { InterruptCard, type InterruptRequest } from '@/components/ask/InterruptCard';
 import { CoreSwapDrawer } from '@/components/cores/CoreSwapDrawer';
 import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
 import { buildContextHealthReport } from '@/lib/context/context-health';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
 import { ASK_ORCHESTRATION_OPTIONS } from '@/lib/ai/ask-runtime-catalog';
-import type { AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
+import type { AskAnswerEnvelope, ConversationDocumentPack } from '@/lib/ai/ask-answer-envelope';
 import type { AskOrchestrationStatusEvent } from '@/lib/ai/ask-orchestrator';
 import { buildProofSummaryFromAskEnvelope, modelPolicyLabelFor, type UiProofSummary } from '@/lib/proof/proof-summary';
 import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
@@ -409,8 +411,8 @@ export function AskStreamPanel({
     [thinking, capsuleId, threadId, contextPackageId, activeContextStack, activeSituation, loadHistory, timelineMessages],
   );
 
-  const draftDocumentPack = useCallback(async (message: AskPanelMessage) => {
-    const pack = message.answerEnvelope?.documentPackCandidate;
+  const draftDocumentPack = useCallback(async (message: AskPanelMessage, selectedPack?: ConversationDocumentPack) => {
+    const pack = selectedPack ?? message.answerEnvelope?.documentPackCandidate;
     if (!pack) return;
     setPackSavingId(message.id);
     try {
@@ -422,12 +424,19 @@ export function AskStreamPanel({
           pack,
           situationId: activeSituation?.id ?? capsuleId ?? 'ask-praxis',
           askTurnId: message.turnId ?? message.id,
+          outputTarget: pack.provenance.outputTarget,
         }),
       });
+      const payload = await res.json().catch(() => ({}));
       if (res.ok) {
+        const href = typeof payload?.href === 'string' ? payload.href : undefined;
         updateTimelineMessage(setTimelineMessages, message.id, {
-          content: `${message.content}\n\n_Document pack saved to Work._`,
+          content: `${message.content}\n\n_Document pack saved as a draft${href ? `: ${href}` : ''}._`,
         });
+        return {
+          href: typeof payload?.href === 'string' ? payload.href : null,
+          memoId: typeof payload?.memoId === 'string' ? payload.memoId : null,
+        };
       } else {
         updateTimelineMessage(setTimelineMessages, message.id, {
           content: `${message.content}\n\n_Document pack could not be saved (${res.status})._`,
@@ -480,9 +489,24 @@ export function AskStreamPanel({
             className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-navy-900 hover:bg-slate-50"
           >
             <FileText className="h-3.5 w-3.5" />
-            Save as Work
+            Open as Draft
           </Link>
         </div>
+        <ActivePolicyFileStrip
+          file={{
+            capsuleId,
+            title: activeSituation?.name ?? capsuleId ?? null,
+            domain: activeSituation?.type ?? activeSituation?.region ?? null,
+            outputGoal,
+            outputTarget: 'policy-memo',
+            sourceCount: (activeSituation?.sourceUrls?.length ?? 0) + (activeSituation?.documentCount ?? 0),
+            openQuestions: contextHealth.signals.filter((signal) => signal.status !== 'ready').length,
+            unsupportedClaims: timelineMessages.reduce((sum, message) => sum + (message.answerEnvelope?.answerQualitySummary.unsupportedClaimCount ?? 0), 0),
+            nextAction: 'Open as Draft',
+          }}
+          onCreate={onOpenComposer}
+          className="m-3"
+        />
 
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-600">
           <span className="inline-flex min-w-0 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1">
@@ -753,7 +777,7 @@ function AskMessageBubble({
   capsuleId?: string | null;
   message: AskPanelMessage;
   newestActive: boolean;
-  onDraftPack: (message: AskPanelMessage) => void;
+  onDraftPack: (message: AskPanelMessage, selectedPack?: ConversationDocumentPack) => void;
   onFollowUp: (followUp: string) => void;
   packSaving: boolean;
 }) {
@@ -799,12 +823,13 @@ function AskMessageBubble({
         <OrchestrationReceiptPanel envelope={message.answerEnvelope} />
         <CapsuleGroundingReceiptPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
         <AnswerSourcePreviewPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
+        <KnowledgeStructurePanel buckets={knowledgeStructureFromAskEnvelope(message.answerEnvelope)} />
         {!message.streaming && message.content && message.answerEnvelope?.documentPackCandidate ? (
           <AskArtifactPreview
             answer={message.content}
             capsuleId={capsuleId ?? message.answerEnvelope.documentPackCandidate.provenance.capsuleId}
             onRevise={(revisionPrompt) => onFollowUp(revisionPrompt)}
-            onSaveToMemoStudio={() => onDraftPack(message)}
+            onSaveToMemoStudio={(selectedPack) => onDraftPack(message, selectedPack)}
             pack={message.answerEnvelope.documentPackCandidate}
             saving={packSaving}
             turnId={message.turnId ?? message.id}
@@ -826,7 +851,7 @@ function AskMessageBubble({
           <div className="mt-3 flex flex-wrap gap-2">
             <Link href="/app/write" className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-800">
               <FileText className="h-3.5 w-3.5" />
-              Save as Work
+              Open as Draft
             </Link>
             <Link href="/app/contexts" className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">
               Review context
@@ -1855,7 +1880,7 @@ function StageCard({ event }: { event: StreamStage }) {
         <div className="mt-3 flex flex-wrap gap-2">
           <Link href="/app/write" className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-800">
             <FileText className="h-3.5 w-3.5" />
-            Save as Work
+            Open as Draft
           </Link>
           <Link href="/app/contexts" className="inline-flex items-center gap-2 rounded-md border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-50">
             Review context

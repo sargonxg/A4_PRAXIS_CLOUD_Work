@@ -20,13 +20,13 @@ const RequestSchema = z.object({
   sourceSnippets: z.array(SourceSnippetSchema).max(20).default([]),
   capsuleId: z.string().max(160).optional(),
   situationId: z.string().max(160).optional(),
+  memoId: z.string().max(180).optional(),
+  paragraphId: z.string().max(180).optional(),
+  outputTarget: z.string().max(120).optional(),
 });
 
 export const POST = withCalibration('sourceability', 'ai_sourceability', {
-  retrievalQuery: (_req, body) => {
-    const claim = typeof body.claimText === 'string' ? body.claimText.trim() : '';
-    return claim || undefined;
-  },
+  blockOnThinContext: false,
 })(async (request) => {
   const raw = await request.json().catch(() => ({}));
   const parsed = RequestSchema.safeParse(raw);

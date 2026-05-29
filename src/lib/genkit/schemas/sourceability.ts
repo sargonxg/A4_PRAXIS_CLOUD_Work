@@ -21,6 +21,9 @@ export const GenkitSourceabilityInputSchema = z.object({
   sourceSnippets: z.array(GenkitSourceSnippetSchema).max(20).default([]),
   capsuleId: z.string().max(160).optional(),
   situationId: z.string().max(160).optional(),
+  memoId: z.string().max(180).optional(),
+  paragraphId: z.string().max(180).optional(),
+  outputTarget: z.string().max(120).optional(),
 });
 
 export const GenkitSourceabilityOutputSchema = z.object({

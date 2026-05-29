@@ -72,15 +72,37 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(`${workbenchSource}\n${askStreamPanelSource}`).toContain('<AskArtifactPreview');
     expect(`${workbenchSource}\n${askStreamPanelSource}`).not.toContain("window.location.assign('/app/write')");
     expect(askArtifactPreviewSource).toContain('data-testid="ask-artifact-preview"');
-    expect(askArtifactPreviewSource).toContain('Draft document pack');
+    expect(askArtifactPreviewSource).toContain('Active Policy File');
     expect(askArtifactPreviewSource).toContain('Copy');
     expect(askArtifactPreviewSource).toContain('Revise in chat');
-    expect(askArtifactPreviewSource).toContain('Save to Work');
+    expect(askArtifactPreviewSource).toContain('Open as Draft');
+    expect(askArtifactPreviewSource).toContain('data-testid="open-draft-link"');
+    expect(askStreamPanelSource).toContain('href: typeof payload?.href ===');
     expect(askArtifactPreviewSource).toContain('Save as Output Capsule');
     expect(askArtifactPreviewSource).toContain('Attach answer to capsule');
     expect(askArtifactPreviewSource).toContain('/api/memos/from-ask-pack');
     expect(askArtifactPreviewSource).toContain('/api/output-capsules');
     expect(askArtifactPreviewSource).toContain('navigator.clipboard?.writeText');
+  });
+
+  it('surfaces sourceability checks from Memo Studio using explicit source snippets only', () => {
+    expect(source).toContain('/api/ai/sourceability');
+    expect(source).toContain('buildMemoSourceabilityRequest');
+    expect(source).toContain('sourceSnippets');
+    expect(source).toContain('selectedMemoParagraph');
+    expect(source).toContain('memoExportReadiness');
+    expect(source).toContain('sourceabilityEvidenceGapsFromResult');
+    expect(source).toContain('Insert cautious rewrite');
+    expect(source).toContain('Add issue to evidence gaps');
+    expect(source).toContain('Export gate');
+    expect(source).not.toContain('sourceability-web-search');
+  });
+
+  it('lets Ask artifact previews choose a deliverable before opening a draft', () => {
+    expect(askArtifactPreviewSource).toContain('POLICY_OUTPUT_TARGETS.map');
+    expect(askArtifactPreviewSource).toContain('data-testid="ask-output-target-select"');
+    expect(askArtifactPreviewSource).toContain('onSaveToMemoStudio(selectedPack)');
+    expect(askArtifactPreviewSource).toContain('selectedPack.provenance.outputTarget');
   });
 
   it('keeps conversation URLs capsule-scoped for sends and copied links', () => {

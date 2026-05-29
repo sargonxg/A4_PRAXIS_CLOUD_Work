@@ -20,6 +20,10 @@ export function AnswerQualityStrip({
   const contextRepairActions = envelope?.contextRepairActions ?? [];
   const healthy = summary.contextReadiness === 'ready' || summary.contextReadiness === 'thin';
   const Icon = healthy ? CheckCircle2 : AlertTriangle;
+  const supportedClaims = envelope?.sourceAudit.supportedClaimCount ?? 0;
+  const assumptionClaims = envelope?.sourceAudit.assumptionClaimCount ?? envelope?.sourceAudit.modelPriorClaimCount ?? 0;
+  const dateCheckCount = (envelope?.claimLedger ?? []).filter((claim) => claim.freshness !== 'current').length
+    + (envelope?.sourceRefreshDocket.staleSourceIds.length ?? 0);
 
   return (
     <section
@@ -33,7 +37,7 @@ export function AnswerQualityStrip({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="inline-flex items-center gap-1.5 font-bold text-slate-800">
           <Icon className={cn('h-3.5 w-3.5', healthy ? 'text-emerald-600' : 'text-amber-700')} />
-          Answer Quality
+          Sourceability
         </p>
         <span className={cn(
           'rounded-md border px-2 py-1 font-mono text-[10px]',
@@ -49,8 +53,11 @@ export function AnswerQualityStrip({
       <div className="mt-2 flex flex-wrap gap-1.5">
         <QualityPill label="Context" value={formatContextReadiness(summary.contextReadiness)} />
         <QualityPill label="Sources" value={`${summary.sourceCount} (${summary.sourceReceiptCount} receipts)`} />
-        <QualityPill label="Weak" value={String(summary.weakClaimCount)} />
-        <QualityPill label="Unsupported" value={String(summary.unsupportedClaimCount)} />
+        <QualityPill label="Supported claims" value={String(supportedClaims)} />
+        <QualityPill label="Weak claims" value={String(summary.weakClaimCount)} />
+        <QualityPill label="Unsupported claims" value={String(summary.unsupportedClaimCount)} />
+        <QualityPill label="Assumptions" value={String(assumptionClaims)} />
+        <QualityPill label="Date checks" value={String(dateCheckCount)} />
         <QualityPill label="Gaps" value={String(summary.sourceGapCount)} />
         <QualityPill label="Deep run" value={formatDeepRun(summary.queuedDeepRunStatus)} />
       </div>

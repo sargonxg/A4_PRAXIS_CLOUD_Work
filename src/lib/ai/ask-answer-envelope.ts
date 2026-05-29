@@ -3,6 +3,12 @@ import type { SourceabilityLedgerSummary, SourceabilitySupportLabel } from '@/li
 import type { AskIntent } from '@/lib/ai/ask-conversation';
 import type { AskConversationOrchestrationReceipt } from '@/lib/ai/ask-orchestrator';
 import type { ContextEnrichmentReceipt } from '@/lib/knowledge/context-enrichment-adapter';
+import {
+  inferPolicyOutputTargetFromText,
+  outputTargetLabel,
+  outputTargetStarterHeadings,
+  type AskPackProvenanceOutputTarget,
+} from '@/lib/policy-work-file/output-targets';
 import type { ResearchGraphReceipt } from '@/lib/research-graph';
 import type { MemoBlock } from '@/types/memo';
 
@@ -278,12 +284,7 @@ export interface ConversationDocumentPack {
 }
 
 export type AskDocumentPackOutputTarget =
-  | 'ask-response'
-  | 'source-note'
-  | 'memo'
-  | 'brief'
-  | 'docx-pdf'
-  | 'handover';
+  AskPackProvenanceOutputTarget;
 
 export interface ConversationPackProvenance {
   capsuleId?: string | null;
@@ -474,7 +475,7 @@ export function buildAskAnswerEnvelope(input: {
       ...input.provenance,
       conversationId: input.provenance?.conversationId ?? input.provenance?.threadId ?? null,
       runId: input.provenance?.runId ?? (queuedRunId && queuedRunId !== 'unavailable' ? queuedRunId : null),
-      outputTarget: input.provenance?.outputTarget ?? 'ask-response',
+      outputTarget: input.provenance?.outputTarget,
     },
   });
   const traceabilitySummary = buildAskTraceabilitySummary({
@@ -794,7 +795,7 @@ export function buildConversationDocumentPack(input: {
       conversationId: input.provenance?.conversationId ?? input.provenance?.threadId ?? null,
       sourceReceiptIds,
       unsupportedClaims,
-      outputTarget: input.provenance?.outputTarget ?? 'ask-response',
+      outputTarget: input.provenance?.outputTarget ?? inferPolicyOutputTargetFromText(`${input.prompt}\n${input.answer}`),
       generatedAt: input.provenance?.generatedAt ?? new Date().toISOString(),
     },
   };
@@ -842,10 +843,24 @@ export function conversationDocumentPackToMemoBlocks(pack: ConversationDocumentP
     timestamp: pack.provenance.generatedAt ?? new Date().toISOString(),
     outputTarget: pack.provenance.outputTarget ?? 'ask-response',
   };
+  const outputTarget = pack.provenance.outputTarget ?? 'policy-memo';
+  const targetLabel = outputTargetLabel(outputTarget);
+  const starterHeadings = outputTargetStarterHeadings(outputTarget);
+  const starterSectionBlocks = starterHeadings.slice(0, 5).map((heading, index) => block(
+    `pack-target-${index + 1}`,
+    index === 0 ? 'paragraph' : 'callout',
+    index === 0
+      ? pack.answer || 'No answer text was captured.'
+      : `Draft this ${targetLabel.toLowerCase()} section from the preserved Ask answer, source cards, and gaps.`,
+    index === 0 ? citations : [],
+    { outputTarget, targetLabel, sectionHeading: heading },
+    heading,
+  ));
 
   return [
     block('pack-heading', 'heading', pack.title, [], {}),
-    block('pack-answer', 'paragraph', pack.answer || 'No answer text was captured.', citations, { prompt: pack.prompt, artifactMetadata }),
+    block('pack-output-target', 'paragraph', `Output target: ${targetLabel}. ${starterHeadings.join(' / ')}`, [], { outputTarget, targetLabel }),
+    ...starterSectionBlocks,
     block('pack-sources', 'bullets', '', citations, {}, 'Source previews', sourceItems),
     block('pack-gaps', 'bullets', '', [], {}, 'Gaps and review notes', gapItems),
     block('pack-provenance', 'bullets', '', [], artifactMetadata, 'Provenance', provenance.length ? provenance : ['No provenance was attached.']),

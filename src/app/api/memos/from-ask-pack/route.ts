@@ -10,6 +10,15 @@ import {
 } from '@/lib/ai/ask-answer-envelope';
 import { saveMemoDraft } from '@/lib/firebase/memo-service';
 import { saveOutputCapsule, type SaveOutputCapsuleInput } from '@/lib/output-capsules/storage';
+import {
+  ASK_DOCUMENT_PACK_OUTPUT_TARGET_IDS,
+  PACK_PROVENANCE_OUTPUT_TARGET_IDS,
+  normalizePolicyOutputTarget,
+  outputCapsuleTemplateIdForTarget,
+  outputTargetLabel,
+  outputTargetStarterHeadings,
+  type AskPersistedDocumentPackOutputTarget,
+} from '@/lib/policy-work-file/output-targets';
 
 const SourceCardSchema = z.object({
   id: z.string().min(1).max(240),
@@ -47,7 +56,7 @@ const PackSchema = z.object({
     contextPackageId: z.string().nullable().optional(),
     sourceReceiptIds: z.array(z.string().max(240)).max(100).optional(),
     unsupportedClaims: z.array(z.string().max(1000)).max(50).optional(),
-    outputTarget: z.enum(['ask-response', 'source-note', 'memo', 'brief', 'docx-pdf', 'handover']).optional(),
+    outputTarget: z.enum(PACK_PROVENANCE_OUTPUT_TARGET_IDS).optional(),
     generatedAt: z.string().optional(),
   }).default({}),
 });
@@ -56,7 +65,7 @@ const RequestSchema = z.object({
   pack: PackSchema,
   situationId: z.string().min(1).max(200),
   askTurnId: z.string().max(240).optional(),
-  outputTarget: z.enum(['source-note', 'memo', 'brief', 'docx-pdf', 'handover']).default('memo'),
+  outputTarget: z.enum(ASK_DOCUMENT_PACK_OUTPUT_TARGET_IDS).default('policy-memo'),
 });
 
 export const POST = withAuth(async (request, user) => {
@@ -100,7 +109,7 @@ export const POST = withAuth(async (request, user) => {
       capsuleVersion: artifactMetadata.capsuleVersion,
       conversationId: artifactMetadata.conversationId,
       runId: artifactMetadata.runId,
-      outputTarget,
+      outputTarget: artifactMetadata.outputTarget,
       sourceReceiptIds: artifactMetadata.sourceReceiptIds,
       sourceReceipts: pack.sourceCards,
       unsupportedClaims: artifactMetadata.unsupportedClaims,
@@ -151,9 +160,12 @@ function validateCapsuleReadReceipt(pack: ConversationDocumentPack): string | nu
 function buildOutputCapsuleInput(
   pack: ConversationDocumentPack,
   situationId: string,
-  outputTarget: AskDocumentPackOutputTarget,
+  outputTarget: AskPersistedDocumentPackOutputTarget,
 ): SaveOutputCapsuleInput {
   const metadata = buildArtifactMetadata(pack, outputTarget);
+  const policyTarget = normalizePolicyOutputTarget(outputTarget);
+  const targetLabel = outputTargetLabel(policyTarget);
+  const starterHeadings = outputTargetStarterHeadings(policyTarget);
   const citations = pack.sourceCards.map((card, index) => ({
     id: card.sourceReceiptId ?? card.id ?? `source-${index + 1}`,
     title: card.title,
@@ -178,16 +190,24 @@ function buildOutputCapsuleInput(
   return {
     situationId,
     contextCapsuleId: metadata.capsuleId,
-    templateId: 'options-memo',
+    templateId: outputCapsuleTemplateIdForTarget(policyTarget),
     payload: {
       title: pack.title,
       summary: excerpt(pack.answer, 280) || 'Ask PRAXIS artifact created from an assistant response.',
       sections: [
-        { heading: 'Assistant answer', body: pack.answer || 'No answer text was captured.', citationIds },
+        ...starterHeadings.map((heading, index) => ({
+          heading,
+          body: index === 0
+            ? pack.answer || 'No answer text was captured.'
+            : `Draft this ${targetLabel.toLowerCase()} section from the preserved Ask answer, source cards, and gaps.`,
+          citationIds: index === 0 ? citationIds : [],
+        })),
         { heading: 'Source posture', body: sourcePostureText(pack), citationIds },
         { heading: 'Gaps and unsupported claims', body: [...pack.gaps, ...metadata.unsupportedClaims].join('\n') || 'No gaps or unsupported claims were recorded.', citationIds: [] },
         { heading: 'Artifact metadata', body: metadataLines.join('\n'), citationIds: [] },
       ],
+      outputTarget: policyTarget,
+      outputTargetLabel: targetLabel,
     },
     citations,
     gaps: [...unsupportedGaps, ...sourceGaps],
@@ -201,6 +221,7 @@ function buildOutputCapsuleInput(
 }
 
 function buildArtifactMetadata(pack: ConversationDocumentPack, outputTarget: AskDocumentPackOutputTarget) {
+  const policyTarget = normalizePolicyOutputTarget(outputTarget);
   return {
     conversationId: pack.provenance.conversationId ?? pack.provenance.threadId ?? null,
     runId: pack.provenance.runId ?? null,
@@ -210,7 +231,7 @@ function buildArtifactMetadata(pack: ConversationDocumentPack, outputTarget: Ask
     unsupportedClaims: pack.provenance.unsupportedClaims ?? [],
     gaps: pack.gaps,
     timestamp: pack.provenance.generatedAt ?? new Date().toISOString(),
-    outputTarget,
+    outputTarget: policyTarget,
   };
 }
 
