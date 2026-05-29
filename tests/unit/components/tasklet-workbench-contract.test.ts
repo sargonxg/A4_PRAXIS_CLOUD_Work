@@ -394,7 +394,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="ask-capsule-suggestion-widget"');
     expect(suggestionWidgetSource).toContain('data-testid={`ask-capsule-suggestion-chip-${suggestion.capsuleId}`}');
     expect(suggestionWidgetSource).toContain('title={`why this capsule: ${suggestion.whyThisCapsule} ${suggestion.whatItChangesForAgent}`}');
-    expect(suggestionWidgetSource).toContain('window.setTimeout(() => setVisible(false), ASK_CAPSULE_SUGGESTION_VISIBLE_MS)');
+    expect(suggestionWidgetSource).toContain('window.setTimeout(() => setHiddenSignature(suggestionSignature), ASK_CAPSULE_SUGGESTION_VISIBLE_MS)');
     expect(suggestionWidgetSource).toContain('onMouseEnter={() => setSuggestionPaused(true)}');
     expect(suggestionWidgetSource).toContain('onFocusCapture={() => setSuggestionPaused(true)}');
     expect(suggestionWidgetSource).toContain('onMouseLeave={() => setSuggestionPaused(false)}');

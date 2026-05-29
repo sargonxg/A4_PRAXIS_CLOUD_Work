@@ -44,10 +44,6 @@ function cleanContextNotes(value: unknown): string | undefined {
   return trimmed.slice(0, MAX_CONTEXT_NOTES_CHARS);
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 export const GET = withAuth(async (_req, user) => {
   if (user.isDemo) {
     return NextResponse.json({ situations: [] });

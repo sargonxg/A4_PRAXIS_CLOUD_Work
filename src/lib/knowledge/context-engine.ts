@@ -16,7 +16,6 @@ import {
   DEFAULT_CORPUS_LAYERS,
   DEFAULT_CORPUS_LIMIT,
   type CorpusItem,
-  type CorpusLayer,
 } from '@/types/corpus';
 import type {
   CandidateGraphDelta,

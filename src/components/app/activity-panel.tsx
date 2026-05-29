@@ -24,27 +24,24 @@ function StatusIcon({ status }: { status: ActiveOperation['status'] }) {
 }
 
 function ElapsedTime({ startedAt, completedAt }: { startedAt: string; completedAt?: string }) {
-  const [elapsed, setElapsed] = useState('0s');
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const start = new Date(startedAt).getTime();
-
-    if (completedAt) {
-      const end = new Date(completedAt).getTime();
-      const secs = Math.round((end - start) / 1000);
-      setElapsed(secs >= 60 ? `${Math.floor(secs / 60)}m ${secs % 60}s` : `${secs}s`);
-      return;
-    }
-
+    if (completedAt) return;
     const interval = setInterval(() => {
-      const secs = Math.round((Date.now() - start) / 1000);
-      setElapsed(secs >= 60 ? `${Math.floor(secs / 60)}m ${secs % 60}s` : `${secs}s`);
+      setNow(Date.now());
     }, 1000);
-
     return () => clearInterval(interval);
-  }, [startedAt, completedAt]);
+  }, [completedAt]);
 
-  return <span className="text-navy-500 tabular-nums">{elapsed}</span>;
+  const elapsedAt = completedAt ? new Date(completedAt).getTime() : now;
+  return <span className="text-navy-500 tabular-nums">{formatElapsed(startedAt, elapsedAt)}</span>;
+}
+
+function formatElapsed(startedAt: string, elapsedAt: number): string {
+  const start = new Date(startedAt).getTime();
+  const secs = Math.round((elapsedAt - start) / 1000);
+  return secs >= 60 ? `${Math.floor(secs / 60)}m ${secs % 60}s` : `${secs}s`;
 }
 
 function OperationRow({ op }: { op: ActiveOperation }) {

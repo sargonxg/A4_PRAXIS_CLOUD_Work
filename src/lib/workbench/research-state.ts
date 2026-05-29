@@ -78,7 +78,7 @@ export function buildResearchCandidates(caseModule: CaseModule, question: string
   const query = question.trim() || `${caseModule.manifest.name} ${caseModule.manifest.region}`;
   const limit = depth === 'deep' ? 10 : depth === 'standard' ? 7 : 4;
   const selected = selectedSourceSets.length ? selectedSourceSets : ['google-search', 'reuters', 'ap'];
-  const fromReceipts = caseModule.sources.slice(0, 4).map((source, index): ResearchCandidate => ({
+  const fromReceipts = caseModule.sources.slice(0, 4).map((source): ResearchCandidate => ({
     id: `receipt-${source.receiptId}`,
     title: source.title ?? source.name ?? source.source,
     url: source.url ?? '#',

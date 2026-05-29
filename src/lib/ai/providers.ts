@@ -20,6 +20,8 @@
 
 import { generateText as aiGenerateText, type GenerateTextResult } from 'ai';
 import type { LanguageModel } from 'ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createVertex } from '@ai-sdk/google-vertex';
 import { AI_PLATFORM_POSTURE, getModelMatrixEntry } from './model-matrix';
 import { getAskPraxisModelRuntimePolicy } from './model-runtime-policy';
 
@@ -49,7 +51,6 @@ const MODEL_EMBED = getModelMatrixEntry('embeddings_text').model;
 // ---------------------------------------------------------------------------
 
 function createVertexModel(modelId: string): LanguageModel {
-  const { createVertex } = require('@ai-sdk/google-vertex') as typeof import('@ai-sdk/google-vertex');
   const location = modelId.startsWith('gemini-3')
     ? (process.env.GOOGLE_VERTEX_GEMINI_LOCATION || 'global')
     : (process.env.GOOGLE_VERTEX_LOCATION || AI_PLATFORM_POSTURE.defaultRegion || 'us-central1');
@@ -60,7 +61,6 @@ function createVertexModel(modelId: string): LanguageModel {
 }
 
 function createGoogleModel(modelId: string): LanguageModel {
-  const { createGoogleGenerativeAI } = require('@ai-sdk/google') as typeof import('@ai-sdk/google');
   return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' })(modelId);
 }
 
@@ -168,7 +168,6 @@ export async function callProModel(
 export function getEmbeddingModel(): ReturnType<ReturnType<typeof import('@ai-sdk/google')['createGoogleGenerativeAI']>['textEmbeddingModel']> | null {
   if (isVertexProviderActive()) {
     try {
-      const { createVertex } = require('@ai-sdk/google-vertex') as typeof import('@ai-sdk/google-vertex');
       return createVertex({
         project: process.env.GOOGLE_VERTEX_PROJECT,
         location: process.env.GOOGLE_VERTEX_LOCATION || 'us-central1',
@@ -177,7 +176,6 @@ export function getEmbeddingModel(): ReturnType<ReturnType<typeof import('@ai-sd
   }
   if (process.env.GOOGLE_AI_API_KEY) {
     try {
-      const { createGoogleGenerativeAI } = require('@ai-sdk/google') as typeof import('@ai-sdk/google');
       return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY })
         .textEmbeddingModel(MODEL_EMBED);
     } catch { /* fall through */ }
@@ -290,7 +288,6 @@ let _googleProvider: ReturnType<typeof import('@ai-sdk/google')['createGoogleGen
 
 function getGoogleProvider(): ReturnType<typeof import('@ai-sdk/google')['createGoogleGenerativeAI']> {
   if (!_googleProvider) {
-    const { createGoogleGenerativeAI } = require('@ai-sdk/google') as typeof import('@ai-sdk/google');
     _googleProvider = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' });
   }
   return _googleProvider;

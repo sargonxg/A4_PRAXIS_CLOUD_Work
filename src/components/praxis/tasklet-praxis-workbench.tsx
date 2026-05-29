@@ -82,7 +82,6 @@ import {
   PENDING_POLICY_AGENT_ID_KEY,
   PENDING_TASKLET_PROMPT_KEY,
   policyAgentLoginHref,
-  policyAgentRunIntent,
   PRAXIS_POLICY_AGENTS,
   type HomeSurfaceMode,
   type PolicyAgentDefinition,
@@ -916,7 +915,7 @@ export function TaskletPraxisWorkbench({
   const [capsuleTypeFilter, setCapsuleTypeFilter] = useState('all');
   const [capsuleDomainFilter, setCapsuleDomainFilter] = useState('all');
   const [capsulePolicyTeamFilter, setCapsulePolicyTeamFilter] = useState('all');
-  const [factoryLane, setFactoryLane] = useState<CapsuleFactoryLaneId>(resolvedInitialFactoryLane);
+  const [factoryLane] = useState<CapsuleFactoryLaneId>(resolvedInitialFactoryLane);
   const isRepositoryLane = isCapsuleRepositoryPage && resolvedInitialFactoryLane === 'sources';
   const [factoryReviewDiffs, setFactoryReviewDiffs] = useState<CapsuleFactoryReviewDiff[]>([]);
   const [userCapsules, setUserCapsules] = useState<PraxisCapsuleSummary[]>([]);
@@ -3240,7 +3239,7 @@ export function TaskletPraxisWorkbench({
     setStatus('Improve prompt prepared for the active context chain.');
   }
 
-  function runCapsuleFactoryAgent() {
+  function _runCapsuleFactoryAgent() {
     const capsuleFactoryAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === 'capsule-factory') ?? selectedAgent;
     setSelectedAgentId(capsuleFactoryAgent.id);
     const target = selectedCapsule?.label ?? activeCapsuleStack[0]?.label ?? 'the active ContextCapsule';
@@ -5125,16 +5124,15 @@ function CapsuleSuggestionWidget({
   onAdd: (suggestion: AskCapsuleSuggestion<PraxisCapsuleSummary>) => void;
   onDismiss: (suggestion: AskCapsuleSuggestion<PraxisCapsuleSummary>) => void;
 }) {
-  const [visible, setVisible] = useState(false);
+  const suggestionSignature = suggestions.map((suggestion) => suggestion.capsuleId).join('|');
+  const [hiddenSignature, setHiddenSignature] = useState<string | null>(null);
   const [suggestionPaused, setSuggestionPaused] = useState(false);
-  useEffect(() => {
-    setVisible(Boolean(suggestions.length));
-  }, [suggestions]);
+  const visible = Boolean(suggestions.length) && hiddenSignature !== suggestionSignature;
   useEffect(() => {
     if (!visible || suggestionPaused || !suggestions.length) return;
-    const timeout = window.setTimeout(() => setVisible(false), ASK_CAPSULE_SUGGESTION_VISIBLE_MS);
+    const timeout = window.setTimeout(() => setHiddenSignature(suggestionSignature), ASK_CAPSULE_SUGGESTION_VISIBLE_MS);
     return () => window.clearTimeout(timeout);
-  }, [suggestions, suggestionPaused, visible]);
+  }, [suggestionPaused, suggestionSignature, suggestions.length, visible]);
   if (!suggestions.length || !visible) return null;
   const visibleSuggestions = suggestions.slice(0, 3);
   return (
@@ -5617,6 +5615,7 @@ function CapsuleRepositoryTile({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function CapsuleRepositoryModal({
   capsule,
   policyTeam,
@@ -6621,7 +6620,7 @@ function publicCategoryForTemplate(templateId: string): PolicyTeamCategory | nul
   return POLICY_TEAM_CATEGORIES.find((category) => category.templateIds.some((id) => id === templateId)) ?? null;
 }
 
-function filterPublicCapsules(query: string, typeFilter: string, domainFilter: string, policyTeamFilter: string) {
+function _filterPublicCapsules(query: string, typeFilter: string, domainFilter: string, policyTeamFilter: string) {
   const clean = query.trim().toLowerCase();
   return COCKPIT_CAPSULE_LIBRARY.filter((capsule) => {
     if (!publicCapsuleMatchesType(capsule, typeFilter)) return false;
@@ -6812,7 +6811,7 @@ function countUniqueCoreRefs(values: string[] | undefined): number {
   return new Set((values ?? []).map((value) => value.trim()).filter(Boolean)).size;
 }
 
-function CapsuleMap({
+function _CapsuleMap({
   capsule,
   fallbackLabel,
   agentRunCount,
@@ -7702,7 +7701,7 @@ function ForkTrail({
   );
 }
 
-function CapsuleFactorySidebar({
+function _CapsuleFactorySidebar({
   activeLane,
   onSelect,
 }: {
@@ -7732,7 +7731,7 @@ function CapsuleFactorySidebar({
   );
 }
 
-function CapsuleFactoryLanePanel({
+function _CapsuleFactoryLanePanel({
   activeLane,
   capsule,
   agentRunCount,
@@ -9144,7 +9143,7 @@ function RunEventTimeline({ events }: { events: AgentRunEventSummary[] }) {
   );
 }
 
-function AgentRegistryCard({
+function _AgentRegistryCard({
   agent,
   selected,
   onSelect,
@@ -10405,6 +10404,8 @@ function PraxisGuideChat({
   const [mounted, setMounted] = useState(false);
   const reduceMotion = useReducedMotion();
   useEffect(() => {
+    // Gate createPortal until the browser document exists after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
   useEffect(() => {
@@ -11196,6 +11197,7 @@ function uniqueStringList(values: Array<string | null | undefined>): string[] {
   return Array.from(new Set(values.map((value) => stringFieldFromUnknown(value)).filter((value): value is string => Boolean(value))));
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function AgentActionDrawer({
   selectedAgentId,
   onClose,

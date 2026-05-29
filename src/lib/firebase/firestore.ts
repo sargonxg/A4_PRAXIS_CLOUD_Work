@@ -90,7 +90,6 @@ const USERS_COLLECTION = 'users';
 const CREDIT_TRANSACTIONS_COLLECTION = 'credit_transactions';
 const CONFLICTS_COLLECTION = 'conflicts';
 const REPORTS_COLLECTION = 'reports';
-const MEMORIES_COLLECTION = 'memories';
 
 // ---------------------------------------------------------------------------
 // User Profile Operations

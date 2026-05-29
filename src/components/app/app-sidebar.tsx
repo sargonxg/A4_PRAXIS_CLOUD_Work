@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Boxes,
@@ -61,19 +61,6 @@ export function AppSidebar() {
     return initial;
   });
 
-  // Auto-expand a group when the active route lives inside it.
-  useEffect(() => {
-    setOpenGroups((prev) => {
-      const next = { ...prev };
-      for (const g of visibleGroups) {
-        if (g.items.some((it) => pathname === it.href || pathname.startsWith(`${it.href}/`))) {
-          next[g.id] = true;
-        }
-      }
-      return next;
-    });
-  }, [pathname, visibleGroups]);
-
   function toggleGroup(id: string) {
     setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
   }
@@ -114,7 +101,7 @@ export function AppSidebar() {
             group={group}
             pathname={pathname}
             sidebarOpen={sidebarOpen}
-            open={openGroups[group.id] ?? group.defaultOpen}
+            open={isGroupActive(group, pathname) || (openGroups[group.id] ?? group.defaultOpen)}
             onToggle={() => toggleGroup(group.id)}
           />
         ))}
@@ -135,6 +122,10 @@ export function AppSidebar() {
       </div>
     </aside>
   );
+}
+
+function isGroupActive(group: PrimaryNavGroup, pathname: string): boolean {
+  return group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
 }
 
 function ContextCapsulePanel() {

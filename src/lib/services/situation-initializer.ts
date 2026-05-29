@@ -396,10 +396,6 @@ const TIER2_SEEDS: ToolSeed[] = [
   },
 ];
 
-// Combined seeds — Tier 1 runs first, then Tier 2
-const TOOL_SEEDS: ToolSeed[] = TIER1_SEEDS;
-
-
 // ---------------------------------------------------------------------------
 // Main initialization function
 // ---------------------------------------------------------------------------

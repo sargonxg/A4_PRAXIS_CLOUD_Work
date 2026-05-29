@@ -34,11 +34,10 @@ describe('analyst-profile-admin', () => {
   it('getAnalystProfile returns null for unknown user', async () => {
     const profileDoc = makeDocStub(null);
     const rootUserDoc = makeDocStub(null);
-    const versionsCol = { doc: vi.fn(() => makeDocStub(null).ref) };
     const db = {
       collection: vi.fn((name) => {
         if (name === 'users') return {
-          doc: vi.fn((uid) => ({
+          doc: vi.fn(() => ({
             collection: vi.fn((sub) => ({
               doc: vi.fn(() => sub === 'profile' ? profileDoc.ref : makeDocStub(null).ref),
             })),

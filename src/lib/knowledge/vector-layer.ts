@@ -6,6 +6,7 @@
 
 import { adminDb } from '@/lib/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { getEmbeddingModel } from '@/lib/ai/providers';
 import { generateEmbedding, generateEmbeddings, chunkText } from './embedding-service';
 import { EMBEDDING_DIMENSION, EMBEDDING_MODEL } from './embedding-config';
 import type { VectorResult } from './types';
@@ -16,7 +17,6 @@ export class VectorLayer {
 
   constructor(private uid: string, private situationId: string) {
     // Check at construction time — re-checked per-call with null guard
-    const { getEmbeddingModel } = require('@/lib/ai/providers');
     this.embeddingAvailable = getEmbeddingModel() !== null;
     if (!this.embeddingAvailable) {
       console.warn('[SKC:vector] Embedding model unavailable. Vector search disabled.');

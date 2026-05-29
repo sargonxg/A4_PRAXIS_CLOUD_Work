@@ -139,7 +139,7 @@ function normalizeOutput(output: {
       role: output.suggestedUserCore.role.slice(0, 120) || profile.label,
       audience: output.suggestedUserCore.audience.slice(0, 160) || defaultAudience(profile),
       workingStyle: output.suggestedUserCore.workingStyle.slice(0, 220) || defaultWorkingStyle(profile),
-      evidencePosture: output.suggestedUserCore.evidencePosture.slice(0, 220) || defaultEvidencePosture(profile),
+      evidencePosture: output.suggestedUserCore.evidencePosture.slice(0, 220) || defaultEvidencePosture(),
     },
     suggestedSituationCore: {
       problemFrame: output.suggestedSituationCore.problemFrame.slice(0, 260) || defaultProblemFrame(profile),
@@ -222,7 +222,7 @@ function buildOutputForProfile(
       role: profile.label,
       audience: defaultAudience(profile),
       workingStyle: defaultWorkingStyle(profile),
-      evidencePosture: defaultEvidencePosture(profile),
+      evidencePosture: defaultEvidencePosture(),
     },
     suggestedSituationCore: {
       problemFrame: defaultProblemFrame(profile),
@@ -266,7 +266,7 @@ function defaultWorkingStyle(profile: PolicyPathProfile): string {
   return `Work from the ${profile.label} path with source gaps and review needs visible.`;
 }
 
-function defaultEvidencePosture(profile: PolicyPathProfile): string {
+function defaultEvidencePosture(): string {
   return 'Prefer sourceable claims, preserve uncertainty, and keep unsupported assumptions out of final outputs.';
 }
 

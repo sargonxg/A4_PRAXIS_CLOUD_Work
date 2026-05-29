@@ -86,7 +86,7 @@ export class FeedLayer {
 
   async isHealthy(): Promise<boolean> {
     try {
-      const snap = await this.feedCacheRef().limit(1).get();
+      await this.feedCacheRef().limit(1).get();
       return true; // Firestore is accessible
     } catch {
       return false;

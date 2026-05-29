@@ -56,13 +56,10 @@ export function TrustPostureChip() {
   const activeSituation = useSituationStore((s) => s.activeSituation);
   const [open, setOpen] = useState(false);
   const [posture, setPosture] = useState<TrustPosture | null>(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
     const url = activeSituation?.id
       ? `/api/context/trust-posture?situationId=${encodeURIComponent(activeSituation.id)}`
       : '/api/context/trust-posture';
@@ -71,13 +68,11 @@ export function TrustPostureChip() {
       .then((payload) => {
         if (cancelled) return;
         setPosture(payload.trustPosture);
+        setError(null);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : 'trust-posture failed');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
@@ -88,7 +83,7 @@ export function TrustPostureChip() {
   // loading so the header doesn't reflow.
   const band = posture?.band ?? 'usable';
   const score = posture?.score ?? 0;
-  const label = posture ? `${score}` : (loading ? '–' : '?');
+  const label = posture ? `${score}` : (error ? '?' : '–');
 
   return (
     <>

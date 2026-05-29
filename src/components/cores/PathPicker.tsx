@@ -36,7 +36,6 @@ const LENS_AXES = [
   'access',
   'protection',
 ] as const;
-type LensAxis = (typeof LENS_AXES)[number];
 
 const PATH_TINT: Record<string, string> = {
   'conflict-path': '#7B1E22',

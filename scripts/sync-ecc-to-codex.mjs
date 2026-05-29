@@ -45,11 +45,6 @@ function splitTomlTables(source) {
   return { root, tables };
 }
 
-function tableBlock(tables, name) {
-  const direct = tables.get(name);
-  return direct ? direct.join("\n").trimEnd() : "";
-}
-
 function serverBlocks(tables, name) {
   const prefix = `mcp_servers.${name}`;
   const blocks = [];

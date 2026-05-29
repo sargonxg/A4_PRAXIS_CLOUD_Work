@@ -17,7 +17,7 @@
  * Focus-trapped dialog. Enter approves, Esc cancels.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Pencil, X, Loader2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -49,21 +49,7 @@ export function InterruptCard({ request, onApprove, onCancel }: InterruptCardPro
     approveRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onCancel();
-      } else if (e.key === 'Enter' && !editing && (e.target as HTMLElement)?.tagName !== 'TEXTAREA') {
-        e.preventDefault();
-        void doApprove();
-      }
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [editing, onCancel]);
-
-  async function doApprove() {
+  const doApprove = useCallback(async () => {
     let inputs = request.inputs;
     if (editing) {
       try {
@@ -80,7 +66,21 @@ export function InterruptCard({ request, onApprove, onCancel }: InterruptCardPro
     } finally {
       setSubmitting(false);
     }
-  }
+  }, [draftJson, editing, onApprove, request.inputs]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onCancel();
+      } else if (e.key === 'Enter' && !editing && (e.target as HTMLElement)?.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        void doApprove();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [doApprove, editing, onCancel]);
 
   return (
     <motion.div

@@ -14,7 +14,7 @@
  * change.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 
 interface SourceHit {
@@ -71,10 +71,7 @@ export function SourceMentionMenu({ editor, situationId }: Props) {
 
   // Fetch sources whenever the query changes.
   useEffect(() => {
-    if (!anchor) {
-      setHits([]);
-      return;
-    }
+    if (!anchor) return;
     const params = new URLSearchParams();
     if (situationId) params.set('situationId', situationId);
     if (anchor.query) params.set('q', anchor.query);
@@ -99,6 +96,23 @@ export function SourceMentionMenu({ editor, situationId }: Props) {
     };
   }, [anchor, situationId]);
 
+  const insertCounter = useMemo(() => Math.max(1, hits.length), [hits]);
+
+  const insert = useCallback((hit: SourceHit) => {
+    if (!editor || !anchor) return;
+    const endPos = editor.state.selection.from;
+    // Replace the `@query` slice with a superscript citation marker.
+    editor
+      .chain()
+      .focus()
+      .deleteRange({ from: anchor.startPos, to: endPos })
+      .insertContent(
+        `<sup data-source-receipt-id="${escapeAttr(hit.receiptId ?? hit.id)}" class="praxis-source-mention">[${insertCounter}]</sup>`,
+      )
+      .run();
+    setAnchor(null);
+  }, [anchor, editor, insertCounter]);
+
   // Keyboard navigation while the menu is open.
   useEffect(() => {
     if (!anchor) return;
@@ -119,24 +133,7 @@ export function SourceMentionMenu({ editor, situationId }: Props) {
     };
     document.addEventListener('keydown', onKey, true);
     return () => document.removeEventListener('keydown', onKey, true);
-  }, [anchor, hits, highlight]);
-
-  const insertCounter = useMemo(() => Math.max(1, hits.length), [hits]);
-
-  function insert(hit: SourceHit) {
-    if (!editor || !anchor) return;
-    const endPos = editor.state.selection.from;
-    // Replace the `@query` slice with a superscript citation marker.
-    editor
-      .chain()
-      .focus()
-      .deleteRange({ from: anchor.startPos, to: endPos })
-      .insertContent(
-        `<sup data-source-receipt-id="${escapeAttr(hit.receiptId ?? hit.id)}" class="praxis-source-mention">[${insertCounter}]</sup>`,
-      )
-      .run();
-    setAnchor(null);
-  }
+  }, [anchor, hits, highlight, insert]);
 
   if (!anchor || hits.length === 0) return null;
 

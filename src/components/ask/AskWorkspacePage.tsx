@@ -105,24 +105,27 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
   const activeSituation = useSituationStore((state) => state.activeSituation);
   const setActiveSituation = useSituationStore((state) => state.setActiveSituation);
 
-  const [privateModels, setPrivateModels] = useState<UserModelRecord[]>([]);
-  const [activeUserModelId, setActiveUserModelId] = useState('foreign-policy-analyst');
+  const [privateModels] = useState<UserModelRecord[]>(() => (
+    typeof window !== 'undefined' ? listPrivateUserModels(window.localStorage) : []
+  ));
+  const [activeUserModelId, setActiveUserModelId] = useState(() => (
+    typeof window !== 'undefined' ? getActiveUserModelId(window.localStorage) : 'foreign-policy-analyst'
+  ));
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(true);
-  const [pendingCapsulePrompt, setPendingCapsulePrompt] = useState('');
-  const [pendingCapsuleTemplateId, setPendingCapsuleTemplateId] = useState('');
-  const [pendingCapsulePathId, setPendingCapsulePathId] = useState('');
-  const [pendingCapsuleOutput, setPendingCapsuleOutput] = useState('');
+  const [pendingCapsulePrompt, setPendingCapsulePrompt] = useState(() => (
+    typeof window !== 'undefined' ? window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY) ?? '' : ''
+  ));
+  const [pendingCapsuleTemplateId, setPendingCapsuleTemplateId] = useState(() => (
+    typeof window !== 'undefined' ? window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY) ?? '' : ''
+  ));
+  const [pendingCapsulePathId, setPendingCapsulePathId] = useState(() => (
+    typeof window !== 'undefined' ? window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PATH_KEY) ?? '' : ''
+  ));
+  const [pendingCapsuleOutput, setPendingCapsuleOutput] = useState(() => (
+    typeof window !== 'undefined' ? window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_OUTPUT_KEY) ?? '' : ''
+  ));
   const { stack, hydrated: stackHydrated, saveStack } = useActiveContextStack();
-
-  useEffect(() => {
-    setPrivateModels(listPrivateUserModels(window.localStorage));
-    setActiveUserModelId(getActiveUserModelId(window.localStorage));
-    setPendingCapsulePrompt(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY) ?? '');
-    setPendingCapsuleTemplateId(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY) ?? '');
-    setPendingCapsulePathId(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PATH_KEY) ?? '');
-    setPendingCapsuleOutput(window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_OUTPUT_KEY) ?? '');
-  }, []);
 
   const pendingCapsuleTemplateLabel = useMemo(
     () => CONTEXT_CAPSULE_TEMPLATES.find((t) => t.id === pendingCapsuleTemplateId)?.label ?? '',
@@ -134,39 +137,33 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
   );
 
   const availableModels = useMemo(() => [...privateModels, ...PUBLIC_USER_MODELS], [privateModels]);
-  const activeUserModel = availableModels.find((model) => model.modelId === activeUserModelId) ?? PUBLIC_USER_MODELS[0];
   const workspaceCases = useMemo(() => buildWorkspaceCases(situations, exampleCases), [exampleCases, situations]);
-
-  useEffect(() => {
-    if (selectedCaseId) return;
-    if (stackHydrated && stack.situationId) {
-      setSelectedCaseId(stack.situationId);
-      return;
-    }
-    if (activeSituation?.id) {
-      setSelectedCaseId(activeSituation.id);
-      return;
-    }
-    if (workspaceCases[0]) setSelectedCaseId(workspaceCases[0].id);
-  }, [activeSituation?.id, selectedCaseId, stack.situationId, stackHydrated, workspaceCases]);
+  const stackUserModelId = stackHydrated && stack.userModelId && availableModels.some((model) => model.modelId === stack.userModelId)
+    ? stack.userModelId
+    : null;
+  const effectiveActiveUserModelId = stackUserModelId ?? activeUserModelId;
+  const activeUserModel = availableModels.find((model) => model.modelId === effectiveActiveUserModelId) ?? PUBLIC_USER_MODELS[0];
+  const effectiveSelectedCaseId = selectedCaseId
+    ?? (stackHydrated && stack.situationId ? stack.situationId : null)
+    ?? activeSituation?.id
+    ?? workspaceCases[0]?.id
+    ?? null;
 
   useEffect(() => {
     if (!stackHydrated) return;
     if (stack.userModelId && availableModels.some((model) => model.modelId === stack.userModelId)) {
       setActiveUserModel(window.localStorage, stack.userModelId);
-      setActiveUserModelId(stack.userModelId);
     }
     if (stack.situationId && workspaceCases.some((item) => item.id === stack.situationId)) {
       const found = workspaceCases.find((item) => item.id === stack.situationId);
-      setSelectedCaseId(stack.situationId);
       if (found?.kind === 'user') setActiveSituation(stack.situationId);
     }
   }, [availableModels, setActiveSituation, stack.situationId, stack.userModelId, stackHydrated, workspaceCases]);
 
   const selectedCase = useMemo(() => {
-    if (selectedCaseId) return workspaceCases.find((item) => item.id === selectedCaseId) ?? null;
+    if (effectiveSelectedCaseId) return workspaceCases.find((item) => item.id === effectiveSelectedCaseId) ?? null;
     return activeSituation ? workspaceCases.find((item) => item.id === activeSituation.id) ?? null : workspaceCases[0] ?? null;
-  }, [activeSituation, selectedCaseId, workspaceCases]);
+  }, [activeSituation, effectiveSelectedCaseId, workspaceCases]);
 
   const evidenceCount = (selectedCase?.sourceCount ?? 0) + (selectedCase?.documentCount ?? 0);
   const capsuleTimeHorizon = selectedCase?.kind === 'user'
@@ -328,7 +325,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
 
         {composerOpen ? (
           <ContextComposer
-            activeUserModelId={activeUserModelId}
+            activeUserModelId={effectiveActiveUserModelId}
             activeContextName={activeContextName}
             availableModels={availableModels}
             bricks={bricks}

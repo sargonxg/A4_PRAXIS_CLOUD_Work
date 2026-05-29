@@ -118,25 +118,6 @@ export const webSearch = tool({
   },
 });
 
-function extractHostname(url: string): string {
-  try {
-    const hostname = new URL(url).hostname.replace('www.', '');
-    return hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1);
-  } catch {
-    return 'Unknown';
-  }
-}
-
-function scoreUrlReliability(url: string): number {
-  const lowerUrl = url.toLowerCase();
-  if (/reuters|apnews|afp/.test(lowerUrl)) return 0.95;
-  if (/bbc|guardian|nytimes|washingtonpost|ft\.com|aljazeera/.test(lowerUrl)) return 0.85;
-  if (/expert-analysis|icg|source_linked_events|security_research|iiss/.test(lowerUrl)) return 0.88;
-  if (/un\.org|osce|europa\.eu/.test(lowerUrl)) return 0.90;
-  if (/foreignpolicy|economist|foreignaffairs/.test(lowerUrl)) return 0.82;
-  return 0.70;
-}
-
 // ============================================================================
 // Tool 2: analyzeDocument
 // Real entity extraction using Gemini with Conflict Grammar framework

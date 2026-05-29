@@ -80,6 +80,8 @@ export function useOrchestratorEvents(
   useEffect(() => {
     terminalRef.current = false;
     lastEventIdRef.current = null;
+    // Reset local stream state when the caller switches to a different SSE URL.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState(initialState);
   }, [streamUrl]);
 
@@ -92,6 +94,8 @@ export function useOrchestratorEvents(
       lastEventId: lastEventIdRef.current,
     });
 
+    // Mark reconnect posture before opening the next EventSource.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState((current) => ({
       ...current,
       isConnected: false,
