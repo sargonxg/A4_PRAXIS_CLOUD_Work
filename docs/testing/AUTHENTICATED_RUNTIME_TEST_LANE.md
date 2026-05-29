@@ -55,15 +55,21 @@ This executes:
 npm run typecheck
 npm run build
 npm run smoke:golden-path
+npm run smoke:authenticated-app
 npx playwright test tests/e2e/canary-auth-skip.spec.ts
 npx playwright test tests/e2e/ask-capsule-runtime.spec.ts
 npx playwright test tests/e2e/ask-same-thread-agent-run.spec.ts
 ```
 
-Inspect login, onboarding skip, `/app`, `/app/capsules`,
-`/app/repository`, conversation routes, dead controls, bad redirects, missing
-headings, mobile navigation, non-rendering panels, and same-thread AgentRun
-receipts.
+`smoke:authenticated-app` is the canonical post-login browser probe. It signs
+in with the disposable Firebase canary, verifies `/api/auth/session`, and then
+checks the protected route matrix for `/app`, `/app/capsules`,
+`/app/repository`, `/app/settings?tab=system`, and `/app/boardroom` without
+bouncing back to `/login`.
+
+Inspect login, onboarding skip, conversation routes, dead controls, bad
+redirects, missing headings, mobile navigation, non-rendering panels, and
+same-thread AgentRun receipts.
 
 ## Product Surface Checks
 

@@ -37,7 +37,7 @@ for (const rel of [
   expectFile(rel);
 }
 
-expectIncludes('src/app/(landing)/layout.tsx', ['Home', 'Capsules', 'Repository', 'Pricing', 'Learn', 'Release notes', 'New capsule']);
+expectIncludes('src/app/(landing)/layout.tsx', ['Home', 'Capsules', 'Pricing', 'Learn', 'Release notes', 'New capsule']);
 expectExcludes('src/app/(landing)/layout.tsx', ['href="/tacitus"', 'https://tacitus.me']);
 expectIncludes('src/components/landing/phase8-wow-landing.tsx', [
   'TaskletPraxisWorkbench',
@@ -72,7 +72,7 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'capsule-inspector-sheet',
   'agent-action-drawer',
   'message-action-row',
-  'text-span-core-popover',
+  'data-testid="text-span-action-menu"',
   '/spans',
   'showWorkbenchNavigation',
   'Compose your reasoning and policy products from expert ContextCapsules.',
@@ -113,10 +113,14 @@ expectExcludes('src/components/cores/ContextBuilderRoom.tsx', [
 expectIncludes('src/lib/navigation/primary-nav.ts', [
   "label: 'Home'",
   "label: 'Capsules'",
-  "label: 'Repository'",
-  "href: '/app/repository'",
+  "href: '/app/capsules'",
+]);
+expectIncludes('src/app/app/repository/page.tsx', [
+  "redirect('/app/capsules?lane=repository')",
 ]);
 expectExcludes('src/lib/navigation/primary-nav.ts', [
+  "label: 'Repository'",
+  "href: '/app/repository'",
   "label: 'Ask PRAXIS'",
   "label: 'Library'",
   "label: 'Memo Studio'",

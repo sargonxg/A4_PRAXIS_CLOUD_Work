@@ -114,6 +114,7 @@
     "smoke:app-core-stack": "npm run smoke:tasklet-app",
     "smoke:public": "playwright test tests/e2e/capabilities-api.spec.ts",
     "smoke:golden-path": "playwright test tests/e2e/golden-path.spec.ts",
+    "smoke:authenticated-app": "playwright test tests/e2e/authenticated-app-post-login.spec.ts",
     "test:auth-runtime": "tsx scripts/run-authenticated-runtime-lane.ts --lane=all",
     "test:auth-runtime:local": "tsx scripts/run-authenticated-runtime-lane.ts --lane=local",
     "test:auth-runtime:product": "tsx scripts/run-authenticated-runtime-lane.ts --lane=product",

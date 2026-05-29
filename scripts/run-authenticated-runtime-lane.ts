@@ -38,6 +38,7 @@ const localSmoke: Step[] = [
   step('Typecheck', 'npm', ['run', 'typecheck']),
   step('Production build', 'npm', ['run', 'build']),
   step('Golden-path smoke', 'npm', ['run', 'smoke:golden-path']),
+  step('Authenticated app post-login smoke', 'npm', ['run', 'smoke:authenticated-app']),
   step('Canary auth skip smoke', 'npx', ['playwright', 'test', 'tests/e2e/canary-auth-skip.spec.ts']),
   step('Ask capsule runtime smoke', 'npx', ['playwright', 'test', 'tests/e2e/ask-capsule-runtime.spec.ts']),
   step('Same-thread AgentRun canary', 'npx', ['playwright', 'test', 'tests/e2e/ask-same-thread-agent-run.spec.ts']),

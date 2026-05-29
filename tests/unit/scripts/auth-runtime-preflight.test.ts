@@ -17,7 +17,11 @@ describe('authenticated runtime preflight', () => {
 
   it('includes the same-thread AgentRun canary in the local authenticated lane', () => {
     const source = readFileSync('scripts/run-authenticated-runtime-lane.ts', 'utf8');
+    const packageJson = readFileSync('package.json', 'utf8');
 
+    expect(source).toContain("step('Authenticated app post-login smoke'");
+    expect(source).toContain('smoke:authenticated-app');
+    expect(packageJson).toContain('"smoke:authenticated-app": "playwright test tests/e2e/authenticated-app-post-login.spec.ts"');
     expect(source).toContain("step('Same-thread AgentRun canary'");
     expect(source).toContain('tests/e2e/ask-same-thread-agent-run.spec.ts');
   });
