@@ -1,7 +1,7 @@
 # Cognee Memory Layer
 
 Date: 2026-05-07
-Status: Disabled-first implementation scaffold
+Status: Disabled-first implementation scaffold; isolated-service client contract
 Sources: `C:\Users\giuli\Downloads\COGNEE_ARCHITECTURE.md`,
 `C:\Users\giuli\Downloads\COGNEE_IMPLEMENTATION.md`
 
@@ -50,6 +50,16 @@ This pass lands the disabled-first implementation spine:
 - authenticated Next.js proxy routes at `/api/memory/*`.
 - server-side credit metering for live Cognee recall/cognify operations.
 - frontend recall/remember client helpers for future UI surfaces.
+- `recallAdvisoryMemory(...)` normalizes enabled recall into capped
+  non-canonical capsule memory posture entries.
+- ContextCapsule prompt injection renders advisory recall only in a clearly
+  labeled non-canonical block: advisory memory is not canonical until a review
+  card is applied.
+- Cognee seed packs can become actual capsule `reviewCards/` proposals through
+  `proposeCogneeSeedReviewCards(...)`.
+- Capsule manager exposes a compact Cognee recall panel inside the existing
+  capsule menu; approve/reject actions create review cards, and approval
+  promotes only capsule-scoped `memoryPosture.canonicalCapsuleFacts[]`.
 - deploy script scaffold for the private `praxis-cognee` Cloud Run service.
 - Disabled-safe memory client and panel components that are consumed behind
   existing workbench surfaces. Cognee does not add a fifth substrate tab; the
@@ -78,9 +88,17 @@ That route is protected by `withAuth` and forwards to either:
 
 Disabled mode is deliberately asymmetric:
 
-- `recall` returns `{ hits: [], status: "memory_layer_disabled" }`.
-- `remember` returns HTTP 503 `memory_layer_disabled` so callers do not assume
-  persistence happened.
+- backend `search`/`recall` return
+  `{ status: "disabled", candidates: [] }`.
+- backend `remember`/`add`/`cognify`/`forget` return
+  `{ status: "queued_disabled" }`.
+- Next.js `/api/memory/recall` preserves `hits: []` compatibility for browser
+  callers and treats disabled or unavailable Cognee as empty advisory recall.
+
+When `COGNEE_ENABLED=true`, `COGNEE_MODE != "disabled"`, and
+`COGNEE_BACKEND_URL` is set, the backend adapter proxies to
+`{COGNEE_BACKEND_URL}/v1/memory/{operation}`. The monolith does not execute live
+Cognee SDK operations.
 
 ## Remaining Enablement Gates
 

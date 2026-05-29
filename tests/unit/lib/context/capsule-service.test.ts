@@ -7,6 +7,7 @@ import {
   bumpCapsuleVersion,
   buildCapsuleInventorySummary,
   combineCapsules,
+  approveAdvisoryMemoryCandidate,
   createCapsuleReviewCard,
   createCapsuleIntakeReviewCards,
   createEmptyCapsuleInventorySummary,
@@ -20,7 +21,10 @@ import {
   listCapsuleInventory,
   listCapsules,
   promoteCapsuleSourceGaps,
+  proposeCogneeSeedReviewCards,
   rateCapsule,
+  recordCapsuleReadReceiptUsage,
+  rejectAdvisoryMemoryCandidate,
   resolveCapsuleOntologyStack,
   saveContextStackCompat,
   seedStarterCapsules,
@@ -29,9 +33,11 @@ import {
   setCapsuleFavorite,
   sanitizeCapsule,
   swapCapsuleCore,
+  validateOntologyStack,
 } from '@/lib/context/capsule-service';
 import { parseCorePackage } from '@/lib/context/core-package';
-import { buildCapsuleInjectionKey, resolveInjectableContext } from '@/lib/context/context-injection';
+import { buildCapsuleInjectionKey, buildCapsulePromptBlock, resolveInjectableContext } from '@/lib/context/context-injection';
+import { deriveCapsuleQuality } from '@/lib/context/capsule-quality';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
 import {
   CAPSULE_STARTER_CATALOG_VERSION,
@@ -938,7 +944,7 @@ describe('capsule service', () => {
     expect(db.data.get('users/u1/capsules/cap-v3')?.version).toBe(1);
   });
 
-  it('normalizes v1 capsules into compact v2 envelopes without carrying append-heavy payloads', () => {
+  it('normalizes v1 capsules into compact v3 envelopes without carrying append-heavy payloads', () => {
     const normalized = sanitizeCapsule({
       schemaVersion: 1,
       capsuleId: 'cap-v1',
@@ -956,7 +962,8 @@ describe('capsule service', () => {
       ontologyHistory: [{ id: 'history-large' }],
     });
 
-    expect(normalized.schemaVersion).toBe(2);
+    expect(normalized.schemaVersion).toBe(3);
+    expect(normalized.v3?.schemaVersion).toBe(3);
     expect(normalized.version).toBe(4);
     expect(normalized.coreRefs.sourceCoreIds).toEqual(['src-1']);
     expect(normalized.activeOntologyStackId).toBe('ontology-stack-default');
@@ -1014,6 +1021,125 @@ describe('capsule service', () => {
     });
   });
 
+  it('writes dependency invalidation notes to dependent capsules after claim/source review-card apply', async () => {
+    const db = new FakeFirestore();
+    const source = await createCapsule('u1', { capsuleId: 'source-cap', label: 'Source capsule' }, deps(db));
+    await createCapsule('u1', {
+      capsuleId: 'dependent-cap',
+      label: 'Dependent capsule',
+      associatedCapsuleIds: ['source-cap'],
+    }, deps(db));
+    const card = await createCapsuleReviewCard('u1', source.capsuleId, {
+      title: 'Add sourced claim',
+      sourceType: 'agent',
+      target: 'claimLedger',
+      proposedEnvelopePatch: {
+        claimLedger: [{ claimId: 'claim-1', text: 'New claim', support: 'supported', sourceRefIds: ['src-1'] }],
+      },
+    }, deps(db));
+
+    await applyCapsuleReviewCard('u1', source.capsuleId, card.reviewCardId, {
+      reviewerUid: 'reviewer-1',
+      diffHash: 'diff:claim',
+      confirmationReason: 'Owner approved the sourced claim.',
+    }, deps(db));
+
+    const notes = Array.from(db.data.entries()).filter(([path]) => path.startsWith('users/u1/capsules/dependent-cap/notes/dependency-invalidation-'));
+    expect(notes).toHaveLength(1);
+    expect(notes[0]?.[1]).toMatchObject({
+      type: 'dependencyInvalidation',
+      sourceCapsuleId: 'source-cap',
+      reviewCardId: card.reviewCardId,
+    });
+  });
+
+  it('turns Cognee seed packs and advisory candidates into review-gated capsule memory updates', async () => {
+    const db = new FakeFirestore();
+    const seeded = await seedStarterCapsules('u1', deps(db));
+    const starter = seeded.capsules.find((item) => item.capsuleId === 'starter-situation-us-federal-ai-governance-baseline');
+    expect(starter).toBeTruthy();
+    if (!starter) throw new Error('starter fixture missing');
+
+    const seed = await proposeCogneeSeedReviewCards('u1', starter.capsuleId, deps(db));
+    expect(seed?.cards[0]).toMatchObject({
+      sourceType: 'cognee',
+      target: 'advisoryMemory',
+      state: 'proposed',
+    });
+
+    const approved = await approveAdvisoryMemoryCandidate('u1', starter.capsuleId, {
+      id: 'candidate-1',
+      text: 'Procurement role classification needs counsel review.',
+      confidence: 0.91,
+      provenance: 'source-1',
+    }, deps(db));
+
+    expect(approved?.card.state).toBe('applied');
+    expect(approved?.capsule.v3?.memoryPosture.canonicalCapsuleFacts.join('\n')).toContain('confidence 0.600');
+    expect(approved?.capsule.v3?.memoryPosture.cogneeMode).toBe('advisory-only');
+    expect(approved?.capsule.v3?.memoryPosture.graphProposals.join(' ')).not.toMatch(/candidate-1/);
+
+    const rejected = await rejectAdvisoryMemoryCandidate('u1', starter.capsuleId, {
+      id: 'candidate-2',
+      text: 'Unsupported claim',
+      reason: 'No provenance.',
+    }, deps(db));
+    expect(rejected?.card.state).toBe('rejected');
+    expect(db.data.has(`users/u1/capsules/${starter.capsuleId}/reviewCards/${rejected?.card.reviewCardId}`)).toBe(true);
+  });
+
+  it('renders advisory Cognee recall as explicitly non-canonical prompt context', async () => {
+    const capsule = sanitizeCapsule({
+      capsuleId: 'cap-advisory',
+      ownerUid: 'u1',
+      memoryPosture: {
+        advisoryCogneeRecall: ['Candidate memory requiring review.'],
+        cogneeMode: 'advisory-only',
+      },
+    });
+
+    const block = buildCapsulePromptBlock(capsule);
+    expect(block).toContain('[advisory_memory_non_canonical]');
+    expect(block).toContain('NOT canonical until a review card is applied');
+    expect(block).toContain('Candidate memory requiring review.');
+  });
+
+  it('aggregates capsule read receipt usage and nudges readiness on degraded runtime signals', async () => {
+    const db = new FakeFirestore();
+    const seeded = await seedStarterCapsules('u1', deps(db));
+    const capsule = seeded.capsules.find((item) => item.capsuleId === 'starter-situation-us-federal-ai-governance-baseline');
+    expect(capsule).toBeTruthy();
+    if (!capsule) throw new Error('starter fixture missing');
+    const baseQuality = deriveCapsuleQuality(capsule).score;
+
+    const first = await recordCapsuleReadReceiptUsage('u1', capsule.capsuleId, {
+      readAt: '2026-05-14T01:00:00.000Z',
+      thinFallback: false,
+      droppedCoreIds: [],
+      staleCoreIds: [],
+    }, deps(db));
+    const degraded = await recordCapsuleReadReceiptUsage('u1', capsule.capsuleId, {
+      readAt: '2026-05-14T02:00:00.000Z',
+      thinFallback: true,
+      droppedCoreIds: ['source:src-1'],
+      staleCoreIds: ['source:src-1'],
+    }, deps(db));
+
+    expect(first?.usage.readCount).toBe(1);
+    expect(degraded?.usage).toMatchObject({
+      readCount: 2,
+      thinFallbackCount: 1,
+      droppedCoreEventCount: 1,
+      staleCoreHitCount: 1,
+      fallbackRate: 0.5,
+      droppedCoreRate: 0.5,
+      staleCoreRate: 0.5,
+    });
+    expect(degraded?.usage.droppedCoreFrequency['source:src-1']).toBe(1);
+    expect(deriveCapsuleQuality(degraded?.capsule).score).toBeLessThan(baseQuality);
+    expect(db.data.get(`users/u1/capsules/${capsule.capsuleId}`)?.usage).toMatchObject({ readCount: 2 });
+  });
+
   it('requires a public proposal flag and moderation state before owner review', async () => {
     const db = new FakeFirestore();
     await createCapsule('u1', { capsuleId: 'cap-public' }, deps(db));
@@ -1034,6 +1160,48 @@ describe('capsule service', () => {
     }, deps(db));
 
     expect(publicCard.state).toBe('moderation_required');
+  });
+
+  it('records ontology diagnostics for dangling refs during review-card apply', async () => {
+    const db = new FakeFirestore();
+    db.data.set('users/u1/ontologyStacks/ontology-stack-default', { stackId: 'ontology-stack-default' });
+    db.data.set('ontologyDocs/domain:known', { ontologyId: 'domain:known' });
+    const capsule = await createCapsule('u1', { capsuleId: 'cap-ontology-apply' }, deps(db));
+
+    const validation = await validateOntologyStack('u1', {
+      stackId: 'ontology-stack-default',
+      ontologyIds: ['domain:known'],
+    }, deps(db));
+    expect(validation.diagnostics).toEqual([]);
+
+    const card = await createCapsuleReviewCard('u1', capsule.capsuleId, {
+      title: 'Review ontology suggestion',
+      sourceType: 'agent',
+      target: 'ontologyStack',
+      evidence: [
+        { id: 'domain:known', label: 'Known ontology', advisory: true },
+        { id: 'domain:missing', label: 'Missing ontology', advisory: true },
+      ],
+    }, deps(db));
+
+    await applyCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, {
+      reviewerUid: 'reviewer-1',
+      diffHash: 'diff:ontology',
+      confirmationReason: 'Owner approved ontology review diagnostics.',
+    }, deps(db));
+
+    const notes = Array.from(db.data.entries()).filter(([path]) => path.startsWith('users/u1/capsules/cap-ontology-apply/notes/ontology-diagnostic-'));
+    expect(notes).toHaveLength(1);
+    expect(notes[0]?.[1]).toMatchObject({
+      type: 'ontologyDiagnostics',
+      reviewCardId: card.reviewCardId,
+      diagnostics: [
+        {
+          code: 'dangling_ontology_ref',
+          ref: 'domain:missing',
+        },
+      ],
+    });
   });
 
   it('resolves a capped ontology stack with candidate and rejection history', () => {

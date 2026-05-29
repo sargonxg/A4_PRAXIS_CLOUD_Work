@@ -144,11 +144,13 @@ export function buildCapsulePromptBlock(
     buildCapsuleStarterPromptBlock(capsule.capsuleId, capsule.starterSnapshot),
     buildAssociatedCapsulesPromptBlock(input.associatedCapsules ?? [], input.missingAssociatedCapsuleIds ?? []),
     buildContextChainBlocksPromptBlock(input.activeContextStack?.contextBlocks),
+    buildAdvisoryMemoryPromptBlock(capsule),
     '[retrieval_policy]',
     `layers: ${capsule.retrievalPolicy.layers.join(', ')}`,
     `limit: ${capsule.retrievalPolicy.limit}`,
     `freshness_check: ${capsule.retrievalPolicy.checkFreshness ? 'on' : 'off'}`,
     `freshness_window_days: ${capsule.retrievalPolicy.freshnessWindowDays ?? 'default'}`,
+    `stale_cores: ${formatStaleCores(refs, input.resolvedAt ?? capsule.updatedAt)}`,
     '',
     '[rules]',
     'Use this ContextCapsule Lite as the inherited working context for the answer.',
@@ -175,6 +177,37 @@ export function buildCapsulePromptBlock(
   }
 
   return lines.join('\n');
+}
+
+function buildAdvisoryMemoryPromptBlock(capsule: PraxisCapsule): string {
+  const posture = memoryPostureOf(capsule);
+  const advisory = stringArray(posture?.advisoryCogneeRecall).slice(0, 8);
+  if (!advisory.length) return '';
+  return [
+    '[advisory_memory_non_canonical]',
+    'Advisory memory - NOT canonical until a review card is applied.',
+    ...advisory.map((item) => `- ${item}`),
+    '',
+  ].join('\n');
+}
+
+function memoryPostureOf(capsule: PraxisCapsule): Record<string, unknown> | null {
+  if (isRecord(capsule.v3?.memoryPosture)) return capsule.v3.memoryPosture;
+  if (isRecord(capsule.memoryPosture)) return capsule.memoryPosture;
+  return null;
+}
+
+function formatStaleCores(refs: PraxisCapsule['coreRefs'], now: string): string {
+  const freshness = refs.coreFreshness ?? {};
+  const compare = Date.parse(now);
+  if (Number.isNaN(compare)) return 'none';
+  const staleIds = Object.entries(freshness)
+    .filter(([, value]) => {
+      const expiresAt = value.freshnessExpiresAt ? Date.parse(value.freshnessExpiresAt) : Number.NaN;
+      return !Number.isNaN(expiresAt) && expiresAt < compare;
+    })
+    .map(([id]) => id);
+  return staleIds.length ? staleIds.slice(0, 12).join(', ') : 'none';
 }
 
 function buildContextChainBlocksPromptBlock(blocks: ActiveContextBlocks | undefined): string {
@@ -277,4 +310,13 @@ function cleanPointer(value: string | null | undefined): string | null {
 
 function uniqueStrings(values: Array<string | null | undefined>): string[] {
   return Array.from(new Set(values.map((value) => value?.trim() ?? '').filter(Boolean)));
+}
+
+function stringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).map((item) => item.trim());
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

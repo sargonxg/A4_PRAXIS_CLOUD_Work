@@ -1,5 +1,26 @@
 # PRAXIS — STATUS
 
+## 2026-05-28 — Context Capsule Overhaul
+
+Current capsule checkpoint:
+
+- Capsules lazily normalize to v3 on read and new capsules persist as
+  `schemaVersion: 3`; Firestore remains canonical.
+- Review-card patches are allow-listed, rejection-audited, and applied through
+  transactional version snapshots when Firestore transaction support is present.
+- Capsule+ export now materializes v3 claims, sources, output contracts, and
+  capped memory facts into reviewable graph proposals; import keeps graph rows
+  proposed rather than canonical.
+- Runtime consumption now reports dropped cores, stale core gates, and
+  configurable token budgets. Usage rollups from read receipts feed readiness.
+- Cognee remains disabled-first and advisory-only. The backend now defines the
+  isolated `praxis-cognee` HTTP client contract, disabled shapes are explicit,
+  browser recall can populate non-canonical advisory memory, seed packs can
+  create review cards, and the capsule manager exposes a gated recall panel.
+- Verified locally: `npm run typecheck`, focused Vitest capsule/runtime/Capsule+
+  suite, and Python parse checks for Cognee files. Backend pytest is blocked on
+  local Windows `pyicu`/ICU build prerequisites for the backend `uv` environment.
+
 ## 2026-05-21 — Product Surface Contract And Canary Audit Repair
 
 Current stabilization checkpoint:

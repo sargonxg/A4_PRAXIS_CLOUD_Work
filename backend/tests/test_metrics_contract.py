@@ -35,5 +35,5 @@ def test_disabled_cognee_calls_emit_metrics():
     body = render_prometheus()
 
     assert 'cognee_calls_total{mode="CHUNKS",operation="search",status="disabled"} 1' in body
-    assert 'cognee_calls_total{mode="none",operation="remember",status="disabled"} 1' in body
+    assert 'cognee_calls_total{mode="none",operation="remember",status="queued_disabled"} 1' in body
     assert 'cognee_latency_seconds_count{mode="CHUNKS",operation="search"} 1' in body

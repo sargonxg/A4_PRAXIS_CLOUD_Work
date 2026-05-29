@@ -20,13 +20,10 @@ import {
   type CapsuleWritingProfileInput,
   type CapsuleWritingProfileOutput,
 } from '@/lib/genkit/schemas/capsule-factory';
+import { detectWritingDefaultFormat, needsFreshnessCheck } from '@/lib/genkit/flows/factory-heuristics';
 
 type SourceSnippet = z.infer<typeof CapsuleFactorySourceSnippetSchema>;
-
-const TEMPORAL_RE = /\b(today|yesterday|current|currently|latest|recent|now|this week|this month|202\d)\b/i;
-const TALKING_POINTS_RE = /\b(talking points|remarks|speech|briefing lines)\b/i;
-const BRIEF_RE = /\b(brief|one-pager|summary)\b/i;
-const HANDOVER_RE = /\b(handover|handoff|transfer)\b/i;
+type FactoryTelemetryPath = 'llm' | 'fallback';
 
 export const capsuleIntakeFlow = ai.defineFlow(
   {
@@ -39,10 +36,10 @@ export const capsuleIntakeFlow = ai.defineFlow(
     try {
       const prompt = ai.prompt<typeof CapsuleIntakeInputSchema, typeof CapsuleIntakeOutputSchema>('capsule-intake');
       const { output } = await prompt(normalized, { model: gemini25Flash, config: { temperature: 0 } });
-      return CapsuleIntakeOutputSchema.parse(output);
+      return withFactoryTelemetry(CapsuleIntakeOutputSchema.parse(output), 'llm');
     } catch (err) {
       console.warn('[genkit/capsule-factory] falling back to deterministic intake:', err);
-      return deterministicIntake(normalized);
+      return withFactoryTelemetry(deterministicIntake(normalized), 'fallback');
     }
   },
 );
@@ -58,10 +55,10 @@ export const capsuleResearchPlanFlow = ai.defineFlow(
     try {
       const prompt = ai.prompt<typeof CapsuleResearchPlanInputSchema, typeof CapsuleResearchPlanOutputSchema>('capsule-research-plan');
       const { output } = await prompt(normalized, { model: gemini25Flash, config: { temperature: 0 } });
-      return CapsuleResearchPlanOutputSchema.parse(output);
+      return withFactoryTelemetry(CapsuleResearchPlanOutputSchema.parse(output), 'llm');
     } catch (err) {
       console.warn('[genkit/capsule-factory] falling back to deterministic research plan:', err);
-      return deterministicResearchPlan(normalized);
+      return withFactoryTelemetry(deterministicResearchPlan(normalized), 'fallback');
     }
   },
 );
@@ -77,10 +74,10 @@ export const capsuleSynthesisFlow = ai.defineFlow(
     try {
       const prompt = ai.prompt<typeof CapsuleSynthesisInputSchema, typeof CapsuleSynthesisOutputSchema>('capsule-synthesis');
       const { output } = await prompt(normalized, { model: gemini25Pro, config: { temperature: 0 } });
-      return CapsuleSynthesisOutputSchema.parse(output);
+      return withFactoryTelemetry(CapsuleSynthesisOutputSchema.parse(output), 'llm');
     } catch (err) {
       console.warn('[genkit/capsule-factory] falling back to deterministic synthesis:', err);
-      return deterministicSynthesis(normalized);
+      return withFactoryTelemetry(deterministicSynthesis(normalized), 'fallback');
     }
   },
 );
@@ -96,10 +93,10 @@ export const capsuleWritingProfileFlow = ai.defineFlow(
     try {
       const prompt = ai.prompt<typeof CapsuleWritingProfileInputSchema, typeof CapsuleWritingProfileOutputSchema>('capsule-writing-profile');
       const { output } = await prompt(normalized, { model: gemini25Flash, config: { temperature: 0 } });
-      return CapsuleWritingProfileOutputSchema.parse(output);
+      return withFactoryTelemetry(CapsuleWritingProfileOutputSchema.parse(output), 'llm');
     } catch (err) {
       console.warn('[genkit/capsule-factory] falling back to deterministic writing profile:', err);
-      return deterministicWritingProfile(normalized);
+      return withFactoryTelemetry(deterministicWritingProfile(normalized), 'fallback');
     }
   },
 );
@@ -143,7 +140,7 @@ function deterministicIntake(input: CapsuleIntakeInput): CapsuleIntakeOutput {
 
 function deterministicResearchPlan(input: CapsuleResearchPlanInput): CapsuleResearchPlanOutput {
   const sourceCount = input.sourceSnippets.length;
-  const freshnessNeeds = TEMPORAL_RE.test(input.objective)
+  const freshnessNeeds = needsFreshnessCheck(input.objective)
     ? ['Dated sources are required before using latest/current wording.']
     : ['Confirm source dates before final output.'];
   const labelText = input.currentCores.map((core) => core.label).join(' ');
@@ -224,13 +221,7 @@ function deterministicSynthesis(input: CapsuleSynthesisInput): CapsuleSynthesisO
 
 function deterministicWritingProfile(input: CapsuleWritingProfileInput): CapsuleWritingProfileOutput {
   const text = `${input.outputGoal ?? ''} ${input.objective}`.toLowerCase();
-  const defaultFormat = HANDOVER_RE.test(text)
-    ? 'handover'
-    : TALKING_POINTS_RE.test(text)
-      ? 'talking_points'
-      : BRIEF_RE.test(text)
-        ? 'brief'
-        : 'memo';
+  const defaultFormat = detectWritingDefaultFormat(text);
   return {
     defaultFormat,
     tone: 'Concise, caveated, source-aware, and decision-ready.',
@@ -313,4 +304,11 @@ function unique(values: string[]): string[] {
 
 function slug(value: string): string {
   return clean(value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), 80) || 'draft';
+}
+
+function withFactoryTelemetry<T extends Record<string, unknown>>(output: T, path: FactoryTelemetryPath): T & { factoryTelemetry: { path: FactoryTelemetryPath } } {
+  return {
+    ...output,
+    factoryTelemetry: { path },
+  };
 }

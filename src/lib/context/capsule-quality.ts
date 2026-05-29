@@ -22,7 +22,8 @@ export type CapsuleQualityDiagnosticCode =
   | 'stale_source_refs'
   | 'missing_output_contract'
   | 'human_gated_missing_author_reviewer'
-  | 'agent_operable_missing_best_next_action_or_permissions';
+  | 'agent_operable_missing_best_next_action_or_permissions'
+  | 'runtime_usage_degraded';
 
 export interface CapsuleQualityDiagnostic {
   code: CapsuleQualityDiagnosticCode;
@@ -43,6 +44,20 @@ export interface CapsuleQualityResult {
   diagnostics: CapsuleQualityDiagnostic[];
 }
 
+interface V3EvaluationHints {
+  tacitKnowledgeScore?: number;
+  sourceSpineScore?: number;
+  agentOperabilityScore?: number;
+  marketplaceReadinessScore?: number;
+}
+
+interface CapsuleUsageSignals {
+  readCount: number;
+  fallbackRate: number;
+  droppedCoreRate: number;
+  staleCoreRate: number;
+}
+
 const QUALITY_WEIGHTS: Array<{ id: CapsuleQualityBreakdownId; label: string; maxScore: number }> = [
   { id: 'completeness', label: 'Completeness', maxScore: 25 },
   { id: 'source_support', label: 'Source support', maxScore: 25 },
@@ -54,7 +69,9 @@ const QUALITY_WEIGHTS: Array<{ id: CapsuleQualityBreakdownId; label: string; max
 
 export function deriveCapsuleQuality(input: ContextCapsuleV2 | unknown, options: ContextCapsuleNormalizeOptions = {}): CapsuleQualityResult {
   const capsule = normalizeContextCapsuleV2(input, options);
-  const breakdown = QUALITY_WEIGHTS.map((weight) => scoreBreakdown(weight.id, weight.label, weight.maxScore, capsule, options));
+  const v3Evaluation = readV3EvaluationHints(input);
+  const usage = readUsageSignals(input);
+  const breakdown = QUALITY_WEIGHTS.map((weight) => scoreBreakdown(weight.id, weight.label, weight.maxScore, capsule, options, v3Evaluation, usage));
   const diagnostics = breakdown.flatMap((item) => item.diagnostics);
   return {
     score: breakdown.reduce((sum, item) => sum + item.score, 0),
@@ -69,6 +86,8 @@ function scoreBreakdown(
   maxScore: number,
   capsule: ContextCapsuleV2,
   options: ContextCapsuleNormalizeOptions,
+  v3Evaluation: V3EvaluationHints,
+  usage: CapsuleUsageSignals,
 ): CapsuleQualityBreakdownItem {
   const diagnostics: CapsuleQualityDiagnostic[] = [];
   let ratio = 1;
@@ -99,6 +118,7 @@ function scoreBreakdown(
       capsule.sourceRefs.length ? 1 : 0,
       capsule.claimLedger.length ? 1 : 0.75,
       unsupported.length ? 0 : 1,
+      scoreRatio(v3Evaluation.sourceSpineScore),
     ]);
   }
 
@@ -124,7 +144,10 @@ function scoreBreakdown(
 
   if (id === 'output_readiness') {
     if (!capsule.outputContracts.length) diagnostics.push({ code: 'missing_output_contract', message: 'Capsule is missing an output contract.' });
-    ratio = capsule.outputContracts.length ? 1 : 0;
+    ratio = average([
+      capsule.outputContracts.length ? 1 : 0,
+      scoreRatio(v3Evaluation.marketplaceReadinessScore),
+    ]);
   }
 
   if (id === 'agent_operability') {
@@ -138,7 +161,18 @@ function scoreBreakdown(
         message: 'Agent-operable capsule needs a best next action and allowed agent permissions.',
       });
     }
-    ratio = capsule.bestNextAction && hasAllowedAction ? 1 : 0;
+    if (usage.readCount > 0 && (usage.fallbackRate > 0.25 || usage.droppedCoreRate > 0.5 || usage.staleCoreRate > 0.5)) {
+      diagnostics.push({
+        code: 'runtime_usage_degraded',
+        message: 'Recent agent reads show thin fallback, dropped cores, or stale-core hits.',
+      });
+    }
+    ratio = average([
+      capsule.bestNextAction && hasAllowedAction ? 1 : 0,
+      scoreRatio(v3Evaluation.agentOperabilityScore),
+      scoreRatio(v3Evaluation.tacitKnowledgeScore),
+      usage.readCount ? Math.max(0, 1 - Math.max(usage.fallbackRate, usage.droppedCoreRate, usage.staleCoreRate)) : Number.NaN,
+    ]);
   }
 
   return {
@@ -156,8 +190,55 @@ function passRatio(values: boolean[]): number {
 }
 
 function average(values: number[]): number {
-  if (!values.length) return 0;
-  return values.reduce((sum, value) => sum + value, 0) / values.length;
+  const usable = values.filter((value) => Number.isFinite(value));
+  if (!usable.length) return 0;
+  return usable.reduce((sum, value) => sum + value, 0) / usable.length;
+}
+
+function readUsageSignals(input: unknown): CapsuleUsageSignals {
+  const body = isRecord(input) ? input : {};
+  const usage = isRecord(body.usage) ? body.usage : {};
+  const readCount = numberOrZero(usage.readCount);
+  const fallbackRate = boundedRatio(usage.fallbackRate);
+  const droppedCoreRate = boundedRatio(usage.droppedCoreRate);
+  const staleCoreRate = boundedRatio(usage.staleCoreRate);
+  return { readCount, fallbackRate, droppedCoreRate, staleCoreRate };
+}
+
+function scoreRatio(value: number | undefined): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return Number.NaN;
+  return Math.max(0, Math.min(1, value / 100));
+}
+
+function readV3EvaluationHints(input: unknown): V3EvaluationHints {
+  const body = isRecord(input) ? input : {};
+  const evaluation = isRecord(body.evaluation)
+    ? body.evaluation
+    : isRecord(body.v3) && isRecord(body.v3.evaluation)
+      ? body.v3.evaluation
+      : {};
+  return {
+    tacitKnowledgeScore: numberOrUndefined(evaluation.tacitKnowledgeScore),
+    sourceSpineScore: numberOrUndefined(evaluation.sourceSpineScore),
+    agentOperabilityScore: numberOrUndefined(evaluation.agentOperabilityScore),
+    marketplaceReadinessScore: numberOrUndefined(evaluation.marketplaceReadinessScore),
+  };
+}
+
+function numberOrUndefined(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function numberOrZero(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0;
+}
+
+function boundedRatio(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function isPast(value: string | null | undefined, now?: string | Date): boolean {

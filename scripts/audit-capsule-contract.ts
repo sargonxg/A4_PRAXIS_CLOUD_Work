@@ -92,7 +92,7 @@ for (const token of [
   'CapsuleTrustSemaphore',
   'setCapsuleAccessPolicy',
   'exportCapsuleCorePackage',
-  'schemaVersion: 2',
+  'schemaVersion: 3',
   'CapsuleReviewCard',
   "collection('reviewCards')",
   'applyMetadata',

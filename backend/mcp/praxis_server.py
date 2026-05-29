@@ -30,7 +30,8 @@ async def list_cases(owner_uid: str) -> dict[str, Any]:
 
 async def recall(owner_uid: str, case_id: str, query: str, limit: int = 8) -> dict[str, Any]:
     scope = MemoryScope(owner_uid=owner_uid, case_id=case_id)
-    hits = await cognee_memory.recall(scope=scope, query=query, limit=limit)
+    response = await cognee_memory.recall(scope=scope, query=query, limit=limit)
+    hits = cognee_memory.memory_hits_from_response(response)
     return {"hits": [hit.__dict__ for hit in hits]}
 
 

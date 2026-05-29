@@ -21,13 +21,15 @@ export interface CapsuleGateResult {
  * should return 412 with the missing list so the UI can show
  * FixThisFirstPanel.
  *
- * Staleness is currently not tracked on PraxisCapsule.coreRefs, so the
- * returned `staleCores` is always empty — the field is reserved for when
- * we add per-core lastUsedAt or freshnessExpiresAt timestamps.
+ * Staleness is tracked per core id through `coreRefs.coreFreshness`. When
+ * a required gate kind is present but all candidate ids for that kind are
+ * expired, the route can return 412 with `staleCores` so the UI can ask the
+ * user to refresh that source/time/output context before running the tool.
  */
 export function checkCapsuleAgainstRequiredCores(
   coreRefs: CapsuleCoreRefs | null | undefined,
   requires: readonly CoreKind[],
+  options: { now?: string | Date } = {},
 ): CapsuleGateResult {
   if (!coreRefs) {
     return {
@@ -37,12 +39,14 @@ export function checkCapsuleAgainstRequiredCores(
   }
 
   const missingCores: GateCoreKind[] = [];
+  const staleCores: GateCoreKind[] = [];
   for (const kind of requires) {
     const gateKind = mapToGateKind(kind);
     if (!gateKind) continue;
     if (!isCorePresent(coreRefs, gateKind)) missingCores.push(gateKind);
+    else if (isCoreStale(coreRefs, gateKind, options.now)) staleCores.push(gateKind);
   }
-  return { missingCores: dedupe(missingCores), staleCores: [] };
+  return { missingCores: dedupe(missingCores), staleCores: dedupe(staleCores) };
 }
 
 /**
@@ -73,6 +77,39 @@ function isCorePresent(refs: CapsuleCoreRefs, kind: GateCoreKind): boolean {
       return refs.outputCoreIds.length > 0;
     case 'time':
       return Boolean(refs.timeCoreId);
+  }
+}
+
+function isCoreStale(refs: CapsuleCoreRefs, kind: GateCoreKind, now?: string | Date): boolean {
+  const freshness = refs.coreFreshness ?? {};
+  const ids = coreIdsForKind(refs, kind);
+  if (!ids.length) return false;
+  const freshnessRows = ids
+    .map((id) => freshness[id])
+    .filter((row): row is NonNullable<CapsuleCoreRefs['coreFreshness']>[string] => Boolean(row?.freshnessExpiresAt));
+  if (!freshnessRows.length) return false;
+  const compare = now instanceof Date ? now.getTime() : now ? Date.parse(now) : Date.now();
+  if (Number.isNaN(compare)) return false;
+  return freshnessRows.every((row) => {
+    const expiresAt = row.freshnessExpiresAt ? Date.parse(row.freshnessExpiresAt) : Number.NaN;
+    return !Number.isNaN(expiresAt) && expiresAt < compare;
+  });
+}
+
+function coreIdsForKind(refs: CapsuleCoreRefs, kind: GateCoreKind): string[] {
+  switch (kind) {
+    case 'user':
+      return refs.userCoreId ? [refs.userCoreId] : [];
+    case 'situation':
+      return refs.situationCoreId ? [refs.situationCoreId] : [];
+    case 'source':
+      return [...refs.sourceCoreIds, ...refs.documentCoreIds];
+    case 'graph':
+      return refs.graphCoreId ? [refs.graphCoreId] : [];
+    case 'output':
+      return refs.outputCoreIds;
+    case 'time':
+      return refs.timeCoreId ? [refs.timeCoreId] : [];
   }
 }
 

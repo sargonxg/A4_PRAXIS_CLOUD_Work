@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- feat(capsules): unify ContextCapsule v3, review gates, Capsule+, Cognee, and usage readiness.
+  Build 2026.05.28.01 normalizes capsules to the v3 in-memory contract, adds a
+  dry-run v3 migration script, validates review-card patches, applies cards
+  transactionally, materializes Capsule+ graph proposals from v3 claims/sources,
+  gates Cognee through an isolated-service contract and review UI, and feeds
+  read-receipt usage rollups back into readiness.
+
 - chore(governance): align the cockpit doctrine and canary proof contract.
   Build 2026.05.21.02 updates repo/product docs to preserve public Home plus
   signed-in Home + Capsules, repairs capsule-depth audit expectations against

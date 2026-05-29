@@ -170,6 +170,8 @@ export function buildThinCapsuleFallback(input: ConversationCapsuleSignalInput):
       maxInputTokens: 24_000,
       reservedOutputTokens: 4_000,
       estimatedContextChars: 0,
+      estimatedContextTokens: 0,
+      droppedCores: [],
     },
     injectableContext,
     memory: { semantic: [], episodic: [], procedural: [] },

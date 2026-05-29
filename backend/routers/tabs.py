@@ -486,12 +486,16 @@ async def get_graph_node(node_id: str, token: dict = Depends(verify_firebase_tok
     node = rows[0]
     scope = MemoryScope(owner_uid=token["uid"], case_id=node["case_id"])
     try:
-        provenance = await cognee_memory.recall_provenance(
+        provenance_response = await cognee_memory.recall_provenance(
             scope=scope,
             node_name=node.get("label") or str(node["id"]),
             top_k=5,
         )
-        cognee_status = {"ok": True, "status": "searched"}
+        provenance = cognee_memory.memory_hits_from_response(provenance_response)
+        cognee_status = {
+            "ok": provenance_response.get("ok", True),
+            "status": provenance_response.get("status", "searched"),
+        }
     except Exception as exc:
         provenance = []
         cognee_status = {"ok": False, "status": "provenance_unavailable", "error": str(exc)}

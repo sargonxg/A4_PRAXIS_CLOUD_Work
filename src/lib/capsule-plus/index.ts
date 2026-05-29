@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { z } from 'zod';
+import { normalizeToLatest, type PraxisCapsuleV3 } from '@/lib/context/capsule-schema';
 
 export const CAPSULE_PLUS_SCHEMA_VERSION = 'capsule-plus.v1';
 export const CAPSULE_PLUS_RUNTIME_LABEL = 'Postgres embedded graph';
@@ -149,6 +150,139 @@ export function buildCapsulePlusManifest(input: {
   });
 }
 
+export function materializeCapsulePlusBundle(input: PraxisCapsuleV3 | unknown): CapsulePlusBundle {
+  const capsule = normalizeToLatest(input);
+  const capsuleId = capsule.identity.capsuleId;
+  const ownerUid = capsule.identity.ownerUid;
+  const sourceNodes: CapsulePlusGraphNode[] = capsule.sourceSpine.sourceRefs.map((source) => CapsulePlusGraphNodeSchema.parse({
+    id: rowId('source', source.sourceId),
+    capsuleId,
+    ownerUid,
+    type: 'Source',
+    label: source.label,
+    properties: {
+      sourceId: source.sourceId,
+      publisher: source.publisher ?? null,
+      url: source.url ?? null,
+      date: source.date ?? null,
+      reliabilityTier: source.reliabilityTier ?? null,
+    },
+    provenance: provenance([source.sourceId], [], [], 0.9),
+    reviewState: 'proposed',
+  }));
+  const actorNodes: CapsulePlusGraphNode[] = uniqueStrings(capsule.sourceSpine.sourceRefs.map((source) => source.publisher ?? '').filter(Boolean))
+    .map((publisher) => CapsulePlusGraphNodeSchema.parse({
+      id: rowId('actor', publisher),
+      capsuleId,
+      ownerUid,
+      type: 'Actor',
+      label: publisher,
+      properties: { inferredFrom: 'source.publisher' },
+      provenance: provenance(capsule.sourceSpine.sourceIds.slice(0, 10), [], [], 0.55),
+      reviewState: 'proposed',
+    }));
+  const claimNodes: CapsulePlusGraphNode[] = capsule.claimLedger.allClaims.map((claim) => CapsulePlusGraphNodeSchema.parse({
+    id: rowId('claim', claim.claimId || claim.text),
+    capsuleId,
+    ownerUid,
+    type: 'Claim',
+    label: claim.text,
+    properties: {
+      claimId: claim.claimId,
+      support: claim.support,
+      caveat: claim.caveat ?? null,
+    },
+    provenance: provenance(claim.sourceRefIds, [], [], confidenceForClaimSupport(claim.support)),
+    reviewState: 'proposed',
+  }));
+  const memoryNodes: CapsulePlusGraphNode[] = capsule.memoryPosture.canonicalCapsuleFacts.slice(0, 20).map((fact, index) => CapsulePlusGraphNodeSchema.parse({
+    id: rowId('claim', `memory:${index}:${fact}`),
+    capsuleId,
+    ownerUid,
+    type: 'Claim',
+    label: fact,
+    properties: {
+      memoryKind: 'canonicalCapsuleFact',
+      cogneeDatasetId: capsule.memoryPosture.cogneeDatasetId,
+      cogneeMode: capsule.memoryPosture.cogneeMode,
+    },
+    provenance: provenance([], [], [capsule.memoryPosture.cogneeDatasetId], 0.6),
+    reviewState: 'proposed',
+  }));
+  const commitmentNodes: CapsulePlusGraphNode[] = capsule.outputContracts.map((contract) => CapsulePlusGraphNodeSchema.parse({
+    id: rowId('commitment', contract.outputId),
+    capsuleId,
+    ownerUid,
+    type: 'Commitment',
+    label: contract.label,
+    properties: {
+      outputId: contract.outputId,
+      artifactType: contract.artifactType,
+      citationRequired: contract.citationRequired,
+      reviewRequired: contract.reviewRequired,
+    },
+    provenance: provenance(capsule.sourceSpine.sourceIds.slice(0, 10), [], [], contract.reviewRequired ? 0.6 : 0.7),
+    reviewState: 'proposed',
+  }));
+  const nodes = dedupeRows([...sourceNodes, ...actorNodes, ...claimNodes, ...memoryNodes, ...commitmentNodes]);
+  const edges: CapsulePlusGraphEdge[] = dedupeRows(capsule.claimLedger.allClaims.flatMap((claim) =>
+    claim.sourceRefIds.map((sourceId) => CapsulePlusGraphEdgeSchema.parse({
+      id: rowId('edge', `${claim.claimId}:${sourceId}:supported-by`),
+      capsuleId,
+      ownerUid,
+      fromNodeId: rowId('claim', claim.claimId || claim.text),
+      toNodeId: rowId('source', sourceId),
+      type: claim.support === 'unsupported' ? 'CONTRADICTS' : 'SUPPORTED_BY',
+      label: claim.support === 'unsupported' ? 'requires review against source' : 'supported by source',
+      properties: { support: claim.support },
+      provenance: provenance([sourceId], [], [], confidenceForClaimSupport(claim.support)),
+      reviewState: 'proposed',
+    })),
+  ));
+  const proposal = CapsulePlusGraphProposalSchema.parse({
+    proposalId: rowId('proposal', `${capsuleId}:v${capsule.identity.capsuleVersion}:materialized`),
+    capsuleId,
+    ownerUid,
+    graphVersion: capsule.identity.capsuleVersion,
+    ontologyStackId: capsule.contextCaptureProfile.profileId,
+    reviewCardId: null,
+    nodes,
+    edges,
+    unsupportedClaims: capsule.claimLedger.unsupportedClaims.map((claim) => claim.text),
+    reviewState: 'proposed',
+    createdAt: capsule.identity.updatedAt,
+  });
+
+  return CapsulePlusBundleSchema.parse({
+    manifest: buildCapsulePlusManifest({
+      capsuleId,
+      ownerUid,
+      graphVersion: capsule.identity.capsuleVersion,
+      exportedAt: new Date().toISOString(),
+    }),
+    capsule: {
+      capsuleId,
+      ownerUid,
+      label: capsule.identity.label,
+      schemaVersion: 3,
+      v3: capsule,
+    },
+    nodes,
+    edges,
+    proposals: nodes.length || edges.length ? [proposal] : [],
+    sourceReceipts: capsule.sourceSpine.sourceRefs.map((source) => ({
+      id: source.sourceId,
+      title: source.label,
+      ...(source.url ? { url: source.url } : {}),
+      ...(source.date ? { capturedAt: normalizeDate(source.date) } : {}),
+      metadata: {
+        publisher: source.publisher ?? null,
+        reliabilityTier: source.reliabilityTier ?? null,
+      },
+    })),
+  });
+}
+
 export function buildPraxisCapsuleFilename(input: {
   label?: string | null;
   capsuleId: string;
@@ -254,6 +388,43 @@ function cleanFilenamePart(value: string): string {
     .replace(/[^\w-]+/g, '_')
     .replace(/^_+|_+$/g, '')
     .slice(0, 48);
+}
+
+function provenance(sourceIds: string[], documentIds: string[], runIds: string[], confidence: number) {
+  const cleanSourceIds = uniqueStrings(sourceIds).slice(0, 20);
+  const cleanDocumentIds = uniqueStrings(documentIds).slice(0, 20);
+  const cleanRunIds = uniqueStrings(runIds).slice(0, 20);
+  return CapsulePlusProvenanceSchema.parse({
+    sourceIds: cleanSourceIds,
+    documentIds: cleanDocumentIds,
+    runIds: cleanSourceIds.length || cleanDocumentIds.length || cleanRunIds.length ? cleanRunIds : ['capsule-plus-materialization'],
+    confidence: Math.max(0, Math.min(1, confidence)),
+    reviewState: 'proposed',
+  });
+}
+
+function confidenceForClaimSupport(support: string): number {
+  if (support === 'supported') return 0.85;
+  if (support === 'partially_supported') return 0.6;
+  return 0.35;
+}
+
+function rowId(prefix: string, value: string): string {
+  return `${prefix}-${cleanFilenamePart(value).toLowerCase().slice(0, 96) || 'item'}`;
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+function dedupeRows<T extends { id: string }>(rows: T[]): T[] {
+  return Array.from(new Map(rows.map((row) => [row.id, row])).values());
+}
+
+function normalizeDate(value: string): string | undefined {
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) return undefined;
+  return new Date(timestamp).toISOString();
 }
 
 function parseJsonl<T>(text: string, schema: z.ZodType<T>): T[] {

@@ -112,6 +112,25 @@ describe('checkCapsuleAgainstRequiredCores', () => {
     expect(missingCores).toEqual(['source']);
   });
 
+  it('flags stale source cores when freshness metadata has expired', () => {
+    const refs: CapsuleCoreRefs = {
+      ...fullRefs(),
+      sourceCoreIds: ['src-stale'],
+      coreFreshness: {
+        'src-stale': {
+          lastRefreshedAt: '2026-04-01T00:00:00.000Z',
+          freshnessExpiresAt: '2026-05-01T00:00:00.000Z',
+        },
+      },
+    };
+    const { missingCores, staleCores } = checkCapsuleAgainstRequiredCores(refs, ['source'], {
+      now: '2026-05-28T00:00:00.000Z',
+    });
+
+    expect(missingCores).toEqual([]);
+    expect(staleCores).toEqual(['source']);
+  });
+
   it('skips expanded non-hard-gate slots', () => {
     const refs: CapsuleCoreRefs = { ...emptyRefs };
     const { missingCores } = checkCapsuleAgainstRequiredCores(refs, ['path', 'document', 'tool', 'objective', 'product', 'memory']);

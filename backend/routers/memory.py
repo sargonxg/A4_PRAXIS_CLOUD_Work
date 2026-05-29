@@ -97,7 +97,8 @@ async def recall(req: RecallRequest, token: dict = Depends(verify_firebase_token
         )
         return {"hits": [], "status": "memory_layer_disabled"}
     scope = MemoryScope(owner_uid=token["uid"], case_id=req.case_id, session_id=req.session_id)
-    hits = await cognee_memory.recall(scope=scope, query=req.query, limit=req.k)
+    response = await cognee_memory.recall(scope=scope, query=req.query, limit=req.k)
+    hits = cognee_memory.memory_hits_from_response(response)
     logger.info(
         "cognee.recall owner_uid=%s case_id=%s hits=%s latency_ms=%.2f",
         token["uid"],
@@ -105,7 +106,10 @@ async def recall(req: RecallRequest, token: dict = Depends(verify_firebase_token
         len(hits),
         (time.perf_counter() - started) * 1000,
     )
-    return {"hits": [hit.__dict__ for hit in hits]}
+    return {
+        "hits": [hit.__dict__ for hit in hits],
+        "cognee": {"ok": response.get("ok", True), "status": response.get("status", "searched")},
+    }
 
 
 @router.delete("/forget")

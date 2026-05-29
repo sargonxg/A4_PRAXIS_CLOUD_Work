@@ -12,6 +12,8 @@ import logging
 import time
 from typing import Any
 
+import httpx
+
 from config import get_settings
 from services.metrics import record_cognee_call
 from services.ontology_system import (
@@ -122,7 +124,11 @@ def dataset_for(owner_uid: str, case_id: str) -> str:
 
 def is_enabled() -> bool:
     settings = get_settings()
-    return settings.cognee_enabled and settings.cognee_mode != "disabled"
+    return (
+        settings.cognee_enabled
+        and settings.cognee_mode != "disabled"
+        and bool(settings.cognee_backend_url.strip())
+    )
 
 
 def _finish_call(
@@ -160,6 +166,8 @@ def _validate_runtime_config() -> None:
         raise RuntimeError("Cognee memory must use the vertex-adc sentinel, not a raw provider key")
     if settings.cognee_embedding_dimensions != 768:
         raise RuntimeError("Cognee memory embeddings must be 768-dimensional")
+    if not settings.cognee_backend_url.strip():
+        raise RuntimeError("Cognee memory requires COGNEE_BACKEND_URL for the isolated praxis-cognee service")
 
 
 def _load_cognee() -> Any:
@@ -171,9 +179,156 @@ def _load_cognee() -> Any:
     return cognee
 
 
+def _service_base_url() -> str:
+    settings = get_settings()
+    return settings.cognee_backend_url.rstrip("/")
+
+
+def _service_headers(scope: MemoryScope) -> dict[str, str]:
+    return {
+        "content-type": "application/json",
+        "x-praxis-owner-uid": scope.owner_uid,
+        "x-praxis-case-id": scope.case_id,
+        "x-praxis-cognee-dataset": scope.dataset,
+    }
+
+
+async def _post_service(*, operation: str, scope: MemoryScope, payload: dict[str, Any]) -> dict[str, Any]:
+    url = f"{_service_base_url()}/v1/memory/{operation}"
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.post(url, json=payload, headers=_service_headers(scope))
+        response.raise_for_status()
+        data = response.json()
+    if not isinstance(data, dict):
+        raise RuntimeError(f"Cognee service returned non-object response for {operation}")
+    return data
+
+
+def _base_payload(scope: MemoryScope) -> dict[str, Any]:
+    return {
+        "ownerUid": scope.owner_uid,
+        "caseId": scope.case_id,
+        "sessionId": scope.session_id,
+        "dataset": scope.dataset,
+    }
+
+
+def _service_unavailable(*, operation: str, scope: MemoryScope, exc: Exception, candidates: bool = False) -> dict[str, Any]:
+    logger.warning(
+        "cognee.%s service_unavailable dataset=%s error=%s",
+        operation,
+        scope.dataset,
+        exc,
+    )
+    result: dict[str, Any] = {
+        "ok": False,
+        "status": "service_unavailable",
+        "dataset": scope.dataset,
+        "error": str(exc),
+    }
+    if candidates:
+        result["candidates"] = []
+    return result
+
+
+def _candidate_text(candidate: dict[str, Any]) -> str:
+    for key in ("text", "content", "summary", "label", "title"):
+        value = candidate.get(key)
+        if value:
+            return str(value)
+    return ""
+
+
+def _candidate_score(candidate: dict[str, Any]) -> float:
+    for key in ("score", "confidence", "internalScore", "internal_score"):
+        value = candidate.get(key)
+        if value is not None:
+            try:
+                return round(max(0.0, min(float(value), 0.6)), 3)
+            except (TypeError, ValueError):
+                return 0.0
+    return 0.0
+
+
+def _candidate_id(candidate: dict[str, Any]) -> str:
+    for key in ("id", "memoryId", "memory_id", "nodeId", "node_id", "cogneeNodeId", "cognee_node_id"):
+        value = candidate.get(key)
+        if value:
+            return str(value)
+    return "cognee-candidate"
+
+
+def _candidate_source_id(candidate: dict[str, Any]) -> str | None:
+    for key in ("sourceId", "source_id", "sourceChunkId", "source_chunk_id"):
+        value = candidate.get(key)
+        if value:
+            return str(value)
+    return None
+
+
+def _candidate_metadata(candidate: dict[str, Any]) -> dict[str, Any]:
+    metadata = candidate.get("metadata")
+    if isinstance(metadata, dict):
+        return metadata
+    return {}
+
+
+def _candidate_to_hit(candidate: Any) -> MemoryHit | None:
+    if isinstance(candidate, MemoryHit):
+        return MemoryHit(
+            id=candidate.id,
+            text=candidate.text,
+            score=round(max(0.0, min(float(candidate.score), 0.6)), 3),
+            source_id=candidate.source_id,
+            metadata=candidate.metadata,
+        )
+    if not isinstance(candidate, dict):
+        return None
+    return MemoryHit(
+        id=_candidate_id(candidate),
+        text=_candidate_text(candidate),
+        score=_candidate_score(candidate),
+        source_id=_candidate_source_id(candidate),
+        metadata=_candidate_metadata(candidate),
+    )
+
+
+def memory_hits_from_response(response: dict[str, Any] | list[Any]) -> list[MemoryHit]:
+    candidates: Any
+    if isinstance(response, list):
+        candidates = response
+    else:
+        candidates = response.get("candidates")
+        if candidates is None:
+            candidates = response.get("hits", [])
+    if not isinstance(candidates, list):
+        return []
+    hits = [_candidate_to_hit(candidate) for candidate in candidates]
+    return [hit for hit in hits if hit is not None]
+
+
+def _normalize_search_response(response: dict[str, Any], *, scope: MemoryScope) -> dict[str, Any]:
+    candidates = response.get("candidates")
+    if candidates is None:
+        candidates = response.get("hits", [])
+    if not isinstance(candidates, list):
+        candidates = []
+    normalized = {
+        **response,
+        "ok": response.get("ok", True),
+        "status": response.get("status", "searched"),
+        "dataset": response.get("dataset", scope.dataset),
+        "candidates": [hit.__dict__ for hit in memory_hits_from_response({"candidates": candidates})],
+    }
+    return normalized
+
+
 def health() -> MemoryHealth:
     settings = get_settings()
     if not is_enabled():
+        reason = "disabled"
+        if settings.cognee_enabled and settings.cognee_mode != "disabled" and not settings.cognee_backend_url.strip():
+            reason = "missing_backend_url"
         return MemoryHealth(
             enabled=False,
             mode=settings.cognee_mode,
@@ -181,11 +336,10 @@ def health() -> MemoryHealth:
             embedding_model=settings.cognee_embedding_model,
             embedding_dimensions=settings.cognee_embedding_dimensions,
             ready=False,
-            reason="disabled",
+            reason=reason,
         )
     try:
         _validate_runtime_config()
-        _load_cognee()
     except RuntimeError as exc:
         return MemoryHealth(
             enabled=True,
@@ -214,23 +368,27 @@ async def remember(
     metadata: dict[str, Any] | None = None,
     run_cognify: bool = True,
 ) -> dict[str, Any]:
-    """Store content in Cognee memory.
-
-    Disabled mode is a no-op. Enabled mode is intentionally not implemented in
-    the monolith yet; the next pass wires it through the isolated Cognee service.
-    """
+    """Store content in advisory memory through the isolated Cognee service."""
     start = time.perf_counter()
-    _ = (content, metadata, run_cognify)
     if not is_enabled():
-        _finish_call(operation="remember", scope=scope, start=start, status="disabled")
-        return {"ok": False, "status": "disabled", "dataset": scope.dataset, "sourceId": source_id}
+        _finish_call(operation="remember", scope=scope, start=start, status="queued_disabled")
+        return {"ok": False, "status": "queued_disabled", "dataset": scope.dataset, "sourceId": source_id}
     try:
-        _load_cognee()
-    except Exception:
-        _finish_call(operation="remember", scope=scope, start=start, status="load_failed")
-        raise
-    _finish_call(operation="remember", scope=scope, start=start, status="not_implemented")
-    raise NotImplementedError("Live Cognee remember is owned by the isolated praxis-cognee service")
+        result = await _post_service(
+            operation="remember",
+            scope=scope,
+            payload={
+                **_base_payload(scope),
+                "content": content,
+                "sourceId": source_id,
+                "metadata": metadata or {},
+                "runCognify": run_cognify,
+            },
+        )
+    except Exception as exc:
+        result = _service_unavailable(operation="remember", scope=scope, exc=exc)
+    _finish_call(operation="remember", scope=scope, start=start, status=str(result.get("status", "proxied")))
+    return {**result, "dataset": result.get("dataset", scope.dataset), "sourceId": result.get("sourceId", source_id)}
 
 
 async def add(
@@ -254,13 +412,30 @@ async def add(
             "sourceId": source_id,
             "nodeSet": node_set,
         }
+    payload_content: str
+    payload_encoding: str | None = None
+    if isinstance(content, bytes):
+        payload_content = content.decode("utf-8", errors="replace")
+        payload_encoding = "utf-8-replacement"
+    else:
+        payload_content = content
     try:
-        _load_cognee()
-    except Exception:
-        _finish_call(operation="add", scope=scope, start=start, status="load_failed")
-        raise
-    _finish_call(operation="add", scope=scope, start=start, status="not_implemented")
-    raise NotImplementedError("Live Cognee add is owned by the isolated praxis-cognee service")
+        result = await _post_service(
+            operation="add",
+            scope=scope,
+            payload={
+                **_base_payload(scope),
+                "content": payload_content,
+                "contentEncoding": payload_encoding,
+                "sourceId": source_id,
+                "nodeSet": node_set,
+                "metadata": metadata or {},
+            },
+        )
+    except Exception as exc:
+        result = _service_unavailable(operation="add", scope=scope, exc=exc)
+    _finish_call(operation="add", scope=scope, start=start, status=str(result.get("status", "proxied")))
+    return {**result, "dataset": result.get("dataset", scope.dataset), "sourceId": result.get("sourceId", source_id)}
 
 
 async def cognify(
@@ -303,14 +478,26 @@ async def cognify(
             "resolver": resolver,
             "temporalCognify": temporal_cognify,
         }
-    _ = (content, metadata)
     try:
-        _load_cognee()
-    except Exception:
-        _finish_call(operation="cognify", scope=scope, start=start, status="load_failed")
-        raise
-    _finish_call(operation="cognify", scope=scope, start=start, status="not_implemented")
-    raise NotImplementedError("Live Cognee cognify is owned by the isolated praxis-cognee service")
+        result = await _post_service(
+            operation="cognify",
+            scope=scope,
+            payload={
+                **_base_payload(scope),
+                "content": content,
+                "sourceId": source_id,
+                "metadata": metadata or {},
+                "ontologyFilePath": ontology_file_paths[0],
+                "ontologyFilePaths": list(ontology_file_paths),
+                "dataPointClasses": list(data_point_names),
+                "resolver": resolver,
+                "temporalCognify": temporal_cognify,
+            },
+        )
+    except Exception as exc:
+        result = _service_unavailable(operation="cognify", scope=scope, exc=exc)
+    _finish_call(operation="cognify", scope=scope, start=start, status=str(result.get("status", "proxied")))
+    return {**result, "dataset": result.get("dataset", scope.dataset), "sourceId": result.get("sourceId", source_id)}
 
 
 async def memify(
@@ -325,14 +512,16 @@ async def memify(
     if not is_enabled():
         _finish_call(operation="memify", scope=scope, start=start, status="queued_disabled")
         return {"ok": False, "status": "queued_disabled", "dataset": scope.dataset, "threadId": thread_id}
-    _ = (turns, metadata)
     try:
-        _load_cognee()
-    except Exception:
-        _finish_call(operation="memify", scope=scope, start=start, status="load_failed")
-        raise
-    _finish_call(operation="memify", scope=scope, start=start, status="not_implemented")
-    raise NotImplementedError("Live Cognee memify is owned by the isolated praxis-cognee service")
+        result = await _post_service(
+            operation="memify",
+            scope=scope,
+            payload={**_base_payload(scope), "threadId": thread_id, "turns": turns, "metadata": metadata or {}},
+        )
+    except Exception as exc:
+        result = _service_unavailable(operation="memify", scope=scope, exc=exc)
+    _finish_call(operation="memify", scope=scope, start=start, status=str(result.get("status", "proxied")))
+    return {**result, "dataset": result.get("dataset", scope.dataset), "threadId": result.get("threadId", thread_id)}
 
 
 async def improve(
@@ -357,14 +546,16 @@ async def improve(
             "targetId": target_id,
             "positive": positive,
         }
-    _ = metadata
     try:
-        _load_cognee()
-    except Exception:
-        _finish_call(operation="improve", scope=scope, start=start, status="load_failed")
-        raise
-    _finish_call(operation="improve", scope=scope, start=start, status="not_implemented")
-    raise NotImplementedError("Live Cognee improve is owned by the isolated praxis-cognee service")
+        result = await _post_service(
+            operation="improve",
+            scope=scope,
+            payload={**_base_payload(scope), "targetId": target_id, "positive": positive, "metadata": metadata or {}},
+        )
+    except Exception as exc:
+        result = _service_unavailable(operation="improve", scope=scope, exc=exc)
+    _finish_call(operation="improve", scope=scope, start=start, status=str(result.get("status", "proxied")))
+    return {**result, "dataset": result.get("dataset", scope.dataset), "targetId": result.get("targetId", target_id)}
 
 
 async def search(
@@ -379,8 +570,12 @@ async def search(
     signal: str | None = None,
     node_set: list[str] | None = None,
     audit: SearchAudit | None = None,
-) -> list[MemoryHit]:
-    """Route Cognee search modes with save_interaction=True by default."""
+) -> dict[str, Any]:
+    """Route advisory Cognee search through the isolated service.
+
+    Disabled mode returns an explicit empty candidate envelope instead of a raw
+    empty list so callers can distinguish disabled memory from no results.
+    """
     start = time.perf_counter()
     interaction = audit or SearchAudit(mode=mode)
     if not interaction.save_interaction:
@@ -388,22 +583,40 @@ async def search(
         raise ValueError("Cognee search calls in PRAXIS must use save_interaction=True")
     if not is_enabled():
         _finish_call(operation="search", scope=scope, start=start, status="disabled", mode=mode)
-        return []
-    _ = (scope, query, limit, session_id, source_kind, positive, signal, node_set)
+        return {"ok": False, "status": "disabled", "dataset": scope.dataset, "candidates": []}
     try:
-        _load_cognee()
-    except Exception:
-        _finish_call(operation="search", scope=scope, start=start, status="load_failed", mode=mode)
-        raise
-    _finish_call(operation="search", scope=scope, start=start, status="not_implemented", mode=mode)
-    raise NotImplementedError("Live Cognee search is owned by the isolated praxis-cognee service")
+        result = await _post_service(
+            operation="search",
+            scope=scope,
+            payload={
+                **_base_payload(scope),
+                "query": query,
+                "mode": mode.value,
+                "limit": limit,
+                "sessionId": session_id,
+                "sourceKind": source_kind,
+                "positive": positive,
+                "signal": signal,
+                "nodeSet": node_set or [],
+                "audit": {
+                    "mode": interaction.mode.value,
+                    "saveInteraction": interaction.save_interaction,
+                    "surfaceKey": interaction.surface_key,
+                },
+            },
+        )
+        result = _normalize_search_response(result, scope=scope)
+    except Exception as exc:
+        result = _service_unavailable(operation="search", scope=scope, exc=exc, candidates=True)
+    _finish_call(operation="search", scope=scope, start=start, status=str(result.get("status", "proxied")), mode=mode)
+    return result
 
 
-async def recall(*, scope: MemoryScope, query: str, limit: int = 10) -> list[MemoryHit]:
+async def recall(*, scope: MemoryScope, query: str, limit: int = 10) -> dict[str, Any]:
     return await search(scope=scope, query=query, limit=limit, mode=CogneeSearchMode.NATURAL_LANGUAGE)
 
 
-async def recall_provenance(*, scope: MemoryScope, node_name: str, top_k: int = 5) -> list[MemoryHit]:
+async def recall_provenance(*, scope: MemoryScope, node_name: str, top_k: int = 5) -> dict[str, Any]:
     return await search(
         scope=scope,
         query=node_name,
@@ -416,12 +629,15 @@ async def recall_provenance(*, scope: MemoryScope, node_name: str, top_k: int = 
 async def forget(*, scope: MemoryScope, memory_id: str) -> dict[str, Any]:
     start = time.perf_counter()
     if not is_enabled():
-        _finish_call(operation="forget", scope=scope, start=start, status="disabled")
-        return {"ok": False, "status": "disabled", "dataset": scope.dataset, "memoryId": memory_id}
+        _finish_call(operation="forget", scope=scope, start=start, status="queued_disabled")
+        return {"ok": False, "status": "queued_disabled", "dataset": scope.dataset, "memoryId": memory_id}
     try:
-        _load_cognee()
-    except Exception:
-        _finish_call(operation="forget", scope=scope, start=start, status="load_failed")
-        raise
-    _finish_call(operation="forget", scope=scope, start=start, status="not_implemented")
-    raise NotImplementedError("Live Cognee forget is owned by the isolated praxis-cognee service")
+        result = await _post_service(
+            operation="forget",
+            scope=scope,
+            payload={**_base_payload(scope), "memoryId": memory_id},
+        )
+    except Exception as exc:
+        result = _service_unavailable(operation="forget", scope=scope, exc=exc)
+    _finish_call(operation="forget", scope=scope, start=start, status=str(result.get("status", "proxied")))
+    return {**result, "dataset": result.get("dataset", scope.dataset), "memoryId": result.get("memoryId", memory_id)}

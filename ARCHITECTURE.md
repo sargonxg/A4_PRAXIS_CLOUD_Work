@@ -1,6 +1,6 @@
 # PRAXIS Architecture
 
-Last updated: 2026-05-21.
+Last updated: 2026-05-28.
 
 ## Canonical references
 
@@ -53,6 +53,15 @@ The next canonical runtime target is Cloud Run first, GKE later:
   calls, approvals, document chunks, and operational joins.
 - Firestore remains the owner-scoped source of truth for capsules,
   context stacks, cores, and user-facing app state.
+- ContextCapsules now normalize v1/v2/v3 envelopes into the v3 in-memory
+  contract on read. Firestore remains canonical; Capsule+ graph materialization,
+  Cognee recall, and imported graph rows are derived/review-gated artifacts.
+- Capsule readiness is derived from the unified quality/readiness path and is
+  softly adjusted by usage rollups from agent read receipts: thin fallback,
+  dropped-core events, and stale-core hits lower operability readiness.
+- Cognee remains disabled-first and advisory-only. Enabled recall flows through
+  the isolated `praxis-cognee` service contract and can promote only
+  capsule-scoped memory facts through review cards.
 - Cloud Tasks dispatches durable per-run work; Pub/Sub broadcasts events;
   Cloud Scheduler triggers daily briefs/watchlists and maintenance.
 - MCP and browser/code sandbox workers are phased after run ledger and approval

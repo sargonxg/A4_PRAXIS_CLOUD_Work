@@ -2,7 +2,16 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { buildCorePackage, type PraxisCorePackageV1 } from '@/lib/context/core-package';
-import { normalizeContextCapsuleV3, type ContextCapsuleV3 } from '@/lib/context/capsule-v3';
+import type { ContextCapsuleV3 } from '@/lib/context/capsule-v3';
+import {
+  CapsuleEnvelopePatchSchema,
+  deriveReadinessBlock,
+  normalizeToLatest,
+  type CapsuleEnvelopePatch,
+  type CapsuleReadinessBlock,
+  type CapsuleSchemaVersion,
+} from '@/lib/context/capsule-schema';
+// v3 construction is centralized through normalizeToLatest, which delegates to normalizeContextCapsuleV3.
 import {
   DEFAULT_CONTEXT_STACK_ID,
   defaultActiveContextStack,
@@ -31,7 +40,6 @@ import {
 export type CapsuleScope = 'user' | 'situation' | 'team';
 export type CapsuleVisibility = 'private' | 'organization' | 'shared' | 'public' | 'unlisted';
 export type CapsuleTrustLevel = 'green' | 'amber' | 'red' | 'grey';
-export type CapsuleSchemaVersion = 1 | 2;
 export type CapsuleReviewState =
   | 'draft'
   | 'proposed'
@@ -84,6 +92,10 @@ export interface CapsuleCoreRefs {
   objectiveCoreIds?: string[];
   productCoreIds?: string[];
   memoryCoreId?: string | null;
+  coreFreshness?: Record<string, {
+    lastRefreshedAt?: string | null;
+    freshnessExpiresAt?: string | null;
+  }>;
 }
 
 export interface CapsuleProvenance {
@@ -137,6 +149,27 @@ export interface CapsuleReadinessSummary {
   updatedAt: string;
 }
 
+export interface CapsuleUsageRollup {
+  readCount: number;
+  lastUsedAt: string | null;
+  thinFallbackCount: number;
+  droppedCoreEventCount: number;
+  staleCoreHitCount: number;
+  fallbackRate: number;
+  droppedCoreRate: number;
+  staleCoreRate: number;
+  droppedCoreFrequency: Record<string, number>;
+  staleCoreFrequency: Record<string, number>;
+  updatedAt: string;
+}
+
+export interface CapsuleUsageReceiptSignal {
+  readAt?: string;
+  thinFallback?: boolean;
+  droppedCoreIds?: string[];
+  staleCoreIds?: string[];
+}
+
 export interface CapsuleReviewEvidence {
   id: string;
   label: string;
@@ -162,16 +195,7 @@ export interface CapsuleReviewCard {
   target: CapsuleReviewTarget;
   state: CapsuleReviewState;
   evidence: CapsuleReviewEvidence[];
-  proposedEnvelopePatch: Partial<Pick<PraxisCapsule,
-    'label'
-    | 'summary'
-    | 'activeOntologyStackId'
-    | 'activeReadContractId'
-    | 'latestGateState'
-    | 'lockedCoreKinds'
-    | 'coreRefs'
-    | 'readinessSummary'
-  >>;
+  proposedEnvelopePatch: CapsuleEnvelopePatch;
   applyMetadata: CapsuleReviewApplyMetadata | null;
   createdAt: string;
   updatedAt: string;
@@ -186,6 +210,15 @@ export interface CreateCapsuleReviewCardInput {
   publicProposalsEnabled?: boolean;
   evidence?: CapsuleReviewEvidence[];
   proposedEnvelopePatch?: CapsuleReviewCard['proposedEnvelopePatch'];
+}
+
+export interface AdvisoryMemoryReviewCandidateInput {
+  id: string;
+  text: string;
+  confidence?: number;
+  sourceId?: string | null;
+  provenance?: string | null;
+  metadata?: Record<string, unknown>;
 }
 
 export interface CapsuleOntologySuggestion {
@@ -224,6 +257,16 @@ export interface OntologyStackResolution {
   resolvedAt: string;
 }
 
+export interface OntologyStackValidationResult {
+  checkedRefs: string[];
+  danglingRefs: string[];
+  diagnostics: Array<{
+    code: 'dangling_ontology_ref';
+    message: string;
+    ref: string;
+  }>;
+}
+
 export interface ResolveCapsuleOntologyStackInput {
   capsuleId: string;
   stackId?: string;
@@ -254,6 +297,15 @@ export interface PraxisCapsule {
   access: CapsuleAccessPolicy;
   community: CapsuleCommunityProfile;
   trust: CapsuleTrustSemaphore;
+  readiness?: CapsuleReadinessBlock;
+  usage?: CapsuleUsageRollup;
+  v3?: ContextCapsuleV3;
+  sourceRefs?: unknown[];
+  claimLedger?: unknown[];
+  outputContracts?: unknown[];
+  sourcePosture?: unknown;
+  agentPermissions?: unknown;
+  memoryPosture?: unknown;
   activeOntologyStackId?: string;
   activeReadContractId?: string;
   readinessSummary?: CapsuleReadinessSummary;
@@ -462,7 +514,7 @@ export async function createCapsule(
     createdAt: timestamp,
     updatedAt: timestamp,
     archivedAt: null,
-    schemaVersion: 2,
+    schemaVersion: 3,
     version: 1,
     label: input.label ?? defaultCapsuleLabel(input.coreRefs),
     summary: input.summary,
@@ -814,6 +866,111 @@ export async function createCapsuleIntakeReviewCards(
   };
 }
 
+export async function proposeCogneeSeedReviewCards(
+  uid: string,
+  capsuleId: string,
+  deps?: CapsuleServiceDeps,
+): Promise<{ capsule: PraxisCapsule; cards: CapsuleReviewCard[]; seedPack: ReturnType<typeof buildCapsuleCogneeSeedPack> } | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule?.starterSnapshot?.cogneeProfile) return null;
+  const seedPack = buildCapsuleCogneeSeedPack(capsule.starterSnapshot);
+  const card = await createCapsuleReviewCard(uid, capsule.capsuleId, {
+    reviewCardId: `review-card-${stableId(`${uid}:${capsule.capsuleId}:cognee-seed:${seedPack.profileId}`)}`,
+    title: `Review Cognee seed pack for ${capsule.label}`,
+    sourceType: seedPack.reviewCardProposal.sourceType,
+    target: seedPack.reviewCardProposal.target,
+    state: seedPack.reviewCardProposal.state,
+    evidence: seedPack.documents.map((document) => ({
+      id: document.id,
+      label: document.title,
+      advisory: true,
+      sourceType: document.metadata.kind,
+    })),
+    proposedEnvelopePatch: {
+      latestGateState: 'proposed',
+      memoryPosture: buildMemoryPosturePatch(capsule, {
+        advisoryCogneeRecall: seedPack.documents.map((document) => document.title),
+      }),
+    },
+  }, deps);
+  const updated = await getCapsule(uid, capsule.capsuleId, deps);
+  return {
+    capsule: updated ?? capsule,
+    cards: [card],
+    seedPack,
+  };
+}
+
+export async function approveAdvisoryMemoryCandidate(
+  uid: string,
+  capsuleId: string,
+  candidate: AdvisoryMemoryReviewCandidateInput,
+  deps?: CapsuleServiceDeps,
+): Promise<{ capsule: PraxisCapsule; card: CapsuleReviewCard } | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  const fact = formatAdvisoryMemoryCandidate(candidate);
+  const card = await createCapsuleReviewCard(uid, capsule.capsuleId, {
+    reviewCardId: `review-card-${stableId(`${uid}:${capsule.capsuleId}:advisory-memory:${candidate.id}:${fact}`)}`,
+    title: 'Promote advisory memory into capsule facts',
+    sourceType: 'cognee',
+    target: 'advisoryMemory',
+    state: 'proposed',
+    evidence: [{
+      id: cleanId(candidate.id, 'cognee-candidate'),
+      label: cleanText(candidate.text, 240) || 'Cognee candidate',
+      advisory: true,
+      sourceType: 'cognee',
+    }],
+    proposedEnvelopePatch: {
+      latestGateState: 'proposed',
+      memoryPosture: buildMemoryPosturePatch(capsule, {
+        canonicalCapsuleFacts: [fact],
+        advisoryCogneeRecall: [fact],
+        removeFromAdvisory: true,
+      }),
+    },
+  }, deps);
+  return applyCapsuleReviewCard(uid, capsule.capsuleId, card.reviewCardId, {
+    reviewerUid: uid,
+    appliedAt: nowIso(deps),
+    targetVersion: capsule.version + 1,
+    diffHash: stableId(fact),
+    confirmationReason: 'Approved Cognee advisory memory as capsule-scoped fact; no graph promotion performed.',
+  }, deps);
+}
+
+export async function rejectAdvisoryMemoryCandidate(
+  uid: string,
+  capsuleId: string,
+  candidate: Pick<AdvisoryMemoryReviewCandidateInput, 'id' | 'text'> & { reason?: string | null },
+  deps?: CapsuleServiceDeps,
+): Promise<{ capsule: PraxisCapsule; card: CapsuleReviewCard } | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  const card = await createCapsuleReviewCard(uid, capsule.capsuleId, {
+    reviewCardId: `review-card-${stableId(`${uid}:${capsule.capsuleId}:reject-advisory-memory:${candidate.id}`)}`,
+    title: 'Reject advisory memory candidate',
+    sourceType: 'cognee',
+    target: 'advisoryMemory',
+    state: 'rejected',
+    evidence: [{
+      id: cleanId(candidate.id, 'cognee-candidate'),
+      label: cleanText(candidate.text, 240) || 'Cognee candidate',
+      advisory: true,
+      sourceType: 'cognee',
+    }],
+    proposedEnvelopePatch: {
+      latestGateState: 'rejected',
+      memoryPosture: buildMemoryPosturePatch(capsule, {
+        rejectedInferences: [cleanText(candidate.reason, 240) || cleanText(candidate.text, 240) || candidate.id],
+      }),
+    },
+  }, deps);
+  const updated = await getCapsule(uid, capsule.capsuleId, deps);
+  return { capsule: updated ?? capsule, card };
+}
+
 export async function createCapsuleReviewCard(
   uid: string,
   capsuleId: string,
@@ -830,6 +987,13 @@ export async function createCapsuleReviewCard(
     ? 'moderation_required'
     : normalizeReviewState(input.state ?? 'proposed');
   const reviewCardId = cleanId(input.reviewCardId ?? `review-card-${stableId(`${uid}:${capsule.capsuleId}:${input.title}:${timestamp}`)}`, `review-card-${stableId(timestamp)}`);
+  let proposedEnvelopePatch: CapsuleEnvelopePatch;
+  try {
+    proposedEnvelopePatch = normalizeReviewEnvelopePatch(input.proposedEnvelopePatch);
+  } catch (err) {
+    await recordReviewPatchRejection(uid, capsule, input, err, deps);
+    throw err;
+  }
   const card: CapsuleReviewCard = {
     reviewCardId,
     capsuleId: capsule.capsuleId,
@@ -839,7 +1003,7 @@ export async function createCapsuleReviewCard(
     target: input.target,
     state,
     evidence: normalizeReviewEvidence(input.evidence ?? []),
-    proposedEnvelopePatch: normalizeReviewEnvelopePatch(input.proposedEnvelopePatch),
+    proposedEnvelopePatch,
     applyMetadata: null,
     createdAt: timestamp,
     updatedAt: timestamp,
@@ -866,43 +1030,67 @@ export async function applyCapsuleReviewCard(
   metadata: Partial<CapsuleReviewApplyMetadata>,
   deps?: CapsuleServiceDeps,
 ): Promise<{ capsule: PraxisCapsule; card: CapsuleReviewCard } | null> {
-  const capsule = await getCapsule(uid, capsuleId, deps);
-  if (!capsule) return null;
-  const applyMetadata = normalizeApplyMetadata(metadata, capsule.version + 1, nowIso(deps));
-  const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
+  const db = dbOf(deps);
+  const ref = capsulesCollection(uid, deps).doc(cleanId(capsuleId, DEFAULT_CONTEXT_STACK_ID));
   const cardRef = ref.collection('reviewCards').doc(cleanId(reviewCardId, 'review-card'));
+  type TransactionDocRef = typeof ref;
+  const runTransaction = (db as unknown as {
+    runTransaction?: <T>(fn: (transaction: {
+      get: (docRef: TransactionDocRef) => Promise<{ exists: boolean; data: () => Record<string, unknown>; id: string }>;
+      set: (docRef: TransactionDocRef, value: unknown, options?: { merge?: boolean }) => void;
+    }) => Promise<T>) => Promise<T>;
+  }).runTransaction;
+
+  if (typeof runTransaction === 'function') {
+    const result = await runTransaction(async (transaction) => {
+      const capsuleSnap = await transaction.get(ref);
+      if (!capsuleSnap.exists) return null;
+      const capsule = sanitizeCapsule({ ...capsuleSnap.data(), capsuleId: ref.id });
+      const cardSnap = await transaction.get(cardRef as typeof ref);
+      if (!cardSnap.exists) return null;
+      const card = normalizeReviewCard(cardSnap.data(), capsule, cardRef.id);
+      const applyMetadata = normalizeApplyMetadata(metadata, capsule.version + 1, nowIso(deps));
+      const applied = buildAppliedReviewCardUpdate(capsule, card, applyMetadata);
+      transaction.set(ref.collection('versions').doc(`v${capsule.version}`) as typeof ref, applied.previousSnapshot, { merge: true });
+      transaction.set(ref.collection('versions').doc(`v${applied.capsule.version}`) as typeof ref, applied.capsule, { merge: true });
+      transaction.set(ref, applied.capsule, { merge: true });
+      transaction.set(cardRef as typeof ref, applied.card, { merge: true });
+      return { capsule: applied.capsule, card: applied.card };
+    });
+    if (result) {
+      await mirrorActiveContextStack(uid, result.capsule, deps);
+      await writeDependencyInvalidationNotes(uid, result.capsule, result.card, deps);
+      await writeOntologyDiagnosticsNote(uid, result.capsule, result.card, deps);
+    }
+    return result;
+  }
+
+  const capsuleSnap = await ref.get();
+  if (!capsuleSnap.exists) return null;
+  const capsule = sanitizeCapsule({ ...capsuleSnap.data(), capsuleId: ref.id });
   const cardSnap = await cardRef.get();
   if (!cardSnap.exists) return null;
   const card = normalizeReviewCard(cardSnap.data(), capsule, cardRef.id);
-  const patch = card.proposedEnvelopePatch;
-  const updated = sanitizeCapsule({
-    ...capsule,
-    ...patch,
-    coreRefs: patch.coreRefs ? normalizeCoreRefs({ ...capsule.coreRefs, ...patch.coreRefs }) : capsule.coreRefs,
-    lockedCoreKinds: patch.lockedCoreKinds ?? capsule.lockedCoreKinds,
-    readinessSummary: {
-      ...(capsule.readinessSummary ?? {}),
-      ...(patch.readinessSummary ?? {}),
-      reviewCardCount: Math.max(capsule.readinessSummary?.reviewCardCount ?? 1, 1),
-    },
-    latestGateState: patch.latestGateState ?? 'applied',
-    version: applyMetadata.targetVersion,
-    updatedAt: applyMetadata.appliedAt,
-  });
-  const appliedCard: CapsuleReviewCard = {
-    ...card,
-    state: 'applied',
-    applyMetadata,
-    updatedAt: applyMetadata.appliedAt,
-  };
-  const batch = dbOf(deps).batch();
-  batch.set(ref.collection('versions').doc(`v${capsule.version}`), capsule, { merge: true });
-  batch.set(ref.collection('versions').doc(`v${updated.version}`), updated, { merge: true });
-  batch.set(ref, updated, { merge: true });
-  batch.set(cardRef, appliedCard, { merge: true });
+  const applyMetadata = normalizeApplyMetadata(metadata, capsule.version + 1, nowIso(deps));
+  const applied = buildAppliedReviewCardUpdate(capsule, card, applyMetadata);
+  const batch = db.batch();
+  batch.set(ref.collection('versions').doc(`v${capsule.version}`), applied.previousSnapshot, { merge: true });
+  batch.set(ref.collection('versions').doc(`v${applied.capsule.version}`), applied.capsule, { merge: true });
+  batch.set(ref, applied.capsule, { merge: true });
+  batch.set(cardRef, applied.card, { merge: true });
   await batch.commit();
-  await mirrorActiveContextStack(uid, updated, deps);
-  return { capsule: updated, card: appliedCard };
+  await mirrorActiveContextStack(uid, applied.capsule, deps);
+  await writeDependencyInvalidationNotes(uid, applied.capsule, applied.card, deps);
+  await writeOntologyDiagnosticsNote(uid, applied.capsule, applied.card, deps);
+  return { capsule: applied.capsule, card: applied.card };
+}
+
+export async function getCapsuleDependents(uid: string, capsuleId: string, deps?: CapsuleServiceDeps): Promise<PraxisCapsule[]> {
+  const targetId = cleanId(capsuleId, DEFAULT_CONTEXT_STACK_ID);
+  const snap = await capsulesCollection(uid, deps).get();
+  return snap.docs
+    .map((doc) => sanitizeCapsule({ ...doc.data(), capsuleId: doc.id }))
+    .filter((capsule) => capsule.capsuleId !== targetId && capsule.associatedCapsuleIds.includes(targetId));
 }
 
 export function resolveCapsuleOntologyStack(input: ResolveCapsuleOntologyStackInput): OntologyStackResolution {
@@ -1481,6 +1669,21 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
   const latestGateState = normalizeGateState(body.latestGateState);
   const provenanceBody = isRecord(body.provenance) ? body.provenance : {};
   const provenanceNotes = stringOrNull(provenanceBody.notes);
+  const qualityInput = {
+    ...body,
+    capsuleId: cleanCapsuleId,
+    ownerUid,
+    label,
+    summary: stringOrNull(body.summary) ?? label,
+    coreRefs,
+    createdAt,
+    updatedAt,
+    schemaVersion: body.schemaVersion === 1 ? 1 : body.schemaVersion === 2 ? 2 : 3,
+    version,
+  };
+  const baseHealth = isContextHealth(body.health) ? enrichContextHealth(body.health) : computeCapsuleHealth(coreRefs);
+  const readiness = applyCoreHealthToReadiness(deriveReadinessBlock(qualityInput, updatedAt), baseHealth);
+  const health = applyReadinessToHealth(baseHealth, readiness);
   const provenance: CapsuleProvenance = {
     source: provenanceBody.source === 'context-stack-migration' || provenanceBody.source === 'fork' || provenanceBody.source === 'combine' || provenanceBody.source === 'api' || provenanceBody.source === 'created'
       ? provenanceBody.source
@@ -1490,7 +1693,7 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     forkedFromVersion: typeof provenanceBody.forkedFromVersion === 'number' ? Math.max(1, Math.floor(provenanceBody.forkedFromVersion)) : null,
   };
   if (provenanceNotes) provenance.notes = provenanceNotes;
-  const capsule: Omit<PraxisCapsule, 'trust'> = {
+  const capsule: Omit<PraxisCapsule, 'trust' | 'v3'> = {
     capsuleId: cleanCapsuleId,
     ownerUid,
     scope: body.scope === 'team' || body.scope === 'situation' || body.scope === 'user' ? body.scope : inferScope(coreRefs),
@@ -1500,7 +1703,7 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     associatedCapsuleIds: uniqueStrings(cleanStringArray(body.associatedCapsuleIds).filter((id) => id !== cleanCapsuleId)).slice(0, 20),
     coreRefs,
     retrievalPolicy: normalizeRetrievalPolicy(isRecord(body.retrievalPolicy) ? body.retrievalPolicy : {}),
-    health: isContextHealth(body.health) ? enrichContextHealth(body.health) : computeCapsuleHealth(coreRefs),
+    health,
     activeForSituationIds: cleanStringArray(body.activeForSituationIds).slice(0, 50),
     lockedCoreKinds: uniqueLockKinds(cleanStringArray(body.lockedCoreKinds)),
     provenance,
@@ -1514,18 +1717,92 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     createdAt,
     updatedAt,
     archivedAt: stringOrNull(body.archivedAt),
-    schemaVersion: 2,
+    schemaVersion: 3,
     version,
     label,
+    readiness,
+    usage: normalizeUsageRollup(body.usage, updatedAt),
+    ...(Array.isArray(body.sourceRefs) ? { sourceRefs: cloneSerializable(body.sourceRefs) } : {}),
+    ...(Array.isArray(body.claimLedger) ? { claimLedger: cloneSerializable(body.claimLedger) } : {}),
+    ...(Array.isArray(body.outputContracts) ? { outputContracts: cloneSerializable(body.outputContracts) } : {}),
+    ...(Object.prototype.hasOwnProperty.call(body, 'sourcePosture') ? { sourcePosture: cloneSerializable(body.sourcePosture) } : {}),
+    ...(isRecord(body.agentPermissions) ? { agentPermissions: cloneSerializable(body.agentPermissions) } : {}),
+    ...(isRecord(body.memoryPosture) ? { memoryPosture: cloneSerializable(body.memoryPosture) } : {}),
   };
-  return {
+  const result: PraxisCapsule = {
     ...capsule,
     trust: normalizeTrustSemaphore(isRecord(body.trust) ? body.trust : null, capsule.health, capsule.updatedAt),
   };
+  return {
+    ...result,
+    v3: normalizeToLatest(result, { now: updatedAt }),
+  };
+}
+
+export async function validateOntologyStack(
+  uid: string,
+  refs: { ontologyIds?: string[]; stackId?: string | null },
+  deps?: CapsuleServiceDeps,
+): Promise<OntologyStackValidationResult> {
+  const checkedRefs = uniqueStrings([
+    ...(refs.stackId ? [refs.stackId] : []),
+    ...(refs.ontologyIds ?? []),
+  ].map((value) => cleanText(value, 160)).filter(Boolean));
+  const danglingRefs: string[] = [];
+  for (const ref of checkedRefs) {
+    const exists = await ontologyRefExists(uid, ref, deps);
+    if (!exists) danglingRefs.push(ref);
+  }
+  return {
+    checkedRefs,
+    danglingRefs,
+    diagnostics: danglingRefs.map((ref) => ({
+      code: 'dangling_ontology_ref',
+      ref,
+      message: `Ontology reference is not present in Firestore: ${ref}`,
+    })),
+  };
+}
+
+export async function recordCapsuleReadReceiptUsage(
+  uid: string,
+  capsuleId: string,
+  signal: CapsuleUsageReceiptSignal,
+  deps?: CapsuleServiceDeps,
+): Promise<{ capsule: PraxisCapsule; usage: CapsuleUsageRollup } | null> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return null;
+  const readAt = cleanText(signal.readAt, 80) || nowIso(deps);
+  const droppedCoreIds = uniqueStrings(cleanStringArray(signal.droppedCoreIds)).slice(0, 20);
+  const staleCoreIds = uniqueStrings(cleanStringArray(signal.staleCoreIds)).slice(0, 20);
+  const usage = normalizeUsageRollup({
+    ...capsule.usage,
+    readCount: (capsule.usage?.readCount ?? 0) + 1,
+    lastUsedAt: readAt,
+    thinFallbackCount: (capsule.usage?.thinFallbackCount ?? 0) + (signal.thinFallback ? 1 : 0),
+    droppedCoreEventCount: (capsule.usage?.droppedCoreEventCount ?? 0) + (droppedCoreIds.length ? 1 : 0),
+    staleCoreHitCount: (capsule.usage?.staleCoreHitCount ?? 0) + (staleCoreIds.length ? 1 : 0),
+    droppedCoreFrequency: incrementFrequency(capsule.usage?.droppedCoreFrequency, droppedCoreIds),
+    staleCoreFrequency: incrementFrequency(capsule.usage?.staleCoreFrequency, staleCoreIds),
+    updatedAt: readAt,
+  }, readAt);
+  const updated = sanitizeCapsule({
+    ...capsule,
+    usage,
+    updatedAt: readAt,
+  });
+  await capsulesCollection(uid, deps).doc(capsule.capsuleId).set({
+    usage,
+    readiness: updated.readiness,
+    health: updated.health,
+    trust: updated.trust,
+    updatedAt: readAt,
+  }, { merge: true });
+  return { capsule: updated, usage };
 }
 
 export function buildContextCapsuleV3(input: PraxisCapsule | unknown): ContextCapsuleV3 {
-  return normalizeContextCapsuleV3(sanitizeCapsule(input));
+  return normalizeToLatest(sanitizeCapsule(input));
 }
 
 function starterToCreateInput(uid: string, starterDefinition: CapsuleStarterDefinition): CreateCapsuleInput {
@@ -1938,7 +2215,21 @@ function normalizeCoreRefs(input: Partial<CapsuleCoreRefs> | unknown): CapsuleCo
     objectiveCoreIds: cleanStringArray(body.objectiveCoreIds).slice(0, 20),
     productCoreIds: cleanStringArray(body.productCoreIds).slice(0, 20),
     memoryCoreId: stringOrNull(body.memoryCoreId),
+    coreFreshness: normalizeCoreFreshness(body.coreFreshness),
   };
+}
+
+function normalizeCoreFreshness(input: unknown): CapsuleCoreRefs['coreFreshness'] {
+  if (!isRecord(input)) return {};
+  return Object.fromEntries(Object.entries(input).flatMap(([key, value]) => {
+    if (!isRecord(value)) return [];
+    const cleanKey = cleanText(key, 160);
+    if (!cleanKey) return [];
+    return [[cleanKey, {
+      lastRefreshedAt: stringOrNull(value.lastRefreshedAt),
+      freshnessExpiresAt: stringOrNull(value.freshnessExpiresAt),
+    }]];
+  }));
 }
 
 function normalizeRetrievalPolicy(input: Partial<ContextRetrievalPolicy> | unknown): ContextRetrievalPolicy {
@@ -2009,13 +2300,9 @@ function normalizeCommunityProfile(input: Partial<CapsuleCommunityProfile> | unk
 function normalizeTrustSemaphore(input: Record<string, unknown> | null, health: ContextHealth, checkedAt: string): CapsuleTrustSemaphore {
   const fromHealth = trustFromHealth(health, checkedAt);
   if (!input) return fromHealth;
-  const level: CapsuleTrustLevel =
-    input.level === 'green' || input.level === 'amber' || input.level === 'red' || input.level === 'grey'
-      ? input.level
-      : fromHealth.level;
   return {
-    level,
-    score: typeof input.score === 'number' && Number.isFinite(input.score) ? Math.max(0, Math.min(100, Math.round(input.score))) : fromHealth.score,
+    level: fromHealth.level,
+    score: fromHealth.score,
     label: stringOrNull(input.label) ?? fromHealth.label,
     summary: stringOrNull(input.summary) ?? fromHealth.summary,
     blockers: cleanStringArray(input.blockers).slice(0, 10),
@@ -2082,24 +2369,249 @@ function normalizeReviewEvidence(values: unknown[]): CapsuleReviewEvidence[] {
 }
 
 function normalizeReviewEnvelopePatch(input: unknown): CapsuleReviewCard['proposedEnvelopePatch'] {
-  const body = isRecord(input) ? input : {};
+  const parsed = CapsuleEnvelopePatchSchema.safeParse(isRecord(input) ? input : {});
+  if (!parsed.success) {
+    const disallowed = parsed.error.issues.flatMap((issue) =>
+      issue.code === 'unrecognized_keys' ? issue.keys : issue.path.length ? [issue.path.join('.')] : ['patch'],
+    );
+    throw new Error(`Capsule review envelope patch contains fields that are not allowed: ${uniqueStrings(disallowed).join(', ') || 'unknown field'}`);
+  }
+  const body = parsed.data;
   const patch: CapsuleReviewCard['proposedEnvelopePatch'] = {};
   const label = cleanText(body.label, 160);
   const summary = cleanText(body.summary, 600);
-  const activeOntologyStackId = cleanText(body.activeOntologyStackId, 120);
-  const activeReadContractId = cleanText(body.activeReadContractId, 120);
   const latestGateState = normalizeGateState(body.latestGateState);
   if (label) patch.label = label;
   if (summary) patch.summary = summary;
-  if (activeOntologyStackId) patch.activeOntologyStackId = activeOntologyStackId;
-  if (activeReadContractId) patch.activeReadContractId = activeReadContractId;
   if (latestGateState !== 'none') patch.latestGateState = latestGateState;
   if (isRecord(body.coreRefs)) patch.coreRefs = normalizeCoreRefs(body.coreRefs);
-  if (Array.isArray(body.lockedCoreKinds)) patch.lockedCoreKinds = uniqueLockKinds(cleanStringArray(body.lockedCoreKinds));
-  if (isRecord(body.readinessSummary)) {
-    patch.readinessSummary = normalizeReadinessSummary(body.readinessSummary, normalizeCoreRefs(body.coreRefs), latestGateState, new Date(0).toISOString());
-  }
+  if (Array.isArray(body.sourceRefs)) patch.sourceRefs = cloneSerializable(body.sourceRefs);
+  if (Array.isArray(body.claimLedger)) patch.claimLedger = cloneSerializable(body.claimLedger);
+  if (Array.isArray(body.outputContracts)) patch.outputContracts = cloneSerializable(body.outputContracts);
+  if (Object.prototype.hasOwnProperty.call(body, 'sourcePosture')) patch.sourcePosture = cloneSerializable(body.sourcePosture);
+  if (isRecord(body.agentPermissions)) patch.agentPermissions = cloneSerializable(body.agentPermissions);
+  if (isRecord(body.memoryPosture)) patch.memoryPosture = cloneSerializable(body.memoryPosture);
   return patch;
+}
+
+function normalizeUsageRollup(input: unknown, fallbackUpdatedAt: string): CapsuleUsageRollup {
+  const body = isRecord(input) ? input : {};
+  const readCount = nonnegativeCount(body.readCount);
+  const thinFallbackCount = Math.min(readCount, nonnegativeCount(body.thinFallbackCount));
+  const droppedCoreEventCount = Math.min(readCount, nonnegativeCount(body.droppedCoreEventCount));
+  const staleCoreHitCount = Math.min(readCount, nonnegativeCount(body.staleCoreHitCount));
+  return {
+    readCount,
+    lastUsedAt: stringOrNull(body.lastUsedAt),
+    thinFallbackCount,
+    droppedCoreEventCount,
+    staleCoreHitCount,
+    fallbackRate: readCount ? roundRatio(thinFallbackCount / readCount) : 0,
+    droppedCoreRate: readCount ? roundRatio(droppedCoreEventCount / readCount) : 0,
+    staleCoreRate: readCount ? roundRatio(staleCoreHitCount / readCount) : 0,
+    droppedCoreFrequency: normalizeFrequency(body.droppedCoreFrequency),
+    staleCoreFrequency: normalizeFrequency(body.staleCoreFrequency),
+    updatedAt: stringOrNull(body.updatedAt) ?? fallbackUpdatedAt,
+  };
+}
+
+function incrementFrequency(current: Record<string, number> | undefined, ids: string[]): Record<string, number> {
+  const next = normalizeFrequency(current);
+  for (const id of ids) {
+    next[id] = (next[id] ?? 0) + 1;
+  }
+  return next;
+}
+
+function normalizeFrequency(value: unknown): Record<string, number> {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(Object.entries(value).flatMap(([key, count]) => {
+    const cleanKey = cleanText(key, 160);
+    const cleanCount = nonnegativeCount(count);
+    return cleanKey && cleanCount > 0 ? [[cleanKey, cleanCount]] : [];
+  }));
+}
+
+function nonnegativeCount(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+}
+
+function roundRatio(value: number): number {
+  return Math.round(Math.max(0, Math.min(1, value)) * 1000) / 1000;
+}
+
+function buildMemoryPosturePatch(
+  capsule: PraxisCapsule,
+  input: {
+    canonicalCapsuleFacts?: string[];
+    advisoryCogneeRecall?: string[];
+    rejectedInferences?: string[];
+    removeFromAdvisory?: boolean;
+  },
+): Record<string, unknown> {
+  const existing = isRecord(capsule.v3?.memoryPosture)
+    ? capsule.v3.memoryPosture
+    : isRecord(capsule.memoryPosture)
+      ? capsule.memoryPosture
+      : {};
+  const canonicalCapsuleFacts = uniqueStrings([
+    ...cleanStringArray(existing.canonicalCapsuleFacts),
+    ...(input.canonicalCapsuleFacts ?? []),
+  ]).slice(0, 100);
+  const promoted = new Set((input.removeFromAdvisory ? input.advisoryCogneeRecall ?? [] : []).map((item) => item.trim()));
+  const advisoryCogneeRecall = uniqueStrings([
+    ...cleanStringArray(existing.advisoryCogneeRecall).filter((item) => !promoted.has(item)),
+    ...(input.removeFromAdvisory ? [] : input.advisoryCogneeRecall ?? []),
+  ]).slice(0, 100);
+  const rejectedInferences = uniqueStrings([
+    ...cleanStringArray(existing.rejectedInferences),
+    ...(input.rejectedInferences ?? []),
+  ]).slice(0, 100);
+  return {
+    ...cloneSerializable(existing),
+    canonicalCapsuleFacts,
+    advisoryCogneeRecall,
+    rejectedInferences,
+    cogneeDatasetId: typeof existing.cogneeDatasetId === 'string' && existing.cogneeDatasetId.trim()
+      ? existing.cogneeDatasetId
+      : `owner:${capsule.ownerUid}/capsule:${capsule.capsuleId}/v${capsule.version}`,
+    cogneeMode: 'advisory-only',
+    cogneeOperations: ['remember', 'recall', 'improve', 'forget'],
+  };
+}
+
+function formatAdvisoryMemoryCandidate(candidate: AdvisoryMemoryReviewCandidateInput): string {
+  const text = cleanText(candidate.text, 500) || cleanId(candidate.id, 'cognee-candidate');
+  const confidence = Math.round(Math.max(0, Math.min(candidate.confidence ?? 0, 0.6)) * 1000) / 1000;
+  const provenance = cleanText(candidate.provenance ?? candidate.sourceId, 160) || 'cognee';
+  return `${text} (confidence ${confidence.toFixed(3)}; provenance ${provenance})`;
+}
+
+async function recordReviewPatchRejection(
+  uid: string,
+  capsule: PraxisCapsule,
+  input: CreateCapsuleReviewCardInput,
+  err: unknown,
+  deps?: CapsuleServiceDeps,
+): Promise<void> {
+  const timestamp = nowIso(deps);
+  const message = err instanceof Error ? err.message : 'Patch validation failed.';
+  const auditId = `patch-rejected-${stableId(`${uid}:${capsule.capsuleId}:${input.title}:${timestamp}`)}`;
+  await capsulesCollection(uid, deps).doc(capsule.capsuleId).collection('reviewAudits').doc(auditId).set({
+    auditId,
+    event: 'review_card_patch_rejected',
+    capsuleId: capsule.capsuleId,
+    ownerUid: uid,
+    title: cleanText(input.title, 180) || 'Capsule review card',
+    sourceType: input.sourceType,
+    target: input.target,
+    message,
+    createdAt: timestamp,
+  }, { merge: true });
+}
+
+function buildAppliedReviewCardUpdate(
+  capsule: PraxisCapsule,
+  card: CapsuleReviewCard,
+  applyMetadata: CapsuleReviewApplyMetadata,
+): { previousSnapshot: PraxisCapsule; capsule: PraxisCapsule; card: CapsuleReviewCard } {
+  const patch = card.proposedEnvelopePatch;
+  const updated = sanitizeCapsule({
+    ...capsule,
+    ...patch,
+    coreRefs: patch.coreRefs ? normalizeCoreRefs({ ...capsule.coreRefs, ...patch.coreRefs }) : capsule.coreRefs,
+    readinessSummary: {
+      ...(capsule.readinessSummary ?? {}),
+      reviewCardCount: Math.max(capsule.readinessSummary?.reviewCardCount ?? 1, 1),
+    },
+    latestGateState: patch.latestGateState ?? 'applied',
+    version: applyMetadata.targetVersion,
+    updatedAt: applyMetadata.appliedAt,
+  });
+  const appliedCard: CapsuleReviewCard = {
+    ...card,
+    state: 'applied',
+    applyMetadata,
+    updatedAt: applyMetadata.appliedAt,
+  };
+  return {
+    previousSnapshot: sanitizeCapsule(capsule),
+    capsule: updated,
+    card: appliedCard,
+  };
+}
+
+async function writeDependencyInvalidationNotes(
+  uid: string,
+  capsule: PraxisCapsule,
+  card: CapsuleReviewCard,
+  deps?: CapsuleServiceDeps,
+): Promise<void> {
+  const patch = card.proposedEnvelopePatch;
+  const changesSourceOrClaim = Array.isArray(patch.sourceRefs) || Array.isArray(patch.claimLedger) || Boolean(patch.coreRefs?.sourceCoreIds?.length);
+  if (!changesSourceOrClaim) return;
+  const dependents = await getCapsuleDependents(uid, capsule.capsuleId, deps);
+  if (!dependents.length) return;
+  const timestamp = nowIso(deps);
+  const batch = dbOf(deps).batch();
+  for (const dependent of dependents) {
+    const noteId = `dependency-invalidation-${stableId(`${dependent.capsuleId}:${capsule.capsuleId}:${card.reviewCardId}:${timestamp}`)}`;
+    batch.set(capsulesCollection(uid, deps).doc(dependent.capsuleId).collection('notes').doc(noteId), {
+      noteId,
+      type: 'dependencyInvalidation',
+      sourceCapsuleId: capsule.capsuleId,
+      sourceCapsuleVersion: capsule.version,
+      reviewCardId: card.reviewCardId,
+      body: `Dependency invalidation: ${capsule.label} changed source or claim material. Re-evaluate readiness before downstream use.`,
+      createdAt: timestamp,
+    }, { merge: true });
+  }
+  await batch.commit();
+}
+
+async function writeOntologyDiagnosticsNote(
+  uid: string,
+  capsule: PraxisCapsule,
+  card: CapsuleReviewCard,
+  deps?: CapsuleServiceDeps,
+): Promise<void> {
+  if (card.target !== 'ontologyStack') return;
+  const validation = await validateOntologyStack(uid, {
+    stackId: capsule.activeOntologyStackId,
+    ontologyIds: card.evidence.map((item) => item.id),
+  }, deps);
+  if (!validation.diagnostics.length) return;
+  const timestamp = nowIso(deps);
+  const noteId = `ontology-diagnostic-${stableId(`${capsule.capsuleId}:${card.reviewCardId}:${timestamp}`)}`;
+  await capsulesCollection(uid, deps).doc(capsule.capsuleId).collection('notes').doc(noteId).set({
+    noteId,
+    type: 'ontologyDiagnostics',
+    capsuleId: capsule.capsuleId,
+    reviewCardId: card.reviewCardId,
+    diagnostics: validation.diagnostics,
+    body: `Ontology validation found dangling refs: ${validation.danglingRefs.join(', ')}`,
+    createdAt: timestamp,
+  }, { merge: true });
+}
+
+async function ontologyRefExists(uid: string, ref: string, deps?: CapsuleServiceDeps): Promise<boolean> {
+  const docId = firestoreDocId(ref);
+  const db = dbOf(deps);
+  const candidates = [
+    db.collection('users').doc(uid).collection('ontologyDocs').doc(docId),
+    db.collection('users').doc(uid).collection('ontologyStacks').doc(docId),
+    db.collection('ontologyDocs').doc(docId),
+    db.collection('ontologyStacks').doc(docId),
+  ];
+  for (const candidate of candidates) {
+    const snap = await candidate.get();
+    if (snap.exists) return true;
+  }
+  return false;
+}
+
+function firestoreDocId(value: string): string {
+  return cleanText(value, 180).replace(/[\\/]/g, '__') || 'ontology-ref';
 }
 
 function normalizeApplyMetadata(
@@ -2234,6 +2746,39 @@ function enrichContextHealth(health: ContextHealth): ContextHealth {
     recommendations: health.recommendations ?? health.warnings.slice(0, 5),
   };
   return enriched;
+}
+
+function applyCoreHealthToReadiness(readiness: CapsuleReadinessBlock, health: ContextHealth): CapsuleReadinessBlock {
+  const score = Math.min(readiness.score, health.score);
+  const coreDiagnostics = (health.blockers ?? []).map((message) => ({
+    code: 'missing_core',
+    message,
+  }));
+  return {
+    ...readiness,
+    score,
+    tier: score >= 80 ? 'green' : score >= 50 ? 'amber' : 'red',
+    diagnostics: [...readiness.diagnostics, ...coreDiagnostics],
+  };
+}
+
+function applyReadinessToHealth(health: ContextHealth, readiness: CapsuleReadinessBlock): ContextHealth {
+  const diagnosticWarnings = readiness.diagnostics.map((diagnostic) => diagnostic.message);
+  const warnings = uniqueStrings([...health.warnings, ...diagnosticWarnings]).slice(0, 20);
+  const blockers = uniqueStrings([
+    ...(health.blockers ?? []),
+    ...readiness.diagnostics
+      .filter((diagnostic) => /unsupported|stale/i.test(`${diagnostic.code} ${diagnostic.message}`))
+      .map((diagnostic) => diagnostic.message),
+  ]).slice(0, 10);
+  return {
+    ...health,
+    score: readiness.score,
+    semaphore: readiness.tier === 'green' ? 'green' : readiness.tier === 'amber' ? 'amber' : 'red',
+    warnings,
+    blockers,
+    recommendations: uniqueStrings([...(health.recommendations ?? []), ...diagnosticWarnings]).slice(0, 10),
+  };
 }
 
 function patchForCoreSwap(

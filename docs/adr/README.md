@@ -41,6 +41,7 @@ Accepted ADRs are not edited for meaning. Supersede them with a later ADR.
 - `0044-draft-as-briefing-assembly-contract.md`
 - `0045-ai-first-case-creation-pattern.md`
 - `0049-cognee-memory-layer-disabled-first.md`
+- `0050-context-capsule-unified-schema.md`
 
 Historical v5 duplicate ADRs and superseded marketplace/tool-lane ADRs were
 removed or archived during Tasklet cleanup. The 2026-05-16 aggressive cleanup

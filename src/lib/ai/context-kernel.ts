@@ -8,7 +8,7 @@ import {
   type InjectableContext,
   type InjectableContextInput,
 } from '@/lib/context/context-injection';
-import type { CapsuleServiceDeps } from '@/lib/context/capsule-service';
+import type { CapsuleServiceDeps, PraxisCapsule } from '@/lib/context/capsule-service';
 import type {
   CapsuleContextCaptureProfile,
   CapsuleRepositoryMetadata,
@@ -55,7 +55,13 @@ export interface TurnCapsule {
   graphProposalCounts: { proposed: number; accepted: number; rejected: number };
   activeGaps: string[];
   recentToolOutputs: string[];
-  tokenBudgetReport: { maxInputTokens: number; reservedOutputTokens: number; estimatedContextChars: number };
+  tokenBudgetReport: {
+    maxInputTokens: number;
+    reservedOutputTokens: number;
+    estimatedContextChars: number;
+    estimatedContextTokens: number;
+    droppedCores: string[];
+  };
   injectableContext: InjectableContext;
   memory: Record<MemoryType, KernelMemoryItem[]>;
   retrievalPlan: CapsuleRetrievalPlan;
@@ -176,6 +182,9 @@ export interface TurnCapsuleInput extends InjectableContextInput {
   activeGaps?: string[];
   recentToolOutputs?: string[];
   memoryItems?: KernelMemoryItem[];
+  maxInputTokens?: number;
+  reservedOutputTokens?: number;
+  modelContextWindowTokens?: number;
 }
 
 export interface RunCapabilityInput {
@@ -218,8 +227,8 @@ export interface SuggestedActionReceipt {
   createdAt: string;
 }
 
-const DEFAULT_MAX_INPUT_TOKENS = 24_000;
-const DEFAULT_RESERVED_OUTPUT_TOKENS = 4_000;
+export const DEFAULT_MAX_INPUT_TOKENS = 24_000;
+export const DEFAULT_RESERVED_OUTPUT_TOKENS = 4_000;
 
 export async function buildTurnCapsule(
   input: TurnCapsuleInput,
@@ -228,6 +237,10 @@ export async function buildTurnCapsule(
   const injectableContext = await resolveInjectableContext(input, deps);
   const refs = injectableContext.capsule.coreRefs;
   const memory = groupVisibleMemory(input.memoryItems ?? [], injectableContext.capsule.capsuleId);
+  const tokenBudget = resolveTokenBudget(input);
+  const selectedCores = selectCoresForBudget(injectableContext.capsule, {
+    objective: input.query ?? input.situationId ?? injectableContext.capsule.label,
+  }, tokenBudget);
   const estimatedContextChars = [
     injectableContext.promptBlock,
     input.query ?? '',
@@ -235,6 +248,11 @@ export async function buildTurnCapsule(
     ...(input.activeGaps ?? []),
     ...(input.recentToolOutputs ?? []),
   ].join('\n').length;
+  const estimatedContextTokens = estimateTokens([
+    injectableContext.promptBlock,
+    input.query ?? '',
+    ...Object.values(memory).flat().map((item) => item.text),
+  ].join('\n'));
 
   const baseCapsule = {
     traceId: input.traceId ?? `turn_${Date.now().toString(36)}`,
@@ -264,9 +282,11 @@ export async function buildTurnCapsule(
     activeGaps: input.activeGaps ?? injectableContext.capsule.health.warnings,
     recentToolOutputs: input.recentToolOutputs ?? [],
     tokenBudgetReport: {
-      maxInputTokens: DEFAULT_MAX_INPUT_TOKENS,
-      reservedOutputTokens: DEFAULT_RESERVED_OUTPUT_TOKENS,
+      maxInputTokens: tokenBudget.maxInputTokens,
+      reservedOutputTokens: tokenBudget.reservedOutputTokens,
       estimatedContextChars,
+      estimatedContextTokens,
+      droppedCores: selectedCores.droppedCores,
     },
     injectableContext,
     memory,
@@ -275,6 +295,53 @@ export async function buildTurnCapsule(
   return {
     ...baseCapsule,
     retrievalPlan: buildCapsuleRetrievalPlan(baseCapsule),
+  };
+}
+
+export interface CoreBudgetSelection {
+  selectedCoreIds: string[];
+  droppedCores: string[];
+  estimatedTokens: number;
+}
+
+export function selectCoresForBudget(
+  capsule: PraxisCapsule,
+  turn: { objective?: string | null },
+  budget: { maxInputTokens?: number; reservedOutputTokens?: number } = {},
+): CoreBudgetSelection {
+  const refs = capsule.coreRefs;
+  const locked = new Set(capsule.lockedCoreKinds);
+  const objective = (turn.objective ?? '').toLowerCase();
+  const usableBudget = Math.max(1, (budget.maxInputTokens ?? DEFAULT_MAX_INPUT_TOKENS) - (budget.reservedOutputTokens ?? DEFAULT_RESERVED_OUTPUT_TOKENS));
+  const items = [
+    coreBudgetItem('user', refs.userCoreId, locked.has('user'), objective),
+    coreBudgetItem('situation', refs.situationCoreId, locked.has('situation'), objective),
+    ...refs.sourceCoreIds.map((id) => coreBudgetItem('source', id, locked.has('source'), objective)),
+    ...refs.documentCoreIds.map((id) => coreBudgetItem('document', id, locked.has('document'), objective)),
+    coreBudgetItem('graph', refs.graphCoreId, locked.has('graph'), objective),
+    coreBudgetItem('time', refs.timeCoreId, locked.has('time'), objective),
+    ...refs.outputCoreIds.map((id) => coreBudgetItem('output', id, locked.has('output'), objective)),
+    ...(refs.toolCoreIds ?? []).map((id) => coreBudgetItem('tool', id, locked.has('tool'), objective)),
+    ...(refs.objectiveCoreIds ?? []).map((id) => coreBudgetItem('objective', id, locked.has('objective'), objective)),
+    ...(refs.productCoreIds ?? []).map((id) => coreBudgetItem('product', id, locked.has('product'), objective)),
+    coreBudgetItem('memory', refs.memoryCoreId, locked.has('memory'), objective),
+  ].filter((item): item is NonNullable<ReturnType<typeof coreBudgetItem>> => Boolean(item))
+    .sort((a, b) => Number(b.locked) - Number(a.locked) || b.score - a.score || a.id.localeCompare(b.id));
+  const selected: string[] = [];
+  const dropped: string[] = [];
+  let used = 0;
+  for (const item of items) {
+    if (item.locked || used + item.tokens <= usableBudget) {
+      selected.push(item.id);
+      used += item.tokens;
+    } else {
+      dropped.push(item.id);
+    }
+  }
+  return {
+    selectedCoreIds: selected,
+    droppedCores: dropped,
+    estimatedTokens: used,
   };
 }
 
@@ -779,6 +846,40 @@ function retrievalLayer(
     refIds: ids,
     status: ids.length > 0 ? 'ready' : 'missing',
   };
+}
+
+function resolveTokenBudget(input: TurnCapsuleInput): { maxInputTokens: number; reservedOutputTokens: number } {
+  const reservedOutputTokens = positiveInt(input.reservedOutputTokens) ?? DEFAULT_RESERVED_OUTPUT_TOKENS;
+  const modelWindow = positiveInt(input.modelContextWindowTokens);
+  const explicitMax = positiveInt(input.maxInputTokens);
+  return {
+    maxInputTokens: explicitMax ?? (modelWindow ? Math.max(512, modelWindow - reservedOutputTokens) : DEFAULT_MAX_INPUT_TOKENS),
+    reservedOutputTokens,
+  };
+}
+
+function positiveInt(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : null;
+}
+
+function coreBudgetItem(kind: string, id: string | null | undefined, locked: boolean, objective: string) {
+  if (!id) return null;
+  const idText = id.toLowerCase();
+  const overlap = objective
+    .split(/\W+/)
+    .filter((token) => token.length > 2 && idText.includes(token)).length;
+  const kindPriority = kind === 'user' || kind === 'situation' ? 8 : kind === 'source' || kind === 'document' ? 7 : kind === 'objective' ? 6 : 4;
+  return {
+    id,
+    kind,
+    locked,
+    score: kindPriority + overlap * 2,
+    tokens: estimateTokens(`${kind}:${id}`),
+  };
+}
+
+function estimateTokens(value: string): number {
+  return Math.max(1, Math.ceil(value.length / 4));
 }
 
 function inferRepositoryFreshness(

@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { createCapsule, type CapsuleCoreRefs } from '@/lib/context/capsule-service';
+import { createCapsule, createCapsuleReviewCard, type CapsuleCoreRefs } from '@/lib/context/capsule-service';
 import { parseCapsulePlusImportBundle } from '@/lib/capsule-plus';
-import { upsertApprovedCapsulePlusGraphRows } from '@/lib/capsule-plus/postgres';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,20 +38,30 @@ export const POST = withAuth(async (request, user) => {
         notes: `Imported from Capsule+ bundle ${bundle.manifest.capsuleId}.`,
       },
     });
-    const scopedNodes = bundle.nodes.map((node) => ({ ...node, ownerUid: user.uid, capsuleId: capsule.capsuleId }));
-    const scopedEdges = bundle.edges.map((edge) => ({ ...edge, ownerUid: user.uid, capsuleId: capsule.capsuleId }));
-    const writeResult = await upsertApprovedCapsulePlusGraphRows({
-      ownerUid: user.uid,
-      capsuleId: capsule.capsuleId,
-      nodes: scopedNodes,
-      edges: scopedEdges,
-    });
+    const scopedNodes = bundle.nodes.map((node) => ({ ...node, ownerUid: user.uid, capsuleId: capsule.capsuleId, reviewState: 'proposed' as const }));
+    const scopedEdges = bundle.edges.map((edge) => ({ ...edge, ownerUid: user.uid, capsuleId: capsule.capsuleId, reviewState: 'proposed' as const }));
+    const reviewCards = [];
+    if (scopedNodes.length || scopedEdges.length || bundle.proposals.length) {
+      reviewCards.push(await createCapsuleReviewCard(user.uid, capsule.capsuleId, {
+        title: `Review Capsule+ graph proposal from ${bundle.manifest.capsuleId}`,
+        sourceType: 'graph',
+        target: 'graphProposal',
+        evidence: [
+          ...scopedNodes.slice(0, 10).map((node) => ({ id: node.id, label: node.label, advisory: true, sourceType: 'capsule-plus' })),
+          ...scopedEdges.slice(0, 10).map((edge) => ({ id: edge.id, label: edge.label ?? edge.type, advisory: true, sourceType: 'capsule-plus' })),
+        ],
+      }));
+    }
     return NextResponse.json({
       capsule,
       imported: true,
-      graph: writeResult,
-      proposedRowsRetainedForReview: scopedNodes.filter((row) => row.reviewState !== 'approved').length
-        + scopedEdges.filter((row) => row.reviewState !== 'approved').length,
+      graph: {
+        canonicalWrites: 0,
+        proposedNodes: scopedNodes.length,
+        proposedEdges: scopedEdges.length,
+      },
+      reviewCards,
+      proposedRowsRetainedForReview: scopedNodes.length + scopedEdges.length,
     }, { status: 201 });
   } catch (err) {
     return handleRouteError(err, 'context/capsules/capsule-plus/import');

@@ -6,6 +6,7 @@ import { handleRouteError } from '@/lib/api/standard-error';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import {
   activateCapsule,
+  approveAdvisoryMemoryCandidate,
   archiveCapsule,
   bumpCapsuleVersion,
   deleteCapsule,
@@ -13,7 +14,9 @@ import {
   forkCapsule,
   getCapsule,
   promoteCapsuleSourceGaps,
+  proposeCogneeSeedReviewCards,
   rateCapsule,
+  rejectAdvisoryMemoryCandidate,
   renameCapsule,
   setCapsuleAccessPolicy,
   setCapsuleCoreLock,
@@ -102,6 +105,26 @@ const ActionSchema = z.discriminatedUnion('action', [
     sourceIds: z.array(z.string().min(1).max(120)).max(20).optional(),
     runId: z.string().min(1).max(120).nullable().optional(),
     generatedBy: z.string().min(1).max(80).optional(),
+  }),
+  z.object({ action: z.literal('propose-cognee-seed') }),
+  z.object({
+    action: z.literal('approve-advisory-memory'),
+    candidate: z.object({
+      id: z.string().min(1).max(180),
+      text: z.string().min(1).max(2000),
+      confidence: z.number().min(0).max(1).optional(),
+      sourceId: z.string().min(1).max(240).nullable().optional(),
+      provenance: z.string().min(1).max(240).nullable().optional(),
+      metadata: z.record(z.string(), z.unknown()).optional(),
+    }),
+  }),
+  z.object({
+    action: z.literal('reject-advisory-memory'),
+    candidate: z.object({
+      id: z.string().min(1).max(180),
+      text: z.string().min(1).max(2000),
+      reason: z.string().max(500).nullable().optional(),
+    }),
   }),
 ]);
 
@@ -298,6 +321,21 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
         runId: parsed.data.runId,
         generatedBy: parsed.data.generatedBy,
       });
+      if (!result) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return NextResponse.json(result, { status: 201 });
+    }
+    if (parsed.data.action === 'propose-cognee-seed') {
+      const result = await proposeCogneeSeedReviewCards(user.uid, capsuleId);
+      if (!result) return NextResponse.json({ error: 'Capsule starter seed pack not found' }, { status: 404 });
+      return NextResponse.json(result, { status: 201 });
+    }
+    if (parsed.data.action === 'approve-advisory-memory') {
+      const result = await approveAdvisoryMemoryCandidate(user.uid, capsuleId, parsed.data.candidate);
+      if (!result) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
+      return NextResponse.json(result, { status: 201 });
+    }
+    if (parsed.data.action === 'reject-advisory-memory') {
+      const result = await rejectAdvisoryMemoryCandidate(user.uid, capsuleId, parsed.data.candidate);
       if (!result) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
       return NextResponse.json(result, { status: 201 });
     }

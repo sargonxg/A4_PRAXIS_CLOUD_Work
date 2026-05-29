@@ -33,6 +33,7 @@ describe('capsule factory Genkit flows', () => {
     });
 
     expect(result.draftCores.map((core) => core.kind)).toEqual(expect.arrayContaining(['user', 'situation', 'source', 'tool', 'output']));
+    expect(result.factoryTelemetry?.path).toBe('fallback');
     expect(result.applyMode).toBe('draft_review');
     expect(result.warnings).toContain('No documents or source snippets were provided; source cores stay gap-oriented.');
   }, 10_000);
@@ -45,6 +46,7 @@ describe('capsule factory Genkit flows', () => {
       sourceSnippets: [],
     });
 
+    expect(result.factoryTelemetry?.path).toBe('fallback');
     expect(result.freshnessNeeds).toContain('Dated sources are required before using latest/current wording.');
     expect(result.searchQueries.length).toBeGreaterThan(0);
     expect(result.readOnlyTools.every((tool) => tool.approvalPosture === 'receipt_only')).toBe(true);
@@ -68,6 +70,7 @@ describe('capsule factory Genkit flows', () => {
       sourceSnippets: [{ id: 'src-ocha', title: 'OCHA update', date: '2026-05-01', span: 'Access constraints remain significant.', source: 'firestore' }],
     });
 
+    expect(result.factoryTelemetry?.path).toBe('fallback');
     expect(result.contextCapsuleDraft.status).toBe('draft');
     expect(result.contextCapsuleDraft.provenance.sourceIds).toEqual(['src-ocha']);
     expect(result.proposedCores.find((core) => core.label === 'OCHA note')?.source).toBe('firestore');
@@ -239,8 +242,20 @@ describe('capsule factory Genkit flows', () => {
       },
     });
 
+    expect(result.factoryTelemetry?.path).toBe('fallback');
     expect(result.defaultFormat).toBe('talking_points');
     expect(result.exportGates).toContain('Human confirmation before replacing the active capsule or exporting final work.');
     expect(JSON.stringify(result).toLowerCase()).not.toContain('document automation');
+  });
+
+  it('keeps documented factory heuristics stable for freshness and output formats', async () => {
+    const { needsFreshnessCheck, detectWritingDefaultFormat } = await import('@/lib/genkit/flows/factory-heuristics');
+
+    expect(needsFreshnessCheck('latest sanctions posture this week')).toBe(true);
+    expect(needsFreshnessCheck('evergreen doctrine summary')).toBe(false);
+    expect(detectWritingDefaultFormat('handover to the next analyst')).toBe('handover');
+    expect(detectWritingDefaultFormat('brief the minister')).toBe('brief');
+    expect(detectWritingDefaultFormat('talking points for remarks')).toBe('talking_points');
+    expect(detectWritingDefaultFormat('decision memo')).toBe('memo');
   });
 });

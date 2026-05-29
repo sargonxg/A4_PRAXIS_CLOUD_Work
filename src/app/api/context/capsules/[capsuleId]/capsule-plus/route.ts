@@ -4,9 +4,8 @@ import { handleRouteError } from '@/lib/api/standard-error';
 import { getCapsule } from '@/lib/context/capsule-service';
 import {
   buildCapsulePlusExportBundle,
-  buildCapsulePlusManifest,
   buildPraxisCapsuleFilename,
-  type CapsulePlusBundle,
+  materializeCapsulePlusBundle,
 } from '@/lib/capsule-plus';
 import { listCapsulePlusGraphRows } from '@/lib/capsule-plus/postgres';
 
@@ -28,18 +27,9 @@ export const GET = withAuth<RouteContext>(async (_request, user, context) => {
       capsuleId: capsule.capsuleId,
       includeProposed: true,
     });
-    const bundle: CapsulePlusBundle = {
-      manifest: buildCapsulePlusManifest({
-        capsuleId: capsule.capsuleId,
-        ownerUid: user.uid,
-        graphVersion: graph.nodes.length || graph.edges.length ? capsule.version : 0,
-      }),
-      capsule: { ...capsule },
-      nodes: graph.nodes,
-      edges: graph.edges,
-      proposals: [],
-      sourceReceipts: capsule.coreRefs.sourceCoreIds.map((id) => ({ id, title: id, metadata: { capsuleId: capsule.capsuleId } })),
-    };
+    const bundle = materializeCapsulePlusBundle(capsule.v3 ?? capsule);
+    bundle.nodes = [...bundle.nodes, ...graph.nodes];
+    bundle.edges = [...bundle.edges, ...graph.edges];
     const zip = await buildCapsulePlusExportBundle(bundle);
     return new NextResponse(new Uint8Array(zip), {
       headers: {

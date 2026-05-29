@@ -56,6 +56,7 @@ export async function runCapsuleFactoryDraft(
     phase: 'succeeded',
     schemaName: 'CapsuleIntakeOutput',
     data: {
+      path: intake.factoryTelemetry?.path ?? 'llm',
       draftCoreCount: intake.draftCores.length,
       sourceGapCount: intake.sourceGaps.length,
     },
@@ -83,6 +84,7 @@ export async function runCapsuleFactoryDraft(
     phase: 'succeeded',
     schemaName: 'CapsuleResearchPlanOutput',
     data: {
+      path: researchPlan.factoryTelemetry?.path ?? 'llm',
       sourceGapCount: researchPlan.sourceGaps.length,
       readOnlyTools: researchPlan.readOnlyTools.map((tool) => tool.toolId),
     },
@@ -105,6 +107,7 @@ export async function runCapsuleFactoryDraft(
     phase: 'succeeded',
     schemaName: 'CapsuleSynthesisOutput',
     data: {
+      path: synthesis.factoryTelemetry?.path ?? 'llm',
       draftOutput: {
         contextCapsuleDraft: synthesis.contextCapsuleDraft,
         proposedCoreCount: synthesis.proposedCores.length,
@@ -124,6 +127,7 @@ export async function runCapsuleFactoryDraft(
     phase: 'succeeded',
     schemaName: 'CapsuleWritingProfileOutput',
     data: {
+      path: writingProfile.factoryTelemetry?.path ?? 'llm',
       defaultFormat: writingProfile.defaultFormat,
       exportGates: writingProfile.exportGates,
     },

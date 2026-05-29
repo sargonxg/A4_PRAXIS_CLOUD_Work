@@ -360,7 +360,7 @@ export function normalizeContextCapsuleV3(input: ContextCapsuleV2 | unknown, opt
   const contextCaptureProfile = buildContextCaptureProfile(v2, sourceSpine);
   const claimLedger = buildClaimLedger(v2);
   const agentOperatingContract = buildAgentOperatingContract(v2);
-  const memoryPosture = buildMemoryPosture(v2);
+  const memoryPosture = buildMemoryPosture(v2, body.memoryPosture);
   const governance = buildGovernance(v2);
   const marketplaceProfile = buildMarketplaceProfile(v2, sourceSpine, humanTacitKnowledge);
   const evaluation = buildEvaluation(v2, sourceSpine, humanTacitKnowledge, agentOperatingContract, marketplaceProfile, options);
@@ -814,25 +814,26 @@ function buildAgentOperatingContract(v2: ContextCapsuleV2): ContextCapsuleAgentO
   };
 }
 
-function buildMemoryPosture(v2: ContextCapsuleV2): ContextCapsuleMemoryPosture {
+function buildMemoryPosture(v2: ContextCapsuleV2, input?: unknown): ContextCapsuleMemoryPosture {
   const datasetId = `owner:${v2.ownerUid}/capsule:${v2.capsuleId}/v${v2.version}`;
+  const body = isRecord(input) ? input : {};
   return {
-    canonicalCapsuleFacts: [
+    canonicalCapsuleFacts: withFallback(cleanStringArray(body.canonicalCapsuleFacts), [
       `${v2.capsuleId}@v${v2.version}`,
       ...v2.claimLedger.filter((claim) => claim.support === 'supported').map((claim) => claim.text),
-    ],
-    advisoryCogneeRecall: v2.starterSnapshot?.cogneeProfile
+    ]),
+    advisoryCogneeRecall: withFallback(cleanStringArray(body.advisoryCogneeRecall), v2.starterSnapshot?.cogneeProfile
       ? [
         v2.starterSnapshot.cogneeProfile.whyCogneeHelps,
         ...v2.starterSnapshot.cogneeProfile.seedDocuments.map((document) => document.title),
       ]
-      : [],
-    sessionMemory: [],
-    graphProposals: v2.coreRefs.graphCoreId ? [`approved graph ${v2.coreRefs.graphCoreId}`] : ['review-card graph proposal required before graph promotion'],
-    staleAssumptions: v2.sourceRefs.filter((source) => source.stale).map((source) => source.label),
-    disputedClaims: v2.claimLedger.filter((claim) => claim.support === 'unsupported' || /disputed|contested/i.test(`${claim.text} ${claim.caveat ?? ''}`)).map((claim) => claim.text),
-    rejectedInferences: [],
-    cogneeDatasetId: datasetId,
+      : []),
+    sessionMemory: cleanStringArray(body.sessionMemory),
+    graphProposals: withFallback(cleanStringArray(body.graphProposals), v2.coreRefs.graphCoreId ? [`approved graph ${v2.coreRefs.graphCoreId}`] : ['review-card graph proposal required before graph promotion']),
+    staleAssumptions: withFallback(cleanStringArray(body.staleAssumptions), v2.sourceRefs.filter((source) => source.stale).map((source) => source.label)),
+    disputedClaims: withFallback(cleanStringArray(body.disputedClaims), v2.claimLedger.filter((claim) => claim.support === 'unsupported' || /disputed|contested/i.test(`${claim.text} ${claim.caveat ?? ''}`)).map((claim) => claim.text)),
+    rejectedInferences: cleanStringArray(body.rejectedInferences),
+    cogneeDatasetId: typeof body.cogneeDatasetId === 'string' && body.cogneeDatasetId.trim() ? body.cogneeDatasetId.trim() : datasetId,
     cogneeMode: 'advisory-only',
     cogneeOperations: ['remember', 'recall', 'improve', 'forget'],
   };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCapsuleRetrievalPlan, buildTurnCapsule, compileEffectiveCapsule, persistSuggestedActionReceipt, runCapability, suggestNextActions } from '@/lib/ai/context-kernel';
+import { buildCapsuleRetrievalPlan, buildTurnCapsule, compileEffectiveCapsule, persistSuggestedActionReceipt, runCapability, selectCoresForBudget, suggestNextActions } from '@/lib/ai/context-kernel';
 
 describe('context kernel', () => {
   it('builds a turn capsule and excludes deleted memory from the next capsule', async () => {
@@ -128,6 +128,36 @@ describe('context kernel', () => {
     expect(plan.layers.find((layer) => layer.id === 'recent-runs')?.refIds).toEqual(['run-1']);
     expect(plan.layers.find((layer) => layer.id === 'repository-documents')?.priority).toBe(5);
     expect(plan.layers.find((layer) => layer.id === 'advisory-cognee-memory')?.priority).toBe(7);
+  });
+
+  it('selects ranked cores under a token budget and reports dropped cores', async () => {
+    const db = new FakeFirestore();
+    const capsule = await buildTurnCapsule({
+      uid: 'u1',
+      activeContextStack: {
+        stackId: 'default',
+        userModelId: 'policy-user',
+        situationId: 'ceasefire-monitoring',
+        sourceIds: ['ceasefire-source-primary', 'low-value-appendix-that-is-very-long-and-not-relevant-to-the-current-turn'],
+        documentIds: ['monitoring-document-with-substantial-background-material'],
+        outputGoal: 'memo',
+      },
+      query: 'ceasefire monitoring memo',
+      maxInputTokens: 20,
+      reservedOutputTokens: 10,
+    }, deps(db));
+
+    const selection = selectCoresForBudget(capsule.injectableContext.capsule, {
+      objective: 'ceasefire monitoring memo',
+    }, {
+      maxInputTokens: 20,
+      reservedOutputTokens: 10,
+    });
+
+    expect(selection.selectedCoreIds).toContain('ceasefire-monitoring');
+    expect(selection.droppedCores.length).toBeGreaterThan(0);
+    expect(capsule.tokenBudgetReport.droppedCores.length).toBeGreaterThan(0);
+    expect(capsule.tokenBudgetReport.estimatedContextTokens).toBeGreaterThan(0);
   });
 
   it('plans capability runs through canonical route families', async () => {

@@ -107,7 +107,7 @@ async def _safe_cognee_search(
     node_set: list[str] | None = None,
 ) -> tuple[list[Any], dict[str, Any]]:
     try:
-        hits = await cognee_memory.search(
+        response = await cognee_memory.search(
             scope=scope,
             query=query,
             mode=mode,
@@ -119,7 +119,12 @@ async def _safe_cognee_search(
             node_set=node_set,
             audit=audit,
         )
-        return hits, {"ok": True, "status": "searched"}
+        hits = cognee_memory.memory_hits_from_response(response)
+        return hits, {
+            "ok": response.get("ok", True),
+            "status": response.get("status", "searched"),
+            "dataset": response.get("dataset", scope.dataset),
+        }
     except Exception as exc:
         return [], {"ok": False, "status": "search_unavailable", "error": str(exc)}
 

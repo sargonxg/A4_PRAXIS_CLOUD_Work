@@ -17,6 +17,10 @@ export const CapsuleFactoryCoreKindSchema = z.enum([
 export const CapsuleFactoryLaneIdSchema = z.enum(['improve', 'sources', 'output', 'dialectica', 'kairos', 'agon']);
 export const CapsuleFactoryReviewStateSchema = z.enum(['draft', 'reviewed', 'applied', 'rejected']);
 export const CapsuleFactoryProposalSourceSchema = z.enum(['firestore', 'cognee', 'future_graphiti']);
+export const CapsuleFactoryTelemetryPathSchema = z.enum(['llm', 'fallback']);
+export const CapsuleFactoryTelemetrySchema = z.object({
+  path: CapsuleFactoryTelemetryPathSchema,
+}).optional();
 export const CapsuleFactoryApplyTargetSchema = z.enum([
   'user_core',
   'situation_core',
@@ -74,6 +78,7 @@ export const CapsuleIntakeOutputSchema = z.object({
   suggestedTools: z.array(z.string().min(1).max(120)).max(10),
   applyMode: z.literal('draft_review'),
   warnings: z.array(z.string().min(1).max(240)).max(10),
+  factoryTelemetry: CapsuleFactoryTelemetrySchema,
 });
 
 export const CapsuleResearchPlanInputSchema = z.object({
@@ -96,6 +101,7 @@ export const CapsuleResearchPlanOutputSchema = z.object({
   })).max(8),
   corpusReads: z.array(z.string().min(1).max(160)).max(12),
   freshnessNeeds: z.array(z.string().min(1).max(240)).max(8),
+  factoryTelemetry: CapsuleFactoryTelemetrySchema,
 });
 
 export const CapsuleSynthesisInputSchema = z.object({
@@ -158,6 +164,7 @@ export const CapsuleSynthesisOutputSchema = z.object({
   })).max(10),
   laneImprovements: z.array(CapsuleFactoryLaneImprovementSchema).max(8).default([]),
   factoryReceipts: CapsuleFactoryReceiptsSchema.optional(),
+  factoryTelemetry: CapsuleFactoryTelemetrySchema,
 });
 
 export const CapsuleFactoryReviewDiffSchema = z.object({
@@ -196,6 +203,7 @@ export const CapsuleWritingProfileOutputSchema = z.object({
   audience: z.string().min(1).max(240),
   citationPosture: z.string().min(1).max(320),
   exportGates: z.array(z.string().min(1).max(240)).max(8),
+  factoryTelemetry: CapsuleFactoryTelemetrySchema,
 });
 
 export type CapsuleIntakeInput = z.infer<typeof CapsuleIntakeInputSchema>;

@@ -37,7 +37,7 @@ def test_disabled_remember_does_not_load_cognee_or_provider(monkeypatch):
     import asyncio
 
     result = asyncio.run(cognee_memory.remember(scope=scope, content="memo", source_id="doc-1"))
-    assert result["status"] == "disabled"
+    assert result["status"] == "queued_disabled"
 
 
 def test_enabled_config_rejects_raw_provider_key(monkeypatch):

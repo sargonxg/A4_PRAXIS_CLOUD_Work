@@ -41,6 +41,7 @@ class Settings(BaseSettings):
         default="disabled",
         validation_alias=AliasChoices("COGNEE_MODE", "cognee_mode"),
     )
+    cognee_backend_url: str = Field(default="", validation_alias=AliasChoices("COGNEE_BACKEND_URL", "cognee_backend_url"))
     cognee_db_host: str = Field(default="pgbouncer", validation_alias=AliasChoices("COGNEE_DB_HOST", "cognee_db_host"))
     cognee_db_port: int = Field(default=6432, validation_alias=AliasChoices("COGNEE_DB_PORT", "cognee_db_port"))
     cognee_db_name: str = Field(default="praxis_cognee", validation_alias=AliasChoices("COGNEE_DB_NAME", "cognee_db_name"))

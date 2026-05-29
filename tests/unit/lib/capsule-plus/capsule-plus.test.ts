@@ -7,8 +7,11 @@ import {
   CapsulePlusGraphNodeSchema,
   buildCapsulePlusExportBundle,
   buildPraxisCapsuleFilename,
+  materializeCapsulePlusBundle,
   parseCapsulePlusImportBundle,
 } from '@/lib/capsule-plus';
+import { normalizeContextCapsuleV2 } from '@/lib/context/capsule-v2';
+import { normalizeContextCapsuleV3 } from '@/lib/context/capsule-v3';
 
 const baseProvenance = {
   sourceIds: ['src-1'],
@@ -136,6 +139,34 @@ describe('Capsule+ graph contract', () => {
 
     expect(proposal.ontologyStackId).toBe('ontology-stack-1');
     expect(proposal.reviewCardId).toBe('review-card-1');
+  });
+
+  it('materializes v3 claims and sources into a reviewable Capsule+ graph proposal', () => {
+    const capsule = normalizeContextCapsuleV3(normalizeContextCapsuleV2({
+      capsuleId: 'cap-graph',
+      ownerUid: 'u1',
+      label: 'Graph capsule',
+      summary: 'Source-backed claim graph.',
+      version: 3,
+      coreRefs: { sourceCoreIds: ['src-1'], outputCoreIds: ['memo'] },
+      claimLedger: [
+        { claimId: 'claim-1', text: 'Access constraints are rising.', support: 'supported', sourceRefIds: ['src-1'] },
+      ],
+      sourceRefs: [
+        { sourceId: 'src-1', label: 'Official update', publisher: 'UN', date: '2026-05-28T00:00:00.000Z' },
+      ],
+      outputContracts: [
+        { outputId: 'memo', label: 'Decision memo', artifactType: 'memo', citationRequired: true, reviewRequired: true },
+      ],
+    }));
+
+    const bundle = materializeCapsulePlusBundle(capsule);
+
+    expect(bundle.manifest.schemaVersion).toBe('capsule-plus.v1');
+    expect(bundle.nodes.some((node) => node.type === 'Claim')).toBe(true);
+    expect(bundle.nodes.some((node) => node.type === 'Source')).toBe(true);
+    expect(bundle.edges.some((edge) => edge.type === 'SUPPORTED_BY')).toBe(true);
+    expect(bundle.proposals[0]?.reviewState).toBe('proposed');
   });
 
   it('refuses malformed import bundles', async () => {
