@@ -16,13 +16,15 @@ Use this file at the start of Codex sessions in this checkout.
 1. `AGENTS.md`
 2. `CLAUDE.md`
 3. `ARCHITECTURE.md`
-4. `docs/product/README.md`
-5. `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md`
-6. `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`
-7. `docs/architecture/PRAXIS_ARCHITECTURE.md`
-8. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`
-9. `docs/GCP_OPERATIONS.md`
-10. `graphify-out/GRAPH_REPORT.md`
+4. `docs/README.md`
+5. `docs/product/README.md`
+6. `docs/audits/2026-05-30-red-flags-and-improvement-plan.md`
+7. `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md`
+8. `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`
+9. `docs/architecture/PRAXIS_ARCHITECTURE.md`
+10. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`
+11. `docs/GCP_OPERATIONS.md`
+12. `graphify-out/GRAPH_REPORT.md`
 
 ## Product Boundaries
 
@@ -93,7 +95,7 @@ git status --short --branch
 git rev-list --left-right --count origin/main...HEAD
 npm run build
 npm run audit:gcp
-npm run deploy:frontend:cloud
+npm run deploy:frontend:main-safe
 gcloud run services describe praxis-frontend --project=praxisbytacitus --region=us-central1 --format="value(status.latestReadyRevisionName,status.url)"
 ```
 

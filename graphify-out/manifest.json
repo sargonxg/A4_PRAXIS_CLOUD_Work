@@ -5644,8 +5644,8 @@
     "hash": "1997d17d8a918e37e78b2a63580963a0"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\CHANGELOG.md": {
-    "mtime": 1780117912.3984873,
-    "hash": "1ff9c846717842bd53a2fe3ae1677723"
+    "mtime": 1780119396.2771833,
+    "hash": "475396b2ec0032a09763d88ba4e713ca"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\CLAUDE.md": {
     "mtime": 1780075183.449476,
@@ -5672,24 +5672,24 @@
     "hash": "661065ff2a8cfe4e486fb1c0b08584ec"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\README.md": {
-    "mtime": 1780075183.4539275,
-    "hash": "5780c0566c0aff3da96fa5dc8ca9a1d9"
+    "mtime": 1780119350.6649952,
+    "hash": "ae3db8114a9c55d1e2aab549c8eeb844"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\SECURITY.md": {
     "mtime": 1780075183.4539275,
     "hash": "224ef591a97b99d337c083a4fbb862b1"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\STATUS.md": {
-    "mtime": 1780117919.2389078,
-    "hash": "c2f58081e9406841950566f4fdf4db8a"
+    "mtime": 1780119390.819873,
+    "hash": "434dcbd56bffe541e5733edb15109043"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\TESTING.md": {
     "mtime": 1780075183.4558003,
     "hash": "4480eec3f1c2e0555ad88d1b65411d4e"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\TODO.md": {
-    "mtime": 1780075183.4567978,
-    "hash": "d78d0ca708bf80fc5384dc338a69f15f"
+    "mtime": 1780119382.7880945,
+    "hash": "66ba59a48843509fcd0ae42de7de7ad1"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\backend\\agents\\README.md": {
     "mtime": 1780075183.5056136,
@@ -5884,8 +5884,8 @@
     "hash": "1f6ca55fc26fdc57a2e2eaeac64daa83"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\CODEX_SESSION_BRIEF.md": {
-    "mtime": 1780075698.5921974,
-    "hash": "bca14cb7df54da6486a6ea480666b308"
+    "mtime": 1780119406.3544972,
+    "hash": "de8758d4344757a41d4b8402c8c36bc2"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\COMPLIANCE.md": {
     "mtime": 1780075183.6908886,
@@ -5910,6 +5910,10 @@
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\PRAXIS_TECHNICAL_SPECIFICATION.md": {
     "mtime": 1780075183.7046087,
     "hash": "748732cc8191372e534969772b1733bd"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\README.md": {
+    "mtime": 1780119327.2788954,
+    "hash": "318c21d02cc7501d4be3a07ef8590c33"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\adr\\0022-red-team-analyst-subagent.md": {
     "mtime": 1780075183.7135065,
@@ -6064,7 +6068,7 @@
     "hash": "04b260734365a973b336e7c7e766ac0c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-19-capsule-depth-audit.md": {
-    "mtime": 1780118204.9535687,
+    "mtime": 1780119789.8360438,
     "hash": "94b1d9b643579d75e18e882ab5b074e5"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-19-capsule-discussion-filter-diagnostic.md": {
@@ -6188,7 +6192,7 @@
     "hash": "ebcf57927485517c442e6f87063c30aa"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-25-capsule-consolidation-audit.md": {
-    "mtime": 1780118205.8916304,
+    "mtime": 1780119790.6920023,
     "hash": "b6517aaf1c71c51938673bb6eff980eb"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-25-DEEP_PRESHIP_CHECKLIST.md": {
@@ -6208,8 +6212,16 @@
     "hash": "a2ec40efb6a98479979c18b098c8adac"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-30-DEEP_PRESHIP_CHECKLIST.md": {
-    "mtime": 1780118221.6369183,
+    "mtime": 1780119805.759797,
     "hash": "c21e0c438e4495492c1678a6d2bb7384"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-30-red-flags-and-improvement-plan.md": {
+    "mtime": 1780119511.8768215,
+    "hash": "79e872c3110aeb67495cbd686b817a87"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\README.md": {
+    "mtime": 1780119337.689987,
+    "hash": "501317116727acfb064e78abd42581c7"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\tool-contracts-2026-05-16.md": {
     "mtime": 1780075183.8370364,
@@ -6256,7 +6268,7 @@
     "hash": "d3087b071157b0620be6bae79e756862"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\tool-contracts-2026-05-30.md": {
-    "mtime": 1780118217.6634054,
+    "mtime": 1780119802.1152806,
     "hash": "1a0bca9c8e7abd35864428657ff895d7"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\agentic-research-evals\\2026-05-20-praxis-vs-generic-llm.md": {
@@ -6372,8 +6384,8 @@
     "hash": "b595b964c648bfc2192e42ac57c2072e"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\product\\README.md": {
-    "mtime": 1780075183.9046307,
-    "hash": "e33e9cafd97b88d66bfcb9ade3efbd34"
+    "mtime": 1780119425.2268043,
+    "hash": "2497676be148e9890ee1b71c465abc88"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\product\\TASKLET_RESEARCH_INTAKE_2026-05-15.md": {
     "mtime": 1780075183.9046307,

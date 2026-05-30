@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- docs(readiness): consolidate red flags and next improvements.
+  Build 2026.05.30.04 adds current documentation and audit indexes, records
+  the 10 highest-value improvements across visuals, capsules, agents, graph,
+  sourceability, and live canaries, updates README/TODO/status pointers, and
+  keeps historical dated audits retained until references are checked.
+
 - feat(capsules): harden expert-grade augmented-generation starter context.
   Build 2026.05.30.03 raises the full starter catalog to v15, normalizes every
   starter through an expert-use contract, and ensures capsule prompts carry

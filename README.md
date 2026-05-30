@@ -48,11 +48,14 @@ and `ARCHITECTURE.md` first.
 
 Current build control files:
 
+- `docs/README.md` - documentation map and hygiene policy.
 - `docs/product/README.md` - product documentation index.
 - `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md` - canonical app/runtime
   structure.
 - `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md` - policy capsule
   anatomy, personas, paths, connectors, outputs, and combination rules.
+- `docs/audits/2026-05-30-red-flags-and-improvement-plan.md` - current red
+  flags, top 10 improvements, and docs cleanup decision.
 - `docs/product/PRAXIS_FUNDING_AND_PITCH_PACK.md` - funder-facing elevator
   pitch, business model, funding needs, and textual pitch deck.
 - `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md` - active
@@ -105,6 +108,11 @@ PRAXIS is organized around a small set of durable concepts.
 | **Policy Graph** | Structured entities, relationships, provenance, and changes over time. |
 | **Tools** | Research, source intake, graph review, stakeholder map, ACH, memo drafting, export, red team. |
 | **Docs Library** | The writing surface where evidence becomes a brief, memo, or talking points. |
+
+Current capsule catalog: `2026-05-30-capsule-consolidation-expert-grade-v15`.
+The starter catalog has 205 situation, tool, output, and user capsules with
+sourceability, tacit-knowledge, ontology, graph-proposal, output-goal, and
+human-review contracts for PRAXIS augmented generation.
 
 The app should feel like this:
 
@@ -258,7 +266,10 @@ https://praxis.tacitus.me
 - `CLAUDE.md` - canonical agent guidance for this repo
 - `AGENTS.md` - startup rules, validation gate, and deploy notes
 - `ARCHITECTURE.md` - architecture entrypoint
+- `docs/README.md` - current documentation map and cleanup policy
 - `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md` - canonical app/product/runtime structure
+- `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md` - capsule anatomy and augmented-generation contract
+- `docs/audits/2026-05-30-red-flags-and-improvement-plan.md` - current red flags and top 10 improvement plan
 - `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md` - Tasklet-style PRAXIS agent runtime plan
 - `docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md` - external browser-agent research intake and decisions
 - `docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md` - foundation coherence check and build order

@@ -1,11 +1,13 @@
 # PRAXIS TODO
 
-Last updated: 2026-05-21.
+Last updated: 2026-05-30.
 
 ## Current Build Queue
 
 - Current active ledger:
   `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`.
+- Current red-flag and improvement ledger:
+  `docs/audits/2026-05-30-red-flags-and-improvement-plan.md`.
 - Current prompt pack:
   `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`.
 
@@ -14,7 +16,7 @@ Tasklet cleanup. New work starts from the active ledger above.
 
 ## Immediate Next Steps
 
-### Canonical Tasklet-Style Runtime Build
+### Current Priority Queue
 
 0. Current surface doctrine is public Home plus signed-in Home + Capsules.
    Keep Ask PRAXIS, library/source work, memo, canvas, diagnostics, and agent
@@ -22,12 +24,24 @@ Tasklet cleanup. New work starts from the active ledger above.
    signed-in URLs and `/agents/[runId]` may redirect or deep-link for
    compatibility, but new product work must not add another primary app page or
    navigation item.
-0. The capsule-depth audit now derives starter totals from the live catalog and
-   passes with 69 starters. Next live-proof work should run
-   `doctor:praxis:canary` with the disposable Firebase account, ADC, Cloud SQL,
+0. The capsule catalog is now
+   `2026-05-30-capsule-consolidation-expert-grade-v15` with 205 starter
+   capsules. Next capsule work should improve authoring/review UX, Firestore
+   v15 backfill proof, and capsule-vs-generic-LLM evals rather than adding a
+   parallel schema.
+0. Next live-proof work should run `doctor:praxis:canary` and the authenticated
+   browser production lane with the disposable Firebase account, ADC, Cloud SQL,
    Cloud Tasks, worker auth, and model runtime env configured; do not claim
-   production golden-path proof unless that canary records the run id, output
-   destination, same-thread receipt, and cleanup posture.
+   production golden-path proof unless that canary records the run id, capsule
+   id, memo id, same-thread receipt, and cleanup posture.
+0. The current red flags are tracked in
+   `docs/audits/2026-05-30-red-flags-and-improvement-plan.md`: authenticated
+   live E2E, 51/55 tool-contract coverage, model-string audit warnings,
+   dependency advisory review, disabled Cognee/Polar posture, and docs sprawl.
+0. Documentation consolidation now routes through `docs/README.md`,
+   `docs/product/README.md`, `docs/audits/README.md`, `README.md`, `STATUS.md`,
+   `TODO.md`, and `CHANGELOG.md`. Do not delete historical dated audits until
+   references and generated scripts have been checked.
 0. Senior engineering cleanup is now in progress: launch-readiness live header
    probes pass, canonical-name warnings are fixed and regression-tested, and
    `docs/audits/2026-05-19-senior-engineering-improvement-audit.md` records the

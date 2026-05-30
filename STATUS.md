@@ -1,5 +1,20 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — Docs, Red Flags, And Improvement Queue
+
+Current documentation/readiness checkpoint:
+
+- Added `docs/README.md` as the current documentation map and
+  `docs/audits/README.md` as the audit routing index.
+- Added `docs/audits/2026-05-30-red-flags-and-improvement-plan.md` with the
+  current red flags, 10 important improvements, and documentation cleanup
+  decision.
+- Root README, product docs index, and TODO now point at the capsule v15
+  posture, current red flags, and consolidation policy.
+- No exact duplicate Markdown files were found outside `docs/_archive`; dated
+  historical audits are retained as evidence until a later cleanup pass proves
+  they are unreferenced.
+
 ## 2026-05-30 — Expert Capsule Context V15
 
 Current capsule-content checkpoint:

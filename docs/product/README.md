@@ -1,6 +1,6 @@
 # PRAXIS Product Documentation Index
 
-Date: 2026-05-21  
+Date: 2026-05-30
 Status: canonical index for the current app structure
 
 ## Read These First
@@ -18,8 +18,9 @@ Status: canonical index for the current app structure
      tool marketplace, handover, and capsule combination.
 4. [`CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`](./CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md)
    - Canonical guide for building policy/statecraft ContextCapsules.
-   - Defines core anatomy, generic versus path-bound users, personas,
-     combination rules, tools, connectors, outputs, and usable app shape.
+   - Defines core anatomy, PRAXIS augmented generation, generic versus
+     path-bound users, personas, combination rules, tools, connectors,
+     outputs, and usable app shape.
 5. [`CONTEXT_CAPSULE_V3_HUMAN_GATED_CONTEXT_INFRASTRUCTURE.md`](./CONTEXT_CAPSULE_V3_HUMAN_GATED_CONTEXT_INFRASTRUCTURE.md)
    - Canonical v3 contract for human-gated capsules, Cognee advisory memory,
      review-card-only agents, marketplace gates, and `/learn` positioning.
@@ -37,6 +38,9 @@ Status: canonical index for the current app structure
 9. [`PRAXIS_FUNDING_AND_PITCH_PACK.md`](./PRAXIS_FUNDING_AND_PITCH_PACK.md)
    - Funder-facing PRAXIS explanation pack with the 300-character elevator
      pitch, business model, funding needs, and textual pitch deck.
+10. [`../audits/2026-05-30-red-flags-and-improvement-plan.md`](../audits/2026-05-30-red-flags-and-improvement-plan.md)
+    - Current red flags, 10 next improvements, and documentation cleanup
+      decision.
 
 ## Build Queue
 
@@ -86,6 +90,7 @@ Keep the visible app simple:
 ```text
 Home
 Capsules
+Boardroom
 ```
 
 Pricing and Release notes are public pages. Login remains operational but is
@@ -95,6 +100,8 @@ library, memo, canvas, or advanced tools.
 - Home: prompt bar, active capsule, recent work, and direct Ask PRAXIS.
 - Capsules: searchable stored ContextCapsules with ids, versions, categories,
   source/document refs, upload, improve, archive, and AI-guided build actions.
+- Boardroom: simple personal knowledge board for chaired discussion around a
+  policy question, attached context, source posture, and synthesis.
 - Deeper memo, canvas, library, run-log, and diagnostic behavior should open as
   panels/actions inside the capsule manager or remain admin/debug-only.
 - Legacy signed-in URLs and focused run links may redirect or deep-link into
@@ -139,4 +146,8 @@ When a new wave changes the canonical structure, update this index,
 `TODO.md`, and `CHANGELOG.md` together.
 
 Old docs that no longer describe the Tasklet-style ContextCapsule product
-should be deleted after references and audits are updated.
+should be archived or deleted only after references and audits are updated. As
+of 2026-05-30, no exact duplicate Markdown files were found outside
+`docs/_archive`; the current cleanup stance is consolidation through
+`../README.md`, `../audits/README.md`, `../../README.md`, `STATUS.md`,
+`TODO.md`, and `CHANGELOG.md`.
