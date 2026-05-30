@@ -14,7 +14,11 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  Users,
 } from 'lucide-react';
+import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
+import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
+import { ActivePolicyFileStrip } from '@/components/policy-work-file/ActivePolicyFileStrip';
 import { buildProofSummaryFromAgentRun, type UiProofSummary } from '@/lib/proof/proof-summary';
 import { cn } from '@/lib/utils/cn';
 
@@ -66,6 +70,11 @@ type BoardroomTurn = {
   critique?: string;
   recommendation?: string;
   confidence: 'high' | 'medium' | 'low';
+};
+
+type BoardroomUrlContext = {
+  capsuleId: string | null;
+  contextStackId: string | null;
 };
 
 const BOARDROOM_AGENTS: BoardroomAgent[] = [
@@ -130,6 +139,10 @@ export function BoardroomWorkspace() {
   const [events, setEvents] = useState<RunEvent[]>([]);
   const [status, setStatus] = useState('Ready');
   const [submitting, setSubmitting] = useState(false);
+  const [urlContext, setUrlContext] = useState<BoardroomUrlContext>({
+    capsuleId: null,
+    contextStackId: null,
+  });
 
   const latestBoardroomOutput = useMemo(() => {
     const artifactEvent = [...events].reverse().find((event) => isRecord(event.data) && isRecord(event.data.boardroomOutput));
@@ -148,6 +161,24 @@ export function BoardroomWorkspace() {
     () => proofItemsFromEvents(events, run, latestBoardroomOutput),
     [events, latestBoardroomOutput, run],
   );
+  const openQuestions = useMemo(
+    () => arrayFromPath(latestBoardroomOutput, ['openQuestions']).length,
+    [latestBoardroomOutput],
+  );
+  const boardroomPolicyFile = useMemo(() => ({
+    capsuleId: urlContext.capsuleId ?? run?.capsuleId ?? null,
+    title: run?.objective ?? (urlContext.capsuleId ? 'Capsule boardroom file' : null),
+    jurisdiction: 'Workspace context',
+    domain: 'Policy board deliberation',
+    outputTarget: 'stakeholder-map-brief',
+    sourceCount: proofSummary?.sourceCount ?? run?.sourceReceiptIds?.length ?? 0,
+    openQuestions,
+    unsupportedClaims: proofSummary?.unsupportedClaimCount ?? 0,
+    nextAction: activeRunId ? 'Review synthesis' : 'Start boardroom',
+  }), [activeRunId, openQuestions, proofSummary, run, urlContext.capsuleId]);
+  const openBoardroomSearch = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('open-praxis-search'));
+  }, []);
 
   const refreshRun = useCallback(async (nextRunId = activeRunId) => {
     if (!nextRunId) return;
@@ -185,6 +216,8 @@ export function BoardroomWorkspace() {
         body: JSON.stringify({
           question: trimmed,
           directContext: directContext || undefined,
+          capsuleId: urlContext.capsuleId || undefined,
+          contextStackId: urlContext.contextStackId || undefined,
           participantIds: BOARDROOM_AGENT_IDS,
           maxRounds: MAX_ROUNDS,
           outputTarget: 'board_executive_pack',
@@ -207,6 +240,10 @@ export function BoardroomWorkspace() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    setUrlContext({
+      capsuleId: params.get('capsuleId'),
+      contextStackId: params.get('contextStackId'),
+    });
     const runId = params.get('runId');
     if (runId) {
       setActiveRunId(runId);
@@ -229,31 +266,75 @@ export function BoardroomWorkspace() {
       className="civic-atelier-shell cartographic-grid praxis-checker-constellation od-praxis-surface min-h-screen text-[color:var(--color-deep-ink)]"
       data-testid="boardroom-home-surface"
     >
-      <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <Link
-            href="/app"
-            className="inline-flex items-center gap-2 rounded-md border border-[color:var(--color-clay)]/20 bg-white px-3 py-2 text-sm font-semibold text-[color:var(--color-deep-ink)] shadow-sm hover:bg-[color:var(--color-archive-paper-strong)]"
-          >
-            <ArrowLeft className="h-4 w-4" />
+      <div className="grid min-h-screen lg:grid-cols-[250px_minmax(0,1fr)]">
+        <aside className="dossier-spine od-praxis-sidebar hidden border-r px-4 py-6 lg:flex lg:flex-col" aria-label="Boardroom navigation">
+          <Link href="/app" className="mb-6 flex items-center gap-3 text-lg font-bold">
+            <PraxisBrandChip compact />
+          </Link>
+          <Link href="/app" className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5">
+            <ArrowLeft className="h-5 w-5 text-slate-500" />
             Home
           </Link>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={cn('inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold', runStatusClass(run?.status ?? 'draft'))}>
-              <ShieldCheck className="h-4 w-4" />
-              {run?.status ?? 'draft'}
-            </span>
-            <button
-              type="button"
-              onClick={() => void refreshRun()}
-              disabled={!activeRunId}
-              className="inline-flex items-center gap-2 rounded-md border border-[color:var(--color-clay)]/20 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-[color:var(--color-archive-paper-strong)] disabled:cursor-not-allowed disabled:text-slate-300"
-            >
-              <RefreshCcw className="h-4 w-4" />
-              Refresh
-            </button>
+          <button
+            type="button"
+            onClick={openBoardroomSearch}
+            className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5"
+          >
+            <Search className="h-5 w-5 text-slate-500" />
+            Search app
+          </button>
+          <Link href="/app/capsules" className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5">
+            <FileText className="h-5 w-5 text-slate-500" />
+            Capsules
+          </Link>
+          <div className="mt-8">
+            <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Board posture
+            </p>
+            <div className="mt-3 space-y-2">
+              <span className={cn('flex w-full items-center justify-between rounded-md border px-3 py-2 text-xs font-semibold', runStatusClass(run?.status ?? 'draft'))}>
+                <span>Run state</span>
+                <span>{run?.status ?? 'draft'}</span>
+              </span>
+              <span className="flex w-full items-center justify-between rounded-md border border-black/10 bg-white/70 px-3 py-2 text-xs font-semibold text-slate-700">
+                <span>Lenses</span>
+                <span>{BOARDROOM_AGENTS.length}</span>
+              </span>
+              <span className="flex w-full items-center justify-between rounded-md border border-black/10 bg-white/70 px-3 py-2 text-xs font-semibold text-slate-700">
+                <span>Open questions</span>
+                <span>{openQuestions}</span>
+              </span>
+            </div>
           </div>
-        </header>
+          <div className="mt-auto rounded-lg border border-black/10 bg-white/70 p-3 text-xs leading-5 text-slate-600">
+            The boardroom uses the active capsule, your details, and run receipts without silently mutating the capsule.
+          </div>
+        </aside>
+
+        <main className="min-w-0 px-4 py-8 sm:px-6 lg:px-10">
+          <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
+            <Link href="/app" className="flex items-center gap-2 text-lg font-semibold lg:hidden">
+              <PraxisBrandChip compact />
+            </Link>
+            <nav className="ml-auto hidden items-center gap-8 text-sm font-semibold text-slate-500 md:flex" aria-label="Boardroom navigation">
+              <Link href="/app" className="hover:text-slate-900">Home</Link>
+              <Link href="/app/capsules" className="hover:text-slate-900">Capsules</Link>
+              <Link href="/learn" className="hover:text-slate-900">Learn</Link>
+              <button type="button" onClick={openBoardroomSearch} className="hover:text-slate-900">Search</button>
+            </nav>
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+              <RuntimeHealthSemaphore isAuthenticated={true} />
+              <button
+                type="button"
+                onClick={() => void refreshRun()}
+                disabled={!activeRunId}
+                className="inline-flex items-center gap-2 rounded-md border border-[color:var(--color-clay)]/20 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-[color:var(--color-archive-paper-strong)] disabled:cursor-not-allowed disabled:text-slate-300"
+              >
+                <RefreshCcw className="h-4 w-4" />
+                Refresh
+              </button>
+            </div>
+          </header>
 
         <section className="mx-auto mt-8 flex w-full max-w-5xl flex-col items-center text-center sm:mt-12">
           <p className="receipt-slip flex items-center gap-2 rounded-md px-3 py-1.5 font-mono text-xs font-semibold">
@@ -270,6 +351,9 @@ export function BoardroomWorkspace() {
           <div className="praxis-composer-focus-shell od-praxis-panel mt-7 w-full rounded-xl text-left">
             <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
               <div className="min-w-0">
+                <div className="mb-4" data-testid="boardroom-context-strip">
+                  <ActivePolicyFileStrip file={boardroomPolicyFile} />
+                </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--color-clay)]/25 bg-[color:var(--color-archive-paper-strong)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-oxide)]">
                     <Sparkles className="h-3.5 w-3.5" />
@@ -278,6 +362,10 @@ export function BoardroomWorkspace() {
                   <span className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--color-civic-blue)]/20 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-civic-blue)]">
                     <Search className="h-3.5 w-3.5" />
                     Source-aware
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+                    <Users className="h-3.5 w-3.5" />
+                    Board lenses
                   </span>
                 </div>
                 <label className="mt-4 block text-sm font-semibold text-slate-900" htmlFor="boardroom-question">
@@ -476,6 +564,7 @@ export function BoardroomWorkspace() {
             </section>
           </aside>
         </div>
+        </main>
       </div>
     </section>
   );

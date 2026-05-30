@@ -24,7 +24,7 @@ Completed in the current slice:
 1. Created the simplification/kernel ledger at docs/roadmap/PRAXIS_SIMPLIFICATION_AGENTIC_KERNEL_LEDGER_2026-05-28.md.
 2. Added tests/unit/simplification/visible-vocabulary-contract.test.ts to lock Ask/first-run/front-door surfaces to Home, Capsules, Ask PRAXIS, Context, Sources, Work, and Proof vocabulary.
 3. Reworded targeted Ask prompt, onboarding, Ask helper, context, source/work/proof, and compatibility helper labels away from visible Library / Memo Studio / Canvas / Advanced routing.
-4. Reframed visible Boardroom launch CTAs from the workbench as a deep review action while preserving /app/boardroom compatibility.
+4. Reframed visible Boardroom launch CTAs from the workbench as Your Personal Knowledge Board while preserving /app/boardroom compatibility.
 5. Tightened src/lib/agent-runtime/tool-registry.ts so agent tools use strict Zod input/output schemas instead of generic record fallback; updated tests/unit/lib/agent-runtime/tool-registry.test.ts.
 6. Updated output target display labels in Ask/AgentRun DTOs from Memo Studio/Canvas to Work/Context while preserving persisted enum values.
 

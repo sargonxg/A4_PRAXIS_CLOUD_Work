@@ -18,10 +18,16 @@ describe('/app/boardroom workspace contract', () => {
     expect(componentSource).toContain('data-testid="boardroom-deep-research-agents"');
     expect(componentSource).toContain('data-testid="boardroom-live-proof"');
     expect(componentSource).toContain('data-testid="boardroom-run-panel"');
+    expect(componentSource).toContain('data-testid="boardroom-context-strip"');
     expect(componentSource).toContain('Your Personal Knowledge Board');
+    expect(componentSource).toContain('PraxisBrandChip');
+    expect(componentSource).toContain('RuntimeHealthSemaphore');
+    expect(componentSource).toContain('ActivePolicyFileStrip');
     expect(componentSource).toContain('Electa');
     expect(componentSource).toContain('Deep research');
     expect(componentSource).toContain('directContext: directContext || undefined');
+    expect(componentSource).toContain('capsuleId: urlContext.capsuleId || undefined');
+    expect(componentSource).toContain('contextStackId: urlContext.contextStackId || undefined');
     expect(componentSource).toContain('/api/boardroom/runs');
     expect(componentSource).toContain('/api/agents/runs/${encodeURIComponent(runId)}');
     expect(componentSource).toContain('/api/agents/runs/${encodeURIComponent(runId)}/stream');
@@ -40,10 +46,10 @@ describe('/app/boardroom workspace contract', () => {
     expect(componentSource).not.toContain('Paste text as source');
   });
 
-  it('keeps boardroom out of primary navigation inside the normal app shell', () => {
+  it('keeps boardroom out of primary navigation while using the homepage-style one-page shell', () => {
     expect(primaryNavSource).not.toContain('/app/boardroom');
     expect(primaryNavSource).not.toContain("id: 'boardroom'");
-    expect(appShellSource).not.toContain("pathname === '/app/boardroom'");
+    expect(appShellSource).toContain("pathname === '/app/boardroom'");
     expect(appShellSource).toContain('CoreContextStrip');
   });
 

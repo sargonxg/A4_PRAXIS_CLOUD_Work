@@ -10417,7 +10417,7 @@ function ContextPackLanePanel({
         <InspectorRef label="Inspect" value={`${contextHealth.plainState} / ${contextHealth.label}`} />
         <InspectorRef label="Source posture" value={`${sourcePosture} (${sourceCount} refs)`} />
         <InspectorRef label="Repair Actions" value={bestNextAction} />
-        <InspectorRef label="Context pack" value="Ask, deep review, and document intake share this receipt path." />
+        <InspectorRef label="Context pack" value="Ask, Your Personal Knowledge Board, and document intake share this receipt path." />
       </div>
     </section>
   );

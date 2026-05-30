@@ -2460,8 +2460,8 @@
     "hash": "0cd392efe4c9eb2abba6c9b8fe1b9c10"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\app-shell.tsx": {
-    "mtime": 1780075184.6743731,
-    "hash": "6860973a996bb30ae66680cad1c6bcbc"
+    "mtime": 1780123035.852617,
+    "hash": "5fe1895a4c4c6902c978473ee69fe800"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\app-sidebar.tsx": {
     "mtime": 1780091562.8649957,
@@ -2544,8 +2544,8 @@
     "hash": "868e98714a557fda6229fb823c8f9a63"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\boardroom\\boardroom-workspace.tsx": {
-    "mtime": 1780116064.3420665,
-    "hash": "9cd1449306c87714fb26040a9c227395"
+    "mtime": 1780123263.0145934,
+    "hash": "ce2ce257caa2c888fcdd4e10d624f4cd"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\brand\\praxis-brand-chip.tsx": {
     "mtime": 1780075184.6894882,
@@ -2708,8 +2708,8 @@
     "hash": "2b6e97a95afb4fa9449af352900b518c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\policy-work-file\\ActivePolicyFileStrip.tsx": {
-    "mtime": 1780116098.5208516,
-    "hash": "a989af6f6ddc5b99ef09d039e64239a9"
+    "mtime": 1780123274.2658243,
+    "hash": "b977f213314c5f74c5c5f734c368993b"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\policy-work-file\\KnowledgeStructurePanel.tsx": {
     "mtime": 1780078585.9694734,
@@ -2732,8 +2732,8 @@
     "hash": "61c402339d85370318364e059461078c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tasklet-praxis-workbench.tsx": {
-    "mtime": 1780116119.559426,
-    "hash": "95e8fb2daedf147a7043ebb68fe70d63"
+    "mtime": 1780123279.5583835,
+    "hash": "1d65faf85e1e75b194764afe3e7beaba"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tasklet-workbench-conversation.ts": {
     "mtime": 1780075184.7297962,
@@ -4868,8 +4868,8 @@
     "hash": "3479f0658118d49db3ebb5ec4716c953"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\app\\boardroom-route.test.ts": {
-    "mtime": 1780116149.0767517,
-    "hash": "177c6e3e6d5ad6582c08936332a63434"
+    "mtime": 1780123293.9249926,
+    "hash": "eb839b0b31b65fad0760e7b8294e0506"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\app\\capsule-factory-route-consolidation.test.ts": {
     "mtime": 1780075185.1559594,
@@ -6408,8 +6408,8 @@
     "hash": "dc0286790b18d4c7f6bf828409cd065c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\roadmap\\PRAXIS_AGENTIC_KERNEL_CONTINUATION_PROMPT_2026-05-28.md": {
-    "mtime": 1780075183.9046307,
-    "hash": "46adc4ff8f24a951c7ab742e52f5827c"
+    "mtime": 1780123283.0892007,
+    "hash": "0aefc17665b26ef48e82d7cd415f369f"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\roadmap\\PRAXIS_MAIN_DEPLOY_VERIFICATION_PROMPT_2026-05-28.md": {
     "mtime": 1780075183.9046307,
@@ -7007,38 +7007,6 @@
     "mtime": 1780075184.9667776,
     "hash": "f64f91f6cdf294e06988a908bd60876a"
   },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-1da35--is-structured-and-readable\\error-context.md": {
-    "mtime": 1780121385.1552722,
-    "hash": "01b153c840dc38755461b957059b975b"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-8e3cb--is-structured-and-readable\\error-context.md": {
-    "mtime": 1780121382.1341434,
-    "hash": "601371029ae5ce556c89d3ac24004999"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-9b80e--is-structured-and-readable\\error-context.md": {
-    "mtime": 1780121383.7177248,
-    "hash": "1c7e9b2e3c251d9d5c8758a4918d0b2a"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-a8dff--is-structured-and-readable\\error-context.md": {
-    "mtime": 1780121379.3123977,
-    "hash": "a5f95f84dd091cb5ba1c6924b516b005"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-b8a63--is-structured-and-readable\\error-context.md": {
-    "mtime": 1780121380.718784,
-    "hash": "c83fd17a96a52598d7ab007aa18b0d13"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-d05b0--is-structured-and-readable\\error-context.md": {
-    "mtime": 1780121386.6069138,
-    "hash": "6376ba1bd9619d5136236ffe2c5f65fe"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-d3f6c--is-structured-and-readable\\error-context.md": {
-    "mtime": 1780121375.9745145,
-    "hash": "f372952ae88276fdf41aae360f38e8f3"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-f0137--is-structured-and-readable\\error-context.md": {
-    "mtime": 1780121377.8376057,
-    "hash": "298dd440684adbc5ad55693d7903117d"
-  },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\artifacts\\screenshots\\praxis-homepage-live-2026-05-18.png": {
     "mtime": 1780075183.5005682,
     "hash": "6eaa05178a8ee45f39092ecd4b19457d"
@@ -7046,37 +7014,5 @@
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\public\\favicon.svg": {
     "mtime": 1780075184.2054973,
     "hash": "49defc539ec0726ed135cfcf65e3211e"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-1da35--is-structured-and-readable\\test-failed-1.png": {
-    "mtime": 1780121385.1343112,
-    "hash": "3965581ca7279ef026342c429d88efc4"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-8e3cb--is-structured-and-readable\\test-failed-1.png": {
-    "mtime": 1780121382.108117,
-    "hash": "3a78c8cd2f7f102c1c0b7b382e61b5d2"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-9b80e--is-structured-and-readable\\test-failed-1.png": {
-    "mtime": 1780121383.6979396,
-    "hash": "9279e3d1a4a6ef4611afc3fb16e2e296"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-a8dff--is-structured-and-readable\\test-failed-1.png": {
-    "mtime": 1780121379.300255,
-    "hash": "31faa0d3d2ef8b945ccf628025d61f57"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-b8a63--is-structured-and-readable\\test-failed-1.png": {
-    "mtime": 1780121380.6981943,
-    "hash": "576a0cccda5746275a3bf49f3dca1fa6"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-d05b0--is-structured-and-readable\\test-failed-1.png": {
-    "mtime": 1780121386.5885189,
-    "hash": "893ba912dc7f303351fa92a806c7f66c"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-d3f6c--is-structured-and-readable\\test-failed-1.png": {
-    "mtime": 1780121375.9422238,
-    "hash": "9a6e52bd36b7b7cd8117d15cc8e2f989"
-  },
-  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-f0137--is-structured-and-readable\\test-failed-1.png": {
-    "mtime": 1780121377.8189027,
-    "hash": "b0a719ad010a15ac3269df7234cab54f"
   }
 }
