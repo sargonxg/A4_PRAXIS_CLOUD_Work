@@ -17,7 +17,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('Capsules route consolidation', () => {
-  it('keeps /app/repository as a compatibility redirect to the Repository lane', async () => {
+  it('keeps /app/repository as a compatibility redirect to Workspace', async () => {
     const { default: RepositoryPage } = await import('@/app/app/repository/page');
 
     expect(() => RepositoryPage()).toThrow('NEXT_REDIRECT:/app/capsules?lane=repository');
@@ -44,8 +44,8 @@ describe('Capsules route consolidation', () => {
       label: 'Open Capsules',
       href: '/app/capsules',
     });
-    expect(COMMANDS.find((command) => command.id === 'open-repository-lane')).toMatchObject({
-      label: 'Open Repository lane',
+    expect(COMMANDS.find((command) => command.id === 'open-workspace')).toMatchObject({
+      label: 'Open Workspace',
       href: '/app/capsules?lane=repository',
     });
   });

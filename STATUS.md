@@ -1,5 +1,27 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — EPIC 1.9 Homepage Simplification
+
+Current public/signed-in home checkpoint:
+
+- `/` is now a light public marketing route with one prompt, one primary
+  "Start free" action, three capability cards, a marketplace teaser, trust
+  strip, pricing strip, and footer.
+- The public route no longer imports or renders the cockpit workbench, landing
+  workbench preview, created-work fetches, runtime-health semaphore, diagnostics
+  strip, app search, or capsule filter facets.
+- `/app` now renders a calm signed-in launchpad with one prompt, one capsule
+  chip, up to four recent work items, three quiet links, and a collapsed
+  "Advanced / Edit context" disclosure for the context model.
+- Operator chrome is gated behind `NEXT_PUBLIC_PRAXIS_DEBUG`; legacy workspace
+  vocabulary is consolidated toward "Workspace" while `/app/repository`
+  remains a redirect into Capsules for compatibility.
+- Verification so far: focused Vitest homepage/workbench contracts,
+  `npx tsc --noEmit`, `npm run lint`, `npm run build`, and local Playwright
+  public-home/mobile/runtime checks. Screenshots are in
+  `artifacts/epic-1-9/before-home.png` and
+  `artifacts/epic-1-9/after-home.png`.
+
 ## 2026-05-30 — Docs, Red Flags, And Improvement Queue
 
 Current documentation/readiness checkpoint:

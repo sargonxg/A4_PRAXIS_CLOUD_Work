@@ -19,7 +19,7 @@ describe('/app/boardroom workspace contract', () => {
     expect(componentSource).toContain('data-testid="boardroom-live-proof"');
     expect(componentSource).toContain('data-testid="boardroom-run-panel"');
     expect(componentSource).toContain('data-testid="boardroom-context-strip"');
-    expect(componentSource).toContain('Your Personal Knowledge Board');
+    expect(componentSource).toContain('Workspace');
     expect(componentSource).toContain('PraxisBrandChip');
     expect(componentSource).toContain('RuntimeHealthSemaphore');
     expect(componentSource).toContain('ActivePolicyFileStrip');
@@ -56,7 +56,7 @@ describe('/app/boardroom workspace contract', () => {
   it('keeps Home and Capsules launch compatibility for the side workspace', () => {
     expect(workbenchSource).toContain('data-testid="open-boardroom-workspace-cta"');
     expect(workbenchSource).toContain('data-testid="capsule-studio-boardroom-action"');
-    expect(workbenchSource).toContain('Your Personal Knowledge Board');
+    expect(workbenchSource).toContain('Workspace');
     expect(workbenchSource).not.toContain('Start deep review');
     expect(workbenchSource).toContain("href=\"/app/boardroom\"");
   });

@@ -1,26 +1,17 @@
 import { expect, test } from '@playwright/test';
 
-const sectionIds = ['core-stack', 'methods', 'drafting', 'real-app', 'pricing'];
+test('landing renders light marketing sections and working anchors', async ({ page }) => {
+  await page.goto('/');
 
-test('landing v2 renders target sections and working CTAs', async ({ page }) => {
-  await page.goto('/?staticHero=1');
+  await expect(page.getByRole('heading', { name: /Turn any policy question into a sourced, citable brief\./i })).toBeVisible();
+  await expect(page.getByTestId('marketing-hero-prompt')).toBeVisible();
+  await expect(page.getByTestId('marketing-primary-cta')).toHaveCount(1);
+  await expect(page.getByRole('heading', { name: /^Context Capsules$/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Agentic research$/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Capsule marketplace$/i })).toBeVisible();
 
-  await expect(page.getByRole('heading', { name: /Build the right context for policy AI\./i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toHaveAttribute('href', '/app');
-  await expect(page.getByRole('link', { name: /^Cores$/i })).toHaveAttribute('href', '#core-stack');
-
-  for (const id of sectionIds) {
-    await expect(page.locator(`#${id}`), `section #${id}`).toHaveCount(1);
-  }
-
-  await page.getByRole('link', { name: /^Cores$/i }).click();
-  await expect(page.locator('#core-stack')).toBeInViewport();
-  await expect(page.getByText(/Build the cores\. Ask from them\. Ship grounded work\./i)).toBeVisible();
-});
-
-test('landing primary app CTA routes to Ask PRAXIS', async ({ page }) => {
-  await page.goto('/?staticHero=1');
-
-  await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toHaveAttribute('href', '/app');
-  await expect(page.getByRole('link', { name: /Open Ask workspace/i }).first()).toHaveAttribute('href', '/app');
+  await page.getByRole('link', { name: /^Capsules$/i }).click();
+  await expect(page.locator('#capsules')).toBeInViewport();
+  await page.getByRole('link', { name: /^Pricing$/i }).click();
+  await expect(page.locator('#pricing')).toBeInViewport();
 });

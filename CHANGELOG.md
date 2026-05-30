@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- feat(home): rebuild the public and signed-in PRAXIS entry points.
+  Build 2026.05.30.05 replaces the public cockpit-style `/` route with a light
+  marketing page, moves users to a calm `/app` launchpad, gates operator chrome
+  behind `NEXT_PUBLIC_PRAXIS_DEBUG`, collapses capsule filters into the
+  Capsules workspace, and adds Playwright/static contracts proving the public
+  page shows the marketing hero without the cockpit.
+
 - docs(readiness): consolidate red flags and next improvements.
   Build 2026.05.30.04 adds current documentation and audit indexes, records
   the 10 highest-value improvements across visuals, capsules, agents, graph,
