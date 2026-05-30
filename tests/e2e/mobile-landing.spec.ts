@@ -1,82 +1,26 @@
-import { test, expect, devices } from "@playwright/test";
+import { test, expect, devices } from '@playwright/test';
 
-/**
- * Mobile landing parity — verifies the PRAXIS landing renders correctly on
- * common iPhone viewports with the design system intact.
- *
- * Run via: npm run test:mobile
- *
- * Requires the dev server running at http://localhost:3000 (or set BASE_URL).
- */
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? process.env.BASE_URL ?? 'http://localhost:3000';
 
-const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
+test.use({ ...devices['iPhone 13'] });
 
-test.use({ ...devices["iPhone 13"] });
-
-test.describe("Mobile landing — iPhone 13 (390×844)", () => {
-  test("landing renders with capsule buttons + sections", async ({ page }) => {
+test.describe('Mobile landing - iPhone 13', () => {
+  test('light marketing home renders without cockpit overflow', async ({ page }) => {
     await page.goto(BASE_URL);
+    await expect(page.getByTestId('marketing-home')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Turn any policy question/i })).toBeVisible();
+    await expect(page.getByTestId('tasklet-praxis-workbench')).toHaveCount(0);
 
-    // Capsule button class lands on the page (proves DESIGN_SYSTEM shipped).
-    const ctaCount = await page
-      .locator(".btn-capsule-primary, .btn-capsule-secondary")
-      .count();
-    expect(ctaCount).toBeGreaterThan(0);
-
-    // The public root starts with the app/workbench preview, not a standalone hero.
-    await expect(page.locator('[data-testid="tasklet-praxis-workbench"]')).toBeVisible();
-    await expect(page.locator('[data-testid="app-first-root"]')).toHaveCount(1);
-  });
-
-  test("primary mobile CTAs meet touch-target floor (≥44px)", async ({
-    page,
-  }) => {
-    await page.goto(BASE_URL);
-    const buttons = page.locator(".btn-capsule-primary, .btn-capsule-secondary");
-    const n = await buttons.count();
-    for (let i = 0; i < n; i++) {
-      const el = buttons.nth(i);
-      const box = await el.boundingBox();
-      if (!box) continue;
-      expect(box.height, `cta #${i} height`).toBeGreaterThanOrEqual(40);
-    }
-  });
-
-  test("mobile drawer opens, closes, and locks body scroll", async ({
-    page,
-  }) => {
-    await page.goto(BASE_URL);
-    await page.waitForFunction(() => document.documentElement.dataset.praxisHydrated === "true");
-    const toggle = page.locator('button[aria-label="Toggle menu"]');
-    await expect(toggle).toBeVisible();
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-expanded", "true");
-    // Body scroll locked
-    const bodyOverflow = await page.evaluate(() => document.body.style.overflow);
-    expect(bodyOverflow).toBe("hidden");
-    // Close
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
-  });
-
-  test("app-first workbench renders without body overflow", async ({
-    page,
-  }) => {
-    await page.goto(BASE_URL);
-    await page.locator('[data-testid="tasklet-praxis-workbench"]').scrollIntoViewIfNeeded();
-    const bodyOverflowX = await page.evaluate(
+    const overflowX = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
-    expect(bodyOverflowX).toBeLessThanOrEqual(2);
+    expect(overflowX).toBeLessThanOrEqual(2);
   });
-});
 
-test.describe("Mobile landing — reduced motion", () => {
-  test("respects prefers-reduced-motion on capsule hero", async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: "reduce" });
+  test('primary mobile CTA meets touch-target floor', async ({ page }) => {
     await page.goto(BASE_URL);
-    // The root is the public workbench preview; reduced motion should not
-    // break capsule controls or the app-first shell.
-    await expect(page.locator('[data-testid="tasklet-praxis-workbench"]')).toBeVisible();
+    const cta = page.getByTestId('marketing-primary-cta');
+    const box = await cta.boundingBox();
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
   });
 });

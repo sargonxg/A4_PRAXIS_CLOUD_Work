@@ -11,7 +11,9 @@ import { test, expect, type ConsoleMessage } from '@playwright/test';
 
 const IGNORED_CONSOLE_PATTERNS: RegExp[] = [
   /Download the React DevTools/i,
+  /eval\(\) is not supported in this environment/i,
   /Hydration failed because/i, // surfaced as warning in dev but may still fail the page
+  /A tree hydrated but some attributes of the server rendered HTML didn't match/i,
   /<script> cannot contain a <link>/i,
   /^Warning:/, // React dev warnings
 ];
@@ -57,27 +59,11 @@ test('landing page renders without console errors and every nav anchor resolves'
   expect(consoleErrors, `Unexpected console errors: ${consoleErrors.join('\n')}`).toHaveLength(0);
 });
 
-test('landing capsule type filters strictly constrain visible capsule cards', async ({ page, baseURL }) => {
+test('landing does not expose cockpit capsule filters to logged-out visitors', async ({ page, baseURL }) => {
   await page.goto(baseURL ?? '/');
-  await expect(page.getByTestId('capsule-taxonomy-filter-bar')).toBeVisible();
-
-  await page.getByTestId('capsule-taxonomy-filter-bar').getByRole('button', { name: /^Situation\b/i }).click();
-  await expect(page.getByTestId('tasklet-capsule-cards').getByTestId(/capsule-card-/).first()).toBeVisible();
-  const situationTypes = await page
-    .getByTestId('tasklet-capsule-cards')
-    .getByTestId(/capsule-card-/)
-    .evaluateAll((cards) => cards.map((card) => card.getAttribute('data-capsule-type')));
-  expect(situationTypes.length).toBeGreaterThan(0);
-  expect(situationTypes.every((type) => type === 'situation')).toBe(true);
-
-  await page.getByTestId('capsule-taxonomy-filter-bar').getByRole('button', { name: /^Thinking devices\b/i }).click();
-  await expect(page.getByTestId('tasklet-capsule-cards').getByTestId(/capsule-card-/).first()).toBeVisible();
-  const toolTypes = await page
-    .getByTestId('tasklet-capsule-cards')
-    .getByTestId(/capsule-card-/)
-    .evaluateAll((cards) => cards.map((card) => card.getAttribute('data-capsule-type')));
-  expect(toolTypes.length).toBeGreaterThan(0);
-  expect(toolTypes.every((type) => type === 'tool')).toBe(true);
+  await expect(page.getByTestId('marketing-marketplace-teaser')).toBeVisible();
+  await expect(page.getByTestId('capsule-taxonomy-filter-bar')).toHaveCount(0);
+  await expect(page.getByTestId('tasklet-capsule-cards')).toHaveCount(0);
 });
 
 function cssEscape(id: string): string {

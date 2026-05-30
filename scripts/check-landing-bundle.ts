@@ -5,13 +5,10 @@ import path from 'node:path';
 const ROOT = process.cwd();
 const NEXT_DIR = path.join(ROOT, '.next');
 const STATIC_DIR = path.join(NEXT_DIR, 'static');
-const CLIENT_MANIFEST = path.join(
-  NEXT_DIR,
-  'server',
-  'app',
-  '(landing)',
-  'page_client-reference-manifest.js',
-);
+const CLIENT_MANIFEST_CANDIDATES = [
+  path.join(NEXT_DIR, 'server', 'app', 'page_client-reference-manifest.js'),
+  path.join(NEXT_DIR, 'server', 'app', '(landing)', 'page_client-reference-manifest.js'),
+];
 const LIMIT_BYTES = 280 * 1024;
 
 function gzipSize(filePath: string) {
@@ -23,12 +20,14 @@ if (!existsSync(NEXT_DIR)) {
   process.exit(1);
 }
 
-if (!existsSync(CLIENT_MANIFEST)) {
+const clientManifest = CLIENT_MANIFEST_CANDIDATES.find((candidate) => existsSync(candidate));
+
+if (!clientManifest) {
   console.error('Could not locate the landing client reference manifest. Run `npm run build` first.');
   process.exit(1);
 }
 
-const manifestSource = readFileSync(CLIENT_MANIFEST, 'utf8');
+const manifestSource = readFileSync(clientManifest, 'utf8');
 const manifestJson = manifestSource.match(/=\s*(\{[\s\S]*\});?\s*$/)?.[1];
 
 if (!manifestJson) {
@@ -42,6 +41,8 @@ const manifest = JSON.parse(manifestJson) as {
 };
 
 const landingEntries = [
+  '[project]/src/app/page',
+  '[project]/src/app/layout',
   '[project]/src/app/(landing)/layout',
   '[project]/src/app/(landing)/page',
 ];

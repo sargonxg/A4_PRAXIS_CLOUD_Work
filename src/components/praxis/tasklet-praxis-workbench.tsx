@@ -886,6 +886,7 @@ export function TaskletPraxisWorkbench({
   const { user } = useAuth();
   const surfaceMode: HomeSurfaceMode = mode === 'app' ? 'authenticated' : mode;
   const isAuthenticated = surfaceMode === 'authenticated';
+  const showOperatorChrome = process.env.NEXT_PUBLIC_PRAXIS_DEBUG === 'true';
   const showWorkbenchNavigation = mode === 'app' || isAuthenticated;
   const isRepositoryPage = initialPanel === 'repository' && mode === 'app';
   const isCapsuleRepositoryPage = initialPanel === 'capsules' && mode === 'app';
@@ -1169,7 +1170,7 @@ export function TaskletPraxisWorkbench({
       status: activeCapsuleSourceCount > 0 ? `${activeCapsuleSourceCount} receipts` : 'missing receipts',
       detail: activeCapsuleSourceCount > 0
         ? 'The active capsule has source or document receipts available.'
-        : 'Attach sources or open the Repository lane before relying on grounded claims.',
+        : 'Attach sources or open Workspace before relying on grounded claims.',
       tone: activeCapsuleSourceCount > 0 ? 'ok' : 'warn',
     },
     {
@@ -3318,7 +3319,7 @@ export function TaskletPraxisWorkbench({
           </Link>
           <Link href={isAuthenticated ? '/app/capsules?lane=repository' : '/login?mode=signup&redirect=%2Fapp%2Fcapsules%3Flane%3Drepository'} className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5">
             <Library className="h-5 w-5 text-slate-500" />
-            Capsule workspace
+            Workspace
           </Link>
           <div className="mt-8">
             <p className="flex items-center gap-1 text-xs font-semibold text-slate-500">{recentLabel} <ChevronDown className="h-3 w-3" /></p>
@@ -3522,7 +3523,7 @@ export function TaskletPraxisWorkbench({
                         className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                       >
                         <BrainCircuit className="h-4 w-4" />
-                        Your Personal Knowledge Board
+                        Workspace
                       </Link>
                     </div>
                   </>
@@ -3535,10 +3536,12 @@ export function TaskletPraxisWorkbench({
               <Sparkles className="h-4 w-4 text-[color:var(--color-oxide)]" />
               Compose your reasoning and policy products from expert ContextCapsules.
             </p>
+            {showOperatorChrome ? (
+            <>
             <div className="mt-3" data-testid="runtime-health-semaphore">
               <RuntimeHealthSemaphore isAuthenticated={isAuthenticated} />
             </div>
-            <div className="mt-3 flex flex-wrap justify-center gap-2">
+            <div className="mt-3 flex flex-wrap justify-center gap-2" data-testid="operator-chrome">
               <button
                 type="button"
                 data-testid="workbench-search-trigger"
@@ -3550,6 +3553,8 @@ export function TaskletPraxisWorkbench({
               </button>
               <WorkbenchDiagnosticsStrip flags={workbenchRedFlags} onOpen={() => setDiagnosticsOpen(true)} />
             </div>
+            </>
+            ) : null}
             <h1 className="mt-7 max-w-4xl text-center font-serif text-5xl font-semibold tracking-tight text-[color:var(--color-deep-ink)] sm:text-6xl">
               What can PRAXIS do for you?
             </h1>
@@ -3577,7 +3582,7 @@ export function TaskletPraxisWorkbench({
                 className="mt-3 inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
               >
                 <BrainCircuit className="h-4 w-4" />
-                Your Personal Knowledge Board
+                Workspace
               </Link>
             ) : null}
 
@@ -3640,7 +3645,7 @@ export function TaskletPraxisWorkbench({
                         className={cn('rounded-md border px-2 py-1', contextHealth.tone)}
                         title={contextHealth.detail}
                       >
-                        Context health: {plainContextHealthState}
+                        {showOperatorChrome ? `Context health: ${plainContextHealthState}` : 'Add a source to improve grounding when needed'}
                       </span>
                       <button
                         type="button"
@@ -4233,7 +4238,7 @@ export function TaskletPraxisWorkbench({
                     className="inline-flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100"
                   >
                     <Library className="h-4 w-4" />
-                    Repository lane
+                    Workspace
                   </Link>
                 </div>
               </div>
@@ -7235,7 +7240,12 @@ function CapsuleTaxonomyFilterBar({
   ].filter((label): label is string => Boolean(label));
 
   return (
-    <div className="mt-4 grid gap-3" data-testid="capsule-taxonomy-filter-bar">
+    <details className="mt-4 rounded-lg border border-slate-200 bg-white/70 p-3" data-testid="capsule-taxonomy-filter-bar">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-800">
+        Marketplace filters
+        <span className="text-xs font-medium text-slate-500">{activeFilterLabels.length ? activeFilterLabels.join(' / ') : 'No filters applied'}</span>
+      </summary>
+      <div className="mt-3 grid gap-3">
       {onQuery ? (
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
@@ -7260,7 +7270,7 @@ function CapsuleTaxonomyFilterBar({
       >
         <span className="font-semibold uppercase tracking-[0.14em] text-slate-400">Filter receipt</span>
         <span className="font-semibold text-slate-700">
-          {activeFilterLabels.length ? activeFilterLabels.join(' / ') : 'all capsules'} / {stats.visibleCapsules} catalogued
+          {activeFilterLabels.length ? activeFilterLabels.join(' / ') : 'all capsules'} / {stats.visibleCapsules} shown
         </span>
       </div>
       <div className="grid gap-3 md:grid-cols-3" data-testid="capsule-taxonomy-surface">
@@ -7289,7 +7299,8 @@ function CapsuleTaxonomyFilterBar({
           visibleTotalCount={stats.visibleCapsules}
         />
       </div>
-    </div>
+      </div>
+    </details>
   );
 }
 
@@ -10417,7 +10428,7 @@ function ContextPackLanePanel({
         <InspectorRef label="Inspect" value={`${contextHealth.plainState} / ${contextHealth.label}`} />
         <InspectorRef label="Source posture" value={`${sourcePosture} (${sourceCount} refs)`} />
         <InspectorRef label="Repair Actions" value={bestNextAction} />
-        <InspectorRef label="Context pack" value="Ask, Your Personal Knowledge Board, and document intake share this receipt path." />
+        <InspectorRef label="Context pack" value="Ask, Workspace, and document intake share this receipt path." />
       </div>
     </section>
   );
