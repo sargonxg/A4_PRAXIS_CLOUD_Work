@@ -33,6 +33,7 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
       'Context Capsules',
       'Agentic research',
       'Capsule marketplace',
+      'Changelog',
       'data-testid="marketing-marketplace-teaser"',
       'data-testid="marketing-pricing-strip"',
     ]) {
@@ -61,6 +62,13 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     expect(launchpadSource).toContain('data-testid="launchpad-capsule-chip"');
     expect(launchpadSource).toContain('data-testid="launchpad-recent-work"');
     expect(launchpadSource).toContain('data-testid="advanced-edit-context"');
+    expect(launchpadSource).toContain('CapsuleListPicker');
+    expect(launchpadSource).toContain('Build capsule');
+    expect(launchpadSource).toContain('Add from marketplace');
+    expect(launchpadSource).toContain('Discuss in boardroom');
+    expect(launchpadSource).toContain('Ask PRAXIS');
+    expect(launchpadSource).toContain('/app/recent-work');
+    expect(launchpadSource).not.toContain('Start research run');
     expect(source).not.toContain('AskPraxisHome');
     expect(source).not.toContain('TaskletPraxisWorkbench');
     expect(source).not.toContain('listExampleCases');

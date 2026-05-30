@@ -38,6 +38,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     pathname === '/app' ||
     pathname === '/app/boardroom' ||
     pathname === '/app/capsules' ||
+    pathname === '/app/recent-work' ||
     pathname === '/app/settings' ||
     pathname === '/app/repository' ||
     pathname.startsWith('/app/conversations/');

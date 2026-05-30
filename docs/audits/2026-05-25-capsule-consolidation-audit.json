@@ -10,8 +10,8 @@
   },
   "sourceRegistryCount": 27,
   "prompt": {
-    "averageLength": 11979,
-    "maxLength": 15158,
+    "averageLength": 12000,
+    "maxLength": 15174,
     "warnTarget": 12000,
     "hardCap": 16000
   },

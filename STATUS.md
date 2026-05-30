@@ -1,5 +1,23 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — Ask PRAXIS Context Chat Polish
+
+Current UX checkpoint:
+
+- Rebuilt signed-in `/app` as a chat-first Ask PRAXIS workspace with a
+  capsule/context editor pinned above the composer, a relevant workspace
+  sidebar, Learn/Changelog links, recent work, and sample cited policy
+  artifacts.
+- Added `/app/recent-work` as a coherent recent-artifacts page with live
+  created-work rows plus PRAXIS sample artifacts and official source links.
+- Fixed created-work hydration on the launchpad by reading
+  `primaryAction.href`, not only a legacy `href` field.
+- Fixed demo session hydration so signed demo sessions accepted by middleware
+  are also accepted by the client auth context.
+- Local verification: `npx tsc --noEmit`, focused Vitest contracts,
+  `npm run lint`, `npm run build`, and Playwright screenshots for public
+  home, login, `/app`, `/app/recent-work`, and boardroom prompt prefill.
+
 ## 2026-05-30 — Phases 0-1 Verification Checkpoint
 
 Current deploy-readiness checkpoint:

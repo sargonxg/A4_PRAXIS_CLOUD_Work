@@ -14,4 +14,13 @@ describe('root capsule Firestore rules', () => {
     expect(rules).toContain('match /versions/{hash}');
     expect(rules).toContain('allow update, delete: if false;');
   });
+
+  it('covers owner-scoped ContextCapsule ontology graph seeds', () => {
+    const rules = readFileSync(path.join(process.cwd(), 'firestore.rules'), 'utf8');
+
+    expect(rules).toContain('match /capsules/{capsuleId}');
+    expect(rules).toContain('match /ontologyGraphs/{graphId}');
+    expect(rules).toContain('request.resource.data.ownerUid == uid');
+    expect(rules).toContain('request.resource.data.capsuleId == capsuleId');
+  });
 });

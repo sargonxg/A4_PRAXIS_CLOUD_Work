@@ -241,10 +241,18 @@ export function BoardroomWorkspace() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const promptParam = params.get('prompt') ?? params.get('question');
+    const contextParam = params.get('context') ?? params.get('contextNotes');
     setUrlContext({
       capsuleId: params.get('capsuleId'),
       contextStackId: params.get('contextStackId'),
     });
+    if (promptParam) {
+      setQuestion((current) => current || promptParam);
+    }
+    if (contextParam) {
+      setContextNotes((current) => current || contextParam);
+    }
     const runId = params.get('runId');
     if (runId) {
       setActiveRunId(runId);

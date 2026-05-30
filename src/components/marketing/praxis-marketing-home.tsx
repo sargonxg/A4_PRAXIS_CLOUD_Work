@@ -29,6 +29,7 @@ export function PraxisMarketingHome() {
           <a href="#capsules" className="hover:text-slate-950">Capsules</a>
           <a href="#pricing" className="hover:text-slate-950">Pricing</a>
           <Link href="/learn" className="hover:text-slate-950">Learn</Link>
+          <Link href="/release-notes" className="hover:text-slate-950">Changelog</Link>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/login" className="rounded-md px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-white">

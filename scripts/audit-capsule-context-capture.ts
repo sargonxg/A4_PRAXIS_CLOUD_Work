@@ -18,6 +18,7 @@ const promptLengths: number[] = [];
 
 for (const starter of CAPSULE_STARTER_DEFINITIONS) {
   const profile = starter.contextCaptureProfile;
+  const graphSeed = starter.ontologyOverlay?.graphSeed;
   const sourceIds = new Set(starter.sourcePack.map((source) => source.id));
   const bindingIds = new Set(profile.sourceBindings.map((binding) => binding.sourceId));
 
@@ -63,6 +64,13 @@ for (const starter of CAPSULE_STARTER_DEFINITIONS) {
   check(profile.embeddedGraph.proposalOnly === true, `${starter.starterId} graph capture must be proposal-only`);
   check(profile.embeddedGraph.confidenceCap <= 0.6, `${starter.starterId} graph capture confidence cap too high`);
   check(profile.embeddedGraph.promotionGate.match(/human|review/i) !== null, `${starter.starterId} graph promotion gate must require human review`);
+  check(Boolean(graphSeed), `${starter.starterId} missing ontology graph seed`);
+  check((graphSeed?.nodeTemplates.length ?? 0) >= 50, `${starter.starterId} ontology graph seed needs at least 50 nodes`);
+  check((graphSeed?.edgeTemplates.length ?? 0) >= 50, `${starter.starterId} ontology graph seed needs at least 50 edges`);
+  check(new Set(graphSeed?.nodeTemplates ?? []).size === (graphSeed?.nodeTemplates.length ?? 0), `${starter.starterId} ontology graph seed nodes must be unique`);
+  check(new Set(graphSeed?.edgeTemplates ?? []).size === (graphSeed?.edgeTemplates.length ?? 0), `${starter.starterId} ontology graph seed edges must be unique`);
+  check((graphSeed?.nodeTemplates.join(' ') ?? '').match(/AbstractConcept|RealInfo|ReasoningMove|ToolAction|EvidenceNeed/) !== null, `${starter.starterId} ontology graph seed must mix abstract, real, tool, and evidence nodes`);
+  check((graphSeed?.edgeTemplates.join(' ') ?? '').match(/SUPPORTED_BY|CONSTRAINS|DEPENDS_ON|TRIGGERS_REVIEW|CITED_BY/) !== null, `${starter.starterId} ontology graph seed must include typed reasoning edges`);
 
   check(profile.generationImpact.improves.length > 0, `${starter.starterId} missing generation improvement targets`);
   check(profile.generationImpact.suppresses.join(' ').match(/unsupported|stale|Cognee|canonical/i) !== null, `${starter.starterId} missing suppressions for unsafe claims`);

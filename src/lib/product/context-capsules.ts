@@ -1883,6 +1883,170 @@ function graphNodeTypesForStarter(
   return uniqueStrings(nodes).slice(0, 9);
 }
 
+const CAPSULE_STARTER_GRAPH_SEED_MIN_POINTS = 50;
+
+function buildStarterGraphNodeTemplates(input: {
+  starterId: string;
+  category: CapsuleStarterCategory;
+  domain: CapsuleStarterDomain;
+  label: string;
+  tags: string[];
+  sourcePack: CapsuleStarterSource[];
+  recommendedToolIds: string[];
+  outputProductIds: string[];
+  baseOntologyIds: CapsuleStarterOntologyCaseType[];
+  workOntologyId: CapsuleStarterWorkOntologyId;
+  graphNodeTypes: string[];
+  ontologyNodeHints: string[];
+}): string[] {
+  const domainLabel = input.domain.replace(/-/g, ' ');
+  const abstractConcepts = [
+    'decision owner',
+    'stakeholder pressure',
+    'claim boundary',
+    'source confidence',
+    'evidence gap',
+    'review gate',
+    'time horizon',
+    'implementation constraint',
+    'legitimacy risk',
+    'counterfactual pivot',
+    'tradeoff axis',
+    'uncertainty label',
+    'adversarial challenge',
+    'audience need',
+    'approval politics',
+    'memory handover',
+  ];
+  const reasoningMoves = [
+    'separate facts from inference',
+    'rank claims by support',
+    'identify stale assumptions',
+    'map actor incentives',
+    'surface missing source lanes',
+    'test alternative explanations',
+    'flag high-stakes overclaim',
+    'convert weak claims into repair actions',
+    'choose output grammar',
+    'preserve human judgment',
+    'compare official and analytical sources',
+    'bind dates to claims',
+  ];
+  const nodeTemplates = uniqueStrings([
+    `node-001|CapsuleIdentity|${input.starterId}|${input.label}`,
+    `node-002|AbstractConcept|${input.label}|domain:${domainLabel}`,
+    `node-003|WorkOntology|${input.workOntologyId}|${input.label}`,
+    `node-004|GovernanceGate|Firestore ContextCapsules canonical|${input.label}`,
+    `node-005|ReviewState|proposed ontology graph|${input.starterId}`,
+    ...input.baseOntologyIds.map((id, index) =>
+      `node-${graphSeedOrdinal(6 + index)}|CaseOntology|${id}|${input.label}`,
+    ),
+    ...input.graphNodeTypes.map((type, index) =>
+      `node-${graphSeedOrdinal(10 + index)}|GraphType|${type}|${input.category}:${input.label}`,
+    ),
+    ...input.ontologyNodeHints.map((hint, index) =>
+      `node-${graphSeedOrdinal(20 + index)}|OntologyHint|${hint}|${input.label}`,
+    ),
+    ...input.sourcePack.flatMap((source, index) => {
+      const base = 40 + (index * 4);
+      return [
+        `node-${graphSeedOrdinal(base)}|RealInfo|source:${source.id}|${source.label}; publisher=${source.publisher ?? 'unknown'}; date=${source.date ?? 'unknown'}`,
+        `node-${graphSeedOrdinal(base + 1)}|EvidenceNeed|source:${source.id}|${source.relevance}`,
+        `node-${graphSeedOrdinal(base + 2)}|SourceFreshness|source:${source.id}|cadence required before external use`,
+        `node-${graphSeedOrdinal(base + 3)}|SourceBoundary|source:${source.id}|do not infer beyond source text`,
+      ];
+    }),
+    ...input.recommendedToolIds.map((toolId, index) =>
+      `node-${graphSeedOrdinal(90 + index)}|ToolAction|${toolId}|use for ${input.label}`,
+    ),
+    ...input.outputProductIds.map((outputId, index) =>
+      `node-${graphSeedOrdinal(105 + index)}|OutputArtifact|${outputId}|target for ${input.label}`,
+    ),
+    ...input.tags.slice(0, 12).map((tag, index) =>
+      `node-${graphSeedOrdinal(120 + index)}|TaxonomySignal|${tag}|${input.label}`,
+    ),
+    ...abstractConcepts.map((concept, index) =>
+      `node-${graphSeedOrdinal(140 + index)}|AbstractConcept|${concept}|${input.label}`,
+    ),
+    ...reasoningMoves.map((move, index) =>
+      `node-${graphSeedOrdinal(170 + index)}|ReasoningMove|${move}|${input.label}`,
+    ),
+  ].map(shortGraphSeedTemplate));
+
+  let fillerIndex = 0;
+  while (nodeTemplates.length < CAPSULE_STARTER_GRAPH_SEED_MIN_POINTS) {
+    fillerIndex += 1;
+    nodeTemplates.push(shortGraphSeedTemplate(
+      `node-${graphSeedOrdinal(220 + fillerIndex)}|ReasoningMove|capsule-specific repair lane ${fillerIndex}|${input.label}`,
+    ));
+  }
+
+  return nodeTemplates.slice(0, 64);
+}
+
+function buildStarterGraphEdgeTemplates(input: {
+  starterId: string;
+  label: string;
+  sourcePack: CapsuleStarterSource[];
+  graphEdgeTypes: string[];
+  nodeTemplates: string[];
+}): string[] {
+  const edgeNarratives = [
+    'source receipt supports the graph point',
+    'human review constrains canonical promotion',
+    'reasoning move depends on evidence freshness',
+    'unsupported claim triggers review-card repair',
+    'output artifact cites source-bound context',
+    'abstract concept is grounded by real source info',
+    'tool action tests the claim boundary',
+    'open question preserves uncertainty',
+    'decision owner is informed by source posture',
+    'taxonomy signal routes the capsule workflow',
+    'memory handover preserves caveat and approval state',
+    'stale assumption is blocked from confident generation',
+  ];
+  const sourceIds = input.sourcePack.length
+    ? input.sourcePack.map((source) => source.id)
+    : ['source-review-required'];
+  const requiredEdgeTypes = uniqueStrings([
+    ...input.graphEdgeTypes,
+    'SUPPORTED_BY',
+    'CONSTRAINS',
+    'DEPENDS_ON',
+    'TRIGGERS_REVIEW',
+    'CITED_BY',
+  ]);
+  const edgeTemplates: string[] = [];
+
+  for (let index = 0; index < Math.max(CAPSULE_STARTER_GRAPH_SEED_MIN_POINTS, input.nodeTemplates.length); index += 1) {
+    const edgeType = requiredEdgeTypes[index % requiredEdgeTypes.length];
+    const sourceRef = graphSeedNodeRef(input.nodeTemplates[index % input.nodeTemplates.length], index);
+    const targetRef = graphSeedNodeRef(input.nodeTemplates[(index * 7 + 5) % input.nodeTemplates.length], index + 5);
+    const sourceId = sourceIds[index % sourceIds.length];
+    const narrative = edgeNarratives[index % edgeNarratives.length];
+    edgeTemplates.push(shortGraphSeedTemplate(
+      `edge-${graphSeedOrdinal(index + 1)}|${edgeType}|${sourceRef}->${targetRef}|${input.starterId}|evidence=${sourceId}|${narrative}`,
+    ));
+  }
+
+  return uniqueStrings(edgeTemplates).slice(0, 64);
+}
+
+function graphSeedOrdinal(value: number): string {
+  return value.toString().padStart(3, '0');
+}
+
+function graphSeedNodeRef(template: string, fallbackIndex: number): string {
+  const [nodeId, nodeKind] = template.split('|');
+  return `${nodeId || `node-${graphSeedOrdinal(fallbackIndex + 1)}`}:${nodeKind || 'Node'}`;
+}
+
+function shortGraphSeedTemplate(value: string): string {
+  const compact = value.replace(/\s+/g, ' ').trim();
+  if (compact.length <= 220) return compact;
+  return `${compact.slice(0, 217).trimEnd()}...`;
+}
+
 function buildStarterOntologyOverlay(input: {
   starterId: string;
   category: CapsuleStarterCategory;
@@ -1909,10 +2073,25 @@ function buildStarterOntologyOverlay(input: {
   const sourceAffinity = input.sourcePack.map((source) => source.id).slice(0, 8);
   const primaryTool = input.recommendedToolIds[0] ?? 'ask-praxis';
   const primaryOutput = input.outputProductIds[0] ?? 'options-memo';
+  const nodeTemplates = buildStarterGraphNodeTemplates({
+    ...input,
+    baseOntologyIds,
+    workOntologyId: workOntologyForStarter(input.domain, input.tags),
+    graphNodeTypes,
+    ontologyNodeHints,
+  });
+  const edgeTemplates = buildStarterGraphEdgeTemplates({
+    starterId: input.starterId,
+    label: input.label,
+    sourcePack: input.sourcePack,
+    graphEdgeTypes,
+    nodeTemplates,
+  });
+  const workOntologyId = workOntologyForStarter(input.domain, input.tags);
   return {
     overlayId: `${input.starterId}-ontology-overlay-v1`,
     baseOntologyIds,
-    workOntologyId: workOntologyForStarter(input.domain, input.tags),
+    workOntologyId,
     graphNodeTypes,
     graphEdgeTypes,
     ontologyNodeHints,
@@ -1927,8 +2106,8 @@ function buildStarterOntologyOverlay(input: {
     },
     graphSeed: {
       proposalLabel: `${input.label} embedded graph proposal`,
-      nodeTemplates: graphNodeTypes.map((type) => `${type}: review-gated ${input.label} candidate`),
-      edgeTemplates: graphEdgeTypes.map((type) => `${type}: source-backed relationship candidate`),
+      nodeTemplates,
+      edgeTemplates,
       evidenceRequired: [
         'At least one source receipt, attached document, or run receipt is required for every proposed graph row.',
         'Claims from Cognee recall are advisory until a human applies the review card.',
@@ -2566,6 +2745,7 @@ function buildStarterCogneeProfile(input: StarterIntelligenceBuilderInput & {
     .slice(0, 4);
   const expectedNodeCandidates = uniqueStrings([
     ...(curatedPatch?.nodeCandidates ?? []),
+    ...input.ontologyOverlay.graphSeed.nodeTemplates,
     ...input.ontologyOverlay.graphNodeTypes,
     ...input.ontologyOverlay.ontologyNodeHints,
     'Claim',
@@ -2573,15 +2753,16 @@ function buildStarterCogneeProfile(input: StarterIntelligenceBuilderInput & {
     'Decision',
     'OpenQuestion',
     'ReviewGate',
-  ]).slice(0, 14);
+  ]).slice(0, 60);
   const expectedEdgeCandidates = uniqueStrings([
     ...(curatedPatch?.edgeCandidates ?? []),
+    ...input.ontologyOverlay.graphSeed.edgeTemplates,
     ...input.ontologyOverlay.graphEdgeTypes,
     'SUPPORTED_BY',
     'CONTRADICTS',
     'REQUIRES_REVIEW',
     'PROMOTED_BY_REVIEW_CARD',
-  ]).slice(0, 12);
+  ]).slice(0, 60);
 
   return {
     profileId: `${input.starterId}-cognee-v1`,
@@ -7269,7 +7450,10 @@ export function buildCapsuleStarterPromptBlock(
     ] : []),
     ...(starterDefinition.ontologyOverlay ? [
       `ontology_overlay_id: ${starterDefinition.ontologyOverlay.overlayId}`,
-      `embedded_graph_seed: ${compactPromptText(`${starterDefinition.ontologyOverlay.graphSeed.proposalLabel}; ${starterDefinition.ontologyOverlay.graphSeed.reviewGate}`, 180)}`,
+      'embedded_graph_seed: starter-seed',
+      `embedded_graph_seed_counts: nodes=${starterDefinition.ontologyOverlay.graphSeed.nodeTemplates.length}; edges=${starterDefinition.ontologyOverlay.graphSeed.edgeTemplates.length}; doc=starter-seed`,
+      `embedded_graph_seed_sample_nodes: ${starterDefinition.ontologyOverlay.graphSeed.nodeTemplates[0]?.split('|').slice(0, 2).join(':') ?? 'none'}`,
+      `embedded_graph_seed_sample_edges: ${starterDefinition.ontologyOverlay.graphSeed.edgeTemplates[0]?.split('|').slice(0, 2).join(':') ?? 'none'}`,
       `cognee_overlay_mode: ${starterDefinition.ontologyOverlay.cognee.mode}; dataset_scope=${starterDefinition.ontologyOverlay.cognee.datasetScope}`,
       `ontology_promotion_rules: ${compactPromptList(starterDefinition.ontologyOverlay.promotionRules, 3, 120)}`,
       `ontology_forbidden_claims: ${compactPromptList(starterDefinition.ontologyOverlay.forbiddenClaims, 3, 120)}`,

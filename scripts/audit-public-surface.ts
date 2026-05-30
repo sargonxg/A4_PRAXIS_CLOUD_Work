@@ -82,13 +82,16 @@ requireAll('signed-in app index', appIndex, ['PraxisAppLaunchpad']);
 forbidAll('signed-in app index', appIndex, ['AskPraxisHome', 'TaskletPraxisWorkbench']);
 requireAll('signed-in launchpad', appLaunchpad, [
   'data-testid="app-launchpad"',
-  'What do you want to analyze?',
+  'Ask anything. Keep the capsule attached.',
+  'Ask PRAXIS',
   'data-testid="launchpad-capsule-chip"',
   '/api/created-work?limit=4',
   'items.slice(0, 4)',
   'Your capsules',
-  'Browse marketplace',
+  'Marketplace',
   'Recent work',
+  '/app/recent-work',
+  'PRAXIS sample artifacts',
   'data-testid="advanced-edit-context"',
   'Advanced / Edit context',
 ]);

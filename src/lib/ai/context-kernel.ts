@@ -11,6 +11,7 @@ import {
 import type { CapsuleServiceDeps, PraxisCapsule } from '@/lib/context/capsule-service';
 import type {
   CapsuleContextCaptureProfile,
+  CapsuleStarterSnapshot,
   CapsuleRepositoryMetadata,
 } from '@/lib/product/context-capsules';
 import type {
@@ -351,6 +352,7 @@ export function buildCapsuleRetrievalPlan(
 ): CapsuleRetrievalPlan {
   const refs = capsule.injectableContext.capsule.coreRefs;
   const contextCaptureProfile = capsule.injectableContext.capsule.starterSnapshot?.contextCaptureProfile ?? null;
+  const ontologyOverlay = capsule.injectableContext.capsule.starterSnapshot?.ontologyOverlay ?? null;
   const repositoryDocumentIds = uniqueStrings(repository?.documentIds ?? refs.documentCoreIds);
   const sourceReceiptIds = uniqueStrings(repository?.sourceReceiptIds ?? refs.sourceCoreIds);
   const storageObjectRefs = uniqueStrings(repository?.storageObjectRefs ?? []);
@@ -386,6 +388,7 @@ export function buildCapsuleRetrievalPlan(
     retrievalLayer('advisory-cognee-memory', 'Advisory Cognee memory', 7, advisoryCogneeMemoryIds),
     retrievalLayer('capsule-plus-graph', 'Capsule+ graph capture', 8, contextCaptureProfile ? [
       `${contextCaptureProfile.profileId}:graph-candidates`,
+      ...(ontologyOverlay ? [`${ontologyOverlay.overlayId}:starter-seed:nodes=${ontologyOverlay.graphSeed.nodeTemplates.length}:edges=${ontologyOverlay.graphSeed.edgeTemplates.length}`] : []),
       `nodes:${contextCaptureProfile.embeddedGraph.allowedNodeTypes.slice(0, 8).join(',')}`,
       `edges:${contextCaptureProfile.embeddedGraph.allowedEdgeTypes.slice(0, 6).join(',')}`,
       `provenance:${contextCaptureProfile.embeddedGraph.requiredProvenance.join('+')}`,
@@ -406,7 +409,7 @@ export function buildCapsuleRetrievalPlan(
     `Repository: ${repositoryDocumentIds.length} document ref(s), ${sourceReceiptIds.length} source receipt ref(s), ${chunkCount} chunk(s), ${repository?.retrievalBackend ?? 'local-hybrid'} backend, freshness ${repository?.freshness ?? inferRepositoryFreshness(repositoryDocumentIds, sourceReceiptIds)}.`,
     'ContextChain block priority: userCore, situation, sources, thinkingDevices, output.',
     ...formatRetrievalContextBlocks(capsule.injectableContext.stack.contextBlocks),
-    ...formatContextCapturePromptLines(contextCaptureProfile, capsule.enrichment?.receipt),
+    ...formatContextCapturePromptLines(contextCaptureProfile, capsule.enrichment?.receipt, ontologyOverlay),
     'Read order:',
     ...layers.map((layer) => `- ${layer.priority}. ${layer.label}: ${layer.status}${layer.refIds.length ? ` (${layer.refIds.slice(0, 8).join(', ')})` : ''}`),
     'Answer from capsule core refs first, then associated reference capsule summaries, ontology-bound source lanes, usage inference, repository documents/chunks and source receipts, advisory Cognee memory, Capsule+ graph candidates, then graph/time/memory/recent run/output history. Treat missing layers as explicit evidence gaps.',
@@ -449,6 +452,7 @@ function formatContextCapturePromptLines(
     ignoredMemoryItemIds?: string[];
     writebackProposalIds?: string[];
   } | null,
+  ontologyOverlay?: CapsuleStarterSnapshot['ontologyOverlay'] | null,
 ): string[] {
   if (!profile) {
     return [
@@ -460,12 +464,16 @@ function formatContextCapturePromptLines(
   }
   const usedMemoryIds = receipt?.usedMemoryItemIds ?? receipt?.memoryItemIds ?? [];
   const ignoredMemoryIds = receipt?.ignoredMemoryItemIds ?? [];
+  const graphSeed = ontologyOverlay?.graphSeed ?? null;
   return [
     `Context capture profile: ${profile.profileId}`,
     `Ontology-bound sources: ${compactList(profile.sourceBindings.map((binding) => `${binding.sourceId} [${binding.ontologyIds.join('+')} -> ${binding.expectedClaims.slice(0, 2).join('; ')}]`), 4)}`,
     `Usage inference: signals=${compactList(profile.usageInference.activationSignals, 3)}; jobs=${compactList(profile.usageInference.userJobs, 2)}; contraindications=${compactList(profile.usageInference.contraindications, 3)}; confidence<=${profile.usageInference.confidenceThresholds.advisoryGenerationMaxConfidence} until evidence.`,
     `Advisory Cognee memory: seed_docs=${compactList(profile.cogneeCapture.seedDocumentIds, 4)}; used=${compactList(usedMemoryIds, 4)}; ignored=${compactList(ignoredMemoryIds, 4)}; advisory_only=${profile.cogneeCapture.advisoryOnly}; promotion=review-card.`,
     `Capsule+ graph capture: nodes=${profile.embeddedGraph.allowedNodeTypes.slice(0, 8).join(',')}; edges=${profile.embeddedGraph.allowedEdgeTypes.slice(0, 6).join(',')}; provenance=${profile.embeddedGraph.requiredProvenance.join('+')}; review_state=${profile.embeddedGraph.reviewState}; promotion_gate=${profile.embeddedGraph.promotionGate}`,
+    graphSeed
+      ? `Ontology graph seed: ${ontologyOverlay?.overlayId}; graph_doc=ontologyGraphs/starter-seed; nodes=${graphSeed.nodeTemplates.length}; edges=${graphSeed.edgeTemplates.length}; sample_nodes=${compactList(graphSeed.nodeTemplates, 3)}; sample_edges=${compactList(graphSeed.edgeTemplates, 3)}`
+      : 'Ontology graph seed: none',
     `Unsupported claim warnings: ${compactList(profile.generationImpact.unsupportedClaimWarnings, 3)}; evidence_required=${compactList(profile.generationImpact.evidenceRequiredBeforeConfidentGeneration, 3)}`,
   ];
 }

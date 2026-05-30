@@ -2032,6 +2032,35 @@ async function writeStarterDetailRecords(
     catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
     updatedAt: timestamp,
   }, { merge: true });
+  if (starterDefinition.ontologyOverlay) {
+    const graphSeed = starterDefinition.ontologyOverlay.graphSeed;
+    batch.set(ref.collection('ontologyGraphs').doc('starter-seed'), {
+      graphId: 'starter-seed',
+      ownerUid: uid,
+      capsuleId,
+      starterDefinitionId: starterDefinition.starterId,
+      overlayId: starterDefinition.ontologyOverlay.overlayId,
+      catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+      baseOntologyIds: starterDefinition.ontologyOverlay.baseOntologyIds,
+      workOntologyId: starterDefinition.ontologyOverlay.workOntologyId,
+      graphNodeTypes: starterDefinition.ontologyOverlay.graphNodeTypes,
+      graphEdgeTypes: starterDefinition.ontologyOverlay.graphEdgeTypes,
+      sourceAffinity: starterDefinition.ontologyOverlay.sourceAffinity,
+      proposalLabel: graphSeed.proposalLabel,
+      nodeCount: graphSeed.nodeTemplates.length,
+      edgeCount: graphSeed.edgeTemplates.length,
+      nodeTemplates: graphSeed.nodeTemplates,
+      edgeTemplates: graphSeed.edgeTemplates,
+      evidenceRequired: graphSeed.evidenceRequired,
+      reviewGate: graphSeed.reviewGate,
+      reviewState: 'proposed',
+      proposalOnly: true,
+      canonicalTruth: 'Firestore ContextCapsules',
+      promotionRules: starterDefinition.ontologyOverlay.promotionRules,
+      forbiddenClaims: starterDefinition.ontologyOverlay.forbiddenClaims,
+      updatedAt: timestamp,
+    }, { merge: true });
+  }
   batch.set(ref.collection('advisoryMemoryHits').doc('starter-advisory-context'), {
     memoryHitId: 'starter-advisory-context',
     capsuleId,

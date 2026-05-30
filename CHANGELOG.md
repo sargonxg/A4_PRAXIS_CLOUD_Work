@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- feat(home): make signed-in Home an Ask PRAXIS workspace.
+  Build 2026.05.30.16 reshapes `/app` around one Ask PRAXIS composer with a
+  pinned capsule/context editor, relevant workspace sidebar, Learn/Changelog
+  links, recent work, and PRAXIS sample policy artifacts with official source
+  links. It adds `/app/recent-work`, fixes recent-work `primaryAction.href`
+  hydration, and aligns demo session hydration between middleware and the
+  client auth context.
+
 - chore(verification): record the Phases 0-1 deploy gate checkpoint.
   Build 2026.05.30.15 refreshes graphify, fixes verification drift in backend,
   doctor, auth, and smoke contracts, and clears the Phase 1 Postgres skip gate

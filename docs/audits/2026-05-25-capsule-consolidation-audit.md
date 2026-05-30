@@ -6,7 +6,7 @@
 - Starters: 205
 - Category counts: situation 85, tool 72, output 35, user 13
 - Source registry entries: 27
-- Prompt average/max: 11979/15158 chars
+- Prompt average/max: 12000/15174 chars
 
 ## Failures
 

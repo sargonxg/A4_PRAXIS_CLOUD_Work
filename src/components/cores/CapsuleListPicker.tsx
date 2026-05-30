@@ -31,7 +31,7 @@ export function CapsuleListPicker({ activeCapsuleId, onSelect, onCreate, refresh
     };
   }, [refreshKey]);
 
-  const active = capsules.find((c) => c.capsuleId === activeCapsuleId) ?? capsules[0] ?? null;
+  const active = capsules.find((c) => c.capsuleId === activeCapsuleId) ?? null;
 
   async function handleCreate() {
     setBusy(true);

@@ -116,7 +116,8 @@ async function serverSessionToAuthUser(): Promise<AuthUser | null> {
         isDemo?: boolean;
       } | null;
     };
-    if (!payload.authenticated || !payload.user?.id) return null;
+    if (!payload.user?.id) return null;
+    if (!payload.authenticated && payload.user.isDemo !== true) return null;
     return {
       id: payload.user.id,
       email: payload.user.email || '',

@@ -1,0 +1,573 @@
+{
+  "generatedAt": "2026-05-30T23:04:18.747Z",
+  "mode": "read-only",
+  "architecture": {
+    "canonicalStateOwner": "PRAXIS",
+    "firestoreOwnership": "Firestore remains canonical for user/app state, profiles, ContextCapsules, context stacks, conversations, documents, and output capsules.",
+    "cloudSqlOwnership": "Cloud SQL Postgres is the durable ledger for Ask SQL memory and agent runs: ask_threads, ask_thread_turns, agent_runs, agent_run_events, agent_tool_calls, and agent_approvals.",
+    "executionSubstrates": "ADK, Genkit, Vertex, Gemini, Cloud Tasks, and Cloud Run execute work but do not become the product source of truth."
+  },
+  "inventory": {
+    "firestorePaths": [
+      {
+        "path": "users/{uid}",
+        "purpose": "Profile, credits, onboarding, API-key metadata, and AI settings.",
+        "required": true,
+        "status": "BLOCKED",
+        "evidence": "No bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/profile/analyst",
+        "purpose": "Onboarding/profile metadata for the analyst core.",
+        "required": true,
+        "status": "BLOCKED",
+        "evidence": "No bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/usage/{period}",
+        "purpose": "Usage and credit accounting.",
+        "required": true,
+        "status": "BLOCKED",
+        "evidence": "No bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/settings/api_keys_encrypted/providers/{provider}",
+        "purpose": "Server-owned API-key metadata and encrypted provider key records.",
+        "required": false,
+        "status": "WARN",
+        "evidence": "Optional path recorded for coverage; no bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/capsules/{capsuleId}",
+        "purpose": "Canonical ContextCapsule state.",
+        "required": true,
+        "status": "BLOCKED",
+        "evidence": "No bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/capsules/{capsuleId}/versions/{version}",
+        "purpose": "Capsule version history and lockability.",
+        "required": true,
+        "status": "BLOCKED",
+        "evidence": "No bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/capsules/{capsuleId}/ontologyGraphs/starter-seed",
+        "purpose": "Starter ontology graph seed with review-gated node and edge templates.",
+        "required": true,
+        "status": "BLOCKED",
+        "evidence": "No bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/capsules/{capsuleId}/askThreads/{threadId}",
+        "purpose": "Capsule-scoped Ask thread metadata.",
+        "required": true,
+        "status": "BLOCKED",
+        "evidence": "No bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/capsules/{capsuleId}/askThreads/{threadId}/turns/{turnId}",
+        "purpose": "Capsule-scoped Ask turns.",
+        "required": true,
+        "status": "BLOCKED",
+        "evidence": "No bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/contextStacks/default",
+        "purpose": "Default active ContextCapsule stack.",
+        "required": true,
+        "status": "BLOCKED",
+        "evidence": "No bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/conversations/{conversationId}/turns/{turnId}",
+        "purpose": "Conversation continuity outside capsule-specific threads.",
+        "required": true,
+        "status": "BLOCKED",
+        "evidence": "No bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/situations/{situationId}/memos/{memoId}",
+        "purpose": "Memo outputs and versions.",
+        "required": false,
+        "status": "WARN",
+        "evidence": "Optional path recorded for coverage; no bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/situations/{situationId}/documents/{documentId}",
+        "purpose": "User document corpus and chunks.",
+        "required": false,
+        "status": "WARN",
+        "evidence": "Optional path recorded for coverage; no bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/outputCapsules/{outputId}",
+        "purpose": "Durable output capsules created by Ask/agent runs.",
+        "required": true,
+        "status": "BLOCKED",
+        "evidence": "No bounded Firestore diagnostic sample was supplied."
+      },
+      {
+        "path": "users/{uid}/capsules/{capsuleId}/outputs/{outputId}",
+        "purpose": "Capsule-linked output capsule index.",
+        "required": true,
+        "status": "BLOCKED",
+        "evidence": "No bounded Firestore diagnostic sample was supplied."
+      }
+    ],
+    "cloudSqlSchema": [
+      {
+        "table": "ask_threads",
+        "requiredColumns": [
+          "owner_uid",
+          "capsule_id",
+          "thread_id",
+          "situation_id",
+          "capsule_version",
+          "last_prompt",
+          "last_output_preview",
+          "turn_count",
+          "created_at",
+          "updated_at"
+        ],
+        "requiredIndexes": [
+          "ask_threads_pkey",
+          "ask_threads_owner_updated_idx"
+        ],
+        "status": "BLOCKED",
+        "missingColumns": [],
+        "missingIndexes": []
+      },
+      {
+        "table": "ask_thread_turns",
+        "requiredColumns": [
+          "id",
+          "owner_uid",
+          "capsule_id",
+          "thread_id",
+          "situation_id",
+          "prompt",
+          "output",
+          "capsule_version",
+          "runtime",
+          "path_id",
+          "path_version",
+          "framework_steps",
+          "tool_invocations",
+          "created_at"
+        ],
+        "requiredIndexes": [
+          "ask_thread_turns_pkey",
+          "ask_thread_turns_thread_created_idx"
+        ],
+        "status": "BLOCKED",
+        "missingColumns": [],
+        "missingIndexes": []
+      },
+      {
+        "table": "agent_runs",
+        "requiredColumns": [
+          "id",
+          "agent_spec_id",
+          "owner_uid",
+          "capsule_id",
+          "context_stack_id",
+          "context_package_id",
+          "selected_core_ids",
+          "status",
+          "trigger_type",
+          "objective",
+          "trace_id",
+          "parent_run_id",
+          "idempotency_key",
+          "max_step",
+          "max_session_minutes",
+          "internal_estimated_cost_cents",
+          "internal_spend_cents",
+          "metadata",
+          "created_at",
+          "updated_at",
+          "queued_at",
+          "started_at",
+          "completed_at",
+          "expires_at"
+        ],
+        "requiredIndexes": [
+          "agent_runs_pkey",
+          "agent_runs_owner_capsule_created_idx"
+        ],
+        "status": "BLOCKED",
+        "missingColumns": [],
+        "missingIndexes": []
+      },
+      {
+        "table": "agent_run_events",
+        "requiredColumns": [
+          "id",
+          "run_id",
+          "owner_uid",
+          "capsule_id",
+          "event_type",
+          "from_status",
+          "to_status",
+          "message",
+          "data",
+          "trace_id",
+          "created_at"
+        ],
+        "requiredIndexes": [
+          "agent_run_events_pkey",
+          "agent_run_events_run_created_idx"
+        ],
+        "status": "BLOCKED",
+        "missingColumns": [],
+        "missingIndexes": []
+      },
+      {
+        "table": "agent_tool_calls",
+        "requiredColumns": [
+          "id",
+          "run_id",
+          "owner_uid",
+          "capsule_id",
+          "tool_id",
+          "risk",
+          "status",
+          "input",
+          "output",
+          "error",
+          "started_at",
+          "completed_at",
+          "created_at",
+          "updated_at"
+        ],
+        "requiredIndexes": [
+          "agent_tool_calls_pkey",
+          "agent_tool_calls_run_created_idx"
+        ],
+        "status": "BLOCKED",
+        "missingColumns": [],
+        "missingIndexes": []
+      },
+      {
+        "table": "agent_approvals",
+        "requiredColumns": [
+          "id",
+          "run_id",
+          "owner_uid",
+          "capsule_id",
+          "tool_call_id",
+          "status",
+          "reason",
+          "risk",
+          "requested_at",
+          "decided_at",
+          "decided_by_uid",
+          "expires_at"
+        ],
+        "requiredIndexes": [
+          "agent_approvals_pkey",
+          "agent_approvals_run_requested_idx"
+        ],
+        "status": "BLOCKED",
+        "missingColumns": [],
+        "missingIndexes": []
+      }
+    ],
+    "aiProvider": {
+      "vertexProjectConfigured": false,
+      "vertexLocation": "global",
+      "frontierModels": [
+        "gemini-3.5-flash",
+        "gemini-3.1-pro-preview"
+      ],
+      "fallbackModels": [
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash-lite"
+      ],
+      "googleAiFallbackConfigured": false,
+      "embeddingsConfigured": false,
+      "warnings": [
+        "GOOGLE_VERTEX_PROJECT is not configured."
+      ]
+    },
+    "secretsIam": {
+      "firebaseAdminCredentials": "BLOCKED",
+      "applicationDefaultCredentials": "WARN",
+      "cloudRunServiceAccount": "WARN",
+      "cloudTasksWorkerAuth": "FAIL",
+      "secretManagerHints": "WARN",
+      "evidence": [
+        "Firebase Admin credential source: missing",
+        "ADC/impersonation: not visible in env",
+        "Cloud Tasks worker auth: missing",
+        "Cloud Run service account hint: not visible in env"
+      ]
+    },
+    "continuity": {
+      "ownerUid": "BLOCKED",
+      "capsuleId": "WARN",
+      "threadId": "WARN",
+      "traceId": "WARN",
+      "evidence": [
+        "Firestore capsule path: BLOCKED",
+        "Firestore capsule turns path: BLOCKED",
+        "SQL ask turns: BLOCKED",
+        "SQL agent runs: BLOCKED"
+      ]
+    }
+  },
+  "runtimeHealth": {
+    "status": "degraded",
+    "summary": "Some systems degraded",
+    "checkedAt": "2026-05-30T23:04:18.744Z",
+    "debugHref": "/app/settings?tab=system",
+    "build": {
+      "source": "unknown",
+      "repository": "unknown",
+      "branch": "unknown",
+      "commit": "unknown",
+      "buildId": "unknown",
+      "revision": "local",
+      "service": "local"
+    },
+    "checks": [
+      {
+        "id": "frontend",
+        "label": "Frontend runtime",
+        "status": "ok",
+        "latencyMs": 100
+      },
+      {
+        "id": "firestore",
+        "label": "Firestore",
+        "status": "degraded",
+        "repairAction": "Configure Firebase Admin credentials for production persistence."
+      },
+      {
+        "id": "backend",
+        "label": "Private backend",
+        "status": "unconfigured",
+        "repairAction": "Set NEXT_PUBLIC_PRAXIS_BACKEND_URL when the private backend is required."
+      },
+      {
+        "id": "agent_ledger",
+        "label": "Deep work queue",
+        "status": "unconfigured",
+        "repairAction": "Set an agent runtime database URL for durable queued-agent ledgers."
+      },
+      {
+        "id": "agent_queue",
+        "label": "Agent task queue",
+        "status": "down",
+        "latencyMs": 99,
+        "detail": "projects/praxisbytacitus/locations/us-central1/queues/agent-runs",
+        "repairAction": "Create or grant access to projects/praxisbytacitus/locations/us-central1/queues/agent-runs."
+      },
+      {
+        "id": "agent_worker",
+        "label": "Agent worker dispatch",
+        "status": "unconfigured",
+        "repairAction": "Set AGENT_RUN_WORKER_BASE_URL plus AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL and AGENT_RUN_WORKER_OIDC_AUDIENCE for Cloud Tasks dispatch."
+      },
+      {
+        "id": "agent_platform",
+        "label": "Agent platform",
+        "status": "unconfigured",
+        "repairAction": "Configure Vertex project and ADK worker credentials for queued agent execution."
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "cloud-tasks-worker-auth-missing",
+      "status": "FAIL",
+      "severity": "critical",
+      "category": "secrets-iam",
+      "summary": "Cloud Tasks worker authentication is not configured.",
+      "evidence": [
+        "Firebase Admin credential source: missing",
+        "ADC/impersonation: not visible in env",
+        "Cloud Tasks worker auth: missing",
+        "Cloud Run service account hint: not visible in env"
+      ],
+      "affectedFlow": "Durable queued agent dispatch and worker execution.",
+      "remediation": [
+        "Set AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL and AGENT_RUN_WORKER_OIDC_AUDIENCE for OIDC worker auth.",
+        "Use AGENT_RUN_WORKER_SHARED_SECRET only as a documented fallback."
+      ]
+    },
+    {
+      "id": "vertex-project-missing",
+      "status": "FAIL",
+      "severity": "high",
+      "category": "ai-runtime",
+      "summary": "Vertex project is missing and no Google AI fallback is visible.",
+      "evidence": [
+        "Vertex location: global",
+        "Google AI fallback: missing"
+      ],
+      "affectedFlow": "Ask model selection, Gemini runtime routing, and queued agent execution.",
+      "remediation": [
+        "Set GOOGLE_VERTEX_PROJECT and GOOGLE_VERTEX_LOCATION/GOOGLE_VERTEX_GEMINI_LOCATION.",
+        "Keep Google AI fallback configured only as a controlled fallback, not the canonical production posture."
+      ]
+    },
+    {
+      "id": "capsule-thread-agent-continuity",
+      "status": "BLOCKED",
+      "severity": "high",
+      "category": "agentic-chain",
+      "summary": "Continuity check maps ownerUid, capsuleId, threadId, and traceId across Firestore and Cloud SQL.",
+      "evidence": [
+        "Firestore capsule path: BLOCKED",
+        "Firestore capsule turns path: BLOCKED",
+        "SQL ask turns: BLOCKED",
+        "SQL agent runs: BLOCKED"
+      ],
+      "affectedFlow": "User asks a capsule, continues a conversation, queues a deep agent run, and reads the resulting receipt.",
+      "remediation": [
+        "Ensure Ask requests persist capsuleId/threadId in Firestore and SQL.",
+        "Ensure agent_runs carries owner_uid, capsule_id, context_package_id, and trace_id."
+      ]
+    },
+    {
+      "id": "firebase-admin-credentials-blocked",
+      "status": "BLOCKED",
+      "severity": "high",
+      "category": "secrets-iam",
+      "summary": "Firebase Admin credentials are not visible to the diagnostic environment.",
+      "evidence": [
+        "Firebase Admin credential source: missing",
+        "ADC/impersonation: not visible in env",
+        "Cloud Tasks worker auth: missing",
+        "Cloud Run service account hint: not visible in env"
+      ],
+      "affectedFlow": "Profile, ContextCapsule, conversation, and output-capsule reads.",
+      "remediation": [
+        "Run npm run auth:doctor and configure FIREBASE_SERVICE_ACCOUNT_KEY_FILE, FIREBASE_SERVICE_ACCOUNT_KEY, or ADC."
+      ]
+    },
+    {
+      "id": "firestore-sample-blocked",
+      "status": "BLOCKED",
+      "severity": "medium",
+      "category": "firestore",
+      "summary": "Required Firestore data-plane paths were not sampled in this run.",
+      "evidence": [
+        "users/{uid}: No bounded Firestore diagnostic sample was supplied.",
+        "users/{uid}/profile/analyst: No bounded Firestore diagnostic sample was supplied.",
+        "users/{uid}/usage/{period}: No bounded Firestore diagnostic sample was supplied.",
+        "users/{uid}/capsules/{capsuleId}: No bounded Firestore diagnostic sample was supplied.",
+        "users/{uid}/capsules/{capsuleId}/versions/{version}: No bounded Firestore diagnostic sample was supplied.",
+        "users/{uid}/capsules/{capsuleId}/ontologyGraphs/starter-seed: No bounded Firestore diagnostic sample was supplied.",
+        "users/{uid}/capsules/{capsuleId}/askThreads/{threadId}: No bounded Firestore diagnostic sample was supplied.",
+        "users/{uid}/capsules/{capsuleId}/askThreads/{threadId}/turns/{turnId}: No bounded Firestore diagnostic sample was supplied.",
+        "users/{uid}/contextStacks/default: No bounded Firestore diagnostic sample was supplied.",
+        "users/{uid}/conversations/{conversationId}/turns/{turnId}: No bounded Firestore diagnostic sample was supplied.",
+        "users/{uid}/outputCapsules/{outputId}: No bounded Firestore diagnostic sample was supplied.",
+        "users/{uid}/capsules/{capsuleId}/outputs/{outputId}: No bounded Firestore diagnostic sample was supplied."
+      ],
+      "affectedFlow": "Profile, ContextCapsule, conversation, and output-capsule continuity.",
+      "remediation": [
+        "Set PRAXIS_DIAGNOSTIC_UID to a non-demo diagnostic user and rerun npm run audit:runtime-data-plane.",
+        "Confirm Firebase Admin credentials with npm run auth:doctor."
+      ]
+    },
+    {
+      "id": "ai-provider-warning-google-vertex-project-is-not-configured",
+      "status": "WARN",
+      "severity": "medium",
+      "category": "ai-runtime",
+      "summary": "GOOGLE_VERTEX_PROJECT is not configured.",
+      "evidence": [
+        "Frontier models: gemini-3.5-flash, gemini-3.1-pro-preview",
+        "Fallback models: gemini-2.5-flash, gemini-2.5-pro, gemini-2.5-flash-lite"
+      ],
+      "affectedFlow": "Ask PRAXIS model routing.",
+      "remediation": [
+        "Run npm run audit:ai-provider-vertex-default and align env with src/lib/ai/model-runtime-policy.ts."
+      ]
+    },
+    {
+      "id": "cloud-sql-url-missing",
+      "status": "WARN",
+      "severity": "medium",
+      "category": "cloud-sql",
+      "summary": "Cloud SQL URL was not visible in this environment; Firestore can still carry app state but Ask SQL memory and durable agent ledgers are degraded.",
+      "evidence": [
+        "Checked ASK_THREAD_DATABASE_URL, AGENT_RUNTIME_DATABASE_URL, PRAXIS_DATABASE_URL, and DATABASE_URL."
+      ],
+      "affectedFlow": "Ask SQL memory and queued agent-run durability.",
+      "remediation": [
+        "Set ASK_THREAD_DATABASE_URL or AGENT_RUNTIME_DATABASE_URL from Secret Manager in the Cloud Run service.",
+        "Rerun npm run audit:runtime-data-plane after the secret is mounted."
+      ]
+    },
+    {
+      "id": "embeddings-unconfigured",
+      "status": "WARN",
+      "severity": "medium",
+      "category": "ai-runtime",
+      "summary": "Embeddings configuration was not visible in this environment.",
+      "evidence": [
+        "Checked GOOGLE_VERTEX_EMBEDDING_MODEL, EMBEDDING_MODEL, and GOOGLE_GENERATIVE_AI_EMBEDDING_MODEL."
+      ],
+      "affectedFlow": "Context retrieval, capsule evidence packs, and semantic memory.",
+      "remediation": [
+        "Configure the approved embedding model or document why deterministic retrieval is sufficient for this environment."
+      ]
+    },
+    {
+      "id": "runtime-health-degraded",
+      "status": "WARN",
+      "severity": "medium",
+      "category": "preflight",
+      "summary": "Runtime health is degraded.",
+      "evidence": [
+        "frontend: ok",
+        "firestore: degraded",
+        "backend: unconfigured",
+        "agent_ledger: unconfigured",
+        "agent_queue: down",
+        "agent_worker: unconfigured",
+        "agent_platform: unconfigured"
+      ],
+      "affectedFlow": "Runtime semaphore, Settings/System, and operator debugging.",
+      "remediation": [
+        "Open /app/settings?tab=system with an authenticated user and repair down checks first."
+      ]
+    },
+    {
+      "id": "architecture-ownership",
+      "status": "PASS",
+      "severity": "low",
+      "category": "architecture",
+      "summary": "Database ownership is explicit: Firestore owns user/app/capsule state; Cloud SQL owns Ask SQL memory and agent-run ledgers; PRAXIS remains canonical over execution substrates.",
+      "evidence": [
+        "Firestore path inventory includes profiles, capsules, context stacks, conversations, documents, and output capsules.",
+        "Cloud SQL schema inventory includes Ask thread tables and agent runtime tables.",
+        "Ask PRAXIS model policy provider: vertex"
+      ],
+      "affectedFlow": "Architecture and operator repair decisions.",
+      "remediation": [
+        "Do not introduce a replacement database owner without updating the architecture docs and migration plan."
+      ]
+    },
+    {
+      "id": "write-canary-gate",
+      "status": "PASS",
+      "severity": "low",
+      "category": "preflight",
+      "summary": "Write canary mode is disabled; this diagnostic is read-only.",
+      "evidence": [
+        "PRAXIS_DIAGNOSTIC_WRITE_CANARY=not set"
+      ],
+      "affectedFlow": "Production diagnostics and safety posture.",
+      "remediation": [
+        "Set PRAXIS_DIAGNOSTIC_WRITE_CANARY=1 only for an explicit controlled canary phase."
+      ]
+    }
+  ]
+}

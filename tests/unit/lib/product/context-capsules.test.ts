@@ -603,6 +603,12 @@ describe('context capsule product contract', () => {
       });
       expect(starter?.ontologyOverlay?.baseOntologyIds.length, `${starterId} base ontology ids`).toBeGreaterThanOrEqual(1);
       expect(starter?.ontologyOverlay?.workOntologyId, `${starterId} work ontology`).toMatch(/foreign-policy|domestic-policy|corporate-strategic/);
+      expect(starter?.ontologyOverlay?.graphSeed.nodeTemplates.length, `${starterId} graph seed nodes`).toBeGreaterThanOrEqual(50);
+      expect(starter?.ontologyOverlay?.graphSeed.edgeTemplates.length, `${starterId} graph seed edges`).toBeGreaterThanOrEqual(50);
+      expect(new Set(starter?.ontologyOverlay?.graphSeed.nodeTemplates).size, `${starterId} unique graph seed nodes`).toBe(starter?.ontologyOverlay?.graphSeed.nodeTemplates.length);
+      expect(new Set(starter?.ontologyOverlay?.graphSeed.edgeTemplates).size, `${starterId} unique graph seed edges`).toBe(starter?.ontologyOverlay?.graphSeed.edgeTemplates.length);
+      expect(starter?.ontologyOverlay?.graphSeed.nodeTemplates.join(' '), `${starterId} graph seed node content`).toMatch(/AbstractConcept|RealInfo|ReasoningMove|ToolAction|EvidenceNeed/);
+      expect(starter?.ontologyOverlay?.graphSeed.edgeTemplates.join(' '), `${starterId} graph seed edge content`).toMatch(/SUPPORTED_BY|CONSTRAINS|DEPENDS_ON|TRIGGERS_REVIEW|CITED_BY/);
       expect(starter?.ontologyOverlay?.cognee).toMatchObject({
         datasetScope: 'owner-capsule',
         maxCandidateConfidence: 0.6,
@@ -616,8 +622,24 @@ describe('context capsule product contract', () => {
       const promptBlock = buildCapsuleStarterPromptBlock(starterId);
       expect(promptBlock).toContain('ontology_overlay_id:');
       expect(promptBlock).toContain('embedded_graph_seed:');
+      expect(promptBlock).toContain('embedded_graph_seed_counts: nodes=');
+      expect(promptBlock).toContain('embedded_graph_seed_sample_nodes:');
+      expect(promptBlock).toContain('embedded_graph_seed_sample_edges:');
       expect(promptBlock).toContain('cognee_overlay_mode:');
       expect(promptBlock).toContain('ontology_promotion_rules:');
+    }
+  });
+
+  it('keeps every starter ontology graph at 50 unique points and 50 unique edges', () => {
+    for (const starter of CAPSULE_STARTER_DEFINITIONS) {
+      const graphSeed = starter.ontologyOverlay?.graphSeed;
+
+      expect(graphSeed?.nodeTemplates.length, `${starter.starterId} node templates`).toBeGreaterThanOrEqual(50);
+      expect(graphSeed?.edgeTemplates.length, `${starter.starterId} edge templates`).toBeGreaterThanOrEqual(50);
+      expect(new Set(graphSeed?.nodeTemplates).size, `${starter.starterId} unique nodes`).toBe(graphSeed?.nodeTemplates.length);
+      expect(new Set(graphSeed?.edgeTemplates).size, `${starter.starterId} unique edges`).toBe(graphSeed?.edgeTemplates.length);
+      expect(graphSeed?.nodeTemplates.join(' '), `${starter.starterId} abstract and real graph points`).toMatch(/AbstractConcept|RealInfo|ReasoningMove|ToolAction|EvidenceNeed/);
+      expect(graphSeed?.edgeTemplates.join(' '), `${starter.starterId} typed graph edges`).toMatch(/SUPPORTED_BY|CONSTRAINS|DEPENDS_ON|TRIGGERS_REVIEW|CITED_BY/);
     }
   });
 

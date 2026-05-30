@@ -102,6 +102,9 @@ async function samplePath(input: {
     case 'users/{uid}/capsules/{capsuleId}/versions/{version}':
       if (!capsuleId) return false;
       return !(await db.collection('users').doc(uid).collection('capsules').doc(capsuleId).collection('versions').limit(1).get()).empty;
+    case 'users/{uid}/capsules/{capsuleId}/ontologyGraphs/starter-seed':
+      if (!capsuleId) return false;
+      return (await db.collection('users').doc(uid).collection('capsules').doc(capsuleId).collection('ontologyGraphs').doc('starter-seed').get()).exists;
     case 'users/{uid}/capsules/{capsuleId}/askThreads/{threadId}':
       if (!capsuleId) return false;
       return threadId

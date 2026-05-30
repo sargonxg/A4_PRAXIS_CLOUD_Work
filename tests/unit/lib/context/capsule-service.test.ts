@@ -628,6 +628,21 @@ describe('capsule service', () => {
       graphCaptureReviewState: 'proposed',
       graphPromotionGate: expect.stringMatching(/human|review-card|canonical/i),
     });
+    const aiGovernanceOntologyGraph = db.data.get('users/u1/capsules/starter-situation-ai-governance-procurement/ontologyGraphs/starter-seed') as Record<string, unknown> | undefined;
+    expect(aiGovernanceOntologyGraph).toMatchObject({
+      graphId: 'starter-seed',
+      ownerUid: 'u1',
+      capsuleId: 'starter-situation-ai-governance-procurement',
+      reviewState: 'proposed',
+      proposalOnly: true,
+      canonicalTruth: 'Firestore ContextCapsules',
+      nodeCount: expect.any(Number),
+      edgeCount: expect.any(Number),
+    });
+    expect(aiGovernanceOntologyGraph?.nodeCount).toBeGreaterThanOrEqual(50);
+    expect(aiGovernanceOntologyGraph?.edgeCount).toBeGreaterThanOrEqual(50);
+    expect((aiGovernanceOntologyGraph?.nodeTemplates as unknown[])?.length).toBeGreaterThanOrEqual(50);
+    expect((aiGovernanceOntologyGraph?.edgeTemplates as unknown[])?.length).toBeGreaterThanOrEqual(50);
     expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/sources/un-sudan-atrocity-famine-risk')).toBe(true);
     expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/evaluations/starter-readiness')).toBe(true);
     expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/notes/starter-guidance')).toBe(true);
@@ -698,6 +713,9 @@ describe('capsule service', () => {
     expect(resolved.promptBlock).toContain('starter_category: tool');
     expect(resolved.promptBlock).toContain('recommended_tools: grounded-research, sourceability, ask-praxis');
     expect(resolved.promptBlock).toContain('source_pack:');
+    expect(resolved.promptBlock).toContain('embedded_graph_seed_counts: nodes=');
+    expect(resolved.promptBlock).toContain('embedded_graph_seed_sample_nodes:');
+    expect(resolved.promptBlock).toContain('embedded_graph_seed_sample_edges:');
   });
 
   it('does not overwrite an edited starter capsule during reseeding', async () => {

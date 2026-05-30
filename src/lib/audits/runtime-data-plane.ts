@@ -92,6 +92,7 @@ export const EXPECTED_FIRESTORE_PATHS: FirestorePathCheck[] = [
   pathCheck('users/{uid}/settings/api_keys_encrypted/providers/{provider}', 'Server-owned API-key metadata and encrypted provider key records.', false),
   pathCheck('users/{uid}/capsules/{capsuleId}', 'Canonical ContextCapsule state.', true),
   pathCheck('users/{uid}/capsules/{capsuleId}/versions/{version}', 'Capsule version history and lockability.', true),
+  pathCheck('users/{uid}/capsules/{capsuleId}/ontologyGraphs/starter-seed', 'Starter ontology graph seed with review-gated node and edge templates.', true),
   pathCheck('users/{uid}/capsules/{capsuleId}/askThreads/{threadId}', 'Capsule-scoped Ask thread metadata.', true),
   pathCheck('users/{uid}/capsules/{capsuleId}/askThreads/{threadId}/turns/{turnId}', 'Capsule-scoped Ask turns.', true),
   pathCheck('users/{uid}/contextStacks/default', 'Default active ContextCapsule stack.', true),
