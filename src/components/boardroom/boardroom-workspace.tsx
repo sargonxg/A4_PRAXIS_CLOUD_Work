@@ -179,6 +179,7 @@ export function BoardroomWorkspace() {
   const openBoardroomSearch = useCallback(() => {
     window.dispatchEvent(new CustomEvent('open-praxis-search'));
   }, []);
+  const showOperatorChrome = process.env.NEXT_PUBLIC_PRAXIS_DEBUG === 'true';
 
   const refreshRun = useCallback(async (nextRunId = activeRunId) => {
     if (!nextRunId) return;
@@ -275,14 +276,14 @@ export function BoardroomWorkspace() {
             <ArrowLeft className="h-5 w-5 text-slate-500" />
             Home
           </Link>
-          <button
+          {showOperatorChrome ? <button
             type="button"
             onClick={openBoardroomSearch}
             className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5"
           >
             <Search className="h-5 w-5 text-slate-500" />
             Search app
-          </button>
+          </button> : null}
           <Link href="/app/capsules" className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5">
             <FileText className="h-5 w-5 text-slate-500" />
             Capsules
@@ -320,10 +321,10 @@ export function BoardroomWorkspace() {
               <Link href="/app" className="hover:text-slate-900">Home</Link>
               <Link href="/app/capsules" className="hover:text-slate-900">Capsules</Link>
               <Link href="/learn" className="hover:text-slate-900">Learn</Link>
-              <button type="button" onClick={openBoardroomSearch} className="hover:text-slate-900">Search</button>
+              {showOperatorChrome ? <button type="button" onClick={openBoardroomSearch} className="hover:text-slate-900">Search</button> : null}
             </nav>
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-              <RuntimeHealthSemaphore isAuthenticated={true} />
+              {showOperatorChrome ? <RuntimeHealthSemaphore isAuthenticated={true} /> : null}
               <button
                 type="button"
                 onClick={() => void refreshRun()}
@@ -339,7 +340,7 @@ export function BoardroomWorkspace() {
         <section className="mx-auto mt-8 flex w-full max-w-5xl flex-col items-center text-center sm:mt-12">
           <p className="receipt-slip flex items-center gap-2 rounded-md px-3 py-1.5 font-mono text-xs font-semibold">
             <Sparkles className="h-4 w-4 text-[color:var(--color-oxide)]" />
-            Your Personal Knowledge Board
+            Workspace
           </p>
           <h1 className="mt-7 max-w-4xl font-serif text-5xl font-semibold tracking-tight text-[color:var(--color-deep-ink)] sm:text-6xl">
             What should the board deliberate?

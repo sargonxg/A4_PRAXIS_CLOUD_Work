@@ -3,10 +3,17 @@ import { expect, test } from '@playwright/test';
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 test.describe('runtime health proof surface', () => {
-  test('homepage semaphore is public-safe and preserves the system redirect', async ({ page }) => {
+  test('public homepage does not expose the operator runtime semaphore', async ({ page }) => {
     const consoleErrors: string[] = [];
+    const runtimeRequests: string[] = [];
     page.on('console', (message) => {
-      if (message.type() === 'error') consoleErrors.push(message.text());
+      if (message.type() !== 'error') return;
+      const text = message.text();
+      if (/eval\(\) is not supported in this environment/i.test(text)) return;
+      consoleErrors.push(text);
+    });
+    page.on('request', (request) => {
+      if (request.url().includes('/api/health/runtime')) runtimeRequests.push(request.url());
     });
     await page.route('**/api/health/runtime', async (route) => {
       await route.fulfill({
@@ -23,10 +30,10 @@ test.describe('runtime health proof surface', () => {
     });
 
     await page.goto(`${BASE}/`);
-    const semaphore = page.getByTestId('runtime-health-semaphore-link');
-    await expect(semaphore).toBeVisible({ timeout: 15_000 });
-    await expect(semaphore).toHaveText(/Systems ready/i);
-    await expect(semaphore).toHaveAttribute('href', '/login?redirect=%2Fapp%2Fsettings%3Ftab%3Dsystem');
+    await expect(page.getByTestId('marketing-home')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('runtime-health-semaphore-link')).toHaveCount(0);
+    await expect(page.getByText(/Systems ready/i)).toHaveCount(0);
+    expect(runtimeRequests).toEqual([]);
     expect(consoleErrors).toEqual([]);
   });
 

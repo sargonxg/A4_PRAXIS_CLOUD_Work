@@ -13,8 +13,8 @@ const coreRoutes = [
   {
     label: 'Ask cockpit',
     path: '/app',
-    testIds: ['tasklet-praxis-workbench', 'praxis-main-composer', 'runtime-health-semaphore'],
-    text: /Ask PRAXIS/i,
+    testIds: ['app-launchpad', 'launchpad-capsule-chip', 'launchpad-recent-work'],
+    text: /What do you want to analyze\?/i,
   },
   {
     label: 'Capsules workspace',

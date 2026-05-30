@@ -116,9 +116,9 @@ export function buildFederatedSearchResults(input: {
     })));
 
   results.push({
-    id: 'open-repository-lane',
+    id: 'open-workspace',
     group: 'Sources',
-    label: 'Open source repository lane',
+    label: 'Open Workspace',
     description: 'Review source and document repository items inside Capsules.',
     href: '/app/capsules?lane=repository',
     icon: 'sources',

@@ -5,9 +5,10 @@ import { describe, expect, it } from 'vitest';
 const PRODUCT_COPY_FILES = [
   'src/app/layout.tsx',
   'src/app/opengraph-image.tsx',
-  'src/app/(landing)/page.tsx',
+  'src/app/page.tsx',
   'src/app/(landing)/learn/page.tsx',
   'src/components/landing/phase8-wow-landing.tsx',
+  'src/components/marketing/praxis-marketing-home.tsx',
   'src/components/assistant/suggested-prompts.tsx',
   'src/components/app/floating-praxis.tsx',
   'src/components/app/header.tsx',
@@ -49,7 +50,7 @@ describe('PRAXIS product positioning copy', () => {
     expect(combined).not.toContain('Turn documents, sources, and policy tools into grounded analysis');
     expect(combined).toContain('Compose your reasoning and policy products from expert ContextCapsules.');
     expect(combined).toContain(
-      'PRAXIS lets you compose reasoning and policy products from expert ContextCapsules: reusable blocks that capture how analysts think, frame issues, and structure decisions.',
+      'Compose reasoning and policy products from reusable blocks that capture how analysts think, frame issues, and structure decisions.',
     );
   });
 });

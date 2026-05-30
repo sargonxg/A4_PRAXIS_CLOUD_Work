@@ -1,9 +1,9 @@
 {
   "date": "2026-05-30",
   "summary": {
-    "pass": 139,
+    "pass": 138,
     "warn": 2,
-    "blocked": 0,
+    "blocked": 1,
     "total": 141
   },
   "checks": [
@@ -899,9 +899,9 @@
       "id": "notifications-pre-ship-askpraxishome",
       "section": "13. Notifications system",
       "title": "notifications stack includes AskPraxisHome",
-      "status": "PASS",
-      "evidence": "notifications stack contains required marker.",
-      "remediation": "None."
+      "status": "BLOCKED",
+      "evidence": "notifications stack is missing required marker.",
+      "remediation": "Add or wire AskPraxisHome before marking this checklist item complete."
     },
     {
       "id": "frontend-polish-emptystate",
