@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- feat(drafting): add citation editor, templates, actions, and export route.
+  Build 2026.05.30.12 adds TipTap citation marks and editor controls,
+  first-class brief/memo/SITREP/talking-points/decision-memo templates,
+  calibrated drafting actions, and `/api/export/work-product` for DOCX, PDF,
+  disabled-safe Google Docs, and saved-draft share links.
+
 - feat(agent-runtime): add agentic research flow and run timeline.
   Build 2026.05.30.11 adds the backend plan/source/retrieve/verify/synthesize
   flow envelope, deterministic claim grounding gates for

@@ -1,5 +1,24 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — EPIC 1.6 Citation Drafting And Export
+
+Current drafting checkpoint:
+
+- Added TipTap citation editing primitives with a `citation` mark carrying
+  source id, claim id, title, and URL attributes.
+- Added a compact citation editor that mounts StarterKit, links, placeholders,
+  citation marks, and source-card insertion controls.
+- Added distinct brief, policy memo, SITREP, talking-points, and decision-memo
+  templates with quality gates and sourceability-before-export flags where
+  needed.
+- Added calibrated `/api/ai/drafting-action` for redraft, expand, tighten,
+  tone, and fact-check actions. The route persists tool output and does not
+  perform hidden web retrieval.
+- Added `/api/export/work-product` for DOCX, PDF, disabled-safe Google Docs,
+  and share-link export paths.
+- Verification so far: focused drafting/export/action Vitest contracts,
+  scoped lint, and `npx tsc --noEmit`.
+
 ## 2026-05-30 — EPIC 1.5 Agentic Research Flow And Run Timeline
 
 Current AgentRun research checkpoint:
