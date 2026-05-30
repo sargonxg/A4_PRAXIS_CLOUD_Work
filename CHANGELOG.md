@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- feat(capsules): add declarative sourcing and retrieval lanes.
+  Build 2026.05.30.10 maps capsule `SourcingPolicy` and `RetrievalConfig`
+  into Google Search grounding, Situation Knowledge Corpus, and Vertex RAG
+  retrieval lanes; adds feature-flagged Exa, Tavily, Firecrawl, GDELT, ACLED,
+  ReliefWeb, and OpenAlex connectors; adds source fusion/dedupe/trust ranking;
+  and adds a disabled-safe backend Vertex AI RAG Engine client.
+
 - feat(capsules): add the guided Capsule Builder.
   Build 2026.05.30.09 adds `/app/capsules/builder`, a six-step nontechnical
   authoring wizard, advanced Monaco JSON editing with live capsule validation,

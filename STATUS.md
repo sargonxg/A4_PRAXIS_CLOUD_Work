@@ -1,5 +1,24 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — EPIC 1.4 Declarative Sourcing And Retrieval
+
+Current sourcing checkpoint:
+
+- Added a capsule-driven sourcing plan that turns `SourcingPolicy` and
+  `RetrievalConfig` into explicit lanes for Google Search grounding, the
+  Situation Knowledge Corpus, and Vertex AI RAG Engine corpora.
+- Added source connector contracts plus feature-flagged Exa, Tavily,
+  Firecrawl, GDELT, ACLED, ReliefWeb, and OpenAlex clients. Vendor and feed
+  clients remain disabled by default and require explicit connector flags plus
+  Secret Manager-backed environment variables where applicable.
+- Added fuse/dedupe/trust-rank logic so capsule retrieval can merge live
+  grounding, SKC results, and corpus receipts without duplicate source cards.
+- Added a disabled-safe backend Vertex RAG Engine client for
+  `retrieveContexts`; it returns an explicit disabled result unless
+  `VERTEX_RAG_ENABLED=true`.
+- Verification so far: focused sourcing/fuse Vitest contracts, backend Vertex
+  RAG pytest, and `npx tsc --noEmit`.
+
 ## 2026-05-30 — EPIC 1.3 Capsule Builder Wizard
 
 Current builder checkpoint:
