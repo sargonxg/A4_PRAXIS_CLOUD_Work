@@ -320,6 +320,31 @@ describe('context capsule product contract', () => {
     }
   });
 
+  it('keeps every starter capsule at expert-grade quality without reviewable audit gaps', () => {
+    const incomplete = CAPSULE_STARTER_DEFINITIONS
+      .map((starter) => ({
+        starter,
+        audit: runCapsuleStarterQualityAudit(starter),
+      }))
+      .filter(({ audit }) => (
+        Object.values(audit.scores).some((score) => score < 1)
+        || audit.findings.length
+        || audit.sourceGaps.length
+        || audit.agentInstructionGaps.length
+        || audit.deviceProfileGaps.length
+      ))
+      .map(({ starter, audit }) => ({
+        starterId: starter.starterId,
+        scores: audit.scores,
+        findings: audit.findings,
+        sourceGaps: audit.sourceGaps,
+        agentInstructionGaps: audit.agentInstructionGaps,
+        deviceProfileGaps: audit.deviceProfileGaps,
+      }));
+
+    expect(incomplete).toEqual([]);
+  });
+
   it('binds every starter source to context-capture, ontology, graph, Cognee, and generation rules', () => {
     expect(CAPSULE_CONTEXT_CAPTURE_FIXTURE_STARTER_IDS).toEqual([
       'starter-situation-red-sea-houthi-shipping-risk',
