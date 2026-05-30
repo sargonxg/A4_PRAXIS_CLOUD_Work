@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- feat(capsules): add the guided Capsule Builder.
+  Build 2026.05.30.09 adds `/app/capsules/builder`, a six-step nontechnical
+  authoring wizard, advanced Monaco JSON editing with live capsule validation,
+  and calibrated capsule-assist routes for persona, output schema, source
+  posture, and few-shot suggestions.
+
 - feat(capsules): add root capsule CRUD storage and routes.
   Build 2026.05.30.08 adds the root `capsules/{id}` Firestore store,
   immutable `versions/{hash}` publish snapshots, authenticated create/list,

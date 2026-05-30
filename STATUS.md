@@ -1,5 +1,20 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — EPIC 1.3 Capsule Builder Wizard
+
+Current builder checkpoint:
+
+- Added `/app/capsules/builder` as a signed-in Capsule Builder surface with a
+  six-step guided wizard for Job, Sources, Output, Tools, Test & evaluate, and
+  Publish.
+- Added advanced JSON mode with Monaco and a live `capsule/v2` preview for
+  technical users while keeping the default path nontechnical.
+- Added calibrated `/api/capsules/assist/[action]` routes for persona,
+  output-schema, sources, and few-shot suggestions, with tool-output
+  persistence when a situation id is present.
+- Verification so far: focused builder/assist/static route Vitest contracts,
+  capsule lifecycle route tests, and `npx tsc --noEmit`.
+
 ## 2026-05-30 — EPIC 1.2 Capsule CRUD API And Storage
 
 Current root capsule store checkpoint:
