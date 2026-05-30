@@ -1,5 +1,21 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — EPIC 1.7 Capsule Dry-Run Eval
+
+Current eval checkpoint:
+
+- Added deterministic capsule dry-run evaluation in TypeScript and a backend
+  Python mirror for computation metrics, citation coverage, schema conformance,
+  context recall, safety, and a RAGAS-compatible faithfulness proxy.
+- Added authenticated `/api/capsules/eval/dry-run`, returning scores,
+  failures, and an `eval.lastRun` patch suitable for the publish gate.
+- Replaced the Builder's synthetic eval shortcut with a real dry-run eval call
+  that applies the returned patch and shows faithfulness, citation, and schema
+  scores.
+- The dry-run path performs no external judge call and no live retrieval.
+- Verification so far: focused capsule eval Vitest, builder contract Vitest,
+  backend capsule eval pytest, scoped lint, and `npx tsc --noEmit`.
+
 ## 2026-05-30 — EPIC 1.6 Citation Drafting And Export
 
 Current drafting checkpoint:

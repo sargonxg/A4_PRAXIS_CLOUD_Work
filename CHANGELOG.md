@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- feat(capsules): add dry-run capsule evaluation.
+  Build 2026.05.30.13 adds deterministic TS/Python dry-run eval scoring for
+  faithfulness, citation coverage, context recall, schema conformance, safety,
+  and red-team pass rate; exposes `/api/capsules/eval/dry-run`; and wires the
+  Capsule Builder to apply the returned `eval.lastRun` publish-gate patch.
+
 - feat(drafting): add citation editor, templates, actions, and export route.
   Build 2026.05.30.12 adds TipTap citation marks and editor controls,
   first-class brief/memo/SITREP/talking-points/decision-memo templates,

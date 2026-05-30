@@ -15,6 +15,8 @@ describe('Capsule Builder UX contract', () => {
     }
     expect(wizard).toContain('/api/capsules');
     expect(wizard).toContain('/publish');
+    expect(wizard).toContain('/api/capsules/eval/dry-run');
+    expect(wizard).toContain('Run dry-run eval');
   });
 
   it('exposes advanced Monaco JSON mode with a live preview', () => {

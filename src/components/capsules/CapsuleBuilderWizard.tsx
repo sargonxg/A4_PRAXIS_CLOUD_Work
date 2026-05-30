@@ -52,6 +52,7 @@ export function CapsuleBuilderWizard() {
   const [savedCapsuleId, setSavedCapsuleId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [message, setMessage] = useState('');
+  const [evalSummary, setEvalSummary] = useState<string | null>(null);
   const [job, setJob] = useState('Help analysts produce a sourced policy briefing with explicit uncertainty and next evidence gaps.');
   const [frameworks, setFrameworks] = useState('ach, stakeholder-salience');
   const [allowedDomains, setAllowedDomains] = useState('un.org, reliefweb.int');
@@ -131,6 +132,50 @@ export function CapsuleBuilderWizard() {
     }
     setSaveState('published');
     setMessage('Capsule published and frozen as an immutable version.');
+  }
+
+  async function runDryRunEval() {
+    setMessage('Running dry-run eval...');
+    const samples = sampleQuestions
+      .split('\n')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 8)
+      .map((prompt, index) => ({
+        prompt,
+        output: {
+          judgment: `Dry-run answer for: ${prompt}`,
+          evidence: ['builder-source'],
+          openQuestions: ['What source would change this assessment?'],
+        },
+        claims: [{
+          id: `sample-${index + 1}`,
+          text: prompt,
+          sourceIds: ['builder-source'],
+        }],
+      }));
+    const response = await fetch('/api/capsules/eval/dry-run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        capsule,
+        samples,
+        sourceSnippets: [{
+          id: 'builder-source',
+          text: [capsule.persona.systemFrame, capsule.sourcing.allowedDomains.join(' ')].join(' '),
+        }],
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      setSaveState('error');
+      setMessage(payload.error ?? 'Dry-run eval failed.');
+      return;
+    }
+    if (payload.patch) patchCapsule(payload.patch);
+    const scores = payload.scores ?? {};
+    setEvalSummary(`Faithfulness ${pct(scores.faithfulness)}, citations ${pct(scores.citationCoverage)}, schema ${pct(scores.schemaConformance)}.`);
+    setMessage(payload.passed ? 'Dry-run eval passed. Publish gate is ready.' : `Dry-run eval found gaps: ${(payload.failures ?? []).join(', ')}`);
   }
 
   function applyJson(value: string) {
@@ -375,33 +420,16 @@ export function CapsuleBuilderWizard() {
                 <div className="flex flex-wrap gap-3">
                   <button
                     type="button"
-                    onClick={() => {
-                      patchCapsule({
-                        eval: {
-                          lastRun: {
-                            runId: `dry-run-${Date.now()}`,
-                            scores: {
-                              faithfulness: 0.92,
-                              citationCoverage: 0.91,
-                              contextRecall: 0.82,
-                              schemaConformance: 1,
-                              redTeamPassRate: 0.99,
-                              safetyScore: 0.99,
-                            },
-                            passedAt: new Date().toISOString(),
-                          },
-                        },
-                      });
-                      setMessage('Dry-run eval recorded. Publish gate is ready.');
-                    }}
+                    onClick={() => void runDryRunEval()}
                     className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium"
                   >
-                    <Check className="h-4 w-4" /> Record dry-run eval
+                    <Check className="h-4 w-4" /> Run dry-run eval
                   </button>
                   <button type="button" onClick={() => runAssist('few-shot')} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium">
                     <Sparkles className="h-4 w-4" /> Generate few-shot examples
                   </button>
                 </div>
+                {evalSummary ? <p className="text-sm text-[#6f675c]">{evalSummary}</p> : null}
               </div>
             )}
 
@@ -571,4 +599,8 @@ function csv(value: string): string[] {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function pct(value: unknown): string {
+  return typeof value === 'number' ? `${Math.round(value * 100)}%` : 'n/a';
 }
