@@ -18,6 +18,7 @@ import {
   type CapsuleWorkbenchAgentRunInput,
   type CapsuleWorkbenchCapsuleInput,
   type CapsuleWorkbenchDocumentInput,
+  type CapsuleWorkbenchTacitMemoryInput,
   type CapsuleWorkbenchReviewState,
   type CapsuleWorkbenchViewModel,
 } from '@/lib/context/capsule-workbench-view-model';
@@ -27,14 +28,16 @@ export function CapsuleWorkbenchPanel({
   capsule,
   repositoryDocuments = [],
   agentRuns = [],
+  tacitMemories = [],
   compact = false,
 }: {
   capsule: CapsuleWorkbenchCapsuleInput;
   repositoryDocuments?: CapsuleWorkbenchDocumentInput[];
   agentRuns?: CapsuleWorkbenchAgentRunInput[];
+  tacitMemories?: CapsuleWorkbenchTacitMemoryInput[];
   compact?: boolean;
 }) {
-  const model = buildCapsuleWorkbenchViewModel({ capsule, repositoryDocuments, agentRuns });
+  const model = buildCapsuleWorkbenchViewModel({ capsule, repositoryDocuments, agentRuns, tacitMemories });
   const sparse = model.evidence.sourceCount === 0;
   return (
     <section

@@ -32,6 +32,8 @@ describe('Capsule workbench UI contract', () => {
     expect(workbenchSource).toContain('<CapsuleWorkbenchPanel');
     expect(workbenchSource).toContain('repositoryDocuments={repositoryDocuments}');
     expect(workbenchSource).toContain('agentRuns={agentRuns}');
+    expect(workbenchSource).toContain("fetch(`/api/context/capsules/${encodeURIComponent(selectedCapsuleIdForMemories)}/memories`");
+    expect(workbenchSource).toContain('tacitMemories={capsuleMemories}');
     expect(workbenchSource).toContain('data-testid="capsule-detail-panel"');
     expect(workbenchSource).toContain('data-testid="capsule-inspector-sheet"');
   });

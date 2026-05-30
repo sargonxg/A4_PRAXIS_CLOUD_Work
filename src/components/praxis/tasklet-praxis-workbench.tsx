@@ -119,6 +119,7 @@ import {
 import { recommendCapsuleTools, type CapsuleToolRecommendation } from '@/lib/tools/recommend';
 import { DEFAULT_CONTEXT_STACK_ID } from '@/lib/context/active-context-stack';
 import { rankAskCapsuleSuggestions, type AskCapsuleSuggestion } from '@/lib/context/capsule-suggestions';
+import type { CapsuleWorkbenchTacitMemoryInput } from '@/lib/context/capsule-workbench-view-model';
 import type { CapsuleInventorySummary } from '@/lib/context/capsule-service';
 import { deriveCapsuleQuality, type CapsuleQualityResult } from '@/lib/context/capsule-quality';
 import { buildCapsuleImproveProposals, normalizeContextCapsuleV2, type ContextCapsuleV2 } from '@/lib/context/capsule-v2';
@@ -931,6 +932,7 @@ export function TaskletPraxisWorkbench({
   const [capsuleDetailTab, setCapsuleDetailTab] = useState<CapsuleDetailTab>('overview');
   const [builderOpen, setBuilderOpen] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [capsuleMemories, setCapsuleMemories] = useState<CapsuleWorkbenchTacitMemoryInput[]>([]);
   const [repositoryDocuments, setRepositoryDocuments] = useState<RepositoryDocument[]>([]);
   const [repositoryLoading, setRepositoryLoading] = useState(false);
   const [savedConversations, setSavedConversations] = useState<SavedConversationSummary[]>([]);
@@ -2247,6 +2249,31 @@ export function TaskletPraxisWorkbench({
       setCapsulesLoading(false);
     }
   }, [currentCapsuleId, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !selectedCapsule) {
+      setCapsuleMemories([]);
+      return undefined;
+    }
+    const selectedCapsuleIdForMemories = selectedCapsule.capsuleId;
+    let cancelled = false;
+    async function loadCapsuleMemories() {
+      try {
+        const response = await fetch(`/api/context/capsules/${encodeURIComponent(selectedCapsuleIdForMemories)}/memories`, {
+          credentials: 'include',
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (cancelled) return;
+        setCapsuleMemories(workbenchMemoriesFromPayload(payload));
+      } catch {
+        if (!cancelled) setCapsuleMemories([]);
+      }
+    }
+    void loadCapsuleMemories();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, selectedCapsule]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -4461,6 +4488,7 @@ export function TaskletPraxisWorkbench({
                       detailTab={capsuleDetailTab}
                       repositoryDocuments={visibleRepositoryDocuments}
                       repositoryLoading={repositoryLoading}
+                      tacitMemories={capsuleMemories}
                       agentRuns={agentRuns}
                       agentRunsLoading={agentRunsLoading}
                       focusedRun={focusedRun}
@@ -4580,6 +4608,7 @@ export function TaskletPraxisWorkbench({
             contextHealth={contextHealth}
             runtimeProof={runtimeProof}
             repositoryDocuments={visibleRepositoryDocuments}
+            tacitMemories={capsuleMemories}
             agentRuns={agentRuns}
             selectedAgent={selectedAgent}
             isAuthenticated={isAuthenticated}
@@ -5889,6 +5918,26 @@ async function fetchCapsuleLibrary(): Promise<CapsuleLibraryPayload> {
     summary: isCapsuleInventorySummary(payload?.summary) ? payload.summary : null,
     persisted: payload?.persisted === true,
   };
+}
+
+function workbenchMemoriesFromPayload(payload: unknown): CapsuleWorkbenchTacitMemoryInput[] {
+  const root = asRecord(payload);
+  const memories = Array.isArray(root?.memories) ? root.memories : [];
+  return memories.flatMap((value): CapsuleWorkbenchTacitMemoryInput[] => {
+    const memory = asRecord(value);
+    const id = stringFieldFromUnknown(memory?.id);
+    const summary = stringFieldFromUnknown(memory?.summary);
+    if (!id || !summary) return [];
+    return [{
+      id,
+      type: stringFieldFromUnknown(memory?.type) ?? 'working_assumption',
+      summary,
+      detail: stringFieldFromUnknown(memory?.detail),
+      confidence: numberFieldFromUnknown(memory?.confidence),
+      tags: stringListFromUnknown(memory?.tags),
+      lastUsedAt: stringFieldFromUnknown(memory?.lastUsedAt),
+    }];
+  });
 }
 
 function isCapsuleInventorySummary(value: unknown): value is CapsuleInventorySummary {
@@ -8587,6 +8636,7 @@ function CapsuleDetailPanel({
   detailTab,
   repositoryDocuments,
   repositoryLoading,
+  tacitMemories,
   agentRuns,
   agentRunsLoading,
   focusedRun,
@@ -8617,6 +8667,7 @@ function CapsuleDetailPanel({
   detailTab: CapsuleDetailTab;
   repositoryDocuments: RepositoryDocument[];
   repositoryLoading: boolean;
+  tacitMemories: CapsuleWorkbenchTacitMemoryInput[];
   agentRuns: AgentRunSummary[];
   agentRunsLoading: boolean;
   focusedRun: AgentRunDetail | null;
@@ -8673,6 +8724,7 @@ function CapsuleDetailPanel({
           capsule={capsule}
           repositoryDocuments={repositoryDocuments}
           agentRuns={agentRuns}
+          tacitMemories={tacitMemories}
           compact
         />
       </div>
@@ -9620,6 +9672,7 @@ function CapsuleInspectorSheet({
   contextHealth,
   runtimeProof,
   repositoryDocuments,
+  tacitMemories,
   agentRuns,
   selectedAgent,
   isAuthenticated,
@@ -9637,6 +9690,7 @@ function CapsuleInspectorSheet({
   contextHealth: ContextHealth;
   runtimeProof: RuntimeProof;
   repositoryDocuments: RepositoryDocument[];
+  tacitMemories: CapsuleWorkbenchTacitMemoryInput[];
   agentRuns: AgentRunSummary[];
   selectedAgent: PolicyAgentDefinition;
   isAuthenticated: boolean;
@@ -9795,6 +9849,7 @@ function CapsuleInspectorSheet({
               capsule={capsule}
               repositoryDocuments={repositoryDocuments}
               agentRuns={agentRuns}
+              tacitMemories={tacitMemories}
             />
           </div>
         ) : null}
