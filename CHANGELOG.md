@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- feat(capsules): add launch capsule seed set.
+  Build 2026.05.30.14 adds the ten §10 launch capsules with golden sets,
+  passing dry-run eval metadata, marketplace posture, guardrails, and
+  idempotent `scripts/seed-capsules.ts` writes for root capsule documents and
+  immutable version snapshots.
+
 - feat(capsules): add dry-run capsule evaluation.
   Build 2026.05.30.13 adds deterministic TS/Python dry-run eval scoring for
   faithfulness, citation coverage, context recall, schema conformance, safety,

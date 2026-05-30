@@ -21,6 +21,8 @@ export interface CapsuleDryRunEvalInput {
   capsule: ContextCapsule;
   samples: CapsuleEvalSample[];
   sourceSnippets: CapsuleEvalSourceSnippet[];
+  runId?: string;
+  passedAt?: string;
 }
 
 export interface CapsuleDryRunEvalResult {
@@ -88,9 +90,9 @@ export function runCapsuleDryRunEval(input: CapsuleDryRunEvalInput): CapsuleDryR
     patch: {
       eval: {
         lastRun: {
-          runId: `dry-run-${Date.now()}`,
+          runId: input.runId ?? `dry-run-${Date.now()}`,
           scores,
-          passedAt: new Date().toISOString(),
+          passedAt: input.passedAt ?? new Date().toISOString(),
         },
       },
     },

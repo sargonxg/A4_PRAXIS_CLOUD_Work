@@ -1,5 +1,21 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — EPIC 1.8 Launch Capsule Seed Set
+
+Current launch-capsule checkpoint:
+
+- Added the ten §10 launch capsules as a stable `capsule/v2` library: conflict
+  analysis, sanctions impact, economic policy, mediation readiness, treaty
+  review, humanitarian SITREP, election risk, energy/resource security,
+  stakeholder decision memo, and OSINT source-to-brief.
+- Each launch capsule carries sourcing posture, retrieval posture, guardrails,
+  marketplace metadata, golden-set samples, source snippets, and a passing
+  dry-run `eval.lastRun`.
+- Added idempotent `scripts/seed-capsules.ts` for root `capsules/{id}` writes
+  plus immutable `versions/{hash}` writes.
+- Verification so far: focused launch-capsule and seed-script Vitest
+  contracts, scoped lint, and `npx tsc --noEmit`.
+
 ## 2026-05-30 — EPIC 1.7 Capsule Dry-Run Eval
 
 Current eval checkpoint:
