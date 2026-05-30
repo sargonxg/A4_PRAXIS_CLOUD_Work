@@ -13,12 +13,15 @@ describe('/app/boardroom workspace contract', () => {
     expect(pageSource).toContain('<BoardroomWorkspace');
     expect(componentSource).toContain('data-testid="boardroom-home-surface"');
     expect(componentSource).toContain('data-testid="boardroom-main-composer"');
+    expect(componentSource).toContain('data-testid="boardroom-context-notes"');
     expect(componentSource).toContain('data-testid="boardroom-agent-stage"');
     expect(componentSource).toContain('data-testid="boardroom-deep-research-agents"');
     expect(componentSource).toContain('data-testid="boardroom-live-proof"');
     expect(componentSource).toContain('data-testid="boardroom-run-panel"');
+    expect(componentSource).toContain('Your Personal Knowledge Board');
     expect(componentSource).toContain('Electa');
     expect(componentSource).toContain('Deep research');
+    expect(componentSource).toContain('directContext: directContext || undefined');
     expect(componentSource).toContain('/api/boardroom/runs');
     expect(componentSource).toContain('/api/agents/runs/${encodeURIComponent(runId)}');
     expect(componentSource).toContain('/api/agents/runs/${encodeURIComponent(runId)}/stream');
@@ -47,6 +50,8 @@ describe('/app/boardroom workspace contract', () => {
   it('keeps Home and Capsules launch compatibility for the side workspace', () => {
     expect(workbenchSource).toContain('data-testid="open-boardroom-workspace-cta"');
     expect(workbenchSource).toContain('data-testid="capsule-studio-boardroom-action"');
+    expect(workbenchSource).toContain('Your Personal Knowledge Board');
+    expect(workbenchSource).not.toContain('Start deep review');
     expect(workbenchSource).toContain("href=\"/app/boardroom\"");
   });
 });

@@ -1080,8 +1080,8 @@
     "hash": "5c9d07acc5d04e742a88bc887ff2a3ed"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-ai-provider-isolation.ts": {
-    "mtime": 1780075184.219448,
-    "hash": "132297284cefaebc5662564a75b35739"
+    "mtime": 1780091505.3997722,
+    "hash": "bf7c1d86d0c1a173e157b5d7588518a4"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-ai-provider-vertex-default.ts": {
     "mtime": 1780075184.219448,
@@ -1388,8 +1388,8 @@
     "hash": "fa7d48061f59a00882b63fee0e78162c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\scripts\\sync-ecc-to-codex.mjs": {
-    "mtime": 1780075184.2965782,
-    "hash": "bf7e96371a6309442153c721400f6f65"
+    "mtime": 1780091505.3997722,
+    "hash": "2f7a597b25788c9ae510f2f22108c0b8"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\scripts\\sync-ecc-to-codex.ps1": {
     "mtime": 1780075184.2965782,
@@ -2252,8 +2252,8 @@
     "hash": "93e465e2bed4e5f97b87d4962c29cf99"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\app\\api\\situations\\route.ts": {
-    "mtime": 1780075184.6394558,
-    "hash": "eb3f735888af5026049150e4b54d6e59"
+    "mtime": 1780091505.3997722,
+    "hash": "66f72db186591d610ce97552c88cfc3f"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\app\\api\\situations\\classify\\route.ts": {
     "mtime": 1780075184.6384556,
@@ -2448,8 +2448,8 @@
     "hash": "1b8fff8d8a869a6658760f1922dfcc8e"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\activity-panel.tsx": {
-    "mtime": 1780075184.6723895,
-    "hash": "539c12e1c667fc29e0d600d47903e564"
+    "mtime": 1780091543.3237774,
+    "hash": "3329e36618f99c4cb1b1a8ff5332965a"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\advanced-explanation-panel.tsx": {
     "mtime": 1780075184.673367,
@@ -2464,12 +2464,12 @@
     "hash": "6860973a996bb30ae66680cad1c6bcbc"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\app-sidebar.tsx": {
-    "mtime": 1780075184.6743731,
-    "hash": "4110c5b89406e4324f3e4e7e3e8443b7"
+    "mtime": 1780091562.8649957,
+    "hash": "c2165c958333fd130786cb6133a9030c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\calibration-transparency-modal.tsx": {
-    "mtime": 1780075184.6753657,
-    "hash": "e071087ddbbef4a0beeb55c58d9ad33b"
+    "mtime": 1780091569.847834,
+    "hash": "e917edb64bc3e00bce9506f9f3b60329"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\capsule-strip-header.tsx": {
     "mtime": 1780075184.6753657,
@@ -2496,8 +2496,8 @@
     "hash": "2dafc5efcf35cf2dca22e5aebe9678ab"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\trust-posture-chip.tsx": {
-    "mtime": 1780075184.6793842,
-    "hash": "81f6096a1b9e2c059c865de2c63e3b9e"
+    "mtime": 1780091579.5616038,
+    "hash": "bb2e9912e75e688bdf8e27ae1ec8c1aa"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\app\\use-active-context-stack.ts": {
     "mtime": 1780075184.680366,
@@ -2524,12 +2524,12 @@
     "hash": "0852ffd438f160f3d5944044ced5f157"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\ask\\AskWorkspacePage.tsx": {
-    "mtime": 1780075184.6843665,
-    "hash": "8d95beffd18d5cb2fb7ff0a3bd14d36f"
+    "mtime": 1780091605.975355,
+    "hash": "507911fd80db0cbedeb990c6708d559c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\ask\\InterruptCard.tsx": {
-    "mtime": 1780075184.6843665,
-    "hash": "2091ba29e47f8a7ac07901e46c8a222b"
+    "mtime": 1780091621.4799826,
+    "hash": "45be9c051bf980f263475155892fbccf"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\assistant\\mutation-confirm-card.tsx": {
     "mtime": 1780075184.6853673,
@@ -2544,8 +2544,8 @@
     "hash": "868e98714a557fda6229fb823c8f9a63"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\boardroom\\boardroom-workspace.tsx": {
-    "mtime": 1780075184.6885114,
-    "hash": "00bbd95ead33025bbb7cb76018bc053c"
+    "mtime": 1780116064.3420665,
+    "hash": "9cd1449306c87714fb26040a9c227395"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\brand\\praxis-brand-chip.tsx": {
     "mtime": 1780075184.6894882,
@@ -2558,6 +2558,10 @@
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\brand\\praxis-thinking.tsx": {
     "mtime": 1780075184.6904862,
     "hash": "df998a8e1196066427abb1df4e72ce6c"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\capsules\\CapsuleWorkbenchPanel.tsx": {
+    "mtime": 1780114527.159658,
+    "hash": "4bc1d959393e51620927f75853f2ea62"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\context\\context-capsule-preview.tsx": {
     "mtime": 1780075184.6914902,
@@ -2624,8 +2628,8 @@
     "hash": "16e71bf22251aec9b68a60e662c9ee7e"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\cores\\PathPicker.tsx": {
-    "mtime": 1780075184.6994863,
-    "hash": "1d9e8ac0f90585cd4486c3795e8a8001"
+    "mtime": 1780091505.4132237,
+    "hash": "36b42f42ab7c0bb7c208314793f679a1"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\cores\\ShareCapsuleButton.tsx": {
     "mtime": 1780075184.6994863,
@@ -2676,12 +2680,12 @@
     "hash": "f7190cad54721f561af9f0636c369cf3"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\memo\\memo-desk.tsx": {
-    "mtime": 1780075184.7092943,
-    "hash": "c5b8aaa70a5a1f98f683cf421f422325"
+    "mtime": 1780115328.40815,
+    "hash": "137ea06b788dd1ff94b42f964013b724"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\memo\\source-mention-menu.tsx": {
-    "mtime": 1780075184.7102973,
-    "hash": "4d600fd3c872cd2e3182d681e2cd97d7"
+    "mtime": 1780091741.3689888,
+    "hash": "11bf25b861343840fabd0ef07947bf52"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\onboarding\\onboarding-wrapper.tsx": {
     "mtime": 1780075184.7123108,
@@ -2704,8 +2708,8 @@
     "hash": "2b6e97a95afb4fa9449af352900b518c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\policy-work-file\\ActivePolicyFileStrip.tsx": {
-    "mtime": 1780088338.8556094,
-    "hash": "c8011de12a43ecda575f666af780fa04"
+    "mtime": 1780116098.5208516,
+    "hash": "a989af6f6ddc5b99ef09d039e64239a9"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\policy-work-file\\KnowledgeStructurePanel.tsx": {
     "mtime": 1780078585.9694734,
@@ -2728,8 +2732,8 @@
     "hash": "61c402339d85370318364e059461078c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tasklet-praxis-workbench.tsx": {
-    "mtime": 1780088741.6103168,
-    "hash": "eea5c0d2578b5b8580f7fe11005d42aa"
+    "mtime": 1780116119.559426,
+    "hash": "95e8fb2daedf147a7043ebb68fe70d63"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\components\\praxis\\tasklet-workbench-conversation.ts": {
     "mtime": 1780075184.7297962,
@@ -2816,8 +2820,8 @@
     "hash": "106b44db3ac4135ea12b9ff9b87b8c66"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\hooks\\useOrchestratorEvents.ts": {
-    "mtime": 1780075184.7557669,
-    "hash": "94893fbe5daeb26281e4122abd607db8"
+    "mtime": 1780091642.1055992,
+    "hash": "359fa75d9e661806ecb9b1103356781a"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\agent-runtime\\adk-bridge.ts": {
     "mtime": 1780075184.7598095,
@@ -3020,8 +3024,8 @@
     "hash": "ee9feac0bf6b5eafc0c86fa50f58740c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\ai\\providers.ts": {
-    "mtime": 1780075184.8233204,
-    "hash": "b507ac1c82f1061bfc7f550f9e134d61"
+    "mtime": 1780091526.007022,
+    "hash": "d8db9094e1850bc742b780758330ac58"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\ai\\query-intelligence.ts": {
     "mtime": 1780075184.8242664,
@@ -3052,8 +3056,8 @@
     "hash": "3f447d045934417ba368084d7a785806"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\ai\\tools.ts": {
-    "mtime": 1780075184.8356183,
-    "hash": "cb0897237b5ced5d7ccbfb59a74fe6ba"
+    "mtime": 1780091516.0845609,
+    "hash": "1daec31818d4d742512822a3dfd410a1"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\ai\\vertex-agent.ts": {
     "mtime": 1780075184.8367379,
@@ -3419,6 +3423,10 @@
     "mtime": 1780075184.893592,
     "hash": "ac433b02ceb5c4f4d38c7876c77dfef0"
   },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\context\\capsule-workbench-view-model.ts": {
+    "mtime": 1780114451.0704896,
+    "hash": "016083e4f3ac9e2069c8ce917ee64821"
+  },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\context\\context-aware.ts": {
     "mtime": 1780075184.893592,
     "hash": "3a6603b6e0191db842b7230a839b8751"
@@ -3496,8 +3504,8 @@
     "hash": "4299ff11a0150c440e907bdaf0472719"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\context\\trust-posture.ts": {
-    "mtime": 1780075184.905357,
-    "hash": "6a1a555214b153d90e394aa9d6669252"
+    "mtime": 1780091505.4132237,
+    "hash": "1a482ef49d3f8048fdba567950aebb5e"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\conversations\\capsule-signal.ts": {
     "mtime": 1780075184.905357,
@@ -3636,8 +3644,8 @@
     "hash": "f0602d109f071c35dec1a2fcbb779cf4"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\firebase\\firestore.ts": {
-    "mtime": 1780075184.935611,
-    "hash": "613512b17e8a8560458d501a50994e64"
+    "mtime": 1780091505.4158077,
+    "hash": "502ed53208989283c9135a69a532e85b"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\firebase\\graph-service.ts": {
     "mtime": 1780075184.935611,
@@ -3700,8 +3708,8 @@
     "hash": "d584ec455bfd8152b36beb94acc98084"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\genkit\\flows\\classify-path.ts": {
-    "mtime": 1780075184.94459,
-    "hash": "6fcd7930b04ff1096c6f0918da7d6b70"
+    "mtime": 1780091845.9871633,
+    "hash": "3f94b328666a2e277c0b3665cb62e144"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\genkit\\flows\\factory-heuristics.ts": {
     "mtime": 1780075184.9455903,
@@ -3816,12 +3824,12 @@
     "hash": "c17509f66d0fc750a4562d3856a436fc"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\knowledge\\analyst-notes.ts": {
-    "mtime": 1780075184.9680476,
-    "hash": "abe42f543fa34372542a4ce809208a27"
+    "mtime": 1780091505.4158077,
+    "hash": "4c487848a186ee8e5c1d7eb655726517"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\knowledge\\context-engine.ts": {
-    "mtime": 1780075184.968553,
-    "hash": "b22ae1823cf2a3ac97fa52bfca80cacc"
+    "mtime": 1780091505.421833,
+    "hash": "155c225a0acf652016786bc1ff133ff9"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\knowledge\\context-enrichment-adapter.ts": {
     "mtime": 1780075184.96956,
@@ -3840,8 +3848,8 @@
     "hash": "e1106f2c64ac59677c8ac29fd3e2804c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\knowledge\\feed-layer.ts": {
-    "mtime": 1780075184.9715598,
-    "hash": "253b077b265257fe719c92f4a6b2144d"
+    "mtime": 1780091516.0845609,
+    "hash": "e503231d2ff2e0ec667d25ca88dde7d7"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\knowledge\\firestore-graph-analytics.ts": {
     "mtime": 1780075184.9715598,
@@ -3900,8 +3908,8 @@
     "hash": "834498c71e6ecd61e329d1ac10ab1800"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\knowledge\\vector-layer.ts": {
-    "mtime": 1780075184.9788027,
-    "hash": "ec2db15f6df70df05a1d51032f1fb9eb"
+    "mtime": 1780091530.8195684,
+    "hash": "081ed3f94f9993c383a1be8a7fce7daf"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\knowledge\\vertex-vector-search.ts": {
     "mtime": 1780075184.9799454,
@@ -4204,8 +4212,8 @@
     "hash": "d93a9a2e1772f4ee99f6aacefb7e454a"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\services\\situation-initializer.ts": {
-    "mtime": 1780075185.0411704,
-    "hash": "d010428b2247fe6353acbaee3d4bd4e1"
+    "mtime": 1780091505.4232204,
+    "hash": "f574dfdca46ad0046c2314a29770d6b1"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\services\\sources-preference.ts": {
     "mtime": 1780075185.0411704,
@@ -4408,8 +4416,8 @@
     "hash": "7a58d679290f2d19570be7387691d398"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\lib\\workbench\\research-state.ts": {
-    "mtime": 1780075185.077598,
-    "hash": "b77ced6030a9a3c6df13985a6a2ec69e"
+    "mtime": 1780091516.0845609,
+    "hash": "94afdf3e55c860c5d6f519e061aaae02"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\stores\\activity-store.ts": {
     "mtime": 1780075185.0795982,
@@ -4856,8 +4864,8 @@
     "hash": "3479f0658118d49db3ebb5ec4716c953"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\app\\boardroom-route.test.ts": {
-    "mtime": 1780075185.1559594,
-    "hash": "651c8c042ddf51062b353ec341867c62"
+    "mtime": 1780116149.0767517,
+    "hash": "177c6e3e6d5ad6582c08936332a63434"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\app\\capsule-factory-route-consolidation.test.ts": {
     "mtime": 1780075185.1559594,
@@ -4956,8 +4964,8 @@
     "hash": "d5845c61a3d671fccebf317d7d46ddd5"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\tasklet-workbench-contract.test.ts": {
-    "mtime": 1780088230.5374131,
-    "hash": "1404dcabfa0979efd352fe5f3840a04d"
+    "mtime": 1780091845.9871633,
+    "hash": "78401442d21720776066d14a3e633228"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\tasklet-workbench-conversation.test.ts": {
     "mtime": 1780075185.1650617,
@@ -4966,6 +4974,10 @@
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\assistant\\suggested-prompts.test.ts": {
     "mtime": 1780075185.1577363,
     "hash": "f333e7a5e11a5527e4c8a8d941a2663f"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\praxis\\capsule-workbench-contract.test.ts": {
+    "mtime": 1780114609.008678,
+    "hash": "310b3373cc06ba730e3615a67b6d25d7"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\components\\praxis\\empty-error-state.test.tsx": {
     "mtime": 1780075185.1577363,
@@ -5243,6 +5255,10 @@
     "mtime": 1780075185.2102008,
     "hash": "568185d9534312d7df7c0849adb1889a"
   },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\context\\capsule-workbench-view-model.test.ts": {
+    "mtime": 1780114041.359681,
+    "hash": "600ed9af45acc06c644373e69a0a6afd"
+  },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\context\\context-aware.test.ts": {
     "mtime": 1780075185.217181,
     "hash": "5238aad2e683d0ebdab9aff9923f6029"
@@ -5324,8 +5340,8 @@
     "hash": "1248d9a98c08375591275e2bab8ebdd4"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\firebase\\analyst-profile-admin.test.ts": {
-    "mtime": 1780075185.2355857,
-    "hash": "88a1322f09842f1d6499abc64ab221ae"
+    "mtime": 1780091682.6225474,
+    "hash": "7b57a52763ba08c5cfe794e26606a79f"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\lib\\firebase\\ask-thread-service.test.ts": {
     "mtime": 1780075185.2355857,
@@ -5612,8 +5628,8 @@
     "hash": "6f6a09941c9b447f34605e47258d6ccf"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\simplification\\visible-vocabulary-contract.test.ts": {
-    "mtime": 1780075185.286347,
-    "hash": "a4c916f25e9bdc3b01228efdb26b2371"
+    "mtime": 1780116162.8583786,
+    "hash": "ca215455f0a1a7ca0de583b4e7f62e48"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\unit\\types\\analyst-profile.test.ts": {
     "mtime": 1780075185.287618,
@@ -5628,8 +5644,8 @@
     "hash": "1997d17d8a918e37e78b2a63580963a0"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\CHANGELOG.md": {
-    "mtime": 1780075183.448474,
-    "hash": "1eaa7bf6cdeebe27c4a78556588ccf7f"
+    "mtime": 1780116190.8383415,
+    "hash": "09c2e25e56f0afb81df603b05e6e45d9"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\CLAUDE.md": {
     "mtime": 1780075183.449476,
@@ -5664,8 +5680,8 @@
     "hash": "224ef591a97b99d337c083a4fbb862b1"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\STATUS.md": {
-    "mtime": 1780075183.4558003,
-    "hash": "294ac1a85acba2536daf98a7045ffb30"
+    "mtime": 1780116198.4620397,
+    "hash": "5eaa9ca911d5e91b93d30e4ff2fac59d"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\TESTING.md": {
     "mtime": 1780075183.4558003,
@@ -6048,8 +6064,8 @@
     "hash": "04b260734365a973b336e7c7e766ac0c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-19-capsule-depth-audit.md": {
-    "mtime": 1780075183.7618713,
-    "hash": "84ec2806d0e340f2f9d80c6fbbd063bc"
+    "mtime": 1780116379.7480114,
+    "hash": "a26edbc03f93155b5b8f1782751640a9"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-19-capsule-discussion-filter-diagnostic.md": {
     "mtime": 1780075183.7627628,
@@ -6172,8 +6188,8 @@
     "hash": "ebcf57927485517c442e6f87063c30aa"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-25-capsule-consolidation-audit.md": {
-    "mtime": 1780075183.820822,
-    "hash": "e568ed26db01301110f2348d4a3c994b"
+    "mtime": 1780116380.6201873,
+    "hash": "8d911dba3b08147dcdda765c84b644d0"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-25-DEEP_PRESHIP_CHECKLIST.md": {
     "mtime": 1780075183.8144603,
@@ -6190,6 +6206,10 @@
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-27-DEEP_PRESHIP_CHECKLIST.md": {
     "mtime": 1780075183.8279054,
     "hash": "a2ec40efb6a98479979c18b098c8adac"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-30-DEEP_PRESHIP_CHECKLIST.md": {
+    "mtime": 1780116395.8000593,
+    "hash": "c21e0c438e4495492c1678a6d2bb7384"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\tool-contracts-2026-05-16.md": {
     "mtime": 1780075183.8370364,
@@ -6234,6 +6254,10 @@
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\tool-contracts-2026-05-27.md": {
     "mtime": 1780075183.85229,
     "hash": "d3087b071157b0620be6bae79e756862"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\tool-contracts-2026-05-30.md": {
+    "mtime": 1780116392.1459677,
+    "hash": "1a0bca9c8e7abd35864428657ff895d7"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\agentic-research-evals\\2026-05-20-praxis-vs-generic-llm.md": {
     "mtime": 1780075183.8279054,
@@ -6296,8 +6320,8 @@
     "hash": "42b9d8432f012e7b38e93e8f9584f913"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\product\\CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md": {
-    "mtime": 1780075183.8854747,
-    "hash": "89c21544cd3c080c85191e11513ed287"
+    "mtime": 1780114676.2191472,
+    "hash": "32ce5e27191915ff60aa99a936ee7ea4"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\product\\CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md": {
     "mtime": 1780075183.8875668,

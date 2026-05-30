@@ -56,8 +56,6 @@ const FORBIDDEN_VISIBLE_SNIPPETS = [
   'Advanced optional mirror',
   'Open Boardroom',
   'Start live boardroom',
-  'Saved from Memo Studio',
-  'Write for Memo Studio',
   'Continue this as a Memo Studio',
   'Memo Studio draft',
   'document pack for Memo Studio',

@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- feat(boardroom): simplify the personal knowledge board surface.
+  Build 2026.05.30.02 reshapes `/app/boardroom` around the same simple
+  homepage-style composer, adds optional context/details for the chaired
+  Boardroom AgentRun, renames the homepage entry to "Your Personal Knowledge
+  Board", and compacts the Active Policy File strip so it reads as file
+  identity plus a few quality signals instead of a crowded dashboard.
+
 - feat(capsules): add the clicked-capsule workbench.
   Build 2026.05.30.01 turns capsule inspection into a structured Capsule
   Workbench with overview, anatomy, evidence, graph/ontology, tacit knowledge,

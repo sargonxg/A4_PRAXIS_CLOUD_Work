@@ -1,5 +1,21 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — Personal Knowledge Board And Active File Polish
+
+Current boardroom/home checkpoint:
+
+- `/app/boardroom` now uses the same simple homepage-style center composer:
+  one decision question, one optional context/details box, and one chaired
+  AgentRun.
+- The boardroom still keeps participants, transcript, proof, and synthesis
+  visible, but the first interaction is a personal knowledge board rather than
+  a dense agent dashboard.
+- Home and Capsule Studio now launch the boardroom as "Your Personal Knowledge
+  Board".
+- The Active Policy File strip is compacted to file identity, target, source
+  posture, open/unsupported counts, review gate, and next action without the
+  duplicate low-level capsule framing.
+
 ## 2026-05-30 — Capsule Workbench Visualization
 
 Current capsule UX checkpoint:

@@ -124,6 +124,7 @@ const MAX_ROUNDS = 2;
 
 export function BoardroomWorkspace() {
   const [question, setQuestion] = useState('');
+  const [contextNotes, setContextNotes] = useState('');
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [run, setRun] = useState<AgentRunSummary | null>(null);
   const [events, setEvents] = useState<RunEvent[]>([]);
@@ -173,6 +174,7 @@ export function BoardroomWorkspace() {
   async function startRun() {
     const trimmed = question.trim();
     if (!trimmed || submitting) return;
+    const directContext = contextNotes.trim();
     setSubmitting(true);
     setStatus('Queueing Boardroom AgentRun');
     try {
@@ -182,6 +184,7 @@ export function BoardroomWorkspace() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           question: trimmed,
+          directContext: directContext || undefined,
           participantIds: BOARDROOM_AGENT_IDS,
           maxRounds: MAX_ROUNDS,
           outputTarget: 'board_executive_pack',
@@ -228,21 +231,13 @@ export function BoardroomWorkspace() {
     >
       <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link
-              href="/app"
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[color:var(--color-clay)]/20 bg-white text-[color:var(--color-deep-ink)] shadow-sm hover:bg-[color:var(--color-archive-paper-strong)]"
-              aria-label="Back to Home"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-            <div className="min-w-0">
-              <p className="civic-atelier-eyebrow">Ask PRAXIS</p>
-              <h1 className="mt-1 font-serif text-3xl font-semibold text-[color:var(--color-deep-ink)] sm:text-4xl">
-                Live boardroom
-              </h1>
-            </div>
-          </div>
+          <Link
+            href="/app"
+            className="inline-flex items-center gap-2 rounded-md border border-[color:var(--color-clay)]/20 bg-white px-3 py-2 text-sm font-semibold text-[color:var(--color-deep-ink)] shadow-sm hover:bg-[color:var(--color-archive-paper-strong)]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Home
+          </Link>
           <div className="flex flex-wrap items-center gap-2">
             <span className={cn('inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold', runStatusClass(run?.status ?? 'draft'))}>
               <ShieldCheck className="h-4 w-4" />
@@ -260,63 +255,93 @@ export function BoardroomWorkspace() {
           </div>
         </header>
 
-        <section className="rounded-xl border border-[color:var(--color-clay)]/20 bg-white/90 p-4 shadow-sm shadow-[rgba(164,73,46,0.10)] backdrop-blur sm:p-5">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.18fr)_minmax(20rem,0.82fr)]">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--color-clay)]/25 bg-[color:var(--color-archive-paper-strong)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-oxide)]">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Electa chaired
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--color-civic-blue)]/20 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-civic-blue)]">
-                  <Search className="h-3.5 w-3.5" />
-                  Deep research
-                </span>
-              </div>
-              <label className="mt-4 block text-sm font-semibold text-slate-900" htmlFor="boardroom-question">
-                What should the board deliberate?
-              </label>
-              <textarea
-                id="boardroom-question"
-                data-testid="boardroom-main-composer"
-                value={question}
-                onChange={(event) => setQuestion(event.target.value)}
-                rows={5}
-                className="mt-2 w-full resize-none rounded-lg border border-[color:var(--color-clay)]/25 bg-[color:var(--color-archive-paper-strong)] px-4 py-3 text-base leading-7 text-slate-950 outline-none placeholder:text-slate-400 focus:border-[color:var(--color-oxide)] focus:bg-white"
-                placeholder="Decide what to do next, what evidence is strong enough, or where the team disagrees."
-              />
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <p className="max-w-2xl text-sm leading-6 text-slate-600">
-                  One prompt starts a durable AgentRun. Electa, research, risk, legal, comms, humanitarian, mediation, and red-team agents discuss the question and return proof.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void startRun()}
-                  disabled={!question.trim() || submitting}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[color:var(--color-deep-ink)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                >
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                  Start boardroom
-                </button>
-              </div>
-            </div>
+        <section className="mx-auto mt-8 flex w-full max-w-5xl flex-col items-center text-center sm:mt-12">
+          <p className="receipt-slip flex items-center gap-2 rounded-md px-3 py-1.5 font-mono text-xs font-semibold">
+            <Sparkles className="h-4 w-4 text-[color:var(--color-oxide)]" />
+            Your Personal Knowledge Board
+          </p>
+          <h1 className="mt-7 max-w-4xl font-serif text-5xl font-semibold tracking-tight text-[color:var(--color-deep-ink)] sm:text-6xl">
+            What should the board deliberate?
+          </h1>
+          <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
+            Bring a decision, dispute, or policy question. PRAXIS chairs a realistic board discussion across evidence, law, risk, field impact, communications, mediation, and red-team challenge.
+          </p>
 
-            <aside className="min-w-0 rounded-lg border border-[color:var(--color-clay)]/20 bg-[color:var(--color-archive-paper-strong)] p-4" data-testid="boardroom-live-proof">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-[color:var(--color-oxide)]" />
-                <h2 className="text-sm font-semibold text-slate-950">Proof</h2>
+          <div className="praxis-composer-focus-shell od-praxis-panel mt-7 w-full rounded-xl text-left">
+            <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--color-clay)]/25 bg-[color:var(--color-archive-paper-strong)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-oxide)]">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Electa chaired
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--color-civic-blue)]/20 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-civic-blue)]">
+                    <Search className="h-3.5 w-3.5" />
+                    Source-aware
+                  </span>
+                </div>
+                <label className="mt-4 block text-sm font-semibold text-slate-900" htmlFor="boardroom-question">
+                  Decision question
+                </label>
+                <textarea
+                  id="boardroom-question"
+                  data-testid="boardroom-main-composer"
+                  value={question}
+                  onChange={(event) => setQuestion(event.target.value)}
+                  rows={4}
+                  className="mt-2 w-full resize-none rounded-lg border border-[color:var(--color-clay)]/25 bg-[color:var(--color-archive-paper-strong)] px-4 py-3 text-base leading-7 text-slate-950 outline-none placeholder:text-slate-400 focus:border-[color:var(--color-oxide)] focus:bg-white"
+                  placeholder="Decide what to do next, what evidence is strong enough, or where the team disagrees."
+                />
+                <label className="mt-4 block text-sm font-semibold text-slate-900" htmlFor="boardroom-context">
+                  Context and details
+                </label>
+                <textarea
+                  id="boardroom-context"
+                  data-testid="boardroom-context-notes"
+                  value={contextNotes}
+                  onChange={(event) => setContextNotes(event.target.value)}
+                  rows={3}
+                  className="mt-2 w-full resize-none rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-800 outline-none placeholder:text-slate-400 focus:border-[color:var(--color-oxide)]"
+                  placeholder="Add the relevant facts, stakeholders, constraints, sources, deadline, or desired board posture."
+                />
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="max-w-2xl text-sm leading-6 text-slate-600">
+                    One prompt starts a durable AgentRun. The board reads the active capsule and your notes, then returns a transcript, synthesis, risks, open questions, and proof.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void startRun()}
+                    disabled={!question.trim() || submitting}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[color:var(--color-deep-ink)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                    Start boardroom
+                  </button>
+                </div>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <Metric label="Agents" value={BOARDROOM_AGENTS.length} />
-                <Metric label="Turns" value={transcriptTurns.length} />
-                <Metric label="Events" value={events.length} />
-                <Metric label="Rounds" value={MAX_ROUNDS} />
-              </div>
-              <p className="mt-3 break-words text-xs font-semibold leading-5 text-slate-600">{status}</p>
-              <p className="mt-2 truncate text-[11px] leading-5 text-slate-500">
-                runId: {activeRunId ?? 'pending'}
-              </p>
-            </aside>
+
+              <aside className="min-w-0 rounded-lg border border-[color:var(--color-clay)]/20 bg-[color:var(--color-archive-paper-strong)] p-4" data-testid="boardroom-live-proof">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-[color:var(--color-oxide)]" />
+                  <h2 className="text-sm font-semibold text-slate-950">What the board uses</h2>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Metric label="Lenses" value={BOARDROOM_AGENTS.length} />
+                  <Metric label="Rounds" value={MAX_ROUNDS} />
+                  <Metric label="Turns" value={transcriptTurns.length} />
+                  <Metric label="Events" value={events.length} />
+                </div>
+                <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600">
+                  <p className="rounded-md border border-slate-200 bg-white px-2 py-1.5">Active capsule context and source receipts when available.</p>
+                  <p className="rounded-md border border-slate-200 bg-white px-2 py-1.5">Your added details become run context, not a canonical capsule mutation.</p>
+                  <p className="rounded-md border border-slate-200 bg-white px-2 py-1.5">Outputs remain reviewable: consensus, dissent, risks, and next actions.</p>
+                </div>
+                <p className="mt-3 break-words text-xs font-semibold leading-5 text-slate-600">{status}</p>
+                <p className="mt-2 truncate text-[11px] leading-5 text-slate-500">
+                  runId: {activeRunId ?? 'pending'}
+                </p>
+              </aside>
+            </div>
           </div>
         </section>
 

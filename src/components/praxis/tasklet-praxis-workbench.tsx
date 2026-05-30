@@ -3522,7 +3522,7 @@ export function TaskletPraxisWorkbench({
                         className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                       >
                         <BrainCircuit className="h-4 w-4" />
-                        Deep review
+                        Your Personal Knowledge Board
                       </Link>
                     </div>
                   </>
@@ -3577,7 +3577,7 @@ export function TaskletPraxisWorkbench({
                 className="mt-3 inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
               >
                 <BrainCircuit className="h-4 w-4" />
-                Start deep review
+                Your Personal Knowledge Board
               </Link>
             ) : null}
 
@@ -3624,8 +3624,8 @@ export function TaskletPraxisWorkbench({
                         capsuleVersion: activeCapsuleSummaryForStrip?.version ?? null,
                         title: activeCapsuleForStrip?.label ?? activeCapsuleSummaryForStrip?.label ?? null,
                         domain: activeStarterForStrip?.domain ?? activeCapsuleSummaryForStrip?.scope ?? null,
-                  outputGoal: activeCapsuleSummaryForStrip?.coreRefs.outputCoreIds?.[0] ?? selectedAgent.outputDestination,
-                  outputTarget: 'policy-memo',
+                        outputGoal: activeCapsuleSummaryForStrip?.coreRefs.outputCoreIds?.[0] ?? selectedAgent.outputDestination,
+                        outputTarget: 'policy-memo',
                         sourceCount: activeCapsuleSourceCount,
                         openQuestions: openChainSlots.length,
                         unsupportedClaims: 0,
@@ -3635,10 +3635,6 @@ export function TaskletPraxisWorkbench({
                       className="mb-2"
                     />
                     <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
-                      <span className="rounded-md bg-slate-950 px-2 py-1 text-white">Active Policy File</span>
-                      <span className="max-w-full truncate rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-900">
-                        {activeCapsuleForStrip?.label ?? 'No capsule opened'}
-                      </span>
                       <span
                         data-testid="context-health-indicator"
                         className={cn('rounded-md border px-2 py-1', contextHealth.tone)}
