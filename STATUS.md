@@ -1,5 +1,18 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — EPIC 1.1 Capsule V2 Schema And Resolver
+
+Current capsule marketplace checkpoint:
+
+- Added the ADR 0050 `capsule/v2` TypeScript type surface, Zod schema, and
+  backend Pydantic mirror for lineage, composability, sourcing, retrieval,
+  guardrails, eval, provenance, and marketplace metadata.
+- Added `resolveCapsule(ref)` for root `capsules/{id}` documents and immutable
+  `versions/{hash}` reads, with `extends` and `imports` resolution, merge
+  strategies, cycle protection, and a canonical stable `contentHash`.
+- Verification so far: focused resolver/schema/backend mirror Vitest contracts
+  and `npx tsc --noEmit`.
+
 ## 2026-05-30 — EPIC 0.1 Durable AgentRun Hardening
 
 Current runtime checkpoint:

@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- feat(capsules): add ADR 0050 capsule/v2 schema and resolver.
+  Build 2026.05.30.07 introduces the marketplace-ready ContextCapsule contract
+  with lineage, imports, sourcing, retrieval, guardrails, eval, provenance, and
+  market metadata; adds a Pydantic backend mirror; and implements stable
+  canonical content hashing plus `extends`/`imports` resolution for effective
+  capsules.
+
 - feat(agent-runtime): add Firestore AgentRun mirror and live snapshot stream.
   Build 2026.05.30.06 keeps Cloud SQL as the durable AgentRun ledger while
   mirroring owner-scoped run state, events, tool calls, and approvals into
