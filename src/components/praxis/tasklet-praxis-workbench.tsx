@@ -63,6 +63,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { AccountProfileButton } from '@/components/app/account-profile-button';
+import { CapsuleWorkbenchPanel } from '@/components/capsules/CapsuleWorkbenchPanel';
 import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
 import { AskQueuedAgentRunPanel, queuedAgentRunFromEnvelope } from '@/components/ask/AskQueuedAgentRunPanel';
@@ -8667,6 +8668,14 @@ function CapsuleDetailPanel({
         testId="capsule-inspector-usefulness-rating"
         onRate={onRateUsefulness}
       />
+      <div className="mt-4">
+        <CapsuleWorkbenchPanel
+          capsule={capsule}
+          repositoryDocuments={repositoryDocuments}
+          agentRuns={agentRuns}
+          compact
+        />
+      </div>
       <CapsuleXRayScoreboard
         capsule={capsule}
         policyTeam={policyTeam}
@@ -9780,6 +9789,15 @@ function CapsuleInspectorSheet({
           cogneeStatus={enrichmentReceipt.cognee}
           graphProposalStatus={capsule?.coreRefs.graphCoreId ? `approved graph ${capsule.coreRefs.graphCoreId}` : 'review-gated graph proposal'}
         />
+        {capsule ? (
+          <div className="mt-5">
+            <CapsuleWorkbenchPanel
+              capsule={capsule}
+              repositoryDocuments={repositoryDocuments}
+              agentRuns={agentRuns}
+            />
+          </div>
+        ) : null}
         <ContextPackLanePanel
           contextHealth={contextHealth}
           sourceCount={counts.sources + counts.documents}
