@@ -1,5 +1,24 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — EPIC 0.1 Durable AgentRun Hardening
+
+Current runtime checkpoint:
+
+- AgentRun remains canonical in the existing Cloud SQL ledger, with Cloud Tasks
+  dispatch and Pub/Sub event publication intact.
+- The ledger now mirrors owner-scoped run state into
+  `users/{uid}/runs/{runId}` with `events`, `toolCalls`, and `approvals`
+  subcollections so the UI can stream the durable run timeline via Firestore
+  `onSnapshot`.
+- Firestore rules now allow owners to read their own run mirrors while direct
+  client writes remain denied; server runtime writes continue through Admin SDK.
+- Ask queued-run proof now prefers the Firestore live timeline and falls back
+  to the existing SSE stream while Cloud SQL remains the execution ledger.
+- Verification so far: `npx tsc --noEmit`, `npm run lint`, `npm run build`,
+  focused AgentRun Vitest contracts, and `npm run audit:agent-runtime-proof`.
+  The runtime audit passes with local-env warnings for missing live Cloud SQL,
+  worker auth/target, model, and ADK variables in this shell.
+
 ## 2026-05-30 — Docs, Red Flags, And Improvement Queue
 
 Current documentation/readiness checkpoint:
