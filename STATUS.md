@@ -1,5 +1,22 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — EPIC 1.5 Agentic Research Flow And Run Timeline
+
+Current AgentRun research checkpoint:
+
+- Added a backend Genkit/ADK flow skeleton in `backend/ai/flows.py` for
+  `plan → source → retrieve → verify → synthesize`, with deterministic dry-run
+  helpers and optional AgentRun event persistence callbacks.
+- Added claim grounding enforcement for `minSourcesPerClaim` and
+  `maxUngroundedClaims` so source gates can block synthesis before unsupported
+  claims reach a deliverable.
+- Added a Google/Vertex grounding metadata parser that builds inline citation
+  maps by walking `groundingSupports` in descending `endIndex` order.
+- Added `RunTimeline`, a reusable Firestore `onSnapshot` timeline component
+  that surfaces the five research phases and AI SDK stream status.
+- Verification so far: focused grounding/run-timeline Vitest contracts,
+  backend agentic-flow pytest, scoped lint, and `npx tsc --noEmit`.
+
 ## 2026-05-30 — EPIC 1.4 Declarative Sourcing And Retrieval
 
 Current sourcing checkpoint:

@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- feat(agent-runtime): add agentic research flow and run timeline.
+  Build 2026.05.30.11 adds the backend plan/source/retrieve/verify/synthesize
+  flow envelope, deterministic claim grounding gates for
+  `minSourcesPerClaim` and `maxUngroundedClaims`, inline citation-map parsing
+  from Google/Vertex grounding metadata, and a Firestore `onSnapshot` run
+  timeline component that also exposes AI SDK stream status.
+
 - feat(capsules): add declarative sourcing and retrieval lanes.
   Build 2026.05.30.10 maps capsule `SourcingPolicy` and `RetrievalConfig`
   into Google Search grounding, Situation Knowledge Corpus, and Vertex RAG
