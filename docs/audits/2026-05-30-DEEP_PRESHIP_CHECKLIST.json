@@ -1,10 +1,10 @@
 {
   "date": "2026-05-30",
   "summary": {
-    "pass": 138,
+    "pass": 140,
     "warn": 2,
-    "blocked": 1,
-    "total": 141
+    "blocked": 0,
+    "total": 142
   },
   "checks": [
     {
@@ -896,12 +896,20 @@
       "remediation": "None."
     },
     {
-      "id": "notifications-pre-ship-askpraxishome",
+      "id": "notifications-pre-ship-praxisapplaunchpad",
       "section": "13. Notifications system",
-      "title": "notifications stack includes AskPraxisHome",
-      "status": "BLOCKED",
-      "evidence": "notifications stack is missing required marker.",
-      "remediation": "Add or wire AskPraxisHome before marking this checklist item complete."
+      "title": "notifications stack includes PraxisAppLaunchpad",
+      "status": "PASS",
+      "evidence": "notifications stack contains required marker.",
+      "remediation": "None."
+    },
+    {
+      "id": "notifications-pre-ship-data-testid-app-launchpad-",
+      "section": "13. Notifications system",
+      "title": "notifications stack includes data-testid=\"app-launchpad\"",
+      "status": "PASS",
+      "evidence": "notifications stack contains required marker.",
+      "remediation": "None."
     },
     {
       "id": "frontend-polish-emptystate",

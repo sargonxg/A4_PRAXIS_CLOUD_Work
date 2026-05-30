@@ -1,8 +1,15 @@
 import { test, expect } from '@playwright/test';
+import {
+  authenticateFirebaseCanary,
+  canaryCredentialSkipReason,
+  hasFirebaseCanaryCredentials,
+  isOnboardingUrl,
+} from './helpers/auth';
 
 /**
- * E2E covers: login → /onboarding redirect → 3 steps → completion → /app/situations/new.
- * Requires a test Firebase user seeded in the staging project.
+ * E2E covers: login → onboarding when required, or launchpad when the canary
+ * already has a completed profile. The shared canary is intentionally durable,
+ * so this test cannot assume first-login state.
  * Env:
  *   PLAYWRIGHT_BASE_URL (default http://localhost:3000)
  *   TEST_FIREBASE_EMAIL, TEST_FIREBASE_PASSWORD (test account)
@@ -10,18 +17,20 @@ import { test, expect } from '@playwright/test';
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 test.describe('onboarding first-login flow', () => {
-  test.skip(!process.env.TEST_FIREBASE_EMAIL || !process.env.TEST_FIREBASE_PASSWORD, 'TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set');
+  test.skip(!hasFirebaseCanaryCredentials(), canaryCredentialSkipReason());
 
-  test('redirects to /onboarding and completes all 3 steps', async ({ page }) => {
-    // login
-    await page.goto(`${BASE}/login`);
-    await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
-    await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
-    await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
+  test('handles onboarding or an already-onboarded canary profile', async ({ page }) => {
+    await authenticateFirebaseCanary(page, BASE, '/onboarding', {
+      allowOnboarding: true,
+      expectComposer: false,
+    });
 
-    // should land on /onboarding because onboardingCompletedAt is null
-    await page.waitForURL(/\/onboarding/);
-    await expect(page.locator('h2')).toContainText('Set up your analyst profile');
+    if (!isOnboardingUrl(page)) {
+      await expect(page.getByTestId('app-launchpad')).toBeVisible({ timeout: 30_000 });
+      return;
+    }
+
+    await expect(page.locator('h2')).toContainText(/Set up your analyst profile|Review your analyst profile/);
 
     // Step 1 — identity
     await page.click('button:has-text("UN official")');
@@ -42,7 +51,8 @@ test.describe('onboarding first-login flow', () => {
 
     // Step 4 — completion
     await expect(page.locator('h3')).toContainText('Profile ready');
-    await page.click('button:has-text("Create my first situation")');
-    await page.waitForURL(/\/situations\/new/);
+    await page.click('button:has-text("Go to dashboard")');
+    await page.waitForURL(/\/app/);
+    await expect(page.getByTestId('app-launchpad')).toBeVisible({ timeout: 30_000 });
   });
 });

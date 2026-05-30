@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- chore(verification): record the Phases 0-1 deploy gate checkpoint.
+  Build 2026.05.30.15 refreshes graphify, fixes verification drift in backend,
+  doctor, auth, and smoke contracts, and clears the Phase 1 Postgres skip gate
+  by running backend pytest in Cloud Run against an isolated temporary Cloud SQL
+  database: `161 passed, 0 skipped`.
+
 - feat(capsules): add launch capsule seed set.
   Build 2026.05.30.14 adds the ten §10 launch capsules with golden sets,
   passing dry-run eval metadata, marketplace posture, guardrails, and

@@ -325,10 +325,8 @@ def _normalize_search_response(response: dict[str, Any], *, scope: MemoryScope) 
 
 def health() -> MemoryHealth:
     settings = get_settings()
-    if not is_enabled():
+    if not settings.cognee_enabled or settings.cognee_mode == "disabled":
         reason = "disabled"
-        if settings.cognee_enabled and settings.cognee_mode != "disabled" and not settings.cognee_backend_url.strip():
-            reason = "missing_backend_url"
         return MemoryHealth(
             enabled=False,
             mode=settings.cognee_mode,
@@ -593,7 +591,7 @@ async def search(
                 "query": query,
                 "mode": mode.value,
                 "limit": limit,
-                "sessionId": session_id,
+                "sessionId": session_id or scope.session_id,
                 "sourceKind": source_kind,
                 "positive": positive,
                 "signal": signal,

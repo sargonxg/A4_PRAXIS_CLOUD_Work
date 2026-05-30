@@ -1,12 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { authenticateFirebaseCanary, expectAuthenticatedSession } from './helpers/auth';
 
 /**
- * Golden-path end-to-end test. Verifies a brand-new user can:
- *   1. Sign in (fixture account)
- *   2. Complete 3-step onboarding
- *   3. Create a first situation with 2 source URLs
- *   4. See the dashboard render the source-coverage banner + 6 widgets
- *   5. Run three tools: Risk Monitor, Early Warning, Stakeholder Map
+ * Golden-path smoke for the simplified PRAXIS MVP surface. Verifies an
+ * onboarded canary user can sign in and reach the launchpad, capsules,
+ * boardroom, and runtime settings without bouncing back to login.
  *
  * Env requirements:
  *   PLAYWRIGHT_BASE_URL       — defaults to http://localhost:3000
@@ -20,69 +18,31 @@ import { test, expect } from '@playwright/test';
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
-test.describe('golden path — free tier smoke', () => {
+test.describe('golden path — app usability smoke', () => {
   test.skip(!process.env.TEST_FIREBASE_EMAIL || !process.env.TEST_FIREBASE_PASSWORD, 'TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set — skipping authenticated golden path');
 
   test.setTimeout(120_000);
 
-  test('signup → onboard → situation → dashboard → 3 tools', async ({ page }) => {
-    // ── 1. Login ──────────────────────────────────────────────────────────
-    await page.goto(`${BASE}/login`);
-    await page.fill('input[type=email]', process.env.TEST_FIREBASE_EMAIL!);
-    await page.fill('input[type=password]', process.env.TEST_FIREBASE_PASSWORD!);
-    await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
+  test('sign in → launchpad → capsules → boardroom → settings', async ({ page }) => {
+    await authenticateFirebaseCanary(page, BASE, '/app', { expectComposer: false });
+    const session = await expectAuthenticatedSession(page);
+    expect(session.userEmail).toContain('@');
 
-    // ── 2. Onboarding (3 steps) ───────────────────────────────────────────
-    // If the user already has a profile we land on /app directly; skip the wizard.
-    const arrived = await Promise.race([
-      page.waitForURL(/\/onboarding/, { timeout: 10_000 }).then(() => 'onboarding'),
-      page.waitForURL(/\/app/, { timeout: 10_000 }).then(() => 'app'),
-    ]);
-    if (arrived === 'onboarding') {
-      await page.click('button:has-text("UN official")');
-      await page.click('button:has-text("senior")');
-      await page.fill('input[placeholder*="UN DPPA"]', 'UN DPPA');
-      await page.click('button:has-text("Continue")');
+    await expect(page.getByTestId('app-launchpad')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('launchpad-capsule-chip')).toBeVisible();
+    await expect(page.getByTestId('launchpad-recent-work')).toBeVisible();
 
-      await page.fill('textarea', 'Weekly briefings for USG on prevention in the Sahel. IHL-anchored.');
-      await page.click('button:has-text("Continue")');
-
-      await page.click('button:has-text("English")');
-      await page.click('button:has-text("rapid brief"), button:has-text("Rapid brief"), button:has-text("rapid_brief")');
-      await page.click('button:has-text("Review and complete")');
-      await page.waitForURL(/\/situations\/new|\/app/);
-    }
-
-    // ── 3. Create a situation ─────────────────────────────────────────────
-    if (!page.url().includes('/situations/new')) {
-      await page.goto(`${BASE}/app/situations/new`);
-    }
-    await page.fill('input[name="name"], input[placeholder*="situation"]', 'Golden-path smoke — Mali');
-    // We don't rely on specific source-URL inputs; the app supports creating
-    // a bare situation and hydrating later.
-    const createBtn = page.locator('button:has-text("Create"), button:has-text("Create situation")').first();
-    await createBtn.click();
-    await page.waitForURL(/\/app\/(dashboard|situations\/[^/]+)/);
-
-    // Land on dashboard
-    if (!page.url().includes('/dashboard')) {
-      await page.goto(`${BASE}/app`);
-    }
-
-    // ── 4. Dashboard renders with coverage banner + widgets ──────────────
-    // Coverage banner text is deterministic; widget titles are stable.
-    await expect(page.getByText(/Source coverage/i)).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(/Credits/i)).toBeVisible();
-
-    // ── 5. Run three tools — smoke, just checks they render ──────────────
-    const tools: Array<{ path: string; expectHeading: RegExp }> = [
-      { path: '/app/risk-monitor', expectHeading: /risk monitor/i },
-      { path: '/app/early-warning', expectHeading: /early warning/i },
-      { path: '/app/stakeholder-map', expectHeading: /stakeholder/i },
+    const routes = [
+      { path: '/app/capsules', testId: 'capsule-studio-header', text: /Build capsule|Use in Ask/i },
+      { path: '/app/boardroom', testId: 'boardroom-home-surface', text: /Boardroom/i },
+      { path: '/app/settings?tab=system', testId: 'account-settings-page', text: /PRAXIS runtime doctor/i },
     ];
-    for (const t of tools) {
-      await page.goto(`${BASE}${t.path}`);
-      await expect(page.getByRole('heading').first()).toHaveText(t.expectHeading, { timeout: 15_000 });
+
+    for (const route of routes) {
+      await page.goto(`${BASE}${route.path}`);
+      await expect(page).not.toHaveURL(/\/login/);
+      await expect(page.getByTestId(route.testId)).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText(route.text).first()).toBeVisible({ timeout: 30_000 });
     }
   });
 });

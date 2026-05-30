@@ -84,9 +84,10 @@ async def test_traversal_repo_requires_owner_and_case_predicates():
 async def test_embedding_repo_filters_semantic_search_by_owner_and_case():
     conn = FakeConnection(rows=[])
     repo = EmbeddingRepo(conn)
-    await repo.semantic_search(owner_uid="user-1", case_id="case-1", embedding=[0.1, 0.2], limit=5)
+    embedding = [0.1] * 768
+    await repo.semantic_search(owner_uid="user-1", case_id="case-1", embedding=embedding, limit=5)
 
     query, params = conn.calls[0]
     assert "n.owner_uid = %s" in query
     assert "n.case_id = %s" in query
-    assert params == ([0.1, 0.2], "user-1", "case-1", [0.1, 0.2], 5)
+    assert params == (embedding, "user-1", "case-1", embedding, 5)

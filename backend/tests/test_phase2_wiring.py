@@ -36,7 +36,7 @@ async def test_registry_builds_required_flows():
         "deep_research",
         "symbolic_firewall",
         "red_team_analyst",
-        "gdelt_monitor",
+        "grounded_search_monitor",
     }
 
 

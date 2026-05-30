@@ -663,7 +663,10 @@ async function runAuthenticatedCanary(
     `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(apiKey)}`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Referer: env.FIREBASE_AUTH_REFERER || 'https://praxis.tacitus.me/login',
+      },
       body: JSON.stringify({ email, password, returnSecureToken: true }),
     }
   );
@@ -1543,6 +1546,14 @@ async function shellExec(command: string): Promise<ExecResult> {
 }
 
 async function readResponse(response: Awaited<ReturnType<FetchFn>>): Promise<unknown> {
+  const contentType = response.headers?.get?.('content-type') ?? response.headers?.get?.('Content-Type') ?? '';
+  if (contentType && !contentType.includes('application/json')) {
+    try {
+      if (response.text) return await response.text();
+    } catch {
+      return { status: response.status };
+    }
+  }
   try {
     if (response.json) return await response.json();
   } catch {

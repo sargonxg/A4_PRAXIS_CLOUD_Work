@@ -5,8 +5,9 @@ using a realistic Sudan conflict fixture.
 """
 from __future__ import annotations
 
-import pytest
 import asyncio
+
+import pytest
 
 # ── Sudan conflict fixture ─────────────────────────────────────────────────────
 
@@ -106,14 +107,17 @@ class MockGeminiClient:
         }
 
 
+def extract_sudan_fixture() -> dict:
+    return asyncio.run(MockGeminiClient().extract_aco(SUDAN_FIXTURE))
+
+
 # ── Tests ──────────────────────────────────────────────────────────────────────
 
 def test_build_from_extraction():
     """Test building a NetworkX graph from the mock extraction."""
     from graphify_tacitus.build import build_from_json
 
-    client = MockGeminiClient()
-    raw = asyncio.get_event_loop().run_until_complete(client.extract_aco(SUDAN_FIXTURE))
+    raw = extract_sudan_fixture()
 
     G = build_from_json(raw)
 
@@ -130,8 +134,7 @@ def test_cluster():
     from graphify_tacitus.build import build_from_json
     from graphify_tacitus.cluster import cluster
 
-    client = MockGeminiClient()
-    raw = asyncio.get_event_loop().run_until_complete(client.extract_aco(SUDAN_FIXTURE))
+    raw = extract_sudan_fixture()
 
     G = build_from_json(raw)
     communities = cluster(G)
@@ -149,8 +152,7 @@ def test_escalation_assessment():
     from graphify_tacitus.cluster import cluster
     from graphify_tacitus.analyze import escalation_assessment
 
-    client = MockGeminiClient()
-    raw = asyncio.get_event_loop().run_until_complete(client.extract_aco(SUDAN_FIXTURE))
+    raw = extract_sudan_fixture()
 
     G = build_from_json(raw)
     escalation = escalation_assessment(G)
@@ -167,8 +169,7 @@ def test_pivot_actors():
     from graphify_tacitus.build import build_from_json
     from graphify_tacitus.analyze import pivot_actors
 
-    client = MockGeminiClient()
-    raw = asyncio.get_event_loop().run_until_complete(client.extract_aco(SUDAN_FIXTURE))
+    raw = extract_sudan_fixture()
 
     G = build_from_json(raw)
     actors = pivot_actors(G)
@@ -184,8 +185,7 @@ def test_faction_map():
     from graphify_tacitus.cluster import cluster
     from graphify_tacitus.analyze import faction_map
 
-    client = MockGeminiClient()
-    raw = asyncio.get_event_loop().run_until_complete(client.extract_aco(SUDAN_FIXTURE))
+    raw = extract_sudan_fixture()
 
     G = build_from_json(raw)
     communities = cluster(G)
@@ -204,8 +204,7 @@ def test_report_generation():
     )
     from graphify_tacitus.report import render_situation_brief_json
 
-    client = MockGeminiClient()
-    raw = asyncio.get_event_loop().run_until_complete(client.extract_aco(SUDAN_FIXTURE))
+    raw = extract_sudan_fixture()
 
     G = build_from_json(raw)
     communities = cluster(G)
@@ -248,8 +247,7 @@ def test_extraction_schema_validation():
     """Test that the extraction result matches the ACO schema."""
     from graphify_tacitus.schemas.aco import ACO_TYPE_MAP, PrimitiveType
 
-    client = MockGeminiClient()
-    raw = asyncio.get_event_loop().run_until_complete(client.extract_aco(SUDAN_FIXTURE))
+    raw = extract_sudan_fixture()
 
     valid_types = set(ACO_TYPE_MAP.keys())
     for node in raw["nodes"]:

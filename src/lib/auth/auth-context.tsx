@@ -100,6 +100,39 @@ function fbUserToAuthUser(fbUser: FirebaseUser, credits = 0): AuthUser {
   };
 }
 
+async function serverSessionToAuthUser(): Promise<AuthUser | null> {
+  try {
+    const response = await fetch('/api/auth/session', {
+      cache: 'no-store',
+      credentials: 'include',
+    });
+    if (!response.ok) return null;
+    const payload = await response.json() as {
+      authenticated?: boolean;
+      user?: {
+        id?: string;
+        email?: string;
+        name?: string;
+        isDemo?: boolean;
+      } | null;
+    };
+    if (!payload.authenticated || !payload.user?.id) return null;
+    return {
+      id: payload.user.id,
+      email: payload.user.email || '',
+      name: payload.user.name || payload.user.email?.split('@')[0] || 'Analyst',
+      role: 'analyst',
+      orgId: 'org-default',
+      orgName: 'TACITUS Platform',
+      isDemo: payload.user.isDemo === true,
+      credits: 0,
+      subscription: 'free',
+    };
+  } catch {
+    return null;
+  }
+}
+
 const DEPLOYED_APP_DOMAIN = 'praxis.tacitus.me';
 const GOOGLE_OAUTH_REDIRECT_URI = 'https://praxisbytacitus.firebaseapp.com/__/auth/handler';
 
@@ -298,6 +331,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.warn('[auth] Firestore profile load failed (using defaults):', err);
         }
       } else if (!isDemoModeRef.current) {
+        const sessionUser = await serverSessionToAuthUser();
+        if (sessionUser) {
+          setUser(sessionUser);
+          setFirebaseUser(null);
+          setIsDemoMode(sessionUser.isDemo);
+          setCredits(sessionUser.credits);
+          firebaseAuthDoneRef.current = true;
+          setLoading(false);
+          return;
+        }
         setUser(null);
         setFirebaseUser(null);
         setCredits(0);

@@ -530,6 +530,18 @@ The last one is the free, shareable flywheel capsule — low credit cost, high "
 > `npx tsc --noEmit && npm run build && npm run lint && npx vitest run` plus relevant audits
 > (`node scripts/audit-ai-routes.mjs`, `npm run audit:repo-shape`, `npm run audit:gate`).
 
+### 2026-05-30 verification checkpoint
+
+- Frontend, static, audit, graphify, and smoke gates are green on the current
+  branch after the Phase 0-1 verification pass.
+- The Phase 1 Postgres skip gate was cleared by running the backend pytest
+  command inside Cloud Run against an isolated temporary Cloud SQL database with
+  `DATABASE_URL` set; the result was `161 passed, 0 skipped`. The temporary
+  database and Cloud Run verification jobs were deleted afterward.
+- The live `praxis.tacitus.me` canary succeeds for the currently deployed
+  production revision, including an AgentRun stream and Memo Studio handoff,
+  but that is not proof that this unmerged branch has deployed.
+
 ### EPIC 0.1 — Hardening & durable AgentRun
 - Confirm all validation gates green; record a checkpoint in `STATUS.md`.
 - Finalize the `AgentRun` Firestore model + Cloud Tasks dispatch + Pub/Sub events + `onSnapshot`

@@ -251,10 +251,10 @@ requireIncludes(
 const notificationsRouter = read('backend/routers/notifications.py');
 const notificationsService = read('backend/services/notifications/__init__.py');
 const notificationsDelivery = read('backend/services/notifications/delivery.py');
-const notificationsSettings = read('src/app/app/page.tsx');
+const notificationsSettings = `${read('src/app/app/page.tsx')}\n${read('src/components/app/praxis-app-launchpad.tsx')}`;
 requireIncludes(
   `${notificationsRouter}\n${notificationsService}\n${notificationsDelivery}\n${notificationsSettings}`,
-  ['@router.get("/stream")', '@router.post("/{notification_id}/signal")', '@router.put("/preferences")', '@router.post("/dispatch")', 'quiet_hours', 'provider_unconfigured', 'MAX_DELIVERY_ATTEMPTS', 'AskPraxisHome'],
+  ['@router.get("/stream")', '@router.post("/{notification_id}/signal")', '@router.put("/preferences")', '@router.post("/dispatch")', 'quiet_hours', 'provider_unconfigured', 'MAX_DELIVERY_ATTEMPTS', 'PraxisAppLaunchpad', 'data-testid="app-launchpad"'],
   '13. Notifications system',
   'notifications-pre-ship',
   'notifications stack',

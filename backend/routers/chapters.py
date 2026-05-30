@@ -404,6 +404,13 @@ async def list_drafts(case_id: str = Query(..., min_length=1, max_length=128), t
     return {"drafts": rows}
 
 
+@router.get("/briefings")
+async def list_briefings(case_id: str = Query(..., min_length=1, max_length=128), token: dict = Depends(verify_firebase_token)) -> dict[str, Any]:
+    async with tenant_session(token["uid"]) as conn:
+        rows = await conn.fetch("SELECT * FROM briefings WHERE owner_uid = %s AND case_id = %s ORDER BY updated_at DESC LIMIT 100", token["uid"], case_id)
+    return {"briefings": rows}
+
+
 @router.post("/drafts")
 async def create_draft(req: DraftRequest, token: dict = Depends(verify_firebase_token)) -> dict[str, Any]:
     async with tenant_session(token["uid"]) as conn:

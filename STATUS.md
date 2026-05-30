@@ -1,5 +1,28 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — Phases 0-1 Verification Checkpoint
+
+Current deploy-readiness checkpoint:
+
+- Full frontend gates are green on the working branch: `npx tsc --noEmit`,
+  `npm run build`, `npm run lint`, `npx vitest run`,
+  `node scripts/audit-ai-routes.mjs`, `npm run audit:repo-shape`,
+  `npm run audit:architecture-reference`, `npm run audit:gcp`, and
+  `npm run audit:gate`.
+- Graphify was refreshed with `graphify update .`; `graphify-out/graph.json`,
+  `graphify-out/GRAPH_REPORT.md`, and `graphify-out/manifest.json` now match
+  this checkout.
+- Frontend smokes are green: `npm run smoke:app-usability`,
+  `npm run smoke:core-flows`, `npm run smoke:authenticated-app`, and the
+  authenticated runtime lane.
+- The Phase 1 backend database tests were rerun inside Cloud Run against an
+  isolated temporary Cloud SQL database with `DATABASE_URL` set; the backend
+  command completed with `161 passed, 0 skipped` and the temporary database/job
+  were deleted afterward.
+- Production canary proof for the already deployed service is healthy; a fresh
+  deployment still needs the main-safe Cloud Build/Cloud Run checkpoint and
+  live screenshot pass.
+
 ## 2026-05-30 — EPIC 1.8 Launch Capsule Seed Set
 
 Current launch-capsule checkpoint:

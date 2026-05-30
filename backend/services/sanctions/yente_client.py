@@ -51,7 +51,9 @@ class SanctionsMatch:
 def normalize_actor(actor: ActorNode) -> dict[str, Any]:
     schema = "Person" if "person" in actor.subtype.lower() else "Organization"
     country = actor.metadata.get("country")
-    normalized_name = rigour_normalize_name(actor.label) if rigour_normalize_name else actor.label.strip()
+    # Yente accepts raw entity names; preserve the analyst-facing label because
+    # rigour may lowercase organization names across versions.
+    normalized_name = actor.label.strip()
     normalized_country = rigour_normalize_country(country) if country and rigour_normalize_country else country
     return {
         "schema": schema,
