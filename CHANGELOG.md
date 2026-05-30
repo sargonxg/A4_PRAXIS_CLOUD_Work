@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- feat(agent-runtime): add Firestore AgentRun mirror and live snapshot stream.
+  Build 2026.05.30.06 keeps Cloud SQL as the durable AgentRun ledger while
+  mirroring owner-scoped run state, events, tool calls, and approvals into
+  Firestore for `onSnapshot` UI streaming. Firestore rules expose owner read
+  access only and deny direct client writes; the existing SSE stream remains as
+  a fallback.
+
 - feat(home): rebuild the public and signed-in PRAXIS entry points.
   Build 2026.05.30.05 replaces the public cockpit-style `/` route with a light
   marketing page, moves users to a calm `/app` launchpad, gates operator chrome

@@ -10,6 +10,12 @@ import {
 } from '@/lib/agent-runtime/types';
 import { publishPraxisEvent, type PraxisEventType } from '@/lib/events/praxis-events';
 import {
+  mirrorAgentApprovalToFirestore,
+  mirrorAgentRunEventToFirestore,
+  mirrorAgentRunToFirestore,
+  mirrorAgentToolCallToFirestore,
+} from '@/lib/agent-runtime/firestore-mirror';
+import {
   assertAgentRunTransition,
   makeAgentRunEvent,
   normalizeCreateAgentRunInput,
@@ -166,6 +172,7 @@ export async function createAgentRun(input: CreateAgentRunInput): Promise<AgentR
     ],
   );
   const run = rowToAgentRun(result.rows[0]);
+  await mirrorAgentRunToFirestore(run);
   await appendAgentRunEvent(makeAgentRunEvent({
     runId: run.id,
     ownerUid: run.ownerUid,
@@ -269,7 +276,9 @@ export async function appendAgentRunEvent(input: AgentRunEvent): Promise<AgentRu
       input.createdAt,
     ],
   );
-  return rowToAgentRunEvent(result.rows[0]);
+  const event = rowToAgentRunEvent(result.rows[0]);
+  await mirrorAgentRunEventToFirestore(event);
+  return event;
 }
 
 export async function appendAgentToolCall(input: AgentToolCall): Promise<AgentToolCall> {
@@ -300,7 +309,9 @@ export async function appendAgentToolCall(input: AgentToolCall): Promise<AgentTo
       input.updatedAt,
     ],
   );
-  return rowToAgentToolCall(result.rows[0]);
+  const toolCall = rowToAgentToolCall(result.rows[0]);
+  await mirrorAgentToolCallToFirestore(toolCall);
+  return toolCall;
 }
 
 export async function listAgentToolCalls(input: {
@@ -347,7 +358,9 @@ export async function appendAgentApproval(input: AgentApproval): Promise<AgentAp
       input.expiresAt,
     ],
   );
-  return rowToAgentApproval(result.rows[0]);
+  const approval = rowToAgentApproval(result.rows[0]);
+  await mirrorAgentApprovalToFirestore(approval);
+  return approval;
 }
 
 export async function listAgentApprovals(input: {
@@ -389,6 +402,7 @@ export async function decideAgentApproval(input: {
   );
   const approval = result.rows[0] ? rowToAgentApproval(result.rows[0]) : null;
   if (approval) {
+    await mirrorAgentApprovalToFirestore(approval);
     await appendAgentRunEvent(makeAgentRunEvent({
       runId: run.id,
       ownerUid: run.ownerUid,
@@ -433,6 +447,7 @@ export async function updateAgentRunStatus(input: {
   );
   const run = result.rows[0] ? rowToAgentRun(result.rows[0]) : null;
   if (run) {
+    await mirrorAgentRunToFirestore(run, { preserveAudit: true });
     await appendAgentRunEvent(makeAgentRunEvent({
       runId: run.id,
       ownerUid: run.ownerUid,
@@ -482,6 +497,7 @@ export async function updateAgentRunMetadata(input: {
   );
   const run = result.rows[0] ? rowToAgentRun(result.rows[0]) : null;
   if (run && input.message) {
+    await mirrorAgentRunToFirestore(run, { preserveAudit: true });
     await appendAgentRunEvent(makeAgentRunEvent({
       runId: run.id,
       ownerUid: run.ownerUid,
@@ -491,6 +507,8 @@ export async function updateAgentRunMetadata(input: {
       data: input.metadata,
       traceId: run.traceId,
     }));
+  } else if (run) {
+    await mirrorAgentRunToFirestore(run, { preserveAudit: true });
   }
   return run;
 }

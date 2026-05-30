@@ -2,7 +2,7 @@
 
 Date: 2026-05-30
 
-Summary: 139 PASS, 2 WARN, 0 BLOCKED across 141 static pre-ship checks.
+Summary: 138 PASS, 2 WARN, 1 BLOCKED across 141 static pre-ship checks.
 
 This audit is deliberately conservative: live staging checks, Cloud SQL restore tests, load tests, browser sessions, and Vertex billing comparisons remain blocked until run against staging/production credentials and datasets.
 
@@ -151,7 +151,7 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 | PASS | notifications stack includes quiet_hours | notifications stack contains required marker. | None. |
 | PASS | notifications stack includes provider_unconfigured | notifications stack contains required marker. | None. |
 | PASS | notifications stack includes MAX_DELIVERY_ATTEMPTS | notifications stack contains required marker. | None. |
-| PASS | notifications stack includes AskPraxisHome | notifications stack contains required marker. | None. |
+| BLOCKED | notifications stack includes AskPraxisHome | notifications stack is missing required marker. | Add or wire AskPraxisHome before marking this checklist item complete. |
 
 ## 18. Frontend polish
 

@@ -13,79 +13,111 @@ function read(rel: string): string {
   return readFileSync(full, 'utf8');
 }
 
-const landing = read('src/components/landing/phase8-wow-landing.tsx');
-const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
-const appHome = read('src/components/dashboard/ask-praxis-home.tsx');
-const appIndex = read('src/app/app/page.tsx');
-const appShell = read('src/components/app/app-shell.tsx');
-
-for (const forbidden of [
-  'components/user-case',
-  '@/components/user-case',
-  'components/tour',
-  '@/components/tour',
-  'ContextCapsulePreview',
-  'CAPSULE_COMBINATION_RECIPES',
-  'Live demo bar',
-  'Run cached answer',
-  'Open read-only context',
-]) {
-  if (landing.includes(forbidden)) {
-    failures.push(`public landing imports or renders legacy marker: ${forbidden}`);
+function requireAll(label: string, source: string, markers: string[]): void {
+  for (const marker of markers) {
+    if (!source.includes(marker)) failures.push(`${label} missing marker: ${marker}`);
   }
 }
 
-for (const required of [
-  'mode="public"',
-  'TaskletPraxisWorkbench',
-]) {
-  if (!landing.includes(required)) failures.push(`public landing missing marker: ${required}`);
+function forbidAll(label: string, source: string, markers: string[]): void {
+  for (const marker of markers) {
+    if (source.includes(marker)) failures.push(`${label} still exposes marker: ${marker}`);
+  }
 }
 
-for (const required of [
-  'mode="app"',
+const publicPage = read('src/app/page.tsx');
+const marketingHome = read('src/components/marketing/praxis-marketing-home.tsx');
+const appIndex = read('src/app/app/page.tsx');
+const appLaunchpad = read('src/components/app/praxis-app-launchpad.tsx');
+const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
+const boardroom = read('src/components/boardroom/boardroom-workspace.tsx');
+const appShell = read('src/components/app/app-shell.tsx');
+const sitemap = read('src/app/sitemap.ts');
+const dockerfile = read('Dockerfile');
+
+requireAll('public route', publicPage, [
+  'PraxisMarketingHome',
+  'SoftwareApplication',
+  'Turn any policy question into a sourced, citable brief.',
+]);
+forbidAll('public route', publicPage, [
   'TaskletPraxisWorkbench',
-]) {
-  if (!appHome.includes(required)) failures.push(`app home missing marker: ${required}`);
+  'AskPraxisHome',
+  'PraxisAppLaunchpad',
+  '/api/created-work',
+  '/api/context',
+  '/api/health',
+]);
+
+requireAll('marketing home', marketingHome, [
+  'data-testid="marketing-home"',
+  'Turn any policy question into a sourced, citable brief.',
+  'data-testid="marketing-hero-prompt"',
+  'data-testid="marketing-primary-cta"',
+  'Context Capsules',
+  'Agentic research',
+  'Capsule marketplace',
+  'data-testid="marketing-marketplace-teaser"',
+  'data-testid="marketing-pricing-strip"',
+  'Every claim cited',
+  'Start free',
+]);
+forbidAll('marketing home', marketingHome, [
+  'Diagnostics',
+  'Systems ready',
+  'Search app',
+  'context-health',
+  'red flags',
+  'catalogued',
+  'TaskletPraxisWorkbench',
+  'AskPraxisHome',
+]);
+
+const primaryCtaCount = marketingHome.split('data-testid="marketing-primary-cta"').length - 1;
+if (primaryCtaCount !== 1) {
+  failures.push(`marketing home should expose exactly one primary CTA test id, found ${primaryCtaCount}`);
 }
 
-if (!appIndex.includes('AskPraxisHome')) failures.push('app index must render the Ask PRAXIS workbench home');
+requireAll('signed-in app index', appIndex, ['PraxisAppLaunchpad']);
+forbidAll('signed-in app index', appIndex, ['AskPraxisHome', 'TaskletPraxisWorkbench']);
+requireAll('signed-in launchpad', appLaunchpad, [
+  'data-testid="app-launchpad"',
+  'What do you want to analyze?',
+  'data-testid="launchpad-capsule-chip"',
+  '/api/created-work?limit=4',
+  'items.slice(0, 4)',
+  'Your capsules',
+  'Browse marketplace',
+  'Recent work',
+  'data-testid="advanced-edit-context"',
+  'Advanced / Edit context',
+]);
+forbidAll('signed-in launchpad', appLaunchpad, [
+  'Diagnostics',
+  'Systems ready',
+  'Search app',
+  'red flags',
+  'catalogued',
+]);
 
-for (const required of [
+requireAll('shared cockpit', workbench, [
+  'TaskletPraxisWorkbench',
   'data-testid="praxis-main-composer"',
-  "'capsule-manager'",
-  'data-testid="tasklet-capsule-cards"',
-  'What can PRAXIS do for you?',
-  'Describe a task or responsibility',
-  'AccountProfileButton',
-  "currentToolId: 'ask-praxis'",
   'data-testid="capsule-context-bar"',
   'data-testid="praxis-chat-thread"',
-  'data-testid="capsule-agent-lane"',
-  'data-testid="praxis-answer-markdown"',
   'Compose your reasoning and policy products from expert ContextCapsules.',
-  'Capsules',
-  'showWorkbenchNavigation',
-  'starterCapsuleSummaries',
-  'visibleCapsuleCards',
-  'showingStarterFallback',
-]) {
-  if (!workbench.includes(required)) failures.push(`shared cockpit missing marker: ${required}`);
-}
+  'const showOperatorChrome = process.env.NEXT_PUBLIC_PRAXIS_DEBUG === \'true\';',
+]);
+requireAll('boardroom workspace', boardroom, [
+  'BoardroomWorkspace',
+  'const showOperatorChrome = process.env.NEXT_PUBLIC_PRAXIS_DEBUG === \'true\';',
+]);
 
-const landingLayout = read('src/app/(landing)/layout.tsx');
-for (const required of ['Home', 'Capsules', 'Pricing', 'Learn', 'Release notes', 'Sign in']) {
-  if (!landingLayout.includes(required)) failures.push(`public navigation missing marker: ${required}`);
-}
-if (landingLayout.includes('Repository')) failures.push('public navigation still exposes Repository as a separate primary route');
-for (const singleHeaderRoute of ['/pricing', '/learn', '/release-notes']) {
-  const routeCount = landingLayout.split(`href: "${singleHeaderRoute}"`).length - 1;
-  if (routeCount !== 1) {
-    failures.push(`public route ${singleHeaderRoute} should appear once in the landing layout header, found ${routeCount}`);
-  }
-}
+requireAll('app shell', appShell, [
+  'data-testid="praxis-one-page-app-shell"',
+  "pathname === '/app'",
+]);
 
-const sitemap = read('src/app/sitemap.ts');
 for (const required of ['/learn', '/pricing', '/release-notes', '/login']) {
   if (!sitemap.includes(required)) failures.push(`sitemap missing public route: ${required}`);
 }
@@ -96,31 +128,8 @@ for (const stalePublicFile of ['public/sitemap.xml', 'public/robots.txt']) {
   }
 }
 
-const dockerfile = read('Dockerfile');
 if (!dockerfile.includes('rm -f public/sitemap.xml public/robots.txt')) {
   failures.push('Dockerfile must remove stale public sitemap/robots files before serving the standalone image');
-}
-
-for (const required of [
-  'data-testid="praxis-one-page-app-shell"',
-  "pathname === '/app'",
-]) {
-  if (!appShell.includes(required)) failures.push(`app shell missing one-page cockpit marker: ${required}`);
-}
-
-for (const forbidden of [
-  'data-testid="public-contextcapsule-explainer"',
-  "surfaceMode === 'authenticated' && agentDrawerOpen",
-  'Public preview',
-  'Use your own sources',
-  'Policy sources, documents, grounded search',
-  'Recommended agent',
-  'Canonical user types',
-  'Suggested tools',
-  'Produce',
-  'window.prompt',
-]) {
-  if (workbench.includes(forbidden)) failures.push(`shared cockpit keeps signed-out-only marker: ${forbidden}`);
 }
 
 if (failures.length) {

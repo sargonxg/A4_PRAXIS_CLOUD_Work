@@ -1,0 +1,152 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { collection, doc, limit as firestoreLimit, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { useAuth } from '@/lib/auth/auth-context';
+import { db } from '@/lib/firebase/config';
+import type { OrchestratorEvent } from '@/hooks/useOrchestratorEvents';
+
+export type AgentRunSnapshotSummary = {
+  runId: string;
+  status: string;
+  outputHref?: string | null;
+  policyAgentLabel?: string | null;
+  outputTargetLabel?: string | null;
+  selectedTools?: string[];
+  sourceReceiptIds?: string[];
+  sourceCount?: number;
+  approvalGateCount?: number;
+  sourcePosture?: string | null;
+  groundingPosture?: string | null;
+  degradedReason?: string | null;
+};
+
+export type AgentRunSnapshotState = {
+  run: AgentRunSnapshotSummary | null;
+  events: OrchestratorEvent[];
+  isConnected: boolean;
+  error: string | null;
+};
+
+export function useAgentRunSnapshots(
+  runId: string | null | undefined,
+  options: {
+    enabled?: boolean;
+    limit?: number;
+  } = {},
+): AgentRunSnapshotState {
+  const { user } = useAuth();
+  const uid = user?.id ?? null;
+  const enabled = options.enabled ?? true;
+  const eventLimit = Math.max(1, Math.min(50, Math.floor(options.limit ?? 20)));
+  const [run, setRun] = useState<AgentRunSnapshotSummary | null>(null);
+  const [events, setEvents] = useState<OrchestratorEvent[]>([]);
+  const [runConnected, setRunConnected] = useState(false);
+  const [eventsConnected, setEventsConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!enabled || !uid || !runId) return;
+    const runRef = doc(db, 'users', uid, 'runs', runId);
+    return onSnapshot(
+      runRef,
+      (snapshot) => {
+        setRunConnected(true);
+        setError(null);
+        setRun(snapshot.exists() ? snapshotToRunSummary(snapshot.data()) : null);
+      },
+      (err) => {
+        setRunConnected(false);
+        setError(err.message || 'AgentRun Firestore snapshot unavailable.');
+      },
+    );
+  }, [enabled, runId, uid]);
+
+  useEffect(() => {
+    if (!enabled || !uid || !runId) return;
+    const eventsQuery = query(
+      collection(db, 'users', uid, 'runs', runId, 'events'),
+      orderBy('createdAt', 'asc'),
+      firestoreLimit(eventLimit),
+    );
+    return onSnapshot(
+      eventsQuery,
+      (snapshot) => {
+        setEventsConnected(true);
+        setError(null);
+        setEvents(snapshot.docs.map((eventDoc) => snapshotToOrchestratorEvent(eventDoc.id, eventDoc.data())));
+      },
+      (err) => {
+        setEventsConnected(false);
+        setError(err.message || 'AgentRun Firestore event stream unavailable.');
+      },
+    );
+  }, [enabled, eventLimit, runId, uid]);
+
+  return useMemo(() => {
+    const activeRun = run?.runId === runId ? run : null;
+    const activeEvents = events.filter((event) => event.runId === runId);
+    return {
+      run: activeRun,
+      events: activeEvents,
+      isConnected: Boolean(activeRun || activeEvents.length) && (runConnected || eventsConnected),
+      error,
+    };
+  }, [error, events, eventsConnected, run, runConnected, runId]);
+}
+
+function snapshotToRunSummary(data: Record<string, unknown>): AgentRunSnapshotSummary | null {
+  const runId = stringValue(data.runId);
+  if (!runId) return null;
+  const plan = recordValue(data.plan);
+  const outputs = recordValue(data.outputs);
+  return {
+    runId,
+    status: stringValue(data.status) ?? 'queued',
+    outputHref: stringValue(outputs.href),
+    policyAgentLabel: stringValue(plan.policyAgentLabel),
+    outputTargetLabel: stringValue(plan.outputTargetLabel),
+    selectedTools: stringArray(plan.selectedTools),
+    sourceReceiptIds: stringArray(data.sourceReceiptIds),
+    sourceCount: stringArray(data.sourceReceiptIds).length,
+    approvalGateCount: stringArray(plan.approvalRequiredToolIds).length,
+    sourcePosture: stringValue(data.sourcePosture),
+    groundingPosture: stringValue(data.groundingPosture),
+    degradedReason: stringValue(data.degradedReason),
+  };
+}
+
+function snapshotToOrchestratorEvent(id: string, data: Record<string, unknown>): OrchestratorEvent {
+  const rawType = stringValue(data.eventType) ?? 'progress';
+  const createdAt = stringValue(data.createdAt) ?? new Date().toISOString();
+  return {
+    id: stringValue(data.id) ?? id,
+    runId: stringValue(data.runId),
+    type: eventKindFrom(rawType, data),
+    rawType,
+    message: stringValue(data.message),
+    data,
+    createdAt,
+  };
+}
+
+function eventKindFrom(rawType: string, data: Record<string, unknown>): OrchestratorEvent['type'] {
+  const toStatus = stringValue(data.toStatus);
+  if (toStatus === 'succeeded') return 'complete';
+  if (toStatus === 'failed' || toStatus === 'cancelled' || toStatus === 'expired') return 'fail';
+  if (rawType === 'status_transition' && toStatus === 'running') return 'start';
+  if (rawType.includes('approval') || rawType.includes('reasoning') || rawType.includes('tool') || rawType.includes('output')) return 'step';
+  return 'progress';
+}
+
+function recordValue(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}

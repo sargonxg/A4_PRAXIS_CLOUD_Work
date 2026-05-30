@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import type { AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
 import type { AskOrchestrationStatusEvent } from '@/lib/ai/ask-orchestrator';
+import { useAgentRunSnapshots } from '@/hooks/useAgentRunSnapshots';
 import { agentRailStageFromEvent, useOrchestratorEvents } from '@/hooks/useOrchestratorEvents';
 import {
   agentRunLifecycleSteps,
@@ -84,6 +85,10 @@ export function AskQueuedAgentRunPanel({
   const [expanded, setExpanded] = useState(false);
   const actionStatus = run?.status ?? queuedRun?.fallbackPosture ?? queuedRun?.status ?? null;
   const streamEnabled = Boolean(runId) && shouldStreamAgentRunStatus(actionStatus, { expanded, newestActive });
+  const snapshotState = useAgentRunSnapshots(runId, {
+    enabled: Boolean(runId),
+    limit: 20,
+  });
   const eventState = useOrchestratorEvents(runId ? `/api/agents/runs/${encodeURIComponent(runId)}/stream` : null, {
     enabled: streamEnabled,
     limit: 20,
@@ -145,20 +150,23 @@ export function AskQueuedAgentRunPanel({
 
   if (!queuedRun || (!runId && queuedRun.status !== 'failed')) return null;
 
-  const status = actionStatus ?? queuedRun.status;
-  const recentEvents = expanded ? eventState.events.slice(-4).reverse() : [];
+  const snapshotRun = snapshotState.run;
+  const visibleRun = snapshotRun ?? run;
+  const status = visibleRun?.status ?? actionStatus ?? queuedRun.status;
+  const visibleEvents = snapshotState.events.length ? snapshotState.events : eventState.events;
+  const recentEvents = expanded ? visibleEvents.slice(-4).reverse() : [];
   const canCancel = Boolean(runId) && canCancelAgentRunStatus(status);
   const canRetry = Boolean(runId) && canRetryAgentRunStatus(status);
   const lifecycle = agentRunLifecycleSteps(status);
-  const selectedTools = run?.selectedTools ?? queuedRun.selectedToolIds ?? [];
-  const sourceCount = run?.sourceCount ?? queuedRun.sourceCount ?? 0;
-  const approvalGateCount = run?.approvalGateCount ?? queuedRun.approvalGateCount ?? 0;
-  const outputTarget = run?.outputTargetLabel ?? queuedRun.outputTarget ?? null;
-  const agentLabel = run?.policyAgentLabel ?? queuedRun.agentLabel ?? 'Policy agent';
-  const sourcePosture = run?.sourcePosture ?? queuedRun.sourcePosture ?? 'No source receipts saved';
-  const groundingPosture = run?.groundingPosture ?? queuedRun.groundingPosture ?? sourcePosture;
-  const degradedReason = run?.degradedReason ?? queuedRun.degradedReason ?? null;
-  const sourceReceiptCount = run?.sourceReceiptIds?.length ?? sourceCount;
+  const selectedTools = visibleRun?.selectedTools ?? queuedRun.selectedToolIds ?? [];
+  const sourceCount = visibleRun?.sourceCount ?? queuedRun.sourceCount ?? 0;
+  const approvalGateCount = visibleRun?.approvalGateCount ?? queuedRun.approvalGateCount ?? 0;
+  const outputTarget = visibleRun?.outputTargetLabel ?? queuedRun.outputTarget ?? null;
+  const agentLabel = visibleRun?.policyAgentLabel ?? queuedRun.agentLabel ?? 'Policy agent';
+  const sourcePosture = visibleRun?.sourcePosture ?? queuedRun.sourcePosture ?? 'No source receipts saved';
+  const groundingPosture = visibleRun?.groundingPosture ?? queuedRun.groundingPosture ?? sourcePosture;
+  const degradedReason = visibleRun?.degradedReason ?? queuedRun.degradedReason ?? null;
+  const sourceReceiptCount = visibleRun?.sourceReceiptIds?.length ?? sourceCount;
   const searchTools = selectedTools.filter((toolId) => toolId === 'grounded-search' || toolId === 'deep-search-agent');
   const stateLabel = degradedReason
     ? 'Search degraded'
@@ -216,7 +224,8 @@ export function AskQueuedAgentRunPanel({
           </li>
         ))}
       </ol>
-      {error ? <p className="mt-2 rounded-md border border-gold-200 bg-white px-2 py-1 text-xs text-gold-900">{error}</p> : null}
+      {snapshotState.isConnected ? <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-700">Live Firestore timeline</p> : null}
+      {error ?? snapshotState.error ? <p className="mt-2 rounded-md border border-gold-200 bg-white px-2 py-1 text-xs text-gold-900">{error ?? snapshotState.error}</p> : null}
       {recentEvents.length ? (
         <div className="mt-2 space-y-1">
           {recentEvents.map((event) => (

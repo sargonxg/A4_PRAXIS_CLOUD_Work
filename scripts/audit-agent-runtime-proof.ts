@@ -58,7 +58,24 @@ requireMarkers('src/lib/agent-runtime/postgres.ts', [
   'CREATE TABLE IF NOT EXISTS agent_run_events',
   'CREATE TABLE IF NOT EXISTS agent_tool_calls',
   'CREATE TABLE IF NOT EXISTS agent_approvals',
+  'mirrorAgentRunToFirestore',
   'publishAgentRunEvent',
+]);
+requireMarkers('src/lib/agent-runtime/firestore-mirror.ts', [
+  'buildAgentRunFirestoreSnapshot',
+  'mirrorAgentRunToFirestore',
+  'mirrorAgentRunEventToFirestore',
+  'agentRunFirestorePath',
+]);
+requireMarkers('src/hooks/useAgentRunSnapshots.ts', [
+  'onSnapshot',
+  "collection(db, 'users', uid, 'runs', runId, 'events')",
+  "doc(db, 'users', uid, 'runs', runId)",
+]);
+requireMarkers('firestore.rules', [
+  'match /runs/{runId}',
+  'match /events/{eventId}',
+  'allow write: if false;',
 ]);
 requireMarkers('src/lib/agent-runtime/worker.ts', [
   'executeCapsuleFactoryAgentRun',
@@ -125,7 +142,7 @@ if (!genkitLive) warnings.push('Genkit provider resolves, but live model calls a
 if (!adkConfigured) warnings.push('ADK Agent Engine is unconfigured for queued agent execution in this shell.');
 
 console.log('Agent runtime proof audit');
-line('static contract', failures.length ? 'fail' : 'ok', failures.length ? `${failures.length} missing marker(s)` : 'create, dispatch, execute, stream, ledger, worker, mirror, ADK, and Genkit markers found');
+line('static contract', failures.length ? 'fail' : 'ok', failures.length ? `${failures.length} missing marker(s)` : 'create, dispatch, execute, Firestore onSnapshot mirror, stream fallback, ledger, worker, mirror, ADK, and Genkit markers found');
 line('ledger', ledgerConfigured ? 'ok' : 'warn', ledgerConfigured ? 'Cloud SQL/Postgres env present' : 'runtime proof can run with doubles only');
 line('Cloud Tasks queue', 'ok', getAgentRunTasksQueuePath());
 line('worker target', workerBaseConfigured ? 'ok' : 'warn', workerBaseConfigured ? 'worker base URL present' : 'dispatch URL cannot be built for live Cloud Tasks');
