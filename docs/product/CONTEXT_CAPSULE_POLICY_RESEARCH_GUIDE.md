@@ -128,6 +128,25 @@ A mature capsule should keep these cores together:
 The app should never force every core to be complete before work starts. It
 should show completeness, gaps, and suggested next actions.
 
+## Capsule Workbench
+
+Clicking a capsule should open one coherent workbench rather than separate
+debug-like panels. The workbench should show:
+
+- overview, readiness, domain, jurisdiction, output goal, and next action;
+- the 12-core anatomy with present and missing cores;
+- evidence posture, unsupported claims, date checks, and source gaps;
+- a readable graph/ontology lens that distinguishes canonical items from
+  proposed or missing items;
+- tacit knowledge from capsule memories, including assumptions, decisions,
+  commitments, preferences, caveats, and open questions;
+- agent workflow receipts, recent runs, suggested next actions, outputs, and
+  review queue items.
+
+The graph/ontology lens is explanatory in v1. AI-discovered graph, ontology,
+source-gap, or advisory-memory items must remain review cards or evidence gaps
+until a human accepts them.
+
 ## Generic Users And Path-Bound Users
 
 PRAXIS must support two modes:

@@ -1,5 +1,21 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — Capsule Workbench Visualization
+
+Current capsule UX checkpoint:
+
+- Clicking a capsule now surfaces a structured Capsule Workbench instead of a
+  scattered inspector-only readout.
+- The workbench shows overview, 12-core anatomy, evidence posture,
+  graph/ontology structure, tacit knowledge, agent workflow, outputs, and
+  review queue state in one reusable panel.
+- The readable graph distinguishes canonical nodes from proposed or missing
+  items; graph, ontology, source-gap, and advisory-memory changes remain
+  review-gated.
+- Saved capsule memories load from the existing capsule memories API and appear
+  in the tacit-knowledge section so reviewer caveats, assumptions, decisions,
+  commitments, and open questions can travel with the policy file.
+
 ## 2026-05-28 — Context Capsule Overhaul
 
 Current capsule checkpoint:

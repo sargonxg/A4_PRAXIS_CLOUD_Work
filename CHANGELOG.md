@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- feat(capsules): add the clicked-capsule workbench.
+  Build 2026.05.30.01 turns capsule inspection into a structured Capsule
+  Workbench with overview, anatomy, evidence, graph/ontology, tacit knowledge,
+  agent workflow, outputs, and review queue panels. Saved capsule memories now
+  flow into the tacit-knowledge section, while proposed graph, ontology,
+  source-gap, and advisory-memory items remain review-gated.
+
 - feat(capsules): unify ContextCapsule v3, review gates, Capsule+, Cognee, and usage readiness.
   Build 2026.05.28.01 normalizes capsules to the v3 in-memory contract, adds a
   dry-run v3 migration script, validates review-card patches, applies cards
