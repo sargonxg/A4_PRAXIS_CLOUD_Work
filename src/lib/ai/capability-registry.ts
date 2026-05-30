@@ -175,6 +175,7 @@ export const LEGACY_AI_ROUTE_CAPABILITY_MAP: Record<string, CapabilityId> = {
   dialectica: 'graph-proposal',
   'discover-sources': 'source-search',
   'dossier-generate': 'dossier-generation',
+  'drafting-action': 'drafting-studio',
   'economic-impact': 'risk-analysis',
   'electoral-risk': 'risk-analysis',
   'escalation-scan': 'risk-analysis',
