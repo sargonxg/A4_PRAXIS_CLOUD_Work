@@ -72,9 +72,20 @@ const checks: Check[] = [
     ],
   },
   {
+    id: 'ask-ui-panel-mount',
+    label: 'Ask stream mounts queued-run UI proof panel',
+    path: 'src/components/ask/AskStreamPanel.tsx',
+    markers: [
+      'AskQueuedAgentRunPanel',
+      'queuedRun',
+      'AskWorkingTimeline',
+      'OrchestrationReceiptPanel',
+    ],
+  },
+  {
     id: 'ask-ui-proof',
     label: 'Ask queued-run UI proof fields',
-    path: 'src/components/ask/AskStreamPanel.tsx',
+    path: 'src/components/ask/AskQueuedAgentRunPanel.tsx',
     markers: [
       'Search queued',
       'Search degraded',

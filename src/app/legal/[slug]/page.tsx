@@ -35,12 +35,12 @@ export default async function LegalPage({ params }: LegalPageProps) {
         <div className="space-y-5">
           <Link
             href="/"
-            className="praxis-link font-mono text-xs uppercase tracking-[0.16em] text-[color:var(--color-gold-700)]"
+            className="praxis-link font-mono text-xs uppercase tracking-[0.16em] text-[color:var(--color-diplomatic-blue)]"
           >
             PRAXIS by TACITUS
           </Link>
           <div className="space-y-4">
-            <p className="font-mono text-xs uppercase tracking-[0.16em] text-[color:var(--color-ink)]/55">
+            <p className="font-mono text-xs uppercase tracking-[0.16em] text-[color:var(--color-ink)]/65">
               Updated {page.updatedAt}
             </p>
             <h1 className="font-serif text-4xl font-semibold tracking-normal text-[color:var(--color-diplomatic-blue)] sm:text-5xl">

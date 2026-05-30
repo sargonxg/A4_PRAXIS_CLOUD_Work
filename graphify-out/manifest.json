@@ -8,7 +8,7 @@
     "hash": "8b4b8776da15df30cee6721093b01ab1"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\next-env.d.ts": {
-    "mtime": 1780090519.3223467,
+    "mtime": 1780121752.9007165,
     "hash": "b698cdd97fe8e3bd16dcd74899ad7cef"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\next.config.ts": {
@@ -1068,8 +1068,8 @@
     "hash": "5a2b551978870b912e872498f116d2a2"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-agentic-search-proof.ts": {
-    "mtime": 1780075184.2172332,
-    "hash": "ec711b4419d373643710f7cb775dae53"
+    "mtime": 1780121335.8132074,
+    "hash": "5e05e35f2f364678e31550469df908e0"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\scripts\\audit-agentic-search.ts": {
     "mtime": 1780075184.2185826,
@@ -2396,8 +2396,8 @@
     "hash": "750a707f825f36dc094d6aaa7676208d"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\app\\legal\\[slug]\\page.tsx": {
-    "mtime": 1780075184.6634092,
-    "hash": "60569425e5d854399a0fba5dc163b940"
+    "mtime": 1780121023.2254164,
+    "hash": "8f718df1cabed37e6cf5caeb62b8f24f"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\src\\app\\onboarding\\chip-stack.tsx": {
     "mtime": 1780075184.6649163,
@@ -4659,6 +4659,10 @@
     "mtime": 1780075185.1160629,
     "hash": "af4ddbc31f702073181f1f591f23c876"
   },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\e2e\\legal-pages-readability.spec.ts": {
+    "mtime": 1780121075.900333,
+    "hash": "08cdf632793754ecfbd2b2cf8fddd95d"
+  },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\tests\\e2e\\mobile-landing.spec.ts": {
     "mtime": 1780075185.1160629,
     "hash": "bf3506436f209a25b83966f6b32ff9d2"
@@ -6068,7 +6072,7 @@
     "hash": "04b260734365a973b336e7c7e766ac0c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-19-capsule-depth-audit.md": {
-    "mtime": 1780119789.8360438,
+    "mtime": 1780121932.1689787,
     "hash": "94b1d9b643579d75e18e882ab5b074e5"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-19-capsule-discussion-filter-diagnostic.md": {
@@ -6192,7 +6196,7 @@
     "hash": "ebcf57927485517c442e6f87063c30aa"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-25-capsule-consolidation-audit.md": {
-    "mtime": 1780119790.6920023,
+    "mtime": 1780121933.048147,
     "hash": "b6517aaf1c71c51938673bb6eff980eb"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-25-DEEP_PRESHIP_CHECKLIST.md": {
@@ -6212,16 +6216,24 @@
     "hash": "a2ec40efb6a98479979c18b098c8adac"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-30-DEEP_PRESHIP_CHECKLIST.md": {
-    "mtime": 1780119805.759797,
+    "mtime": 1780121949.0255837,
     "hash": "c21e0c438e4495492c1678a6d2bb7384"
   },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-30-full-ux-agentic-capsule-legal-diagnostic.md": {
+    "mtime": 1780121593.9504085,
+    "hash": "6834feb512cd068522531118f891c21e"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-30-launch-readiness.md": {
+    "mtime": 1780121732.027399,
+    "hash": "02217ecb94ccf01c31d4ba17d477902d"
+  },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-30-red-flags-and-improvement-plan.md": {
-    "mtime": 1780119511.8768215,
-    "hash": "79e872c3110aeb67495cbd686b817a87"
+    "mtime": 1780119915.5877953,
+    "hash": "ea686ff7e3fe32887b7d8df47b9b0b27"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\README.md": {
-    "mtime": 1780119337.689987,
-    "hash": "501317116727acfb064e78abd42581c7"
+    "mtime": 1780121600.3968387,
+    "hash": "c156b451fa64cda1bfe72cd74a3aae7a"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\tool-contracts-2026-05-16.md": {
     "mtime": 1780075183.8370364,
@@ -6268,7 +6280,7 @@
     "hash": "d3087b071157b0620be6bae79e756862"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\tool-contracts-2026-05-30.md": {
-    "mtime": 1780119802.1152806,
+    "mtime": 1780121945.1422653,
     "hash": "1a0bca9c8e7abd35864428657ff895d7"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\agentic-research-evals\\2026-05-20-praxis-vs-generic-llm.md": {
@@ -6995,6 +7007,38 @@
     "mtime": 1780075184.9667776,
     "hash": "f64f91f6cdf294e06988a908bd60876a"
   },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-1da35--is-structured-and-readable\\error-context.md": {
+    "mtime": 1780121385.1552722,
+    "hash": "01b153c840dc38755461b957059b975b"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-8e3cb--is-structured-and-readable\\error-context.md": {
+    "mtime": 1780121382.1341434,
+    "hash": "601371029ae5ce556c89d3ac24004999"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-9b80e--is-structured-and-readable\\error-context.md": {
+    "mtime": 1780121383.7177248,
+    "hash": "1c7e9b2e3c251d9d5c8758a4918d0b2a"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-a8dff--is-structured-and-readable\\error-context.md": {
+    "mtime": 1780121379.3123977,
+    "hash": "a5f95f84dd091cb5ba1c6924b516b005"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-b8a63--is-structured-and-readable\\error-context.md": {
+    "mtime": 1780121380.718784,
+    "hash": "c83fd17a96a52598d7ab007aa18b0d13"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-d05b0--is-structured-and-readable\\error-context.md": {
+    "mtime": 1780121386.6069138,
+    "hash": "6376ba1bd9619d5136236ffe2c5f65fe"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-d3f6c--is-structured-and-readable\\error-context.md": {
+    "mtime": 1780121375.9745145,
+    "hash": "f372952ae88276fdf41aae360f38e8f3"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-f0137--is-structured-and-readable\\error-context.md": {
+    "mtime": 1780121377.8376057,
+    "hash": "298dd440684adbc5ad55693d7903117d"
+  },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\artifacts\\screenshots\\praxis-homepage-live-2026-05-18.png": {
     "mtime": 1780075183.5005682,
     "hash": "6eaa05178a8ee45f39092ecd4b19457d"
@@ -7002,5 +7046,37 @@
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\public\\favicon.svg": {
     "mtime": 1780075184.2054973,
     "hash": "49defc539ec0726ed135cfcf65e3211e"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-1da35--is-structured-and-readable\\test-failed-1.png": {
+    "mtime": 1780121385.1343112,
+    "hash": "3965581ca7279ef026342c429d88efc4"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-8e3cb--is-structured-and-readable\\test-failed-1.png": {
+    "mtime": 1780121382.108117,
+    "hash": "3a78c8cd2f7f102c1c0b7b382e61b5d2"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-9b80e--is-structured-and-readable\\test-failed-1.png": {
+    "mtime": 1780121383.6979396,
+    "hash": "9279e3d1a4a6ef4611afc3fb16e2e296"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-a8dff--is-structured-and-readable\\test-failed-1.png": {
+    "mtime": 1780121379.300255,
+    "hash": "31faa0d3d2ef8b945ccf628025d61f57"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-b8a63--is-structured-and-readable\\test-failed-1.png": {
+    "mtime": 1780121380.6981943,
+    "hash": "576a0cccda5746275a3bf49f3dca1fa6"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-d05b0--is-structured-and-readable\\test-failed-1.png": {
+    "mtime": 1780121386.5885189,
+    "hash": "893ba912dc7f303351fa92a806c7f66c"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-d3f6c--is-structured-and-readable\\test-failed-1.png": {
+    "mtime": 1780121375.9422238,
+    "hash": "9a6e52bd36b7b7cd8117d15cc8e2f989"
+  },
+  "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\test-results\\legal-pages-readability-le-f0137--is-structured-and-readable\\test-failed-1.png": {
+    "mtime": 1780121377.8189027,
+    "hash": "b0a719ad010a15ac3269df7234cab54f"
   }
 }

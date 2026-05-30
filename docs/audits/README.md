@@ -9,6 +9,11 @@ references.
 
 ## Current Audits
 
+- [`2026-05-30-full-ux-agentic-capsule-legal-diagnostic.md`](./2026-05-30-full-ux-agentic-capsule-legal-diagnostic.md)
+  - Current full UX, legal/privacy readability, capsule, boardroom, and
+    agentic-runtime diagnostic with fixes and remaining red flags.
+- [`2026-05-30-launch-readiness.md`](./2026-05-30-launch-readiness.md)
+  - Launch-readiness contract report; latest result is 46 pass, 1 warn, 0 fail.
 - [`2026-05-30-red-flags-and-improvement-plan.md`](./2026-05-30-red-flags-and-improvement-plan.md)
   - Current red flags, 10 important improvements, and docs cleanup decision.
 - [`2026-05-30-DEEP_PRESHIP_CHECKLIST.md`](./2026-05-30-DEEP_PRESHIP_CHECKLIST.md)
