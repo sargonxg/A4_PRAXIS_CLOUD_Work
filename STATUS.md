@@ -1,5 +1,20 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — EPIC 1.2 Capsule CRUD API And Storage
+
+Current root capsule store checkpoint:
+
+- Added root Firestore capsule lifecycle storage for `capsules/{id}` plus
+  immutable `versions/{hash}` publish snapshots, separate from legacy
+  user-scoped context capsules.
+- Added authenticated `/api/capsules` create/list, get/update-draft,
+  fork, and publish routes.
+- Extended Firestore rules so owners can write draft root capsules, public and
+  unlisted capsules are readable, org capsules check org claims, and version
+  documents remain client-immutable.
+- Verification so far: focused storage, route, and rules Vitest contracts plus
+  `npx tsc --noEmit`.
+
 ## 2026-05-30 — EPIC 1.1 Capsule V2 Schema And Resolver
 
 Current capsule marketplace checkpoint:

@@ -62,6 +62,24 @@ service cloud.firestore {
       ];
     }
 
+    function isRootCapsulePublic(capsuleData) {
+      return capsuleData.market.visibility in ['public', 'unlisted'];
+    }
+
+    function isRootCapsuleOwner(capsuleId) {
+      return request.auth != null
+             && resource.data.ownerUid == request.auth.uid;
+    }
+
+    function canReadRootCapsule(capsuleData) {
+      return request.auth != null
+             && (capsuleData.ownerUid == request.auth.uid
+                 || isRootCapsulePublic(capsuleData)
+                 || (capsuleData.market.visibility == 'org'
+                     && request.auth.token.orgId != null
+                     && request.auth.token.orgId == capsuleData.provenance.author.org));
+    }
+
     // User profiles: owner-only access with field-level protection
     match /users/{uid} {
       // Read: owner only
@@ -322,6 +340,36 @@ service cloud.firestore {
     match /domains_history/{historyId} {
       allow read: if request.auth != null;
       allow write: if false;
+    }
+
+    // Marketplace Context Capsules: root capsule records are the
+    // marketplace/capsule-builder store. Owner draft writes are allowed for
+    // clients, but published immutable versions are created only by server
+    // routes through Admin SDK and cannot be changed from the client.
+    match /capsules/{capsuleId} {
+      allow read: if canReadRootCapsule(resource.data);
+      allow create: if request.auth != null
+                    && request.resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.schemaVersion == 'capsule/v2'
+                    && request.resource.data.status == 'draft'
+                    && request.resource.data.immutable == false;
+      allow update: if isRootCapsuleOwner(capsuleId)
+                    && resource.data.status == 'draft'
+                    && resource.data.immutable == false
+                    && request.resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.schemaVersion == 'capsule/v2'
+                    && request.resource.data.status == 'draft'
+                    && request.resource.data.immutable == false;
+      allow delete: if false;
+
+      match /versions/{hash} {
+        allow read: if request.auth != null
+                    && canReadRootCapsule(
+                      get(/databases/$(database)/documents/capsules/$(capsuleId)).data
+                    );
+        allow create: if false;
+        allow update, delete: if false;
+      }
     }
 
     // ── Operational spine: tool_runs, background_jobs, system_events ──

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- feat(capsules): add root capsule CRUD storage and routes.
+  Build 2026.05.30.08 adds the root `capsules/{id}` Firestore store,
+  immutable `versions/{hash}` publish snapshots, authenticated create/list,
+  get/update-draft/fork/publish API routes, and owner/public/org read rules
+  while preserving legacy user-scoped context capsules.
+
 - feat(capsules): add ADR 0050 capsule/v2 schema and resolver.
   Build 2026.05.30.07 introduces the marketplace-ready ContextCapsule contract
   with lineage, imports, sourcing, retrieval, guardrails, eval, provenance, and
