@@ -1,5 +1,20 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — Expert Capsule Context V15
+
+Current capsule-content checkpoint:
+
+- The starter catalog is now `2026-05-30-capsule-consolidation-expert-grade-v15`
+  with 205 starters across situation, tool, output, and user capsules.
+- Every starter is normalized through an expert-use contract before it is used
+  by Ask, tools, graph capture, Cognee recall, or drafting surfaces.
+- Agent-facing capsule context now explicitly carries active-capsule identity,
+  sourceability posture, tacit assumptions, ontology hints, graph proposal
+  boundaries, output goal, and human review gates.
+- The new expert-grade unit gate requires every starter audit score to be 1.0
+  with no source, agent, device, or reviewable audit gaps before the catalog can
+  pass.
+
 ## 2026-05-30 — Personal Knowledge Board And Active File Polish
 
 Current boardroom/home checkpoint:

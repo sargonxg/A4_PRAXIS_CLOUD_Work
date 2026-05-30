@@ -19,6 +19,28 @@ prompt -> capsule -> sources/tools -> memo/brief/handover
 
 The ContextCapsule is the working policy object that makes this possible.
 
+## PRAXIS Augmented Generation Contract
+
+Capsules are PRAXIS' answer to generic LLM context loss. A mature capsule should
+make the model better because it carries a reviewed policy work file, not just a
+label or saved chat. Every starter capsule should therefore expose the same
+agent-facing contract:
+
+- active-capsule identity and output goal;
+- source receipts, freshness posture, and sourceability requirements;
+- tacit assumptions, red lines, approval politics, and practical heuristics;
+- ontology hints and embedded graph candidates for actors, institutions/rules,
+  claims, evidence, risks, options, decisions, and open questions;
+- clear separation between canonical Firestore capsule state and proposed
+  graph, Cognee, memory, or SQL projection changes;
+- human review gates before external publication, high-stakes reliance, or
+  canonical graph promotion.
+
+AI can use this structure to draft, compare, retrieve, and reason, but it should
+not silently promote inferred knowledge. Unsupported claims become evidence
+gaps, inferred graph items become review proposals, and advisory memory remains
+non-canonical until a reviewer accepts it.
+
 ## Visible MVP: Intent, Policy Context, And Traceability
 
 The first visible MVP keeps Ask PRAXIS as the cockpit. The user sees one

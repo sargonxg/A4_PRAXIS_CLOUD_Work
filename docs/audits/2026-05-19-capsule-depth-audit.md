@@ -1,7 +1,7 @@
 # Capsule Depth Audit
 
 - Date: 2026-05-19
-- Catalog version: 2026-05-25-capsule-consolidation-v14
+- Catalog version: 2026-05-30-capsule-consolidation-expert-grade-v15
 - Result: pass
 - Total starters: 205
 - Category counts: situation 85, tool 72, output 35, user 13

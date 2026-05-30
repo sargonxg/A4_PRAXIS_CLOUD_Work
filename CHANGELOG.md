@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- feat(capsules): harden expert-grade augmented-generation starter context.
+  Build 2026.05.30.03 raises the full starter catalog to v15, normalizes every
+  starter through an expert-use contract, and ensures capsule prompts carry
+  explicit active-capsule instructions, sourceability posture, tacit knowledge,
+  ontology/graph proposal boundaries, readable output goals, and human review
+  gates before agents use them for PRAXIS augmented generation.
+
 - feat(boardroom): simplify the personal knowledge board surface.
   Build 2026.05.30.02 reshapes `/app/boardroom` around the same simple
   homepage-style composer, adds optional context/details for the chaired

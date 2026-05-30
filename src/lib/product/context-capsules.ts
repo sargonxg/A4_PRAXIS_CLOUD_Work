@@ -902,7 +902,7 @@ export const CAPSULE_WOW_DEMO_STARTER_IDS = [
   'starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026',
 ] as const;
 
-export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-25-capsule-consolidation-v14';
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-30-capsule-consolidation-expert-grade-v15';
 export const CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS = 12_000;
 export const CAPSULE_STARTER_PROMPT_MAX_CHARS = 16_000;
 export const CAPSULE_CONTEXT_CAPTURE_FIXTURE_STARTER_IDS = [
@@ -2761,7 +2761,7 @@ function starter(
     baseAiUseGuidance,
     'Keep source limits, review-card gates, human approval limits, and no-affiliation boundaries visible before external use.',
   ].join(' ');
-  const richProfile = overrides?.richProfile ?? buildStarterRichProfile({
+  const rawRichProfile = overrides?.richProfile ?? buildStarterRichProfile({
     starterId,
     category,
     domain,
@@ -2772,6 +2772,7 @@ function starter(
     recommendedToolIds,
     outputProductIds,
   });
+  const richProfile = normalizeStarterRichProfileForExpertUse(rawRichProfile, label);
   const deviceProfile = overrides?.deviceProfile ?? (
     category === 'tool' && starterTags.includes('thinking-device')
       ? buildStarterDeviceProfile(label)
@@ -2867,8 +2868,12 @@ function starter(
     outputGoal: outputProductIds[0] ?? 'options-memo',
     approvalNotes: 'Require approval before external export, graph mutation, or connector writes.',
   };
+  const normalizedOutputGoal = baseAgentWorkflow.outputGoal.length > 20
+    ? baseAgentWorkflow.outputGoal
+    : `Produce ${baseAgentWorkflow.outputGoal} with ${label} context`;
   const agentWorkflow = {
     ...baseAgentWorkflow,
+    outputGoal: normalizedOutputGoal,
     approvalNotes: [
       baseAgentWorkflow.approvalNotes,
       'Human review-card approval is required before external export, canonical graph promotion, Cognee remember(), SQL projection writes, or high-stakes reliance.',
@@ -3120,6 +3125,48 @@ function buildStarterRichProfile(input: {
       `Review posture for ${label}: risks, caveats, and approval gates are visible before export.`,
     ],
     agentInstructions: `When ${label} is active, treat it as real work context created for a human expert. Start by restating its purpose in one line, separate approved, disputed, stale, advisory, and forbidden claims, inspect ${firstSource} and ${secondSource}, run ${primaryTool}${secondaryTool !== primaryTool ? ` or ${secondaryTool}` : ''} for gaps, keep Cognee recall, graph rows, and SQL projections advisory until review-card apply metadata exists, produce ${primaryOutput}, and stop for approval before external export or connector writes. Context detail: ${detail}`,
+  };
+}
+
+function normalizeStarterRichProfileForExpertUse(
+  profile: CapsuleStarterRichProfile,
+  label: string,
+): CapsuleStarterRichProfile {
+  const activeCapsuleContract = `Active capsule: ${label}. Use this as expert-grade PRAXIS augmented-generation context: apply its tacit assumptions, source receipts, ontology hints, graph proposals, output target, and human-review gates before producing any answer.`;
+  const graphReviewContract = `For ${label}, keep inferred actors, rules, claims, risks, options, decisions, Cognee recall, and embedded graph candidates advisory until a human review-card promotion is recorded.`;
+  const sourceabilityContract = `For ${label}, before confident generation, identify supported, weak, unsupported, stale, and date-sensitive claims from the provided sources instead of silently retrieving or inventing evidence.`;
+  const agentInstructions = profile.agentInstructions.includes(label)
+    ? profile.agentInstructions
+    : `${activeCapsuleContract} ${profile.agentInstructions}`;
+
+  return {
+    purpose: profile.purpose,
+    userJob: profile.userJob,
+    whenToUse: [...profile.whenToUse],
+    whenNotToUse: [...profile.whenNotToUse],
+    improves: uniqueStrings([
+      ...profile.improves,
+      `${label} improves augmented generation by converting tacit policy knowledge, ontology structure, and human review gates into reusable LLM context.`,
+    ]),
+    sourceIndications: [...profile.sourceIndications],
+    evidenceRequirements: uniqueStrings([
+      ...profile.evidenceRequirements,
+      sourceabilityContract,
+    ]),
+    riskCaveats: uniqueStrings([
+      ...profile.riskCaveats,
+      graphReviewContract,
+    ]),
+    decisionPrompts: [...profile.decisionPrompts],
+    nextIdeas: uniqueStrings([
+      ...profile.nextIdeas,
+      `Review ${label} for tacit assumptions, ontology gaps, graph proposal quality, and sourceability issues before sharing it with another policy team.`,
+    ]),
+    qualityRubric: uniqueStrings([
+      ...profile.qualityRubric,
+      `Augmented-generation value for ${label}: the capsule gives agents better context than generic chat while preserving sourceability and human approval boundaries.`,
+    ]),
+    agentInstructions,
   };
 }
 
