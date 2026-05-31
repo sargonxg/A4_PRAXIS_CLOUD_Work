@@ -8,7 +8,7 @@ describe('root capsule Firestore rules', () => {
 
     expect(rules).toContain('// Marketplace Context Capsules');
     expect(rules).toContain('match /capsules/{capsuleId}');
-    expect(rules).toContain('function isRootCapsuleOwner(capsuleId)');
+    expect(rules).toContain('function isRootCapsuleOwner()');
     expect(rules).toContain("request.resource.data.status == 'draft'");
     expect(rules).toContain("resource.data.status == 'draft'");
     expect(rules).toContain('match /versions/{hash}');
