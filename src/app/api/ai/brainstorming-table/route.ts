@@ -1,9 +1,11 @@
 /**
  * POST /api/ai/brainstorming-table
  *
- * Synchronous MVP of the Brainstorming Table — a multi-persona expert
- * deliberation rendered as a structured table (rows = persona turns) with
- * a synthesis chair consolidating recommendations.
+ * Synchronous Boardroom Lite path — a multi-persona expert deliberation
+ * rendered as a structured table (rows = persona turns) with a synthesis chair
+ * consolidating recommendations. The durable Boardroom AgentRun is the full
+ * chaired path; this endpoint keeps the old tool id while sharing the same
+ * persona registry and deliberation schema.
  *
  * MVP constraints:
  * - One synchronous calibrated call (single Pro-model generation).
@@ -13,8 +15,8 @@
  * - Optional `personas[]` request param lets the analyst pick which voices
  *   sit at the table; defaults to a balanced 6-persona panel.
  *
- * Cloud Tasks fan-out (per-turn delivery, retry policy) is the next step
- * once the schema is stable — see docs/AGENTIC_SYSTEM.md.
+ * Cloud Tasks fan-out, per-turn delivery, and run history live in
+ * /app/boardroom.
  */
 
 import { NextResponse } from 'next/server';

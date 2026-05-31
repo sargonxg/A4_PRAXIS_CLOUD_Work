@@ -147,6 +147,48 @@ describe('boardroom-discussion worker', () => {
     ]));
   });
 
+  it('streams boardroom turn and synthesis events from the live runner callbacks', async () => {
+    const phases: string[] = [];
+    const output = makeBoardroomOutput();
+
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued'),
+      updateStatus: async (input) => makeRun(input.toStatus),
+      buildEvidencePack: async () => makeEvidencePack(),
+      runBoardroomDiscussion: async (input) => {
+        await input.onTurn?.({
+          turn: output.transcript[0],
+          participantId: output.transcript[0].participantId,
+          participant: {
+            id: 'legal',
+            label: 'Legal Analyst',
+            lens: 'Authority',
+            role: 'reviewer',
+            rolePrompt: 'Checks mandate and defensibility.',
+            critic: false,
+          },
+          round: output.transcript[0].round,
+          rejectedEvidenceRefs: [],
+        });
+        await input.onSynthesis?.({ output });
+        return output;
+      },
+      appendToolCall: async (toolCall) => toolCall,
+      appendEvent: async (event) => {
+        phases.push(String(event.data.phase ?? event.eventType));
+        return event;
+      },
+      saveMemoDraft: async () => ({ memo: { id: 'memo-boardroom-1' } }),
+      saveOutputCapsule: async () => ({ id: 'output-boardroom-1' }),
+    });
+
+    expect(result.status).toBe('succeeded');
+    expect(phases.filter((phase) => phase === 'boardroom.turn.legal')).toHaveLength(1);
+    expect(phases.indexOf('boardroom.turn.legal')).toBeGreaterThan(-1);
+    expect(phases.indexOf('boardroom.synthesis_created')).toBeGreaterThan(phases.indexOf('boardroom.turn.legal'));
+    expect(phases.filter((phase) => phase.startsWith('boardroom.turn.'))).toEqual(['boardroom.turn.legal']);
+  });
+
   it('fails the AgentRun visibly when the live boardroom runner fails', async () => {
     const transitions: Array<{ status: AgentRun['status']; data: Record<string, unknown> | undefined }> = [];
 

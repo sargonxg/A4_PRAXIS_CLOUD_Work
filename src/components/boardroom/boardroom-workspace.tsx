@@ -20,22 +20,20 @@ import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
 import { ActivePolicyFileStrip } from '@/components/policy-work-file/ActivePolicyFileStrip';
 import { buildProofSummaryFromAgentRun, type UiProofSummary } from '@/lib/proof/proof-summary';
+import {
+  BOARDROOM_PARTICIPANT_IDS,
+  BOARDROOM_PARTICIPANTS,
+  type BoardroomParticipantId,
+} from '@/lib/boardroom/participants';
 import { cn } from '@/lib/utils/cn';
 
-type ParticipantId =
-  | 'synthesis-chair'
-  | 'mediator'
-  | 'humanitarian'
-  | 'legal'
-  | 'media'
-  | 'security'
-  | 'red-team'
-  | 'source-scout';
+type ParticipantId = BoardroomParticipantId;
 
 type BoardroomAgent = {
   id: ParticipantId;
   label: string;
   lens: string;
+  role: string;
   brief: string;
 };
 
@@ -43,6 +41,8 @@ type AgentRunSummary = {
   runId: string;
   status: 'queued' | 'running' | 'waiting_approval' | 'succeeded' | 'failed' | 'cancelled' | 'expired';
   objective: string;
+  createdAt?: string;
+  updatedAt?: string;
   capsuleId?: string;
   policyAgentLabel?: string | null;
   outputHref?: string | null;
@@ -70,6 +70,7 @@ type BoardroomTurn = {
   critique?: string;
   recommendation?: string;
   confidence: 'high' | 'medium' | 'low';
+  unsupportedEvidenceRefs?: string[];
 };
 
 type BoardroomUrlContext = {
@@ -77,66 +78,29 @@ type BoardroomUrlContext = {
   contextStackId: string | null;
 };
 
-const BOARDROOM_AGENTS: BoardroomAgent[] = [
-  {
-    id: 'synthesis-chair',
-    label: 'Electa',
-    lens: 'Chair synthesis',
-    brief: 'Frames the question, keeps the agents sequenced, and turns the discussion into a board pack.',
-  },
-  {
-    id: 'source-scout',
-    label: 'Deep research',
-    lens: 'Evidence discovery',
-    brief: 'Finds what the board can rely on and calls out missing receipts.',
-  },
-  {
-    id: 'mediator',
-    label: 'Mediator',
-    lens: 'Negotiation',
-    brief: 'Tests workable paths and agreement space.',
-  },
-  {
-    id: 'legal',
-    label: 'Legal',
-    lens: 'Authority',
-    brief: 'Checks mandate, permissions, and defensibility.',
-  },
-  {
-    id: 'security',
-    label: 'Security',
-    lens: 'Risk',
-    brief: 'Stress-tests operational exposure and sequencing.',
-  },
-  {
-    id: 'humanitarian',
-    label: 'Humanitarian',
-    lens: 'Civilians',
-    brief: 'Keeps field impact and harm reduction visible.',
-  },
-  {
-    id: 'media',
-    label: 'Comms',
-    lens: 'Narrative',
-    brief: 'Assesses public posture and message risk.',
-  },
-  {
-    id: 'red-team',
-    label: 'Red Team',
-    lens: 'Challenge',
-    brief: 'Finds weak assumptions before the final synthesis.',
-  },
-];
+const BOARDROOM_ROSTER: BoardroomAgent[] = BOARDROOM_PARTICIPANT_IDS.map((id) => {
+  const participant = BOARDROOM_PARTICIPANTS[id];
+  return {
+    id,
+    label: participant.label,
+    lens: participant.lens,
+    role: participant.role,
+    brief: participant.rolePrompt,
+  };
+});
 
-const BOARDROOM_AGENT_IDS = BOARDROOM_AGENTS.map((agent) => agent.id);
+const BOARDROOM_AGENT_IDS = BOARDROOM_ROSTER.map((agent) => agent.id);
 const MAX_ROUNDS = 2;
 
 export function BoardroomWorkspace() {
   const [question, setQuestion] = useState('');
   const [contextNotes, setContextNotes] = useState('');
+  const [followUp, setFollowUp] = useState('');
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [run, setRun] = useState<AgentRunSummary | null>(null);
   const [events, setEvents] = useState<RunEvent[]>([]);
+  const [history, setHistory] = useState<AgentRunSummary[]>([]);
+  const [historyStatus, setHistoryStatus] = useState('History pending');
   const [status, setStatus] = useState('Ready');
   const [submitting, setSubmitting] = useState(false);
   const [urlContext, setUrlContext] = useState<BoardroomUrlContext>({
@@ -203,10 +167,31 @@ export function BoardroomWorkspace() {
     }
   }, [activeRunId]);
 
-  async function startRun() {
-    const trimmed = question.trim();
+  const refreshHistory = useCallback(async () => {
+    try {
+      const response = await fetch('/api/boardroom/history?limit=8', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setHistoryStatus(payload?.detail ?? payload?.error ?? 'History unavailable');
+        return;
+      }
+      const runs = Array.isArray(payload?.runs)
+        ? payload.runs.filter((item: unknown): item is AgentRunSummary => isRecord(item) && typeof item.runId === 'string')
+        : [];
+      setHistory(runs);
+      setHistoryStatus(payload?.degraded ? 'History degraded' : runs.length ? 'History loaded' : 'No saved Boardroom runs yet');
+    } catch {
+      setHistoryStatus('History unavailable');
+    }
+  }, []);
+
+  async function startRun(options?: { questionOverride?: string; directContextOverride?: string; maxRounds?: number }) {
+    const trimmed = (options?.questionOverride ?? question).trim();
     if (!trimmed || submitting) return;
-    const directContext = contextNotes.trim();
+    const directContext = (options?.directContextOverride ?? contextNotes).trim();
     setSubmitting(true);
     setStatus('Queueing Boardroom AgentRun');
     try {
@@ -220,7 +205,7 @@ export function BoardroomWorkspace() {
           capsuleId: urlContext.capsuleId || undefined,
           contextStackId: urlContext.contextStackId || undefined,
           participantIds: BOARDROOM_AGENT_IDS,
-          maxRounds: MAX_ROUNDS,
+          maxRounds: options?.maxRounds ?? MAX_ROUNDS,
           outputTarget: 'board_executive_pack',
         }),
       });
@@ -232,11 +217,40 @@ export function BoardroomWorkspace() {
       setActiveRunId(payload.run.runId);
       setEvents([]);
       setStatus(payload.dispatch?.degraded ? 'Queued. Worker dispatch is degraded.' : 'Live boardroom dispatched.');
+      setFollowUp('');
+      void refreshHistory();
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Boardroom run failed.');
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function reopenHistoryRun(item: AgentRunSummary) {
+    setRun(item);
+    setActiveRunId(item.runId);
+    setEvents([]);
+    setStatus(`Reopened Boardroom run ${item.runId}`);
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set('runId', item.runId);
+    window.history.replaceState(null, '', nextUrl.toString());
+    void refreshRun(item.runId);
+  }
+
+  async function startFocusedRound() {
+    const steering = followUp.trim();
+    if (!steering || !run) return;
+    const synthesis = stringFromPath(latestBoardroomOutput, ['finalSynthesis']);
+    await startRun({
+      questionOverride: `Focused Boardroom follow-up: ${steering}`,
+      directContextOverride: [
+        `Follow-up to Boardroom run ${run.runId}.`,
+        `Original question: ${run.objective}`,
+        synthesis ? `Current chair synthesis: ${synthesis}` : null,
+        contextNotes.trim() ? `Analyst context: ${contextNotes.trim()}` : null,
+      ].filter(Boolean).join('\n\n'),
+      maxRounds: 1,
+    });
   }
 
   useEffect(() => {
@@ -259,6 +273,10 @@ export function BoardroomWorkspace() {
       void refreshRun(runId);
     }
   }, [refreshRun]);
+
+  useEffect(() => {
+    void refreshHistory();
+  }, [refreshHistory]);
 
   useEffect(() => {
     if (!activeRunId) return;
@@ -307,7 +325,7 @@ export function BoardroomWorkspace() {
               </span>
               <span className="flex w-full items-center justify-between rounded-md border border-black/10 bg-white/70 px-3 py-2 text-xs font-semibold text-slate-700">
                 <span>Lenses</span>
-                <span>{BOARDROOM_AGENTS.length}</span>
+                <span>{BOARDROOM_ROSTER.length}</span>
               </span>
               <span className="flex w-full items-center justify-between rounded-md border border-black/10 bg-white/70 px-3 py-2 text-xs font-semibold text-slate-700">
                 <span>Open questions</span>
@@ -423,7 +441,7 @@ export function BoardroomWorkspace() {
                   <h2 className="text-sm font-semibold text-slate-950">What the board uses</h2>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <Metric label="Lenses" value={BOARDROOM_AGENTS.length} />
+                  <Metric label="Lenses" value={BOARDROOM_ROSTER.length} />
                   <Metric label="Rounds" value={MAX_ROUNDS} />
                   <Metric label="Turns" value={transcriptTurns.length} />
                   <Metric label="Events" value={events.length} />
@@ -460,8 +478,8 @@ export function BoardroomWorkspace() {
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" data-testid="boardroom-deep-research-agents">
-              {BOARDROOM_AGENTS.map((agent) => {
-                const state = stateForParticipant(agent.id, transcriptTurns, run?.status);
+              {BOARDROOM_ROSTER.map((agent) => {
+                const state = stateForParticipant(agent.id, transcriptTurns, events, run?.status);
                 const active = activeTurn?.participantId === agent.id;
                 return (
                   <article
@@ -477,7 +495,7 @@ export function BoardroomWorkspace() {
                       <span className="rounded-md bg-white/80 px-2 py-1 text-[11px] font-semibold">{state}</span>
                     </div>
                     <p className="mt-3 truncate text-sm font-semibold">{agent.label}</p>
-                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">{agent.lens}</p>
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">{agent.role} · {agent.lens}</p>
                     <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-600">{agent.brief}</p>
                   </article>
                 );
@@ -540,6 +558,48 @@ export function BoardroomWorkspace() {
               </Link>
             ) : null}
 
+            <section className="mt-4 rounded-md border border-slate-200 bg-[color:var(--color-archive-paper-strong)] p-3" data-testid="boardroom-history-panel">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">History</p>
+                <button
+                  type="button"
+                  onClick={() => void refreshHistory()}
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  <RefreshCcw className="h-3.5 w-3.5" />
+                  Refresh
+                </button>
+              </div>
+              <p className="mt-2 text-[11px] leading-5 text-slate-500">{historyStatus}</p>
+              <div className="mt-2 grid max-h-56 gap-2 overflow-y-auto pr-1">
+                {history.map((item) => (
+                  <article key={item.runId} className={cn(
+                    'rounded-md border bg-white p-2 text-left',
+                    item.runId === activeRunId ? 'border-[color:var(--color-oxide)]' : 'border-slate-200',
+                  )}>
+                    <button
+                      type="button"
+                      onClick={() => reopenHistoryRun(item)}
+                      className="block w-full text-left text-xs font-semibold leading-5 text-slate-900 hover:text-[color:var(--color-oxide)]"
+                    >
+                      {item.objective}
+                    </button>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                      <span>{formatDate(item.createdAt)}</span>
+                      <span>{item.status}</span>
+                      <span className="truncate">capsule {item.capsuleId ?? 'default'}</span>
+                    </div>
+                    {item.outputHref ? (
+                      <Link href={item.outputHref} className="mt-1 inline-flex text-[11px] font-semibold text-[color:var(--color-civic-blue)] hover:underline">
+                        Saved board pack
+                      </Link>
+                    ) : null}
+                  </article>
+                ))}
+                {!history.length ? <p className="rounded-md border border-dashed border-slate-300 bg-white p-2 text-xs text-slate-500">No saved boardroom sessions loaded.</p> : null}
+              </div>
+            </section>
+
             <section className="mt-4">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Brief</p>
               <p className="mt-2 rounded-md border border-slate-200 bg-[color:var(--color-archive-paper-strong)] p-3 text-sm leading-6 text-slate-700">
@@ -557,6 +617,30 @@ export function BoardroomWorkspace() {
               <SynthesisList title="Risks" items={arrayFromPath(latestBoardroomOutput, ['risks'])} />
               <SynthesisList title="Open Questions" items={arrayFromPath(latestBoardroomOutput, ['openQuestions'])} />
               <SynthesisList title="Next Actions" items={nextActionsFromOutput(latestBoardroomOutput)} />
+            </section>
+
+            <section className="mt-4 rounded-md border border-slate-200 bg-[color:var(--color-archive-paper-strong)] p-3">
+              <label className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500" htmlFor="boardroom-follow-up">
+                Steering
+              </label>
+              <textarea
+                id="boardroom-follow-up"
+                data-testid="boardroom-follow-up"
+                value={followUp}
+                onChange={(event) => setFollowUp(event.target.value)}
+                rows={3}
+                className="mt-2 w-full resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-800 outline-none focus:border-[color:var(--color-oxide)]"
+                placeholder="Push one lens harder, ask for a focused extra round, or test a new assumption."
+              />
+              <button
+                type="button"
+                onClick={() => void startFocusedRound()}
+                disabled={!run || !followUp.trim() || submitting}
+                className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[color:var(--color-deep-ink)] px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Gavel className="h-3.5 w-3.5" />}
+                Add focused round
+              </button>
             </section>
 
             <section className="mt-4">
@@ -616,16 +700,20 @@ function normalizeTurn(value: unknown): BoardroomTurn[] {
     state: typeof value.state === 'string' ? value.state : 'speaking',
     claim,
     evidenceRefs: Array.isArray(value.evidenceRefs) ? value.evidenceRefs.filter((item): item is string => typeof item === 'string') : [],
+    unsupportedEvidenceRefs: Array.isArray(value.unsupportedEvidenceRefs) ? value.unsupportedEvidenceRefs.filter((item): item is string => typeof item === 'string') : undefined,
     critique: typeof value.critique === 'string' ? value.critique : undefined,
     recommendation: typeof value.recommendation === 'string' ? value.recommendation : undefined,
     confidence: value.confidence === 'high' || value.confidence === 'medium' || value.confidence === 'low' ? value.confidence : 'medium',
   }];
 }
 
-function stateForParticipant(id: ParticipantId, turns: BoardroomTurn[], status?: AgentRunSummary['status']) {
+function stateForParticipant(id: ParticipantId, turns: BoardroomTurn[], events: RunEvent[], status?: AgentRunSummary['status']) {
   const lastTurn = [...turns].reverse().find((turn) => turn.participantId === id);
-  if (status === 'succeeded' && id === 'synthesis-chair') return 'synthesized';
-  if (lastTurn) return lastTurn.state === 'challenged' ? 'challenged' : 'speaking';
+  const hasSynthesis = events.some((event) => event.data?.phase === 'boardroom.synthesis_created');
+  if ((status === 'succeeded' || hasSynthesis) && id === 'synthesis-chair') return 'synthesized';
+  if (lastTurn && turns.at(-1)?.participantId === id) return lastTurn.state === 'challenged' || lastTurn.state === 'unsupported' ? lastTurn.state : 'speaking';
+  if (lastTurn) return lastTurn.state === 'unsupported' ? 'unsupported' : 'spoke';
+  if ((status === 'running' || status === 'queued') && id === 'synthesis-chair') return 'chairing';
   if (status === 'running' || status === 'queued') return 'thinking';
   return 'waiting';
 }
@@ -636,8 +724,14 @@ function participantStateClass(state: string): string {
       return 'border-emerald-300 text-emerald-800';
     case 'challenged':
       return 'border-rose-300 text-rose-800';
+    case 'unsupported':
+      return 'border-rose-400 bg-rose-50 text-rose-900';
     case 'thinking':
       return 'border-amber-300 text-amber-800';
+    case 'chairing':
+      return 'border-[color:var(--color-civic-blue)] text-[color:var(--color-civic-blue)]';
+    case 'spoke':
+      return 'border-emerald-200 text-emerald-700';
     case 'synthesized':
       return 'border-[color:var(--color-oxide)] text-[color:var(--color-oxide)]';
     default:
@@ -725,15 +819,22 @@ function nextActionsFromOutput(value: unknown): string[] {
 }
 
 function participantLabel(id: ParticipantId): string {
-  return BOARDROOM_AGENTS.find((agent) => agent.id === id)?.label ?? id;
+  return BOARDROOM_PARTICIPANTS[id]?.label ?? id;
 }
 
 function isParticipantId(value: string): value is ParticipantId {
-  return BOARDROOM_AGENTS.some((agent) => agent.id === value);
+  return (BOARDROOM_PARTICIPANT_IDS as readonly string[]).includes(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function formatDate(value: string | undefined): string {
+  if (!value) return 'date pending';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
 }
 
 function BoardroomProofSummaryPanel({ run, summary }: { run: AgentRunSummary; summary: UiProofSummary }) {

@@ -141,8 +141,8 @@ test.describe('Boardroom live workspace', () => {
 
     await page.goto(`${BASE}/app/boardroom`);
     await expect(page.getByTestId('boardroom-home-surface')).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByTestId('boardroom-deep-research-agents')).toContainText(/Electa/i);
-    await expect(page.getByTestId('boardroom-deep-research-agents')).toContainText(/Deep research/i);
+    await expect(page.getByTestId('boardroom-deep-research-agents')).toContainText(/Synthesis Chair/i);
+    await expect(page.getByTestId('boardroom-deep-research-agents')).toContainText(/Source Scout/i);
     await page.getByTestId('boardroom-main-composer').fill('Decide how to sequence corridor guarantees.');
     await page.getByRole('button', { name: /Start boardroom/i }).click();
 

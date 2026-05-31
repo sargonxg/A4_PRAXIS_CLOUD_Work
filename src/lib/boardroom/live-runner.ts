@@ -10,15 +10,30 @@ import {
   BoardroomParticipantIdSchema,
   resolveBoardroomSpecFromMetadata,
   type BoardroomOutput,
+  type BoardroomParticipant,
   type BoardroomParticipantId,
 } from '@/lib/boardroom/schema';
 
 export const BOARDROOM_MODEL_POLICY_ID = 'praxis_frontier_deep_model_policy';
 
+export type LiveBoardroomTurnEvent = {
+  turn: BoardroomOutput['transcript'][number];
+  participantId: BoardroomParticipantId;
+  participant: BoardroomParticipant;
+  round: number;
+  rejectedEvidenceRefs: string[];
+};
+
+export type LiveBoardroomSynthesisEvent = {
+  output: BoardroomOutput;
+};
+
 export type LiveBoardroomRunnerInput = {
   run: AgentRun;
   payload: ExecuteAgentRunPayload;
   evidencePack: CapsuleEvidencePack;
+  onTurn?: (event: LiveBoardroomTurnEvent) => Promise<void> | void;
+  onSynthesis?: (event: LiveBoardroomSynthesisEvent) => Promise<void> | void;
 };
 
 const BoardroomTurnModelSchema = z.object({
@@ -85,16 +100,29 @@ export async function runLiveBoardroomDiscussion(input: LiveBoardroomRunnerInput
         }),
       });
       const parsed = BoardroomTurnModelSchema.parse(output);
-      transcript.push({
+      const evidenceCheck = normalizeTurnEvidenceRefs(parsed.evidenceRefs, evidenceRefs);
+      const state = evidenceCheck.evidenceRefs.length
+        ? participant.critic ? 'challenged' : 'speaking'
+        : 'unsupported';
+      const turn: BoardroomOutput['transcript'][number] = {
         turnId: `${input.run.id}:r${round}:${participant.id}`,
         round,
         participantId: participant.id,
-        state: participant.critic ? 'challenged' : 'speaking',
+        state,
         claim: parsed.claim,
-        evidenceRefs: normalizeTurnEvidenceRefs(parsed.evidenceRefs, evidenceRefs),
+        evidenceRefs: evidenceCheck.evidenceRefs,
+        ...(evidenceCheck.rejectedEvidenceRefs.length ? { unsupportedEvidenceRefs: evidenceCheck.rejectedEvidenceRefs } : {}),
         critique: parsed.critique,
         recommendation: parsed.recommendation,
-        confidence: parsed.confidence,
+        confidence: evidenceCheck.evidenceRefs.length ? parsed.confidence : 'low',
+      };
+      transcript.push(turn);
+      await input.onTurn?.({
+        turn,
+        participantId: participant.id,
+        participant,
+        round,
+        rejectedEvidenceRefs: evidenceCheck.rejectedEvidenceRefs,
       });
     }
   }
@@ -129,7 +157,7 @@ export async function runLiveBoardroomDiscussion(input: LiveBoardroomRunnerInput
   const unsupportedClaimCount = transcript.filter((turn) => turn.evidenceRefs.length === 0).length
     + (input.evidencePack.openGaps.length ? 1 : 0);
 
-  return BoardroomOutputSchema.parse({
+  const boardroomOutput = BoardroomOutputSchema.parse({
     meetingBrief: `Boardroom brief for ${input.evidencePack.activeCapsule.label}: ${spec.question}`,
     agenda: [
       'Resolve active ContextCapsule and evidence pack',
@@ -141,6 +169,7 @@ export async function runLiveBoardroomDiscussion(input: LiveBoardroomRunnerInput
       participantId: participant.id,
       label: participant.label,
       lens: participant.lens,
+      role: participant.role,
     })),
     transcript,
     topicClusters: synthesis.topicClusters.length
@@ -160,6 +189,8 @@ export async function runLiveBoardroomDiscussion(input: LiveBoardroomRunnerInput
     nextActions: synthesis.nextActions,
     finalSynthesis: synthesis.finalSynthesis,
   });
+  await input.onSynthesis?.({ output: boardroomOutput });
+  return boardroomOutput;
 }
 
 function buildTurnPrompt(input: {
@@ -181,13 +212,15 @@ Role prompt:
 ${input.rolePrompt}
 
 Lens: ${input.participantLens}
+Boardroom role: ${BOARDROOM_PARTICIPANTS[input.participantId].role}
 Round: ${input.round} of ${input.maxRounds}
 Model policy: ${BOARDROOM_MODEL_POLICY_ID}
 Decision question: ${input.question}
 Direct chair context: ${input.directContext || 'none'}
 
 Use only the active ContextCapsule, uploaded/pasted document excerpts, source receipts, and prior transcript below.
-Every evidenceRefs entry must be chosen from the available evidence ids. If evidence is thin, say so and use low confidence.
+Every evidenceRefs entry must be chosen from the available evidence ids. If a source id is unavailable, leave evidenceRefs empty and explain the gap instead of inventing a ref.
+If evidence is thin, say so and use low confidence.
 Do not invent sources, receipts, people, dates, or model/provider internals.
 
 ${input.evidenceBlock}
@@ -258,11 +291,18 @@ function buildEvidenceRefs(input: LiveBoardroomRunnerInput): EvidenceRef[] {
   ]).slice(0, 30);
 }
 
-function normalizeTurnEvidenceRefs(refs: string[], available: EvidenceRef[]): string[] {
+function normalizeTurnEvidenceRefs(refs: string[], available: EvidenceRef[]): {
+  evidenceRefs: string[];
+  rejectedEvidenceRefs: string[];
+} {
   const availableIds = new Set(available.map((ref) => ref.id));
-  const normalized = refs.filter((ref) => availableIds.has(ref));
-  if (normalized.length) return Array.from(new Set(normalized)).slice(0, 6);
-  return available.slice(0, 2).map((ref) => ref.id);
+  const uniqueRefs = Array.from(new Set(refs.map((ref) => ref.trim()).filter(Boolean))).slice(0, 6);
+  const evidenceRefs = uniqueRefs.filter((ref) => availableIds.has(ref));
+  const rejectedEvidenceRefs = uniqueRefs.filter((ref) => !availableIds.has(ref));
+  return {
+    evidenceRefs,
+    rejectedEvidenceRefs,
+  };
 }
 
 function uniqueRefs(refs: EvidenceRef[]): EvidenceRef[] {

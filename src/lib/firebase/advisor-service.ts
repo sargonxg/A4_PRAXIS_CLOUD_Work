@@ -1,7 +1,7 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { AdvisorConfigSchema, type AdvisorConfig, type AdvisorId } from '@/types/advisor';
 import { FieldValue } from 'firebase-admin/firestore';
-import { FALLBACK_ADVISOR_CONFIGS } from '@/lib/constants/advisor-configs';
+import { fallbackAdvisorConfigs } from '@/lib/agents/registry';
 
 const PATH = (id: AdvisorId) => `config/advisors/items/${id}`;
 const HISTORY = (id: AdvisorId, v: number) => `config/advisors_history/items/${id}_${v}`;
@@ -12,30 +12,32 @@ const TTL_MS = 5 * 60 * 1000;
 export async function getAdvisor(id: AdvisorId): Promise<AdvisorConfig | null> {
   const hit = cache.get(id);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.value;
+  const fallback = fallbackAdvisorConfigs();
   try {
     const snap = await adminDb.doc(PATH(id)).get();
-    if (!snap.exists) return FALLBACK_ADVISOR_CONFIGS.find((advisor) => advisor.id === id) ?? null;
+    if (!snap.exists) return fallback.find((advisor) => advisor.id === id) ?? null;
     const parsed = AdvisorConfigSchema.safeParse(snap.data());
-    if (!parsed.success) return FALLBACK_ADVISOR_CONFIGS.find((advisor) => advisor.id === id) ?? null;
+    if (!parsed.success) return fallback.find((advisor) => advisor.id === id) ?? null;
     cache.set(id, { value: parsed.data, at: Date.now() });
     return parsed.data;
   } catch (err) {
     console.warn(`[advisor-service] getAdvisor(${id}) failed:`, err);
-    return FALLBACK_ADVISOR_CONFIGS.find((advisor) => advisor.id === id) ?? null;
+    return fallback.find((advisor) => advisor.id === id) ?? null;
   }
 }
 
 export async function listAdvisors(): Promise<AdvisorConfig[]> {
+  const fallback = fallbackAdvisorConfigs();
   try {
     const snap = await adminDb.collection('config/advisors/items').get();
     const advisors = snap.docs
       .map((d) => AdvisorConfigSchema.safeParse(d.data()))
       .filter((r): r is { success: true; data: AdvisorConfig } => r.success)
       .map((r) => r.data);
-    return advisors.length > 0 ? advisors : FALLBACK_ADVISOR_CONFIGS;
+    return advisors.length > 0 ? advisors : fallback;
   } catch (err) {
     console.warn('[advisor-service] listAdvisors failed:', err);
-    return FALLBACK_ADVISOR_CONFIGS;
+    return fallback;
   }
 }
 

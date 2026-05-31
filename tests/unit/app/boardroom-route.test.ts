@@ -23,8 +23,9 @@ describe('/app/boardroom workspace contract', () => {
     expect(componentSource).toContain('PraxisBrandChip');
     expect(componentSource).toContain('RuntimeHealthSemaphore');
     expect(componentSource).toContain('ActivePolicyFileStrip');
-    expect(componentSource).toContain('Electa');
-    expect(componentSource).toContain('Deep research');
+    expect(componentSource).toContain('BOARDROOM_PARTICIPANTS');
+    expect(componentSource).toContain('boardroom-history-panel');
+    expect(componentSource).toContain('boardroom-follow-up');
     expect(componentSource).toContain('directContext: directContext || undefined');
     expect(componentSource).toContain('capsuleId: urlContext.capsuleId || undefined');
     expect(componentSource).toContain('contextStackId: urlContext.contextStackId || undefined');

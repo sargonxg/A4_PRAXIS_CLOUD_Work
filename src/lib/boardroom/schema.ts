@@ -1,41 +1,25 @@
 import { createHash } from 'crypto';
 import { z } from 'zod';
 import {
-  AGENT_REGISTRY,
-  type AgentPersona,
-  type AgentPersonaId,
-} from '@/lib/agents/registry';
+  BOARDROOM_DEFAULT_PARTICIPANT_IDS,
+  BOARDROOM_PARTICIPANT_IDS,
+  BOARDROOM_PARTICIPANTS,
+  boardroomParticipantLabel,
+  isBoardroomParticipantId,
+  type BoardroomParticipant,
+  type BoardroomParticipantId,
+  type BoardroomParticipantRole,
+} from '@/lib/boardroom/participants';
 import type { CreateAgentRunInput, SelectedCoreIds } from '@/lib/agent-runtime/types';
 
-export const BOARDROOM_DEFAULT_PARTICIPANT_IDS = [
-  'synthesis-chair',
-  'mediator',
-  'legal',
-  'security',
-  'humanitarian',
-  'media',
-  'red-team',
-] as const;
-
-export const BOARDROOM_PARTICIPANT_IDS = [
-  'synthesis-chair',
-  'mediator',
-  'humanitarian',
-  'legal',
-  'media',
-  'security',
-  'red-team',
-  'source-scout',
-] as const;
-
-export type BoardroomParticipantId = (typeof BOARDROOM_PARTICIPANT_IDS)[number];
-
-export type BoardroomParticipant = {
-  id: BoardroomParticipantId;
-  label: string;
-  lens: string;
-  rolePrompt: string;
-  critic: boolean;
+export {
+  BOARDROOM_DEFAULT_PARTICIPANT_IDS,
+  BOARDROOM_PARTICIPANT_IDS,
+  BOARDROOM_PARTICIPANTS,
+  boardroomParticipantLabel,
+  type BoardroomParticipant,
+  type BoardroomParticipantId,
+  type BoardroomParticipantRole,
 };
 
 export const BoardroomSourceRefSchema = z.object({
@@ -51,13 +35,8 @@ export const BoardroomSourceRefSchema = z.object({
 
 export type BoardroomSourceRef = z.infer<typeof BoardroomSourceRefSchema>;
 
-export const BOARDROOM_PARTICIPANTS: Record<BoardroomParticipantId, BoardroomParticipant> =
-  Object.fromEntries(BOARDROOM_PARTICIPANT_IDS.map((id) => {
-    const persona = AGENT_REGISTRY[id as AgentPersonaId];
-    return [id, personaToBoardroomParticipant(persona)];
-  })) as Record<BoardroomParticipantId, BoardroomParticipant>;
-
 export const BoardroomParticipantIdSchema = z.enum(BOARDROOM_PARTICIPANT_IDS);
+export const BoardroomParticipantRoleSchema = z.enum(['chair', 'analyst', 'reviewer', 'red-teamer', 'stakeholder']);
 
 export const BoardroomRunRequestSchema = z.object({
   question: z.string().trim().min(5).max(2000),
@@ -89,6 +68,7 @@ export const BoardroomTurnStateSchema = z.enum([
   'thinking',
   'speaking',
   'challenged',
+  'unsupported',
   'synthesized',
 ]);
 
@@ -99,6 +79,7 @@ export const BoardroomTurnSchema = z.object({
   state: BoardroomTurnStateSchema,
   claim: z.string().min(1),
   evidenceRefs: z.array(z.string()),
+  unsupportedEvidenceRefs: z.array(z.string()).optional(),
   critique: z.string().optional(),
   recommendation: z.string().optional(),
   confidence: z.enum(['high', 'medium', 'low']),
@@ -111,6 +92,7 @@ export const BoardroomOutputSchema = z.object({
     participantId: BoardroomParticipantIdSchema,
     label: z.string(),
     lens: z.string(),
+    role: BoardroomParticipantRoleSchema.optional(),
   })).min(3),
   transcript: z.array(BoardroomTurnSchema).min(1),
   topicClusters: z.array(z.object({
@@ -233,146 +215,6 @@ export function resolveBoardroomSpecFromMetadata(metadata: Record<string, unknow
   return BoardroomRunRequestSchema.parse({ question: objective });
 }
 
-export function buildBoardroomOutput(input: {
-  runId: string;
-  capsuleId: string;
-  objective: string;
-  metadata: Record<string, unknown>;
-  selectedCoreIds: Partial<SelectedCoreIds>;
-  createdAt?: string;
-}): BoardroomOutput {
-  const spec = resolveBoardroomSpecFromMetadata(input.metadata, input.objective);
-  const participants = spec.participantIds.map((id) => BOARDROOM_PARTICIPANTS[id]);
-  const sourceReceiptIds = stringArray(input.metadata.sourceReceiptIds);
-  const selectedSources = normalizeSelectedSources(input.metadata.selectedSources);
-  const documentIds = uniqueStrings([
-    ...(input.selectedCoreIds.documentCoreIds ?? []),
-    ...spec.selectedDocumentIds,
-    ...selectedSources.flatMap((source) => source.documentId ? [source.documentId] : []),
-  ]);
-  const evidenceRefs = uniqueStrings([
-    ...sourceReceiptIds,
-    ...selectedSources.flatMap((source) => source.sourceReceiptId ? [source.sourceReceiptId] : []),
-    ...documentIds.map((id) => `document:${id}`),
-    ...(input.selectedCoreIds.sourceCoreIds ?? []).map((id) => `source:${id}`),
-  ]).slice(0, 8);
-  const workingEvidenceRefs = evidenceRefs.length ? evidenceRefs : [`capsule:${input.capsuleId}`];
-  const speakingParticipants = participants.filter((participant) => participant.id !== 'synthesis-chair');
-  const transcript = speakingParticipants.flatMap((participant, index) => {
-    const firstRound = buildTurn({
-      runId: input.runId,
-      round: 1,
-      participant,
-      index,
-      evidenceRefs: workingEvidenceRefs,
-      objective: spec.question,
-      state: participant.critic ? 'challenged' : 'speaking',
-    });
-    const challengeRound = spec.maxRounds > 1 && (participant.critic || participant.id === 'legal' || participant.id === 'security')
-      ? [buildTurn({
-          runId: input.runId,
-          round: 2,
-          participant,
-          index,
-          evidenceRefs: workingEvidenceRefs,
-          objective: spec.question,
-          state: participant.critic ? 'challenged' : 'speaking',
-          challenge: true,
-        })]
-      : [];
-    return [firstRound, ...challengeRound];
-  });
-  const distribution = transcript.reduce((acc, turn) => {
-    acc[turn.confidence] += 1;
-    return acc;
-  }, { high: 0, medium: 0, low: 0 });
-  const unsupportedClaimCount = workingEvidenceRefs.some((ref) => ref.startsWith('capsule:')) ? 1 : 0;
-  return BoardroomOutputSchema.parse({
-    meetingBrief: `Boardroom brief for ${input.capsuleId}: ${spec.question}`,
-    agenda: [
-      'Context brief from active ContextCapsule',
-      'Sequential participant turns',
-      spec.maxRounds > 1 ? 'Challenge and rebuttal pass' : 'Synthesis pass',
-      'Chair synthesis and board-executive pack',
-    ],
-    roster: participants.map((participant) => ({
-      participantId: participant.id,
-      label: participant.label,
-      lens: participant.lens,
-    })),
-    transcript,
-    topicClusters: [
-      { topic: 'Decision posture', mentions: transcript.length, participantIds: speakingParticipants.map((participant) => participant.id) },
-      { topic: 'Evidence coverage', mentions: workingEvidenceRefs.length, participantIds: ['synthesis-chair', ...speakingParticipants.slice(0, 2).map((participant) => participant.id)] },
-    ],
-    consensus: [
-      'Use the active ContextCapsule as the shared record for the decision.',
-      'Keep source gaps visible before hardening the board-executive output.',
-    ],
-    divergences: speakingParticipants.some((participant) => participant.critic)
-      ? ['Red Team keeps confidence conditional until stronger source coverage is attached.']
-      : ['Participants differ on sequencing, but no formal dissent was generated in this pass.'],
-    risks: [
-      unsupportedClaimCount ? 'The run has limited attached source receipts.' : 'Evidence coverage is present but still requires human review before external use.',
-      'Durable knowledge updates remain review-gated.',
-    ],
-    openQuestions: [
-      'Which human owner approves the final board pack?',
-      'What source receipts should be added before sharing externally?',
-    ],
-    evidenceStats: {
-      sourceCount: sourceReceiptIds.length + (input.selectedCoreIds.sourceCoreIds?.length ?? 0),
-      documentCount: documentIds.length,
-      sourcedParagraphCount: nonnegativeInt(input.metadata.evidenceParagraphCount) ?? 0,
-      unsupportedClaimCount,
-    },
-    confidenceDistribution: distribution,
-    nextActions: [
-      { action: 'Review unsupported claims and source gaps.', owner: 'analyst', urgency: 'short-term' },
-      { action: 'Approve or revise the board-executive pack.', owner: 'chair', urgency: 'short-term' },
-    ],
-    finalSynthesis: `Chair synthesis: proceed with a reviewable board-executive pack for "${spec.question}" and keep the AgentRun transcript attached as proof.`,
-  });
-}
-
-export function boardroomParticipantLabel(id: BoardroomParticipantId): string {
-  return BOARDROOM_PARTICIPANTS[id].label;
-}
-
-function buildTurn(input: {
-  runId: string;
-  round: number;
-  participant: BoardroomParticipant;
-  index: number;
-  evidenceRefs: string[];
-  objective: string;
-  state: 'speaking' | 'challenged';
-  challenge?: boolean;
-}): z.infer<typeof BoardroomTurnSchema> {
-  const confidence = input.evidenceRefs.some((ref) => ref.startsWith('capsule:'))
-    ? 'low'
-    : input.participant.critic || input.challenge
-      ? 'medium'
-      : 'medium';
-  return {
-    turnId: `${input.runId}:r${input.round}:${input.participant.id}`,
-    round: input.round,
-    participantId: input.participant.id,
-    state: input.state,
-    claim: input.challenge
-      ? `${input.participant.label} revisits the evidence posture for: ${input.objective}`
-      : `${input.participant.label} evaluates the decision through the ${input.participant.lens.toLowerCase()} lens.`,
-    evidenceRefs: input.evidenceRefs.slice(input.index % input.evidenceRefs.length, input.index % input.evidenceRefs.length + 2),
-    critique: input.participant.critic || input.challenge
-      ? 'Confidence should stay conditional until source diversity and approval posture are reviewed.'
-      : undefined,
-    recommendation: input.participant.critic
-      ? 'Keep dissent and missing evidence visible in the final pack.'
-      : 'Carry this lens into the chair synthesis and final board pack.',
-    confidence,
-  };
-}
-
 function selectedToolsForBoardroom(request: BoardroomRunRequest): string[] {
   const hasDocuments = request.selectedDocumentIds.length || request.selectedSources.some((source) => source.documentId);
   return uniqueStrings([
@@ -414,33 +256,6 @@ function sanitizeSelectedSources(value: BoardroomSourceRef[]): BoardroomSourceRe
   }));
 }
 
-function personaToBoardroomParticipant(persona: AgentPersona): BoardroomParticipant {
-  return {
-    id: persona.id as BoardroomParticipantId,
-    label: persona.label,
-    lens: lensForPersona(persona),
-    rolePrompt: persona.rolePrompt,
-    critic: Boolean(persona.critic),
-  };
-}
-
-function lensForPersona(persona: AgentPersona): string {
-  switch (persona.id) {
-    case 'synthesis-chair':
-      return 'Chair';
-    case 'red-team':
-      return 'Adversarial review';
-    case 'source-scout':
-      return 'Evidence discovery';
-    default:
-      return persona.label.replace(/\s+Analyst$/, '').replace(/\s+Lead$/, '');
-  }
-}
-
-function isBoardroomParticipantId(value: string): value is BoardroomParticipantId {
-  return (BOARDROOM_PARTICIPANT_IDS as readonly string[]).includes(value);
-}
-
 function stableBoardroomIdempotencyKey(ownerUid: string, capsuleId: string, request: BoardroomRunRequest): string {
   const hash = createHash('sha256')
     .update(JSON.stringify({
@@ -462,22 +277,6 @@ function stableBoardroomIdempotencyKey(ownerUid: string, capsuleId: string, requ
   return `boardroom:${hash}`;
 }
 
-function stringArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
-}
-
-function normalizeSelectedSources(value: unknown): BoardroomSourceRef[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((item) => {
-    const parsed = BoardroomSourceRefSchema.safeParse(item);
-    return parsed.success ? [parsed.data] : [];
-  });
-}
-
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).slice(0, 100);
-}
-
-function nonnegativeInt(value: unknown): number | null {
-  return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
 }

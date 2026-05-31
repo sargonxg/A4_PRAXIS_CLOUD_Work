@@ -1245,30 +1245,139 @@ async function executeBoardroomAgentRun(
 
     executionStage = 'boardroom-live-discussion';
     const boardroomStartedAt = Date.now();
+    let streamedTurnCount = 0;
+    let streamedSynthesis = false;
     const boardroom = await runBoardroomDiscussion({
       run: running,
       payload,
       evidencePack,
+      onTurn: async (event) => {
+        streamedTurnCount += 1;
+        await mirrorWorkerEvent(running, {
+          substrate: 'praxis',
+          phase: `boardroom.turn.${event.turn.participantId}`,
+          message: `${boardroomParticipantLabel(event.turn.participantId)} completed boardroom turn ${event.turn.round}.`,
+          data: {
+            modelPolicy: BOARDROOM_MODEL_POLICY_ID,
+            participantId: event.turn.participantId,
+            participantRole: event.participant.role,
+            agent: {
+              id: event.turn.participantId,
+              label: event.participant.label,
+              role: event.participant.role,
+            },
+            consumes: {
+              capsuleId: running.capsuleId,
+              evidencePackId: evidencePack.packId,
+              sourceReceiptIds: evidencePack.sourceReceiptIds,
+              priorTurnCount: streamedTurnCount - 1,
+            },
+            produces: {
+              turnId: event.turn.turnId,
+              evidenceRefs: event.turn.evidenceRefs,
+              confidence: event.turn.confidence,
+              unsupported: event.turn.state === 'unsupported',
+            },
+            round: event.turn.round,
+            turn: event.turn,
+            state: event.turn.state,
+            confidence: event.turn.confidence,
+            evidenceRefs: event.turn.evidenceRefs,
+            rejectedEvidenceRefs: event.rejectedEvidenceRefs,
+            evidenceHallucinationCount: event.rejectedEvidenceRefs.length,
+            sourceCount: evidencePack.sourceReceiptIds.length,
+            documentCount: running.selectedCoreIds.documentCoreIds.length,
+          },
+        }, deps);
+        if (event.rejectedEvidenceRefs.length) {
+          await mirrorWorkerEvent(running, {
+            substrate: 'praxis',
+            phase: 'boardroom.evidence_ref_rejected',
+            message: `${boardroomParticipantLabel(event.turn.participantId)} cited unavailable evidence refs; PRAXIS rejected them.`,
+            data: {
+              modelPolicy: BOARDROOM_MODEL_POLICY_ID,
+              participantId: event.turn.participantId,
+              round: event.turn.round,
+              rejectedEvidenceRefs: event.rejectedEvidenceRefs,
+              turnId: event.turn.turnId,
+              evalSignal: 'boardroom_evidence_ref_hallucination',
+            },
+          }, deps);
+        }
+      },
+      onSynthesis: async (event) => {
+        streamedSynthesis = true;
+        await mirrorWorkerEvent(running, {
+          substrate: 'praxis',
+          phase: 'boardroom.synthesis_created',
+          message: 'Synthesis Chair created the final boardroom synthesis.',
+          data: {
+            modelPolicy: BOARDROOM_MODEL_POLICY_ID,
+            finalSynthesis: event.output.finalSynthesis,
+            agent: {
+              id: 'synthesis-chair',
+              label: boardroomParticipantLabel('synthesis-chair'),
+              role: 'chair',
+            },
+            consumes: {
+              capsuleId: running.capsuleId,
+              transcriptTurnIds: event.output.transcript.map((turn) => turn.turnId),
+              evidenceStats: event.output.evidenceStats,
+            },
+            produces: {
+              artifactKind: 'board_executive_pack',
+              consensusCount: event.output.consensus.length,
+              riskCount: event.output.risks.length,
+              nextActionCount: event.output.nextActions.length,
+            },
+            consensus: event.output.consensus,
+            divergences: event.output.divergences,
+            risks: event.output.risks,
+            openQuestions: event.output.openQuestions,
+            evidenceStats: event.output.evidenceStats,
+          },
+        }, deps);
+      },
     });
     const boardroomLatencyMs = Date.now() - boardroomStartedAt;
 
-    for (const turn of boardroom.transcript) {
-      await mirrorWorkerEvent(running, {
-        substrate: 'praxis',
-        phase: `boardroom.turn.${turn.participantId}`,
-        message: `${boardroomParticipantLabel(turn.participantId)} completed boardroom turn ${turn.round}.`,
-        data: {
-          modelPolicy: BOARDROOM_MODEL_POLICY_ID,
-          participantId: turn.participantId,
-          round: turn.round,
-          turn,
-          state: turn.state,
-          confidence: turn.confidence,
-          evidenceRefs: turn.evidenceRefs,
-          sourceCount: boardroom.evidenceStats.sourceCount,
-          documentCount: boardroom.evidenceStats.documentCount,
-        },
-      }, deps);
+    if (streamedTurnCount === 0) {
+      for (const turn of boardroom.transcript) {
+        await mirrorWorkerEvent(running, {
+          substrate: 'praxis',
+          phase: `boardroom.turn.${turn.participantId}`,
+          message: `${boardroomParticipantLabel(turn.participantId)} completed boardroom turn ${turn.round}.`,
+          data: {
+            modelPolicy: BOARDROOM_MODEL_POLICY_ID,
+            participantId: turn.participantId,
+            agent: {
+              id: turn.participantId,
+              label: boardroomParticipantLabel(turn.participantId),
+              role: null,
+            },
+            consumes: {
+              capsuleId: running.capsuleId,
+              evidencePackId: evidencePack.packId,
+              sourceReceiptIds: evidencePack.sourceReceiptIds,
+            },
+            produces: {
+              turnId: turn.turnId,
+              evidenceRefs: turn.evidenceRefs,
+              confidence: turn.confidence,
+              unsupported: turn.state === 'unsupported',
+            },
+            round: turn.round,
+            turn,
+            state: turn.state,
+            confidence: turn.confidence,
+            evidenceRefs: turn.evidenceRefs,
+            rejectedEvidenceRefs: turn.unsupportedEvidenceRefs ?? [],
+            evidenceHallucinationCount: turn.unsupportedEvidenceRefs?.length ?? 0,
+            sourceCount: boardroom.evidenceStats.sourceCount,
+            documentCount: boardroom.evidenceStats.documentCount,
+          },
+        }, deps);
+      }
     }
 
     await persistToolCall(makeAgentToolCall({
@@ -1293,21 +1402,39 @@ async function executeBoardroomAgentRun(
       completedAt: new Date().toISOString(),
     }));
 
-    await mirrorWorkerEvent(running, {
-      substrate: 'praxis',
-      phase: 'boardroom.synthesis_created',
-      message: 'Synthesis Chair created the final boardroom synthesis.',
-      data: {
-        modelPolicy: BOARDROOM_MODEL_POLICY_ID,
-        latencyMs: boardroomLatencyMs,
-        finalSynthesis: boardroom.finalSynthesis,
-        consensus: boardroom.consensus,
-        divergences: boardroom.divergences,
-        risks: boardroom.risks,
-        openQuestions: boardroom.openQuestions,
-        evidenceStats: boardroom.evidenceStats,
-      },
-    }, deps);
+    if (!streamedSynthesis) {
+      await mirrorWorkerEvent(running, {
+        substrate: 'praxis',
+        phase: 'boardroom.synthesis_created',
+        message: 'Synthesis Chair created the final boardroom synthesis.',
+        data: {
+          modelPolicy: BOARDROOM_MODEL_POLICY_ID,
+          latencyMs: boardroomLatencyMs,
+          finalSynthesis: boardroom.finalSynthesis,
+          agent: {
+            id: 'synthesis-chair',
+            label: boardroomParticipantLabel('synthesis-chair'),
+            role: 'chair',
+          },
+          consumes: {
+            capsuleId: running.capsuleId,
+            transcriptTurnIds: boardroom.transcript.map((turn) => turn.turnId),
+            evidenceStats: boardroom.evidenceStats,
+          },
+          produces: {
+            artifactKind: 'board_executive_pack',
+            consensusCount: boardroom.consensus.length,
+            riskCount: boardroom.risks.length,
+            nextActionCount: boardroom.nextActions.length,
+          },
+          consensus: boardroom.consensus,
+          divergences: boardroom.divergences,
+          risks: boardroom.risks,
+          openQuestions: boardroom.openQuestions,
+          evidenceStats: boardroom.evidenceStats,
+        },
+      }, deps);
+    }
 
     executionStage = 'memo-persist';
     const memoRecord = await persistMemo(running.ownerUid, {

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAgentRun: vi.fn(),
+  listBoardroomAgentRuns: vi.fn(),
   enqueueAgentRunDispatch: vi.fn(),
   getCapsule: vi.fn(),
   getOrMigrateDefaultCapsule: vi.fn(),
@@ -15,6 +16,7 @@ vi.mock('@/lib/api/with-auth', () => ({
 
 vi.mock('@/lib/agent-runtime/postgres', () => ({
   createAgentRun: mocks.createAgentRun,
+  listBoardroomAgentRuns: mocks.listBoardroomAgentRuns,
 }));
 
 vi.mock('@/lib/agent-runtime/cloud-tasks', () => ({
@@ -169,4 +171,77 @@ describe('/api/boardroom/runs route', () => {
     expect(body.run.runId).toBe('run-boardroom-1');
     expect(body.dispatch).toMatchObject({ dispatched: false, degraded: true });
   });
+
+  it('lists only this user boardroom runs for history', async () => {
+    mocks.listBoardroomAgentRuns.mockResolvedValue([
+      makeHistoryRun('run-boardroom-2', 'boardroom-discussion'),
+    ]);
+    const { GET } = await import('@/app/api/boardroom/history/route');
+
+    const response = await GET(new Request('https://praxis.local/api/boardroom/history?limit=10'));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(mocks.listBoardroomAgentRuns).toHaveBeenCalledWith('user-1', 10);
+    expect(body.persisted).toBe(true);
+    expect(body.runs).toHaveLength(1);
+    expect(body.runs[0]).toMatchObject({
+      runId: 'run-boardroom-2',
+      title: 'Should the board approve run-boardroom-2?',
+      capsuleId: 'cap-1',
+      status: 'succeeded',
+      outputHref: '/app/boardroom?runId=run-boardroom-2',
+    });
+  });
 });
+
+function makeHistoryRun(id: string, policyAgentId: string) {
+  return {
+    id,
+    agentSpecId: null,
+    ownerUid: 'user-1',
+    capsuleId: 'cap-1',
+    contextStackId: 'default',
+    contextPackageId: null,
+    selectedCoreIds: {
+      userCoreId: 'user-core',
+      teamCoreId: null,
+      situationCoreId: null,
+      pathCoreId: null,
+      sourceCoreIds: [],
+      documentCoreIds: [],
+      graphCoreId: null,
+      timeCoreId: null,
+      outputCoreIds: [],
+      toolCoreIds: [],
+      objectiveCoreIds: [],
+      productCoreIds: [],
+      memoryCoreId: null,
+    },
+    status: 'succeeded',
+    triggerType: 'manual',
+    objective: `Should the board approve ${id}?`,
+    traceId: `trace-${id}`,
+    parentRunId: null,
+    idempotencyKey: `history:${id}`,
+    maxStep: 24,
+    maxSessionMinutes: 45,
+    internalEstimatedCostCents: null,
+    internalSpendCents: 0,
+    metadata: {
+      policyAgentId,
+      policyAgentLabel: 'Boardroom Discussion',
+      source: policyAgentId === 'boardroom-discussion' ? 'boardroom-workspace' : 'ask',
+      outputDestination: 'library',
+      outputHref: `/app/boardroom?runId=${id}`,
+      memoId: `memo-${id}`,
+      outputCapsuleId: `output-${id}`,
+    },
+    createdAt: '2026-05-31T12:00:00.000Z',
+    updatedAt: '2026-05-31T12:05:00.000Z',
+    queuedAt: '2026-05-31T12:00:00.000Z',
+    startedAt: '2026-05-31T12:01:00.000Z',
+    completedAt: '2026-05-31T12:05:00.000Z',
+    expiresAt: null,
+  };
+}

@@ -162,4 +162,40 @@ describe('boardroom schemas and AgentRun mapping', () => {
     expect(parsed.transcript[0].participantId).toBe('legal');
     expect(parsed.confidenceDistribution.medium).toBe(1);
   });
+
+  it('keeps unsupported boardroom turns explicit when evidence refs are rejected', () => {
+    const parsed = BoardroomOutputSchema.parse({
+      meetingBrief: 'Boardroom brief for cap-1.',
+      agenda: ['Context brief', 'Participant turns', 'Synthesis'],
+      roster: [
+        { participantId: 'synthesis-chair', label: 'Synthesis Chair', lens: 'Chair' },
+        { participantId: 'legal', label: 'Legal Analyst', lens: 'Legal' },
+        { participantId: 'security', label: 'Security/Risk Analyst', lens: 'Risk' },
+      ],
+      transcript: [
+        {
+          turnId: 'turn-unsupported',
+          round: 1,
+          participantId: 'security',
+          state: 'unsupported',
+          claim: 'The posture needs a field guarantee.',
+          evidenceRefs: [],
+          unsupportedEvidenceRefs: ['invented-source'],
+          confidence: 'low',
+        },
+      ],
+      topicClusters: [{ topic: 'Evidence posture', mentions: 1, participantIds: ['security'] }],
+      consensus: [],
+      divergences: ['Security claim is unsupported.'],
+      risks: ['Unsupported evidence ref was rejected.'],
+      openQuestions: ['What source can verify the field guarantee?'],
+      evidenceStats: { sourceCount: 0, documentCount: 0, sourcedParagraphCount: 0, unsupportedClaimCount: 1 },
+      confidenceDistribution: { high: 0, medium: 0, low: 1 },
+      nextActions: [{ action: 'Attach a valid source receipt.', owner: 'analyst', urgency: 'short-term' }],
+      finalSynthesis: 'Keep the unsupported field guarantee out of the final decision posture until sourced.',
+    });
+
+    expect(parsed.transcript[0].state).toBe('unsupported');
+    expect(parsed.transcript[0].unsupportedEvidenceRefs).toEqual(['invented-source']);
+  });
 });

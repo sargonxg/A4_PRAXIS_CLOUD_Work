@@ -11,8 +11,8 @@ This repo-local copy records the sequential Codex build track for the five-sessi
 |---|---|---|
 | 1 | Capsule Studio and living graph | Complete locally on `feature/capsule-studio-living-graph` |
 | 2 | Live agents and proof rail | Complete locally on `feature/live-agents-proof-rail` |
-| 3 | Approvals and real multi-agent orchestration | Pending |
-| 4 | Boardroom depth | Pending |
+| 3 | Approvals and real multi-agent orchestration | Complete locally on `feature/human-approvals-multi-agent` |
+| 4 | Boardroom depth | Complete locally on `feature/boardroom-live-history-personas` |
 | 5 | Public surface, billing, and ship proof | Pending |
 
 ## Prompt 1 Completion Notes
@@ -168,3 +168,45 @@ SKIPPED - TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set in this shell.
 3. The approval seam to reuse is `pauseForApprovalGate` in `worker.ts`; Boardroom high/medium-risk synthesis/export should pause with persisted `agent_approvals` rows before external or executive-pack finalization.
 4. The compact cockpit rail already renders `agent`, `consumes`, and `produces` facts; Session 4 can add Boardroom-specific event names to `useOrchestratorEvents.ts` without a new page.
 5. Keep Boardroom outputs sourceability-compatible by preserving `sourceabilityLedgerSummary`, `redTeamFindings`-style critique artifacts, and final `outputHref` metadata on the AgentRun.
+
+## Prompt 4 Completion Notes
+
+- Added live Boardroom turn callbacks to `runLiveBoardroomDiscussion`; the worker now mirrors `boardroom.turn.{participantId}` events as each persona finishes instead of replaying the transcript only after all turns complete.
+- Added synthesis streaming via `boardroom.synthesis_created`, while preserving the final memo, OutputCapsule, tool-call, and AgentRun artifact ledger.
+- Boardroom turn and synthesis events now carry compact `agent`, `consumes`, and `produces` facts for the cockpit proof rail.
+- Added strict evidence-ref handling: invalid persona evidence refs are rejected, recorded on the turn as `unsupportedEvidenceRefs`, marked `unsupported` with low confidence when no valid evidence remains, and mirrored as `boardroom.evidence_ref_rejected` eval signals.
+- Added `GET /api/boardroom/history` backed by a ledger query for this user's Boardroom AgentRuns, plus a workspace history panel that can reopen past board packs.
+- Moved Boardroom participants to a registry-backed client-safe module and removed the hardcoded workspace roster; retired `src/lib/constants/advisor-configs.ts` by deriving fallback advisor runtime configs from `src/lib/agents/registry.ts`.
+- Kept `brainstorming-table` as the synchronous Boardroom Lite path sharing the registry/schema language rather than a separate persona source.
+- Added focused steering in the workspace so a user can spawn a one-round follow-up from the active synthesis without mutating the capsule.
+
+## Prompt 4 Validation Output
+
+```text
+npx tsc --noEmit
+PASS
+
+npm run build
+PASS - Next.js production build compiled and generated 167 static pages.
+Note: existing Firebase Admin credential warnings appeared during static generation; they did not fail the build.
+
+npm run lint
+PASS
+
+npx vitest run
+PASS - 284 files, 1218 tests.
+
+npx playwright test tests/e2e/boardroom.spec.ts
+SKIPPED - TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set in this shell.
+
+Local browser smoke
+LIMITED - next start on localhost:3005 served the app shell, but unauthenticated localhost redirected to the PRAXIS home surface and Firebase Installations blocked localhost referer with 403, so the authenticated Boardroom workspace was not visually exercised in this shell.
+```
+
+## Handoff For Session 5
+
+1. Reuse `src/lib/boardroom/participants.ts` as the Boardroom roster source; do not reintroduce `advisor-configs.ts` or hardcoded persona arrays.
+2. Boardroom proof now streams `boardroom.turn.*`, `boardroom.evidence_ref_rejected`, `boardroom.synthesis_created`, and `boardroom.artifact_created`; public/billing proof can link to these run events.
+3. History is available at `GET /api/boardroom/history` and returns `outputHref`, `memoId`, and `outputCapsuleId` for reopening board packs.
+4. Strict evidence rejection is intentional: if Session 5 surfaces public examples, show unsupported turns honestly rather than substituting nearby receipts.
+5. Boardroom still reads capsules immutably; public/billing work should preserve the output-only path through memo + OutputCapsule + AgentRun metadata.

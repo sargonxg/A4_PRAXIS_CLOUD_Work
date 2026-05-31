@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { advisors, advisorCapabilityById } from '@/lib/constants/advisors';
-import { FALLBACK_ADVISOR_CONFIGS } from '@/lib/constants/advisor-configs';
+import { fallbackAdvisorConfigs } from '@/lib/agents/registry';
 import { ADVISOR_IDS } from '@/types/advisor';
 
 describe('flagship advisor capability registry', () => {
@@ -20,8 +20,9 @@ describe('flagship advisor capability registry', () => {
   });
 
   it('keeps fallback runtime configs available for routed policy lenses', () => {
-    expect(FALLBACK_ADVISOR_CONFIGS.map((advisor) => advisor.id)).toEqual(ADVISOR_IDS);
-    for (const advisor of FALLBACK_ADVISOR_CONFIGS) {
+    const configs = fallbackAdvisorConfigs();
+    expect(configs.map((advisor) => advisor.id)).toEqual(ADVISOR_IDS);
+    for (const advisor of configs) {
       expect(advisor.persona.length).toBeGreaterThan(300);
       expect(advisor.allowedTools).toContain('knowledgeCore');
       expect(advisor.greeting.length).toBeGreaterThan(40);

@@ -14,6 +14,13 @@
  * Spec: docs/AGENTIC_SYSTEM.md, docs/AGENT_REGISTRY.md.
  */
 
+import { advisors } from '@/lib/constants/advisors';
+import {
+  ADVISOR_MODEL_TIERS,
+  type AdvisorConfig,
+  type AdvisorId,
+} from '@/types/advisor';
+
 export type AgentPersonaId =
   | 'mediator'
   | 'humanitarian'
@@ -163,3 +170,100 @@ export function getPersona(id: string): AgentPersona | null {
   const p = AGENT_REGISTRY[id as AgentPersonaId];
   return p && p.active ? p : null;
 }
+
+export type AdvisorSeedConfig = Omit<AdvisorConfig, 'version' | 'updatedAt'>;
+
+export function fallbackAdvisorConfigs(): AdvisorConfig[] {
+  return advisorRuntimeSeeds().map((seed) => ({
+    ...seed,
+    version: 1,
+    updatedAt: null,
+  }));
+}
+
+export function advisorRuntimeSeeds(): AdvisorSeedConfig[] {
+  return advisors.map((advisor) => {
+    const runtime = ADVISOR_RUNTIME_BY_ID[advisor.id];
+    return {
+      id: advisor.id,
+      name: advisor.name,
+      title: advisor.title,
+      bio: advisor.bio,
+      headshotUrl: null,
+      persona: [
+        `You are ${advisor.name}, ${advisor.title}, operating as a PRAXIS routed policy advisor.`,
+        advisor.bio,
+        `Method: ${advisor.method}`,
+        `Deliberation role: ${advisor.deliberationRole}`,
+        `Dialectica binding: ${advisor.dialecticaLayer}`,
+        runtime.personaGuardrails,
+        'Keep the answer grounded in PRAXIS evidence. Explicitly flag INTELLIGENCE GAP when the corpus is thin. Do not invent citations, actors, dates, sources, or institutional authority.',
+      ].join('\n\n'),
+      modelTier: runtime.modelTier,
+      sourceCategories: runtime.sourceCategories,
+      allowedTools: ['webSearch', 'knowledgeCore'],
+      greeting: runtime.greeting,
+      memoryPolicy: { lastTurns: 8, rollingSummary: true },
+    };
+  });
+}
+
+const ADVISOR_RUNTIME_BY_ID: Record<AdvisorId, {
+  modelTier: AdvisorConfig['modelTier'];
+  sourceCategories: string[];
+  greeting: string;
+  personaGuardrails: string;
+}> = {
+  adeyemi: {
+    modelTier: ADVISOR_MODEL_TIERS[2],
+    sourceCategories: [
+      'multilateral-political-reports',
+      'democracy-governance-indices',
+      'peer-reviewed-political-science',
+      'reputable-think-tank-analysis',
+      'government-affairs',
+    ],
+    greeting: "I'm Ngozi - political affairs, governance, elections. Tell me what you're looking at and I'll frame the political dynamics.",
+    personaGuardrails:
+      'Apply Putnam two-level games, Fearon rationalist explanations for war, Lederach peace-building levels, V-Dem-style indicator reading, and Fisher-Ury interests analysis. Keep tone measured and historically literate.',
+  },
+  reyes: {
+    modelTier: ADVISOR_MODEL_TIERS[1],
+    sourceCategories: [
+      'un-mission-reports',
+      'open-source-conflict-event-data',
+      'defence-security-journals',
+      'osce-observer-materials',
+      'doctrinal-publications',
+    ],
+    greeting: "Reyes. Security and operations. What's the ground-truth picture you need?",
+    personaGuardrails:
+      'Apply force-ratio reasoning, sustainment calculus, rules-of-engagement feasibility, SSR sequencing, geography, logistics, command unity, legitimacy, and operational risk. Be direct and avoid over-promising.',
+  },
+  vanderberg: {
+    modelTier: ADVISOR_MODEL_TIERS[3],
+    sourceCategories: [
+      'multilateral-development-bank-publications',
+      'imf-wb-oecd-statistical-series',
+      'central-bank-bulletins',
+      'commodity-markets',
+      'sanctions-watch-data',
+    ],
+    greeting: 'Sigrid Vanderberg. Political economy, sanctions, reconstruction finance. What do you need me to follow the money on?',
+    personaGuardrails:
+      'Trace revenue, sanctions pressure, reconstruction incentives, institutional capacity, evasion networks, fiscal constraints, and distributional winners and losers. Mark DATA UNCERTAIN when statistics are weak.',
+  },
+  takeda: {
+    modelTier: ADVISOR_MODEL_TIERS[3],
+    sourceCategories: [
+      'un-treaty-collection',
+      'diplomatic-archives',
+      'historical-case-studies',
+      'icj-jurisprudence',
+      'academic-history',
+    ],
+    greeting: 'Takeda. Diplomatic drafting, treaty interpretation, historical parallels. What do you need drafted - or read into?',
+    personaGuardrails:
+      'Convert policy intent into sendable diplomatic language, treaty clauses, sequenced asks, and face-saving formulations. Produce complete text when drafting; no placeholders or bracketed fragments.',
+  },
+};
