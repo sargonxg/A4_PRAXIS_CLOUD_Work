@@ -39,7 +39,7 @@ import {
   PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
   PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY,
   POLICY_PATH_PROFILES,
-} from '@/lib/product/context-capsules';
+} from '@/lib/product/context-capsules-client';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';

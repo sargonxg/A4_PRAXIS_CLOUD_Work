@@ -121,6 +121,7 @@ export interface CapsuleWorkbenchReviewCardInput {
   title?: string | null;
   target?: string | null;
   state?: string | null;
+  sourceType?: string | null;
 }
 
 export interface CapsuleWorkbenchViewModelInput {
@@ -159,6 +160,12 @@ export interface CapsuleGraphNodeDisplay {
   type: 'capsule' | 'core' | 'source' | 'document' | 'claim' | 'gap' | 'memory' | 'output' | 'agent' | 'ontology' | 'review';
   reviewState: CapsuleWorkbenchReviewState;
   detail?: string;
+  entityType?: string;
+  provenance?: string;
+  confidence?: number | null;
+  sourceReceiptIds?: string[];
+  linkedClaimIds?: string[];
+  version?: number | null;
 }
 
 export interface CapsuleGraphEdgeDisplay {
@@ -167,6 +174,9 @@ export interface CapsuleGraphEdgeDisplay {
   target: string;
   label: string;
   reviewState: CapsuleWorkbenchReviewState;
+  relationshipType?: string;
+  confidence?: number | null;
+  sourceReceiptIds?: string[];
 }
 
 export interface CapsuleGraphDisplay {
@@ -231,6 +241,7 @@ export interface CapsuleReviewCardDisplay {
   title: string;
   target: string;
   state: string;
+  sourceType: string;
   reviewState: CapsuleWorkbenchReviewState;
 }
 
@@ -474,6 +485,7 @@ function buildReviewQueue(
     title: cleanText(card.title) || humanizeId(card.target ?? 'review card'),
     target: cleanText(card.target) || 'capsuleEnvelope',
     state: cleanText(card.state) || 'proposed',
+    sourceType: cleanText(card.sourceType) || 'user',
     reviewState: reviewStateFrom(card.state),
   }));
   const derived: CapsuleReviewCardDisplay[] = [];
@@ -483,6 +495,7 @@ function buildReviewQueue(
       title: 'Attach sources or create a source-gap review card',
       target: 'sourceGap',
       state: 'proposed',
+      sourceType: 'source-gap',
       reviewState: 'proposed',
     });
   }
@@ -492,6 +505,7 @@ function buildReviewQueue(
       title: `${evidence.unsupportedClaims.length} unsupported claim${evidence.unsupportedClaims.length === 1 ? '' : 's'} need evidence`,
       target: 'claimLedger',
       state: 'proposed',
+      sourceType: 'source-gap',
       reviewState: 'proposed',
     });
   }
@@ -501,6 +515,7 @@ function buildReviewQueue(
       title: capsule.coreRefs?.graphCoreId ? 'Review pending graph proposals' : 'Create or review capsule graph structure',
       target: 'graphProposal',
       state: 'proposed',
+      sourceType: 'graph',
       reviewState: 'proposed',
     });
   }
@@ -510,6 +525,7 @@ function buildReviewQueue(
       title: 'Review advisory tacit memory before reuse',
       target: 'advisoryMemory',
       state: 'proposed',
+      sourceType: 'cognee',
       reviewState: 'advisory',
     });
   }
@@ -615,8 +631,15 @@ function buildGraph(input: {
     type: 'capsule',
     reviewState: 'canonical',
     detail: input.capsule.summary ?? undefined,
+    entityType: 'Policy',
+    provenance: 'ContextCapsule envelope',
+    confidence: confidenceFromScore(scoreForCapsule(input.capsule)),
+    version: input.capsule.version ?? null,
   }];
   const edges: CapsuleGraphEdgeDisplay[] = [];
+  const sourceItems = sourceItemsFromUnknown(input.capsule.sourceRefs);
+  const sourceById = new Map(sourceItems.map((source) => [source.id, source]));
+  const claimItems = claimItemsFromUnknown(input.capsule.claimLedger);
   const addNode = (node: CapsuleGraphNodeDisplay) => {
     if (!nodes.some((existing) => existing.id === node.id)) nodes.push(node);
   };
@@ -632,6 +655,8 @@ function buildGraph(input: {
       type: 'core',
       reviewState: core.reviewState,
       detail: core.status === 'present' ? core.ids.slice(0, 3).join(', ') : core.description,
+      entityType: core.kind === 'source' || core.kind === 'document' ? 'Resource' : core.kind === 'memory' ? 'Narrative' : 'Policy',
+      provenance: 'Capsule core reference',
     });
     addEdge({
       id: `capsule-${nodeId}`,
@@ -639,56 +664,194 @@ function buildGraph(input: {
       target: nodeId,
       label: core.status === 'present' ? 'has core' : 'missing core',
       reviewState: core.reviewState,
+      relationshipType: 'member_of',
     });
   }
 
-  for (const sourceId of input.evidence.sourceIds.slice(0, 6)) {
-    addNode({ id: `source:${sourceId}`, label: humanizeId(sourceId), type: 'source', reviewState: 'canonical' });
-    addEdge({ id: `source-${sourceId}-core`, source: `source:${sourceId}`, target: 'core:source', label: 'uses source', reviewState: 'canonical' });
+  for (const sourceId of input.evidence.sourceIds) {
+    const source = sourceById.get(sourceId);
+    addNode({
+      id: `source:${sourceId}`,
+      label: source?.label ?? humanizeId(sourceId),
+      type: 'source',
+      reviewState: source?.reviewState ?? 'canonical',
+      detail: source?.detail,
+      entityType: source?.entityType ?? 'Resource',
+      provenance: source?.provenance ?? 'source receipt',
+      confidence: source?.confidence ?? null,
+      sourceReceiptIds: [sourceId],
+      linkedClaimIds: claimItems.filter((claim) => claim.sourceIds.includes(sourceId)).map((claim) => claim.id),
+    });
+    addEdge({
+      id: `source-${sourceId}-core`,
+      source: `source:${sourceId}`,
+      target: 'core:source',
+      label: 'uses source',
+      reviewState: source?.reviewState ?? 'canonical',
+      relationshipType: 'member_of',
+      confidence: source?.confidence ?? null,
+      sourceReceiptIds: [sourceId],
+    });
   }
-  for (const documentId of input.evidence.documentIds.slice(0, 6)) {
-    addNode({ id: `document:${documentId}`, label: humanizeId(documentId), type: 'document', reviewState: 'canonical' });
-    addEdge({ id: `document-${documentId}-core`, source: `document:${documentId}`, target: 'core:document', label: 'uses document', reviewState: 'canonical' });
+  for (const documentId of input.evidence.documentIds) {
+    addNode({
+      id: `document:${documentId}`,
+      label: humanizeId(documentId),
+      type: 'document',
+      reviewState: 'canonical',
+      entityType: 'Resource',
+      provenance: 'repository document',
+      sourceReceiptIds: [documentId],
+    });
+    addEdge({
+      id: `document-${documentId}-core`,
+      source: `document:${documentId}`,
+      target: 'core:document',
+      label: 'uses document',
+      reviewState: 'canonical',
+      relationshipType: 'member_of',
+      sourceReceiptIds: [documentId],
+    });
   }
-  for (const [index, claim] of input.evidence.unsupportedClaims.slice(0, 4).entries()) {
+  for (const claim of claimItems) {
+    const id = `claim:${claim.id}`;
+    addNode({
+      id,
+      label: claim.text,
+      type: 'claim',
+      reviewState: claim.reviewState,
+      detail: claim.status ? `Claim status: ${claim.status}` : 'Capsule claim ledger entry.',
+      entityType: 'Claim',
+      provenance: claim.provenance ?? 'claim ledger',
+      confidence: claim.confidence ?? null,
+      sourceReceiptIds: claim.sourceIds,
+    });
+    if (!claim.sourceIds.length) {
+      addEdge({
+        id: `${id}-source-gap`,
+        source: id,
+        target: 'core:source',
+        label: 'needs evidence',
+        reviewState: claim.reviewState === 'canonical' ? 'proposed' : claim.reviewState,
+        relationshipType: 'requires_resource',
+      });
+    }
+    for (const sourceId of claim.sourceIds) {
+      addEdge({
+        id: `claim-${claim.id}-source-${sourceId}`,
+        source: id,
+        target: `source:${sourceId}`,
+        label: 'supported by',
+        reviewState: claim.reviewState,
+        relationshipType: 'supports_claim',
+        confidence: claim.confidence ?? null,
+        sourceReceiptIds: [sourceId],
+      });
+    }
+  }
+  const claimTexts = new Set(claimItems.map((claim) => claim.text));
+  for (const [index, claim] of input.evidence.unsupportedClaims.filter((claim) => !claimTexts.has(claim)).entries()) {
     const id = `claim:unsupported-${index + 1}`;
-    addNode({ id, label: claim, type: 'claim', reviewState: 'proposed', detail: 'Unsupported or weak claim.' });
-    addEdge({ id: `${id}-source-gap`, source: id, target: 'core:source', label: 'needs evidence', reviewState: 'proposed' });
+    addNode({
+      id,
+      label: claim,
+      type: 'claim',
+      reviewState: 'proposed',
+      detail: 'Unsupported or weak claim.',
+      entityType: 'Claim',
+      provenance: 'readiness warning',
+    });
+    addEdge({ id: `${id}-source-gap`, source: id, target: 'core:source', label: 'needs evidence', reviewState: 'proposed', relationshipType: 'requires_resource' });
   }
-  for (const [index, gap] of input.evidence.gaps.slice(0, 4).entries()) {
+  for (const [index, gap] of input.evidence.gaps.entries()) {
     const id = `gap:${index + 1}`;
-    addNode({ id, label: gap, type: 'gap', reviewState: 'proposed' });
-    addEdge({ id: `${id}-review`, source: id, target: 'core:source', label: 'needs review', reviewState: 'proposed' });
+    addNode({ id, label: gap, type: 'gap', reviewState: 'proposed', entityType: 'Risk', provenance: 'readiness diagnostics' });
+    addEdge({ id: `${id}-review`, source: id, target: 'core:source', label: 'needs review', reviewState: 'proposed', relationshipType: 'triggers_risk' });
   }
   if (!input.evidence.sourceCount) {
-    addNode({ id: 'gap:no-sources', label: 'No attached sources', type: 'gap', reviewState: 'missing' });
-    addEdge({ id: 'gap-no-sources-core', source: 'gap:no-sources', target: 'core:source', label: 'blocks evidence', reviewState: 'missing' });
+    addNode({ id: 'gap:no-sources', label: 'No attached sources', type: 'gap', reviewState: 'missing', entityType: 'Risk', provenance: 'source readiness gate' });
+    addEdge({ id: 'gap-no-sources-core', source: 'gap:no-sources', target: 'core:source', label: 'blocks evidence', reviewState: 'missing', relationshipType: 'requires_resource' });
   }
-  for (const memory of input.tacitKnowledge.items.slice(0, 4)) {
-    addNode({ id: `memory:${memory.id}`, label: memory.summary, type: 'memory', reviewState: memory.reviewState });
-    addEdge({ id: `memory-${memory.id}-core`, source: `memory:${memory.id}`, target: 'core:memory', label: 'travels as context', reviewState: memory.reviewState });
+  for (const memory of input.tacitKnowledge.items) {
+    addNode({
+      id: `memory:${memory.id}`,
+      label: memory.summary,
+      type: 'memory',
+      reviewState: memory.reviewState,
+      detail: memory.detail ?? undefined,
+      entityType: 'Narrative',
+      provenance: memory.type,
+      confidence: memory.confidence,
+    });
+    addEdge({ id: `memory-${memory.id}-core`, source: `memory:${memory.id}`, target: 'core:memory', label: 'travels as context', reviewState: memory.reviewState, relationshipType: 'reinforces' });
   }
-  for (const output of input.outputs.slice(0, 4)) {
-    addNode({ id: `output:${output.id}`, label: output.label, type: 'output', reviewState: output.reviewState });
-    addEdge({ id: `output-${output.id}-core`, source: 'core:output', target: `output:${output.id}`, label: 'produces', reviewState: output.reviewState });
+  for (const output of input.outputs) {
+    addNode({ id: `output:${output.id}`, label: output.label, type: 'output', reviewState: output.reviewState, entityType: 'Policy', provenance: output.type, version: input.capsule.version ?? null });
+    addEdge({ id: `output-${output.id}-core`, source: 'core:output', target: `output:${output.id}`, label: 'produces', reviewState: output.reviewState, relationshipType: 'generates_claim' });
   }
-  for (const run of input.agentRuns.slice(0, 4)) {
-    addNode({ id: `agent:${run.runId}`, label: run.policyAgentLabel ?? run.policyAgentId ?? 'Agent run', type: 'agent', reviewState: 'canonical', detail: run.status });
-    addEdge({ id: `agent-${run.runId}-capsule`, source: `agent:${run.runId}`, target: `capsule:${input.capsule.capsuleId}`, label: 'reads capsule', reviewState: 'canonical' });
+  for (const run of input.agentRuns) {
+    addNode({ id: `agent:${run.runId}`, label: run.policyAgentLabel ?? run.policyAgentId ?? 'Agent run', type: 'agent', reviewState: 'canonical', detail: run.status, entityType: 'Actor', provenance: run.createdAt ?? 'agent run receipt' });
+    addEdge({ id: `agent-${run.runId}-capsule`, source: `agent:${run.runId}`, target: `capsule:${input.capsule.capsuleId}`, label: 'reads capsule', reviewState: 'canonical', relationshipType: 'claims' });
   }
-  for (const ontology of [...input.ontology.active, ...input.ontology.proposed, ...input.ontology.missing].slice(0, 4)) {
-    addNode({ id: `ontology:${ontology.id}`, label: ontology.label, type: 'ontology', reviewState: ontology.reviewState });
-    addEdge({ id: `ontology-${ontology.id}-graph`, source: `ontology:${ontology.id}`, target: 'core:graph', label: 'structures graph', reviewState: ontology.reviewState });
+  for (const ontology of [...input.ontology.active, ...input.ontology.proposed, ...input.ontology.missing]) {
+    addNode({ id: `ontology:${ontology.id}`, label: ontology.label, type: 'ontology', reviewState: ontology.reviewState, detail: ontology.requiredRelations.join(', '), entityType: 'Institution', provenance: 'ACO ontology overlay' });
+    addEdge({ id: `ontology-${ontology.id}-graph`, source: `ontology:${ontology.id}`, target: 'core:graph', label: 'structures graph', reviewState: ontology.reviewState, relationshipType: 'governs' });
   }
-  for (const card of input.reviewQueue.slice(0, 4)) {
-    addNode({ id: `review:${card.id}`, label: card.title, type: 'review', reviewState: card.reviewState });
-    addEdge({ id: `review-${card.id}-capsule`, source: `review:${card.id}`, target: `capsule:${input.capsule.capsuleId}`, label: 'needs approval', reviewState: card.reviewState });
+  for (const card of input.reviewQueue) {
+    addNode({ id: `review:${card.id}`, label: card.title, type: 'review', reviewState: card.reviewState, detail: card.target, entityType: 'Commitment', provenance: card.sourceType });
+    addEdge({ id: `review-${card.id}-capsule`, source: `review:${card.id}`, target: `capsule:${input.capsule.capsuleId}`, label: 'needs approval', reviewState: card.reviewState, relationshipType: 'made_commitment' });
+  }
+  for (const proposal of graphProposalsFromUnknown(input.capsule.memoryPosture)) {
+    if (proposal.kind === 'node' && proposal.operation !== 'delete') {
+      const nodeId = graphProposalNodeId(proposal.payload.id);
+      addNode({
+        id: nodeId,
+        label: proposal.payload.label,
+        type: graphDisplayTypeForEntity(proposal.payload.entityType),
+        reviewState: 'reviewed',
+        detail: proposal.payload.reason || 'Approved graph proposal.',
+        entityType: proposal.payload.entityType,
+        provenance: proposal.payload.provenance || 'approved graph proposal',
+        confidence: proposal.payload.confidence,
+        sourceReceiptIds: proposal.payload.sourceReceiptIds,
+      });
+      addEdge({
+        id: `${proposal.proposalId}-capsule`,
+        source: nodeId,
+        target: `capsule:${input.capsule.capsuleId}`,
+        label: 'approved into graph',
+        reviewState: 'reviewed',
+        relationshipType: 'member_of',
+        confidence: proposal.payload.confidence,
+        sourceReceiptIds: proposal.payload.sourceReceiptIds,
+      });
+    }
+    if (proposal.kind === 'edge' && proposal.operation !== 'delete') {
+      const source = graphProposalNodeId(proposal.payload.source);
+      const target = graphProposalNodeId(proposal.payload.target);
+      if (!nodes.some((node) => node.id === source)) {
+        addNode({ id: source, label: humanizeId(proposal.payload.source), type: 'ontology', reviewState: 'reviewed', entityType: 'Policy', provenance: 'approved graph proposal endpoint' });
+      }
+      if (!nodes.some((node) => node.id === target)) {
+        addNode({ id: target, label: humanizeId(proposal.payload.target), type: 'ontology', reviewState: 'reviewed', entityType: 'Policy', provenance: 'approved graph proposal endpoint' });
+      }
+      addEdge({
+        id: proposal.payload.id || proposal.proposalId,
+        source,
+        target,
+        label: proposal.payload.label || proposal.payload.relationshipType || 'related to',
+        reviewState: 'reviewed',
+        relationshipType: proposal.payload.relationshipType,
+        confidence: proposal.payload.confidence,
+        sourceReceiptIds: proposal.payload.sourceReceiptIds,
+      });
+    }
   }
 
   const canonicalNodeCount = nodes.filter((node) => node.reviewState === 'canonical' || node.reviewState === 'reviewed').length;
   return {
-    nodes: nodes.slice(0, 30),
-    edges: edges.slice(0, 42),
+    nodes,
+    edges,
     canonicalNodeCount,
     proposedNodeCount: nodes.length - canonicalNodeCount,
   };
@@ -764,6 +927,130 @@ function claimBucketsFromUnknown(value: unknown): {
   return buckets;
 }
 
+interface CapsuleGraphSourceItem {
+  id: string;
+  label: string;
+  detail?: string;
+  entityType?: string;
+  provenance?: string;
+  confidence?: number | null;
+  reviewState: CapsuleWorkbenchReviewState;
+}
+
+interface CapsuleGraphClaimItem {
+  id: string;
+  text: string;
+  status: string;
+  sourceIds: string[];
+  provenance?: string;
+  confidence?: number | null;
+  reviewState: CapsuleWorkbenchReviewState;
+}
+
+interface CapsuleGraphProposalItem {
+  proposalId: string;
+  kind: 'node' | 'edge';
+  operation: 'create' | 'edit' | 'delete';
+  payload: {
+    id: string;
+    source: string;
+    target: string;
+    label: string;
+    entityType: string;
+    relationshipType?: string;
+    provenance?: string;
+    reason?: string;
+    confidence?: number | null;
+    sourceReceiptIds?: string[];
+  };
+}
+
+function sourceItemsFromUnknown(value: unknown): CapsuleGraphSourceItem[] {
+  if (!Array.isArray(value)) return [];
+  return uniqueBy(value.flatMap((item): CapsuleGraphSourceItem[] => {
+    if (typeof item === 'string') {
+      const id = item.trim();
+      return id ? [{ id, label: humanizeId(id), reviewState: 'canonical' }] : [];
+    }
+    const record = asRecord(item);
+    if (!record) return [];
+    const id = cleanText(record.id) || cleanText(record.sourceId) || cleanText(record.receiptId);
+    if (!id) return [];
+    const label = cleanText(record.label) || cleanText(record.title) || cleanText(record.name) || humanizeId(id);
+    return [{
+      id,
+      label,
+      detail: cleanText(record.summary) || cleanText(record.description) || cleanText(record.url) || undefined,
+      entityType: cleanText(record.entityType) || cleanText(record.type) || 'Resource',
+      provenance: cleanText(record.provenance) || cleanText(record.sourceType) || cleanText(record.publisher) || undefined,
+      confidence: confidenceFromUnknown(record.confidence ?? record.score),
+      reviewState: reviewStateFrom(record.reviewState ?? record.status ?? 'canonical'),
+    }];
+  }), (source) => source.id);
+}
+
+function claimItemsFromUnknown(value: unknown): CapsuleGraphClaimItem[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item, index): CapsuleGraphClaimItem[] => {
+    const record = asRecord(item);
+    const text = typeof item === 'string'
+      ? item.trim()
+      : record
+        ? cleanText(record.text) || cleanText(record.claim) || cleanText(record.claimText) || cleanText(record.summary)
+        : '';
+    if (!text) return [];
+    const id = record
+      ? cleanText(record.id) || cleanText(record.claimId) || cleanText(record.uid) || slugId(text, `claim-${index + 1}`)
+      : slugId(text, `claim-${index + 1}`);
+    const status = record ? cleanText(record.status) || cleanText(record.reviewState) : '';
+    const sourceIds = record ? uniqueStrings([
+      ...cleanStrings(record.sourceIds),
+      ...cleanStrings(record.receiptIds),
+      ...cleanStrings(record.evidenceIds),
+      cleanText(record.sourceId),
+      cleanText(record.receiptId),
+    ]) : [];
+    return [{
+      id,
+      text,
+      status,
+      sourceIds,
+      provenance: record ? cleanText(record.provenance) || cleanText(record.generatedBy) || undefined : undefined,
+      confidence: record ? confidenceFromUnknown(record.confidence ?? record.score) : null,
+      reviewState: reviewStateForClaim(status, sourceIds.length),
+    }];
+  });
+}
+
+function graphProposalsFromUnknown(value: unknown): CapsuleGraphProposalItem[] {
+  const record = asRecord(value);
+  if (!record || !Array.isArray(record.graphProposals)) return [];
+  return record.graphProposals.flatMap((item): CapsuleGraphProposalItem[] => {
+    const proposal = asRecord(item);
+    const payload = asRecord(proposal?.payload);
+    if (!proposal || !payload) return [];
+    const kind = proposal.kind === 'edge' ? 'edge' : proposal.kind === 'node' ? 'node' : null;
+    if (!kind) return [];
+    return [{
+      proposalId: cleanText(proposal.proposalId) || slugId(JSON.stringify(payload), 'graph-proposal'),
+      kind,
+      operation: proposal.operation === 'edit' || proposal.operation === 'delete' ? proposal.operation : 'create',
+      payload: {
+        id: cleanText(payload.id),
+        source: cleanText(payload.source),
+        target: cleanText(payload.target),
+        label: cleanText(payload.label),
+        entityType: cleanText(payload.entityType) || 'Policy',
+        relationshipType: cleanText(payload.relationshipType) || undefined,
+        provenance: cleanText(payload.provenance) || undefined,
+        reason: cleanText(payload.reason) || undefined,
+        confidence: confidenceFromUnknown(payload.confidence),
+        sourceReceiptIds: cleanStrings(payload.sourceReceiptIds),
+      },
+    }];
+  });
+}
+
 function sourceIdsFromUnknown(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
@@ -801,6 +1088,40 @@ function reviewStateFrom(value: unknown): CapsuleWorkbenchReviewState {
   if (/advisory/.test(state)) return 'advisory';
   if (/missing/.test(state)) return 'missing';
   return 'proposed';
+}
+
+function reviewStateForClaim(status: string, sourceCount: number): CapsuleWorkbenchReviewState {
+  const cleanStatus = status.toLowerCase();
+  if (/unsupported|missing|gap/.test(cleanStatus)) return 'proposed';
+  if (/weak|partial|stale|disputed/.test(cleanStatus)) return 'proposed';
+  if (/support|canonical|approved|reviewed/.test(cleanStatus) && sourceCount > 0) return 'canonical';
+  return sourceCount > 0 ? 'canonical' : 'proposed';
+}
+
+function confidenceFromUnknown(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return Math.round(clamp(value > 1 ? value / 100 : value, 0, 1) * 1000) / 1000;
+}
+
+function confidenceFromScore(value: number): number {
+  return Math.round(clamp(value / 100, 0, 1) * 1000) / 1000;
+}
+
+function graphProposalNodeId(value: string): string {
+  const clean = cleanText(value);
+  if (!clean) return 'graph:proposal-node';
+  return clean.includes(':') ? clean : `graph:${clean}`;
+}
+
+function graphDisplayTypeForEntity(value: string): CapsuleGraphNodeDisplay['type'] {
+  const clean = value.toLowerCase();
+  if (clean === 'claim') return 'claim';
+  if (clean === 'resource') return 'source';
+  if (clean === 'risk') return 'gap';
+  if (clean === 'narrative') return 'memory';
+  if (clean === 'actor') return 'agent';
+  if (clean === 'institution' || clean === 'norm') return 'ontology';
+  return 'ontology';
 }
 
 function cleanText(value: unknown): string {
@@ -853,4 +1174,13 @@ function humanizeId(value: string): string {
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function slugId(value: string, fallback: string): string {
+  const slug = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+  return slug || fallback;
 }

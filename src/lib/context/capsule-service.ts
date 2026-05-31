@@ -212,6 +212,39 @@ export interface CreateCapsuleReviewCardInput {
   proposedEnvelopePatch?: CapsuleReviewCard['proposedEnvelopePatch'];
 }
 
+export interface CapsuleGraphNodeProposalInput {
+  operation: 'create' | 'edit' | 'delete';
+  nodeId?: string;
+  node?: {
+    id?: string;
+    label?: string;
+    entityType?: string;
+    provenance?: string;
+    confidence?: number;
+    sourceReceiptIds?: string[];
+    reviewState?: string;
+  };
+  sourceReceiptIds?: string[];
+  reason?: string;
+}
+
+export interface CapsuleGraphEdgeProposalInput {
+  operation: 'create' | 'edit' | 'delete';
+  edgeId?: string;
+  edge?: {
+    id?: string;
+    source?: string;
+    target?: string;
+    label?: string;
+    relationshipType?: string;
+    confidence?: number;
+    sourceReceiptIds?: string[];
+    reviewState?: string;
+  };
+  sourceReceiptIds?: string[];
+  reason?: string;
+}
+
 export interface AdvisoryMemoryReviewCandidateInput {
   id: string;
   text: string;
@@ -969,6 +1002,86 @@ export async function rejectAdvisoryMemoryCandidate(
   }, deps);
   const updated = await getCapsule(uid, capsule.capsuleId, deps);
   return { capsule: updated ?? capsule, card };
+}
+
+export async function proposeCapsuleGraphNodeChange(
+  uid: string,
+  capsuleId: string,
+  input: CapsuleGraphNodeProposalInput,
+  deps?: CapsuleServiceDeps,
+): Promise<CapsuleReviewCard> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) throw new Error(`Capsule not found: ${capsuleId}`);
+  const operation = normalizeGraphOperation(input.operation);
+  const nodeId = cleanId(input.node?.id ?? input.nodeId ?? `graph-node-${stableId(JSON.stringify(input.node ?? input))}`, 'graph-node');
+  const label = cleanText(input.node?.label, 160) || nodeId;
+  const entityType = cleanText(input.node?.entityType, 80) || 'Policy';
+  const sourceReceiptIds = uniqueStrings([...(input.sourceReceiptIds ?? []), ...(input.node?.sourceReceiptIds ?? [])].map((item) => cleanText(item, 160)));
+  const proposalId = `graph-node-${stableId(`${uid}:${capsule.capsuleId}:${operation}:${nodeId}:${nowIso(deps)}`)}`;
+  return createCapsuleReviewCard(uid, capsule.capsuleId, {
+    title: `Graph node proposal: ${operation} ${label}`,
+    sourceType: 'graph',
+    target: 'graphProposal',
+    evidence: sourceReceiptIds.map((id) => ({ id, label: cleanText(id, 160) || 'Source receipt', advisory: false, sourceType: 'source' })),
+    proposedEnvelopePatch: {
+      latestGateState: 'proposed',
+      memoryPosture: buildGraphProposalMemoryPosturePatch(capsule, {
+        proposalId,
+        kind: 'node',
+        operation,
+        payload: {
+          id: nodeId,
+          label,
+          entityType,
+          provenance: cleanText(input.node?.provenance, 240) || 'Capsule Studio graph proposal',
+          confidence: normalizeConfidence(input.node?.confidence),
+          sourceReceiptIds,
+          reason: cleanText(input.reason, 500),
+        },
+      }),
+    },
+  }, deps);
+}
+
+export async function proposeCapsuleGraphEdgeChange(
+  uid: string,
+  capsuleId: string,
+  input: CapsuleGraphEdgeProposalInput,
+  deps?: CapsuleServiceDeps,
+): Promise<CapsuleReviewCard> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) throw new Error(`Capsule not found: ${capsuleId}`);
+  const operation = normalizeGraphOperation(input.operation);
+  const source = cleanText(input.edge?.source, 160);
+  const target = cleanText(input.edge?.target, 160);
+  const edgeId = cleanId(input.edge?.id ?? input.edgeId ?? `graph-edge-${stableId(`${source}:${target}:${input.edge?.relationshipType ?? input.edge?.label ?? 'related'}`)}`, 'graph-edge');
+  const relationshipType = cleanText(input.edge?.relationshipType, 80) || cleanText(input.edge?.label, 80) || 'related_to';
+  const sourceReceiptIds = uniqueStrings([...(input.sourceReceiptIds ?? []), ...(input.edge?.sourceReceiptIds ?? [])].map((item) => cleanText(item, 160)));
+  const proposalId = `graph-edge-${stableId(`${uid}:${capsule.capsuleId}:${operation}:${edgeId}:${nowIso(deps)}`)}`;
+  return createCapsuleReviewCard(uid, capsule.capsuleId, {
+    title: `Graph edge proposal: ${operation} ${relationshipType}`,
+    sourceType: 'graph',
+    target: 'graphProposal',
+    evidence: sourceReceiptIds.map((id) => ({ id, label: cleanText(id, 160) || 'Source receipt', advisory: false, sourceType: 'source' })),
+    proposedEnvelopePatch: {
+      latestGateState: 'proposed',
+      memoryPosture: buildGraphProposalMemoryPosturePatch(capsule, {
+        proposalId,
+        kind: 'edge',
+        operation,
+        payload: {
+          id: edgeId,
+          source,
+          target,
+          label: cleanText(input.edge?.label, 160) || relationshipType,
+          relationshipType,
+          confidence: normalizeConfidence(input.edge?.confidence),
+          sourceReceiptIds,
+          reason: cleanText(input.reason, 500),
+        },
+      }),
+    },
+  }, deps);
 }
 
 export async function createCapsuleReviewCard(
@@ -2583,6 +2696,50 @@ function buildMemoryPosturePatch(
   };
 }
 
+function buildGraphProposalMemoryPosturePatch(
+  capsule: PraxisCapsule,
+  proposal: {
+    proposalId: string;
+    kind: 'node' | 'edge';
+    operation: 'create' | 'edit' | 'delete';
+    payload: Record<string, unknown>;
+  },
+): Record<string, unknown> {
+  const existing = isRecord(capsule.v3?.memoryPosture)
+    ? capsule.v3.memoryPosture
+    : isRecord(capsule.memoryPosture)
+      ? capsule.memoryPosture
+      : {};
+  const existingProposals = Array.isArray(existing.graphProposals)
+    ? existing.graphProposals.filter(isRecord)
+    : [];
+  const graphProposals = uniqueByProposalId([
+    ...existingProposals,
+    {
+      proposalId: cleanId(proposal.proposalId, 'graph-proposal'),
+      kind: proposal.kind,
+      operation: proposal.operation,
+      payload: cloneSerializable(proposal.payload),
+      reviewState: 'reviewed',
+      promotedByReviewCard: true,
+    },
+  ]).slice(-100);
+  return {
+    ...cloneSerializable(existing),
+    graphMode: 'review-gated',
+    graphProposals,
+  };
+}
+
+function normalizeGraphOperation(value: unknown): 'create' | 'edit' | 'delete' {
+  return value === 'edit' || value === 'delete' ? value : 'create';
+}
+
+function normalizeConfidence(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return Math.round(Math.max(0, Math.min(value > 1 ? value / 100 : value, 1)) * 1000) / 1000;
+}
+
 function formatAdvisoryMemoryCandidate(candidate: AdvisoryMemoryReviewCandidateInput): string {
   const text = cleanText(candidate.text, 500) || cleanId(candidate.id, 'cognee-candidate');
   const confidence = Math.round(Math.max(0, Math.min(candidate.confidence ?? 0, 0.6)) * 1000) / 1000;
@@ -3071,6 +3228,19 @@ function cleanId(value: string, fallback: string): string {
 
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values.filter((item) => item.length > 0))).slice(0, 50);
+}
+
+function uniqueByProposalId(values: Record<string, unknown>[]): Record<string, unknown>[] {
+  const seen = new Set<string>();
+  const out: Record<string, unknown>[] = [];
+  for (const value of values) {
+    const proposalId = cleanText(value.proposalId, 160);
+    const key = proposalId || stableId(JSON.stringify(value));
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(value);
+  }
+  return out;
 }
 
 function stableId(value: string): string {

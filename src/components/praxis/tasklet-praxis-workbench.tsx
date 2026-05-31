@@ -117,7 +117,7 @@ import {
   type CapsuleConnectorDefinition,
   type CapsuleTaxonomyStats,
   type PolicyTeamCategory,
-} from '@/lib/product/context-capsules';
+} from '@/lib/product/context-capsules-client';
 import { recommendCapsuleTools, type CapsuleToolRecommendation } from '@/lib/tools/recommend';
 import { DEFAULT_CONTEXT_STACK_ID } from '@/lib/context/active-context-stack';
 import { rankAskCapsuleSuggestions, type AskCapsuleSuggestion } from '@/lib/context/capsule-suggestions';
