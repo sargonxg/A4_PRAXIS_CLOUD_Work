@@ -22,6 +22,14 @@ interface WorkProductExportRequest {
   classification?: string;
   sections?: WorkProductSection[];
   sources?: string[];
+  unsupportedClaims?: string[];
+  unsupportedParagraphIds?: string[];
+  claimChecks?: Array<{
+    id?: string;
+    paragraphId?: string;
+    status?: string;
+    claim?: string;
+  }>;
 }
 
 function text(value: unknown, fallback = ''): string {
@@ -95,6 +103,16 @@ export const POST = withAuth(async (req, user) => {
   if (!sections.length) {
     return NextResponse.json({ error: 'At least one document section is required' }, { status: 400 });
   }
+  const sourceabilityGate = sourceabilityExportGate(payload);
+  if (sourceabilityGate.blocked) {
+    return NextResponse.json({
+      error: 'Unsupported paragraphs block export for policy memos and board executive packs.',
+      exportBlocked: true,
+      unsupportedClaimCount: sourceabilityGate.unsupportedClaims.length,
+      unsupportedClaims: sourceabilityGate.unsupportedClaims,
+      unsupportedParagraphIds: sourceabilityGate.unsupportedParagraphIds,
+    }, { status: 409 });
+  }
 
   const doc = new Document({
     creator: user.name || 'PRAXIS',
@@ -155,3 +173,33 @@ export const POST = withAuth(async (req, user) => {
     },
   });
 });
+
+function sourceabilityExportGate(payload: WorkProductExportRequest): {
+  blocked: boolean;
+  unsupportedClaims: string[];
+  unsupportedParagraphIds: string[];
+} {
+  const productType = text(payload.productType).toLowerCase().replace(/[\s_]+/g, '-');
+  const requiresGate = productType === 'policy-memo' || productType === 'board-executive-pack';
+  const unsupportedClaims = uniqueStrings([
+    ...(payload.unsupportedClaims ?? []),
+    ...((payload.claimChecks ?? [])
+      .filter((check) => text(check.status).toLowerCase() === 'unsupported')
+      .map((check) => text(check.claim))),
+  ]);
+  const unsupportedParagraphIds = uniqueStrings([
+    ...(payload.unsupportedParagraphIds ?? []),
+    ...((payload.claimChecks ?? [])
+      .filter((check) => text(check.status).toLowerCase() === 'unsupported')
+      .map((check) => text(check.paragraphId ?? check.id))),
+  ]);
+  return {
+    blocked: requiresGate && unsupportedClaims.length > 0,
+    unsupportedClaims,
+    unsupportedParagraphIds,
+  };
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).slice(0, 100);
+}

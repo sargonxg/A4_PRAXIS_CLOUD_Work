@@ -918,7 +918,7 @@ function mergeWorkingTimeline(
       id: 'worker' as const,
       label: 'Producing output',
       status: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'queued' as const : receipt.supervisor.action === 'queue_agent_run' ? 'warn' as const : 'skipped' as const,
-      detail: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'Durable agent run queued for deeper work.' : receipt.supervisor.action === 'queue_agent_run' ? 'Durable run could not be queued; Ask continued synchronously.' : 'No durable run needed for this answer.',
+      detail: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'Durable agent run queued for deeper work.' : receipt.supervisor.action === 'queue_agent_run' ? 'Agent runtime unavailable - answered directly.' : 'No durable run needed for this answer.',
       runId: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? receipt.supervisor.queuedRun.runId : null,
       outputHref: receipt.supervisor.queuedRun?.outputHref ?? null,
       canOpen: Boolean(receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable'),

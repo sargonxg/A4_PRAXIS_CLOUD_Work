@@ -686,6 +686,12 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('sourceability reviewer before memo/PDF output');
   });
 
+  it('surfaces paragraph-level weak source highlights in memo side artifacts', () => {
+    expect(source).toContain('data-testid="memo-weak-source-highlights"');
+    expect(source).toContain('Weak source paragraphs');
+    expect(source).toContain('artifact.unsupportedClaims.slice(0, 2)');
+  });
+
   it('uses dnd-kit for composer reordering and modal capsule browsing', () => {
     expect(source).toContain("from '@dnd-kit/core'");
     expect(source).toContain("from '@dnd-kit/sortable'");

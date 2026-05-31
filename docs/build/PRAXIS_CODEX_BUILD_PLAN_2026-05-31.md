@@ -10,7 +10,7 @@ This repo-local copy records the sequential Codex build track for the five-sessi
 | Session | Focus | Status |
 |---|---|---|
 | 1 | Capsule Studio and living graph | Complete locally on `feature/capsule-studio-living-graph` |
-| 2 | Live agents and proof rail | Pending |
+| 2 | Live agents and proof rail | Complete locally on `feature/live-agents-proof-rail` |
 | 3 | Approvals and real multi-agent orchestration | Pending |
 | 4 | Boardroom depth | Pending |
 | 5 | Public surface, billing, and ship proof | Pending |
@@ -67,3 +67,58 @@ PASS - Authenticated app route assets: 760.9 KB gzip across 22 chunks.
 3. `buildCapsuleWorkbenchViewModel` now emits full graph metadata with entity type, provenance, confidence, source receipts, and relationship type.
 4. Starters now have Firestore loader/seed plumbing, but broader runtime adoption should continue by moving remaining catalog reads behind server/API loaders.
 5. Keep Session 2 work inside the existing Ask/cockpit surfaces and wire live agent proof into the same review/proposal language.
+
+## Prompt 2 Completion Notes
+
+- Reworked Research Memo Agent execution into explicit plan -> live retrieval -> evidence pack -> sourceability verification -> memo draft -> self-critique -> artifact finalize phases.
+- Live retrieval uses the existing grounded research path when a server AI/search provider is configured, with dependency-injected search/model seams for tests and future supervisors.
+- Sourceability verification now attaches live source receipt ids to checked claims, persists claim checks/unsupported claims on memo drafts, and emits proof-rail events.
+- Capsule Factory proposals now become review cards for source gaps, claim ledger updates, and agent instruction/memory posture changes; canonical mutation remains review-card-only.
+- The Ask proof rail streams the new runtime event names and shows compact tool risk, receipt counts, unsupported-claim counts, and artifact links.
+- Exporting `policy-memo` or `board-executive-pack` DOCX output is blocked with `409` while unsupported claims remain.
+- Runtime degradation copy now says `Agent runtime unavailable - answered directly` instead of implying durable work succeeded.
+- Memo side artifacts surface paragraph-level weak-source highlights from preserved unsupported claims.
+
+## Prompt 2 Validation Output
+
+```text
+npx tsc --noEmit
+PASS
+
+npm run build
+PASS - Next.js production build compiled and generated 167 static pages.
+Note: existing Firebase Admin credential warnings appeared during static generation; they did not fail the build.
+
+npm run lint
+PASS
+
+npx vitest run
+PASS - 283 files, 1210 tests.
+
+node scripts/audit-ai-routes.mjs
+PASS - OK - 61 AI route files, 61 calibrated, 10 exempt (static-marker).
+
+npm run audit:agent-runtime-proof
+PASS - audit:agent-runtime-proof OK.
+Warnings in this local shell: missing AgentRun database URL, worker base URL/auth, Genkit live model config, and ADK Agent Engine config.
+
+npm run audit:agent-process-contract
+PASS - audit:agent-process-contract OK
+
+npm run audit:agentic-search-proof
+PASS - audit:agentic-search-proof OK
+
+npm run eval:agentic-research
+PASS - 10/10 scenarios beat the prompt-only baseline.
+
+graphify update .
+PASS - graph.json and GRAPH_REPORT.md updated; HTML viz skipped because the graph has 6869 nodes.
+```
+
+## Handoff For Session 3
+
+1. Hook approval pauses into `evaluateAgentOperatingContract` and the `agent.contract.stop_condition` event in `src/lib/agent-runtime/worker.ts`.
+2. Use the `approvalSeam` metadata emitted by `research.plan_created` and `capsuleFactoryReviewCards` as the supervisor pause/resume markers.
+3. Promote capsule changes through review cards created by `runCapsuleFactoryDraft`; do not add direct canonical mutation paths.
+4. Reuse `collectSearchEvidenceForRun`, `verifySourceabilityLedgerWithLiveSearch`, and `draftAndCritiqueMemo` as the single-agent worker primitives under the multi-agent supervisor.
+5. Preserve the proof rail event schema in `useOrchestratorEvents.ts` and add orchestration events rather than creating a new cockpit surface.

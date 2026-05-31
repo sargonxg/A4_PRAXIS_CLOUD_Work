@@ -359,7 +359,7 @@ describe('agent runtime no-op worker', () => {
       expect.objectContaining({ toolId: 'sourceability-reviewer', status: 'succeeded' }),
       expect.objectContaining({ toolId: 'policy-memo', status: 'succeeded' }),
     ]));
-    expect(toolCalls.find((call) => call.toolId === 'sourceability-reviewer')?.output).toMatchObject({
+    expect(toolCalls.find((call) => call.toolId === 'sourceability-reviewer' && call.output)?.output).toMatchObject({
       unsupportedClaimCount: 1,
       checkedClaimCount: 2,
       liveSourceReceiptCount: 1,
@@ -386,18 +386,18 @@ describe('agent runtime no-op worker', () => {
       getRun: async () => makeRun('queued', { policyAgentId: 'capsule-factory' }),
       updateStatus: async (input) => makeRun(input.toStatus, { policyAgentId: 'capsule-factory' }),
       appendEvent: async (event) => event,
-      runIntakeFlow: async () => ({
+      runIntakeFlow: (async () => ({
         draftCores: [{ kind: 'source', label: 'Treaty source pack', summary: 'Attach treaty source pack.' }],
         sourceGaps: ['Need official treaty text.'],
         intakeQuestions: [],
         factoryTelemetry: { path: 'unit' },
-      } as never),
-      runResearchPlanFlow: async () => ({
+      })) as never,
+      runResearchPlanFlow: (async () => ({
         sourceGaps: ['Need official treaty text.'],
         readOnlyTools: [{ toolId: 'grounded-search', reason: 'Find official treaty text.' }],
         factoryTelemetry: { path: 'unit' },
-      } as never),
-      runSynthesisFlow: async () => ({
+      })) as never,
+      runSynthesisFlow: (async () => ({
         contextCapsuleDraft: {
           label: 'Treaty analysis capsule',
           summary: 'Review-gated treaty analysis capsule.',
@@ -406,12 +406,12 @@ describe('agent runtime no-op worker', () => {
         openQuestions: ['Which official text is current?'],
         applyActions: ['Create source-gap review card'],
         factoryTelemetry: { path: 'unit' },
-      } as never),
-      runWritingProfileFlow: async () => ({
+      })) as never,
+      runWritingProfileFlow: (async () => ({
         defaultFormat: 'policy-memo',
         exportGates: ['sourceability'],
         factoryTelemetry: { path: 'unit' },
-      } as never),
+      })) as never,
       createReviewCard: async (_uid, _capsuleId, input) => {
         reviewCards.push({
           title: input.title,
@@ -593,6 +593,7 @@ describe('agent runtime no-op worker', () => {
         mirrored.push({ eventType: event.eventType, data: event.data });
         return event;
       },
+      createReviewCard: async () => ({ reviewCardId: 'review-card-unit' } as never),
     });
 
     expect(transitions).toEqual(['running', 'succeeded']);

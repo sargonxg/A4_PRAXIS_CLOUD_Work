@@ -359,7 +359,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
         ? 'queued'
         : 'skipped';
   const agentDetail = queuedRun?.status === 'ledger_failed'
-    ? 'Deep work queue is unavailable; Ask will continue synchronously.'
+    ? 'Agent runtime unavailable - answered directly.'
     : queuedRun?.status === 'dispatch_failed'
       ? 'Durable run was created, but dispatch needs retry.'
       : receipt.supervisor.action === 'queue_agent_run'
@@ -526,7 +526,7 @@ export function markAskOrchestrationRunQueued(
           ...stage,
           status: queuedRun.status === 'ledger_failed' || queuedRun.status === 'dispatch_failed' ? 'warn' : 'ok',
           detail: queuedRun.status === 'ledger_failed'
-            ? `AgentRun could not be created: ${queuedRun.error ?? 'ledger unavailable'}.`
+            ? `Agent runtime unavailable - answered directly: ${queuedRun.error ?? 'ledger unavailable'}.`
             : `AgentRun ${queuedRun.runId} ${queuedRun.status.replace(/_/g, ' ')}.`,
         }
       : stage),

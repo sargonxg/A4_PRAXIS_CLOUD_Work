@@ -10899,6 +10899,12 @@ function MemoArtifactOverlay({
                   <MemoPraxisActionButton icon={CircleHelp} label="Challenge" disabled={loading} onClick={() => onPraxisAction('redteam')} />
                   <MemoPraxisActionButton icon={Search} label="Evidence actions" disabled={loading} onClick={() => onPraxisAction('evidence')} />
                 </div>
+                {artifact.unsupportedClaims.length ? (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-950" data-testid="memo-weak-source-highlights">
+                    <p className="font-semibold">Weak source paragraphs</p>
+                    <p className="mt-1">{artifact.unsupportedClaims.slice(0, 2).join(' | ')}</p>
+                  </div>
+                ) : null}
                 <textarea
                   ref={textareaRef}
                   data-testid="memo-artifact-editor"

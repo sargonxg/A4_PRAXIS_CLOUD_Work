@@ -42,7 +42,7 @@ export function queuedAgentRunFromEnvelope(envelope?: AskAnswerEnvelope): AskOrc
       ? 'warn'
       : 'queued';
   const detail = queuedRun.status === 'ledger_failed'
-    ? 'Deep work queue is unavailable; Ask continued synchronously.'
+    ? 'Agent runtime unavailable - answered directly.'
     : queuedRun.status === 'dispatch_failed'
       ? 'Durable run was created, but dispatch needs retry.'
       : 'Durable agent run queued for deeper work.';
@@ -232,12 +232,59 @@ export function AskQueuedAgentRunPanel({
             <p key={event.id} className="rounded-md border border-blue-100 bg-white px-2 py-1 text-[11px] text-slate-600">
               <span className="font-semibold text-slate-800">{agentRailStageFromEvent(event)}</span>
               {event.message ? ` / ${event.message}` : null}
+              <AgentEventProofFacts event={event} />
             </p>
           ))}
         </div>
       ) : null}
     </section>
   );
+}
+
+function AgentEventProofFacts({ event }: { event: ReturnType<typeof useOrchestratorEvents>['events'][number] }) {
+  const facts = eventProofFacts(event.data);
+  if (!facts.length) return null;
+  return (
+    <span className="mt-1 flex flex-wrap gap-1 text-[10px] text-slate-500">
+      {facts.map((fact) => fact.href ? (
+        <Link key={`${fact.label}:${fact.value}`} href={fact.href} className="rounded border border-blue-100 bg-blue-50 px-1.5 py-0.5 font-semibold text-diplomatic-blue hover:bg-blue-100">
+          {fact.label}: {fact.value}
+        </Link>
+      ) : (
+        <span key={`${fact.label}:${fact.value}`} className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5">
+          {fact.label}: {fact.value}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function eventProofFacts(data: Record<string, unknown>): Array<{ label: string; value: string; href?: string }> {
+  const facts: Array<{ label: string; value: string; href?: string }> = [];
+  const toolId = stringValue(data.toolId);
+  const risk = stringValue(data.risk);
+  const outputHref = stringValue(data.outputHref);
+  const sourceReceiptIds = stringArray(data.sourceReceiptIds);
+  const unsupportedClaimCount = numberValue(data.unsupportedClaimCount);
+  const liveSourceReceiptCount = numberValue(data.liveSourceReceiptCount);
+  if (toolId) facts.push({ label: 'tool', value: risk ? `${toolId} (${risk})` : toolId });
+  if (sourceReceiptIds.length) facts.push({ label: 'receipts', value: sourceReceiptIds.slice(0, 3).join(', ') });
+  if (typeof liveSourceReceiptCount === 'number') facts.push({ label: 'live sources', value: String(liveSourceReceiptCount) });
+  if (typeof unsupportedClaimCount === 'number') facts.push({ label: 'unsupported', value: String(unsupportedClaimCount) });
+  if (outputHref) facts.push({ label: 'artifact', value: 'open', href: outputHref });
+  return facts;
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0) : [];
+}
+
+function numberValue(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function agentRunLifecycleStepClass(state: 'pending' | 'active' | 'complete' | 'failed'): string {

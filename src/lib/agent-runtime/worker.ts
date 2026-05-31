@@ -1,3 +1,5 @@
+import { createHash } from 'crypto';
+import { generateText as aiGenerateText, type LanguageModel } from 'ai';
 import type { AgentRun } from '@/lib/agent-runtime/types';
 import { buildCapsuleReadReceiptFromEvidencePack, buildCapsuleReadReceiptFromRun, type CapsuleReadReceipt } from '@/lib/agent-runtime/capsule-read-receipt';
 import {
@@ -7,10 +9,12 @@ import {
   updateAgentRunStatus,
 } from '@/lib/agent-runtime/postgres';
 import { saveMemoDraft, type SaveMemoDraftInput } from '@/lib/firebase/memo-service';
+import { searchWeb, type WebSearchResult } from '@/lib/ai/grounded-research';
+import { getDeepThinkModel, getProModel, hasServerAiProvider } from '@/lib/ai/providers';
 import { getPolicyAgent, policyAgentRunIntent, type PolicyAgentOutputDestination } from '@/lib/product/policy-agents';
 import { buildOutputFormatterReasoningLoop, buildResearchMemoReasoningLoop } from '@/lib/agent-runtime/reasoning-loop';
-import { buildCapsuleEvidencePack, type CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
-import { buildSourceabilityLedgerFromEvidencePack, buildSourceabilityLedgerFromRun, type SourceabilityLedger } from '@/lib/agent-runtime/sourceability-ledger';
+import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock, type CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
+import { buildSourceabilityLedgerFromEvidencePack, buildSourceabilityLedgerFromRun, type SourceabilityClaim, type SourceabilityLedger } from '@/lib/agent-runtime/sourceability-ledger';
 import { makeAgentApproval, makeAgentToolCall } from '@/lib/agent-runtime/state';
 import { getAgentToolDefinition } from '@/lib/agent-runtime/tool-registry';
 import { buildAgentWorkflowPlan, type AgentWorkflowPlan } from '@/lib/agent-runtime/workflow-plan';
@@ -21,6 +25,7 @@ import {
   type AgentRuntimeMirrorDeps,
 } from '@/lib/agent-runtime/mirror';
 import { runCapsuleFactoryDraft, type CapsuleFactoryDeps } from '@/lib/agent-runtime/capsule-factory';
+import type { CreateCapsuleReviewCardInput, CapsuleReviewCard } from '@/lib/context/capsule-service';
 import { boardroomParticipantLabel, type BoardroomOutput } from '@/lib/boardroom/schema';
 import {
   BOARDROOM_MODEL_POLICY_ID,
@@ -82,7 +87,63 @@ type WorkerDeps = {
   runBoardroomDiscussion?: (input: LiveBoardroomRunnerInput) => Promise<BoardroomOutput>;
   appendToolCall?: typeof appendAgentToolCall;
   appendApproval?: typeof appendAgentApproval;
+  runGroundedSearch?: AgentGroundedSearchRunner;
+  generateText?: AgentTextGenerator;
+  createReviewCard?: (uid: string, capsuleId: string, input: CreateCapsuleReviewCardInput) => Promise<CapsuleReviewCard>;
 } & AgentRuntimeMirrorDeps & CapsuleFactoryDeps;
+
+type AgentTextGenerator = (input: {
+  model?: LanguageModel;
+  modelPurpose: 'pro' | 'deep-think';
+  system: string;
+  prompt: string;
+  temperature?: number;
+  providerOptions?: Record<string, unknown>;
+}) => Promise<{ text: string }>;
+
+type AgentGroundedSearchReceipt = {
+  sourceReceiptId: string;
+  title: string;
+  url: string | null;
+  snippet: string;
+  provider: string | null;
+  publishedDate?: string | null;
+  confidence: number;
+};
+
+type AgentGroundedSearchRunner = (input: {
+  run: AgentRun;
+  query: string;
+  objective: string;
+  sourceClasses: string[];
+  freshnessNeed: string;
+  timeframe: string | null;
+}) => Promise<{
+  query: string;
+  sourceReceipts: AgentGroundedSearchReceipt[];
+  degradedReason: string | null;
+}>;
+
+type LiveSearchEvidence = {
+  selectedToolIds: string[];
+  querySet: string[];
+  sourceClasses: string[];
+  freshnessNeed: string;
+  timeframe: string | null;
+  sourceReceipts: AgentGroundedSearchReceipt[];
+  sourceReceiptIds: string[];
+  groundingPosture: string;
+  degradedReason: string | null;
+  gaps: string[];
+};
+
+type LiveMemoDraft = {
+  draftText: string;
+  critiqueText: string;
+  finalText: string;
+  modelPosture: 'live' | 'fallback';
+  degradedReason: string | null;
+};
 
 export async function executeAgentRun(
   payload: ExecuteAgentRunPayload,
@@ -447,10 +508,59 @@ async function executeResearchMemoAgentRun(
       };
     }
 
+    executionStage = 'research-plan';
+    const liveResearchPlan = normalizeSearchPlan(running.metadata.searchPlan, running.objective);
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'research.plan_created',
+      message: 'Research Memo Agent created a live retrieval and source-check plan.',
+      data: {
+        querySet: liveResearchPlan.queries,
+        sourceClasses: liveResearchPlan.sourceClasses,
+        freshnessNeed: liveResearchPlan.freshnessNeed,
+        timeframe: liveResearchPlan.timeframe,
+        agentOperatingContract: agentOperatingContractFromRun(running),
+        approvalSeam: 'TODO(session-3): pause here when supervisor approvals are enabled for high-risk retrieval or export.',
+      },
+    }, deps);
+    const contractDecision = evaluateAgentOperatingContract(running);
+    if (!contractDecision.allowed) {
+      await mirrorWorkerEvent(running, {
+        substrate: 'praxis',
+        phase: 'agent.contract.stop_condition',
+        message: contractDecision.reason,
+        data: {
+          reason: contractDecision.reason,
+          forbiddenActions: contractDecision.forbiddenActions,
+          missingAllowedActions: contractDecision.missingAllowedActions,
+          approvalSeam: 'TODO(session-3): supervisor should resume this run after explicit approval.',
+        },
+      }, deps);
+      const waiting = await updateStatus({
+        ownerUid: running.ownerUid,
+        runId: running.id,
+        toStatus: 'waiting_approval',
+        message: contractDecision.reason,
+        data: {
+          dispatchId: payload.dispatchId,
+          attempt: payload.attempt,
+          executionMode: 'research-memo',
+          contractDecision,
+        },
+      });
+      return {
+        runId: waiting?.id ?? running.id,
+        status: waiting?.status ?? 'waiting_approval',
+        executionMode: 'research-memo',
+        traceId: running.traceId,
+      };
+    }
+
     executionStage = 'search-evidence';
-    await collectSearchEvidenceForRun(running, {
+    const liveSearchEvidence = await collectSearchEvidenceForRun(running, {
       appendToolCall: persistToolCall,
       appendEvent: deps.appendEvent,
+      runGroundedSearch: deps.runGroundedSearch,
     });
 
     executionStage = 'evidence-pack';
@@ -475,11 +585,26 @@ async function executeResearchMemoAgentRun(
       capsuleReadReceipt,
       groundingPosture: capsuleReadReceipt.groundingPosture,
     });
-    const sourceabilityLedger = buildSourceabilityLedgerFromEvidencePack(evidencePack, {
+    let sourceabilityLedger = buildSourceabilityLedgerFromEvidencePack(evidencePack, {
       agentRunId: running.id,
       outputTarget: 'memo_studio',
     });
+    sourceabilityLedger = verifySourceabilityLedgerWithLiveSearch(sourceabilityLedger, liveSearchEvidence);
     await emitSourceabilityLedger(running, sourceabilityLedger, deps);
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'sourceability.claims_verified',
+      message: 'Sourceability Reviewer checked draft claims against capsule evidence and live retrieval receipts.',
+      data: {
+        ledgerId: sourceabilityLedger.ledgerId,
+        checkedClaimCount: sourceabilityLedger.summary.totalClaims,
+        unsupportedClaimCount: sourceabilityLedger.summary.unsupportedClaims,
+        weakClaimCount: sourceabilityLedger.summary.weakClaims,
+        contradictedClaimCount: sourceabilityLedger.summary.contradictedClaims,
+        liveSourceReceiptCount: liveSearchEvidence.sourceReceiptIds.length,
+        sourceReceiptIds: liveSearchEvidence.sourceReceiptIds,
+      },
+    }, deps);
     await persistToolCall(makeAgentToolCall({
       runId: running.id,
       ownerUid: running.ownerUid,
@@ -509,6 +634,9 @@ async function executeResearchMemoAgentRun(
         ledgerId: sourceabilityLedger.ledgerId,
         summary: sourceabilityLedger.summary,
         unsupportedClaimCount: sourceabilityLedger.summary.unsupportedClaims,
+        checkedClaimCount: sourceabilityLedger.summary.totalClaims,
+        liveSourceReceiptCount: liveSearchEvidence.sourceReceiptIds.length,
+        sourceReceiptIds: liveSearchEvidence.sourceReceiptIds,
       },
       startedAt: new Date().toISOString(),
       completedAt: new Date().toISOString(),
@@ -520,14 +648,67 @@ async function executeResearchMemoAgentRun(
       : ['No blocking capsule gaps were detected for this first memo pass.'];
     const caseId = running.selectedCoreIds.situationCoreId ?? running.capsuleId;
     const title = `Research memo - ${running.objective.slice(0, 80)}`;
+    executionStage = 'memo-draft';
+    const liveMemoDraft = await draftAndCritiqueMemo(running, evidencePack, sourceabilityLedger, liveSearchEvidence, deps);
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'memo.draft_created',
+      message: liveMemoDraft.modelPosture === 'live'
+        ? 'Research Memo Agent drafted memo text with inline source receipts.'
+        : 'Research Memo Agent produced a fallback memo draft because the model runtime was unavailable.',
+      data: {
+        modelPosture: liveMemoDraft.modelPosture,
+        degradedReason: liveMemoDraft.degradedReason,
+        sourceReceiptIds: liveSearchEvidence.sourceReceiptIds,
+        unsupportedClaimCount: sourceabilityLedger.summary.unsupportedClaims,
+      },
+    }, deps);
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'memo.self_critique_completed',
+      message: 'Research Memo Agent completed sourceability self-critique before finalizing the artifact.',
+      data: {
+        critiquePreview: liveMemoDraft.critiqueText.slice(0, 900),
+        unsupportedClaimCount: sourceabilityLedger.summary.unsupportedClaims,
+        weakClaimCount: sourceabilityLedger.summary.weakClaims,
+      },
+    }, deps);
+
     executionStage = 'memo-persist';
+    const combinedSourceReceiptIds = uniqueStrings([
+      ...evidencePack.sourceReceiptIds,
+      ...evidencePack.sourcedParagraphs.map((paragraph) => paragraph.sourceReceiptId).filter((value): value is string => Boolean(value)),
+      ...liveSearchEvidence.sourceReceiptIds,
+    ]);
+    const claimChecks = sourceabilityLedger.claims.map((claim) => ({
+      id: claim.id,
+      claim: claim.claim,
+      status: claim.supportLabel,
+      confidence: claim.confidence,
+      sourceReceiptIds: claim.sourceReceiptIds,
+      documentParagraphIds: claim.documentParagraphIds,
+      reviewNote: claim.reviewNote,
+    }));
+    const unsupportedClaims = sourceabilityLedger.unsupportedClaims.map((claim) => claim.claim);
     const memoRecord = await persistMemo(running.ownerUid, {
       caseId,
       templateId: 'policy-memo',
       title,
       graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:graph-gap`,
       changeNote: `Created by Research Memo Agent run ${running.id}.`,
-      blocks: buildMemoBlocks(running, evidencePack, sourceabilityLedger),
+      capsuleId: running.capsuleId,
+      capsuleVersion: evidencePack.activeCapsule.version ?? null,
+      runId: running.id,
+      outputTarget: 'policy-memo',
+      sourceReceiptIds: combinedSourceReceiptIds,
+      sourceReceipts: liveSearchEvidence.sourceReceipts,
+      unsupportedClaims,
+      claimChecks,
+      blocks: buildMemoBlocks(running, evidencePack, sourceabilityLedger, {
+        liveMemoDraft,
+        liveSearchEvidence,
+        combinedSourceReceiptIds,
+      }),
     });
     await persistToolCall(makeAgentToolCall({
       runId: running.id,
@@ -578,6 +759,18 @@ async function executeResearchMemoAgentRun(
         capsuleReadReceipt,
         workflowPlan,
         sourceabilityLedgerSummary: sourceabilityLedger.summary,
+      },
+    }, deps);
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'artifact.finalized',
+      message: 'Research Memo Agent finalized the memo artifact link and sourceability gate receipt.',
+      data: {
+        memoId: memoRecord.memo.id,
+        outputCapsuleId: outputCapsule?.id ?? null,
+        outputHref,
+        sourceReceiptIds: combinedSourceReceiptIds,
+        unsupportedClaimCount: sourceabilityLedger.summary.unsupportedClaims,
       },
     }, deps);
 
@@ -1224,9 +1417,30 @@ async function executeReviewAgentRun(
     executionStage = 'workflow-proof';
     const { capsuleReadReceipt, workflowPlan } = await emitCapsuleReadAndWorkflowPlan(running, deps);
     executionStage = 'sourceability-ledger';
-    const sourceabilityLedger = buildSourceabilityLedgerFromRun(running, {
+    let sourceabilityLedger = buildSourceabilityLedgerFromRun(running, {
       outputTarget: executionMode === 'handover-builder' ? 'handover' : 'memo_studio',
     });
+    if (executionMode === 'sourceability-reviewer') {
+      const liveSearchEvidence = await collectSearchEvidenceForRun(running, {
+        appendToolCall: persistToolCall,
+        appendEvent: deps.appendEvent,
+        runGroundedSearch: deps.runGroundedSearch,
+      });
+      sourceabilityLedger = verifySourceabilityLedgerWithLiveSearch(sourceabilityLedger, liveSearchEvidence);
+      await mirrorWorkerEvent(running, {
+        substrate: 'praxis',
+        phase: 'sourceability.claims_verified',
+        message: 'Sourceability Reviewer checked draft claims against live retrieval receipts.',
+        data: {
+          ledgerId: sourceabilityLedger.ledgerId,
+          checkedClaimCount: sourceabilityLedger.summary.totalClaims,
+          unsupportedClaimCount: sourceabilityLedger.summary.unsupportedClaims,
+          weakClaimCount: sourceabilityLedger.summary.weakClaims,
+          liveSourceReceiptCount: liveSearchEvidence.sourceReceiptIds.length,
+          sourceReceiptIds: liveSearchEvidence.sourceReceiptIds,
+        },
+      }, deps);
+    }
     await emitSourceabilityLedger(running, sourceabilityLedger, deps);
 
     executionStage = 'tool-call-persist';
@@ -1250,6 +1464,20 @@ async function executeReviewAgentRun(
       title: `${reviewAgentLabel(executionMode)} - ${running.objective.slice(0, 72)}`,
       graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:${executionMode}`,
       changeNote: `Created by ${reviewAgentLabel(executionMode)} run ${running.id}.`,
+      capsuleId: running.capsuleId,
+      runId: running.id,
+      outputTarget: executionMode === 'handover-builder' ? 'handover' : 'policy-memo',
+      sourceReceiptIds: uniqueStrings(sourceabilityLedger.claims.flatMap((claim) => claim.sourceReceiptIds)),
+      unsupportedClaims: sourceabilityLedger.unsupportedClaims.map((claim) => claim.claim),
+      claimChecks: sourceabilityLedger.claims.map((claim) => ({
+        id: claim.id,
+        claim: claim.claim,
+        status: claim.supportLabel,
+        confidence: claim.confidence,
+        sourceReceiptIds: claim.sourceReceiptIds,
+        documentParagraphIds: claim.documentParagraphIds,
+        reviewNote: claim.reviewNote,
+      })),
       blocks: buildReviewMemoBlocks(running, executionMode, sourceabilityLedger),
     });
     const outputHref = executionMode === 'handover-builder'
@@ -1479,18 +1707,95 @@ function outputDestinationFromMetadata(metadata: Record<string, unknown>): Polic
 
 async function collectSearchEvidenceForRun(
   running: AgentRun,
-  deps: Pick<WorkerDeps, 'appendToolCall' | 'appendEvent'>,
-): Promise<void> {
+  deps: Pick<WorkerDeps, 'appendToolCall' | 'appendEvent' | 'runGroundedSearch'>,
+): Promise<LiveSearchEvidence> {
   const persistToolCall = deps.appendToolCall ?? appendAgentToolCall;
   const selectedToolIds = selectedSearchToolIds(running);
-  if (!selectedToolIds.length) return;
-
   const searchPlan = normalizeSearchPlan(running.metadata.searchPlan, running.objective);
-  const sourceReceiptIds = stringArray(running.metadata.sourceReceiptIds);
+  if (!selectedToolIds.length) {
+    return {
+      selectedToolIds: [],
+      querySet: searchPlan.queries,
+      sourceClasses: searchPlan.sourceClasses,
+      freshnessNeed: searchPlan.freshnessNeed,
+      timeframe: searchPlan.timeframe,
+      sourceReceipts: [],
+      sourceReceiptIds: [],
+      groundingPosture: 'No search tool selected',
+      degradedReason: null,
+      gaps: [],
+    };
+  }
+
+  let sourceReceipts: AgentGroundedSearchReceipt[] = [];
+  let liveSearchError: string | null = null;
+  if (deps.runGroundedSearch || shouldUseDefaultLiveSearch()) {
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'grounding.live_retrieval_started',
+      message: 'Agent worker started live grounded retrieval.',
+      data: {
+        selectedToolIds,
+        querySet: searchPlan.queries,
+        sourceClasses: searchPlan.sourceClasses,
+        freshnessNeed: searchPlan.freshnessNeed,
+      },
+    }, deps);
+    for (const query of searchPlan.queries) {
+      try {
+        const result = deps.runGroundedSearch
+          ? await deps.runGroundedSearch({
+              run: running,
+              query,
+              objective: running.objective,
+              sourceClasses: searchPlan.sourceClasses,
+              freshnessNeed: searchPlan.freshnessNeed,
+              timeframe: searchPlan.timeframe,
+            })
+          : await runDefaultGroundedSearch({
+              run: running,
+              query,
+              objective: running.objective,
+              sourceClasses: searchPlan.sourceClasses,
+              freshnessNeed: searchPlan.freshnessNeed,
+              timeframe: searchPlan.timeframe,
+            });
+        sourceReceipts.push(...result.sourceReceipts);
+        if (result.degradedReason) liveSearchError = result.degradedReason;
+      } catch (err) {
+        liveSearchError = err instanceof Error ? err.message : String(err);
+      }
+    }
+    sourceReceipts = dedupeSourceReceipts(sourceReceipts);
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: sourceReceipts.length ? 'grounding.live_retrieval_succeeded' : 'grounding.live_retrieval_degraded',
+      message: sourceReceipts.length
+        ? 'Live grounded retrieval returned source receipts for sourceability review.'
+        : 'Live grounded retrieval completed without source receipts.',
+      data: {
+        selectedToolIds,
+        querySet: searchPlan.queries,
+        sourceReceiptIds: sourceReceipts.map((receipt) => receipt.sourceReceiptId),
+        sourceReceiptCount: sourceReceipts.length,
+        degradedReason: liveSearchError,
+      },
+    }, deps);
+  }
+  const sourceReceiptIds = uniqueStrings([
+    ...stringArray(running.metadata.sourceReceiptIds),
+    ...sourceReceipts.map((receipt) => receipt.sourceReceiptId),
+  ]);
   const groundingPlan = isRecord(running.metadata.groundingPlan) ? running.metadata.groundingPlan : null;
   const googleGroundingActive = Array.isArray(groundingPlan?.modes) && groundingPlan.modes.includes('google_search');
-  const groundingPosture = googleGroundingActive ? 'Google Search grounding active' : 'Grounding unavailable';
-  const degradedReason = googleGroundingActive ? null : 'Google Search grounding is not configured.';
+  const groundingPosture = sourceReceipts.length
+    ? 'Live grounded retrieval completed'
+    : googleGroundingActive
+      ? 'Google Search grounding active'
+      : 'Grounding unavailable';
+  const degradedReason = sourceReceipts.length || googleGroundingActive
+    ? liveSearchError
+    : (liveSearchError ?? 'Google Search grounding is not configured.');
   const gaps = [
     ...(sourceReceiptIds.length ? [] : ['No current-source receipts were collected for this run.']),
     ...(degradedReason ? [degradedReason] : []),
@@ -1519,6 +1824,7 @@ async function collectSearchEvidenceForRun(
       timeframe: searchPlan.timeframe,
       sourceReceiptIds,
       sourceReceiptCount: sourceReceiptIds.length,
+      sourceReceipts,
       groundingPlan,
       groundingPosture,
       degradedReason,
@@ -1548,6 +1854,8 @@ async function collectSearchEvidenceForRun(
       data: {
         toolId,
         sourceReceiptCount: sourceReceiptIds.length,
+        sourceReceiptIds,
+        risk: getAgentToolDefinition(toolId).risk,
         groundingPosture,
         degradedReason,
       },
@@ -1577,12 +1885,25 @@ async function collectSearchEvidenceForRun(
     data: {
       sourceReceiptIds,
       sourceReceiptCount: sourceReceiptIds.length,
+      sourceReceipts,
       querySet: searchPlan.queries,
       gaps,
       groundingPosture,
       degradedReason,
     },
   }, deps);
+  return {
+    selectedToolIds,
+    querySet: searchPlan.queries,
+    sourceClasses: searchPlan.sourceClasses,
+    freshnessNeed: searchPlan.freshnessNeed,
+    timeframe: searchPlan.timeframe,
+    sourceReceipts,
+    sourceReceiptIds,
+    groundingPosture,
+    degradedReason,
+    gaps,
+  };
 }
 
 function selectedSearchToolIds(run: AgentRun): string[] {
@@ -1617,6 +1938,287 @@ function normalizeSearchPlan(value: unknown, objective: string): {
   };
 }
 
+function shouldUseDefaultLiveSearch(): boolean {
+  return hasServerAiProvider() || process.env.PRAXIS_AGENT_LIVE_SEARCH === 'true';
+}
+
+async function runDefaultGroundedSearch(input: Parameters<AgentGroundedSearchRunner>[0]): Promise<Awaited<ReturnType<AgentGroundedSearchRunner>>> {
+  const results = await searchWeb(input.query, {
+    numResults: 5,
+    timeRange: /current|latest|today|week/i.test(input.freshnessNeed) ? 'month' : 'all',
+  });
+  const sourceReceipts = results.slice(0, 8).map((result) => sourceReceiptFromSearchResult(input.query, result));
+  return {
+    query: input.query,
+    sourceReceipts,
+    degradedReason: sourceReceipts.length ? null : 'Live grounded search returned no source receipts.',
+  };
+}
+
+function sourceReceiptFromSearchResult(query: string, result: WebSearchResult): AgentGroundedSearchReceipt {
+  const basis = `${query}:${result.url}:${result.title}`;
+  return {
+    sourceReceiptId: `web:${stableShortId(basis)}`,
+    title: result.title || result.url || 'Live source',
+    url: result.url || null,
+    snippet: (result.content || result.description || '').replace(/\s+/g, ' ').slice(0, 900),
+    provider: result.provider ?? 'web-search',
+    publishedDate: result.publishedDate ?? null,
+    confidence: result.success ? 0.72 : 0.35,
+  };
+}
+
+function verifySourceabilityLedgerWithLiveSearch(
+  ledger: SourceabilityLedger,
+  liveSearchEvidence: LiveSearchEvidence,
+): SourceabilityLedger {
+  if (!ledger.claims.length || !liveSearchEvidence.sourceReceipts.length) return ledger;
+  const claims = ledger.claims.map((claim) => {
+    if (claim.supportLabel === 'unsupported') return claim;
+    const matchingReceipts = liveSearchEvidence.sourceReceipts.filter((receipt) => receiptMatchesClaim(receipt, claim.claim));
+    if (!matchingReceipts.length) return claim;
+    const sourceReceiptIds = uniqueStrings([
+      ...claim.sourceReceiptIds,
+      ...matchingReceipts.map((receipt) => receipt.sourceReceiptId),
+    ]);
+    const confidence = Math.max(claim.confidence, ...matchingReceipts.map((receipt) => receipt.confidence));
+    const supportLabel = confidence >= 0.7 ? 'supported' : 'weak';
+    return {
+      ...claim,
+      supportLabel,
+      sourceReceiptIds,
+      confidence,
+      reviewNote: `Live sourceability check attached ${matchingReceipts.length} grounded receipt(s).`,
+    } satisfies SourceabilityClaim;
+  });
+  return rebuildSourceabilityLedger(ledger, claims);
+}
+
+async function draftAndCritiqueMemo(
+  running: AgentRun,
+  evidencePack: CapsuleEvidencePack,
+  sourceabilityLedger: SourceabilityLedger,
+  liveSearchEvidence: LiveSearchEvidence,
+  deps: Pick<WorkerDeps, 'generateText'>,
+): Promise<LiveMemoDraft> {
+  const evidencePrompt = [
+    formatEvidencePackPromptBlock(evidencePack),
+    sourceReceiptsPromptBlock(liveSearchEvidence),
+    claimLedgerPromptBlock(sourceabilityLedger),
+  ].join('\n\n');
+  const draftPrompt = [
+    `Objective: ${running.objective}`,
+    evidencePrompt,
+    'Draft a concise policy memo paragraph set. Use inline bracket citations with the available source receipt ids. Flag weak or unsupported claims explicitly.',
+  ].join('\n\n');
+
+  let modelPosture: LiveMemoDraft['modelPosture'] = 'live';
+  let degradedReason: string | null = null;
+  let draftText: string;
+  try {
+    draftText = (await generateAgentText(deps, {
+      modelPurpose: 'pro',
+      system: 'You are PRAXIS Research Memo Agent. Draft only from the supplied capsule evidence and live source receipts.',
+      prompt: draftPrompt,
+      temperature: 0.2,
+    })).text.trim();
+  } catch (err) {
+    modelPosture = 'fallback';
+    degradedReason = err instanceof Error ? err.message : String(err);
+    draftText = fallbackMemoDraft(running, evidencePack, sourceabilityLedger, liveSearchEvidence);
+  }
+
+  let critiqueText: string;
+  try {
+    critiqueText = (await generateAgentText(deps, {
+      modelPurpose: 'deep-think',
+      system: 'You are PRAXIS sourceability self-critique. Identify unsupported paragraphs, weak citations, and export blockers.',
+      prompt: [
+        'Review this memo draft for sourceability gates.',
+        draftText,
+        claimLedgerPromptBlock(sourceabilityLedger),
+      ].join('\n\n'),
+      temperature: 0,
+      providerOptions: { google: { thinking_level: 'high' } },
+    })).text.trim();
+  } catch (err) {
+    modelPosture = 'fallback';
+    degradedReason = degradedReason ?? (err instanceof Error ? err.message : String(err));
+    critiqueText = sourceabilityLedger.summary.unsupportedClaims
+      ? `${sourceabilityLedger.summary.unsupportedClaims} unsupported claim(s) block export-ready use.`
+      : 'No unsupported claims were detected by the ledger; human review is still required before export.';
+  }
+
+  return {
+    draftText,
+    critiqueText,
+    finalText: [draftText, '', 'Sourceability self-critique:', critiqueText].join('\n').trim(),
+    modelPosture,
+    degradedReason,
+  };
+}
+
+async function generateAgentText(
+  deps: Pick<WorkerDeps, 'generateText'>,
+  input: Parameters<AgentTextGenerator>[0],
+): Promise<{ text: string }> {
+  if (deps.generateText) return deps.generateText(input);
+  if (!hasServerAiProvider()) {
+    throw new Error('Server AI provider is not configured for live memo drafting.');
+  }
+  const model = input.modelPurpose === 'deep-think' ? getDeepThinkModel('high') : getProModel();
+  const result = await aiGenerateText({
+    model,
+    system: input.system,
+    prompt: input.prompt,
+    temperature: input.temperature,
+    ...(input.providerOptions ? { providerOptions: input.providerOptions as never } : {}),
+  });
+  return { text: result.text };
+}
+
+function fallbackMemoDraft(
+  running: AgentRun,
+  evidencePack: CapsuleEvidencePack,
+  sourceabilityLedger: SourceabilityLedger,
+  liveSearchEvidence: LiveSearchEvidence,
+): string {
+  const sourceIds = uniqueStrings([
+    ...evidencePack.sourceReceiptIds,
+    ...evidencePack.sourcedParagraphs.map((paragraph) => paragraph.sourceReceiptId).filter((value): value is string => Boolean(value)),
+    ...liveSearchEvidence.sourceReceiptIds,
+  ]);
+  return [
+    `Task: ${running.objective}`,
+    evidencePack.sourcedParagraphs.length
+      ? evidencePack.sourcedParagraphs.map((paragraph) => `${paragraph.excerpt} ${paragraph.sourceReceiptId ? `[${paragraph.sourceReceiptId}]` : paragraph.citationLabel}`).join('\n')
+      : 'No sourced capsule paragraphs were retrieved.',
+    sourceIds.length ? `Inline source receipts available: ${sourceIds.join(', ')}.` : 'No live source receipts are available.',
+    sourceabilityLedger.summary.unsupportedClaims
+      ? `Unsupported paragraphs remain: ${sourceabilityLedger.unsupportedClaims.map((claim) => claim.claim).join(' | ')}`
+      : 'No unsupported paragraphs were recorded by the claim ledger.',
+  ].join('\n\n');
+}
+
+function sourceReceiptsPromptBlock(liveSearchEvidence: LiveSearchEvidence): string {
+  const lines = ['## Live Source Receipts'];
+  if (!liveSearchEvidence.sourceReceipts.length) {
+    lines.push(`- none${liveSearchEvidence.degradedReason ? ` (${liveSearchEvidence.degradedReason})` : ''}`);
+    return lines.join('\n');
+  }
+  for (const receipt of liveSearchEvidence.sourceReceipts) {
+    lines.push(`- [${receipt.sourceReceiptId}] ${receipt.title}${receipt.url ? ` ${receipt.url}` : ''}: ${receipt.snippet}`);
+  }
+  return lines.join('\n');
+}
+
+function claimLedgerPromptBlock(sourceabilityLedger: SourceabilityLedger): string {
+  return [
+    '## Claim Ledger',
+    ...sourceabilityLedger.claims.map((claim) => `- ${claim.supportLabel} (${Math.round(claim.confidence * 100)}%): ${claim.claim} [${claim.sourceReceiptIds.join(', ') || 'no receipt'}]`),
+  ].join('\n');
+}
+
+function rebuildSourceabilityLedger(
+  ledger: SourceabilityLedger,
+  claims: SourceabilityClaim[],
+): SourceabilityLedger {
+  const summary = {
+    totalClaims: claims.length,
+    supportedClaims: claims.filter((item) => item.supportLabel === 'supported').length,
+    weakClaims: claims.filter((item) => item.supportLabel === 'weak').length,
+    unsupportedClaims: claims.filter((item) => item.supportLabel === 'unsupported').length,
+    contradictedClaims: claims.filter((item) => item.supportLabel === 'contradicted').length,
+    modelPriorClaims: claims.filter((item) => item.supportLabel === 'model_prior').length,
+    assumptionClaims: claims.filter((item) => item.supportLabel === 'assumption').length,
+  };
+  const sourceReceiptIds = uniqueStrings(claims.flatMap((claim) => claim.sourceReceiptIds));
+  return {
+    ...ledger,
+    claims,
+    summary,
+    unsupportedClaims: claims.filter((claim) => claim.supportLabel === 'unsupported'),
+    outputReadiness: {
+      ...ledger.outputReadiness,
+      sourceReceiptIds,
+    },
+  };
+}
+
+function receiptMatchesClaim(receipt: AgentGroundedSearchReceipt, claim: string): boolean {
+  const haystack = `${receipt.title} ${receipt.snippet}`.toLowerCase();
+  const tokens = claim.toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .filter((token) => token.length > 4)
+    .slice(0, 18);
+  if (!tokens.length) return false;
+  const hits = tokens.filter((token) => haystack.includes(token)).length;
+  return hits >= Math.min(2, tokens.length);
+}
+
+function agentOperatingContractFromRun(run: AgentRun): {
+  allowedActions: string[];
+  forbiddenActions: string[];
+  stopConditions: string[];
+} {
+  const contract = isRecord(run.metadata.agentOperatingContract) ? run.metadata.agentOperatingContract : {};
+  return {
+    allowedActions: uniqueStrings([
+      ...stringArray(contract.allowedActions),
+      ...stringArray(run.metadata.allowedActions),
+    ]),
+    forbiddenActions: uniqueStrings([
+      ...stringArray(contract.forbiddenActions),
+      ...stringArray(run.metadata.forbiddenActions),
+    ]),
+    stopConditions: uniqueStrings([
+      ...stringArray(contract.stopConditions),
+      ...stringArray(run.metadata.stopConditions),
+    ]),
+  };
+}
+
+function evaluateAgentOperatingContract(run: AgentRun): {
+  allowed: boolean;
+  reason: string;
+  forbiddenActions: string[];
+  missingAllowedActions: string[];
+} {
+  const contract = agentOperatingContractFromRun(run);
+  const requiredActions = uniqueStrings([
+    selectedSearchToolIds(run).length ? 'search_grounded' : '',
+    'draft_policy_memo',
+    'check_sourceability',
+  ]);
+  const forbiddenActions = requiredActions.filter((action) => contract.forbiddenActions.includes(action));
+  const strictAllowed = run.metadata.strictAgentOperatingContract === true;
+  const missingAllowedActions = strictAllowed && contract.allowedActions.length
+    ? requiredActions.filter((action) => !contract.allowedActions.includes(action))
+    : [];
+  const allowed = forbiddenActions.length === 0 && missingAllowedActions.length === 0;
+  return {
+    allowed,
+    reason: allowed
+      ? 'Agent operating contract permits this read, source-check, and memo draft sequence.'
+      : `Agent operating contract stopped the run before ${[...forbiddenActions, ...missingAllowedActions].join(', ')}.`,
+    forbiddenActions,
+    missingAllowedActions,
+  };
+}
+
+function dedupeSourceReceipts(receipts: AgentGroundedSearchReceipt[]): AgentGroundedSearchReceipt[] {
+  const seen = new Set<string>();
+  const out: AgentGroundedSearchReceipt[] = [];
+  for (const receipt of receipts) {
+    const key = receipt.sourceReceiptId || receipt.url || `${receipt.title}:${receipt.snippet.slice(0, 80)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(receipt);
+  }
+  return out.slice(0, 24);
+}
+
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 }
@@ -1625,17 +2227,37 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
+function uniqueStrings(values: Array<string | null | undefined>): string[] {
+  return Array.from(new Set(values.map((value) => (typeof value === 'string' ? value.trim() : '')).filter(Boolean))).slice(0, 100);
+}
+
+function stableShortId(value: string): string {
+  return createHash('sha256').update(value).digest('hex').slice(0, 16);
+}
+
 function buildMemoBlocks(
   running: AgentRun,
   evidencePack: CapsuleEvidencePack,
   sourceabilityLedger?: SourceabilityLedger,
+  options: {
+    liveMemoDraft?: LiveMemoDraft;
+    liveSearchEvidence?: LiveSearchEvidence;
+    combinedSourceReceiptIds?: string[];
+  } = {},
 ): SaveMemoDraftInput['blocks'] {
-  const citedReceiptIds = evidencePack.sourcedParagraphs
-    .map((paragraph) => paragraph.sourceReceiptId)
-    .filter((value): value is string => Boolean(value));
+  const citedReceiptIds = uniqueStrings([
+    ...evidencePack.sourcedParagraphs
+      .map((paragraph) => paragraph.sourceReceiptId)
+      .filter((value): value is string => Boolean(value)),
+    ...(options.combinedSourceReceiptIds ?? []),
+  ]);
   const paragraphCitation = citedReceiptIds.length
     ? [{ nodeIds: [], sourceReceiptIds: citedReceiptIds, surface: 'footnote' as const }]
     : [];
+  const weakSourceHighlight = Boolean(
+    sourceabilityLedger &&
+    (sourceabilityLedger.summary.weakClaims > 0 || sourceabilityLedger.summary.unsupportedClaims > 0 || sourceabilityLedger.summary.contradictedClaims > 0)
+  );
 
   return [
     {
@@ -1668,6 +2290,29 @@ function buildMemoBlocks(
         paragraphIds: evidencePack.sourcedParagraphs.map((paragraph) => paragraph.id),
       },
     },
+    ...(options.liveMemoDraft ? [{
+      id: 'live-memo-draft',
+      type: 'paragraph' as const,
+      title: 'Draft memo with inline citations',
+      content: options.liveMemoDraft.finalText,
+      citations: paragraphCitation,
+      metadata: {
+        runId: running.id,
+        capsuleId: running.capsuleId,
+        modelPosture: options.liveMemoDraft.modelPosture,
+        degradedReason: options.liveMemoDraft.degradedReason,
+        weakSourceHighlight,
+        sourceReceiptIds: citedReceiptIds,
+        liveSourceReceiptIds: options.liveSearchEvidence?.sourceReceiptIds ?? [],
+        sourceabilityLedgerSummary: sourceabilityLedger?.summary,
+        paragraphSourceability: sourceabilityLedger?.claims.map((claim) => ({
+          claimId: claim.id,
+          status: claim.supportLabel,
+          confidence: claim.confidence,
+          sourceReceiptIds: claim.sourceReceiptIds,
+        })) ?? [],
+      },
+    }] : []),
     {
       id: 'source-receipt',
       type: 'bullets',
