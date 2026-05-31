@@ -125,4 +125,61 @@ describe('buildCapsuleWorkbenchViewModel', () => {
     expect(model.reviewQueue.some((item) => item.target === 'sourceGap')).toBe(true);
     expect(model.summaryFacts.nextAction).toBe('Attach sources or create a source-gap review card.');
   });
+
+  it('keeps the full living graph model instead of truncating to a preview subset', () => {
+    const sourceRefs = Array.from({ length: 90 }, (_, index) => ({
+      id: `source-${index + 1}`,
+      title: `Source ${index + 1}`,
+    }));
+    const claimLedger = Array.from({ length: 90 }, (_, index) => ({
+      id: `claim-${index + 1}`,
+      text: `Claim ${index + 1}`,
+      status: index % 3 === 0 ? 'unsupported' : index % 3 === 1 ? 'weak' : 'supported',
+      sourceIds: [`source-${index + 1}`],
+    }));
+
+    const model = buildCapsuleWorkbenchViewModel({
+      capsule: {
+        capsuleId: 'cap-living-graph',
+        label: 'Living graph capsule',
+        summary: 'A capsule with enough sources and claims to require graph exploration.',
+        version: 3,
+        sourceRefs,
+        claimLedger,
+        coreRefs: {
+          situationCoreId: 'situation-core',
+          sourceCoreIds: sourceRefs.map((source) => source.id),
+          graphCoreId: 'graph-core',
+          outputCoreIds: ['policy-memo'],
+        },
+        readiness: {
+          score: 82,
+          tier: 'green',
+          diagnostics: ['Ready for sourced drafting.'],
+        },
+        trust: {
+          level: 'green',
+          score: 82,
+          label: 'Source-backed',
+        },
+      },
+      repositoryDocuments: Array.from({ length: 12 }, (_, index) => ({
+        id: `doc-${index + 1}`,
+        title: `Document ${index + 1}`,
+        status: 'ready',
+      })),
+      agentRuns: Array.from({ length: 8 }, (_, index) => ({
+        runId: `run-${index + 1}`,
+        status: 'succeeded',
+        policyAgentLabel: 'Research memo agent',
+        objective: `Run objective ${index + 1}`,
+      })),
+    });
+
+    expect(model.graph.nodes.length).toBeGreaterThan(150);
+    expect(model.graph.edges.length).toBeGreaterThan(150);
+    expect(model.graph.nodes.some((node) => node.id === 'source:source-72')).toBe(true);
+    expect(model.graph.nodes.some((node) => node.id === 'claim:claim-73')).toBe(true);
+    expect(model.graph.edges.some((edge) => edge.source === 'claim:claim-73' && edge.target === 'source:source-73')).toBe(true);
+  });
 });
