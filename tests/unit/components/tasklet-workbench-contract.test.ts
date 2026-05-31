@@ -458,12 +458,16 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Ontology');
     expect(source).toContain('Advisory');
     expect(source).toContain('Graph proposal');
+    expect(source).toContain('GraphLite projection');
+    expect(source).toContain('graphLiteProjection');
     expect(source).toContain('Review card');
     expect(source).toContain('data-testid="capsule-v2-inspector-tabs"');
     expect(source).toContain('Anatomy');
     expect(source).toContain('Ontology Stack');
     expect(source).toContain('Dynamic ontology');
     expect(source).toContain('Embedded graph seed');
+    expect(source).toContain('GraphLite advisory projection');
+    expect(source).toContain('graphlite-starter-projection');
     expect(source).toContain('Workflow');
     expect(source).toContain('Reasoning scaffold');
     expect(source).toContain('Cognee memory benefit');

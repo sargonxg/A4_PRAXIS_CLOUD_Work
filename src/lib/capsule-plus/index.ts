@@ -4,6 +4,7 @@ import { normalizeToLatest, type PraxisCapsuleV3 } from '@/lib/context/capsule-s
 
 export const CAPSULE_PLUS_SCHEMA_VERSION = 'capsule-plus.v1';
 export const CAPSULE_PLUS_RUNTIME_LABEL = 'Postgres embedded graph';
+export const CAPSULE_PLUS_GRAPHLITE_RUNTIME_LABEL = 'GraphLite embedded graph seed';
 
 export const CapsulePlusReviewStateSchema = z.enum(['draft', 'proposed', 'approved', 'rejected']);
 export const CapsulePlusNodeTypeSchema = z.enum([
@@ -308,6 +309,8 @@ export async function buildCapsulePlusExportBundle(input: CapsulePlusBundle): Pr
   zip.file('graph/proposals.jsonl', toJsonl(bundle.proposals));
   zip.file('receipts/source-receipts.jsonl', toJsonl(bundle.sourceReceipts));
   zip.file('sql/postgres-seed.sql', buildPostgresSeedSql(bundle));
+  zip.file('graphlite/seed.gql', buildGraphLiteSeedGql(bundle));
+  zip.file('graphlite/README.md', buildGraphLiteReadme(bundle));
   zip.file('README.md', buildBundleReadme(bundle));
   return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
 }
@@ -361,6 +364,117 @@ ON CONFLICT (id) DO NOTHING;`);
   return `${statements.join('\n')}\n`;
 }
 
+export function buildGraphLiteSeedGql(bundle: CapsulePlusBundle): string {
+  const parsed = CapsulePlusBundleSchema.parse(bundle);
+  const schemaName = graphLiteIdentifier(`praxis_${parsed.manifest.ownerUid}`);
+  const graphName = graphLiteIdentifier(`capsule_${parsed.manifest.capsuleId}`);
+  const capsuleNodeId = `capsule-${parsed.manifest.capsuleId}`;
+  const nodeById = new Map(parsed.nodes.map((node) => [node.id, node]));
+  const ontologyIds = uniqueStrings(parsed.proposals.map((proposal) => proposal.ontologyStackId ?? '').filter(Boolean));
+  const ontologyStackIds = ontologyIds.length ? ontologyIds : [`ontology-${parsed.manifest.capsuleId}`];
+  const nodeTypes = uniqueStrings(parsed.nodes.map((node) => node.type));
+  const edgeTypes = uniqueStrings(parsed.edges.map((edge) => edge.type));
+  const statements = [
+    '-- PRAXIS Capsule+ GraphLite seed',
+    '-- Derived, review-gated graph artifact. Firestore ContextCapsules remain canonical.',
+    `-- Runtime: ${CAPSULE_PLUS_GRAPHLITE_RUNTIME_LABEL}`,
+    `CREATE SCHEMA IF NOT EXISTS /${schemaName};`,
+    `CREATE GRAPH IF NOT EXISTS /${schemaName}/${graphName};`,
+    `SESSION SET GRAPH /${schemaName}/${graphName};`,
+    '',
+    `INSERT (:Capsule {${gqlProperties({
+      id: capsuleNodeId,
+      capsuleId: parsed.manifest.capsuleId,
+      ownerUid: parsed.manifest.ownerUid,
+      schemaVersion: parsed.manifest.schemaVersion,
+      graphVersion: parsed.manifest.graphVersion,
+      reviewState: 'proposed',
+      canonicalStore: 'Firestore ContextCapsules',
+      advisoryOnly: true,
+    })});`,
+  ];
+
+  for (const ontologyId of ontologyStackIds) {
+    statements.push(`INSERT (:Ontology {${gqlProperties({
+      id: ontologyId,
+      capsuleId: parsed.manifest.capsuleId,
+      ownerUid: parsed.manifest.ownerUid,
+      label: ontologyId,
+      reviewState: 'proposed',
+      canonicalStore: 'Firestore ContextCapsules',
+      advisoryOnly: true,
+    })});`);
+    statements.push(`MATCH (capsule:Capsule {id: ${gqlString(capsuleNodeId)}}), (ontology:Ontology {id: ${gqlString(ontologyId)}})
+INSERT (capsule)-[:USES_ONTOLOGY {${gqlProperties({ reviewState: 'proposed', advisoryOnly: true })}}]->(ontology);`);
+  }
+
+  for (const nodeType of nodeTypes) {
+    statements.push(`INSERT (:OntologyTerm {${gqlProperties({
+      id: `node-type-${nodeType}`,
+      term: nodeType,
+      termKind: 'node_type',
+      capsuleId: parsed.manifest.capsuleId,
+      advisoryOnly: true,
+    })});`);
+  }
+
+  for (const edgeType of edgeTypes) {
+    statements.push(`INSERT (:OntologyTerm {${gqlProperties({
+      id: `edge-type-${edgeType}`,
+      term: edgeType,
+      termKind: 'edge_type',
+      capsuleId: parsed.manifest.capsuleId,
+      advisoryOnly: true,
+    })});`);
+  }
+
+  for (const node of parsed.nodes) {
+    statements.push(`INSERT (:${graphLiteIdentifier(node.type)} {${gqlProperties({
+      id: node.id,
+      capsuleId: node.capsuleId,
+      ownerUid: node.ownerUid,
+      label: node.label,
+      nodeType: node.type,
+      reviewState: node.reviewState,
+      confidence: node.provenance.confidence,
+      sourceIds: node.provenance.sourceIds.join(','),
+      documentIds: node.provenance.documentIds.join(','),
+      runIds: node.provenance.runIds.join(','),
+      propertiesJson: JSON.stringify(node.properties),
+      provenanceJson: JSON.stringify(node.provenance),
+      canonicalStore: 'Firestore ContextCapsules',
+      advisoryOnly: true,
+    })});`);
+    statements.push(`MATCH (capsule:Capsule {id: ${gqlString(capsuleNodeId)}}), (node:${graphLiteIdentifier(node.type)} {id: ${gqlString(node.id)}})
+INSERT (capsule)-[:CONTAINS {${gqlProperties({ reviewState: node.reviewState, advisoryOnly: true })}}]->(node);`);
+  }
+
+  for (const edge of parsed.edges) {
+    const fromNode = nodeById.get(edge.fromNodeId);
+    const toNode = nodeById.get(edge.toNodeId);
+    if (!fromNode || !toNode) continue;
+    statements.push(`MATCH (from:${graphLiteIdentifier(fromNode.type)} {id: ${gqlString(edge.fromNodeId)}}), (to:${graphLiteIdentifier(toNode.type)} {id: ${gqlString(edge.toNodeId)}})
+INSERT (from)-[:${graphLiteIdentifier(edge.type)} {${gqlProperties({
+      id: edge.id,
+      capsuleId: edge.capsuleId,
+      ownerUid: edge.ownerUid,
+      label: edge.label ?? edge.type,
+      edgeType: edge.type,
+      reviewState: edge.reviewState,
+      confidence: edge.provenance.confidence,
+      sourceIds: edge.provenance.sourceIds.join(','),
+      documentIds: edge.provenance.documentIds.join(','),
+      runIds: edge.provenance.runIds.join(','),
+      propertiesJson: JSON.stringify(edge.properties),
+      provenanceJson: JSON.stringify(edge.provenance),
+      canonicalStore: 'Firestore ContextCapsules',
+      advisoryOnly: true,
+    })}]->(to);`);
+  }
+
+  return `${statements.join('\n')}\n`;
+}
+
 function buildBundleReadme(bundle: CapsulePlusBundle): string {
   return [
     `# ${String(bundle.capsule.label ?? bundle.manifest.capsuleId)}`,
@@ -369,12 +483,28 @@ function buildBundleReadme(bundle: CapsulePlusBundle): string {
     '',
     `- Schema: ${bundle.manifest.schemaVersion}`,
     `- Runtime: ${bundle.manifest.runtimeLabel}`,
+    `- Embedded graph seed: ${CAPSULE_PLUS_GRAPHLITE_RUNTIME_LABEL}`,
     `- Graph version: ${bundle.manifest.graphVersion}`,
     `- Nodes: ${bundle.nodes.length}`,
     `- Edges: ${bundle.edges.length}`,
     `- Proposals: ${bundle.proposals.length}`,
     '',
     'Import through PRAXIS to preserve owner checks and review-gated graph promotion.',
+    'The GraphLite seed is portable and advisory; it is not canonical PRAXIS state.',
+  ].join('\n');
+}
+
+function buildGraphLiteReadme(bundle: CapsulePlusBundle): string {
+  return [
+    `# GraphLite Seed for ${String(bundle.capsule.label ?? bundle.manifest.capsuleId)}`,
+    '',
+    'This folder contains an optional GraphLite GQL seed for local capsule graph inspection.',
+    '',
+    '- `seed.gql` creates one owner/capsule-scoped GraphLite schema and graph.',
+    '- Nodes, edges, ontology terms, provenance, and review state are advisory.',
+    '- Firestore ContextCapsules remain canonical; PRAXIS review-card approval is still required before graph promotion.',
+    '',
+    'Use a clean GraphLite database or inspect the script before replaying it, because the seed uses insert statements.',
   ].join('\n');
 }
 
@@ -419,6 +549,33 @@ function uniqueStrings(values: string[]): string[] {
 
 function dedupeRows<T extends { id: string }>(rows: T[]): T[] {
   return Array.from(new Map(rows.map((row) => [row.id, row])).values());
+}
+
+function graphLiteIdentifier(value: string): string {
+  const cleaned = value
+    .normalize('NFKD')
+    .replace(/[^a-zA-Z0-9_]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  const safe = cleaned || 'item';
+  return /^[A-Za-z_]/.test(safe) ? safe : `g_${safe}`;
+}
+
+function gqlProperties(values: Record<string, unknown>): string {
+  return Object.entries(values)
+    .filter((entry): entry is [string, Exclude<unknown, null | undefined>] => entry[1] !== null && entry[1] !== undefined)
+    .map(([key, value]) => `${graphLiteIdentifier(key)}: ${gqlValue(value)}`)
+    .join(', ');
+}
+
+function gqlValue(value: unknown): string {
+  if (typeof value === 'string') return gqlString(value);
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  return gqlString(JSON.stringify(value));
+}
+
+function gqlString(value: string): string {
+  return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, ' ').slice(0, 2000)}'`;
 }
 
 function normalizeDate(value: string): string | undefined {

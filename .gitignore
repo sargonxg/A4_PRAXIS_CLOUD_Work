@@ -87,3 +87,7 @@ Screenshot*.jpeg
 
 # Graphify generated cache is local; committed graph outputs live in graphify-out/.
 graphify-out/cache/
+
+# GraphLite local CLI database/history state is generated; committed seeds live
+# in Capsule+ exports and docs.
+.graphlite/

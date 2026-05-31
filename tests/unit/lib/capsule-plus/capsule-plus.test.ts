@@ -6,6 +6,7 @@ import {
   CapsulePlusGraphEdgeSchema,
   CapsulePlusGraphNodeSchema,
   buildCapsulePlusExportBundle,
+  buildGraphLiteSeedGql,
   buildPraxisCapsuleFilename,
   materializeCapsulePlusBundle,
   parseCapsulePlusImportBundle,
@@ -104,12 +105,15 @@ describe('Capsule+ graph contract', () => {
       'graph/proposals.jsonl',
       'receipts/source-receipts.jsonl',
       'sql/postgres-seed.sql',
+      'graphlite/seed.gql',
+      'graphlite/README.md',
       'README.md',
     ]) {
       expect(zip.file(path), `${path} missing`).toBeTruthy();
     }
     await expect(zip.file('graph/nodes.jsonl')?.async('string')).resolves.toContain('node-deadline-1');
     await expect(zip.file('sql/postgres-seed.sql')?.async('string')).resolves.toContain('graph_nodes');
+    await expect(zip.file('graphlite/seed.gql')?.async('string')).resolves.toContain('CREATE GRAPH IF NOT EXISTS');
   });
 
   it('creates portable .praxis filenames from capsule metadata', () => {
@@ -167,6 +171,31 @@ describe('Capsule+ graph contract', () => {
     expect(bundle.nodes.some((node) => node.type === 'Source')).toBe(true);
     expect(bundle.edges.some((edge) => edge.type === 'SUPPORTED_BY')).toBe(true);
     expect(bundle.proposals[0]?.reviewState).toBe('proposed');
+  });
+
+  it('builds a GraphLite GQL seed for capsule ontology and review-gated graph rows', () => {
+    const bundle = materializeCapsulePlusBundle(normalizeContextCapsuleV3(normalizeContextCapsuleV2({
+      capsuleId: 'cap-graphlite',
+      ownerUid: 'u1',
+      label: 'GraphLite capsule',
+      summary: 'Embedded graph seed.',
+      version: 2,
+      coreRefs: { sourceCoreIds: ['src-1'], outputCoreIds: ['memo'] },
+      sourceRefs: [{ sourceId: 'src-1', label: 'Source A', publisher: 'UN' }],
+      claimLedger: [{ claimId: 'claim-1', text: 'Claim A.', support: 'supported', sourceRefIds: ['src-1'] }],
+      outputContracts: [{ outputId: 'memo', label: 'Memo', artifactType: 'memo', citationRequired: true, reviewRequired: true }],
+    })));
+
+    const gql = buildGraphLiteSeedGql(bundle);
+
+    expect(gql).toContain('CREATE SCHEMA IF NOT EXISTS');
+    expect(gql).toContain('CREATE GRAPH IF NOT EXISTS');
+    expect(gql).toContain('INSERT (:Capsule');
+    expect(gql).toContain('INSERT (:Ontology');
+    expect(gql).toContain('INSERT (:Claim');
+    expect(gql).toContain('SUPPORTED_BY');
+    expect(gql).toContain('reviewState:');
+    expect(gql).toContain('canonicalStore:');
   });
 
   it('refuses malformed import bundles', async () => {

@@ -21,6 +21,7 @@ const expectedCounts = {
 const acceptedPostConsolidationCatalogWaves = [
   /capsule-consolidation/,
   /research-dossier-firestore-proof/,
+  /graphlite-advisory-projection/,
 ];
 
 const counts = CAPSULE_STARTER_DEFINITIONS.reduce<Record<string, number>>((acc, starter) => {

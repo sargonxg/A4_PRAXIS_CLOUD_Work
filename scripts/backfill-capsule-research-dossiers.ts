@@ -15,6 +15,7 @@ type StarterBackfillStatus = {
   missingClaimLedger: boolean;
   missingWorkflow: boolean;
   missingRefreshDocket: boolean;
+  missingGraphLiteProjection: boolean;
 };
 
 async function main(): Promise<void> {
@@ -51,7 +52,7 @@ async function main(): Promise<void> {
 async function inspectUser(db: FirebaseFirestore.Firestore, uid: string): Promise<StarterBackfillStatus[]> {
   return Promise.all(CAPSULE_STARTER_DEFINITIONS.map(async (starter) => {
     const capsuleRef = db.collection('users').doc(uid).collection('capsules').doc(starter.starterId);
-    const [capsule, sources, graphSeed, researchDossier, claimLedger, workflow, refreshDocket] = await Promise.all([
+    const [capsule, sources, graphSeed, researchDossier, claimLedger, workflow, refreshDocket, graphLiteProjection] = await Promise.all([
       capsuleRef.get(),
       capsuleRef.collection('sources').limit(1).get(),
       capsuleRef.collection('ontologyGraphs').doc('starter-seed').get(),
@@ -59,6 +60,7 @@ async function inspectUser(db: FirebaseFirestore.Firestore, uid: string): Promis
       capsuleRef.collection('claimLedgers').doc('starter-claims').get(),
       capsuleRef.collection('humanWorkflowExamples').doc('starter-workflow').get(),
       capsuleRef.collection('sourceRefreshDockets').doc('starter-refresh').get(),
+      capsuleRef.collection('graphProjections').doc('graphlite-starter-projection').get(),
     ]);
     const capsuleData = capsule.exists ? capsule.data() : null;
     return {
@@ -71,6 +73,7 @@ async function inspectUser(db: FirebaseFirestore.Firestore, uid: string): Promis
       missingClaimLedger: !claimLedger.exists,
       missingWorkflow: !workflow.exists,
       missingRefreshDocket: !refreshDocket.exists,
+      missingGraphLiteProjection: !graphLiteProjection.exists,
     };
   }));
 }
@@ -86,6 +89,7 @@ function summarize(statuses: StarterBackfillStatus[]) {
     missingClaimLedger: statuses.filter((item) => item.missingClaimLedger).length,
     missingWorkflow: statuses.filter((item) => item.missingWorkflow).length,
     missingRefreshDocket: statuses.filter((item) => item.missingRefreshDocket).length,
+    missingGraphLiteProjection: statuses.filter((item) => item.missingGraphLiteProjection).length,
   };
 }
 
@@ -97,7 +101,8 @@ function needsBackfill(status: StarterBackfillStatus): boolean {
     || status.missingResearchDossier
     || status.missingClaimLedger
     || status.missingWorkflow
-    || status.missingRefreshDocket;
+    || status.missingRefreshDocket
+    || status.missingGraphLiteProjection;
 }
 
 function parseArgs(args: string[]): { uid: string | null; apply: boolean } {

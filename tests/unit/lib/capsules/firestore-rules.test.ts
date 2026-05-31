@@ -32,6 +32,7 @@ describe('root capsule Firestore rules', () => {
       'match /claimLedgers/{ledgerId}',
       'match /humanWorkflowExamples/{workflowId}',
       'match /sourceRefreshDockets/{docketId}',
+      'match /graphProjections/{projectionId}',
       'match /sources/{sourceId}',
       'match /advisoryMemoryHits/{memoryHitId}',
     ]) {

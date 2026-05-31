@@ -396,9 +396,17 @@ type CapsuleEnrichmentReceipt = {
   canonicalStatus: 'firestore-canonical';
   firestore: 'ready';
   cognee: 'enabled' | 'disabled' | 'degraded';
+  trustgraph: 'enabled' | 'disabled' | 'degraded';
+  graphlite: 'enabled' | 'disabled' | 'degraded';
   graphiti: 'deferred';
   memoryHitCount: number;
   memoryItemIds: string[];
+  trustgraphHitCount: number;
+  trustgraphItemIds: string[];
+  graphliteHitCount: number;
+  graphliteItemIds: string[];
+  graphCandidateIds: string[];
+  explainabilityIds: string[];
   warnings: string[];
   writebackProposalIds: string[];
 };
@@ -6219,6 +6227,7 @@ function starterResearchArtifacts(capsule: PraxisCapsuleSummary | null) {
     claimLedger: starter?.claimLedgerSeeds ?? snapshot?.claimLedgerSeeds ?? null,
     workflow: starter?.humanWorkflowExample ?? snapshot?.humanWorkflowExample ?? null,
     refreshDocket: starter?.sourceRefreshDocket ?? snapshot?.sourceRefreshDocket ?? null,
+    graphLiteProjection: starter?.graphLiteProjection ?? snapshot?.graphLiteProjection ?? null,
     ontologyOverlay: starter?.ontologyOverlay ?? snapshot?.ontologyOverlay ?? null,
     sourceSpine: starter?.researchDossier.sourceSpine ?? snapshot?.researchDossier?.sourceSpine ?? [],
     knownEvidenceGaps: starter?.researchDossier.knownEvidenceGaps ?? snapshot?.researchDossier?.knownEvidenceGaps ?? [],
@@ -6272,9 +6281,17 @@ function buildCapsuleEnrichmentReceipt(capsule: PraxisCapsuleSummary | null): Ca
     canonicalStatus: 'firestore-canonical',
     firestore: 'ready',
     cognee: 'disabled',
+    trustgraph: 'disabled',
+    graphlite: 'disabled',
     graphiti: 'deferred',
     memoryHitCount: memoryIds.length,
     memoryItemIds: memoryIds,
+    trustgraphHitCount: 0,
+    trustgraphItemIds: [],
+    graphliteHitCount: 0,
+    graphliteItemIds: [],
+    graphCandidateIds: [],
+    explainabilityIds: [],
     warnings: [],
     writebackProposalIds: [],
   };
@@ -6556,6 +6573,7 @@ function capsuleGovernanceBadges(capsule: PraxisCapsuleSummary): Array<{ label: 
   const graphSeedCounts = capsuleGraphSeedCounts(capsule);
   const dossierStatus = capsuleDossierStatus(capsule);
   const freshnessStatus = capsuleFreshnessStatus(capsule);
+  const graphLiteProjection = starterResearchArtifacts(capsule).graphLiteProjection;
   return [
     { label: 'Human Gate', value: humanGateStatusLabel(humanGateStatus), tone: humanGateStatus === 'human_gated' || humanGateStatus === 'expert_pick_human_gated' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : humanGateStatus === 'not_required' ? 'border-slate-200 bg-slate-50 text-slate-700' : 'border-amber-200 bg-amber-50 text-amber-800' },
     ...humanGateBadges.map((badge) => ({
@@ -6566,6 +6584,7 @@ function capsuleGovernanceBadges(capsule: PraxisCapsuleSummary): Array<{ label: 
     { label: 'Dossier', value: dossierStatus, tone: 'border-cyan-200 bg-cyan-50 text-cyan-800' },
     { label: 'Freshness', value: freshnessStatus, tone: freshnessStatus === 'verified' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800' },
     { label: 'Graph seed', value: `${graphSeedCounts.graphNodeCount} nodes / ${graphSeedCounts.graphEdgeCount} edges`, tone: 'border-violet-200 bg-violet-50 text-violet-800' },
+    { label: 'GraphLite projection', value: graphLiteProjection?.status ?? 'projection pending', tone: 'border-fuchsia-200 bg-fuchsia-50 text-fuchsia-800' },
     { label: 'Gate', value: reviewGate, tone: 'border-teal-200 bg-teal-50 text-teal-800' },
     { label: 'Ontology', value: ontology, tone: 'border-sky-200 bg-sky-50 text-sky-800' },
     { label: 'Advisory', value: 'Firestore canonical; graph and memory enrichment advisory', tone: 'border-slate-200 bg-slate-50 text-slate-700' },
@@ -8548,6 +8567,7 @@ function CapsuleCard({
   const usefulness = buildCapsuleUsefulnessRating(capsule, mutable);
   const researchArtifacts = starterResearchArtifacts(capsule);
   const graphSeedCounts = capsuleGraphSeedCounts(capsule);
+  const graphLiteProjection = researchArtifacts.graphLiteProjection;
   const dossierStatus = capsuleDossierStatus(capsule);
   const freshnessStatus = capsuleFreshnessStatus(capsule);
   const catalogUpdated = (
@@ -8625,6 +8645,7 @@ function CapsuleCard({
           <span className="rounded-md bg-white px-2 py-1">Freshness {freshnessStatus}</span>
           <span className="rounded-md bg-white px-2 py-1">Dossier {dossierStatus}</span>
           <span className="rounded-md bg-white px-2 py-1">Graph seed {graphSeedCounts.graphNodeCount}/{graphSeedCounts.graphEdgeCount}</span>
+          <span className="rounded-md bg-white px-2 py-1">GraphLite {graphLiteProjection?.status ?? 'projection pending'}</span>
         </span>
         {catalogUpdated ? (
           <span className="mt-2 inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-2 py-1 text-[11px] font-semibold text-cyan-800">
@@ -8828,7 +8849,7 @@ function CapsuleDetailPanel({
       <div className="mt-3 rounded-lg border border-slate-200 p-3">
         <p className="text-[11px] font-semibold uppercase text-slate-400">Enrichment status</p>
         <p className="mt-1 text-xs leading-5 text-slate-500">
-          Firestore canonical. Cognee advisory: {enrichmentReceipt.cognee}. Memory hits: {enrichmentReceipt.memoryHitCount}. Graphiti: {enrichmentReceipt.graphiti}.
+          Firestore canonical. Cognee advisory: {enrichmentReceipt.cognee}. GraphLite advisory: {enrichmentReceipt.graphlite}. Memory hits: {enrichmentReceipt.memoryHitCount}. Graph paths: {enrichmentReceipt.graphliteHitCount + enrichmentReceipt.trustgraphHitCount}. Graphiti: {enrichmentReceipt.graphiti}.
         </p>
       </div>
       <div className="mt-3 rounded-lg border border-slate-200 p-3">
@@ -9807,6 +9828,7 @@ function CapsuleInspectorSheet({
   const claimLedger = researchArtifacts.claimLedger;
   const humanWorkflow = researchArtifacts.workflow;
   const sourceRefreshDocket = researchArtifacts.refreshDocket;
+  const graphLiteProjection = researchArtifacts.graphLiteProjection;
   const graphSeedCounts = capsuleGraphSeedCounts(capsule);
   const dossierStatus = capsuleDossierStatus(capsule);
   const freshnessStatus = capsuleFreshnessStatus(capsule);
@@ -9963,6 +9985,7 @@ function CapsuleInspectorSheet({
              <InspectorRef label="Dossier" value={dossierStatus} />
              <InspectorRef label="Freshness" value={freshnessStatus} />
              <InspectorRef label="Graph seed" value={`${graphSeedCounts.graphNodeCount} nodes / ${graphSeedCounts.graphEdgeCount} edges`} />
+             <InspectorRef label="GraphLite projection" value={graphLiteProjection ? `${graphLiteProjection.status} / ${graphLiteProjection.namedGraph}` : 'projection pending'} />
              <InspectorRef label="Unsupported claims" value={String(unsupportedClaims)} />
             <InspectorRef label="ContextChain health" value={chainHealth ? `${chainHealth.chainStrength} / ${chainHealth.safeUseLabel}` : null} />
             <InspectorRef label="Forkability" value={v2Capsule ? humanizeIdentifier(v2Capsule.forkability) : null} />
@@ -9993,6 +10016,7 @@ function CapsuleInspectorSheet({
               <InspectorRef label="Intelligence profile" value={intelligenceProfile ? `${intelligenceProfile.capsuleKind} / ${intelligenceProfile.profileId}` : null} />
               <InspectorRef label="Cognee seed pack" value={cogneeProfile ? `${cogneeProfile.datasetScope} / ${cogneeProfile.seedDocuments.length} advisory seed docs` : null} />
               <InspectorRef label="Graph proposal" value={capsule.coreRefs.graphCoreId ? `approved graph ${capsule.coreRefs.graphCoreId}` : ontologyOverlay ? ontologyOverlay.graphSeed.proposalLabel : '1 review-gated graph proposal'} />
+              <InspectorRef label="GraphLite projection" value={graphLiteProjection ? `${graphLiteProjection.provider} / ${graphLiteProjection.status} / ${graphLiteProjection.namedGraph}` : 'graphlite-starter-projection pending'} />
               <InspectorRef label="Review card" value={audit ? '1 sourceability review card' : 'review card pending'} />
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5" data-testid="capsule-governance-badges">
@@ -10286,6 +10310,17 @@ function CapsuleInspectorSheet({
               `Promotion status: proposal-only, review-gated, non-canonical.`,
               `Gate: ${ontologyOverlay.graphSeed.reviewGate}`,
             ].join(' ')} /> : null}
+            {graphLiteProjection ? <InspectorTextSection label="GraphLite advisory projection" detail={[
+              `${graphLiteProjection.projectionId}: ${graphLiteProjection.status}.`,
+              `Storage scope: ${graphLiteProjection.storageScope}.`,
+              `Named graph: ${graphLiteProjection.namedGraph}.`,
+              `Compile status: ${graphLiteProjection.compileStatus}.`,
+              `Counts: ${graphLiteProjection.nodeCount} nodes / ${graphLiteProjection.edgeCount} edges.`,
+              `Source checksum: ${graphLiteProjection.sourceChecksum}.`,
+              `Sample GQL: ${graphLiteProjection.sampleGql.slice(0, 3).join(' | ')}`,
+              `Canonical store: ${graphLiteProjection.canonicalStore}.`,
+              `Gate: ${graphLiteProjection.promotionGate}`,
+            ].join(' ')} /> : null}
             {humanReview ? <InspectorTextSection label="Human review" detail={[
               humanReview.notes,
               humanReview.tooltip,
@@ -10358,7 +10393,7 @@ function CapsuleInspectorSheet({
             <section className="rounded-lg border border-slate-200 p-3">
               <p className="text-xs font-semibold uppercase text-slate-400">Enrichment status</p>
               <p className="mt-1 text-xs leading-5 text-slate-500">
-                Firestore canonical. Cognee advisory: {enrichmentReceipt.cognee}. Memory hits: {enrichmentReceipt.memoryHitCount}. Proposed writebacks: {enrichmentReceipt.writebackProposalIds.length}.
+                Firestore canonical. Cognee advisory: {enrichmentReceipt.cognee}. GraphLite advisory: {enrichmentReceipt.graphlite}. Memory hits: {enrichmentReceipt.memoryHitCount}. Graph paths: {enrichmentReceipt.graphliteHitCount + enrichmentReceipt.trustgraphHitCount}. Proposed writebacks: {enrichmentReceipt.writebackProposalIds.length}.
               </p>
             </section>
             <section className="rounded-lg border border-slate-200 p-3">

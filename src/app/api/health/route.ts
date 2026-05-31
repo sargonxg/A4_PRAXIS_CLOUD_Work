@@ -51,6 +51,8 @@ export async function GET() {
   // --- Optional integrations (warn but don't fail) ---
   checks.vertex_adk = process.env.VERTEX_AGENT_ENGINE_ID ? 'ok' : 'unconfigured';
   checks.cognee_memory = (process.env.COGNEE_ENABLED === 'true' && process.env.COGNEE_BACKEND_URL) ? 'ok' : 'unconfigured';
+  checks.graphlite_context = (process.env.GRAPHLITE_ENABLED === 'true' && process.env.GRAPHLITE_BACKEND_URL) ? 'ok' : 'unconfigured';
+  checks.trustgraph_context = (process.env.TRUSTGRAPH_ENABLED === 'true' && process.env.TRUSTGRAPH_BACKEND_URL) ? 'ok' : 'unconfigured';
   checks.polar = (
     process.env.POLAR_ACCESS_TOKEN
     && process.env.POLAR_WEBHOOK_SECRET
@@ -74,6 +76,10 @@ export async function GET() {
         genkitLocation: genkitProvider.location,
         cogneeMemoryEnabled: process.env.COGNEE_ENABLED === 'true' && Boolean(process.env.COGNEE_BACKEND_URL),
         cogneeMode: process.env.COGNEE_MODE || 'disabled',
+        graphLiteEnabled: process.env.GRAPHLITE_ENABLED === 'true' && Boolean(process.env.GRAPHLITE_BACKEND_URL),
+        graphLiteMode: process.env.GRAPHLITE_ENABLED === 'true' ? 'advisory-embedded' : 'disabled',
+        trustGraphEnabled: process.env.TRUSTGRAPH_ENABLED === 'true' && Boolean(process.env.TRUSTGRAPH_BACKEND_URL),
+        trustGraphMode: process.env.TRUSTGRAPH_ENABLED === 'true' ? 'advisory-derived' : 'disabled',
       },
     },
     { status, headers: HEALTH_SECURITY_HEADERS }

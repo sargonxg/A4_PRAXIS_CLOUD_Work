@@ -98,6 +98,7 @@ export const EXPECTED_FIRESTORE_PATHS: FirestorePathCheck[] = [
   pathCheck('users/{uid}/capsules/{capsuleId}/humanWorkflowExamples/starter-workflow', 'Starter human workflow example and output path.', true),
   pathCheck('users/{uid}/capsules/{capsuleId}/sourceRefreshDockets/starter-refresh', 'Starter source refresh docket for every starter capsule.', true),
   pathCheck('users/{uid}/capsules/{capsuleId}/ontologyGraphs/starter-seed', 'Starter ontology graph seed with review-gated node and edge templates.', true),
+  pathCheck('users/{uid}/capsules/{capsuleId}/graphProjections/graphlite-starter-projection', 'GraphLite-ready advisory projection compiled from the starter graph seed.', true),
   pathCheck('users/{uid}/capsules/{capsuleId}/askThreads/{threadId}', 'Capsule-scoped Ask thread metadata.', true),
   pathCheck('users/{uid}/capsules/{capsuleId}/askThreads/{threadId}/turns/{turnId}', 'Capsule-scoped Ask turns.', true),
   pathCheck('users/{uid}/contextStacks/default', 'Default active ContextCapsule stack.', true),

@@ -632,6 +632,13 @@ describe('capsule service', () => {
       sourceIds: expect.arrayContaining(['nist-ai-rmf']),
       humanReviewRequired: true,
     });
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-ai-governance-procurement')?.starterSnapshot?.graphLiteProjection).toMatchObject({
+      provider: 'graphlite',
+      status: 'compiled-advisory',
+      advisoryOnly: true,
+      canonicalStore: 'Firestore ContextCapsules',
+      sourceIds: expect.arrayContaining(['nist-ai-rmf']),
+    });
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-mediator-batna-zopa-ripeness-map')?.starterSnapshot?.deviceProfile?.deviceKind).toBe('mediator-ripeness-map');
     const sudanStarter = capsules.find((capsule) => capsule.capsuleId === 'starter-situation-sudan-darfur-atrocity-access');
     expect(sudanStarter?.starterSnapshot?.sourcePack?.some((source) => source.id === 'un-sudan-atrocity-famine-risk')).toBe(true);
@@ -697,6 +704,17 @@ describe('capsule service', () => {
       ownerUid: 'u1',
       catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
       humanReviewRequired: true,
+      sourceIds: expect.arrayContaining(['nist-ai-rmf']),
+    });
+    expect(db.data.get('users/u1/capsules/starter-situation-ai-governance-procurement/graphProjections/graphlite-starter-projection')).toMatchObject({
+      projectionId: 'starter-situation-ai-governance-procurement-graphlite-starter-projection',
+      provider: 'graphlite',
+      capsuleId: 'starter-situation-ai-governance-procurement',
+      ownerUid: 'u1',
+      status: 'compiled-advisory',
+      advisoryOnly: true,
+      canonicalStore: 'Firestore ContextCapsules',
+      catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
       sourceIds: expect.arrayContaining(['nist-ai-rmf']),
     });
     expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/sources/un-sudan-atrocity-famine-risk')).toBe(true);
@@ -846,6 +864,7 @@ describe('capsule service', () => {
     expect(capsule?.starterSnapshot?.claimLedgerSeeds?.missing.length).toBeGreaterThanOrEqual(1);
     expect(capsule?.starterSnapshot?.humanWorkflowExample?.steps.length).toBeGreaterThanOrEqual(3);
     expect(capsule?.starterSnapshot?.sourceRefreshDocket?.docketId).toBe('starter-refresh');
+    expect(capsule?.starterSnapshot?.graphLiteProjection?.status).toBe('compiled-advisory');
     expect(capsule?.version).toBe(8);
     expect(db.data.get(`${path}/evaluations/starter-readiness`)?.evidenceRequirements).toEqual(expect.arrayContaining([
       expect.stringContaining('Attach at least one current source'),
@@ -866,6 +885,11 @@ describe('capsule service', () => {
     expect(db.data.get(`${path}/sourceRefreshDockets/starter-refresh`)?.nextRepairActions).toEqual(expect.arrayContaining([
       expect.stringMatching(/refresh|source|gap/i),
     ]));
+    expect(db.data.get(`${path}/graphProjections/graphlite-starter-projection`)).toMatchObject({
+      provider: 'graphlite',
+      storageScope: 'owner-workspace-named-graph',
+      promotionGate: expect.stringMatching(/human|review|canonical/i),
+    });
 
     await seedStarterCapsules('u1', deps(db));
     const afterSecondRun = await getCapsule('u1', 'starter-situation-diplomatic-options', deps(db));

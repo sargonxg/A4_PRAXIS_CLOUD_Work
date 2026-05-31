@@ -263,6 +263,17 @@ service cloud.firestore {
                        && request.resource.data.capsuleId == capsuleId;
         }
 
+        match /graphProjections/{projectionId} {
+          allow read: if request.auth != null
+                      && request.auth.uid == uid
+                      && resource.data.ownerUid == uid
+                      && resource.data.capsuleId == capsuleId;
+          allow write: if request.auth != null
+                       && request.auth.uid == uid
+                       && request.resource.data.ownerUid == uid
+                       && request.resource.data.capsuleId == capsuleId;
+        }
+
         match /advisoryMemoryHits/{memoryHitId} {
           allow read: if request.auth != null
                       && request.auth.uid == uid

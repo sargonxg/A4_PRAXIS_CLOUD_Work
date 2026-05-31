@@ -855,6 +855,27 @@ export interface CapsuleStarterSourceRefreshDocket {
   catalogVersion: string;
 }
 
+export interface CapsuleStarterGraphLiteProjection {
+  projectionId: string;
+  provider: 'graphlite';
+  status: 'compiled-advisory' | 'stale' | 'reviewed' | 'promoted';
+  storageScope: 'owner-workspace-named-graph';
+  schemaName: string;
+  namedGraph: string;
+  generatedFromGraphId: 'starter-seed';
+  nodeCount: number;
+  edgeCount: number;
+  sourceIds: string[];
+  sourceChecksum: string;
+  compileStatus: 'gql-ready';
+  sampleGql: string[];
+  advisoryOnly: true;
+  canonicalStore: 'Firestore ContextCapsules';
+  promotionGate: string;
+  buildNotes: string[];
+  catalogVersion: string;
+}
+
 export type CapsuleStarterDomain =
   | 'sustainability'
   | 'finance'
@@ -903,6 +924,7 @@ export interface CapsuleStarterDefinition {
   claimLedgerSeeds: CapsuleStarterClaimLedgerSeeds;
   humanWorkflowExample: CapsuleStarterHumanWorkflowExample;
   sourceRefreshDocket: CapsuleStarterSourceRefreshDocket;
+  graphLiteProjection: CapsuleStarterGraphLiteProjection;
   deviceProfile?: CapsuleStarterDeviceProfile;
   humanReview?: CapsuleStarterHumanReview;
   ontologyOverlay?: CapsuleStarterOntologyOverlay;
@@ -991,7 +1013,7 @@ export const CAPSULE_WOW_DEMO_STARTER_IDS = [
   'starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026',
 ] as const;
 
-export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-30-research-dossier-firestore-proof-v16';
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-31-graphlite-advisory-projection-v17';
 export const CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS = 12_000;
 export const CAPSULE_STARTER_PROMPT_MAX_CHARS = 16_000;
 export const CAPSULE_CONTEXT_CAPTURE_FIXTURE_STARTER_IDS = [
@@ -1304,6 +1326,7 @@ export type CapsuleStarterSnapshot = Pick<
   | 'claimLedgerSeeds'
   | 'humanWorkflowExample'
   | 'sourceRefreshDocket'
+  | 'graphLiteProjection'
   | 'deviceProfile'
   | 'humanReview'
   | 'ontologyOverlay'
@@ -1874,6 +1897,7 @@ type CapsuleStarterOverrides = Partial<Pick<
   | 'claimLedgerSeeds'
   | 'humanWorkflowExample'
   | 'sourceRefreshDocket'
+  | 'graphLiteProjection'
   | 'deviceProfile'
   | 'humanReview'
   | 'ontologyOverlay'
@@ -3203,6 +3227,76 @@ function buildStarterSourceRefreshDocket(input: {
   };
 }
 
+function buildStarterGraphLiteProjection(input: {
+  starterId: string;
+  label: string;
+  sourcePack: CapsuleStarterSource[];
+  ontologyOverlay: CapsuleStarterOntologyOverlay;
+}): CapsuleStarterGraphLiteProjection {
+  const schemaName = graphLiteIdentifier(`praxis_${input.starterId}`, 64);
+  const namedGraph = graphLiteIdentifier(`capsule_${input.starterId}`, 72);
+  const sourceIds = input.sourcePack.map((source) => source.id);
+  const sourceChecksum = graphLiteChecksum([
+    input.starterId,
+    ...sourceIds,
+    ...input.ontologyOverlay.graphSeed.nodeTemplates,
+    ...input.ontologyOverlay.graphSeed.edgeTemplates,
+  ]);
+  const firstNode = graphLiteLiteral(input.ontologyOverlay.graphSeed.nodeTemplates[0] ?? `${input.label} starter node`);
+  const firstEdge = graphLiteLiteral(input.ontologyOverlay.graphSeed.edgeTemplates[0] ?? `${input.label} starter edge`);
+  const sourceLiteral = graphLiteLiteral(sourceIds.slice(0, 6).join(', ') || 'starter sources pending');
+
+  return {
+    projectionId: `${input.starterId}-graphlite-starter-projection`,
+    provider: 'graphlite',
+    status: 'compiled-advisory',
+    storageScope: 'owner-workspace-named-graph',
+    schemaName,
+    namedGraph,
+    generatedFromGraphId: 'starter-seed',
+    nodeCount: input.ontologyOverlay.graphSeed.nodeTemplates.length,
+    edgeCount: input.ontologyOverlay.graphSeed.edgeTemplates.length,
+    sourceIds,
+    sourceChecksum,
+    compileStatus: 'gql-ready',
+    sampleGql: [
+      `CREATE SCHEMA IF NOT EXISTS ${schemaName}`,
+      `CREATE GRAPH IF NOT EXISTS ${namedGraph}`,
+      `INSERT (:CapsuleProjection {capsuleId: '${graphLiteLiteral(input.starterId)}', label: '${graphLiteLiteral(input.label)}', provider: 'graphlite', advisoryOnly: true, canonicalStore: 'Firestore ContextCapsules'})`,
+      `INSERT (:GraphSeedSummary {graphId: 'starter-seed', nodeCount: ${input.ontologyOverlay.graphSeed.nodeTemplates.length}, edgeCount: ${input.ontologyOverlay.graphSeed.edgeTemplates.length}, sampleNode: '${firstNode}', sampleEdge: '${firstEdge}'})`,
+      `INSERT (:SourceSpineSummary {sourceIds: '${sourceLiteral}', sourceChecksum: '${sourceChecksum}'})`,
+    ],
+    advisoryOnly: true,
+    canonicalStore: 'Firestore ContextCapsules',
+    promotionGate: 'Human review-card approval required before any GraphLite projection becomes canonical graph state.',
+    buildNotes: [
+      'GraphLite is an advisory projection compiled from the starter ontology graph seed; Firestore remains canonical.',
+      'Use one owner/workspace database with named capsule graphs rather than one database per capsule.',
+      'Generated GQL is dry-run proof until a server-side GraphLite runtime is configured and reviewed.',
+    ],
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+  };
+}
+
+function graphLiteIdentifier(value: string, maxLength: number): string {
+  const cleaned = value.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '').replace(/_+/g, '_');
+  const candidate = cleaned || 'capsule_graph';
+  return /^[a-z_]/.test(candidate) ? candidate.slice(0, maxLength) : `g_${candidate}`.slice(0, maxLength);
+}
+
+function graphLiteLiteral(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\s+/g, ' ').trim().slice(0, 360);
+}
+
+function graphLiteChecksum(parts: string[]): string {
+  let hash = 2166136261;
+  for (const char of parts.join('|')) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `gql-${(hash >>> 0).toString(16).padStart(8, '0')}`;
+}
+
 function starter(
   starterId: string,
   category: CapsuleStarterCategory,
@@ -3363,6 +3457,12 @@ function starter(
     sourcePack,
     researchDossier,
   });
+  const graphLiteProjection = overrides?.graphLiteProjection ?? buildStarterGraphLiteProjection({
+    starterId,
+    label,
+    sourcePack,
+    ontologyOverlay,
+  });
   const baseAgentWorkflow = overrides?.agentWorkflow ?? {
     preferredAgentId: category === 'output' ? 'output-formatter' : 'research-memo',
     routeHint: category === 'tool' ? 'tool-router' : 'capsule-supervisor',
@@ -3416,6 +3516,7 @@ function starter(
     claimLedgerSeeds,
     humanWorkflowExample,
     sourceRefreshDocket,
+    graphLiteProjection,
     ...(deviceProfile ? { deviceProfile } : {}),
     ...(humanReview ? { humanReview } : {}),
     ontologyOverlay,
@@ -3433,6 +3534,7 @@ function starter(
       { label: 'Claim ledger', detail: `Supported ${claimLedgerSeeds.supported.length}; weak ${claimLedgerSeeds.weak.length}; missing ${claimLedgerSeeds.missing.length}; stale ${claimLedgerSeeds.stale.length}. ${claimLedgerSeeds.reviewGate}` },
       { label: 'Source refresh docket', detail: `${sourceRefreshDocket.docketId}: ${sourceRefreshDocket.status}; ${sourceRefreshDocket.cadence}` },
       { label: 'Human workflow', detail: `${humanWorkflowExample.scenario} Output path: ${humanWorkflowExample.outputPath}` },
+      { label: 'GraphLite advisory projection', detail: `${graphLiteProjection.projectionId}: ${graphLiteProjection.status}; named graph ${graphLiteProjection.namedGraph}; nodes ${graphLiteProjection.nodeCount}; edges ${graphLiteProjection.edgeCount}; ${graphLiteProjection.promotionGate}` },
       { label: 'Agent contract', detail: curationProfile.compactAgentInstructions.join(' ') },
       { label: 'Review gates', detail: humanReview?.humanReviewGate ?? agentWorkflow.approvalNotes },
       { label: 'Marketplace/share readiness', detail: 'Private by default. Public, forkable, or marketplace reuse requires human author/reviewer metadata, explicit reuse terms, source freshness, and no unsupported final claims.' },
@@ -7847,6 +7949,7 @@ export function buildCapsuleStarterPromptBlock(
       `embedded_graph_seed_counts: nodes=${starterDefinition.ontologyOverlay.graphSeed.nodeTemplates.length}; edges=${starterDefinition.ontologyOverlay.graphSeed.edgeTemplates.length}; doc=starter-seed`,
       `embedded_graph_seed_sample_nodes: ${starterDefinition.ontologyOverlay.graphSeed.nodeTemplates[0]?.split('|').slice(0, 2).join(':') ?? 'none'}`,
       `embedded_graph_seed_sample_edges: ${starterDefinition.ontologyOverlay.graphSeed.edgeTemplates[0]?.split('|').slice(0, 2).join(':') ?? 'none'}`,
+      `graphlite_projection: ${starterDefinition.graphLiteProjection.status}; provider=${starterDefinition.graphLiteProjection.provider}; graph=${starterDefinition.graphLiteProjection.namedGraph}; nodes=${starterDefinition.graphLiteProjection.nodeCount}; edges=${starterDefinition.graphLiteProjection.edgeCount}; advisory=${starterDefinition.graphLiteProjection.advisoryOnly}`,
       `cognee_overlay_mode: ${starterDefinition.ontologyOverlay.cognee.mode}; dataset_scope=${starterDefinition.ontologyOverlay.cognee.datasetScope}`,
       `ontology_promotion_rules: ${compactPromptList(starterDefinition.ontologyOverlay.promotionRules, 2, 90)}`,
       `ontology_forbidden_claims: ${compactPromptList(starterDefinition.ontologyOverlay.forbiddenClaims, 2, 90)}`,

@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- feat(capsules): install and wire GraphLite advisory graph recall.
+  Build 2026.05.31.01 configures local Rust/GraphLite CLI verification
+  (`gql-cli` 0.0.1), adds a repeatable `doctor:graphlite` smoke, and
+  wires disabled-first GraphLite bridge contracts for capsule sync and
+  provenance-bound advisory recall while keeping Firestore ContextCapsules
+  canonical and graph writebacks review-gated.
+
 - fix(capsules): harden v16 research-dossier capsule audits.
   Build 2026.05.30.17 updates the capsule consolidation gate for the
   `2026-05-30-research-dossier-firestore-proof-v16` catalog, compresses the

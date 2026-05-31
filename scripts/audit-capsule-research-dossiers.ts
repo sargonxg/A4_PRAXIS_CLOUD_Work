@@ -68,8 +68,8 @@ const averagePromptLength = Math.round(promptLengths.reduce((sum, length) => sum
 if (averagePromptLength > CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS) {
   add('catalog', `average prompt block exceeds warning target: ${averagePromptLength}`);
 }
-if (!CAPSULE_STARTER_CATALOG_VERSION.match(/research-dossier.*v16/)) {
-  add('catalog', `catalog version is not v16 research dossier label: ${CAPSULE_STARTER_CATALOG_VERSION}`);
+if (!CAPSULE_STARTER_CATALOG_VERSION.match(/research-dossier.*v16|graphlite-advisory-projection.*v17/)) {
+  add('catalog', `catalog version is not an accepted research dossier or GraphLite projection label: ${CAPSULE_STARTER_CATALOG_VERSION}`);
 }
 
 const outDir = join(process.cwd(), 'docs', 'audits');

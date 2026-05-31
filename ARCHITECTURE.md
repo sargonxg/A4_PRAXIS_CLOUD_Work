@@ -15,6 +15,8 @@ Last updated: 2026-05-28.
 - [`docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md) — what was incorporated from the external Tasklet-class browser-agent research and what was rejected/deferred.
 - [`docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md) — current coherence check across product docs, substrate, and build order.
 - [`docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md`](./docs/product/PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md) — ADK + Genkit integration map: ADK owns long-running/multi-step workers, Genkit owns typed flows/tools/structured outputs/evals, and PRAXIS owns ContextCapsules, Firestore app state, Cloud SQL run ledger, approvals, and receipts.
+- [`docs/architecture/GRAPHLITE_CAPSULE_EMBEDDED_GRAPH.md`](./docs/architecture/GRAPHLITE_CAPSULE_EMBEDDED_GRAPH.md) — selected GraphLite embedded graph plan for Capsule+ exports, local GQL inspection, ontology hints, provenance, advisory recall, and review-gated graph rows.
+- [`docs/architecture/TRUSTGRAPH_CONTEXT_SUBSTRATE.md`](./docs/architecture/TRUSTGRAPH_CONTEXT_SUBSTRATE.md) — legacy optional TrustGraph bridge/substrate plan for derived capsule context, graph paths, ontology extraction, and explainability receipts.
 - [`docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`](./docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md) — active implementation ledger and queue for the public-to-app, capsule workbench, run ledger, dispatch, and agent waves.
 - [`docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`](./docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md) — copy-paste Codex and Claude Code prompts for parallel implementation sessions.
 
@@ -56,12 +58,23 @@ The next canonical runtime target is Cloud Run first, GKE later:
 - ContextCapsules now normalize v1/v2/v3 envelopes into the v3 in-memory
   contract on read. Firestore remains canonical; Capsule+ graph materialization,
   Cognee recall, and imported graph rows are derived/review-gated artifacts.
+- Capsule+ exports now include optional GraphLite GQL seed artifacts for
+  owner/capsule-scoped embedded graph inspection. These artifacts are portable
+  and advisory; they do not replace Firestore canonical capsule state or
+  Postgres approved graph rows.
+- GraphLite advisory recall is disabled-first. Enabled recall flows through a
+  private `praxis-graphlite-bridge` contract and can return only provenance-
+  bound embedded graph context, explainability receipts, and review-gated graph
+  candidates.
 - Capsule readiness is derived from the unified quality/readiness path and is
   softly adjusted by usage rollups from agent read receipts: thin fallback,
   dropped-core events, and stale-core hits lower operability readiness.
 - Cognee remains disabled-first and advisory-only. Enabled recall flows through
   the isolated `praxis-cognee` service contract and can promote only
   capsule-scoped memory facts through review cards.
+- TrustGraph remains a legacy disabled-first compatibility lane. Prefer
+  GraphLite for embedded capsule graph artifacts unless a dedicated TrustGraph
+  service plan is explicitly active.
 - Cloud Tasks dispatches durable per-run work; Pub/Sub broadcasts events;
   Cloud Scheduler triggers daily briefs/watchlists and maintenance.
 - MCP and browser/code sandbox workers are phased after run ledger and approval

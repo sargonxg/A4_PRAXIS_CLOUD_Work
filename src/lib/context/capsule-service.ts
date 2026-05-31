@@ -1903,6 +1903,7 @@ function buildStarterSnapshot(starterDefinition: CapsuleStarterDefinition): Caps
     claimLedgerSeeds: cloneSerializable(starterDefinition.claimLedgerSeeds),
     humanWorkflowExample: cloneSerializable(starterDefinition.humanWorkflowExample),
     sourceRefreshDocket: cloneSerializable(starterDefinition.sourceRefreshDocket),
+    graphLiteProjection: cloneSerializable(starterDefinition.graphLiteProjection),
     ...(starterDefinition.ontologyOverlay ? {
       ontologyOverlay: {
         ...starterDefinition.ontologyOverlay,
@@ -2028,6 +2029,17 @@ async function writeStarterDetailRecords(
     starterDefinitionId: starterDefinition.starterId,
     needsRefresh: true,
     lastRefreshedAt: null,
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+    updatedAt: timestamp,
+  }, { merge: true });
+  batch.set(ref.collection('graphProjections').doc('graphlite-starter-projection'), {
+    ...cloneSerializable(starterDefinition.graphLiteProjection),
+    ownerUid: uid,
+    capsuleId,
+    starterDefinitionId: starterDefinition.starterId,
+    sourceIds,
+    ontologyGraphId: 'starter-seed',
+    projectionScope: 'advisory',
     catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
     updatedAt: timestamp,
   }, { merge: true });
@@ -2273,6 +2285,7 @@ function starterSnapshotMissingHints(snapshot: CapsuleStarterSnapshot): string[]
   if (!snapshot.claimLedgerSeeds?.missing?.length) missing.push('claimLedgerSeeds');
   if (!snapshot.humanWorkflowExample?.steps?.length) missing.push('humanWorkflowExample');
   if (!snapshot.sourceRefreshDocket?.sourceIds?.length) missing.push('sourceRefreshDocket');
+  if (!snapshot.graphLiteProjection?.sampleGql?.length) missing.push('graphLiteProjection');
   return missing;
 }
 
@@ -3248,7 +3261,12 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     : catalogStarter?.sourceRefreshDocket
       ? cloneSerializable(catalogStarter.sourceRefreshDocket)
       : null;
-  if (!intelligenceProfile || !cogneeProfile || !curationProfile || !contextCaptureProfile || !researchDossier || !claimLedgerSeeds || !humanWorkflowExample || !sourceRefreshDocket) return null;
+  const graphLiteProjection = isRecord(value.graphLiteProjection)
+    ? cloneSerializable(value.graphLiteProjection as unknown as CapsuleStarterSnapshot['graphLiteProjection'])
+    : catalogStarter?.graphLiteProjection
+      ? cloneSerializable(catalogStarter.graphLiteProjection)
+      : null;
+  if (!intelligenceProfile || !cogneeProfile || !curationProfile || !contextCaptureProfile || !researchDossier || !claimLedgerSeeds || !humanWorkflowExample || !sourceRefreshDocket || !graphLiteProjection) return null;
   return {
     catalogVersion: stringOrNull(value.catalogVersion) ?? 'unknown',
     starterId,
@@ -3281,6 +3299,7 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     claimLedgerSeeds,
     humanWorkflowExample,
     sourceRefreshDocket,
+    graphLiteProjection,
     ...(ontologyOverlay ? { ontologyOverlay } : {}),
     ...(deviceProfile ? { deviceProfile } : {}),
     ...(humanReviewRecord ? {

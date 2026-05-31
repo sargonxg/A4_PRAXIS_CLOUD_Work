@@ -90,6 +90,7 @@ describe('runtime data plane diagnostic', () => {
     expect(checks.find((check) => check.path === 'users/{uid}/capsules/{capsuleId}/claimLedgers/starter-claims')?.status).toBe('BLOCKED');
     expect(checks.find((check) => check.path === 'users/{uid}/capsules/{capsuleId}/humanWorkflowExamples/starter-workflow')?.status).toBe('BLOCKED');
     expect(checks.find((check) => check.path === 'users/{uid}/capsules/{capsuleId}/sourceRefreshDockets/starter-refresh')?.status).toBe('BLOCKED');
+    expect(checks.find((check) => check.path === 'users/{uid}/capsules/{capsuleId}/graphProjections/graphlite-starter-projection')?.status).toBe('BLOCKED');
   });
 
   it('reports Vertex, fallback, and unconfigured AI provider states', () => {

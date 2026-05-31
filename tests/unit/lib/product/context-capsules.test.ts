@@ -257,6 +257,19 @@ describe('context capsule product contract', () => {
       expect(starter.sourceRefreshDocket.sourceIds, `${starter.starterId} refresh source ids`).toEqual(expect.arrayContaining(starter.sourcePack.map((source) => source.id)));
       expect(starter.sourceRefreshDocket.status, `${starter.starterId} refresh status`).toMatch(/starter-seeded|needs-refresh|verified/);
       expect(starter.sourceRefreshDocket.nextRepairActions.length, `${starter.starterId} refresh actions`).toBeGreaterThanOrEqual(2);
+      expect(starter.graphLiteProjection.projectionId, `${starter.starterId} GraphLite projection id`).toBe(`${starter.starterId}-graphlite-starter-projection`);
+      expect(starter.graphLiteProjection.provider, `${starter.starterId} GraphLite provider`).toBe('graphlite');
+      expect(starter.graphLiteProjection.status, `${starter.starterId} GraphLite status`).toBe('compiled-advisory');
+      expect(starter.graphLiteProjection.advisoryOnly, `${starter.starterId} GraphLite advisory`).toBe(true);
+      expect(starter.graphLiteProjection.canonicalStore, `${starter.starterId} GraphLite canonical store`).toBe('Firestore ContextCapsules');
+      expect(starter.graphLiteProjection.storageScope, `${starter.starterId} GraphLite storage scope`).toBe('owner-workspace-named-graph');
+      expect(starter.graphLiteProjection.namedGraph, `${starter.starterId} GraphLite named graph`).toMatch(/^capsule_/);
+      expect(starter.graphLiteProjection.nodeCount, `${starter.starterId} GraphLite node count`).toBe(starter.ontologyOverlay?.graphSeed.nodeTemplates.length ?? 0);
+      expect(starter.graphLiteProjection.edgeCount, `${starter.starterId} GraphLite edge count`).toBe(starter.ontologyOverlay?.graphSeed.edgeTemplates.length ?? 0);
+      expect(starter.graphLiteProjection.sourceIds, `${starter.starterId} GraphLite sources`).toEqual(expect.arrayContaining(starter.sourcePack.map((source) => source.id)));
+      expect(starter.graphLiteProjection.sampleGql.join('\n'), `${starter.starterId} GraphLite GQL`).toContain('CREATE GRAPH IF NOT EXISTS');
+      expect(starter.graphLiteProjection.sampleGql.join('\n'), `${starter.starterId} GraphLite GQL advisory`).toMatch(/advisory|Firestore|review/i);
+      expect(starter.graphLiteProjection.promotionGate, `${starter.starterId} GraphLite promotion gate`).toMatch(/human|review|canonical/i);
       expect(starter.excerpts.length, `${starter.starterId} excerpts`).toBeGreaterThanOrEqual(2);
       for (const source of starter.sourcePack) {
         expect(source.id, `${starter.starterId} source id`).toBeTruthy();
@@ -324,7 +337,7 @@ describe('context capsule product contract', () => {
     const externalSourceCount = (starter: (typeof CAPSULE_STARTER_DEFINITIONS)[number]) =>
       starter.sourcePack.filter((source) => source.publisher !== 'PRAXIS starter catalog' && !source.url.includes('praxis.tacitus.me')).length;
 
-    expect(CAPSULE_STARTER_CATALOG_VERSION).toMatch(/research-dossier.*v16/);
+    expect(CAPSULE_STARTER_CATALOG_VERSION).toMatch(/graphlite-advisory-projection.*v17/);
     expect(Object.keys(CAPSULE_STARTER_SOURCE_REGISTRY).length).toBeGreaterThanOrEqual(10);
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
@@ -441,6 +454,7 @@ describe('context capsule product contract', () => {
       expect(promptBlock, `${starter.starterId} ontology-bound sources`).toContain('ontology_bound_sources:');
       expect(promptBlock, `${starter.starterId} usage inference`).toContain('usage_activation_signals:');
       expect(promptBlock, `${starter.starterId} graph profile`).toContain('capsule_plus_graph_capture:');
+      expect(promptBlock, `${starter.starterId} graphlite projection`).toContain('graphlite_projection:');
     }
   });
 

@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "catalogVersion": "2026-05-30-research-dossier-firestore-proof-v16",
+  "catalogVersion": "2026-05-31-graphlite-advisory-projection-v17",
   "total": 205,
   "counts": {
     "situation": 85,

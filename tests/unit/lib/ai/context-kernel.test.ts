@@ -59,6 +59,8 @@ describe('context kernel', () => {
       'repository-documents',
       'source-receipts',
       'advisory-cognee-memory',
+      'advisory-trustgraph-context',
+      'advisory-graphlite-context',
       'capsule-plus-graph',
       'graph-core',
       'time-core',
@@ -73,6 +75,8 @@ describe('context kernel', () => {
     expect(capsule.retrievalPlan.promptBlock).toContain('Ontology-bound sources:');
     expect(capsule.retrievalPlan.promptBlock).toContain('Usage inference:');
     expect(capsule.retrievalPlan.promptBlock).toContain('Advisory Cognee memory:');
+    expect(capsule.retrievalPlan.promptBlock).toContain('Advisory TrustGraph context:');
+    expect(capsule.retrievalPlan.promptBlock).toContain('Advisory GraphLite embedded graph:');
     expect(capsule.retrievalPlan.promptBlock).toContain('Capsule+ graph capture:');
   });
 
@@ -128,6 +132,8 @@ describe('context kernel', () => {
     expect(plan.layers.find((layer) => layer.id === 'recent-runs')?.refIds).toEqual(['run-1']);
     expect(plan.layers.find((layer) => layer.id === 'repository-documents')?.priority).toBe(5);
     expect(plan.layers.find((layer) => layer.id === 'advisory-cognee-memory')?.priority).toBe(7);
+    expect(plan.layers.find((layer) => layer.id === 'advisory-trustgraph-context')?.priority).toBe(8);
+    expect(plan.layers.find((layer) => layer.id === 'advisory-graphlite-context')?.priority).toBe(9);
   });
 
   it('selects ranked cores under a token budget and reports dropped cores', async () => {
@@ -274,11 +280,23 @@ describe('context kernel', () => {
           firestore: 'ready' as const,
           canonicalStatus: 'firestore-canonical' as const,
           cognee: 'enabled' as const,
+          trustgraph: 'disabled' as const,
+          graphlite: 'disabled' as const,
           graphiti: 'deferred' as const,
           memoryItemIds: ['cognee:hit-1'],
           usedMemoryItemIds: ['cognee:hit-1'],
           ignoredMemoryItemIds: [],
           memoryHitCount: 1,
+          trustgraphItemIds: [],
+          usedTrustGraphItemIds: [],
+          ignoredTrustGraphItemIds: [],
+          trustgraphHitCount: 0,
+          graphliteItemIds: [],
+          usedGraphLiteItemIds: [],
+          ignoredGraphLiteItemIds: [],
+          graphliteHitCount: 0,
+          graphCandidateIds: [],
+          explainabilityIds: [],
           writebackProposalIds: ['review-card:cognee:hit-1'],
           warnings: [],
         },

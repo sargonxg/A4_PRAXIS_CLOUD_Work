@@ -10,10 +10,14 @@ interface FeatureFlagState {
 
 interface FeatureFlags {
   cognee: FeatureFlagState;
+  graphlite: FeatureFlagState;
+  trustgraph: FeatureFlagState;
   contextEnrichment: FeatureFlagState & {
     receipts: {
       firestore: 'ready';
       cognee: 'enabled' | 'disabled';
+      graphlite: 'enabled' | 'disabled';
+      trustgraph: 'enabled' | 'disabled';
       graphiti: 'deferred';
     };
   };
@@ -25,6 +29,10 @@ interface FeatureFlags {
 export async function GET() {
   const cogneeConfigured = Boolean(process.env.COGNEE_BACKEND_URL);
   const cogneeEnabled = process.env.COGNEE_ENABLED === 'true' && cogneeConfigured;
+  const graphliteConfigured = Boolean(process.env.GRAPHLITE_BACKEND_URL);
+  const graphliteEnabled = process.env.GRAPHLITE_ENABLED === 'true' && graphliteConfigured;
+  const trustgraphConfigured = Boolean(process.env.TRUSTGRAPH_BACKEND_URL);
+  const trustgraphEnabled = process.env.TRUSTGRAPH_ENABLED === 'true' && trustgraphConfigured;
   const kgBackend = (process.env.KG_BACKEND ?? 'firestore').toLowerCase();
   const postgresKgEnabled = kgBackend === 'postgres' || kgBackend === 'both';
   const agentEngineConfigured = Boolean(process.env.VERTEX_AGENT_ENGINE_ID);
@@ -39,15 +47,41 @@ export async function GET() {
           ? 'COGNEE_ENABLED=true and COGNEE_BACKEND_URL is set'
           : 'COGNEE_ENABLED is not "true" or COGNEE_BACKEND_URL is missing',
       },
+      graphlite: {
+        enabled: graphliteEnabled,
+        mode: graphliteEnabled ? process.env.GRAPHLITE_WORKSPACE_MODE || 'owner-capsule' : 'disabled',
+        reason: graphliteEnabled
+          ? 'GRAPHLITE_ENABLED=true and GRAPHLITE_BACKEND_URL is set'
+          : 'GRAPHLITE_ENABLED is not "true" or GRAPHLITE_BACKEND_URL is missing',
+      },
+      trustgraph: {
+        enabled: trustgraphEnabled,
+        mode: trustgraphEnabled ? process.env.TRUSTGRAPH_WORKSPACE_MODE || 'owner-capsule' : 'disabled',
+        reason: trustgraphEnabled
+          ? 'TRUSTGRAPH_ENABLED=true and TRUSTGRAPH_BACKEND_URL is set'
+          : 'TRUSTGRAPH_ENABLED is not "true" or TRUSTGRAPH_BACKEND_URL is missing',
+      },
       contextEnrichment: {
         enabled: true,
-        mode: cogneeEnabled ? 'firestore+cognee_review' : 'firestore_only',
-        reason: cogneeEnabled
-          ? 'Firestore is canonical; Cognee recall may enrich reviewable context; Graphiti is deferred'
-          : 'Firestore-only context is active; Cognee is disabled or unconfigured; Graphiti is deferred',
+        mode: graphliteEnabled
+          ? 'firestore+cognee_review+graphlite_review'
+          : trustgraphEnabled
+          ? 'firestore+cognee_review+trustgraph_legacy_review'
+          : cogneeEnabled
+            ? 'firestore+cognee_review'
+            : 'firestore_only',
+        reason: graphliteEnabled
+          ? 'Firestore is canonical; GraphLite and Cognee may enrich reviewable context; Graphiti is deferred'
+          : trustgraphEnabled
+          ? 'Firestore is canonical; legacy TrustGraph and Cognee may enrich reviewable context; Graphiti is deferred'
+          : cogneeEnabled
+            ? 'Firestore is canonical; Cognee recall may enrich reviewable context; Graphiti is deferred'
+            : 'Firestore-only context is active; Cognee, GraphLite, and TrustGraph are disabled or unconfigured; Graphiti is deferred',
         receipts: {
           firestore: 'ready',
           cognee: cogneeEnabled ? 'enabled' : 'disabled',
+          graphlite: graphliteEnabled ? 'enabled' : 'disabled',
+          trustgraph: trustgraphEnabled ? 'enabled' : 'disabled',
           graphiti: 'deferred',
         },
       },

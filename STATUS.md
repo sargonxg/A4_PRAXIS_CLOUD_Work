@@ -1,5 +1,24 @@
 # PRAXIS — STATUS
 
+## 2026-05-31 — GraphLite Capsule Graph Integration
+
+Current graph checkpoint:
+
+- Installed/configured the local Rust stable toolchain and `gql-cli` `0.0.1`;
+  the installed binary is `graphlite`.
+- Added `npm run doctor:graphlite`, which initializes a disposable GraphLite
+  database, creates a capsule graph, inserts a capsule node, queries it back,
+  and deletes the temporary database.
+- Added disabled-first GraphLite bridge contracts for capsule sync and
+  provenance-bound advisory recall. Firestore ContextCapsules remain canonical,
+  and GraphLite hits are injected only as review-gated advisory context.
+- Updated health/feature flags, env examples, and workbench enrichment copy so
+  GraphLite is the primary embedded graph label while TrustGraph remains a
+  legacy optional compatibility lane.
+- Verification so far: GraphLite CLI smoke, `npm run doctor:graphlite`, and
+  focused Vitest contracts for GraphLite, context enrichment, context kernel,
+  answer envelopes, and Capsule+ export behavior.
+
 ## 2026-05-30 — Capsule Research-Dossier Audit Hardening
 
 Current audit checkpoint:

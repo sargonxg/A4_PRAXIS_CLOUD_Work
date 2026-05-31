@@ -1,6 +1,6 @@
 # PRAXIS Runtime Data Plane Diagnostic
 
-Generated: 2026-05-31T00:31:32.248Z
+Generated: 2026-05-31T03:38:26.579Z
 Mode: read-only
 
 ## Architecture
@@ -98,6 +98,7 @@ Evidence:
 - users/{uid}/capsules/{capsuleId}/humanWorkflowExamples/starter-workflow: No bounded Firestore diagnostic sample was supplied.
 - users/{uid}/capsules/{capsuleId}/sourceRefreshDockets/starter-refresh: No bounded Firestore diagnostic sample was supplied.
 - users/{uid}/capsules/{capsuleId}/ontologyGraphs/starter-seed: No bounded Firestore diagnostic sample was supplied.
+- users/{uid}/capsules/{capsuleId}/graphProjections/graphlite-starter-projection: No bounded Firestore diagnostic sample was supplied.
 - users/{uid}/capsules/{capsuleId}/askThreads/{threadId}: No bounded Firestore diagnostic sample was supplied.
 - users/{uid}/capsules/{capsuleId}/askThreads/{threadId}/turns/{turnId}: No bounded Firestore diagnostic sample was supplied.
 - users/{uid}/contextStacks/default: No bounded Firestore diagnostic sample was supplied.
@@ -207,6 +208,7 @@ Remediation:
 | BLOCKED | yes | `users/{uid}/capsules/{capsuleId}/humanWorkflowExamples/starter-workflow` | Starter human workflow example and output path. | No bounded Firestore diagnostic sample was supplied. |
 | BLOCKED | yes | `users/{uid}/capsules/{capsuleId}/sourceRefreshDockets/starter-refresh` | Starter source refresh docket for every starter capsule. | No bounded Firestore diagnostic sample was supplied. |
 | BLOCKED | yes | `users/{uid}/capsules/{capsuleId}/ontologyGraphs/starter-seed` | Starter ontology graph seed with review-gated node and edge templates. | No bounded Firestore diagnostic sample was supplied. |
+| BLOCKED | yes | `users/{uid}/capsules/{capsuleId}/graphProjections/graphlite-starter-projection` | GraphLite-ready advisory projection compiled from the starter graph seed. | No bounded Firestore diagnostic sample was supplied. |
 | BLOCKED | yes | `users/{uid}/capsules/{capsuleId}/askThreads/{threadId}` | Capsule-scoped Ask thread metadata. | No bounded Firestore diagnostic sample was supplied. |
 | BLOCKED | yes | `users/{uid}/capsules/{capsuleId}/askThreads/{threadId}/turns/{turnId}` | Capsule-scoped Ask turns. | No bounded Firestore diagnostic sample was supplied. |
 | BLOCKED | yes | `users/{uid}/contextStacks/default` | Default active ContextCapsule stack. | No bounded Firestore diagnostic sample was supplied. |

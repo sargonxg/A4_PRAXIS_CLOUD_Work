@@ -21,6 +21,11 @@
       "evidence": "starter refresh docket detail record is seeded"
     },
     {
+      "id": "merge-only-graphlite-write",
+      "status": "PASS",
+      "evidence": "GraphLite projection detail record is seeded"
+    },
+    {
       "id": "merge-flag",
       "status": "PASS",
       "evidence": "detail writes are merge-only"
@@ -46,6 +51,11 @@
       "evidence": "Firestore rules cover refresh dockets"
     },
     {
+      "id": "rules-graphlite-projections",
+      "status": "PASS",
+      "evidence": "Firestore rules cover GraphLite projections"
+    },
+    {
       "id": "runtime-audit-dossiers",
       "status": "PASS",
       "evidence": "runtime data-plane audit samples research dossiers"
@@ -54,6 +64,11 @@
       "id": "runtime-audit-refresh",
       "status": "PASS",
       "evidence": "runtime data-plane audit samples starter refresh dockets"
+    },
+    {
+      "id": "runtime-audit-graphlite",
+      "status": "PASS",
+      "evidence": "runtime data-plane audit samples GraphLite projection records"
     },
     {
       "id": "script-registered",

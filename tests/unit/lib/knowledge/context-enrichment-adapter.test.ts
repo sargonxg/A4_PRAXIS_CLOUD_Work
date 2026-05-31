@@ -21,9 +21,121 @@ describe('context enrichment adapter', () => {
     expect(capsule.enrichment.receipt).toMatchObject({
       firestore: 'ready',
       cognee: 'disabled',
+      trustgraph: 'disabled',
+      graphlite: 'disabled',
       graphiti: 'deferred',
     });
     expect(capsule.enrichment.memoryHitCount).toBe(0);
+    expect(capsule.memory.semantic).toEqual([]);
+  });
+
+  it('adds TrustGraph recall hits as advisory context without mutating canonical capsules', async () => {
+    const db = new FakeFirestore();
+    const recall = vi.fn(async () => ({
+      status: 'enabled' as const,
+      hits: [
+        { id: 'tg-1', text: 'TrustGraph path connects actor leverage to a deadline.', score: 0.91, sourceId: 'src-graph-1' },
+        { id: 'tg-ignored', text: 'TrustGraph hit without provenance.', score: 0.7 },
+      ],
+      graphCandidateIds: ['proposal:actor-deadline'],
+      explainabilityIds: ['path:actor->deadline'],
+    }));
+
+    const capsule = await buildEnrichedTurnCapsule({
+      uid: 'u1',
+      traceId: 'trace-trustgraph',
+      activeContextStack: { stackId: 'default', situationId: 'sit-1' },
+      query: 'Which context path matters?',
+    }, {
+      ...deps(db),
+      cognee: { enabled: false, recall: vi.fn() },
+      trustgraph: { enabled: true, recall },
+    });
+
+    expect(recall).toHaveBeenCalledWith({
+      uid: 'u1',
+      capsuleId: 'default',
+      query: 'Which context path matters?',
+      limit: 6,
+    });
+    expect(capsule.memory.semantic.map((item) => item.id)).toEqual(['trustgraph:tg-1']);
+    expect(capsule.enrichment.receipt).toMatchObject({
+      cognee: 'disabled',
+      trustgraph: 'enabled',
+      trustgraphItemIds: ['trustgraph:tg-1'],
+      usedTrustGraphItemIds: ['trustgraph:tg-1'],
+      ignoredTrustGraphItemIds: ['trustgraph:tg-ignored'],
+      graphCandidateIds: ['proposal:actor-deadline'],
+      explainabilityIds: ['path:actor->deadline'],
+      writebackProposalIds: ['review-card:trustgraph:tg-1', 'proposal:actor-deadline'],
+    });
+    expect(db.data.has('users/u1/capsules/default')).toBe(true);
+    expect(db.data.has('users/u1/capsules/default/memories/trustgraph:tg-1')).toBe(false);
+  });
+
+  it('adds GraphLite recall hits as advisory embedded graph context without mutating canonical capsules', async () => {
+    const db = new FakeFirestore();
+    const recall = vi.fn(async () => ({
+      status: 'enabled' as const,
+      hits: [
+        { id: 'gl-1', text: 'GraphLite path connects actor leverage to a deadline.', score: 0.91, sourceId: 'src-graph-1' },
+        { id: 'gl-ignored', text: 'GraphLite hit without provenance.', score: 0.7 },
+      ],
+      graphCandidateIds: ['proposal:actor-deadline'],
+      explainabilityIds: ['path:actor->deadline'],
+    }));
+
+    const capsule = await buildEnrichedTurnCapsule({
+      uid: 'u1',
+      traceId: 'trace-graphlite',
+      activeContextStack: { stackId: 'default', situationId: 'sit-1' },
+      query: 'Which embedded graph path matters?',
+    }, {
+      ...deps(db),
+      cognee: { enabled: false, recall: vi.fn() },
+      graphlite: { enabled: true, recall },
+    });
+
+    expect(recall).toHaveBeenCalledWith({
+      uid: 'u1',
+      capsuleId: 'default',
+      query: 'Which embedded graph path matters?',
+      limit: 6,
+    });
+    expect(capsule.memory.semantic.map((item) => item.id)).toEqual(['graphlite:gl-1']);
+    expect(capsule.enrichment.receipt).toMatchObject({
+      cognee: 'disabled',
+      graphlite: 'enabled',
+      graphliteItemIds: ['graphlite:gl-1'],
+      usedGraphLiteItemIds: ['graphlite:gl-1'],
+      ignoredGraphLiteItemIds: ['graphlite:gl-ignored'],
+      graphCandidateIds: ['proposal:actor-deadline'],
+      explainabilityIds: ['path:actor->deadline'],
+      writebackProposalIds: ['review-card:graphlite:gl-1', 'proposal:actor-deadline'],
+    });
+    expect(db.data.has('users/u1/capsules/default')).toBe(true);
+    expect(db.data.has('users/u1/capsules/default/memories/graphlite:gl-1')).toBe(false);
+  });
+
+  it('records degraded TrustGraph status without failing context construction', async () => {
+    const capsule = await buildEnrichedTurnCapsule({
+      uid: 'u1',
+      traceId: 'trace-trustgraph-degraded',
+      activeContextStack: { stackId: 'default', situationId: 'sit-1' },
+      query: 'Will TrustGraph fail?',
+    }, {
+      ...deps(new FakeFirestore()),
+      cognee: { enabled: false, recall: vi.fn() },
+      trustgraph: {
+        enabled: true,
+        recall: vi.fn(async () => {
+          throw new Error('trustgraph unavailable');
+        }),
+      },
+    });
+
+    expect(capsule.enrichment.receipt.trustgraph).toBe('degraded');
+    expect(capsule.enrichment.receipt.warnings.join(' ')).toContain('trustgraph unavailable');
     expect(capsule.memory.semantic).toEqual([]);
   });
 
@@ -95,16 +207,29 @@ describe('context enrichment adapter', () => {
     expect(buildContextEnrichmentReceipt({ cogneeEnabled: false })).toMatchObject({
       firestore: 'ready',
       cognee: 'disabled',
+      trustgraph: 'disabled',
       graphiti: 'deferred',
       canonicalStatus: 'firestore-canonical',
       memoryHitCount: 0,
       writebackProposalIds: [],
       usedMemoryItemIds: [],
       ignoredMemoryItemIds: [],
+      trustgraphHitCount: 0,
+      trustgraphItemIds: [],
+      usedTrustGraphItemIds: [],
+      ignoredTrustGraphItemIds: [],
+      graphliteHitCount: 0,
+      graphliteItemIds: [],
+      usedGraphLiteItemIds: [],
+      ignoredGraphLiteItemIds: [],
+      graphCandidateIds: [],
+      explainabilityIds: [],
     });
     expect(buildContextEnrichmentReceipt({ cogneeEnabled: true })).toMatchObject({
       firestore: 'ready',
       cognee: 'enabled',
+      trustgraph: 'disabled',
+      graphlite: 'disabled',
       graphiti: 'deferred',
       canonicalStatus: 'firestore-canonical',
       memoryHitCount: 0,
