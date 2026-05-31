@@ -239,6 +239,202 @@ describe('agent runtime no-op worker', () => {
     expect(mirrored).toContain('memo_output_created');
   });
 
+  it('runs research memo as live plan, retrieval, source-check, draft, critique, and finalize phases', async () => {
+    const mirrored: Array<{ phase: string; data: Record<string, unknown> }> = [];
+    const toolCalls: Array<{ toolId: string; status: string; output: Record<string, unknown> | null }> = [];
+    const generatedPrompts: string[] = [];
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', {
+        policyAgentId: 'research-memo',
+        selectedToolIds: ['context-resolve', 'grounded-search', 'sourceability-reviewer', 'policy-memo'],
+        searchPlan: {
+          queries: ['treaty analysis memo current sources'],
+          sourceClasses: ['public_web'],
+          freshnessNeed: 'current',
+        },
+        sourceReceiptIds: [],
+        agentOperatingContract: {
+          allowedActions: ['search_grounded', 'draft_policy_memo', 'check_sourceability'],
+          forbiddenActions: ['export_unsupported_policy_memo'],
+          stopConditions: ['Stop before external export.'],
+        },
+      }),
+      updateStatus: async (input) => makeRun(input.toStatus, {
+        policyAgentId: 'research-memo',
+        selectedToolIds: ['context-resolve', 'grounded-search', 'sourceability-reviewer', 'policy-memo'],
+      }),
+      appendToolCall: async (toolCall) => {
+        toolCalls.push({ toolId: toolCall.toolId, status: toolCall.status, output: toolCall.output });
+        return toolCall;
+      },
+      appendApproval: async (approval) => approval,
+      appendEvent: async (event) => {
+        mirrored.push({ phase: String(event.data.phase ?? event.eventType), data: event.data });
+        return event;
+      },
+      runGroundedSearch: async ({ query }) => ({
+        query,
+        sourceReceipts: [
+          {
+            sourceReceiptId: 'web-live-1',
+            title: 'Treaty source',
+            url: 'https://example.test/treaty',
+            snippet: 'Treaty analysis memo current sources confirm the access clause.',
+            provider: 'unit-search',
+            confidence: 0.82,
+          },
+        ],
+        degradedReason: null,
+      }),
+      generateText: async (input) => {
+        generatedPrompts.push(input.prompt);
+        return generatedPrompts.length === 1
+          ? { text: 'Draft memo paragraph [web-live-1]. The access clause is supported by current sources.' }
+          : { text: 'Self-critique: citation coverage is acceptable; keep export blocked if unsupported claims remain.' };
+      },
+      buildEvidencePack: async () => ({
+        packId: 'evidence-live-1',
+        ownerUid: 'user-1',
+        capsuleId: 'cap-1',
+        objective: 'No-op run',
+        builtAt: '2026-05-15T12:00:00.000Z',
+        activeCapsule: { capsuleId: 'cap-1', version: 2 } as never,
+        knowledgeDocuments: [],
+        sourceReceiptIds: [],
+        sourcedParagraphs: [{
+          id: 'para-1',
+          documentId: 'doc-1',
+          chunkId: 'chunk-1',
+          sourceReceiptId: 'doc-src-1',
+          pageRef: 'p.1',
+          paragraphRef: 'para-1',
+          charStart: 0,
+          charEnd: 20,
+          excerpt: 'The access clause is supported by current sources.',
+          score: 0.8,
+          confidence: 0.8,
+          citationLabel: '[D1:p.1]',
+        }],
+        documentDigests: [],
+        outputHistory: [],
+        memories: [],
+        openGaps: ['A disputed implementation detail still needs field confirmation.'],
+        receipts: {
+          sourcesUsed: 0,
+          paragraphsUsed: 1,
+          unsupportedGaps: ['A disputed implementation detail still needs field confirmation.'],
+          outputHistoryCount: 0,
+          memoryCount: 0,
+        },
+      }),
+      saveMemoDraft: async (_uid, input) => {
+        expect(input.runId).toBe('run-1');
+        expect(input.capsuleId).toBe('cap-1');
+        expect(input.outputTarget).toBe('policy-memo');
+        expect(input.sourceReceiptIds).toEqual(expect.arrayContaining(['doc-src-1', 'web-live-1']));
+        expect(input.unsupportedClaims).toContain('A disputed implementation detail still needs field confirmation.');
+        expect(input.claimChecks).toEqual(expect.arrayContaining([
+          expect.objectContaining({
+            status: 'supported',
+            sourceReceiptIds: expect.arrayContaining(['doc-src-1', 'web-live-1']),
+          }),
+        ]));
+        expect(input.blocks.some((block) => block.id === 'live-memo-draft')).toBe(true);
+        expect(input.blocks.find((block) => block.id === 'live-memo-draft')?.metadata).toMatchObject({
+          weakSourceHighlight: true,
+        });
+        return { memo: { id: 'memo-live-1' } };
+      },
+      saveOutputCapsule: async () => ({ id: 'output-live-1' }),
+    });
+
+    expect(result).toMatchObject({
+      status: 'succeeded',
+      executionMode: 'research-memo',
+      memoId: 'memo-live-1',
+    });
+    expect(generatedPrompts.join('\n')).toContain('Capsule Evidence Pack');
+    expect(toolCalls).toEqual(expect.arrayContaining([
+      expect.objectContaining({ toolId: 'grounded-search', status: 'succeeded' }),
+      expect.objectContaining({ toolId: 'sourceability-reviewer', status: 'succeeded' }),
+      expect.objectContaining({ toolId: 'policy-memo', status: 'succeeded' }),
+    ]));
+    expect(toolCalls.find((call) => call.toolId === 'sourceability-reviewer')?.output).toMatchObject({
+      unsupportedClaimCount: 1,
+      checkedClaimCount: 2,
+      liveSourceReceiptCount: 1,
+    });
+    expect(mirrored.map((event) => event.phase)).toEqual(expect.arrayContaining([
+      'research.plan_created',
+      'grounding.live_retrieval_started',
+      'grounding.live_retrieval_succeeded',
+      'sourceability.claims_verified',
+      'memo.draft_created',
+      'memo.self_critique_completed',
+      'artifact.finalized',
+    ]));
+    expect(mirrored.find((event) => event.phase === 'sourceability.claims_verified')?.data).toMatchObject({
+      unsupportedClaimCount: 1,
+      liveSourceReceiptCount: 1,
+    });
+  });
+
+  it('creates review cards instead of mutating the capsule when capsule factory proposes improvements', async () => {
+    const reviewCards: Array<{ title: string; target: string; patch: Record<string, unknown> | undefined }> = [];
+
+    await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', { policyAgentId: 'capsule-factory' }),
+      updateStatus: async (input) => makeRun(input.toStatus, { policyAgentId: 'capsule-factory' }),
+      appendEvent: async (event) => event,
+      runIntakeFlow: async () => ({
+        draftCores: [{ kind: 'source', label: 'Treaty source pack', summary: 'Attach treaty source pack.' }],
+        sourceGaps: ['Need official treaty text.'],
+        intakeQuestions: [],
+        factoryTelemetry: { path: 'unit' },
+      } as never),
+      runResearchPlanFlow: async () => ({
+        sourceGaps: ['Need official treaty text.'],
+        readOnlyTools: [{ toolId: 'grounded-search', reason: 'Find official treaty text.' }],
+        factoryTelemetry: { path: 'unit' },
+      } as never),
+      runSynthesisFlow: async () => ({
+        contextCapsuleDraft: {
+          label: 'Treaty analysis capsule',
+          summary: 'Review-gated treaty analysis capsule.',
+        },
+        proposedCores: [{ kind: 'claim', label: 'Access clause', summary: 'Clause needs claim ledger entry.' }],
+        openQuestions: ['Which official text is current?'],
+        applyActions: ['Create source-gap review card'],
+        factoryTelemetry: { path: 'unit' },
+      } as never),
+      runWritingProfileFlow: async () => ({
+        defaultFormat: 'policy-memo',
+        exportGates: ['sourceability'],
+        factoryTelemetry: { path: 'unit' },
+      } as never),
+      createReviewCard: async (_uid, _capsuleId, input) => {
+        reviewCards.push({
+          title: input.title,
+          target: input.target,
+          patch: input.proposedEnvelopePatch,
+        });
+        return { reviewCardId: `card-${reviewCards.length}` } as never;
+      },
+    });
+
+    expect(reviewCards.length).toBeGreaterThanOrEqual(3);
+    expect(reviewCards).toEqual(expect.arrayContaining([
+      expect.objectContaining({ target: 'sourceGap' }),
+      expect.objectContaining({ target: 'claimLedger' }),
+      expect.objectContaining({ target: 'agentInstructions' }),
+    ]));
+    expect(reviewCards.map((card) => card.patch)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ sourceRefs: expect.any(Array) }),
+      expect.objectContaining({ claimLedger: expect.any(Array) }),
+      expect.objectContaining({ memoryPosture: expect.any(Object) }),
+    ]));
+  });
+
   it('persists degraded search evidence receipts before memo output when search tools are selected', async () => {
     const toolCalls: Array<{ toolId: string; output: Record<string, unknown> | null }> = [];
     const mirrored: string[] = [];

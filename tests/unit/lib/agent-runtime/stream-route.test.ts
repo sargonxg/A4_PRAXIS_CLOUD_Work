@@ -51,4 +51,24 @@ describe('agent run SSE stream route helpers', () => {
       'Failed',
     ]);
   });
+
+  it('maps live research and sourceability proof events to compact rail labels', () => {
+    const events = [
+      normalizeOrchestratorEvent({ type: 'praxis.research.plan_created', data: JSON.stringify({ phase: 'research.plan_created' }) }),
+      normalizeOrchestratorEvent({ type: 'praxis.grounding.live_retrieval_started', data: JSON.stringify({ phase: 'grounding.live_retrieval_started', querySet: ['treaty analysis'] }) }),
+      normalizeOrchestratorEvent({ type: 'praxis.tool.grounded-search.completed', data: JSON.stringify({ phase: 'tool.grounded-search.completed', toolId: 'grounded-search', risk: 'low', sourceReceiptIds: ['web-live-1'] }) }),
+      normalizeOrchestratorEvent({ type: 'praxis.sourceability.claims_verified', data: JSON.stringify({ phase: 'sourceability.claims_verified', unsupportedClaimCount: 1 }) }),
+      normalizeOrchestratorEvent({ type: 'praxis.memo.self_critique_completed', data: JSON.stringify({ phase: 'memo.self_critique_completed' }) }),
+      normalizeOrchestratorEvent({ type: 'praxis.artifact.finalized', data: JSON.stringify({ phase: 'artifact.finalized', outputHref: '/app?panel=memo&memoId=memo-1' }) }),
+    ];
+
+    expect(events.map(agentRailStageFromEvent)).toEqual([
+      'Research plan',
+      'Live retrieval',
+      'Tool call',
+      'Sourceability check',
+      'Gap review',
+      'Save output',
+    ]);
+  });
 });
