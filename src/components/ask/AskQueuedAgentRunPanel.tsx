@@ -30,6 +30,15 @@ type RunSummary = {
   degradedReason?: string | null;
 };
 
+type RunApprovalSummary = {
+  id: string;
+  toolCallId?: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'expired';
+  reason: string;
+  risk?: 'low' | 'medium' | 'high';
+  requestedAt?: string;
+};
+
 export function queuedAgentRunFromEnvelope(envelope?: AskAnswerEnvelope): AskOrchestrationStatusEvent | null {
   const receipt = envelope?.orchestrationReceipt;
   const queuedRun = receipt?.supervisor.queuedRun ?? null;
@@ -80,6 +89,7 @@ export function AskQueuedAgentRunPanel({
   const [overrideRunId, setOverrideRunId] = useState<string | null>(null);
   const runId = overrideRunId ?? queuedRun?.runId ?? null;
   const [run, setRun] = useState<RunSummary | null>(null);
+  const [approvals, setApprovals] = useState<RunApprovalSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -98,18 +108,20 @@ export function AskQueuedAgentRunPanel({
   useEffect(() => {
     setOverrideRunId(null);
     setRun(null);
+    setApprovals([]);
   }, [queuedRun?.runId]);
 
   const refresh = useCallback(async () => {
     if (!runId) return;
     try {
       const response = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}`, { credentials: 'include', cache: 'no-store' });
-      const payload = await response.json().catch(() => ({})) as { run?: RunSummary; error?: string };
+      const payload = await response.json().catch(() => ({})) as { run?: RunSummary; approvals?: RunApprovalSummary[]; error?: string };
       if (!response.ok) {
         setError(response.status === 503 ? userSafeAgentRunError(payload.error) : payload.error ?? `Agent run lookup failed (${response.status}).`);
         return;
       }
       setRun(payload.run ?? null);
+      setApprovals(Array.isArray(payload.approvals) ? payload.approvals : []);
       setError(null);
     } catch {
       setError(userSafeAgentRunError('Agent run status network refresh failed'));
@@ -148,6 +160,31 @@ export function AskQueuedAgentRunPanel({
     }
   }, [refresh, run, runId]);
 
+  const decideApproval = useCallback(async (approvalId: string, decision: 'approved' | 'rejected') => {
+    if (!runId) return;
+    setActionPending(`approval:${approvalId}:${decision}`);
+    try {
+      const response = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}/approvals/${encodeURIComponent(approvalId)}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision }),
+      });
+      const payload = await response.json().catch(() => ({})) as { run?: RunSummary; error?: string };
+      if (!response.ok) {
+        setError(payload.error ?? userSafeAgentRunError(`Approval ${decision} failed (${response.status}).`));
+        return;
+      }
+      setRun(payload.run ?? run);
+      setError(null);
+      void refresh();
+    } catch {
+      setError(userSafeAgentRunError('Approval decision could not reach the deep work queue.'));
+    } finally {
+      setActionPending(null);
+    }
+  }, [refresh, run, runId]);
+
   if (!queuedRun || (!runId && queuedRun.status !== 'failed')) return null;
 
   const snapshotRun = snapshotState.run;
@@ -158,6 +195,7 @@ export function AskQueuedAgentRunPanel({
   const canCancel = Boolean(runId) && canCancelAgentRunStatus(status);
   const canRetry = Boolean(runId) && canRetryAgentRunStatus(status);
   const lifecycle = agentRunLifecycleSteps(status);
+  const pendingApprovals = approvals.filter((approval) => approval.status === 'pending');
   const selectedTools = visibleRun?.selectedTools ?? queuedRun.selectedToolIds ?? [];
   const sourceCount = visibleRun?.sourceCount ?? queuedRun.sourceCount ?? 0;
   const approvalGateCount = visibleRun?.approvalGateCount ?? queuedRun.approvalGateCount ?? 0;
@@ -226,6 +264,38 @@ export function AskQueuedAgentRunPanel({
       </ol>
       {snapshotState.isConnected ? <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-700">Live Firestore timeline</p> : null}
       {error ?? snapshotState.error ? <p className="mt-2 rounded-md border border-gold-200 bg-white px-2 py-1 text-xs text-gold-900">{error ?? snapshotState.error}</p> : null}
+      {pendingApprovals.length ? (
+        <div className="mt-2 space-y-1" data-testid="ask-agent-approval-tray">
+          {pendingApprovals.map((approval) => (
+            <div key={approval.id} className="rounded-md border border-amber-200 bg-white px-2 py-1.5">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-slate-800">Approval required {approval.risk ? `/${approval.risk}` : ''}</p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-slate-600">{approval.reason}</p>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => void decideApproval(approval.id, 'approved')}
+                    disabled={Boolean(actionPending)}
+                    className="rounded-md bg-slate-950 px-2 py-1 text-[11px] font-semibold text-white hover:bg-slate-800 disabled:bg-slate-300"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void decideApproval(approval.id, 'rejected')}
+                    disabled={Boolean(actionPending)}
+                    className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 disabled:text-slate-300"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
       {recentEvents.length ? (
         <div className="mt-2 space-y-1">
           {recentEvents.map((event) => (
@@ -264,10 +334,16 @@ function eventProofFacts(data: Record<string, unknown>): Array<{ label: string; 
   const toolId = stringValue(data.toolId);
   const risk = stringValue(data.risk);
   const outputHref = stringValue(data.outputHref);
+  const agentId = stringValue(data.agentId);
   const sourceReceiptIds = stringArray(data.sourceReceiptIds);
+  const consumes = stringArray(data.consumes);
+  const produces = stringArray(data.produces);
   const unsupportedClaimCount = numberValue(data.unsupportedClaimCount);
   const liveSourceReceiptCount = numberValue(data.liveSourceReceiptCount);
   if (toolId) facts.push({ label: 'tool', value: risk ? `${toolId} (${risk})` : toolId });
+  if (agentId) facts.push({ label: 'agent', value: agentId });
+  if (consumes.length) facts.push({ label: 'consumes', value: consumes.slice(0, 3).join(', ') });
+  if (produces.length) facts.push({ label: 'produces', value: produces.slice(0, 3).join(', ') });
   if (sourceReceiptIds.length) facts.push({ label: 'receipts', value: sourceReceiptIds.slice(0, 3).join(', ') });
   if (typeof liveSourceReceiptCount === 'number') facts.push({ label: 'live sources', value: String(liveSourceReceiptCount) });
   if (typeof unsupportedClaimCount === 'number') facts.push({ label: 'unsupported', value: String(unsupportedClaimCount) });

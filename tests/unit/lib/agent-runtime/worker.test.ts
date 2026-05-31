@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AgentWorkerError, executeAgentRun, executeNoopAgentRun, type ExecuteAgentRunPayload } from '@/lib/agent-runtime/worker';
-import type { AgentRun } from '@/lib/agent-runtime/types';
+import type { AgentApproval, AgentRun, AgentRunEvent, AgentToolCall } from '@/lib/agent-runtime/types';
 
 const payload: ExecuteAgentRunPayload = {
   runId: 'run-1',
@@ -13,6 +13,9 @@ const payload: ExecuteAgentRunPayload = {
 };
 
 function makeRun(status: AgentRun['status'], metadata: Record<string, unknown> = {}): AgentRun {
+  const contract = typeof metadata.agentOperatingContract === 'object' && metadata.agentOperatingContract !== null && !Array.isArray(metadata.agentOperatingContract)
+    ? metadata.agentOperatingContract as Record<string, unknown>
+    : {};
   return {
     id: payload.runId,
     agentSpecId: null,
@@ -45,13 +48,58 @@ function makeRun(status: AgentRun['status'], metadata: Record<string, unknown> =
     maxSessionMinutes: 30,
     internalEstimatedCostCents: null,
     internalSpendCents: 0,
-    metadata,
+    metadata: {
+      ...metadata,
+      agentOperatingContract: {
+        approvalThreshold: 'high',
+        ...contract,
+      },
+    },
     createdAt: '2026-05-15T12:00:00.000Z',
     updatedAt: '2026-05-15T12:00:00.000Z',
     queuedAt: '2026-05-15T12:00:00.000Z',
     startedAt: null,
     completedAt: null,
     expiresAt: null,
+  };
+}
+
+function makeEvidencePack(overrides: Record<string, unknown> = {}) {
+  return {
+    packId: 'evidence-1',
+    ownerUid: 'user-1',
+    capsuleId: 'cap-1',
+    objective: 'No-op run',
+    builtAt: '2026-05-15T12:00:00.000Z',
+    activeCapsule: { capsuleId: 'cap-1', version: 1 } as never,
+    knowledgeDocuments: [{ documentId: 'doc-1', title: 'Doc' } as never],
+    sourceReceiptIds: ['src-1'],
+    sourcedParagraphs: [{
+      id: 'para-1',
+      documentId: 'doc-1',
+      chunkId: 'chunk-1',
+      sourceReceiptId: 'src-1',
+      pageRef: 'p.1',
+      paragraphRef: 'para-1',
+      charStart: 0,
+      charEnd: 20,
+      excerpt: 'Evidence paragraph.',
+      score: 0.8,
+      confidence: 0.8,
+      citationLabel: '[D1:p.1]',
+    }],
+    documentDigests: [],
+    outputHistory: [],
+    memories: [],
+    openGaps: [],
+    receipts: {
+      sourcesUsed: 1,
+      paragraphsUsed: 1,
+      unsupportedGaps: [],
+      outputHistoryCount: 0,
+      memoryCount: 0,
+    },
+    ...overrides,
   };
 }
 
@@ -145,6 +193,144 @@ describe('agent runtime no-op worker', () => {
       failedPhase: 'evidence-pack',
     });
     expect(JSON.stringify(failed?.data)).not.toContain('token=secret');
+  });
+
+  it('pauses medium-risk tool work until a persisted approval is approved, then resumes', async () => {
+    const approvals: AgentApproval[] = [];
+    const toolCalls: AgentToolCall[] = [];
+    const events: AgentRunEvent[] = [];
+    const metadata = {
+      policyAgentId: 'research-memo',
+      selectedToolIds: ['policy-memo'],
+      agentOperatingContract: { approvalThreshold: 'medium' },
+    };
+    let run = makeRun('queued', metadata);
+    let memoSaved = 0;
+
+    const deps = {
+      getRun: async () => run,
+      updateStatus: async (input: { toStatus: AgentRun['status'] }) => {
+        run = makeRun(input.toStatus, metadata);
+        return run;
+      },
+      appendEvent: async (event: AgentRunEvent) => {
+        events.push(event);
+        return event;
+      },
+      appendToolCall: async (toolCall: AgentToolCall) => {
+        toolCalls.push(toolCall);
+        return toolCall;
+      },
+      appendApproval: async (approval: AgentApproval) => {
+        approvals.push(approval);
+        return approval;
+      },
+      listApprovals: async () => approvals,
+      buildEvidencePack: async () => makeEvidencePack(),
+      saveMemoDraft: async () => {
+        memoSaved += 1;
+        return { memo: { id: 'memo-approved-1' } };
+      },
+      saveOutputCapsule: async () => ({ id: 'output-approved-1' }),
+    };
+
+    const paused = await executeAgentRun(payload, deps);
+
+    expect(paused).toMatchObject({ status: 'waiting_approval', executionMode: 'research-memo' });
+    expect(approvals).toHaveLength(1);
+    expect(approvals[0]).toMatchObject({ status: 'pending', risk: 'medium' });
+    expect(toolCalls.some((call) => call.status === 'waiting_approval' && call.toolId === 'policy-memo')).toBe(true);
+    expect(events.map((event) => event.eventType)).toContain('praxis.approval.required');
+    expect(memoSaved).toBe(0);
+
+    approvals[0] = {
+      ...approvals[0],
+      status: 'approved',
+      decidedAt: '2026-05-15T12:01:00.000Z',
+      decidedByUid: 'user-1',
+    };
+    run = makeRun('running', metadata);
+
+    const resumed = await executeAgentRun(payload, deps);
+
+    expect(resumed).toMatchObject({
+      status: 'succeeded',
+      executionMode: 'research-memo',
+      memoId: 'memo-approved-1',
+    });
+    expect(memoSaved).toBe(1);
+    expect(events.map((event) => event.eventType)).toContain('praxis.approval.granted');
+  });
+
+  it('runs multi-agent review as research to draft to red-team to revise with consumed outputs', async () => {
+    const mirrored: Array<{ phase: string; data: Record<string, unknown> }> = [];
+    const savedBlocks: string[] = [];
+
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', {
+        policyAgentId: 'red-team-analyst',
+        workflowPlan: { workflowKind: 'multi_agent_review' },
+        selectedToolIds: ['grounded-search', 'sourceability-reviewer', 'policy-memo', 'red-team-review'],
+        searchPlan: { queries: ['current treaty evidence'], sourceClasses: ['public_web'], freshnessNeed: 'current' },
+        agentOperatingContract: { approvalThreshold: 'high' },
+      }),
+      updateStatus: async (input) => makeRun(input.toStatus, {
+        policyAgentId: 'red-team-analyst',
+        workflowPlan: { workflowKind: 'multi_agent_review' },
+        selectedToolIds: ['grounded-search', 'sourceability-reviewer', 'policy-memo', 'red-team-review'],
+        agentOperatingContract: { approvalThreshold: 'high' },
+      }),
+      appendToolCall: async (toolCall) => toolCall,
+      appendApproval: async (approval) => approval,
+      appendEvent: async (event) => {
+        mirrored.push({ phase: String(event.data.phase ?? event.eventType), data: event.data });
+        return event;
+      },
+      runGroundedSearch: async ({ query }) => ({
+        query,
+        sourceReceipts: [{
+          sourceReceiptId: 'web-supervisor-1',
+          title: 'Supervisor source',
+          url: 'https://example.test/supervisor',
+          snippet: 'Current treaty evidence supports the draft.',
+          provider: 'unit-search',
+          confidence: 0.82,
+        }],
+        degradedReason: null,
+      }),
+      generateText: async ({ system }) => {
+        if (system.includes('red-team')) return { text: '- Clarify unsupported implementation dependency.\n- Preserve source caveat in the recommendation.' };
+        if (system.includes('revise agent')) return { text: 'Revised memo with source caveat and explicit implementation dependency.' };
+        if (system.includes('self-critique')) return { text: 'Self-critique: caveat retained.' };
+        return { text: 'Draft memo with inline receipt [web-supervisor-1].' };
+      },
+      buildEvidencePack: async () => makeEvidencePack({ sourceReceiptIds: ['source-receipt-1'] }),
+      saveMemoDraft: async (_uid, input) => {
+        savedBlocks.push(...input.blocks.map((block) => `${block.id}:${block.content ?? ''}`));
+        expect(input.blocks.find((block) => block.id === 'multi-agent-final')?.content).toContain('Red-team findings addressed in revision');
+        return { memo: { id: 'memo-supervisor-1' } };
+      },
+      saveOutputCapsule: async () => ({ id: 'output-supervisor-1' }),
+    });
+
+    expect(result).toMatchObject({
+      status: 'succeeded',
+      executionMode: 'multi-agent-supervisor',
+      memoId: 'memo-supervisor-1',
+    });
+    expect(mirrored.map((event) => event.phase)).toEqual(expect.arrayContaining([
+      'supervisor.graph.created',
+      'supervisor.agent.research.succeeded',
+      'supervisor.agent.drafting.succeeded',
+      'supervisor.agent.red_team.succeeded',
+      'supervisor.agent.revise.succeeded',
+      'supervisor.graph.updated',
+    ]));
+    expect(mirrored.find((event) => event.phase === 'supervisor.agent.red_team.succeeded')?.data).toMatchObject({
+      consumes: ['draftMemo', 'claimLedger'],
+      produces: ['redTeamFindings'],
+    });
+    expect(savedBlocks.join('\n')).toContain('Addressed: Clarify unsupported implementation dependency.');
   });
 
   it('routes research-memo runs into memo and output capsule receipts', async () => {
@@ -530,6 +716,8 @@ describe('agent runtime no-op worker', () => {
         mirrored.push(String(event.data.phase ?? event.eventType));
         return event;
       },
+      appendToolCall: async (toolCall) => toolCall,
+      appendApproval: async (approval) => approval,
       saveMemoDraft: async (_uid, input) => {
         expect(input.templateId).toBe('policy-memo');
         expect(input.blocks.some((block) => block.id === 'structure')).toBe(true);

@@ -71,4 +71,22 @@ describe('agent run SSE stream route helpers', () => {
       'Save output',
     ]);
   });
+
+  it('maps bounded multi-agent supervisor proof events to compact rail labels', () => {
+    const events = [
+      normalizeOrchestratorEvent({ type: 'praxis.supervisor.graph.created', data: JSON.stringify({ phase: 'supervisor.graph.created' }) }),
+      normalizeOrchestratorEvent({ type: 'praxis.supervisor.agent.research.succeeded', data: JSON.stringify({ phase: 'supervisor.agent.research.succeeded', agentId: 'research-agent' }) }),
+      normalizeOrchestratorEvent({ type: 'praxis.supervisor.agent.drafting.succeeded', data: JSON.stringify({ phase: 'supervisor.agent.drafting.succeeded', agentId: 'drafting-agent' }) }),
+      normalizeOrchestratorEvent({ type: 'praxis.supervisor.agent.red_team.succeeded', data: JSON.stringify({ phase: 'supervisor.agent.red_team.succeeded', agentId: 'red-team-agent' }) }),
+      normalizeOrchestratorEvent({ type: 'praxis.supervisor.agent.revise.succeeded', data: JSON.stringify({ phase: 'supervisor.agent.revise.succeeded', agentId: 'revise-agent' }) }),
+    ];
+
+    expect(events.map(agentRailStageFromEvent)).toEqual([
+      'Agent graph',
+      'Research agent',
+      'Drafting agent',
+      'Red-team agent',
+      'Revise agent',
+    ]);
+  });
 });

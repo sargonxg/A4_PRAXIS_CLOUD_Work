@@ -65,9 +65,20 @@ const LEDGER_EVENT_TYPES = [
   'praxis.memo_output_created',
   'praxis.output_created',
   'praxis.artifact.finalized',
+  'praxis.supervisor.approval_gate',
+  'praxis.supervisor.graph.created',
+  'praxis.supervisor.graph.updated',
+  'praxis.supervisor.agent.research.succeeded',
+  'praxis.supervisor.agent.drafting.succeeded',
+  'praxis.supervisor.agent.red_team.succeeded',
+  'praxis.supervisor.agent.revise.succeeded',
   'praxis.workflow.plan_created',
   'praxis.capsule.read_receipt_created',
   'praxis.approval_requested',
+  'praxis.approval.required',
+  'praxis.approval.granted',
+  'approval_approved',
+  'approval_rejected',
 ] as const;
 const ORCHESTRATOR_EVENT_TYPES = ['start', 'step', 'progress', 'complete', 'fail'] as const;
 export const LAST_EVENT_ID_HEADER = 'Last-Event-ID';
@@ -208,6 +219,11 @@ export function agentRailStageFromEvent(event: OrchestratorEvent): string {
   if (event.type === 'fail') return 'Failed';
   if (event.type === 'complete' || rawType.includes('memo_output') || rawType.includes('output_created') || rawType.includes('artifact.finalized') || phase === 'artifact.finalized') return 'Save output';
   if (rawType === 'status_transition' && stringValue(event.data.toStatus) === 'running') return 'Agent started';
+  if (rawType.includes('supervisor.graph') || phase?.startsWith('supervisor.graph')) return 'Agent graph';
+  if (rawType.includes('supervisor.agent.research') || phase === 'supervisor.agent.research.succeeded') return 'Research agent';
+  if (rawType.includes('supervisor.agent.drafting') || phase === 'supervisor.agent.drafting.succeeded') return 'Drafting agent';
+  if (rawType.includes('supervisor.agent.red_team') || phase === 'supervisor.agent.red_team.succeeded') return 'Red-team agent';
+  if (rawType.includes('supervisor.agent.revise') || phase === 'supervisor.agent.revise.succeeded') return 'Revise agent';
   if (rawType.includes('context_resolved') || phase === 'context_resolved') return 'Capsule read';
   if (rawType.includes('research.plan') || rawType.includes('reasoning.plan') || phase === 'research.plan_created' || phase === 'reasoning.plan' || phase === 'plan') return 'Research plan';
   if (rawType.includes('grounding.live_retrieval') || phase?.startsWith('grounding.live_retrieval')) return 'Live retrieval';

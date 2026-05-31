@@ -122,3 +122,49 @@ PASS - graph.json and GRAPH_REPORT.md updated; HTML viz skipped because the grap
 3. Promote capsule changes through review cards created by `runCapsuleFactoryDraft`; do not add direct canonical mutation paths.
 4. Reuse `collectSearchEvidenceForRun`, `verifySourceabilityLedgerWithLiveSearch`, and `draftAndCritiqueMemo` as the single-agent worker primitives under the multi-agent supervisor.
 5. Preserve the proof rail event schema in `useOrchestratorEvents.ts` and add orchestration events rather than creating a new cockpit surface.
+
+## Prompt 3 Completion Notes
+
+- Added durable approval gates in `src/lib/agent-runtime/worker.ts` with stable approval/tool-call ids, persisted `agent_approvals` rows, explicit `waiting_approval` transitions, resume-on-approved behavior, and reject-to-failed behavior.
+- `agentOperatingContract.approvalThreshold` / `approvalRiskThreshold` now controls approval risk thresholds; default runtime behavior approval-gates medium/high risk, while capsule policy can raise/lower or disable the threshold.
+- Added a bounded `multi_agent_review` supervisor path: research agent -> drafting agent -> red-team agent -> revise agent, with downstream consumption recorded in `praxis.supervisor.*` proof events and final memo blocks.
+- Extended the compact Ask proof rail to show pending approval cards, Approve/Reject actions, and multi-agent graph facts (`agent`, `consumes`, `produces`) without adding a new top-level surface.
+- Added `tests/e2e/agentic-approval.spec.ts` for the approval pause/resume/multi-agent rail flow; it skips in shells without `TEST_FIREBASE_EMAIL` / `TEST_FIREBASE_PASSWORD`.
+
+## Prompt 3 Validation Output
+
+```text
+npx tsc --noEmit
+PASS
+
+npm run build
+PASS - Next.js production build compiled and generated 167 static pages.
+Note: existing Firebase Admin credential warnings appeared during static generation; they did not fail the build.
+
+npm run lint
+PASS
+
+npx vitest run
+PASS - 283 files, 1214 tests.
+
+npm run audit:agent-runtime-proof
+PASS - audit:agent-runtime-proof OK.
+Warnings in this local shell: Agent ledger env missing, worker base URL missing, worker auth env missing, Genkit live model env missing, ADK Agent Engine unconfigured.
+
+npm run audit:agent-process-contract
+PASS - audit:agent-process-contract OK.
+
+node scripts/audit-ai-routes.mjs
+PASS - OK - 61 AI route files, 61 calibrated, 10 exempt (static-marker).
+
+npx playwright test tests/e2e/agentic-approval.spec.ts
+SKIPPED - TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set in this shell.
+```
+
+## Handoff For Session 4
+
+1. Reuse the `multi-agent-supervisor` execution mode and `praxis.supervisor.agent.*` proof events for Boardroom deliberation depth instead of creating a separate Boardroom runtime rail.
+2. Boardroom persona/participant passes should follow the same durable consumption contract: each participant event should name `agentId`, `consumes`, `produces`, evidence refs, and confidence.
+3. The approval seam to reuse is `pauseForApprovalGate` in `worker.ts`; Boardroom high/medium-risk synthesis/export should pause with persisted `agent_approvals` rows before external or executive-pack finalization.
+4. The compact cockpit rail already renders `agent`, `consumes`, and `produces` facts; Session 4 can add Boardroom-specific event names to `useOrchestratorEvents.ts` without a new page.
+5. Keep Boardroom outputs sourceability-compatible by preserving `sourceabilityLedgerSummary`, `redTeamFindings`-style critique artifacts, and final `outputHref` metadata on the AgentRun.

@@ -1,11 +1,18 @@
 import { createHash } from 'crypto';
 import { generateText as aiGenerateText, type LanguageModel } from 'ai';
-import type { AgentRun } from '@/lib/agent-runtime/types';
+import type {
+  AgentApproval,
+  AgentReasoningLoopResult,
+  AgentRun,
+  AgentToolCall,
+  AgentToolRisk,
+} from '@/lib/agent-runtime/types';
 import { buildCapsuleReadReceiptFromEvidencePack, buildCapsuleReadReceiptFromRun, type CapsuleReadReceipt } from '@/lib/agent-runtime/capsule-read-receipt';
 import {
   appendAgentApproval,
   appendAgentToolCall,
   getAgentRun,
+  listAgentApprovals,
   updateAgentRunStatus,
 } from '@/lib/agent-runtime/postgres';
 import { saveMemoDraft, type SaveMemoDraftInput } from '@/lib/firebase/memo-service';
@@ -17,6 +24,11 @@ import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock, type CapsuleEv
 import { buildSourceabilityLedgerFromEvidencePack, buildSourceabilityLedgerFromRun, type SourceabilityClaim, type SourceabilityLedger } from '@/lib/agent-runtime/sourceability-ledger';
 import { makeAgentApproval, makeAgentToolCall } from '@/lib/agent-runtime/state';
 import { getAgentToolDefinition } from '@/lib/agent-runtime/tool-registry';
+import {
+  normalizeAgentApprovalThreshold,
+  requiresAgentApproval,
+  type AgentApprovalThreshold,
+} from '@/lib/agent-runtime/tool-risk';
 import { buildAgentWorkflowPlan, type AgentWorkflowPlan } from '@/lib/agent-runtime/workflow-plan';
 import { saveOutputCapsule, type SaveOutputCapsuleInput } from '@/lib/output-capsules/storage';
 import {
@@ -47,6 +59,7 @@ export type AgentRunExecutionMode =
   | 'noop'
   | 'capsule-factory'
   | 'research-memo'
+  | 'multi-agent-supervisor'
   | 'boardroom-discussion'
   | 'output-formatter'
   | 'sourceability-reviewer'
@@ -87,6 +100,7 @@ type WorkerDeps = {
   runBoardroomDiscussion?: (input: LiveBoardroomRunnerInput) => Promise<BoardroomOutput>;
   appendToolCall?: typeof appendAgentToolCall;
   appendApproval?: typeof appendAgentApproval;
+  listApprovals?: typeof listAgentApprovals;
   runGroundedSearch?: AgentGroundedSearchRunner;
   generateText?: AgentTextGenerator;
   createReviewCard?: (uid: string, capsuleId: string, input: CreateCapsuleReviewCardInput) => Promise<CapsuleReviewCard>;
@@ -156,6 +170,9 @@ export async function executeAgentRun(
   }
   const policyAgentId = typeof run.metadata?.policyAgentId === 'string' ? run.metadata.policyAgentId : null;
   const policyAgent = getPolicyAgent(policyAgentId);
+  if (workflowKindFromMetadata(run.metadata) === 'multi_agent_review') {
+    return executeMultiAgentSupervisorRun(payload, { ...deps, getRun: async () => run });
+  }
   if (policyAgent?.id === 'capsule-factory') {
     return executeCapsuleFactoryAgentRun(payload, { ...deps, getRun: async () => run });
   }
@@ -448,65 +465,17 @@ async function executeResearchMemoAgentRun(
     executionStage = 'workflow-proof';
     const initialWorkflowProof = await emitCapsuleReadAndWorkflowPlan(running, deps);
 
-    for (const step of loop.steps) {
-      const toolCall = step.toolId
-        ? makeAgentToolCall({
-            runId: running.id,
-            ownerUid: running.ownerUid,
-            capsuleId: running.capsuleId,
-            toolId: step.toolId,
-            risk: step.risk,
-            status: step.requiresApproval ? 'waiting_approval' : 'planned',
-            input: { objective: running.objective, stepId: step.id },
-          })
-        : null;
-      if (toolCall) await persistToolCall(toolCall);
-      await mirrorWorkerEvent(running, {
-        substrate: 'praxis',
-        phase: `reasoning.${step.phase}`,
-        message: step.message,
-        data: {
-          stepId: step.id,
-          toolId: step.toolId,
-          risk: step.risk,
-          requiresApproval: step.requiresApproval,
-          receiptId: step.receiptId,
-          stoppedForApproval: loop.stoppedForApproval,
-          toolCallId: toolCall?.id ?? null,
-        },
-      }, deps);
-      if (step.requiresApproval) {
-        await persistApproval(makeAgentApproval({
-          runId: running.id,
-          ownerUid: running.ownerUid,
-          capsuleId: running.capsuleId,
-          toolCallId: toolCall?.id ?? null,
-          risk: step.risk,
-          reason: `${step.toolId ?? step.id} requires approval before execution.`,
-        }));
-      }
-    }
-
-    if (loop.stoppedForApproval) {
-      const waiting = await updateStatus({
-        ownerUid: running.ownerUid,
-        runId: running.id,
-        toStatus: 'waiting_approval',
-        message: loop.nextApprovalReason ?? 'Agent run is waiting for approval before continuing.',
-        data: {
-          dispatchId: payload.dispatchId,
-          attempt: payload.attempt,
-          executionMode: 'research-memo',
-          approvalReason: loop.nextApprovalReason,
-        },
-      });
-      return {
-        runId: waiting?.id ?? running.id,
-        status: waiting?.status ?? 'waiting_approval',
-        executionMode: 'research-memo',
-        traceId: running.traceId,
-      };
-    }
+    const reasoningGate = await emitReasoningLoopProofAndMaybePause({
+      running,
+      payload,
+      loop,
+      executionMode: 'research-memo',
+      deps,
+      updateStatus,
+      persistToolCall,
+      persistApproval,
+    });
+    if (reasoningGate.state !== 'continue') return reasoningGate.result;
 
     executionStage = 'research-plan';
     const liveResearchPlan = normalizeSearchPlan(running.metadata.searchPlan, running.objective);
@@ -520,40 +489,31 @@ async function executeResearchMemoAgentRun(
         freshnessNeed: liveResearchPlan.freshnessNeed,
         timeframe: liveResearchPlan.timeframe,
         agentOperatingContract: agentOperatingContractFromRun(running),
-        approvalSeam: 'TODO(session-3): pause here when supervisor approvals are enabled for high-risk retrieval or export.',
+        approvalSeam: 'Durable approval gates are persisted as agent_approvals rows before medium/high-risk tool execution.',
       },
     }, deps);
     const contractDecision = evaluateAgentOperatingContract(running);
     if (!contractDecision.allowed) {
-      await mirrorWorkerEvent(running, {
-        substrate: 'praxis',
+      const contractGate = await pauseForApprovalGate({
+        running,
+        payload,
+        deps,
+        updateStatus,
+        persistToolCall,
+        persistApproval,
+        executionMode: 'research-memo',
+        key: 'agent-operating-contract',
+        toolId: 'agent-operating-contract',
+        risk: 'high',
         phase: 'agent.contract.stop_condition',
         message: contractDecision.reason,
-        data: {
-          reason: contractDecision.reason,
-          forbiddenActions: contractDecision.forbiddenActions,
-          missingAllowedActions: contractDecision.missingAllowedActions,
-          approvalSeam: 'TODO(session-3): supervisor should resume this run after explicit approval.',
-        },
-      }, deps);
-      const waiting = await updateStatus({
-        ownerUid: running.ownerUid,
-        runId: running.id,
-        toStatus: 'waiting_approval',
-        message: contractDecision.reason,
-        data: {
-          dispatchId: payload.dispatchId,
-          attempt: payload.attempt,
-          executionMode: 'research-memo',
+        proposedAction: {
+          kind: 'agent_operating_contract_override',
           contractDecision,
+          objective: running.objective,
         },
       });
-      return {
-        runId: waiting?.id ?? running.id,
-        status: waiting?.status ?? 'waiting_approval',
-        executionMode: 'research-memo',
-        traceId: running.traceId,
-      };
+      if (contractGate.state !== 'continue') return contractGate.result;
     }
 
     executionStage = 'search-evidence';
@@ -814,6 +774,358 @@ async function executeResearchMemoAgentRun(
       executionMode: 'research-memo',
       failedPhase: executionStage,
       message: 'Research Memo Agent failed before creating a memo draft.',
+      err,
+    });
+  }
+}
+
+async function executeMultiAgentSupervisorRun(
+  payload: ExecuteAgentRunPayload,
+  deps: WorkerDeps = {},
+): Promise<ExecuteAgentRunResult> {
+  const getRun = deps.getRun ?? getAgentRun;
+  const updateStatus = deps.updateStatus ?? updateAgentRunStatus;
+  const persistMemo = deps.saveMemoDraft ?? saveMemoDraft;
+  const persistOutputCapsule = deps.saveOutputCapsule ?? saveOutputCapsule;
+  const getEvidencePack = deps.buildEvidencePack ?? buildCapsuleEvidencePack;
+  const persistToolCall = deps.appendToolCall ?? appendAgentToolCall;
+  const persistApproval = deps.appendApproval ?? appendAgentApproval;
+  const run = await getRun(payload.ownerUid, payload.runId);
+  if (!run) {
+    throw new AgentWorkerError('Agent run not found', 404);
+  }
+  if (run.traceId !== payload.traceId || run.capsuleId !== payload.capsuleId) {
+    throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
+  }
+  if (run.status === 'succeeded') {
+    return {
+      runId: run.id,
+      status: run.status,
+      executionMode: 'multi-agent-supervisor',
+      traceId: run.traceId,
+      outputHref: outputHrefFromMetadata(run.metadata, '/app?panel=memo'),
+      idempotent: true,
+    };
+  }
+  if (run.status !== 'queued' && run.status !== 'running') {
+    throw new AgentWorkerError(`Agent run cannot be executed from ${run.status}`, 409);
+  }
+
+  let running = run;
+  let executionStage = 'starting';
+  try {
+    if (run.status !== 'running') {
+      const next = await updateStatus({
+        ownerUid: run.ownerUid,
+        runId: run.id,
+        toStatus: 'running',
+        message: 'Multi-agent supervisor accepted the queued capsule run.',
+        data: {
+          dispatchId: payload.dispatchId,
+          attempt: payload.attempt,
+          requestedAt: payload.requestedAt,
+          executionMode: 'multi-agent-supervisor',
+        },
+      });
+      if (!next) throw new AgentWorkerError('Agent run disappeared before execution', 404);
+      running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
+    }
+
+    executionStage = 'supervisor-approval';
+    const approvalThreshold = approvalThresholdFromRun(running);
+    if (requiresAgentApproval('medium', approvalThreshold)) {
+      const supervisorGate = await pauseForApprovalGate({
+        running,
+        payload,
+        deps,
+        updateStatus,
+        persistToolCall,
+        persistApproval,
+        executionMode: 'multi-agent-supervisor',
+        key: 'supervisor:multi-agent-review',
+        toolId: 'multi-agent-review',
+        risk: 'medium',
+        phase: 'supervisor.approval_gate',
+        message: 'Multi-agent review will run research, drafting, red-team, and revise agents before saving the final memo.',
+        proposedAction: {
+          kind: 'multi_agent_review',
+          approvalThreshold,
+          rounds: ['research', 'drafting', 'red-team', 'revise'],
+          maxRounds: 1,
+          objective: running.objective,
+        },
+      });
+      if (supervisorGate.state !== 'continue') return supervisorGate.result;
+    }
+
+    executionStage = 'context-resolved';
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'supervisor.graph.created',
+      message: 'Multi-agent supervisor created the bounded agent graph.',
+      data: {
+        agentGraph: [
+          { agentId: 'research-agent', consumes: ['capsule', 'searchPlan'], produces: ['evidencePack', 'sourceReceipts'] },
+          { agentId: 'drafting-agent', consumes: ['evidencePack', 'sourceReceipts'], produces: ['draftMemo'] },
+          { agentId: 'red-team-agent', consumes: ['draftMemo', 'claimLedger'], produces: ['redTeamFindings'] },
+          { agentId: 'revise-agent', consumes: ['draftMemo', 'redTeamFindings'], produces: ['finalMemo'] },
+        ],
+        maxRounds: 1,
+        executionMode: 'multi-agent-supervisor',
+      },
+    }, deps);
+    const initialWorkflowProof = await emitCapsuleReadAndWorkflowPlan(running, deps);
+
+    executionStage = 'search-evidence';
+    const liveSearchEvidence = await collectSearchEvidenceForRun(running, {
+      appendToolCall: persistToolCall,
+      appendEvent: deps.appendEvent,
+      runGroundedSearch: deps.runGroundedSearch,
+    });
+
+    executionStage = 'research-agent';
+    const evidencePack = await getEvidencePack({
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      objective: running.objective,
+      maxParagraphs: 10,
+    });
+    await persistToolCall(makeAgentToolCall({
+      runId: running.id,
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      toolId: 'capsule-evidence-pack',
+      risk: getAgentToolDefinition('capsule-evidence-pack').risk,
+      status: 'succeeded',
+      input: { objective: running.objective, supervisorAgentId: 'research-agent' },
+      output: {
+        packId: evidencePack.packId,
+        sourceReceiptIds: uniqueStrings([...evidencePack.sourceReceiptIds, ...liveSearchEvidence.sourceReceiptIds]),
+        paragraphCount: evidencePack.sourcedParagraphs.length,
+      },
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    }));
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'supervisor.agent.research.succeeded',
+      message: 'Research agent produced the evidence pack and source receipt set for downstream drafting.',
+      data: {
+        agentId: 'research-agent',
+        consumes: ['capsule', 'searchPlan'],
+        produces: ['evidencePack', 'sourceReceipts'],
+        evidencePackId: evidencePack.packId,
+        sourceReceiptIds: uniqueStrings([...evidencePack.sourceReceiptIds, ...liveSearchEvidence.sourceReceiptIds]),
+        paragraphCount: evidencePack.sourcedParagraphs.length,
+      },
+    }, deps);
+
+    executionStage = 'sourceability-ledger';
+    const capsuleReadReceipt = buildCapsuleReadReceiptFromEvidencePack(evidencePack, {
+      selectedTools: initialWorkflowProof.workflowPlan.selectedTools,
+      outputTarget: outputDestinationFromMetadata(running.metadata) ?? 'memo_studio',
+      groundingPosture: initialWorkflowProof.capsuleReadReceipt.groundingPosture,
+    });
+    const workflowPlan = buildAgentWorkflowPlan({
+      prompt: running.objective,
+      runIntent: 'red_team_review',
+      policyAgentId: 'red-team-analyst',
+      selectedToolIds: initialWorkflowProof.workflowPlan.selectedTools,
+      outputTarget: outputDestinationFromMetadata(running.metadata) ?? 'memo_studio',
+      capsuleReadReceipt,
+      groundingPosture: capsuleReadReceipt.groundingPosture,
+    });
+    let sourceabilityLedger = buildSourceabilityLedgerFromEvidencePack(evidencePack, {
+      agentRunId: running.id,
+      outputTarget: 'memo_studio',
+    });
+    sourceabilityLedger = verifySourceabilityLedgerWithLiveSearch(sourceabilityLedger, liveSearchEvidence);
+    await emitSourceabilityLedger(running, sourceabilityLedger, deps);
+
+    executionStage = 'drafting-agent';
+    const liveMemoDraft = await draftAndCritiqueMemo(running, evidencePack, sourceabilityLedger, liveSearchEvidence, deps);
+    await persistToolCall(makeAgentToolCall({
+      runId: running.id,
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      toolId: 'policy-memo',
+      risk: getAgentToolDefinition('policy-memo').risk,
+      status: 'succeeded',
+      input: { evidencePackId: evidencePack.packId, supervisorAgentId: 'drafting-agent' },
+      output: { draftLength: liveMemoDraft.finalText.length },
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    }));
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'supervisor.agent.drafting.succeeded',
+      message: 'Drafting agent consumed research output and produced the first memo draft.',
+      data: {
+        agentId: 'drafting-agent',
+        consumes: ['evidencePack', 'sourceReceipts', 'claimLedger'],
+        produces: ['draftMemo'],
+        evidencePackId: evidencePack.packId,
+        sourceabilityLedgerId: sourceabilityLedger.ledgerId,
+        unsupportedClaimCount: sourceabilityLedger.summary.unsupportedClaims,
+      },
+    }, deps);
+
+    executionStage = 'red-team-agent';
+    const redTeamText = await generateRedTeamFindings(running, liveMemoDraft.finalText, sourceabilityLedger, deps);
+    const redTeamFindings = redTeamFindingsFromText(redTeamText);
+    await persistToolCall(makeAgentToolCall({
+      runId: running.id,
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      toolId: 'red-team-review',
+      risk: getAgentToolDefinition('red-team-review').risk,
+      status: 'succeeded',
+      input: { draftLength: liveMemoDraft.finalText.length, supervisorAgentId: 'red-team-agent' },
+      output: { findings: redTeamFindings },
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    }));
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'supervisor.agent.red_team.succeeded',
+      message: 'Red-team agent challenged the draft and produced revision findings.',
+      data: {
+        agentId: 'red-team-agent',
+        consumes: ['draftMemo', 'claimLedger'],
+        produces: ['redTeamFindings'],
+        findings: redTeamFindings,
+        findingCount: redTeamFindings.length,
+      },
+    }, deps);
+
+    executionStage = 'revise-agent';
+    const finalMemoText = await reviseMemoWithRedTeamFindings(running, liveMemoDraft.finalText, redTeamFindings, deps);
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'supervisor.agent.revise.succeeded',
+      message: 'Revise agent consumed red-team findings and produced the final memo.',
+      data: {
+        agentId: 'revise-agent',
+        consumes: ['draftMemo', 'redTeamFindings'],
+        produces: ['finalMemo'],
+        addressedFindings: redTeamFindings,
+        finalTextPreview: finalMemoText.slice(0, 500),
+      },
+    }, deps);
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'supervisor.graph.updated',
+      message: 'Multi-agent supervisor recorded the consumed and produced artifacts for the proof rail.',
+      data: {
+        edges: [
+          { from: 'research-agent', to: 'drafting-agent', artifact: 'evidencePack' },
+          { from: 'drafting-agent', to: 'red-team-agent', artifact: 'draftMemo' },
+          { from: 'red-team-agent', to: 'revise-agent', artifact: 'redTeamFindings' },
+        ],
+        finalAgentId: 'revise-agent',
+      },
+    }, deps);
+
+    executionStage = 'memo-persist';
+    const combinedSourceReceiptIds = uniqueStrings([
+      ...evidencePack.sourceReceiptIds,
+      ...evidencePack.sourcedParagraphs.map((paragraph) => paragraph.sourceReceiptId).filter((value): value is string => Boolean(value)),
+      ...liveSearchEvidence.sourceReceiptIds,
+    ]);
+    const memoRecord = await persistMemo(running.ownerUid, {
+      caseId: running.selectedCoreIds.situationCoreId ?? running.capsuleId,
+      templateId: 'policy-memo',
+      title: `Multi-agent review - ${running.objective.slice(0, 72)}`,
+      graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:multi-agent-review`,
+      changeNote: `Created by multi-agent supervisor run ${running.id}.`,
+      capsuleId: running.capsuleId,
+      capsuleVersion: evidencePack.activeCapsule.version ?? null,
+      runId: running.id,
+      outputTarget: 'policy-memo',
+      sourceReceiptIds: combinedSourceReceiptIds,
+      sourceReceipts: liveSearchEvidence.sourceReceipts,
+      unsupportedClaims: sourceabilityLedger.unsupportedClaims.map((claim) => claim.claim),
+      claimChecks: sourceabilityLedger.claims.map((claim) => ({
+        id: claim.id,
+        claim: claim.claim,
+        status: claim.supportLabel,
+        confidence: claim.confidence,
+        sourceReceiptIds: claim.sourceReceiptIds,
+        documentParagraphIds: claim.documentParagraphIds,
+        reviewNote: claim.reviewNote,
+      })),
+      blocks: buildMultiAgentReviewMemoBlocks(running, {
+        evidencePack,
+        sourceabilityLedger,
+        liveMemoDraft,
+        liveSearchEvidence,
+        finalMemoText,
+        redTeamFindings,
+        combinedSourceReceiptIds,
+      }),
+    });
+    const outputCapsule = await persistOutputCapsule(
+      running.ownerUid,
+      buildOutputCapsuleInput(running, evidencePack, memoRecord.memo.id, sourceabilityLedger),
+    );
+    const outputHref = outputCapsule?.id
+      ? `/app?panel=memo&memoId=${encodeURIComponent(memoRecord.memo.id)}&outputCapsuleId=${encodeURIComponent(outputCapsule.id)}`
+      : `/app?panel=memo&memoId=${encodeURIComponent(memoRecord.memo.id)}`;
+
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'artifact.finalized',
+      message: 'Multi-agent supervisor finalized the memo after red-team revision.',
+      data: {
+        memoId: memoRecord.memo.id,
+        outputCapsuleId: outputCapsule?.id ?? null,
+        outputHref,
+        sourceReceiptIds: combinedSourceReceiptIds,
+        redTeamFindings,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
+      },
+    }, deps);
+
+    executionStage = 'succeeded-transition';
+    const succeeded = await updateStatus({
+      ownerUid: running.ownerUid,
+      runId: running.id,
+      toStatus: 'succeeded',
+      message: 'Multi-agent supervisor completed research, drafting, red-team, and revision.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        executionMode: 'multi-agent-supervisor',
+        memoId: memoRecord.memo.id,
+        outputCapsuleId: outputCapsule?.id ?? null,
+        outputHref,
+        capsuleReadReceipt,
+        workflowPlan,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
+        selectedTools: workflowPlan.selectedTools,
+        groundingPosture: workflowPlan.groundingPosture,
+        redTeamFindings,
+      },
+    });
+
+    return {
+      runId: succeeded?.id ?? running.id,
+      status: succeeded?.status ?? 'succeeded',
+      executionMode: 'multi-agent-supervisor',
+      traceId: running.traceId,
+      outputHref,
+      memoId: memoRecord.memo.id,
+      outputCapsuleId: outputCapsule?.id,
+    };
+  } catch (err) {
+    if (err instanceof AgentWorkerError) throw err;
+    return failAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'multi-agent-supervisor',
+      failedPhase: executionStage,
+      message: 'Multi-agent supervisor failed before creating the revised memo.',
       err,
     });
   }
@@ -1123,6 +1435,8 @@ async function executeOutputFormatterAgentRun(
   const getRun = deps.getRun ?? getAgentRun;
   const updateStatus = deps.updateStatus ?? updateAgentRunStatus;
   const persistMemo = deps.saveMemoDraft ?? saveMemoDraft;
+  const persistToolCall = deps.appendToolCall ?? appendAgentToolCall;
+  const persistApproval = deps.appendApproval ?? appendAgentApproval;
   const run = await getRun(payload.ownerUid, payload.runId);
   if (!run) {
     throw new AgentWorkerError('Agent run not found', 404);
@@ -1185,42 +1499,17 @@ async function executeOutputFormatterAgentRun(
     });
     await emitSourceabilityLedger(running, sourceabilityLedger, deps);
 
-    for (const step of loop.steps) {
-      await mirrorWorkerEvent(running, {
-        substrate: 'praxis',
-        phase: `reasoning.${step.phase}`,
-        message: step.message,
-        data: {
-          stepId: step.id,
-          toolId: step.toolId,
-          risk: step.risk,
-          requiresApproval: step.requiresApproval,
-          receiptId: step.receiptId,
-          stoppedForApproval: loop.stoppedForApproval,
-        },
-      }, deps);
-    }
-
-    if (loop.stoppedForApproval) {
-      const waiting = await updateStatus({
-        ownerUid: running.ownerUid,
-        runId: running.id,
-        toStatus: 'waiting_approval',
-        message: loop.nextApprovalReason ?? 'Output Formatter is waiting for approval before continuing.',
-        data: {
-          dispatchId: payload.dispatchId,
-          attempt: payload.attempt,
-          executionMode: 'output-formatter',
-          approvalReason: loop.nextApprovalReason,
-        },
-      });
-      return {
-        runId: waiting?.id ?? running.id,
-        status: waiting?.status ?? 'waiting_approval',
-        executionMode: 'output-formatter',
-        traceId: running.traceId,
-      };
-    }
+    const reasoningGate = await emitReasoningLoopProofAndMaybePause({
+      running,
+      payload,
+      loop,
+      executionMode: 'output-formatter',
+      deps,
+      updateStatus,
+      persistToolCall,
+      persistApproval,
+    });
+    if (reasoningGate.state !== 'continue') return reasoningGate.result;
 
     const sourceCount = running.selectedCoreIds.sourceCoreIds.length + running.selectedCoreIds.documentCoreIds.length;
     const caseId = running.selectedCoreIds.situationCoreId ?? running.capsuleId;
@@ -1538,6 +1827,286 @@ async function executeReviewAgentRun(
   }
 }
 
+type ApprovalGateOutcome =
+  | { state: 'continue' }
+  | { state: 'waiting' | 'failed'; result: ExecuteAgentRunResult };
+
+async function emitReasoningLoopProofAndMaybePause(input: {
+  running: AgentRun;
+  payload: ExecuteAgentRunPayload;
+  loop: AgentReasoningLoopResult;
+  executionMode: AgentRunExecutionMode;
+  deps: WorkerDeps;
+  updateStatus: typeof updateAgentRunStatus;
+  persistToolCall: typeof appendAgentToolCall;
+  persistApproval: typeof appendAgentApproval;
+}): Promise<ApprovalGateOutcome> {
+  for (const step of input.loop.steps) {
+    if (step.requiresApproval) {
+      const gate = await pauseForApprovalGate({
+        running: input.running,
+        payload: input.payload,
+        deps: input.deps,
+        updateStatus: input.updateStatus,
+        persistToolCall: input.persistToolCall,
+        persistApproval: input.persistApproval,
+        executionMode: input.executionMode,
+        key: `reasoning:${step.id}`,
+        toolId: step.toolId ?? step.id,
+        risk: step.risk,
+        phase: `reasoning.${step.phase}`,
+        message: step.message,
+        proposedAction: {
+          kind: 'reasoning_step',
+          stepId: step.id,
+          toolId: step.toolId,
+          receiptId: step.receiptId,
+          objective: input.running.objective,
+          approvalReason: input.loop.nextApprovalReason ?? `${step.toolId ?? step.id} requires approval before execution.`,
+        },
+        receiptId: step.receiptId,
+      });
+      if (gate.state !== 'continue') return gate;
+      continue;
+    }
+
+    const toolCall = step.toolId
+      ? makeStableAgentToolCall(input.running, `reasoning:${step.id}`, {
+          toolId: step.toolId,
+          risk: step.risk,
+          status: 'planned',
+          input: {
+            objective: input.running.objective,
+            stepId: step.id,
+            receiptId: step.receiptId,
+          },
+        })
+      : null;
+    if (toolCall) await persistIgnoringDuplicate(() => input.persistToolCall(toolCall));
+    await mirrorWorkerEvent(input.running, {
+      substrate: 'praxis',
+      phase: `reasoning.${step.phase}`,
+      message: step.message,
+      data: {
+        stepId: step.id,
+        toolId: step.toolId,
+        risk: step.risk,
+        requiresApproval: false,
+        receiptId: step.receiptId,
+        stoppedForApproval: input.loop.stoppedForApproval,
+        toolCallId: toolCall?.id ?? null,
+      },
+    }, input.deps);
+  }
+
+  return { state: 'continue' };
+}
+
+async function pauseForApprovalGate(input: {
+  running: AgentRun;
+  payload: ExecuteAgentRunPayload;
+  deps: WorkerDeps;
+  updateStatus: typeof updateAgentRunStatus;
+  persistToolCall: typeof appendAgentToolCall;
+  persistApproval: typeof appendAgentApproval;
+  executionMode: AgentRunExecutionMode;
+  key: string;
+  toolId: string;
+  risk: AgentToolRisk;
+  phase: string;
+  message: string;
+  proposedAction: Record<string, unknown>;
+  receiptId?: string | null;
+}): Promise<ApprovalGateOutcome> {
+  const toolCallId = stableToolCallId(input.running, input.key, input.toolId);
+  const approvalId = stableApprovalId(input.running, input.key, input.toolId);
+  const approvals = await listApprovalsForRun(input.running, input.deps);
+  const existing = approvals.find((approval) => approval.id === approvalId);
+
+  if (existing?.status === 'approved') {
+    await mirrorWorkerEvent(input.running, {
+      substrate: 'praxis',
+      phase: input.phase,
+      message: `${input.message} Approved; worker resumed from persisted approval ${existing.id}.`,
+      data: {
+        ...input.proposedAction,
+        approvalId: existing.id,
+        toolCallId,
+        risk: input.risk,
+        requiresApproval: true,
+        approvalStatus: 'approved',
+        receiptId: input.receiptId ?? null,
+      },
+    }, input.deps);
+    await mirrorWorkerEvent(input.running, {
+      substrate: 'praxis',
+      phase: 'approval.granted',
+      message: 'Persisted owner approval found; worker resumed the saved checkpoint.',
+      data: {
+        approvalId: existing.id,
+        toolCallId,
+        toolId: input.toolId,
+        risk: input.risk,
+        receiptId: input.receiptId ?? null,
+      },
+    }, input.deps);
+    return { state: 'continue' };
+  }
+
+  if (existing?.status === 'rejected') {
+    const failed = await input.updateStatus({
+      ownerUid: input.running.ownerUid,
+      runId: input.running.id,
+      toStatus: 'failed',
+      message: 'Agent run stopped because a persisted approval was rejected.',
+      data: {
+        dispatchId: input.payload.dispatchId,
+        attempt: input.payload.attempt,
+        executionMode: input.executionMode,
+        approvalId: existing.id,
+        toolCallId,
+        toolId: input.toolId,
+        risk: input.risk,
+      },
+    });
+    return {
+      state: 'failed',
+      result: {
+        runId: failed?.id ?? input.running.id,
+        status: failed?.status ?? 'failed',
+        executionMode: input.executionMode,
+        traceId: input.running.traceId,
+      },
+    };
+  }
+
+  const toolCall = makeStableAgentToolCall(input.running, input.key, {
+    toolId: input.toolId,
+    risk: input.risk,
+    status: 'waiting_approval',
+    input: {
+      objective: input.running.objective,
+      proposedAction: input.proposedAction,
+      receiptId: input.receiptId ?? null,
+      approvalId,
+    },
+  });
+  const approval: AgentApproval = {
+    ...makeAgentApproval({
+      runId: input.running.id,
+      ownerUid: input.running.ownerUid,
+      capsuleId: input.running.capsuleId,
+      toolCallId,
+      risk: input.risk,
+      reason: input.message,
+    }),
+    id: approvalId,
+  };
+
+  if (!existing) {
+    await persistIgnoringDuplicate(() => input.persistToolCall(toolCall));
+    await persistIgnoringDuplicate(() => input.persistApproval(approval));
+  }
+  await mirrorWorkerEvent(input.running, {
+    substrate: 'praxis',
+    phase: input.phase,
+    message: input.message,
+    data: {
+      ...input.proposedAction,
+      approvalId,
+      toolCallId,
+      risk: input.risk,
+      requiresApproval: true,
+      approvalStatus: 'pending',
+      receiptId: input.receiptId ?? null,
+    },
+  }, input.deps);
+  await mirrorWorkerEvent(input.running, {
+    substrate: 'praxis',
+    phase: 'approval.required',
+    message: input.message,
+    data: {
+      approvalId,
+      toolCallId,
+      toolId: input.toolId,
+      risk: input.risk,
+      proposedAction: input.proposedAction,
+      receiptId: input.receiptId ?? null,
+      dispatchId: input.payload.dispatchId,
+      attempt: input.payload.attempt,
+    },
+  }, input.deps);
+  const waiting = await input.updateStatus({
+    ownerUid: input.running.ownerUid,
+    runId: input.running.id,
+    toStatus: 'waiting_approval',
+    message: input.message,
+    data: {
+      dispatchId: input.payload.dispatchId,
+      attempt: input.payload.attempt,
+      executionMode: input.executionMode,
+      approvalId,
+      toolCallId,
+      toolId: input.toolId,
+      risk: input.risk,
+      proposedAction: input.proposedAction,
+    },
+  });
+  return {
+    state: 'waiting',
+    result: {
+      runId: waiting?.id ?? input.running.id,
+      status: waiting?.status ?? 'waiting_approval',
+      executionMode: input.executionMode,
+      traceId: input.running.traceId,
+    },
+  };
+}
+
+function makeStableAgentToolCall(
+  run: AgentRun,
+  key: string,
+  input: Omit<Parameters<typeof makeAgentToolCall>[0], 'runId' | 'ownerUid' | 'capsuleId'>,
+): AgentToolCall {
+  return {
+    ...makeAgentToolCall({
+      runId: run.id,
+      ownerUid: run.ownerUid,
+      capsuleId: run.capsuleId,
+      ...input,
+    }),
+    id: stableToolCallId(run, key, input.toolId),
+  };
+}
+
+async function listApprovalsForRun(run: AgentRun, deps: WorkerDeps): Promise<AgentApproval[]> {
+  const listApprovals = deps.listApprovals ?? listAgentApprovals;
+  return listApprovals({ ownerUid: run.ownerUid, runId: run.id });
+}
+
+async function persistIgnoringDuplicate<T>(operation: () => Promise<T>): Promise<T | null> {
+  try {
+    return await operation();
+  } catch (err) {
+    if (isDuplicateKeyError(err)) return null;
+    throw err;
+  }
+}
+
+function isDuplicateKeyError(err: unknown): boolean {
+  const code = typeof err === 'object' && err !== null && 'code' in err ? String((err as { code?: unknown }).code) : '';
+  const message = err instanceof Error ? err.message : String(err);
+  return code === '23505' || /duplicate key|unique constraint/i.test(message);
+}
+
+function stableToolCallId(run: AgentRun, key: string, toolId: string): string {
+  return `tool:${stableShortId(`${run.id}:${key}:${toolId}`)}`;
+}
+
+function stableApprovalId(run: AgentRun, key: string, toolId: string): string {
+  return `approval:${stableShortId(`${run.id}:${key}:${toolId}`)}`;
+}
+
 async function failAgentRunExecution(input: {
   updateStatus: typeof updateAgentRunStatus;
   running: AgentRun;
@@ -1688,6 +2257,77 @@ async function emitSourceabilityLedger(
   }, deps);
 }
 
+async function generateRedTeamFindings(
+  running: AgentRun,
+  draftText: string,
+  sourceabilityLedger: SourceabilityLedger,
+  deps: Pick<WorkerDeps, 'generateText'>,
+): Promise<string> {
+  try {
+    return (await generateAgentText(deps, {
+      modelPurpose: 'deep-think',
+      system: 'You are the PRAXIS red-team analyst. Challenge assumptions, weak sources, option framing, and unsupported claims without inventing new evidence.',
+      prompt: [
+        `Objective: ${running.objective}`,
+        'Draft memo:',
+        draftText,
+        claimLedgerPromptBlock(sourceabilityLedger),
+        'Return concise findings that the revise agent must address.',
+      ].join('\n\n'),
+      temperature: 0,
+      providerOptions: { google: { thinking_level: 'high' } },
+    })).text.trim();
+  } catch {
+    const blockers = sourceabilityLedger.unsupportedClaims.map((claim) => claim.claim);
+    return [
+      'Verify weak or unsupported claims before export.',
+      blockers.length ? `Unsupported claim pressure: ${blockers.slice(0, 3).join(' | ')}` : 'Check whether the recommendation depends on hidden assumptions not present in the capsule.',
+      'Make the revision explicitly identify caveats and decision dependencies.',
+    ].join('\n');
+  }
+}
+
+async function reviseMemoWithRedTeamFindings(
+  running: AgentRun,
+  draftText: string,
+  redTeamFindings: string[],
+  deps: Pick<WorkerDeps, 'generateText'>,
+): Promise<string> {
+  let revised: string;
+  try {
+    revised = (await generateAgentText(deps, {
+      modelPurpose: 'pro',
+      system: 'You are the PRAXIS revise agent. Revise only the supplied draft and explicitly address red-team findings.',
+      prompt: [
+        `Objective: ${running.objective}`,
+        'Draft memo:',
+        draftText,
+        'Red-team findings to address:',
+        redTeamFindings.map((finding, index) => `${index + 1}. ${finding}`).join('\n'),
+        'Return the revised memo. Include a short section naming the red-team findings addressed.',
+      ].join('\n\n'),
+      temperature: 0.15,
+    })).text.trim();
+  } catch {
+    revised = draftText;
+  }
+  return [
+    revised,
+    '',
+    'Red-team findings addressed in revision:',
+    ...redTeamFindings.map((finding, index) => `${index + 1}. Addressed: ${finding}`),
+  ].join('\n').trim();
+}
+
+function redTeamFindingsFromText(text: string): string[] {
+  const findings = text
+    .split(/\r?\n+/)
+    .map((line) => line.replace(/^\s*(?:[-*]|\d+[.)])\s*/, '').trim())
+    .filter(Boolean)
+    .slice(0, 6);
+  return findings.length ? findings : ['Red-team review found no discrete finding; human review remains required before export.'];
+}
+
 function selectedWorkflowToolIds(run: AgentRun): string[] {
   const tools = [
     'context-resolve',
@@ -1696,6 +2336,22 @@ function selectedWorkflowToolIds(run: AgentRun): string[] {
     ...run.selectedCoreIds.toolCoreIds,
   ];
   return Array.from(new Set(tools));
+}
+
+function workflowKindFromMetadata(metadata: Record<string, unknown>): string | null {
+  if (typeof metadata.workflowKind === 'string') return metadata.workflowKind;
+  if (typeof metadata.runIntent === 'string') return metadata.runIntent;
+  const workflowPlan = isRecord(metadata.workflowPlan) ? metadata.workflowPlan : null;
+  return typeof workflowPlan?.workflowKind === 'string' ? workflowPlan.workflowKind : null;
+}
+
+function approvalThresholdFromRun(run: AgentRun): AgentApprovalThreshold {
+  const contract = isRecord(run.metadata.agentOperatingContract) ? run.metadata.agentOperatingContract : {};
+  return normalizeAgentApprovalThreshold(contract.approvalThreshold)
+    ?? normalizeAgentApprovalThreshold(contract.approvalRiskThreshold)
+    ?? normalizeAgentApprovalThreshold(run.metadata.approvalThreshold)
+    ?? normalizeAgentApprovalThreshold(run.metadata.approvalRiskThreshold)
+    ?? 'medium';
 }
 
 function outputDestinationFromMetadata(metadata: Record<string, unknown>): PolicyAgentOutputDestination | null {
@@ -2371,6 +3027,95 @@ function buildMemoBlocks(
         outputDestination: 'memo_studio',
       },
     }] : []),
+  ];
+}
+
+function buildMultiAgentReviewMemoBlocks(
+  running: AgentRun,
+  input: {
+    evidencePack: CapsuleEvidencePack;
+    sourceabilityLedger: SourceabilityLedger;
+    liveMemoDraft: LiveMemoDraft;
+    liveSearchEvidence: LiveSearchEvidence;
+    finalMemoText: string;
+    redTeamFindings: string[];
+    combinedSourceReceiptIds: string[];
+  },
+): SaveMemoDraftInput['blocks'] {
+  const paragraphCitation = input.combinedSourceReceiptIds.length
+    ? [{ nodeIds: [], sourceReceiptIds: input.combinedSourceReceiptIds, surface: 'footnote' as const }]
+    : [];
+  return [
+    {
+      id: 'multi-agent-final',
+      type: 'paragraph',
+      title: 'Final revised memo',
+      content: input.finalMemoText,
+      citations: paragraphCitation,
+      metadata: {
+        runId: running.id,
+        capsuleId: running.capsuleId,
+        workflowKind: 'multi_agent_review',
+        consumedAgents: ['research-agent', 'drafting-agent', 'red-team-agent', 'revise-agent'],
+        addressedRedTeamFindings: input.redTeamFindings,
+        weakSourceHighlight: input.sourceabilityLedger.summary.weakClaims > 0 || input.sourceabilityLedger.summary.unsupportedClaims > 0,
+      },
+    },
+    {
+      id: 'agent-graph-receipt',
+      type: 'bullets',
+      title: 'Agent graph receipt',
+      content: '',
+      items: [
+        'research-agent produced evidencePack and sourceReceipts.',
+        'drafting-agent consumed research-agent output and produced draftMemo.',
+        'red-team-agent consumed draftMemo and claimLedger and produced redTeamFindings.',
+        'revise-agent consumed draftMemo and redTeamFindings and produced finalMemo.',
+      ],
+      citations: [],
+      metadata: { workflowKind: 'multi_agent_review' },
+    },
+    {
+      id: 'red-team-findings',
+      type: 'bullets',
+      title: 'Red-team findings addressed',
+      content: '',
+      items: input.redTeamFindings,
+      citations: [],
+      metadata: {
+        sourceabilityLedgerId: input.sourceabilityLedger.ledgerId,
+        unsupportedClaimCount: input.sourceabilityLedger.summary.unsupportedClaims,
+      },
+    },
+    {
+      id: 'drafting-agent-output',
+      type: 'paragraph',
+      title: 'Drafting agent output before red-team revision',
+      content: input.liveMemoDraft.finalText,
+      citations: paragraphCitation,
+      metadata: {
+        modelPosture: input.liveMemoDraft.modelPosture,
+        degradedReason: input.liveMemoDraft.degradedReason,
+        liveSourceReceiptIds: input.liveSearchEvidence.sourceReceiptIds,
+      },
+    },
+    {
+      id: 'sourceability-ledger-summary',
+      type: 'bullets',
+      title: 'Sourceability ledger summary',
+      content: '',
+      items: [
+        `${input.sourceabilityLedger.summary.totalClaims} material claim(s) reviewed.`,
+        `${input.sourceabilityLedger.summary.weakClaims} weak claim(s) remain visible.`,
+        `${input.sourceabilityLedger.summary.unsupportedClaims} unsupported claim(s) remain visible.`,
+      ],
+      citations: paragraphCitation,
+      metadata: {
+        capsuleVersion: input.evidencePack.activeCapsule.version ?? null,
+        sourceabilityLedgerId: input.sourceabilityLedger.ledgerId,
+        sourceabilityLedgerSummary: input.sourceabilityLedger.summary,
+      },
+    },
   ];
 }
 

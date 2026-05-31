@@ -4,7 +4,11 @@ import type {
   AgentReasoningStep,
   AgentRun,
 } from '@/lib/agent-runtime/types';
-import { classifyAgentToolRisk, requiresAgentApproval } from '@/lib/agent-runtime/tool-risk';
+import {
+  classifyAgentToolRisk,
+  normalizeAgentApprovalThreshold,
+  requiresAgentApproval,
+} from '@/lib/agent-runtime/tool-risk';
 
 type PlannedStep = {
   id: string;
@@ -94,7 +98,7 @@ export function runBoundedReasoningLoop(
       toolId: planned.toolId ?? planned.id,
       readOnly: planned.readOnly,
     });
-    const requiresApproval = requiresAgentApproval(risk);
+    const requiresApproval = requiresAgentApproval(risk, approvalThresholdFromRun(run));
     steps.push({
       id: planned.id,
       phase: requiresApproval ? 'approval_gate' : planned.phase,
@@ -130,4 +134,17 @@ export function runBoundedReasoningLoop(
     steps,
     nextApprovalReason: null,
   };
+}
+
+function approvalThresholdFromRun(run: AgentRun) {
+  const contract = isRecord(run.metadata.agentOperatingContract) ? run.metadata.agentOperatingContract : {};
+  return normalizeAgentApprovalThreshold(contract.approvalThreshold)
+    ?? normalizeAgentApprovalThreshold(contract.approvalRiskThreshold)
+    ?? normalizeAgentApprovalThreshold(run.metadata.approvalThreshold)
+    ?? normalizeAgentApprovalThreshold(run.metadata.approvalRiskThreshold)
+    ?? 'medium';
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

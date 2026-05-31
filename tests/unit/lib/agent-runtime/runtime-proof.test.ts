@@ -42,6 +42,7 @@ describe('agent runtime proof smoke', () => {
         policyAgentId: request.policyAgentId,
         outputDestination: request.outputDestination,
         executionMode: 'queued-only',
+        agentOperatingContract: { approvalThreshold: 'high' },
       },
     } satisfies CreateAgentRunInput);
     let run = makeRun('queued', normalized);

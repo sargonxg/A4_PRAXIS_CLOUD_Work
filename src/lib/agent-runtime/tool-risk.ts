@@ -1,5 +1,7 @@
 import type { AgentToolRisk } from '@/lib/agent-runtime/types';
 
+export type AgentApprovalThreshold = 'none' | AgentToolRisk;
+
 const HIGH_RISK_MARKERS = [
   'browser',
   'credential',
@@ -35,6 +37,19 @@ export function classifyAgentToolRisk(input: {
   return 'low';
 }
 
-export function requiresAgentApproval(risk: AgentToolRisk): boolean {
-  return risk === 'high';
+export function requiresAgentApproval(
+  risk: AgentToolRisk,
+  threshold: AgentApprovalThreshold = 'medium',
+): boolean {
+  if (threshold === 'none') return false;
+  const ranks: Record<AgentToolRisk, number> = {
+    low: 1,
+    medium: 2,
+    high: 3,
+  };
+  return ranks[risk] >= ranks[threshold];
+}
+
+export function normalizeAgentApprovalThreshold(value: unknown): AgentApprovalThreshold | null {
+  return value === 'none' || value === 'low' || value === 'medium' || value === 'high' ? value : null;
 }

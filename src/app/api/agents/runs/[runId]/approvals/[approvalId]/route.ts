@@ -16,9 +16,10 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
   }
   if (user.isDemo) return NextResponse.json({ error: 'Sample mode cannot decide private agent approvals' }, { status: 403 });
 
-  const body = await request.json().catch(() => ({})) as { decision?: unknown };
+  const body = await request.json().catch(() => ({})) as { decision?: unknown; reason?: unknown };
   const decision = body.decision === 'approved' || body.decision === 'rejected' ? body.decision : null;
   if (!decision) return NextResponse.json({ error: 'decision must be approved or rejected' }, { status: 400 });
+  const rejectionReason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 500) : '';
 
   try {
     const approval = await decideAgentApproval({
@@ -38,8 +39,10 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
             ownerUid: user.uid,
             runId: run.id,
             toStatus: 'failed',
-            message: 'Agent run stopped because an approval was rejected.',
-            data: { approvalId: approval.id },
+            message: rejectionReason
+              ? `Agent run stopped because an approval was rejected: ${rejectionReason}`
+              : 'Agent run stopped because an approval was rejected.',
+            data: { approvalId: approval.id, rejectionReason: rejectionReason || null },
           })
         : run;
       return NextResponse.json({ approval, run: toAgentRunOutput(failed ?? run), resumed: false });

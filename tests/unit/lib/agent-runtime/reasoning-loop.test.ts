@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildOutputFormatterReasoningLoop, runBoundedReasoningLoop } from '@/lib/agent-runtime/reasoning-loop';
 import type { AgentRun } from '@/lib/agent-runtime/types';
 
-function run(maxStep = 20): AgentRun {
+function run(maxStep = 20, metadata: Record<string, unknown> = {}): AgentRun {
   return {
     id: 'run-1',
     agentSpecId: null,
@@ -35,7 +35,7 @@ function run(maxStep = 20): AgentRun {
     maxSessionMinutes: 30,
     internalEstimatedCostCents: null,
     internalSpendCents: 0,
-    metadata: {},
+    metadata,
     createdAt: '2026-05-15T12:00:00.000Z',
     updatedAt: '2026-05-15T12:00:00.000Z',
     queuedAt: '2026-05-15T12:00:00.000Z',
@@ -69,8 +69,26 @@ describe('agent reasoning loop', () => {
     expect(result.steps.map((step) => step.phase)).toEqual(['plan', 'approval_gate']);
   });
 
+  it('approval-gates medium-risk tools by default but allows capsule threshold overrides', () => {
+    const defaultResult = runBoundedReasoningLoop(run(), [
+      { id: 'memo', phase: 'act', toolId: 'policy-memo', message: 'Draft memo' },
+    ]);
+    const highThresholdResult = runBoundedReasoningLoop(run(20, {
+      agentOperatingContract: { approvalThreshold: 'high' },
+    }), [
+      { id: 'memo', phase: 'act', toolId: 'policy-memo', message: 'Draft memo' },
+    ]);
+
+    expect(defaultResult.stoppedForApproval).toBe(true);
+    expect(defaultResult.steps[0]).toMatchObject({ phase: 'approval_gate', risk: 'medium' });
+    expect(highThresholdResult.stoppedForApproval).toBe(false);
+    expect(highThresholdResult.completed).toBe(true);
+  });
+
   it('builds an output formatter loop that preserves citation review', () => {
-    const result = buildOutputFormatterReasoningLoop(run());
+    const result = buildOutputFormatterReasoningLoop(run(20, {
+      agentOperatingContract: { approvalThreshold: 'high' },
+    }));
 
     expect(result.completed).toBe(true);
     expect(result.stoppedForApproval).toBe(false);

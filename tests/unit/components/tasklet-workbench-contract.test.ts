@@ -199,9 +199,11 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(workbenchSource).toContain('queuedRun={queuedAgentRunFromEnvelope(message.answerEnvelope)}');
     expect(workbenchSource.indexOf('<AskTurnPlanPanel')).toBeLessThan(workbenchSource.indexOf('<AskQueuedAgentRunPanel'));
     expect(workbenchSource.indexOf('<AskQueuedAgentRunPanel')).toBeLessThan(workbenchSource.indexOf('<AnswerQualityStrip'));
-    for (const expected of ['Deep work queue', 'source receipts', 'tools', 'gates', 'Retry', 'Cancel', 'Open run']) {
+    for (const expected of ['Deep work queue', 'source receipts', 'tools', 'gates', 'Retry', 'Cancel', 'Open run', 'Approval required', 'Approve', 'Reject']) {
       expect(askQueuedAgentRunPanelSource).toContain(expected);
     }
+    expect(askQueuedAgentRunPanelSource).toContain('/approvals/${encodeURIComponent(approvalId)}');
+    expect(askQueuedAgentRunPanelSource).toContain('data-testid="ask-agent-approval-tray"');
   });
 
   it('surfaces plain context readiness states in the active capsule strip', () => {
