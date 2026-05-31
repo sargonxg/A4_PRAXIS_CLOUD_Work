@@ -10,5 +10,8 @@ export default defineConfig({
   test: {
     include: ['src/__tests__/**/*.test.ts', 'src/__tests__/**/*.test.tsx', 'tests/**/*.test.ts', 'tests/**/*.test.tsx'],
     setupFiles: ['./vitest.setup.ts'],
+    hookTimeout: 30_000,
+    maxWorkers: 4,
+    testTimeout: 30_000,
   },
 });
