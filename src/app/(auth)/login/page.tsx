@@ -18,7 +18,7 @@ import {
   PENDING_CONTEXT_CAPSULE_PATH_KEY,
   PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
   PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY,
-} from '@/lib/product/context-capsules';
+} from '@/lib/product/context-capsule-pending';
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   if (!password) return { score: 0, label: '', color: '' };

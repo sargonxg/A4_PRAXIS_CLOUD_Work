@@ -8,7 +8,7 @@ test.describe('Mobile landing - iPhone 13', () => {
   test('light marketing home renders without cockpit overflow', async ({ page }) => {
     await page.goto(BASE_URL);
     await expect(page.getByTestId('marketing-home')).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Turn any policy question/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Ask a policy question/i })).toBeVisible();
     await expect(page.getByTestId('tasklet-praxis-workbench')).toHaveCount(0);
 
     const overflowX = await page.evaluate(

@@ -13,7 +13,7 @@ This repo-local copy records the sequential Codex build track for the five-sessi
 | 2 | Live agents and proof rail | Complete locally on `feature/live-agents-proof-rail` |
 | 3 | Approvals and real multi-agent orchestration | Complete locally on `feature/human-approvals-multi-agent` |
 | 4 | Boardroom depth | Complete locally on `feature/boardroom-live-history-personas` |
-| 5 | Public surface, billing, and ship proof | Pending |
+| 5 | Public surface, billing, and ship proof | Implemented locally on `feature/public-billing-golden-proof`; authenticated runtime proof blocked by missing test credentials/ADC in this shell |
 
 ## Prompt 1 Completion Notes
 
@@ -210,3 +210,69 @@ LIMITED - next start on localhost:3005 served the app shell, but unauthenticated
 3. History is available at `GET /api/boardroom/history` and returns `outputHref`, `memoId`, and `outputCapsuleId` for reopening board packs.
 4. Strict evidence rejection is intentional: if Session 5 surfaces public examples, show unsupported turns honestly rather than substituting nearby receipts.
 5. Boardroom still reads capsules immutably; public/billing work should preserve the output-only path through memo + OutputCapsule + AgentRun metadata.
+
+## Prompt 5 Completion Notes
+
+- Rebuilt the public and signed-in entry language around three concrete policy missions: Sanctions impact memo, Treaty analysis with citations, and Stakeholder & ACH for a crisis.
+- Public hero and signed-in launchpad prompts now hand off to Capsule Builder through `capsulePrompt`, with the builder pre-filling the job, sample questions, domain, and tags.
+- Practitioner and Team pricing CTAs now call `/api/billing/checkout` for authenticated users and preserve signup-to-checkout intent for signed-out users; Institution remains contact-only.
+- Billing routes return an explicit billing mode, Settings exposes Manage billing through `/api/billing/portal`, and subscription webhook patches now set a plan credit allowance.
+- Learn, pricing trust copy, legal pages, release notes, and the Civic Atelier design contract now state the current beta posture, US infrastructure posture, Polar sub-processor posture, and premium-web limits.
+- The authenticated golden path is wired into CI when `TEST_FIREBASE_EMAIL` and `TEST_FIREBASE_PASSWORD` secrets are present; local execution is blocked by missing disposable Firebase credentials and stale Application Default Credentials.
+- Added `scripts/audit-runner.ts` for modular launch/gate/routes/simplification audits and documented the remaining audit/TODO sprawl in `docs/audits/2026-05-31-audit-and-todo-triage.md`.
+
+## Prompt 5 Validation Output
+
+```text
+npx tsc --noEmit
+PASS
+
+npm run build
+PASS - Next.js production build compiled and generated 167 static pages.
+Note: existing Firebase Admin credential warnings appeared during static generation; they did not fail the build.
+
+npm run lint
+PASS - ESLint completed. Existing Babel deoptimization notes appeared for tasklet-praxis-workbench.tsx and context-capsules.ts.
+
+npx vitest run
+PASS - 286 files, 1226 tests.
+
+npm run audit:public-surface
+PASS - audit:public-surface OK
+
+npm run audit:design
+PASS - audit:design ok (9 files scanned)
+
+npm run verify:design
+PASS - local source markers present for EB Garamond, Inter, Civic Atelier, policy missions, billing honesty, and premium web honesty.
+
+npm run audit:launch
+PASS - audit-runner launch complete.
+Warnings: local shell lacks Firebase Admin credentials and several live agent env vars; GCP audit has 0 hard failures and 1 soft runtime-proof warning.
+
+npm run audit:launch-readiness
+PASS - 49 pass, 1 warn, 0 fail.
+Warning: live header probe skipped unless PRAXIS_LAUNCH_LIVE_HEADERS=1 is set.
+
+npm run test:mobile
+PASS - 2 passed.
+
+npm run smoke:public
+PASS - 5 passed.
+
+npm run smoke:golden-path
+SKIPPED - 2 skipped because TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD are not set.
+
+npm run test:auth-runtime
+BLOCKED before test execution.
+Missing TEST_FIREBASE_EMAIL and TEST_FIREBASE_PASSWORD.
+Application Default Credentials refresh failed; run gcloud auth application-default login --project=praxisbytacitus.
+```
+
+## Session 5 Handoff / Known Gaps
+
+1. Add the disposable Firebase credentials to this shell or CI and refresh ADC, then rerun `npm run test:auth-runtime`.
+2. The CI golden-path step is present but intentionally gated on `TEST_FIREBASE_EMAIL` and `TEST_FIREBASE_PASSWORD` secrets.
+3. `scripts/audit-runner.ts` consolidates orchestration, but raw leaf audit count remains high for historical reproducibility; retire leaf audits only after docs/tests/runbooks are updated.
+4. Polar checkout is wired but public copy still labels sandbox/unconfigured mode honestly based on environment configuration.
+5. Local Browser smoke loaded `/` at `http://127.0.0.1:3006/` with the PRAXIS ContextCapsule title and mission-first public surface.

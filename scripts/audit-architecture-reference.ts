@@ -97,8 +97,13 @@ if (failures.length === 0) {
   }
 
   const packageJson = JSON.parse(body('package.json')) as { scripts?: Record<string, string> };
+  const auditRunner = existsSync(path.join(root, 'scripts/audit-runner.ts'))
+    ? body('scripts/audit-runner.ts')
+    : '';
+  const gateScript = packageJson.scripts?.['audit:gate'] ?? '';
+  const gateSource = gateScript.includes('scripts/audit-runner.ts') ? auditRunner : gateScript;
   if (!packageJson.scripts?.['audit:architecture-chain']) failures.push('package.json missing audit:architecture-chain');
-  if (!packageJson.scripts?.['audit:gate']?.includes('audit:architecture-chain')) {
+  if (!gateSource.includes('audit:architecture-chain')) {
     failures.push('audit:gate must include audit:architecture-chain');
   }
 }

@@ -1,11 +1,13 @@
 'use client';
 
 import { Check, Code2, FileJson, Rocket, Sparkles } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 
 import { CapsuleJsonMonacoEditor } from '@/components/capsules/CapsuleJsonMonacoEditor';
 import { CapsuleLivePreview } from '@/components/capsules/CapsuleLivePreview';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { PENDING_CONTEXT_CAPSULE_PROMPT_KEY } from '@/lib/product/context-capsule-pending';
 import type { ContextCapsule } from '@/types/context-capsule';
 
 type BuilderStepId = 'job' | 'sources' | 'output' | 'tools' | 'eval' | 'publish';
@@ -47,6 +49,7 @@ type DeepPartial<T> = {
 
 export function CapsuleBuilderWizard() {
   const guard = useSituationGuard();
+  const searchParams = useSearchParams();
   const [activeStep, setActiveStep] = useState<BuilderStepId>('job');
   const [advanced, setAdvanced] = useState(false);
   const [savedCapsuleId, setSavedCapsuleId] = useState<string | null>(null);
@@ -69,6 +72,31 @@ export function CapsuleBuilderWizard() {
 
   const activeIndex = STEPS.findIndex((step) => step.id === activeStep);
   const capsuleJson = useMemo(() => JSON.stringify(capsule, null, 2), [capsule]);
+
+  useEffect(() => {
+    const prompt = searchParams.get('capsulePrompt') ?? searchParams.get('prompt');
+    const storedPrompt = typeof window !== 'undefined'
+      ? window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY)
+      : null;
+    const plainLanguagePrompt = (prompt ?? storedPrompt ?? '').trim();
+    if (!plainLanguagePrompt) return;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate builder draft from login/localStorage handoff.
+    setJob(plainLanguagePrompt);
+    setSampleQuestions([
+      plainLanguagePrompt,
+      'Which claims need stronger source receipts before this becomes a memo?',
+    ].join('\n'));
+    setCapsule((current) => deepMerge(current, {
+      persona: {
+        systemFrame: plainLanguagePrompt,
+        domain: inferDomainFromPrompt(plainLanguagePrompt),
+      },
+      market: {
+        tags: ['builder-draft', ...inferTagsFromPrompt(plainLanguagePrompt)],
+      },
+    }) as ContextCapsule);
+  }, [searchParams]);
 
   function patchCapsule(next: CapsulePatch) {
     setCapsule((current) => deepMerge(current, next) as ContextCapsule);
@@ -599,6 +627,26 @@ function csv(value: string): string[] {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function inferDomainFromPrompt(prompt: string): string {
+  const normalized = prompt.toLowerCase();
+  if (normalized.includes('sanction')) return 'economic-sanctions';
+  if (normalized.includes('treaty') || normalized.includes('diplom')) return 'diplomacy-negotiation';
+  if (normalized.includes('humanitarian')) return 'humanitarian';
+  if (normalized.includes('crisis') || normalized.includes('stakeholder')) return 'governance-rule-of-law';
+  return 'generic';
+}
+
+function inferTagsFromPrompt(prompt: string): string[] {
+  return Array.from(new Set(
+    prompt
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, ' ')
+      .split(/\s+/)
+      .filter((token) => token.length >= 5)
+      .slice(0, 5),
+  ));
 }
 
 function pct(value: unknown): string {

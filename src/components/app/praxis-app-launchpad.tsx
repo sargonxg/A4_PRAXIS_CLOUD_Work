@@ -30,6 +30,7 @@ import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { CapsuleListPicker } from '@/components/cores/CapsuleListPicker';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { PENDING_TASKLET_PROMPT_KEY } from '@/lib/product/policy-agents';
+import { POLICY_MISSION_EXAMPLES } from '@/lib/product/policy-missions';
 import { SAMPLE_POLICY_ARTIFACTS, type SamplePolicyArtifact } from '@/lib/product/sample-policy-artifacts';
 import type { ActiveContextBlocks } from '@/lib/context/active-context-stack';
 
@@ -116,8 +117,7 @@ export function PraxisAppLaunchpad() {
       window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, trimmed);
     }
     const params = buildContextParams(trimmed);
-    params.set('panel', 'ask');
-    router.push(`/app/capsules?${params.toString()}`);
+    router.push(`/app/capsules/builder?${params.toString()}`);
   }
 
   function openBoardroom() {
@@ -127,7 +127,10 @@ export function PraxisAppLaunchpad() {
 
   function buildContextParams(trimmedPrompt: string) {
     const params = new URLSearchParams();
-    if (trimmedPrompt) params.set('prompt', trimmedPrompt);
+    if (trimmedPrompt) {
+      params.set('prompt', trimmedPrompt);
+      params.set('capsulePrompt', trimmedPrompt);
+    }
     if (stack.capsuleId) params.set('capsuleId', stack.capsuleId);
     if (stack.stackId && stack.stackId !== 'default') params.set('contextStackId', stack.stackId);
     return params;
@@ -314,7 +317,7 @@ export function PraxisAppLaunchpad() {
                     Ask PRAXIS
                   </p>
                   <h1 className="mt-4 font-serif text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-                    Ask anything. Keep the capsule attached.
+                    Ask a policy question. Build the capsule first.
                   </h1>
                 </div>
               </div>
@@ -359,6 +362,22 @@ export function PraxisAppLaunchpad() {
                     </div>
                   </div>
                 </form>
+                <div className="grid gap-2 sm:grid-cols-3" aria-label="Example policy missions">
+                  {POLICY_MISSION_EXAMPLES.map((mission) => (
+                    <button
+                      key={mission.title}
+                      type="button"
+                      onClick={() => {
+                        setPrompt(mission.prompt);
+                        window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, mission.prompt);
+                      }}
+                      className="rounded-lg border border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-3 text-left text-sm hover:border-[color:var(--color-oxide)] hover:bg-white"
+                    >
+                      <span className="block font-semibold text-slate-950">{mission.title}</span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-600">{mission.outcome}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </section>

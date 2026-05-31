@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-31T06:36:16.598Z",
+  "generatedAt": "2026-05-31T20:52:31.510Z",
   "status": "pass",
   "failures": [],
   "warnings": [
@@ -93,6 +93,11 @@
     },
     {
       "id": "legal-link-data-retention",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-pending-review-cleared",
       "status": "pass",
       "evidence": "contract satisfied"
     },

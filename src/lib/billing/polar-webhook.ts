@@ -1,5 +1,6 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import type { SubscriptionTier } from '@/lib/api/tier';
+import { PRAXIS_FREE_MONTHLY_CREDIT_ALLOWANCE } from '@/lib/billing/usage-policy';
 
 export type PolarBillablePlan = Extract<SubscriptionTier, 'analyst' | 'team'>;
 export type PolarSubscriptionStatus = 'active' | 'trialing' | 'canceled' | 'past_due' | 'revoked';
@@ -21,6 +22,7 @@ export type PolarSubscriptionPatch = {
   polarProductId: string | null;
   subscriptionExpiresAt: string | null;
   subscriptionUpdatedAt: string;
+  creditAllowance: number;
   subscriptionMetadata: {
     provider: 'polar';
     eventType: string;
@@ -81,6 +83,7 @@ export function polarSubscriptionPatchFromEvent(event: PolarEventLike, products:
     polarProductId: productId || null,
     subscriptionExpiresAt: revoked ? new Date().toISOString() : currentPeriodEnd,
     subscriptionUpdatedAt: new Date().toISOString(),
+    creditAllowance: creditAllowanceForPlan(subscriptionPlanId),
     subscriptionMetadata: {
       provider: 'polar',
       eventType: type,
@@ -96,6 +99,11 @@ export async function applyPolarSubscriptionPatch(db: Firestore, patch: PolarSub
   return db.runTransaction(async (tx) => {
     const eventSnap = await tx.get(eventRef);
     if (eventSnap.exists) return 'duplicate';
+    const userSnap = await tx.get(userRef);
+    const currentCredits = typeof userSnap.data()?.credits === 'number'
+      ? userSnap.data()!.credits as number
+      : 0;
+    const nextCredits = Math.max(currentCredits, patch.creditAllowance);
 
     tx.set(eventRef, {
       uid: patch.uid,
@@ -116,6 +124,9 @@ export async function applyPolarSubscriptionPatch(db: Firestore, patch: PolarSub
       polarExternalCustomerId: patch.polarExternalCustomerId,
       polarSubscriptionId: patch.polarSubscriptionId,
       polarProductId: patch.polarProductId,
+      creditAllowance: patch.creditAllowance,
+      credits: nextCredits,
+      billingCreditsUpdatedAt: patch.subscriptionUpdatedAt,
       subscriptionMetadata: patch.subscriptionMetadata,
     }, { merge: true });
     return 'applied';
@@ -134,6 +145,12 @@ function statusForEvent(type: string, rawStatus: string): PolarSubscriptionStatu
 
 function planFromMetadata(value: unknown): PolarBillablePlan | null {
   return value === 'analyst' || value === 'team' ? value : null;
+}
+
+function creditAllowanceForPlan(plan: PolarBillablePlan | 'free'): number {
+  if (plan === 'team') return 1_000_000;
+  if (plan === 'analyst') return 250_000;
+  return PRAXIS_FREE_MONTHLY_CREDIT_ALLOWANCE;
 }
 
 function objectValue(value: unknown): Record<string, unknown> {

@@ -5,7 +5,7 @@
 @theme inline {
   /* Fonts - Civic Atelier typography */
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-heading: "Newsreader", ui-serif, Georgia, "Times New Roman", serif;
+  --font-heading: "EB Garamond", ui-serif, Georgia, "Times New Roman", serif;
   --font-serif: var(--font-heading);
   --font-mono: "JetBrains Mono", var(--font-geist-mono), ui-monospace, "SFMono-Regular", "Fira Code", monospace;
 
@@ -70,7 +70,7 @@
   --color-evidence-review: #A4492E;
   --color-evidence-muted: #777066;
 
-  /* Futurist AI Lab palette. Use for capsule/source/agent operating scenes. */
+  /* Agent operating palette. Retained for capsule/source/proof workspace compatibility. */
   --color-lab-void: #070A12;
   --color-lab-ink: #0D1524;
   --color-lab-panel: #111D2E;
@@ -1532,7 +1532,7 @@ h1, h2, h3, h4,
 .font-serif,
 [class*="font-heading"] {
   font-feature-settings: "kern" 1, "liga" 1, "dlig" 1;
-  letter-spacing: -0.018em;
+  letter-spacing: 0;
   text-wrap: balance;
 }
 

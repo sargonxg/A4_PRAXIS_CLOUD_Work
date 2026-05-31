@@ -16,6 +16,11 @@ export function isPolarBillingConfigured(plan?: string | null): boolean {
   return Boolean(process.env.POLAR_PRODUCT_ANALYST && process.env.POLAR_PRODUCT_TEAM);
 }
 
+export function polarBillingMode(plan?: string | null): 'sandbox' | 'production' | 'unconfigured' {
+  if (!isPolarBillingConfigured(plan)) return 'unconfigured';
+  return process.env.POLAR_SERVER === 'sandbox' ? 'sandbox' : 'production';
+}
+
 export function createPolarClient(): Polar {
   return new Polar({
     accessToken: process.env.POLAR_ACCESS_TOKEN,

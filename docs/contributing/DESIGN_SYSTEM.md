@@ -1,12 +1,12 @@
 # PRAXIS Design System
 
-Aesthetic north star: **Futurist AI Lab: computational statecraft, not a generic AI dashboard.**
+Aesthetic north star: **Civic Atelier: computational statecraft, not a generic AI dashboard.**
 
 This file is the agent-facing implementation guide. The canonical design contract is `DESIGN.md`; this file turns it into tokens, component rules, and review checks.
 
 ## Typography
 
-- Heading/display: `Newsreader`, loaded in `src/app/layout.tsx` and exposed as `--font-heading`.
+- Heading/display: `EB Garamond`, loaded in `src/app/layout.tsx` and exposed as `--font-heading`.
 - Body/UI: `Inter`.
 - Evidence/receipts/IDs: `JetBrains Mono`.
 - Migration: `font-serif` remains as a compatibility alias for heading/display. New guidance should say "heading/display", not "generic serif".
@@ -35,7 +35,7 @@ Use token classes or CSS variables instead of raw hex values.
 
 Gold tokens remain available only for a single primary action, focus rings, and rare active states. They should not carry the brand by themselves.
 
-## Futurist AI Lab Components
+## Civic Atelier Components
 
 ### AI Operating Scene
 
@@ -101,7 +101,7 @@ When building or editing UI: **token first, primitive second, route-local stylin
 
 ## Pilot Scope
 
-The current Futurist AI Lab pilot covers:
+The current Civic Atelier pilot covers:
 
 - public root through the app-first PRAXIS workbench preview,
 - `/app/capsules`,

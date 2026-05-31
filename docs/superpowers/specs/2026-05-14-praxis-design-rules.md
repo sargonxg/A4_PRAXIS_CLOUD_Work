@@ -31,7 +31,7 @@ Enforcement: `audit:no-emoji-icons` script (planned).
 
 | Surface | Family |
 |---|---|
-| Headings (H1, H2, H3) | Newsreader, heading/display |
+| Headings (H1, H2, H3) | EB Garamond, heading/display |
 | UI text (labels, buttons, body) | Inter, sans-serif |
 | Receipts, citations, IDs, page-spans, machine output | JetBrains Mono |
 

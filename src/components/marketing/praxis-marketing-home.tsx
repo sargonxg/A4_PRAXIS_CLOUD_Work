@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, BadgeCheck, BrainCircuit, FileSearch, Library, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
+import { POLICY_MISSION_EXAMPLES } from '@/lib/product/policy-missions';
 
 const verifiedCapsules = [
   'Conflict Analysis',
@@ -55,15 +56,15 @@ export function PraxisMarketingHome() {
             <ShieldCheck className="h-3.5 w-3.5" />
             ContextCapsule AI for policy teams
           </p>
-          <h1 className="mt-6 max-w-4xl font-serif text-5xl font-semibold tracking-tight text-slate-950 sm:text-6xl">
-            Turn any policy question into a sourced, citable brief.
+          <h1 className="mt-6 max-w-4xl font-serif text-5xl font-semibold tracking-normal text-slate-950 sm:text-6xl">
+            Ask a policy question. Build the capsule first.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-            PRAXIS combines Context Capsules, agentic research runs, and a capsule marketplace so teams can reuse trusted context instead of starting every brief from scratch.
+            Start with a mission, create a ContextCapsule, then use PRAXIS to produce sourced work with receipts, claim posture, and review gates attached.
           </p>
           <form action="/login" method="get" className="mt-8 max-w-2xl rounded-xl border border-slate-200 bg-white p-3 shadow-xl shadow-slate-200/60">
             <input type="hidden" name="mode" value="signup" />
-            <input type="hidden" name="redirect" value="/app" />
+            <input type="hidden" name="redirect" value="/app/capsules/builder" />
             <label className="sr-only" htmlFor="marketing-hero-prompt">Ask a policy question</label>
             <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
               <input
@@ -82,6 +83,25 @@ export function PraxisMarketingHome() {
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
+          </form>
+          <div className="mt-5 grid gap-2 sm:grid-cols-3" aria-label="Example policy missions">
+            {POLICY_MISSION_EXAMPLES.map((mission) => (
+              <button
+                key={mission.title}
+                type="submit"
+                form="marketing-mission-form"
+                name="capsulePrompt"
+                value={mission.prompt}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-3 text-left text-sm shadow-sm hover:border-[color:var(--color-oxide)]"
+              >
+                <span className="block font-semibold text-slate-950">{mission.title}</span>
+                <span className="mt-1 block text-xs leading-5 text-slate-600">{mission.outcome}</span>
+              </button>
+            ))}
+          </div>
+          <form id="marketing-mission-form" action="/login" method="get" className="hidden">
+            <input type="hidden" name="mode" value="signup" />
+            <input type="hidden" name="redirect" value="/app/capsules/builder" />
           </form>
         </div>
 
@@ -131,7 +151,7 @@ export function PraxisMarketingHome() {
         <div className="mx-auto grid max-w-7xl gap-4 px-4 py-8 sm:px-6 md:grid-cols-3 lg:px-8">
           <TrustItem icon={FileSearch} label="Every claim cited" />
           <TrustItem icon={LockKeyhole} label="Private workspace; no training on your work" />
-          <TrustItem icon={ShieldCheck} label="Verified badges explain review posture" />
+          <TrustItem icon={ShieldCheck} label="Trust, billing, and data posture stay visible" />
         </div>
       </section>
 
@@ -152,6 +172,7 @@ export function PraxisMarketingHome() {
           <div className="flex gap-4">
             <Link href="/legal/privacy" className="hover:text-slate-950">Privacy</Link>
             <Link href="/legal/terms" className="hover:text-slate-950">Terms</Link>
+            <Link href="/legal/security" className="hover:text-slate-950">Security</Link>
             <Link href="/release-notes" className="hover:text-slate-950">Release notes</Link>
           </div>
         </div>

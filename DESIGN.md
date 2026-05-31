@@ -1,16 +1,16 @@
-# PRAXIS Futurist AI Lab Design Contract
+# PRAXIS Civic Atelier Design Contract
 
-Status: active pilot. This is the Futurist AI Lab design contract. It extends the Civic Atelier foundation for the landing page, Capsules, Repository, and the shared `TaskletPraxisWorkbench` surfaces. Do not sweep unrelated Settings, Memo Studio, Advanced, auth, or admin screens except where shared tokens naturally affect them.
+Status: active pilot. This is the Civic Atelier design contract for the landing page, Capsules, Repository, Boardroom, and shared PRAXIS work surfaces. Do not sweep unrelated Settings, Memo Studio, Advanced, auth, or admin screens except where shared tokens naturally affect them.
 
 ## North Star
 
-PRAXIS should read as a professional statecraft product with a proprietary object model, not as a generic AI dashboard. The visual system is **Futurist AI Lab**: computational cartography, capsule chains, source-flow graphics, AI receipt strips, and precise agent proof layered on the existing dossier and specimen grammar.
+PRAXIS should read as a professional statecraft product with a proprietary object model, not as a generic AI dashboard. The visual system is **Civic Atelier**: dense policy instruments, dossier spines, capsule chains, source receipts, proof rails, and restrained map-like structure.
 
 The interface should feel designed for analysts, policy teams, and operators who need source posture and reusable context to be visible without turning the main screen into a manual.
 
 ## Typography
 
-- Display and headings: `Newsreader`, loaded through `next/font/google`.
+- Display and headings: `EB Garamond`, loaded through `next/font/google`.
 - Body, labels, controls: `Inter`.
 - Receipts, citations, IDs, page spans, model/tool traces, and machine-readable evidence: `JetBrains Mono`.
 - Compatibility rule: `font-serif` remains available as a heading/display alias during migration. Do not describe it as a generic serif token in new docs.
@@ -29,7 +29,7 @@ Use PRAXIS tokens first. Gold is a rare action/focus signal, not the brand's mai
 | `--color-civic-blue` | Selected civic/system signal. |
 | `--color-evidence-ready` / `--color-evidence-review` / `--color-evidence-muted` | Receipts, source posture, readiness states. |
 | `--color-gold-*` | Single primary action, focus ring, or rare active signal only. |
-| `--color-lab-void` / `--color-lab-ink` / `--color-lab-panel` | Futurist operating scene and dark lab surfaces. |
+| `--color-lab-void` / `--color-lab-ink` / `--color-lab-panel` | Legacy dark operating surfaces for proof rails and agent workspaces. |
 | `--color-lab-cyan` / `--color-lab-lime` / `--color-lab-plasma` / `--color-lab-warning` | Restrained AI, receipt, agent, and review signals. |
 | `--color-lab-line` | Source-flow lines, capsule borders, and technical map structure. |
 
@@ -69,9 +69,9 @@ canonical_component: ContextChain
 
 Mobile rule: the active ContextChain must remain reachable through a sticky compact bar or bottom sheet. Do not hide critical capsule state behind desktop-only rails.
 
-### Futurist AI Lab Primitives
+### Civic Atelier Primitives
 
-Use `app-first-futurist-shell` for the public root when it renders the PRAXIS workbench preview, not a standalone marketing page. Use `futurist-ai-lab`, `capsule-chain-node`, `source-flow-line`, `ai-receipt-strip`, `capsule-state-active`, `capsule-state-reference`, `capsule-state-review`, `capsule-state-missing`, and `capsule-mobile-sheet` inside the app-first workbench, capsule selector, source receipts, and agent proof surfaces.
+Use `civic-atelier-shell`, `cartographic-grid`, `dossier-spine`, `specimen-card`, `receipt-slip`, `context-chain`, `capsule-state-active`, `capsule-state-reference`, `capsule-state-review`, `capsule-state-missing`, and `capsule-mobile-sheet` inside public, app, capsule, source receipt, and agent proof surfaces.
 
 ### Living Context Rail
 
@@ -96,7 +96,7 @@ Use these primitives before route-local styling:
 
 ## Implementation Order
 
-For any Futurist AI Lab change: **token first, primitive second, route-local styling last**.
+For any Civic Atelier change: **token first, primitive second, route-local styling last**.
 
 1. Add or reuse a CSS token/class in `src/app/globals.css`.
 2. Prefer shared primitives in `src/components/ui/instrument.tsx`.

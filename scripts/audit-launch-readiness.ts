@@ -193,6 +193,15 @@ export function evaluateLaunchReadiness(input: LaunchReadinessInput): LaunchRead
       `public navigation missing legal link /legal/${slug}`,
     );
   }
+  const legalPages = body(input.files, 'src/lib/legal/pages.ts');
+  pushCheck(
+    checks,
+    failures,
+    warnings,
+    'legal-pending-review-cleared',
+    !legalPages.includes('pendingLegalReview: true'),
+    'legal pages still display pending legal-review posture instead of current beta terms',
+  );
 
   const proxy = body(input.files, 'src/proxy.ts');
   pushCheck(

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
-import { createPolarClient, isPolarBillingConfigured, polarProductIdForPlan } from '@/lib/billing/polar-server';
+import { createPolarClient, isPolarBillingConfigured, polarBillingMode, polarProductIdForPlan } from '@/lib/billing/polar-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +21,7 @@ export const POST = withAuth(async (request, user) => {
     return NextResponse.json({
       error: 'Billing is not configured',
       configured: false,
+      mode: polarBillingMode(parsed.data.plan),
       fallbackHref: '/pricing',
     }, { status: 503 });
   }
@@ -40,5 +41,5 @@ export const POST = withAuth(async (request, user) => {
     },
   });
 
-  return NextResponse.json({ url: checkout.url, configured: true });
+  return NextResponse.json({ url: checkout.url, configured: true, mode: polarBillingMode(parsed.data.plan) });
 });

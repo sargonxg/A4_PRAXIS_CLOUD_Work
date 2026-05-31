@@ -59,17 +59,7 @@ export default function LandingLayout({
       id="top"
       className="landing-light relative min-h-screen bg-[var(--color-cream-100)] paper-texture"
     >
-      {/* Atmospheric gold spotlight — anchors the page in the brand color */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[480px]"
-        style={{
-          background:
-            "radial-gradient(60% 100% at 50% 0%, rgba(232,185,49,0.08), transparent 70%)",
-        }}
-      />
-
-      {/* Floating capsule navbar — rounded, glass, deliberate */}
+      {/* Sticky public navbar */}
       <div className="landing-sticky-collision-zone sticky top-0 z-50 px-3 pb-2 pt-3 sm:px-5 sm:pb-3 sm:pt-4">
         <header
           className={cn(
@@ -90,15 +80,14 @@ export default function LandingLayout({
               href="/"
               className="group flex shrink-0 items-center gap-2 sm:gap-3"
             >
-              {/* Glyph chip — anchors the brand color in a rounded square */}
-              <span className="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-[color:var(--color-rose-gold)]/40 bg-gradient-to-br from-[color:var(--color-gold-500)]/20 to-[color:var(--color-gold-500)]/5 transition-transform duration-500 group-hover:rotate-[8deg]">
+              <span className="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-[color:var(--color-rose-gold)]/40 bg-[color:var(--color-gold-500)]/12 transition-transform duration-500 group-hover:rotate-[8deg]">
                 <PraxisMark
                   size={20}
                   className="text-[color:var(--color-gold-700)]"
                   title="PRAXIS"
                 />
               </span>
-              <span className="font-serif text-[20px] font-semibold tracking-[-0.01em] text-[color:var(--color-diplomatic-blue)] sm:text-[22px]">
+              <span className="font-serif text-[20px] font-semibold tracking-normal text-[color:var(--color-diplomatic-blue)] sm:text-[22px]">
                 PRAXIS
               </span>
               <span className="hidden rounded-full bg-[color:var(--color-gold-500)]/10 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.18em] text-[color:var(--color-gold-700)] sm:inline-flex">
@@ -208,11 +197,11 @@ export default function LandingLayout({
         <PraxisRouteTransition>{children}</PraxisRouteTransition>
       </main>
 
-      {/* Footer — compact brand/contact row; public route navigation lives only in the header. */}
+      {/* Footer — compact brand/contact row; public route navigation lives in the header. */}
       <footer className="relative z-10 mt-24 px-3 pb-6 sm:px-5">
         <div className="mx-auto flex max-w-[1180px] flex-col items-center justify-between gap-3 rounded-3xl border border-[color:var(--color-rose-gold)]/25 bg-white/45 px-6 py-5 backdrop-blur-md sm:flex-row sm:gap-4">
           <Link href="/" className="group flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl border border-[color:var(--color-rose-gold)]/40 bg-gradient-to-br from-[color:var(--color-gold-500)]/20 to-[color:var(--color-gold-500)]/5 transition-transform duration-500 group-hover:rotate-[8deg]">
+            <span className="flex h-7 w-7 items-center justify-center rounded-xl border border-[color:var(--color-rose-gold)]/40 bg-[color:var(--color-gold-500)]/12 transition-transform duration-500 group-hover:rotate-[8deg]">
               <PraxisMark size={15} className="text-[color:var(--color-gold-700)]" />
             </span>
             <span className="font-serif text-base font-semibold tracking-wide text-[color:var(--color-diplomatic-blue)]">
@@ -229,6 +218,9 @@ export default function LandingLayout({
             >
               Contact
             </a>
+            <Link href="/release-notes" className="praxis-link hover:text-[color:var(--color-ink)]">
+              Release notes
+            </Link>
             {legalLinks.map((link) => (
               <Link
                 key={link.href}

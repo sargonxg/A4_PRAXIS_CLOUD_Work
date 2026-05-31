@@ -381,7 +381,7 @@ export function AccountSettingsPage() {
 
   async function openBillingPortal() {
     setBusyAction('billing-portal');
-    const result = await fetchJson<{ url?: string; fallbackHref?: string }>('/api/billing/portal', { method: 'POST' });
+    const result = await fetchJson<{ url?: string; fallbackHref?: string; mode?: string }>('/api/billing/portal', { method: 'POST' });
     setBusyAction(null);
     if (result.ok && result.data.url) {
       window.location.href = result.data.url;
@@ -393,7 +393,7 @@ export function AccountSettingsPage() {
 
   async function startCheckout(plan: 'analyst' | 'team') {
     setBusyAction(`checkout-${plan}`);
-    const result = await fetchJson<{ url?: string; fallbackHref?: string }>('/api/billing/checkout', {
+    const result = await fetchJson<{ url?: string; fallbackHref?: string; mode?: string }>('/api/billing/checkout', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ plan }),
@@ -752,12 +752,12 @@ function BillingTab({
         <Metric label="Credits used" value={totalCreditsUsed} />
       </div>
       <div className="flex flex-wrap gap-2">
-        <ActionButton icon={CreditCard} label={busyAction === 'billing-portal' ? 'Opening...' : 'Manage subscription'} onClick={onPortal} disabled={busyAction !== null} />
+        <ActionButton icon={CreditCard} label={busyAction === 'billing-portal' ? 'Opening...' : 'Manage billing'} onClick={onPortal} disabled={busyAction !== null} />
         <ActionButton icon={CheckCircle2} label={busyAction === 'checkout-analyst' ? 'Starting...' : 'Start Analyst checkout'} onClick={() => onCheckout('analyst')} disabled={busyAction !== null} />
         <ActionButton icon={CheckCircle2} label={busyAction === 'checkout-team' ? 'Starting...' : 'Start Team checkout'} onClick={() => onCheckout('team')} disabled={busyAction !== null} />
       </div>
       <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-        If Polar billing is not configured in this environment, PRAXIS sends users to the public pricing page instead of failing silently.
+        If Polar billing is in sandbox test mode, hosted checkout and the customer portal are test transactions. If billing is unconfigured, PRAXIS sends users to the public pricing page instead of failing silently.
       </p>
       <div className="flex flex-wrap gap-2 text-sm">
         <Link href={PLAN_SIGNUP_HREFS.analyst} className="font-semibold text-diplomatic-blue hover:underline">Practitioner signup</Link>

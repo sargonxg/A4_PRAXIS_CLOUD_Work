@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Newsreader } from "next/font/google";
+import { EB_Garamond, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const newsreader = Newsreader({
+const ebGaramond = EB_Garamond({
   subsets: ["latin"],
-  variable: "--font-newsreader",
+  variable: "--font-eb-garamond",
   display: "swap",
 });
 
@@ -28,12 +28,12 @@ export const viewport: Viewport = {
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
 
-const PRIMARY_TITLE = "PRAXIS by TACITUS — ContextCapsule AI Lab for Policy Work";
-const SHARE_TITLE = "PRAXIS by TACITUS · AI Lab for ContextCapsules, Sources, and Agents";
+const PRIMARY_TITLE = "PRAXIS by TACITUS — ContextCapsule Policy Workspace";
+const SHARE_TITLE = "PRAXIS by TACITUS · ContextCapsules for Sourced Policy Work";
 const SHARE_DESCRIPTION =
-  "PRAXIS turns policy questions into inspectable ContextCapsules, source receipts, agent runs, and reviewable memos.";
+  "PRAXIS turns sanctions, treaty, stakeholder, and crisis questions into inspectable ContextCapsules, source receipts, agent runs, and reviewable memos.";
 const SEARCH_DESCRIPTION =
-  "PRAXIS by TACITUS is a ContextCapsule-first AI lab for statecraft, policy analysis, conflict intelligence, diplomacy, source trust, and institutional decision work.";
+  "PRAXIS by TACITUS is a ContextCapsule-first workspace for statecraft, policy analysis, conflict intelligence, diplomacy, source trust, and institutional decision work.";
 const SHARE_IMAGE_ALT =
   "PRAXIS by TACITUS — capsule chain, source receipts, agent timeline, and memo handoff.";
 
@@ -145,7 +145,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${newsreader.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body className={`${ebGaramond.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
         {children}
       </body>
     </html>

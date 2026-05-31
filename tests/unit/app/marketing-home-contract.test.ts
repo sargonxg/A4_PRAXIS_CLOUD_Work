@@ -17,7 +17,7 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
 
     expect(source).toContain('PraxisMarketingHome');
     expect(source).toContain('@/components/marketing/praxis-marketing-home');
-    expect(source).toContain('Turn any policy question into a sourced, citable brief.');
+    expect(source).toContain('Ask a policy question, build a ContextCapsule');
     expect(source).not.toContain('TaskletPraxisWorkbench');
     expect(source).not.toContain('Phase8WowLanding');
     expect(legacySource).not.toContain('TaskletPraxisWorkbench');

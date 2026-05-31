@@ -1,9 +1,9 @@
 # PRAXIS Launch Readiness Audit
 
-Generated: 2026-05-31T06:36:16.598Z
+Generated: 2026-05-31T20:52:31.510Z
 Status: **PASS**
 
-Summary: 48 PASS, 1 WARN, 0 FAIL.
+Summary: 49 PASS, 1 WARN, 0 FAIL.
 
 ## Failures
 
@@ -35,6 +35,7 @@ Summary: 48 PASS, 1 WARN, 0 FAIL.
 | PASS | legal-link-sub-processors | contract satisfied |
 | PASS | legal-page-data-retention | contract satisfied |
 | PASS | legal-link-data-retention | contract satisfied |
+| PASS | legal-pending-review-cleared | contract satisfied |
 | PASS | legal-header-matcher | contract satisfied |
 | PASS | header-matcher-/ | contract satisfied |
 | PASS | header-matcher-/pricing | contract satisfied |

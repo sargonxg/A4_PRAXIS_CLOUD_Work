@@ -65,7 +65,7 @@ describe('audit-launch-readiness', () => {
       ].join('\n'),
       'src/app/(landing)/layout.tsx': '/legal/privacy /legal/cookies /legal/gdpr /legal/data-processing /legal/terms /legal/security /legal/sub-processors /legal/data-retention',
       'src/app/legal/[slug]/page.tsx': 'generateStaticParams',
-      'src/lib/legal/pages.ts': REQUIRED_LEGAL_SLUGS.map((slug) => `slug: '${slug}', pendingLegalReview: true`).join('\n'),
+      'src/lib/legal/pages.ts': REQUIRED_LEGAL_SLUGS.map((slug) => `slug: '${slug}', pendingLegalReview: false`).join('\n'),
       'src/app/api/settings/api-keys/route.ts': 'listUserKeyStatuses; return NextResponse.json({ providers: PROVIDER_REGISTRY, statuses });',
       'src/app/api/health/route.ts': [
         'Content-Security-Policy',

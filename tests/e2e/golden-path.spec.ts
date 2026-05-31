@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { authenticateFirebaseCanary, expectAuthenticatedSession } from './helpers/auth';
+import { authenticateFirebaseCanary, expectAuthenticatedSession, hasFirebaseCanaryCredentials } from './helpers/auth';
 
 /**
  * Golden-path smoke for the simplified PRAXIS MVP surface. Verifies an
@@ -19,7 +19,7 @@ import { authenticateFirebaseCanary, expectAuthenticatedSession } from './helper
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 test.describe('golden path — app usability smoke', () => {
-  test.skip(!process.env.TEST_FIREBASE_EMAIL || !process.env.TEST_FIREBASE_PASSWORD, 'TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set — skipping authenticated golden path');
+  test.skip(!hasFirebaseCanaryCredentials(), 'TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set — skipping authenticated golden path');
 
   test.setTimeout(120_000);
 
@@ -45,4 +45,167 @@ test.describe('golden path — app usability smoke', () => {
       await expect(page.getByText(route.text).first()).toBeVisible({ timeout: 30_000 });
     }
   });
+
+  test('capsule prompt → Ask with sources → memo export → boardroom proof', async ({ page }) => {
+    test.setTimeout(150_000);
+    const capsuleId = 'golden-path-capsule';
+    const conversationId = 'golden-path-conversation';
+    const runId = 'golden-path-boardroom-run';
+    const mission = 'Treaty analysis with citations for a ceasefire monitoring mechanism.';
+
+    await page.route(`**/api/conversations/${conversationId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          persisted: true,
+          conversation: { conversationId, capsuleId, turnCount: 0 },
+          turns: [],
+        }),
+      });
+    });
+    await page.route(`**/api/conversations/${conversationId}/turns`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/plain; charset=utf-8',
+        body: [
+          '0:"Treaty analysis with citations: the draft cites source receipt [treaty-source-1] and flags one open verification gap."',
+          `2:${JSON.stringify({ type: 'answerEnvelope', answerEnvelope: goldenEnvelope({ capsuleId, runId, conversationId }) })}`,
+          '',
+        ].join('\n'),
+      });
+    });
+    await page.route('**/api/work-products/export-docx', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true, memoId: 'golden-memo', filename: 'golden-path-memo.docx' }),
+      });
+    });
+    await page.route('**/api/boardroom/history?*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ persisted: true, runs: [boardroomRun(runId, capsuleId)] }),
+      });
+    });
+    await page.route('**/api/boardroom/runs', async (route) => {
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ run: boardroomRun(runId, capsuleId), dispatch: { degraded: false } }),
+      });
+    });
+    await page.route(`**/api/agents/runs/${runId}`, async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ run: boardroomRun(runId, capsuleId), toolCalls: [], approvals: [] }) });
+    });
+    await page.route(`**/api/agents/runs/${runId}/stream?*`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream; charset=utf-8',
+        body: [
+          sse('golden-turn-1', {
+            id: 'golden-turn-1',
+            eventType: 'tool',
+            message: 'Legal reviewer spoke',
+            createdAt: '2026-05-31T12:00:01.000Z',
+            data: {
+              phase: 'boardroom.turn.legal-reviewer',
+              turn: {
+                participantId: 'legal-reviewer',
+                claim: 'The memo needs an implementation caveat before export.',
+                evidenceRefs: ['treaty-source-1'],
+                confidence: 'medium',
+              },
+            },
+          }),
+          sse('golden-synthesis', {
+            id: 'golden-synthesis',
+            eventType: 'complete',
+            message: 'Synthesis created',
+            createdAt: '2026-05-31T12:00:02.000Z',
+            data: {
+              phase: 'boardroom.synthesis_created',
+              boardroomOutput: {
+                finalSynthesis: 'Boardroom synthesis: keep citations inline and resolve the monitoring mandate caveat.',
+                consensus: ['Citations and caveats must travel with the memo.'],
+                divergences: ['Red-team wants a stronger verification source.'],
+                risks: ['Implementation language may outrun the treaty text.'],
+                openQuestions: ['Who verifies monitors?'],
+                nextActions: [{ action: 'Attach treaty source packet', owner: 'analyst', urgency: 'short-term' }],
+                transcript: [],
+              },
+            },
+          }),
+        ].join('\n'),
+      });
+    });
+
+    await authenticateFirebaseCanary(page, BASE, '/app', { expectComposer: false });
+    await page.goto(`${BASE}/app/capsules/builder?capsulePrompt=${encodeURIComponent(mission)}`);
+    await expect(page.getByRole('heading', { name: /Build a policy capsule/i })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByLabel(/What should this capsule do/i)).toHaveValue(mission, { timeout: 30_000 });
+
+    await page.goto(`${BASE}/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
+    const composer = page.getByLabel(/Describe a task or responsibility/i);
+    await composer.fill('Build a treaty analysis memo on monitoring obligations with sources.');
+    await page.getByRole('button', { name: /Send to PRAXIS/i }).click();
+    await expect(page.getByText(/source receipt \[treaty-source-1\]/i)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('ask-agent-run-panel')).toBeVisible({ timeout: 30_000 });
+
+    const exportResult = await page.evaluate(async () => {
+      const response = await fetch('/api/work-products/export-docx', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ productType: 'policy-memo', title: 'Golden path memo', sections: [{ heading: 'Analysis', body: 'Source-backed.' }] }),
+      });
+      return { status: response.status, payload: await response.json() };
+    });
+    expect(exportResult).toMatchObject({ status: 200, payload: { memoId: 'golden-memo' } });
+
+    await page.goto(`${BASE}/app/boardroom?capsuleId=${capsuleId}`);
+    await expect(page.getByTestId('boardroom-home-surface')).toBeVisible({ timeout: 30_000 });
+    await page.getByTestId('boardroom-main-composer').fill('Stress-test the treaty memo before export.');
+    await page.getByRole('button', { name: /Start boardroom/i }).click();
+    await expect(page.getByTestId('boardroom-run-panel')).toContainText(/Boardroom synthesis/i, { timeout: 30_000 });
+    await expect(page.getByTestId('boardroom-history-panel')).toContainText(/Golden path boardroom/i);
+  });
 });
+
+function sse(id: string, data: unknown): string {
+  return [`id: ${id}`, 'event: run_event', `data: ${JSON.stringify(data)}`, ''].join('\n');
+}
+
+function boardroomRun(runId: string, capsuleId: string) {
+  return {
+    runId,
+    status: 'succeeded',
+    objective: 'Golden path boardroom proof',
+    capsuleId,
+    policyAgentLabel: 'Boardroom',
+    outputHref: `/app/boardroom?runId=${runId}`,
+    memoId: 'golden-memo',
+    outputCapsuleId: 'golden-output-capsule',
+    sourceReceiptIds: ['treaty-source-1'],
+    createdAt: '2026-05-31T12:00:00.000Z',
+    updatedAt: '2026-05-31T12:00:02.000Z',
+  };
+}
+
+function goldenEnvelope({ capsuleId, runId, conversationId }: { capsuleId: string; runId: string; conversationId: string }) {
+  return {
+    orchestrationReceipt: {
+      traceId: 'golden-path-trace',
+      triage: { intent: 'research_memo', complexity: 'deep', agenticMode: 'agent_run', reasons: ['Needs source-backed memo.'] },
+      capsule: { capsuleId, capsuleVersion: 1, contextPackageId: 'golden-context', contextHealth: 'ready', evidenceCount: 1, sourcePreviewCount: 1, activeGapCount: 1, warnings: [] },
+      toolRouting: { selectedToolIds: ['grounded-search', 'sourceability-reviewer'], approvalRequiredToolIds: [], blockedToolIds: [] },
+      grounding: { sourcePosture: 'Source receipts saved', groundingPosture: 'Grounded retrieval completed' },
+      supervisor: { action: 'queue_agent_run', status: 'dispatch_enqueued', policyAgentId: 'research-memo', queuedRun: { runId, status: 'queued' } },
+      stages: [],
+    },
+    answerQualitySummary: { contextReadiness: 'ready', sourceCount: 1, sourceReceiptCount: 1, sourceGapCount: 1, weakClaimCount: 0, unsupportedClaimCount: 0, memoHandoffReady: true },
+    sourceCards: [{ sourceReceiptId: 'treaty-source-1', label: 'Treaty source', title: 'Treaty source', quotePreview: 'Monitoring mandate text.', url: 'https://example.test/treaty' }],
+    provenance: { conversationId },
+  };
+}

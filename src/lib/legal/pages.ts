@@ -27,8 +27,8 @@ export const legalPages: LegalPage[] = [
     slug: 'privacy',
     title: 'Privacy Policy',
     summary: 'How PRAXIS collects, stores, uses, and protects account, workspace, source, document, and product telemetry data.',
-    updatedAt: '2026-05-19',
-    pendingLegalReview: true,
+    updatedAt: '2026-05-31',
+    pendingLegalReview: false,
     sections: [
       {
         heading: 'Data We Collect',
@@ -42,6 +42,7 @@ export const legalPages: LegalPage[] = [
         body: [
           'We use workspace data to authenticate users, build context for AI-assisted analysis, persist output capsules, maintain audit trails, debug reliability issues, and protect the service from abuse.',
           'We do not sell user data. External model and infrastructure providers are limited to the sub-processors listed in the public sub-processor page.',
+          'The current production posture uses United States infrastructure by default. Enterprise residency commitments require a separate written arrangement before regulated workloads are onboarded.',
         ],
       },
       {
@@ -57,8 +58,8 @@ export const legalPages: LegalPage[] = [
     slug: 'cookies',
     title: 'Cookie Notice',
     summary: 'How PRAXIS uses essential cookies, authentication storage, analytics settings, and future consent controls.',
-    updatedAt: '2026-05-22',
-    pendingLegalReview: true,
+    updatedAt: '2026-05-31',
+    pendingLegalReview: false,
     sections: [
       {
         heading: 'Essential Cookies',
@@ -86,8 +87,8 @@ export const legalPages: LegalPage[] = [
     slug: 'gdpr',
     title: 'GDPR and Privacy Rights',
     summary: 'Current GDPR-style rights posture for access, correction, export, deletion, objection, restriction, and support requests.',
-    updatedAt: '2026-05-22',
-    pendingLegalReview: true,
+    updatedAt: '2026-05-31',
+    pendingLegalReview: false,
     sections: [
       {
         heading: 'Rights Requests',
@@ -116,8 +117,8 @@ export const legalPages: LegalPage[] = [
     slug: 'data-processing',
     title: 'Data Processing Addendum',
     summary: 'Customer-data processing roles, instructions, sub-processors, security controls, retention, deletion, and support channels.',
-    updatedAt: '2026-05-22',
-    pendingLegalReview: true,
+    updatedAt: '2026-05-31',
+    pendingLegalReview: false,
     sections: [
       {
         heading: 'Processing Roles',
@@ -146,13 +147,14 @@ export const legalPages: LegalPage[] = [
     slug: 'terms',
     title: 'Terms of Service',
     summary: 'Operational terms for using PRAXIS as a beta policy and statecraft workbench.',
-    updatedAt: '2026-05-19',
-    pendingLegalReview: true,
+    updatedAt: '2026-05-31',
+    pendingLegalReview: false,
     sections: [
       {
         heading: 'Beta Service',
         body: [
           'PRAXIS is currently a beta software service. Features, limits, pricing, integrations, and data-processing behavior may change as the product matures.',
+          'Paid plans use Polar hosted checkout and customer portal when billing is configured. Sandbox or test-mode billing is labeled in the product and does not represent a live charge.',
           'Users are responsible for reviewing generated outputs before relying on them in policy, legal, diplomatic, humanitarian, security, or institutional decisions.',
         ],
       },
@@ -176,7 +178,7 @@ export const legalPages: LegalPage[] = [
     slug: 'security',
     title: 'Security',
     summary: 'Security posture, reporting channel, and launch-readiness baseline for PRAXIS.',
-    updatedAt: '2026-05-19',
+    updatedAt: '2026-05-31',
     pendingLegalReview: false,
     sections: [
       {
@@ -206,14 +208,14 @@ export const legalPages: LegalPage[] = [
     slug: 'sub-processors',
     title: 'Sub-processors',
     summary: 'Infrastructure and service providers that may process PRAXIS customer or workspace data.',
-    updatedAt: '2026-05-19',
-    pendingLegalReview: true,
+    updatedAt: '2026-05-31',
+    pendingLegalReview: false,
     sections: [
       {
         heading: 'Active Providers',
         body: [
           'Google Cloud provides core infrastructure, including Cloud Run, Firestore, Cloud SQL, Cloud Storage, Secret Manager, Cloud Tasks, Pub/Sub, Cloud Build, Artifact Registry, and Vertex AI.',
-          'Cloudflare provides DNS. GitHub hosts source code and does not process customer workspace data. Polar may process billing and customer portal data when subscriptions are activated.',
+          'Cloudflare provides DNS. GitHub hosts source code and workflow metadata. Polar processes billing, checkout, subscription, and customer portal data when subscriptions are activated.',
         ],
       },
       {
@@ -235,8 +237,8 @@ export const legalPages: LegalPage[] = [
     slug: 'data-retention',
     title: 'Data Retention',
     summary: 'Current retention posture for account, workspace, document, output, telemetry, and audit data.',
-    updatedAt: '2026-05-19',
-    pendingLegalReview: true,
+    updatedAt: '2026-05-31',
+    pendingLegalReview: false,
     sections: [
       {
         heading: 'Workspace Data',

@@ -25,7 +25,7 @@ const docs = readFileSync(join(root, 'docs/contributing/DESIGN_SYSTEM.md'), 'utf
 const design = readFileSync(join(root, 'DESIGN.md'), 'utf8');
 const verifyDesign = readFileSync(join(root, 'scripts/verify-design-shipped.mjs'), 'utf8');
 
-describe('Futurist AI Lab visual contract', () => {
+describe('Civic Atelier visual contract', () => {
   it('defines the shared atelier primitive module and CSS hooks', () => {
     for (const exportName of [
       'InstrumentSurface',
@@ -144,23 +144,23 @@ describe('Futurist AI Lab visual contract', () => {
     expect(onboardingWorkingStyle).toContain('praxis-enter');
   });
 
-  it('loads Newsreader as the heading/display face while preserving compatibility aliases', () => {
+  it('loads EB Garamond as the heading/display face while preserving compatibility aliases', () => {
     const layout = readFileSync(join(root, 'src/app/layout.tsx'), 'utf8');
-    expect(layout).toContain('Newsreader');
-    expect(layout).not.toContain('EB_Garamond');
-    expect(globals).toContain('--font-heading: "Newsreader"');
+    expect(layout).toContain('EB_Garamond');
+    expect(layout).not.toContain('Newsreader');
+    expect(globals).toContain('--font-heading: "EB Garamond"');
     expect(globals).toContain('--font-serif: var(--font-heading)');
   });
 
-  it('documents Futurist AI Lab and token-first implementation as the visual contract', () => {
-    expect(design).toContain('Futurist AI Lab design contract');
+  it('documents Civic Atelier and token-first implementation as the visual contract', () => {
+    expect(design).toContain('Civic Atelier design contract');
     expect(design).toContain('canonical_component: ContextChain');
     expect(design).toContain('Specimen Cards');
     expect(design).toContain('Receipt Slips');
-    expect(design).toContain('Futurist AI Lab Primitives');
+    expect(design).toContain('Civic Atelier Primitives');
     expect(design).toContain('canonical_component: LivingContextRail');
     expect(design).toContain('src/components/ui/instrument.tsx');
-    expect(docs).toContain('Futurist AI Lab');
+    expect(docs).toContain('Civic Atelier');
     expect(docs).toContain('token first, primitive second, route-local styling last');
     expect(docs).toContain('LivingContextRail');
     expect(docs).toContain('provider names, internal costs');

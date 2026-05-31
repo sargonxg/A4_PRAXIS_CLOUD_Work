@@ -49,12 +49,9 @@ export default async function LegalPage({ params }: LegalPageProps) {
             <p className="max-w-3xl text-base leading-7 text-[color:var(--color-ink)]/72">
               {page.summary}
             </p>
-            {page.pendingLegalReview ? (
-              <p className="max-w-3xl rounded-md border border-[color:var(--color-rose-gold)]/45 bg-white/55 px-4 py-3 text-sm leading-6 text-[color:var(--color-ink)]/68">
-                This page describes the current operating posture and is pending
-                formal legal review.
-              </p>
-            ) : null}
+            <p className="max-w-3xl rounded-md border border-[color:var(--color-rose-gold)]/45 bg-white/55 px-4 py-3 text-sm leading-6 text-[color:var(--color-ink)]/68">
+              This page states the current PRAXIS beta operating posture. Enterprise-specific terms, residency, or procurement language require a separate written agreement.
+            </p>
           </div>
         </div>
 

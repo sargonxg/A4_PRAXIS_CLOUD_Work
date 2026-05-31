@@ -19,7 +19,7 @@ test.describe('public surface smoke', () => {
     await page.goto(`${BASE}/`);
     await expect(page.locator('[data-testid="marketing-home"]')).toBeVisible({ timeout: 15_000 });
     await expect(page.locator('[data-testid="marketing-primary-cta"]')).toHaveCount(1);
-    await expect(page.getByText(/Turn any policy question into a sourced, citable brief/i).first()).toBeVisible();
+    await expect(page.getByText(/Ask a policy question\. Build the capsule first\./i).first()).toBeVisible();
     await expect(page.locator('[data-testid="tasklet-praxis-workbench"]')).toHaveCount(0);
   });
 

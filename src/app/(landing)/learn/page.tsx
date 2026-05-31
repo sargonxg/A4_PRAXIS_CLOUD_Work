@@ -287,9 +287,9 @@ export default function LearnPage() {
         <div className="grid gap-4 md:grid-cols-2">
           <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Premium web</span>
-            <h2 className="mt-3 font-serif text-2xl font-medium text-slate-950">Exa finds high-quality open-web sources when a turn needs paid discovery.</h2>
+            <h2 className="mt-3 font-serif text-2xl font-medium text-slate-950">Premium web is not enabled by default.</h2>
             <p className="mt-3 text-sm leading-6 text-slate-700">
-              Premium web is the source-discovery lane for current, source-linked open-web research. It is separate from the free Research graph extra and remains available only when the user enables it for a paid turn.
+              PRAXIS can expose a paid source-discovery lane only when the deployment has a configured provider and the user explicitly starts that paid workflow. Until then, public claims stay limited to the wired source receipts, uploaded documents, grounded-search routes, and review gates available in the app.
             </p>
           </article>
           <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">

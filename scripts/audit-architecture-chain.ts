@@ -6,6 +6,9 @@ const architecture = readFileSync(join(root, 'docs/architecture/PRAXIS_ARCHITECT
 const alignment = readFileSync(join(root, 'docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md'), 'utf8');
 const packageJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { scripts?: Record<string, string> };
 const scripts = packageJson.scripts ?? {};
+const auditRunner = existsSync(join(root, 'scripts/audit-runner.ts'))
+  ? readFileSync(join(root, 'scripts/audit-runner.ts'), 'utf8')
+  : '';
 const failures: string[] = [];
 
 const coreGate = [
@@ -33,8 +36,9 @@ for (const script of coreGate) {
 }
 
 const gate = scripts['audit:gate'] ?? '';
+const gateSource = gate.includes('scripts/audit-runner.ts') ? auditRunner : gate;
 for (const script of coreGate) {
-  if (!gate.includes(script)) failures.push(`audit:gate missing ${script}`);
+  if (!gateSource.includes(script)) failures.push(`audit:gate missing ${script}`);
 }
 for (const file of [
   'scripts/audit-ai-routes.mjs',

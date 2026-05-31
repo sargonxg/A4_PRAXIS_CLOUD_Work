@@ -3,10 +3,12 @@ import type { TacitusCorePrimitive } from '@/lib/graph/core-primitives';
 import type { OntologyId } from '@/lib/ontology/types';
 import type { DomainId } from '@/types/domain';
 
-export const PENDING_CONTEXT_CAPSULE_PROMPT_KEY = 'praxis.pendingContextCapsulePrompt';
-export const PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY = 'praxis.pendingContextCapsuleTemplate';
-export const PENDING_CONTEXT_CAPSULE_PATH_KEY = 'praxis.pendingContextCapsulePath';
-export const PENDING_CONTEXT_CAPSULE_OUTPUT_KEY = 'praxis.pendingContextCapsuleOutput';
+export {
+  PENDING_CONTEXT_CAPSULE_OUTPUT_KEY,
+  PENDING_CONTEXT_CAPSULE_PATH_KEY,
+  PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
+  PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY,
+} from '@/lib/product/context-capsule-pending';
 
 export type CapsuleAttachmentRole = 'primary' | 'reference' | 'comparison' | 'archived';
 

@@ -21,6 +21,8 @@ references.
 - [`2026-05-31-DEEP_PRESHIP_CHECKLIST.md`](./2026-05-31-DEEP_PRESHIP_CHECKLIST.md)
   - Latest generated static pre-ship checklist; latest result is 140 pass, 2
     warn, 0 blocked.
+- [`2026-05-31-audit-and-todo-triage.md`](./2026-05-31-audit-and-todo-triage.md)
+  - Session 5 audit-runner consolidation note and TODO/stub triage ledger.
 - [`2026-05-30-capsule-research-dossiers-audit.md`](./2026-05-30-capsule-research-dossiers-audit.md)
   - Current v16 research-dossier, claim-ledger, source-refresh, and graph-seed
     capsule audit.

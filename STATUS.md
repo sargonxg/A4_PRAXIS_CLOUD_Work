@@ -1,5 +1,39 @@
 # PRAXIS — STATUS
 
+## 2026-05-31 — Five-Session PRAXIS Build Track Checkpoint
+
+What shipped across the five-session track:
+
+- Session 1 made ContextCapsules the core product object with Capsule Studio,
+  an interactive living graph, proposal-gated graph edits, review cards, and
+  Firestore starter plumbing.
+- Session 2 replaced deterministic agent scaffolds with live sourced agent
+  phases, sourceability checks, unsupported-claim export gates, proof rail
+  streaming, and honest degraded runtime states.
+- Session 3 made approvals durable and restart-safe, added real
+  research/draft/red-team/revise multi-agent orchestration, and enforced
+  per-capsule operating contracts.
+- Session 4 made Boardroom live and chaired with per-turn streaming, history,
+  registry-backed personas, strict evidence refs, Boardroom Lite consolidation,
+  and immutable capsule reads.
+- Session 5 rebuilt the public/signed-in entry around policy missions, wired
+  billing checkout and Manage billing, updated Learn/legal/trust posture,
+  applied the Civic Atelier design pass, added a modular audit runner, and
+  wired the authenticated golden-path CI proof gate.
+
+Known remaining gaps:
+
+- `npm run test:auth-runtime` is blocked in this shell because
+  `TEST_FIREBASE_EMAIL` and `TEST_FIREBASE_PASSWORD` are missing and ADC needs
+  `gcloud auth application-default login --project=praxisbytacitus`.
+- The CI golden path is present but will skip until the disposable Firebase
+  credentials are configured as secrets.
+- Polar checkout is wired; environments without live Polar product ids still
+  show sandbox/unconfigured copy honestly.
+- Audit orchestration is consolidated through `scripts/audit-runner.ts`, but
+  historical leaf audit files remain until docs/tests/runbooks that reference
+  them are migrated.
+
 ## 2026-05-31 — GraphLite Capsule Graph Integration
 
 Current graph checkpoint:

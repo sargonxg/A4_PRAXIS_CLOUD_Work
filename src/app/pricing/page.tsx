@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { PRICING_TIERS, PLAN_USAGE_BUCKETS, INTERNAL_COST_DISCLOSURE_NOTICE } from '@/lib/constants/pricing';
 import { PraxisGlyphChip } from '@/components/brand/praxis-mark';
+import { PricingCheckoutButton } from '@/components/billing/pricing-checkout-button';
 import { LivingContextRail, PublicPageShell } from '@/components/ui/instrument';
 
 export const metadata: Metadata = {
@@ -25,6 +26,11 @@ export const metadata: Metadata = {
 };
 
 export default function PricingPage() {
+  const billingMode = process.env.POLAR_SERVER === 'sandbox'
+    ? 'Polar checkout is running in sandbox test mode in this environment.'
+    : process.env.POLAR_ACCESS_TOKEN
+      ? 'Polar checkout is configured for live billing in this environment.'
+      : 'Polar checkout is not configured in this environment; signed-in users see an explicit unavailable state.';
   const pricingRailCells = [
     { id: 'profile', label: 'Profile', value: 'Analyst or team', detail: 'Workspace-owned', state: 'ready' as const },
     { id: 'context', label: 'Context', value: 'One capsule first', detail: 'Upgrade when work travels', state: 'active' as const },
@@ -43,6 +49,9 @@ export default function PricingPage() {
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-[color:var(--color-ink)]/70">
             PRAXIS is priced as a workspace, not as a menu of tool charges. Start with one capsule, attach it to Ask PRAXIS, and upgrade when capsules, sources, Guide help, and handovers need to move across people.
+          </p>
+          <p className="mt-5 max-w-2xl rounded-xl border border-[color:var(--color-rose-gold)]/30 bg-white/65 px-4 py-3 text-sm leading-6 text-[color:var(--color-ink)]/70">
+            {billingMode}
           </p>
           <LivingContextRail cells={pricingRailCells} compact className="mt-8" />
         </section>
@@ -70,12 +79,7 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href={tier.id === 'enterprise' ? 'mailto:hello@tacitus.me' : `/login?mode=signup${tier.id === 'analyst' || tier.id === 'team' ? `&plan=${tier.id}` : ''}`}
-                className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-full bg-[color:var(--color-diplomatic-blue)] px-4 text-sm font-semibold text-white"
-              >
-                {tier.cta}
-              </Link>
+              <PricingCheckoutButton plan={tier.id} label={tier.cta} />
             </article>
           ))}
         </section>
@@ -90,6 +94,17 @@ export default function PricingPage() {
             ))}
           </div>
           <p className="mt-6 text-sm text-[color:var(--color-ink)]/60">{INTERNAL_COST_DISCLOSURE_NOTICE}</p>
+        </section>
+        <section id="trust-security" className="mt-8 rounded-2xl border border-[color:var(--color-rose-gold)]/25 bg-white/55 p-6">
+          <h2 className="font-serif text-2xl font-semibold text-[color:var(--color-diplomatic-blue)]">Trust and security posture</h2>
+          <p className="mt-3 text-sm leading-6 text-[color:var(--color-ink)]/70">
+            PRAXIS is a beta service using United States infrastructure by default, Firebase Auth, Google Cloud, and Polar for billing when subscriptions are active. Workspace outputs remain reviewable policy work, not professional advice.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
+            <Link href="/legal/security" className="praxis-link">Security</Link>
+            <Link href="/legal/sub-processors" className="praxis-link">Sub-processors</Link>
+            <Link href="/legal/terms" className="praxis-link">Beta terms</Link>
+          </div>
         </section>
     </PublicPageShell>
   );

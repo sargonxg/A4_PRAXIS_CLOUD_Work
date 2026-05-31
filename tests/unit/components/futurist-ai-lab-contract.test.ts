@@ -10,8 +10,8 @@ const workbench = readFileSync(join(root, 'src/components/praxis/tasklet-praxis-
 const sitemap = readFileSync(join(root, 'src/app/sitemap.ts'), 'utf8');
 const ogImage = readFileSync(join(root, 'src/app/opengraph-image.tsx'), 'utf8');
 
-describe('Futurist AI Lab visual and capsule UX contract', () => {
-  it('adds token-first Futurist AI Lab primitives', () => {
+describe('Civic Atelier capsule UX compatibility contract', () => {
+  it('keeps token-first agent workspace primitives available', () => {
     for (const token of [
       '--color-lab-void',
       '--color-lab-ink',
@@ -40,7 +40,8 @@ describe('Futurist AI Lab visual and capsule UX contract', () => {
   it('keeps the public root light and marketing-first instead of rendering the cockpit', () => {
     expect(landingPage).toContain('PraxisMarketingHome');
     expect(marketingHome).toContain('data-testid="marketing-home"');
-    expect(marketingHome).toContain('Turn any policy question into a sourced, citable brief.');
+    expect(marketingHome).toContain('Ask a policy question. Build the capsule first.');
+    expect(marketingHome).toContain('POLICY_MISSION_EXAMPLES');
     expect(`${landingPage}\n${marketingHome}`).not.toContain('TaskletPraxisWorkbench');
     expect(`${landingPage}\n${marketingHome}`).not.toContain('mode="public"');
     expect(`${landingPage}\n${marketingHome}`).not.toContain('data-testid="app-first-root"');

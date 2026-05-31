@@ -29,6 +29,7 @@ const publicPage = read('src/app/page.tsx');
 const marketingHome = read('src/components/marketing/praxis-marketing-home.tsx');
 const appIndex = read('src/app/app/page.tsx');
 const appLaunchpad = read('src/components/app/praxis-app-launchpad.tsx');
+const policyMissions = read('src/lib/product/policy-missions.ts');
 const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
 const boardroom = read('src/components/boardroom/boardroom-workspace.tsx');
 const appShell = read('src/components/app/app-shell.tsx');
@@ -38,7 +39,7 @@ const dockerfile = read('Dockerfile');
 requireAll('public route', publicPage, [
   'PraxisMarketingHome',
   'SoftwareApplication',
-  'Turn any policy question into a sourced, citable brief.',
+  'Ask a policy question, build a ContextCapsule',
 ]);
 forbidAll('public route', publicPage, [
   'TaskletPraxisWorkbench',
@@ -51,7 +52,8 @@ forbidAll('public route', publicPage, [
 
 requireAll('marketing home', marketingHome, [
   'data-testid="marketing-home"',
-  'Turn any policy question into a sourced, citable brief.',
+  'Ask a policy question. Build the capsule first.',
+  'POLICY_MISSION_EXAMPLES',
   'data-testid="marketing-hero-prompt"',
   'data-testid="marketing-primary-cta"',
   'Context Capsules',
@@ -83,7 +85,8 @@ requireAll('signed-in app index', appIndex, ['PraxisAppLaunchpad']);
 forbidAll('signed-in app index', appIndex, ['AskPraxisHome', 'TaskletPraxisWorkbench']);
 requireAll('signed-in launchpad', appLaunchpad, [
   'data-testid="app-launchpad"',
-  'Ask anything. Keep the capsule attached.',
+  'Ask a policy question. Build the capsule first.',
+  'POLICY_MISSION_EXAMPLES',
   'Ask PRAXIS',
   'data-testid="launchpad-capsule-chip"',
   '/api/created-work?limit=4',
@@ -95,6 +98,11 @@ requireAll('signed-in launchpad', appLaunchpad, [
   'PRAXIS sample artifacts',
   'data-testid="advanced-edit-context"',
   'Advanced / Edit context',
+]);
+requireAll('policy missions', policyMissions, [
+  'Sanctions impact memo',
+  'Treaty analysis with citations',
+  'Stakeholder & ACH for a crisis',
 ]);
 forbidAll('signed-in launchpad', appLaunchpad, [
   'Diagnostics',

@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { legalPages } from '@/lib/legal/pages';
 
 const CONTENT_LAST_MODIFIED = new Date('2026-05-31T00:00:00.000Z');
-const LEGAL_LAST_MODIFIED = new Date('2026-05-19T00:00:00.000Z');
+const LEGAL_LAST_MODIFIED = new Date('2026-05-31T00:00:00.000Z');
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://praxis.tacitus.me';

@@ -3,7 +3,7 @@ import { PraxisMarketingHome } from '@/components/marketing/praxis-marketing-hom
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
 const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
-const description = 'Turn any policy question into a sourced, citable brief.';
+const description = 'Ask a policy question, build a ContextCapsule, and produce sourced work with receipts.';
 
 const softwareJsonLd = {
   '@context': 'https://schema.org',

@@ -26,6 +26,21 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.31.03',
+    version: '6.4.1',
+    date: '2026-05-31',
+    title: 'Public surface, billing, and proof gate align',
+    summary: 'PRAXIS now routes concrete public policy missions into capsule creation, wires pricing CTAs to billing, and records the authenticated golden-path proof contract for CI.',
+    category: 'product',
+    items: [
+      'Public and signed-in home surfaces now share the same mission-first entry, with sanctions, treaty, and stakeholder/crisis examples handed to Capsule Builder through capsulePrompt.',
+      'Practitioner and Team pricing CTAs call the Polar checkout route for authenticated users and preserve signup-to-checkout intent for new users, while Institution remains a contact path.',
+      'Settings exposes Manage billing through the portal route and public pricing labels sandbox/unconfigured billing posture honestly.',
+      'Legal and Learn pages now state the current beta, US-data, Polar sub-processor, and premium-web posture instead of pending or aspirational claims.',
+      'The CI smoke workflow can run the authenticated golden path when TEST_FIREBASE_EMAIL and TEST_FIREBASE_PASSWORD secrets are present.',
+    ],
+  },
+  {
     buildNumber: '2026.05.31.02',
     version: '6.4.1',
     date: '2026-05-31',

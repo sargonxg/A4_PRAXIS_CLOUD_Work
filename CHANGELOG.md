@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- feat(public): wire mission-first homepage, billing, and proof gate.
+  Build 2026.05.31.03 routes public and signed-in policy missions into
+  Capsule Builder via `capsulePrompt`, starts Polar checkout from Practitioner
+  and Team pricing CTAs, labels sandbox/unconfigured billing posture honestly,
+  updates Learn/legal trust copy for the current beta posture, and adds the
+  authenticated golden-path proof spec to CI when disposable Firebase
+  credentials are present.
+
 - feat(public): add Guide and capsule-bound generation contract.
   Build 2026.05.31.02 adds public `/guide`, `/help`, and `/changelog`
   coverage, mobile public navigation, concrete Learn anchors for starter
