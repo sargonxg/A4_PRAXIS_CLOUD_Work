@@ -11,9 +11,14 @@ describe('shouldPrefixPraxisHref', () => {
   it('does not prefix already-prefixed, public, or external links', () => {
     expect(shouldPrefixPraxisHref('/app/dashboard')).toBe(false);
     expect(shouldPrefixPraxisHref('/pricing')).toBe(false);
+    expect(shouldPrefixPraxisHref('/guide')).toBe(false);
+    expect(shouldPrefixPraxisHref('/help')).toBe(false);
+    expect(shouldPrefixPraxisHref('/changelog')).toBe(false);
     expect(shouldPrefixPraxisHref('/login')).toBe(false);
     expect(shouldPrefixPraxisHref('/privacy')).toBe(false);
     expect(shouldPrefixPraxisHref('/terms')).toBe(false);
+    expect(shouldPrefixPraxisHref('/legal/privacy')).toBe(false);
+    expect(shouldPrefixPraxisHref('/legal/terms')).toBe(false);
     expect(shouldPrefixPraxisHref('https://tacitus.me')).toBe(false);
     expect(shouldPrefixPraxisHref('mailto:hello@tacitus.me')).toBe(false);
   });

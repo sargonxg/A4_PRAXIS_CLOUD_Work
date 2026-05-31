@@ -877,6 +877,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('type GuideChatStorageState');
     expect(source).toContain('function loadGuideChatState');
     expect(source).toContain('function persistGuideChatState');
+    expect(source).toContain('function guideAppliedCapsules');
     expect(source).toContain('window.localStorage.getItem(GUIDE_CHAT_STORAGE_KEY)');
     expect(source).toContain('window.localStorage.setItem(GUIDE_CHAT_STORAGE_KEY');
     expect(source).toContain('setGuideChatOpen(Boolean(restored.open))');
@@ -884,6 +885,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('sendPublicToLogin(`PRAXIS guide question');
     expect(source).toContain('setGuideMessages((current) => [...current, userMessage, { role:');
     expect(source).toContain('buildGuideChatPrompt(cleanPrompt, targetCapsule');
+    expect(source).toContain('capsuleId: scopedCapsuleId');
+    expect(source).toContain('activeContextStack: guideActiveContextStack');
     expect(source).not.toContain('setActiveTab(\'analysis\');\n    setStatus(`${capsule.label} is ready in Ask PRAXIS.`);');
   });
 
@@ -893,6 +896,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('text-base leading-7');
     expect(source).toContain('PRAXIS guide, not the agentic Ask PRAXIS workspace');
     expect(source).toContain('Use the main Ask PRAXIS bar for agent runs');
+    expect(source).toContain('how ContextCapsules attach to generation');
+    expect(source).toContain('primary capsule first, reference capsules second');
     expect(source).toContain('Guide assistant');
     expect(source).toContain('aria-label="Clear PRAXIS guide chat"');
     expect(source).toContain("currentToolId: 'praxis-guide-chat'");

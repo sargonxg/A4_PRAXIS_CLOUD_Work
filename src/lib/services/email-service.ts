@@ -59,7 +59,7 @@ function baseTemplate(title: string, content: string): string {
   <p>TACITUS — Conflict Intelligence for Peace & Security Professionals</p>
   <p><a href="https://praxis.tacitus.me" style="color:#1B3A5C;text-decoration:none">praxis.tacitus.me</a></p>
   <p style="margin-top:12px">
-    <a href="https://praxis.tacitus.me/privacy" style="color:#94A3B8;text-decoration:none">Privacy Policy</a>
+    <a href="https://praxis.tacitus.me/legal/privacy" style="color:#94A3B8;text-decoration:none">Privacy Policy</a>
     &nbsp;&middot;&nbsp;
     <a href="https://praxis.tacitus.me/app?panel=account" style="color:#94A3B8;text-decoration:none">Email Preferences</a>
   </p>

@@ -33,8 +33,11 @@ function routeExists(aiRoute: string): boolean {
 }
 
 function pageExists(toolId: string): boolean {
-  const href = hrefForTool(toolId).split(/[?#]/)[0].replace(/^\//, '');
-  const pageDir = join(process.cwd(), 'src', 'app', 'app', href);
+  const href = hrefForTool(toolId).split(/[?#]/)[0];
+  const appRelative = href.replace(/^\/app\/?/, '').replace(/^\//, '');
+  const pageDir = appRelative
+    ? join(process.cwd(), 'src', 'app', 'app', ...appRelative.split('/'))
+    : join(process.cwd(), 'src', 'app', 'app');
   return existsSync(join(pageDir, 'page.tsx')) || existsSync(join(pageDir, 'layout.tsx'));
 }
 

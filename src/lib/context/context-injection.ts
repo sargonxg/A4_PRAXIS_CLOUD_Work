@@ -144,6 +144,7 @@ export function buildCapsulePromptBlock(
     buildCapsuleStarterPromptBlock(capsule.capsuleId, capsule.starterSnapshot),
     buildAssociatedCapsulesPromptBlock(input.associatedCapsules ?? [], input.missingAssociatedCapsuleIds ?? []),
     buildContextChainBlocksPromptBlock(input.activeContextStack?.contextBlocks),
+    buildGenerationContractPromptBlock(capsule, input.associatedCapsules ?? []),
     buildAdvisoryMemoryPromptBlock(capsule),
     '[retrieval_policy]',
     `layers: ${capsule.retrievalPolicy.layers.join(', ')}`,
@@ -177,6 +178,33 @@ export function buildCapsulePromptBlock(
   }
 
   return lines.join('\n');
+}
+
+function buildGenerationContractPromptBlock(capsule: PraxisCapsule, associatedCapsules: PraxisCapsule[]): string {
+  const outputTargets = capsule.coreRefs.outputCoreIds.length
+    ? capsule.coreRefs.outputCoreIds.join(', ')
+    : 'answer, memo, brief, source review, or handover as requested';
+  const toolTargets = capsule.coreRefs.toolCoreIds?.length
+    ? capsule.coreRefs.toolCoreIds.join(', ')
+    : 'sourceability, grounded research, memo drafting, red-team review, and handover when available';
+  return [
+    '[llm_generation_contract]',
+    'primary_capsule_governs: yes',
+    `primary_capsule: ${capsule.capsuleId}`,
+    `reference_capsule_count: ${associatedCapsules.length}`,
+    `preferred_outputs: ${outputTargets}`,
+    `preferred_tools: ${toolTargets}`,
+    'generation_order:',
+    '1. Read the active ContextCapsule and active ContextChain before answering.',
+    '2. Treat capsule cores, source/document receipts, locked cores, and review cards as the highest-priority context.',
+    '3. Use associated capsules only as labeled reference context; do not silently merge them into the primary capsule.',
+    '4. Separate capsule-grounded facts, retrieved evidence, outside model knowledge, and user-provided assumptions in the answer.',
+    '5. Turn missing or stale support into explicit evidence gaps with the smallest useful repair action.',
+    '6. Preserve the requested output contract: answer, memo, brief, source review, boardroom pack, or handover.',
+    '7. If the task needs durable multi-agent work, recommend or queue a capsule-bound AgentRun rather than improvising invisible work.',
+    '8. Never claim a capsule, source, graph, memo, or external system was mutated unless the runtime returned a receipt for that mutation.',
+    '',
+  ].join('\n');
 }
 
 function buildAdvisoryMemoryPromptBlock(capsule: PraxisCapsule): string {

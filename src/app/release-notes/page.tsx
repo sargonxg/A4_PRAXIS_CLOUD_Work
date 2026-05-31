@@ -45,6 +45,7 @@ export default function ReleaseNotesPage() {
             <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="hidden md:inline">Capsules</Link>
             <Link href="/pricing" className="hidden md:inline">Pricing</Link>
             <Link href="/learn" className="hidden md:inline">Learn</Link>
+            <Link href="/guide" className="hidden md:inline">Guide</Link>
             <Link href="/release-notes" className="hidden md:inline">Release notes</Link>
             <Link href="/login" className="rounded-full bg-white px-4 py-2 text-[color:var(--color-ink)]">Sign in</Link>
           </nav>

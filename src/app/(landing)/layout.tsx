@@ -12,6 +12,7 @@ const navLinks = [
   { label: "Capsules", href: "/login?mode=signup&redirect=%2Fapp%2Fcapsules" },
   { label: "Pricing", href: "/pricing" },
   { label: "Learn", href: "/learn" },
+  { label: "Guide", href: "/guide" },
   { label: "Release notes", href: "/release-notes" },
 ];
 

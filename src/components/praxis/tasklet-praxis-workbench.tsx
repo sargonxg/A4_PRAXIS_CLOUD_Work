@@ -463,7 +463,7 @@ type ContextChainBlockLaneModel = {
 
 const GUIDE_CHAT_STORAGE_KEY = 'praxis-guide-chat-state:v1';
 const GUIDE_CHAT_MESSAGE_LIMIT = 40;
-const DEFAULT_GUIDE_CHAT_PROMPT = 'What is PRAXIS building around this capsule?';
+const DEFAULT_GUIDE_CHAT_PROMPT = 'How do I use PRAXIS with the active capsule, sources, agents, and outputs?';
 
 type GuideChatStorageState = {
   messages: ChatMessage[];
@@ -1435,21 +1435,39 @@ export function TaskletPraxisWorkbench({
     const sourceCount = guideCapsuleForPrompt
       ? capsuleCounts(guideCapsuleForPrompt).sources + capsuleCounts(guideCapsuleForPrompt).documents
       : activeCapsuleSourceCount;
-    const capsuleStack = activeCapsuleStack
+    const guideCapsuleStack = guideAppliedCapsules(guideCapsuleForPrompt);
+    const capsuleStack = guideCapsuleStack
       .map((capsule) => `${capsule.role.toUpperCase()}: ${capsule.label}`)
       .join('\n');
     return [
       cleanPrompt,
       '',
       'PRAXIS guide, not the agentic Ask PRAXIS workspace: answer as a lightweight product and capsule guide.',
-      'Frame what PRAXIS is building, how ContextCapsules work, what source gaps exist, and how the selected capsule should be used.',
+      'Frame what PRAXIS is building, how ContextCapsules attach to generation, what source gaps exist, and how the selected capsule should be used.',
       'Do not mutate capsules, create agent runs, export memos, attach sources, or claim that repository state changed. Use the main Ask PRAXIS bar for agent runs, saved work, source operations, and real AI execution.',
+      'Explain the simple app spine when useful: Home for the daily cockpit, Capsules for reusable policy context, Ask PRAXIS for generation and agent runs, Memo Studio/Work for outputs, and Proof/receipts for trust.',
+      'When asked how capsule attachment works, explain that the active capsule becomes the governed prompt context: primary capsule first, reference capsules second, retrieved evidence and outside model knowledge clearly separated.',
+      'Answer in a compact guide format: what this means, where to click next, what the capsule contributes, what proof/gaps to check, and when to switch from Guide assistant to Ask PRAXIS.',
       `Guide thread: ${threadId}`,
       `Scoped capsule: ${guideCapsuleForPrompt?.label ?? 'No capsule selected'}`,
+      `Scoped capsule id: ${guideCapsuleForPrompt?.capsuleId ?? currentCapsuleId}`,
+      `Scoped capsule version: ${guideCapsuleForPrompt?.version ?? 'unknown'}`,
       `Capsule purpose: ${capsuleMeta?.starterDefinition?.richProfile?.purpose ?? capsuleMeta?.summary ?? 'Explain PRAXIS and capsule use from the visible context.'}`,
       `Visible source count: ${sourceCount}`,
       `Active ContextChain:\n${capsuleStack}`,
     ].join('\n');
+  }
+
+  function guideAppliedCapsules(targetCapsule: PraxisCapsuleSummary | null): ActiveCapsuleChip[] {
+    const base = [...activeCapsuleStack];
+    if (targetCapsule && !base.some((capsule) => capsule.id === targetCapsule.capsuleId)) {
+      const chip = capsuleToChip(targetCapsule);
+      base.unshift({
+        ...chip,
+        role: capsuleCategory(targetCapsule) === 'user' ? 'user' : 'reference',
+      });
+    }
+    return base.slice(0, 12);
   }
 
   function openGuideChatForCapsule(capsule?: PraxisCapsuleSummary | null) {
@@ -1485,7 +1503,12 @@ export function TaskletPraxisWorkbench({
 
     setGuideStreaming(true);
     const nextThreadId = ensureGuideThread();
-    await ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsuleStack);
+    const scopedCapsuleId = targetCapsule?.capsuleId ?? currentCapsuleId;
+    const appliedGuideCapsules = guideAppliedCapsules(targetCapsule);
+    const guideActiveContextStack = targetCapsule && targetCapsule.capsuleId !== currentCapsuleId
+      ? buildActiveContextStack(targetCapsule.capsuleId, appliedGuideCapsules)
+      : activeContextStack;
+    await ensureConversationRecord(nextThreadId, scopedCapsuleId, appliedGuideCapsules);
     const userMessage: ChatMessage = { role: 'user', text: cleanPrompt };
     const enrichedPrompt = buildGuideChatPrompt(cleanPrompt, targetCapsule, nextThreadId);
     setGuideMessages((current) => [...current, userMessage, { role: 'assistant', text: '' }]);
@@ -1501,16 +1524,16 @@ export function TaskletPraxisWorkbench({
             role: message.role,
             content: message.text,
           })),
-          capsuleId: currentCapsuleId,
+          capsuleId: scopedCapsuleId,
           contextPackageId: targetCapsule?.capsuleId ? `capsule:${targetCapsule.capsuleId}:v${targetCapsule.version}` : undefined,
-          appliedCapsules: activeCapsuleStack.map((capsule) => ({
+          appliedCapsules: appliedGuideCapsules.map((capsule) => ({
             id: capsule.id,
             label: capsule.label,
             role: capsule.role,
           })),
           currentToolId: 'praxis-guide-chat',
-          currentPath: buildConversationPath(currentCapsuleId, nextThreadId),
-          activeContextStack,
+          currentPath: buildConversationPath(scopedCapsuleId, nextThreadId),
+          activeContextStack: guideActiveContextStack,
           aiSettings: {
             provider: 'vertex',
             analysisDepth: 'standard',

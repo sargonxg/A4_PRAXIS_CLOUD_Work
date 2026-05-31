@@ -26,6 +26,8 @@ const LIVE_HEADER_PATHS = [
   '/',
   '/login',
   '/pricing',
+  '/guide',
+  '/changelog',
   '/legal/privacy',
   '/legal/cookies',
   '/legal/gdpr',
@@ -201,7 +203,7 @@ export function evaluateLaunchReadiness(input: LaunchReadinessInput): LaunchRead
     proxy.includes("'/legal/:path*'") || proxy.includes('"/legal/:path*"'),
     'src/proxy.ts matcher missing /legal/:path* security-header coverage',
   );
-  for (const path of ['/', '/pricing', '/learn', '/release-notes', '/api/health', '/api/health/:path*']) {
+  for (const path of ['/', '/pricing', '/learn', '/guide', '/release-notes', '/changelog', '/api/health', '/api/health/:path*']) {
     pushCheck(
       checks,
       failures,

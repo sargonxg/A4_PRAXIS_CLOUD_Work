@@ -35,6 +35,34 @@ const flowSteps = [
   "Memo, brief, or handover",
 ];
 
+const currentCapabilityAnchors = [
+  {
+    id: "sourceability",
+    title: "Sourceability",
+    body: "Use PRAXIS to inspect whether key claims are supported by attached sources, weakly supported, stale, or missing evidence before a memo becomes export-ready.",
+  },
+  {
+    id: "claim-source-alignment",
+    title: "Claim-source alignment",
+    body: "Capsules and Ask outputs preserve source ids, previews, gaps, and claim posture so a policy team can separate cited facts from model judgment and user assumptions.",
+  },
+  {
+    id: "role-capsules",
+    title: "Role capsules",
+    body: "A capsule can carry role, institution, lens, allowed tools, constraints, and output goals so the model answers as a specific policy worker rather than a generic assistant.",
+  },
+  {
+    id: "output-quality",
+    title: "Output quality",
+    body: "Memo, brief, talking-point, source review, and handover workflows keep output contracts, caveats, receipts, and next actions attached to the work product.",
+  },
+  {
+    id: "thinking-devices",
+    title: "Thinking devices",
+    body: "ACH, timeline, causal, human-friction, red-team, boardroom, and sourceability devices can be represented as capsule context and routed into the right tool or agent lane.",
+  },
+];
+
 const capsuleCores = [
   {
     name: "User",
@@ -195,6 +223,28 @@ export default function LearnPage() {
           <p className="mt-4 text-base leading-7 text-slate-700">
             A user can begin with a prompt, a source packet, a draft question, or a document. PRAXIS wraps the work in a ContextCapsule, routes it through source, document, graph, and time cores, then uses Ask PRAXIS, tools, and agent workflows to produce a memo, brief, source review, or handover that still carries its evidence trail.
           </p>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8">
+        <div className="grid gap-5 lg:grid-cols-[0.78fr_1.22fr]">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Use it today</span>
+            <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950 sm:text-4xl">
+              Current PRAXIS stays simple: one cockpit, capsule attached, evidence visible.
+            </h2>
+            <p className="mt-4 text-sm leading-6 text-slate-700 sm:text-base sm:leading-7">
+              The current app centers on Home, Capsules, Ask PRAXIS, sources, memos, and receipts. Upstream TACITUS systems and deeper graph or temporal engines are described as integration layers or roadmap lanes when they are not the visible production surface.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {currentCapabilityAnchors.map((item) => (
+              <article id={item.id} key={item.id} className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white/85 p-5">
+                <h3 className="font-serif text-xl font-medium text-slate-950">{item.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-700">{item.body}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 

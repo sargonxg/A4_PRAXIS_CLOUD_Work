@@ -32,7 +32,7 @@ describe('consolidated PRAXIS tool model', () => {
       expect(tool, anchorToolId).toBeDefined();
       expect(tool?.aiRoute, anchorToolId).toMatch(/^\/api\//);
       expect(hrefForTool(anchorToolId), anchorToolId).toMatch(
-        /^\/(?:workbench(?:\?tab=(context|library|graph)|#(desk|research|draft))|tools)$/,
+        /^\/app(?:\/capsules|\?(panel=(ask|library|canvas|memo|advanced)))?$/,
       );
 
       const routePath = join(process.cwd(), 'src', 'app', ...tool!.aiRoute.replace(/^\//, '').split('/'), 'route.ts');

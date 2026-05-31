@@ -21,7 +21,7 @@ const plans = [
 export function PraxisMarketingHome() {
   return (
     <main className="civic-atelier-shell praxis-checker-constellation min-h-screen text-slate-950" data-testid="marketing-home">
-      <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8" aria-label="Public navigation">
+      <nav className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-y-3 px-4 py-5 sm:px-6 lg:px-8" aria-label="Public navigation">
         <Link href="/" className="min-w-0">
           <PraxisBrandChip compact />
         </Link>
@@ -29,6 +29,7 @@ export function PraxisMarketingHome() {
           <a href="#capsules" className="hover:text-slate-950">Capsules</a>
           <a href="#pricing" className="hover:text-slate-950">Pricing</a>
           <Link href="/learn" className="hover:text-slate-950">Learn</Link>
+          <Link href="/guide" className="hover:text-slate-950">Guide</Link>
           <Link href="/release-notes" className="hover:text-slate-950">Changelog</Link>
         </div>
         <div className="flex items-center gap-2">
@@ -38,6 +39,13 @@ export function PraxisMarketingHome() {
           <Link href="/login?mode=signup" className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-50">
             Start free
           </Link>
+        </div>
+        <div className="flex basis-full items-center gap-3 overflow-x-auto text-sm font-semibold text-slate-600 md:hidden">
+          <a href="#capsules" className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-2">Capsules</a>
+          <a href="#pricing" className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-2">Pricing</a>
+          <Link href="/learn" className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-2">Learn</Link>
+          <Link href="/guide" className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-2">Guide</Link>
+          <Link href="/release-notes" className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-2">Changelog</Link>
         </div>
       </nav>
 

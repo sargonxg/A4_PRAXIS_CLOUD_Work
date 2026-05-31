@@ -18,7 +18,13 @@ export default function NotFound() {
           href="/app"
           className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-sm font-medium transition-colors"
         >
-          Go to Dashboard
+          Open PRAXIS
+        </Link>
+        <Link
+          href="/guide"
+          className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-md text-sm font-medium transition-colors"
+        >
+          Guide
         </Link>
         <Link
           href="/"

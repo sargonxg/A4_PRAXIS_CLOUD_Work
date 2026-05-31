@@ -1,5 +1,12 @@
+import { createHash } from 'crypto';
 import { makeAgentRunEvent, normalizePointer } from '@/lib/agent-runtime/state';
-import { appendAgentRunEvent, getAgentRun } from '@/lib/agent-runtime/postgres';
+import {
+  appendAgentRunEvent,
+  claimAgentRunDispatch,
+  getAgentRun,
+  markAgentRunDispatchEnqueued,
+  markAgentRunDispatchFailed,
+} from '@/lib/agent-runtime/postgres';
 import { publishPraxisEvent } from '@/lib/events/praxis-events';
 
 export type AgentRunDispatchPayload = {
@@ -34,7 +41,7 @@ export function makeAgentRunDispatchPayload(input: {
     ownerUid: input.ownerUid.trim(),
     capsuleId: normalizePointer(input.capsuleId, 'default'),
     traceId: input.traceId.trim(),
-    dispatchId: input.dispatchId?.trim() || cryptoRandomDispatchId(input.runId, input.traceId),
+    dispatchId: input.dispatchId?.trim() || makeDeterministicDispatchId(input.runId, input.traceId, input.attempt),
     attempt: Math.max(1, Math.floor(input.attempt ?? 1)),
     requestedAt: (input.requestedAt ?? new Date()).toISOString(),
   };
@@ -76,6 +83,7 @@ export function buildAgentRunTask(input: {
   targetUrl: string;
   serviceAccountEmail?: string | null;
   audience?: string | null;
+  taskName?: string | null;
 }): AgentRunTask {
   const body = Buffer.from(JSON.stringify(input.payload)).toString('base64');
   const headers = {
@@ -95,7 +103,16 @@ export function buildAgentRunTask(input: {
       audience: input.audience || input.targetUrl,
     };
   }
-  return { httpRequest };
+  return input.taskName ? { name: input.taskName, httpRequest } : { httpRequest };
+}
+
+export function getAgentRunTaskName(queuePath: string, payload: AgentRunDispatchPayload): string {
+  return `${queuePath}/tasks/praxis-agent-${taskIdHash([
+    payload.runId,
+    payload.traceId,
+    payload.dispatchId,
+    String(payload.attempt),
+  ].join('|'))}`;
 }
 
 export async function enqueueAgentRunDispatch(input: {
@@ -118,16 +135,62 @@ export async function enqueueAgentRunDispatch(input: {
     traceId: run.traceId,
     attempt: input.attempt,
   });
+  const claim = await claimAgentRunDispatch({
+    ownerUid: run.ownerUid,
+    runId: run.id,
+    dispatchId: payload.dispatchId,
+    attempt: payload.attempt,
+  });
+  if (!claim.claimed && claim.existing?.dispatchId) {
+    return {
+      mode: 'cloud-tasks',
+      queuePath: claim.existing.queuePath ?? getAgentRunTasksQueuePath(),
+      taskName: claim.existing.taskName,
+      targetUrl: claim.existing.targetUrl ?? getAgentRunExecuteUrl(run.id),
+      payload: {
+        ...payload,
+        dispatchId: claim.existing.dispatchId,
+        attempt: claim.existing.attempt ?? payload.attempt,
+      },
+    };
+  }
+  if (!claim.claimed) {
+    throw new Error('Agent run dispatch claim could not be acquired.');
+  }
+
   const queuePath = getAgentRunTasksQueuePath();
   const targetUrl = getAgentRunExecuteUrl(run.id);
+  const taskName = getAgentRunTaskName(queuePath, payload);
   const task = buildAgentRunTask({
     payload,
     targetUrl,
     serviceAccountEmail: process.env.AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL || null,
     audience: process.env.AGENT_RUN_WORKER_OIDC_AUDIENCE || targetUrl,
+    taskName,
   });
 
-  const created = await createCloudTask({ parent: queuePath, task });
+  let created: CloudTaskCreateResult;
+  try {
+    created = await createCloudTask({ parent: queuePath, task });
+  } catch (err) {
+    await markAgentRunDispatchFailed({
+      ownerUid: run.ownerUid,
+      runId: run.id,
+      dispatchId: payload.dispatchId,
+      attempt: payload.attempt,
+      error: err instanceof Error ? err.message : String(err),
+    }).catch((metadataErr) => console.warn('[agent-runtime] dispatch failure metadata update failed:', metadataErr));
+    throw err;
+  }
+  await markAgentRunDispatchEnqueued({
+    ownerUid: run.ownerUid,
+    runId: run.id,
+    dispatchId: payload.dispatchId,
+    attempt: payload.attempt,
+    taskName: created.name ?? taskName,
+    queuePath,
+    targetUrl,
+  }).catch((metadataErr) => console.warn('[agent-runtime] dispatch metadata update failed:', metadataErr));
 
   await appendAgentRunEvent(makeAgentRunEvent({
     runId: run.id,
@@ -138,10 +201,11 @@ export async function enqueueAgentRunDispatch(input: {
     data: {
       mode: 'cloud-tasks',
       queuePath,
-      taskName: created.name ?? null,
+      taskName: created.name ?? taskName,
       targetUrl,
       dispatchId: payload.dispatchId,
       attempt: payload.attempt,
+      alreadyExists: created.alreadyExists === true,
     },
     traceId: run.traceId,
   }));
@@ -155,23 +219,25 @@ export async function enqueueAgentRunDispatch(input: {
     data: {
       mode: 'cloud-tasks',
       queuePath,
-      taskName: created.name ?? null,
+      taskName: created.name ?? taskName,
       targetUrl,
       dispatchId: payload.dispatchId,
       attempt: payload.attempt,
+      alreadyExists: created.alreadyExists === true,
     },
   });
 
   return {
     mode: 'cloud-tasks',
     queuePath,
-    taskName: created.name ?? null,
+    taskName: created.name ?? taskName,
     targetUrl,
     payload,
   };
 }
 
 type AgentRunTask = {
+  name?: string;
   httpRequest: {
     httpMethod: 'POST';
     url: string;
@@ -184,7 +250,9 @@ type AgentRunTask = {
   };
 };
 
-async function createCloudTask(input: { parent: string; task: AgentRunTask }): Promise<{ name?: string | null }> {
+type CloudTaskCreateResult = { name?: string | null; alreadyExists?: boolean };
+
+async function createCloudTask(input: { parent: string; task: AgentRunTask }): Promise<CloudTaskCreateResult> {
   const accessToken = await getMetadataAccessToken();
   const response = await fetch(getAgentRunTasksCreateUrl(input.parent), {
     method: 'POST',
@@ -198,6 +266,9 @@ async function createCloudTask(input: { parent: string; task: AgentRunTask }): P
   });
   const text = await response.text();
   if (!response.ok) {
+    if (response.status === 409 && input.task.name) {
+      return { name: input.task.name, alreadyExists: true };
+    }
     throw new Error(`Cloud Tasks enqueue failed with HTTP ${response.status}: ${text.slice(0, 500)}`);
   }
   if (!text) return {};
@@ -224,7 +295,11 @@ async function getMetadataAccessToken(): Promise<string> {
   return payload.access_token;
 }
 
-function cryptoRandomDispatchId(runId: string, traceId: string): string {
-  const seed = `${normalizePointer(runId, 'run')}:${traceId}:${Date.now()}:${Math.random()}`;
-  return `dispatch_${Buffer.from(seed).toString('base64url').slice(0, 32)}`;
+function makeDeterministicDispatchId(runId: string, traceId: string, attempt?: number): string {
+  const normalizedAttempt = Math.max(1, Math.floor(attempt ?? 1));
+  return `dispatch_${taskIdHash(`${normalizePointer(runId, 'run')}:${traceId}:${normalizedAttempt}`).slice(0, 32)}`;
+}
+
+function taskIdHash(value: string): string {
+  return createHash('sha256').update(value).digest('base64url').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 48);
 }

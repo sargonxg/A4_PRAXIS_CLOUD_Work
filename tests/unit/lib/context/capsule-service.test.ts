@@ -271,6 +271,10 @@ describe('capsule service', () => {
     expect(resolved.promptBlock).toContain('document_cores: doc-1');
     expect(resolved.promptBlock).toContain('[context_chain_blocks]');
     expect(resolved.promptBlock).toContain('thinking_devices: sourceability-matrix [primary] Sourceability matrix');
+    expect(resolved.promptBlock).toContain('[llm_generation_contract]');
+    expect(resolved.promptBlock).toContain('primary_capsule_governs: yes');
+    expect(resolved.promptBlock).toContain('Separate capsule-grounded facts, retrieved evidence, outside model knowledge, and user-provided assumptions');
+    expect(resolved.promptBlock).toContain('recommend or queue a capsule-bound AgentRun');
     expect(resolved.promptBlock).toContain('Outside model knowledge, online reading, and retrieval are supplemental only.');
     expect(resolved.sharePath).toBe('/app?capsuleId=default');
   });

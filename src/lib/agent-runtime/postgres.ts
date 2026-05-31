@@ -140,15 +140,24 @@ export async function createAgentRun(input: CreateAgentRunInput): Promise<AgentR
   const runId = randomUUID();
   const result = await getPool().query(
     `
-      INSERT INTO agent_runs (
-        id, agent_spec_id, owner_uid, capsule_id, context_stack_id, context_package_id,
-        selected_core_ids, status, trigger_type, objective, trace_id, parent_run_id,
-        idempotency_key, max_step, max_session_minutes, internal_estimated_cost_cents,
-        internal_spend_cents, metadata, created_at, updated_at, queued_at, expires_at
+      WITH inserted AS (
+        INSERT INTO agent_runs (
+          id, agent_spec_id, owner_uid, capsule_id, context_stack_id, context_package_id,
+          selected_core_ids, status, trigger_type, objective, trace_id, parent_run_id,
+          idempotency_key, max_step, max_session_minutes, internal_estimated_cost_cents,
+          internal_spend_cents, metadata, created_at, updated_at, queued_at, expires_at
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7,'queued',$8,$9,$10,$11,$12,$13,$14,$15,0,$16,$17,$17,$17,$18)
+        ON CONFLICT (owner_uid, idempotency_key) DO NOTHING
+        RETURNING *, true AS inserted
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,'queued',$8,$9,$10,$11,$12,$13,$14,$15,0,$16,$17,$17,$17,$18)
-      ON CONFLICT (owner_uid, idempotency_key) DO UPDATE SET updated_at = agent_runs.updated_at
-      RETURNING *
+      SELECT * FROM inserted
+      UNION ALL
+      SELECT agent_runs.*, false AS inserted
+      FROM agent_runs
+      WHERE owner_uid = $3 AND idempotency_key = $12
+        AND NOT EXISTS (SELECT 1 FROM inserted)
+      LIMIT 1
     `,
     [
       runId,
@@ -172,21 +181,170 @@ export async function createAgentRun(input: CreateAgentRunInput): Promise<AgentR
     ],
   );
   const run = rowToAgentRun(result.rows[0]);
+  const inserted = Boolean(result.rows[0]?.inserted);
   await mirrorAgentRunToFirestore(run);
-  await appendAgentRunEvent(makeAgentRunEvent({
-    runId: run.id,
-    ownerUid: run.ownerUid,
-    capsuleId: run.capsuleId,
-    eventType: 'run.queued',
-    toStatus: 'queued',
-    message: 'Agent run queued for later dispatch.',
-    traceId: run.traceId,
-  }));
-  publishAgentRunEvent('agent_run.created', run, {
-    triggerType: run.triggerType,
-    agentSpecId: run.agentSpecId,
-  });
+  if (inserted) {
+    await appendAgentRunEvent(makeAgentRunEvent({
+      runId: run.id,
+      ownerUid: run.ownerUid,
+      capsuleId: run.capsuleId,
+      eventType: 'run.queued',
+      toStatus: 'queued',
+      message: 'Agent run queued for later dispatch.',
+      traceId: run.traceId,
+    }));
+    publishAgentRunEvent('agent_run.created', run, {
+      triggerType: run.triggerType,
+      agentSpecId: run.agentSpecId,
+    });
+  }
   return run;
+}
+
+export type AgentRunDispatchMetadata = {
+  dispatchId: string | null;
+  attempt: number | null;
+  taskName: string | null;
+  queuePath: string | null;
+  targetUrl: string | null;
+};
+
+export type AgentRunDispatchClaim = {
+  run: AgentRun;
+  claimed: boolean;
+  existing: AgentRunDispatchMetadata | null;
+};
+
+export async function claimAgentRunDispatch(input: {
+  ownerUid: string;
+  runId: string;
+  dispatchId: string;
+  attempt: number;
+}): Promise<AgentRunDispatchClaim> {
+  await ensureSchema();
+  const now = new Date();
+  const claimMetadata = {
+    dispatchEnqueueStatus: 'dispatch_claimed',
+    dispatchId: input.dispatchId,
+    dispatchAttempt: input.attempt,
+    dispatchClaimedAt: now.toISOString(),
+  };
+  const result = await getPool().query(
+    `
+      UPDATE agent_runs
+      SET metadata = agent_runs.metadata || $1::jsonb,
+          updated_at = $2
+      WHERE owner_uid = $3
+        AND id = $4
+        AND status IN ('queued', 'running')
+        AND COALESCE(metadata->>'dispatchEnqueueStatus', '') NOT IN ('dispatch_claimed', 'dispatch_enqueued')
+      RETURNING *
+    `,
+    [JSON.stringify(claimMetadata), now, input.ownerUid, input.runId],
+  );
+  if (result.rows[0]) {
+    const run = rowToAgentRun(result.rows[0]);
+    await mirrorAgentRunToFirestore(run, { preserveAudit: true });
+    return { run, claimed: true, existing: null };
+  }
+
+  const run = await getAgentRun(input.ownerUid, input.runId);
+  if (!run) {
+    throw new Error('Agent run not found for dispatch.');
+  }
+  if (run.status !== 'queued' && run.status !== 'running') {
+    throw new Error(`Agent run dispatch requires queued or running status, received ${run.status}.`);
+  }
+  const existingStatus = typeof run.metadata.dispatchEnqueueStatus === 'string'
+    ? run.metadata.dispatchEnqueueStatus
+    : null;
+  if (existingStatus === 'dispatch_claimed' || existingStatus === 'dispatch_enqueued') {
+    return { run, claimed: false, existing: readAgentRunDispatchMetadata(run) };
+  }
+  return { run, claimed: false, existing: null };
+}
+
+export async function markAgentRunDispatchEnqueued(input: {
+  ownerUid: string;
+  runId: string;
+  dispatchId: string;
+  attempt: number;
+  taskName: string | null;
+  queuePath: string;
+  targetUrl: string;
+}): Promise<AgentRun | null> {
+  return patchAgentRunDispatchMetadata({
+    ownerUid: input.ownerUid,
+    runId: input.runId,
+    metadata: {
+      dispatchEnqueueStatus: 'dispatch_enqueued',
+      dispatchId: input.dispatchId,
+      dispatchAttempt: input.attempt,
+      dispatchTaskName: input.taskName,
+      dispatchQueuePath: input.queuePath,
+      dispatchTargetUrl: input.targetUrl,
+      dispatchLastAttemptAt: new Date().toISOString(),
+    },
+  });
+}
+
+export async function markAgentRunDispatchFailed(input: {
+  ownerUid: string;
+  runId: string;
+  dispatchId: string;
+  attempt: number;
+  error: string;
+}): Promise<AgentRun | null> {
+  return patchAgentRunDispatchMetadata({
+    ownerUid: input.ownerUid,
+    runId: input.runId,
+    metadata: {
+      dispatchEnqueueStatus: 'dispatch_failed',
+      dispatchId: input.dispatchId,
+      dispatchAttempt: input.attempt,
+      dispatchError: input.error.slice(0, 1000),
+      dispatchLastAttemptAt: new Date().toISOString(),
+    },
+  });
+}
+
+async function patchAgentRunDispatchMetadata(input: {
+  ownerUid: string;
+  runId: string;
+  metadata: Record<string, unknown>;
+}): Promise<AgentRun | null> {
+  await ensureSchema();
+  const result = await getPool().query(
+    `
+      UPDATE agent_runs
+      SET metadata = agent_runs.metadata || $1::jsonb,
+          updated_at = $2
+      WHERE owner_uid = $3 AND id = $4
+      RETURNING *
+    `,
+    [JSON.stringify(input.metadata), new Date(), input.ownerUid, input.runId],
+  );
+  const run = result.rows[0] ? rowToAgentRun(result.rows[0]) : null;
+  if (run) {
+    await mirrorAgentRunToFirestore(run, { preserveAudit: true });
+  }
+  return run;
+}
+
+function readAgentRunDispatchMetadata(run: AgentRun): AgentRunDispatchMetadata {
+  const metadata = run.metadata;
+  const attemptValue = typeof metadata.dispatchAttempt === 'number'
+    ? metadata.dispatchAttempt
+    : typeof metadata.dispatchAttempt === 'string'
+      ? Number(metadata.dispatchAttempt)
+      : null;
+  return {
+    dispatchId: typeof metadata.dispatchId === 'string' ? metadata.dispatchId : null,
+    attempt: attemptValue !== null && Number.isFinite(attemptValue) ? attemptValue : null,
+    taskName: typeof metadata.dispatchTaskName === 'string' ? metadata.dispatchTaskName : null,
+    queuePath: typeof metadata.dispatchQueuePath === 'string' ? metadata.dispatchQueuePath : null,
+    targetUrl: typeof metadata.dispatchTargetUrl === 'string' ? metadata.dispatchTargetUrl : null,
+  };
 }
 
 export async function getAgentRun(ownerUid: string, runId: string): Promise<AgentRun | null> {

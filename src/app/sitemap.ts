@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { legalPages } from '@/lib/legal/pages';
 
-const CONTENT_LAST_MODIFIED = new Date('2026-05-21T00:00:00.000Z');
+const CONTENT_LAST_MODIFIED = new Date('2026-05-31T00:00:00.000Z');
 const LEGAL_LAST_MODIFIED = new Date('2026-05-19T00:00:00.000Z');
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -21,6 +21,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: `${baseUrl}/guide`,
+      lastModified: CONTENT_LAST_MODIFIED,
+      changeFrequency: 'weekly',
+      priority: 0.75,
+    },
+    {
       url: `${baseUrl}/pricing`,
       lastModified: CONTENT_LAST_MODIFIED,
       changeFrequency: 'monthly',
@@ -31,6 +37,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: CONTENT_LAST_MODIFIED,
       changeFrequency: 'weekly',
       priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/changelog`,
+      lastModified: CONTENT_LAST_MODIFIED,
+      changeFrequency: 'weekly',
+      priority: 0.55,
     },
     {
       url: `${baseUrl}/login`,

@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- feat(public): add Guide and capsule-bound generation contract.
+  Build 2026.05.31.02 adds public `/guide`, `/help`, and `/changelog`
+  coverage, mobile public navigation, concrete Learn anchors for starter
+  capsule deep links, and stronger capsule-to-generation rules for active
+  ContextCapsules, reference capsules, evidence gaps, and AgentRun handoff. It
+  also hardens AgentRun creation/dispatch idempotency with deterministic Cloud
+  Tasks names.
+
 - feat(capsules): install and wire GraphLite advisory graph recall.
   Build 2026.05.31.01 configures local Rust/GraphLite CLI verification
   (`gql-cli` 0.0.1), adds a repeatable `doctor:graphlite` smoke, and

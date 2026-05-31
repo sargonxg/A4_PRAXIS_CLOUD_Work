@@ -14,4 +14,22 @@ describe('/learn ContextCapsule v3 contract', () => {
     expect(source).toContain('forkable and inspectable');
     expect(source).toContain('provenance and review state');
   });
+
+  it('keeps starter deep links and current-versus-roadmap boundaries concrete', () => {
+    for (const anchor of [
+      'id: "sourceability"',
+      'id: "claim-source-alignment"',
+      'id: "role-capsules"',
+      'id: "output-quality"',
+      'id: "thinking-devices"',
+    ]) {
+      expect(source).toContain(anchor);
+    }
+    expect(source).toContain('id={item.id}');
+
+    expect(source).toContain('Use it today');
+    expect(source).toContain('Current PRAXIS stays simple');
+    expect(source).toContain('roadmap lanes when they are not the visible production surface');
+    expect(source).toContain('Home, Capsules, Ask PRAXIS, sources, memos, and receipts');
+  });
 });

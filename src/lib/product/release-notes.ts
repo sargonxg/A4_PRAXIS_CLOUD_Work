@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.05.31.02',
+    version: '6.4.1',
+    date: '2026-05-31',
+    title: 'Guide and capsule-bound generation harden',
+    summary: 'PRAXIS now makes the public Guide reachable, labels current-versus-planned Learn content more clearly, and strengthens the runtime contract that attaches policy capsules to generation and durable agent work.',
+    category: 'runtime',
+    items: [
+      'Added public Guide, Help redirect, and Changelog redirect routes, then exposed Guide in public navigation, sitemap, and mobile marketing links.',
+      'Expanded Learn with deep-link anchors for sourceability, claim-source alignment, role capsules, output quality, and thinking devices so starter capsule references land on concrete guidance.',
+      'Ask and Guide turns now receive an explicit capsule-generation contract that treats the active capsule as governing context, separates reference capsules, labels evidence gaps, and recommends capsule-bound AgentRuns for durable work.',
+      'AgentRun creation and Cloud Tasks dispatch now use idempotency and deterministic task names so duplicate enqueue attempts produce one durable run receipt instead of parallel work.',
+    ],
+  },
+  {
     buildNumber: '2026.05.21.02',
     version: '6.4.1',
     date: '2026-05-21',

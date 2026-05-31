@@ -132,6 +132,12 @@ export function proxy(request: NextRequest) {
   if (pathname === '/app/pricing') {
     return redirectWithSearch(request, nonce, '/pricing');
   }
+  if (pathname === '/privacy') {
+    return redirectWithSearch(request, nonce, '/legal/privacy');
+  }
+  if (pathname === '/terms') {
+    return redirectWithSearch(request, nonce, '/legal/terms');
+  }
   if (pathname === '/tacitus' || pathname.startsWith('/tacitus/')) {
     return addSecurityHeaders(NextResponse.redirect('https://tacitus.me'), nonce);
   }
@@ -335,7 +341,12 @@ export const config = {
     '/',
     '/pricing',
     '/learn',
+    '/guide',
+    '/help',
     '/release-notes',
+    '/changelog',
+    '/privacy',
+    '/terms',
     '/app/:path*',
     '/agents/:path*',
     '/api/health',

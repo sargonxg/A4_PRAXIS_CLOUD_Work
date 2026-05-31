@@ -33,6 +33,7 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
       'Context Capsules',
       'Agentic research',
       'Capsule marketplace',
+      'Guide',
       'Changelog',
       'data-testid="marketing-marketplace-teaser"',
       'data-testid="marketing-pricing-strip"',

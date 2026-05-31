@@ -42,7 +42,7 @@ export default function PricingPage() {
             Monthly plans for one ContextCapsule workspace.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-[color:var(--color-ink)]/70">
-            PRAXIS is priced as a workspace, not as a menu of tool charges. Start with one capsule and upgrade when capsules, sources, and handovers need to move across people.
+            PRAXIS is priced as a workspace, not as a menu of tool charges. Start with one capsule, attach it to Ask PRAXIS, and upgrade when capsules, sources, Guide help, and handovers need to move across people.
           </p>
           <LivingContextRail cells={pricingRailCells} compact className="mt-8" />
         </section>
@@ -107,6 +107,7 @@ function PublicHeader() {
         <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="praxis-link hidden md:inline">Capsules</Link>
         <Link href="/pricing" className="praxis-link hidden md:inline">Pricing</Link>
         <Link href="/learn" className="praxis-link hidden md:inline">Learn</Link>
+        <Link href="/guide" className="praxis-link hidden md:inline">Guide</Link>
         <Link href="/release-notes" className="praxis-link hidden md:inline">Release notes</Link>
         <Link href="/login" className="rounded-full bg-white px-4 py-2 text-[color:var(--color-ink)]">Sign in</Link>
       </nav>

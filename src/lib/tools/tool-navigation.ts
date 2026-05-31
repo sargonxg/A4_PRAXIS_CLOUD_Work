@@ -2,29 +2,29 @@ import { CUSTOMIZABLE_SIDEBAR_TOOLS } from '@/lib/navigation/tool-preferences';
 import { consolidatedToolForLegacyId } from '@/lib/constants/consolidated-tools';
 
 const TOOL_HREF_OVERRIDES: Record<string, string> = {
-  'actor-profiles': '/workbench?tab=context',
-  'alert-center': '/workbench#desk',
-  assistant: '/workbench#research',
-  'brief-builder': '/workbench#draft',
-  'brainstorming-table': '/tools',
-  'context-builder': '/workbench?tab=context',
-  'deep-research': '/workbench#research',
-  compare: '/workbench#research',
-  'info-environment': '/workbench#research',
-  'auto-briefings': '/workbench#draft',
-  scenarios: '/tools',
-  'media-compass': '/workbench#research',
-  'media-roundup': '/workbench#research',
-  team: '/settings',
-  'electoral-risk': '/workbench#desk',
-  'peacebuilding-index': '/workbench#desk',
-  graphops: '/workbench?tab=graph',
-  'red-team-review': '/tools',
-  'report-studio': '/workbench#draft',
-  reports: '/workbench#draft',
-  'situation-intelligence': '/workbench#desk',
-  'sources-library': '/workbench?tab=library',
-  sources: '/workbench?tab=library',
+  'actor-profiles': '/app/capsules',
+  'alert-center': '/app',
+  assistant: '/app?panel=ask',
+  'brief-builder': '/app?panel=memo',
+  'brainstorming-table': '/app?panel=advanced',
+  'context-builder': '/app/capsules',
+  'deep-research': '/app?panel=ask',
+  compare: '/app?panel=ask',
+  'info-environment': '/app?panel=ask',
+  'auto-briefings': '/app?panel=memo',
+  scenarios: '/app?panel=advanced',
+  'media-compass': '/app?panel=ask',
+  'media-roundup': '/app?panel=ask',
+  team: '/app?panel=account',
+  'electoral-risk': '/app',
+  'peacebuilding-index': '/app',
+  graphops: '/app?panel=canvas',
+  'red-team-review': '/app?panel=advanced',
+  'report-studio': '/app?panel=memo',
+  reports: '/app?panel=memo',
+  'situation-intelligence': '/app',
+  'sources-library': '/app?panel=library',
+  sources: '/app?panel=library',
 };
 
 const CONSOLIDATED_TOOL_TAB: Record<string, string> = {
@@ -44,11 +44,15 @@ export function hrefForTool(toolId: string): string {
   if (TOOL_HREF_OVERRIDES[toolId]) return TOOL_HREF_OVERRIDES[toolId];
   const consolidated = consolidatedToolForLegacyId(toolId);
   const tab = consolidated ? CONSOLIDATED_TOOL_TAB[consolidated.id] : null;
-  if (tab === 'context' || tab === 'library' || tab === 'graph') return `/workbench?tab=${tab}`;
-  if (tab) return `/workbench#${tab}`;
-  return CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === toolId)?.href ?? `/${toolId}`;
+  if (tab === 'context') return '/app/capsules';
+  if (tab === 'library') return '/app?panel=library';
+  if (tab === 'graph') return '/app?panel=canvas';
+  if (tab === 'draft') return '/app?panel=memo';
+  if (tab === 'tools') return '/app?panel=advanced';
+  if (tab) return '/app?panel=ask';
+  return CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === toolId)?.href ?? '/app';
 }
 
 export function hrefForSituationSettings(situationId?: string | null): string {
-  return situationId ? `/situations/${situationId}/settings` : '/situations/new';
+  return situationId ? `/app?situationId=${encodeURIComponent(situationId)}&panel=account` : '/app?panel=builder';
 }

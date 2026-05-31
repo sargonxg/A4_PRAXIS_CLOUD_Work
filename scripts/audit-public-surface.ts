@@ -57,6 +57,7 @@ requireAll('marketing home', marketingHome, [
   'Context Capsules',
   'Agentic research',
   'Capsule marketplace',
+  'Guide',
   'data-testid="marketing-marketplace-teaser"',
   'data-testid="marketing-pricing-strip"',
   'Every claim cited',
@@ -121,7 +122,7 @@ requireAll('app shell', appShell, [
   "pathname === '/app'",
 ]);
 
-for (const required of ['/learn', '/pricing', '/release-notes', '/login']) {
+for (const required of ['/learn', '/guide', '/pricing', '/release-notes', '/changelog', '/login']) {
   if (!sitemap.includes(required)) failures.push(`sitemap missing public route: ${required}`);
 }
 

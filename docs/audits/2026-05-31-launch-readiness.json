@@ -1,0 +1,255 @@
+{
+  "generatedAt": "2026-05-31T06:36:16.598Z",
+  "status": "pass",
+  "failures": [],
+  "warnings": [
+    "live header probe skipped; set PRAXIS_LAUNCH_LIVE_HEADERS=1 to enable"
+  ],
+  "checks": [
+    {
+      "id": "package-script",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-route",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-page-privacy",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-link-privacy",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-page-cookies",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-link-cookies",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-page-gdpr",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-link-gdpr",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-page-data-processing",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-link-data-processing",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-page-terms",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-link-terms",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-page-security",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-link-security",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-page-sub-processors",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-link-sub-processors",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-page-data-retention",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-link-data-retention",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "legal-header-matcher",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-matcher-/",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-matcher-/pricing",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-matcher-/learn",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-matcher-/guide",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-matcher-/release-notes",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-matcher-/changelog",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-matcher-/api/health",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-matcher-/api/health/:path*",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-Content-Security-Policy",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-Strict-Transport-Security",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-X-Frame-Options",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-X-Content-Type-Options",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-Referrer-Policy",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "header-Permissions-Policy",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "health-route-header-Content-Security-Policy",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "health-route-header-Strict-Transport-Security",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "health-route-header-X-Frame-Options",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "health-route-header-X-Content-Type-Options",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "health-route-header-Referrer-Policy",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "health-route-header-Permissions-Policy",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "public-env-exposure",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "user-api-key-response-minimization",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "security-doc-Do not commit secrets",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "security-doc-User API keys are encrypted",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "security-doc-withCalibration",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "security-doc-Incident Response",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "compliance-doc-GDPR",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "compliance-doc-Sub-processor inventory",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "compliance-doc-Data Processing Agreement",
+      "status": "pass",
+      "evidence": "contract satisfied"
+    },
+    {
+      "id": "live-header-probe",
+      "status": "warn",
+      "evidence": "live header probe skipped; set PRAXIS_LAUNCH_LIVE_HEADERS=1 to enable"
+    }
+  ]
+}

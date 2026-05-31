@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-31T04:42:03.124Z",
+  "generatedAt": "2026-05-31T05:50:57.928Z",
   "mode": "read-only",
   "architecture": {
     "canonicalStateOwner": "PRAXIS",
@@ -363,7 +363,7 @@
   "runtimeHealth": {
     "status": "degraded",
     "summary": "Some systems degraded",
-    "checkedAt": "2026-05-31T04:42:03.122Z",
+    "checkedAt": "2026-05-31T05:50:57.924Z",
     "debugHref": "/app/settings?tab=system",
     "build": {
       "source": "unknown",
@@ -379,7 +379,7 @@
         "id": "frontend",
         "label": "Frontend runtime",
         "status": "ok",
-        "latencyMs": 184
+        "latencyMs": 158
       },
       {
         "id": "firestore",
@@ -403,7 +403,7 @@
         "id": "agent_queue",
         "label": "Agent task queue",
         "status": "down",
-        "latencyMs": 183,
+        "latencyMs": 157,
         "detail": "projects/praxisbytacitus/locations/us-central1/queues/agent-runs",
         "repairAction": "Create or grant access to projects/praxisbytacitus/locations/us-central1/queues/agent-runs."
       },

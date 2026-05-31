@@ -31,9 +31,9 @@ describe('tool preferences navigation helpers', () => {
     const desk = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'dashboard');
     const graph = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'graphops');
     const research = CUSTOMIZABLE_SIDEBAR_TOOLS.find((tool) => tool.toolId === 'source-scout');
-    expect(desk?.href).toBe('/desk');
-    expect(graph?.href).toBe('/graph');
-    expect(research?.href).toBe('/research');
+    expect(desk?.href).toBe('/app');
+    expect(graph?.href).toBe('/app?panel=canvas');
+    expect(research?.href).toBe('/app?panel=ask');
   });
 
   it('normalizes legacy recommendation ids before applying preferences', () => {

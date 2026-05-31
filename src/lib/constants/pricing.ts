@@ -21,7 +21,8 @@ export const PRICING_TIERS: PricingTier[] = [
     audience: 'Solo researchers and policy workers evaluating PRAXIS',
     features: [
       '1 active ContextCapsule',
-      'Ask PRAXIS with capsule readiness visible',
+      'Ask PRAXIS with active-capsule grounding visible',
+      'Guide assistant for product and capsule-use questions',
       'Starter sourceability and memo workflow',
       'Context Core Lite creation',
       'No credit card, no commitment',
@@ -39,7 +40,7 @@ export const PRICING_TIERS: PricingTier[] = [
     features: [
       'Unlimited draft capsules, 10 active capsules',
       'User Core and Situation Core management',
-      'Sourceability, grounded research, and memo drafting',
+      'Capsule-bound Ask PRAXIS, sourceability, grounded research, and memo drafting',
       'Capsule fork, lock, lineage, and handover',
       'Memo Studio exports with provenance',
       'Email support',
@@ -57,8 +58,8 @@ export const PRICING_TIERS: PricingTier[] = [
       'Everything in Practitioner',
       'Shared ContextCapsule library',
       'Shared situation workspaces and roles',
-      'Review gates and audit receipts',
-      'Scheduled brief and watchlist preparation',
+      'Review gates, sourceability status, and audit receipts',
+      'Scheduled brief and watchlist preparation when configured',
       'Team-ready handover workflows',
       'Priority support',
     ],
@@ -76,7 +77,7 @@ export const PRICING_TIERS: PricingTier[] = [
       'Everything in Team',
       'SSO / SAML and audit controls',
       'Custom model and data residency options',
-      'Private GCP, graph, and database architecture',
+      'Private GCP, graph, and database architecture when configured',
       'Private GCP deployment support',
       'Security review and procurement support',
       'Dedicated account team',
@@ -87,7 +88,7 @@ export const PRICING_TIERS: PricingTier[] = [
 export const PLAN_USAGE_BUCKETS = [
   {
     name: 'Capsule Work',
-    description: 'ContextCapsule creation, User and Situation cores, active stacks, and capsule handover.',
+    description: 'ContextCapsule creation, User and Situation cores, active stacks, Guide help, and capsule handover.',
   },
   {
     name: 'Sourceability',
@@ -95,7 +96,7 @@ export const PLAN_USAGE_BUCKETS = [
   },
   {
     name: 'Analysis Tools',
-    description: 'Timeline, graph/power map, ACH, scenario review, red-team review, and capsule-aware research.',
+    description: 'Timeline, graph/power map, ACH, scenario review, red-team review, and capsule-aware research agents.',
   },
   {
     name: 'Memo Studio',
