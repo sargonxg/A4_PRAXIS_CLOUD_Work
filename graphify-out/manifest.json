@@ -32,8 +32,8 @@
     "hash": "0f92e89e86098f978ca0058d615e639e"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\vitest.config.ts": {
-    "mtime": 1780075185.2898,
-    "hash": "e64f7528e70ebbe5aefa6307283680c4"
+    "mtime": 1780201627.3659966,
+    "hash": "0576e1b0479cca43c885c7d2e5a0cfe6"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\vitest.setup.ts": {
     "mtime": 1780075185.2911596,
@@ -5992,8 +5992,8 @@
     "hash": "224ef591a97b99d337c083a4fbb862b1"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\STATUS.md": {
-    "mtime": 1780199628.5108206,
-    "hash": "f2d3eeb42e25f533356cba223dbc665f"
+    "mtime": 1780201498.248202,
+    "hash": "2e2e07dae2824d212745ac982299e516"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\TESTING.md": {
     "mtime": 1780075183.4558003,
@@ -6396,7 +6396,7 @@
     "hash": "04b260734365a973b336e7c7e766ac0c"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-19-capsule-depth-audit.md": {
-    "mtime": 1780200338.9565818,
+    "mtime": 1780202074.9210656,
     "hash": "28aa330316ab830f4807eb886c7eb944"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-19-capsule-discussion-filter-diagnostic.md": {
@@ -6520,7 +6520,7 @@
     "hash": "ebcf57927485517c442e6f87063c30aa"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-25-capsule-consolidation-audit.md": {
-    "mtime": 1780200340.6033225,
+    "mtime": 1780202077.1019287,
     "hash": "321575686597eef18ce9fa6efd0d8248"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-25-DEEP_PRESHIP_CHECKLIST.md": {
@@ -6540,11 +6540,11 @@
     "hash": "a2ec40efb6a98479979c18b098c8adac"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-30-capsule-backfill-readiness-audit.md": {
-    "mtime": 1780200352.5037622,
+    "mtime": 1780202089.1540835,
     "hash": "b946df52ca5155e58775e8569e3ee743"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-30-capsule-research-dossiers-audit.md": {
-    "mtime": 1780200350.7194417,
+    "mtime": 1780202087.936373,
     "hash": "456f27bb3c810d740c156c34e6afde99"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-30-DEEP_PRESHIP_CHECKLIST.md": {
@@ -6568,11 +6568,11 @@
     "hash": "e1d3841444a56c0ad331fa7fe29ffd62"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-31-capsule-graphlite-projections-audit.md": {
-    "mtime": 1780200354.7508018,
+    "mtime": 1780202090.7328732,
     "hash": "89354ecb4513db704ef7400f69bb7b54"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-31-DEEP_PRESHIP_CHECKLIST.md": {
-    "mtime": 1780200383.5815182,
+    "mtime": 1780202125.1646106,
     "hash": "80fccd29c180b080eb2c212a621ba458"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\2026-05-31-runtime-data-plane-diagnostic.md": {
@@ -6632,7 +6632,7 @@
     "hash": "1a0bca9c8e7abd35864428657ff895d7"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\tool-contracts-2026-05-31.md": {
-    "mtime": 1780200374.743116,
+    "mtime": 1780202113.4826663,
     "hash": "f18e2e9b6adc13725a91f313f8215f72"
   },
   "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work\\docs\\audits\\agentic-research-evals\\2026-05-20-praxis-vs-generic-llm.md": {

@@ -1,6 +1,6 @@
 # PRAXIS Runtime Data Plane Diagnostic
 
-Generated: 2026-05-31T03:38:26.579Z
+Generated: 2026-05-31T04:42:03.124Z
 Mode: read-only
 
 ## Architecture
