@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "catalogVersion": "2026-05-30-capsule-consolidation-expert-grade-v15",
+  "catalogVersion": "2026-05-30-research-dossier-firestore-proof-v16",
   "total": 205,
   "counts": {
     "situation": 85,
@@ -10,8 +10,8 @@
   },
   "sourceRegistryCount": 27,
   "prompt": {
-    "averageLength": 12000,
-    "maxLength": 15174,
+    "averageLength": 9292,
+    "maxLength": 11633,
     "warnTarget": 12000,
     "hardCap": 16000
   },

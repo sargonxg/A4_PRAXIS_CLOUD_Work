@@ -1,5 +1,23 @@
 # PRAXIS — STATUS
 
+## 2026-05-30 — Capsule Research-Dossier Audit Hardening
+
+Current audit checkpoint:
+
+- Fixed the capsule consolidation gate for the current
+  `2026-05-30-research-dossier-firestore-proof-v16` starter catalog instead of
+  the older v15 consolidation label.
+- Reduced the default starter prompt projection to an average of 9,292
+  characters while preserving full research dossiers, claim ledgers, human
+  workflow examples, source refresh dockets, graph seeds, and review gates in
+  the capsule snapshot/data model.
+- Added/validated capsule research-dossier and backfill-readiness audits in the
+  full `audit:gate` path.
+- Verification: focused capsule/workbench Vitest contracts, full
+  `npx vitest run` (`274` files, `1181` tests), `npm run lint`, and
+  `npm run audit:gate` all pass locally. GCP audit has zero hard failures and
+  one soft runtime-proof warning tied to local shell env, not deployed health.
+
 ## 2026-05-30 — Ask PRAXIS Context Chat Polish
 
 Current UX checkpoint:

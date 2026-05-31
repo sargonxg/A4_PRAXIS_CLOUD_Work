@@ -18,6 +18,10 @@ const expectedCounts = {
   output: 35,
   user: 13,
 };
+const acceptedPostConsolidationCatalogWaves = [
+  /capsule-consolidation/,
+  /research-dossier-firestore-proof/,
+];
 
 const counts = CAPSULE_STARTER_DEFINITIONS.reduce<Record<string, number>>((acc, starter) => {
   acc[starter.category] = (acc[starter.category] ?? 0) + 1;
@@ -28,7 +32,10 @@ check(CAPSULE_STARTER_DEFINITIONS.length === 205, `expected 205 starters, found 
 for (const [category, count] of Object.entries(expectedCounts)) {
   check((counts[category] ?? 0) === count, `expected ${count} ${category} starters, found ${counts[category] ?? 0}`);
 }
-check(/capsule-consolidation/.test(CAPSULE_STARTER_CATALOG_VERSION), `catalog version must identify consolidation wave: ${CAPSULE_STARTER_CATALOG_VERSION}`);
+check(
+  acceptedPostConsolidationCatalogWaves.some((wave) => wave.test(CAPSULE_STARTER_CATALOG_VERSION)),
+  `catalog version must identify a post-consolidation wave: ${CAPSULE_STARTER_CATALOG_VERSION}`,
+);
 check(Object.keys(CAPSULE_STARTER_SOURCE_REGISTRY).length >= 10, 'source registry should contain shared external source metadata');
 
 const starterIds = new Set<string>();

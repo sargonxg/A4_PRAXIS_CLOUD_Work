@@ -102,6 +102,21 @@ async function samplePath(input: {
     case 'users/{uid}/capsules/{capsuleId}/versions/{version}':
       if (!capsuleId) return false;
       return !(await db.collection('users').doc(uid).collection('capsules').doc(capsuleId).collection('versions').limit(1).get()).empty;
+    case 'users/{uid}/capsules/{capsuleId}/sources/{sourceId}':
+      if (!capsuleId) return false;
+      return !(await db.collection('users').doc(uid).collection('capsules').doc(capsuleId).collection('sources').limit(1).get()).empty;
+    case 'users/{uid}/capsules/{capsuleId}/researchDossiers/starter-dossier':
+      if (!capsuleId) return false;
+      return (await db.collection('users').doc(uid).collection('capsules').doc(capsuleId).collection('researchDossiers').doc('starter-dossier').get()).exists;
+    case 'users/{uid}/capsules/{capsuleId}/claimLedgers/starter-claims':
+      if (!capsuleId) return false;
+      return (await db.collection('users').doc(uid).collection('capsules').doc(capsuleId).collection('claimLedgers').doc('starter-claims').get()).exists;
+    case 'users/{uid}/capsules/{capsuleId}/humanWorkflowExamples/starter-workflow':
+      if (!capsuleId) return false;
+      return (await db.collection('users').doc(uid).collection('capsules').doc(capsuleId).collection('humanWorkflowExamples').doc('starter-workflow').get()).exists;
+    case 'users/{uid}/capsules/{capsuleId}/sourceRefreshDockets/starter-refresh':
+      if (!capsuleId) return false;
+      return (await db.collection('users').doc(uid).collection('capsules').doc(capsuleId).collection('sourceRefreshDockets').doc('starter-refresh').get()).exists;
     case 'users/{uid}/capsules/{capsuleId}/ontologyGraphs/starter-seed':
       if (!capsuleId) return false;
       return (await db.collection('users').doc(uid).collection('capsules').doc(capsuleId).collection('ontologyGraphs').doc('starter-seed').get()).exists;

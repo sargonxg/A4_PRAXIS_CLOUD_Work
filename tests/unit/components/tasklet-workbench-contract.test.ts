@@ -1028,6 +1028,11 @@ describe('Tasklet PRAXIS workbench contract', () => {
       'Purpose',
       'Source pack',
       'Starter excerpts',
+      'Research dossier',
+      'Claim ledger',
+      'Evidence gaps',
+      'Next human actions',
+      'Source refresh docket',
       'Core refs',
       'Tools/Thinking Devices',
       'Recommended tools',
@@ -1046,5 +1051,31 @@ describe('Tasklet PRAXIS workbench contract', () => {
     ]) {
       expect(inspectorSheetSource).toContain(expected);
     }
+  });
+
+  it('surfaces starter dossier, graph counts, freshness, and vNext proof without new navigation', () => {
+    for (const expected of [
+      'starterResearchArtifacts',
+      'capsuleGraphSeedCounts',
+      'capsuleDossierStatus',
+      'capsuleFreshnessStatus',
+      'Updated to catalog vNext',
+      'Dossier',
+      'Graph seed',
+      'starter-refresh',
+      'sourceSpine',
+      'knownEvidenceGaps',
+      'nextHumanActions',
+      'graphNodeCount',
+      'graphEdgeCount',
+      'Promotion status',
+      'Source grounding',
+      'Sample nodes',
+      'Sample edges',
+    ]) {
+      expect(source).toContain(expected);
+    }
+    expect(primaryNavSource).not.toContain('research-dossier');
+    expect(primaryNavSource).not.toContain('capsule-graph');
   });
 });

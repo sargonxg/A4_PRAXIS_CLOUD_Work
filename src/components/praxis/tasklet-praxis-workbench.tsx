@@ -93,6 +93,7 @@ import {
 } from '@/lib/product/cockpit-composition';
 import {
   CAPSULE_STARTER_DEFINITIONS,
+  CAPSULE_STARTER_CATALOG_VERSION,
   CAPSULE_CONNECTOR_REGISTRY,
   CONTEXT_CAPSULE_V3_PRODUCT_SECTIONS,
   CONTEXT_CAPSULE_V3_SHELVES,
@@ -112,6 +113,7 @@ import {
   type CapsuleQualityAuditResult,
   type CapsuleStarterCategory,
   type CapsuleStarterDefinition,
+  type CapsuleStarterSnapshot,
   type CapsuleConnectorDefinition,
   type CapsuleTaxonomyStats,
   type PolicyTeamCategory,
@@ -376,6 +378,7 @@ type PraxisCapsuleSummary = {
     reviewRequired?: boolean;
   } | null;
   searchMatchReason?: string | null;
+  starterSnapshot?: CapsuleStarterSnapshot | null;
 };
 type CapsuleLibraryPayload = {
   capsules: PraxisCapsuleSummary[];
@@ -6196,12 +6199,52 @@ function starterDefinitionToCapsuleSummary(starter: CapsuleStarterDefinition): P
       score: starter.readinessStars * 20,
       label: 'Starter capsule',
     },
+    starterSnapshot: {
+      ...starter,
+      catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+    },
   };
 }
 
 function starterDefinitionForCapsule(capsule: PraxisCapsuleSummary | null): CapsuleStarterDefinition | null {
   if (!capsule) return null;
-  return CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === capsule.capsuleId) ?? null;
+  return CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === capsule.capsuleId || starter.starterId === capsule.starterSnapshot?.starterId) ?? null;
+}
+
+function starterResearchArtifacts(capsule: PraxisCapsuleSummary | null) {
+  const starter = starterDefinitionForCapsule(capsule);
+  const snapshot = capsule?.starterSnapshot ?? null;
+  return {
+    dossier: starter?.researchDossier ?? snapshot?.researchDossier ?? null,
+    claimLedger: starter?.claimLedgerSeeds ?? snapshot?.claimLedgerSeeds ?? null,
+    workflow: starter?.humanWorkflowExample ?? snapshot?.humanWorkflowExample ?? null,
+    refreshDocket: starter?.sourceRefreshDocket ?? snapshot?.sourceRefreshDocket ?? null,
+    ontologyOverlay: starter?.ontologyOverlay ?? snapshot?.ontologyOverlay ?? null,
+    sourceSpine: starter?.researchDossier.sourceSpine ?? snapshot?.researchDossier?.sourceSpine ?? [],
+    knownEvidenceGaps: starter?.researchDossier.knownEvidenceGaps ?? snapshot?.researchDossier?.knownEvidenceGaps ?? [],
+    nextHumanActions: starter?.researchDossier.nextHumanActions ?? snapshot?.researchDossier?.nextHumanActions ?? [],
+  };
+}
+
+function capsuleGraphSeedCounts(capsule: PraxisCapsuleSummary | null) {
+  const ontologyOverlay = starterResearchArtifacts(capsule).ontologyOverlay;
+  const graphNodeCount = ontologyOverlay?.graphSeed.nodeTemplates.length ?? 0;
+  const graphEdgeCount = ontologyOverlay?.graphSeed.edgeTemplates.length ?? 0;
+  return { graphNodeCount, graphEdgeCount };
+}
+
+function capsuleDossierStatus(capsule: PraxisCapsuleSummary | null): string {
+  const artifacts = starterResearchArtifacts(capsule);
+  if (!artifacts.dossier) return 'missing dossier';
+  if (artifacts.sourceSpine.length >= 4 && artifacts.claimLedger) return 'dossier ready';
+  return 'dossier needs review';
+}
+
+function capsuleFreshnessStatus(capsule: PraxisCapsuleSummary | null): string {
+  const artifacts = starterResearchArtifacts(capsule);
+  if (artifacts.refreshDocket) return artifacts.refreshDocket.status;
+  const starter = starterDefinitionForCapsule(capsule);
+  return starter?.curationProfile.sourceRefreshStatus.status ?? 'freshness unknown';
 }
 
 function isHumanGatedPolicyJudgmentCapsule(capsule: PraxisCapsuleSummary): boolean {
@@ -6510,6 +6553,9 @@ function capsuleGovernanceBadges(capsule: PraxisCapsuleSummary): Array<{ label: 
     ?? 'Review card clear';
   const graphStatus = capsule.coreRefs.graphCoreId ? `Approved graph ${capsule.coreRefs.graphCoreId}` : 'Graph proposal pending';
   const sourceability = audit ? `${Math.round(audit.scores.sourceability * 100)} sourceability` : 'Review card pending';
+  const graphSeedCounts = capsuleGraphSeedCounts(capsule);
+  const dossierStatus = capsuleDossierStatus(capsule);
+  const freshnessStatus = capsuleFreshnessStatus(capsule);
   return [
     { label: 'Human Gate', value: humanGateStatusLabel(humanGateStatus), tone: humanGateStatus === 'human_gated' || humanGateStatus === 'expert_pick_human_gated' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : humanGateStatus === 'not_required' ? 'border-slate-200 bg-slate-50 text-slate-700' : 'border-amber-200 bg-amber-50 text-amber-800' },
     ...humanGateBadges.map((badge) => ({
@@ -6517,6 +6563,9 @@ function capsuleGovernanceBadges(capsule: PraxisCapsuleSummary): Array<{ label: 
       value: badge.detail,
       tone: humanGateBadgeTone(badge.tone),
     })),
+    { label: 'Dossier', value: dossierStatus, tone: 'border-cyan-200 bg-cyan-50 text-cyan-800' },
+    { label: 'Freshness', value: freshnessStatus, tone: freshnessStatus === 'verified' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800' },
+    { label: 'Graph seed', value: `${graphSeedCounts.graphNodeCount} nodes / ${graphSeedCounts.graphEdgeCount} edges`, tone: 'border-violet-200 bg-violet-50 text-violet-800' },
     { label: 'Gate', value: reviewGate, tone: 'border-teal-200 bg-teal-50 text-teal-800' },
     { label: 'Ontology', value: ontology, tone: 'border-sky-200 bg-sky-50 text-sky-800' },
     { label: 'Advisory', value: 'Firestore canonical; graph and memory enrichment advisory', tone: 'border-slate-200 bg-slate-50 text-slate-700' },
@@ -6850,8 +6899,11 @@ function publicCapsuleMatchesPolicyTeam(capsule: (typeof COCKPIT_CAPSULE_LIBRARY
 }
 
 function capsuleCounts(capsule: PraxisCapsuleSummary) {
+  const starter = starterDefinitionForCapsule(capsule);
+  const starterSourceIds = starter?.sourcePack.map((source) => source.id) ?? [];
+  const snapshotSourceIds = capsule.starterSnapshot?.sourcePack?.map((source) => source.id) ?? [];
   return {
-    sources: countUniqueCoreRefs(capsule.coreRefs.sourceCoreIds),
+    sources: countUniqueCoreRefs([...(capsule.coreRefs.sourceCoreIds ?? []), ...starterSourceIds, ...snapshotSourceIds]),
     documents: countUniqueCoreRefs(capsule.coreRefs.documentCoreIds),
     tools: countUniqueCoreRefs(capsule.coreRefs.toolCoreIds),
     outputs: countUniqueCoreRefs([...(capsule.coreRefs.outputCoreIds ?? []), ...(capsule.coreRefs.productCoreIds ?? [])]),
@@ -8494,6 +8546,14 @@ function CapsuleCard({
   const purposeLine = richProfile?.purpose ?? meta.summary;
   const bestNextAction = richProfile?.nextIdeas[0] ?? capsule.health?.warnings?.[0] ?? 'Inspect source gaps before relying on this capsule.';
   const usefulness = buildCapsuleUsefulnessRating(capsule, mutable);
+  const researchArtifacts = starterResearchArtifacts(capsule);
+  const graphSeedCounts = capsuleGraphSeedCounts(capsule);
+  const dossierStatus = capsuleDossierStatus(capsule);
+  const freshnessStatus = capsuleFreshnessStatus(capsule);
+  const catalogUpdated = (
+    meta.starterDefinition?.researchDossier.catalogVersion === CAPSULE_STARTER_CATALOG_VERSION
+    || capsule.starterSnapshot?.researchDossier?.catalogVersion === CAPSULE_STARTER_CATALOG_VERSION
+  );
   return (
     <article
       ref={setNodeRef}
@@ -8554,6 +8614,7 @@ function CapsuleCard({
           <span>{policyTeamChip}</span>
           <span>quality {v2Quality.score}/100</span>
           <span>{counts.documents + counts.sources} source ref{counts.documents + counts.sources === 1 ? '' : 's'}</span>
+          <span>{graphSeedCounts.graphNodeCount}/{graphSeedCounts.graphEdgeCount} graph seed</span>
           <span>{unsupportedClaims} unsupported</span>
           {counts.outputs ? <span>{counts.outputs} output{counts.outputs === 1 ? '' : 's'}</span> : null}
         </span>
@@ -8561,8 +8622,20 @@ function CapsuleCard({
           <span className="rounded-md bg-white px-2 py-1">Gate {humanGateStatusLabel(humanGateStatus)}</span>
           <span className="rounded-md bg-white px-2 py-1">{v2Capsule.agentPermissions.canDraft ? 'agent-operable' : 'agent-blocked'}</span>
           <span className="rounded-md bg-white px-2 py-1">Fork {humanizeIdentifier(v2Capsule.forkability)}</span>
-          <span className="rounded-md bg-white px-2 py-1">Freshness {v2Capsule.expiry ? 'expires' : 'review'}</span>
+          <span className="rounded-md bg-white px-2 py-1">Freshness {freshnessStatus}</span>
+          <span className="rounded-md bg-white px-2 py-1">Dossier {dossierStatus}</span>
+          <span className="rounded-md bg-white px-2 py-1">Graph seed {graphSeedCounts.graphNodeCount}/{graphSeedCounts.graphEdgeCount}</span>
         </span>
+        {catalogUpdated ? (
+          <span className="mt-2 inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-2 py-1 text-[11px] font-semibold text-cyan-800">
+            Updated to catalog vNext
+          </span>
+        ) : null}
+        {researchArtifacts.dossier ? (
+          <span className="mt-2 block line-clamp-1 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-semibold text-slate-700">
+            Research dossier: {researchArtifacts.sourceSpine.length} sources / {researchArtifacts.knownEvidenceGaps.length} evidence gaps
+          </span>
+        ) : null}
         <span className="mt-3 block line-clamp-2 text-sm leading-6 text-slate-600">{purposeLine}</span>
         <span className="mt-2 block line-clamp-1 rounded-md bg-white px-2 py-1.5 text-[11px] font-semibold text-slate-700">
           Best next action: {bestNextAction}
@@ -9729,6 +9802,14 @@ function CapsuleInspectorSheet({
   const deviceProfile = meta?.starterDefinition?.deviceProfile ?? null;
   const humanReview = meta?.starterDefinition?.humanReview ?? null;
   const ontologyOverlay = meta?.starterDefinition?.ontologyOverlay ?? null;
+  const researchArtifacts = starterResearchArtifacts(capsule);
+  const researchDossier = researchArtifacts.dossier;
+  const claimLedger = researchArtifacts.claimLedger;
+  const humanWorkflow = researchArtifacts.workflow;
+  const sourceRefreshDocket = researchArtifacts.refreshDocket;
+  const graphSeedCounts = capsuleGraphSeedCounts(capsule);
+  const dossierStatus = capsuleDossierStatus(capsule);
+  const freshnessStatus = capsuleFreshnessStatus(capsule);
   const compatible = meta?.starterDefinition?.combinesWellWith
     .map((id) => CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === id)?.label ?? id)
     .slice(0, 4) ?? [];
@@ -9878,8 +9959,11 @@ function CapsuleInspectorSheet({
             <InspectorRef label="Quality audit" value={qualityBreakdownSummary} />
             <InspectorRef label="Capsule class" value={v2Capsule ? humanizeIdentifier(v2Capsule.capsuleClass) : null} />
             <InspectorRef label="Review state" value={v2Capsule ? humanizeIdentifier(v2Capsule.reviewState.status) : null} />
-            <InspectorRef label="Human gate" value={humanGateStatusLabel(humanGateStatus)} />
-            <InspectorRef label="Unsupported claims" value={String(unsupportedClaims)} />
+             <InspectorRef label="Human gate" value={humanGateStatusLabel(humanGateStatus)} />
+             <InspectorRef label="Dossier" value={dossierStatus} />
+             <InspectorRef label="Freshness" value={freshnessStatus} />
+             <InspectorRef label="Graph seed" value={`${graphSeedCounts.graphNodeCount} nodes / ${graphSeedCounts.graphEdgeCount} edges`} />
+             <InspectorRef label="Unsupported claims" value={String(unsupportedClaims)} />
             <InspectorRef label="ContextChain health" value={chainHealth ? `${chainHealth.chainStrength} / ${chainHealth.safeUseLabel}` : null} />
             <InspectorRef label="Forkability" value={v2Capsule ? humanizeIdentifier(v2Capsule.forkability) : null} />
             <InspectorRef label="Review gate" value={reviewGate} />
@@ -10105,6 +10189,38 @@ function CapsuleInspectorSheet({
             </div>
           </form>
         ) : null}
+        {researchDossier ? (
+          <div className="mt-5 space-y-2" data-testid="capsule-research-dossier-panel">
+            <InspectorTextSection label="Research dossier" detail={[
+              researchDossier.humanJob,
+              researchDossier.realWorldScenario,
+              researchDossier.howHumanUsesCapsule,
+              `Status: ${dossierStatus}. Updated to catalog vNext: ${researchDossier.catalogVersion === CAPSULE_STARTER_CATALOG_VERSION}.`,
+            ].join(' ')} />
+            <InspectorTextSection label="Sources" detail={researchDossier.sourceSpine.map((source) => `${source.sourceId} (${source.role}, ${source.publisher}, ${source.date}, tier ${source.reliabilityTier})`).join(' ')} />
+            {humanWorkflow ? <InspectorTextSection label="Real-world workflow" detail={[
+              humanWorkflow.scenario,
+              `Steps: ${humanWorkflow.steps.join(' ')}`,
+              `Output path: ${humanWorkflow.outputPath}.`,
+              `Gate: ${humanWorkflow.humanReviewGate}.`,
+            ].join(' ')} /> : null}
+            <InspectorTextSection label="Evidence gaps" detail={researchArtifacts.knownEvidenceGaps.join(' ')} />
+            {claimLedger ? <InspectorTextSection label="Claim ledger" detail={[
+              `Supported: ${claimLedger.supported.map((claim) => claim.claim).join(' ')}`,
+              `Weak: ${claimLedger.weak.map((claim) => claim.claim).join(' ')}`,
+              `Missing: ${claimLedger.missing.map((claim) => claim.claim).join(' ')}`,
+              `Stale: ${claimLedger.stale.map((claim) => claim.claim).join(' ')}`,
+              `Review gate: ${claimLedger.reviewGate}`,
+            ].join(' ')} /> : null}
+            <InspectorTextSection label="Next human actions" detail={researchArtifacts.nextHumanActions.join(' ')} />
+            {sourceRefreshDocket ? <InspectorTextSection label="Source refresh docket" detail={[
+              `${sourceRefreshDocket.docketId || 'starter-refresh'}: ${sourceRefreshDocket.status}.`,
+              `Cadence: ${sourceRefreshDocket.cadence}`,
+              `Sources: ${sourceRefreshDocket.sourceIds.join(', ')}`,
+              `Actions: ${sourceRefreshDocket.nextRepairActions.join(' ')}`,
+            ].join(' ')} /> : null}
+          </div>
+        ) : null}
         {richProfile ? (
           <div className="mt-5 space-y-2" data-testid="capsule-rich-profile">
             <InspectorTextSection label="Purpose" detail={`${richProfile.purpose} ${richProfile.userJob}`} />
@@ -10154,13 +10270,20 @@ function CapsuleInspectorSheet({
               `Overlay ${ontologyOverlay.overlayId}.`,
               `Base ontologies: ${ontologyOverlay.baseOntologyIds.join(', ')}.`,
               `Work ontology: ${ontologyOverlay.workOntologyId}.`,
+              `Graph seed counts: nodes=${graphSeedCounts.graphNodeCount}, edges=${graphSeedCounts.graphEdgeCount}.`,
               `Node hints: ${ontologyOverlay.ontologyNodeHints.slice(0, 8).join(', ')}.`,
+              `Source grounding: ${ontologyOverlay.sourceAffinity.slice(0, 8).join(', ')}.`,
+              `Promotion status: proposed only; Firestore ContextCapsules stay canonical until a human review-card approval promotes graph or memory candidates.`,
               `Cognee: ${ontologyOverlay.cognee.mode}, ${ontologyOverlay.cognee.datasetScope}, max candidate confidence ${ontologyOverlay.cognee.maxCandidateConfidence}.`,
             ].join(' ')} /> : null}
             {ontologyOverlay ? <InspectorTextSection label="Embedded graph seed" detail={[
               ontologyOverlay.graphSeed.proposalLabel,
               `Nodes: ${ontologyOverlay.graphNodeTypes.join(', ')}.`,
               `Edges: ${ontologyOverlay.graphEdgeTypes.join(', ')}.`,
+              `Sample nodes: ${ontologyOverlay.graphSeed.nodeTemplates.slice(0, 3).join(' | ')}.`,
+              `Sample edges: ${ontologyOverlay.graphSeed.edgeTemplates.slice(0, 3).join(' | ')}.`,
+              `Source grounding: ${ontologyOverlay.sourceAffinity.slice(0, 8).join(', ')}.`,
+              `Promotion status: proposal-only, review-gated, non-canonical.`,
               `Gate: ${ontologyOverlay.graphSeed.reviewGate}`,
             ].join(' ')} /> : null}
             {humanReview ? <InspectorTextSection label="Human review" detail={[

@@ -608,6 +608,30 @@ describe('capsule service', () => {
       humanReviewGate: expect.stringMatching(/review|approval|human/i),
       sourcePackSummary: expect.stringMatching(/federal|NIST|OMB/i),
     });
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-ai-governance-procurement')?.starterSnapshot?.researchDossier).toMatchObject({
+      dossierId: 'starter-situation-ai-governance-procurement-starter-dossier',
+      status: 'starter-research-dossier',
+      sourceSpine: expect.arrayContaining([
+        expect.objectContaining({
+          role: 'primary-authoritative',
+          publisher: expect.any(String),
+          nonAffiliationSafe: true,
+        }),
+      ]),
+    });
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-ai-governance-procurement')?.starterSnapshot?.claimLedgerSeeds).toMatchObject({
+      ledgerId: 'starter-situation-ai-governance-procurement-starter-claims',
+      supported: expect.any(Array),
+      weak: expect.any(Array),
+      missing: expect.any(Array),
+      stale: expect.any(Array),
+    });
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-ai-governance-procurement')?.starterSnapshot?.humanWorkflowExample?.steps.length).toBeGreaterThanOrEqual(3);
+    expect(capsules.find((capsule) => capsule.capsuleId === 'starter-situation-ai-governance-procurement')?.starterSnapshot?.sourceRefreshDocket).toMatchObject({
+      docketId: 'starter-refresh',
+      sourceIds: expect.arrayContaining(['nist-ai-rmf']),
+      humanReviewRequired: true,
+    });
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-mediator-batna-zopa-ripeness-map')?.starterSnapshot?.deviceProfile?.deviceKind).toBe('mediator-ripeness-map');
     const sudanStarter = capsules.find((capsule) => capsule.capsuleId === 'starter-situation-sudan-darfur-atrocity-access');
     expect(sudanStarter?.starterSnapshot?.sourcePack?.some((source) => source.id === 'un-sudan-atrocity-famine-risk')).toBe(true);
@@ -639,10 +663,42 @@ describe('capsule service', () => {
       nodeCount: expect.any(Number),
       edgeCount: expect.any(Number),
     });
-    expect(aiGovernanceOntologyGraph?.nodeCount).toBeGreaterThanOrEqual(50);
-    expect(aiGovernanceOntologyGraph?.edgeCount).toBeGreaterThanOrEqual(50);
-    expect((aiGovernanceOntologyGraph?.nodeTemplates as unknown[])?.length).toBeGreaterThanOrEqual(50);
-    expect((aiGovernanceOntologyGraph?.edgeTemplates as unknown[])?.length).toBeGreaterThanOrEqual(50);
+    expect(aiGovernanceOntologyGraph?.nodeCount).toBeGreaterThanOrEqual(64);
+    expect(aiGovernanceOntologyGraph?.edgeCount).toBeGreaterThanOrEqual(64);
+    expect((aiGovernanceOntologyGraph?.nodeTemplates as unknown[])?.length).toBeGreaterThanOrEqual(64);
+    expect((aiGovernanceOntologyGraph?.edgeTemplates as unknown[])?.length).toBeGreaterThanOrEqual(64);
+    expect(db.data.get('users/u1/capsules/starter-situation-ai-governance-procurement/researchDossiers/starter-dossier')).toMatchObject({
+      dossierId: 'starter-situation-ai-governance-procurement-starter-dossier',
+      capsuleId: 'starter-situation-ai-governance-procurement',
+      ownerUid: 'u1',
+      catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+      status: 'starter-research-dossier',
+      sourceIds: expect.arrayContaining(['nist-ai-rmf']),
+      graphNodeCount: expect.any(Number),
+      graphEdgeCount: expect.any(Number),
+    });
+    expect(db.data.get('users/u1/capsules/starter-situation-ai-governance-procurement/claimLedgers/starter-claims')).toMatchObject({
+      ledgerId: 'starter-situation-ai-governance-procurement-starter-claims',
+      capsuleId: 'starter-situation-ai-governance-procurement',
+      ownerUid: 'u1',
+      catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+      reviewGate: expect.stringMatching(/human|review|source/i),
+    });
+    expect(db.data.get('users/u1/capsules/starter-situation-ai-governance-procurement/humanWorkflowExamples/starter-workflow')).toMatchObject({
+      workflowId: 'starter-situation-ai-governance-procurement-starter-workflow',
+      capsuleId: 'starter-situation-ai-governance-procurement',
+      ownerUid: 'u1',
+      catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+      humanReviewGate: expect.stringMatching(/human|review|approval/i),
+    });
+    expect(db.data.get('users/u1/capsules/starter-situation-ai-governance-procurement/sourceRefreshDockets/starter-refresh')).toMatchObject({
+      docketId: 'starter-refresh',
+      capsuleId: 'starter-situation-ai-governance-procurement',
+      ownerUid: 'u1',
+      catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+      humanReviewRequired: true,
+      sourceIds: expect.arrayContaining(['nist-ai-rmf']),
+    });
     expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/sources/un-sudan-atrocity-famine-risk')).toBe(true);
     expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/evaluations/starter-readiness')).toBe(true);
     expect(db.data.has('users/u1/capsules/starter-situation-sudan-darfur-atrocity-access/notes/starter-guidance')).toBe(true);
@@ -786,6 +842,10 @@ describe('capsule service', () => {
     expect(capsule?.starterSnapshot?.intelligenceProfile?.humanWorkflow.decisionMoment).toMatch(/decision|brief|review|workflow/i);
     expect(capsule?.starterSnapshot?.cogneeProfile?.advisoryOnly).toBe(true);
     expect(capsule?.starterSnapshot?.cogneeProfile?.seedDocuments.every((document) => document.advisoryOnly)).toBe(true);
+    expect(capsule?.starterSnapshot?.researchDossier?.sourceSpine.length).toBeGreaterThanOrEqual(4);
+    expect(capsule?.starterSnapshot?.claimLedgerSeeds?.missing.length).toBeGreaterThanOrEqual(1);
+    expect(capsule?.starterSnapshot?.humanWorkflowExample?.steps.length).toBeGreaterThanOrEqual(3);
+    expect(capsule?.starterSnapshot?.sourceRefreshDocket?.docketId).toBe('starter-refresh');
     expect(capsule?.version).toBe(8);
     expect(db.data.get(`${path}/evaluations/starter-readiness`)?.evidenceRequirements).toEqual(expect.arrayContaining([
       expect.stringContaining('Attach at least one current source'),
@@ -794,6 +854,18 @@ describe('capsule service', () => {
     expect(db.data.get(`${path}/advisoryMemoryHits/starter-cognee-seed-pack`)?.advisoryOnly).toBe(true);
     expect(db.data.get(`${path}/advisoryMemoryHits/starter-cognee-seed-pack`)?.promotionRequired).toBe('review-card');
     expect(db.data.get(`${path}/advisoryMemoryHits/starter-cognee-seed-pack`)?.contextCaptureProfileId).toBe('starter-situation-diplomatic-options-context-capture-v1');
+    expect(db.data.get(`${path}/researchDossiers/starter-dossier`)?.sourceIds).toEqual(expect.arrayContaining([
+      expect.stringMatching(/un-|eeas|praxis|jhu|gpo|plain/i),
+    ]));
+    expect(db.data.get(`${path}/claimLedgers/starter-claims`)?.missing).toEqual(expect.arrayContaining([
+      expect.objectContaining({ status: 'missing' }),
+    ]));
+    expect(db.data.get(`${path}/humanWorkflowExamples/starter-workflow`)?.steps).toEqual(expect.arrayContaining([
+      expect.stringMatching(/source|review|output|claim/i),
+    ]));
+    expect(db.data.get(`${path}/sourceRefreshDockets/starter-refresh`)?.nextRepairActions).toEqual(expect.arrayContaining([
+      expect.stringMatching(/refresh|source|gap/i),
+    ]));
 
     await seedStarterCapsules('u1', deps(db));
     const afterSecondRun = await getCapsule('u1', 'starter-situation-diplomatic-options', deps(db));

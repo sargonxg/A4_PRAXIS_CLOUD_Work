@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- fix(capsules): harden v16 research-dossier capsule audits.
+  Build 2026.05.30.17 updates the capsule consolidation gate for the
+  `2026-05-30-research-dossier-firestore-proof-v16` catalog, compresses the
+  default starter prompt projection to a 9,292-character average, and keeps
+  research dossiers, claim ledgers, source refresh dockets, human workflows,
+  graph seeds, and review gates available through snapshots and inspector UI.
+  It also wires research-dossier/backfill audits into `audit:gate`.
+
 - feat(home): make signed-in Home an Ask PRAXIS workspace.
   Build 2026.05.30.16 reshapes `/app` around one Ask PRAXIS composer with a
   pinned capsule/context editor, relevant workspace sidebar, Learn/Changelog

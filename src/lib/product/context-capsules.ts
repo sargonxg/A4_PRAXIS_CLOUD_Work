@@ -770,6 +770,91 @@ export interface CapsuleStarterOntologyOverlay {
   forbiddenClaims: string[];
 }
 
+export type CapsuleStarterResearchSourceRole =
+  | 'primary-authoritative'
+  | 'method-sourceability'
+  | 'domain-context'
+  | 'advisory-background';
+
+export interface CapsuleStarterResearchDossierSourceRef {
+  sourceId: string;
+  label: string;
+  url: string;
+  publisher: string;
+  date: string;
+  reliabilityTier: 1 | 2 | 3;
+  role: CapsuleStarterResearchSourceRole;
+  rationale: string;
+  nonAffiliationSafe: true;
+}
+
+export interface CapsuleStarterResearchDossier {
+  dossierId: string;
+  status: 'starter-research-dossier';
+  humanJob: string;
+  realWorldScenario: string;
+  howHumanUsesCapsule: string;
+  sourceSpine: CapsuleStarterResearchDossierSourceRef[];
+  knownEvidenceGaps: string[];
+  refreshCadence: string;
+  claimReviewPolicy: string;
+  nextHumanActions: string[];
+  nonAffiliationSafety: string;
+  catalogVersion: string;
+}
+
+export interface CapsuleStarterClaimLedgerSeed {
+  claimId: string;
+  claim: string;
+  status: 'supported' | 'weak' | 'missing' | 'stale';
+  sourceIds: string[];
+  caveat: string;
+  nextAction: string;
+}
+
+export interface CapsuleStarterClaimLedgerSeeds {
+  ledgerId: string;
+  supported: CapsuleStarterClaimLedgerSeed[];
+  weak: CapsuleStarterClaimLedgerSeed[];
+  missing: CapsuleStarterClaimLedgerSeed[];
+  stale: CapsuleStarterClaimLedgerSeed[];
+  reviewGate: string;
+  catalogVersion: string;
+}
+
+export interface CapsuleStarterHumanWorkflowExample {
+  workflowId: string;
+  humanRole: string;
+  scenario: string;
+  steps: string[];
+  outputPath: string;
+  humanReviewGate: string;
+  nextActions: string[];
+  catalogVersion: string;
+}
+
+export interface CapsuleStarterSourceRefreshDocketItem {
+  sourceId: string;
+  title: string;
+  url: string;
+  publisher: string;
+  status: 'starter-seeded' | 'needs-refresh' | 'verified';
+  gap: string;
+}
+
+export interface CapsuleStarterSourceRefreshDocket {
+  docketId: 'starter-refresh';
+  status: 'starter-seeded' | 'needs-refresh' | 'verified';
+  cadence: string;
+  sourceIds: string[];
+  items: CapsuleStarterSourceRefreshDocketItem[];
+  staleSourceIds: string[];
+  missingEvidenceGaps: string[];
+  nextRepairActions: string[];
+  humanReviewRequired: boolean;
+  catalogVersion: string;
+}
+
 export type CapsuleStarterDomain =
   | 'sustainability'
   | 'finance'
@@ -814,6 +899,10 @@ export interface CapsuleStarterDefinition {
   intelligenceProfile: CapsuleIntelligenceProfile;
   cogneeProfile: CapsuleCogneeProfile;
   contextCaptureProfile: CapsuleContextCaptureProfile;
+  researchDossier: CapsuleStarterResearchDossier;
+  claimLedgerSeeds: CapsuleStarterClaimLedgerSeeds;
+  humanWorkflowExample: CapsuleStarterHumanWorkflowExample;
+  sourceRefreshDocket: CapsuleStarterSourceRefreshDocket;
   deviceProfile?: CapsuleStarterDeviceProfile;
   humanReview?: CapsuleStarterHumanReview;
   ontologyOverlay?: CapsuleStarterOntologyOverlay;
@@ -902,7 +991,7 @@ export const CAPSULE_WOW_DEMO_STARTER_IDS = [
   'starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026',
 ] as const;
 
-export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-30-capsule-consolidation-expert-grade-v15';
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-30-research-dossier-firestore-proof-v16';
 export const CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS = 12_000;
 export const CAPSULE_STARTER_PROMPT_MAX_CHARS = 16_000;
 export const CAPSULE_CONTEXT_CAPTURE_FIXTURE_STARTER_IDS = [
@@ -1211,6 +1300,10 @@ export type CapsuleStarterSnapshot = Pick<
   | 'intelligenceProfile'
   | 'cogneeProfile'
   | 'contextCaptureProfile'
+  | 'researchDossier'
+  | 'claimLedgerSeeds'
+  | 'humanWorkflowExample'
+  | 'sourceRefreshDocket'
   | 'deviceProfile'
   | 'humanReview'
   | 'ontologyOverlay'
@@ -1777,6 +1870,10 @@ type CapsuleStarterOverrides = Partial<Pick<
   | 'intelligenceProfile'
   | 'cogneeProfile'
   | 'contextCaptureProfile'
+  | 'researchDossier'
+  | 'claimLedgerSeeds'
+  | 'humanWorkflowExample'
+  | 'sourceRefreshDocket'
   | 'deviceProfile'
   | 'humanReview'
   | 'ontologyOverlay'
@@ -1883,7 +1980,7 @@ function graphNodeTypesForStarter(
   return uniqueStrings(nodes).slice(0, 9);
 }
 
-const CAPSULE_STARTER_GRAPH_SEED_MIN_POINTS = 50;
+const CAPSULE_STARTER_GRAPH_SEED_MIN_POINTS = 64;
 
 function buildStarterGraphNodeTemplates(input: {
   starterId: string;
@@ -2920,6 +3017,192 @@ function buildStarterContextCaptureProfile(input: StarterIntelligenceBuilderInpu
   };
 }
 
+function buildResearchDossierSourceSpine(sourcePack: CapsuleStarterSource[]): CapsuleStarterResearchDossierSourceRef[] {
+  const spine = sourcePack.slice(0, 6).map<CapsuleStarterResearchDossierSourceRef>((source) => ({
+    sourceId: source.id,
+    label: source.label,
+    url: source.url,
+    publisher: source.publisher ?? publisherFromSource(source),
+    date: source.date ?? CAPSULE_STARTER_CATALOG_VERSION,
+    reliabilityTier: source.reliabilityTier ?? reliabilityTierFromSource(source.sourceType),
+    role: 'advisory-background',
+    rationale: source.relevance,
+    nonAffiliationSafe: true,
+  }));
+  const primaryIndexes = spine
+    .map((source, index) => ({ source, index }))
+    .filter(({ source }) => source.publisher !== 'PRAXIS starter catalog' && source.reliabilityTier <= 2)
+    .slice(0, 2)
+    .map(({ index }) => index);
+  for (const index of primaryIndexes) spine[index].role = 'primary-authoritative';
+  const methodIndex = spine.findIndex((source, index) => (
+    !primaryIndexes.includes(index)
+    && /praxis|sourceability|claim-source|evaluating-sources|purdue|stanford|method|style|plain-language/i.test(source.sourceId)
+  ));
+  if (methodIndex >= 0) spine[methodIndex].role = 'method-sourceability';
+  const domainIndex = spine.findIndex((_, index) => !primaryIndexes.includes(index) && index !== methodIndex);
+  if (domainIndex >= 0) spine[domainIndex].role = 'domain-context';
+  if (!spine.some((source) => source.role === 'method-sourceability') && spine.length) {
+    const fallbackIndex = spine.findIndex((source) => source.role !== 'primary-authoritative');
+    spine[fallbackIndex >= 0 ? fallbackIndex : 0].role = 'method-sourceability';
+  }
+  if (!spine.some((source) => source.role === 'domain-context') && spine.length) {
+    const fallbackIndex = spine.findIndex((source) => source.role === 'advisory-background');
+    spine[fallbackIndex >= 0 ? fallbackIndex : spine.length - 1].role = 'domain-context';
+  }
+  return spine;
+}
+
+function buildStarterResearchDossier(input: {
+  starterId: string;
+  category: CapsuleStarterCategory;
+  domain: CapsuleStarterDomain;
+  label: string;
+  sourcePack: CapsuleStarterSource[];
+  richProfile: CapsuleStarterRichProfile;
+  curationProfile: CapsuleStarterCurationProfile;
+  intelligenceProfile: CapsuleIntelligenceProfile;
+}): CapsuleStarterResearchDossier {
+  const evidenceGaps = uniqueStrings([
+    ...input.curationProfile.sourceRefreshStatus.sourceGaps,
+    ...input.intelligenceProfile.contextMap.openQuestions,
+    ...input.richProfile.evidenceRequirements.filter((item) => /missing|stale|verify|source|review/i.test(item)),
+    'Attach current source excerpts before external reliance.',
+  ]).slice(0, 6);
+  return {
+    dossierId: `${input.starterId}-starter-dossier`,
+    status: 'starter-research-dossier',
+    humanJob: input.richProfile.userJob,
+    realWorldScenario: input.intelligenceProfile.humanWorkflow.decisionMoment,
+    howHumanUsesCapsule: `A human uses ${input.label} to frame ${input.domain.replace(/-/g, ' ')} work, inspect source support, route gaps to review, and produce a bounded ${input.category} artifact without treating starter context as final advice.`,
+    sourceSpine: buildResearchDossierSourceSpine(input.sourcePack),
+    knownEvidenceGaps: evidenceGaps,
+    refreshCadence: 'Refresh before external use, high-stakes reliance, or whenever dates, jurisdiction, facts, or named actors materially change.',
+    claimReviewPolicy: 'Starter claims are scaffolds only: supported claims need source receipts, weak claims need caveats, missing claims become gaps, and stale claims require refresh before reuse.',
+    nextHumanActions: uniqueStrings([
+      ...input.richProfile.nextIdeas,
+      'Open the source pack and attach dated excerpts for every load-bearing claim.',
+      'Review graph and memory candidates before any canonical promotion.',
+    ]).slice(0, 5),
+    nonAffiliationSafety: CAPSULE_NO_AFFILIATION_LIMITATION,
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+  };
+}
+
+function buildStarterClaimLedgerSeeds(input: {
+  starterId: string;
+  label: string;
+  sourcePack: CapsuleStarterSource[];
+  excerpts: CapsuleStarterExcerpt[];
+  researchDossier: CapsuleStarterResearchDossier;
+  richProfile: CapsuleStarterRichProfile;
+}): CapsuleStarterClaimLedgerSeeds {
+  const sourceIds = input.sourcePack.map((source) => source.id);
+  const supported = (input.excerpts.length ? input.excerpts : input.sourcePack.slice(0, 2).map((source) => ({
+    sourceId: source.id,
+    text: `${source.label} is a starter source lane for ${input.label}.`,
+  }))).slice(0, 2).map((excerpt, index) => ({
+    claimId: `${input.starterId}-supported-${index + 1}`,
+    claim: excerpt.text,
+    status: 'supported' as const,
+    sourceIds: excerpt.sourceId ? [excerpt.sourceId] : sourceIds.slice(0, 1),
+    caveat: 'Supported only as starter source-spine context; verify current source text before reliance.',
+    nextAction: 'Attach the source receipt and as-of date to the capsule before export.',
+  }));
+  return {
+    ledgerId: `${input.starterId}-starter-claims`,
+    supported,
+    weak: [{
+      claimId: `${input.starterId}-weak-1`,
+      claim: `${input.label} can improve drafting quality when the source spine is refreshed and explicit caveats are preserved.`,
+      status: 'weak',
+      sourceIds: sourceIds.slice(0, 2),
+      caveat: 'This is a starter-method claim, not proof that PRAXIS completed a bespoke legal, compliance, or expert review.',
+      nextAction: 'Convert into a specific sourced claim after the human attaches current receipts.',
+    }],
+    missing: input.researchDossier.knownEvidenceGaps.slice(0, 3).map((gap, index) => ({
+      claimId: `${input.starterId}-missing-${index + 1}`,
+      claim: gap,
+      status: 'missing' as const,
+      sourceIds: [],
+      caveat: 'No starter source receipt currently supports this as a final claim.',
+      nextAction: 'Create or resolve a source-gap review card before final output.',
+    })),
+    stale: [{
+      claimId: `${input.starterId}-stale-1`,
+      claim: `${input.label} source dates and operating context may become stale before reuse.`,
+      status: 'stale',
+      sourceIds,
+      caveat: 'Starter source dates are catalog lanes, not live refresh proof.',
+      nextAction: 'Run the source refresh docket and update as-of receipts before external reliance.',
+    }],
+    reviewGate: `Human source review required: ${input.richProfile.evidenceRequirements[0] ?? 'verify support before external use.'}`,
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+  };
+}
+
+function buildStarterHumanWorkflowExample(input: {
+  starterId: string;
+  label: string;
+  category: CapsuleStarterCategory;
+  domain: CapsuleStarterDomain;
+  recommendedToolIds: string[];
+  outputProductIds: string[];
+  richProfile: CapsuleStarterRichProfile;
+  intelligenceProfile: CapsuleIntelligenceProfile;
+  humanReview?: CapsuleStarterHumanReview;
+}): CapsuleStarterHumanWorkflowExample {
+  const tool = input.recommendedToolIds[0] ?? 'ask-praxis';
+  const output = input.outputProductIds[0] ?? 'options-memo';
+  return {
+    workflowId: `${input.starterId}-starter-workflow`,
+    humanRole: input.richProfile.userJob,
+    scenario: input.intelligenceProfile.humanWorkflow.decisionMoment,
+    steps: [
+      `Start with ${input.label} as a ${input.category} capsule for ${input.domain.replace(/-/g, ' ')} work.`,
+      'Inspect the research dossier, source spine, claim ledger, and known evidence gaps before drafting.',
+      `Run ${tool} or Ask PRAXIS to turn gaps into source receipts, review cards, or a scoped ${output}.`,
+      'Human reviewer approves, rejects, or keeps graph and memory candidates advisory before any export.',
+    ],
+    outputPath: output,
+    humanReviewGate: input.humanReview?.humanReviewGate ?? 'Human review required before external export, graph promotion, or high-stakes reliance.',
+    nextActions: uniqueStrings([
+      ...input.richProfile.nextIdeas,
+      `Draft or update ${output} only after source gaps are resolved.`,
+    ]).slice(0, 4),
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+  };
+}
+
+function buildStarterSourceRefreshDocket(input: {
+  sourcePack: CapsuleStarterSource[];
+  researchDossier: CapsuleStarterResearchDossier;
+}): CapsuleStarterSourceRefreshDocket {
+  return {
+    docketId: 'starter-refresh',
+    status: 'starter-seeded',
+    cadence: input.researchDossier.refreshCadence,
+    sourceIds: input.sourcePack.map((source) => source.id),
+    items: input.sourcePack.map((source) => ({
+      sourceId: source.id,
+      title: source.label,
+      url: source.url,
+      publisher: source.publisher ?? publisherFromSource(source),
+      status: 'starter-seeded',
+      gap: 'Starter lane requires a dated source receipt before external reliance.',
+    })),
+    staleSourceIds: [],
+    missingEvidenceGaps: input.researchDossier.knownEvidenceGaps,
+    nextRepairActions: [
+      'Refresh source-pack URLs and store dated source snippets before external use.',
+      'Create source-gap review cards for missing, stale, or unreachable source lanes.',
+      'Keep Cognee recall, graph rows, and SQL projections advisory until human review.',
+    ],
+    humanReviewRequired: true,
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+  };
+}
+
 function starter(
   starterId: string,
   category: CapsuleStarterCategory,
@@ -2935,7 +3218,7 @@ function starter(
   overrides?: CapsuleStarterOverrides,
 ): CapsuleStarterDefinition {
   const starterTags = normalizeStarterTags(category, domain, tags);
-  const sourcePack = normalizeStarterSourcePack(overrides?.sourcePack ?? sourcePackForStarter(starterId, category, label, domain));
+  const sourcePack = normalizeStarterSourcePack(overrides?.sourcePack ?? sourcePackForStarter(starterId, category, label, domain), { category, domain });
   const baseAiUseGuidance = overrides?.aiUseGuidance
     ?? `Use ${label} as reusable capsule context. Ask for missing inputs, keep source limits visible, and route work through the recommended tools before drafting outputs.`;
   const aiUseGuidance = [
@@ -3043,6 +3326,43 @@ function starter(
     intelligenceProfile,
     cogneeProfile,
   });
+  const excerpts = overrides?.excerpts ?? sourcePack.map((source) => ({
+    sourceId: source.id,
+    text: `${source.label} should be treated as starter context for ${label}; verify freshness, jurisdiction, and evidentiary limits before relying on it.`,
+  }));
+  const researchDossier = overrides?.researchDossier ?? buildStarterResearchDossier({
+    starterId,
+    category,
+    domain,
+    label,
+    sourcePack,
+    richProfile,
+    curationProfile,
+    intelligenceProfile,
+  });
+  const claimLedgerSeeds = overrides?.claimLedgerSeeds ?? buildStarterClaimLedgerSeeds({
+    starterId,
+    label,
+    sourcePack,
+    excerpts,
+    researchDossier,
+    richProfile,
+  });
+  const humanWorkflowExample = overrides?.humanWorkflowExample ?? buildStarterHumanWorkflowExample({
+    starterId,
+    label,
+    category,
+    domain,
+    recommendedToolIds,
+    outputProductIds,
+    richProfile,
+    intelligenceProfile,
+    ...(humanReview ? { humanReview } : {}),
+  });
+  const sourceRefreshDocket = overrides?.sourceRefreshDocket ?? buildStarterSourceRefreshDocket({
+    sourcePack,
+    researchDossier,
+  });
   const baseAgentWorkflow = overrides?.agentWorkflow ?? {
     preferredAgentId: category === 'output' ? 'output-formatter' : 'research-memo',
     routeHint: category === 'tool' ? 'tool-router' : 'capsule-supervisor',
@@ -3074,10 +3394,7 @@ function starter(
     outputProductIds,
     combinesWellWith,
     sourcePack,
-    excerpts: overrides?.excerpts ?? sourcePack.map((source) => ({
-      sourceId: source.id,
-      text: `${source.label} should be treated as starter context for ${label}; verify freshness, jurisdiction, and evidentiary limits before relying on it.`,
-    })),
+    excerpts,
     readinessStars: overrides?.readinessStars ?? (category === 'situation' ? 4 : 3),
     suggestedQuestions: overrides?.suggestedQuestions ?? [
       `What is missing before ${label} can support a decision?`,
@@ -3095,6 +3412,10 @@ function starter(
     intelligenceProfile,
     cogneeProfile,
     contextCaptureProfile,
+    researchDossier,
+    claimLedgerSeeds,
+    humanWorkflowExample,
+    sourceRefreshDocket,
     ...(deviceProfile ? { deviceProfile } : {}),
     ...(humanReview ? { humanReview } : {}),
     ontologyOverlay,
@@ -3108,6 +3429,10 @@ function starter(
         ...curationProfile.tacitKnowledge.approvalPolitics,
       ].slice(0, 6).join(' ') },
       { label: 'Claim/support posture', detail: richProfile.evidenceRequirements.slice(0, 4).join(' ') },
+      { label: 'Research dossier', detail: `${researchDossier.humanJob} ${researchDossier.realWorldScenario} Sources: ${researchDossier.sourceSpine.map((source) => `${source.sourceId}:${source.role}`).join(', ')}` },
+      { label: 'Claim ledger', detail: `Supported ${claimLedgerSeeds.supported.length}; weak ${claimLedgerSeeds.weak.length}; missing ${claimLedgerSeeds.missing.length}; stale ${claimLedgerSeeds.stale.length}. ${claimLedgerSeeds.reviewGate}` },
+      { label: 'Source refresh docket', detail: `${sourceRefreshDocket.docketId}: ${sourceRefreshDocket.status}; ${sourceRefreshDocket.cadence}` },
+      { label: 'Human workflow', detail: `${humanWorkflowExample.scenario} Output path: ${humanWorkflowExample.outputPath}` },
       { label: 'Agent contract', detail: curationProfile.compactAgentInstructions.join(' ') },
       { label: 'Review gates', detail: humanReview?.humanReviewGate ?? agentWorkflow.approvalNotes },
       { label: 'Marketplace/share readiness', detail: 'Private by default. Public, forkable, or marketplace reuse requires human author/reviewer metadata, explicit reuse terms, source freshness, and no unsupported final claims.' },
@@ -3525,7 +3850,7 @@ function sourcePackForStarter(
       date: CAPSULE_STARTER_CATALOG_VERSION,
       reliabilityTier: category === 'situation' ? 2 : 3,
     },
-  ]);
+  ], { category, domain });
 }
 
 function sourceFromRegistry(sourceId: string, relevance?: string): CapsuleStarterSource {
@@ -3560,14 +3885,82 @@ function ensureExternalSourceSpine(sources: CapsuleStarterSource[]): CapsuleStar
   return deduped;
 }
 
-function normalizeStarterSourcePack(sources: CapsuleStarterSource[]): CapsuleStarterSource[] {
+function methodSourceForStarter(category?: CapsuleStarterCategory, domain?: CapsuleStarterDomain): CapsuleStarterSource {
+  if (domain === 'output-brief' || category === 'output') return sourceFromRegistry('plain-language-gov');
+  if (domain === 'audit-review') return sourceFromRegistry('jhu-evaluating-sources');
+  if (domain === 'source-intake') return {
+    id: 'praxis-sourceability-method',
+    label: 'PRAXIS sourceability method',
+    url: 'https://praxis.tacitus.me/learn#sourceability',
+    sourceType: 'public-library',
+    relevance: 'Starter method for turning source packs into reviewable capsule receipts and claim-source repair actions.',
+    publisher: 'PRAXIS starter catalog',
+    date: CAPSULE_STARTER_CATALOG_VERSION,
+    reliabilityTier: 3,
+  };
+  return sourceFromRegistry('jhu-evaluating-sources');
+}
+
+function domainContextSourceForStarter(domain?: CapsuleStarterDomain): CapsuleStarterSource {
+  const byDomain: Partial<Record<CapsuleStarterDomain, CapsuleStarterSource>> = {
+    sustainability: sourceFromRegistry('gpo-style-manual', 'Disclosure and public-document drafting context for sustainability capsule outputs.'),
+    finance: sourceFromRegistry('world-bank-debt-statistics', 'Public domain-context lane for macro-financial and debt exposure work.'),
+    hr: sourceFromRegistry('plain-language-gov', 'Clear policy-writing context for HR review and rollout artifacts.'),
+    diplomacy: sourceFromRegistry('un-mediation-resources', 'Domain context for diplomatic options, mediation design, and mandate-sensitive work.'),
+    'humanitarian-rights': sourceFromRegistry('reliefweb-updates', 'Domain context for humanitarian and human-rights operating environments.'),
+    'ai-governance': sourceFromRegistry('jhu-evaluating-sources', 'Sourceability and source-evaluation context for AI governance claims.'),
+    'public-health': sourceFromRegistry('plain-language-gov', 'Plain-language public communication context for health and emergency outputs.'),
+    'critical-minerals': sourceFromRegistry('gpo-style-manual', 'Public-document style and source receipt context for critical-minerals evidence products.'),
+    'cyber-resilience': sourceFromRegistry('jhu-evaluating-sources', 'Source evaluation context for cyber controls and incident claims.'),
+    'migration-displacement': sourceFromRegistry('reliefweb-updates', 'Domain context for displacement and humanitarian reporting lanes.'),
+    'election-integrity': sourceFromRegistry('jhu-evaluating-sources', 'Source evaluation context for election-integrity evidence reviews.'),
+    'source-intake': sourceFromRegistry('gpo-style-manual', 'Citation and public-document source metadata context for source packs.'),
+    'exposure-mapping': sourceFromRegistry('world-bank-debt-statistics', 'Domain context for exposure mapping and country-risk data products.'),
+    'policy-review': sourceFromRegistry('plain-language-gov', 'Clear policy drafting context for review, revision, and implementation artifacts.'),
+    'options-mapping': sourceFromRegistry('un-mediation-resources', 'Domain context for option design, mediation, and tradeoff mapping.'),
+    'audit-review': sourceFromRegistry('gpo-style-manual', 'Citation and public-document evidence context for audit and review artifacts.'),
+    'analyst-role': sourceFromRegistry('jhu-evaluating-sources', 'Source evaluation context for analyst role capsules.'),
+    'output-brief': sourceFromRegistry('gpo-style-manual', 'Government-style citation and document structure context for output capsules.'),
+  };
+  return byDomain[domain ?? 'audit-review'] ?? sourceFromRegistry('gpo-style-manual');
+}
+
+function ensureResearchSourceSpine(
+  sources: CapsuleStarterSource[],
+  options: { category?: CapsuleStarterCategory; domain?: CapsuleStarterDomain } = {},
+): CapsuleStarterSource[] {
+  const deduped = ensureExternalSourceSpine(sources);
+  const seen = new Set(deduped.map((source) => source.id));
+  const add = (source: CapsuleStarterSource) => {
+    if (seen.has(source.id)) return;
+    deduped.push(source);
+    seen.add(source.id);
+  };
+  add(methodSourceForStarter(options.category, options.domain));
+  add(domainContextSourceForStarter(options.domain));
+  for (const sourceId of ['plain-language-gov', 'gpo-style-manual', 'jhu-evaluating-sources']) {
+    if (deduped.length >= 4) break;
+    add(sourceFromRegistry(sourceId));
+  }
+  return deduped.slice(0, 6);
+}
+
+function normalizeStarterSourcePack(
+  sources: CapsuleStarterSource[],
+  options: { category?: CapsuleStarterCategory; domain?: CapsuleStarterDomain } = {},
+): CapsuleStarterSource[] {
   const normalized = sources.map((source) => ({
     ...source,
     publisher: source.publisher ?? publisherFromSource(source),
     date: source.date ?? CAPSULE_STARTER_CATALOG_VERSION,
     reliabilityTier: source.reliabilityTier ?? reliabilityTierFromSource(source.sourceType),
   }));
-  return ensureExternalSourceSpine(normalized);
+  return ensureResearchSourceSpine(normalized, options).map((source) => ({
+    ...source,
+    publisher: source.publisher ?? publisherFromSource(source),
+    date: source.date ?? CAPSULE_STARTER_CATALOG_VERSION,
+    reliabilityTier: source.reliabilityTier ?? reliabilityTierFromSource(source.sourceType),
+  }));
 }
 
 function publisherFromSource(source: CapsuleStarterSource): string {
@@ -3672,7 +4065,7 @@ function sourcePackForDomain(domain: CapsuleStarterDomain): CapsuleStarterSource
       { id: 'plain-language-gov', label: 'Plain language government guidance', url: 'https://www.plainlanguage.gov/guidelines/', sourceType: 'official', relevance: 'Public guidance for concise, usable government-facing writing.', publisher: 'U.S. Plain Language Action and Information Network', date: '2026', reliabilityTier: 1 },
     ],
   };
-  return normalizeStarterSourcePack(byDomain[domain] ?? []);
+  return normalizeStarterSourcePack(byDomain[domain] ?? [], { domain });
 }
 
 const REASONING_DEVICE_SOURCE_REFERENCES: Record<string, CapsuleStarterSource> = {
@@ -7386,7 +7779,7 @@ export function buildCapsuleStarterPromptBlock(
     .slice(0, 3)
     .join(', ') || 'source refresh required';
   const sourcePackLine = starterDefinition.sourcePack
-    .slice(0, 5)
+    .slice(0, 4)
     .map((source) => `${source.id}|${source.publisher ?? 'unknown'}|${source.date ?? 'unknown'}|tier${source.reliabilityTier ?? 'unknown'}`)
     .join(' ; ');
   const promptLines = [
@@ -7406,47 +7799,47 @@ export function buildCapsuleStarterPromptBlock(
     `readiness_stars: ${starterDefinition.readinessStars}/5`,
     `source_pack: ${sourcePackLine || 'none'}`,
     `source_refresh_status: ${curationProfile.sourceRefreshStatus.status}; verified_at=${curationProfile.sourceRefreshStatus.verifiedAt}; primary_sources=${primarySources}`,
+    `research_dossier: ${starterDefinition.researchDossier.status}; human_job=${compactPromptText(starterDefinition.researchDossier.humanJob, 100)}; scenario=${compactPromptText(starterDefinition.researchDossier.realWorldScenario, 110)}`,
+    `research_source_spine: ${starterDefinition.researchDossier.sourceSpine.slice(0, 4).map((source) => `${source.sourceId}:${source.role}:tier${source.reliabilityTier}`).join(' | ')}`,
+    `claim_ledger_seeds: supported=${starterDefinition.claimLedgerSeeds.supported.length}; weak=${starterDefinition.claimLedgerSeeds.weak.length}; missing=${starterDefinition.claimLedgerSeeds.missing.length}; stale=${starterDefinition.claimLedgerSeeds.stale.length}; gate=${compactPromptText(starterDefinition.claimLedgerSeeds.reviewGate, 90)}`,
+    `human_workflow_example: ${compactPromptText(starterDefinition.humanWorkflowExample.scenario, 100)}; output=${starterDefinition.humanWorkflowExample.outputPath}; gate=${compactPromptText(starterDefinition.humanWorkflowExample.humanReviewGate, 90)}`,
+    `source_refresh_docket: ${starterDefinition.sourceRefreshDocket.docketId}; status=${starterDefinition.sourceRefreshDocket.status}; cadence=${compactPromptText(starterDefinition.sourceRefreshDocket.cadence, 90)}`,
     ...(contextCaptureProfile ? [
       `context_capture_profile_id: ${contextCaptureProfile.profileId}`,
-      `ontology_bound_sources: ${contextCaptureProfile.sourceBindings.slice(0, 6).map((binding) => `${binding.sourceId}:${binding.ontologyIds.join('+')}`).join(' | ')}`,
-      `usage_activation_signals: ${compactPromptList(contextCaptureProfile.usageInference.activationSignals, 3, 120)}`,
-      `usage_contraindications: ${compactPromptList(contextCaptureProfile.usageInference.contraindications, 3, 120)}`,
+      `ontology_bound_sources: ${contextCaptureProfile.sourceBindings.slice(0, 4).map((binding) => `${binding.sourceId}:${binding.ontologyIds.join('+')}`).join(' | ')}`,
+      `usage_activation_signals: ${compactPromptList(contextCaptureProfile.usageInference.activationSignals, 2, 90)}`,
+      `usage_contraindications: ${compactPromptList(contextCaptureProfile.usageInference.contraindications, 2, 90)}`,
       `capsule_plus_graph_capture: nodes=${contextCaptureProfile.embeddedGraph.allowedNodeTypes.slice(0, 6).join(',')}; edges=${contextCaptureProfile.embeddedGraph.allowedEdgeTypes.slice(0, 4).join(',')}; provenance=${contextCaptureProfile.embeddedGraph.requiredProvenance.join('+')}; review_state=${contextCaptureProfile.embeddedGraph.reviewState}`,
-      `generation_impact: improves=${compactPromptList(contextCaptureProfile.generationImpact.improves, 2, 120)}; suppresses=${compactPromptList(contextCaptureProfile.generationImpact.suppresses, 2, 120)}`,
+      `generation_impact: improves=${compactPromptList(contextCaptureProfile.generationImpact.improves, 1, 90)}; suppresses=${compactPromptList(contextCaptureProfile.generationImpact.suppresses, 1, 90)}`,
     ] : []),
     ...(starterDefinition.humanReview ? [
       `human_review: ${starterDefinition.humanReview.label}|${starterDefinition.humanReview.status}|${starterDefinition.humanReview.reviewedBy}|${starterDefinition.humanReview.reviewedAt}`,
-      `human_review_limitations: ${compactPromptList(starterDefinition.humanReview.limitations, 3, 140)}`,
+      `human_review_limitations: ${compactPromptList(starterDefinition.humanReview.limitations, 2, 100)}`,
     ] : []),
     `recommended_tools: ${starterDefinition.recommendedToolIds.join(', ') || 'none'}`,
     `output_targets: ${starterDefinition.outputProductIds.join(', ') || 'none'}`,
-    `suggested_questions: ${compactPromptList(starterDefinition.suggestedQuestions, 3, 120)}`,
-    `suggested_next_actions: ${compactPromptList(starterDefinition.suggestedNextActions, 3, 120)}`,
+    `suggested_questions: ${compactPromptList(starterDefinition.suggestedQuestions, 2, 100)}`,
+    `suggested_next_actions: ${compactPromptList(starterDefinition.suggestedNextActions, 2, 100)}`,
     `agent_workflow: preferred_agent=${starterDefinition.agentWorkflow.preferredAgentId}; route_hint=${starterDefinition.agentWorkflow.routeHint}; output_goal=${starterDefinition.agentWorkflow.outputGoal}`,
-    `ai_use_guidance: ${compactPromptText(starterDefinition.aiUseGuidance, 260)}`,
-    `curation_human_summary: ${compactPromptText(curationProfile.humanInspectionSummary, 180)}`,
-    `curation_agent_summary: ${compactPromptText(curationProfile.agentUseSummary, 220)}`,
-    `tacit_assumptions: ${compactPromptList(curationProfile.tacitKnowledge.workingAssumptions, 3, 160)}`,
-    `tacit_red_lines: ${compactPromptList(curationProfile.tacitKnowledge.redLines, 3, 160)}`,
-    `tacit_approval_politics: ${compactPromptList(curationProfile.tacitKnowledge.approvalPolitics, 3, 160)}`,
-    `tacit_heuristics: ${compactPromptList(curationProfile.tacitKnowledge.practicalHeuristics, 3, 160)}`,
-    `tacit_sensitivities: ${compactPromptList(curationProfile.tacitKnowledge.stakeholderSensitivities, 3, 160)}`,
-    `tacit_caveats: ${compactPromptList(curationProfile.tacitKnowledge.caveats, 3, 160)}`,
-    `omit_from_agent_context: ${compactPromptList(curationProfile.omitFromAgentContextNotes, 3, 160)}`,
-    `compact_agent_instructions: ${compactPromptList(curationProfile.compactAgentInstructions, 3, 160)}`,
-    `human_review_gate: ${compactPromptText(starterDefinition.humanReview?.humanReviewGate ?? 'Human review required before external use.', 220)}`,
+    `ai_use_guidance: ${compactPromptText(starterDefinition.aiUseGuidance, 180)}`,
+    `curation_human_summary: ${compactPromptText(curationProfile.humanInspectionSummary, 140)}`,
+    `curation_agent_summary: ${compactPromptText(curationProfile.agentUseSummary, 160)}`,
+    `tacit_red_lines: ${compactPromptList(curationProfile.tacitKnowledge.redLines, 2, 110)}`,
+    `omit_from_agent_context: ${compactPromptList(curationProfile.omitFromAgentContextNotes, 2, 110)}`,
+    `compact_agent_instructions: ${compactPromptList(curationProfile.compactAgentInstructions, 2, 110)}`,
+    `human_review_gate: ${compactPromptText(starterDefinition.humanReview?.humanReviewGate ?? 'Human review required before external use.', 150)}`,
     `governance: ${CAPSULE_NO_AFFILIATION_LIMITATION}`,
     ...(intelligenceProfile ? [
       `intelligence_profile_id: ${intelligenceProfile.profileId}`,
-      `human_workflow_decision_moment: ${compactPromptText(intelligenceProfile.humanWorkflow.decisionMoment, 180)}`,
-      `reasoning_steps: ${compactPromptList(intelligenceProfile.reasoningScaffold.steps, 4, 120)}`,
-      `generation_review_gates: ${compactPromptList(intelligenceProfile.generationContract.reviewGates, 3, 120)}`,
-      `generation_output_path: ${compactPromptText(intelligenceProfile.generationContract.outputPath, 180)}`,
+      `human_workflow_decision_moment: ${compactPromptText(intelligenceProfile.humanWorkflow.decisionMoment, 130)}`,
+      `reasoning_steps: ${compactPromptList(intelligenceProfile.reasoningScaffold.steps, 3, 90)}`,
+      `generation_review_gates: ${compactPromptList(intelligenceProfile.generationContract.reviewGates, 2, 90)}`,
+      `generation_output_path: ${compactPromptText(intelligenceProfile.generationContract.outputPath, 130)}`,
     ] : []),
     ...(cogneeProfile ? [
       `cognee_profile_id: ${cogneeProfile.profileId}`,
       `cognee_advisory_only: ${cogneeProfile.advisoryOnly}`,
-      `cognee_review_rules: ${compactPromptList(cogneeProfile.reviewCardPromotionRules, 3, 120)}`,
+      `cognee_review_rules: ${compactPromptList(cogneeProfile.reviewCardPromotionRules, 2, 90)}`,
     ] : []),
     ...(starterDefinition.ontologyOverlay ? [
       `ontology_overlay_id: ${starterDefinition.ontologyOverlay.overlayId}`,
@@ -7455,29 +7848,28 @@ export function buildCapsuleStarterPromptBlock(
       `embedded_graph_seed_sample_nodes: ${starterDefinition.ontologyOverlay.graphSeed.nodeTemplates[0]?.split('|').slice(0, 2).join(':') ?? 'none'}`,
       `embedded_graph_seed_sample_edges: ${starterDefinition.ontologyOverlay.graphSeed.edgeTemplates[0]?.split('|').slice(0, 2).join(':') ?? 'none'}`,
       `cognee_overlay_mode: ${starterDefinition.ontologyOverlay.cognee.mode}; dataset_scope=${starterDefinition.ontologyOverlay.cognee.datasetScope}`,
-      `ontology_promotion_rules: ${compactPromptList(starterDefinition.ontologyOverlay.promotionRules, 3, 120)}`,
-      `ontology_forbidden_claims: ${compactPromptList(starterDefinition.ontologyOverlay.forbiddenClaims, 3, 120)}`,
+      `ontology_promotion_rules: ${compactPromptList(starterDefinition.ontologyOverlay.promotionRules, 2, 90)}`,
+      `ontology_forbidden_claims: ${compactPromptList(starterDefinition.ontologyOverlay.forbiddenClaims, 2, 90)}`,
     ] : []),
     ...(starterDefinition.deviceProfile ? [
       `device_kind: ${starterDefinition.deviceProfile.deviceKind}`,
-      `device_operation: ${compactPromptText(starterDefinition.deviceProfile.reasoningOperation, 180)}`,
-      `device_reasoning_operation: ${compactPromptText(starterDefinition.deviceProfile.reasoningOperation, 180)}`,
-      `device_activation_criteria: ${compactPromptList(starterDefinition.deviceProfile.activationCriteria, 3, 120)}`,
-      `device_input_contract: ${compactPromptList(starterDefinition.deviceProfile.inputContract, 3, 120)}`,
-      `device_output_grammar: ${compactPromptList(starterDefinition.deviceProfile.outputGrammar, 3, 120)}`,
-      `device_method_steps: ${compactPromptList(starterDefinition.deviceProfile.methodSteps, 4, 120)}`,
-      `device_best_inputs: ${compactPromptList(starterDefinition.deviceProfile.bestInputs, 3, 120)}`,
-      `device_expected_outputs: ${compactPromptList(starterDefinition.deviceProfile.expectedOutputs, 3, 120)}`,
-      `device_disconfirming_checks: ${compactPromptList(starterDefinition.deviceProfile.disconfirmingChecks, 3, 120)}`,
-      `device_failure_modes: ${compactPromptList(starterDefinition.deviceProfile.failureModes, 3, 120)}`,
-      `device_sourceability_requirements: ${compactPromptList(starterDefinition.deviceProfile.sourceabilityRequirements, 3, 120)}`,
-      `device_human_review_gate: ${compactPromptText(starterDefinition.deviceProfile.humanReviewGate, 180)}`,
-      `device_confidence_policy: ${compactPromptText(starterDefinition.deviceProfile.confidencePolicy, 180)}`,
-      `device_forgetting_policy: ${compactPromptText(starterDefinition.deviceProfile.forgettingPolicy, 180)}`,
-      `device_cross_capsule_pairings: ${compactPromptList(starterDefinition.deviceProfile.crossCapsulePairings, 4, 100)}`,
-      `device_misuse_warnings: ${compactPromptList(starterDefinition.deviceProfile.misuseWarnings, 3, 120)}`,
+      `device_reasoning_operation: ${compactPromptText(starterDefinition.deviceProfile.reasoningOperation, 140)}`,
+      `device_activation_criteria: ${compactPromptList(starterDefinition.deviceProfile.activationCriteria, 2, 90)}`,
+      `device_input_contract: ${compactPromptList(starterDefinition.deviceProfile.inputContract, 2, 90)}`,
+      `device_output_grammar: ${compactPromptList(starterDefinition.deviceProfile.outputGrammar, 2, 90)}`,
+      `device_method_steps: ${compactPromptList(starterDefinition.deviceProfile.methodSteps, 3, 90)}`,
+      `device_best_inputs: ${compactPromptList(starterDefinition.deviceProfile.bestInputs, 1, 70)}`,
+      `device_expected_outputs: ${compactPromptList(starterDefinition.deviceProfile.expectedOutputs, 1, 70)}`,
+      `device_disconfirming_checks: ${compactPromptList(starterDefinition.deviceProfile.disconfirmingChecks, 2, 90)}`,
+      `device_failure_modes: ${compactPromptList(starterDefinition.deviceProfile.failureModes, 2, 90)}`,
+      `device_sourceability_requirements: ${compactPromptList(starterDefinition.deviceProfile.sourceabilityRequirements, 2, 90)}`,
+      `device_human_review_gate: ${compactPromptText(starterDefinition.deviceProfile.humanReviewGate, 130)}`,
+      `device_confidence_policy: ${compactPromptText(starterDefinition.deviceProfile.confidencePolicy, 130)}`,
+      `device_forgetting_policy: ${compactPromptText(starterDefinition.deviceProfile.forgettingPolicy, 130)}`,
+      `device_cross_capsule_pairings: ${compactPromptList(starterDefinition.deviceProfile.crossCapsulePairings, 3, 80)}`,
+      `device_misuse_warnings: ${compactPromptList(starterDefinition.deviceProfile.misuseWarnings, 2, 90)}`,
       `device_review_gate_type: ${starterDefinition.deviceProfile.reviewGateType}`,
-      `device_agent_instructions: ${compactPromptText(starterDefinition.deviceProfile.agentInstructions, 220)}`,
+      `device_agent_instructions: ${compactPromptText(starterDefinition.deviceProfile.agentInstructions, 150)}`,
     ] : []),
     `combines_well_with: ${starterDefinition.combinesWellWith.join(', ') || 'none'}`,
     'runtime_rule: Treat this starter definition as reusable operating context for Ask PRAXIS, tool routing, agent runs, and output drafting.',

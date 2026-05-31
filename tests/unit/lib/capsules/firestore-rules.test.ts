@@ -23,4 +23,21 @@ describe('root capsule Firestore rules', () => {
     expect(rules).toContain('request.resource.data.ownerUid == uid');
     expect(rules).toContain('request.resource.data.capsuleId == capsuleId');
   });
+
+  it('covers owner-scoped starter research dossiers, claim ledgers, workflows, and refresh dockets', () => {
+    const rules = readFileSync(path.join(process.cwd(), 'firestore.rules'), 'utf8');
+
+    for (const expected of [
+      'match /researchDossiers/{dossierId}',
+      'match /claimLedgers/{ledgerId}',
+      'match /humanWorkflowExamples/{workflowId}',
+      'match /sourceRefreshDockets/{docketId}',
+      'match /sources/{sourceId}',
+      'match /advisoryMemoryHits/{memoryHitId}',
+    ]) {
+      expect(rules).toContain(expected);
+    }
+    expect(rules).toContain('request.resource.data.ownerUid == uid');
+    expect(rules).toContain('request.resource.data.capsuleId == capsuleId');
+  });
 });

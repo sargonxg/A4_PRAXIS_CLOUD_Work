@@ -223,7 +223,40 @@ describe('context capsule product contract', () => {
         expect(starter.deviceProfile?.humanReviewGate, `${starter.starterId} device gate`).toMatch(/human|review|approval/i);
         expect(starter.inspectionSections.map((section) => section.label)).toContain('Tools/Thinking Devices');
       }
-      expect(starter.sourcePack.length, `${starter.starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter.sourcePack.length, `${starter.starterId} source pack`).toBeGreaterThanOrEqual(4);
+      expect(starter.researchDossier.dossierId, `${starter.starterId} dossier id`).toBe(`${starter.starterId}-starter-dossier`);
+      expect(starter.researchDossier.status, `${starter.starterId} dossier status`).toBe('starter-research-dossier');
+      expect(starter.researchDossier.humanJob.length, `${starter.starterId} human job`).toBeGreaterThan(30);
+      expect(starter.researchDossier.realWorldScenario.length, `${starter.starterId} scenario`).toBeGreaterThan(40);
+      expect(starter.researchDossier.howHumanUsesCapsule.length, `${starter.starterId} human use`).toBeGreaterThan(40);
+      expect(starter.researchDossier.sourceSpine.length, `${starter.starterId} source spine`).toBeGreaterThanOrEqual(4);
+      expect(starter.researchDossier.sourceSpine.filter((source) => source.role === 'primary-authoritative').length, `${starter.starterId} primary spine sources`).toBeGreaterThanOrEqual(2);
+      expect(starter.researchDossier.sourceSpine.some((source) => source.role === 'method-sourceability'), `${starter.starterId} method source`).toBe(true);
+      expect(starter.researchDossier.sourceSpine.some((source) => source.role === 'domain-context'), `${starter.starterId} domain context source`).toBe(true);
+      expect(starter.researchDossier.knownEvidenceGaps.length, `${starter.starterId} evidence gaps`).toBeGreaterThanOrEqual(1);
+      expect(starter.researchDossier.nextHumanActions.length, `${starter.starterId} next human actions`).toBeGreaterThanOrEqual(2);
+      expect(starter.researchDossier.nonAffiliationSafety, `${starter.starterId} non-affiliation`).toMatch(/not affiliated|endorsed/i);
+      for (const sourceRef of starter.researchDossier.sourceSpine) {
+        expect(sourceRef.publisher, `${starter.starterId} ${sourceRef.sourceId} publisher`).toBeTruthy();
+        expect(sourceRef.date, `${starter.starterId} ${sourceRef.sourceId} date`).toBeTruthy();
+        expect(sourceRef.url, `${starter.starterId} ${sourceRef.sourceId} url`).toMatch(/^https:\/\//);
+        expect([1, 2, 3]).toContain(sourceRef.reliabilityTier);
+        expect(sourceRef.nonAffiliationSafe, `${starter.starterId} ${sourceRef.sourceId} affiliation safety`).toBe(true);
+      }
+      expect(starter.claimLedgerSeeds.ledgerId, `${starter.starterId} claim ledger`).toBe(`${starter.starterId}-starter-claims`);
+      expect(starter.claimLedgerSeeds.supported.length, `${starter.starterId} supported claims`).toBeGreaterThanOrEqual(1);
+      expect(starter.claimLedgerSeeds.weak.length, `${starter.starterId} weak claims`).toBeGreaterThanOrEqual(1);
+      expect(starter.claimLedgerSeeds.missing.length, `${starter.starterId} missing claims`).toBeGreaterThanOrEqual(1);
+      expect(starter.claimLedgerSeeds.stale.length, `${starter.starterId} stale claims`).toBeGreaterThanOrEqual(1);
+      expect(starter.claimLedgerSeeds.reviewGate, `${starter.starterId} claim review gate`).toMatch(/human|review|source/i);
+      expect(starter.humanWorkflowExample.workflowId, `${starter.starterId} workflow`).toBe(`${starter.starterId}-starter-workflow`);
+      expect(starter.humanWorkflowExample.steps.length, `${starter.starterId} workflow steps`).toBeGreaterThanOrEqual(3);
+      expect(starter.humanWorkflowExample.outputPath, `${starter.starterId} workflow output`).toBeTruthy();
+      expect(starter.humanWorkflowExample.humanReviewGate, `${starter.starterId} workflow gate`).toMatch(/human|review|approval/i);
+      expect(starter.sourceRefreshDocket.docketId, `${starter.starterId} refresh docket`).toBe('starter-refresh');
+      expect(starter.sourceRefreshDocket.sourceIds, `${starter.starterId} refresh source ids`).toEqual(expect.arrayContaining(starter.sourcePack.map((source) => source.id)));
+      expect(starter.sourceRefreshDocket.status, `${starter.starterId} refresh status`).toMatch(/starter-seeded|needs-refresh|verified/);
+      expect(starter.sourceRefreshDocket.nextRepairActions.length, `${starter.starterId} refresh actions`).toBeGreaterThanOrEqual(2);
       expect(starter.excerpts.length, `${starter.starterId} excerpts`).toBeGreaterThanOrEqual(2);
       for (const source of starter.sourcePack) {
         expect(source.id, `${starter.starterId} source id`).toBeTruthy();
@@ -268,7 +301,7 @@ describe('context capsule product contract', () => {
         reviewedAt: 'not-reviewed',
         humanReviewGate: expect.stringMatching(/human review required/i),
       });
-      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(4);
       expect(starter?.sourcePack.every((source) => source.publisher !== 'Source placeholder')).toBe(true);
       expect(starter?.sourcePack.every((source) => source.url.startsWith('https://') && !source.url.includes('example.test'))).toBe(true);
       expect(starter?.sourcePack.filter((source) => source.publisher !== 'PRAXIS starter catalog').length, `${starterId} external source count`).toBeGreaterThanOrEqual(2);
@@ -291,11 +324,12 @@ describe('context capsule product contract', () => {
     const externalSourceCount = (starter: (typeof CAPSULE_STARTER_DEFINITIONS)[number]) =>
       starter.sourcePack.filter((source) => source.publisher !== 'PRAXIS starter catalog' && !source.url.includes('praxis.tacitus.me')).length;
 
-    expect(CAPSULE_STARTER_CATALOG_VERSION).toMatch(/capsule-consolidation/);
+    expect(CAPSULE_STARTER_CATALOG_VERSION).toMatch(/research-dossier.*v16/);
     expect(Object.keys(CAPSULE_STARTER_SOURCE_REGISTRY).length).toBeGreaterThanOrEqual(10);
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(externalSourceCount(starter), `${starter.starterId} external source refs`).toBeGreaterThanOrEqual(2);
+      expect(starter.sourcePack.length, `${starter.starterId} curated source refs`).toBeGreaterThanOrEqual(4);
       expect(starter.sourcePack.some((source) => source.publisher === 'Source placeholder'), `${starter.starterId} placeholder publisher`).toBe(false);
       expect(starter.sourcePack.some((source) => source.url.includes('example.test')), `${starter.starterId} example.test source`).toBe(false);
       expect(starter.curationProfile.humanInspectionSummary, `${starter.starterId} human summary`).toContain(starter.label);
@@ -475,7 +509,7 @@ describe('context capsule product contract', () => {
     for (const starterId of [...expectedSituationIds, ...expectedToolIds, ...expectedOutputIds, ...expectedUserIds]) {
       const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
       expect(starter, `${starterId} missing`).toBeTruthy();
-      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(4);
       expect(starter?.excerpts.length, `${starterId} excerpts`).toBeGreaterThanOrEqual(2);
       expect(starter?.suggestedQuestions.length, `${starterId} questions`).toBeGreaterThanOrEqual(3);
       expect(starter?.suggestedNextActions.length, `${starterId} actions`).toBeGreaterThanOrEqual(3);
@@ -561,7 +595,7 @@ describe('context capsule product contract', () => {
       const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
       expect(starter, `${starterId} missing`).toBeTruthy();
       expect(starter?.tags).toEqual(expect.arrayContaining(['real-work', 'v2-context', 'no-affiliation']));
-      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(4);
       expect(starter?.excerpts.length, `${starterId} excerpts`).toBeGreaterThanOrEqual(2);
       expect(starter?.suggestedQuestions.length, `${starterId} questions`).toBeGreaterThanOrEqual(3);
       expect(starter?.suggestedNextActions.length, `${starterId} actions`).toBeGreaterThanOrEqual(3);
@@ -603,8 +637,8 @@ describe('context capsule product contract', () => {
       });
       expect(starter?.ontologyOverlay?.baseOntologyIds.length, `${starterId} base ontology ids`).toBeGreaterThanOrEqual(1);
       expect(starter?.ontologyOverlay?.workOntologyId, `${starterId} work ontology`).toMatch(/foreign-policy|domestic-policy|corporate-strategic/);
-      expect(starter?.ontologyOverlay?.graphSeed.nodeTemplates.length, `${starterId} graph seed nodes`).toBeGreaterThanOrEqual(50);
-      expect(starter?.ontologyOverlay?.graphSeed.edgeTemplates.length, `${starterId} graph seed edges`).toBeGreaterThanOrEqual(50);
+      expect(starter?.ontologyOverlay?.graphSeed.nodeTemplates.length, `${starterId} graph seed nodes`).toBeGreaterThanOrEqual(64);
+      expect(starter?.ontologyOverlay?.graphSeed.edgeTemplates.length, `${starterId} graph seed edges`).toBeGreaterThanOrEqual(64);
       expect(new Set(starter?.ontologyOverlay?.graphSeed.nodeTemplates).size, `${starterId} unique graph seed nodes`).toBe(starter?.ontologyOverlay?.graphSeed.nodeTemplates.length);
       expect(new Set(starter?.ontologyOverlay?.graphSeed.edgeTemplates).size, `${starterId} unique graph seed edges`).toBe(starter?.ontologyOverlay?.graphSeed.edgeTemplates.length);
       expect(starter?.ontologyOverlay?.graphSeed.nodeTemplates.join(' '), `${starterId} graph seed node content`).toMatch(/AbstractConcept|RealInfo|ReasoningMove|ToolAction|EvidenceNeed/);
@@ -634,8 +668,8 @@ describe('context capsule product contract', () => {
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       const graphSeed = starter.ontologyOverlay?.graphSeed;
 
-      expect(graphSeed?.nodeTemplates.length, `${starter.starterId} node templates`).toBeGreaterThanOrEqual(50);
-      expect(graphSeed?.edgeTemplates.length, `${starter.starterId} edge templates`).toBeGreaterThanOrEqual(50);
+      expect(graphSeed?.nodeTemplates.length, `${starter.starterId} node templates`).toBeGreaterThanOrEqual(64);
+      expect(graphSeed?.edgeTemplates.length, `${starter.starterId} edge templates`).toBeGreaterThanOrEqual(64);
       expect(new Set(graphSeed?.nodeTemplates).size, `${starter.starterId} unique nodes`).toBe(graphSeed?.nodeTemplates.length);
       expect(new Set(graphSeed?.edgeTemplates).size, `${starter.starterId} unique edges`).toBe(graphSeed?.edgeTemplates.length);
       expect(graphSeed?.nodeTemplates.join(' '), `${starter.starterId} abstract and real graph points`).toMatch(/AbstractConcept|RealInfo|ReasoningMove|ToolAction|EvidenceNeed/);
@@ -843,7 +877,7 @@ describe('context capsule product contract', () => {
     for (const starterId of [...expectedSituationIds, ...expectedToolIds]) {
       const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
       expect(starter, `${starterId} missing`).toBeTruthy();
-      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(4);
       expect(starter?.excerpts.length, `${starterId} excerpts`).toBeGreaterThanOrEqual(2);
       expect(starter?.readinessStars, `${starterId} readiness`).toBeGreaterThanOrEqual(4);
       expect(starter?.humanReview).toMatchObject({
@@ -876,7 +910,7 @@ describe('context capsule product contract', () => {
     for (const starterId of expectedStarterIds) {
       const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
       expect(starter, `${starterId} missing`).toBeTruthy();
-      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(4);
       expect(starter?.suggestedNextActions.length, `${starterId} next actions`).toBeGreaterThanOrEqual(3);
       expect(starter?.humanReview).toMatchObject({
         status: 'human-reviewed',
@@ -912,7 +946,7 @@ describe('context capsule product contract', () => {
       expect(starter, `${starterId} missing`).toBeTruthy();
       expect(starter?.category).toBe('tool');
       expect(starter?.tags).toEqual(expect.arrayContaining(['thinking-device', 'review-gated']));
-      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(4);
       expect(starter?.suggestedQuestions.length, `${starterId} questions`).toBeGreaterThanOrEqual(3);
       expect(starter?.suggestedNextActions.length, `${starterId} actions`).toBeGreaterThanOrEqual(3);
       expect(starter?.combinesWellWith.some((id) => id.startsWith('starter-situation-')), `${starterId} situation compatibility`).toBe(true);
@@ -960,7 +994,7 @@ describe('context capsule product contract', () => {
       expect(starter, `${starterId} missing`).toBeTruthy();
       expect(starter?.category).toBe('tool');
       expect(starter?.tags).toEqual(expect.arrayContaining(['thinking-device', 'reasoning-guide', 'review-gated']));
-      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(4);
       expect(starter?.suggestedQuestions.length, `${starterId} questions`).toBeGreaterThanOrEqual(3);
       expect(starter?.suggestedNextActions.length, `${starterId} actions`).toBeGreaterThanOrEqual(3);
       expect(starter?.combinesWellWith).toEqual(expect.arrayContaining([
@@ -1263,7 +1297,7 @@ describe('context capsule product contract', () => {
     ]));
 
     for (const starter of situationStarters) {
-      expect(starter.sourcePack.length, `${starter.starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter.sourcePack.length, `${starter.starterId} source pack`).toBeGreaterThanOrEqual(4);
       expect(starter.excerpts.length, `${starter.starterId} excerpts`).toBeGreaterThanOrEqual(2);
       expect(starter.readinessStars, `${starter.starterId} readiness stars`).toBeGreaterThanOrEqual(3);
       expect(starter.readinessStars, `${starter.starterId} readiness stars`).toBeLessThanOrEqual(5);
@@ -1313,7 +1347,7 @@ describe('context capsule product contract', () => {
       const starter = byId.get(starterId);
       expect(starter, `${starterId} missing`).toBeTruthy();
       expect(starter?.category, `${starterId} category`).toBe('situation');
-      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(4);
       expect(starter?.excerpts.length, `${starterId} excerpts`).toBeGreaterThanOrEqual(2);
       expect(starter?.readinessStars, `${starterId} readiness`).toBeGreaterThanOrEqual(4);
       expect(starter?.humanReview?.humanReviewGate, `${starterId} gate`).toMatch(/human|review|approval/i);
@@ -1325,7 +1359,7 @@ describe('context capsule product contract', () => {
       const starter = byId.get(starterId);
       expect(starter, `${starterId} missing`).toBeTruthy();
       expect(['tool', 'output'], `${starterId} category`).toContain(starter?.category);
-      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(4);
       expect(starter?.excerpts.length, `${starterId} excerpts`).toBeGreaterThanOrEqual(2);
       expect(starter?.recommendedToolIds.length, `${starterId} tools`).toBeGreaterThanOrEqual(2);
       expect(starter?.outputProductIds.length, `${starterId} outputs`).toBeGreaterThanOrEqual(1);
@@ -1364,7 +1398,7 @@ describe('context capsule product contract', () => {
       expect(starterIds.has(starterId), `${starterId} missing`).toBe(true);
       const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId)!;
       expect(starter.tags.length, `${starterId} tags`).toBeGreaterThanOrEqual(6);
-      expect(starter.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(2);
+      expect(starter.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(4);
       expect(starter.excerpts.length, `${starterId} excerpts`).toBeGreaterThanOrEqual(2);
       expect(starter.inspectionSections.map((section) => section.label)).toEqual(expect.arrayContaining([
         'Purpose',
@@ -1403,6 +1437,11 @@ describe('context capsule product contract', () => {
     expect(promptBlock).toContain('domain: source-intake');
     expect(promptBlock).toContain('readiness_stars:');
     expect(promptBlock).toContain('source_pack:');
+    expect(promptBlock).toContain('research_dossier:');
+    expect(promptBlock).toContain('research_source_spine:');
+    expect(promptBlock).toContain('claim_ledger_seeds:');
+    expect(promptBlock).toContain('human_workflow_example:');
+    expect(promptBlock).toContain('source_refresh_docket: starter-refresh');
     expect(promptBlock).toContain('suggested_questions:');
     expect(promptBlock).toContain('suggested_next_actions:');
     expect(promptBlock).toContain('agent_workflow:');

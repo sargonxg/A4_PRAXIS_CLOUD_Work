@@ -1,0 +1,74 @@
+{
+  "checks": [
+    {
+      "id": "merge-only-dossier-write",
+      "status": "PASS",
+      "evidence": "research dossier detail record is seeded"
+    },
+    {
+      "id": "merge-only-claim-ledger-write",
+      "status": "PASS",
+      "evidence": "claim ledger detail record is seeded"
+    },
+    {
+      "id": "merge-only-workflow-write",
+      "status": "PASS",
+      "evidence": "human workflow example detail record is seeded"
+    },
+    {
+      "id": "merge-only-refresh-write",
+      "status": "PASS",
+      "evidence": "starter refresh docket detail record is seeded"
+    },
+    {
+      "id": "merge-flag",
+      "status": "PASS",
+      "evidence": "detail writes are merge-only"
+    },
+    {
+      "id": "rules-research-dossiers",
+      "status": "PASS",
+      "evidence": "Firestore rules cover research dossiers"
+    },
+    {
+      "id": "rules-claim-ledgers",
+      "status": "PASS",
+      "evidence": "Firestore rules cover claim ledgers"
+    },
+    {
+      "id": "rules-workflows",
+      "status": "PASS",
+      "evidence": "Firestore rules cover workflow examples"
+    },
+    {
+      "id": "rules-refresh-dockets",
+      "status": "PASS",
+      "evidence": "Firestore rules cover refresh dockets"
+    },
+    {
+      "id": "runtime-audit-dossiers",
+      "status": "PASS",
+      "evidence": "runtime data-plane audit samples research dossiers"
+    },
+    {
+      "id": "runtime-audit-refresh",
+      "status": "PASS",
+      "evidence": "runtime data-plane audit samples starter refresh dockets"
+    },
+    {
+      "id": "script-registered",
+      "status": "PASS",
+      "evidence": "diagnostic backfill script is registered"
+    },
+    {
+      "id": "ui-dossier-panel",
+      "status": "PASS",
+      "evidence": "workbench inspector surfaces research dossier proof"
+    },
+    {
+      "id": "ui-vnext-proof",
+      "status": "PASS",
+      "evidence": "capsule cards show catalog vNext proof"
+    }
+  ]
+}

@@ -806,8 +806,8 @@ export async function promoteCapsuleSourceGaps(
       level: capsule.trust.level === 'green' ? 'amber' : capsule.trust.level,
       blockers: uniqueStrings([...capsule.trust.blockers, ...gaps]).slice(0, 10),
       recommendations: uniqueStrings([
-        ...capsule.trust.recommendations,
         'Review proposed source-pack gaps before the next external handoff.',
+        ...capsule.trust.recommendations,
       ]).slice(0, 10),
       checkedAt: timestamp,
     },
@@ -1815,7 +1815,10 @@ function starterToCreateInput(uid: string, starterDefinition: CapsuleStarterDefi
       userCoreId: starterDefinition.coreRefs.userCoreId,
       situationCoreId: starterDefinition.coreRefs.situationCoreId,
       pathCoreId: starterDefinition.coreRefs.pathCoreId,
-      sourceCoreIds: starterDefinition.coreRefs.sourceCoreIds,
+      sourceCoreIds: uniqueStrings([
+        ...(starterDefinition.coreRefs.sourceCoreIds ?? []),
+        ...starterDefinition.sourcePack.map((source) => source.id),
+      ]),
       documentCoreIds: starterDefinition.coreRefs.documentCoreIds,
       graphCoreId: starterDefinition.coreRefs.graphCoreId,
       timeCoreId: starterDefinition.coreRefs.timeCoreId,
@@ -1896,6 +1899,10 @@ function buildStarterSnapshot(starterDefinition: CapsuleStarterDefinition): Caps
     intelligenceProfile: cloneSerializable(starterDefinition.intelligenceProfile),
     cogneeProfile: cloneSerializable(starterDefinition.cogneeProfile),
     contextCaptureProfile: cloneSerializable(starterDefinition.contextCaptureProfile),
+    researchDossier: cloneSerializable(starterDefinition.researchDossier),
+    claimLedgerSeeds: cloneSerializable(starterDefinition.claimLedgerSeeds),
+    humanWorkflowExample: cloneSerializable(starterDefinition.humanWorkflowExample),
+    sourceRefreshDocket: cloneSerializable(starterDefinition.sourceRefreshDocket),
     ...(starterDefinition.ontologyOverlay ? {
       ontologyOverlay: {
         ...starterDefinition.ontologyOverlay,
@@ -1952,6 +1959,7 @@ async function writeStarterDetailRecords(
     const sourceBinding = starterDefinition.contextCaptureProfile.sourceBindings.find((binding) => binding.sourceId === source.id);
     batch.set(ref.collection('sources').doc(cleanId(source.id, 'starter-source')), {
       sourceId: source.id,
+      ownerUid: uid,
       capsuleId,
       title: source.label,
       publisher: source.publisher ?? null,
@@ -1981,9 +1989,52 @@ async function writeStarterDetailRecords(
       seededAt: timestamp,
     }, { merge: true });
   }
+  const sourceIds = starterDefinition.sourcePack.map((source) => source.id);
+  const graphNodeCount = starterDefinition.ontologyOverlay?.graphSeed.nodeTemplates.length ?? 0;
+  const graphEdgeCount = starterDefinition.ontologyOverlay?.graphSeed.edgeTemplates.length ?? 0;
+  batch.set(ref.collection('researchDossiers').doc('starter-dossier'), {
+    ...cloneSerializable(starterDefinition.researchDossier),
+    ownerUid: uid,
+    capsuleId,
+    starterDefinitionId: starterDefinition.starterId,
+    sourceIds,
+    graphNodeCount,
+    graphEdgeCount,
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+    updatedAt: timestamp,
+  }, { merge: true });
+  batch.set(ref.collection('claimLedgers').doc('starter-claims'), {
+    ...cloneSerializable(starterDefinition.claimLedgerSeeds),
+    ownerUid: uid,
+    capsuleId,
+    starterDefinitionId: starterDefinition.starterId,
+    sourceIds,
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+    updatedAt: timestamp,
+  }, { merge: true });
+  batch.set(ref.collection('humanWorkflowExamples').doc('starter-workflow'), {
+    ...cloneSerializable(starterDefinition.humanWorkflowExample),
+    ownerUid: uid,
+    capsuleId,
+    starterDefinitionId: starterDefinition.starterId,
+    sourceIds,
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+    updatedAt: timestamp,
+  }, { merge: true });
+  batch.set(ref.collection('sourceRefreshDockets').doc('starter-refresh'), {
+    ...cloneSerializable(starterDefinition.sourceRefreshDocket),
+    ownerUid: uid,
+    capsuleId,
+    starterDefinitionId: starterDefinition.starterId,
+    needsRefresh: true,
+    lastRefreshedAt: null,
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+    updatedAt: timestamp,
+  }, { merge: true });
   if (CAPSULE_WOW_DEMO_STARTER_IDS.includes(starterDefinition.starterId as typeof CAPSULE_WOW_DEMO_STARTER_IDS[number])) {
     batch.set(ref.collection('sourceRefreshDockets').doc('wow-demo'), {
       docketId: 'wow-demo',
+      ownerUid: uid,
       capsuleId,
       starterDefinitionId: starterDefinition.starterId,
       catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
@@ -2013,6 +2064,7 @@ async function writeStarterDetailRecords(
   }
   batch.set(ref.collection('evaluations').doc('starter-readiness'), {
     evaluationId: 'starter-readiness',
+    ownerUid: uid,
     capsuleId,
     type: 'starter-readiness',
     stars: starterDefinition.readinessStars,
@@ -2063,6 +2115,7 @@ async function writeStarterDetailRecords(
   }
   batch.set(ref.collection('advisoryMemoryHits').doc('starter-advisory-context'), {
     memoryHitId: 'starter-advisory-context',
+    ownerUid: uid,
     capsuleId,
     source: 'starter-catalog',
     advisoryOnly: true,
@@ -2100,6 +2153,7 @@ async function writeStarterDetailRecords(
   const cogneeSeedPack = buildCapsuleCogneeSeedPack(starterDefinition);
   batch.set(ref.collection('advisoryMemoryHits').doc('starter-cognee-seed-pack'), {
     memoryHitId: 'starter-cognee-seed-pack',
+    ownerUid: uid,
     capsuleId,
     source: 'starter-catalog',
     sourceType: 'cognee',
@@ -2111,6 +2165,7 @@ async function writeStarterDetailRecords(
   }, { merge: true });
   batch.set(ref.collection('notes').doc('starter-guidance'), {
     noteId: 'starter-guidance',
+    ownerUid: uid,
     capsuleId,
     type: 'source_note',
     title: `${starterDefinition.label} starter guidance`,
@@ -2212,6 +2267,12 @@ function starterSnapshotMissingHints(snapshot: CapsuleStarterSnapshot): string[]
   if (!snapshot.richProfile?.evidenceRequirements.length) missing.push('richProfile');
   if (!snapshot.intelligenceProfile?.humanWorkflow?.decisionMoment) missing.push('intelligenceProfile');
   if (!snapshot.cogneeProfile?.seedDocuments?.length) missing.push('cogneeProfile');
+  if (!snapshot.contextCaptureProfile?.sourceBindings?.length) missing.push('contextCaptureProfile');
+  if (!snapshot.ontologyOverlay?.graphSeed?.nodeTemplates?.length) missing.push('ontologyOverlay');
+  if (!snapshot.researchDossier?.sourceSpine?.length) missing.push('researchDossier');
+  if (!snapshot.claimLedgerSeeds?.missing?.length) missing.push('claimLedgerSeeds');
+  if (!snapshot.humanWorkflowExample?.steps?.length) missing.push('humanWorkflowExample');
+  if (!snapshot.sourceRefreshDocket?.sourceIds?.length) missing.push('sourceRefreshDocket');
   return missing;
 }
 
@@ -3167,7 +3228,27 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     : catalogStarter?.contextCaptureProfile
       ? cloneSerializable(catalogStarter.contextCaptureProfile)
       : null;
-  if (!intelligenceProfile || !cogneeProfile || !curationProfile || !contextCaptureProfile) return null;
+  const researchDossier = isRecord(value.researchDossier)
+    ? cloneSerializable(value.researchDossier as unknown as CapsuleStarterSnapshot['researchDossier'])
+    : catalogStarter?.researchDossier
+      ? cloneSerializable(catalogStarter.researchDossier)
+      : null;
+  const claimLedgerSeeds = isRecord(value.claimLedgerSeeds)
+    ? cloneSerializable(value.claimLedgerSeeds as unknown as CapsuleStarterSnapshot['claimLedgerSeeds'])
+    : catalogStarter?.claimLedgerSeeds
+      ? cloneSerializable(catalogStarter.claimLedgerSeeds)
+      : null;
+  const humanWorkflowExample = isRecord(value.humanWorkflowExample)
+    ? cloneSerializable(value.humanWorkflowExample as unknown as CapsuleStarterSnapshot['humanWorkflowExample'])
+    : catalogStarter?.humanWorkflowExample
+      ? cloneSerializable(catalogStarter.humanWorkflowExample)
+      : null;
+  const sourceRefreshDocket = isRecord(value.sourceRefreshDocket)
+    ? cloneSerializable(value.sourceRefreshDocket as unknown as CapsuleStarterSnapshot['sourceRefreshDocket'])
+    : catalogStarter?.sourceRefreshDocket
+      ? cloneSerializable(catalogStarter.sourceRefreshDocket)
+      : null;
+  if (!intelligenceProfile || !cogneeProfile || !curationProfile || !contextCaptureProfile || !researchDossier || !claimLedgerSeeds || !humanWorkflowExample || !sourceRefreshDocket) return null;
   return {
     catalogVersion: stringOrNull(value.catalogVersion) ?? 'unknown',
     starterId,
@@ -3196,6 +3277,10 @@ function normalizeStarterSnapshot(value: unknown): CapsuleStarterSnapshot | null
     intelligenceProfile,
     cogneeProfile,
     contextCaptureProfile,
+    researchDossier,
+    claimLedgerSeeds,
+    humanWorkflowExample,
+    sourceRefreshDocket,
     ...(ontologyOverlay ? { ontologyOverlay } : {}),
     ...(deviceProfile ? { deviceProfile } : {}),
     ...(humanReviewRecord ? {
