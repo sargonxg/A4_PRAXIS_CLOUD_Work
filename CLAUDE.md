@@ -13,7 +13,8 @@
 > `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`,
 > `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`,
 > `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`, `TODO.md`,
-> `docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md`, and the
+> `docs/PRAXIS_CODEX_PLAYBOOK.md` (authoritative roadmap + per-surface work
+> packets), and the
 > `[Unreleased]` section in `CHANGELOG.md`. The current product direction is
 > the Tasklet-style ContextCapsule agent runtime coordinated through
 > `docs/product/` and the execution ledger. Validate with `npx tsc --noEmit`,
@@ -43,18 +44,19 @@ order. Skipping items 4-10 will produce duplicate work.
 1. `README.md`
 2. `CLAUDE.md` (this file)
 3. `AGENTS.md` — hard rules, validation gate, deploy procedure
-4. `ARCHITECTURE.md` — architecture entrypoint and canonical links
-5. `docs/product/README.md` — current product documentation index
-6. `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md` — current app/runtime structure
-7. `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md` — Tasklet-style runtime plan
-8. `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md` — active build ledger
-9. `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` — active implementation prompts
-10. `docs/architecture/PRAXIS_ARCHITECTURE.md` — architecture bible / invariants
-11. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` — shipped vs gated state
-12. `docs/architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md` — Ask / AgentRun / Genkit / ADK runtime contract
-13. `STATUS.md`
-14. `TODO.md`
-15. `CHANGELOG.md` — `[Unreleased]` section only
+4. `docs/PRAXIS_CODEX_PLAYBOOK.md` — authoritative priorities, vision→gap map, per-surface work packets, docs hygiene
+5. `ARCHITECTURE.md` — architecture entrypoint and canonical links
+6. `docs/product/README.md` — current product documentation index
+7. `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md` — current app/runtime structure
+8. `docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md` — Tasklet-style runtime plan
+9. `docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md` — active build ledger
+10. `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` — active implementation prompts
+11. `docs/architecture/PRAXIS_ARCHITECTURE.md` — architecture bible / invariants
+12. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` — shipped vs gated state
+13. `docs/architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md` — Ask / AgentRun / Genkit / ADK runtime contract
+14. `STATUS.md`
+15. `TODO.md`
+16. `CHANGELOG.md` — `[Unreleased]` section only
 
 ### Operational references (consult when relevant, not every session)
 

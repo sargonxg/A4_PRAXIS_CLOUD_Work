@@ -276,7 +276,7 @@ https://praxis.tacitus.me
 - `docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md` - copy-paste prompts for Codex and Claude Code sessions
 - `docs/architecture/PRAXIS_ARCHITECTURE.md` - canonical architecture bible
 - `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md` - shipped vs target-state notes
-- `docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md` - current cleanup ledger
+- `docs/PRAXIS_CODEX_PLAYBOOK.md` - authoritative roadmap, priorities, and per-surface work packets
 - `STATUS.md`, `TODO.md`, `CHANGELOG.md` - current repo status and backlog
 
 ---

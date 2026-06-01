@@ -53,5 +53,5 @@ Future ADRs should resume at the next unused numeric prefix.
 
 Active target-state gaps are tracked in:
 
-- `docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md`
+- `docs/PRAXIS_CODEX_PLAYBOOK.md`
 - `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`

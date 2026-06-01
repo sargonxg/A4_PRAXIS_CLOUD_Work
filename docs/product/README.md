@@ -13,17 +13,18 @@ Status: canonical index for the current app structure
 2. [`TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`](./TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md)
    - Implementation plan for the Tasklet-style PRAXIS runtime.
    - Explains what to copy from Tasklet's product class and what not to copy.
-3. [`CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md`](./CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md)
-   - Product narrative and UX plan for ContextCapsules, landing, app shell,
-     tool marketplace, handover, and capsule combination.
+3. [`../PRAXIS_CODEX_PLAYBOOK.md`](../PRAXIS_CODEX_PLAYBOOK.md)
+   - Authoritative roadmap + per-surface work packets. Supersedes the removed
+     product-rebuild plan; product narrative/UX intent now lives in the canonical
+     app structure doc plus this playbook's vision→gap map.
 4. [`CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`](./CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md)
    - Canonical guide for building policy/statecraft ContextCapsules.
    - Defines core anatomy, PRAXIS augmented generation, generic versus
      path-bound users, personas, combination rules, tools, connectors,
      outputs, and usable app shape.
-5. [`CONTEXT_CAPSULE_V3_HUMAN_GATED_CONTEXT_INFRASTRUCTURE.md`](./CONTEXT_CAPSULE_V3_HUMAN_GATED_CONTEXT_INFRASTRUCTURE.md)
-   - Canonical v3 contract for human-gated capsules, Cognee advisory memory,
-     review-card-only agents, marketplace gates, and `/learn` positioning.
+5. _(Removed 2026-06-01)_ The v3 human-gated context-infrastructure doc was
+   superseded by the Tasklet-style runtime; the live capsule contract is
+   `src/lib/context/capsule-v3.ts` and the canonical app structure doc.
 6. [`TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./TASKLET_RESEARCH_INTAKE_2026-05-15.md)
    - Intake note for the external Tasklet-class browser-agent research.
    - Records what PRAXIS adopted, deferred, or rejected.

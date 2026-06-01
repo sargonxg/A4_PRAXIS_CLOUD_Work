@@ -30,7 +30,7 @@ work unless Giulio explicitly asks.
 8. [`docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`](./docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md)
 9. [`docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`](./docs/build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md)
 10. [`docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md`](./docs/build/PRAXIS_TASKLET_RUNTIME_AGENT_PROMPTS.md)
-11. [`docs/product/CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md`](./docs/product/CONTEXT_CAPSULE_PRODUCT_REBUILD_PLAN.md)
+11. [`docs/PRAXIS_CODEX_PLAYBOOK.md`](./docs/PRAXIS_CODEX_PLAYBOOK.md) — authoritative priorities, vision→gap map, per-surface work packets, docs hygiene
 12. [`docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./docs/product/TASKLET_RESEARCH_INTAKE_2026-05-15.md)
 13. [`docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./docs/product/PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md)
 14. [`docs/architecture/PRAXIS_ARCHITECTURE.md`](./docs/architecture/PRAXIS_ARCHITECTURE.md)

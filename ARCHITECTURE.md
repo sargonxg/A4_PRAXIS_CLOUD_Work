@@ -8,7 +8,7 @@ Last updated: 2026-05-28.
 - [`docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`](./docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md) — shipped, partial, gated, and drift state.
 - [`docs/architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md`](./docs/architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md) — canonical Ask PRAXIS / AgentRun / Genkit / ADK runtime architecture: PRAXIS-owned state, queued worker execution, mirrored events, approvals, receipts, evals, and local-vs-production proof.
 - [`docs/architecture/PRAXIS_DIALECTICA_KNOWLEDGE_LAYER_ALIGNMENT.md`](./docs/architecture/PRAXIS_DIALECTICA_KNOWLEDGE_LAYER_ALIGNMENT.md) — future product boundary: PRAXIS as the user-facing policy workbench, DIALECTICA as the ingestion/knowledge layer, with KAIROS and AGON feeding structured evidence upstream.
-- [`docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md`](./docs/architecture/PRAXIS_SIMPLIFIED_CONTEXT_CORE_MODEL_2026-05-08.md) — historical simplified model evidence. The current visible product spine is Home + Capsules, with Ask, sources, outputs, diagnostics, and agent work inside the shared cockpit.
+- [`docs/PRAXIS_CODEX_PLAYBOOK.md`](./docs/PRAXIS_CODEX_PLAYBOOK.md) — authoritative priorities, vision→gap map, and per-surface work packets. The current visible product spine is Home + Capsules, with Ask, sources, outputs, diagnostics, and agent work inside the shared cockpit.
 - [`docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md`](./docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md) — current canonical product/app structure for the Tasklet-style ContextCapsule runtime on Google Cloud.
 - [`docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`](./docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md) — canonical guide for policy/statecraft capsule anatomy, generic and path-bound users, personas, combination, tools, connectors, and output products.
 - [`docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`](./docs/product/TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md) — implementation plan for persistent capsule-aware agents, Cloud SQL run ledger, Cloud Tasks dispatch, approvals, MCP, and browser/sandbox deferral.
@@ -23,9 +23,10 @@ Last updated: 2026-05-28.
 ## Historical / Subsumed Directions
 
 Historical v4/v5/v7 and May 8 design-led slice plans were removed during the
-Tasklet cleanup pass. Use the product docs above and
-[`docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md`](./docs/audits/2026-05-16-tasklet-codebase-cleanup-audit.md)
-for the current runtime-first cleanup ledger.
+Tasklet cleanup pass, and the dated daily audit ledgers were pruned on 2026-06-01.
+Use the product docs above and
+[`docs/PRAXIS_CODEX_PLAYBOOK.md`](./docs/PRAXIS_CODEX_PLAYBOOK.md)
+for the current priorities and cleanup rules.
 
 ## Current Production Shape
 
