@@ -29,6 +29,8 @@ const publicPage = read('src/app/page.tsx');
 const marketingHome = read('src/components/marketing/praxis-marketing-home.tsx');
 const appIndex = read('src/app/app/page.tsx');
 const appLaunchpad = read('src/components/app/praxis-app-launchpad.tsx');
+const chatShell = read('src/components/app/praxis-chat-first-shell.tsx');
+const sharedHomeSurface = `${marketingHome}\n${appLaunchpad}\n${chatShell}`;
 const policyMissions = read('src/lib/product/policy-missions.ts');
 const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
 const boardroom = read('src/components/boardroom/boardroom-workspace.tsx');
@@ -50,8 +52,13 @@ forbidAll('public route', publicPage, [
   '/api/health',
 ]);
 
-requireAll('marketing home', marketingHome, [
-  'data-testid="marketing-home"',
+requireAll('marketing home wrapper', marketingHome, [
+  'PraxisChatFirstShell',
+  'mode="public"',
+]);
+requireAll('marketing home', sharedHomeSurface, [
+  'marketing-home',
+  'data-testid="praxis-chat-first-shell"',
   'Ask a policy question. Build the capsule first.',
   'POLICY_MISSION_EXAMPLES',
   'data-testid="marketing-hero-prompt"',
@@ -65,7 +72,7 @@ requireAll('marketing home', marketingHome, [
   'Every claim cited',
   'Start free',
 ]);
-forbidAll('marketing home', marketingHome, [
+forbidAll('marketing home', sharedHomeSurface, [
   'Diagnostics',
   'Systems ready',
   'Search app',
@@ -76,15 +83,19 @@ forbidAll('marketing home', marketingHome, [
   'AskPraxisHome',
 ]);
 
-const primaryCtaCount = marketingHome.split('data-testid="marketing-primary-cta"').length - 1;
+const primaryCtaCount = chatShell.split('data-testid="marketing-primary-cta"').length - 1;
 if (primaryCtaCount !== 1) {
   failures.push(`marketing home should expose exactly one primary CTA test id, found ${primaryCtaCount}`);
 }
 
 requireAll('signed-in app index', appIndex, ['PraxisAppLaunchpad']);
 forbidAll('signed-in app index', appIndex, ['AskPraxisHome', 'TaskletPraxisWorkbench']);
-requireAll('signed-in launchpad', appLaunchpad, [
-  'data-testid="app-launchpad"',
+requireAll('signed-in launchpad wrapper', appLaunchpad, [
+  'PraxisChatFirstShell',
+  'mode="authenticated"',
+]);
+requireAll('signed-in launchpad', sharedHomeSurface, [
+  'app-launchpad',
   'Ask a policy question. Build the capsule first.',
   'POLICY_MISSION_EXAMPLES',
   'Ask PRAXIS',
@@ -104,7 +115,7 @@ requireAll('policy missions', policyMissions, [
   'Treaty analysis with citations',
   'Stakeholder & ACH for a crisis',
 ]);
-forbidAll('signed-in launchpad', appLaunchpad, [
+forbidAll('signed-in launchpad', sharedHomeSurface, [
   'Diagnostics',
   'Systems ready',
   'Search app',

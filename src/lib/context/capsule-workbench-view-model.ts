@@ -85,6 +85,9 @@ export interface CapsuleWorkbenchCapsuleInput {
   outputContracts?: unknown[];
   memoryPosture?: unknown;
   starterSnapshot?: unknown;
+  graphLiteProjection?: unknown;
+  embeddedGraph?: unknown;
+  grounding?: unknown;
 }
 
 export interface CapsuleWorkbenchDocumentInput {
@@ -847,6 +850,7 @@ function buildGraph(input: {
       });
     }
   }
+  addGraphLiteProjection(input.capsule, addNode, addEdge);
 
   const canonicalNodeCount = nodes.filter((node) => node.reviewState === 'canonical' || node.reviewState === 'reviewed').length;
   return {
@@ -965,6 +969,34 @@ interface CapsuleGraphProposalItem {
   };
 }
 
+interface GraphLiteProjectionItem {
+  projectionId: string;
+  status: string;
+  namedGraph: string;
+  canonicalStore: string;
+  promotionGate: string;
+  nodeCount: number;
+  edgeCount: number;
+  nodes: Array<{
+    id: string;
+    label: string;
+    entityType: string;
+    reviewState: CapsuleWorkbenchReviewState;
+    confidence: number | null;
+    sourceReceiptIds: string[];
+  }>;
+  edges: Array<{
+    id: string;
+    source: string;
+    target: string;
+    label: string;
+    relationshipType?: string;
+    reviewState: CapsuleWorkbenchReviewState;
+    confidence: number | null;
+    sourceReceiptIds: string[];
+  }>;
+}
+
 function sourceItemsFromUnknown(value: unknown): CapsuleGraphSourceItem[] {
   if (!Array.isArray(value)) return [];
   return uniqueBy(value.flatMap((item): CapsuleGraphSourceItem[] => {
@@ -1049,6 +1081,141 @@ function graphProposalsFromUnknown(value: unknown): CapsuleGraphProposalItem[] {
       },
     }];
   });
+}
+
+function addGraphLiteProjection(
+  capsule: CapsuleWorkbenchCapsuleInput,
+  addNode: (node: CapsuleGraphNodeDisplay) => void,
+  addEdge: (edge: CapsuleGraphEdgeDisplay) => void,
+) {
+  const projection = graphLiteProjectionFromCapsule(capsule);
+  if (!projection) return;
+
+  const projectionNodeId = `graphlite:${projection.projectionId}`;
+  addNode({
+    id: projectionNodeId,
+    label: 'GraphLite advisory projection',
+    type: 'ontology',
+    reviewState: 'advisory',
+    detail: `${projection.status}; ${projection.namedGraph}; ${projection.nodeCount} nodes, ${projection.edgeCount} edges. ${projection.canonicalStore} canonical.`,
+    entityType: 'Policy',
+    provenance: 'GraphLite advisory projection',
+    confidence: 0.6,
+  });
+  addEdge({
+    id: `graphlite-${projection.projectionId}-capsule`,
+    source: projectionNodeId,
+    target: `capsule:${capsule.capsuleId}`,
+    label: 'derived from',
+    reviewState: 'advisory',
+    relationshipType: 'derived_from',
+  });
+
+  for (const node of projection.nodes) {
+    const id = `graphlite:${node.id}`;
+    addNode({
+      id,
+      label: node.label,
+      type: graphDisplayTypeForEntity(node.entityType),
+      reviewState: 'advisory',
+      detail: node.reviewState === 'reviewed' ? 'Reviewed inside GraphLite projection; Firestore promotion still requires a review card.' : projection.promotionGate,
+      entityType: node.entityType,
+      provenance: 'GraphLite advisory projection',
+      confidence: node.confidence,
+      sourceReceiptIds: node.sourceReceiptIds,
+    });
+    addEdge({
+      id: `graphlite-node:${projection.projectionId}:${node.id}`,
+      source: projectionNodeId,
+      target: id,
+      label: 'projects',
+      reviewState: 'advisory',
+      relationshipType: 'projects',
+      confidence: node.confidence,
+      sourceReceiptIds: node.sourceReceiptIds,
+    });
+  }
+
+  for (const edge of projection.edges) {
+    addEdge({
+      id: `graphlite-edge:${edge.id}`,
+      source: `graphlite:${edge.source}`,
+      target: `graphlite:${edge.target}`,
+      label: edge.label,
+      reviewState: 'advisory',
+      relationshipType: edge.relationshipType,
+      confidence: edge.confidence,
+      sourceReceiptIds: edge.sourceReceiptIds,
+    });
+  }
+}
+
+function graphLiteProjectionFromCapsule(capsule: CapsuleWorkbenchCapsuleInput): GraphLiteProjectionItem | null {
+  const grounding = asRecord(capsule.grounding);
+  const starterSnapshot = asRecord(capsule.starterSnapshot);
+  const candidate = firstRecord(
+    capsule.graphLiteProjection,
+    capsule.embeddedGraph,
+    grounding?.embeddedGraph,
+    starterSnapshot?.graphLiteProjection,
+  );
+  if (!candidate || cleanText(candidate.provider) !== 'graphlite') return null;
+  const projectionId = cleanText(candidate.projectionId);
+  if (!projectionId) return null;
+  const nodes = graphLiteNodesFromUnknown(candidate.nodes);
+  const edges = graphLiteEdgesFromUnknown(candidate.edges);
+  return {
+    projectionId,
+    status: cleanText(candidate.status) || 'compiled-advisory',
+    namedGraph: cleanText(candidate.namedGraph) || projectionId,
+    canonicalStore: cleanText(candidate.canonicalStore) || 'Firestore ContextCapsules',
+    promotionGate: cleanText(candidate.promotionGate) || 'Human review-card approval required before canonical graph promotion.',
+    nodeCount: typeof candidate.nodeCount === 'number' ? candidate.nodeCount : nodes.length,
+    edgeCount: typeof candidate.edgeCount === 'number' ? candidate.edgeCount : edges.length,
+    nodes,
+    edges,
+  };
+}
+
+function graphLiteNodesFromUnknown(value: unknown): GraphLiteProjectionItem['nodes'] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item): GraphLiteProjectionItem['nodes'] => {
+    const record = asRecord(item);
+    const id = cleanText(record?.id);
+    if (!id) return [];
+    return [{
+      id,
+      label: cleanText(record?.label) || humanizeId(id),
+      entityType: cleanText(record?.entityType) || 'Policy',
+      reviewState: reviewStateFrom(record?.reviewState ?? 'advisory'),
+      confidence: confidenceFromUnknown(record?.confidence),
+      sourceReceiptIds: cleanStrings(record?.sourceReceiptIds),
+    }];
+  });
+}
+
+function graphLiteEdgesFromUnknown(value: unknown): GraphLiteProjectionItem['edges'] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item, index): GraphLiteProjectionItem['edges'] => {
+    const record = asRecord(item);
+    const source = cleanText(record?.source);
+    const target = cleanText(record?.target);
+    if (!source || !target) return [];
+    return [{
+      id: cleanText(record?.id) || `edge-${index + 1}`,
+      source,
+      target,
+      label: cleanText(record?.label) || cleanText(record?.relationshipType) || 'related to',
+      relationshipType: cleanText(record?.relationshipType) || undefined,
+      reviewState: reviewStateFrom(record?.reviewState ?? 'advisory'),
+      confidence: confidenceFromUnknown(record?.confidence),
+      sourceReceiptIds: cleanStrings(record?.sourceReceiptIds),
+    }];
+  });
+}
+
+function firstRecord(...values: unknown[]): Record<string, unknown> | null {
+  return values.find((value): value is Record<string, unknown> => Boolean(asRecord(value))) ?? null;
 }
 
 function sourceIdsFromUnknown(value: unknown): string[] {

@@ -1,0 +1,9 @@
+{
+  "catalogVersion": "2026-05-31-graphlite-advisory-projection-v17",
+  "starterCount": 205,
+  "provider": "graphlite",
+  "projectionMode": "advisory",
+  "canonicalStore": "Firestore ContextCapsules",
+  "namedGraphCount": 205,
+  "findings": []
+}

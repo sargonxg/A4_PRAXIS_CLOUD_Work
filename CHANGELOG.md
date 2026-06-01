@@ -2,6 +2,44 @@
 
 ## [Unreleased]
 
+- feat(hardening): finish P3 shared shell, CI auth gate, and audit lanes.
+  Reconciles public `/` and signed-in `/app` through a shared chat-first PRAXIS
+  shell while keeping root SEO metadata, makes `persona-smoke` fail early unless
+  disposable Firebase Actions secrets are configured, and consolidates audit
+  gate groups behind `scripts/audit-runner.ts` lanes while dropping duplicate
+  `audit:ontology` and `audit:path-coverage` aliases.
+
+- feat(capsules): capture capsule grounding depth at creation.
+  Adds temporal anchors, causal links, domain taxonomy, ontology, and ACO
+  primitive bindings to capsule/v2 creation and persistence, carries them into
+  the v3 `grounding` section, seeds non-empty GraphLite advisory projections
+  from capsule/domain/timeline/causal bindings, and surfaces them in the
+  existing capsule workbench while keeping Firestore canonical.
+
+- feat(boardroom): add capsule-grounded turn feed and synthesis options.
+  Wires Boardroom runs to the active context stack's capsule sources/documents,
+  renders per-turn status, evidence, critique, recommendation, and confidence,
+  aligns the default speaker order with the six brainstorming personas, and
+  persists consensus/divergence/decision-option synthesis through the run,
+  memo, and output capsule payloads.
+
+- feat(agent-runtime): expose triage and live source-checker lane.
+  Adds explicit Ask triage workflow decisions, persists them on queued
+  AgentRun metadata and PRAXIS-prefixed trace events, surfaces the triage step
+  in the Ask rail, and runs a source-checker lane that writes sourceability
+  verdicts before research memo drafting.
+
+- feat(memo): add fact-check and language-check rail actions.
+  Extends the calibrated Memo writer route with claim checks via Ask PRAXIS and
+  deterministic output-constraint language checks, carries active capsule
+  provenance through tool output persistence, and renders verdicts, receipts,
+  and red-line flags in the Memo GapFillerRail.
+
+- feat(ask): surface sourceability verdict badges inline.
+  Adds per-claim sourceability verdict DTOs to the Ask answer envelope and
+  legacy stream payload helper, renders supported/weak/contradicted/unsupported
+  badges in Ask, and covers the badge tone plus route payload contract.
+
 - feat(public): wire mission-first homepage, billing, and proof gate.
   Build 2026.05.31.03 routes public and signed-in policy missions into
   Capsule Builder via `capsulePrompt`, starts Polar checkout from Practitioner

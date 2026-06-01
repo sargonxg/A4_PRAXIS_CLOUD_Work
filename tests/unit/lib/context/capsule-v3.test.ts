@@ -48,6 +48,100 @@ describe('ContextCapsule v3 contract', () => {
     expect(capsule.outputContracts).toHaveLength(1);
   });
 
+  it('persists explicit temporal, causal, ontology, and GraphLite grounding from capsule creation', () => {
+    const capsule = normalizeContextCapsuleV3({
+      ...makeCapsule(),
+      grounding: {
+        temporality: {
+          timelineAnchors: [{
+            id: 'anchor-review',
+            label: 'Review window',
+            date: '2026-06-15',
+            kind: 'review',
+            sourceRefs: ['src-1'],
+          }],
+        },
+        causality: {
+          causalLinks: [{
+            id: 'causal-risk',
+            cause: 'Legal review is incomplete',
+            effect: 'Procurement recommendation remains blocked',
+            relation: 'blocks',
+            evidenceRefs: ['src-1'],
+            confidence: 0.72,
+          }],
+        },
+        ontologyBinding: {
+          domainId: 'governance-rule-of-law',
+          taxonomyPath: ['generic', 'governance-rule-of-law'],
+          ontologyIds: ['governance', 'legal'],
+          acoPrimitives: ['Actor', 'Claim', 'Constraint'],
+          bindingRationale: 'Procurement governance needs actor, claim, and constraint extraction.',
+        },
+        embeddedGraph: {
+          provider: 'graphlite',
+          projectionId: 'ai-governance-procurement-graphlite-builder-projection',
+          status: 'compiled-advisory',
+          namedGraph: 'capsule_ai_governance_procurement',
+          nodeCount: 2,
+          edgeCount: 1,
+          advisoryOnly: true,
+          canonicalStore: 'Firestore ContextCapsules',
+          promotionGate: 'Human review-card approval required before canonical graph promotion.',
+          nodes: [
+            { id: 'capsule:ai-governance-procurement', label: 'AI governance procurement', entityType: 'Policy', reviewState: 'advisory' },
+            { id: 'domain:governance-rule-of-law', label: 'Governance & Rule of Law', entityType: 'Ontology', reviewState: 'advisory' },
+          ],
+          edges: [
+            {
+              id: 'capsule-domain-binding',
+              source: 'capsule:ai-governance-procurement',
+              target: 'domain:governance-rule-of-law',
+              label: 'bound to domain',
+              relationshipType: 'bound_to_domain',
+              reviewState: 'advisory',
+            },
+          ],
+        },
+      },
+    });
+
+    expect(capsule.grounding.temporality.timelineAnchors[0]).toMatchObject({
+      id: 'anchor-review',
+      date: '2026-06-15',
+    });
+    expect(capsule.grounding.causality.causalLinks[0]).toMatchObject({
+      cause: 'Legal review is incomplete',
+      effect: 'Procurement recommendation remains blocked',
+      relation: 'blocks',
+    });
+    expect(capsule.grounding.ontologyBinding).toMatchObject({
+      domainId: 'governance-rule-of-law',
+      ontologyIds: ['governance', 'legal'],
+      acoPrimitives: ['Actor', 'Claim', 'Constraint'],
+    });
+    expect(capsule.grounding.embeddedGraph).toMatchObject({
+      provider: 'graphlite',
+      advisoryOnly: true,
+      canonicalStore: 'Firestore ContextCapsules',
+      nodeCount: 2,
+      edgeCount: 1,
+    });
+    expect(capsule.grounding.embeddedGraph.nodes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'domain:governance-rule-of-law',
+        entityType: 'Ontology',
+        reviewState: 'advisory',
+      }),
+    ]));
+    expect(capsule.grounding.embeddedGraph.edges).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'capsule-domain-binding',
+        relationshipType: 'bound_to_domain',
+      }),
+    ]));
+  });
+
   it('keeps Cognee recall advisory by converting receipts into review cards only', () => {
     const capsule = normalizeContextCapsuleV3(makeCapsule());
     const receipt: CogneeAdvisoryReceipt = {

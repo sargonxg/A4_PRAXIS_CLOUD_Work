@@ -16,6 +16,24 @@ describe('ADR 0050 capsule/v2 Zod schema', () => {
     expect(parsed.guardrails.citationRequired).toBe(true);
     expect(parsed.eval.judge).toBe('gemini-2.5-flash');
     expect(parsed.market.visibility).toBe('public');
+    expect(parsed.temporality.timelineAnchors[0]).toMatchObject({
+      id: 'anchor-1',
+      label: 'Ceasefire review date',
+      date: '2026-06-15',
+      kind: 'review',
+    });
+    expect(parsed.causality.causalLinks[0]).toMatchObject({
+      cause: 'Access restrictions remain in place',
+      effect: 'Humanitarian delivery slows',
+      relation: 'causes',
+    });
+    expect(parsed.ontologyBinding).toMatchObject({
+      domainId: 'diplomacy-negotiation',
+      ontologyIds: ['conflict', 'mediation'],
+      acoPrimitives: ['Actor', 'Claim', 'Event'],
+    });
+    expect(parsed.embeddedGraph.provider).toBe('graphlite');
+    expect(parsed.embeddedGraph.advisoryOnly).toBe(true);
   });
 
   it('rejects legacy numeric schema versions for the ADR 0050 contract', () => {
@@ -138,6 +156,43 @@ function makeCapsule() {
       installs: 12,
       rating: 4.8,
       revenueShare: { authorUid: 'u1', pct: 70 },
+    },
+    temporality: {
+      timelineAnchors: [{
+        id: 'anchor-1',
+        label: 'Ceasefire review date',
+        date: '2026-06-15',
+        kind: 'review',
+        sourceRefs: ['src-1'],
+      }],
+    },
+    causality: {
+      causalLinks: [{
+        id: 'cause-1',
+        cause: 'Access restrictions remain in place',
+        effect: 'Humanitarian delivery slows',
+        relation: 'causes',
+        evidenceRefs: ['src-1'],
+        confidence: 0.68,
+      }],
+    },
+    ontologyBinding: {
+      domainId: 'diplomacy-negotiation',
+      taxonomyPath: ['generic', 'diplomacy-negotiation'],
+      ontologyIds: ['conflict', 'mediation'],
+      acoPrimitives: ['Actor', 'Claim', 'Event'],
+      bindingRationale: 'Mediation work needs actors, claims, dated events, and negotiation constraints.',
+    },
+    embeddedGraph: {
+      provider: 'graphlite',
+      projectionId: 'cap-1-graphlite-builder-projection',
+      status: 'compiled-advisory',
+      namedGraph: 'capsule_cap_1',
+      advisoryOnly: true,
+      canonicalStore: 'Firestore ContextCapsules',
+      promotionGate: 'Human review-card approval required before canonical graph promotion.',
+      nodes: [{ id: 'actor-un', label: 'UN mediator', entityType: 'Actor', reviewState: 'proposed' }],
+      edges: [],
     },
   };
 }

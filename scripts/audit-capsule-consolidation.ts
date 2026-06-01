@@ -95,8 +95,8 @@ check(averagePromptLength <= CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS, `average 
 const ok = failures.length === 0;
 const auditDir = join(root, 'docs', 'audits');
 mkdirSync(auditDir, { recursive: true });
-const jsonPath = join(auditDir, '2026-05-25-capsule-consolidation-audit.json');
-const mdPath = join(auditDir, '2026-05-25-capsule-consolidation-audit.md');
+const jsonPath = join(auditDir, 'LATEST-capsule-consolidation-audit.json');
+const mdPath = join(auditDir, 'LATEST-capsule-consolidation-audit.md');
 writeFileSync(jsonPath, `${JSON.stringify({
   ok,
   catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
@@ -114,7 +114,7 @@ writeFileSync(jsonPath, `${JSON.stringify({
 writeFileSync(mdPath, [
   '# Capsule Consolidation Audit',
   '',
-  '- Date: 2026-05-25',
+  '- Output: rolling LATEST file',
   `- Catalog version: ${CAPSULE_STARTER_CATALOG_VERSION}`,
   `- Result: ${ok ? 'pass' : 'fail'}`,
   `- Starters: ${CAPSULE_STARTER_DEFINITIONS.length}`,

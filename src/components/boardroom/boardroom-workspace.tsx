@@ -17,10 +17,13 @@ import {
   Users,
 } from 'lucide-react';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
+import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
 import { ActivePolicyFileStrip } from '@/components/policy-work-file/ActivePolicyFileStrip';
+import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
 import { buildProofSummaryFromAgentRun, type UiProofSummary } from '@/lib/proof/proof-summary';
 import {
+  BOARDROOM_DEFAULT_PARTICIPANT_IDS,
   BOARDROOM_PARTICIPANT_IDS,
   BOARDROOM_PARTICIPANTS,
   type BoardroomParticipantId,
@@ -78,7 +81,29 @@ type BoardroomUrlContext = {
   contextStackId: string | null;
 };
 
-const BOARDROOM_ROSTER: BoardroomAgent[] = BOARDROOM_PARTICIPANT_IDS.map((id) => {
+type BoardroomSelectedSource = {
+  documentId?: string;
+  sourceCoreId?: string;
+  label: string;
+  kind: 'capsule-source';
+};
+
+type BoardroomRuntimeContext = {
+  capsuleId: string | null;
+  contextStackId: string | null;
+  selectedDocumentIds: string[];
+  selectedSources: BoardroomSelectedSource[];
+};
+
+type BoardroomDecisionOption = {
+  label: string;
+  tradeoffs: string;
+  preferredBy: ParticipantId[];
+};
+
+const BOARDROOM_AGENT_IDS = [...BOARDROOM_DEFAULT_PARTICIPANT_IDS];
+
+const BOARDROOM_ROSTER: BoardroomAgent[] = BOARDROOM_AGENT_IDS.map((id) => {
   const participant = BOARDROOM_PARTICIPANTS[id];
   return {
     id,
@@ -89,10 +114,10 @@ const BOARDROOM_ROSTER: BoardroomAgent[] = BOARDROOM_PARTICIPANT_IDS.map((id) =>
   };
 });
 
-const BOARDROOM_AGENT_IDS = BOARDROOM_ROSTER.map((agent) => agent.id);
 const MAX_ROUNDS = 2;
 
 export function BoardroomWorkspace() {
+  const { stack: activeContextStack } = useActiveContextStack();
   const [question, setQuestion] = useState('');
   const [contextNotes, setContextNotes] = useState('');
   const [followUp, setFollowUp] = useState('');
@@ -107,6 +132,10 @@ export function BoardroomWorkspace() {
     capsuleId: null,
     contextStackId: null,
   });
+  const boardroomContext = useMemo(
+    () => buildBoardroomContext(urlContext, activeContextStack),
+    [activeContextStack, urlContext],
+  );
 
   const latestBoardroomOutput = useMemo(() => {
     const artifactEvent = [...events].reverse().find((event) => isRecord(event.data) && isRecord(event.data.boardroomOutput));
@@ -130,16 +159,26 @@ export function BoardroomWorkspace() {
     [latestBoardroomOutput],
   );
   const boardroomPolicyFile = useMemo(() => ({
-    capsuleId: urlContext.capsuleId ?? run?.capsuleId ?? null,
-    title: run?.objective ?? (urlContext.capsuleId ? 'Capsule boardroom file' : null),
+    capsuleId: boardroomContext.capsuleId ?? run?.capsuleId ?? null,
+    title: run?.objective ?? (boardroomContext.capsuleId ? 'Capsule boardroom file' : null),
     jurisdiction: 'Workspace context',
     domain: 'Policy board deliberation',
     outputTarget: 'stakeholder-map-brief',
-    sourceCount: proofSummary?.sourceCount ?? run?.sourceReceiptIds?.length ?? 0,
+    sourceCount: proofSummary?.sourceCount
+      ?? run?.sourceReceiptIds?.length
+      ?? boardroomContext.selectedSources.length + boardroomContext.selectedDocumentIds.length,
     openQuestions,
     unsupportedClaims: proofSummary?.unsupportedClaimCount ?? 0,
     nextAction: activeRunId ? 'Review synthesis' : 'Start boardroom',
-  }), [activeRunId, openQuestions, proofSummary, run, urlContext.capsuleId]);
+  }), [
+    activeRunId,
+    boardroomContext.capsuleId,
+    boardroomContext.selectedDocumentIds.length,
+    boardroomContext.selectedSources.length,
+    openQuestions,
+    proofSummary,
+    run,
+  ]);
   const openBoardroomSearch = useCallback(() => {
     window.dispatchEvent(new CustomEvent('open-praxis-search'));
   }, []);
@@ -202,8 +241,10 @@ export function BoardroomWorkspace() {
         body: JSON.stringify({
           question: trimmed,
           directContext: directContext || undefined,
-          capsuleId: urlContext.capsuleId || undefined,
-          contextStackId: urlContext.contextStackId || undefined,
+          capsuleId: boardroomContext.capsuleId || undefined,
+          contextStackId: boardroomContext.contextStackId || undefined,
+          selectedDocumentIds: boardroomContext.selectedDocumentIds,
+          selectedSources: boardroomContext.selectedSources,
           participantIds: BOARDROOM_AGENT_IDS,
           maxRounds: options?.maxRounds ?? MAX_ROUNDS,
           outputTarget: 'board_executive_pack',
@@ -443,8 +484,8 @@ export function BoardroomWorkspace() {
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <Metric label="Lenses" value={BOARDROOM_ROSTER.length} />
                   <Metric label="Rounds" value={MAX_ROUNDS} />
-                  <Metric label="Turns" value={transcriptTurns.length} />
-                  <Metric label="Events" value={events.length} />
+                  <Metric label="Sources" value={boardroomContext.selectedSources.length} />
+                  <Metric label="Documents" value={boardroomContext.selectedDocumentIds.length} />
                 </div>
                 <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600">
                   <p className="rounded-md border border-slate-200 bg-white px-2 py-1.5">Active capsule context and source receipts when available.</p>
@@ -502,7 +543,7 @@ export function BoardroomWorkspace() {
               })}
             </div>
 
-            <section className="mt-5">
+            <section className="mt-5" data-testid="boardroom-turn-feed">
               <div className="flex items-center gap-2">
                 <MessageSquareText className="h-4 w-4 text-[color:var(--color-oxide)]" />
                 <h3 className="text-sm font-semibold text-slate-950">Live transcript</h3>
@@ -513,16 +554,35 @@ export function BoardroomWorkspace() {
                     <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Round {round}</p>
                     <div className="mt-2 grid gap-2">
                       {turns.map((turn) => (
-                        <article key={turn.turnId} className="rounded-md border border-slate-200 bg-white p-3">
+                        <article key={turn.turnId} data-testid="boardroom-turn-card" className="rounded-md border border-slate-200 bg-white p-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="text-sm font-semibold text-slate-950">{participantLabel(turn.participantId)}</p>
-                            <span className={cn('rounded-md px-2 py-1 text-[11px] font-semibold', confidenceClass(turn.confidence))}>
-                              {turn.confidence}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-1">
+                              <span aria-label={`Status: ${turn.state}`} className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', participantStateClass(turn.state))}>
+                                {turn.state}
+                              </span>
+                              <span aria-label={`Confidence: ${turn.confidence}`} className={cn('rounded-md px-2 py-1 text-[11px] font-semibold', confidenceClass(turn.confidence))}>
+                                {turn.confidence}
+                              </span>
+                            </div>
                           </div>
-                          <p className="mt-2 text-sm leading-6 text-slate-700">{turn.claim}</p>
-                          {turn.critique ? <p className="mt-2 text-xs leading-5 text-rose-800">{turn.critique}</p> : null}
-                          {turn.recommendation ? <p className="mt-2 text-xs leading-5 text-emerald-800">{turn.recommendation}</p> : null}
+                          <div className="mt-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Claim</p>
+                            <p className="mt-1 text-sm leading-6 text-slate-700">{turn.claim}</p>
+                          </div>
+                          <TurnEvidenceRefs turn={turn} />
+                          {turn.critique ? (
+                            <div className="mt-2">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-rose-700">Critique</p>
+                              <p className="mt-1 text-xs leading-5 text-rose-800">{turn.critique}</p>
+                            </div>
+                          ) : null}
+                          {turn.recommendation ? (
+                            <div className="mt-2">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700">Recommendation</p>
+                              <p className="mt-1 text-xs leading-5 text-emerald-800">{turn.recommendation}</p>
+                            </div>
+                          ) : null}
                         </article>
                       ))}
                     </div>
@@ -614,6 +674,7 @@ export function BoardroomWorkspace() {
               </p>
               <SynthesisList title="Consensus" items={arrayFromPath(latestBoardroomOutput, ['consensus'])} />
               <SynthesisList title="Divergences" items={arrayFromPath(latestBoardroomOutput, ['divergences'])} />
+              <DecisionOptionsList options={decisionOptionsFromOutput(latestBoardroomOutput)} />
               <SynthesisList title="Risks" items={arrayFromPath(latestBoardroomOutput, ['risks'])} />
               <SynthesisList title="Open Questions" items={arrayFromPath(latestBoardroomOutput, ['openQuestions'])} />
               <SynthesisList title="Next Actions" items={nextActionsFromOutput(latestBoardroomOutput)} />
@@ -661,6 +722,38 @@ export function BoardroomWorkspace() {
       </div>
     </section>
   );
+}
+
+function buildBoardroomContext(urlContext: BoardroomUrlContext, stack: ActiveContextStackState): BoardroomRuntimeContext {
+  const sourceBlocks = stack.contextBlocks.sources;
+  const legacyDocumentIds = new Set(stack.documentIds);
+  const documentIdsFromBlocks = sourceBlocks
+    .filter((item) => item.role === 'document' || legacyDocumentIds.has(item.id))
+    .map((item) => item.id);
+  const selectedDocumentIds = uniqueStrings([...stack.documentIds, ...documentIdsFromBlocks]).slice(0, 12);
+  const selectedDocumentIdSet = new Set(selectedDocumentIds);
+  const selectedSources = uniqueSelectedSources([
+    ...sourceBlocks.flatMap((item): BoardroomSelectedSource[] => {
+      if (item.role === 'document' || selectedDocumentIdSet.has(item.id)) return [];
+      return [{
+        sourceCoreId: item.id,
+        label: item.label ?? item.id,
+        kind: 'capsule-source',
+      }];
+    }),
+    ...stack.sourceIds.flatMap((id): BoardroomSelectedSource[] => (
+      sourceBlocks.some((item) => item.id === id && item.role !== 'document')
+        ? []
+        : [{ sourceCoreId: id, label: id, kind: 'capsule-source' }]
+    )),
+  ]).slice(0, 24);
+
+  return {
+    capsuleId: urlContext.capsuleId ?? stack.capsuleId,
+    contextStackId: urlContext.contextStackId ?? stack.stackId,
+    selectedDocumentIds,
+    selectedSources,
+  };
 }
 
 function parseSseEvents(text: string): RunEvent[] {
@@ -818,6 +911,37 @@ function nextActionsFromOutput(value: unknown): string[] {
   });
 }
 
+function decisionOptionsFromOutput(value: unknown): BoardroomDecisionOption[] {
+  const current = isRecord(value) && Array.isArray(value.decisionOptions) ? value.decisionOptions : [];
+  return current.flatMap((item) => {
+    if (!isRecord(item) || typeof item.label !== 'string' || typeof item.tradeoffs !== 'string') return [];
+    const preferredBy = Array.isArray(item.preferredBy)
+      ? item.preferredBy.filter((id): id is ParticipantId => typeof id === 'string' && isParticipantId(id))
+      : [];
+    return [{
+      label: item.label,
+      tradeoffs: item.tradeoffs,
+      preferredBy,
+    }];
+  });
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+function uniqueSelectedSources(sources: BoardroomSelectedSource[]): BoardroomSelectedSource[] {
+  const seen = new Set<string>();
+  const out: BoardroomSelectedSource[] = [];
+  for (const source of sources) {
+    const key = source.sourceCoreId ?? source.documentId ?? source.label;
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(source);
+  }
+  return out;
+}
+
 function participantLabel(id: ParticipantId): string {
   return BOARDROOM_PARTICIPANTS[id]?.label ?? id;
 }
@@ -881,11 +1005,64 @@ function BoardroomProofSummaryPanel({ run, summary }: { run: AgentRunSummary; su
   );
 }
 
+function TurnEvidenceRefs({ turn }: { turn: BoardroomTurn }) {
+  const unsupportedRefs = turn.unsupportedEvidenceRefs ?? [];
+  const supportedRefs = turn.evidenceRefs.filter((ref) => !unsupportedRefs.includes(ref));
+  return (
+    <div className="mt-3 rounded-md border border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-2 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">Evidence</p>
+      <div className="mt-1 flex flex-wrap gap-1">
+        {supportedRefs.map((ref) => (
+          <span key={`supported:${ref}`} className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800">
+            {ref}
+          </span>
+        ))}
+        {unsupportedRefs.map((ref) => (
+          <span key={`unsupported:${ref}`} className="rounded-md border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-800">
+            {ref}
+          </span>
+        ))}
+        {!supportedRefs.length && !unsupportedRefs.length ? (
+          <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
+            No evidence refs
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
       <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
       <p className="mt-1 truncate text-sm font-semibold text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function DecisionOptionsList({ options }: { options: BoardroomDecisionOption[] }) {
+  if (!options.length) return null;
+  return (
+    <div className="mt-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Decision options</p>
+      <div className="mt-1 grid gap-2">
+        {options.map((option) => (
+          <article key={option.label} className="rounded-md border border-[color:var(--color-civic-blue)]/20 bg-[color:var(--color-archive-paper-strong)] px-2 py-2">
+            <p className="text-xs font-semibold leading-5 text-slate-900">{option.label}</p>
+            <p className="mt-1 text-xs leading-5 text-slate-600">{option.tradeoffs}</p>
+            {option.preferredBy.length ? (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {option.preferredBy.map((id) => (
+                  <span key={`${option.label}:${id}`} className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                    {participantLabel(id)}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </article>
+        ))}
+      </div>
     </div>
   );
 }

@@ -26,6 +26,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
+import { Mark, mergeAttributes } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import LinkExtension from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -42,6 +43,7 @@ import {
   Heading1,
   Heading2,
   Italic,
+  Languages,
   Library,
   List,
   ListOrdered,
@@ -64,6 +66,11 @@ import { GapFillerRail } from '@/components/memo/GapFillerRail';
 import { useSituationStore } from '@/stores/situation-store';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
+import type {
+  MemoClaimCheckResult,
+  MemoLanguageCheckResult,
+  MemoLanguageViolation,
+} from '@/lib/memo/memo-checks';
 import type { MemoBlock } from '@/types/memo';
 
 interface AskTurn {
@@ -136,6 +143,30 @@ const OUTPUT_CORES = [
   'Handover note',
 ] as const;
 
+const LanguageViolationMark = Mark.create({
+  name: 'languageViolation',
+  addAttributes() {
+    return {
+      kind: { default: 'language' },
+      phrase: { default: null },
+      severity: { default: 'medium' },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'span[data-language-violation]' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      'span',
+      mergeAttributes(HTMLAttributes, {
+        'data-language-violation': HTMLAttributes.kind ?? 'language',
+        class: 'praxis-language-violation',
+      }),
+      0,
+    ];
+  },
+});
+
 function escapeAttr(value: string): string {
   return value.replace(/[&<>"']/g, (ch) =>
     ch === '&' ? '&amp;'
@@ -194,6 +225,8 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   const [serverSaveState, setServerSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [exportOpen, setExportOpen] = useState(false);
   const [mobilePane, setMobilePane] = useState<'library' | 'ask' | null>(null);
+  const [memoCheckResults, setMemoCheckResults] = useState<Array<MemoClaimCheckResult | MemoLanguageCheckResult>>([]);
+  const [memoCheckPending, setMemoCheckPending] = useState<'claim-check' | 'language-check' | null>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const storageKey = `${STORAGE_PREFIX}${documentId}`;
   const activeCapsule = useMemo(() => {
@@ -247,6 +280,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
 
   const editor = useEditor({
     extensions: [
+      LanguageViolationMark,
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
       LinkExtension.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder: 'Type to draft… or press / for PRAXIS commands.' }),
@@ -445,6 +479,50 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
     trustScore,
     usingRow,
   ]);
+
+  const runMemoReview = useCallback(async (action: 'claim-check' | 'language-check') => {
+    if (!editor) return;
+    const selectedText = selectedEditorText(editor);
+    const fallbackText = action === 'language-check'
+      ? editor.getText().slice(0, 20_000)
+      : editor.getText().slice(0, 1200);
+    const selectionText = (selectedText || fallbackText).trim();
+    if (!selectionText) return;
+    setMemoCheckPending(action);
+    try {
+      const res = await fetch('/api/ai/writer/ask', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          situationId: activeSituation?.id,
+          capsuleId: activeCapsule?.capsuleId,
+          situation: activeSituation,
+          selectionText,
+          prompt: action === 'claim-check'
+            ? 'Check the selected memo claim against the active capsule sources.'
+            : 'Check the selected or full memo text against the analyst output constraints.',
+          mode: action,
+        }),
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const payload = (await res.json()) as { claimCheck?: unknown; languageCheck?: unknown };
+      const claimCheck = payload.claimCheck;
+      const languageCheck = payload.languageCheck;
+      if (action === 'claim-check' && isMemoClaimCheckResult(claimCheck)) {
+        setMemoCheckResults((current) => [claimCheck, ...current].slice(0, 8));
+      }
+      if (action === 'language-check' && isMemoLanguageCheckResult(languageCheck)) {
+        applyLanguageViolationMarks(editor, languageCheck.violations);
+        setMemoCheckResults((current) => [languageCheck, ...current].slice(0, 8));
+      }
+    } catch (err) {
+      const text = `${action === 'claim-check' ? 'Claim check' : 'Language check'} failed. ${err instanceof Error ? err.message : 'Unknown error.'}`;
+      setTurns((items) => [...items, { id: `p-${Date.now()}`, role: 'praxis', text, ts: Date.now() }]);
+    } finally {
+      setMemoCheckPending(null);
+    }
+  }, [activeCapsule?.capsuleId, activeSituation, editor]);
 
   const runSlashCommand = useCallback(
     (id: typeof SLASH_COMMANDS[number]['id']) => {
@@ -864,16 +942,24 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
         <button
           type="button"
           onClick={() => {
-            void runWriterPrompt({
-              prompt: 'Find citation opportunities and evidence gaps in the selected text. Return concise edits and source needs.',
-              mode: 'ask',
-            }).catch(() => undefined);
+            void runMemoReview('claim-check');
           }}
-          disabled={askPending || !editor}
+          disabled={Boolean(memoCheckPending) || !editor}
           className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
         >
           <ShieldCheck className="h-3.5 w-3.5" />
-          Check claims
+          Check claim
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            void runMemoReview('language-check');
+          }}
+          disabled={Boolean(memoCheckPending) || !editor}
+          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+        >
+          <Languages className="h-3.5 w-3.5" />
+          Language check
         </button>
       </div>
 
@@ -1320,6 +1406,14 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
         <GapFillerRail
           editor={editor}
           situationId={activeSituation?.id ?? null}
+          checkResults={memoCheckResults}
+          checkingAction={memoCheckPending}
+          onCheckClaim={() => {
+            void runMemoReview('claim-check');
+          }}
+          onLanguageCheck={() => {
+            void runMemoReview('language-check');
+          }}
           className="hidden lg:block"
         />
       </div>
@@ -1416,6 +1510,11 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
         .memo-editor em { font-style: italic; color: #334155; }
         .memo-editor sup { font-family: 'JetBrains Mono', ui-monospace, monospace; color: #8A5A00; font-size: 0.7em; }
         .memo-editor a { color: #1B3A5C; text-decoration: underline; text-decoration-color: rgba(232,185,49,0.6); text-underline-offset: 2px; }
+        .memo-editor .praxis-language-violation {
+          background: rgba(251, 191, 36, 0.26);
+          border-bottom: 2px solid rgba(180, 83, 9, 0.8);
+          border-radius: 2px;
+        }
       `}</style>
     </div>
   );
@@ -1490,6 +1589,70 @@ function selectedEditorText(editor: Editor): string {
   const { from, to } = editor.state.selection;
   if (from === to) return '';
   return editor.state.doc.textBetween(from, to, '\n').trim();
+}
+
+function applyLanguageViolationMarks(editor: Editor, violations: MemoLanguageViolation[]) {
+  const markType = editor.schema.marks.languageViolation;
+  if (!markType) return;
+  const phrases = Array.from(new Set(
+    violations
+      .filter((violation) => violation.kind === 'red_line')
+      .map((violation) => violation.phrase.trim())
+      .filter((phrase) => phrase.length > 0),
+  ));
+  let tr = editor.state.tr.removeMark(0, editor.state.doc.content.size, markType);
+  if (phrases.length === 0) {
+    if (tr.docChanged) editor.view.dispatch(tr);
+    return;
+  }
+  editor.state.doc.descendants((node, pos) => {
+    if (!node.isText || !node.text) return;
+    const lower = node.text.toLowerCase();
+    for (const phrase of phrases) {
+      const needle = phrase.toLowerCase();
+      let index = lower.indexOf(needle);
+      while (index >= 0) {
+        tr = tr.addMark(
+          pos + index,
+          pos + index + phrase.length,
+          markType.create({ kind: 'red_line', phrase, severity: 'high' }),
+        );
+        index = lower.indexOf(needle, index + Math.max(1, needle.length));
+      }
+    }
+  });
+  if (tr.docChanged) editor.view.dispatch(tr);
+}
+
+function isMemoClaimCheckResult(value: unknown): value is MemoClaimCheckResult {
+  if (!isRecord(value)) return false;
+  return value.kind === 'claim-check'
+    && typeof value.claim === 'string'
+    && typeof value.verdict === 'string'
+    && typeof value.rationale === 'string'
+    && isRecord(value.provenance);
+}
+
+function isMemoLanguageCheckResult(value: unknown): value is MemoLanguageCheckResult {
+  if (!isRecord(value)) return false;
+  return value.kind === 'language-check'
+    && typeof value.checkedText === 'string'
+    && Array.isArray(value.violations)
+    && value.violations.every(isMemoLanguageViolation)
+    && isRecord(value.provenance);
+}
+
+function isMemoLanguageViolation(value: unknown): value is MemoLanguageViolation {
+  if (!isRecord(value)) return false;
+  return typeof value.id === 'string'
+    && typeof value.kind === 'string'
+    && typeof value.phrase === 'string'
+    && typeof value.start === 'number'
+    && typeof value.end === 'number';
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function buildWriterInstruction(input: {

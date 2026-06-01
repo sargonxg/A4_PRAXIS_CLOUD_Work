@@ -136,8 +136,8 @@ const capsuleReports = CAPSULE_STARTER_DEFINITIONS.map((starter) => {
 const ok = failures.length === 0;
 const auditDir = join(root, 'docs', 'audits');
 mkdirSync(auditDir, { recursive: true });
-const jsonPath = join(auditDir, '2026-05-19-capsule-depth-audit.json');
-const mdPath = join(auditDir, '2026-05-19-capsule-depth-audit.md');
+const jsonPath = join(auditDir, 'LATEST-capsule-depth-audit.json');
+const mdPath = join(auditDir, 'LATEST-capsule-depth-audit.md');
 writeFileSync(jsonPath, `${JSON.stringify({
   ok,
   catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
@@ -150,7 +150,7 @@ writeFileSync(jsonPath, `${JSON.stringify({
 writeFileSync(mdPath, [
   '# Capsule Depth Audit',
   '',
-  `- Date: 2026-05-19`,
+  '- Output: rolling LATEST file',
   `- Catalog version: ${CAPSULE_STARTER_CATALOG_VERSION}`,
   `- Result: ${ok ? 'pass' : 'fail'}`,
   `- Total starters: ${CAPSULE_STARTER_DEFINITIONS.length}`,

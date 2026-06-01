@@ -6,6 +6,7 @@ import {
   buildBoardroomAgentRunInput,
   normalizeBoardroomParticipants,
 } from '@/lib/boardroom/schema';
+import { BRAINSTORMING_PERSONA_IDS } from '@/lib/boardroom/brainstorming-table';
 
 describe('boardroom schemas and AgentRun mapping', () => {
   it('defaults to the required chair-led PRAXIS boardroom roster', () => {
@@ -15,6 +16,7 @@ describe('boardroom schemas and AgentRun mapping', () => {
     });
 
     expect(parsed.participantIds).toEqual(BOARDROOM_DEFAULT_PARTICIPANT_IDS);
+    expect(parsed.participantIds.slice(1)).toEqual(BRAINSTORMING_PERSONA_IDS);
     expect(parsed.maxRounds).toBe(2);
     expect(parsed.outputTarget).toBe('board_executive_pack');
   });
@@ -151,6 +153,13 @@ describe('boardroom schemas and AgentRun mapping', () => {
       topicClusters: [{ topic: 'Decision posture', mentions: 2, participantIds: ['legal', 'security'] }],
       consensus: ['Use a reviewed board pack before external action.'],
       divergences: ['Risk and legal differ on speed.'],
+      decisionOptions: [
+        {
+          label: 'Approve with legal review gate',
+          tradeoffs: 'Slower than immediate action, but preserves sourceability and authority posture.',
+          preferredBy: ['legal'],
+        },
+      ],
       risks: ['Source coverage is thin.'],
       openQuestions: ['Which authority signs off?'],
       evidenceStats: { sourceCount: 1, documentCount: 2, sourcedParagraphCount: 0, unsupportedClaimCount: 1 },
@@ -160,6 +169,10 @@ describe('boardroom schemas and AgentRun mapping', () => {
     });
 
     expect(parsed.transcript[0].participantId).toBe('legal');
+    expect(parsed.decisionOptions[0]).toMatchObject({
+      label: 'Approve with legal review gate',
+      preferredBy: ['legal'],
+    });
     expect(parsed.confidenceDistribution.medium).toBe(1);
   });
 

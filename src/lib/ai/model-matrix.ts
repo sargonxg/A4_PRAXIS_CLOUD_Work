@@ -1,4 +1,4 @@
-import { modelMatrix as matrix } from './model-matrix-data';
+import matrix from './MODEL_MATRIX.json';
 
 export type TaskKind = keyof typeof matrix.taskKinds;
 export type AIProviderRuntime = 'vertex' | 'google';
@@ -32,6 +32,8 @@ export function getModelMatrixEntry(taskKind: TaskKind): ModelMatrixEntry {
 export function getModelIdForTask(taskKind: TaskKind): string {
   return getModelMatrixEntry(taskKind).model;
 }
+
+export const CAPSULE_EVAL_JUDGE_MODEL = getAskPraxisRuntimePolicyMatrix().stableFallback.chat[0] ?? getModelIdForTask('balanced');
 
 export function getTaskKinds(): TaskKind[] {
   return Object.keys(matrix.taskKinds) as TaskKind[];

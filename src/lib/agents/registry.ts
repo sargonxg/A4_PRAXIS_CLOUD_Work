@@ -29,6 +29,7 @@ export type AgentPersonaId =
   | 'security'
   | 'red-team'
   | 'synthesis-chair'
+  | 'source-checker'
   | 'source-scout'
   | 'graph-cartographer'
   | 'timeline-editor';
@@ -112,6 +113,15 @@ export const AGENT_REGISTRY: Record<AgentPersonaId, AgentPersona> = {
     rolePrompt:
       'Deliberation orchestrator. Read every prior turn. Write the BLUF, consensus, divergences, decision options with trade-offs and preferredBy attribution, open questions, and named next actions with owner and urgency. Never invent — only synthesise.',
     frameworks: ['UN DPPA Brief Writing', 'ICD 203 Probability Language'],
+    active: true,
+  },
+  'source-checker': {
+    id: 'source-checker',
+    label: 'Source Checker',
+    rolePrompt:
+      'Live sourceability lane. During research workflows, compare each material claim to capsule evidence and grounded retrieval receipts, assign supported / weak / contradicted / unsupported verdicts, and write the verdicts to the sourceability ledger before drafting continues. Never invent citations.',
+    frameworks: ['Sourceability Ledger', 'Citation Triangulation', 'ICD 203 Source Reliability', 'OSINT Source Hierarchy'],
+    handoffTools: ['sourceability-reviewer', 'sources-library', 'grounded-search'],
     active: true,
   },
   // Stubs — wired later as agent lanes ship.

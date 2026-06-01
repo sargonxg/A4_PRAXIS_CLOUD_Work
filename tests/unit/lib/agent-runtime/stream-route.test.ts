@@ -3,6 +3,7 @@ import { encodeSseEvents } from '@/app/api/agents/runs/[runId]/stream/route';
 import type { AgentRunEvent } from '@/lib/agent-runtime/types';
 import {
   agentRailStageFromEvent,
+  LEDGER_EVENT_TYPES,
   normalizeOrchestratorEvent,
 } from '@/hooks/useOrchestratorEvents';
 
@@ -54,22 +55,30 @@ describe('agent run SSE stream route helpers', () => {
 
   it('maps live research and sourceability proof events to compact rail labels', () => {
     const events = [
+      normalizeOrchestratorEvent({ type: 'praxis.orchestration.triage_decided', data: JSON.stringify({ phase: 'orchestration.triage_decided', workflowKind: 'current_research_brief', sourceCheckLane: 'source-checker' }) }),
       normalizeOrchestratorEvent({ type: 'praxis.research.plan_created', data: JSON.stringify({ phase: 'research.plan_created' }) }),
       normalizeOrchestratorEvent({ type: 'praxis.grounding.live_retrieval_started', data: JSON.stringify({ phase: 'grounding.live_retrieval_started', querySet: ['treaty analysis'] }) }),
       normalizeOrchestratorEvent({ type: 'praxis.tool.grounded-search.completed', data: JSON.stringify({ phase: 'tool.grounded-search.completed', toolId: 'grounded-search', risk: 'low', sourceReceiptIds: ['web-live-1'] }) }),
+      normalizeOrchestratorEvent({ type: 'praxis.sourceability.source_checker.completed', data: JSON.stringify({ phase: 'sourceability.source_checker.completed', agentId: 'source-checker' }) }),
       normalizeOrchestratorEvent({ type: 'praxis.sourceability.claims_verified', data: JSON.stringify({ phase: 'sourceability.claims_verified', unsupportedClaimCount: 1 }) }),
       normalizeOrchestratorEvent({ type: 'praxis.memo.self_critique_completed', data: JSON.stringify({ phase: 'memo.self_critique_completed' }) }),
       normalizeOrchestratorEvent({ type: 'praxis.artifact.finalized', data: JSON.stringify({ phase: 'artifact.finalized', outputHref: '/app?panel=memo&memoId=memo-1' }) }),
     ];
 
     expect(events.map(agentRailStageFromEvent)).toEqual([
+      'Triage decision',
       'Research plan',
       'Live retrieval',
       'Tool call',
       'Sourceability check',
+      'Sourceability check',
       'Gap review',
       'Save output',
     ]);
+  });
+
+  it('subscribes to the PRAXIS triage decision event for live Ask trace visibility', () => {
+    expect(LEDGER_EVENT_TYPES).toContain('praxis.orchestration.triage_decided');
   });
 
   it('maps bounded multi-agent supervisor proof events to compact rail labels', () => {

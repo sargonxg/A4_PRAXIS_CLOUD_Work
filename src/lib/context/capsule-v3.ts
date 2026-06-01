@@ -6,8 +6,9 @@ import {
   type ContextCapsuleSourceRef,
   type ContextCapsuleV2,
 } from '@/lib/context/capsule-v2';
+import { TACITUS_CORE_PRIMITIVES, type TacitusCorePrimitive } from '@/lib/graph/core-primitives';
 import type { CapsuleContextCaptureProfile } from '@/lib/product/context-capsules';
-import type { OntologyId } from '@/lib/ontology/types';
+import { isOntologyId, type OntologyId } from '@/lib/ontology/types';
 
 export const CONTEXT_CAPSULE_V3_SECTION_IDS = [
   'identity',
@@ -15,6 +16,7 @@ export const CONTEXT_CAPSULE_V3_SECTION_IDS = [
   'humanTacitKnowledge',
   'sourceSpine',
   'contextCaptureProfile',
+  'grounding',
   'claimLedger',
   'reasoningScaffold',
   'agentOperatingContract',
@@ -174,6 +176,84 @@ export interface ContextCapsuleEvaluationV3 {
   openGaps: string[];
 }
 
+export type ContextCapsuleTimelineAnchorKind = 'as-of' | 'event' | 'deadline' | 'review' | 'validity-start' | 'validity-end';
+export type ContextCapsuleCausalRelation = 'causes' | 'enables' | 'blocks' | 'escalates' | 'de-escalates' | 'correlates';
+
+export interface ContextCapsuleTimelineAnchorV3 {
+  id: string;
+  label: string;
+  date: string;
+  kind: ContextCapsuleTimelineAnchorKind;
+  sourceRefs: string[];
+  confidence: number | null;
+}
+
+export interface ContextCapsuleCausalLinkV3 {
+  id: string;
+  cause: string;
+  effect: string;
+  relation: ContextCapsuleCausalRelation;
+  evidenceRefs: string[];
+  confidence: number | null;
+  caveat: string | null;
+}
+
+export interface ContextCapsuleOntologyBindingV3 {
+  domainId: string;
+  taxonomyPath: string[];
+  ontologyIds: OntologyId[];
+  acoPrimitives: TacitusCorePrimitive[];
+  bindingRationale: string;
+}
+
+export interface ContextCapsuleGraphLiteNodeV3 {
+  id: string;
+  label: string;
+  entityType: string;
+  reviewState: 'canonical' | 'proposed' | 'missing' | 'advisory' | 'reviewed';
+  confidence: number | null;
+  sourceReceiptIds: string[];
+}
+
+export interface ContextCapsuleGraphLiteEdgeV3 {
+  id: string;
+  source: string;
+  target: string;
+  label: string;
+  relationshipType: string | null;
+  reviewState: 'canonical' | 'proposed' | 'missing' | 'advisory' | 'reviewed';
+  confidence: number | null;
+  sourceReceiptIds: string[];
+}
+
+export interface ContextCapsuleEmbeddedGraphV3 {
+  provider: 'graphlite';
+  projectionId: string;
+  status: 'compiled-advisory' | 'stale' | 'reviewed' | 'promoted';
+  namedGraph: string;
+  advisoryOnly: true;
+  canonicalStore: 'Firestore ContextCapsules';
+  promotionGate: string;
+  nodeCount: number;
+  edgeCount: number;
+  nodes: ContextCapsuleGraphLiteNodeV3[];
+  edges: ContextCapsuleGraphLiteEdgeV3[];
+}
+
+export interface ContextCapsuleGroundingV3 {
+  temporality: {
+    timelineAnchors: ContextCapsuleTimelineAnchorV3[];
+    asOf: string | null;
+    validFrom: string | null;
+    validUntil: string | null;
+  };
+  causality: {
+    causalLinks: ContextCapsuleCausalLinkV3[];
+  };
+  ontologyBinding: ContextCapsuleOntologyBindingV3;
+  embeddedGraph: ContextCapsuleEmbeddedGraphV3;
+}
+
 export interface ContextCapsuleV3 {
   schemaVersion: 3;
   baseSchemaVersion: 2;
@@ -206,6 +286,7 @@ export interface ContextCapsuleV3 {
   humanTacitKnowledge: ContextCapsuleHumanTacitKnowledge;
   sourceSpine: ContextCapsuleSourceSpine;
   contextCaptureProfile: CapsuleContextCaptureProfile;
+  grounding: ContextCapsuleGroundingV3;
   claimLedger: ContextCapsuleClaimLedgerV3;
   reasoningScaffold: {
     publicMethod: string[];
@@ -358,6 +439,7 @@ export function normalizeContextCapsuleV3(input: ContextCapsuleV2 | unknown, opt
   const sourceSpine = buildSourceSpine(v2, options);
   const humanTacitKnowledge = normalizeTacitKnowledge(body.humanTacitKnowledge, v2);
   const contextCaptureProfile = buildContextCaptureProfile(v2, sourceSpine);
+  const grounding = buildGrounding(body, v2, contextCaptureProfile);
   const claimLedger = buildClaimLedger(v2);
   const agentOperatingContract = buildAgentOperatingContract(v2);
   const memoryPosture = buildMemoryPosture(v2, body.memoryPosture);
@@ -397,6 +479,7 @@ export function normalizeContextCapsuleV3(input: ContextCapsuleV2 | unknown, opt
     humanTacitKnowledge,
     sourceSpine,
     contextCaptureProfile,
+    grounding,
     claimLedger,
     reasoningScaffold: {
       publicMethod: [...v2.reasoningScaffold.publicMethod],
@@ -737,6 +820,166 @@ function cloneContextCaptureProfile(profile: CapsuleContextCaptureProfile): Caps
       seedDocumentIds: [...profile.cogneeCapture.seedDocumentIds],
     },
   };
+}
+
+function buildGrounding(
+  input: Record<string, unknown>,
+  v2: ContextCapsuleV2,
+  profile: CapsuleContextCaptureProfile,
+): ContextCapsuleGroundingV3 {
+  const explicitGrounding = isRecord(input.grounding) ? input.grounding : {};
+  const temporalityInput = isRecord(explicitGrounding.temporality)
+    ? explicitGrounding.temporality
+    : isRecord(input.temporality)
+      ? input.temporality
+      : {};
+  const causalityInput = isRecord(explicitGrounding.causality)
+    ? explicitGrounding.causality
+    : isRecord(input.causality)
+      ? input.causality
+      : {};
+  const ontologyInput = isRecord(explicitGrounding.ontologyBinding)
+    ? explicitGrounding.ontologyBinding
+    : isRecord(input.ontologyBinding)
+      ? input.ontologyBinding
+      : {};
+  const graphInput = firstRecord(
+    explicitGrounding.embeddedGraph,
+    input.embeddedGraph,
+    input.graphLiteProjection,
+    isRecord(input.starterSnapshot) ? input.starterSnapshot.graphLiteProjection : undefined,
+    isRecord(v2.starterSnapshot) ? v2.starterSnapshot.graphLiteProjection : undefined,
+  ) ?? {};
+
+  const inferredOntologyIds = dedupeStrings([
+    ...profile.sourceBindings.flatMap((binding) => binding.ontologyIds),
+    ...inferContextCaptureOntologyIds(v2),
+  ]).filter(isOntologyId) as OntologyId[];
+  const domainId = cleanString(ontologyInput.domainId)
+    || cleanString(input.persona && isRecord(input.persona) ? input.persona.domain : undefined)
+    || v2.domainTags[0]
+    || 'generic';
+  const taxonomyPath = withFallback(cleanStringArray(ontologyInput.taxonomyPath), domainId === 'generic' ? ['generic'] : ['generic', domainId]);
+  const ontologyIds = withFallback(cleanStringArray(ontologyInput.ontologyIds).filter(isOntologyId) as OntologyId[], inferredOntologyIds.length ? inferredOntologyIds : ['governance']);
+  const acoPrimitives = withFallback(
+    cleanStringArray(ontologyInput.acoPrimitives).filter(isTacitusCorePrimitive) as TacitusCorePrimitive[],
+    profile.embeddedGraph.allowedAcoPrimitives.filter(isTacitusCorePrimitive) as TacitusCorePrimitive[],
+  );
+  const embeddedGraph = normalizeGraphLiteProjection(graphInput, v2);
+
+  return {
+    temporality: {
+      timelineAnchors: normalizeTimelineAnchors(temporalityInput.timelineAnchors),
+      asOf: cleanString(temporalityInput.asOf) || null,
+      validFrom: cleanString(temporalityInput.validFrom) || null,
+      validUntil: cleanString(temporalityInput.validUntil) || null,
+    },
+    causality: {
+      causalLinks: normalizeCausalLinks(causalityInput.causalLinks),
+    },
+    ontologyBinding: {
+      domainId,
+      taxonomyPath,
+      ontologyIds,
+      acoPrimitives: acoPrimitives.length ? acoPrimitives : ['Actor', 'Claim'],
+      bindingRationale: cleanString(ontologyInput.bindingRationale)
+        || `Bind ${v2.label} to ${ontologyIds.join(', ')} with ACO primitives ${acoPrimitives.join(', ') || 'Actor, Claim'}.`,
+    },
+    embeddedGraph,
+  };
+}
+
+function normalizeTimelineAnchors(value: unknown): ContextCapsuleTimelineAnchorV3[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item, index): ContextCapsuleTimelineAnchorV3[] => {
+    const record = isRecord(item) ? item : {};
+    const label = cleanString(record.label);
+    const date = cleanString(record.date);
+    if (!label || !date) return [];
+    return [{
+      id: cleanString(record.id) || `timeline-anchor-${index + 1}`,
+      label,
+      date,
+      kind: timelineAnchorKindFromUnknown(record.kind),
+      sourceRefs: cleanStringArray(record.sourceRefs),
+      confidence: confidenceFromUnknown(record.confidence),
+    }];
+  });
+}
+
+function normalizeCausalLinks(value: unknown): ContextCapsuleCausalLinkV3[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item, index): ContextCapsuleCausalLinkV3[] => {
+    const record = isRecord(item) ? item : {};
+    const cause = cleanString(record.cause);
+    const effect = cleanString(record.effect);
+    if (!cause || !effect) return [];
+    return [{
+      id: cleanString(record.id) || `causal-link-${index + 1}`,
+      cause,
+      effect,
+      relation: causalRelationFromUnknown(record.relation),
+      evidenceRefs: cleanStringArray(record.evidenceRefs),
+      confidence: confidenceFromUnknown(record.confidence),
+      caveat: cleanString(record.caveat) || null,
+    }];
+  });
+}
+
+function normalizeGraphLiteProjection(value: Record<string, unknown>, v2: ContextCapsuleV2): ContextCapsuleEmbeddedGraphV3 {
+  const projectionId = cleanString(value.projectionId) || `${v2.capsuleId}-graphlite-projection`;
+  const nodes = normalizeGraphLiteNodes(value.nodes);
+  const edges = normalizeGraphLiteEdges(value.edges);
+  return {
+    provider: 'graphlite',
+    projectionId,
+    status: graphLiteStatusFromUnknown(value.status),
+    namedGraph: cleanString(value.namedGraph) || `capsule_${v2.capsuleId.replace(/[^a-z0-9]+/gi, '_').toLowerCase()}`,
+    advisoryOnly: true,
+    canonicalStore: 'Firestore ContextCapsules',
+    promotionGate: cleanString(value.promotionGate) || 'Human review-card approval required before canonical graph promotion.',
+    nodeCount: numberFromUnknown(value.nodeCount) ?? nodes.length,
+    edgeCount: numberFromUnknown(value.edgeCount) ?? edges.length,
+    nodes,
+    edges,
+  };
+}
+
+function normalizeGraphLiteNodes(value: unknown): ContextCapsuleGraphLiteNodeV3[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item): ContextCapsuleGraphLiteNodeV3[] => {
+    const record = isRecord(item) ? item : {};
+    const id = cleanString(record.id);
+    if (!id) return [];
+    return [{
+      id,
+      label: cleanString(record.label) || id,
+      entityType: cleanString(record.entityType) || 'Policy',
+      reviewState: reviewStateFromUnknown(record.reviewState),
+      confidence: confidenceFromUnknown(record.confidence),
+      sourceReceiptIds: cleanStringArray(record.sourceReceiptIds),
+    }];
+  });
+}
+
+function normalizeGraphLiteEdges(value: unknown): ContextCapsuleGraphLiteEdgeV3[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item, index): ContextCapsuleGraphLiteEdgeV3[] => {
+    const record = isRecord(item) ? item : {};
+    const source = cleanString(record.source);
+    const target = cleanString(record.target);
+    if (!source || !target) return [];
+    return [{
+      id: cleanString(record.id) || `graphlite-edge-${index + 1}`,
+      source,
+      target,
+      label: cleanString(record.label) || cleanString(record.relationshipType) || 'related to',
+      relationshipType: cleanString(record.relationshipType) || null,
+      reviewState: reviewStateFromUnknown(record.reviewState),
+      confidence: confidenceFromUnknown(record.confidence),
+      sourceReceiptIds: cleanStringArray(record.sourceReceiptIds),
+    }];
+  });
 }
 
 function inferContextCaptureOntologyIds(v2: ContextCapsuleV2): OntologyId[] {
@@ -1099,13 +1342,59 @@ function isDateOlderThanWindow(value: string | null | undefined, freshnessWindow
   return (compare - timestamp) / 86_400_000 > freshnessWindowDays;
 }
 
-function withFallback(values: string[], fallback: string[]): string[] {
+function withFallback<T extends string>(values: T[], fallback: T[]): T[] {
   return values.length ? values : dedupeStrings(fallback.filter(Boolean));
+}
+
+function firstRecord(...values: unknown[]): Record<string, unknown> | null {
+  return values.find(isRecord) ?? null;
+}
+
+function cleanString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function cleanStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return dedupeStrings(value.filter((item): item is string => typeof item === 'string').map((item) => item.trim()).filter(Boolean));
+}
+
+function confidenceFromUnknown(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return Math.round(Math.max(0, Math.min(1, value > 1 ? value / 100 : value)) * 1000) / 1000;
+}
+
+function numberFromUnknown(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return Math.max(0, Math.round(value));
+}
+
+function isTacitusCorePrimitive(value: string): value is TacitusCorePrimitive {
+  return (TACITUS_CORE_PRIMITIVES as readonly string[]).includes(value);
+}
+
+function timelineAnchorKindFromUnknown(value: unknown): ContextCapsuleTimelineAnchorKind {
+  const clean = cleanString(value);
+  if (clean === 'as-of' || clean === 'event' || clean === 'deadline' || clean === 'review' || clean === 'validity-start' || clean === 'validity-end') return clean;
+  return 'review';
+}
+
+function causalRelationFromUnknown(value: unknown): ContextCapsuleCausalRelation {
+  const clean = cleanString(value);
+  if (clean === 'causes' || clean === 'enables' || clean === 'blocks' || clean === 'escalates' || clean === 'de-escalates' || clean === 'correlates') return clean;
+  return 'causes';
+}
+
+function graphLiteStatusFromUnknown(value: unknown): ContextCapsuleEmbeddedGraphV3['status'] {
+  const clean = cleanString(value);
+  if (clean === 'compiled-advisory' || clean === 'stale' || clean === 'reviewed' || clean === 'promoted') return clean;
+  return 'compiled-advisory';
+}
+
+function reviewStateFromUnknown(value: unknown): ContextCapsuleGraphLiteNodeV3['reviewState'] {
+  const clean = cleanString(value);
+  if (clean === 'canonical' || clean === 'proposed' || clean === 'missing' || clean === 'advisory' || clean === 'reviewed') return clean;
+  return 'advisory';
 }
 
 function dedupeStrings<T extends string>(values: T[]): T[] {

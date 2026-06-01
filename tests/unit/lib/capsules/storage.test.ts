@@ -27,12 +27,57 @@ describe('capsule/v2 Firestore storage lifecycle', () => {
           frameworks: ['zartman-ripeness'],
         },
         market: { visibility: 'private', category: 'diplomacy-negotiation', tags: ['sudan'] },
+        temporality: {
+          timelineAnchors: [{
+            id: 'anchor-review',
+            label: 'Ceasefire review date',
+            date: '2026-06-15',
+            kind: 'review',
+            sourceRefs: ['src-un'],
+          }],
+        },
+        causality: {
+          causalLinks: [{
+            id: 'causal-access',
+            cause: 'Access restrictions remain in place',
+            effect: 'Humanitarian delivery slows',
+            relation: 'causes',
+            evidenceRefs: ['src-un'],
+            confidence: 0.7,
+          }],
+        },
+        ontologyBinding: {
+          domainId: 'diplomacy-negotiation',
+          taxonomyPath: ['generic', 'diplomacy-negotiation'],
+          ontologyIds: ['conflict', 'mediation'],
+          acoPrimitives: ['Actor', 'Claim', 'Event'],
+          bindingRationale: 'Mediation capsules need actor, claim, event, and constraint extraction.',
+        },
+        embeddedGraph: {
+          provider: 'graphlite',
+          projectionId: 'mediation-sudan-graphlite-builder-projection',
+          status: 'compiled-advisory',
+          namedGraph: 'capsule_mediation_sudan',
+          advisoryOnly: true,
+          canonicalStore: 'Firestore ContextCapsules',
+          promotionGate: 'Human review-card approval required before canonical graph promotion.',
+          nodes: [{ id: 'actor-un', label: 'UN mediator', entityType: 'Actor', reviewState: 'proposed' }],
+          edges: [],
+        },
       },
     }, deps);
 
     expect(draft.id).toBe('mediation-sudan');
     expect(draft.ownerUid).toBe('u1');
     expect(draft.status).toBe('draft');
+    expect(draft.temporality.timelineAnchors[0]?.label).toBe('Ceasefire review date');
+    expect(draft.causality.causalLinks).toHaveLength(1);
+    expect(draft.ontologyBinding.ontologyIds).toEqual(['conflict', 'mediation']);
+    expect(draft.embeddedGraph).toMatchObject({
+      provider: 'graphlite',
+      advisoryOnly: true,
+      canonicalStore: 'Firestore ContextCapsules',
+    });
     expect(db.data.has('capsules/mediation-sudan')).toBe(true);
 
     const updated = await updateDraftCapsule('u1', 'mediation-sudan', {

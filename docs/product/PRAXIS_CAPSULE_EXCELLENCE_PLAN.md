@@ -162,7 +162,7 @@ canonical, no new top-level routes (capsule features are panels in the cockpit).
 - **Goal:** capsules declare and validate their ontology, support capsule-local extensions, and embed every section/claim/source.
 - **Read:** `src/lib/ontology/{types,registry}.ts`, `src/lib/graph/core-primitives.ts`, `src/lib/knowledge/vector-layer.ts`, `capsule-v3.ts` (`contextCaptureProfile`), `src/lib/domain/*` (use the domain-evolution + admin-gate pattern as the model for promotion).
 - **Touch:** make `contextCaptureProfile` a real binding (entity/relationship subtypes owned + capsule-local extensions); validate entities/claims on write, surfacing unknown types as candidate extensions; embed sections/claims/source snippets via `vector-layer.ts`; add a governance-gated "promote extension to global ACO" admin action.
-- **Done-when:** adding an off-ontology entity surfaces a candidate-extension card (not a silent drop); cross-capsule similarity returns sensible neighbors; `npm run audit:ontology` + `npm run audit:embedding-dim` pass.
+- **Done-when:** adding an off-ontology entity surfaces a candidate-extension card (not a silent drop); cross-capsule similarity returns sensible neighbors; `npm run audit:ontology-system` + `npm run audit:embedding-dim` pass.
 
 ### CAP-4 — Creation co-pilot + document-first + elicitation
 - **Goal:** scaffold a capsule from one sentence or a folder of documents; ask for depth progressively.

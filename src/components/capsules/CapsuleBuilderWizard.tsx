@@ -1,39 +1,32 @@
 'use client';
 
-import { Check, Code2, FileJson, Rocket, Sparkles } from 'lucide-react';
+import { CalendarClock, Check, Code2, FileJson, GitBranch, Network, Rocket, Sparkles } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import { CapsuleJsonMonacoEditor } from '@/components/capsules/CapsuleJsonMonacoEditor';
 import { CapsuleLivePreview } from '@/components/capsules/CapsuleLivePreview';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
+import { CAPSULE_EVAL_JUDGE_MODEL } from '@/lib/ai/model-matrix';
+import { TACITUS_CORE_PRIMITIVES } from '@/lib/graph/core-primitives';
+import { ONTOLOGY_IDS } from '@/lib/ontology/types';
 import { PENDING_CONTEXT_CAPSULE_PROMPT_KEY } from '@/lib/product/context-capsule-pending';
+import { DOMAIN_SEEDS } from '@/lib/domain/seeds';
 import type { ContextCapsule } from '@/types/context-capsule';
 
-type BuilderStepId = 'job' | 'sources' | 'output' | 'tools' | 'eval' | 'publish';
+type BuilderStepId = 'job' | 'sources' | 'grounding' | 'output' | 'tools' | 'eval' | 'publish';
 
 const STEPS: Array<{ id: BuilderStepId; label: string; helper: string }> = [
   { id: 'job', label: 'Job', helper: 'Plain-language purpose, domain, and frameworks.' },
   { id: 'sources', label: 'Sources', helper: 'Grounding posture, domains, recency, and minimum evidence.' },
+  { id: 'grounding', label: 'Grounding', helper: 'Timeline anchors, causal links, and ontology binding.' },
   { id: 'output', label: 'Output', helper: 'Deliverable format and schema ordering.' },
   { id: 'tools', label: 'Tools', helper: 'How PRAXIS should use sourceability and research tools.' },
   { id: 'eval', label: 'Test & evaluate', helper: 'Sample questions and a dry-run quality gate.' },
   { id: 'publish', label: 'Publish', helper: 'Visibility, pricing, and immutable publish.' },
 ];
 
-const DOMAIN_OPTIONS = [
-  'generic',
-  'armed-conflict-security',
-  'diplomacy-negotiation',
-  'humanitarian',
-  'human-rights',
-  'governance-rule-of-law',
-  'economic-sanctions',
-  'development-stabilization',
-  'climate-environmental-security',
-  'information-cyber',
-  'transnational-threats',
-];
+const DOMAIN_OPTIONS = Object.keys(DOMAIN_SEEDS);
 
 const TOOL_OPTIONS = ['sourceability', 'deep_research', 'source-scout', 'policy_memo'];
 
@@ -80,6 +73,7 @@ export function CapsuleBuilderWizard() {
       : null;
     const plainLanguagePrompt = (prompt ?? storedPrompt ?? '').trim();
     if (!plainLanguagePrompt) return;
+    const inferredDomain = inferDomainFromPrompt(plainLanguagePrompt);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate builder draft from login/localStorage handoff.
     setJob(plainLanguagePrompt);
@@ -90,9 +84,18 @@ export function CapsuleBuilderWizard() {
     setCapsule((current) => deepMerge(current, {
       persona: {
         systemFrame: plainLanguagePrompt,
-        domain: inferDomainFromPrompt(plainLanguagePrompt),
+        domain: inferredDomain,
       },
+      ontologyBinding: {
+        domainId: inferredDomain,
+        taxonomyPath: ['generic', inferredDomain],
+      },
+      embeddedGraph: graphLiteProjectionForCapsule(current.id, inferredDomain, {
+        timelineAnchor: current.temporality.timelineAnchors[0],
+        causalLink: current.causality.causalLinks[0],
+      }),
       market: {
+        category: inferredDomain,
         tags: ['builder-draft', ...inferTagsFromPrompt(plainLanguagePrompt)],
       },
     }) as ContextCapsule);
@@ -100,6 +103,61 @@ export function CapsuleBuilderWizard() {
 
   function patchCapsule(next: CapsulePatch) {
     setCapsule((current) => deepMerge(current, next) as ContextCapsule);
+  }
+
+  function patchTimelineAnchor(patch: Partial<ContextCapsule['temporality']['timelineAnchors'][number]>) {
+    const current = capsule.temporality.timelineAnchors[0] ?? defaultTimelineAnchor();
+    const next = { ...current, ...patch };
+    patchCapsule({
+      temporality: { timelineAnchors: [next] },
+      embeddedGraph: graphLiteProjectionForCapsule(capsule.id, capsule.ontologyBinding.domainId, {
+        timelineAnchor: next,
+        causalLink: capsule.causality.causalLinks[0],
+      }),
+    });
+  }
+
+  function patchCausalLink(patch: Partial<ContextCapsule['causality']['causalLinks'][number]>) {
+    const current = capsule.causality.causalLinks[0] ?? defaultCausalLink();
+    const next = { ...current, ...patch };
+    patchCapsule({
+      causality: { causalLinks: [next] },
+      embeddedGraph: graphLiteProjectionForCapsule(capsule.id, capsule.ontologyBinding.domainId, {
+        timelineAnchor: capsule.temporality.timelineAnchors[0],
+        causalLink: next,
+      }),
+    });
+  }
+
+  function setDomainBinding(domainId: string) {
+    patchCapsule({
+      persona: { domain: domainId, systemFrame: capsule.persona.systemFrame },
+      market: { category: domainId },
+      ontologyBinding: {
+        domainId,
+        taxonomyPath: domainId === 'generic' ? ['generic'] : ['generic', domainId],
+      },
+      embeddedGraph: graphLiteProjectionForCapsule(capsule.id, domainId, {
+        timelineAnchor: capsule.temporality.timelineAnchors[0],
+        causalLink: capsule.causality.causalLinks[0],
+      }),
+    });
+  }
+
+  function toggleOntologyId(id: ContextCapsule['ontologyBinding']['ontologyIds'][number], checked: boolean) {
+    const current = capsule.ontologyBinding.ontologyIds;
+    const next = checked
+      ? Array.from(new Set([...current, id]))
+      : current.filter((item) => item !== id);
+    patchCapsule({ ontologyBinding: { ontologyIds: next.length ? next : ['governance'] } });
+  }
+
+  function toggleAcoPrimitive(id: ContextCapsule['ontologyBinding']['acoPrimitives'][number], checked: boolean) {
+    const current = capsule.ontologyBinding.acoPrimitives;
+    const next = checked
+      ? Array.from(new Set([...current, id]))
+      : current.filter((item) => item !== id);
+    patchCapsule({ ontologyBinding: { acoPrimitives: next.length ? next : ['Actor', 'Claim'] } });
   }
 
   async function runAssist(action: 'persona' | 'output-schema' | 'sources' | 'few-shot') {
@@ -290,10 +348,7 @@ export function CapsuleBuilderWizard() {
                     Domain
                     <select
                       value={capsule.persona.domain}
-                      onChange={(event) => patchCapsule({
-                        persona: { domain: event.target.value, systemFrame: capsule.persona.systemFrame },
-                        market: { category: event.target.value },
-                      })}
+                      onChange={(event) => setDomainBinding(event.target.value)}
                       className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
                     >
                       {DOMAIN_OPTIONS.map((domain) => <option key={domain}>{domain}</option>)}
@@ -381,6 +436,147 @@ export function CapsuleBuilderWizard() {
                 <button type="button" onClick={() => runAssist('sources')} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium">
                   <Sparkles className="h-4 w-4" /> Suggest sources
                 </button>
+              </div>
+            )}
+
+            {activeStep === 'grounding' && (
+              <div className="space-y-5">
+                <div className="grid gap-4 lg:grid-cols-3">
+                  <section className="rounded-md border border-[#d8d1c5] bg-white p-3">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#24211b]">
+                      <CalendarClock className="h-4 w-4" />
+                      Timeline anchors
+                    </div>
+                    <label className="block text-xs font-semibold text-[#6f675c]">
+                      Anchor label
+                      <input
+                        value={capsule.temporality.timelineAnchors[0]?.label ?? ''}
+                        onChange={(event) => patchTimelineAnchor({ label: event.target.value })}
+                        className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                      />
+                    </label>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                      <label className="block text-xs font-semibold text-[#6f675c]">
+                        Date
+                        <input
+                          type="date"
+                          value={capsule.temporality.timelineAnchors[0]?.date ?? ''}
+                          onChange={(event) => patchTimelineAnchor({ date: event.target.value })}
+                          className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                        />
+                      </label>
+                      <label className="block text-xs font-semibold text-[#6f675c]">
+                        Kind
+                        <select
+                          value={capsule.temporality.timelineAnchors[0]?.kind ?? 'review'}
+                          onChange={(event) => patchTimelineAnchor({ kind: event.target.value as ContextCapsule['temporality']['timelineAnchors'][number]['kind'] })}
+                          className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                        >
+                          {['as-of', 'event', 'deadline', 'review', 'validity-start', 'validity-end'].map((kind) => <option key={kind}>{kind}</option>)}
+                        </select>
+                      </label>
+                    </div>
+                  </section>
+
+                  <section className="rounded-md border border-[#d8d1c5] bg-white p-3">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#24211b]">
+                      <GitBranch className="h-4 w-4" />
+                      Causal link
+                    </div>
+                    <label className="block text-xs font-semibold text-[#6f675c]">
+                      Cause
+                      <input
+                        value={capsule.causality.causalLinks[0]?.cause ?? ''}
+                        onChange={(event) => patchCausalLink({ cause: event.target.value })}
+                        className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                      />
+                    </label>
+                    <label className="mt-3 block text-xs font-semibold text-[#6f675c]">
+                      Effect
+                      <input
+                        value={capsule.causality.causalLinks[0]?.effect ?? ''}
+                        onChange={(event) => patchCausalLink({ effect: event.target.value })}
+                        className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                      />
+                    </label>
+                    <label className="mt-3 block text-xs font-semibold text-[#6f675c]">
+                      Relation
+                      <select
+                        value={capsule.causality.causalLinks[0]?.relation ?? 'causes'}
+                        onChange={(event) => patchCausalLink({ relation: event.target.value as ContextCapsule['causality']['causalLinks'][number]['relation'] })}
+                        className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                      >
+                        {['causes', 'enables', 'blocks', 'escalates', 'de-escalates', 'correlates'].map((relation) => <option key={relation}>{relation}</option>)}
+                      </select>
+                    </label>
+                  </section>
+
+                  <section className="rounded-md border border-[#d8d1c5] bg-white p-3">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#24211b]">
+                      <Network className="h-4 w-4" />
+                      Domain taxonomy
+                    </div>
+                    <label className="block text-xs font-semibold text-[#6f675c]">
+                      Capsule domain
+                      <select
+                        value={capsule.ontologyBinding.domainId}
+                        onChange={(event) => setDomainBinding(event.target.value)}
+                        className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                      >
+                        {DOMAIN_OPTIONS.map((domain) => <option key={domain}>{domain}</option>)}
+                      </select>
+                    </label>
+                    <label className="mt-3 block text-xs font-semibold text-[#6f675c]">
+                      Binding rationale
+                      <textarea
+                        value={capsule.ontologyBinding.bindingRationale}
+                        onChange={(event) => patchCapsule({ ontologyBinding: { bindingRationale: event.target.value } })}
+                        className="mt-1 min-h-24 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                      />
+                    </label>
+                  </section>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <section className="rounded-md border border-[#d8d1c5] bg-white p-3">
+                    <p className="mb-3 text-sm font-semibold text-[#24211b]">Ontology bindings</p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {ONTOLOGY_IDS.map((ontologyId) => (
+                        <label key={ontologyId} className="flex items-center gap-2 border border-[#ebe4d8] px-2 py-1.5 text-xs text-[#4f483f]">
+                          <input
+                            type="checkbox"
+                            checked={capsule.ontologyBinding.ontologyIds.includes(ontologyId)}
+                            onChange={(event) => toggleOntologyId(ontologyId, event.target.checked)}
+                          />
+                          {ontologyId}
+                        </label>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="rounded-md border border-[#d8d1c5] bg-white p-3">
+                    <p className="mb-3 text-sm font-semibold text-[#24211b]">ACO primitives</p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {TACITUS_CORE_PRIMITIVES.map((primitive) => (
+                        <label key={primitive} className="flex items-center gap-2 border border-[#ebe4d8] px-2 py-1.5 text-xs text-[#4f483f]">
+                          <input
+                            type="checkbox"
+                            checked={capsule.ontologyBinding.acoPrimitives.includes(primitive)}
+                            onChange={(event) => toggleAcoPrimitive(primitive, event.target.checked)}
+                          />
+                          {primitive}
+                        </label>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+
+                <div className="rounded-md border border-[#d8d1c5] bg-[#f8f3e8] p-3 text-sm text-[#4f483f]">
+                  <p className="font-semibold text-[#24211b]">embeddedGraph: GraphLite advisory projection</p>
+                  <p className="mt-1">
+                    {capsule.embeddedGraph.projectionId} writes a derived graph view only; Firestore ContextCapsules remain canonical until a human review card promotes graph changes.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -566,6 +762,23 @@ function makeDraftCapsule(input: {
       topK: 8,
       trustRank: 'balanced',
     },
+    temporality: {
+      timelineAnchors: [defaultTimelineAnchor()],
+    },
+    causality: {
+      causalLinks: [defaultCausalLink()],
+    },
+    ontologyBinding: {
+      domainId: 'generic',
+      taxonomyPath: ['generic'],
+      ontologyIds: ['governance'],
+      acoPrimitives: ['Actor', 'Claim', 'Event'],
+      bindingRationale: 'Ground capsule extraction in the selected domain taxonomy, ontology ids, and ACO primitives before reuse.',
+    },
+    embeddedGraph: graphLiteProjectionForCapsule('new-policy-capsule', 'generic', {
+      timelineAnchor: defaultTimelineAnchor(),
+      causalLink: defaultCausalLink(),
+    }),
     tools: { bound: [], recommended: input.selectedTools, policy: 'suggest' },
     guardrails: {
       refusalPolicy: 'Mark unsupported claims as gaps and avoid definitive policy judgments without evidence.',
@@ -586,7 +799,7 @@ function makeDraftCapsule(input: {
         safetyScore: 0.95,
       },
       metrics: ['faithfulness', 'context_recall'],
-      judge: 'gemini-2.5-flash',
+      judge: CAPSULE_EVAL_JUDGE_MODEL,
     },
     provenance: { author: { uid: 'pending' }, createdAt: now },
     market: {
@@ -597,6 +810,120 @@ function makeDraftCapsule(input: {
       installs: 0,
       rating: 0,
     },
+  };
+}
+
+function defaultTimelineAnchor(): ContextCapsule['temporality']['timelineAnchors'][number] {
+  return {
+    id: 'anchor-initial-review',
+    label: 'Initial review window',
+    date: new Date().toISOString().slice(0, 10),
+    kind: 'review',
+    sourceRefs: [],
+  };
+}
+
+function defaultCausalLink(): ContextCapsule['causality']['causalLinks'][number] {
+  return {
+    id: 'causal-primary-risk',
+    cause: 'Source posture changes or a key assumption fails',
+    effect: 'Analyst output requires review before reuse',
+    relation: 'causes',
+    evidenceRefs: [],
+    confidence: 0.5,
+  };
+}
+
+function graphLiteProjectionForCapsule(
+  capsuleId: string,
+  domainId: string,
+  grounding?: {
+    timelineAnchor?: ContextCapsule['temporality']['timelineAnchors'][number];
+    causalLink?: ContextCapsule['causality']['causalLinks'][number];
+  },
+): ContextCapsule['embeddedGraph'] {
+  const safeCapsuleId = capsuleId.replace(/[^a-z0-9_-]+/gi, '-').toLowerCase() || 'capsule';
+  const safeDomainId = domainId.replace(/[^a-z0-9_-]+/gi, '-').toLowerCase() || 'generic';
+  const domainSeed = DOMAIN_SEEDS[domainId as keyof typeof DOMAIN_SEEDS];
+  const domainLabel = domainSeed?.name ?? humanizeId(domainId);
+  const timelineAnchor = grounding?.timelineAnchor ?? defaultTimelineAnchor();
+  const causalLink = grounding?.causalLink ?? defaultCausalLink();
+  const nodes: NonNullable<ContextCapsule['embeddedGraph']['nodes']> = [
+    {
+      id: `capsule:${safeCapsuleId}`,
+      label: 'Context capsule draft',
+      entityType: 'Policy',
+      reviewState: 'advisory',
+      confidence: 0.6,
+    },
+    {
+      id: `domain:${safeDomainId}`,
+      label: domainLabel,
+      entityType: 'Ontology',
+      reviewState: 'advisory',
+      confidence: 0.6,
+    },
+    {
+      id: 'timeline-anchor:primary',
+      label: timelineAnchor.label,
+      entityType: 'Event',
+      reviewState: 'advisory',
+      confidence: timelineAnchor.confidence ?? 0.5,
+      sourceReceiptIds: timelineAnchor.sourceRefs,
+    },
+    {
+      id: 'causal-link:primary',
+      label: `${causalLink.cause} -> ${causalLink.effect}`,
+      entityType: 'Claim',
+      reviewState: 'advisory',
+      confidence: causalLink.confidence ?? 0.5,
+      sourceReceiptIds: causalLink.evidenceRefs,
+    },
+  ];
+  const edges: NonNullable<ContextCapsule['embeddedGraph']['edges']> = [
+    {
+      id: 'capsule-domain-binding',
+      source: `capsule:${safeCapsuleId}`,
+      target: `domain:${safeDomainId}`,
+      label: 'bound to domain',
+      relationshipType: 'bound_to_domain',
+      reviewState: 'advisory',
+      confidence: 0.6,
+    },
+    {
+      id: 'capsule-timeline-anchor',
+      source: `capsule:${safeCapsuleId}`,
+      target: 'timeline-anchor:primary',
+      label: 'has timeline anchor',
+      relationshipType: 'has_timeline_anchor',
+      reviewState: 'advisory',
+      confidence: timelineAnchor.confidence ?? 0.5,
+      sourceReceiptIds: timelineAnchor.sourceRefs,
+    },
+    {
+      id: 'capsule-causal-link',
+      source: 'causal-link:primary',
+      target: `capsule:${safeCapsuleId}`,
+      label: 'grounds capsule risk',
+      relationshipType: 'grounded_by_causal_link',
+      reviewState: 'advisory',
+      confidence: causalLink.confidence ?? 0.5,
+      sourceReceiptIds: causalLink.evidenceRefs,
+    },
+  ];
+
+  return {
+    provider: 'graphlite',
+    projectionId: `${safeCapsuleId}-${safeDomainId}-graphlite-builder-projection`,
+    status: 'compiled-advisory',
+    namedGraph: `capsule_${safeCapsuleId.replaceAll('-', '_')}`,
+    advisoryOnly: true,
+    canonicalStore: 'Firestore ContextCapsules',
+    promotionGate: 'Human review-card approval required before canonical graph promotion.',
+    nodeCount: nodes.length,
+    edgeCount: edges.length,
+    nodes,
+    edges,
   };
 }
 
@@ -647,6 +974,12 @@ function inferTagsFromPrompt(prompt: string): string[] {
       .filter((token) => token.length >= 5)
       .slice(0, 5),
   ));
+}
+
+function humanizeId(value: string): string {
+  return value
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function pct(value: unknown): string {

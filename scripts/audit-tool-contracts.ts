@@ -93,7 +93,7 @@ function main() {
   const rows = TOOL_REGISTRY.map(scoreTool).sort((a, b) => a.score - b.score || a.toolId.localeCompare(b.toolId));
   const auditsDir = join(process.cwd(), 'docs', 'audits');
   if (!existsSync(auditsDir)) mkdirSync(auditsDir, { recursive: true });
-  const out = join(auditsDir, `tool-contracts-${new Date().toISOString().slice(0, 10)}.md`);
+  const out = join(auditsDir, 'LATEST-tool-contracts.md');
   writeFileSync(out, render(rows));
   console.log(`Wrote ${out}`);
   console.log(`${rows.filter((row) => row.score >= 6).length}/${rows.length} tools pass >=6/7 operating-contract checks (static-marker)`);

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentRun } from '@/lib/agent-runtime/types';
 import type { ExecuteAgentRunPayload } from '@/lib/agent-runtime/worker';
 import type { CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
+import { BRAINSTORMING_PERSONA_IDS } from '@/lib/boardroom/brainstorming-table';
 
 const generateTextMock = vi.hoisted(() => vi.fn());
 
@@ -42,6 +43,13 @@ describe('runLiveBoardroomDiscussion', () => {
       {
         consensus: ['Keep authorization and evidence limits visible.'],
         divergences: ['Security confidence remains conditional.'],
+        decisionOptions: [
+          {
+            label: 'Approve with caveats',
+            tradeoffs: 'Moves the board forward while keeping weak operational evidence visible.',
+            preferredBy: ['legal'],
+          },
+        ],
         risks: ['A source gap could make the pack overconfident.'],
         openQuestions: ['Who can provide the missing operational receipt?'],
         nextActions: [{ action: 'Attach a valid source receipt.', owner: 'analyst', urgency: 'short-term' }],
@@ -77,8 +85,62 @@ describe('runLiveBoardroomDiscussion', () => {
     expect(turnEvents[1].turn.state).toBe('unsupported');
     expect(turnEvents[1].turn.confidence).toBe('low');
     expect(output.evidenceStats.unsupportedClaimCount).toBe(1);
+    expect(output.decisionOptions).toEqual([
+      expect.objectContaining({
+        label: 'Approve with caveats',
+        preferredBy: ['legal'],
+      }),
+    ]);
     expect(synthesisEvents).toEqual(['Proceed only with the weakly sourced security point flagged.']);
     expect(JSON.stringify(output.transcript)).not.toContain('document:doc-1');
+    const prompts = generateTextMock.mock.calls.map((call) => String(call[0]?.prompt ?? ''));
+    expect(prompts[0]).toContain('capsule: cap-1 v1');
+    expect(prompts[0]).toContain('receipt-1');
+    expect(prompts[0]).toContain('The board needs a written authorization caveat.');
+  });
+
+  it('runs the six brainstorming personas against active capsule evidence by default', async () => {
+    const { runLiveBoardroomDiscussion } = await import('@/lib/boardroom/live-runner');
+    const turnOutputs = BRAINSTORMING_PERSONA_IDS.map((id) => ({
+      claim: `${id} grounds the decision in the active capsule receipt.`,
+      evidenceRefs: ['receipt-1'],
+      critique: `${id} critique stays attached to the capsule source.`,
+      recommendation: `${id} recommends keeping the source citation visible.`,
+      confidence: 'medium',
+    }));
+    generateTextMock.mockImplementation(async () => ({
+      output: turnOutputs.shift() ?? {
+        consensus: ['Every board persona cited the active capsule receipt.'],
+        divergences: ['Personas differ on speed and risk posture.'],
+        decisionOptions: [
+          {
+            label: 'Proceed with cited caveats',
+            tradeoffs: 'Keeps the decision moving while retaining capsule-source caveats.',
+            preferredBy: ['mediator', 'legal'],
+          },
+        ],
+        risks: ['Do not overstate the single source receipt.'],
+        openQuestions: ['Which second source should corroborate the receipt?'],
+        nextActions: [{ action: 'Add a second corroborating source.', owner: 'analyst', urgency: 'short-term' }],
+        finalSynthesis: 'Proceed only with the active capsule receipt and caveats visible.',
+        topicClusters: [{ topic: 'Capsule evidence', mentions: 6, participantIds: ['mediator', 'humanitarian', 'legal', 'media', 'security', 'red-team'] }],
+      },
+    }));
+
+    const output = await runLiveBoardroomDiscussion({
+      run: makeDefaultRun(),
+      payload,
+      evidencePack: makeEvidencePack(),
+    });
+
+    expect(output.transcript.map((turn) => turn.participantId)).toEqual(BRAINSTORMING_PERSONA_IDS);
+    expect(output.transcript).toHaveLength(6);
+    expect(output.transcript.every((turn) => turn.evidenceRefs.includes('receipt-1'))).toBe(true);
+    expect(output.decisionOptions[0]).toMatchObject({
+      label: 'Proceed with cited caveats',
+      preferredBy: ['mediator', 'legal'],
+    });
+    expect(generateTextMock).toHaveBeenCalledTimes(7);
   });
 });
 
@@ -139,6 +201,19 @@ function makeRun(): AgentRun {
     startedAt: '2026-05-31T12:00:01.000Z',
     completedAt: null,
     expiresAt: null,
+  };
+}
+
+function makeDefaultRun(): AgentRun {
+  return {
+    ...makeRun(),
+    metadata: {
+      boardroomSpec: {
+        question: 'Should the board approve the posture?',
+        maxRounds: 1,
+        outputTarget: 'board_executive_pack',
+      },
+    },
   };
 }
 

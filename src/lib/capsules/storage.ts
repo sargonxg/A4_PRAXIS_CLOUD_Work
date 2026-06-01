@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 
+import { CAPSULE_EVAL_JUDGE_MODEL } from '@/lib/ai/model-matrix';
 import { ContextCapsuleSchema } from '@/lib/ai/schemas/context-capsule';
 import { computeCapsuleContentHash } from '@/lib/capsules/resolve';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
@@ -249,6 +250,30 @@ function buildCapsule(uid: string, input: DeepPartial<ContextCapsule>, now: stri
       topK: 8,
       trustRank: 'balanced',
     },
+    temporality: {
+      timelineAnchors: [],
+    },
+    causality: {
+      causalLinks: [],
+    },
+    ontologyBinding: {
+      domainId: 'generic',
+      taxonomyPath: ['generic'],
+      ontologyIds: ['governance'],
+      acoPrimitives: ['Actor', 'Claim'],
+      bindingRationale: 'Use the generic PRAXIS ontology binding until a domain-specific review updates this capsule.',
+    },
+    embeddedGraph: {
+      provider: 'graphlite',
+      projectionId: 'capsule-graphlite-projection',
+      status: 'stale',
+      namedGraph: 'capsule_graphlite_projection',
+      advisoryOnly: true,
+      canonicalStore: 'Firestore ContextCapsules',
+      promotionGate: 'Human review-card approval required before canonical graph promotion.',
+      nodes: [],
+      edges: [],
+    },
     tools: { bound: [], recommended: ['sourceability'], policy: 'suggest' },
     guardrails: {
       refusalPolicy: 'Refuse unsupported definitive claims and mark gaps when evidence is missing.',
@@ -269,7 +294,7 @@ function buildCapsule(uid: string, input: DeepPartial<ContextCapsule>, now: stri
         safetyScore: 0.95,
       },
       metrics: ['faithfulness', 'context_recall'],
-      judge: 'gemini-2.5-flash',
+      judge: CAPSULE_EVAL_JUDGE_MODEL,
     },
     provenance: {
       author: { uid },

@@ -554,11 +554,33 @@ describe('agent runtime no-op worker', () => {
       'research.plan_created',
       'grounding.live_retrieval_started',
       'grounding.live_retrieval_succeeded',
+      'sourceability.source_checker.started',
+      'sourceability.source_checker.completed',
       'sourceability.claims_verified',
       'memo.draft_created',
       'memo.self_critique_completed',
       'artifact.finalized',
     ]));
+    const phases = mirrored.map((event) => event.phase);
+    expect(phases.indexOf('sourceability.source_checker.completed')).toBeGreaterThan(-1);
+    expect(phases.indexOf('sourceability.source_checker.completed')).toBeLessThan(phases.indexOf('memo.draft_created'));
+    expect(mirrored.find((event) => event.phase === 'sourceability.source_checker.completed')?.data).toMatchObject({
+      agentId: 'source-checker',
+      lane: 'sourceability',
+      toolId: 'sourceability-reviewer',
+      checkedClaimCount: 2,
+      unsupportedClaimCount: 1,
+      sourceabilityVerdicts: expect.arrayContaining([
+        expect.objectContaining({
+          verdict: 'supported',
+          sourceIds: expect.arrayContaining(['doc-src-1', 'web-live-1']),
+        }),
+        expect.objectContaining({
+          verdict: 'unsupported',
+          sourceIds: [],
+        }),
+      ]),
+    });
     expect(mirrored.find((event) => event.phase === 'sourceability.claims_verified')?.data).toMatchObject({
       unsupportedClaimCount: 1,
       liveSourceReceiptCount: 1,

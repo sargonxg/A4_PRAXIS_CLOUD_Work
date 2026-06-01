@@ -2,7 +2,7 @@ import type { AskContextReceipt, AskIntent } from '@/lib/ai/ask-conversation';
 import { buildCapsuleReadReceiptFromAsk, type CapsuleReadReceipt } from '@/lib/agent-runtime/capsule-read-receipt';
 import { resolveGroundingPlan, type GroundingPlan } from '@/lib/agent-runtime/grounding-adapter';
 import { agentToolRequiresApproval, getAgentToolDefinition } from '@/lib/agent-runtime/tool-registry';
-import { buildAgentWorkflowPlan, type AgentWorkflowPlan } from '@/lib/agent-runtime/workflow-plan';
+import { buildAgentWorkflowPlan, type AgentWorkflowKind, type AgentWorkflowPlan } from '@/lib/agent-runtime/workflow-plan';
 import { getPolicyAgent, policyAgentRunIntent, type PolicyAgentOutputDestination, type PolicyAgentRunIntent } from '@/lib/product/policy-agents';
 import { buildTacitusRoutingDecision, type TacitusRoutingDecision } from '@/lib/ai/tacitus-routing-policy';
 import { getModelMatrixEntry } from '@/lib/ai/model-matrix';
@@ -35,10 +35,20 @@ export interface AskConversationOrchestrationReceipt {
     intent: AskIntent;
     workIntent: WorkIntentPlan;
     runIntent: PolicyAgentRunIntent;
+    workflowKind: AgentWorkflowKind;
     complexity: AskOrchestrationComplexity;
     agenticMode: AskAgenticMode;
     policyAgentId: string | null;
     reasons: string[];
+    decision: {
+      stepId: 'triage-decision';
+      label: 'Triage decision';
+      workflowKind: AgentWorkflowKind;
+      agenticMode: AskAgenticMode;
+      policyAgentId: string | null;
+      sourceCheckLane: 'source-checker' | null;
+      reasons: string[];
+    };
   };
   capsule: {
     capsuleId: string | null;
@@ -180,6 +190,7 @@ export function buildAskConversationOrchestrationReceipt(input: {
   });
   const blockedToolIds = approvalRequiredToolIds;
   const shouldQueue = routingDecision.workerMode !== 'direct-answer';
+  const agenticMode: AskAgenticMode = shouldQueue ? 'queue_agent_run' : 'direct_with_receipts';
   const activeGapCount = input.activeGapCount ?? input.contextReceipt.warnings.length;
   const grounding = buildGroundingReceipt({
     selectedToolIds,
@@ -225,6 +236,15 @@ export function buildAskConversationOrchestrationReceipt(input: {
     activeGapCount,
     contextHealth: input.contextReceipt.health,
   });
+  const triageDecision = {
+    stepId: 'triage-decision' as const,
+    label: 'Triage decision' as const,
+    workflowKind: workflowPlan.workflowKind,
+    agenticMode,
+    policyAgentId,
+    sourceCheckLane: workflowPlan.steps.some((step) => step.agentId === 'source-checker') ? 'source-checker' as const : null,
+    reasons,
+  };
 
   for (const toolId of selectedToolIds) {
     getAgentToolDefinition(toolId);
@@ -250,10 +270,12 @@ export function buildAskConversationOrchestrationReceipt(input: {
       intent: input.intent,
       workIntent,
       runIntent: policyAgentRunIntent(policyAgentId),
+      workflowKind: workflowPlan.workflowKind,
       complexity,
-      agenticMode: shouldQueue ? 'queue_agent_run' : 'direct_with_receipts',
+      agenticMode,
       policyAgentId,
       reasons,
+      decision: triageDecision,
     },
     capsule: {
       capsuleId: input.contextReceipt.capsuleId,
@@ -294,7 +316,7 @@ export function buildAskConversationOrchestrationReceipt(input: {
       {
         stage: 'triage',
         status: 'ok',
-        detail: `${input.intent.replace(/_/g, ' ')} request classified as ${complexity}.`,
+        detail: `${input.intent.replace(/_/g, ' ')} request classified as ${complexity}; ${workflowPlan.workflowKind.replace(/_/g, ' ')} workflow selected.`,
       },
       {
         stage: 'agent_router',
@@ -379,7 +401,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
       id: 'triage',
       label: 'Planning workflow',
       status: 'complete',
-      detail: safeStatusDetail(`${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}.`),
+      detail: safeStatusDetail(`${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}; ${receipt.triage.workflowKind.replace(/_/g, ' ')} workflow selected.`),
       agentLabel: policyAgent?.label ?? receipt.routingDecision.userSafeLabels.policyAgent,
     },
     {

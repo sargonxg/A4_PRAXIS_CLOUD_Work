@@ -85,6 +85,12 @@ export const BoardroomTurnSchema = z.object({
   confidence: z.enum(['high', 'medium', 'low']),
 });
 
+export const BoardroomDecisionOptionSchema = z.object({
+  label: z.string().trim().min(1).max(240),
+  tradeoffs: z.string().trim().min(1).max(1000),
+  preferredBy: z.array(BoardroomParticipantIdSchema).default([]),
+});
+
 export const BoardroomOutputSchema = z.object({
   meetingBrief: z.string().min(1),
   agenda: z.array(z.string()).min(1),
@@ -102,6 +108,7 @@ export const BoardroomOutputSchema = z.object({
   })),
   consensus: z.array(z.string()),
   divergences: z.array(z.string()),
+  decisionOptions: z.array(BoardroomDecisionOptionSchema).default([]),
   risks: z.array(z.string()),
   openQuestions: z.array(z.string()),
   evidenceStats: z.object({

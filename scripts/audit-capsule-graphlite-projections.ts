@@ -57,8 +57,8 @@ const report = {
 
 const outDir = join(process.cwd(), 'docs', 'audits');
 mkdirSync(outDir, { recursive: true });
-writeFileSync(join(outDir, '2026-05-31-capsule-graphlite-projections-audit.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
-writeFileSync(join(outDir, '2026-05-31-capsule-graphlite-projections-audit.md'), renderMarkdown(report), 'utf8');
+writeFileSync(join(outDir, 'LATEST-capsule-graphlite-projections-audit.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+writeFileSync(join(outDir, 'LATEST-capsule-graphlite-projections-audit.md'), renderMarkdown(report), 'utf8');
 
 if (findings.length) {
   console.error(`audit:capsule-graphlite-projections FAIL (${findings.length} findings)`);

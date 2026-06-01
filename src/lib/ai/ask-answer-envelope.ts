@@ -1,5 +1,10 @@
 import type { CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
-import type { SourceabilityLedgerSummary, SourceabilitySupportLabel } from '@/lib/agent-runtime/sourceability-ledger';
+import {
+  buildSourceabilityClaimVerdicts,
+  type SourceabilityClaimVerdict,
+  type SourceabilityLedgerSummary,
+  type SourceabilitySupportLabel,
+} from '@/lib/agent-runtime/sourceability-ledger';
 import type { AskIntent } from '@/lib/ai/ask-conversation';
 import type { AskConversationOrchestrationReceipt } from '@/lib/ai/ask-orchestrator';
 import type { ContextEnrichmentReceipt } from '@/lib/knowledge/context-enrichment-adapter';
@@ -52,6 +57,7 @@ export interface ClaimGrounding {
 export type ClaimStatus =
   | 'supported'
   | 'weak'
+  | 'contradicted'
   | 'unsupported'
   | 'stale'
   | 'advisory_memory'
@@ -253,6 +259,7 @@ export interface AskAnswerEnvelope {
   };
   sourceCards: SourcePreviewCard[];
   claimGrounding: ClaimGrounding[];
+  sourceabilityVerdicts: SourceabilityClaimVerdict[];
   claimLedgerSummary: SourceabilityLedgerSummary;
   sourceAudit: AskSourceAuditSummary;
   traceabilitySummary: AskTraceabilitySummary;
@@ -432,6 +439,14 @@ export function buildAskAnswerEnvelope(input: {
   contextEnrichment?: ContextEnrichmentReceipt;
 }): AskAnswerEnvelope {
   const claimGrounding = groundClaims(input.answer, input.sourceCards);
+  const sourceabilityVerdicts = buildSourceabilityClaimVerdicts(claimGrounding.map((claim, index) => ({
+    id: `claim:${stableTinyHash(`${index}:${claim.claim}:${claim.sourceCardIds.join('|')}`)}`,
+    claim: claim.claim,
+    supportLabel: claim.supportLabel,
+    sourceCardIds: claim.sourceCardIds,
+    confidence: confidenceForSupportLabel(claim.supportLabel),
+    reviewNote: reviewNoteForSupportLabel(claim.supportLabel),
+  })));
   const claimLedgerSummary = summarizeClaimGrounding(claimGrounding);
   const memoryReceipt = buildCapsuleMemoryReceipt(input.contextEnrichment, input.provenance);
   const claimLedger = buildCapsuleClaimLedger(claimGrounding, memoryReceipt);
@@ -469,7 +484,7 @@ export function buildAskAnswerEnvelope(input: {
     sourceCards: input.sourceCards,
     gaps: input.gaps ?? [],
     unsupportedClaims: claimGrounding
-      .filter((claim) => claim.supportLabel === 'unsupported')
+      .filter((claim) => claim.supportLabel === 'unsupported' || claim.supportLabel === 'contradicted')
       .map((claim) => claim.claim),
     provenance: {
       ...input.provenance,
@@ -516,6 +531,7 @@ export function buildAskAnswerEnvelope(input: {
     },
     sourceCards: input.sourceCards,
     claimGrounding,
+    sourceabilityVerdicts,
     claimLedgerSummary,
     sourceAudit,
     groundingReceipt,
@@ -908,6 +924,15 @@ function groundClaims(answer: string, sourceCards: SourcePreviewCard[]): ClaimGr
       .sort((a, b) => b.score - a.score)
       .slice(0, 3)
       .map((match) => match.card);
+    const contradictedMatches = matches.filter((card) => sourceContradictsClaim(claim, card));
+    if (contradictedMatches.length > 0) {
+      return {
+        claim,
+        grounding: 'unsupported',
+        supportLabel: 'contradicted',
+        sourceCardIds: contradictedMatches.map((card) => card.id),
+      };
+    }
     const bestConfidence = matches.reduce((max, card) => Math.max(max, card.confidence ?? 0), 0);
     return {
       claim,
@@ -1076,7 +1101,7 @@ function buildCapsuleGroundingReceipt(input: {
 }): CapsuleGroundingReceipt {
   const supportedClaims = input.claimLedger.filter((claim) => claim.status === 'supported').length;
   const weakClaims = input.claimLedger.filter((claim) => claim.status === 'weak' || claim.status === 'advisory_memory').length;
-  const unsupportedClaims = input.claimLedger.filter((claim) => claim.status === 'unsupported' || claim.status === 'model_prior').length;
+  const unsupportedClaims = input.claimLedger.filter((claim) => claim.status === 'unsupported' || claim.status === 'contradicted' || claim.status === 'model_prior').length;
   const staleClaims = input.claimLedger.filter((claim) => claim.status === 'stale').length + input.sourceRefreshDocket.staleSourceIds.length;
   const humanReviewRequired = weakClaims > 0
     || unsupportedClaims > 0
@@ -1117,7 +1142,7 @@ function buildCapsuleReviewCardSuggestions(input: {
   memoryReceipt: CapsuleMemoryReceipt;
 }): CapsuleReviewCardSuggestion[] {
   const supported = input.claimLedger.find((claim) => claim.status === 'supported');
-  const disputed = input.claimLedger.find((claim) => claim.status === 'unsupported' || claim.status === 'weak' || claim.status === 'model_prior');
+  const disputed = input.claimLedger.find((claim) => claim.status === 'contradicted' || claim.status === 'unsupported' || claim.status === 'weak' || claim.status === 'model_prior');
   const memory = input.claimLedger.find((claim) => claim.status === 'advisory_memory');
   const gap = input.sourceRefreshDocket.missingEvidenceGaps[0] ?? 'Create a source gap for the weakest unsupported claim.';
   return [
@@ -1172,7 +1197,8 @@ function buildCapsuleReviewCardSuggestions(input: {
 function claimStatusForSupportLabel(label: SourceabilitySupportLabel): ClaimStatus {
   if (label === 'supported') return 'supported';
   if (label === 'weak') return 'weak';
-  if (label === 'unsupported' || label === 'contradicted') return 'unsupported';
+  if (label === 'contradicted') return 'contradicted';
+  if (label === 'unsupported') return 'unsupported';
   return 'model_prior';
 }
 
@@ -1180,6 +1206,24 @@ function confidenceForStatus(status: ClaimStatus): CapsuleClaimLedgerItem['confi
   if (status === 'supported') return 'high';
   if (status === 'weak') return 'medium';
   return 'low';
+}
+
+function confidenceForSupportLabel(label: SourceabilitySupportLabel): number | null {
+  if (label === 'supported') return 0.85;
+  if (label === 'weak') return 0.55;
+  if (label === 'contradicted') return 0.15;
+  if (label === 'unsupported') return 0.1;
+  if (label === 'model_prior') return 0.35;
+  return 0.25;
+}
+
+function reviewNoteForSupportLabel(label: SourceabilitySupportLabel): string {
+  if (label === 'supported') return 'Attached source preview supports this claim.';
+  if (label === 'weak') return 'Attached source preview partially supports this claim; verify before relying on it.';
+  if (label === 'contradicted') return 'Attached source preview appears to contradict this claim.';
+  if (label === 'unsupported') return 'No attached source preview supports this claim.';
+  if (label === 'model_prior') return 'Claim is model-prior unless the user attaches a source.';
+  return 'Claim is an assumption that needs review before promotion.';
 }
 
 function nextGroundingRepairActions(input: {
@@ -1251,6 +1295,30 @@ function sourceabilityScore(claim: string, card: SourcePreviewCard): number {
   return overlap / claimTokens.size;
 }
 
+function sourceContradictsClaim(claim: string, card: SourcePreviewCard): boolean {
+  const sourceText = [card.quotePreview, card.title, card.citationLabel, card.locatorLabel].filter(Boolean).join(' ');
+  const claimTokens = tokenSet(claim);
+  const sourceTokens = tokenSet(sourceText);
+  if (claimTokens.size === 0 || sourceTokens.size === 0) return false;
+  let shared = 0;
+  for (const token of claimTokens) {
+    if (sourceTokens.has(token)) shared += 1;
+  }
+  const sharedRatio = shared / claimTokens.size;
+  if (sharedRatio < 0.3) return false;
+  return CONTRADICTION_TOKEN_PAIRS.some(([claimToken, sourceToken]) => (
+    (claimTokens.has(claimToken) && sourceTokens.has(sourceToken))
+    || (claimTokens.has(sourceToken) && sourceTokens.has(claimToken))
+  )) || hasNegationMismatch(claim, sourceText, sharedRatio);
+}
+
+function hasNegationMismatch(claim: string, sourceText: string, sharedRatio: number): boolean {
+  if (sharedRatio < 0.5) return false;
+  const claimNegated = NEGATION_PATTERN.test(claim.toLowerCase());
+  const sourceNegated = NEGATION_PATTERN.test(sourceText.toLowerCase());
+  return claimNegated !== sourceNegated;
+}
+
 function tokenSet(value: string): Set<string> {
   return new Set(value
     .toLowerCase()
@@ -1279,6 +1347,29 @@ const STOPWORDS = new Set([
   'claim',
   'separate',
 ]);
+
+const NEGATION_PATTERN = /\b(no|not|never|without|cannot|can't|denied|deny|lacks|lack|failed|fails|restricted|restrictions|blocked|unavailable|unconfirmed)\b/;
+
+const CONTRADICTION_TOKEN_PAIRS: Array<[string, string]> = [
+  ['unrestricted', 'restricted'],
+  ['unrestricted', 'restrictions'],
+  ['allowed', 'denied'],
+  ['available', 'unavailable'],
+  ['confirmed', 'unconfirmed'],
+  ['complete', 'incomplete'],
+  ['open', 'closed'],
+  ['active', 'inactive'],
+  ['present', 'absent'],
+  ['supports', 'contradicts'],
+  ['approved', 'rejected'],
+  ['passed', 'failed'],
+  ['stable', 'unstable'],
+  ['safe', 'unsafe'],
+  ['legal', 'illegal'],
+  ['compliant', 'noncompliant'],
+  ['possible', 'impossible'],
+  ['access', 'blocked'],
+];
 
 function locatorLabel(parts: Array<string | null | undefined>): string | undefined {
   const label = parts.filter(isString).join(' ');

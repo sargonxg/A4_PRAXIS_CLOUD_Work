@@ -108,6 +108,7 @@ describe('boardroom-discussion worker', () => {
         expect(input.title).toContain('Boardroom pack');
         expect(input.blocks.some((block) => block.id === 'boardroom-transcript')).toBe(true);
         expect(input.blocks.some((block) => block.id === 'boardroom-synthesis')).toBe(true);
+        expect(input.blocks.some((block) => block.id === 'boardroom-decision-options')).toBe(true);
         expect(JSON.stringify(input)).not.toMatch(/\bgemini\b|\bclaude\b|\bgpt-\d/i);
         return { memo: { id: 'memo-boardroom-1' } };
       },
@@ -115,6 +116,9 @@ describe('boardroom-discussion worker', () => {
         expect(input.templateId).toBe('board-executive-pack');
         expect(input.payload).toMatchObject({
           title: 'Boardroom pack - Should the board approve the operating posture?',
+          decisionOptions: expect.arrayContaining([
+            expect.objectContaining({ label: 'Approve with review gates' }),
+          ]),
         });
         return { id: 'output-boardroom-1' };
       },
@@ -259,6 +263,13 @@ function makeBoardroomOutput(): BoardroomOutput {
     topicClusters: [{ topic: 'Decision posture', mentions: 2, participantIds: ['legal', 'security'] }],
     consensus: ['Proceed only with review gates attached.'],
     divergences: ['Legal wants authorization first; security wants phased execution.'],
+    decisionOptions: [
+      {
+        label: 'Approve with review gates',
+        tradeoffs: 'Keeps the decision moving while preserving legal and sourceability constraints.',
+        preferredBy: ['legal', 'security'],
+      },
+    ],
     risks: ['Source coverage still needs human review.'],
     openQuestions: ['Who signs off on the final pack?'],
     evidenceStats: { sourceCount: 1, documentCount: 1, sourcedParagraphCount: 1, unsupportedClaimCount: 0 },

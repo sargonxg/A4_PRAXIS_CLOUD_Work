@@ -52,13 +52,15 @@ import {
   type AskIntent,
 } from '@/lib/ai/ask-conversation';
 import { buildAskAnswerEnvelope, buildResearchGraphSourcePreviewCards, buildSourcePreviewCards, type AskAnswerEnvelope, type AskCapsuleSuggestionReceipt, type AskGenerationReceipt } from '@/lib/ai/ask-answer-envelope';
+import { buildAskChatFinishPayloads } from '@/lib/ai/ask-chat-stream-payload';
 import {
   buildAskConversationOrchestrationReceipt,
   buildAskOrchestrationStatusEvents,
   markAskOrchestrationRunQueued,
   type AskConversationOrchestrationReceipt,
 } from '@/lib/ai/ask-orchestrator';
-import { createAgentRun, updateAgentRunMetadata } from '@/lib/agent-runtime/postgres';
+import { appendAgentRunEvent, createAgentRun, updateAgentRunMetadata } from '@/lib/agent-runtime/postgres';
+import { makeAgentRunEvent } from '@/lib/agent-runtime/state';
 import { enqueueAgentRunDispatch } from '@/lib/agent-runtime/cloud-tasks';
 import { destinationHref } from '@/lib/product/policy-agents';
 import { formatWorkIntentPromptBlock } from '@/lib/ai/work-intent-router';
@@ -818,10 +820,10 @@ You have access to the user's active situation data. When answering questions:
         },
         ...buildAskOrchestrationStatusEvents(orchestrationReceipt),
       ],
-      onFinishData: (text) => [
-        {
-          type: 'generationStatus',
-          phase: 'final',
+      onFinishData: (text) => {
+        const answerEnvelope = buildEnvelopeForText(text);
+        return buildAskChatFinishPayloads({
+          answerEnvelope,
           modelPolicyLabel: modelPolicyLabelFor({
             selectedModelId: runtimeReceipt.generationReceipt?.selectedModel ?? runtimeReceipt.model,
             modelTier: orchestrationReceipt.routingDecision.modelTier,
@@ -833,12 +835,8 @@ You have access to the user's active situation data. When answering questions:
           sourceCount: sourceCardsForEnvelope().length,
           capsuleCount: normalizedAppliedCapsules.length,
           warningCount: runtimeReceipt.contextReceipt?.warnings.length ?? 0,
-        },
-        {
-          type: 'answerEnvelope',
-          answerEnvelope: buildEnvelopeForText(text),
-        },
-      ],
+        });
+      },
     });
   } catch (err) {
     return handleRouteError(err, 'chat');
@@ -1275,6 +1273,8 @@ async function maybeQueueAskAgentRun(input: {
         }),
         triageIntent: receipt.triage.intent,
         triageComplexity: receipt.triage.complexity,
+        triageWorkflowKind: receipt.triage.workflowKind,
+        triageDecision: receipt.triage.decision,
         capsuleReadReceipt: receipt.capsuleReadReceipt,
         workflowPlan: receipt.workflowPlan,
         approvalGateCount: receipt.toolRouting.approvalRequiredToolIds.length,
@@ -1291,6 +1291,23 @@ async function maybeQueueAskAgentRun(input: {
         dispatchEnqueueStatus: 'queued',
       },
     });
+    await appendAgentRunEvent(makeAgentRunEvent({
+      runId: run.id,
+      ownerUid: run.ownerUid,
+      capsuleId: run.capsuleId,
+      eventType: 'praxis.orchestration.triage_decided',
+      message: `Ask PRAXIS triage selected ${receipt.triage.workflowKind.replace(/_/g, ' ')}.`,
+      traceId: run.traceId,
+      data: {
+        phase: 'orchestration.triage_decided',
+        triageDecision: receipt.triage.decision,
+        workflowKind: receipt.triage.workflowKind,
+        policyAgentId: receipt.triage.policyAgentId,
+        agenticMode: receipt.triage.agenticMode,
+        selectedToolIds: receipt.toolRouting.selectedToolIds,
+        sourceCheckLane: receipt.triage.decision.sourceCheckLane,
+      },
+    })).catch((eventErr) => console.warn('[chat] Ask orchestration triage event append failed:', eventErr));
 
     let queued = markAskOrchestrationRunQueued(receipt, {
       runId: run.id,

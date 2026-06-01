@@ -8,6 +8,8 @@ export type AgentRunFirestoreStep = {
   status: string;
   detail: string | null;
   toolId: string | null;
+  agentId: string | null;
+  lane: string | null;
 };
 
 export type AgentRunFirestoreSnapshot = {
@@ -220,6 +222,8 @@ function extractWorkflowSteps(metadata: Record<string, unknown>): AgentRunFirest
       status: stringField(step.status) ?? 'pending',
       detail: stringField(step.detail),
       toolId: stringField(step.toolId),
+      agentId: stringField(step.agentId),
+      lane: stringField(step.lane),
     }];
   });
 }

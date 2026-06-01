@@ -1,4 +1,4 @@
-import { modelMatrix } from '@/lib/ai/model-matrix-data';
+import { AI_PLATFORM_POSTURE } from '@/lib/ai/model-matrix';
 
 export type GenkitGoogleProviderKind = 'vertex' | 'google-ai';
 
@@ -16,7 +16,7 @@ export function resolveGenkitGoogleProvider(env: GenkitProviderEnv = process.env
   const providerOverride = normalizeProviderOverride(env.GENKIT_GOOGLE_PROVIDER ?? env.AI_PROVIDER);
   const apiKey = env.GOOGLE_GENAI_API_KEY ?? env.GEMINI_API_KEY ?? env.GOOGLE_API_KEY ?? env.GOOGLE_AI_API_KEY;
   const projectId = env.GOOGLE_VERTEX_PROJECT ?? env.GOOGLE_CLOUD_PROJECT ?? env.GCLOUD_PROJECT;
-  const location = env.GOOGLE_VERTEX_LOCATION ?? env.GCLOUD_LOCATION ?? modelMatrix.platform.defaultRegion;
+  const location = env.GOOGLE_VERTEX_LOCATION ?? env.GCLOUD_LOCATION ?? AI_PLATFORM_POSTURE.defaultRegion;
 
   if (providerOverride === 'vertex') {
     return {

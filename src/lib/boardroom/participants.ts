@@ -7,10 +7,10 @@ import {
 export const BOARDROOM_DEFAULT_PARTICIPANT_IDS = [
   'synthesis-chair',
   'mediator',
-  'legal',
-  'security',
   'humanitarian',
+  'legal',
   'media',
+  'security',
   'red-team',
 ] as const;
 

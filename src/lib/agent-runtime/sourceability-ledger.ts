@@ -11,6 +11,30 @@ export type SourceabilitySupportLabel =
   | 'assumption'
   | 'unsupported';
 
+export type SourceabilityVerdict = 'supported' | 'weak' | 'contradicted' | 'unsupported';
+
+export interface SourceabilityClaimVerdict {
+  claimId: string;
+  claim: string;
+  verdict: SourceabilityVerdict;
+  supportLabel: SourceabilitySupportLabel;
+  sourceIds: string[];
+  confidence: number | null;
+  reviewNote?: string;
+}
+
+export interface SourceabilityClaimVerdictInput {
+  id?: string;
+  claim: string;
+  supportLabel: SourceabilitySupportLabel;
+  sourceIds?: string[];
+  sourceReceiptIds?: string[];
+  sourceCardIds?: string[];
+  documentParagraphIds?: string[];
+  confidence?: number | null;
+  reviewNote?: string;
+}
+
 export interface SourceabilityClaim {
   id: string;
   claim: string;
@@ -49,6 +73,86 @@ export interface SourceabilityLedger {
     sourceReceiptIds: string[];
     generatedAt: string;
     destination: PolicyAgentOutputDestination | null;
+  };
+}
+
+export interface SourceCheckerTracePayload {
+  agentId: 'source-checker';
+  lane: 'sourceability';
+  toolId: 'sourceability-reviewer';
+  ledgerId: string;
+  sourceabilityLedgerId: string;
+  checkedClaimCount: number;
+  unsupportedClaimCount: number;
+  weakClaimCount: number;
+  contradictedClaimCount: number;
+  liveSourceReceiptCount: number;
+  sourceReceiptIds: string[];
+  sourceabilityVerdicts: SourceabilityClaimVerdict[];
+}
+
+export function sourceabilityVerdictForSupportLabel(label: SourceabilitySupportLabel): SourceabilityVerdict {
+  if (label === 'supported') return 'supported';
+  if (label === 'weak') return 'weak';
+  if (label === 'contradicted') return 'contradicted';
+  return 'unsupported';
+}
+
+export function buildSourceabilityClaimVerdicts(claims: SourceabilityClaimVerdictInput[]): SourceabilityClaimVerdict[] {
+  return claims
+    .filter((item) => item.claim.trim().length > 0)
+    .slice(0, 12)
+    .map((item) => {
+      const sourceIds = uniqueStrings([
+        ...(item.sourceIds ?? []),
+        ...(item.sourceCardIds ?? []),
+        ...(item.sourceReceiptIds ?? []),
+        ...(item.documentParagraphIds ?? []),
+      ]);
+      return {
+        claimId: item.id ?? `claim:${createHash('sha256').update(`${item.claim}:${item.supportLabel}:${sourceIds.join('|')}`).digest('hex').slice(0, 16)}`,
+        claim: item.claim.slice(0, 900),
+        verdict: sourceabilityVerdictForSupportLabel(item.supportLabel),
+        supportLabel: item.supportLabel,
+        sourceIds,
+        confidence: typeof item.confidence === 'number' ? Math.max(0, Math.min(1, item.confidence)) : null,
+        ...(item.reviewNote ? { reviewNote: item.reviewNote } : {}),
+      };
+    });
+}
+
+export function buildSourceabilityClaimVerdictsFromLedger(ledger: SourceabilityLedger): SourceabilityClaimVerdict[] {
+  return buildSourceabilityClaimVerdicts(ledger.claims.map((item) => ({
+    id: item.id,
+    claim: item.claim,
+    supportLabel: item.supportLabel,
+    sourceReceiptIds: item.sourceReceiptIds,
+    documentParagraphIds: item.documentParagraphIds,
+    confidence: item.confidence,
+    reviewNote: item.reviewNote,
+  })));
+}
+
+export function buildSourceCheckerTracePayload(
+  ledger: SourceabilityLedger,
+  options: {
+    liveSourceReceiptIds?: string[];
+  } = {},
+): SourceCheckerTracePayload {
+  const liveSourceReceiptIds = uniqueStrings(options.liveSourceReceiptIds ?? []);
+  return {
+    agentId: 'source-checker',
+    lane: 'sourceability',
+    toolId: 'sourceability-reviewer',
+    ledgerId: ledger.ledgerId,
+    sourceabilityLedgerId: ledger.ledgerId,
+    checkedClaimCount: ledger.summary.totalClaims,
+    unsupportedClaimCount: ledger.summary.unsupportedClaims,
+    weakClaimCount: ledger.summary.weakClaims,
+    contradictedClaimCount: ledger.summary.contradictedClaims,
+    liveSourceReceiptCount: liveSourceReceiptIds.length,
+    sourceReceiptIds: liveSourceReceiptIds,
+    sourceabilityVerdicts: buildSourceabilityClaimVerdictsFromLedger(ledger),
   };
 }
 

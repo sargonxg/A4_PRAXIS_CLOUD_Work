@@ -28,6 +28,8 @@ describe('Capsule Studio living graph UI contract', () => {
       'Trust & readiness',
       'History/diff',
       'Proposed changes',
+      'GraphLite advisory projection',
+      'Firestore canonical',
       'Build graph from sources',
       'data-testid="capsule-studio-graph-search"',
       'data-testid="capsule-graph-detail-panel"',

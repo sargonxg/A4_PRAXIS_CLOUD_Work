@@ -21,7 +21,13 @@ import { getDeepThinkModel, getProModel, hasServerAiProvider } from '@/lib/ai/pr
 import { getPolicyAgent, policyAgentRunIntent, type PolicyAgentOutputDestination } from '@/lib/product/policy-agents';
 import { buildOutputFormatterReasoningLoop, buildResearchMemoReasoningLoop } from '@/lib/agent-runtime/reasoning-loop';
 import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock, type CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
-import { buildSourceabilityLedgerFromEvidencePack, buildSourceabilityLedgerFromRun, type SourceabilityClaim, type SourceabilityLedger } from '@/lib/agent-runtime/sourceability-ledger';
+import {
+  buildSourceabilityLedgerFromEvidencePack,
+  buildSourceabilityLedgerFromRun,
+  buildSourceCheckerTracePayload,
+  type SourceabilityClaim,
+  type SourceabilityLedger,
+} from '@/lib/agent-runtime/sourceability-ledger';
 import { makeAgentApproval, makeAgentToolCall } from '@/lib/agent-runtime/state';
 import { getAgentToolDefinition } from '@/lib/agent-runtime/tool-registry';
 import {
@@ -545,17 +551,28 @@ async function executeResearchMemoAgentRun(
       capsuleReadReceipt,
       groundingPosture: capsuleReadReceipt.groundingPosture,
     });
+    await emitSourceCheckerStarted(running, deps, {
+      workflowKind: workflowPlan.workflowKind,
+      evidencePackId: evidencePack.packId,
+      liveSourceReceiptIds: liveSearchEvidence.sourceReceiptIds,
+    });
     let sourceabilityLedger = buildSourceabilityLedgerFromEvidencePack(evidencePack, {
       agentRunId: running.id,
       outputTarget: 'memo_studio',
     });
     sourceabilityLedger = verifySourceabilityLedgerWithLiveSearch(sourceabilityLedger, liveSearchEvidence);
     await emitSourceabilityLedger(running, sourceabilityLedger, deps);
+    await emitSourceCheckerCompleted(running, sourceabilityLedger, deps, {
+      workflowKind: workflowPlan.workflowKind,
+      liveSourceReceiptIds: liveSearchEvidence.sourceReceiptIds,
+    });
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'sourceability.claims_verified',
-      message: 'Sourceability Reviewer checked draft claims against capsule evidence and live retrieval receipts.',
+      message: 'Source Checker updated the sourceability ledger against capsule evidence and live retrieval receipts.',
       data: {
+        agentId: 'source-checker',
+        lane: 'sourceability',
         ledgerId: sourceabilityLedger.ledgerId,
         checkedClaimCount: sourceabilityLedger.summary.totalClaims,
         unsupportedClaimCount: sourceabilityLedger.summary.unsupportedClaims,
@@ -591,12 +608,17 @@ async function executeResearchMemoAgentRun(
       status: sourceabilityLedger.summary.unsupportedClaims > 0 ? 'succeeded' : 'succeeded',
       input: { evidencePackId: evidencePack.packId, objective: running.objective },
       output: {
+        agentId: 'source-checker',
+        lane: 'sourceability',
         ledgerId: sourceabilityLedger.ledgerId,
         summary: sourceabilityLedger.summary,
         unsupportedClaimCount: sourceabilityLedger.summary.unsupportedClaims,
         checkedClaimCount: sourceabilityLedger.summary.totalClaims,
         liveSourceReceiptCount: liveSearchEvidence.sourceReceiptIds.length,
         sourceReceiptIds: liveSearchEvidence.sourceReceiptIds,
+        sourceabilityVerdicts: buildSourceCheckerTracePayload(sourceabilityLedger, {
+          liveSourceReceiptIds: liveSearchEvidence.sourceReceiptIds,
+        }).sourceabilityVerdicts,
       },
       startedAt: new Date().toISOString(),
       completedAt: new Date().toISOString(),
@@ -935,12 +957,21 @@ async function executeMultiAgentSupervisorRun(
       capsuleReadReceipt,
       groundingPosture: capsuleReadReceipt.groundingPosture,
     });
+    await emitSourceCheckerStarted(running, deps, {
+      workflowKind: workflowPlan.workflowKind,
+      evidencePackId: evidencePack.packId,
+      liveSourceReceiptIds: liveSearchEvidence.sourceReceiptIds,
+    });
     let sourceabilityLedger = buildSourceabilityLedgerFromEvidencePack(evidencePack, {
       agentRunId: running.id,
       outputTarget: 'memo_studio',
     });
     sourceabilityLedger = verifySourceabilityLedgerWithLiveSearch(sourceabilityLedger, liveSearchEvidence);
     await emitSourceabilityLedger(running, sourceabilityLedger, deps);
+    await emitSourceCheckerCompleted(running, sourceabilityLedger, deps, {
+      workflowKind: workflowPlan.workflowKind,
+      liveSourceReceiptIds: liveSearchEvidence.sourceReceiptIds,
+    });
 
     executionStage = 'drafting-agent';
     const liveMemoDraft = await draftAndCritiqueMemo(running, evidencePack, sourceabilityLedger, liveSearchEvidence, deps);
@@ -1327,11 +1358,13 @@ async function executeBoardroomAgentRun(
             produces: {
               artifactKind: 'board_executive_pack',
               consensusCount: event.output.consensus.length,
+              decisionOptionCount: event.output.decisionOptions.length,
               riskCount: event.output.risks.length,
               nextActionCount: event.output.nextActions.length,
             },
             consensus: event.output.consensus,
             divergences: event.output.divergences,
+            decisionOptions: event.output.decisionOptions,
             risks: event.output.risks,
             openQuestions: event.output.openQuestions,
             evidenceStats: event.output.evidenceStats,
@@ -1424,11 +1457,13 @@ async function executeBoardroomAgentRun(
           produces: {
             artifactKind: 'board_executive_pack',
             consensusCount: boardroom.consensus.length,
+            decisionOptionCount: boardroom.decisionOptions.length,
             riskCount: boardroom.risks.length,
             nextActionCount: boardroom.nextActions.length,
           },
           consensus: boardroom.consensus,
           divergences: boardroom.divergences,
+          decisionOptions: boardroom.decisionOptions,
           risks: boardroom.risks,
           openQuestions: boardroom.openQuestions,
           evidenceStats: boardroom.evidenceStats,
@@ -2360,6 +2395,53 @@ async function emitCapsuleReadAndWorkflowPlan(
   }, deps);
 
   return { capsuleReadReceipt, workflowPlan };
+}
+
+async function emitSourceCheckerStarted(
+  running: AgentRun,
+  deps: WorkerDeps,
+  input: {
+    workflowKind: string | null;
+    evidencePackId?: string | null;
+    liveSourceReceiptIds?: string[];
+  },
+): Promise<void> {
+  await mirrorWorkerEvent(running, {
+    substrate: 'praxis',
+    phase: 'sourceability.source_checker.started',
+    message: 'Source Checker lane started claim verification before drafting.',
+    data: {
+      agentId: 'source-checker',
+      lane: 'sourceability',
+      toolId: 'sourceability-reviewer',
+      workflowKind: input.workflowKind,
+      evidencePackId: input.evidencePackId ?? null,
+      liveSourceReceiptCount: input.liveSourceReceiptIds?.length ?? 0,
+      sourceReceiptIds: input.liveSourceReceiptIds ?? [],
+    },
+  }, deps);
+}
+
+async function emitSourceCheckerCompleted(
+  running: AgentRun,
+  ledger: SourceabilityLedger,
+  deps: WorkerDeps,
+  input: {
+    workflowKind: string | null;
+    liveSourceReceiptIds?: string[];
+  },
+): Promise<void> {
+  await mirrorWorkerEvent(running, {
+    substrate: 'praxis',
+    phase: 'sourceability.source_checker.completed',
+    message: 'Source Checker wrote claim verdicts into the sourceability ledger before drafting.',
+    data: {
+      workflowKind: input.workflowKind,
+      ...buildSourceCheckerTracePayload(ledger, {
+        liveSourceReceiptIds: input.liveSourceReceiptIds,
+      }),
+    },
+  }, deps);
 }
 
 async function emitSourceabilityLedger(
@@ -3383,8 +3465,25 @@ function buildBoardroomMemoBlocks(
         ...baseMetadata,
         consensus: boardroom.consensus,
         divergences: boardroom.divergences,
+        decisionOptions: boardroom.decisionOptions,
         risks: boardroom.risks,
         openQuestions: boardroom.openQuestions,
+      },
+    },
+    {
+      id: 'boardroom-decision-options',
+      type: 'bullets',
+      title: 'Decision options',
+      content: '',
+      items: boardroom.decisionOptions.map((option) => [
+        option.label,
+        option.tradeoffs,
+        option.preferredBy.length ? `Preferred by: ${option.preferredBy.map((id) => boardroomParticipantLabel(id)).join(', ')}` : null,
+      ].filter(Boolean).join(' - ')),
+      citations: [],
+      metadata: {
+        ...baseMetadata,
+        decisionOptions: boardroom.decisionOptions,
       },
     },
     {
@@ -3464,6 +3563,7 @@ function buildBoardroomOutputCapsuleInput(
       topicClusters: boardroom.topicClusters,
       consensus: boardroom.consensus,
       divergences: boardroom.divergences,
+      decisionOptions: boardroom.decisionOptions,
       risks: boardroom.risks,
       openQuestions: boardroom.openQuestions,
       evidenceStats: boardroom.evidenceStats,

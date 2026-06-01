@@ -47,6 +47,11 @@ const BoardroomTurnModelSchema = z.object({
 const BoardroomSynthesisModelSchema = z.object({
   consensus: z.array(z.string().trim().min(1).max(500)).max(8),
   divergences: z.array(z.string().trim().min(1).max(500)).max(8),
+  decisionOptions: z.array(z.object({
+    label: z.string().trim().min(1).max(240),
+    tradeoffs: z.string().trim().min(1).max(1000),
+    preferredBy: z.array(BoardroomParticipantIdSchema).max(8).default([]),
+  })).max(6).default([]),
   risks: z.array(z.string().trim().min(1).max(500)).max(8),
   openQuestions: z.array(z.string().trim().min(1).max(500)).max(8),
   nextActions: z.array(z.object({
@@ -177,6 +182,7 @@ export async function runLiveBoardroomDiscussion(input: LiveBoardroomRunnerInput
       : [{ topic: 'Decision posture', mentions: transcript.length, participantIds: speakingParticipants.map((participant) => participant.id) }],
     consensus: synthesis.consensus,
     divergences: synthesis.divergences,
+    decisionOptions: synthesis.decisionOptions.length ? synthesis.decisionOptions : fallbackDecisionOptions(transcript),
     risks: synthesis.risks,
     openQuestions: synthesis.openQuestions,
     evidenceStats: {
@@ -243,7 +249,7 @@ Model policy: ${BOARDROOM_MODEL_POLICY_ID}
 Run id: ${input.run.id}
 Decision question: ${input.question}
 
-Create the final board synthesis from the live participant transcript. Preserve dissent, source gaps, risks, open questions, and concrete next actions. Do not hide weak evidence.
+Create the final board synthesis from the live participant transcript. Preserve dissent, source gaps, risks, open questions, concrete next actions, and 2-4 decision options. Do not hide weak evidence.
 
 ${input.evidenceBlock}
 
@@ -303,6 +309,27 @@ function normalizeTurnEvidenceRefs(refs: string[], available: EvidenceRef[]): {
     evidenceRefs,
     rejectedEvidenceRefs,
   };
+}
+
+function fallbackDecisionOptions(transcript: BoardroomOutput['transcript']): BoardroomOutput['decisionOptions'] {
+  const supportedParticipantIds = Array.from(new Set(transcript
+    .filter((turn) => turn.evidenceRefs.length > 0)
+    .map((turn) => turn.participantId)));
+  const challengedParticipantIds = Array.from(new Set(transcript
+    .filter((turn) => turn.state === 'unsupported' || turn.confidence === 'low')
+    .map((turn) => turn.participantId)));
+  return [
+    {
+      label: 'Proceed with review gates',
+      tradeoffs: 'Keeps the decision moving while preserving explicit caveats, evidence refs, and human review before external use.',
+      preferredBy: supportedParticipantIds.slice(0, 4),
+    },
+    {
+      label: 'Pause for source reinforcement',
+      tradeoffs: 'Reduces unsupported-claim risk, but delays the decision until the weakest evidence refs are replaced or corroborated.',
+      preferredBy: challengedParticipantIds.slice(0, 4),
+    },
+  ];
 }
 
 function uniqueRefs(refs: EvidenceRef[]): EvidenceRef[] {

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 const routeSource = readFileSync(join(process.cwd(), 'src/app/api/conversations/[conversationId]/turns/route.ts'), 'utf8');
 const chatRouteSource = readFileSync(join(process.cwd(), 'src/app/api/ai/chat/route.ts'), 'utf8');
 const answerEnvelopeSource = readFileSync(join(process.cwd(), 'src/lib/ai/ask-answer-envelope.ts'), 'utf8');
+const chatStreamPayloadSource = readFileSync(join(process.cwd(), 'src/lib/ai/ask-chat-stream-payload.ts'), 'utf8');
 const persistedEnvelopeContractSource = `${chatRouteSource}\n${answerEnvelopeSource}`;
 
 describe('conversation turns Ask PRAXIS contract', () => {
@@ -65,5 +66,12 @@ describe('conversation turns Ask PRAXIS contract', () => {
     expect(chatRouteSource).toContain('agentRunSnapshotFromAnswerEnvelope');
     expect(chatRouteSource).toContain('latestAgentRunSnapshot: agentRunSnapshotFromAnswerEnvelope(input.runtime.answerEnvelope)');
     expect(chatRouteSource).toContain('agentRunSnapshot: agentRunSnapshotFromAnswerEnvelope(input.runtime.answerEnvelope)');
+  });
+
+  it('streams sourceability verdicts as a first-class chat payload item', () => {
+    expect(answerEnvelopeSource).toContain('sourceabilityVerdicts');
+    expect(chatRouteSource).toContain('buildAskChatFinishPayloads');
+    expect(chatStreamPayloadSource).toContain("type: 'sourceabilityVerdicts'");
+    expect(chatStreamPayloadSource).toContain('sourceabilityVerdicts: input.answerEnvelope.sourceabilityVerdicts');
   });
 });

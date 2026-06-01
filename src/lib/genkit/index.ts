@@ -2,13 +2,13 @@ import { googleAI, vertexAI } from '@genkit-ai/google-genai';
 import { enableGoogleCloudTelemetry } from '@genkit-ai/google-cloud';
 import { genkit } from 'genkit';
 import { loadEnvConfig } from '@next/env';
-import { modelMatrix } from '@/lib/ai/model-matrix-data';
+import { getModelIdForTask, type TaskKind } from '@/lib/ai/model-matrix';
 import { GenkitClassifyPathOutputSchema } from '@/lib/genkit/schemas/classify-path';
 import { GenkitSourceabilityOutputSchema } from '@/lib/genkit/schemas/sourceability';
 import { GenkitSituationIntelligenceSchema } from '@/lib/genkit/schemas/situation-intelligence';
 import { resolveGenkitGoogleProvider } from '@/lib/genkit/provider';
 
-type ModelTaskKind = keyof typeof modelMatrix.taskKinds;
+type ModelTaskKind = TaskKind;
 
 loadEnvConfig(process.cwd());
 
@@ -26,7 +26,7 @@ if (shouldExportTelemetry) {
 }
 
 export function modelIdForTask(kind: ModelTaskKind): string {
-  return modelMatrix.taskKinds[kind].model;
+  return getModelIdForTask(kind);
 }
 
 export const genkitGoogleProvider = resolveGenkitGoogleProvider();

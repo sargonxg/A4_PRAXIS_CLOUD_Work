@@ -80,6 +80,13 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     expect(receipt.triage.complexity).toBe('deep');
     expect(receipt.triage.agenticMode).toBe('queue_agent_run');
     expect(receipt.triage.policyAgentId).toBe('research-memo');
+    expect(receipt.triage.workflowKind).toBe('current_research_brief');
+    expect(receipt.triage.decision).toMatchObject({
+      stepId: 'triage-decision',
+      label: 'Triage decision',
+      workflowKind: 'current_research_brief',
+      sourceCheckLane: 'source-checker',
+    });
     expect(receipt.toolRouting.selectedToolIds).toEqual(expect.arrayContaining([
       'context-resolve',
       'capsule-evidence-pack',
@@ -104,6 +111,22 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       requiresSourceabilityPass: true,
       requiresCurrentGrounding: true,
     });
+    expect(receipt.workflowPlan.steps).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'triage-decision',
+        label: 'Triage decision',
+        status: 'complete',
+        lane: 'triage',
+      }),
+      expect.objectContaining({
+        id: 'source-check',
+        label: 'Source check',
+        status: 'pending',
+        agentId: 'source-checker',
+        toolId: 'sourceability-reviewer',
+        lane: 'sourceability',
+      }),
+    ]));
     expect(receipt.routingDecision.userSafeLabels.modelTier).toBe('TACITUS selected deep reasoning');
     expect(receipt.generationBudget).toMatchObject({
       mode: 'long_context',

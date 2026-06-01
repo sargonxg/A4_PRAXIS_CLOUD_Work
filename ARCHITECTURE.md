@@ -110,7 +110,7 @@ The following architectural gates are active in the repo:
 - `npm run audit:ux-polish`
 - `npm run audit:context-vs-tools`
 - `npm run audit:context-aware-coverage`
-- `npm run audit:ontology`
+- `npm run audit:ontology-system`
 - `npm run audit:ontology-mapping`
 - `npm run audit:ontology-versions`
 - `npm run audit:context-types-parity`

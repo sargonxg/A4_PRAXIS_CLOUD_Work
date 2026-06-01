@@ -23,15 +23,31 @@ describe('/app/boardroom workspace contract', () => {
     expect(componentSource).toContain('PraxisBrandChip');
     expect(componentSource).toContain('RuntimeHealthSemaphore');
     expect(componentSource).toContain('ActivePolicyFileStrip');
+    expect(componentSource).toContain('useActiveContextStack');
     expect(componentSource).toContain('BOARDROOM_PARTICIPANTS');
+    expect(componentSource).toContain('BOARDROOM_ROSTER: BoardroomAgent[] = BOARDROOM_AGENT_IDS.map');
     expect(componentSource).toContain('boardroom-history-panel');
     expect(componentSource).toContain('boardroom-follow-up');
     expect(componentSource).toContain('directContext: directContext || undefined');
-    expect(componentSource).toContain('capsuleId: urlContext.capsuleId || undefined');
-    expect(componentSource).toContain('contextStackId: urlContext.contextStackId || undefined');
+    expect(componentSource).toContain('capsuleId: boardroomContext.capsuleId || undefined');
+    expect(componentSource).toContain('contextStackId: boardroomContext.contextStackId || undefined');
+    expect(componentSource).toContain('selectedDocumentIds: boardroomContext.selectedDocumentIds');
+    expect(componentSource).toContain('selectedSources: boardroomContext.selectedSources');
+    expect(componentSource).toContain('Decision options');
     expect(componentSource).toContain('/api/boardroom/runs');
     expect(componentSource).toContain('/api/agents/runs/${encodeURIComponent(runId)}');
     expect(componentSource).toContain('/api/agents/runs/${encodeURIComponent(runId)}/stream');
+  });
+
+  it('renders an explicit turn-feed contract for readable persona deliberation', () => {
+    expect(componentSource).toContain('data-testid="boardroom-turn-feed"');
+    expect(componentSource).toContain('data-testid="boardroom-turn-card"');
+    expect(componentSource).toContain('Claim');
+    expect(componentSource).toContain('Evidence');
+    expect(componentSource).toContain('Critique');
+    expect(componentSource).toContain('Recommendation');
+    expect(componentSource).toContain('aria-label={`Status: ${turn.state}`}');
+    expect(componentSource).toContain('aria-label={`Confidence: ${turn.confidence}`}');
   });
 
   it('removes the old context-builder, capsule picker, upload, and manual roster workflow', () => {

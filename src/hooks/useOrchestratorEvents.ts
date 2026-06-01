@@ -43,8 +43,9 @@ export interface BuildOrchestratorStreamUrlOptions {
 }
 
 const DEFAULT_MAX_EVENTS = 50;
-const LEDGER_EVENT_TYPES = [
+export const LEDGER_EVENT_TYPES = [
   'status_transition',
+  'praxis.orchestration.triage_decided',
   'praxis.context_resolved',
   'praxis.research.plan_created',
   'praxis.grounding.live_retrieval_started',
@@ -58,6 +59,8 @@ const LEDGER_EVENT_TYPES = [
   'praxis.document.retrieved',
   'praxis.tool.grounded-search.completed',
   'praxis.tool.deep-search-agent.completed',
+  'praxis.sourceability.source_checker.started',
+  'praxis.sourceability.source_checker.completed',
   'praxis.sourceability.claims_verified',
   'praxis.sourceability.ledger_created',
   'praxis.memo.draft_created',
@@ -219,6 +222,7 @@ export function agentRailStageFromEvent(event: OrchestratorEvent): string {
   if (event.type === 'fail') return 'Failed';
   if (event.type === 'complete' || rawType.includes('memo_output') || rawType.includes('output_created') || rawType.includes('artifact.finalized') || phase === 'artifact.finalized') return 'Save output';
   if (rawType === 'status_transition' && stringValue(event.data.toStatus) === 'running') return 'Agent started';
+  if (rawType.includes('orchestration.triage_decided') || phase === 'orchestration.triage_decided') return 'Triage decision';
   if (rawType.includes('supervisor.graph') || phase?.startsWith('supervisor.graph')) return 'Agent graph';
   if (rawType.includes('supervisor.agent.research') || phase === 'supervisor.agent.research.succeeded') return 'Research agent';
   if (rawType.includes('supervisor.agent.drafting') || phase === 'supervisor.agent.drafting.succeeded') return 'Drafting agent';
@@ -227,6 +231,7 @@ export function agentRailStageFromEvent(event: OrchestratorEvent): string {
   if (rawType.includes('context_resolved') || phase === 'context_resolved') return 'Capsule read';
   if (rawType.includes('research.plan') || rawType.includes('reasoning.plan') || phase === 'research.plan_created' || phase === 'reasoning.plan' || phase === 'plan') return 'Research plan';
   if (rawType.includes('grounding.live_retrieval') || phase?.startsWith('grounding.live_retrieval')) return 'Live retrieval';
+  if (rawType.includes('sourceability.source_checker') || phase?.startsWith('sourceability.source_checker')) return 'Sourceability check';
   if (rawType.includes('sourceability.claims_verified') || phase === 'sourceability.claims_verified') return 'Sourceability check';
   if (rawType.includes('memo.self_critique') || phase === 'memo.self_critique_completed') return 'Gap review';
   if (rawType.includes('source') || phase === 'source_discovery') return 'Source discovery';

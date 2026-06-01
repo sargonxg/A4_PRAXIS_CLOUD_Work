@@ -13,15 +13,15 @@ function read(rel: string): string {
   return readFileSync(full, 'utf8');
 }
 
-const report = read('docs/_archive/2026-05-16-aggressive-cleanup/root/PURPOSE_AUDIT_REPORT.md');
+const report = `${read('docs/PRAXIS_CODEX_PLAYBOOK.md')}\n${read('docs/audits/README.md')}`;
 for (const marker of [
-  '## TL;DR',
-  '## Findings: Remove',
-  '## Findings: Simplify',
-  '## Findings: Consolidate',
-  '## Cross-cutting findings',
-  '## Recommended sequence',
-  '## Things kept after consideration',
+  '## 7. Documentation hygiene rules',
+  'One canonical per topic',
+  'Audit/doctor output is ephemeral',
+  'LATEST-*',
+  'Completed P3',
+  'current audit routing index',
+  'Generated gate audits should overwrite `LATEST-*` files',
 ]) {
   if (!report.includes(marker)) failures.push(`purpose report missing ${marker}`);
 }

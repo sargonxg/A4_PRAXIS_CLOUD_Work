@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+import { CAPSULE_EVAL_JUDGE_MODEL } from '@/lib/ai/model-matrix';
+import { TACITUS_CORE_PRIMITIVES } from '@/lib/graph/core-primitives';
+import { isOntologyId } from '@/lib/ontology/types';
 import { DOMAIN_IDS } from '@/types/domain';
 
 const SemVerSchema = z.string().min(1).max(40);
@@ -59,6 +62,72 @@ export const RetrievalConfigSchema = z.object({
   filters: JsonObjectSchema.optional(),
 });
 
+export const CapsuleTemporalitySchema = z.object({
+  timelineAnchors: z.array(z.object({
+    id: z.string().min(1).max(160),
+    label: z.string().min(1).max(240),
+    date: z.string().min(1).max(80),
+    kind: z.enum(['as-of', 'event', 'deadline', 'review', 'validity-start', 'validity-end']),
+    sourceRefs: z.array(z.string().min(1).max(180)).max(80).optional(),
+    confidence: z.number().min(0).max(1).optional(),
+  })).max(80).default([]),
+  asOf: z.string().min(1).max(80).optional(),
+  validFrom: z.string().min(1).max(80).optional(),
+  validUntil: z.string().min(1).max(80).optional(),
+});
+
+export const CapsuleCausalitySchema = z.object({
+  causalLinks: z.array(z.object({
+    id: z.string().min(1).max(160),
+    cause: z.string().min(1).max(800),
+    effect: z.string().min(1).max(800),
+    relation: z.enum(['causes', 'enables', 'blocks', 'escalates', 'de-escalates', 'correlates']),
+    evidenceRefs: z.array(z.string().min(1).max(180)).max(80).default([]),
+    confidence: z.number().min(0).max(1).optional(),
+    caveat: z.string().max(1200).optional(),
+  })).max(120).default([]),
+});
+
+export const CapsuleOntologyBindingSchema = z.object({
+  domainId: DomainKeySchema,
+  taxonomyPath: z.array(z.string().min(1).max(160)).max(12).default(['generic']),
+  ontologyIds: z.array(z.string().refine(isOntologyId, 'Unknown ontology id')).max(12).default(['governance']),
+  acoPrimitives: z.array(z.enum(TACITUS_CORE_PRIMITIVES)).max(16).default(['Actor', 'Claim']),
+  bindingRationale: z.string().min(1).max(2000).default('Use the generic PRAXIS ontology binding until a domain-specific review updates this capsule.'),
+});
+
+const CapsuleEmbeddedGraphReviewStateSchema = z.enum(['canonical', 'proposed', 'missing', 'advisory', 'reviewed']);
+
+export const CapsuleEmbeddedGraphProjectionSchema = z.object({
+  provider: z.literal('graphlite'),
+  projectionId: z.string().min(1).max(220),
+  status: z.enum(['compiled-advisory', 'stale', 'reviewed', 'promoted']),
+  namedGraph: z.string().min(1).max(220),
+  advisoryOnly: z.literal(true),
+  canonicalStore: z.literal('Firestore ContextCapsules'),
+  promotionGate: z.string().min(1).max(1200),
+  nodeCount: z.number().int().nonnegative().optional(),
+  edgeCount: z.number().int().nonnegative().optional(),
+  nodes: z.array(z.object({
+    id: z.string().min(1).max(220),
+    label: z.string().min(1).max(300),
+    entityType: z.string().min(1).max(120),
+    reviewState: CapsuleEmbeddedGraphReviewStateSchema.optional(),
+    confidence: z.number().min(0).max(1).optional(),
+    sourceReceiptIds: z.array(z.string().min(1).max(180)).max(80).optional(),
+  })).max(1000).default([]),
+  edges: z.array(z.object({
+    id: z.string().min(1).max(220),
+    source: z.string().min(1).max(220),
+    target: z.string().min(1).max(220),
+    label: z.string().min(1).max(240),
+    relationshipType: z.string().min(1).max(160).optional(),
+    reviewState: CapsuleEmbeddedGraphReviewStateSchema.optional(),
+    confidence: z.number().min(0).max(1).optional(),
+    sourceReceiptIds: z.array(z.string().min(1).max(180)).max(80).optional(),
+  })).max(2000).default([]),
+});
+
 export const VertexSafetySettingSchema = z.object({
   category: z.string().min(1).max(160),
   threshold: z.string().min(1).max(160),
@@ -83,7 +152,7 @@ export const CapsuleEvalSchema = z.object({
     'tool_call_accuracy',
     'agent_goal_accuracy',
   ])).min(1).max(16),
-  judge: z.literal('gemini-2.5-flash'),
+  judge: z.literal(CAPSULE_EVAL_JUDGE_MODEL),
   lastRun: z.object({
     runId: z.string().min(1).max(180),
     scores: z.record(z.string(), z.number()),
@@ -130,6 +199,26 @@ export const ContextCapsuleSchema = z.object({
 
   sourcing: SourcingPolicySchema,
   retrieval: RetrievalConfigSchema,
+  temporality: CapsuleTemporalitySchema.default({ timelineAnchors: [] }),
+  causality: CapsuleCausalitySchema.default({ causalLinks: [] }),
+  ontologyBinding: CapsuleOntologyBindingSchema.default({
+    domainId: 'generic',
+    taxonomyPath: ['generic'],
+    ontologyIds: ['governance'],
+    acoPrimitives: ['Actor', 'Claim'],
+    bindingRationale: 'Use the generic PRAXIS ontology binding until a domain-specific review updates this capsule.',
+  }),
+  embeddedGraph: CapsuleEmbeddedGraphProjectionSchema.default({
+    provider: 'graphlite',
+    projectionId: 'capsule-graphlite-projection',
+    status: 'stale',
+    namedGraph: 'capsule_graphlite_projection',
+    advisoryOnly: true,
+    canonicalStore: 'Firestore ContextCapsules',
+    promotionGate: 'Human review-card approval required before canonical graph promotion.',
+    nodes: [],
+    edges: [],
+  }),
 
   tools: z.object({
     bound: z.array(z.string().min(1).max(160)).max(80).default([]),

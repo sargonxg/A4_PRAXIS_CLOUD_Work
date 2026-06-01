@@ -20,6 +20,19 @@ The lane also loads `.env.local`. If `TEST_FIREBASE_EMAIL` /
 the preflight can validate ADC with a temporary service-account credential file
 when local user ADC has expired. The temporary file is deleted during preflight.
 
+## GitHub Actions Setup
+
+The `persona-smoke` workflow requires repository or environment GitHub Actions
+secrets for the disposable Firebase browser user:
+
+- `TEST_FIREBASE_EMAIL`
+- `TEST_FIREBASE_PASSWORD`
+
+Do not commit these values to the repo, `.env.local`, docs, screenshots, or
+workflow logs. Configure them in GitHub Actions secrets for the PRAXIS repo.
+The workflow fails before install/build if either secret is missing, so the
+authenticated app smoke and golden-path proof cannot silently skip.
+
 Readiness check:
 
 ```powershell

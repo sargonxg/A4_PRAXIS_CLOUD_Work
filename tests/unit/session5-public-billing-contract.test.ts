@@ -19,24 +19,30 @@ describe('Session 5 public surface and billing contract', () => {
   it('uses the same concrete policy missions on public and signed-in home shells', () => {
     const marketingHome = read('src/components/marketing/praxis-marketing-home.tsx');
     const appLaunchpad = read('src/components/app/praxis-app-launchpad.tsx');
+    const chatShell = read('src/components/app/praxis-chat-first-shell.tsx');
     const missionSource = read('src/lib/product/policy-missions.ts');
 
     for (const mission of REQUIRED_MISSIONS) {
       expect(missionSource).toContain(mission);
     }
-    expect(marketingHome).toContain('POLICY_MISSION_EXAMPLES');
-    expect(appLaunchpad).toContain('POLICY_MISSION_EXAMPLES');
+    expect(marketingHome).toContain('PraxisChatFirstShell');
+    expect(appLaunchpad).toContain('PraxisChatFirstShell');
+    expect(chatShell).toContain('POLICY_MISSION_EXAMPLES');
   });
 
   it('routes hero prompts directly into capsule creation through capsulePrompt', () => {
     const marketingHome = read('src/components/marketing/praxis-marketing-home.tsx');
     const appLaunchpad = read('src/components/app/praxis-app-launchpad.tsx');
+    const chatShell = read('src/components/app/praxis-chat-first-shell.tsx');
     const builder = read('src/components/capsules/CapsuleBuilderWizard.tsx');
 
-    expect(marketingHome).toContain('name="capsulePrompt"');
-    expect(marketingHome).toContain('value="/app/capsules/builder"');
-    expect(appLaunchpad).toContain('params.set(\'capsulePrompt\'');
-    expect(appLaunchpad).toContain('router.push(`/app/capsules/builder?${params.toString()}`)');
+    expect(marketingHome).toContain('mode="public"');
+    expect(appLaunchpad).toContain('mode="authenticated"');
+    expect(chatShell).toContain('name="capsulePrompt"');
+    expect(chatShell).toContain('value="/app/capsules/builder"');
+    expect(chatShell).toContain('params.set(\'capsulePrompt\'');
+    expect(chatShell).toContain('router.push(`/app/capsules/builder?${params.toString()}`)');
+    expect(chatShell).toContain('router.push(`/login?${params.toString()}`)');
     expect(builder).toContain('useSearchParams');
     expect(builder).toContain('PENDING_CONTEXT_CAPSULE_PROMPT_KEY');
     expect(builder).toContain("from '@/lib/product/context-capsule-pending'");
@@ -96,5 +102,6 @@ describe('Session 5 public surface and billing contract', () => {
     expect(learnPage).toContain('Premium web is not enabled by default');
     expect(personaSmoke).toContain('tests/e2e/golden-path.spec.ts');
     expect(personaSmoke).toContain('TEST_FIREBASE_EMAIL');
+    expect(personaSmoke).toContain('Verify Firebase disposable test credentials');
   });
 });

@@ -20,11 +20,24 @@ export type AgentWorkflowKind =
   | 'handover'
   | 'capsule_governance';
 
+export type AgentWorkflowStepStatus = 'pending' | 'active' | 'complete' | 'warn' | 'skipped' | 'failed';
+
+export interface AgentWorkflowStep {
+  id: string;
+  label: string;
+  status: AgentWorkflowStepStatus;
+  detail: string | null;
+  toolId: string | null;
+  agentId: string | null;
+  lane: string | null;
+}
+
 export interface AgentWorkflowPlan {
   version: 1;
   planId: string;
   workflowKind: AgentWorkflowKind;
   processRail: string[];
+  steps: AgentWorkflowStep[];
   requiredPolicyAgentIds: string[];
   reviewCardOnlyAgentIds: string[];
   reviewCardTargets: ContextCapsuleV3ReviewCardTarget[];
@@ -68,6 +81,12 @@ export function buildAgentWorkflowPlan(input: {
     || workflowKind === 'handover';
   const outputTarget = input.outputTarget ?? input.capsuleReadReceipt.outputTarget ?? null;
   const groundingPosture = input.groundingPosture ?? input.capsuleReadReceipt.groundingPosture;
+  const steps = buildWorkflowSteps({
+    workflowKind,
+    requiredPolicyAgentIds,
+    requiresSourceabilityPass,
+    selectedTools,
+  });
 
   return {
     version: 1,
@@ -76,6 +95,7 @@ export function buildAgentWorkflowPlan(input: {
     processRail: capsuleGovernance
       ? [...AGENT_WORKFLOW_PROCESS_RAIL.slice(0, 4), 'Preparing review cards', 'Saving artifact']
       : AGENT_WORKFLOW_PROCESS_RAIL,
+    steps,
     requiredPolicyAgentIds,
     reviewCardOnlyAgentIds: capsuleGovernance ? CAPSULE_V3_AGENT_ROLES.map((role) => role.id) : [],
     reviewCardTargets: capsuleGovernance ? ['advisoryMemory', 'sourceGap', 'graphProposal', 'claimLedger', 'agentInstructions'] : [],
@@ -88,6 +108,49 @@ export function buildAgentWorkflowPlan(input: {
     groundingPosture,
     planSummary: summarizePlan(workflowKind, requiredPolicyAgentIds, selectedTools, outputTarget),
   };
+}
+
+function buildWorkflowSteps(input: {
+  workflowKind: AgentWorkflowKind;
+  requiredPolicyAgentIds: string[];
+  requiresSourceabilityPass: boolean;
+  selectedTools: string[];
+}): AgentWorkflowStep[] {
+  const steps: AgentWorkflowStep[] = [
+    {
+      id: 'triage-decision',
+      label: 'Triage decision',
+      status: 'complete',
+      detail: `Selected ${input.workflowKind.replace(/_/g, ' ')} workflow.`,
+      toolId: null,
+      agentId: input.requiredPolicyAgentIds[0] ?? null,
+      lane: 'triage',
+    },
+  ];
+  if (shouldRunSourceCheckerLane(input.workflowKind, input.requiresSourceabilityPass, input.selectedTools)) {
+    steps.push({
+      id: 'source-check',
+      label: 'Source check',
+      status: 'pending',
+      detail: 'Source-checker lane updates the sourceability ledger before drafting.',
+      toolId: 'sourceability-reviewer',
+      agentId: 'source-checker',
+      lane: 'sourceability',
+    });
+  }
+  return steps;
+}
+
+function shouldRunSourceCheckerLane(
+  workflowKind: AgentWorkflowKind,
+  requiresSourceabilityPass: boolean,
+  selectedTools: string[],
+): boolean {
+  if (!requiresSourceabilityPass && !selectedTools.includes('sourceability-reviewer')) return false;
+  return workflowKind === 'current_research_brief'
+    || workflowKind === 'multi_agent_review'
+    || workflowKind === 'pdf_memo_output'
+    || workflowKind === 'handover';
 }
 
 function classifyWorkflowKind(input: {

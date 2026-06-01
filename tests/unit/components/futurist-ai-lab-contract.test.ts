@@ -6,6 +6,7 @@ const root = process.cwd();
 const globals = readFileSync(join(root, 'src/app/globals.css'), 'utf8');
 const landingPage = readFileSync(join(root, 'src/app/page.tsx'), 'utf8');
 const marketingHome = readFileSync(join(root, 'src/components/marketing/praxis-marketing-home.tsx'), 'utf8');
+const chatShell = readFileSync(join(root, 'src/components/app/praxis-chat-first-shell.tsx'), 'utf8');
 const workbench = readFileSync(join(root, 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
 const sitemap = readFileSync(join(root, 'src/app/sitemap.ts'), 'utf8');
 const ogImage = readFileSync(join(root, 'src/app/opengraph-image.tsx'), 'utf8');
@@ -39,12 +40,13 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
 
   it('keeps the public root light and marketing-first instead of rendering the cockpit', () => {
     expect(landingPage).toContain('PraxisMarketingHome');
-    expect(marketingHome).toContain('data-testid="marketing-home"');
-    expect(marketingHome).toContain('Ask a policy question. Build the capsule first.');
-    expect(marketingHome).toContain('POLICY_MISSION_EXAMPLES');
-    expect(`${landingPage}\n${marketingHome}`).not.toContain('TaskletPraxisWorkbench');
-    expect(`${landingPage}\n${marketingHome}`).not.toContain('mode="public"');
-    expect(`${landingPage}\n${marketingHome}`).not.toContain('data-testid="app-first-root"');
+    expect(marketingHome).toContain('PraxisChatFirstShell');
+    expect(marketingHome).toContain('mode="public"');
+    expect(chatShell).toContain('data-testid="praxis-chat-first-shell"');
+    expect(chatShell).toContain('Ask a policy question. Build the capsule first.');
+    expect(chatShell).toContain('POLICY_MISSION_EXAMPLES');
+    expect(`${landingPage}\n${marketingHome}\n${chatShell}`).not.toContain('TaskletPraxisWorkbench');
+    expect(`${landingPage}\n${marketingHome}\n${chatShell}`).not.toContain('data-testid="app-first-root"');
   });
 
   it('keeps capsule state reachable on mobile through ContextChain controls', () => {
@@ -62,13 +64,13 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
   });
 
   it('compresses the public homepage into three plain capabilities plus a marketplace teaser', () => {
-    expect(marketingHome).toContain('Context Capsules');
-    expect(marketingHome).toContain('Agentic research');
-    expect(marketingHome).toContain('Capsule marketplace');
-    expect(marketingHome).toContain('data-testid="marketing-marketplace-teaser"');
-    expect(marketingHome).toContain('data-testid="marketing-pricing-strip"');
-    expect(marketingHome).not.toContain('data-testid="homepage-capsule-load-more"');
-    expect(marketingHome).not.toContain('Load more capsules');
+    expect(chatShell).toContain('Context Capsules');
+    expect(chatShell).toContain('Agentic research');
+    expect(chatShell).toContain('Capsule marketplace');
+    expect(chatShell).toContain('data-testid="marketing-marketplace-teaser"');
+    expect(chatShell).toContain('data-testid="marketing-pricing-strip"');
+    expect(chatShell).not.toContain('data-testid="homepage-capsule-load-more"');
+    expect(chatShell).not.toContain('Load more capsules');
   });
 
   it('uses stable sitemap timestamps and OG capsule/source/agent language', () => {

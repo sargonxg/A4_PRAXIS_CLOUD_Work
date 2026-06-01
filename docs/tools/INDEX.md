@@ -80,7 +80,7 @@ in `src/lib/tools/tool-operating-contracts.ts`. That contract defines objective,
 user value, applicability, required questions, expected outputs, Ask PRAXIS
 writeback actions, situation inputs, persistence expectations, and quality bar.
 Run `npm run audit:tool-contracts` to regenerate the verification report in
-`docs/audits/tool-contracts-YYYY-MM-DD.md`.
+`docs/audits/LATEST-tool-contracts.md`.
 
 As of the same sprint, every registered tool also has a computed context
 blueprint in `src/lib/tools/tool-context-blueprints.ts`. The blueprint declares

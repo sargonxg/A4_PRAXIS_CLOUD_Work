@@ -1,3 +1,4 @@
+import { CAPSULE_EVAL_JUDGE_MODEL } from '@/lib/ai/model-matrix';
 import { computeCapsuleContentHash } from '@/lib/capsules/resolve';
 import { runCapsuleDryRunEval, type CapsuleDryRunEvalResult, type CapsuleEvalSample, type CapsuleEvalSourceSnippet } from '@/lib/capsules/dry-run-eval';
 import type { ContextCapsule } from '@/types/context-capsule';
@@ -249,6 +250,45 @@ function buildBaseCapsule(definition: typeof DEFINITIONS[number]): ContextCapsul
       topK: 10,
       trustRank: 'strict',
     },
+    temporality: {
+      timelineAnchors: [{
+        id: `${definition.id}-as-of`,
+        label: 'Launch capsule as-of date',
+        date: LAUNCH_CREATED_AT.slice(0, 10),
+        kind: 'as-of',
+        sourceRefs: [],
+      }],
+    },
+    causality: {
+      causalLinks: [{
+        id: `${definition.id}-sourceability-loop`,
+        cause: 'A source gap or stale receipt is detected',
+        effect: 'The capsule output remains review-gated before reuse',
+        relation: 'causes',
+        evidenceRefs: [],
+        confidence: 0.6,
+      }],
+    },
+    ontologyBinding: {
+      domainId: definition.domain,
+      taxonomyPath: definition.domain === 'generic' ? ['generic'] : ['generic', definition.domain],
+      ontologyIds: ['governance'],
+      acoPrimitives: ['Actor', 'Claim', 'Event'],
+      bindingRationale: 'Launch capsules start with source-backed actor, claim, and event extraction before domain-specific review.',
+    },
+    embeddedGraph: {
+      provider: 'graphlite',
+      projectionId: `${definition.id}-graphlite-launch-projection`,
+      status: 'compiled-advisory',
+      namedGraph: `capsule_${definition.id.replaceAll('-', '_')}`,
+      advisoryOnly: true,
+      canonicalStore: 'Firestore ContextCapsules',
+      promotionGate: 'Human review-card approval required before canonical graph promotion.',
+      nodeCount: 0,
+      edgeCount: 0,
+      nodes: [],
+      edges: [],
+    },
     tools: {
       bound: [],
       recommended: ['sourceability', 'deep_research', 'source-scout'],
@@ -271,10 +311,10 @@ function buildBaseCapsule(definition: typeof DEFINITIONS[number]): ContextCapsul
         schemaConformance: 1,
         redTeamPassRate: 0.95,
         safetyScore: 0.95,
+        },
+        metrics: ['faithfulness', 'context_recall', 'factual_correctness', 'tool_call_accuracy'],
+        judge: CAPSULE_EVAL_JUDGE_MODEL,
       },
-      metrics: ['faithfulness', 'context_recall', 'factual_correctness', 'tool_call_accuracy'],
-      judge: 'gemini-2.5-flash',
-    },
     provenance: {
       author: { uid: 'system', org: 'tacitus' },
       createdAt: LAUNCH_CREATED_AT,

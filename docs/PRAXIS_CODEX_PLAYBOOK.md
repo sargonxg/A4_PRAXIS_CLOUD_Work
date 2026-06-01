@@ -108,53 +108,28 @@ incomplete vs vision; **Stub** = scaffolded, not yet a real experience.
 
 | Surface | State | Where it lives | The gap that matters |
 |---|---|---|---|
-| **Homepage (chat-first, same pre/post login)** | Solid-ish | `src/app/page.tsx`, `src/components/marketing/praxis-marketing-home.tsx`, `src/components/app/praxis-app-launchpad.tsx` | Pre-login marketing shell and post-login launchpad are **two different UIs**. Vision wants ONE chat-first entry that's the same before/after login. |
-| **Context Capsules** | Solid schema, partial capture | `src/lib/context/capsule-v3.ts` (14 sections), `src/components/capsules/CapsuleBuilderWizard.tsx`, `capsule-service.ts` | Builder wizard does **not** make the user bind **temporality, causality, or ontology** — those exist in the schema/brain libs but aren't surfaced at creation. Embedded graph is present but thin in the builder. |
-| **Ask PRAXIS** | Solid | `src/app/api/ai/chat/route.ts`, `src/lib/ai/ask-orchestrator.ts`, `src/components/ask/AskStreamPanel.tsx`, `receipt-card.tsx` | `sourceability-ledger.ts` (supported / weak / contradicted / unsupported) is **computed but not shown** in the chat UI. Temporal/causal grounding isn't explicitly prompted. |
-| **Agentic workflow (orchestration/triage/multi-agent)** | Partial | `src/lib/agent-runtime/workflow-plan.ts`, `src/lib/agents/run-agent.ts` + `registry.ts`, `src/lib/ai/vertex-agent.ts` | No explicit **triage state machine** (which agent, when to escalate). **Source-checking is post-hoc** (ledger), not a live agent lane. Multi-agent debate is a UI feature, not an orchestrator primitive. |
-| **Boardroom** | Stub | `src/app/app/boardroom/page.tsx`, `src/components/boardroom/boardroom-workspace.tsx`, `src/lib/boardroom/{schema,live-runner,brainstorming-table}.ts` | Schema (6 personas, turn = claim/evidence/critique/recommendation/confidence) exists; **turn-feed UI and synthesis (consensus/divergence/options) are not built**. Not wired to the capsule context stack. |
-| **Memo** | Solid editor, missing checks | `src/components/memo/memo-desk.tsx`, `GapFillerRail.tsx`, `source-mention-menu.tsx`, `src/lib/memo/templates/registry.ts` | **No fact-check and no language-check tool** wired into the desk. Source mentions insert citations but there's no "promote to receipt / verify claim" flow. |
+| **Homepage (chat-first, same pre/post login)** | Solid | `src/app/page.tsx`, `src/components/marketing/praxis-marketing-home.tsx`, `src/components/app/praxis-app-launchpad.tsx`, `src/components/app/praxis-chat-first-shell.tsx` | P3.1 complete: public and authenticated entry points use the shared chat-first shell; `/` keeps SEO metadata in `page.tsx` and logged-out users get the same composer with a sign-in affordance. |
+| **Context Capsules** | Solid capture + derived graph | `src/lib/context/capsule-v3.ts` (14 sections), `src/components/capsules/CapsuleBuilderWizard.tsx`, `capsule-service.ts`, `CapsuleWorkbenchPanel.tsx` | P2 complete: creation captures temporality, causality, and ontology/domain bindings, and the workbench surfaces the derived GraphLite projection while Firestore remains canonical. |
+| **Ask PRAXIS** | Solid/sourceable | `src/app/api/ai/chat/route.ts`, `src/lib/ai/ask-orchestrator.ts`, `src/components/ask/AskStreamPanel.tsx`, `receipt-card.tsx` | P0/P1 complete: streamed answers surface sourceability verdicts and traces expose triage/source-check activity. Next gaps are quality/polish, not plumbing. |
+| **Agentic workflow (orchestration/triage/multi-agent)** | Solid visible runtime | `src/lib/agent-runtime/workflow-plan.ts`, `src/lib/agents/run-agent.ts` + `registry.ts`, `src/lib/ai/ask-orchestrator.ts` | Explicit triage and the source-checker lane are wired into AgentRun traces. Future work should harden telemetry and eval coverage around long-running research workflows. |
+| **Boardroom** | Solid capsule-grounded discussion | `src/app/app/boardroom/page.tsx`, `src/components/boardroom/boardroom-workspace.tsx`, `src/lib/boardroom/{schema,live-runner,brainstorming-table}.ts` | P1.2 complete: turn feed, evidence, critique, recommendation, confidence, status, and synthesis are built against active capsule evidence. |
+| **Memo** | Solid checks | `src/components/memo/memo-desk.tsx`, `GapFillerRail.tsx`, `source-mention-menu.tsx`, `src/lib/memo/templates/registry.ts` | P0.2 complete: claim checks and language checks run through calibrated plumbing and persist provenance. Remaining work is UX polish and broader red-line coverage. |
 | **Pre-login pages (changelog/learn/pricing)** | Exist | `src/app/changelog`, `src/app/(landing)/learn`, `src/app/pricing`, `guide`, `help` | All present as shells; content/polish is the open item, not plumbing. |
-| **Build/CI health** | Green w/ debt | `.github/workflows/*`, `cloudbuild.yaml`, 71 `audit:*` scripts | Authenticated E2E (`persona-smoke`) is **skipped in CI** — no Firebase test creds. 71 audit scripts are real maintenance debt. |
+| **Build/CI health** | Green w/ reduced debt | `.github/workflows/*`, `cloudbuild.yaml`, `scripts/audit-runner.ts` | P3.2/P3.3 complete: `persona-smoke` fails early without disposable Firebase secrets and audit gates run through runner lanes. Keep migrating one-off checks into durable lanes as new audits are added. |
 
 ---
 
 ## 5. Prioritized roadmap
 
-Ship in this order. Each item links to a work packet in §6.
+The P0-P3 implementation roadmap is complete as of 2026-06-01. Do not add a
+new active item here until §4 has a current gap and §6 has a concrete work
+packet.
 
-### P0 — Close the credibility loop (the thing that makes PRAXIS *PRAXIS*)
-- **P0.1 Surface the sourceability ledger in Ask.** Render supported/weak/
-  contradicted/unsupported badges inline with answers using the existing ledger +
-  `receipt-card`. This is the single highest-leverage change: it turns "a chatbot"
-  into "a sourceable policy assistant."
-- **P0.2 Memo fact-check + language-check rail.** Wire a claim-audit action and a
-  language/tone check into `memo-desk`. Policy writers will not trust a draft tool
-  without these.
-
-### P1 — Make the agentic depth real and visible
-- **P1.1 Explicit triage + source-checking agent lane.** Promote triage to a
-  named step in `ask-orchestrator` and add a live source-verification agent that
-  writes into the sourceability ledger *during* the run, not after.
-- **P1.2 Boardroom turn-feed + synthesis.** Build the discussion feed UI and the
-  synthesis pass (consensus / divergence / decision options) on top of the
-  existing schema, grounded by the active capsule.
-
-### P2 — Capsule depth at creation time
-> Full capsule design + 7-phase plan (CAP-1…CAP-7) lives in
-> `docs/product/PRAXIS_CAPSULE_EXCELLENCE_PLAN.md`. P2.1/P2.2 below are the entry points.
-- **P2.1 Capsule builder: bind temporality, causality, ontology.** Add wizard
-  steps so a capsule declares its timeline anchors, causal links, and ACO/domain
-  ontology bindings — the data the schema already supports.
-- **P2.2 Embedded graph in the capsule view.** Surface the capsule's graph
-  (GraphLite projection) inside the capsule workbench, not just in tool pages.
-
-### P3 — Simplicity + hardening
-- **P3.1 Unify the home into one chat-first entry** shared pre/post login.
-- **P3.2 Turn on authenticated E2E in CI** (Firebase disposable creds) so
-  `persona-smoke` actually gates.
-- **P3.3 Consolidate the 71 `audit:*` scripts** behind `scripts/audit-runner.ts`
-  lanes and delete leaf duplicates as their docs/tests migrate.
+- **Completed P0:** Ask sourceability badges and Memo claim/language checks.
+- **Completed P1:** Ask triage/source-check lane and Boardroom feed/synthesis.
+- **Completed P2:** Capsule creation grounding and embedded GraphLite projection.
+- **Completed P3:** unified chat-first home, authenticated E2E CI gate, and
+  audit-runner lane consolidation.
 
 ---
 

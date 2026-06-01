@@ -35,6 +35,34 @@ describe('agent workflow plan', () => {
     expect(plan.canonicalMutationPolicy).toBe('review-card-only');
     expect(plan.processRail).toContain('Preparing review cards');
   });
+
+  it('makes triage and source-check lanes explicit for current research workflows', () => {
+    const plan = buildAgentWorkflowPlan({
+      prompt: 'Prepare a current multi-source policy memo.',
+      runIntent: 'research_memo',
+      policyAgentId: 'research-memo',
+      selectedToolIds: ['context-resolve', 'grounded-search', 'sourceability-reviewer', 'policy-memo'],
+      capsuleReadReceipt: receipt(),
+    });
+
+    expect(plan.workflowKind).toBe('current_research_brief');
+    expect(plan.steps).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'triage-decision',
+        label: 'Triage decision',
+        status: 'complete',
+        lane: 'triage',
+      }),
+      expect.objectContaining({
+        id: 'source-check',
+        label: 'Source check',
+        status: 'pending',
+        agentId: 'source-checker',
+        toolId: 'sourceability-reviewer',
+        lane: 'sourceability',
+      }),
+    ]));
+  });
 });
 
 function receipt(): CapsuleReadReceipt {

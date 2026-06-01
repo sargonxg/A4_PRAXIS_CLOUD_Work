@@ -1,5 +1,7 @@
 import type { AnalystProfile } from './analyst-profile';
 import type { DomainId } from './domain';
+import type { TacitusCorePrimitive } from '../lib/graph/core-primitives';
+import type { OntologyId } from '../lib/ontology/types';
 
 export type CapsuleSchemaVersion = 'capsule/v2';
 export type SemVer = string;
@@ -81,12 +83,88 @@ export interface CapsuleEval {
   goldenSetRef: string;
   thresholds: CapsuleEvalThresholds;
   metrics: CapsuleEvalMetric[];
-  judge: 'gemini-2.5-flash';
+  judge: string;
   lastRun?: {
     runId: string;
     scores: Record<string, number>;
     passedAt: string;
   };
+}
+
+export type CapsuleTimelineAnchorKind = 'as-of' | 'event' | 'deadline' | 'review' | 'validity-start' | 'validity-end';
+
+export interface CapsuleTimelineAnchor {
+  id: string;
+  label: string;
+  date: string;
+  kind: CapsuleTimelineAnchorKind;
+  sourceRefs?: string[];
+  confidence?: number;
+}
+
+export interface CapsuleTemporality {
+  timelineAnchors: CapsuleTimelineAnchor[];
+  asOf?: string;
+  validFrom?: string;
+  validUntil?: string;
+}
+
+export type CapsuleCausalRelation = 'causes' | 'enables' | 'blocks' | 'escalates' | 'de-escalates' | 'correlates';
+
+export interface CapsuleCausalLink {
+  id: string;
+  cause: string;
+  effect: string;
+  relation: CapsuleCausalRelation;
+  evidenceRefs: string[];
+  confidence?: number;
+  caveat?: string;
+}
+
+export interface CapsuleCausality {
+  causalLinks: CapsuleCausalLink[];
+}
+
+export interface CapsuleOntologyBinding {
+  domainId: DomainKey;
+  taxonomyPath: string[];
+  ontologyIds: OntologyId[];
+  acoPrimitives: TacitusCorePrimitive[];
+  bindingRationale: string;
+}
+
+export interface CapsuleEmbeddedGraphNode {
+  id: string;
+  label: string;
+  entityType: string;
+  reviewState?: 'canonical' | 'proposed' | 'missing' | 'advisory' | 'reviewed';
+  confidence?: number;
+  sourceReceiptIds?: string[];
+}
+
+export interface CapsuleEmbeddedGraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  label: string;
+  relationshipType?: string;
+  reviewState?: 'canonical' | 'proposed' | 'missing' | 'advisory' | 'reviewed';
+  confidence?: number;
+  sourceReceiptIds?: string[];
+}
+
+export interface CapsuleEmbeddedGraphProjection {
+  provider: 'graphlite';
+  projectionId: string;
+  status: 'compiled-advisory' | 'stale' | 'reviewed' | 'promoted';
+  namedGraph: string;
+  advisoryOnly: true;
+  canonicalStore: 'Firestore ContextCapsules';
+  promotionGate: string;
+  nodeCount?: number;
+  edgeCount?: number;
+  nodes?: CapsuleEmbeddedGraphNode[];
+  edges?: CapsuleEmbeddedGraphEdge[];
 }
 
 export interface SigstoreBundle {
@@ -139,6 +217,10 @@ export interface ContextCapsule {
 
   sourcing: SourcingPolicy;
   retrieval: RetrievalConfig;
+  temporality: CapsuleTemporality;
+  causality: CapsuleCausality;
+  ontologyBinding: CapsuleOntologyBinding;
+  embeddedGraph: CapsuleEmbeddedGraphProjection;
 
   tools: {
     bound: ToolSurfaceId[];

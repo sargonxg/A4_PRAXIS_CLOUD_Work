@@ -34,6 +34,7 @@ import {
 import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
 import { AskQueuedAgentRunPanel } from '@/components/ask/AskQueuedAgentRunPanel';
+import { SourceabilityVerdictBadges } from '@/components/ask/SourceabilityVerdictBadges';
 import { AskTurnPlanPanel } from '@/components/ask/AskTurnPlanPanel';
 import { ActivePolicyFileStrip } from '@/components/policy-work-file/ActivePolicyFileStrip';
 import { KnowledgeStructurePanel, knowledgeStructureFromAskEnvelope } from '@/components/policy-work-file/KnowledgeStructurePanel';
@@ -45,6 +46,7 @@ import type { ActiveContextStackState } from '@/lib/context/active-context-stack
 import { ASK_ORCHESTRATION_OPTIONS } from '@/lib/ai/ask-runtime-catalog';
 import type { AskAnswerEnvelope, ConversationDocumentPack } from '@/lib/ai/ask-answer-envelope';
 import type { AskOrchestrationStatusEvent } from '@/lib/ai/ask-orchestrator';
+import type { SourceabilityClaimVerdict } from '@/lib/agent-runtime/sourceability-ledger';
 import { buildProofSummaryFromAskEnvelope, modelPolicyLabelFor, type UiProofSummary } from '@/lib/proof/proof-summary';
 import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
 import { buildAskTimelineMessages, type AskTimelineMessage } from '@/lib/ai/ask-conversation';
@@ -107,6 +109,7 @@ type AskPanelMessage = AskTimelineMessage & {
   stages?: StreamStage[];
   streaming?: boolean;
   answerEnvelope?: AskAnswerEnvelope;
+  sourceabilityVerdicts?: SourceabilityClaimVerdict[];
   orchestrationEvents?: AskOrchestrationStatusEvent[];
   queuedRun?: AskOrchestrationStatusEvent | null;
 };
@@ -358,9 +361,18 @@ export function AskStreamPanel({
             appendSynthesisToken(parseDataStreamChunk(`${line}\n`));
           } else if (line.startsWith('2:')) {
             try {
-              const payload = JSON.parse(line.slice(2)) as { type?: string; answerEnvelope?: AskAnswerEnvelope };
+              const payload = JSON.parse(line.slice(2)) as { type?: string; answerEnvelope?: AskAnswerEnvelope; sourceabilityVerdicts?: unknown };
               if (payload.type === 'answerEnvelope' && payload.answerEnvelope) {
-                updateTimelineMessage(setTimelineMessages, assistantId, { answerEnvelope: payload.answerEnvelope });
+                const sourceabilityVerdicts = Array.isArray(payload.answerEnvelope.sourceabilityVerdicts)
+                  ? payload.answerEnvelope.sourceabilityVerdicts.filter(isSourceabilityClaimVerdict)
+                  : [];
+                updateTimelineMessage(setTimelineMessages, assistantId, sourceabilityVerdicts.length
+                  ? { answerEnvelope: payload.answerEnvelope, sourceabilityVerdicts }
+                  : { answerEnvelope: payload.answerEnvelope });
+              } else if (payload.type === 'sourceabilityVerdicts' && Array.isArray(payload.sourceabilityVerdicts)) {
+                updateTimelineMessage(setTimelineMessages, assistantId, {
+                  sourceabilityVerdicts: payload.sourceabilityVerdicts.filter(isSourceabilityClaimVerdict),
+                });
               } else if (isAskOrchestrationStatusEvent(payload)) {
                 appendOrchestrationEvent(setTimelineMessages, assistantId, payload);
               }
@@ -766,6 +778,21 @@ function isAskOrchestrationStatusEvent(value: unknown): value is AskOrchestratio
     && typeof value.detail === 'string';
 }
 
+function isSourceabilityClaimVerdict(value: unknown): value is SourceabilityClaimVerdict {
+  if (!isRecord(value)) return false;
+  return typeof value.claimId === 'string'
+    && typeof value.claim === 'string'
+    && isSourceabilityVerdict(value.verdict)
+    && typeof value.supportLabel === 'string'
+    && Array.isArray(value.sourceIds)
+    && value.sourceIds.every((sourceId) => typeof sourceId === 'string')
+    && (value.confidence === null || typeof value.confidence === 'number');
+}
+
+function isSourceabilityVerdict(value: unknown): value is SourceabilityClaimVerdict['verdict'] {
+  return value === 'supported' || value === 'weak' || value === 'contradicted' || value === 'unsupported';
+}
+
 function AskMessageBubble({
   capsuleId,
   message,
@@ -794,6 +821,9 @@ function AskMessageBubble({
   const stages = message.stages?.filter((stage) => stage.stage !== 'synthesis' && stage.stage !== 'interrupt') ?? [];
   const workingTimeline = mergeWorkingTimeline(message.orchestrationEvents, message.answerEnvelope);
   const proofSummary = message.answerEnvelope ? buildProofSummaryFromAskEnvelope(message.answerEnvelope) : null;
+  const sourceabilityVerdicts = message.answerEnvelope?.sourceabilityVerdicts?.length
+    ? message.answerEnvelope.sourceabilityVerdicts
+    : message.sourceabilityVerdicts ?? [];
   return (
     <div className="flex justify-start">
       <article className="max-w-[88%] rounded-2xl rounded-bl-md border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm">
@@ -809,6 +839,8 @@ function AskMessageBubble({
             </span>
           )}
         </div>
+
+        <SourceabilityVerdictBadges verdicts={sourceabilityVerdicts} />
 
         {message.streaming ? (
           <span className="mt-2 inline-block h-4 w-0.5 animate-pulse bg-gold-500" />

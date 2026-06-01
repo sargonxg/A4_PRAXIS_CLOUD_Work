@@ -16,8 +16,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Editor } from '@tiptap/react';
-import { Sparkles, Loader2, AlertCircle } from 'lucide-react';
+import { AlertCircle, Languages, Loader2, ReceiptText, ShieldCheck, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import type {
+  MemoClaimCheckResult,
+  MemoLanguageCheckResult,
+  MemoLanguageViolation,
+} from '@/lib/memo/memo-checks';
 
 interface Gap {
   id: string;
@@ -50,10 +55,22 @@ function extractGaps(html: string): Gap[] {
 export interface GapFillerRailProps {
   editor: Editor | null;
   situationId?: string | null;
+  checkResults?: Array<MemoClaimCheckResult | MemoLanguageCheckResult>;
+  checkingAction?: 'claim-check' | 'language-check' | null;
+  onCheckClaim?: () => void;
+  onLanguageCheck?: () => void;
   className?: string;
 }
 
-export function GapFillerRail({ editor, situationId, className }: GapFillerRailProps) {
+export function GapFillerRail({
+  editor,
+  situationId,
+  checkResults = [],
+  checkingAction = null,
+  onCheckClaim,
+  onLanguageCheck,
+  className,
+}: GapFillerRailProps) {
   const [tick, setTick] = useState(0);
   const [working, setWorking] = useState<string | null>(null);
 
@@ -120,10 +137,37 @@ export function GapFillerRail({ editor, situationId, className }: GapFillerRailP
       <header className="mb-2 flex items-center gap-2">
         <Sparkles className="h-3.5 w-3.5 text-[#8A5A00]" />
         <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-700">
-          Gap filler
+          Memo checks
         </span>
         <span className="ml-auto font-mono text-[10px] text-slate-400">{gaps.length}</span>
       </header>
+      <div className="mb-3 grid grid-cols-2 gap-1.5">
+        <button
+          type="button"
+          onClick={onCheckClaim}
+          disabled={!onCheckClaim || Boolean(checkingAction)}
+          className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[10px] font-bold uppercase text-slate-700 hover:border-[#8A5A00]/50 hover:text-[#8A5A00] disabled:opacity-50"
+        >
+          {checkingAction === 'claim-check' ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldCheck className="h-3 w-3" />}
+          Claim
+        </button>
+        <button
+          type="button"
+          onClick={onLanguageCheck}
+          disabled={!onLanguageCheck || Boolean(checkingAction)}
+          className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[10px] font-bold uppercase text-slate-700 hover:border-[#8A5A00]/50 hover:text-[#8A5A00] disabled:opacity-50"
+        >
+          {checkingAction === 'language-check' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
+          Language
+        </button>
+      </div>
+      <MemoCheckResults results={checkResults} />
+      <div className="mb-2 mt-3 flex items-center gap-2">
+        <AlertCircle className="h-3.5 w-3.5 text-amber-700" />
+        <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-700">
+          Unsourced gaps
+        </span>
+      </div>
       {gaps.length === 0 ? (
         <p className="rounded-md border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
           Every sentence over 30 characters has a receipt marker. Nice work.
@@ -163,5 +207,94 @@ export function GapFillerRail({ editor, situationId, className }: GapFillerRailP
         </ul>
       )}
     </aside>
+  );
+}
+
+function MemoCheckResults({ results }: { results: Array<MemoClaimCheckResult | MemoLanguageCheckResult> }) {
+  if (!results.length) {
+    return (
+      <p className="rounded-md border border-dashed border-slate-200 bg-slate-50 p-2 text-[11px] leading-4 text-slate-500">
+        Select memo text, then run a claim or language check.
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {results.slice(0, 4).map((result) => (
+        result.kind === 'claim-check'
+          ? <ClaimCheckCard key={`${result.kind}-${result.provenance.generatedAt}`} result={result} />
+          : <LanguageCheckCard key={`${result.kind}-${result.provenance.generatedAt}`} result={result} />
+      ))}
+    </div>
+  );
+}
+
+function ClaimCheckCard({ result }: { result: MemoClaimCheckResult }) {
+  return (
+    <article className="rounded-md border border-slate-200 bg-white p-2 shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+          <ReceiptText className="h-3 w-3" />
+          Claim check
+        </span>
+        <span className={cn(
+          'rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase',
+          result.verdict === 'supported'
+            ? 'border-[#E8B931]/50 bg-[#0F172A] text-[#F4ECD8]'
+            : result.verdict === 'contradicted'
+              ? 'border-red-200 bg-red-50 text-red-800'
+              : result.verdict === 'weak'
+                ? 'border-amber-200 bg-amber-50 text-amber-800'
+                : 'border-slate-200 bg-slate-50 text-slate-600',
+        )}>
+          {result.verdict}
+        </span>
+      </div>
+      <p className="mt-1 line-clamp-3 text-[11px] leading-4 text-slate-700">{result.claim}</p>
+      <p className="mt-1 text-[11px] leading-4 text-slate-500">{result.rationale}</p>
+      {result.receipt ? (
+        <div className="mt-2 rounded border-l-[3px] border-l-[#E8B931] bg-slate-50 px-2 py-1.5">
+          <p className="truncate text-[10px] font-semibold text-slate-800">{result.receipt.title}</p>
+          {result.receipt.quote ? <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-slate-600">{result.receipt.quote}</p> : null}
+          <p className="mt-0.5 truncate font-mono text-[10px] text-slate-400">{result.receipt.sourceId}</p>
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function LanguageCheckCard({ result }: { result: MemoLanguageCheckResult }) {
+  return (
+    <article className="rounded-md border border-slate-200 bg-white p-2 shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+          <Languages className="h-3 w-3" />
+          Language check
+        </span>
+        <span className={cn(
+          'rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase',
+          result.violations.length ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-emerald-200 bg-emerald-50 text-emerald-700',
+        )}>
+          {result.violations.length ? `${result.violations.length} flagged` : 'clear'}
+        </span>
+      </div>
+      <p className="mt-1 text-[11px] leading-4 text-slate-600">{result.summary}</p>
+      {result.violations.length ? (
+        <ul className="mt-2 space-y-1">
+          {result.violations.slice(0, 4).map((violation) => (
+            <LanguageViolationRow key={violation.id} violation={violation} />
+          ))}
+        </ul>
+      ) : null}
+    </article>
+  );
+}
+
+function LanguageViolationRow({ violation }: { violation: MemoLanguageViolation }) {
+  return (
+    <li className="rounded border border-amber-100 bg-amber-50 px-2 py-1">
+      <p className="truncate text-[11px] font-semibold text-amber-950">{violation.phrase}</p>
+      <p className="mt-0.5 text-[10px] leading-4 text-amber-800">{violation.suggestion}</p>
+    </li>
   );
 }

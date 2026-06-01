@@ -251,10 +251,14 @@ requireIncludes(
 const notificationsRouter = read('backend/routers/notifications.py');
 const notificationsService = read('backend/services/notifications/__init__.py');
 const notificationsDelivery = read('backend/services/notifications/delivery.py');
-const notificationsSettings = `${read('src/app/app/page.tsx')}\n${read('src/components/app/praxis-app-launchpad.tsx')}`;
+const notificationsSettings = [
+  read('src/app/app/page.tsx'),
+  read('src/components/app/praxis-app-launchpad.tsx'),
+  read('src/components/app/praxis-chat-first-shell.tsx'),
+].join('\n');
 requireIncludes(
   `${notificationsRouter}\n${notificationsService}\n${notificationsDelivery}\n${notificationsSettings}`,
-  ['@router.get("/stream")', '@router.post("/{notification_id}/signal")', '@router.put("/preferences")', '@router.post("/dispatch")', 'quiet_hours', 'provider_unconfigured', 'MAX_DELIVERY_ATTEMPTS', 'PraxisAppLaunchpad', 'data-testid="app-launchpad"'],
+  ['@router.get("/stream")', '@router.post("/{notification_id}/signal")', '@router.put("/preferences")', '@router.post("/dispatch")', 'quiet_hours', 'provider_unconfigured', 'MAX_DELIVERY_ATTEMPTS', 'PraxisAppLaunchpad', 'PraxisChatFirstShell', 'app-launchpad'],
   '13. Notifications system',
   'notifications-pre-ship',
   'notifications stack',
@@ -384,8 +388,8 @@ for (const [section, sectionChecks] of bySection) {
 
 const auditDir = path.join(root, 'docs/audits');
 mkdirSync(auditDir, { recursive: true });
-const mdPath = path.join(auditDir, `${today}-DEEP_PRESHIP_CHECKLIST.md`);
-const jsonPath = path.join(auditDir, `${today}-DEEP_PRESHIP_CHECKLIST.json`);
+const mdPath = path.join(auditDir, 'LATEST-DEEP_PRESHIP_CHECKLIST.md');
+const jsonPath = path.join(auditDir, 'LATEST-DEEP_PRESHIP_CHECKLIST.json');
 writeFileSync(mdPath, `${reportLines.join('\n')}\n`);
 writeFileSync(jsonPath, JSON.stringify({ date: today, summary: { pass, warn, blocked, total: checks.length }, checks }, null, 2));
 

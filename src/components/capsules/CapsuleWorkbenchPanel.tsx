@@ -465,6 +465,8 @@ function CapsuleKnowledgeGraph({
           <span>{graph.canonicalNodeCount} canonical</span>
           <span>{graph.proposedNodeCount} proposed/missing</span>
           <span>{graph.nodes.length > graphData.nodes.length ? `${graph.nodes.length - graphData.nodes.length} nodes collapsed by level of detail` : 'Full graph visible'}</span>
+          <span>GraphLite advisory projection</span>
+          <span>Firestore canonical</span>
           <span>Review before promotion</span>
         </div>
         <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2">

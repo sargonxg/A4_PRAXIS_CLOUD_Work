@@ -33,6 +33,13 @@ jobs:
           node-version: '22'
           cache: npm
 
+      - name: Verify Firebase disposable test credentials
+        run: |
+          if [ -z "$TEST_FIREBASE_EMAIL" ] || [ -z "$TEST_FIREBASE_PASSWORD" ]; then
+            echo "GitHub Actions secrets TEST_FIREBASE_EMAIL and TEST_FIREBASE_PASSWORD are required for persona-smoke authenticated E2E."
+            exit 1
+          fi
+
       - name: Install dependencies
         run: npm ci
 
@@ -63,8 +70,12 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
         run: npm run smoke:tasklet-app
 
+      - name: Run authenticated app smoke suite
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+        run: npm run smoke:authenticated-app
+
       - name: Run authenticated golden path proof
-        if: ${{ env.TEST_FIREBASE_EMAIL != '' && env.TEST_FIREBASE_PASSWORD != '' }}
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
         run: npx playwright test tests/e2e/golden-path.spec.ts

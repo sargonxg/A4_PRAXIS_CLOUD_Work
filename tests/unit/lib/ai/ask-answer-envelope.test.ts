@@ -157,6 +157,10 @@ describe('ask answer envelope', () => {
       grounding: 'source-backed',
       sourceCardIds: ['doc-1:chunk-1'],
     });
+    expect(envelope.sourceabilityVerdicts).toContainEqual(expect.objectContaining({
+      verdict: 'supported',
+      sourceIds: ['doc-1:chunk-1'],
+    }));
     expect(envelope.followUps).toContain('Check the weakest claim against attached sources.');
     expect(envelope.documentPackCandidate.provenance.capsuleId).toBe('cap-1');
     expect(envelope.contextDiagnostics).toMatchObject({
@@ -471,6 +475,34 @@ describe('ask answer envelope', () => {
         sourceCardIds: ['doc-food:chunk-food'],
       }),
     ]);
+  });
+
+  it('marks a source contradiction as a first-class contradicted verdict', () => {
+    const envelope = buildAskAnswerEnvelope({
+      prompt: 'Check the access posture.',
+      answer: 'The monitoring cell reported unrestricted access near the northern crossing.',
+      intent: 'normal_answer',
+      sourceCards: [
+        {
+          id: 'doc-access:chunk-contradiction',
+          title: 'Monitoring cell access log',
+          label: 'Uploaded Document',
+          sourceType: 'uploaded-document',
+          quotePreview: 'The monitoring cell reported access restrictions near the northern crossing.',
+          documentId: 'doc-access',
+          chunkId: 'chunk-contradiction',
+          sourceReceiptId: 'receipt-access',
+          pageRef: 'p.7',
+          confidence: 0.91,
+        },
+      ],
+    });
+
+    expect(envelope.sourceabilityVerdicts).toContainEqual(expect.objectContaining({
+      claim: 'The monitoring cell reported unrestricted access near the northern crossing.',
+      verdict: 'contradicted',
+      sourceIds: ['doc-access:chunk-contradiction'],
+    }));
   });
 
   it('carries Research graph advisory receipts into source previews and follow-up actions', () => {

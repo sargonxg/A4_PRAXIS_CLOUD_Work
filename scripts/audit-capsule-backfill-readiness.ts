@@ -36,8 +36,8 @@ const checks: Check[] = [
 
 const outDir = join(root, 'docs', 'audits');
 mkdirSync(outDir, { recursive: true });
-writeFileSync(join(outDir, '2026-05-30-capsule-backfill-readiness-audit.json'), `${JSON.stringify({ checks }, null, 2)}\n`, 'utf8');
-writeFileSync(join(outDir, '2026-05-30-capsule-backfill-readiness-audit.md'), renderMarkdown(checks), 'utf8');
+writeFileSync(join(outDir, 'LATEST-capsule-backfill-readiness-audit.json'), `${JSON.stringify({ checks }, null, 2)}\n`, 'utf8');
+writeFileSync(join(outDir, 'LATEST-capsule-backfill-readiness-audit.md'), renderMarkdown(checks), 'utf8');
 
 const failed = checks.filter((check) => check.status === 'FAIL');
 if (failed.length) {

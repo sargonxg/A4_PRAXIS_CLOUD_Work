@@ -182,4 +182,106 @@ describe('buildCapsuleWorkbenchViewModel', () => {
     expect(model.graph.nodes.some((node) => node.id === 'claim:claim-73')).toBe(true);
     expect(model.graph.edges.some((edge) => edge.source === 'claim:claim-73' && edge.target === 'source:source-73')).toBe(true);
   });
+
+  it('reads GraphLite advisory projections into the capsule embedded graph display', () => {
+    const capsuleWithProjection = {
+      ...capsule,
+      graphLiteProjection: {
+        provider: 'graphlite',
+        projectionId: 'cap-ai-governance-graphlite-starter-projection',
+        status: 'compiled-advisory',
+        namedGraph: 'capsule_cap_ai_governance',
+        advisoryOnly: true,
+        canonicalStore: 'Firestore ContextCapsules',
+        promotionGate: 'Human review-card approval required before canonical graph promotion.',
+        nodeCount: 2,
+        edgeCount: 1,
+        nodes: [
+          { id: 'actor-omb', label: 'OMB', entityType: 'Actor', reviewState: 'proposed', sourceReceiptIds: ['src-omb-memo'] },
+          { id: 'claim-review', label: 'Review gate required', entityType: 'Claim', reviewState: 'proposed', sourceReceiptIds: ['src-omb-memo'] },
+        ],
+        edges: [
+          { id: 'omb-review', source: 'actor-omb', target: 'claim-review', label: 'supports', relationshipType: 'supports_claim', reviewState: 'proposed' },
+        ],
+      },
+    };
+
+    const model = buildCapsuleWorkbenchViewModel({ capsule: capsuleWithProjection });
+
+    expect(model.graph.nodes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'graphlite:cap-ai-governance-graphlite-starter-projection',
+        label: 'GraphLite advisory projection',
+        reviewState: 'advisory',
+      }),
+      expect.objectContaining({
+        id: 'graphlite:actor-omb',
+        label: 'OMB',
+        provenance: 'GraphLite advisory projection',
+      }),
+    ]));
+    expect(model.graph.edges).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'graphlite-edge:omb-review',
+        source: 'graphlite:actor-omb',
+        target: 'graphlite:claim-review',
+        reviewState: 'advisory',
+      }),
+    ]));
+  });
+
+  it('reads v3 grounding embeddedGraph projections into the capsule graph display', () => {
+    const capsuleWithGroundingProjection = {
+      ...capsule,
+      grounding: {
+        embeddedGraph: {
+          provider: 'graphlite',
+          projectionId: 'cap-ai-governance-grounding-projection',
+          status: 'compiled-advisory',
+          namedGraph: 'capsule_cap_ai_governance',
+          advisoryOnly: true,
+          canonicalStore: 'Firestore ContextCapsules',
+          promotionGate: 'Human review-card approval required before canonical graph promotion.',
+          nodeCount: 2,
+          edgeCount: 1,
+          nodes: [
+            { id: 'domain:governance-rule-of-law', label: 'Governance & Rule of Law', entityType: 'Ontology', reviewState: 'advisory' },
+            { id: 'timeline-anchor:primary', label: 'Review window', entityType: 'Event', reviewState: 'advisory' },
+          ],
+          edges: [
+            {
+              id: 'capsule-timeline-anchor',
+              source: 'domain:governance-rule-of-law',
+              target: 'timeline-anchor:primary',
+              label: 'frames review window',
+              relationshipType: 'has_timeline_anchor',
+              reviewState: 'advisory',
+            },
+          ],
+        },
+      },
+    };
+
+    const model = buildCapsuleWorkbenchViewModel({ capsule: capsuleWithGroundingProjection });
+
+    expect(model.graph.nodes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'graphlite:cap-ai-governance-grounding-projection',
+        label: 'GraphLite advisory projection',
+        reviewState: 'advisory',
+      }),
+      expect.objectContaining({
+        id: 'graphlite:domain:governance-rule-of-law',
+        label: 'Governance & Rule of Law',
+        reviewState: 'advisory',
+      }),
+    ]));
+    expect(model.graph.edges).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'graphlite-edge:capsule-timeline-anchor',
+        relationshipType: 'has_timeline_anchor',
+        reviewState: 'advisory',
+      }),
+    ]));
+  });
 });

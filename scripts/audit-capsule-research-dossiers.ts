@@ -81,8 +81,8 @@ const report = {
   maxPromptLength: Math.max(...promptLengths),
   findings,
 };
-writeFileSync(join(outDir, '2026-05-30-capsule-research-dossiers-audit.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
-writeFileSync(join(outDir, '2026-05-30-capsule-research-dossiers-audit.md'), renderMarkdown(report), 'utf8');
+writeFileSync(join(outDir, 'LATEST-capsule-research-dossiers-audit.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+writeFileSync(join(outDir, 'LATEST-capsule-research-dossiers-audit.md'), renderMarkdown(report), 'utf8');
 
 if (findings.length) {
   console.error(`audit:capsule-research-dossiers FAIL (${findings.length} findings)`);

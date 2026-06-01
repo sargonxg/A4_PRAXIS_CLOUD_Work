@@ -85,7 +85,7 @@ class CapsuleEval(AliasModel):
             "agent_goal_accuracy",
         ]
     ]
-    judge: Literal["gemini-2.5-flash"]
+    judge: str
     last_run: CapsuleEvalLastRun | None = Field(default=None, alias="lastRun")
 
 

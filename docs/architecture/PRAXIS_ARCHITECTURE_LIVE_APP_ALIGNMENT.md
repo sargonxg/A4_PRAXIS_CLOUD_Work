@@ -12,7 +12,7 @@ claims so engineers and future agents can safely continue implementation.
 
 The latest compact architecture-level truth ledger is the May 31 verification
 set: `docs/audits/2026-05-31-launch-readiness.md`,
-`docs/audits/2026-05-31-DEEP_PRESHIP_CHECKLIST.md`, and
+`docs/audits/LATEST-DEEP_PRESHIP_CHECKLIST.md`, and
 `docs/build/PRAXIS_POLICY_TEAM_AGENTIC_CAPSULE_HARDENING_PROJECT_2026-05-31.md`.
 Older detailed self-audit and reality-check reports remain useful background,
 but they no longer define the live route map.

@@ -75,6 +75,11 @@ export const BoardExecutivePackPayloadSchema = BasePayloadSchema.extend({
   })).default([]),
   consensus: z.array(z.string()).default([]),
   divergences: z.array(z.string()).default([]),
+  decisionOptions: z.array(z.object({
+    label: z.string().min(1),
+    tradeoffs: z.string().min(1),
+    preferredBy: z.array(z.string()).default([]),
+  })).default([]),
   risks: z.array(z.string()).default([]),
   openQuestions: z.array(z.string()).default([]),
   evidenceStats: z.object({
