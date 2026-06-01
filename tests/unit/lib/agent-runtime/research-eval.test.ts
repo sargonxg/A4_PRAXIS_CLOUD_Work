@@ -1,7 +1,9 @@
 import {
   AGENTIC_RESEARCH_EVAL_SCENARIOS,
+  buildDefaultAgenticResearchEvalRun,
   comparePraxisToBaseline,
   scoreResearchEvalCandidate,
+  summarizeAgenticResearchEval,
 } from '@/lib/agent-runtime/research-eval';
 import { describe, expect, it } from 'vitest';
 
@@ -82,5 +84,14 @@ describe('agentic research eval harness', () => {
       citationFidelity: true,
       uncertaintyHandling: true,
     });
+  });
+
+  it('summarizes the capsule-vs-generic delta for scorecards', () => {
+    const scorecard = summarizeAgenticResearchEval(buildDefaultAgenticResearchEvalRun());
+
+    expect(scorecard.scenarioCount).toBe(10);
+    expect(scorecard.praxisWins).toBeGreaterThan(0);
+    expect(scorecard.capsuleVsGenericDelta).toBeGreaterThan(0);
+    expect(scorecard.averagePraxisScore).toBeGreaterThan(scorecard.averageBaselineScore);
   });
 });

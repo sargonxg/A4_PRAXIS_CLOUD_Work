@@ -10,18 +10,30 @@ describe('Capsule workbench UI contract', () => {
   it('renders the clicked-capsule workbench as one coherent surface', () => {
     expect(componentSource).toContain('data-testid="capsule-workbench-panel"');
     for (const expected of [
-      'Overview',
-      'Anatomy',
-      'Evidence',
+      'Situation',
+      'Users',
+      'Tools',
+      'Output',
       'Graph / Ontology',
-      'Tacit Knowledge',
-      'Agent Workflow',
-      'Outputs',
-      'Review Queue',
+      'Timeline scrubber',
+      'Causal chain',
+      'Quality meter',
+      'Fix this',
+      'Reliability tier',
     ]) {
       expect(componentSource).toContain(expected);
     }
     expect(componentSource).toContain('data-testid="capsule-knowledge-graph"');
+    expect(componentSource).toContain('data-testid="capsule-timeline-scrubber"');
+    expect(componentSource).toContain('data-testid="capsule-causal-chain-view"');
+    expect(componentSource).toContain('data-testid="capsule-quality-meter"');
+    expect(componentSource).toContain('data-testid="capsule-claim-receipts"');
+    expect(componentSource).toContain("dynamic(async () => import('vis-timeline/standalone')");
+    expect(componentSource).toContain('CapsulePillarPanel');
+    expect(componentSource).toContain('CapsuleTimelineScrubber');
+    expect(componentSource).toContain('CapsuleCausalChainView');
+    expect(componentSource).toContain('CapsuleQualityMeter');
+    expect(componentSource).toContain('ClaimReceiptDisclosure');
     expect(componentSource).toContain('proposals stay review-gated');
     expect(componentSource).toContain('Advisory memory');
     expect(componentSource).toContain('No source receipts attached yet.');

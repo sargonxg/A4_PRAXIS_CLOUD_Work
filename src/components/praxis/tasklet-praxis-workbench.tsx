@@ -7334,7 +7334,7 @@ function CapsuleTaxonomyFilterBar({
   ].filter((label): label is string => Boolean(label));
 
   return (
-    <details className="mt-4 rounded-lg border border-slate-200 bg-white/70 p-3" data-testid="capsule-taxonomy-filter-bar">
+    <details className="mt-4 rounded-lg border border-slate-200 bg-white p-3" data-testid="capsule-taxonomy-filter-bar">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-800">
         Marketplace filters
         <span className="text-xs font-medium text-slate-500">{activeFilterLabels.length ? activeFilterLabels.join(' / ') : 'No filters applied'}</span>

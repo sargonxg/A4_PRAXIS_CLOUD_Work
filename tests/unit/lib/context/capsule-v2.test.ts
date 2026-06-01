@@ -163,17 +163,82 @@ describe('ContextCapsule v2 contract', () => {
   });
 
   it('derives a deterministic sourceability-first quality breakdown', () => {
-    const capsule = makeCapsule();
+    const capsule = {
+      ...makeCapsule({
+        claimLedger: [
+          {
+            claimId: 'claim-1',
+            text: 'Access constraints are worsening.',
+            support: 'supported',
+            sourceRefIds: ['src-1'],
+            validFrom: '2026-05-01',
+            asOf: '2026-05-12',
+            causalLinks: { escalates: ['claim-2'] },
+            receipts: [{
+              sourceId: 'src-1',
+              publisher: 'Official source',
+              date: '2026-05-12T00:00:00.000Z',
+              reliabilityTier: 1,
+              snippet: 'Access constraints are worsening.',
+              confidence: 0.91,
+              stance: 'supports',
+            }],
+          },
+          {
+            claimId: 'claim-2',
+            text: 'Negotiation window is narrow.',
+            support: 'supported',
+            sourceRefIds: ['src-2'],
+            validFrom: '2026-05-01',
+            asOf: '2026-05-11',
+            causalLinks: { causedBy: ['claim-1'] },
+            receipts: [{
+              sourceId: 'src-2',
+              publisher: 'UN',
+              date: '2026-05-11T00:00:00.000Z',
+              reliabilityTier: 1,
+              snippet: 'Negotiation window is narrow.',
+              confidence: 0.88,
+              stance: 'supports',
+            }],
+          },
+        ],
+      }),
+      v3: {
+        grounding: {
+          temporality: {
+            timelineAnchors: [
+              { id: 'anchor-1', label: 'Access update', date: '2026-05-12', kind: 'event', sourceRefs: ['src-1'] },
+            ],
+          },
+          causality: {
+            causalLinks: [
+              { id: 'cause-1', cause: 'claim-1', effect: 'claim-2', relation: 'escalates', evidenceRefs: ['src-1'] },
+            ],
+          },
+          ontologyBinding: {
+            domainId: 'diplomacy',
+            ontologyIds: ['governance'],
+            acoPrimitives: ['Situation', 'Actor'],
+          },
+        },
+      },
+    };
     const quality = deriveCapsuleQuality(capsule, { now: '2026-05-14T00:00:00.000Z' });
 
     expect(quality.score).toBe(100);
     expect(quality.breakdown.map((item) => [item.id, item.maxScore])).toEqual([
-      ['completeness', 25],
-      ['source_support', 25],
-      ['freshness', 15],
-      ['human_review_provenance', 15],
+      ['completeness', 15],
+      ['source_support', 15],
+      ['freshness', 10],
+      ['human_review_provenance', 10],
       ['output_readiness', 10],
       ['agent_operability', 10],
+      ['temporality_coverage', 7],
+      ['causality_coverage', 7],
+      ['ontology_binding_coverage', 6],
+      ['receipt_depth', 8],
+      ['contradiction_rate', 2],
     ]);
 
     const weak = deriveCapsuleQuality(makeCapsule({
@@ -198,6 +263,10 @@ describe('ContextCapsule v2 contract', () => {
       expect.objectContaining({ code: 'missing_output_contract' }),
       expect.objectContaining({ code: 'human_gated_missing_author_reviewer' }),
       expect.objectContaining({ code: 'agent_operable_missing_best_next_action_or_permissions' }),
+      expect.objectContaining({ code: 'missing_temporality' }),
+      expect.objectContaining({ code: 'missing_causality' }),
+      expect.objectContaining({ code: 'missing_ontology_binding' }),
+      expect.objectContaining({ code: 'low_receipt_depth' }),
     ]));
   });
 

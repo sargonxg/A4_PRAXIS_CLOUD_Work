@@ -55,7 +55,7 @@ export interface DocumentChunk {
   index: number;
   charStart: number;
   charEnd: number;
-  embedding?: number[]; // Gemini text-embedding-005 vector (768 dimensions)
+  embedding?: number[]; // Canonical embedding vector (768 dimensions)
 }
 
 function cosineSimilarity(a: number[], b: number[]): number {

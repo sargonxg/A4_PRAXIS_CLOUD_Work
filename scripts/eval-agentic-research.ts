@@ -3,12 +3,21 @@ import { join } from 'node:path';
 import {
   AGENTIC_RESEARCH_EVAL_SCENARIOS,
   buildDefaultAgenticResearchEvalRun,
+  summarizeAgenticResearchEval,
 } from '@/lib/agent-runtime/research-eval';
 
 type EvalPayload = {
   generatedAt: string;
+  mode: string;
   scenarios: typeof AGENTIC_RESEARCH_EVAL_SCENARIOS;
   comparisons: ReturnType<typeof buildDefaultAgenticResearchEvalRun>;
+  scorecard: ReturnType<typeof summarizeAgenticResearchEval>;
+  summary: {
+    scenarioCount: number;
+    praxisWins: number;
+    capsuleVsGenericDelta: number;
+    note: string;
+  };
 };
 
 async function main() {
@@ -17,14 +26,17 @@ async function main() {
   await mkdir(outDir, { recursive: true });
 
   const comparisons = buildDefaultAgenticResearchEvalRun();
+  const scorecard = summarizeAgenticResearchEval(comparisons);
   const payload = {
     generatedAt: new Date().toISOString(),
     mode: 'deterministic-contract-eval',
     scenarios: AGENTIC_RESEARCH_EVAL_SCENARIOS,
     comparisons,
+    scorecard,
     summary: {
-      scenarioCount: comparisons.length,
-      praxisWins: comparisons.filter((comparison) => comparison.praxisWins).length,
+      scenarioCount: scorecard.scenarioCount,
+      praxisWins: scorecard.praxisWins,
+      capsuleVsGenericDelta: scorecard.capsuleVsGenericDelta,
       note: 'This harness verifies PRAXIS product-proof dimensions against a prompt-only baseline. Live answer grading can attach observed artifacts later.',
     },
   };
@@ -56,6 +68,8 @@ function renderMarkdown(payload: EvalPayload): string {
     '# PRAXIS Agentic Research Eval',
     '',
     `Generated: ${payload.generatedAt}`,
+    `Mode: ${payload.mode}`,
+    `Capsule-vs-generic delta: ${payload.scorecard.capsuleVsGenericDelta}`,
     '',
     '| Scenario | PRAXIS | Baseline | Delta | Proof win | Failure mode |',
     '|---|---:|---:|---:|---|---|',

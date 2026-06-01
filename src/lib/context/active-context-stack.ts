@@ -1,4 +1,8 @@
 export type ActiveContextBlockId = 'userCore' | 'situation' | 'sources' | 'thinkingDevices' | 'output';
+export type ActiveCapsuleRole = 'primary' | 'reference' | 'comparison';
+
+export const CAPSULE_MERGE_PRECEDENCE =
+  'primary capsule governs; reference capsules fill gaps in explicit order; comparison capsules remain labeled context; duplicate capsule ids use the first occurrence.';
 
 export interface ActiveContextBlockItem {
   id: string;
@@ -11,9 +15,28 @@ export interface ActiveContextBlockItem {
 
 export type ActiveContextBlocks = Record<ActiveContextBlockId, ActiveContextBlockItem[]>;
 
+export interface ActiveCapsuleRef {
+  capsuleId: string;
+  label: string | null;
+  role: ActiveCapsuleRole;
+  primary: boolean;
+  order: number;
+  version: number | null;
+}
+
+export interface ActiveCapsuleRefInput {
+  capsuleId: string;
+  label?: string | null;
+  role?: ActiveCapsuleRole | string | null;
+  primary?: boolean;
+  order?: number;
+  version?: number | null;
+}
+
 export interface ActiveContextStackState {
   stackId: string;
   capsuleId: string | null;
+  capsuleRefs: ActiveCapsuleRef[];
   contextPackageId: string | null;
   userModelId: string | null;
   situationId: string | null;
@@ -45,6 +68,7 @@ export function defaultActiveContextStack(): ActiveContextStackState {
   return {
     stackId: DEFAULT_CONTEXT_STACK_ID,
     capsuleId: null,
+    capsuleRefs: [],
     contextPackageId: null,
     userModelId: null,
     situationId: null,
@@ -63,6 +87,7 @@ export function sanitizeActiveContextStack(input: unknown): ActiveContextStackSt
   const body = isRecord(input) ? input : {};
   const stackId = stringOrNull(body.stackId) ?? DEFAULT_CONTEXT_STACK_ID;
   const layout = isRecord(body.canvasLayout) ? body.canvasLayout : {};
+  const capsuleRefs = sanitizeCapsuleRefs(body.capsuleRefs, stringOrNull(body.capsuleId));
   const legacySourceIds = stringList(body.sourceIds).slice(0, 50);
   const legacyDocumentIds = stringList(body.documentIds).slice(0, 50);
   const legacyBlocks = contextBlocksFromLegacy({
@@ -87,7 +112,8 @@ export function sanitizeActiveContextStack(input: unknown): ActiveContextStackSt
 
   return {
     stackId: stackId.slice(0, 80),
-    capsuleId: stringOrNull(body.capsuleId),
+    capsuleId: capsuleRefs[0]?.capsuleId ?? stringOrNull(body.capsuleId),
+    capsuleRefs,
     contextPackageId: stringOrNull(body.contextPackageId),
     userModelId: primaryUser ?? stringOrNull(body.userModelId),
     situationId: primarySituation ?? stringOrNull(body.situationId),
@@ -100,6 +126,81 @@ export function sanitizeActiveContextStack(input: unknown): ActiveContextStackSt
     updatedAt: new Date().toISOString(),
     schemaVersion: 1,
   };
+}
+
+export function attachCapsuleRef(
+  stack: ActiveContextStackState,
+  ref: ActiveCapsuleRefInput,
+): ActiveContextStackState {
+  const current = sanitizeActiveContextStack(stack);
+  if (!stringOrNull(ref.capsuleId)) return current;
+  const nextRefs = [
+    ...current.capsuleRefs,
+    {
+      capsuleId: ref.capsuleId,
+      label: ref.label ?? null,
+      role: ref.role ?? (current.capsuleRefs.length ? 'reference' : 'primary'),
+      primary: ref.primary ?? current.capsuleRefs.length === 0,
+      version: ref.version ?? null,
+    },
+  ];
+  return sanitizeActiveContextStack({
+    ...current,
+    capsuleId: current.capsuleId ?? ref.capsuleId,
+    capsuleRefs: nextRefs,
+  });
+}
+
+export function detachCapsuleRef(stack: ActiveContextStackState, capsuleId: string): ActiveContextStackState {
+  const current = sanitizeActiveContextStack(stack);
+  const target = stringOrNull(capsuleId);
+  if (!target) return current;
+  const nextRefs = current.capsuleRefs.filter((ref) => ref.capsuleId !== target);
+  return sanitizeActiveContextStack({
+    ...current,
+    capsuleId: nextRefs[0]?.capsuleId ?? null,
+    capsuleRefs: nextRefs,
+  });
+}
+
+export function swapCapsuleRef(
+  stack: ActiveContextStackState,
+  currentCapsuleId: string,
+  nextRef: ActiveCapsuleRefInput,
+): ActiveContextStackState {
+  const current = sanitizeActiveContextStack(stack);
+  const target = stringOrNull(currentCapsuleId);
+  const replacementId = stringOrNull(nextRef.capsuleId);
+  if (!target || !replacementId) return current;
+  const replacedRef = current.capsuleRefs.find((ref) => ref.capsuleId === target);
+  let replaced = false;
+  const nextRefs = current.capsuleRefs.flatMap((ref) => {
+    if (ref.capsuleId !== target) return [ref];
+    replaced = true;
+    return [{
+      capsuleId: replacementId,
+      label: nextRef.label ?? ref.label,
+      role: nextRef.role ?? ref.role,
+      primary: nextRef.primary ?? ref.primary,
+      order: ref.order,
+      version: nextRef.version ?? ref.version,
+    }];
+  });
+  if (!replaced) {
+    nextRefs.push({
+      capsuleId: replacementId,
+      label: nextRef.label ?? null,
+      role: nextRef.role ?? 'reference',
+      primary: nextRef.primary ?? false,
+      order: nextRefs.length,
+      version: nextRef.version ?? null,
+    });
+  }
+  return sanitizeActiveContextStack({
+    ...current,
+    capsuleId: replacedRef?.primary ? replacementId : current.capsuleId,
+    capsuleRefs: nextRefs,
+  });
 }
 
 function emptyContextBlocks(): ActiveContextBlocks {
@@ -140,6 +241,77 @@ function sanitizeContextBlocks(value: unknown): ActiveContextBlocks {
     thinkingDevices: sanitizeBlockItems(value.thinkingDevices, 'tool').slice(0, 12),
     output: sanitizeBlockItems(value.output, 'output').slice(0, 8),
   };
+}
+
+function sanitizeCapsuleRefs(value: unknown, legacyCapsuleId: string | null): ActiveCapsuleRef[] {
+  const rawRefs = Array.isArray(value)
+    ? value.flatMap((item, index): Array<ActiveCapsuleRefInput & { originalOrder: number }> => {
+        if (typeof item === 'string') return [{ capsuleId: item, role: 'reference', originalOrder: index }];
+        if (!isRecord(item)) return [];
+        const capsuleId = stringOrNull(item.capsuleId) ?? stringOrNull(item.id);
+        if (!capsuleId) return [];
+        return [{
+          capsuleId,
+          label: stringOrNull(item.label),
+          role: stringOrNull(item.role),
+          primary: item.primary === true,
+          order: typeof item.order === 'number' && Number.isFinite(item.order) ? item.order : index,
+          version: typeof item.version === 'number' && Number.isFinite(item.version) ? Math.floor(item.version) : null,
+          originalOrder: index,
+        }];
+      })
+    : [];
+
+  if (legacyCapsuleId && !rawRefs.some((ref) => ref.capsuleId === legacyCapsuleId)) {
+    rawRefs.unshift({
+      capsuleId: legacyCapsuleId,
+      label: null,
+      role: 'primary',
+      primary: true,
+      order: -1,
+      version: null,
+      originalOrder: -1,
+    });
+  }
+
+  const primaryId =
+    legacyCapsuleId ??
+    rawRefs.find((ref) => ref.primary || ref.role === 'primary')?.capsuleId ??
+    rawRefs[0]?.capsuleId ??
+    null;
+
+  const deduped: Array<ActiveCapsuleRefInput & { originalOrder: number }> = [];
+  for (const ref of rawRefs) {
+    const capsuleId = stringOrNull(ref.capsuleId);
+    if (!capsuleId || deduped.some((candidate) => candidate.capsuleId === capsuleId)) continue;
+    deduped.push({
+      ...ref,
+      capsuleId,
+      label: ref.label ? ref.label.slice(0, 240) : null,
+      role: normalizeCapsuleRole(ref.role),
+      originalOrder: ref.originalOrder,
+    });
+  }
+
+  return deduped
+    .sort((a, b) => {
+      if (a.capsuleId === primaryId) return -1;
+      if (b.capsuleId === primaryId) return 1;
+      return a.originalOrder - b.originalOrder;
+    })
+    .slice(0, 12)
+    .map((ref, index) => ({
+      capsuleId: ref.capsuleId.slice(0, 160),
+      label: ref.label ? ref.label.slice(0, 240) : null,
+      role: index === 0 ? 'primary' : normalizeCapsuleRole(ref.role) === 'primary' ? 'reference' : normalizeCapsuleRole(ref.role),
+      primary: index === 0,
+      order: index,
+      version: typeof ref.version === 'number' && Number.isFinite(ref.version) ? Math.max(1, Math.floor(ref.version)) : null,
+    }));
+}
+
+function normalizeCapsuleRole(value: unknown): ActiveCapsuleRole {
+  return value === 'primary' || value === 'reference' || value === 'comparison' ? value : 'reference';
 }
 
 function sanitizeBlockItems(value: unknown, fallbackRole: string): ActiveContextBlockItem[] {

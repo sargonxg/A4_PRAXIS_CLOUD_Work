@@ -130,6 +130,8 @@ export function withCalibration(
       let body: Record<string, unknown> = {};
       let situationId: string | undefined;
       let pathId: string | undefined;
+      let capsuleId: string | undefined;
+      let activeContextStack: unknown;
       let providedSituation: Partial<Situation> | null = null;
       try {
         const raw = await req.clone().text();
@@ -155,6 +157,10 @@ export function withCalibration(
         if (limitResponse) return limitResponse;
         if (typeof body.situationId === 'string') situationId = body.situationId;
         if (typeof body.pathId === 'string') pathId = body.pathId;
+        if (typeof body.capsuleId === 'string') capsuleId = body.capsuleId;
+        if (body.activeContextStack && typeof body.activeContextStack === 'object' && !Array.isArray(body.activeContextStack)) {
+          activeContextStack = body.activeContextStack;
+        }
         if (!situationId && body.situation && typeof body.situation === 'object') {
           const situation = body.situation as { id?: unknown };
           providedSituation = body.situation as Partial<Situation>;
@@ -285,6 +291,8 @@ export function withCalibration(
         toolId,
         retrievalQuery,
         pathId,
+        capsuleId,
+        activeContextStack,
       });
       // Credit gate (non-demo). Path Core may apply a multiplier for heavier
       // prompt voice, drafting posture, or source mix requirements.

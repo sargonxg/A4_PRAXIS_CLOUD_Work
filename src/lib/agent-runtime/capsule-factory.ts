@@ -194,14 +194,16 @@ async function createCapsuleFactoryReviewCards(
 
   const claimCandidates = [
     ...draft.synthesis.proposedCores.map((core, index) => ({
-      id: `factory-claim-${index + 1}`,
-      claim: `${core.label}: ${core.summary}`.slice(0, 900),
-      status: 'weak',
+      claimId: `factory-claim-${index + 1}`,
+      text: `${core.label}: ${core.summary}`.slice(0, 900),
+      support: 'partially_supported' as const,
+      caveat: `Proposed by Capsule Factory run ${run.id}; requires source receipts before final use.`,
     })),
     ...draft.synthesis.openQuestions.map((question, index) => ({
-      id: `factory-open-question-${index + 1}`,
-      claim: question.slice(0, 900),
-      status: 'unsupported',
+      claimId: `factory-open-question-${index + 1}`,
+      text: question.slice(0, 900),
+      support: 'needs_source' as const,
+      caveat: `Open question from Capsule Factory run ${run.id}; requires source receipts before final use.`,
     })),
   ];
   if (claimCandidates.length) {
@@ -214,11 +216,8 @@ async function createCapsuleFactoryReviewCards(
       proposedEnvelopePatch: {
         claimLedger: claimCandidates.map((candidate) => ({
           ...candidate,
-          sourceReceiptIds: [],
-          reviewState: 'proposed',
-          generatedBy: 'capsule-factory',
-          runId: run.id,
-          createdAt: now,
+          sourceRefIds: [],
+          asOf: now,
         })),
         latestGateState: 'proposed',
       },

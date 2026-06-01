@@ -14,6 +14,58 @@ export interface RetrievedChunk {
   score?: number;
 }
 
+export interface CapsuleFrameSourceReceipt {
+  sourceId: string;
+  label: string;
+  url?: string | null;
+  date?: string | null;
+  reliabilityTier?: number | null;
+}
+
+export interface CapsuleFrameClaim {
+  claimId: string;
+  text: string;
+  support: string;
+  receipts: CapsuleFrameSourceReceipt[];
+}
+
+export interface CapsuleFrameOntologyBinding {
+  domainId: string;
+  taxonomyPath: string[];
+  ontologyIds: string[];
+  acoPrimitives: string[];
+  bindingRationale?: string | null;
+}
+
+export interface CapsuleFrameValidityWindow {
+  asOf?: string | null;
+  validFrom?: string | null;
+  validUntil?: string | null;
+}
+
+export interface CapsuleFrameAgentOperatingContract {
+  allowedActions: string[];
+  forbiddenActions: string[];
+  sourceRequirements: string[];
+  reviewCheckpoints: string[];
+  toolRecommendations: string[];
+  bestNextAction?: string | null;
+  handoffInstructions: string[];
+  stopConditions: string[];
+}
+
+export interface CapsulePromptFrame {
+  capsuleId: string;
+  label: string;
+  role: 'primary' | 'reference' | 'comparison';
+  version: number | null;
+  order: number;
+  ontologyBinding: CapsuleFrameOntologyBinding | null;
+  validityWindow: CapsuleFrameValidityWindow | null;
+  claims: CapsuleFrameClaim[];
+  agentOperatingContract: CapsuleFrameAgentOperatingContract | null;
+}
+
 function escapeTag(str: string): string {
   return String(str ?? '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -46,11 +98,14 @@ export function renderSystemPromptBlock(opts: {
   preferences?: UserPreferences;
   interaction?: InteractionFrame | null;
   advisor?: AdvisorFrame | null;
+  capsuleFrames?: CapsulePromptFrame[];
 }): string {
   const parts: string[] = [];
 
   parts.push(renderProfileBlock(opts.profile, domainPostureFor(opts.domainPosture, opts.domain)));
   parts.push(renderSituationBlock(opts.situation));
+  const capsuleFrameBlock = renderCapsuleFrameBlock(opts.capsuleFrames);
+  if (capsuleFrameBlock) parts.push(capsuleFrameBlock);
   if (opts.domain && opts.domain.id !== 'generic') {
     parts.push(renderDomainBlock(opts.domain, opts.toolId));
   }
@@ -72,6 +127,67 @@ export function renderSystemPromptBlock(opts: {
   }
 
   return parts.join('\n\n');
+}
+
+function renderCapsuleFrameBlock(frames: CapsulePromptFrame[] | undefined): string {
+  const activeFrames = (frames ?? []).slice(0, 6);
+  if (!activeFrames.length) return '';
+  return [
+    `<capsule-frame count="${activeFrames.length}" merge="primary-first">`,
+    '  merge_precedence: primary capsule governs; reference capsules fill gaps in explicit order; comparison capsules remain labeled context; duplicate capsule ids use the first occurrence.',
+    ...activeFrames.flatMap(renderSingleCapsuleFrame),
+    '</capsule-frame>',
+  ].join('\n');
+}
+
+function renderSingleCapsuleFrame(frame: CapsulePromptFrame): string[] {
+  const ontology = frame.ontologyBinding;
+  const validity = frame.validityWindow;
+  const contract = frame.agentOperatingContract;
+  const claims = frame.claims.slice(0, 8);
+  return [
+    `  <capsule id="${escapeTag(frame.capsuleId)}" role="${frame.role}" version="${frame.version ?? 'unknown'}" order="${frame.order}" label="${escapeTag(frame.label)}">`,
+    ontology
+      ? `    ontology: domain=${escapeTag(ontology.domainId)}; taxonomy=${escapeTag(ontology.taxonomyPath.join(' > ') || 'none')}; ontology_ids=${escapeTag(ontology.ontologyIds.join(', ') || 'none')}; aco=${escapeTag(ontology.acoPrimitives.join(', ') || 'none')}`
+      : '    ontology: none declared',
+    ontology?.bindingRationale ? `    ontology_rationale: ${escapeTag(ontology.bindingRationale)}` : '',
+    `    validity: asOf=${escapeTag(validity?.asOf ?? 'unknown')}; validFrom=${escapeTag(validity?.validFrom ?? 'open')}; validUntil=${escapeTag(validity?.validUntil ?? 'open')}`,
+    '    top_claims:',
+    ...(claims.length
+      ? claims.flatMap(renderCapsuleClaim)
+      : ['      - none declared']),
+    '    agent_contract:',
+    contract ? `      allowed_actions: ${formatList(contract.allowedActions)}` : '      allowed_actions: none',
+    contract ? `      forbidden_actions: ${formatList(contract.forbiddenActions)}` : '      forbidden_actions: none',
+    contract ? `      source_requirements: ${formatList(contract.sourceRequirements)}` : '      source_requirements: none',
+    contract ? `      review_checkpoints: ${formatList(contract.reviewCheckpoints)}` : '      review_checkpoints: none',
+    contract ? `      tool_recommendations: ${formatList(contract.toolRecommendations)}` : '      tool_recommendations: none',
+    contract?.bestNextAction ? `      best_next_action: ${escapeTag(contract.bestNextAction)}` : '',
+    contract ? `      handoff: ${formatList(contract.handoffInstructions)}` : '      handoff: none',
+    contract ? `      stop_conditions: ${formatList(contract.stopConditions)}` : '      stop_conditions: none',
+    '  </capsule>',
+  ].filter((line) => line.length > 0);
+}
+
+function renderCapsuleClaim(claim: CapsuleFrameClaim): string[] {
+  const receipts = claim.receipts.slice(0, 4).map((receipt) => {
+    const parts = [
+      receipt.sourceId,
+      receipt.label,
+      receipt.url ?? '',
+      receipt.date ? `date=${receipt.date}` : '',
+      typeof receipt.reliabilityTier === 'number' ? `tier=${receipt.reliabilityTier}` : '',
+    ].filter(Boolean);
+    return parts.map(escapeTag).join(' ');
+  });
+  return [
+    `      - [${escapeTag(claim.claimId)}] ${escapeTag(claim.support)}: ${escapeTag(claim.text)}`,
+    `        receipts: ${receipts.length ? receipts.join('; ') : 'none'}`,
+  ];
+}
+
+function formatList(values: string[]): string {
+  return values.length ? values.map(escapeTag).join(', ') : 'none';
 }
 
 function renderProfileBlock(p: AnalystProfile | null, domainPosture: DomainId[]): string {

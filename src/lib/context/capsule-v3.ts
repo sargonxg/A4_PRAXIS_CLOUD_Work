@@ -1,14 +1,29 @@
 import {
   normalizeContextCapsuleV2,
   type ContextCapsuleClaim,
+  type ContextCapsuleClaimCausalLinks,
   type ContextCapsuleNormalizeOptions,
   type ContextCapsuleOutputContract,
   type ContextCapsuleSourceRef,
   type ContextCapsuleV2,
+  type EvidenceReceipt,
+  type SourceSupportState,
 } from '@/lib/context/capsule-v2';
 import { TACITUS_CORE_PRIMITIVES, type TacitusCorePrimitive } from '@/lib/graph/core-primitives';
-import type { CapsuleContextCaptureProfile } from '@/lib/product/context-capsules';
+import {
+  type CapsuleContextCaptureProfile,
+  type CapsuleLocalOntologyExtension,
+  type CapsuleOntologyBindingProfile,
+  type CapsuleOntologyEntitySubtype,
+  type CapsuleOntologyRelationshipSubtype,
+} from '@/lib/product/context-capsules';
+import { getOntology } from '@/lib/ontology/registry';
 import { isOntologyId, type OntologyId } from '@/lib/ontology/types';
+import {
+  AGENTIC_RESEARCH_EVAL_SCENARIOS,
+  buildDefaultAgenticResearchEvalRun,
+  summarizeAgenticResearchEval,
+} from '@/lib/agent-runtime/research-eval';
 
 export const CONTEXT_CAPSULE_V3_SECTION_IDS = [
   'identity',
@@ -90,14 +105,33 @@ export interface ContextCapsuleSourceSpine {
   score: number;
 }
 
+export type ContextCapsuleClaimV3 = ContextCapsuleClaim & {
+  support: SourceSupportState;
+  receipts: EvidenceReceipt[];
+  validFrom: string | null;
+  validUntil: string | null;
+  asOf: string | null;
+  causalLinks: Required<ContextCapsuleClaimCausalLinks>;
+};
+
+export interface ContextCapsuleCrossClaimContradiction {
+  contradictionId: string;
+  claimIds: [string, string];
+  reason: string;
+  evidenceSourceIds: string[];
+  receiptDates: string[];
+  reviewRequired: true;
+}
+
 export interface ContextCapsuleClaimLedgerV3 {
-  allClaims: ContextCapsuleClaim[];
-  supportedClaims: ContextCapsuleClaim[];
-  weakClaims: ContextCapsuleClaim[];
-  unsupportedClaims: ContextCapsuleClaim[];
-  disputedClaims: ContextCapsuleClaim[];
-  staleClaims: ContextCapsuleClaim[];
-  inferredClaims: ContextCapsuleClaim[];
+  allClaims: ContextCapsuleClaimV3[];
+  supportedClaims: ContextCapsuleClaimV3[];
+  weakClaims: ContextCapsuleClaimV3[];
+  unsupportedClaims: ContextCapsuleClaimV3[];
+  disputedClaims: ContextCapsuleClaimV3[];
+  staleClaims: ContextCapsuleClaimV3[];
+  inferredClaims: ContextCapsuleClaimV3[];
+  crossClaimContradictions: ContextCapsuleCrossClaimContradiction[];
   forbiddenClaims: string[];
 }
 
@@ -173,6 +207,29 @@ export interface ContextCapsuleEvaluationV3 {
   sourceSpineScore: number;
   agentOperabilityScore: number;
   marketplaceReadinessScore: number;
+  temporalityCoverage: number;
+  causalityCoverage: number;
+  ontologyBindingCoverage: number;
+  receiptDepth: number;
+  contradictionRate: number;
+  groundedAnswerRate: number;
+  sourceIndependence: number;
+  capsuleVsGenericDelta: number;
+  goldenQuestionEvals: Array<{
+    questionId: string;
+    prompt: string;
+    praxisLabel: 'PRAXIS capsule-grounded answer';
+    baselineLabel: 'Generic prompt-only LLM';
+    capsuleScore: number;
+    genericScore: number;
+    delta: number;
+    groundedAnswerRate: number;
+    contradictionRate: number;
+    sourceIndependence: number;
+    sourceIds: string[];
+    disputedClaimIds: string[];
+    computedBy: 'deterministic-contract-eval';
+  }>;
   openGaps: string[];
 }
 
@@ -436,16 +493,16 @@ export const CAPSULE_V3_AGENT_ROLES: CapsuleV3AgentRole[] = [
 export function normalizeContextCapsuleV3(input: ContextCapsuleV2 | unknown, options: ContextCapsuleNormalizeOptions = {}): ContextCapsuleV3 {
   const v2 = normalizeContextCapsuleV2(input, options);
   const body = isRecord(input) ? input : {};
-  const sourceSpine = buildSourceSpine(v2, options);
-  const humanTacitKnowledge = normalizeTacitKnowledge(body.humanTacitKnowledge, v2);
-  const contextCaptureProfile = buildContextCaptureProfile(v2, sourceSpine);
-  const grounding = buildGrounding(body, v2, contextCaptureProfile);
   const claimLedger = buildClaimLedger(v2);
+  const sourceSpine = buildSourceSpine(v2, options, claimLedger.allClaims);
+  const humanTacitKnowledge = normalizeTacitKnowledge(body.humanTacitKnowledge, v2);
+  const contextCaptureProfile = buildContextCaptureProfile(v2, sourceSpine, body);
+  const grounding = buildGrounding(body, v2, contextCaptureProfile);
   const agentOperatingContract = buildAgentOperatingContract(v2);
   const memoryPosture = buildMemoryPosture(v2, body.memoryPosture);
   const governance = buildGovernance(v2);
   const marketplaceProfile = buildMarketplaceProfile(v2, sourceSpine, humanTacitKnowledge);
-  const evaluation = buildEvaluation(v2, sourceSpine, humanTacitKnowledge, agentOperatingContract, marketplaceProfile, options);
+  const evaluation = buildEvaluation(v2, sourceSpine, humanTacitKnowledge, agentOperatingContract, marketplaceProfile, grounding, claimLedger, options);
 
   const capsule: ContextCapsuleV3 = {
     schemaVersion: 3,
@@ -601,8 +658,8 @@ export function canPublishCapsuleV3(input: ContextCapsuleV3 | ContextCapsuleV2 |
   if (isStale(capsule.governance.reviewedAt, capsule.identity.updatedAt, options.now) || capsule.governance.humanGateStatus === 'stale') {
     issues.push({ code: 'stale_human_gate', severity: 'error', message: 'Stale human gates must be refreshed before publishing.' });
   }
-  if (capsule.claimLedger.unsupportedClaims.length) {
-    issues.push({ code: 'unsupported_final_claims', severity: 'error', message: 'Unsupported final claims block marketplace publishing.' });
+  if (capsule.claimLedger.unsupportedClaims.length || capsule.claimLedger.disputedClaims.length) {
+    issues.push({ code: 'unsupported_final_claims', severity: 'error', message: 'Unsupported or disputed final claims block marketplace publishing.' });
   }
   if (capsule.sourceSpine.score < 80) {
     issues.push({ code: 'source_spine_below_threshold', severity: 'error', message: 'Source spine score must be at least 80 before publishing.' });
@@ -625,14 +682,14 @@ export function canPublishCapsuleV3(input: ContextCapsuleV3 | ContextCapsuleV2 |
   };
 }
 
-function buildSourceSpine(v2: ContextCapsuleV2, options: ContextCapsuleNormalizeOptions): ContextCapsuleSourceSpine {
+function buildSourceSpine(v2: ContextCapsuleV2, options: ContextCapsuleNormalizeOptions, claims: ContextCapsuleClaimV3[] = buildClaimLedger(v2).allClaims): ContextCapsuleSourceSpine {
   const sourceIds = v2.sourceRefs.map((source) => source.sourceId);
   const sourceIdSet = new Set(sourceIds);
   const staleSourceIds = v2.sourceRefs
     .filter((source) => source.stale || isDateOlderThanWindow(source.date, v2.sourcePosture?.freshnessWindowDays ?? null, options.now))
     .map((source) => source.sourceId);
-  const unsupportedClaimIds = v2.claimLedger
-    .filter((claim) => claim.support === 'unsupported' || claim.support === 'needs_source' || claim.sourceRefIds.some((sourceId) => !sourceIdSet.has(sourceId)))
+  const unsupportedClaimIds = claims
+    .filter((claim) => claim.support === 'unsupported' || claim.support === 'needs_source' || claim.support === 'disputed' || claim.sourceRefIds.some((sourceId) => !sourceIdSet.has(sourceId)))
     .map((claim) => claim.claimId);
   const sourceGaps = [
     ...(!v2.sourceRefs.length ? ['Attach source receipts before final use.'] : []),
@@ -642,7 +699,7 @@ function buildSourceSpine(v2: ContextCapsuleV2, options: ContextCapsuleNormalize
   const independenceScore = scoreIndependence(v2.sourceRefs);
   const sourceCountScore = Math.min(1, v2.sourceRefs.length / 2);
   const reliabilityScore = average(v2.sourceRefs.map((source) => source.reliabilityTier === 1 ? 1 : source.reliabilityTier === 2 ? 0.75 : source.reliabilityTier === 3 ? 0.45 : 0.55), v2.sourceRefs.length ? 0.55 : 0);
-  const claimSupportScore = average(v2.claimLedger.map((claim) => claim.support === 'supported' ? 1 : claim.support === 'partially_supported' ? 0.65 : 0), v2.claimLedger.length ? 0 : 0.75);
+  const claimSupportScore = average(claims.map((claim) => scoreClaimSupport(claim.support)), claims.length ? 0 : 0.75);
   const freshnessScore = staleSourceIds.length ? 0 : 1;
   const score = Math.round(100 * average([sourceCountScore, reliabilityScore, claimSupportScore, freshnessScore, independenceScore / 100], 0));
   return {
@@ -661,9 +718,12 @@ function buildSourceSpine(v2: ContextCapsuleV2, options: ContextCapsuleNormalize
 function buildContextCaptureProfile(
   v2: ContextCapsuleV2,
   sourceSpine: ContextCapsuleSourceSpine,
+  input: Record<string, unknown> = {},
 ): CapsuleContextCaptureProfile {
-  const starterProfile = v2.starterSnapshot?.contextCaptureProfile;
-  if (starterProfile) return cloneContextCaptureProfile(starterProfile);
+  const starterProfile = isRecord(input.contextCaptureProfile)
+    ? input.contextCaptureProfile as unknown as CapsuleContextCaptureProfile
+    : v2.starterSnapshot?.contextCaptureProfile;
+  if (starterProfile) return cloneContextCaptureProfile(starterProfile, v2, sourceSpine);
 
   const ontologyIds = inferContextCaptureOntologyIds(v2);
   const sourceRefs = sourceSpine.sourceRefs.length
@@ -704,9 +764,11 @@ function buildContextCaptureProfile(
     captureRationale: `Bind ${source.label} to ${ontologyIds.join(', ')} so extraction stays source-bound and reviewable.`,
   }));
   const profileId = `${v2.capsuleId}-context-capture-v1`;
+  const ontologyBinding = buildContextCaptureOntologyBinding(v2, sourceBindings);
 
   return {
     profileId,
+    ontologyBinding,
     sourceBindings,
     usageInference: {
       activationSignals: withFallback(v2.evidenceRequirements, [
@@ -780,9 +842,16 @@ function buildContextCaptureProfile(
   };
 }
 
-function cloneContextCaptureProfile(profile: CapsuleContextCaptureProfile): CapsuleContextCaptureProfile {
+function cloneContextCaptureProfile(
+  profile: CapsuleContextCaptureProfile,
+  v2: ContextCapsuleV2,
+  _sourceSpine: ContextCapsuleSourceSpine,
+): CapsuleContextCaptureProfile {
+  const rawProfile = profile as CapsuleContextCaptureProfile & { ontologyBinding?: CapsuleOntologyBindingProfile };
+  const ontologyBinding = buildContextCaptureOntologyBinding(v2, profile.sourceBindings, rawProfile.ontologyBinding);
   return {
     ...profile,
+    ontologyBinding,
     sourceBindings: profile.sourceBindings.map((binding) => ({
       ...binding,
       ontologyIds: [...binding.ontologyIds],
@@ -820,6 +889,141 @@ function cloneContextCaptureProfile(profile: CapsuleContextCaptureProfile): Caps
       seedDocumentIds: [...profile.cogneeCapture.seedDocumentIds],
     },
   };
+}
+
+function buildContextCaptureOntologyBinding(
+  v2: ContextCapsuleV2,
+  sourceBindings: CapsuleContextCaptureProfile['sourceBindings'],
+  explicit?: Partial<CapsuleOntologyBindingProfile> | null,
+): CapsuleOntologyBindingProfile {
+  const explicitOntologyIds = cleanStringArray(explicit?.ontologyIds).filter(isOntologyId) as OntologyId[];
+  const ontologyIds = withFallback(
+    explicitOntologyIds,
+    dedupeStrings([
+      ...sourceBindings.flatMap((binding) => binding.ontologyIds),
+      ...inferContextCaptureOntologyIds(v2),
+    ]).filter(isOntologyId) as OntologyId[],
+  );
+  const localExtensions = normalizeLocalOntologyExtensions(explicit?.localExtensions);
+  const globalEntitySubtypes = dedupeByString([
+    ...(explicit?.entitySubtypes ?? []).filter(isOntologyEntitySubtype),
+    ...ontologyIds.flatMap((ontologyId) => {
+      try {
+        return getOntology(ontologyId).nodeTypes.map((node): CapsuleOntologyEntitySubtype => ({
+          subtypeId: node.id,
+          label: node.label,
+          primitive: node.primitive,
+          description: node.description,
+          source: 'global',
+        }));
+      } catch {
+        return [];
+      }
+    }),
+    ...TACITUS_CORE_PRIMITIVES.map((primitive): CapsuleOntologyEntitySubtype => ({
+      subtypeId: primitive.toLowerCase(),
+      label: primitive,
+      primitive,
+      description: `Base ACO primitive ${primitive}.`,
+      source: 'global',
+    })),
+  ], (item) => item.subtypeId);
+  const globalRelationshipSubtypes = dedupeByString([
+    ...(explicit?.relationshipSubtypes ?? []).filter(isOntologyRelationshipSubtype),
+    ...ontologyIds.flatMap((ontologyId) => {
+      try {
+        return getOntology(ontologyId).edgeTypes.map((edge): CapsuleOntologyRelationshipSubtype => ({
+          subtypeId: edge.id,
+          label: edge.label,
+          from: [...edge.from],
+          to: [...edge.to],
+          description: edge.description,
+          source: 'global',
+        }));
+      } catch {
+        return [];
+      }
+    }),
+  ], (item) => item.subtypeId);
+  const localEntitySubtypes = localExtensions
+    .filter((extension) => extension.kind === 'entity' && extension.primitive)
+    .map((extension): CapsuleOntologyEntitySubtype => ({
+      subtypeId: extension.subtypeId,
+      label: extension.label,
+      primitive: extension.primitive!,
+      description: extension.description,
+      source: 'capsule-local',
+      extensionId: extension.extensionId,
+    }));
+  const localRelationshipSubtypes = localExtensions
+    .filter((extension) => extension.kind === 'relationship' && extension.from?.length && extension.to?.length)
+    .map((extension): CapsuleOntologyRelationshipSubtype => ({
+      subtypeId: extension.subtypeId,
+      label: extension.label,
+      from: extension.from ?? [],
+      to: extension.to ?? [],
+      description: extension.description,
+      source: 'capsule-local',
+      extensionId: extension.extensionId,
+    }));
+
+  return {
+    ontologyIds,
+    domainId: cleanString(explicit?.domainId) || v2.domainTags[0] || 'generic',
+    entitySubtypes: dedupeByString([...globalEntitySubtypes, ...localEntitySubtypes], (item) => `${item.source}:${item.subtypeId}`),
+    relationshipSubtypes: dedupeByString([...globalRelationshipSubtypes, ...localRelationshipSubtypes], (item) => `${item.source}:${item.subtypeId}`),
+    localExtensions,
+    unknownTypePolicy: 'candidate-extension-review-card',
+    promotionGate: 'ADMIN_ALLOWLIST',
+    canonicalStore: 'Firestore ContextCapsules',
+  };
+}
+
+function normalizeLocalOntologyExtensions(value: unknown): CapsuleLocalOntologyExtension[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item, index): CapsuleLocalOntologyExtension[] => {
+    const record = isRecord(item) ? item : {};
+    const subtypeId = cleanString(record.subtypeId);
+    const kind = record.kind === 'relationship' ? 'relationship' : record.kind === 'entity' ? 'entity' : null;
+    if (!subtypeId || !kind) return [];
+    const primitive = cleanString(record.primitive);
+    const extension: CapsuleLocalOntologyExtension = {
+      extensionId: cleanString(record.extensionId) || `local-extension-${index + 1}`,
+      kind,
+      subtypeId,
+      label: cleanString(record.label) || labelizeSubtype(subtypeId),
+      description: cleanString(record.description) || `Capsule-local ${kind} subtype ${subtypeId}.`,
+      status: record.status === 'approved-local' || record.status === 'promoted' ? record.status : 'candidate',
+      evidenceIds: cleanStringArray(record.evidenceIds).slice(0, 20),
+      createdAt: cleanString(record.createdAt) || null,
+    };
+    if (kind === 'entity' && isTacitusCorePrimitive(primitive)) extension.primitive = primitive;
+    if (kind === 'relationship') {
+      extension.from = cleanStringArray(record.from).filter(isTacitusCorePrimitive) as TacitusCorePrimitive[];
+      extension.to = cleanStringArray(record.to).filter(isTacitusCorePrimitive) as TacitusCorePrimitive[];
+    }
+    return [extension];
+  }).slice(0, 50);
+}
+
+function isOntologyEntitySubtype(value: unknown): value is CapsuleOntologyEntitySubtype {
+  return isRecord(value)
+    && typeof value.subtypeId === 'string'
+    && typeof value.label === 'string'
+    && typeof value.primitive === 'string'
+    && isTacitusCorePrimitive(value.primitive)
+    && typeof value.description === 'string'
+    && (value.source === 'global' || value.source === 'capsule-local');
+}
+
+function isOntologyRelationshipSubtype(value: unknown): value is CapsuleOntologyRelationshipSubtype {
+  return isRecord(value)
+    && typeof value.subtypeId === 'string'
+    && typeof value.label === 'string'
+    && Array.isArray(value.from)
+    && Array.isArray(value.to)
+    && typeof value.description === 'string'
+    && (value.source === 'global' || value.source === 'capsule-local');
 }
 
 function buildGrounding(
@@ -992,21 +1196,364 @@ function inferContextCaptureOntologyIds(v2: ContextCapsuleV2): OntologyId[] {
   return dedupeStrings(ids).slice(0, 5) as OntologyId[];
 }
 
-function buildClaimLedger(v2: ContextCapsuleV2): ContextCapsuleClaimLedgerV3 {
-  const unsupportedClaims = v2.claimLedger.filter((claim) => claim.support === 'unsupported' || claim.support === 'needs_source');
-  const weakClaims = v2.claimLedger.filter((claim) => claim.support === 'partially_supported' || claim.support === 'needs_source');
+export function computeClaimSupportFromReceipts(receipts: EvidenceReceipt[]): SourceSupportState {
+  if (!receipts.length) return 'needs_source';
+  const stances = receipts.map((receipt) => receipt.stance ?? 'supports');
+  const supports = stances.filter((stance) => stance === 'supports').length;
+  const contradicts = stances.filter((stance) => stance === 'contradicts' || stance === 'mixed').length;
+  if (contradicts > 0 && supports > 0) return 'disputed';
+  if (contradicts > 0) return 'disputed';
+  if (!supports) return 'needs_source';
+  const confidenceScore = average(receipts.map((receipt) => receipt.confidence ?? 0.6), 0.6);
+  const reliabilityScore = average(receipts.map((receipt) => receipt.reliabilityTier === 1 ? 1 : receipt.reliabilityTier === 2 ? 0.78 : 0.55), 0.55);
+  return confidenceScore >= 0.72 && reliabilityScore >= 0.72 ? 'supported' : 'partially_supported';
+}
+
+export function claimsValidAt(input: ContextCapsuleV3 | ContextCapsuleV2 | unknown, asOf: string | Date): ContextCapsuleClaimV3[] {
+  const capsule = isContextCapsuleV3(input)
+    ? migrateContextCapsuleV3ClaimLedger(input)
+    : normalizeContextCapsuleV3(input, { now: asOf });
+  return capsule.claimLedger.allClaims.filter((claim) => claimIsValidAt(claim, asOf));
+}
+
+export interface CapsuleOntologyTypeCandidateInput {
+  kind: 'entity' | 'relationship';
+  subtypeId: string;
+  label?: string | null;
+  primitive?: TacitusCorePrimitive | string | null;
+  from?: string[] | null;
+  to?: string[] | null;
+  evidenceIds?: string[] | null;
+  description?: string | null;
+}
+
+export function validateCapsuleOntologyType(
+  input: ContextCapsuleV3 | ContextCapsuleV2 | unknown,
+  candidate: CapsuleOntologyTypeCandidateInput,
+): { known: true } | { known: false; extension: CapsuleLocalOntologyExtension } {
+  const capsule = isContextCapsuleV3(input)
+    ? migrateContextCapsuleV3ClaimLedger(input)
+    : normalizeContextCapsuleV3(input);
+  const subtypeId = cleanString(candidate.subtypeId);
+  const normalized = normalizeSubtypeKey(subtypeId);
+  if (!subtypeId) {
+    return {
+      known: false,
+      extension: buildCandidateExtension({ ...candidate, subtypeId: 'unknown_subtype' }),
+    };
+  }
+  if (candidate.kind === 'entity') {
+    const knownEntityKeys = new Set([
+      ...capsule.contextCaptureProfile.ontologyBinding.entitySubtypes.flatMap((item) => [
+        normalizeSubtypeKey(item.subtypeId),
+        normalizeSubtypeKey(item.label),
+        normalizeSubtypeKey(item.primitive),
+      ]),
+      ...capsule.contextCaptureProfile.embeddedGraph.allowedNodeTypes.map(normalizeSubtypeKey),
+    ]);
+    return knownEntityKeys.has(normalized)
+      ? { known: true }
+      : { known: false, extension: buildCandidateExtension(candidate) };
+  }
+  const knownRelationshipKeys = new Set([
+    ...capsule.contextCaptureProfile.ontologyBinding.relationshipSubtypes.flatMap((item) => [
+      normalizeSubtypeKey(item.subtypeId),
+      normalizeSubtypeKey(item.label),
+    ]),
+    ...capsule.contextCaptureProfile.embeddedGraph.allowedEdgeTypes.map(normalizeSubtypeKey),
+  ]);
+  return knownRelationshipKeys.has(normalized)
+    ? { known: true }
+    : { known: false, extension: buildCandidateExtension(candidate) };
+}
+
+export function migrateContextCapsuleV3ClaimLedger(capsule: ContextCapsuleV3): ContextCapsuleV3 {
+  const sourceById = new Map(capsule.sourceSpine.sourceRefs.map((source) => [source.sourceId, source]));
+  const allClaims = capsule.claimLedger.allClaims.map((claim, index) => normalizeClaimForV3(claim, index, sourceById));
   return {
-    allClaims: v2.claimLedger.map((claim) => ({ ...claim, sourceRefIds: [...claim.sourceRefIds] })),
-    supportedClaims: v2.claimLedger.filter((claim) => claim.support === 'supported'),
-    weakClaims,
-    unsupportedClaims,
-    disputedClaims: v2.claimLedger.filter((claim) => /disputed|contested|contradict/i.test(`${claim.text} ${claim.caveat ?? ''}`)),
-    staleClaims: v2.claimLedger.filter((claim) => /stale|expired|refresh/i.test(`${claim.text} ${claim.caveat ?? ''}`)),
-    inferredClaims: v2.claimLedger.filter((claim) => /infer|assumption|estimate/i.test(`${claim.text} ${claim.caveat ?? ''}`)),
+    ...capsule,
+    claimLedger: buildClaimLedgerFromClaims(allClaims, capsule.reasoningScaffold.caveats),
+  };
+}
+
+function buildCandidateExtension(candidate: CapsuleOntologyTypeCandidateInput): CapsuleLocalOntologyExtension {
+  const subtypeId = cleanString(candidate.subtypeId) || 'unknown_subtype';
+  const primitive = cleanString(candidate.primitive);
+  const extension: CapsuleLocalOntologyExtension = {
+    extensionId: stableId(['ontology-extension', candidate.kind, subtypeId, cleanString(candidate.label)].join(':')),
+    kind: candidate.kind,
+    subtypeId,
+    label: cleanString(candidate.label) || labelizeSubtype(subtypeId),
+    description: cleanString(candidate.description) || `Candidate capsule-local ${candidate.kind} subtype ${subtypeId}.`,
+    status: 'candidate',
+    evidenceIds: cleanStringArray(candidate.evidenceIds).slice(0, 20),
+    createdAt: null,
+  };
+  if (candidate.kind === 'entity' && isTacitusCorePrimitive(primitive)) extension.primitive = primitive;
+  if (candidate.kind === 'relationship') {
+    extension.from = cleanStringArray(candidate.from).filter(isTacitusCorePrimitive) as TacitusCorePrimitive[];
+    extension.to = cleanStringArray(candidate.to).filter(isTacitusCorePrimitive) as TacitusCorePrimitive[];
+  }
+  return extension;
+}
+
+function buildClaimLedger(v2: ContextCapsuleV2): ContextCapsuleClaimLedgerV3 {
+  const sourceById = new Map(v2.sourceRefs.map((source) => [source.sourceId, source]));
+  const claims = v2.claimLedger.map((claim, index) => normalizeClaimForV3(claim, index, sourceById));
+  return buildClaimLedgerFromClaims(claims, v2.reasoningScaffold.caveats);
+}
+
+function buildClaimLedgerFromClaims(claims: ContextCapsuleClaimV3[], caveats: string[]): ContextCapsuleClaimLedgerV3 {
+  const crossClaimContradictions = detectCrossClaimContradictions(claims);
+  const crossDisputedClaimIds = new Set(crossClaimContradictions.flatMap((contradiction) => contradiction.claimIds));
+  const normalizedClaims = claims.map((claim) => crossDisputedClaimIds.has(claim.claimId)
+    ? markClaimDisputedByCrossClaimContradiction(claim, crossClaimContradictions)
+    : claim);
+  const unsupportedClaims = normalizedClaims.filter((claim) => claim.support === 'unsupported' || claim.support === 'needs_source');
+  const weakClaims = normalizedClaims.filter((claim) => claim.support === 'partially_supported' || claim.support === 'needs_source');
+  const disputedClaims = normalizedClaims.filter((claim) => claim.support === 'disputed' || /disputed|contested|contradict/i.test(`${claim.text} ${claim.caveat ?? ''}`));
+  return {
+    allClaims: normalizedClaims.map(cloneClaimV3),
+    supportedClaims: normalizedClaims.filter((claim) => claim.support === 'supported').map(cloneClaimV3),
+    weakClaims: weakClaims.map(cloneClaimV3),
+    unsupportedClaims: unsupportedClaims.map(cloneClaimV3),
+    disputedClaims: disputedClaims.map(cloneClaimV3),
+    staleClaims: normalizedClaims.filter((claim) => /stale|expired|refresh/i.test(`${claim.text} ${claim.caveat ?? ''}`)).map(cloneClaimV3),
+    inferredClaims: normalizedClaims.filter((claim) => /infer|assumption|estimate/i.test(`${claim.text} ${claim.caveat ?? ''}`)).map(cloneClaimV3),
+    crossClaimContradictions: crossClaimContradictions.map((contradiction) => ({
+      ...contradiction,
+      claimIds: [...contradiction.claimIds] as [string, string],
+      evidenceSourceIds: [...contradiction.evidenceSourceIds],
+      receiptDates: [...contradiction.receiptDates],
+    })),
     forbiddenClaims: [
-      ...v2.reasoningScaffold.caveats.filter((caveat) => /do not|must not|no\b/i.test(caveat)),
+      ...caveats.filter((caveat) => /do not|must not|no\b/i.test(caveat)),
       ...unsupportedClaims.map((claim) => `Do not use as final claim: ${claim.text}`),
+      ...disputedClaims.map((claim) => `Do not use as final claim until dispute is resolved: ${claim.text}`),
     ],
+  };
+}
+
+export function detectCrossClaimContradictions(claims: ContextCapsuleClaimV3[]): ContextCapsuleCrossClaimContradiction[] {
+  const contradictions: ContextCapsuleCrossClaimContradiction[] = [];
+  for (let leftIndex = 0; leftIndex < claims.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < claims.length; rightIndex += 1) {
+      const left = claims[leftIndex]!;
+      const right = claims[rightIndex]!;
+      if (!claimValidityWindowsOverlap(left, right)) continue;
+      if (!claimsShareTopic(left.text, right.text)) continue;
+      const negationConflict = hasClaimNegation(left.text) !== hasClaimNegation(right.text);
+      const receiptConflict = receiptsDisagree(left, right);
+      if (!negationConflict && !receiptConflict) continue;
+      contradictions.push({
+        contradictionId: stableId(['cross-claim-contradiction', left.claimId, right.claimId].join(':')),
+        claimIds: [left.claimId, right.claimId],
+        reason: negationConflict
+          ? 'Claims share a topic and one asserts the inverse of the other over an overlapping validity window.'
+          : 'Claims share a topic and their receipts carry contradictory stances over an overlapping validity window.',
+        evidenceSourceIds: dedupeStrings([...left.sourceRefIds, ...right.sourceRefIds, ...left.receipts.map((receipt) => receipt.sourceId), ...right.receipts.map((receipt) => receipt.sourceId)]),
+        receiptDates: dedupeStrings([...left.receipts, ...right.receipts].map((receipt) => receipt.date).filter((date): date is string => Boolean(date))),
+        reviewRequired: true,
+      });
+    }
+  }
+  return contradictions;
+}
+
+function markClaimDisputedByCrossClaimContradiction(
+  claim: ContextCapsuleClaimV3,
+  contradictions: ContextCapsuleCrossClaimContradiction[],
+): ContextCapsuleClaimV3 {
+  const reasons = contradictions
+    .filter((contradiction) => contradiction.claimIds.includes(claim.claimId))
+    .map((contradiction) => contradiction.reason);
+  const caveat = dedupeStrings([
+    claim.caveat ?? '',
+    ...reasons.map((reason) => `Cross-claim contradiction review required: ${reason}`),
+  ].filter(Boolean)).join(' ');
+  return {
+    ...claim,
+    support: 'disputed',
+    caveat,
+  };
+}
+
+function claimValidityWindowsOverlap(left: ContextCapsuleClaimV3, right: ContextCapsuleClaimV3): boolean {
+  const leftStart = dateLowerBound(left.validFrom ?? left.asOf) ?? Number.NEGATIVE_INFINITY;
+  const leftEnd = dateUpperBound(left.validUntil ?? left.asOf) ?? Number.POSITIVE_INFINITY;
+  const rightStart = dateLowerBound(right.validFrom ?? right.asOf) ?? Number.NEGATIVE_INFINITY;
+  const rightEnd = dateUpperBound(right.validUntil ?? right.asOf) ?? Number.POSITIVE_INFINITY;
+  return leftStart <= rightEnd && rightStart <= leftEnd;
+}
+
+function claimsShareTopic(left: string, right: string): boolean {
+  const leftTerms = new Set(claimKeywords(left));
+  const shared = claimKeywords(right).filter((term) => leftTerms.has(term));
+  return shared.length >= 2;
+}
+
+function claimKeywords(text: string): string[] {
+  return dedupeStrings(text
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((term) => term.length > 2 && !CLAIM_STOP_WORDS.has(term)));
+}
+
+function hasClaimNegation(text: string): boolean {
+  return /\b(not|no|never|without|cannot|can't|closed|blocked|prohibited|denied|suspended|inactive)\b/i.test(text);
+}
+
+function receiptsDisagree(left: ContextCapsuleClaimV3, right: ContextCapsuleClaimV3): boolean {
+  const leftStances = new Set(left.receipts.map((receipt) => receipt.stance ?? 'supports'));
+  const rightStances = new Set(right.receipts.map((receipt) => receipt.stance ?? 'supports'));
+  return (leftStances.has('supports') && (rightStances.has('contradicts') || rightStances.has('mixed')))
+    || (rightStances.has('supports') && (leftStances.has('contradicts') || leftStances.has('mixed')));
+}
+
+function normalizeClaimForV3(
+  claim: ContextCapsuleClaim,
+  index: number,
+  sourceById: Map<string, ContextCapsuleSourceRef>,
+): ContextCapsuleClaimV3 {
+  const receiptSourceIds = claim.receipts?.map((receipt) => receipt.sourceId) ?? [];
+  const sourceRefIds = dedupeStrings([...claim.sourceRefIds, ...receiptSourceIds]);
+  const receipts = normalizeClaimReceipts(claim, sourceRefIds, sourceById);
+  return {
+    ...claim,
+    claimId: cleanString(claim.claimId) || `claim-${index + 1}`,
+    text: cleanString(claim.text),
+    support: computeClaimSupportFromReceipts(receipts),
+    sourceRefIds: dedupeStrings([...sourceRefIds, ...receipts.map((receipt) => receipt.sourceId)]),
+    receipts,
+    validFrom: cleanString(claim.validFrom) || null,
+    validUntil: cleanString(claim.validUntil) || null,
+    asOf: cleanString(claim.asOf) || null,
+    causalLinks: normalizeClaimCausalLinks(claim.causalLinks),
+  };
+}
+
+function normalizeClaimReceipts(
+  claim: ContextCapsuleClaim,
+  sourceRefIds: string[],
+  sourceById: Map<string, ContextCapsuleSourceRef>,
+): EvidenceReceipt[] {
+  const explicit = (claim.receipts ?? []).map((receipt) => {
+    const source = sourceById.get(receipt.sourceId);
+    return {
+      ...receipt,
+      url: receipt.url ?? source?.url ?? null,
+      publisher: receipt.publisher ?? source?.publisher ?? null,
+      date: receipt.date ?? source?.date ?? null,
+      reliabilityTier: receipt.reliabilityTier ?? source?.reliabilityTier ?? null,
+      confidence: receipt.confidence ?? confidenceForClaimSupport(claim.support),
+      stance: receipt.stance ?? stanceForClaimSupport(claim.support),
+    };
+  });
+  if (explicit.length) return dedupeReceipts(explicit);
+  if (claim.support === 'needs_source') return [];
+
+  return dedupeReceipts(sourceRefIds.flatMap((sourceId): EvidenceReceipt[] => {
+    const source = sourceById.get(sourceId);
+    return [{
+      sourceId,
+      url: source?.url ?? null,
+      publisher: source?.publisher ?? null,
+      date: source?.date ?? null,
+      reliabilityTier: source?.reliabilityTier ?? null,
+      snippet: claim.text,
+      charOffset: null,
+      page: null,
+      embedding: null,
+      confidence: confidenceForClaimSupport(claim.support),
+      stance: stanceForClaimSupport(claim.support),
+    }];
+  }));
+}
+
+function normalizeClaimCausalLinks(value: ContextCapsuleClaim['causalLinks']): Required<ContextCapsuleClaimCausalLinks> {
+  return {
+    causes: cleanStringArray(value?.causes),
+    causedBy: cleanStringArray(value?.causedBy),
+    enables: cleanStringArray(value?.enables),
+    blocks: cleanStringArray(value?.blocks),
+    escalates: cleanStringArray(value?.escalates),
+    deEscalates: cleanStringArray(value?.deEscalates),
+  };
+}
+
+function claimIsValidAt(claim: ContextCapsuleClaimV3, asOf: string | Date): boolean {
+  const compare = asOf instanceof Date ? asOf.getTime() : Date.parse(asOf);
+  if (Number.isNaN(compare)) return true;
+  const from = dateLowerBound(claim.validFrom);
+  const until = dateUpperBound(claim.validUntil);
+  return (from === null || compare >= from) && (until === null || compare <= until);
+}
+
+function dateLowerBound(value: string | null): number | null {
+  if (!value) return null;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function dateUpperBound(value: string | null): number | null {
+  if (!value) return null;
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) return null;
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? parsed + 86_400_000 - 1 : parsed;
+}
+
+function dedupeReceipts(receipts: EvidenceReceipt[]): EvidenceReceipt[] {
+  const seen = new Set<string>();
+  return receipts.filter((receipt) => {
+    const key = [
+      receipt.sourceId,
+      receipt.stance ?? 'supports',
+      receipt.page ?? '',
+      receipt.charOffset?.start ?? '',
+      receipt.charOffset?.end ?? '',
+      receipt.snippet,
+    ].join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 20);
+}
+
+function stanceForClaimSupport(support: SourceSupportState): EvidenceReceipt['stance'] {
+  if (support === 'unsupported' || support === 'disputed') return 'contradicts';
+  return 'supports';
+}
+
+function confidenceForClaimSupport(support: SourceSupportState): number | null {
+  if (support === 'supported') return 0.86;
+  if (support === 'partially_supported') return 0.62;
+  if (support === 'unsupported' || support === 'disputed') return 0.52;
+  return null;
+}
+
+function scoreClaimSupport(support: SourceSupportState): number {
+  if (support === 'supported') return 1;
+  if (support === 'partially_supported') return 0.65;
+  return 0;
+}
+
+function cloneClaimV3(claim: ContextCapsuleClaimV3): ContextCapsuleClaimV3 {
+  return {
+    ...claim,
+    sourceRefIds: [...claim.sourceRefIds],
+    receipts: claim.receipts.map((receipt) => ({
+      ...receipt,
+      charOffset: receipt.charOffset ? { ...receipt.charOffset } : null,
+      embedding: receipt.embedding ? [...receipt.embedding] : null,
+    })),
+    causalLinks: {
+      causes: [...claim.causalLinks.causes],
+      causedBy: [...claim.causalLinks.causedBy],
+      enables: [...claim.causalLinks.enables],
+      blocks: [...claim.causalLinks.blocks],
+      escalates: [...claim.causalLinks.escalates],
+      deEscalates: [...claim.causalLinks.deEscalates],
+    },
   };
 }
 
@@ -1074,7 +1621,7 @@ function buildMemoryPosture(v2: ContextCapsuleV2, input?: unknown): ContextCapsu
     sessionMemory: cleanStringArray(body.sessionMemory),
     graphProposals: withFallback(cleanStringArray(body.graphProposals), v2.coreRefs.graphCoreId ? [`approved graph ${v2.coreRefs.graphCoreId}`] : ['review-card graph proposal required before graph promotion']),
     staleAssumptions: withFallback(cleanStringArray(body.staleAssumptions), v2.sourceRefs.filter((source) => source.stale).map((source) => source.label)),
-    disputedClaims: withFallback(cleanStringArray(body.disputedClaims), v2.claimLedger.filter((claim) => claim.support === 'unsupported' || /disputed|contested/i.test(`${claim.text} ${claim.caveat ?? ''}`)).map((claim) => claim.text)),
+    disputedClaims: withFallback(cleanStringArray(body.disputedClaims), v2.claimLedger.filter((claim) => claim.support === 'unsupported' || claim.support === 'disputed' || /disputed|contested/i.test(`${claim.text} ${claim.caveat ?? ''}`)).map((claim) => claim.text)),
     rejectedInferences: cleanStringArray(body.rejectedInferences),
     cogneeDatasetId: typeof body.cogneeDatasetId === 'string' && body.cogneeDatasetId.trim() ? body.cogneeDatasetId.trim() : datasetId,
     cogneeMode: 'advisory-only',
@@ -1142,29 +1689,176 @@ function buildEvaluation(
   tacit: ContextCapsuleHumanTacitKnowledge,
   agentContract: ContextCapsuleAgentOperatingContract,
   marketplace: ContextCapsuleMarketplaceProfile,
+  grounding: ContextCapsuleGroundingV3,
+  claimLedger: ContextCapsuleClaimLedgerV3,
   options: ContextCapsuleNormalizeOptions,
 ): ContextCapsuleEvaluationV3 {
   const tacitKnowledgeScore = scoreTacitKnowledge(tacit);
   const agentOperabilityScore = scoreAgentOperability(agentContract);
   const marketplaceReadinessScore = scoreMarketplaceReadiness(v2, sourceSpine, marketplace, options);
+  const receiptDepth = scoreReceiptDepth(claimLedger);
+  const temporalityCoverage = scoreTemporalityCoverage(v2, grounding, claimLedger);
+  const causalityCoverage = scoreCausalityCoverage(grounding, claimLedger);
+  const ontologyBindingCoverage = scoreOntologyBindingCoverage(grounding);
+  const contradictionRate = scoreContradictionRate(claimLedger);
+  const groundedAnswerRate = Math.round(average([
+    sourceSpine.score,
+    receiptDepth,
+    100 - contradictionRate,
+    average(claimLedger.allClaims.map((claim) => scoreClaimSupport(claim.support) * 100), 75),
+  ], 0));
+  const sourceIndependence = sourceSpine.independenceScore;
+  const goldenQuestionEvals = buildGoldenQuestionEvals({
+    sourceSpine,
+    claimLedger,
+    groundedAnswerRate,
+    contradictionRate,
+    sourceIndependence,
+  });
+  const capsuleVsGenericDelta = Math.round(average(goldenQuestionEvals.map((item) => item.delta), 0));
   const openGaps = [
     ...sourceSpine.sourceGaps,
     ...(tacitKnowledgeScore < 80 ? ['Tacit knowledge needs more human-authored context.'] : []),
     ...(agentOperabilityScore < 80 ? ['Agent operating contract needs stronger stop conditions or source requirements.'] : []),
+    ...(receiptDepth < 80 ? ['Claim ledger needs receipts for more claims.'] : []),
+    ...(temporalityCoverage < 80 ? ['Temporality needs validity windows or timeline anchors.'] : []),
+    ...(causalityCoverage < 80 ? ['Causality needs explicit causal links or claim-level causal relationships.'] : []),
+    ...(ontologyBindingCoverage < 80 ? ['Ontology binding needs domain, ontology ids, and ACO primitives.'] : []),
+    ...(contradictionRate > 0 ? ['Cross-claim contradictions require human review before canonical updates.'] : []),
   ];
   return {
-    qualityScore: Math.round(average([tacitKnowledgeScore, sourceSpine.score, agentOperabilityScore, marketplaceReadinessScore], 0)),
+    qualityScore: Math.round(average([
+      tacitKnowledgeScore,
+      sourceSpine.score,
+      agentOperabilityScore,
+      marketplaceReadinessScore,
+      receiptDepth,
+      temporalityCoverage,
+      causalityCoverage,
+      ontologyBindingCoverage,
+      100 - contradictionRate,
+    ], 0)),
     tacitKnowledgeScore,
     sourceSpineScore: sourceSpine.score,
     agentOperabilityScore,
     marketplaceReadinessScore,
+    temporalityCoverage,
+    causalityCoverage,
+    ontologyBindingCoverage,
+    receiptDepth,
+    contradictionRate,
+    groundedAnswerRate,
+    sourceIndependence,
+    capsuleVsGenericDelta,
+    goldenQuestionEvals,
     openGaps,
   };
 }
 
+function scoreReceiptDepth(claimLedger: ContextCapsuleClaimLedgerV3): number {
+  if (!claimLedger.allClaims.length) return 0;
+  const receipted = claimLedger.allClaims.filter((claim) => claim.receipts.length > 0).length;
+  return Math.round(100 * receipted / claimLedger.allClaims.length);
+}
+
+function scoreTemporalityCoverage(
+  v2: ContextCapsuleV2,
+  grounding: ContextCapsuleGroundingV3,
+  claimLedger: ContextCapsuleClaimLedgerV3,
+): number {
+  const hasGroundingWindow = Boolean(
+    grounding.temporality.timelineAnchors.length ||
+    grounding.temporality.asOf ||
+    grounding.temporality.validFrom ||
+    grounding.temporality.validUntil,
+  );
+  const claimCoverage = claimLedger.allClaims.length
+    ? claimLedger.allClaims.filter((claim) => claim.validFrom || claim.validUntil || claim.asOf).length / claimLedger.allClaims.length
+    : 0;
+  const hasCapsuleWindow = Boolean(v2.expiry && v2.decisionHorizon);
+  return hasGroundingWindow || claimCoverage === 1 || (hasCapsuleWindow && claimCoverage > 0)
+    ? 100
+    : Math.round(100 * average([claimCoverage, hasCapsuleWindow ? 0.5 : 0], 0));
+}
+
+function scoreCausalityCoverage(grounding: ContextCapsuleGroundingV3, claimLedger: ContextCapsuleClaimLedgerV3): number {
+  const groundingRatio = grounding.causality.causalLinks.length ? 1 : 0;
+  const claimRatio = claimLedger.allClaims.length
+    ? claimLedger.allClaims.filter((claim) => hasClaimCausalLinks(claim)).length / claimLedger.allClaims.length
+    : 0;
+  return Math.round(100 * Math.max(groundingRatio, claimRatio));
+}
+
+function scoreOntologyBindingCoverage(grounding: ContextCapsuleGroundingV3): number {
+  return Math.round(100 * average([
+    grounding.ontologyBinding.domainId ? 1 : 0,
+    grounding.ontologyBinding.ontologyIds.length ? 1 : 0,
+    grounding.ontologyBinding.acoPrimitives.length ? 1 : 0,
+    grounding.ontologyBinding.taxonomyPath.length ? 1 : 0,
+  ], 0));
+}
+
+function scoreContradictionRate(claimLedger: ContextCapsuleClaimLedgerV3): number {
+  if (!claimLedger.allClaims.length) return 0;
+  const disputedClaimIds = new Set([
+    ...claimLedger.disputedClaims.map((claim) => claim.claimId),
+    ...claimLedger.crossClaimContradictions.flatMap((contradiction) => contradiction.claimIds),
+  ]);
+  return Math.round(100 * disputedClaimIds.size / claimLedger.allClaims.length);
+}
+
+function buildGoldenQuestionEvals(input: {
+  sourceSpine: ContextCapsuleSourceSpine;
+  claimLedger: ContextCapsuleClaimLedgerV3;
+  groundedAnswerRate: number;
+  contradictionRate: number;
+  sourceIndependence: number;
+}): ContextCapsuleEvaluationV3['goldenQuestionEvals'] {
+  const comparisons = buildDefaultAgenticResearchEvalRun();
+  const researchScorecard = summarizeAgenticResearchEval(comparisons);
+  const scenariosById = new Map(AGENTIC_RESEARCH_EVAL_SCENARIOS.map((scenario) => [scenario.id, scenario]));
+  const disputedClaimIds = input.claimLedger.disputedClaims.map((claim) => claim.claimId);
+  return comparisons.slice(0, 3).map((comparison) => {
+    const scenario = scenariosById.get(comparison.scenarioId);
+    const capsuleScore = Math.round(average([
+      comparison.praxis.total,
+      input.groundedAnswerRate,
+      input.sourceIndependence,
+      100 - input.contradictionRate,
+    ], 0));
+    const genericScore = Math.max(0, Math.round(capsuleScore - researchScorecard.capsuleVsGenericDelta));
+    return {
+      questionId: comparison.scenarioId,
+      prompt: scenario?.prompt ?? comparison.scenarioId,
+      praxisLabel: 'PRAXIS capsule-grounded answer',
+      baselineLabel: 'Generic prompt-only LLM',
+      capsuleScore,
+      genericScore,
+      delta: capsuleScore - genericScore,
+      groundedAnswerRate: input.groundedAnswerRate,
+      contradictionRate: input.contradictionRate,
+      sourceIndependence: input.sourceIndependence,
+      sourceIds: input.sourceSpine.sourceIds.slice(0, 8),
+      disputedClaimIds,
+      computedBy: 'deterministic-contract-eval',
+    };
+  });
+}
+
+function hasClaimCausalLinks(claim: ContextCapsuleClaimV3): boolean {
+  return Object.values(claim.causalLinks).some((values) => values.length > 0);
+}
+
 function buildDefaultReviewCards(capsule: ContextCapsuleV3): ContextCapsuleV3ReviewCard[] {
   const cards: ContextCapsuleV3ReviewCard[] = [];
-  const add = (target: ContextCapsuleV3ReviewCardTarget, title: string, rationale: string, sourceType: ContextCapsuleV3ReviewCard['sourceType'] = 'quality-audit') => {
+  const add = (
+    target: ContextCapsuleV3ReviewCardTarget,
+    title: string,
+    rationale: string,
+    sourceType: ContextCapsuleV3ReviewCard['sourceType'] = 'quality-audit',
+    proposedPatch: Record<string, unknown> = {},
+    evidenceSourceIds: string[] = capsule.sourceSpine.sourceIds,
+  ) => {
     cards.push({
       reviewCardId: stableId(['v3', capsule.identity.capsuleId, capsule.identity.capsuleVersion, target, title].join(':')),
       capsuleId: capsule.identity.capsuleId,
@@ -1176,15 +1870,30 @@ function buildDefaultReviewCards(capsule: ContextCapsuleV3): ContextCapsuleV3Rev
       state: 'proposed',
       requiresHumanReview: true,
       mutatesCanonicalState: false,
-      evidenceSourceIds: capsule.sourceSpine.sourceIds,
+      evidenceSourceIds,
       evidenceReceipts: [],
-      proposedPatch: {},
+      proposedPatch,
     });
   };
   if (capsule.memoryPosture.advisoryCogneeRecall.length || capsule.memoryPosture.cogneeMode === 'advisory-only') add('advisoryMemory', 'Review advisory memory posture', 'Cognee recall/improve output must remain advisory until a human applies a review card.', 'cognee');
   if (capsule.sourceSpine.sourceGaps.length) add('sourceGap', 'Review source gaps', 'Source gaps must be resolved or explicitly carried before final use.', 'source-gap');
   if (!capsule.identity.archivedAt && !capsule.sourceSpine.sourceIds.includes(capsule.identity.capsuleId)) add('graphProposal', 'Review graph proposal boundary', 'Graph extraction may propose candidates but cannot promote graph state directly.');
-  if (capsule.claimLedger.weakClaims.length || capsule.claimLedger.unsupportedClaims.length) add('claimLedger', 'Review claim support', 'Weak and unsupported claims require claim-ledger review before final outputs.');
+  if (capsule.claimLedger.crossClaimContradictions.length) {
+    const first = capsule.claimLedger.crossClaimContradictions[0]!;
+    add(
+      'claimLedger',
+      'Review cross-claim contradiction',
+      'Cross-claim contradiction detection can propose disputed status, but canonical claim-ledger edits require human review.',
+      'quality-audit',
+      {
+        crossClaimContradictionIds: capsule.claimLedger.crossClaimContradictions.map((contradiction) => contradiction.contradictionId),
+        disputedClaimIds: [...first.claimIds],
+        proposedSupport: 'disputed',
+      },
+      first.evidenceSourceIds,
+    );
+  }
+  if (capsule.claimLedger.weakClaims.length || capsule.claimLedger.unsupportedClaims.length || capsule.claimLedger.disputedClaims.length) add('claimLedger', 'Review claim support', 'Weak, unsupported, and disputed claims require claim-ledger review before final outputs.');
   if (!capsule.agentOperatingContract.stopConditions.length || capsule.agentOperatingContract.forbiddenActions.includes('mutate_canonical_without_review')) add('agentInstructions', 'Review agent operating contract', 'Agent instructions must preserve stop conditions and forbidden actions.');
   return cards;
 }
@@ -1271,7 +1980,7 @@ function scoreMarketplaceReadiness(
     marketplace.moderationSummary.trim() ? 1 : 0,
     sourceSpine.score >= 80 ? 1 : 0,
     v2.outputContracts.length ? 1 : 0,
-    v2.claimLedger.some((claim) => claim.support === 'unsupported' || claim.support === 'needs_source') ? 0 : 1,
+    v2.claimLedger.some((claim) => claim.support === 'unsupported' || claim.support === 'needs_source' || claim.support === 'disputed') ? 0 : 1,
     isStale(v2.humanGate.reviewedAt ?? v2.reviewState.reviewedAt ?? null, v2.updatedAt ?? null, options.now) ? 0 : 1,
   ], 0));
 }
@@ -1359,6 +2068,18 @@ function cleanStringArray(value: unknown): string[] {
   return dedupeStrings(value.filter((item): item is string => typeof item === 'string').map((item) => item.trim()).filter(Boolean));
 }
 
+function normalizeSubtypeKey(value: unknown): string {
+  return cleanString(value).toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+function labelizeSubtype(value: string): string {
+  return value
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function confidenceFromUnknown(value: unknown): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value)) return null;
   return Math.round(Math.max(0, Math.min(1, value > 1 ? value / 100 : value)) * 1000) / 1000;
@@ -1400,6 +2121,35 @@ function reviewStateFromUnknown(value: unknown): ContextCapsuleGraphLiteNodeV3['
 function dedupeStrings<T extends string>(values: T[]): T[] {
   return Array.from(new Set(values));
 }
+
+function dedupeByString<T>(values: T[], keyOf: (value: T) => string): T[] {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    const key = keyOf(value);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+const CLAIM_STOP_WORDS = new Set([
+  'the',
+  'and',
+  'for',
+  'that',
+  'this',
+  'with',
+  'from',
+  'will',
+  'would',
+  'could',
+  'should',
+  'requires',
+  'require',
+  'remains',
+  'source',
+  'review',
+]);
 
 function average(values: number[], fallback: number): number {
   if (!values.length) return fallback;

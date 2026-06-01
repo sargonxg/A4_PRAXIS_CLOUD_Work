@@ -6,7 +6,7 @@ import {
   type ContextCapsuleNormalizeOptions,
   type ContextCapsuleV2,
 } from '@/lib/context/capsule-v2';
-import { normalizeContextCapsuleV3, type ContextCapsuleV3 } from '@/lib/context/capsule-v3';
+import { migrateContextCapsuleV3ClaimLedger, normalizeContextCapsuleV3, type ContextCapsuleV3 } from '@/lib/context/capsule-v3';
 
 export type CapsuleSchemaVersion = 1 | 2 | 3;
 export type PraxisCapsuleV3 = ContextCapsuleV3;
@@ -45,6 +45,47 @@ export const CapsuleV3Schema = z.object({
   schemaVersion: z.literal(3),
 }).passthrough();
 
+const EvidenceReceiptStanceSchema = z.enum(['supports', 'contradicts', 'mixed']);
+
+export const EvidenceReceiptSchema = z.object({
+  sourceId: z.string().min(1).max(160),
+  url: z.string().max(1000).nullable().optional(),
+  publisher: z.string().max(240).nullable().optional(),
+  date: z.string().max(80).nullable().optional(),
+  reliabilityTier: z.union([z.literal(1), z.literal(2), z.literal(3)]).nullable().optional(),
+  snippet: z.string().min(1).max(2000),
+  charOffset: z.object({
+    start: z.number().int().nonnegative(),
+    end: z.number().int().nonnegative(),
+  }).nullable().optional(),
+  page: z.number().int().positive().nullable().optional(),
+  embedding: z.array(z.number()).max(1536).nullable().optional(),
+  confidence: z.number().min(0).max(1).nullable().optional(),
+  stance: EvidenceReceiptStanceSchema.optional(),
+}).strict();
+
+export const CapsuleClaimCausalLinksSchema = z.object({
+  causes: z.array(z.string().min(1).max(160)).max(25).optional(),
+  causedBy: z.array(z.string().min(1).max(160)).max(25).optional(),
+  enables: z.array(z.string().min(1).max(160)).max(25).optional(),
+  blocks: z.array(z.string().min(1).max(160)).max(25).optional(),
+  escalates: z.array(z.string().min(1).max(160)).max(25).optional(),
+  deEscalates: z.array(z.string().min(1).max(160)).max(25).optional(),
+}).strict();
+
+export const CapsuleClaimPatchSchema = z.object({
+  claimId: z.string().min(1).max(160).optional(),
+  text: z.string().min(1).max(2000),
+  support: z.enum(['supported', 'partially_supported', 'unsupported', 'needs_source', 'disputed']).optional(),
+  sourceRefIds: z.array(z.string().min(1).max(160)).max(50).optional(),
+  caveat: z.string().max(1000).optional(),
+  receipts: z.array(EvidenceReceiptSchema).max(20).optional(),
+  validFrom: z.string().max(80).nullable().optional(),
+  validUntil: z.string().max(80).nullable().optional(),
+  asOf: z.string().max(80).nullable().optional(),
+  causalLinks: CapsuleClaimCausalLinksSchema.optional(),
+}).strict();
+
 export const CapsuleAnyVersionSchema = z.discriminatedUnion('schemaVersion', [
   CapsuleV1Schema,
   CapsuleV2Schema,
@@ -76,11 +117,16 @@ export const CapsuleEnvelopePatchSchema = z.object({
   summary: z.string().min(1).max(600).optional(),
   coreRefs: EnvelopeCoreRefsPatchSchema.optional(),
   sourceRefs: z.array(z.record(z.string(), z.unknown())).max(100).optional(),
-  claimLedger: z.array(z.record(z.string(), z.unknown())).max(100).optional(),
+  claimLedger: z.array(CapsuleClaimPatchSchema).max(100).optional(),
   outputContracts: z.array(z.record(z.string(), z.unknown())).max(50).optional(),
   sourcePosture: z.record(z.string(), z.unknown()).nullable().optional(),
   agentPermissions: z.record(z.string(), z.unknown()).optional(),
   memoryPosture: z.record(z.string(), z.unknown()).optional(),
+  humanTacitKnowledge: z.record(z.string(), z.unknown()).optional(),
+  temporality: z.record(z.string(), z.unknown()).optional(),
+  causality: z.record(z.string(), z.unknown()).optional(),
+  ontologyBinding: z.record(z.string(), z.unknown()).optional(),
+  embeddedGraph: z.record(z.string(), z.unknown()).optional(),
   latestGateState: z.enum([
     'none',
     'draft',
@@ -113,12 +159,12 @@ export function upgradeV2toV3(capsule: ContextCapsuleV2 | unknown, options: Cont
 export function normalizeToLatest(capsule: ContextCapsuleV2 | unknown, options: ContextCapsuleNormalizeOptions = {}): PraxisCapsuleV3 {
   const body = isRecord(capsule) ? capsule : {};
   if (body.schemaVersion === 3 && isRecord(body.identity) && Array.isArray(body.sectionIds)) {
-    return body as unknown as PraxisCapsuleV3;
+    return migrateContextCapsuleV3ClaimLedger(body as unknown as PraxisCapsuleV3);
   }
   if (body.schemaVersion === 3 && isRecord(body.v3)) {
     const nested = body.v3;
     if (isRecord(nested.identity) && Array.isArray(nested.sectionIds)) {
-      return {
+      return migrateContextCapsuleV3ClaimLedger({
         ...nested,
         ...(isRecord(body.memoryPosture)
           ? {
@@ -129,7 +175,7 @@ export function normalizeToLatest(capsule: ContextCapsuleV2 | unknown, options: 
             },
           }
           : {}),
-      } as unknown as PraxisCapsuleV3;
+      } as unknown as PraxisCapsuleV3);
     }
     return normalizeContextCapsuleV3({
       ...nested,

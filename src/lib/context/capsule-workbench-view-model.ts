@@ -1,4 +1,5 @@
 import { getDomainOntologyCards, WORK_ONTOLOGIES, type WorkOntologyId } from '@/lib/ontology/work-ontologies';
+import { deriveCapsuleQuality, type CapsuleQualityBreakdownId } from '@/lib/context/capsule-quality';
 
 export type CapsuleWorkbenchCoreKind =
   | 'user'
@@ -80,10 +81,29 @@ export interface CapsuleWorkbenchCapsuleInput {
   activeOntologyStackId?: string | null;
   activeReadContractId?: string | null;
   latestGateState?: string | null;
-  sourceRefs?: unknown[];
-  claimLedger?: unknown[];
+  sourceRefs?: unknown;
+  claimLedger?: unknown;
   outputContracts?: unknown[];
   memoryPosture?: unknown;
+  humanTacitKnowledge?: unknown;
+  sourceSpine?: unknown;
+  contextCaptureProfile?: unknown;
+  agentOperatingContract?: unknown;
+  agentPermissions?: unknown;
+  governance?: unknown;
+  marketplaceProfile?: unknown;
+  evaluation?: unknown;
+  temporality?: unknown;
+  causality?: unknown;
+  ontologyBinding?: unknown;
+  bestNextAction?: string | null;
+  purpose?: string | null;
+  audience?: unknown;
+  sourcePosture?: unknown;
+  decisionHorizon?: unknown;
+  expiry?: string | null;
+  reviewState?: unknown;
+  provenance?: unknown;
   starterSnapshot?: unknown;
   graphLiteProjection?: unknown;
   embeddedGraph?: unknown;
@@ -248,6 +268,100 @@ export interface CapsuleReviewCardDisplay {
   reviewState: CapsuleWorkbenchReviewState;
 }
 
+export type CapsuleWorkbenchPillarId = 'situation' | 'users' | 'tools' | 'output';
+
+export interface CapsulePillarDisplay {
+  id: CapsuleWorkbenchPillarId;
+  title: string;
+  description: string;
+  sections: string[];
+  facts: Array<{
+    label: string;
+    value: string;
+    reviewState: CapsuleWorkbenchReviewState;
+  }>;
+}
+
+export interface CapsuleTimelineItemDisplay {
+  id: string;
+  label: string;
+  start: string;
+  end: string | null;
+  group: string;
+  kind: string;
+  confidence: number | null;
+  nodeIds: string[];
+  sourceIds: string[];
+}
+
+export interface CapsuleTimelineDisplay {
+  asOf: string | null;
+  validFrom: string | null;
+  validUntil: string | null;
+  groups: string[];
+  items: CapsuleTimelineItemDisplay[];
+}
+
+export interface CapsuleCausalChainDisplay {
+  id: string;
+  cause: string;
+  effect: string;
+  relation: string;
+  direction: 'causal' | 'enabling' | 'blocking' | 'escalation' | 'de-escalation';
+  confidence: number | null;
+  caveat: string | null;
+  nodeIds: string[];
+  sourceIds: string[];
+  reviewState: CapsuleWorkbenchReviewState;
+}
+
+export interface CapsuleQualityDisplay {
+  score: number;
+  sections: Array<{
+    id: CapsuleQualityBreakdownId;
+    label: string;
+    score: number;
+    maxScore: number;
+    diagnostics: string[];
+    fixTarget: {
+      target: string;
+      builderStep: string;
+      label: 'Fix this';
+      reviewCardId: string | null;
+    };
+  }>;
+  diagnostics: string[];
+}
+
+export interface CapsuleClaimReceiptDisplay {
+  sourceId: string;
+  url: string | null;
+  publisher: string | null;
+  date: string | null;
+  reliabilityTier: number | string | null;
+  snippet: string;
+  charOffset: string | number | null;
+  page: string | number | null;
+  embedding: number[] | null;
+  confidence: number | null;
+  stance: string | null;
+}
+
+export interface CapsuleClaimDisplay {
+  claimId: string;
+  text: string;
+  support: string;
+  validFrom: string | null;
+  validUntil: string | null;
+  asOf: string | null;
+  causalLinks: Record<string, string[]>;
+  receipts: CapsuleClaimReceiptDisplay[];
+  sourceIds: string[];
+  provenance?: string;
+  confidence: number | null;
+  reviewState: CapsuleWorkbenchReviewState;
+}
+
 export interface CapsuleWorkbenchViewModel {
   capsuleId: string;
   capsuleVersion: number;
@@ -274,6 +388,11 @@ export interface CapsuleWorkbenchViewModel {
   agents: CapsuleAgentWorkflowDisplay;
   outputs: CapsuleOutputDisplay[];
   reviewQueue: CapsuleReviewCardDisplay[];
+  pillars: CapsulePillarDisplay[];
+  timeline: CapsuleTimelineDisplay;
+  causalChains: CapsuleCausalChainDisplay[];
+  quality: CapsuleQualityDisplay;
+  claims: CapsuleClaimDisplay[];
 }
 
 const CORE_ORDER: Array<{
@@ -305,12 +424,29 @@ export function buildCapsuleWorkbenchViewModel(input: CapsuleWorkbenchViewModelI
   const diagnostics = [...blockers, ...warnings].slice(0, 8);
   const score = scoreForCapsule(capsule);
   const anatomy = buildAnatomy(coreRefs);
+  const claims = buildClaims(capsule.claimLedger);
   const evidence = buildEvidence(capsule, input.repositoryDocuments ?? []);
   const tacitKnowledge = buildTacitKnowledge(capsule, input.tacitMemories ?? []);
   const outputs = buildOutputs(coreRefs, capsule.outputContracts);
   const reviewQueue = buildReviewQueue(capsule, input.reviewCards ?? [], evidence);
   const ontology = buildOntology(capsule, coreRefs);
   const agents = buildAgentWorkflow(input.agentRuns ?? [], evidence, reviewQueue);
+  const timeline = buildTimeline(capsule, claims);
+  const causalChains = buildCausalChains(capsule, claims);
+  const quality = buildQuality(capsule, reviewQueue);
+  const pillars = buildPillars({
+    anatomy,
+    evidence,
+    tacitKnowledge,
+    agents,
+    outputs,
+    reviewQueue,
+    ontology,
+    timeline,
+    causalChains,
+    quality,
+    claims,
+  });
   const graph = buildGraph({
     capsule,
     anatomy,
@@ -348,6 +484,11 @@ export function buildCapsuleWorkbenchViewModel(input: CapsuleWorkbenchViewModelI
     agents,
     outputs,
     reviewQueue,
+    pillars,
+    timeline,
+    causalChains,
+    quality,
+    claims,
   };
 }
 
@@ -533,6 +674,153 @@ function buildReviewQueue(
     });
   }
   return uniqueBy([...explicit, ...derived], (item) => item.id).slice(0, 12);
+}
+
+function buildTimeline(
+  capsule: CapsuleWorkbenchCapsuleInput,
+  claims: CapsuleClaimDisplay[],
+): CapsuleTimelineDisplay {
+  const temporality = temporalityFromCapsule(capsule);
+  const anchors = timelineAnchorsFromUnknown(temporality?.timelineAnchors);
+  const claimItems: CapsuleTimelineItemDisplay[] = claims.flatMap((claim): CapsuleTimelineItemDisplay[] => {
+    const start = claim.validFrom ?? claim.asOf;
+    if (!start) return [];
+    return [{
+      id: `claim-validity-${claim.claimId}`,
+      label: claim.text,
+      start,
+      end: claim.validUntil,
+      group: 'claim-validity',
+      kind: 'claim-validity',
+      confidence: claim.confidence,
+      nodeIds: [`claim:${claim.claimId}`],
+      sourceIds: claim.sourceIds,
+    }];
+  });
+  const items = uniqueBy([
+    ...anchors,
+    ...claimItems,
+  ], (item) => item.id).sort((left, right) => left.start.localeCompare(right.start));
+  return {
+    asOf: cleanText(temporality?.asOf) || null,
+    validFrom: cleanText(temporality?.validFrom) || null,
+    validUntil: cleanText(temporality?.validUntil) || null,
+    groups: uniqueStrings(items.map((item) => item.group)),
+    items,
+  };
+}
+
+function buildCausalChains(
+  capsule: CapsuleWorkbenchCapsuleInput,
+  claims: CapsuleClaimDisplay[],
+): CapsuleCausalChainDisplay[] {
+  const causality = causalityFromCapsule(capsule);
+  const topLevel = causalLinksFromUnknown(causality?.causalLinks);
+  const claimLevel = claims.flatMap((claim): CapsuleCausalChainDisplay[] => {
+    const entries = Object.entries(claim.causalLinks).flatMap(([relation, targets]) =>
+      targets.map((target, index) => ({
+        id: `claim-causal-${claim.claimId}-${relation}-${index + 1}`,
+        cause: claim.text,
+        effect: humanizeId(target),
+        relation: relationForCausalKey(relation),
+        direction: directionForRelation(relationForCausalKey(relation)),
+        confidence: claim.confidence,
+        caveat: null,
+        nodeIds: [`claim:${claim.claimId}`, causalTargetNodeId(target)],
+        sourceIds: claim.sourceIds,
+        reviewState: claim.reviewState,
+      })),
+    );
+    return entries;
+  });
+  return uniqueBy([...topLevel, ...claimLevel], (item) => item.id).slice(0, 24);
+}
+
+function buildQuality(
+  capsule: CapsuleWorkbenchCapsuleInput,
+  reviewQueue: CapsuleReviewCardDisplay[],
+): CapsuleQualityDisplay {
+  const quality = safeDeriveCapsuleQuality(capsule);
+  return {
+    score: quality.score,
+    diagnostics: quality.diagnostics,
+    sections: quality.sections.map((section) => {
+      const fixTarget = fixTargetForQuality(section.id);
+      const reviewCard = reviewQueue.find((card) => card.target === fixTarget.target);
+      return {
+        ...section,
+        fixTarget: {
+          ...fixTarget,
+          label: 'Fix this' as const,
+          reviewCardId: reviewCard?.id ?? null,
+        },
+      };
+    }),
+  };
+}
+
+function buildPillars(input: {
+  anatomy: CapsuleCoreDisplay[];
+  evidence: CapsuleEvidenceDisplay;
+  tacitKnowledge: CapsuleTacitKnowledgeDisplay;
+  agents: CapsuleAgentWorkflowDisplay;
+  outputs: CapsuleOutputDisplay[];
+  reviewQueue: CapsuleReviewCardDisplay[];
+  ontology: CapsuleOntologyDisplay;
+  timeline: CapsuleTimelineDisplay;
+  causalChains: CapsuleCausalChainDisplay[];
+  quality: CapsuleQualityDisplay;
+  claims: CapsuleClaimDisplay[];
+}): CapsulePillarDisplay[] {
+  const coreState = (kind: CapsuleWorkbenchCoreKind): CapsuleWorkbenchReviewState =>
+    input.anatomy.find((core) => core.kind === kind)?.reviewState ?? 'missing';
+
+  return [
+    {
+      id: 'situation',
+      title: 'Situation',
+      description: 'What is true, when it is true, and how drivers connect.',
+      sections: ['Claim ledger', 'Timeline', 'Causal chain', 'Graph / Ontology'],
+      facts: [
+        { label: 'Claims', value: `${input.claims.length}`, reviewState: input.claims.length ? 'canonical' : 'missing' },
+        { label: 'Timeline', value: `${input.timeline.items.length} anchor${input.timeline.items.length === 1 ? '' : 's'}`, reviewState: input.timeline.items.length ? 'canonical' : 'missing' },
+        { label: 'Causal links', value: `${input.causalChains.length}`, reviewState: input.causalChains.length ? 'canonical' : 'missing' },
+      ],
+    },
+    {
+      id: 'users',
+      title: 'Users',
+      description: 'The mandate, audience, red lines, and tacit operating knowledge.',
+      sections: ['Audience', 'Human tacit knowledge', 'Review Queue'],
+      facts: [
+        { label: 'User core', value: coreState('user'), reviewState: coreState('user') },
+        { label: 'Tacit cards', value: `${input.tacitKnowledge.items.length}`, reviewState: input.tacitKnowledge.items.length ? 'canonical' : 'missing' },
+        { label: 'Review cards', value: `${input.reviewQueue.length}`, reviewState: input.reviewQueue.length ? 'proposed' : 'canonical' },
+      ],
+    },
+    {
+      id: 'tools',
+      title: 'Tools',
+      description: 'The source, graph, ontology, and agent capabilities allowed to act.',
+      sections: ['Evidence', 'Graph / Ontology', 'Agent Workflow'],
+      facts: [
+        { label: 'Sources', value: `${input.evidence.sourceCount}`, reviewState: input.evidence.sourceCount ? 'canonical' : 'missing' },
+        { label: 'Ontologies', value: `${input.ontology.active.length + input.ontology.proposed.length}`, reviewState: input.ontology.active.length ? 'canonical' : 'proposed' },
+        { label: 'Agent runs', value: `${input.agents.recentRuns.length}`, reviewState: input.agents.recentRuns.length ? 'canonical' : 'missing' },
+      ],
+    },
+    {
+      id: 'output',
+      title: 'Output',
+      description: 'The memo, brief, handover, or decision product this capsule can produce.',
+      sections: ['Outputs', 'Output readiness', 'Quality meter'],
+      facts: [
+        { label: 'Outputs', value: `${input.outputs.length}`, reviewState: input.outputs.length ? 'canonical' : 'missing' },
+        { label: 'Quality', value: `${input.quality.score}`, reviewState: input.quality.score >= 75 ? 'canonical' : input.quality.score >= 45 ? 'proposed' : 'missing' },
+        { label: 'Next fixes', value: `${input.quality.sections.filter((section) => section.diagnostics.length).length}`, reviewState: input.quality.diagnostics.length ? 'proposed' : 'canonical' },
+      ],
+    },
+  ];
 }
 
 function buildOntology(
@@ -916,17 +1204,16 @@ function claimBucketsFromUnknown(value: unknown): {
   assumptions: string[];
 } {
   const buckets = { supported: [] as string[], weak: [] as string[], unsupported: [] as string[], assumptions: [] as string[] };
-  if (!Array.isArray(value)) return buckets;
-  for (const item of value) {
+  for (const item of claimEntriesFromUnknown(value)) {
     const record = asRecord(item);
     if (!record) continue;
     const text = cleanText(record.text) || cleanText(record.claim) || cleanText(record.claimText);
     if (!text) continue;
-    const status = cleanText(record.status).toLowerCase();
-    if (/support/.test(status)) buckets.supported.push(text);
+    const status = (cleanText(record.support) || cleanText(record.status) || cleanText(record.reviewState)).toLowerCase();
+    if (/unsupported|missing|needs_source/.test(status)) buckets.unsupported.push(text);
     else if (/weak|partial/.test(status)) buckets.weak.push(text);
-    else if (/unsupported|missing/.test(status)) buckets.unsupported.push(text);
     else if (/assumption|assumed/.test(status)) buckets.assumptions.push(text);
+    else if (/support/.test(status)) buckets.supported.push(text);
   }
   return buckets;
 }
@@ -969,6 +1256,8 @@ interface CapsuleGraphProposalItem {
   };
 }
 
+type SafeQualitySection = Omit<CapsuleQualityDisplay['sections'][number], 'fixTarget'>;
+
 interface GraphLiteProjectionItem {
   projectionId: string;
   status: string;
@@ -997,6 +1286,40 @@ interface GraphLiteProjectionItem {
   }>;
 }
 
+function buildClaims(value: unknown): CapsuleClaimDisplay[] {
+  return claimEntriesFromUnknown(value).flatMap((item, index): CapsuleClaimDisplay[] => {
+    const record = asRecord(item);
+    const text = typeof item === 'string'
+      ? item.trim()
+      : record
+        ? cleanText(record.text) || cleanText(record.claim) || cleanText(record.claimText) || cleanText(record.summary)
+        : '';
+    if (!text) return [];
+    const claimId = record
+      ? cleanText(record.claimId) || cleanText(record.id) || cleanText(record.uid) || slugId(text, `claim-${index + 1}`)
+      : slugId(text, `claim-${index + 1}`);
+    const receipts = record ? receiptDisplaysFromUnknown(record.receipts) : [];
+    const sourceIds = record ? sourceIdsForClaim(record, receipts) : [];
+    const support = record
+      ? cleanText(record.support) || cleanText(record.status) || cleanText(record.reviewState) || supportFromReceipts(receipts)
+      : 'unsupported';
+    return [{
+      claimId,
+      text,
+      support,
+      validFrom: record ? cleanText(record.validFrom) || null : null,
+      validUntil: record ? cleanText(record.validUntil) || null : null,
+      asOf: record ? cleanText(record.asOf) || null : null,
+      causalLinks: record ? causalLinksObjectFromUnknown(record.causalLinks) : {},
+      receipts,
+      sourceIds,
+      provenance: record ? cleanText(record.provenance) || cleanText(record.generatedBy) || undefined : undefined,
+      confidence: record ? confidenceFromUnknown(record.confidence ?? record.score) : null,
+      reviewState: reviewStateForClaim(support, sourceIds.length),
+    }];
+  });
+}
+
 function sourceItemsFromUnknown(value: unknown): CapsuleGraphSourceItem[] {
   if (!Array.isArray(value)) return [];
   return uniqueBy(value.flatMap((item): CapsuleGraphSourceItem[] => {
@@ -1022,8 +1345,7 @@ function sourceItemsFromUnknown(value: unknown): CapsuleGraphSourceItem[] {
 }
 
 function claimItemsFromUnknown(value: unknown): CapsuleGraphClaimItem[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((item, index): CapsuleGraphClaimItem[] => {
+  return claimEntriesFromUnknown(value).flatMap((item, index): CapsuleGraphClaimItem[] => {
     const record = asRecord(item);
     const text = typeof item === 'string'
       ? item.trim()
@@ -1034,14 +1356,9 @@ function claimItemsFromUnknown(value: unknown): CapsuleGraphClaimItem[] {
     const id = record
       ? cleanText(record.id) || cleanText(record.claimId) || cleanText(record.uid) || slugId(text, `claim-${index + 1}`)
       : slugId(text, `claim-${index + 1}`);
-    const status = record ? cleanText(record.status) || cleanText(record.reviewState) : '';
-    const sourceIds = record ? uniqueStrings([
-      ...cleanStrings(record.sourceIds),
-      ...cleanStrings(record.receiptIds),
-      ...cleanStrings(record.evidenceIds),
-      cleanText(record.sourceId),
-      cleanText(record.receiptId),
-    ]) : [];
+    const receipts = record ? receiptDisplaysFromUnknown(record.receipts) : [];
+    const status = record ? cleanText(record.status) || cleanText(record.support) || cleanText(record.reviewState) : '';
+    const sourceIds = record ? sourceIdsForClaim(record, receipts) : [];
     return [{
       id,
       text,
@@ -1052,6 +1369,230 @@ function claimItemsFromUnknown(value: unknown): CapsuleGraphClaimItem[] {
       reviewState: reviewStateForClaim(status, sourceIds.length),
     }];
   });
+}
+
+function claimEntriesFromUnknown(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  const record = asRecord(value);
+  if (!record) return [];
+  return uniqueBy([
+    ...arrayUnknown(record.allClaims),
+    ...arrayUnknown(record.claims),
+    ...arrayUnknown(record.supportedClaims),
+    ...arrayUnknown(record.weakClaims),
+    ...arrayUnknown(record.unsupportedClaims),
+    ...arrayUnknown(record.disputedClaims),
+    ...arrayUnknown(record.staleClaims),
+  ], (item) => {
+    if (typeof item === 'string') return item;
+    const itemRecord = asRecord(item);
+    return cleanText(itemRecord?.claimId) || cleanText(itemRecord?.id) || cleanText(itemRecord?.text) || JSON.stringify(item);
+  });
+}
+
+function receiptDisplaysFromUnknown(value: unknown): CapsuleClaimReceiptDisplay[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item): CapsuleClaimReceiptDisplay[] => {
+    const record = asRecord(item);
+    if (!record) return [];
+    const sourceId = cleanText(record.sourceId) || cleanText(record.id) || cleanText(record.receiptId);
+    const snippet = cleanText(record.snippet) || cleanText(record.quote) || cleanText(record.text);
+    if (!sourceId && !snippet) return [];
+    return [{
+      sourceId: sourceId || 'unattributed-source',
+      url: cleanText(record.url) || null,
+      publisher: cleanText(record.publisher) || cleanText(record.source) || null,
+      date: cleanText(record.date) || cleanText(record.publishedAt) || null,
+      reliabilityTier: scalarStringOrNumber(record.reliabilityTier ?? record.tier),
+      snippet,
+      charOffset: scalarStringOrNumber(record.charOffset),
+      page: scalarStringOrNumber(record.page),
+      embedding: embeddingFromUnknown(record.embedding),
+      confidence: confidenceFromUnknown(record.confidence),
+      stance: cleanText(record.stance) || cleanText(record.verdict) || null,
+    }];
+  });
+}
+
+function sourceIdsForClaim(record: Record<string, unknown>, receipts: CapsuleClaimReceiptDisplay[]): string[] {
+  return uniqueStrings([
+    ...cleanStrings(record.sourceIds),
+    ...cleanStrings(record.sourceRefIds),
+    ...cleanStrings(record.receiptIds),
+    ...cleanStrings(record.evidenceIds),
+    cleanText(record.sourceId),
+    cleanText(record.receiptId),
+    ...receipts.map((receipt) => receipt.sourceId),
+  ]);
+}
+
+function supportFromReceipts(receipts: CapsuleClaimReceiptDisplay[]): string {
+  const stances = receipts.map((receipt) => receipt.stance?.toLowerCase() ?? '');
+  if (stances.some((stance) => /contradict|disput|oppose/.test(stance)) && stances.some((stance) => /support/.test(stance))) return 'disputed';
+  if (stances.some((stance) => /contradict|disput|oppose/.test(stance))) return 'disputed';
+  if (stances.some((stance) => /support/.test(stance))) return 'supported';
+  return receipts.length ? 'weak' : 'unsupported';
+}
+
+function causalLinksObjectFromUnknown(value: unknown): Record<string, string[]> {
+  const record = asRecord(value);
+  if (!record) return {};
+  const out: Record<string, string[]> = {};
+  for (const key of ['causes', 'causedBy', 'enables', 'blocks', 'escalates', 'deEscalates', 'de-escalates']) {
+    const values = cleanStrings(record[key]);
+    if (values.length) out[key] = values;
+  }
+  return out;
+}
+
+function temporalityFromCapsule(capsule: CapsuleWorkbenchCapsuleInput): Record<string, unknown> | null {
+  const grounding = asRecord(capsule.grounding);
+  const starterSnapshot = asRecord(capsule.starterSnapshot);
+  return firstRecord(capsule.temporality, grounding?.temporality, starterSnapshot?.temporality);
+}
+
+function timelineAnchorsFromUnknown(value: unknown): CapsuleTimelineItemDisplay[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item, index): CapsuleTimelineItemDisplay[] => {
+    const record = asRecord(item);
+    if (!record) return [];
+    const start = cleanText(record.date) || cleanText(record.start) || cleanText(record.asOf);
+    const label = cleanText(record.label) || cleanText(record.title) || cleanText(record.event);
+    if (!start || !label) return [];
+    const sourceIds = uniqueStrings([
+      ...cleanStrings(record.sourceRefs),
+      ...cleanStrings(record.sourceRefIds),
+      ...cleanStrings(record.sourceIds),
+    ]);
+    const kind = cleanText(record.kind) || 'event';
+    return [{
+      id: cleanText(record.id) || slugId(`${label}-${start}`, `timeline-anchor-${index + 1}`),
+      label,
+      start,
+      end: cleanText(record.end) || null,
+      group: kind,
+      kind,
+      confidence: confidenceFromUnknown(record.confidence),
+      nodeIds: sourceIds.map((id) => `source:${id}`),
+      sourceIds,
+    }];
+  });
+}
+
+function causalityFromCapsule(capsule: CapsuleWorkbenchCapsuleInput): Record<string, unknown> | null {
+  const grounding = asRecord(capsule.grounding);
+  const starterSnapshot = asRecord(capsule.starterSnapshot);
+  return firstRecord(capsule.causality, grounding?.causality, starterSnapshot?.causality);
+}
+
+function causalLinksFromUnknown(value: unknown): CapsuleCausalChainDisplay[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item, index): CapsuleCausalChainDisplay[] => {
+    const record = asRecord(item);
+    if (!record) return [];
+    const cause = cleanText(record.cause) || cleanText(record.source);
+    const effect = cleanText(record.effect) || cleanText(record.target);
+    if (!cause || !effect) return [];
+    const relation = relationForCausalKey(cleanText(record.relation) || cleanText(record.relationshipType) || 'causes');
+    const sourceIds = uniqueStrings([
+      ...cleanStrings(record.evidenceRefs),
+      ...cleanStrings(record.sourceRefs),
+      ...cleanStrings(record.sourceIds),
+    ]);
+    return [{
+      id: cleanText(record.id) || slugId(`${cause}-${relation}-${effect}`, `causal-link-${index + 1}`),
+      cause,
+      effect,
+      relation,
+      direction: directionForRelation(relation),
+      confidence: confidenceFromUnknown(record.confidence),
+      caveat: cleanText(record.caveat) || null,
+      nodeIds: sourceIds.map((id) => `source:${id}`),
+      sourceIds,
+      reviewState: reviewStateFrom(record.reviewState ?? record.status ?? 'canonical'),
+    }];
+  });
+}
+
+function safeDeriveCapsuleQuality(capsule: CapsuleWorkbenchCapsuleInput): {
+  score: number;
+  sections: SafeQualitySection[];
+  diagnostics: string[];
+} {
+  try {
+    const result = deriveCapsuleQuality(capsule);
+    return {
+      score: result.score,
+      diagnostics: result.diagnostics.map((diagnostic) => diagnostic.message),
+      sections: result.breakdown.map((item) => ({
+        id: item.id,
+        label: item.label,
+        score: item.score,
+        maxScore: item.maxScore,
+        diagnostics: item.diagnostics.map((diagnostic) => diagnostic.message),
+      })),
+    };
+  } catch {
+    const score = scoreForCapsule(capsule);
+    const sourceRefCount = sourceIdsFromUnknown(capsule.sourceRefs).length;
+    const outputCount = Array.isArray(capsule.outputContracts) ? capsule.outputContracts.length : 0;
+    return {
+      score,
+      diagnostics: capsule.readiness?.diagnostics ?? capsule.health?.warnings ?? [],
+      sections: [
+        { id: 'completeness', label: 'Completeness', score: Math.min(15, Math.round(score * 0.15)), maxScore: 15, diagnostics: [] },
+        { id: 'source_support', label: 'Source support', score: sourceRefCount ? 15 : 0, maxScore: 15, diagnostics: sourceRefCount ? [] : ['Capsule is missing source support.'] },
+        { id: 'freshness', label: 'Freshness', score: 10, maxScore: 10, diagnostics: [] },
+        { id: 'human_review_provenance', label: 'Human review/provenance', score: 10, maxScore: 10, diagnostics: [] },
+        { id: 'output_readiness', label: 'Output readiness', score: outputCount ? 10 : 0, maxScore: 10, diagnostics: outputCount ? [] : ['Capsule is missing an output contract.'] },
+        { id: 'agent_operability', label: 'Agent operability', score: 5, maxScore: 10, diagnostics: [] },
+        { id: 'temporality_coverage', label: 'Temporality coverage', score: 0, maxScore: 7, diagnostics: ['Capsule is missing validity windows or timeline anchors.'] },
+        { id: 'causality_coverage', label: 'Causality coverage', score: 0, maxScore: 7, diagnostics: ['Capsule is missing causal links.'] },
+        { id: 'ontology_binding_coverage', label: 'Ontology binding coverage', score: 0, maxScore: 6, diagnostics: ['Capsule is missing an ontology binding.'] },
+        { id: 'receipt_depth', label: 'Receipt depth', score: sourceRefCount ? 8 : 0, maxScore: 8, diagnostics: sourceRefCount ? [] : ['Capsule is missing claim receipts.'] },
+        { id: 'contradiction_rate', label: 'Contradiction rate', score: 2, maxScore: 2, diagnostics: [] },
+      ],
+    };
+  }
+}
+
+function fixTargetForQuality(id: CapsuleQualityBreakdownId): { target: string; builderStep: string } {
+  const targets: Record<CapsuleQualityBreakdownId, { target: string; builderStep: string }> = {
+    completeness: { target: 'capsuleEnvelope', builderStep: 'prompt' },
+    source_support: { target: 'claimLedger', builderStep: 'sources' },
+    freshness: { target: 'sourceGap', builderStep: 'sources' },
+    human_review_provenance: { target: 'agentInstructions', builderStep: 'review' },
+    output_readiness: { target: 'outputContracts', builderStep: 'output' },
+    agent_operability: { target: 'agentInstructions', builderStep: 'tools' },
+    temporality_coverage: { target: 'claimLedger', builderStep: 'temporal' },
+    causality_coverage: { target: 'claimLedger', builderStep: 'causal' },
+    ontology_binding_coverage: { target: 'graphProposal', builderStep: 'ontology' },
+    receipt_depth: { target: 'claimLedger', builderStep: 'receipts' },
+    contradiction_rate: { target: 'claimLedger', builderStep: 'review' },
+  };
+  return targets[id];
+}
+
+function relationForCausalKey(value: string): string {
+  const clean = value.trim();
+  if (clean === 'deEscalates') return 'de-escalates';
+  if (clean === 'causedBy') return 'caused by';
+  return clean || 'causes';
+}
+
+function directionForRelation(relation: string): CapsuleCausalChainDisplay['direction'] {
+  const clean = relation.toLowerCase();
+  if (/de-?escalat/.test(clean)) return 'de-escalation';
+  if (/escalat/.test(clean)) return 'escalation';
+  if (/block/.test(clean)) return 'blocking';
+  if (/enable/.test(clean)) return 'enabling';
+  return 'causal';
+}
+
+function causalTargetNodeId(value: string): string {
+  const clean = cleanText(value);
+  if (!clean) return 'graph:causal-target';
+  return clean.includes(':') ? clean : `graph:${slugId(clean, 'causal-target')}`;
 }
 
 function graphProposalsFromUnknown(value: unknown): CapsuleGraphProposalItem[] {
@@ -1300,6 +1841,10 @@ function cleanStrings(values: unknown): string[] {
   return values.map(cleanText).filter(Boolean);
 }
 
+function arrayUnknown(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
 function arrayText(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
@@ -1328,6 +1873,18 @@ function uniqueBy<T>(values: T[], keyOf: (value: T) => string): T[] {
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+function scalarStringOrNumber(value: unknown): string | number | null {
+  if (typeof value === 'string') return value.trim() || null;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  return null;
+}
+
+function embeddingFromUnknown(value: unknown): number[] | null {
+  if (!Array.isArray(value)) return null;
+  const numbers = value.filter((item): item is number => typeof item === 'number' && Number.isFinite(item));
+  return numbers.length === value.length ? numbers : null;
 }
 
 function clamp(value: number, min: number, max: number): number {

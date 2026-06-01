@@ -2,6 +2,47 @@
 
 ## [Unreleased]
 
+- feat(capsules): add quality 2.0 evaluation scorecards.
+  Extends capsule quality with temporality, causality, ontology binding,
+  receipt-depth, and contradiction-rate dimensions, adds deterministic
+  golden-question scorecards with PRAXIS-vs-generic LLM deltas, and surfaces
+  cross-claim contradictions as review-gated disputed-claim proposals.
+
+- feat(capsules): add closed-loop capsule learning proposals.
+  Routes low-confidence user feedback and answer corrections into human-gated
+  capsule review cards, adds authenticated document and usage learning workers
+  that propose claim/source/graph patches instead of mutating canonical state,
+  and keeps applied learning behind the existing review-card version bump.
+
+- feat(capsules): add four-pillar workbench legibility.
+  Reorganizes the capsule workbench around Situation, Users, Tools, and Output panels, adds timeline and causal-chain views, renders live quality-meter fix actions, and makes claim receipts expandable with snippet, date, reliability, and confidence provenance.
+
+- feat(capsules): add Capsule Architect review-gated creation co-pilot.
+  Adds a calibrated document-first architect action in the existing capsule
+  assist route and builder panel, extracts uploaded documents into candidate
+  sources, receipted claims, advisory graph proposals, ontology binding,
+  temporality, causality, and tacit-knowledge questions, and stores each as
+  human-gated review cards instead of mutating the canonical capsule.
+
+- feat(capsules): add dynamic ontology binding and semantic vectors.
+  Makes capsule context-capture profiles declare ontology entity and relationship
+  subtypes, carries capsule-local extensions, surfaces unknown graph entity
+  types as ontology review-card candidates, adds ADMIN_ALLOWLIST-gated
+  extension promotion with global ACO snapshots, and embeds capsule sections,
+  claims, and source snippets for cross-capsule similarity.
+
+- feat(capsules): compute claim ledger support from receipts.
+  Adds EvidenceReceipt-backed capsule claims with validity windows and
+  per-claim causal links, computes disputed/support states from receipts,
+  keeps v3 reads back-compatible, and adds a one-shot migration that lifts
+  legacy flat source refs into receipt-backed claim rows with version snapshots.
+
+- feat(capsules): attach capsule refs to the Ask context stack.
+  Adds primary/reference capsule refs to the active context stack, surfaces
+  attach/detach/swap controls in the shared Ask shell, and injects attached
+  capsule ontology, top sourced claims, validity, and agent contract into the
+  calibrated `<capsule-frame>` prompt block.
+
 - feat(hardening): finish P3 shared shell, CI auth gate, and audit lanes.
   Reconciles public `/` and signed-in `/app` through a shared chat-first PRAXIS
   shell while keeping root SEO metadata, makes `persona-smoke` fail early unless

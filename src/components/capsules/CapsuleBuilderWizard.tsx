@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarClock, Check, Code2, FileJson, GitBranch, Network, Rocket, Sparkles } from 'lucide-react';
+import { CalendarClock, Check, Code2, FileJson, GitBranch, Network, Rocket, Sparkles, UploadCloud } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -29,9 +29,20 @@ const STEPS: Array<{ id: BuilderStepId; label: string; helper: string }> = [
 const DOMAIN_OPTIONS = Object.keys(DOMAIN_SEEDS);
 
 const TOOL_OPTIONS = ['sourceability', 'deep_research', 'source-scout', 'policy_memo'];
+const FOLDER_PICKER_INPUT_PROPS = {
+  webkitdirectory: '',
+  directory: '',
+} as Record<string, string>;
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'publishing' | 'published' | 'error';
 type CapsulePatch = DeepPartial<ContextCapsule>;
+type ArchitectDocumentDraft = {
+  documentId: string;
+  title: string;
+  mimeType: string;
+  originalUri: string;
+  text?: string;
+};
 type DeepPartial<T> = {
   [K in keyof T]?: T[K] extends unknown[]
     ? T[K]
@@ -55,6 +66,8 @@ export function CapsuleBuilderWizard() {
   const [blockedDomains, setBlockedDomains] = useState('');
   const [selectedTools, setSelectedTools] = useState<string[]>(['sourceability', 'deep_research']);
   const [sampleQuestions, setSampleQuestions] = useState('What changed this week?\nWhich claims need corroboration?');
+  const [architectDocuments, setArchitectDocuments] = useState<ArchitectDocumentDraft[]>([]);
+  const [architectReviewCount, setArchitectReviewCount] = useState(0);
   const [capsule, setCapsule] = useState<ContextCapsule>(() => makeDraftCapsule({
     job,
     frameworks,
@@ -181,6 +194,38 @@ export function CapsuleBuilderWizard() {
     }
     if (payload.patch) patchCapsule(payload.patch);
     setMessage(payload.summary ?? 'Suggestions applied.');
+  }
+
+  async function runArchitect() {
+    setMessage('Drafting Capsule Architect review cards...');
+    const response = await fetch('/api/capsules/assist/architect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        job,
+        domain: capsule.persona.domain,
+        outputFormat: capsule.output.format,
+        capsule,
+        documents: architectDocuments,
+        elicitation: {
+          decisionHorizon: capsule.temporality.validUntil ?? capsule.temporality.asOf ?? capsule.temporality.timelineAnchors[0]?.date,
+          validFrom: capsule.temporality.validFrom ?? capsule.temporality.timelineAnchors.find((anchor) => anchor.kind === 'validity-start')?.date,
+          validUntil: capsule.temporality.validUntil ?? capsule.temporality.timelineAnchors.find((anchor) => anchor.kind === 'validity-end')?.date,
+          causalDrivers: capsule.causality.causalLinks.map((link) => link.cause).filter(Boolean),
+        },
+        situationId: guard.isDemo ? undefined : guard.situation?.id,
+        forceRun: true,
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      setMessage(payload.error ?? 'Capsule Architect failed.');
+      return;
+    }
+    if (payload.patch) patchCapsule(payload.patch);
+    const cardCount = Array.isArray(payload.cards) ? payload.cards.length : 0;
+    setArchitectReviewCount(cardCount);
+    setMessage(payload.summary ?? `Capsule Architect prepared ${cardCount} review cards.`);
   }
 
   async function saveDraft(): Promise<string | null> {
@@ -369,6 +414,45 @@ export function CapsuleBuilderWizard() {
                 <button type="button" onClick={() => runAssist('persona')} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium">
                   <Sparkles className="h-4 w-4" /> Improve persona
                 </button>
+                <section className="rounded-md border border-[#d8d1c5] bg-white p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[#24211b]">Capsule Architect</p>
+                      <p className="mt-1 text-xs text-[#6f675c]">Document-first intake</p>
+                    </div>
+                    <label className="inline-flex cursor-pointer items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium text-[#24211b] hover:bg-[#24211b] hover:text-white">
+                      <UploadCloud className="h-4 w-4" />
+                      Add documents
+                          <input
+                            type="file"
+                            multiple
+                            {...FOLDER_PICKER_INPUT_PROPS}
+                            accept=".pdf,application/pdf,text/plain,.txt,.md,.csv,.json"
+                            className="sr-only"
+                        onChange={(event) => {
+                          void readArchitectDocuments(event.target.files).then((documents) => {
+                            setArchitectDocuments(documents);
+                          });
+                        }}
+                      />
+                    </label>
+                  </div>
+                  {architectDocuments.length ? (
+                    <ul className="mt-3 grid gap-2 text-xs text-[#4f483f] sm:grid-cols-2">
+                      {architectDocuments.map((document) => (
+                        <li key={document.documentId} className="border border-[#ebe4d8] px-2 py-1.5">
+                          {document.title}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <button type="button" onClick={() => void runArchitect()} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium">
+                      <Sparkles className="h-4 w-4" /> Run Capsule Architect
+                    </button>
+                    {architectReviewCount ? <span className="text-xs text-[#6f675c]">{architectReviewCount} review cards ready</span> : null}
+                  </div>
+                </section>
               </div>
             )}
 
@@ -704,6 +788,27 @@ export function CapsuleBuilderWizard() {
       </div>
     </section>
   );
+}
+
+async function readArchitectDocuments(files: FileList | null): Promise<ArchitectDocumentDraft[]> {
+  const selected = Array.from(files ?? []).slice(0, 12);
+  return Promise.all(selected.map(async (file, index): Promise<ArchitectDocumentDraft> => {
+    const relativePath = file.webkitRelativePath || file.name || `document-${index + 1}`;
+    const isTextReadable = file.type.startsWith('text/') || /\.(txt|md|csv|json)$/i.test(file.name);
+    const text = isTextReadable ? await file.text().catch(() => '') : '';
+    return {
+      documentId: `${index + 1}-${relativePath}`
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_.:-]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 160) || `document-${index + 1}`,
+      title: relativePath,
+      mimeType: file.type || 'application/octet-stream',
+      originalUri: `local-upload:${relativePath}`,
+      text,
+    };
+  }));
 }
 
 function deepMerge(base: unknown, overlay: unknown): unknown {

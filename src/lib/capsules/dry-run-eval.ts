@@ -1,4 +1,5 @@
 import type { ContextCapsule } from '@/types/context-capsule';
+import { buildDefaultAgenticResearchEvalRun, summarizeAgenticResearchEval } from '@/lib/agent-runtime/research-eval';
 
 export interface CapsuleEvalClaim {
   id: string;
@@ -15,6 +16,21 @@ export interface CapsuleEvalSample {
 export interface CapsuleEvalSourceSnippet {
   id: string;
   text: string;
+}
+
+export interface CapsuleDryRunEvalScorecard {
+  groundedAnswerRate: number;
+  contradictionRate: number;
+  sourceIndependence: number;
+  capsuleVsGenericDelta: number;
+  goldenQuestions: Array<{
+    questionId: string;
+    prompt: string;
+    groundedAnswerRate: number;
+    capsuleScore: number;
+    genericScore: number;
+    delta: number;
+  }>;
 }
 
 export interface CapsuleDryRunEvalInput {
@@ -35,6 +51,7 @@ export interface CapsuleDryRunEvalResult {
     score: number;
     reason: string;
   };
+  scorecard: CapsuleDryRunEvalScorecard;
   patch: {
     eval: {
       lastRun: {
@@ -42,6 +59,7 @@ export interface CapsuleDryRunEvalResult {
         scores: Record<string, number>;
         passedAt: string;
       };
+      scorecard: CapsuleDryRunEvalScorecard;
     };
   };
 }
@@ -72,6 +90,12 @@ export function runCapsuleDryRunEval(input: CapsuleDryRunEvalInput): CapsuleDryR
     redTeamPassRate,
     safetyScore,
   };
+  const scorecard = buildDryRunScorecard({
+    samples: input.samples,
+    claims,
+    sourceSnippets: input.sourceSnippets,
+    scores,
+  });
   const thresholds = input.capsule.eval?.thresholds ?? {};
   const failures = Object.entries(thresholds)
     .filter(([key, threshold]) => typeof threshold === 'number' && (scores as Record<string, number>)[key] < threshold)
@@ -87,6 +111,7 @@ export function runCapsuleDryRunEval(input: CapsuleDryRunEvalInput): CapsuleDryR
       score: faithfulness,
       reason: 'RAGAS-compatible faithfulness proxy using cited snippet overlap; no external judge call was made.',
     },
+    scorecard,
     patch: {
       eval: {
         lastRun: {
@@ -94,8 +119,45 @@ export function runCapsuleDryRunEval(input: CapsuleDryRunEvalInput): CapsuleDryR
           scores,
           passedAt: input.passedAt ?? new Date().toISOString(),
         },
+        scorecard,
       },
     },
+  };
+}
+
+function buildDryRunScorecard(input: {
+  samples: CapsuleEvalSample[];
+  claims: CapsuleEvalClaim[];
+  sourceSnippets: CapsuleEvalSourceSnippet[];
+  scores: Record<string, number>;
+}): CapsuleDryRunEvalScorecard {
+  const comparisons = buildDefaultAgenticResearchEvalRun();
+  const researchScorecard = summarizeAgenticResearchEval(comparisons);
+  const citedSourceIds = input.claims.flatMap((claim) => claim.sourceIds);
+  const uniqueSourceIds = new Set(citedSourceIds);
+  const groundedAnswerRate = roundRatio(average([
+    input.scores.faithfulness,
+    input.scores.citationCoverage,
+    input.scores.contextRecall,
+  ]));
+  const contradictionRate = detectContradictionRate(input.claims);
+  const sourceIndependence = uniqueSourceIds.size
+    ? roundRatio(uniqueSourceIds.size / Math.min(2, Math.max(1, citedSourceIds.length)))
+    : 0;
+  const referenceComparisons = comparisons.slice(0, Math.max(1, Math.min(3, input.samples.length || 3)));
+  return {
+    groundedAnswerRate,
+    contradictionRate,
+    sourceIndependence,
+    capsuleVsGenericDelta: roundRatio(researchScorecard.capsuleVsGenericDelta / 100),
+    goldenQuestions: referenceComparisons.map((comparison, index) => ({
+      questionId: comparison.scenarioId,
+      prompt: input.samples[index]?.prompt ?? comparison.scenarioId,
+      groundedAnswerRate,
+      capsuleScore: roundRatio(comparison.praxis.total / 100),
+      genericScore: roundRatio(comparison.baseline.total / 100),
+      delta: roundRatio(comparison.delta / 100),
+    })),
   };
 }
 
@@ -134,3 +196,55 @@ function ratio(numerator: number, denominator: number): number {
   if (denominator <= 0) return 1;
   return Math.max(0, Math.min(1, numerator / denominator));
 }
+
+function detectContradictionRate(claims: CapsuleEvalClaim[]): number {
+  if (claims.length < 2) return 0;
+  let contradictoryPairs = 0;
+  let comparedPairs = 0;
+  for (let leftIndex = 0; leftIndex < claims.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < claims.length; rightIndex += 1) {
+      const left = claims[leftIndex]!;
+      const right = claims[rightIndex]!;
+      if (!claimsShareTopic(left.text, right.text)) continue;
+      comparedPairs += 1;
+      if (hasNegation(left.text) !== hasNegation(right.text)) contradictoryPairs += 1;
+    }
+  }
+  return comparedPairs ? roundRatio(contradictoryPairs / comparedPairs) : 0;
+}
+
+function claimsShareTopic(left: string, right: string): boolean {
+  const leftTerms = new Set(keywords(left).filter((term) => !STOP_WORDS.has(term)));
+  const rightTerms = keywords(right).filter((term) => !STOP_WORDS.has(term));
+  return rightTerms.filter((term) => leftTerms.has(term)).length >= 2;
+}
+
+function hasNegation(text: string): boolean {
+  return /\b(not|no|never|without|cannot|closed|blocked|prohibited|denied|suspended|inactive)\b/i.test(text);
+}
+
+function average(values: number[]): number {
+  const usable = values.filter((value) => Number.isFinite(value));
+  if (!usable.length) return 0;
+  return usable.reduce((sum, value) => sum + value, 0) / usable.length;
+}
+
+function roundRatio(value: number): number {
+  return Math.round(Math.max(0, Math.min(1, value)) * 1000) / 1000;
+}
+
+const STOP_WORDS = new Set([
+  'that',
+  'this',
+  'with',
+  'from',
+  'have',
+  'will',
+  'would',
+  'could',
+  'should',
+  'there',
+  'their',
+  'without',
+  'unsupported',
+]);

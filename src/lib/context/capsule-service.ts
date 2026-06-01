@@ -2,7 +2,18 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { buildCorePackage, type PraxisCorePackageV1 } from '@/lib/context/core-package';
-import type { ContextCapsuleV3 } from '@/lib/context/capsule-v3';
+import {
+  migrateContextCapsuleV3ClaimLedger,
+  validateCapsuleOntologyType,
+  type ContextCapsuleV3,
+} from '@/lib/context/capsule-v3';
+import type { CapsuleLocalOntologyExtension } from '@/lib/product/context-capsules';
+import { isAdmin } from '@/lib/auth/admin-gate';
+import {
+  buildCapsuleArchitectProposal,
+  type CapsuleArchitectBuildInput,
+  type CapsuleArchitectProposal,
+} from '@/lib/context/capsule-architect';
 import {
   CapsuleEnvelopePatchSchema,
   deriveReadinessBlock,
@@ -339,6 +350,11 @@ export interface PraxisCapsule {
   sourcePosture?: unknown;
   agentPermissions?: unknown;
   memoryPosture?: unknown;
+  humanTacitKnowledge?: unknown;
+  temporality?: unknown;
+  causality?: unknown;
+  ontologyBinding?: unknown;
+  embeddedGraph?: unknown;
   activeOntologyStackId?: string;
   activeReadContractId?: string;
   readinessSummary?: CapsuleReadinessSummary;
@@ -485,6 +501,13 @@ export interface CreateCapsuleIntakeReviewCardsResult {
   reviewRequired: true;
 }
 
+export interface CreateCapsuleArchitectReviewCardsResult {
+  capsule: PraxisCapsule;
+  proposal: CapsuleArchitectProposal;
+  cards: CapsuleReviewCard[];
+  reviewRequired: true;
+}
+
 export interface CapsuleServiceDeps {
   db?: Firestore;
   now?: () => Date;
@@ -511,6 +534,22 @@ function capsulesCollection(uid: string, deps?: CapsuleServiceDeps) {
 
 function stackDoc(uid: string, stackId = DEFAULT_CONTEXT_STACK_ID, deps?: CapsuleServiceDeps) {
   return dbOf(deps).collection('users').doc(uid).collection('contextStacks').doc(stackId);
+}
+
+function rawClaimLedgerNeedsReceiptMigration(raw: Record<string, unknown>): boolean {
+  const claims = [
+    ...rawClaimRows(raw.claimLedger),
+    ...(isRecord(raw.v3) && isRecord(raw.v3.claimLedger) ? rawClaimRows(raw.v3.claimLedger.allClaims) : []),
+  ];
+  return claims.some((claim) => {
+    if (!isRecord(claim)) return false;
+    const hasReceipts = Array.isArray(claim.receipts) && claim.receipts.length > 0;
+    return !hasReceipts && cleanStringArray(claim.sourceRefIds).length > 0;
+  });
+}
+
+function rawClaimRows(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
 }
 
 export async function createCapsule(
@@ -899,6 +938,66 @@ export async function createCapsuleIntakeReviewCards(
   };
 }
 
+export async function createCapsuleArchitectReviewCards(
+  uid: string,
+  input: CapsuleArchitectBuildInput,
+  deps?: CapsuleServiceDeps,
+): Promise<CreateCapsuleArchitectReviewCardsResult> {
+  const proposal = buildCapsuleArchitectProposal({
+    ...input,
+    normalizedAt: input.normalizedAt ?? nowIso(deps),
+  });
+  const existing = input.capsuleId ? await getCapsule(uid, input.capsuleId, deps) : null;
+  const capsule = existing ?? await createCapsule(uid, {
+    capsuleId: proposal.capsuleId,
+    label: proposal.label,
+    summary: proposal.summary,
+    coreRefs: {
+      documentCoreIds: proposal.documentIds,
+    },
+    provenance: {
+      source: 'api',
+      createdBy: uid,
+      notes: 'Created by Capsule Architect; generated graph, source, claim, ontology, and tacit proposals remain review-card gated.',
+    },
+    community: {
+      tags: ['capsule-architect', proposal.domainId],
+    },
+    latestGateState: 'proposed',
+    readinessSummary: {
+      reviewRequired: true,
+      sourceBacked: proposal.documentIds.length > 0,
+      graphLinked: false,
+      reviewCardCount: 0,
+    },
+  }, deps);
+
+  const cards: CapsuleReviewCard[] = [];
+  for (const draft of proposal.reviewCards) {
+    const card = await createCapsuleReviewCard(uid, capsule.capsuleId, {
+      reviewCardId: `review-card-${stableId(`${uid}:${capsule.capsuleId}:architect:${draft.target}:${draft.title}`)}`,
+      title: draft.title,
+      sourceType: draft.sourceType,
+      target: draft.target,
+      state: 'proposed',
+      evidence: draft.evidence,
+      proposedEnvelopePatch: draft.proposedEnvelopePatch,
+    }, deps);
+    cards.push(card);
+  }
+
+  const updated = await getCapsule(uid, capsule.capsuleId, deps);
+  return {
+    capsule: updated ?? capsule,
+    proposal: {
+      ...proposal,
+      capsuleId: capsule.capsuleId,
+    },
+    cards,
+    reviewRequired: true,
+  };
+}
+
 export async function proposeCogneeSeedReviewCards(
   uid: string,
   capsuleId: string,
@@ -1017,6 +1116,17 @@ export async function proposeCapsuleGraphNodeChange(
   const label = cleanText(input.node?.label, 160) || nodeId;
   const entityType = cleanText(input.node?.entityType, 80) || 'Policy';
   const sourceReceiptIds = uniqueStrings([...(input.sourceReceiptIds ?? []), ...(input.node?.sourceReceiptIds ?? [])].map((item) => cleanText(item, 160)));
+  const ontologyCheck = validateCapsuleOntologyType(capsule.v3 ?? capsule, {
+    kind: 'entity',
+    subtypeId: entityType,
+    label,
+    primitive: input.node?.entityType,
+    evidenceIds: sourceReceiptIds,
+    description: cleanText(input.reason, 500) || `Candidate entity subtype from graph node ${label}.`,
+  });
+  if (!ontologyCheck.known) {
+    return createCapsuleOntologyExtensionCandidateReviewCard(uid, capsule, ontologyCheck.extension, deps);
+  }
   const proposalId = `graph-node-${stableId(`${uid}:${capsule.capsuleId}:${operation}:${nodeId}:${nowIso(deps)}`)}`;
   return createCapsuleReviewCard(uid, capsule.capsuleId, {
     title: `Graph node proposal: ${operation} ${label}`,
@@ -1082,6 +1192,81 @@ export async function proposeCapsuleGraphEdgeChange(
       }),
     },
   }, deps);
+}
+
+async function createCapsuleOntologyExtensionCandidateReviewCard(
+  uid: string,
+  capsule: PraxisCapsule,
+  extension: CapsuleLocalOntologyExtension,
+  deps?: CapsuleServiceDeps,
+): Promise<CapsuleReviewCard> {
+  const evidenceIds = uniqueStrings(extension.evidenceIds.map((id) => cleanText(id, 160)).filter(Boolean));
+  return createCapsuleReviewCard(uid, capsule.capsuleId, {
+    reviewCardId: `review-card-${stableId(`${uid}:${capsule.capsuleId}:ontology-extension:${extension.extensionId}`)}`,
+    title: `Candidate ontology extension: ${extension.label}`,
+    sourceType: 'ontology',
+    target: 'ontologyStack',
+    state: 'proposed',
+    evidence: evidenceIds.map((id) => ({
+      id,
+      label: id,
+      advisory: true,
+      sourceType: 'source',
+    })),
+    proposedEnvelopePatch: {
+      latestGateState: 'proposed',
+      memoryPosture: buildMemoryPosturePatch(capsule, {
+        graphProposals: [
+          `candidate-ontology-extension:${extension.kind}:${extension.subtypeId}:${extension.label}`,
+        ],
+      }),
+    },
+  }, deps);
+}
+
+export async function promoteCapsuleOntologyExtensionToGlobalAco(
+  uid: string,
+  capsuleId: string,
+  extensionId: string,
+  actor: { uid?: string | null },
+  deps?: CapsuleServiceDeps,
+): Promise<{ capsule: PraxisCapsule; extension: Record<string, unknown> } | null> {
+  if (!isAdmin(actor.uid)) {
+    throw new Error('ADMIN_ALLOWLIST gate required to promote capsule-local ontology extensions.');
+  }
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule?.v3) return null;
+  const extension = capsule.v3.contextCaptureProfile.ontologyBinding.localExtensions
+    .find((item) => item.extensionId === extensionId || item.subtypeId === extensionId);
+  if (!extension) throw new Error(`Capsule-local ontology extension not found: ${extensionId}`);
+
+  const timestamp = nowIso(deps);
+  const ref = dbOf(deps).collection('acoExtensions').doc(extension.extensionId);
+  const previousSnap = await ref.get();
+  const previous = previousSnap.exists ? previousSnap.data() ?? {} : null;
+  const previousVersion = typeof previous?.version === 'number' && Number.isFinite(previous.version)
+    ? Math.max(0, Math.floor(previous.version))
+    : 0;
+  const promoted = {
+    ...extension,
+    status: 'promoted',
+    sourceCapsuleId: capsule.capsuleId,
+    sourceCapsuleVersion: capsule.version,
+    promotedBy: actor.uid,
+    promotedAt: timestamp,
+    version: previousVersion + 1,
+    schemaVersion: 1,
+    canonicalStore: 'Firestore ContextCapsules',
+  };
+
+  const batch = dbOf(deps).batch();
+  if (previous) {
+    batch.set(dbOf(deps).collection('acoExtensionsHistory').doc(`${extension.extensionId}_${previousVersion}`), previous, { merge: true });
+  }
+  batch.set(ref, promoted, { merge: true });
+  batch.set(capsulesCollection(uid, deps).doc(capsule.capsuleId).collection('ontologyPromotions').doc(extension.extensionId), promoted, { merge: true });
+  await batch.commit();
+  return { capsule, extension: promoted };
 }
 
 export async function createCapsuleReviewCard(
@@ -1543,6 +1728,45 @@ export async function bumpCapsuleVersion(
   return updated;
 }
 
+export async function migrateCapsuleClaimLedgerReceipts(
+  uid: string,
+  capsuleId: string,
+  deps?: CapsuleServiceDeps,
+): Promise<{ capsule: PraxisCapsule; migrated: boolean } | null> {
+  const ref = capsulesCollection(uid, deps).doc(capsuleId);
+  const snap = await ref.get();
+  if (!snap.exists) return null;
+
+  const raw = {
+    ...(isRecord(snap.data()) ? snap.data() : {}),
+    capsuleId: snap.id,
+    ownerUid: uid,
+  };
+  const capsule = sanitizeCapsule(raw);
+  if (!rawClaimLedgerNeedsReceiptMigration(raw)) {
+    return { capsule, migrated: false };
+  }
+
+  const timestamp = nowIso(deps);
+  const migratedV3 = capsule.v3
+    ? migrateContextCapsuleV3ClaimLedger(capsule.v3)
+    : undefined;
+  const updated = sanitizeCapsule({
+    ...capsule,
+    claimLedger: migratedV3?.claimLedger.allClaims ?? capsule.v3?.claimLedger.allClaims ?? capsule.claimLedger,
+    version: capsule.version + 1,
+    updatedAt: timestamp,
+  });
+
+  const batch = dbOf(deps).batch();
+  batch.set(ref.collection('versions').doc(`v${capsule.version}`), capsule, { merge: true });
+  batch.set(ref.collection('versions').doc(`v${updated.version}`), updated, { merge: true });
+  batch.set(ref, updated, { merge: true });
+  await batch.commit();
+  await mirrorActiveContextStack(uid, updated, deps);
+  return { capsule: updated, migrated: true };
+}
+
 export async function swapCapsuleCore(
   uid: string,
   capsuleId: string,
@@ -1738,6 +1962,12 @@ export function capsuleToStack(capsule: PraxisCapsule): ActiveContextStackState 
   return sanitizeActiveContextStack({
     stackId: capsule.capsuleId || DEFAULT_CONTEXT_STACK_ID,
     capsuleId: capsule.capsuleId || DEFAULT_CONTEXT_STACK_ID,
+    capsuleRefs: [{
+      capsuleId: capsule.capsuleId || DEFAULT_CONTEXT_STACK_ID,
+      label: capsule.label,
+      role: 'primary',
+      version: capsule.version,
+    }],
     userModelId: capsule.coreRefs.userCoreId,
     situationId: capsule.coreRefs.situationCoreId,
     sourceIds: capsule.coreRefs.sourceCoreIds,
@@ -1841,6 +2071,11 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     ...(Object.prototype.hasOwnProperty.call(body, 'sourcePosture') ? { sourcePosture: cloneSerializable(body.sourcePosture) } : {}),
     ...(isRecord(body.agentPermissions) ? { agentPermissions: cloneSerializable(body.agentPermissions) } : {}),
     ...(isRecord(body.memoryPosture) ? { memoryPosture: cloneSerializable(body.memoryPosture) } : {}),
+    ...(isRecord(body.humanTacitKnowledge) ? { humanTacitKnowledge: cloneSerializable(body.humanTacitKnowledge) } : {}),
+    ...(isRecord(body.temporality) ? { temporality: cloneSerializable(body.temporality) } : {}),
+    ...(isRecord(body.causality) ? { causality: cloneSerializable(body.causality) } : {}),
+    ...(isRecord(body.ontologyBinding) ? { ontologyBinding: cloneSerializable(body.ontologyBinding) } : {}),
+    ...(isRecord(body.embeddedGraph) ? { embeddedGraph: cloneSerializable(body.embeddedGraph) } : {}),
   };
   const result: PraxisCapsule = {
     ...capsule,
@@ -2607,6 +2842,11 @@ function normalizeReviewEnvelopePatch(input: unknown): CapsuleReviewCard['propos
   if (Object.prototype.hasOwnProperty.call(body, 'sourcePosture')) patch.sourcePosture = cloneSerializable(body.sourcePosture);
   if (isRecord(body.agentPermissions)) patch.agentPermissions = cloneSerializable(body.agentPermissions);
   if (isRecord(body.memoryPosture)) patch.memoryPosture = cloneSerializable(body.memoryPosture);
+  if (isRecord(body.humanTacitKnowledge)) patch.humanTacitKnowledge = cloneSerializable(body.humanTacitKnowledge);
+  if (isRecord(body.temporality)) patch.temporality = cloneSerializable(body.temporality);
+  if (isRecord(body.causality)) patch.causality = cloneSerializable(body.causality);
+  if (isRecord(body.ontologyBinding)) patch.ontologyBinding = cloneSerializable(body.ontologyBinding);
+  if (isRecord(body.embeddedGraph)) patch.embeddedGraph = cloneSerializable(body.embeddedGraph);
   return patch;
 }
 
@@ -2662,6 +2902,7 @@ function buildMemoryPosturePatch(
     canonicalCapsuleFacts?: string[];
     advisoryCogneeRecall?: string[];
     rejectedInferences?: string[];
+    graphProposals?: string[];
     removeFromAdvisory?: boolean;
   },
 ): Record<string, unknown> {
@@ -2683,10 +2924,15 @@ function buildMemoryPosturePatch(
     ...cleanStringArray(existing.rejectedInferences),
     ...(input.rejectedInferences ?? []),
   ]).slice(0, 100);
+  const graphProposals = uniqueStrings([
+    ...cleanStringArray(existing.graphProposals),
+    ...(input.graphProposals ?? []),
+  ]).slice(0, 100);
   return {
     ...cloneSerializable(existing),
     canonicalCapsuleFacts,
     advisoryCogneeRecall,
+    graphProposals,
     rejectedInferences,
     cogneeDatasetId: typeof existing.cogneeDatasetId === 'string' && existing.cogneeDatasetId.trim()
       ? existing.cogneeDatasetId

@@ -17,6 +17,7 @@ import {
   DEFAULT_CORPUS_LIMIT,
   type CorpusItem,
 } from '@/types/corpus';
+import { EMBEDDING_MODEL } from '@/lib/knowledge/embedding-config';
 import type {
   CandidateGraphDelta,
   ClaimCheckResult,
@@ -226,7 +227,7 @@ export const localKnowledgeAdapter: KnowledgeAdapter = {
         type: 'ingestion-run',
         run,
         model: {
-          embeddings: 'text-embedding-005 via provider abstraction',
+          embeddings: `${EMBEDDING_MODEL} via provider abstraction`,
           extraction: 'local deterministic extraction now; Gemini structured extraction boundary reserved',
         },
         decisionTrace: run?.stages ?? {},

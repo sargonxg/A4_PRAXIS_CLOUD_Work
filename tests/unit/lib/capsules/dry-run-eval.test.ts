@@ -40,8 +40,15 @@ describe('capsule dry-run eval', () => {
     expect(result.ragasFaithfulness.mode).toBe('proxy');
     expect(result.scores.citationCoverage).toBe(1);
     expect(result.scores.schemaConformance).toBe(1);
+    expect(result.scorecard).toMatchObject({
+      groundedAnswerRate: 1,
+      contradictionRate: 0,
+      sourceIndependence: 1,
+    });
+    expect(result.scorecard.capsuleVsGenericDelta).toBeGreaterThan(0);
     expect(result.passed).toBe(true);
     expect(result.patch.eval.lastRun.runId).toMatch(/^dry-run-/);
+    expect(result.patch.eval.scorecard).toEqual(result.scorecard);
   });
 
   it('fails the gate when claims lack citations', () => {

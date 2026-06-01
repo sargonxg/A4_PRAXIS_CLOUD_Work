@@ -6,6 +6,7 @@ import {
   buildCapsuleV3AgentReviewCards,
   buildCogneeAdvisoryReviewCard,
   canPublishCapsuleV3,
+  claimsValidAt,
   deriveCapsuleV3QualityAudit,
   normalizeContextCapsuleV3,
   type CogneeAdvisoryReceipt,
@@ -33,6 +34,24 @@ describe('ContextCapsule v3 contract', () => {
     expect(capsule.contextCaptureProfile.usageInference.activationSignals.length).toBeGreaterThanOrEqual(3);
     expect(capsule.contextCaptureProfile.embeddedGraph.reviewState).toBe('proposed');
     expect(capsule.contextCaptureProfile.generationImpact.suppresses.join(' ')).toMatch(/unsupported|stale|Cognee|canonical/i);
+    expect(capsule.contextCaptureProfile.ontologyBinding).toMatchObject({
+      unknownTypePolicy: 'candidate-extension-review-card',
+      promotionGate: 'ADMIN_ALLOWLIST',
+      canonicalStore: 'Firestore ContextCapsules',
+    });
+    expect(capsule.contextCaptureProfile.ontologyBinding.entitySubtypes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subtypeId: 'institution',
+        primitive: 'Actor',
+        source: 'global',
+      }),
+    ]));
+    expect(capsule.contextCaptureProfile.ontologyBinding.relationshipSubtypes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subtypeId: 'has_mandate',
+        source: 'global',
+      }),
+    ]));
     expect(capsule.claimLedger.supportedClaims).toHaveLength(1);
     expect(capsule.reasoningScaffold.publicMethod).toContain('Separate obligations, assumptions, and procurement choices.');
     expect(capsule.agentOperatingContract.allowedActions).toEqual(expect.arrayContaining([
@@ -46,6 +65,48 @@ describe('ContextCapsule v3 contract', () => {
     expect(capsule.governance.agentsMayMutateCanonical).toBe(false);
     expect(capsule.marketplaceProfile.requiredBeforePublish).toContain('No unsupported final claims');
     expect(capsule.outputContracts).toHaveLength(1);
+  });
+
+  it('carries capsule-local ontology extensions into the binding contract', () => {
+    const starter = CAPSULE_STARTER_DEFINITIONS[0];
+    const capsule = normalizeContextCapsuleV3(makeCapsule({
+      starterSnapshot: {
+        ...starter,
+        catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+        contextCaptureProfile: {
+          ...starter.contextCaptureProfile,
+          ontologyBinding: {
+            ...starter.contextCaptureProfile.ontologyBinding,
+            localExtensions: [{
+              extensionId: 'field-mandate-risk',
+              kind: 'entity',
+              subtypeId: 'field_mandate_risk',
+              label: 'Field Mandate Risk',
+              primitive: 'Constraint',
+              description: 'A capsule-local risk subtype used by field mandate analysts.',
+              status: 'approved-local',
+              evidenceIds: ['src-1'],
+              createdAt: '2026-05-14T00:00:00.000Z',
+            }],
+          },
+        },
+      },
+    }));
+
+    expect(capsule.contextCaptureProfile.ontologyBinding.localExtensions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        extensionId: 'field-mandate-risk',
+        subtypeId: 'field_mandate_risk',
+        status: 'approved-local',
+      }),
+    ]));
+    expect(capsule.contextCaptureProfile.ontologyBinding.entitySubtypes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subtypeId: 'field_mandate_risk',
+        primitive: 'Constraint',
+        source: 'capsule-local',
+      }),
+    ]));
   });
 
   it('persists explicit temporal, causal, ontology, and GraphLite grounding from capsule creation', () => {
@@ -140,6 +201,152 @@ describe('ContextCapsule v3 contract', () => {
         relationshipType: 'bound_to_domain',
       }),
     ]));
+  });
+
+  it('computes claim support from receipts, preserves validity, and marks contradicting receipts disputed', () => {
+    const capsule = normalizeContextCapsuleV3(makeCapsule({
+      claimLedger: [{
+        claimId: 'c-disputed',
+        text: 'The procurement can proceed without legal review.',
+        support: 'supported',
+        sourceRefIds: ['src-1', 'src-2'],
+        validFrom: '2026-05-01',
+        validUntil: '2026-06-30',
+        asOf: '2026-05-15',
+        causalLinks: {
+          blocks: ['claim-review-ready'],
+          escalates: ['claim-procurement-risk'],
+        },
+        receipts: [
+          {
+            sourceId: 'src-1',
+            url: 'https://example.test/rule',
+            publisher: 'Official source',
+            date: '2026-05-01',
+            reliabilityTier: 1,
+            snippet: 'Procurement recommendations require legal review.',
+            page: 3,
+            confidence: 0.91,
+            stance: 'contradicts',
+          },
+          {
+            sourceId: 'src-2',
+            url: 'https://example.test/guidance',
+            publisher: 'Regulator',
+            date: '2026-04-20',
+            reliabilityTier: 1,
+            snippet: 'Operational readiness can be prepared before final review.',
+            charOffset: { start: 120, end: 188 },
+            embedding: [0.12, 0.34],
+            confidence: 0.73,
+            stance: 'supports',
+          },
+        ],
+      }],
+    }));
+
+    const claim = capsule.claimLedger.allClaims[0];
+    expect(claim.support).toBe('disputed');
+    expect(claim.receipts).toHaveLength(2);
+    expect(claim.validFrom).toBe('2026-05-01');
+    expect(claim.validUntil).toBe('2026-06-30');
+    expect(claim.asOf).toBe('2026-05-15');
+    expect(claim.causalLinks.blocks).toContain('claim-review-ready');
+    expect(claim.causalLinks.escalates).toContain('claim-procurement-risk');
+    expect(capsule.claimLedger.disputedClaims.map((item) => item.claimId)).toContain('c-disputed');
+    expect(capsule.claimLedger.supportedClaims.map((item) => item.claimId)).not.toContain('c-disputed');
+  });
+
+  it('filters claim ledger reads by as-of date', () => {
+    const capsule = normalizeContextCapsuleV3(makeCapsule({
+      claimLedger: [
+        { claimId: 'current', text: 'Current rule applies.', support: 'supported', sourceRefIds: ['src-1'], validFrom: '2026-05-01', validUntil: '2026-06-30' },
+        { claimId: 'expired', text: 'Old rule applies.', support: 'supported', sourceRefIds: ['src-1'], validFrom: '2026-01-01', validUntil: '2026-04-30' },
+        { claimId: 'future', text: 'Future rule applies.', support: 'supported', sourceRefIds: ['src-1'], validFrom: '2026-07-01', validUntil: '2026-12-31' },
+      ],
+    }));
+
+    expect(claimsValidAt(capsule, '2026-05-15').map((claim) => claim.claimId)).toEqual(['current']);
+    expect(claimsValidAt(capsule, '2026-07-15').map((claim) => claim.claimId)).toEqual(['future']);
+  });
+
+  it('surfaces cross-claim contradictions into disputed claims and a review-gated evaluation scorecard', () => {
+    const capsule = normalizeContextCapsuleV3(makeCapsule({
+      claimLedger: [
+        {
+          claimId: 'corridor-open',
+          text: 'The procurement corridor is open for accelerated award.',
+          support: 'supported',
+          sourceRefIds: ['src-1'],
+          validFrom: '2026-05-01',
+          validUntil: '2026-06-30',
+          receipts: [{
+            sourceId: 'src-1',
+            url: 'https://example.test/rule',
+            publisher: 'Official source',
+            date: '2026-05-12',
+            reliabilityTier: 1,
+            snippet: 'The procurement corridor is open for accelerated award.',
+            confidence: 0.9,
+            stance: 'supports',
+          }],
+        },
+        {
+          claimId: 'corridor-not-open',
+          text: 'The procurement corridor is not open for accelerated award.',
+          support: 'supported',
+          sourceRefIds: ['src-2'],
+          validFrom: '2026-05-01',
+          validUntil: '2026-06-30',
+          receipts: [{
+            sourceId: 'src-2',
+            url: 'https://example.test/guidance',
+            publisher: 'Regulator',
+            date: '2026-05-13',
+            reliabilityTier: 1,
+            snippet: 'The procurement corridor is not open for accelerated award.',
+            confidence: 0.88,
+            stance: 'supports',
+          }],
+        },
+      ],
+    }));
+
+    expect(capsule.claimLedger.crossClaimContradictions).toEqual([
+      expect.objectContaining({
+        claimIds: ['corridor-open', 'corridor-not-open'],
+        reviewRequired: true,
+      }),
+    ]);
+    expect(capsule.claimLedger.disputedClaims.map((claim) => claim.claimId)).toEqual(expect.arrayContaining([
+      'corridor-open',
+      'corridor-not-open',
+    ]));
+    expect(capsule.reviewCards).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        target: 'claimLedger',
+        title: 'Review cross-claim contradiction',
+        requiresHumanReview: true,
+        mutatesCanonicalState: false,
+        proposedPatch: expect.objectContaining({
+          disputedClaimIds: ['corridor-open', 'corridor-not-open'],
+        }),
+      }),
+    ]));
+    expect(capsule.evaluation).toMatchObject({
+      receiptDepth: 100,
+      temporalityCoverage: 100,
+      causalityCoverage: expect.any(Number),
+      ontologyBindingCoverage: 100,
+    });
+    expect(capsule.evaluation.contradictionRate).toBeGreaterThan(0);
+    expect(capsule.evaluation.groundedAnswerRate).toBeGreaterThan(0);
+    expect(capsule.evaluation.sourceIndependence).toBeGreaterThan(0);
+    expect(capsule.evaluation.capsuleVsGenericDelta).toBeGreaterThan(0);
+    expect(capsule.evaluation.goldenQuestionEvals[0]).toMatchObject({
+      baselineLabel: 'Generic prompt-only LLM',
+      delta: expect.any(Number),
+    });
   });
 
   it('keeps Cognee recall advisory by converting receipts into review cards only', () => {

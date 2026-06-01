@@ -9,14 +9,12 @@ const GROUPS: Record<string, ScriptStep[]> = {
   routes: [
     { label: 'AI route inventory', script: 'internal:audit-routes' },
   ],
+  ontology: [
+    { label: 'Ontology system', script: 'audit:ontology-system' },
+  ],
 };
 
 const DROPPED_AUDIT_LEAVES = [
-  {
-    script: 'audit:ontology',
-    replacement: 'audit:ontology-system',
-    reason: 'duplicate package alias removed; docs now call the durable script directly',
-  },
   {
     script: 'audit:path-coverage',
     replacement: 'audit:path-tool-coverage',

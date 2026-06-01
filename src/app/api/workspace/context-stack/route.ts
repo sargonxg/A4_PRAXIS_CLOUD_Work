@@ -102,6 +102,7 @@ function sanitizeNamedStack(input: Partial<ActiveContextStackState>): ActiveCont
       ? input.stackId.trim().replace(/[^\w:.-]/g, '-').slice(0, 120)
       : DEFAULT_CONTEXT_STACK_ID,
     capsuleId: input.capsuleId ?? null,
+    capsuleRefs: Array.isArray(input.capsuleRefs) ? input.capsuleRefs : [],
     contextPackageId: input.contextPackageId ?? null,
     userModelId: input.userModelId ?? null,
     situationId: input.situationId ?? null,

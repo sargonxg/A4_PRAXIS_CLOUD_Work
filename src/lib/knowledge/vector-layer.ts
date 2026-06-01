@@ -12,6 +12,177 @@ import { EMBEDDING_DIMENSION, EMBEDDING_MODEL } from './embedding-config';
 import type { VectorResult } from './types';
 import { findVertexVectorNeighbors, isVertexVectorSearchConfigured } from './vertex-vector-search';
 
+export type CapsuleEmbeddingKind = 'section' | 'claim' | 'source';
+
+export interface CapsuleEmbeddingInput {
+  recordId: string;
+  capsuleId: string;
+  kind: CapsuleEmbeddingKind;
+  text: string;
+  sectionId?: string;
+  claimId?: string;
+  sourceId?: string;
+  sourceReceiptIds?: string[];
+}
+
+export interface CapsuleEmbeddingRecord extends CapsuleEmbeddingInput {
+  embedding: number[];
+  embeddingDimension: typeof EMBEDDING_DIMENSION;
+  embeddingModel: typeof EMBEDDING_MODEL;
+  createdAt: string;
+}
+
+export interface CapsuleSimilarityNeighbor {
+  capsuleId: string;
+  score: number;
+  matchedRecordIds: [string, string];
+}
+
+type CapsuleEmbeddingSource = {
+  sectionIds?: readonly string[];
+  identity?: { capsuleId?: string; label?: string; summary?: string };
+  claimLedger?: { allClaims?: Array<{
+    claimId?: string;
+    text?: string;
+    support?: string;
+    receipts?: Array<{
+      sourceId?: string;
+      snippet?: string;
+      publisher?: string | null;
+      date?: string | null;
+      reliabilityTier?: number | null;
+      confidence?: number | null;
+    }>;
+  }> };
+  sourceSpine?: { sourceRefs?: Array<{
+    sourceId?: string;
+    label?: string;
+    url?: string | null;
+    publisher?: string | null;
+    date?: string | null;
+    reliabilityTier?: number | null;
+  }> };
+  [key: string]: unknown;
+};
+
+export function buildCapsuleEmbeddingInputs(capsule: CapsuleEmbeddingSource): CapsuleEmbeddingInput[] {
+  const capsuleId = cleanId(capsule.identity?.capsuleId ?? 'capsule');
+  const sectionInputs = (capsule.sectionIds ?? []).flatMap((sectionId): CapsuleEmbeddingInput[] => {
+    const text = serializeForEmbedding((capsule as Record<string, unknown>)[sectionId]);
+    if (!text) return [];
+    return [{
+      recordId: `${capsuleId}:section:${sectionId}`,
+      capsuleId,
+      kind: 'section',
+      sectionId,
+      text,
+    }];
+  });
+  const claimInputs = (capsule.claimLedger?.allClaims ?? []).flatMap((claim): CapsuleEmbeddingInput[] => {
+    const claimId = cleanId(claim.claimId ?? claim.text ?? 'claim');
+    const receiptText = (claim.receipts ?? [])
+      .map((receipt) => [
+        receipt.sourceId,
+        receipt.publisher,
+        receipt.date,
+        receipt.reliabilityTier ? `tier ${receipt.reliabilityTier}` : '',
+        receipt.confidence !== null && receipt.confidence !== undefined ? `confidence ${receipt.confidence}` : '',
+        receipt.snippet,
+      ].filter(Boolean).join(' | '))
+      .filter(Boolean)
+      .join('\n');
+    const text = [claim.support ? `support: ${claim.support}` : '', claim.text, receiptText].filter(Boolean).join('\n');
+    if (!text.trim()) return [];
+    return [{
+      recordId: `${capsuleId}:claim:${claimId}`,
+      capsuleId,
+      kind: 'claim',
+      claimId,
+      text,
+      sourceReceiptIds: (claim.receipts ?? []).map((receipt) => receipt.sourceId).filter((id): id is string => Boolean(id)),
+    }];
+  });
+  const receiptSnippetsBySource = new Map<string, string[]>();
+  for (const claim of capsule.claimLedger?.allClaims ?? []) {
+    for (const receipt of claim.receipts ?? []) {
+      if (!receipt.sourceId || !receipt.snippet) continue;
+      const snippets = receiptSnippetsBySource.get(receipt.sourceId) ?? [];
+      snippets.push(receipt.snippet);
+      receiptSnippetsBySource.set(receipt.sourceId, snippets);
+    }
+  }
+  const sourceInputs = (capsule.sourceSpine?.sourceRefs ?? []).flatMap((source): CapsuleEmbeddingInput[] => {
+    const sourceId = cleanId(source.sourceId ?? source.label ?? 'source');
+    const text = [
+      source.label,
+      source.publisher,
+      source.date,
+      source.url,
+      source.reliabilityTier ? `tier ${source.reliabilityTier}` : '',
+      ...(receiptSnippetsBySource.get(source.sourceId ?? '') ?? []),
+    ].filter(Boolean).join('\n');
+    if (!text.trim()) return [];
+    return [{
+      recordId: `${capsuleId}:source:${sourceId}`,
+      capsuleId,
+      kind: 'source',
+      sourceId,
+      text,
+    }];
+  });
+  return [...sectionInputs, ...claimInputs, ...sourceInputs];
+}
+
+export async function embedCapsuleSemanticLayer(
+  capsule: CapsuleEmbeddingSource,
+  deps: {
+    embedTexts?: (texts: string[]) => Promise<(number[] | null)[]>;
+    now?: () => string;
+  } = {},
+): Promise<CapsuleEmbeddingRecord[]> {
+  const inputs = buildCapsuleEmbeddingInputs(capsule);
+  const embeddings = await (deps.embedTexts ?? generateEmbeddings)(inputs.map((input) => input.text));
+  const createdAt = deps.now?.() ?? new Date().toISOString();
+  return inputs.flatMap((input, index): CapsuleEmbeddingRecord[] => {
+    const embedding = embeddings[index];
+    if (!embedding || embedding.length !== EMBEDDING_DIMENSION) return [];
+    return [{
+      ...input,
+      embedding,
+      embeddingDimension: EMBEDDING_DIMENSION,
+      embeddingModel: EMBEDDING_MODEL,
+      createdAt,
+    }];
+  });
+}
+
+export function findCrossCapsuleSimilarities(
+  records: CapsuleEmbeddingRecord[],
+  capsuleId: string,
+  topK = 5,
+): CapsuleSimilarityNeighbor[] {
+  const queryRecords = records.filter((record) => record.capsuleId === capsuleId);
+  if (!queryRecords.length) return [];
+  const bestByCapsule = new Map<string, CapsuleSimilarityNeighbor>();
+  for (const query of queryRecords) {
+    for (const candidate of records) {
+      if (candidate.capsuleId === capsuleId) continue;
+      const score = cosineSimilarity(query.embedding, candidate.embedding);
+      const existing = bestByCapsule.get(candidate.capsuleId);
+      if (!existing || score > existing.score) {
+        bestByCapsule.set(candidate.capsuleId, {
+          capsuleId: candidate.capsuleId,
+          score,
+          matchedRecordIds: [query.recordId, candidate.recordId],
+        });
+      }
+    }
+  }
+  return Array.from(bestByCapsule.values())
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
+}
+
 export class VectorLayer {
   private embeddingAvailable: boolean;
 
@@ -35,6 +206,26 @@ export class VectorLayer {
       .collection('users').doc(this.uid)
       .collection('situations').doc(this.situationId)
       .collection('tool-embeddings');
+  }
+
+  private capsuleEmbeddingsRef() {
+    return adminDb
+      .collection('users').doc(this.uid)
+      .collection('capsule-embeddings');
+  }
+
+  async ingestCapsuleSemanticLayer(capsule: CapsuleEmbeddingSource): Promise<CapsuleEmbeddingRecord[]> {
+    if (!this.embeddingAvailable) return [];
+    const records = await embedCapsuleSemanticLayer(capsule);
+    const batch = adminDb.batch();
+    for (const record of records) {
+      batch.set(this.capsuleEmbeddingsRef().doc(record.recordId.replace(/[/#?[\]]+/g, '-')), {
+        ...record,
+        embedding: FieldValue.vector(record.embedding),
+      });
+    }
+    await batch.commit();
+    return records;
   }
 
   async ingestDocument(docId: string, text: string, entityRefs: string[] = []): Promise<void> {
@@ -173,4 +364,32 @@ export class VectorLayer {
       return 0;
     }
   }
+}
+
+function serializeForEmbedding(value: unknown): string {
+  if (typeof value === 'string') return value.trim();
+  if (value === null || value === undefined) return '';
+  try {
+    return JSON.stringify(value).slice(0, 4000);
+  } catch {
+    return String(value).slice(0, 4000);
+  }
+}
+
+function cleanId(value: string): string {
+  return value.trim().replace(/[^a-zA-Z0-9_.:-]+/g, '-').replace(/^-+|-+$/g, '') || 'item';
+}
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (!a.length || !b.length || a.length !== b.length) return 0;
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let index = 0; index < a.length; index += 1) {
+    dot += a[index] * b[index];
+    normA += a[index] * a[index];
+    normB += b[index] * b[index];
+  }
+  if (!normA || !normB) return 0;
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }

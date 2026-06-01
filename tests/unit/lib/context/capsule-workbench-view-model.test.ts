@@ -284,4 +284,138 @@ describe('buildCapsuleWorkbenchViewModel', () => {
       }),
     ]));
   });
+
+  it('builds the four-pillar legibility model with timeline, causal chains, quality fixes, and receipted claims', () => {
+    const model = buildCapsuleWorkbenchViewModel({
+      capsule: {
+        ...capsule,
+        capsuleId: 'cap-access-legibility',
+        label: 'Humanitarian Access Decision Capsule',
+        summary: 'Tracks access claims, validity, causal drivers, and donor memo outputs.',
+        sourceRefs: [
+          {
+            sourceId: 'access-note',
+            label: 'Access constraints note',
+            url: 'https://example.org/access-note',
+            publisher: 'Relief coordination unit',
+            date: '2026-06-01',
+            reliabilityTier: 2,
+          },
+        ],
+        claimLedger: [
+          {
+            claimId: 'access-required',
+            text: 'A current deconfliction channel is required before convoy movement.',
+            support: 'supported',
+            sourceRefIds: ['access-note'],
+            validFrom: '2026-06-01',
+            validUntil: '2026-06-15',
+            asOf: '2026-06-01',
+            causalLinks: {
+              escalates: ['route-clearance-risk'],
+            },
+            receipts: [
+              {
+                sourceId: 'access-note',
+                url: 'https://example.org/access-note',
+                publisher: 'Relief coordination unit',
+                date: '2026-06-01',
+                reliabilityTier: 2,
+                snippet: 'The current deconfliction channel is required.',
+                page: 4,
+                confidence: 0.86,
+                stance: 'supports',
+              },
+            ],
+          },
+        ],
+        temporality: {
+          timelineAnchors: [
+            {
+              id: 'decision-window-open',
+              label: 'Decision window opens',
+              date: '2026-06-01',
+              kind: 'validity-start',
+              sourceRefs: ['access-note'],
+              confidence: 0.8,
+            },
+          ],
+          asOf: '2026-06-01',
+          validFrom: '2026-06-01',
+          validUntil: '2026-06-15',
+        },
+        causality: {
+          causalLinks: [
+            {
+              id: 'late-notification-risk',
+              cause: 'Late notification',
+              effect: 'Route clearance risk increases',
+              relation: 'escalates',
+              evidenceRefs: ['access-note'],
+              confidence: 0.74,
+            },
+          ],
+        },
+      },
+    });
+
+    expect(model.pillars.map((pillar) => pillar.id)).toEqual(['situation', 'users', 'tools', 'output']);
+    expect(model.pillars.find((pillar) => pillar.id === 'situation')?.sections).toEqual(expect.arrayContaining([
+      'Claim ledger',
+      'Timeline',
+      'Causal chain',
+    ]));
+    expect(model.timeline.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'decision-window-open',
+        label: 'Decision window opens',
+        start: '2026-06-01',
+        group: 'validity-start',
+        nodeIds: expect.arrayContaining(['source:access-note']),
+      }),
+      expect.objectContaining({
+        id: 'claim-validity-access-required',
+        label: 'A current deconfliction channel is required before convoy movement.',
+        start: '2026-06-01',
+        end: '2026-06-15',
+        nodeIds: expect.arrayContaining(['claim:access-required']),
+      }),
+    ]));
+    expect(model.causalChains).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'late-notification-risk',
+        cause: 'Late notification',
+        effect: 'Route clearance risk increases',
+        relation: 'escalates',
+        direction: 'escalation',
+        nodeIds: expect.arrayContaining(['source:access-note']),
+      }),
+    ]));
+    expect(model.quality.sections).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'source_support',
+        fixTarget: expect.objectContaining({ target: 'claimLedger', label: 'Fix this' }),
+      }),
+      expect.objectContaining({
+        id: 'freshness',
+        fixTarget: expect.objectContaining({ target: 'sourceGap', label: 'Fix this' }),
+      }),
+    ]));
+    expect(model.claims[0]).toMatchObject({
+      claimId: 'access-required',
+      support: 'supported',
+      validFrom: '2026-06-01',
+      validUntil: '2026-06-15',
+      receipts: [
+        {
+          sourceId: 'access-note',
+          snippet: 'The current deconfliction channel is required.',
+          date: '2026-06-01',
+          reliabilityTier: 2,
+          confidence: 0.86,
+          stance: 'supports',
+        },
+      ],
+    });
+  });
 });

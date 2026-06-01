@@ -3,11 +3,37 @@ import { z } from 'zod';
 
 import { saveToolOutput } from '@/lib/api/save-tool-output';
 import { withCalibration, type CalibrationCtx } from '@/lib/api/with-calibration';
+import { createCapsuleArchitectReviewCards } from '@/lib/context/capsule-service';
 
 export const dynamic = 'force-dynamic';
 
-const ACTIONS = ['persona', 'output-schema', 'sources', 'few-shot'] as const;
+const ACTIONS = ['persona', 'output-schema', 'sources', 'few-shot', 'architect'] as const;
 type AssistAction = typeof ACTIONS[number];
+
+const ArchitectDocumentSchema = z.object({
+  documentId: z.string().max(180).optional(),
+  title: z.string().max(240).optional(),
+  mimeType: z.string().max(160).optional(),
+  originalUri: z.string().max(1000).optional(),
+  url: z.string().max(1000).optional(),
+  publisher: z.string().max(240).optional(),
+  date: z.string().max(80).optional(),
+  text: z.string().max(16000).optional(),
+  page: z.number().int().positive().optional(),
+  reliabilityTier: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
+});
+
+const ArchitectElicitationSchema = z.object({
+  redLines: z.array(z.string().max(600)).max(20).optional(),
+  constraints: z.array(z.string().max(600)).max(20).optional(),
+  approvalPolitics: z.array(z.string().max(600)).max(20).optional(),
+  heuristics: z.array(z.string().max(600)).max(20).optional(),
+  stakeholderSensitivities: z.array(z.string().max(600)).max(20).optional(),
+  decisionHorizon: z.string().max(240).optional(),
+  validFrom: z.string().max(80).optional(),
+  validUntil: z.string().max(80).optional(),
+  causalDrivers: z.array(z.string().max(600)).max(20).optional(),
+}).partial();
 
 const AssistRequestSchema = z.object({
   job: z.string().min(1).max(4000),
@@ -15,6 +41,10 @@ const AssistRequestSchema = z.object({
   outputFormat: z.enum(['json', 'markdown', 'report', 'brief']).default('brief'),
   capsule: z.record(z.string(), z.unknown()).optional(),
   situationId: z.string().max(160).optional(),
+  capsuleId: z.string().max(180).optional(),
+  documents: z.array(ArchitectDocumentSchema).max(20).optional(),
+  elicitation: ArchitectElicitationSchema.optional(),
+  normalizedAt: z.string().max(80).optional(),
 });
 
 export const POST = withCalibration('capsule-builder-assist', 'ai_analysis', {
@@ -30,7 +60,9 @@ export const POST = withCalibration('capsule-builder-assist', 'ai_analysis', {
     return NextResponse.json({ error: 'Invalid capsule assist request', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const result = buildAssistPatch(action, parsed.data);
+  const result = action === 'architect'
+    ? await buildArchitectResult(ctx.uid, parsed.data)
+    : buildAssistPatch(action, parsed.data);
   await saveToolOutput({
     uid: ctx.uid,
     situationId: parsed.data.situationId,
@@ -149,6 +181,42 @@ function buildAssistPatch(action: AssistAction, input: z.infer<typeof AssistRequ
             version: '1.0.0',
           },
         ],
+      },
+    },
+  };
+}
+
+async function buildArchitectResult(uid: string, input: z.infer<typeof AssistRequestSchema>) {
+  const result = await createCapsuleArchitectReviewCards(uid, {
+    capsuleId: input.capsuleId ?? (typeof input.capsule?.id === 'string' ? input.capsule.id : undefined),
+    jobPrompt: input.job,
+    domainId: input.domain,
+    documents: input.documents ?? [],
+    elicitation: input.elicitation,
+    normalizedAt: input.normalizedAt,
+  });
+  return {
+    summary: `Capsule Architect created ${result.cards.length} human-gated review card(s).`,
+    reviewRequired: result.reviewRequired,
+    capsule: result.capsule,
+    cards: result.cards,
+    proposal: result.proposal,
+    patch: {
+      ontologyBinding: result.proposal.ontologyBinding,
+      temporality: result.proposal.temporality,
+      causality: result.proposal.causality,
+      embeddedGraph: result.proposal.embeddedGraph,
+      sourcing: {
+        mode: 'hybrid',
+        minSourcesPerClaim: 2,
+        requiredSourceTypes: ['uploaded-document', 'primary-document'],
+        citationStyle: 'inline',
+      },
+      retrieval: {
+        mode: 'hybrid',
+        graphExpansionDepth: 2,
+        topK: 12,
+        trustRank: 'strict',
       },
     },
   };

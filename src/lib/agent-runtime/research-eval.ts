@@ -55,6 +55,16 @@ export type ResearchEvalComparison = {
   };
 };
 
+export type AgenticResearchEvalScorecard = {
+  scenarioCount: number;
+  praxisWins: number;
+  proofWinRate: number;
+  averagePraxisScore: number;
+  averageBaselineScore: number;
+  averageDelta: number;
+  capsuleVsGenericDelta: number;
+};
+
 const WEIGHTS = {
   planning: 10,
   sourceAuthority: 15,
@@ -207,4 +217,37 @@ export function buildDefaultAgenticResearchEvalRun(): ResearchEvalComparison[] {
       failureMode: null,
     },
   }));
+}
+
+export function summarizeAgenticResearchEval(comparisons: ResearchEvalComparison[]): AgenticResearchEvalScorecard {
+  if (!comparisons.length) {
+    return {
+      scenarioCount: 0,
+      praxisWins: 0,
+      proofWinRate: 0,
+      averagePraxisScore: 0,
+      averageBaselineScore: 0,
+      averageDelta: 0,
+      capsuleVsGenericDelta: 0,
+    };
+  }
+  const scenarioCount = comparisons.length;
+  const praxisWins = comparisons.filter((comparison) => comparison.praxisWins).length;
+  const averagePraxisScore = average(comparisons.map((comparison) => comparison.praxis.total));
+  const averageBaselineScore = average(comparisons.map((comparison) => comparison.baseline.total));
+  const averageDelta = average(comparisons.map((comparison) => comparison.delta));
+  return {
+    scenarioCount,
+    praxisWins,
+    proofWinRate: Math.round((praxisWins / scenarioCount) * 1000) / 1000,
+    averagePraxisScore,
+    averageBaselineScore,
+    averageDelta,
+    capsuleVsGenericDelta: averageDelta,
+  };
+}
+
+function average(values: number[]): number {
+  if (!values.length) return 0;
+  return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 1000) / 1000;
 }

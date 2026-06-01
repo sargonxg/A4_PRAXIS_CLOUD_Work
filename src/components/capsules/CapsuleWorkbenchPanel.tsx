@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useMemo, useRef, useState, type ForwardRefExoticComponent, type ReactNode, type RefAttributes } from 'react';
+import { useEffect, useMemo, useRef, useState, type ForwardRefExoticComponent, type ReactNode, type RefAttributes } from 'react';
 import {
   AlertTriangle,
   BrainCircuit,
@@ -71,6 +71,55 @@ const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
   loading: () => <div className="flex h-[420px] items-center justify-center text-xs font-semibold text-slate-500">Loading living graph...</div>,
 }) as unknown as ForwardRefExoticComponent<ForceGraphProps & RefAttributes<ForceGraphHandle>>;
 
+type VisTimelineProps = {
+  items: CapsuleWorkbenchViewModel['timeline']['items'];
+};
+
+const VisTimeline = dynamic(async () => import('vis-timeline/standalone').then((mod) => {
+  const timelineLib = mod as unknown as {
+    DataSet: new (items: Array<Record<string, unknown>>) => unknown;
+    Timeline: new (container: HTMLElement, items: unknown, options: Record<string, unknown>) => { destroy: () => void };
+  };
+
+  function CapsuleVisTimelineClient({ items }: VisTimelineProps) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+      if (!containerRef.current || !items.length) return undefined;
+      const dataSet = new timelineLib.DataSet(items.map((item) => ({
+        id: item.id,
+        content: item.label,
+        start: item.start,
+        end: item.end ?? undefined,
+        group: item.group,
+        title: `${item.kind}${item.confidence === null ? '' : ` - ${Math.round(item.confidence * 100)}% confidence`}`,
+      })));
+      const timeline = new timelineLib.Timeline(containerRef.current, dataSet, {
+        height: '180px',
+        margin: { item: 8, axis: 10 },
+        orientation: 'top',
+        selectable: true,
+        stack: true,
+        zoomable: true,
+      });
+      return () => timeline.destroy();
+    }, [items]);
+
+    return <div ref={containerRef} className="min-h-[180px] w-full overflow-hidden rounded-md border border-slate-200 bg-white" />;
+  }
+  return CapsuleVisTimelineClient;
+}), {
+  ssr: false,
+  loading: () => <div className="flex min-h-[180px] items-center justify-center rounded-md border border-slate-200 bg-white text-xs font-semibold text-slate-500">Loading timeline...</div>,
+});
+
+const PILLAR_TITLES: Record<CapsuleWorkbenchViewModel['pillars'][number]['id'], 'Situation' | 'Users' | 'Tools' | 'Output'> = {
+  situation: 'Situation',
+  users: 'Users',
+  tools: 'Tools',
+  output: 'Output',
+};
+
 export function CapsuleWorkbenchPanel({
   capsule,
   repositoryDocuments = [],
@@ -93,6 +142,15 @@ export function CapsuleWorkbenchPanel({
     >
       <CapsuleWorkbenchHeader model={model} compact={compact} />
       <CapsuleStudioOverview model={model} />
+      <CapsulePillarPanel pillars={model.pillars} />
+      <div className={cn('grid gap-3', compact ? 'grid-cols-1' : 'xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)]')}>
+        <CapsuleTimelineScrubber timeline={model.timeline} />
+        <CapsuleCausalChainView causalChains={model.causalChains} />
+      </div>
+      <div className={cn('grid gap-3', compact ? 'grid-cols-1' : 'xl:grid-cols-[minmax(320px,0.8fr)_minmax(0,1fr)]')}>
+        <CapsuleQualityMeter quality={model.quality} />
+        <ClaimReceiptDisclosure claims={model.claims} />
+      </div>
       <div className={cn('grid gap-3', compact ? 'grid-cols-1' : 'xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.75fr)]')}>
         <WorkbenchSection title="Overview" icon={ShieldCheck}>
           <div className="grid gap-2 text-sm leading-6 text-slate-600">
@@ -192,6 +250,172 @@ export function CapsuleWorkbenchPanel({
         </WorkbenchSection>
       </div>
     </section>
+  );
+}
+
+function CapsulePillarPanel({ pillars }: { pillars: CapsuleWorkbenchViewModel['pillars'] }) {
+  return (
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Capsule four-pillar model">
+      {pillars.map((pillar) => (
+        <section key={pillar.id} className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{pillar.id}</p>
+              <h4 className="mt-1 text-sm font-semibold text-slate-950">{PILLAR_TITLES[pillar.id] ?? pillar.title}</h4>
+            </div>
+            <StatePill state={pillar.facts.some((fact) => fact.reviewState === 'missing') ? 'missing' : 'canonical'} label={`${pillar.sections.length} panels`} />
+          </div>
+          <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600">{pillar.description}</p>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {pillar.sections.map((section) => (
+              <span key={section} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600">
+                {section}
+              </span>
+            ))}
+          </div>
+          <div className="mt-3 grid gap-1.5">
+            {pillar.facts.map((fact) => (
+              <InfoLine key={fact.label} label={fact.label} value={fact.value} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function CapsuleTimelineScrubber({ timeline }: { timeline: CapsuleWorkbenchViewModel['timeline'] }) {
+  return (
+    <WorkbenchSection title="Timeline scrubber" icon={GitBranch}>
+      <div data-testid="capsule-timeline-scrubber" className="space-y-3">
+        <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
+          <StatePill state={timeline.items.length ? 'canonical' : 'missing'} label={`${timeline.items.length} temporal anchors`} />
+          {timeline.asOf ? <StatePill state="canonical" label={`as of ${timeline.asOf}`} /> : null}
+          {timeline.validFrom || timeline.validUntil ? <StatePill state="canonical" label={`${timeline.validFrom ?? 'open'} to ${timeline.validUntil ?? 'open'}`} /> : null}
+        </div>
+        {timeline.items.length ? <VisTimeline items={timeline.items} /> : (
+          <p className="rounded-md border border-dashed border-slate-200 px-3 py-8 text-center text-xs text-slate-500">No timeline anchors or claim validity windows attached yet.</p>
+        )}
+        <CompactList
+          items={timeline.items.map((item) => `${item.group}: ${item.label} (${item.start}${item.end ? ` to ${item.end}` : ''})`)}
+          empty="No timeline anchors or claim validity windows attached yet."
+        />
+      </div>
+    </WorkbenchSection>
+  );
+}
+
+function CapsuleCausalChainView({ causalChains }: { causalChains: CapsuleWorkbenchViewModel['causalChains'] }) {
+  return (
+    <WorkbenchSection title="Causal chain" icon={Network}>
+      <div data-testid="capsule-causal-chain-view" className="space-y-2">
+        {causalChains.length ? causalChains.map((chain) => {
+          const category = getRelationshipCategory(chain.relation);
+          const borderColor = category ? RELATIONSHIP_CATEGORY_COLORS[category] : '#94a3b8';
+          return (
+            <div key={chain.id} className="rounded-md border bg-slate-50 p-2.5" style={{ borderColor }}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <StatePill state={chain.reviewState} label={chain.direction} />
+                <span className="rounded-md bg-white px-2 py-1 text-[10px] font-semibold text-slate-500">{chain.relation}</span>
+              </div>
+              <div className="mt-2 grid gap-2 text-xs leading-5 text-slate-700">
+                <p><span className="font-semibold text-slate-950">{chain.cause}</span> {'->'} {chain.effect}</p>
+                <p className="text-slate-500">{formatConfidence(chain.confidence)}{chain.caveat ? ` · ${chain.caveat}` : ''}</p>
+              </div>
+              <CompactList items={chain.sourceIds.map((id) => `receipt: ${id}`)} empty="No source receipts attached yet." />
+            </div>
+          );
+        }) : (
+          <p className="rounded-md border border-dashed border-slate-200 px-3 py-8 text-center text-xs text-slate-500">No causal links have been declared yet.</p>
+        )}
+      </div>
+    </WorkbenchSection>
+  );
+}
+
+function CapsuleQualityMeter({ quality }: { quality: CapsuleWorkbenchViewModel['quality'] }) {
+  return (
+    <WorkbenchSection title="Quality meter" icon={ShieldCheck}>
+      <div data-testid="capsule-quality-meter" className="space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-lg font-semibold text-slate-950">
+            {quality.score}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-900">Live capsule quality</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">{quality.diagnostics[0] ?? 'All tracked quality sections are currently clear.'}</p>
+          </div>
+        </div>
+        <div className="grid gap-2">
+          {quality.sections.map((section) => {
+            const ratio = section.maxScore > 0 ? Math.round((section.score / section.maxScore) * 100) : 0;
+            return (
+              <div key={section.id} className="rounded-md border border-slate-100 bg-slate-50 p-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-slate-800">{section.label}</p>
+                  <a
+                    href={`#capsule-review-${section.fixTarget.reviewCardId ?? section.fixTarget.target}`}
+                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-slate-400"
+                    data-builder-step={section.fixTarget.builderStep}
+                    data-review-target={section.fixTarget.target}
+                  >
+                    Fix this
+                  </a>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-white">
+                  <div className={cn('h-full rounded-full', ratio >= 75 ? 'bg-emerald-500' : ratio >= 45 ? 'bg-amber-500' : 'bg-rose-500')} style={{ width: `${clampPercent(ratio)}%` }} />
+                </div>
+                <p className="mt-1 text-[11px] font-semibold text-slate-500">{section.score}/{section.maxScore}</p>
+                <CompactList items={section.diagnostics} empty="No issue in this section." />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </WorkbenchSection>
+  );
+}
+
+function ClaimReceiptDisclosure({ claims }: { claims: CapsuleWorkbenchViewModel['claims'] }) {
+  return (
+    <WorkbenchSection title="Claim receipts" icon={Database}>
+      <div data-testid="capsule-claim-receipts" className="space-y-2">
+        {claims.length ? claims.map((claim) => (
+          <details key={claim.claimId} className="rounded-md border border-slate-200 bg-slate-50 p-2">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-slate-900">
+              <span className="mr-2 inline-flex rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold uppercase text-slate-500">{claim.support}</span>
+              {claim.text}
+            </summary>
+            <div className="mt-3 space-y-2">
+              <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
+                {claim.validFrom || claim.validUntil ? <StatePill state="canonical" label={`${claim.validFrom ?? 'open'} to ${claim.validUntil ?? 'open'}`} /> : null}
+                {claim.asOf ? <StatePill state="canonical" label={`as of ${claim.asOf}`} /> : null}
+                <StatePill state={claim.reviewState} label={`${claim.receipts.length} receipt${claim.receipts.length === 1 ? '' : 's'}`} />
+              </div>
+              {claim.receipts.length ? claim.receipts.map((receipt, index) => (
+                <div key={`${claim.claimId}-${receipt.sourceId}-${index}`} className="rounded-md border border-slate-100 bg-white p-2 text-xs leading-5 text-slate-600">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-semibold text-slate-900">{receipt.publisher ?? receipt.sourceId}</p>
+                    <span className="rounded-md bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-500">Reliability tier {receipt.reliabilityTier ?? 'unset'}</span>
+                  </div>
+                  <p className="mt-2">{receipt.snippet || 'Receipt snippet not captured.'}</p>
+                  <div className="mt-2 grid gap-1 text-[11px] text-slate-500 sm:grid-cols-2">
+                    <InfoLine label="Date" value={receipt.date ?? 'date not set'} />
+                    <InfoLine label="Confidence" value={formatConfidence(receipt.confidence)} />
+                    <InfoLine label="Location" value={receipt.page ? `page ${receipt.page}` : receipt.charOffset ? `offset ${receipt.charOffset}` : 'location not set'} />
+                    <InfoLine label="Source" value={receipt.url ?? receipt.sourceId} />
+                  </div>
+                </div>
+              )) : (
+                <p className="rounded-md border border-dashed border-slate-200 px-3 py-2 text-xs text-slate-500">No source receipts attached yet.</p>
+              )}
+            </div>
+          </details>
+        )) : (
+          <p className="rounded-md border border-dashed border-slate-200 px-3 py-8 text-center text-xs text-slate-500">No claim ledger entries yet.</p>
+        )}
+      </div>
+    </WorkbenchSection>
   );
 }
 
@@ -620,6 +844,10 @@ function edgeColor(link: ForceGraphLink): string {
 function formatConfidence(value: number | null | undefined): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) return 'confidence not set';
   return `${Math.round(value * 100)}% confidence`;
+}
+
+function clampPercent(value: number): number {
+  return Math.max(0, Math.min(100, value));
 }
 
 function slugClientId(value: string): string {

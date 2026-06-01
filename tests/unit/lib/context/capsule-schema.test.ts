@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { createCapsule, createCapsuleReviewCard, getCapsule } from '@/lib/context/capsule-service';
+import { createCapsule, createCapsuleReviewCard, getCapsule, migrateCapsuleClaimLedgerReceipts } from '@/lib/context/capsule-service';
 import {
   CapsuleAnyVersionSchema,
   CapsuleEnvelopePatchSchema,
+  EvidenceReceiptSchema,
   normalizeToLatest,
   upgradeV1toV2,
   upgradeV2toV3,
@@ -79,6 +80,86 @@ describe('unified capsule schema', () => {
     const auditRows = Array.from(db.data.keys()).filter((key) => key.startsWith('users/u1/capsules/cap-review/reviewAudits/'));
     expect(auditRows).toHaveLength(1);
     expect(db.data.get(auditRows[0])?.event).toBe('review_card_patch_rejected');
+  });
+
+  it('validates claim-ledger receipts in envelope patches', () => {
+    const receipt = {
+      sourceId: 'src-1',
+      url: 'https://example.test/rule',
+      publisher: 'Official source',
+      date: '2026-05-01',
+      reliabilityTier: 1,
+      snippet: 'Procurement recommendations require legal review.',
+      charOffset: { start: 12, end: 88 },
+      embedding: [0.1, 0.2],
+      confidence: 0.91,
+      stance: 'supports',
+    };
+
+    expect(EvidenceReceiptSchema.parse(receipt)).toMatchObject(receipt);
+    expect(CapsuleEnvelopePatchSchema.parse({
+      claimLedger: [{
+        claimId: 'claim-1',
+        text: 'Procurement requires legal review.',
+        sourceRefIds: ['src-1'],
+        validFrom: '2026-05-01',
+        validUntil: '2026-06-30',
+        asOf: '2026-05-15',
+        causalLinks: { causes: ['claim-2'], deEscalates: ['claim-3'] },
+        receipts: [receipt],
+      }],
+    }).claimLedger?.[0]).toMatchObject({
+      claimId: 'claim-1',
+      receipts: [receipt],
+    });
+  });
+
+  it('runs the one-shot claim-ledger receipt migration and bumps capsule version', async () => {
+    const db = new FakeFirestore();
+    db.data.set('users/u1/capsules/cap-flat', {
+      capsuleId: 'cap-flat',
+      ownerUid: 'u1',
+      label: 'Flat claim capsule',
+      schemaVersion: 3,
+      version: 2,
+      createdAt: '2026-05-01T00:00:00.000Z',
+      updatedAt: '2026-05-01T00:00:00.000Z',
+      coreRefs: {
+        sourceCoreIds: ['src-1'],
+        documentCoreIds: [],
+        outputCoreIds: [],
+      },
+      sourceRefs: [{
+        sourceId: 'src-1',
+        label: 'Official procurement rule',
+        url: 'https://example.test/rule',
+        publisher: 'Official source',
+        date: '2026-05-01',
+        reliabilityTier: 1,
+      }],
+      claimLedger: [{
+        claimId: 'claim-1',
+        text: 'Procurement requires legal review.',
+        support: 'supported',
+        sourceRefIds: ['src-1'],
+      }],
+    });
+
+    const result = await migrateCapsuleClaimLedgerReceipts('u1', 'cap-flat', deps(db));
+    const stored = db.data.get('users/u1/capsules/cap-flat');
+
+    expect(result?.migrated).toBe(true);
+    expect(result?.capsule.version).toBe(3);
+    expect(result?.capsule.v3?.claimLedger.allClaims[0].receipts[0]).toMatchObject({
+      sourceId: 'src-1',
+      url: 'https://example.test/rule',
+      publisher: 'Official source',
+      reliabilityTier: 1,
+      stance: 'supports',
+    });
+    expect(stored?.version).toBe(3);
+    expect(db.data.get('users/u1/capsules/cap-flat/versions/v2')?.version).toBe(2);
+    expect(db.data.get('users/u1/capsules/cap-flat/versions/v3')?.version).toBe(3);
   });
 });
 

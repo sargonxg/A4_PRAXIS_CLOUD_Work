@@ -9,11 +9,15 @@ vi.mock('@/lib/firebase/situations', () => ({
 vi.mock('@/lib/knowledge/profile-weighted-retrieval', () => ({
   retrieveForProfile: vi.fn(),
 }));
+vi.mock('@/lib/context/capsule-service', () => ({
+  getCapsule: vi.fn(),
+}));
 
 import { buildCalibratedContext } from '@/lib/context/profile-context';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 import { getSituationById } from '@/lib/firebase/situations';
 import { retrieveForProfile } from '@/lib/knowledge/profile-weighted-retrieval';
+import { getCapsule } from '@/lib/context/capsule-service';
 import { DEFAULT_ANALYST_PROFILE } from '@/types/analyst-profile';
 
 describe('buildCalibratedContext', () => {
@@ -59,4 +63,95 @@ describe('buildCalibratedContext', () => {
     const ctx = await buildCalibratedContext({ uid: 'u1', toolId: 'risk-monitor' });
     expect(ctx.provenance.profileVersion).toBe(0);
   });
+
+  it('loads attached capsule refs into the calibrated capsule-frame', async () => {
+    (getAnalystProfile as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(DEFAULT_ANALYST_PROFILE);
+    (getCapsule as unknown as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(makeCapsule('cap-primary', 'Primary governance file', ['Claim from the primary capsule.']))
+      .mockResolvedValueOnce(makeCapsule('cap-reference', 'Reference sanctions file', ['Claim from the reference capsule.']));
+
+    const ctx = await buildCalibratedContext({
+      uid: 'u1',
+      toolId: 'chat',
+      capsuleId: 'cap-primary',
+      activeContextStack: {
+        capsuleRefs: [
+          { capsuleId: 'cap-reference', label: 'Reference sanctions file', role: 'reference' },
+          { capsuleId: 'cap-primary', label: 'Primary governance file', role: 'primary' },
+        ],
+      },
+    });
+
+    expect(getCapsule).toHaveBeenNthCalledWith(1, 'u1', 'cap-primary');
+    expect(getCapsule).toHaveBeenNthCalledWith(2, 'u1', 'cap-reference');
+    expect(ctx.systemPromptBlock).toContain('<capsule-frame count="2"');
+    expect(ctx.systemPromptBlock.indexOf('Primary governance file')).toBeLessThan(ctx.systemPromptBlock.indexOf('Reference sanctions file'));
+    expect(ctx.systemPromptBlock).toContain('Claim from the primary capsule.');
+    expect(ctx.systemPromptBlock).toContain('Claim from the reference capsule.');
+    expect(ctx.toolContext.capsules?.map((capsule) => capsule.capsuleId)).toEqual(['cap-primary', 'cap-reference']);
+  });
 });
+
+function makeCapsule(capsuleId: string, label: string, claims: string[]) {
+  return {
+    capsuleId,
+    ownerUid: 'u1',
+    label,
+    version: 3,
+    scope: 'user',
+    updatedAt: '2026-05-10T00:00:00.000Z',
+    health: { score: 82, warnings: [] },
+    coreRefs: {
+      userCoreId: 'user-core',
+      situationCoreId: 'situation-core',
+      sourceCoreIds: ['src-1'],
+      documentCoreIds: [],
+      graphCoreId: null,
+      outputCoreIds: ['memo'],
+      toolCoreIds: ['sourceability-reviewer'],
+      objectiveCoreIds: [],
+      productCoreIds: [],
+      memoryCoreId: null,
+    },
+    v3: {
+      identity: { capsuleId, label, capsuleVersion: 3 },
+      grounding: {
+        temporality: { asOf: '2026-05-10', validFrom: '2026-05-01', validUntil: '2026-06-30' },
+        ontologyBinding: {
+          domainId: 'governance-rule-of-law',
+          taxonomyPath: ['generic', 'governance-rule-of-law'],
+          ontologyIds: ['governance'],
+          acoPrimitives: ['Actor', 'Claim'],
+          bindingRationale: 'Use governance ontology.',
+        },
+      },
+      sourceSpine: {
+        sourceRefs: [{
+          sourceId: 'src-1',
+          label: 'Official source',
+          url: 'https://example.test/source',
+          date: '2026-05-01',
+          reliabilityTier: 1,
+        }],
+      },
+      claimLedger: {
+        allClaims: claims.map((text, index) => ({
+          claimId: `claim-${index + 1}`,
+          text,
+          support: 'supported',
+          sourceRefIds: ['src-1'],
+        })),
+      },
+      agentOperatingContract: {
+        allowedActions: ['suggest', 'source', 'draft'],
+        forbiddenActions: ['publish', 'mutate_canonical_without_review'],
+        sourceRequirements: ['Every claim needs a source receipt.'],
+        reviewCheckpoints: ['sourceability_review'],
+        toolRecommendations: ['sourceability-reviewer'],
+        bestNextAction: 'Run sourceability before drafting.',
+        handoffInstructions: ['Carry source ids into outputs.'],
+        stopConditions: ['Stop before external publish.'],
+      },
+    },
+  };
+}

@@ -25,6 +25,12 @@ import {
   type ConfidenceLevel,
   type SourceSpan,
 } from '@/lib/ai/schemas/conflict-grammar';
+import type {
+  ContextCapsuleClaim,
+  ContextCapsuleSourceRef,
+  EvidenceReceipt,
+} from '@/lib/context/capsule-v2';
+import type { ContextCapsule } from '@/types/context-capsule';
 
 export interface TrustworthinessScore {
   score: number;
@@ -140,6 +146,39 @@ export interface ExtractionResult {
   sourceName?: string;
   extractedAt: string;
   tokenUsage?: { input: number; output: number };
+}
+
+export interface CapsuleArchitectDocumentInput {
+  documentId?: string | null;
+  sourceId?: string | null;
+  title?: string | null;
+  mimeType?: string | null;
+  originalUri?: string | null;
+  url?: string | null;
+  publisher?: string | null;
+  date?: string | null;
+  text?: string | null;
+  page?: number | null;
+  reliabilityTier?: 1 | 2 | 3 | number | null;
+  extraction?: ExtractionResult | null;
+}
+
+export interface CapsuleDocumentFirstSignalOptions {
+  jobPrompt?: string | null;
+  domainId?: string | null;
+  normalizedAt?: string | null;
+}
+
+export interface CapsuleDocumentFirstSignals {
+  sourceRefs: ContextCapsuleSourceRef[];
+  claimLedger: ContextCapsuleClaim[];
+  embeddedGraph: ContextCapsule['embeddedGraph'] & {
+    nodes: NonNullable<ContextCapsule['embeddedGraph']['nodes']>;
+    edges: NonNullable<ContextCapsule['embeddedGraph']['edges']>;
+  };
+  temporality: ContextCapsule['temporality'];
+  causality: ContextCapsule['causality'];
+  reviewGate: 'human_review';
 }
 
 // ─── Relationship vocabulary for the AI prompt ──────────────────────────────
@@ -363,6 +402,42 @@ export function mergeExtractions(
   };
 }
 
+export function buildDocumentFirstCapsuleArchitectSignals(
+  documents: CapsuleArchitectDocumentInput[],
+  options: CapsuleDocumentFirstSignalOptions = {},
+): CapsuleDocumentFirstSignals {
+  const normalizedAt = cleanTextForCapsule(options.normalizedAt, 80) || new Date().toISOString();
+  const domainId = cleanIdForCapsule(options.domainId ?? 'generic', 'generic');
+  const cleanedDocuments = documents
+    .map((document, index) => normalizeArchitectDocument(document, index, normalizedAt))
+    .slice(0, 20);
+  const sourceRefs = cleanedDocuments.map((document) => document.sourceRef);
+  const claimLedger = buildDocumentFirstClaims(cleanedDocuments, options.jobPrompt, normalizedAt);
+  const timelineAnchors = buildDocumentTimelineAnchors(cleanedDocuments, claimLedger, normalizedAt);
+  const causalLinks = buildDocumentCausalLinks(cleanedDocuments, claimLedger, normalizedAt);
+  const embeddedGraph = buildDocumentFirstEmbeddedGraph({
+    domainId,
+    sourceRefs,
+    claimLedger,
+    timelineAnchors,
+    causalLinks,
+  });
+
+  return {
+    sourceRefs,
+    claimLedger,
+    embeddedGraph,
+    temporality: {
+      timelineAnchors,
+      asOf: normalizedAt.slice(0, 10),
+      validFrom: timelineAnchors[0]?.date ?? normalizedAt.slice(0, 10),
+      validUntil: undefined,
+    },
+    causality: { causalLinks },
+    reviewGate: 'human_review',
+  };
+}
+
 /**
  * Convert extraction results to the Firestore graph format used by PRAXIS.
  */
@@ -435,6 +510,311 @@ function confidenceLevelToScore(level: ConfidenceLevel): number {
   if (level === 'ASSESSED') return 0.6;
   if (level === 'AMBIGUOUS') return 0.4;
   return 0.5;
+}
+
+interface NormalizedArchitectDocument {
+  documentId: string;
+  title: string;
+  text: string;
+  page: number | null;
+  sourceRef: ContextCapsuleSourceRef;
+  extraction?: ExtractionResult | null;
+}
+
+function normalizeArchitectDocument(
+  document: CapsuleArchitectDocumentInput,
+  index: number,
+  normalizedAt: string,
+): NormalizedArchitectDocument {
+  const title = cleanTextForCapsule(document.title, 180) || `Uploaded document ${index + 1}`;
+  const documentId = cleanIdForCapsule(document.documentId ?? title, `document-${index + 1}`);
+  const sourceId = cleanIdForCapsule(document.sourceId ?? documentId, `source-${index + 1}`);
+  const text = cleanTextForCapsule(document.text, 12000);
+  const reliabilityTier = normalizeReliabilityTier(document.reliabilityTier);
+  return {
+    documentId,
+    title,
+    text,
+    page: normalizePositiveInt(document.page),
+    extraction: document.extraction ?? null,
+    sourceRef: {
+      sourceId,
+      label: title,
+      url: cleanTextForCapsule(document.url ?? document.originalUri, 1000) || null,
+      publisher: cleanTextForCapsule(document.publisher, 240) || 'Uploaded document',
+      date: cleanTextForCapsule(document.date, 80) || normalizedAt.slice(0, 10),
+      reliabilityTier,
+      stale: false,
+    },
+  };
+}
+
+function buildDocumentFirstClaims(
+  documents: NormalizedArchitectDocument[],
+  jobPrompt: string | null | undefined,
+  normalizedAt: string,
+): ContextCapsuleClaim[] {
+  const candidateRows = documents.flatMap((document) => {
+    const extractionRows = [
+      document.extraction?.summary,
+      ...(document.extraction?.timeline ?? []).map((entry) => entry.event),
+      ...(document.extraction?.nodes ?? []).map((node) => node.description || node.label),
+    ].filter((value): value is string => Boolean(value?.trim()));
+    const sentenceRows = splitArchitectSentences(document.text);
+    const fallbackRows = [
+      `${document.title} is relevant evidence for ${cleanTextForCapsule(jobPrompt, 220) || 'the capsule job'}.`,
+    ];
+    return [...extractionRows, ...sentenceRows, ...fallbackRows]
+      .map((text) => ({ document, text }))
+      .slice(0, 5);
+  });
+
+  const promptText = cleanTextForCapsule(jobPrompt, 300);
+  const paddedRows = [...candidateRows];
+  while (paddedRows.length < 3) {
+    const document = documents[paddedRows.length % Math.max(documents.length, 1)];
+    if (!document) break;
+    paddedRows.push({
+      document,
+      text: promptText
+        ? `The capsule should test this job against the uploaded evidence: ${promptText}.`
+        : `The capsule needs a human-reviewed claim from ${document.title}.`,
+    });
+  }
+
+  return uniqueByText(paddedRows)
+    .slice(0, 12)
+    .map(({ document, text }, index): ContextCapsuleClaim => {
+      const snippet = cleanTextForCapsule(text, 500) || document.title;
+      const receipt: EvidenceReceipt = {
+        sourceId: document.sourceRef.sourceId,
+        url: document.sourceRef.url,
+        publisher: document.sourceRef.publisher,
+        date: document.sourceRef.date,
+        reliabilityTier: document.sourceRef.reliabilityTier,
+        snippet,
+        charOffset: { start: 0, end: snippet.length },
+        page: document.page,
+        confidence: 0.72,
+        stance: 'supports',
+      };
+      return {
+        claimId: `architect-claim-${index + 1}`,
+        text: snippet,
+        support: 'supported',
+        sourceRefIds: [document.sourceRef.sourceId],
+        caveat: 'Draft Capsule Architect claim; human review required before canonical use.',
+        receipts: [receipt],
+        validFrom: extractIsoDate(snippet) ?? normalizedAt.slice(0, 10),
+        validUntil: null,
+        asOf: normalizedAt.slice(0, 10),
+        causalLinks: index === 0 && paddedRows.length > 1 ? { causes: ['architect-claim-2'] } : {},
+      };
+    });
+}
+
+function buildDocumentTimelineAnchors(
+  documents: NormalizedArchitectDocument[],
+  claims: ContextCapsuleClaim[],
+  normalizedAt: string,
+): ContextCapsule['temporality']['timelineAnchors'] {
+  const timelineRows = documents.flatMap((document) =>
+    (document.extraction?.timeline ?? []).map((entry) => ({
+      label: entry.event,
+      date: entry.date,
+      sourceRefs: [document.sourceRef.sourceId],
+      confidence: 0.7,
+    })),
+  );
+  const claimRows = claims.flatMap((claim) => {
+    const date = extractIsoDate(`${claim.text} ${claim.validFrom ?? ''}`);
+    if (!date) return [];
+    return [{
+      label: claim.text.slice(0, 180),
+      date,
+      sourceRefs: claim.sourceRefIds,
+      confidence: 0.65,
+    }];
+  });
+  const rows = [...timelineRows, ...claimRows];
+  const fallback = {
+    label: 'Capsule Architect review window',
+    date: normalizedAt.slice(0, 10),
+    sourceRefs: documents.map((document) => document.sourceRef.sourceId),
+    confidence: 0.55,
+  };
+  return (rows.length ? rows : [fallback]).slice(0, 12).map((row, index) => ({
+    id: `architect-anchor-${index + 1}`,
+    label: row.label || fallback.label,
+    date: row.date || fallback.date,
+    kind: index === 0 ? 'as-of' : 'event',
+    sourceRefs: row.sourceRefs,
+    confidence: row.confidence,
+  }));
+}
+
+function buildDocumentCausalLinks(
+  documents: NormalizedArchitectDocument[],
+  claims: ContextCapsuleClaim[],
+  normalizedAt: string,
+): ContextCapsule['causality']['causalLinks'] {
+  const sourceIds = documents.map((document) => document.sourceRef.sourceId);
+  const cause = claims[0]?.text ?? 'Uploaded evidence changes the policy posture';
+  const effect = claims[1]?.text ?? 'The capsule needs human review before reuse';
+  return [{
+    id: 'architect-causal-driver-1',
+    cause,
+    effect,
+    relation: 'causes',
+    evidenceRefs: sourceIds,
+    confidence: 0.6,
+    caveat: `Proposed by Capsule Architect on ${normalizedAt}; confirm causality before canonical promotion.`,
+  }];
+}
+
+function buildDocumentFirstEmbeddedGraph(input: {
+  domainId: string;
+  sourceRefs: ContextCapsuleSourceRef[];
+  claimLedger: ContextCapsuleClaim[];
+  timelineAnchors: ContextCapsule['temporality']['timelineAnchors'];
+  causalLinks: ContextCapsule['causality']['causalLinks'];
+}): CapsuleDocumentFirstSignals['embeddedGraph'] {
+  const safeDomainId = cleanIdForCapsule(input.domainId, 'generic');
+  const sourceNodes = input.sourceRefs.map((source) => ({
+    id: `source:${source.sourceId}`,
+    label: source.label,
+    entityType: 'Source',
+    reviewState: 'advisory' as const,
+    confidence: source.reliabilityTier === 1 ? 0.85 : source.reliabilityTier === 2 ? 0.72 : 0.55,
+    sourceReceiptIds: [source.sourceId],
+  }));
+  const claimNodes = input.claimLedger.slice(0, 8).map((claim) => ({
+    id: `claim:${claim.claimId}`,
+    label: claim.text.slice(0, 220),
+    entityType: 'Claim',
+    reviewState: 'advisory' as const,
+    confidence: claim.receipts?.[0]?.confidence ?? 0.6,
+    sourceReceiptIds: claim.sourceRefIds,
+  }));
+  const timelineNodes = input.timelineAnchors.slice(0, 4).map((anchor) => ({
+    id: `timeline:${anchor.id}`,
+    label: anchor.label,
+    entityType: 'Event',
+    reviewState: 'advisory' as const,
+    confidence: anchor.confidence ?? 0.55,
+    sourceReceiptIds: anchor.sourceRefs,
+  }));
+  const causalNodes = input.causalLinks.slice(0, 3).map((link) => ({
+    id: `causal:${link.id}`,
+    label: `${link.cause.slice(0, 90)} -> ${link.effect.slice(0, 90)}`,
+    entityType: 'Claim',
+    reviewState: 'advisory' as const,
+    confidence: link.confidence ?? 0.55,
+    sourceReceiptIds: link.evidenceRefs,
+  }));
+  const nodes = [
+    {
+      id: `domain:${safeDomainId}`,
+      label: humanizeCapsuleText(safeDomainId),
+      entityType: 'Ontology',
+      reviewState: 'advisory' as const,
+      confidence: 0.6,
+      sourceReceiptIds: input.sourceRefs.map((source) => source.sourceId),
+    },
+    ...sourceNodes,
+    ...claimNodes,
+    ...timelineNodes,
+    ...causalNodes,
+  ];
+  const sourceToClaimEdges = input.claimLedger.slice(0, 8).flatMap((claim) =>
+    claim.sourceRefIds.map((sourceId) => ({
+      id: `edge:${sourceId}:${claim.claimId}`,
+      source: `source:${sourceId}`,
+      target: `claim:${claim.claimId}`,
+      label: 'supports claim',
+      relationshipType: 'SUPPORTED_BY',
+      reviewState: 'advisory' as const,
+      confidence: claim.receipts?.[0]?.confidence ?? 0.6,
+      sourceReceiptIds: claim.sourceRefIds,
+    })),
+  );
+  const domainEdges = input.sourceRefs.map((source) => ({
+    id: `edge:domain:${source.sourceId}`,
+    source: `domain:${safeDomainId}`,
+    target: `source:${source.sourceId}`,
+    label: 'uses source',
+    relationshipType: 'USES_SOURCE',
+    reviewState: 'advisory' as const,
+    confidence: 0.6,
+    sourceReceiptIds: [source.sourceId],
+  }));
+  const edges = [...domainEdges, ...sourceToClaimEdges];
+  return {
+    provider: 'graphlite',
+    projectionId: `architect-${safeDomainId}-graphlite-projection`,
+    status: 'compiled-advisory',
+    namedGraph: `capsule_architect_${safeDomainId.replaceAll('-', '_')}`,
+    advisoryOnly: true,
+    canonicalStore: 'Firestore ContextCapsules',
+    promotionGate: 'Human review-card approval required before canonical graph promotion.',
+    nodeCount: nodes.length,
+    edgeCount: edges.length,
+    nodes,
+    edges,
+  };
+}
+
+function splitArchitectSentences(value: string): string[] {
+  return value
+    .replace(/\s+/g, ' ')
+    .split(/(?<=[.!?])\s+/)
+    .map((item) => item.trim())
+    .filter((item) => item.length >= 24)
+    .slice(0, 12);
+}
+
+function uniqueByText(rows: Array<{ document: NormalizedArchitectDocument; text: string }>) {
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    const key = row.text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function normalizeReliabilityTier(value: unknown): 1 | 2 | 3 {
+  return value === 1 || value === 2 || value === 3 ? value : 2;
+}
+
+function normalizePositiveInt(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : null;
+}
+
+function extractIsoDate(value: string): string | null {
+  const match = value.match(/\b\d{4}-\d{2}-\d{2}\b/);
+  return match?.[0] ?? null;
+}
+
+function cleanIdForCapsule(value: unknown, fallback: string): string {
+  const text = typeof value === 'string' ? value : fallback;
+  const cleaned = text
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_.:-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 160);
+  return cleaned || fallback;
+}
+
+function cleanTextForCapsule(value: unknown, limit: number): string {
+  return typeof value === 'string' ? value.trim().slice(0, limit) : '';
+}
+
+function humanizeCapsuleText(value: string): string {
+  return value
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function makeFallbackSourceSpan(text: string, documentId: string | undefined, retrievedAt: string): SourceSpan {

@@ -20,7 +20,7 @@ export type ContextCapsuleMode =
   | 'agent_operable'
   | 'archived';
 
-export type SourceSupportState = 'supported' | 'partially_supported' | 'unsupported' | 'needs_source';
+export type SourceSupportState = 'supported' | 'partially_supported' | 'unsupported' | 'needs_source' | 'disputed';
 export type SourcePostureState = 'source_backed' | 'needs_sources' | 'source_intake' | 'advisory' | 'unsupported';
 export type CapsuleReviewStatus = 'draft' | 'needs_review' | 'review_needed' | 'human_reviewed' | 'approved' | 'published' | 'stale' | 'archived';
 export type CapsuleVisibilityV2 = 'private' | 'team' | 'organization' | 'public' | 'unlisted';
@@ -43,12 +43,42 @@ export interface ContextCapsuleSourceRef {
   stale?: boolean;
 }
 
+export type EvidenceReceiptStance = 'supports' | 'contradicts' | 'mixed';
+
+export interface EvidenceReceipt {
+  sourceId: string;
+  url?: string | null;
+  publisher?: string | null;
+  date?: string | null;
+  reliabilityTier?: 1 | 2 | 3 | null;
+  snippet: string;
+  charOffset?: { start: number; end: number } | null;
+  page?: number | null;
+  embedding?: number[] | null;
+  confidence?: number | null;
+  stance?: EvidenceReceiptStance;
+}
+
+export interface ContextCapsuleClaimCausalLinks {
+  causes?: string[];
+  causedBy?: string[];
+  enables?: string[];
+  blocks?: string[];
+  escalates?: string[];
+  deEscalates?: string[];
+}
+
 export interface ContextCapsuleClaim {
   claimId: string;
   text: string;
   support: SourceSupportState;
   sourceRefIds: string[];
   caveat?: string;
+  receipts?: EvidenceReceipt[];
+  validFrom?: string | null;
+  validUntil?: string | null;
+  asOf?: string | null;
+  causalLinks?: ContextCapsuleClaimCausalLinks;
 }
 
 export interface ContextCapsuleReasoningScaffold {
@@ -456,9 +486,52 @@ function normalizeClaimLedger(value: unknown): ContextCapsuleClaim[] {
         support: isSourceSupportState(row.support) ? row.support : 'needs_source',
         sourceRefIds: cleanStringArray(row.sourceRefIds),
         ...(stringOrNull(row.caveat) ? { caveat: stringOrNull(row.caveat)! } : {}),
+        receipts: normalizeEvidenceReceipts(row.receipts),
+        validFrom: stringOrNull(row.validFrom),
+        validUntil: stringOrNull(row.validUntil),
+        asOf: stringOrNull(row.asOf),
+        causalLinks: normalizeClaimCausalLinks(row.causalLinks),
       };
     })
     .filter((row): row is ContextCapsuleClaim => Boolean(row));
+}
+
+function normalizeEvidenceReceipts(value: unknown): EvidenceReceipt[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item): EvidenceReceipt[] => {
+    if (!isRecord(item)) return [];
+    const sourceId = stringOrNull(item.sourceId);
+    const snippet = stringOrNull(item.snippet);
+    if (!sourceId || !snippet) return [];
+    const reliabilityTier = item.reliabilityTier === 1 || item.reliabilityTier === 2 || item.reliabilityTier === 3
+      ? item.reliabilityTier
+      : null;
+    return [{
+      sourceId,
+      url: stringOrNull(item.url),
+      publisher: stringOrNull(item.publisher),
+      date: stringOrNull(item.date),
+      reliabilityTier,
+      snippet,
+      charOffset: normalizeCharOffset(item.charOffset),
+      page: numberOrNull(item.page),
+      embedding: numberArray(item.embedding),
+      confidence: confidenceOrNull(item.confidence),
+      ...(item.stance === 'supports' || item.stance === 'contradicts' || item.stance === 'mixed' ? { stance: item.stance } : {}),
+    }];
+  }).slice(0, 20);
+}
+
+function normalizeClaimCausalLinks(value: unknown): ContextCapsuleClaimCausalLinks {
+  const body = isRecord(value) ? value : {};
+  return {
+    causes: cleanStringArray(body.causes),
+    causedBy: cleanStringArray(body.causedBy),
+    enables: cleanStringArray(body.enables),
+    blocks: cleanStringArray(body.blocks),
+    escalates: cleanStringArray(body.escalates),
+    deEscalates: cleanStringArray(body.deEscalates),
+  };
 }
 
 function normalizeReasoningScaffold(value: unknown): ContextCapsuleReasoningScaffold {
@@ -540,7 +613,7 @@ function normalizeCapsuleHealth(value: unknown, claims: ContextCapsuleClaim[], s
   const body = isRecord(value) ? value : {};
   const diagnostics = cleanStringArray(body.diagnostics);
   if (!sources.length) diagnostics.push('No source refs attached.');
-  if (claims.some((claim) => claim.support === 'unsupported')) diagnostics.push('Unsupported claims require review.');
+  if (claims.some((claim) => claim.support === 'unsupported' || claim.support === 'disputed')) diagnostics.push('Unsupported or disputed claims require review.');
   if (!outputs.length) diagnostics.push('No output contract attached.');
   const score = typeof body.score === 'number'
     ? Math.max(0, Math.min(100, Math.round(body.score)))
@@ -629,7 +702,7 @@ function requiredNextCheck(capsule: ContextCapsuleV2, status: HumanGateStatus): 
 function derivePayloadHumanGateStatus(capsule: ContextCapsuleV2, options: ContextCapsuleNormalizeOptions): HumanGateStatus {
   if (!capsule.humanGate.required) return 'not_required';
   if (isStale(capsule.humanGate.expiresAt ?? capsule.expiry, options.now)) return 'stale';
-  if (capsule.claimLedger.some((claim) => claim.support === 'unsupported' || claim.support === 'needs_source')) return 'review_needed';
+  if (capsule.claimLedger.some((claim) => claim.support === 'unsupported' || claim.support === 'needs_source' || claim.support === 'disputed')) return 'review_needed';
   if (capsule.humanGate.gateStatus === 'approved' && capsule.humanGate.reviewerId && capsule.humanGate.reviewedAt) return 'human_gated';
   return 'needs_review';
 }
@@ -643,7 +716,7 @@ function isCapsuleMode(value: unknown): value is ContextCapsuleMode {
 }
 
 function isSourceSupportState(value: unknown): value is SourceSupportState {
-  return value === 'supported' || value === 'partially_supported' || value === 'unsupported' || value === 'needs_source';
+  return value === 'supported' || value === 'partially_supported' || value === 'unsupported' || value === 'needs_source' || value === 'disputed';
 }
 
 function isSourcePostureState(value: unknown): value is SourcePostureState {
@@ -673,6 +746,32 @@ function stringOrNull(value: unknown): string | null {
 function cleanStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return dedupeStrings(value.filter((item): item is string => typeof item === 'string').map((item) => item.trim()).filter(Boolean));
+}
+
+function normalizeCharOffset(value: unknown): { start: number; end: number } | null {
+  if (!isRecord(value)) return null;
+  const start = numberOrNull(value.start);
+  const end = numberOrNull(value.end);
+  if (start === null || end === null || end < start) return null;
+  return { start, end };
+}
+
+function numberOrNull(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return Math.max(0, Math.round(value));
+}
+
+function numberArray(value: unknown): number[] | null {
+  if (!Array.isArray(value)) return null;
+  const values = value
+    .filter((item): item is number => typeof item === 'number' && Number.isFinite(item))
+    .slice(0, 1536);
+  return values.length ? values : null;
+}
+
+function confidenceOrNull(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return Math.round(Math.max(0, Math.min(1, value > 1 ? value / 100 : value)) * 1000) / 1000;
 }
 
 function dedupeStrings(values: string[]): string[] {

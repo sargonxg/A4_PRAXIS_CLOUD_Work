@@ -36,7 +36,13 @@ import { useActiveContextStack } from '@/components/app/use-active-context-stack
 import { PENDING_TASKLET_PROMPT_KEY } from '@/lib/product/policy-agents';
 import { POLICY_MISSION_EXAMPLES } from '@/lib/product/policy-missions';
 import { SAMPLE_POLICY_ARTIFACTS, type SamplePolicyArtifact } from '@/lib/product/sample-policy-artifacts';
-import type { ActiveContextBlocks } from '@/lib/context/active-context-stack';
+import {
+  DEFAULT_CONTEXT_STACK_ID,
+  attachCapsuleRef,
+  detachCapsuleRef,
+  swapCapsuleRef,
+  type ActiveContextBlocks,
+} from '@/lib/context/active-context-stack';
 
 const CapsuleListPicker = dynamic(
   () => import('@/components/cores/CapsuleListPicker').then((module) => module.CapsuleListPicker),
@@ -95,9 +101,13 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
   const [savingContext, setSavingContext] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const { stack, saveStack, persisted, hydrated } = useActiveContextStack();
+  const selectedCapsuleRefs = stack.capsuleRefs;
+  const activeCapsuleId = selectedCapsuleRefs[0]?.capsuleId ?? stack.capsuleId;
   const capsuleLabel = useMemo(() => (
-    stack.capsuleId ? `Using ${shortenContextId(stack.capsuleId)}` : 'Add a capsule'
-  ), [stack.capsuleId]);
+    selectedCapsuleRefs.length
+      ? `${selectedCapsuleRefs.length} capsule${selectedCapsuleRefs.length === 1 ? '' : 's'} attached`
+      : activeCapsuleId ? `Using ${shortenContextId(activeCapsuleId)}` : 'Add a capsule'
+  ), [activeCapsuleId, selectedCapsuleRefs]);
   const sourceCount = stack.sourceIds.length + stack.documentIds.length;
   const contextBlockCount = Object.values(stack.contextBlocks).reduce((sum, items) => sum + items.length, 0);
   const visibleRecentWork = recentWork.slice(0, 4);
@@ -179,17 +189,76 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
       params.set('prompt', trimmedPrompt);
       params.set('capsulePrompt', trimmedPrompt);
     }
-    if (stack.capsuleId) params.set('capsuleId', stack.capsuleId);
+    if (activeCapsuleId) params.set('capsuleId', activeCapsuleId);
     if (stack.stackId && stack.stackId !== 'default') params.set('contextStackId', stack.stackId);
     return params;
   }
 
   async function activateCapsule(capsuleId: string) {
+    const next = selectedCapsuleRefs.length
+      ? swapCapsuleRef(stack, selectedCapsuleRefs[0].capsuleId, { capsuleId, role: 'primary', primary: true })
+      : attachCapsuleRef(stack, { capsuleId, role: 'primary', primary: true });
     setSavingContext(true);
     try {
       await saveStack({
-        stackId: capsuleId,
-        capsuleId,
+        stackId: next.capsuleId ?? DEFAULT_CONTEXT_STACK_ID,
+        capsuleId: next.capsuleId,
+        capsuleRefs: next.capsuleRefs,
+      });
+    } finally {
+      setSavingContext(false);
+    }
+  }
+
+  async function attachReferenceCapsule(capsuleId: string) {
+    const next = attachCapsuleRef(stack, {
+      capsuleId,
+      role: selectedCapsuleRefs.length ? 'reference' : 'primary',
+      primary: selectedCapsuleRefs.length === 0,
+    });
+    setSavingContext(true);
+    try {
+      await saveStack({
+        stackId: next.capsuleId ?? DEFAULT_CONTEXT_STACK_ID,
+        capsuleId: next.capsuleId,
+        capsuleRefs: next.capsuleRefs,
+      });
+    } finally {
+      setSavingContext(false);
+    }
+  }
+
+  async function detachCapsule(capsuleId: string) {
+    const next = detachCapsuleRef(stack, capsuleId);
+    setSavingContext(true);
+    try {
+      await saveStack({
+        stackId: next.capsuleId ?? DEFAULT_CONTEXT_STACK_ID,
+        capsuleId: next.capsuleId,
+        capsuleRefs: next.capsuleRefs,
+      });
+    } finally {
+      setSavingContext(false);
+    }
+  }
+
+  async function makePrimaryCapsule(capsuleId: string) {
+    const currentPrimary = selectedCapsuleRefs[0]?.capsuleId;
+    if (!currentPrimary || currentPrimary === capsuleId) return;
+    const target = selectedCapsuleRefs.find((ref) => ref.capsuleId === capsuleId);
+    const next = swapCapsuleRef(stack, currentPrimary, {
+      capsuleId,
+      label: target?.label,
+      version: target?.version,
+      role: 'primary',
+      primary: true,
+    });
+    setSavingContext(true);
+    try {
+      await saveStack({
+        stackId: next.capsuleId ?? DEFAULT_CONTEXT_STACK_ID,
+        capsuleId: next.capsuleId,
+        capsuleRefs: next.capsuleRefs,
       });
     } finally {
       setSavingContext(false);
@@ -206,7 +275,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
           ...stack.contextBlocks,
           output: [{
             id: outputId,
-            capsuleId: stack.capsuleId,
+            capsuleId: activeCapsuleId,
             label: target,
             role: 'output',
             primary: true,
@@ -297,7 +366,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
                 </button>
                 <div className="flex flex-wrap items-center gap-2">
                   <CapsuleListPicker
-                    activeCapsuleId={stack.capsuleId}
+                    activeCapsuleId={activeCapsuleId}
                     onSelect={(capsuleId) => void activateCapsule(capsuleId)}
                   />
                   <Link href="/app/capsules/builder" className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
@@ -323,7 +392,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
                 <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1fr)_17rem]">
                   <div className="grid gap-3">
                     <div className="grid gap-2 sm:grid-cols-3">
-                      <ContextSignal icon={Layers3} label="Capsule" value={stack.capsuleId ? 'Attached' : 'Add one'} />
+                      <ContextSignal icon={Layers3} label="Capsule" value={selectedCapsuleRefs.length ? `${selectedCapsuleRefs.length} attached` : 'Add one'} />
                       <ContextSignal icon={SearchCheck} label="Sources" value={`${sourceCount} linked`} />
                       <ContextSignal icon={Target} label="Output" value={stack.outputGoal ?? 'Choose target'} />
                     </div>
@@ -336,6 +405,52 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
                         <MessageSquareText className="h-3.5 w-3.5" />
                         Discuss in boardroom
                       </button>
+                    </div>
+                    <div data-testid="launchpad-capsule-stack" className="rounded-lg border border-slate-200 bg-white p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Attached capsules</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-slate-600">Attach capsule</span>
+                          <CapsuleListPicker
+                            activeCapsuleId={null}
+                            onSelect={(capsuleId) => void attachReferenceCapsule(capsuleId)}
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-3 grid gap-2">
+                        {selectedCapsuleRefs.length ? selectedCapsuleRefs.map((ref) => (
+                          <div key={ref.capsuleId} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-100 bg-[color:var(--color-archive-paper-strong)] px-3 py-2">
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-semibold text-slate-900">{ref.label ?? shortenContextId(ref.capsuleId)}</p>
+                              <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{ref.role}{ref.primary ? ' · primary' : ''}</p>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-1.5">
+                              {!ref.primary ? (
+                                <button
+                                  type="button"
+                                  onClick={() => void makePrimaryCapsule(ref.capsuleId)}
+                                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+                                >
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Make primary
+                                </button>
+                              ) : null}
+                              <button
+                                type="button"
+                                onClick={() => void detachCapsule(ref.capsuleId)}
+                                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+                              >
+                                <X className="h-3 w-3" />
+                                Detach
+                              </button>
+                            </div>
+                          </div>
+                        )) : (
+                          <p className="rounded-md border border-dashed border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-2 text-xs leading-5 text-slate-500">
+                            No attached capsules.
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Output target</p>

@@ -20,6 +20,7 @@ export function hasConversationCapsuleSignal(input: ConversationCapsuleSignalInp
   const stack = isRecord(input.activeContextStack) ? sanitizeActiveContextStack(input.activeContextStack) : null;
   return Boolean(stack && (
     cleanSignal(stack.capsuleId) ||
+    stack.capsuleRefs.length > 0 ||
     cleanSignal(stack.contextPackageId) ||
     cleanSignal(stack.situationId) ||
     cleanSignal(stack.userModelId) ||
@@ -42,6 +43,7 @@ export function buildThinCapsuleFallback(input: ConversationCapsuleSignalInput):
   const appliedCapsules = normalizeAppliedCapsuleRefs(input.appliedCapsules);
   const capsuleId = cleanSignal(input.capsuleId)
     ?? cleanSignal(stack.capsuleId)
+    ?? stack.capsuleRefs[0]?.capsuleId
     ?? cleanSignal(input.contextPackageId)
     ?? appliedCapsules[0]?.id
     ?? 'thin-capsule-fallback';
@@ -190,7 +192,7 @@ function buildFallbackCoreRefs(stack: ActiveContextStackState, appliedCapsules: 
   return {
     userCoreId: byRole('user')[0] ?? stack.userModelId ?? null,
     teamCoreId: null,
-    situationCoreId: byRole('situation')[0] ?? stack.situationId ?? stack.capsuleId ?? null,
+    situationCoreId: byRole('situation')[0] ?? stack.situationId ?? stack.capsuleRefs[0]?.capsuleId ?? stack.capsuleId ?? null,
     pathCoreId: null,
     sourceCoreIds: uniqueStrings([...stack.sourceIds, ...byRole('source'), ...byRole('reference')]),
     documentCoreIds: uniqueStrings(stack.documentIds),

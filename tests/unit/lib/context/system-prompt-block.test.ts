@@ -116,6 +116,66 @@ describe('renderSystemPromptBlock', () => {
     expect(block).toContain('Favor depth, caveats, and citations.');
     expect(block).not.toContain('Favor brevity and actionable bullets.');
   });
+
+  it('renders attached capsules as a capsule-frame with ontology, receipts, validity, and agent contract', () => {
+    const block = renderSystemPromptBlock({
+      profile: null,
+      situation: null,
+      retrievedChunks: [],
+      capsuleFrames: [{
+        capsuleId: 'cap-primary',
+        label: 'AI procurement governance',
+        role: 'primary',
+        version: 4,
+        order: 0,
+        ontologyBinding: {
+          domainId: 'governance-rule-of-law',
+          taxonomyPath: ['generic', 'governance-rule-of-law'],
+          ontologyIds: ['governance', 'legal'],
+          acoPrimitives: ['Actor', 'Claim', 'Constraint'],
+          bindingRationale: 'Procurement governance needs actor, claim, and constraint extraction.',
+        },
+        validityWindow: {
+          asOf: '2026-05-01',
+          validFrom: '2026-05-01',
+          validUntil: '2026-06-30',
+        },
+        claims: [{
+          claimId: 'claim-1',
+          text: 'The procurement requires source-backed role classification.',
+          support: 'supported',
+          receipts: [{
+            sourceId: 'src-1',
+            label: 'Official procurement rule',
+            url: 'https://example.test/rule',
+            date: '2026-05-01',
+            reliabilityTier: 1,
+          }],
+        }],
+        agentOperatingContract: {
+          allowedActions: ['suggest', 'source', 'draft'],
+          forbiddenActions: ['publish', 'mutate_canonical_without_review'],
+          sourceRequirements: ['Every compliance claim needs source and counsel review.'],
+          reviewCheckpoints: ['sourceability_review'],
+          toolRecommendations: ['sourceability-reviewer'],
+          bestNextAction: 'Run sourceability before drafting.',
+          handoffInstructions: ['Carry source ids into every output.'],
+          stopConditions: ['Stop before external publish.'],
+        },
+      }],
+    });
+
+    expect(block).toContain('<capsule-frame count="1"');
+    expect(block).toContain('merge_precedence: primary capsule governs');
+    expect(block).toContain('domain=governance-rule-of-law');
+    expect(block).toContain('aco=Actor, Claim, Constraint');
+    expect(block).toContain('[claim-1] supported: The procurement requires source-backed role classification.');
+    expect(block).toContain('receipts: src-1 Official procurement rule');
+    expect(block).toContain('validity: asOf=2026-05-01; validFrom=2026-05-01; validUntil=2026-06-30');
+    expect(block).toContain('allowed_actions: suggest, source, draft');
+    expect(block).toContain('forbidden_actions: publish, mutate_canonical_without_review');
+    expect(block).toContain('</capsule-frame>');
+  });
 });
 
 describe('renderOutputConstraints', () => {

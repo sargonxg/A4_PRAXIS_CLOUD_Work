@@ -199,6 +199,43 @@ describe('withCalibration', () => {
     expect(res.status).toBe(200);
   });
 
+  it('forwards capsule id and active context stack into buildCalibratedContext', async () => {
+    const handler = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true })));
+    const route = withCalibration('chat', 'ai_chat', {
+      variant: 'streaming',
+      blockOnThinContext: false,
+    })(handler);
+    const activeContextStack = {
+      capsuleRefs: [
+        { capsuleId: 'cap-reference', role: 'reference', label: 'Reference file' },
+        { capsuleId: 'cap-primary', role: 'primary', label: 'Primary file' },
+      ],
+    };
+    const req = new Request('http://x', {
+      method: 'POST',
+      body: JSON.stringify({
+        situationId: 's1',
+        capsuleId: 'cap-primary',
+        activeContextStack,
+        messages: [{ role: 'user', content: 'Assess this.' }],
+      }),
+    });
+
+    const res = await (route as unknown as (r: Request, u: { uid: string; email: string; name: string; isDemo: boolean }) => Promise<Response>)(
+      req,
+      { uid: 'u1', email: '', name: '', isDemo: false },
+    );
+
+    expect(res.status).toBe(200);
+    expect(buildCalibratedContext).toHaveBeenCalledWith(expect.objectContaining({
+      uid: 'u1',
+      toolId: 'chat',
+      situationId: 's1',
+      capsuleId: 'cap-primary',
+      activeContextStack,
+    }));
+  });
+
   it('returns 402 when credits insufficient', async () => {
     const { checkAndDeductCreditsForUid } = await import('@/lib/api/with-credits');
     (checkAndDeductCreditsForUid as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({

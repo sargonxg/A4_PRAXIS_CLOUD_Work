@@ -1,6 +1,6 @@
 import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
 import type { TacitusCorePrimitive } from '@/lib/graph/core-primitives';
-import type { OntologyId } from '@/lib/ontology/types';
+import { isOntologyId, type OntologyId } from '@/lib/ontology/types';
 import type { DomainId } from '@/types/domain';
 
 export {
@@ -503,8 +503,56 @@ export interface CapsuleGenerationImprovementReceipt {
   confidenceCap: 0.6;
 }
 
+export type CapsuleOntologySubtypeSource = 'global' | 'capsule-local';
+export type CapsuleLocalOntologyExtensionStatus = 'candidate' | 'approved-local' | 'promoted';
+
+export interface CapsuleOntologyEntitySubtype {
+  subtypeId: string;
+  label: string;
+  primitive: TacitusCorePrimitive;
+  description: string;
+  source: CapsuleOntologySubtypeSource;
+  extensionId?: string;
+}
+
+export interface CapsuleOntologyRelationshipSubtype {
+  subtypeId: string;
+  label: string;
+  from: TacitusCorePrimitive[];
+  to: TacitusCorePrimitive[];
+  description: string;
+  source: CapsuleOntologySubtypeSource;
+  extensionId?: string;
+}
+
+export interface CapsuleLocalOntologyExtension {
+  extensionId: string;
+  kind: 'entity' | 'relationship';
+  subtypeId: string;
+  label: string;
+  primitive?: TacitusCorePrimitive;
+  from?: TacitusCorePrimitive[];
+  to?: TacitusCorePrimitive[];
+  description: string;
+  status: CapsuleLocalOntologyExtensionStatus;
+  evidenceIds: string[];
+  createdAt: string | null;
+}
+
+export interface CapsuleOntologyBindingProfile {
+  ontologyIds: OntologyId[];
+  domainId: string;
+  entitySubtypes: CapsuleOntologyEntitySubtype[];
+  relationshipSubtypes: CapsuleOntologyRelationshipSubtype[];
+  localExtensions: CapsuleLocalOntologyExtension[];
+  unknownTypePolicy: 'candidate-extension-review-card';
+  promotionGate: 'ADMIN_ALLOWLIST';
+  canonicalStore: 'Firestore ContextCapsules';
+}
+
 export interface CapsuleContextCaptureProfile {
   profileId: string;
+  ontologyBinding: CapsuleOntologyBindingProfile;
   sourceBindings: CapsuleSourceOntologyBinding[];
   usageInference: CapsuleUsageInferenceProfile;
   embeddedGraph: CapsuleEmbeddedGraphProfile;
@@ -2964,6 +3012,16 @@ function buildStarterContextCaptureProfile(input: StarterIntelligenceBuilderInpu
 
   return {
     profileId,
+    ontologyBinding: {
+      ontologyIds: input.ontologyOverlay.baseOntologyIds.flatMap((id): OntologyId[] => isOntologyId(id) ? [id] : []),
+      domainId: input.domain,
+      entitySubtypes: [],
+      relationshipSubtypes: [],
+      localExtensions: [],
+      unknownTypePolicy: 'candidate-extension-review-card',
+      promotionGate: 'ADMIN_ALLOWLIST',
+      canonicalStore: 'Firestore ContextCapsules',
+    },
     sourceBindings,
     usageInference: {
       activationSignals: uniqueStrings([

@@ -80,6 +80,13 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     expect(shellSource).toContain('data-testid="launchpad-recent-work"');
     expect(shellSource).toContain('data-testid="advanced-edit-context"');
     expect(shellSource).toContain('CapsuleListPicker');
+    expect(shellSource).toContain('selectedCapsuleRefs');
+    expect(shellSource).toContain('attachCapsuleRef');
+    expect(shellSource).toContain('detachCapsuleRef');
+    expect(shellSource).toContain('swapCapsuleRef');
+    expect(shellSource).toContain('data-testid="launchpad-capsule-stack"');
+    expect(shellSource).toContain('Attach capsule');
+    expect(shellSource).toContain('Detach');
     expect(shellSource).toContain('Build capsule');
     expect(shellSource).toContain('Add from marketplace');
     expect(shellSource).toContain('Discuss in boardroom');

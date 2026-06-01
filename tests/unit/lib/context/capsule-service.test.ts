@@ -21,7 +21,9 @@ import {
   listCapsuleInventory,
   listCapsules,
   promoteCapsuleSourceGaps,
+  promoteCapsuleOntologyExtensionToGlobalAco,
   proposeCogneeSeedReviewCards,
+  proposeCapsuleGraphNodeChange,
   rateCapsule,
   recordCapsuleReadReceiptUsage,
   rejectAdvisoryMemoryCandidate,
@@ -44,6 +46,10 @@ import {
   CAPSULE_STARTER_DEFINITIONS,
   CAPSULE_WOW_DEMO_STARTER_IDS,
 } from '@/lib/product/context-capsules';
+import {
+  buildUserFeedbackLearningReviewCardInput,
+  proposeCapsuleDocumentLearningReviewCards,
+} from '@/lib/context/capsule-closed-loop-learning';
 
 describe('capsule service', () => {
   it('migrates the legacy default context stack into the default capsule', async () => {
@@ -1139,6 +1145,75 @@ describe('capsule service', () => {
     });
   });
 
+  it('applies user feedback learning review cards with a version bump', async () => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', { capsuleId: 'cap-feedback-learning', label: 'Feedback learning capsule' }, deps(db));
+    const cardInput = buildUserFeedbackLearningReviewCardInput(capsule, {
+      situationId: 'sit-1',
+      toolId: 'ask-praxis',
+      answerId: 'answer-1',
+      confidence: 1,
+      issues: ['inaccurate'],
+      suggestion: 'The corridor is closed; keep this as disputed until the next UN access bulletin.',
+      createdAt: '2026-06-01T10:00:00.000Z',
+    });
+    const card = await createCapsuleReviewCard('u1', capsule.capsuleId, cardInput, deps(db));
+
+    expect(card.sourceType).toBe('user');
+    expect(card.state).toBe('owner_review');
+
+    const applied = await applyCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, {
+      reviewerUid: 'reviewer-1',
+      diffHash: 'diff:feedback-learning',
+      confirmationReason: 'Owner approved the feedback correction as a capsule learning patch.',
+    }, deps(db));
+
+    expect(applied?.capsule.version).toBe(capsule.version + 1);
+    expect(applied?.capsule.claimLedger).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        support: 'disputed',
+        text: expect.stringMatching(/corridor is closed/i),
+      }),
+    ]));
+    expect(applied?.card.applyMetadata).toMatchObject({
+      targetVersion: capsule.version + 1,
+      reviewerUid: 'reviewer-1',
+    });
+  });
+
+  it('runs document learning as an authenticated review-card worker', async () => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', { capsuleId: 'cap-document-learning', label: 'Document learning capsule' }, deps(db));
+
+    await expect(proposeCapsuleDocumentLearningReviewCards('u1', capsule.capsuleId, {
+      auth: {},
+      document: {
+        documentId: 'doc-1',
+        title: 'UN access bulletin',
+        claims: [{ text: 'The corridor remains closed.', sourceId: 'src-1' }],
+        sources: [{ sourceId: 'src-1', label: 'UN access bulletin' }],
+      },
+    }, deps(db))).rejects.toThrow(/requires/i);
+
+    const result = await proposeCapsuleDocumentLearningReviewCards('u1', capsule.capsuleId, {
+      auth: {
+        authorizationHeader: 'Bearer secret-1234567890',
+        cronSecret: 'secret-1234567890',
+      },
+      document: {
+        documentId: 'doc-1',
+        title: 'UN access bulletin',
+        claims: [{ text: 'The corridor remains closed.', sourceId: 'src-1' }],
+        sources: [{ sourceId: 'src-1', label: 'UN access bulletin' }],
+        graphProposals: ['Constraint -> blocks -> Relief access'],
+      },
+    }, deps(db));
+
+    expect(result.cards.map((card) => card.target)).toEqual(['claimLedger', 'graphProposal']);
+    expect(db.data.has(`users/u1/capsules/${capsule.capsuleId}/reviewCards/${result.cards[0]?.reviewCardId}`)).toBe(true);
+    expect(db.data.get(`users/u1/capsules/${capsule.capsuleId}`)?.latestGateState).toBe('owner_review');
+  });
+
   it('writes dependency invalidation notes to dependent capsules after claim/source review-card apply', async () => {
     const db = new FakeFirestore();
     const source = await createCapsule('u1', { capsuleId: 'source-cap', label: 'Source capsule' }, deps(db));
@@ -1350,6 +1425,108 @@ describe('capsule service', () => {
       'domain:finance',
       'domain:legacy',
     ]));
+  });
+
+  it('surfaces off-ontology graph entity types as candidate-extension review cards', async () => {
+    const db = new FakeFirestore();
+    const starter = CAPSULE_STARTER_DEFINITIONS[0];
+    const capsule = await createCapsule('u1', {
+      capsuleId: 'cap-ontology-write',
+      label: 'Ontology write capsule',
+      starterSnapshot: {
+        ...starter,
+        catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+      },
+    }, deps(db));
+
+    const card = await proposeCapsuleGraphNodeChange('u1', capsule.capsuleId, {
+      operation: 'create',
+      node: {
+        id: 'field-mandate-risk',
+        label: 'Field mandate risk',
+        entityType: 'field_mandate_risk',
+      },
+      sourceReceiptIds: ['src-1'],
+      reason: 'Analysts need a local subtype before graph promotion.',
+    }, deps(db));
+
+    expect(card.target).toBe('ontologyStack');
+    expect(card.sourceType).toBe('ontology');
+    expect(card.title).toMatch(/candidate ontology extension/i);
+    expect(card.evidence).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'src-1', sourceType: 'source' }),
+    ]));
+    expect(db.data.has(`users/u1/capsules/${capsule.capsuleId}/reviewCards/${card.reviewCardId}`)).toBe(true);
+  });
+
+  it('gates capsule-local ontology extension promotion behind ADMIN_ALLOWLIST and writes a version snapshot', async () => {
+    const db = new FakeFirestore();
+    const previousAllowlist = process.env.ADMIN_ALLOWLIST;
+    process.env.ADMIN_ALLOWLIST = 'admin-1';
+    try {
+      const starter = CAPSULE_STARTER_DEFINITIONS[0];
+      const capsule = await createCapsule('u1', {
+        capsuleId: 'cap-local-ontology',
+        label: 'Local ontology capsule',
+        starterSnapshot: {
+          ...starter,
+          catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+          contextCaptureProfile: {
+            ...starter.contextCaptureProfile,
+            ontologyBinding: {
+              ...starter.contextCaptureProfile.ontologyBinding,
+              localExtensions: [{
+                extensionId: 'field-mandate-risk',
+                kind: 'entity',
+                subtypeId: 'field_mandate_risk',
+                label: 'Field Mandate Risk',
+                primitive: 'Constraint',
+                description: 'A local subtype for mandate fragility in field teams.',
+                status: 'approved-local',
+                evidenceIds: ['src-1'],
+                createdAt: '2026-05-14T00:00:00.000Z',
+              }],
+            },
+          },
+        },
+      }, deps(db));
+      db.data.set('acoExtensions/field-mandate-risk', {
+        extensionId: 'field-mandate-risk',
+        kind: 'entity',
+        subtypeId: 'field_mandate_risk',
+        label: 'Old Field Mandate Risk',
+        primitive: 'Constraint',
+        status: 'promoted',
+        version: 1,
+      });
+
+      await expect(promoteCapsuleOntologyExtensionToGlobalAco('u1', capsule.capsuleId, 'field-mandate-risk', {
+        uid: 'not-admin',
+      }, deps(db))).rejects.toThrow(/ADMIN_ALLOWLIST/i);
+
+      const result = await promoteCapsuleOntologyExtensionToGlobalAco('u1', capsule.capsuleId, 'field-mandate-risk', {
+        uid: 'admin-1',
+      }, deps(db));
+
+      expect(result?.extension).toMatchObject({
+        extensionId: 'field-mandate-risk',
+        label: 'Field Mandate Risk',
+        status: 'promoted',
+        version: 2,
+        promotedBy: 'admin-1',
+      });
+      expect(db.data.get('acoExtensionsHistory/field-mandate-risk_1')).toMatchObject({
+        label: 'Old Field Mandate Risk',
+        version: 1,
+      });
+      expect(db.data.get('acoExtensions/field-mandate-risk')).toMatchObject({
+        label: 'Field Mandate Risk',
+        version: 2,
+      });
+    } finally {
+      if (previousAllowlist === undefined) delete process.env.ADMIN_ALLOWLIST;
+      else process.env.ADMIN_ALLOWLIST = previousAllowlist;
+    }
   });
 });
 

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { defaultActiveContextStack, sanitizeActiveContextStack } from '@/lib/context/active-context-stack';
+import {
+  attachCapsuleRef,
+  defaultActiveContextStack,
+  detachCapsuleRef,
+  sanitizeActiveContextStack,
+  swapCapsuleRef,
+} from '@/lib/context/active-context-stack';
 
 describe('active context stack block arrays', () => {
   it('derives multi-capsule blocks from legacy primary fields', () => {
@@ -70,5 +76,36 @@ describe('active context stack block arrays', () => {
       thinkingDevices: [],
       output: [],
     });
+  });
+
+  it('normalizes capsule refs and exposes attach, detach, and swap operations with primary-first precedence', () => {
+    const base = sanitizeActiveContextStack({
+      capsuleId: 'cap-primary',
+      capsuleRefs: [
+        { capsuleId: 'cap-reference', label: 'Reference file', role: 'reference' },
+        { capsuleId: 'cap-primary', label: 'Primary file', role: 'primary' },
+        { capsuleId: 'cap-reference', label: 'Duplicate should lose', role: 'comparison' },
+      ],
+    });
+
+    expect(base.capsuleId).toBe('cap-primary');
+    expect(base.capsuleRefs.map((ref) => [ref.capsuleId, ref.role, ref.primary, ref.order])).toEqual([
+      ['cap-primary', 'primary', true, 0],
+      ['cap-reference', 'reference', false, 1],
+    ]);
+
+    const attached = attachCapsuleRef(base, { capsuleId: 'cap-legal', label: 'Legal file', role: 'reference' });
+    expect(attached.capsuleRefs.map((ref) => ref.capsuleId)).toEqual(['cap-primary', 'cap-reference', 'cap-legal']);
+
+    const swapped = swapCapsuleRef(attached, 'cap-primary', { capsuleId: 'cap-humanitarian', label: 'Humanitarian file', role: 'primary' });
+    expect(swapped.capsuleId).toBe('cap-humanitarian');
+    expect(swapped.capsuleRefs.map((ref) => [ref.capsuleId, ref.role, ref.primary])).toEqual([
+      ['cap-humanitarian', 'primary', true],
+      ['cap-reference', 'reference', false],
+      ['cap-legal', 'reference', false],
+    ]);
+
+    const detached = detachCapsuleRef(swapped, 'cap-reference');
+    expect(detached.capsuleRefs.map((ref) => ref.capsuleId)).toEqual(['cap-humanitarian', 'cap-legal']);
   });
 });
