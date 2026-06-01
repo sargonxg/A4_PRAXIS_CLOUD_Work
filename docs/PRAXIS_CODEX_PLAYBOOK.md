@@ -141,6 +141,8 @@ Ship in this order. Each item links to a work packet in §6.
   existing schema, grounded by the active capsule.
 
 ### P2 — Capsule depth at creation time
+> Full capsule design + 7-phase plan (CAP-1…CAP-7) lives in
+> `docs/product/PRAXIS_CAPSULE_EXCELLENCE_PLAN.md`. P2.1/P2.2 below are the entry points.
 - **P2.1 Capsule builder: bind temporality, causality, ontology.** Add wizard
   steps so a capsule declares its timeline anchors, causal links, and ACO/domain
   ontology bindings — the data the schema already supports.

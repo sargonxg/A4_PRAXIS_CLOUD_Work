@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "catalogVersion": "2026-05-31-graphlite-advisory-projection-v17",
+  "total": 205,
+  "counts": {
+    "situation": 85,
+    "tool": 72,
+    "output": 35,
+    "user": 13
+  },
+  "sourceRegistryCount": 27,
+  "prompt": {
+    "averageLength": 9441,
+    "maxLength": 11791,
+    "warnTarget": 12000,
+    "hardCap": 16000
+  },
+  "failures": []
+}

@@ -17,14 +17,18 @@ Status: canonical index for the current app structure
    - Authoritative roadmap + per-surface work packets. Supersedes the removed
      product-rebuild plan; product narrative/UX intent now lives in the canonical
      app structure doc plus this playbook's vision→gap map.
-4. [`CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`](./CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md)
+4. [`PRAXIS_CAPSULE_EXCELLENCE_PLAN.md`](./PRAXIS_CAPSULE_EXCELLENCE_PLAN.md)
+   - Authoritative capsule design + 7-phase build plan (CAP-1…CAP-7): creation,
+     display, content, usage, analysis, learning, embedded graphs, dynamic
+     ontologies, semantic layer — organized by Users/Tools/Output/Situation.
+5. [`CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`](./CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md)
    - Canonical guide for building policy/statecraft ContextCapsules.
    - Defines core anatomy, PRAXIS augmented generation, generic versus
      path-bound users, personas, combination rules, tools, connectors,
      outputs, and usable app shape.
-5. _(Removed 2026-06-01)_ The v3 human-gated context-infrastructure doc was
-   superseded by the Tasklet-style runtime; the live capsule contract is
-   `src/lib/context/capsule-v3.ts` and the canonical app structure doc.
+   - _(The v3 human-gated context-infrastructure doc was removed 2026-06-01 and
+     superseded by the Tasklet-style runtime; the live capsule contract is now
+     `src/lib/context/capsule-v3.ts` plus the canonical app structure doc.)_
 6. [`TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./TASKLET_RESEARCH_INTAKE_2026-05-15.md)
    - Intake note for the external Tasklet-class browser-agent research.
    - Records what PRAXIS adopted, deferred, or rejected.
