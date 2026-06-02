@@ -37,6 +37,39 @@ describe('ask answer envelope', () => {
     }));
   });
 
+  it('turns approved capsule source refs into citation-ready source cards for Ask answers', () => {
+    const cards = buildSourcePreviewCards({
+      evidencePack: {
+        ...evidencePack(),
+        activeCapsule: {
+          ...evidencePack().activeCapsule,
+          sourceRefs: [
+            {
+              sourceId: 'receipt-1',
+              label: 'OHCHR access update',
+              title: 'OHCHR access update',
+              url: 'https://example.org/ohchr-access',
+              publisher: 'OHCHR',
+              date: '2026-06-01',
+              reliabilityTier: 1,
+              citation: 'OHCHR, Access Update, 1 June 2026',
+            },
+          ],
+        },
+      } as CapsuleEvidencePack,
+    });
+
+    expect(cards).toContainEqual(expect.objectContaining({
+      id: 'receipt:receipt-1',
+      title: 'OHCHR access update',
+      sourceType: 'source-receipt',
+      url: 'https://example.org/ohchr-access',
+      citationLabel: 'OHCHR, Access Update, 1 June 2026',
+      locatorLabel: 'OHCHR / 2026-06-01 / tier 1',
+      sourceReceiptId: 'receipt-1',
+    }));
+  });
+
   it('normalizes corpus documents, source receipts, grounded fetches, and document digests into source cards', () => {
     const cards = buildSourcePreviewCards({
       evidencePack: {

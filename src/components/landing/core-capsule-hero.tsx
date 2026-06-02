@@ -104,7 +104,7 @@ export function CoreCapsuleHero({
       role="img"
     >
       <div
-        className="border-brushed-gold rounded-[180px] p-px shadow-capsule-lg transition-transform duration-300 ease-out"
+        className="border-brushed-gold rounded-[var(--radius-full)] p-px shadow-[var(--shadow-float)] transition-transform duration-300 ease-out"
         style={{
           transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
           transformStyle: "preserve-3d",

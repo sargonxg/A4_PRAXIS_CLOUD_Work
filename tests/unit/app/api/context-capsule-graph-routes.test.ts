@@ -4,6 +4,7 @@ const service = vi.hoisted(() => ({
   applyCapsuleReviewCard: vi.fn(),
   proposeCapsuleGraphEdgeChange: vi.fn(),
   proposeCapsuleGraphNodeChange: vi.fn(),
+  rejectCapsuleReviewCard: vi.fn(),
 }));
 
 vi.mock('@/lib/api/with-auth', () => ({
@@ -121,8 +122,40 @@ describe('capsule graph proposal routes', () => {
     expect(response.status).toBe(200);
     expect(service.applyCapsuleReviewCard).toHaveBeenCalledWith('u1', 'cap-1', 'review-card-node-1', expect.objectContaining({
       reviewerUid: 'u1',
+      diffHash: expect.stringMatching(/^diff:graph:/),
       confirmationReason: 'Graph proposal reviewed in Capsule Studio.',
     }));
     expect(payload.capsule).toMatchObject({ version: 2 });
+  });
+
+  it('rejects graph proposal review cards without applying graph mutations', async () => {
+    service.rejectCapsuleReviewCard.mockResolvedValueOnce({
+      capsule: { capsuleId: 'cap-1', version: 1 },
+      card: { reviewCardId: 'review-card-node-1', state: 'rejected' },
+    });
+    const { POST } = await import('@/app/api/context/capsules/[capsuleId]/graph/nodes/route');
+    const post = POST as unknown as MockedAuthRouteHandler;
+
+    const response = await post(
+      new Request('http://localhost/api/context/capsules/cap-1/graph/nodes', {
+        method: 'POST',
+        body: JSON.stringify({
+          operation: 'reject',
+          reviewCardId: 'review-card-node-1',
+          confirmationReason: 'Not supported by the source receipt.',
+        }),
+      }),
+      { uid: 'u1', isDemo: false },
+      { params: Promise.resolve({ capsuleId: 'cap-1' }) },
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(service.rejectCapsuleReviewCard).toHaveBeenCalledWith('u1', 'cap-1', 'review-card-node-1', expect.objectContaining({
+      reviewerUid: 'u1',
+      confirmationReason: 'Not supported by the source receipt.',
+    }));
+    expect(service.applyCapsuleReviewCard).not.toHaveBeenCalled();
+    expect(payload.card).toMatchObject({ state: 'rejected' });
   });
 });

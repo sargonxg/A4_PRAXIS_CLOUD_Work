@@ -157,7 +157,7 @@ export function ActivityPanel() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="fixed bottom-16 left-6 z-50 flex w-[420px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-xl border border-navy-700 bg-navy-950 shadow-2xl"
+            className="fixed bottom-16 left-6 z-50 flex w-[420px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-[var(--radius-xl)] border border-navy-700 bg-navy-950 shadow-[var(--shadow-modal)]"
             style={{ maxHeight: '60vh' }}
           >
             {/* Header */}

@@ -130,7 +130,8 @@ function OnboardingWizard() {
   }, [router]);
 
   return (
-    <div className="space-y-5 pb-10">
+    <div className="app-light praxis-app-surface min-h-screen px-4 py-6 text-[color:var(--color-app-text)] sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl space-y-5 pb-10">
       {resumeMode && (
         <Link
           href="/app"
@@ -143,7 +144,7 @@ function OnboardingWizard() {
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <div>
           <Header step={step} onSkip={skipForLater} resumeMode={resumeMode} />
-          <div className="mt-5 rounded-lg border border-[var(--color-app-border)] bg-white p-5 shadow-sm sm:p-6">
+          <div className="praxis-shell-card mt-5 p-5 sm:p-6">
             {saveError && (
               <div role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
                 {saveError}
@@ -196,6 +197,7 @@ function OnboardingWizard() {
         </aside>
       </div>
     </div>
+    </div>
   );
 }
 
@@ -212,7 +214,7 @@ function Header({ step, onSkip, resumeMode }: { step: Step; onSkip: () => void; 
             </span>
           )}
         </div>
-        <h2 className="mt-1 text-2xl font-semibold text-navy-900">
+        <h2 className="praxis-text-title mt-1">
           {resumeMode ? 'Review your analyst profile' : 'Set up your analyst profile'}
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-navy-500">
@@ -220,7 +222,7 @@ function Header({ step, onSkip, resumeMode }: { step: Step; onSkip: () => void; 
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-medium uppercase tracking-wider">
           {steps.map((s, i) => (
-            <span key={s} className={cn('rounded-full px-3 py-1', i + 1 <= step ? 'bg-diplomatic-blue text-white' : 'bg-navy-100 text-navy-500')}>
+            <span key={s} className={cn('rounded-[var(--radius-full)] px-3 py-1', i + 1 <= step ? 'bg-diplomatic-blue text-white' : 'bg-navy-100 text-navy-500')}>
               {i + 1}. {s}
             </span>
           ))}
@@ -229,7 +231,7 @@ function Header({ step, onSkip, resumeMode }: { step: Step; onSkip: () => void; 
       {!resumeMode && step < 4 && (
         <button
           onClick={onSkip}
-          className="rounded-md text-xs text-navy-500 hover:text-navy-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40 focus-visible:ring-offset-2"
+          className="rounded-[var(--radius-md)] text-xs text-navy-500 hover:text-navy-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40 focus-visible:ring-offset-2"
         >
           Finish later
         </button>

@@ -171,7 +171,7 @@ export function CapsuleStripHeader() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-50 mt-2 w-[34rem] max-w-[calc(100vw-2rem)] rounded-lg border border-slate-200 bg-white p-4 text-slate-700 shadow-xl shadow-navy-950/15">
+        <div className="absolute right-0 z-50 mt-2 w-[34rem] max-w-[calc(100vw-2rem)] rounded-[var(--radius-lg)] border border-slate-200 bg-white p-4 text-slate-700 shadow-[var(--shadow-float)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gold-700">Capsule Manager</p>
@@ -228,7 +228,7 @@ export function CapsuleStripHeader() {
               role="dialog"
               aria-modal="true"
               aria-label="Associate capsules with context"
-              className="absolute inset-x-4 top-20 z-[60] rounded-lg border border-slate-200 bg-white p-4 shadow-2xl shadow-navy-950/25"
+              className="absolute inset-x-4 top-20 z-[60] rounded-[var(--radius-lg)] border border-slate-200 bg-white p-4 shadow-[var(--shadow-modal)]"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>

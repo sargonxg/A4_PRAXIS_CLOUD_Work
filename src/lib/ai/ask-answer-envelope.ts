@@ -394,16 +394,31 @@ export function buildSourcePreviewCards(input: BuildSourcePreviewCardsInput): So
     });
   }
 
-  for (const sourceReceiptId of input.evidencePack?.sourceReceiptIds ?? []) {
+  const capsuleSourceRefs = sourceRefDetailsFromEvidencePack(input.evidencePack);
+  const sourceReceiptIds = uniqueStrings([
+    ...(input.evidencePack?.sourceReceiptIds ?? []),
+    ...capsuleSourceRefs.map((source) => source.sourceId),
+  ]);
+  const capsuleSourceById = new Map(capsuleSourceRefs.map((source) => [source.sourceId, source]));
+  for (const sourceReceiptId of sourceReceiptIds) {
+    const source = capsuleSourceById.get(sourceReceiptId);
+    const locatorParts = [
+      source?.publisher,
+      source?.date,
+      source?.reliabilityTier !== null && source?.reliabilityTier !== undefined ? `tier ${source.reliabilityTier}` : '',
+    ].filter(isString);
     cards.push({
       id: `receipt:${sourceReceiptId}`,
-      title: sourceReceiptId,
+      title: source?.title ?? sourceReceiptId,
       label: 'Source Receipt',
       sourceType: 'source-receipt',
-      quotePreview: `Source receipt attached to the active ContextCapsule: ${sourceReceiptId}.`,
+      url: source?.url ?? undefined,
+      quotePreview: excerpt(source?.snippet ?? source?.relevance ?? `Source receipt attached to the active ContextCapsule: ${sourceReceiptId}.`, 360),
       sourceReceiptId,
       sourceReceiptHref: receiptHref(sourceReceiptId),
-      confidence: 0.58,
+      locatorLabel: locatorParts.length ? locatorParts.join(' / ') : undefined,
+      citationLabel: source?.citation ?? undefined,
+      confidence: clamp01(source?.confidence ?? 0.58),
     });
   }
 
@@ -1267,6 +1282,74 @@ function titleForPrompt(prompt: string): string {
   const cleaned = prompt.trim().replace(/\s+/g, ' ');
   if (!cleaned) return 'Ask PRAXIS document pack';
   return cleaned.length > 72 ? `${cleaned.slice(0, 69)}...` : cleaned;
+}
+
+interface CapsuleSourceRefDetail {
+  sourceId: string;
+  title: string;
+  url: string | null;
+  publisher: string | null;
+  date: string | null;
+  reliabilityTier: string | number | null;
+  snippet: string | null;
+  relevance: string | null;
+  citation: string | null;
+  confidence: number | null;
+}
+
+function sourceRefDetailsFromEvidencePack(pack: CapsuleEvidencePack | null | undefined): CapsuleSourceRefDetail[] {
+  const sourceRefs = (pack?.activeCapsule as { sourceRefs?: unknown } | null | undefined)?.sourceRefs;
+  if (!Array.isArray(sourceRefs)) return [];
+  return sourceRefs.flatMap((item): CapsuleSourceRefDetail[] => {
+    if (typeof item === 'string') {
+      const sourceId = item.trim();
+      return sourceId ? [{
+        sourceId,
+        title: sourceId,
+        url: null,
+        publisher: null,
+        date: null,
+        reliabilityTier: null,
+        snippet: null,
+        relevance: null,
+        citation: null,
+        confidence: null,
+      }] : [];
+    }
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return [];
+    const record = item as Record<string, unknown>;
+    const sourceId = stringFromRecord(record, 'sourceId')
+      ?? stringFromRecord(record, 'id')
+      ?? stringFromRecord(record, 'receiptId');
+    if (!sourceId) return [];
+    const title = stringFromRecord(record, 'title')
+      ?? stringFromRecord(record, 'label')
+      ?? stringFromRecord(record, 'publisher')
+      ?? sourceId;
+    const confidence = numberFromRecord(record, 'confidence');
+    return [{
+      sourceId,
+      title,
+      url: stringFromRecord(record, 'url'),
+      publisher: stringFromRecord(record, 'publisher'),
+      date: stringFromRecord(record, 'date'),
+      reliabilityTier: stringFromRecord(record, 'reliabilityTier') ?? numberFromRecord(record, 'reliabilityTier'),
+      snippet: stringFromRecord(record, 'snippet') ?? stringFromRecord(record, 'quotePreview'),
+      relevance: stringFromRecord(record, 'relevance') ?? stringFromRecord(record, 'sourceNote'),
+      citation: stringFromRecord(record, 'citation') ?? stringFromRecord(record, 'citationLabel'),
+      confidence,
+    }];
+  });
+}
+
+function stringFromRecord(record: Record<string, unknown>, key: string): string | null {
+  const value = record[key];
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function numberFromRecord(record: Record<string, unknown>, key: string): number | null {
+  const value = record[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function excerpt(value: string, maxLength: number): string {

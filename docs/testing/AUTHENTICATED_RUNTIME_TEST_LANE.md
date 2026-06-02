@@ -33,6 +33,19 @@ workflow logs. Configure them in GitHub Actions secrets for the PRAXIS repo.
 The workflow fails before install/build if either secret is missing, so the
 authenticated app smoke and golden-path proof cannot silently skip.
 
+The same workflow also runs a scheduled and manually dispatchable live canary
+against `https://praxis.tacitus.me` using:
+
+```powershell
+npm run doctor:praxis:canary -- --json
+```
+
+That canary sets `PRAXIS_DOCTOR_WRITE_CANARY=1` inside GitHub Actions, signs in
+with the disposable Firebase account, creates a tagged capsule, runs Ask with
+sources, queues an AgentRun, verifies terminal worker output, creates a memo
+draft, and records cleanup-planned artifact ids. Keep the account disposable
+and non-admin.
+
 Readiness check:
 
 ```powershell

@@ -20,7 +20,6 @@ describe('/app/boardroom workspace contract', () => {
     expect(componentSource).toContain('data-testid="boardroom-run-panel"');
     expect(componentSource).toContain('data-testid="boardroom-context-strip"');
     expect(componentSource).toContain('Workspace');
-    expect(componentSource).toContain('PraxisBrandChip');
     expect(componentSource).toContain('RuntimeHealthSemaphore');
     expect(componentSource).toContain('ActivePolicyFileStrip');
     expect(componentSource).toContain('useActiveContextStack');
@@ -63,10 +62,11 @@ describe('/app/boardroom workspace contract', () => {
     expect(componentSource).not.toContain('Paste text as source');
   });
 
-  it('keeps boardroom out of primary navigation while using the homepage-style one-page shell', () => {
-    expect(primaryNavSource).not.toContain('/app/boardroom');
-    expect(primaryNavSource).not.toContain("id: 'boardroom'");
-    expect(appShellSource).toContain("pathname === '/app/boardroom'");
+  it('keeps Boardroom in the shared route registry while using the app shell', () => {
+    expect(primaryNavSource).toContain('/app/boardroom');
+    expect(primaryNavSource).toContain("id: 'boardroom'");
+    expect(appShellSource).toContain('AppSidebar');
+    expect(appShellSource).toContain('Header');
     expect(appShellSource).toContain('CoreContextStrip');
   });
 

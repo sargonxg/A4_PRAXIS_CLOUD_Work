@@ -20,4 +20,14 @@ describe('writer Ask memo check route contract', () => {
     expect(routeSource).toContain('buildMemoClaimCheckQuestion');
     expect(routeSource).toContain('capsuleId: parsed.data.capsuleId ?? null');
   });
+
+  it('blocks memo exports behind the combined export-ready gate', () => {
+    expect(memoDeskSource).toContain('deriveMemoExportGate');
+    expect(memoDeskSource).toContain('classificationMarking');
+    expect(memoDeskSource).toContain('memoExportGate.ready');
+    expect(memoDeskSource).toContain('Export blocked');
+    expect(memoDeskSource).toContain('Sourceability');
+    expect(memoDeskSource).toContain('Red-line');
+    expect(memoDeskSource).toContain('Classification');
+  });
 });

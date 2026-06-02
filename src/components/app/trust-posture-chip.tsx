@@ -132,7 +132,7 @@ function TrustPostureDrawer({
         onClick={onClose}
         aria-label="Close trust drawer backdrop"
       />
-      <aside className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-slate-300 bg-white p-5 shadow-2xl">
+      <aside className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-slate-300 bg-white p-5 shadow-[var(--shadow-modal)]">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">

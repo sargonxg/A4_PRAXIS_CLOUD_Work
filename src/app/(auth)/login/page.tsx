@@ -280,7 +280,7 @@ function LoginForm() {
             transition={{ duration: 0.6, ease: 'easeOut' }}
             className="relative z-10 w-full max-w-md"
           >
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-200/70 backdrop-blur-sm sm:p-8">
+            <div className="praxis-shell-modal border border-slate-200 bg-white p-6 backdrop-blur-sm sm:p-8">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

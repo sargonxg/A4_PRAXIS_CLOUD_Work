@@ -8,7 +8,7 @@
  *  1. Button usage   — landing files use only "capsule|capsule-secondary|
  *                      capsule-ghost" variants (no <Button variant="default">).
  *  2. Hex literals   — landing files contain no raw #RRGGBB hex values.
- *  3. Rounded floor  — every <article|section> in landing has rounded-* class.
+ *  3. Rounded floor  — every <article|section> in landing has a tokenized rounded-* class.
  *
  * Output: non-zero exit code if any check fails.
  */
@@ -31,7 +31,7 @@ const ALLOWED_BUTTON_VARIANTS = new Set([
 
 const HEX_PATTERN = /#(?:[0-9A-Fa-f]{3,8})\b/g;
 const BUTTON_VARIANT_PATTERN = /variant\s*=\s*["']([^"']+)["']/g;
-const ROUNDED_PATTERN = /\brounded-(?:none|sm|md|lg|xl|2xl|3xl|full|\[[^\]]+\])\b/;
+const ROUNDED_PATTERN = /\brounded-(?:none|sm|md|lg|xl|2xl|3xl|full)\b|\brounded-\[[^\]]+\]/;
 
 const violations = [];
 
@@ -90,7 +90,7 @@ async function main() {
     }
 
     // Check 3: rounded floor on article/section
-    const tagRegex = /<(article|section)\b([^>]*)>/g;
+    const tagRegex = /<(article|section)\b([\s\S]*?)>/g;
     let t;
     while ((t = tagRegex.exec(src)) !== null) {
       const attrs = t[2];
@@ -101,7 +101,7 @@ async function main() {
           violations.push({
             file: rel,
             rule: "rounded-floor",
-            detail: `<article> without a rounded-* class — landing surfaces should be rounded-2xl or rounded-3xl`,
+            detail: `<article> without a rounded-* class — landing surfaces should use the shared radius token family`,
           });
         }
       }

@@ -105,7 +105,7 @@ export function GlobalSearch({
       <div className="absolute inset-0 bg-navy-950/25 backdrop-blur-sm" />
       <Command
         data-testid="command-palette"
-        className="relative z-10 w-full max-w-2xl overflow-hidden rounded-lg border border-[var(--color-app-border)] bg-white shadow-xl shadow-navy-950/12"
+        className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-app-border)] bg-white shadow-[var(--shadow-modal)]"
         onClick={(event) => event.stopPropagation()}
         shouldFilter
       >

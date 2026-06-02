@@ -77,7 +77,7 @@ export function RecentPolicyWorkPage() {
           </nav>
         </header>
 
-        <section className="mt-8 rounded-xl border border-slate-200 bg-white/95 p-5 shadow-xl shadow-slate-200/60">
+        <section className="praxis-shell-card mt-8 p-5">
           <Link href="/app" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-950">
             <ArrowLeft className="h-4 w-4" />
             Back to Ask PRAXIS

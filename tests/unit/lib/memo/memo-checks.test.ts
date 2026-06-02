@@ -3,6 +3,7 @@ import {
   buildMemoClaimCheckQuestion,
   buildMemoClaimCheckResult,
   checkMemoLanguageConstraints,
+  deriveMemoExportGate,
 } from '@/lib/memo/memo-checks';
 import type { OutputConstraints } from '@/lib/context/system-prompt-block';
 
@@ -82,5 +83,61 @@ describe('memo checks', () => {
       severity: 'high',
     }));
     expect(result.summary).toContain('2 issue');
+  });
+
+  it('blocks memo export until sourceability passes, red-lines are clear, and classification is set', () => {
+    const supportedClaim = buildMemoClaimCheckResult({
+      claim: 'The monitoring cell reported restricted access near the northern crossing.',
+      delegateResult: {
+        text: 'The attached source supports the claim.',
+        output: {
+          verdict: 'supported',
+          rationale: 'The receipt directly supports the access restriction claim.',
+          quote: 'The monitoring cell reported access restrictions near the northern crossing.',
+          sourceId: 'doc-access:chunk-supported',
+        },
+        citations: [],
+      },
+      profileVersion: 7,
+      toolRunId: 'tool-run-sourceability',
+      generatedAt: '2026-06-02T12:00:00.000Z',
+    });
+    const cleanLanguage = checkMemoLanguageConstraints(
+      'The attached source indicates access restrictions remain in place.',
+      constraints,
+      { profileVersion: 7, toolRunId: 'tool-run-language', generatedAt: '2026-06-02T12:01:00.000Z' },
+    );
+
+    expect(deriveMemoExportGate({
+      classification: '',
+      checkResults: [cleanLanguage, supportedClaim],
+    })).toMatchObject({
+      ready: false,
+      blockers: expect.arrayContaining(['classification-required']),
+    });
+
+    expect(deriveMemoExportGate({
+      classification: 'UNCLASSIFIED // POLICY PLANNING',
+      checkResults: [cleanLanguage, supportedClaim],
+    })).toMatchObject({
+      ready: true,
+      sourceabilityStatus: 'passed',
+      redlineStatus: 'passed',
+      classificationStatus: 'set',
+    });
+
+    const redlineCheck = checkMemoLanguageConstraints(
+      'We can guarantee delivery without risk if principals accept this text.',
+      constraints,
+      { profileVersion: 7, toolRunId: 'tool-run-redline', generatedAt: '2026-06-02T12:02:00.000Z' },
+    );
+    expect(deriveMemoExportGate({
+      classification: 'UNCLASSIFIED // POLICY PLANNING',
+      checkResults: [redlineCheck, supportedClaim],
+    })).toMatchObject({
+      ready: false,
+      redlineStatus: 'blocked',
+      blockers: expect.arrayContaining(['redline-blocked']),
+    });
   });
 });

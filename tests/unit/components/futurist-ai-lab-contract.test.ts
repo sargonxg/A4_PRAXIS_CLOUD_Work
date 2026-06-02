@@ -7,6 +7,7 @@ const globals = readFileSync(join(root, 'src/app/globals.css'), 'utf8');
 const landingPage = readFileSync(join(root, 'src/app/page.tsx'), 'utf8');
 const marketingHome = readFileSync(join(root, 'src/components/marketing/praxis-marketing-home.tsx'), 'utf8');
 const chatShell = readFileSync(join(root, 'src/components/app/praxis-chat-first-shell.tsx'), 'utf8');
+const praxisChat = readFileSync(join(root, 'src/components/app/praxis-chat.tsx'), 'utf8');
 const workbench = readFileSync(join(root, 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
 const sitemap = readFileSync(join(root, 'src/app/sitemap.ts'), 'utf8');
 const ogImage = readFileSync(join(root, 'src/app/opengraph-image.tsx'), 'utf8');
@@ -26,7 +27,8 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
     }
 
     for (const className of [
-      '.app-first-futurist-shell',
+      '.praxis-public-workbench-shell',
+      '.praxis-agent-accent-panel',
       '.capsule-chain-node',
       '.source-flow-line',
       '.ai-receipt-strip',
@@ -43,8 +45,10 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
     expect(marketingHome).toContain('PraxisChatFirstShell');
     expect(marketingHome).toContain('mode="public"');
     expect(chatShell).toContain('data-testid="praxis-chat-first-shell"');
-    expect(chatShell).toContain('Ask a policy question. Build the capsule first.');
-    expect(chatShell).toContain('POLICY_MISSION_EXAMPLES');
+    expect(chatShell).toContain('PraxisChat');
+    expect(praxisChat).toContain('Ask a policy question');
+    expect(praxisChat).toContain('Sign in to run PRAXIS.');
+    expect(praxisChat).toContain('POLICY_MISSION_EXAMPLES');
     expect(`${landingPage}\n${marketingHome}\n${chatShell}`).not.toContain('TaskletPraxisWorkbench');
     expect(`${landingPage}\n${marketingHome}\n${chatShell}`).not.toContain('data-testid="app-first-root"');
   });
@@ -63,12 +67,17 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
     expect(workbench).toContain('selected-reference-capsules-preview');
   });
 
-  it('compresses the public homepage into three plain capabilities plus a marketplace teaser', () => {
-    expect(chatShell).toContain('Context Capsules');
-    expect(chatShell).toContain('Agentic research');
-    expect(chatShell).toContain('Capsule marketplace');
-    expect(chatShell).toContain('data-testid="marketing-marketplace-teaser"');
-    expect(chatShell).toContain('data-testid="marketing-pricing-strip"');
+  it('keeps the public homepage as a simple chat surface without feature-preview clutter', () => {
+    expect(chatShell).toContain('HOME_DESTINATIONS');
+    expect(chatShell).toContain("label: 'Ask'");
+    expect(chatShell).toContain("label: 'Capsules'");
+    expect(chatShell).toContain("label: 'Boardroom'");
+    expect(chatShell).toContain("label: 'Memo'");
+    expect(praxisChat).toContain('data-testid="simple-home-chat"');
+    expect(praxisChat).toContain('data-testid="marketing-hero-prompt"');
+    expect(praxisChat).toContain('data-testid="marketing-primary-cta"');
+    expect(chatShell).not.toContain('data-testid="marketing-marketplace-teaser"');
+    expect(chatShell).not.toContain('data-testid="marketing-pricing-strip"');
     expect(chatShell).not.toContain('data-testid="homepage-capsule-load-more"');
     expect(chatShell).not.toContain('Load more capsules');
   });

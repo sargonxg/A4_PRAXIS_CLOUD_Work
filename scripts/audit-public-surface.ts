@@ -30,7 +30,9 @@ const marketingHome = read('src/components/marketing/praxis-marketing-home.tsx')
 const appIndex = read('src/app/app/page.tsx');
 const appLaunchpad = read('src/components/app/praxis-app-launchpad.tsx');
 const chatShell = read('src/components/app/praxis-chat-first-shell.tsx');
-const sharedHomeSurface = `${marketingHome}\n${appLaunchpad}\n${chatShell}`;
+const praxisChat = read('src/components/app/praxis-chat.tsx');
+const publicShell = read('src/components/app/public-shell.tsx');
+const sharedHomeSurface = `${marketingHome}\n${appLaunchpad}\n${chatShell}\n${praxisChat}\n${publicShell}`;
 const policyMissions = read('src/lib/product/policy-missions.ts');
 const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
 const boardroom = read('src/components/boardroom/boardroom-workspace.tsx');
@@ -59,20 +61,25 @@ requireAll('marketing home wrapper', marketingHome, [
 requireAll('marketing home', sharedHomeSurface, [
   'marketing-home',
   'data-testid="praxis-chat-first-shell"',
-  'Ask a policy question. Build the capsule first.',
+  'data-testid="simple-home-chat"',
+  'Ask a policy question',
   'POLICY_MISSION_EXAMPLES',
   'data-testid="marketing-hero-prompt"',
   'data-testid="marketing-primary-cta"',
-  'Context Capsules',
-  'Agentic research',
-  'Capsule marketplace',
+  'Sign in to run',
+  'Ask',
+  'Capsules',
+  'Boardroom',
+  'Memo',
   'Guide',
-  'data-testid="marketing-marketplace-teaser"',
-  'data-testid="marketing-pricing-strip"',
-  'Every claim cited',
-  'Start free',
+  'Pricing',
 ]);
 forbidAll('marketing home', sharedHomeSurface, [
+  'SAMPLE_POLICY_ARTIFACTS',
+  'PublicMarketingSections',
+  'PRAXIS sample artifacts',
+  'data-testid="marketing-marketplace-teaser"',
+  'data-testid="marketing-pricing-strip"',
   'Diagnostics',
   'Systems ready',
   'Search app',
@@ -83,7 +90,7 @@ forbidAll('marketing home', sharedHomeSurface, [
   'AskPraxisHome',
 ]);
 
-const primaryCtaCount = chatShell.split('data-testid="marketing-primary-cta"').length - 1;
+const primaryCtaCount = sharedHomeSurface.split('data-testid="marketing-primary-cta"').length - 1;
 if (primaryCtaCount !== 1) {
   failures.push(`marketing home should expose exactly one primary CTA test id, found ${primaryCtaCount}`);
 }
@@ -96,19 +103,19 @@ requireAll('signed-in launchpad wrapper', appLaunchpad, [
 ]);
 requireAll('signed-in launchpad', sharedHomeSurface, [
   'app-launchpad',
-  'Ask a policy question. Build the capsule first.',
+  'Ask a policy question',
   'POLICY_MISSION_EXAMPLES',
   'Ask PRAXIS',
+  'fetch(\'/api/ai/chat\'',
+  'sourceCards',
+  'data-testid="simple-home-chat"',
+  'data-testid="context-toggle"',
   'data-testid="launchpad-capsule-chip"',
-  '/api/created-work?limit=4',
-  'items.slice(0, 4)',
-  'Your capsules',
-  'Marketplace',
-  'Recent work',
-  '/app/recent-work',
-  'PRAXIS sample artifacts',
+  'data-testid="launchpad-capsule-stack"',
+  'Attach capsule',
+  'Build capsule',
+  '/app?panel=memo',
   'data-testid="advanced-edit-context"',
-  'Advanced / Edit context',
 ]);
 requireAll('policy missions', policyMissions, [
   'Sanctions impact memo',

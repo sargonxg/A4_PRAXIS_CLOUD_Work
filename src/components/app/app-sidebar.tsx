@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Boxes,
+  BookOpen,
+  BriefcaseBusiness,
   ChevronDown,
   ChevronRight,
   ChevronsLeft,
@@ -11,9 +13,12 @@ import {
   Cog,
   FileText,
   FolderKanban,
+  History,
   Home,
+  Library,
   LibraryBig,
   LogOut,
+  MessageSquareText,
   Network,
   Settings,
   ShieldCheck,
@@ -23,17 +28,22 @@ import {
 } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
-import { NAV_GROUPS, type PrimaryNavGroup, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
+import { itemMatchesPath, NAV_GROUPS, type PrimaryNavGroup, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
 import { useAppStore } from '@/stores/app-store';
 
 const ICONS: Record<PrimaryNavIcon, typeof Home> = {
   Home,
+  MessageSquareText,
   Sparkles,
   FolderKanban,
   LibraryBig,
+  Library,
+  BriefcaseBusiness,
   FileText,
+  BookOpen,
+  History,
   Network,
   Wrench,
   Settings,
@@ -125,7 +135,7 @@ export function AppSidebar() {
 }
 
 function isGroupActive(group: PrimaryNavGroup, pathname: string): boolean {
-  return group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
+  return group.items.some((item) => itemMatchesPath(item, pathname));
 }
 
 function ContextCapsulePanel() {
@@ -193,7 +203,7 @@ function NavGroup({
       <div className="space-y-1">
         {group.items.map((item) => {
           const Icon = ICONS[item.icon];
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const active = itemMatchesPath(item, pathname);
           return (
             <PraxisLink
               key={item.id}
@@ -241,7 +251,7 @@ function NavGroup({
         <div className="mt-1 space-y-0.5">
           {group.items.map((item) => {
             const Icon = ICONS[item.icon];
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const active = itemMatchesPath(item, pathname);
             return (
               <PraxisLink
                 key={item.id}

@@ -79,7 +79,7 @@ export function ConnectorStrip() {
         {CONNECTORS.map((c) => (
           <li key={c.id}>
             <span
-              className="surface-glass inline-flex items-center gap-2 rounded-full border border-[color:var(--color-rose-gold)]/30 px-3 py-1.5 text-[12.5px] font-medium text-[color:var(--color-ink)]/85 shadow-capsule transition-all hover:-translate-y-0.5 hover:shadow-capsule-lg"
+              className="surface-glass inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-[color:var(--color-rose-gold)]/30 px-3 py-1.5 text-[12.5px] font-medium text-[color:var(--color-ink)]/85 shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-float)]"
               title={`${c.label} — ${STATUS_LABEL[c.status]}`}
             >
               <span

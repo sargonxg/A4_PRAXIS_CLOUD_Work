@@ -46,7 +46,7 @@ export function CapsuleAnatomyHoneycomb() {
               onClick={() =>
                 setActiveMobile((prev) => (prev === core.key ? null : core.key))
               }
-              className="group relative aspect-square w-full overflow-hidden rounded-2xl border border-[color:var(--color-rose-gold)]/25 transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-gold-500)] focus-visible:ring-offset-2 hover:-translate-y-1 hover:shadow-capsule"
+              className="group relative aspect-square w-full overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--color-rose-gold)]/25 transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-gold-500)] focus-visible:ring-offset-2 hover:-translate-y-1 hover:shadow-[var(--shadow-card)]"
               style={{
                 background: `linear-gradient(180deg, ${core.color}1A 0%, rgba(255,255,255,0.5) 60%)`,
               }}

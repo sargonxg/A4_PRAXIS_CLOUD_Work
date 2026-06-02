@@ -158,7 +158,7 @@ export function GuidedWalkthrough({ onComplete }: GuidedWalkthroughProps) {
         animate={{ opacity: 1, x: 0, y: 0 }}
         exit={{ opacity: 0, x: 24 }}
         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed bottom-6 right-6 z-40 w-80 rounded-2xl bg-white shadow-2xl border border-gray-100 overflow-hidden"
+        className="fixed bottom-6 right-6 z-40 w-80 overflow-hidden rounded-[var(--radius-xl)] border border-gray-100 bg-white shadow-[var(--shadow-float)]"
         aria-label="Guided walkthrough"
       >
         {/* Progress bar */}

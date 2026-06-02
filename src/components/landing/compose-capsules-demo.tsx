@@ -100,7 +100,7 @@ function ComposeCard({
   return (
     <div className="flex items-center justify-center">
       <article
-        className="surface-glass relative flex aspect-[5/6] w-full max-w-[260px] flex-col overflow-hidden rounded-3xl border border-[color:var(--color-rose-gold)]/30 p-5 shadow-capsule"
+        className="surface-glass relative flex aspect-[5/6] w-full max-w-[260px] flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--color-rose-gold)]/30 p-5 shadow-[var(--shadow-card)]"
         style={{
           transform: `rotate(${tiltDeg}deg)`,
           background: `linear-gradient(180deg, ${ACCENT_BG[capsule.accent]} 0%, rgba(255,255,255,0.55) 60%)`,
@@ -109,7 +109,7 @@ function ComposeCard({
         {composite ? (
           <div
             aria-hidden
-            className="border-brushed-gold pointer-events-none absolute inset-0 rounded-3xl p-px"
+            className="border-brushed-gold pointer-events-none absolute inset-0 rounded-[var(--radius-xl)] p-px"
             style={{ background: "transparent" }}
           />
         ) : null}

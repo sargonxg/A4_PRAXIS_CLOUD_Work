@@ -36,7 +36,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isOnePageCockpit =
     pathname === '/app' ||
-    pathname === '/app/boardroom' ||
     pathname === '/app/capsules' ||
     pathname === '/app/recent-work' ||
     pathname === '/app/settings' ||
@@ -142,7 +141,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <TooltipProvider delayDuration={0}>
       <>
       {isOnePageCockpit ? (
-        <div className="app-light h-screen overflow-y-auto bg-[#f3f5f1]" data-testid="praxis-one-page-app-shell">
+        <div className="app-light praxis-app-surface h-screen overflow-y-auto" data-testid="praxis-one-page-app-shell">
           <ErrorBoundary>
             <ToolErrorBoundary>
               <PraxisRouteTransition>
@@ -154,7 +153,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       ) : (
       <>
-      <div className="app-light flex h-screen overflow-hidden bg-[var(--color-app-bg)]">
+      <div className="app-light praxis-app-surface flex h-screen overflow-hidden">
         {/* Mobile sidebar overlay */}
         {isMobile && sidebarOpen && (
           <div
@@ -170,7 +169,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div
           className={
             isMobile
-              ? `fixed inset-y-0 left-0 z-50 bg-white shadow-2xl shadow-navy-950/20 transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+              ? `fixed inset-y-0 left-0 z-50 bg-white shadow-[var(--shadow-modal)] transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
               : ''
           }
         >
@@ -198,7 +197,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {helpOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-navy-950/25 px-4 pt-20 backdrop-blur-sm" onClick={() => setHelpOpen(false)}>
           <div
-            className="w-full max-w-md rounded-xl border border-[var(--color-app-border)] bg-white p-4 shadow-xl"
+            className="praxis-shell-modal w-full max-w-md border border-[var(--color-app-border)] bg-white p-4"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-3">
@@ -249,7 +248,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 function AppShellLoadingState({ label }: { label: string }) {
   return (
-    <div className="app-light flex min-h-screen items-center justify-center bg-[var(--color-app-bg)] p-6">
+    <div className="app-light praxis-app-surface flex min-h-screen items-center justify-center p-6">
       <div className="praxis-enter w-full max-w-4xl space-y-5" role="status" aria-label={label}>
         <span className="sr-only">{label}</span>
         <div className="flex items-center gap-3">

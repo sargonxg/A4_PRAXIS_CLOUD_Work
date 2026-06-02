@@ -9,10 +9,15 @@ const button = readFileSync(join(root, 'src/components/ui/button.tsx'), 'utf8');
 const contextStrip = readFileSync(join(root, 'src/components/app/core-context-strip.tsx'), 'utf8');
 const workbench = readFileSync(join(root, 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
 const appShell = readFileSync(join(root, 'src/components/app/app-shell.tsx'), 'utf8');
+const publicShell = readFileSync(join(root, 'src/components/app/public-shell.tsx'), 'utf8');
+const appSidebar = readFileSync(join(root, 'src/components/app/app-sidebar.tsx'), 'utf8');
+const appHeader = readFileSync(join(root, 'src/components/app/header.tsx'), 'utf8');
+const boardroom = readFileSync(join(root, 'src/components/boardroom/boardroom-workspace.tsx'), 'utf8');
 const appLoading = readFileSync(join(root, 'src/app/app/loading.tsx'), 'utf8');
 const skeleton = readFileSync(join(root, 'src/components/ui/skeleton.tsx'), 'utf8');
 const praxisMotion = readFileSync(join(root, 'src/components/ui/praxis-motion.tsx'), 'utf8');
 const landingLayout = readFileSync(join(root, 'src/app/(landing)/layout.tsx'), 'utf8');
+const primaryNav = readFileSync(join(root, 'src/lib/navigation/primary-nav.ts'), 'utf8');
 const pricing = readFileSync(join(root, 'src/app/pricing/page.tsx'), 'utf8');
 const legal = readFileSync(join(root, 'src/app/legal/[slug]/page.tsx'), 'utf8');
 const login = readFileSync(join(root, 'src/app/(auth)/login/page.tsx'), 'utf8');
@@ -56,8 +61,8 @@ describe('Civic Atelier visual contract', () => {
       '.living-context-cell',
       '.source-posture-chip',
       '.work-action-menu',
-      '.app-first-futurist-shell',
-      '.futurist-ai-lab',
+      '.praxis-public-workbench-shell',
+      '.praxis-agent-accent-panel',
       '.capsule-chain-node',
       '.source-flow-line',
       '.ai-receipt-strip',
@@ -127,7 +132,8 @@ describe('Civic Atelier visual contract', () => {
     expect(praxisMotion).toContain('function PraxisRouteTransition');
     expect(praxisMotion).toContain('useReducedMotion');
     expect(appShell).toContain('<PraxisRouteTransition>');
-    expect(landingLayout).toContain('<PraxisRouteTransition>');
+    expect(publicShell).toContain('<PraxisRouteTransition>');
+    expect(landingLayout).toContain('return <>{children}</>');
     expect(appShell).toContain('AppShellLoadingState');
     expect(appLoading).toContain('praxis-enter-stagger');
     expect(workbench).toContain('AnimatePresence');
@@ -142,6 +148,48 @@ describe('Civic Atelier visual contract', () => {
     expect(onboardingIdentity).toContain('praxis-enter');
     expect(onboardingPerspective).toContain('praxis-enter');
     expect(onboardingWorkingStyle).toContain('praxis-enter');
+  });
+
+  it('keeps Prompt 2 shells, tokens, route labels, and boardroom surface unified', () => {
+    for (const token of [
+      '--radius-sm',
+      '--radius-md',
+      '--radius-lg',
+      '--radius-xl',
+      '--radius-full',
+      '--shadow-card',
+      '--shadow-modal',
+      '--shadow-float',
+      '--spacing-shell-x',
+      '--spacing-shell-y',
+      '--spacing-panel',
+      '--spacing-card',
+      '--text-display',
+      '--text-title',
+      '--text-body',
+      '--text-caption',
+      '--color-praxis-accent',
+      '--color-praxis-action',
+    ]) {
+      expect(globals).toContain(token);
+    }
+
+    expect(publicShell).toContain('PUBLIC_NAV_ITEMS');
+    expect(publicShell).toContain('PUBLIC_FOOTER_LINKS');
+    expect(publicShell).toContain('praxis-public-header');
+    expect(publicShell).toContain('praxis-button-primary');
+    expect(appShell).toContain('<AppSidebar />');
+    expect(appShell).toContain('<Header isMobile={isMobile}');
+    expect(appShell).toContain('praxis-app-surface');
+    expect(appSidebar).toContain('NAV_GROUPS');
+    expect(appHeader).toContain('breadcrumbsForPath');
+    expect(primaryNav).toContain('PUBLIC_NAV_ITEMS');
+    expect(primaryNav).toContain('ROUTE_LABELS');
+    expect(primaryNav).toContain('breadcrumbsForPath');
+    expect(boardroom).toContain('app-light');
+    expect(boardroom).toContain('praxis-shell-card');
+    expect(boardroom).not.toContain('praxis-agent-accent-panel');
+    expect(boardroom).not.toContain('--color-lab-');
   });
 
   it('loads EB Garamond as the heading/display face while preserving compatibility aliases', () => {

@@ -43,7 +43,7 @@ export function ContextBuilderRoom({ situationId, initialMode = 'repository' }: 
 
   return (
     <main className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 bg-[#f3f5f1] bg-[linear-gradient(rgba(19,34,27,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(19,34,27,0.045)_1px,transparent_1px)] bg-[length:36px_36px] px-4 pb-16 pt-4 sm:px-6 lg:px-8">
-      <header className="rounded-3xl border border-black/10 bg-white/90 px-5 py-5 shadow-xl shadow-slate-900/5 backdrop-blur">
+      <header className="rounded-[var(--radius-xl)] border border-black/10 bg-white/90 px-5 py-5 shadow-[var(--shadow-card)] backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-700">Context Capsule management</p>

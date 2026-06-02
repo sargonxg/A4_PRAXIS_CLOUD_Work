@@ -91,7 +91,7 @@ export function PersonaCards() {
         {PERSONAS.map((p) => (
           <article
             key={p.id}
-            className="surface-glass relative flex flex-col overflow-hidden rounded-3xl border border-[color:var(--color-rose-gold)]/25 p-6 shadow-capsule transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-capsule-lg sm:p-7"
+            className="surface-glass relative flex flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--color-rose-gold)]/25 p-6 shadow-[var(--shadow-card)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[var(--shadow-float)] sm:p-7"
             style={{
               background: `linear-gradient(180deg, ${ACCENT_TINT[p.accent]} 0%, rgba(255,255,255,0.55) 60%)`,
             }}

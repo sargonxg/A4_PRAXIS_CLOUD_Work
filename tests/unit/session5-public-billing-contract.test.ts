@@ -21,28 +21,29 @@ describe('Session 5 public surface and billing contract', () => {
     const appLaunchpad = read('src/components/app/praxis-app-launchpad.tsx');
     const chatShell = read('src/components/app/praxis-chat-first-shell.tsx');
     const missionSource = read('src/lib/product/policy-missions.ts');
+    const praxisChat = read('src/components/app/praxis-chat.tsx');
 
     for (const mission of REQUIRED_MISSIONS) {
       expect(missionSource).toContain(mission);
     }
     expect(marketingHome).toContain('PraxisChatFirstShell');
     expect(appLaunchpad).toContain('PraxisChatFirstShell');
-    expect(chatShell).toContain('POLICY_MISSION_EXAMPLES');
+    expect(chatShell).toContain('PraxisChat');
+    expect(praxisChat).toContain('POLICY_MISSION_EXAMPLES');
   });
 
   it('routes hero prompts directly into capsule creation through capsulePrompt', () => {
     const marketingHome = read('src/components/marketing/praxis-marketing-home.tsx');
     const appLaunchpad = read('src/components/app/praxis-app-launchpad.tsx');
-    const chatShell = read('src/components/app/praxis-chat-first-shell.tsx');
+    const praxisChat = read('src/components/app/praxis-chat.tsx');
     const builder = read('src/components/capsules/CapsuleBuilderWizard.tsx');
 
     expect(marketingHome).toContain('mode="public"');
     expect(appLaunchpad).toContain('mode="authenticated"');
-    expect(chatShell).toContain('name="capsulePrompt"');
-    expect(chatShell).toContain('value="/app/capsules/builder"');
-    expect(chatShell).toContain('params.set(\'capsulePrompt\'');
-    expect(chatShell).toContain('router.push(`/app/capsules/builder?${params.toString()}`)');
-    expect(chatShell).toContain('router.push(`/login?${params.toString()}`)');
+    expect(praxisChat).toContain('name="capsulePrompt"');
+    expect(praxisChat).toContain('fetch(\'/api/ai/chat\'');
+    expect(praxisChat).toContain('params.set(\'prompt\'');
+    expect(praxisChat).toContain('router.push(`/login?${params.toString()}`)');
     expect(builder).toContain('useSearchParams');
     expect(builder).toContain('PENDING_CONTEXT_CAPSULE_PROMPT_KEY');
     expect(builder).toContain("from '@/lib/product/context-capsule-pending'");

@@ -92,7 +92,7 @@ export function ShareCapsuleButton({ capsuleId }: { capsuleId: string | null }) 
               animate={{ y: 0, scale: 1, opacity: 1 }}
               exit={{ y: 12, scale: 0.98, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 240, damping: 28 }}
-              className="relative z-10 w-full max-w-md rounded-xl border border-slate-300 bg-white p-5 shadow-2xl"
+              className="praxis-shell-modal relative z-10 w-full max-w-md border border-slate-300 bg-white p-5"
             >
               <button
                 type="button"

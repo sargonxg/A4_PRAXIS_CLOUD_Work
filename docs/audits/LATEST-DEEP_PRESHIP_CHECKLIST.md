@@ -1,6 +1,6 @@
 # PRAXIS Deep Pre-Ship Checklist Audit
 
-Date: 2026-06-01
+Date: 2026-06-02
 
 Summary: 141 PASS, 2 WARN, 0 BLOCKED across 143 static pre-ship checks.
 

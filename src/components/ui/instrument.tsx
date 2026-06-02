@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ComponentType, type HTMLAttributes, type ReactNode } from 'react';
 import { ChevronDown, MoreHorizontal } from 'lucide-react';
+import { PublicShell } from '@/components/app/public-shell';
 import { cn } from '@/lib/utils/cn';
 
 type InstrumentTone = 'paper' | 'vellum' | 'dark';
@@ -290,8 +291,8 @@ export function PublicPageShell({
   maxWidth?: string;
 }) {
   return (
-    <main className="landing-light instrument-public-shell civic-atelier-shell cartographic-grid praxis-enter min-h-screen px-5 py-10 text-[color:var(--color-ink)]">
-      <div className={cn('mx-auto', maxWidth)}>{children}</div>
-    </main>
+    <PublicShell contentClassName="px-5 py-10">
+      <div className={cn('praxis-enter mx-auto', maxWidth)}>{children}</div>
+    </PublicShell>
   );
 }

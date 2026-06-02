@@ -142,7 +142,7 @@ export function CoreSwapDrawer({
             animate={{ x: 0, opacity: 1 }}
             exit={reduceMotion ? { opacity: 0 } : { x: 32, opacity: 0 }}
             transition={reduceMotion ? { duration: 0 } : SPRING}
-            className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-slate-300 bg-white shadow-2xl"
+            className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-slate-300 bg-white shadow-[var(--shadow-modal)]"
           >
             <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-5 py-4">
               <div>

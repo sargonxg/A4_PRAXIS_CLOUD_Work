@@ -19,7 +19,7 @@ function CallbackCard({
 }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-navy-950 px-5 text-white">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.06] p-8 text-center shadow-2xl shadow-black/30 backdrop-blur-md">
+      <div className="w-full max-w-md rounded-[var(--radius-xl)] border border-white/10 bg-white/[0.06] p-8 text-center shadow-[var(--shadow-modal)] backdrop-blur-md">
         <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-gold-400/25 bg-gold-400/10 text-gold-300">
           {tone === "error" ? (
             <ShieldAlert className="h-6 w-6" />

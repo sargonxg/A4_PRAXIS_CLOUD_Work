@@ -3635,7 +3635,7 @@ export function TaskletPraxisWorkbench({
                     <span className="mt-0.5 block truncate text-sm font-semibold text-white">{activeCapsuleForStrip?.label ?? 'No capsule opened'}</span>
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1">
-                    <span className="rounded-md border border-white/15 bg-white/10 px-2 py-1 text-[11px] font-semibold text-[color:var(--color-lab-cyan)]">
+                    <span className="rounded-[var(--radius-md)] border border-white/15 bg-white/10 px-2 py-1 text-[11px] font-semibold text-[color:var(--color-gold-300)]">
                       {activeCapsuleReadiness}
                     </span>
                     <span className="text-[11px] font-semibold text-white/80">Open Context Chain</span>
@@ -3815,7 +3815,7 @@ export function TaskletPraxisWorkbench({
                   <motion.section className="praxis-enter capsule-mobile-sheet max-h-[86vh] w-full overflow-y-auto rounded-t-xl p-4" data-testid="mobile-context-chain-sheet" {...fadeRiseMotionProps(reduceMotion, 12)}>
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-[color:var(--color-lab-line)]">ContextChain</p>
+                        <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-[color:var(--color-app-text-muted)]">ContextChain</p>
                         <h2 className="mt-1 text-lg font-semibold text-slate-950">Capsule selector</h2>
                         <p className="mt-1 text-sm text-slate-600">
                           All capsules: {activeCapsuleStack.length} active, {openChainSlots.length} open slot{openChainSlots.length === 1 ? '' : 's'}.
@@ -4182,7 +4182,7 @@ export function TaskletPraxisWorkbench({
               ) : null}
               {selectedText && selectionRect && selectedSpanMenuOpen ? (
                 <div
-                  className="fixed z-[80] w-[min(20rem,calc(100vw-1.5rem))] rounded-lg border border-[color:var(--color-clay)]/35 bg-[color:var(--color-archive-paper-strong)] p-3 shadow-2xl shadow-slate-950/20 ring-1 ring-white/70"
+                  className="fixed z-[80] w-[min(20rem,calc(100vw-1.5rem))] rounded-[var(--radius-lg)] border border-[color:var(--color-clay)]/35 bg-[color:var(--color-archive-paper-strong)] p-3 shadow-[var(--shadow-modal)] ring-1 ring-white/70"
                   role="menu"
                   aria-label="Selected text actions"
                   data-selection-popover
@@ -5459,7 +5459,7 @@ function MobileCapsuleLane({
               <span className="block truncate text-sm font-semibold text-white">{capsule.label}</span>
               <span className="block font-mono text-[10px] font-semibold uppercase text-slate-400">{capsuleRoleLabel(capsule.role)}</span>
             </span>
-            <span className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-[color:var(--color-lab-cyan)]">{capsule.code}</span>
+            <span className="rounded-[var(--radius-sm)] bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-[color:var(--color-gold-300)]">{capsule.code}</span>
           </button>
         )) : (
           <span className="rounded-md border border-dashed border-slate-200 px-3 py-2 text-xs text-slate-500">No capsules in this lane.</span>
@@ -5494,7 +5494,7 @@ function CapsuleBrowserDialog({
       exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
     >
-      <motion.section className="praxis-enter max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20" data-testid="capsule-browser-modal" {...fadeRiseMotionProps(reduceMotion)}>
+      <motion.section className="praxis-enter max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-[var(--radius-xl)] border border-slate-200 bg-white shadow-[var(--shadow-modal)]" data-testid="capsule-browser-modal" {...fadeRiseMotionProps(reduceMotion)}>
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div>
             <p className="text-sm font-semibold text-slate-950">Browse capsules</p>
@@ -5762,7 +5762,7 @@ function CapsuleRepositoryModal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20" onMouseDown={(event) => event.stopPropagation()}>
+      <section className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[var(--radius-xl)] border border-slate-200 bg-white shadow-[var(--shadow-modal)]" onMouseDown={(event) => event.stopPropagation()}>
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-5 py-4">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-oxide)]">Capsule repository</p>
@@ -7084,7 +7084,7 @@ function ContextChainProvenanceMap({
       <ol className={cn('relative grid gap-2', compact ? 'grid-cols-1 sm:grid-cols-5' : 'grid-cols-1 md:grid-cols-5')}>
         {nodes.map((node) => (
           <li key={node.id} className="capsule-chain-node min-w-0 rounded-lg p-3" data-context-chain-state={node.state}>
-            <span className="block font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-lab-cyan)]">
+            <span className="block font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-gold-300)]">
               {node.label}
             </span>
             <span className="mt-1 block truncate text-sm font-semibold text-white" title={node.value}>{node.value}</span>
@@ -8170,7 +8170,7 @@ function WorkbenchDiagnosticsDrawer({
       exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
     >
-      <motion.aside className="praxis-enter ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-2xl" {...sideSheetMotionProps(reduceMotion)}>
+      <motion.aside className="praxis-enter ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-[var(--shadow-modal)]" {...sideSheetMotionProps(reduceMotion)}>
         <div className="border-b border-slate-200 p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -9552,7 +9552,7 @@ function CapsuleBuilderDialog({
       exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
     >
-      <motion.section className="praxis-enter praxis-workbench-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto p-5 shadow-2xl" {...fadeRiseMotionProps(reduceMotion)}>
+      <motion.section className="praxis-enter praxis-workbench-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto p-5 shadow-[var(--shadow-modal)]" {...fadeRiseMotionProps(reduceMotion)}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--color-oxide)]">Build Capsule</p>
@@ -9734,7 +9734,7 @@ function RepositorySheet({
       exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
     >
-      <motion.aside className="praxis-enter dossier-spine ml-auto flex h-full w-full max-w-xl flex-col shadow-2xl" {...sideSheetMotionProps(reduceMotion)}>
+      <motion.aside className="praxis-enter dossier-spine ml-auto flex h-full w-full max-w-xl flex-col shadow-[var(--shadow-modal)]" {...sideSheetMotionProps(reduceMotion)}>
         <div className="border-b border-slate-200 p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -9918,7 +9918,7 @@ function CapsuleInspectorSheet({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <motion.aside className="praxis-enter dossier-spine ml-auto flex h-full w-full max-w-3xl flex-col overflow-y-auto p-5 shadow-2xl" onMouseDown={(event) => event.stopPropagation()} {...sideSheetMotionProps(reduceMotion)}>
+      <motion.aside className="praxis-enter dossier-spine ml-auto flex h-full w-full max-w-3xl flex-col overflow-y-auto p-5 shadow-[var(--shadow-modal)]" onMouseDown={(event) => event.stopPropagation()} {...sideSheetMotionProps(reduceMotion)}>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--color-oxide)]">Capsule inspector</p>
@@ -10686,7 +10686,7 @@ function PraxisGuideChat({
             role="dialog"
             aria-modal="false"
             aria-label="PRAXIS guide chat"
-            className="praxis-enter flex max-h-[calc(100vh-2rem)] w-[min(42rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 md:max-h-[82vh]"
+            className="praxis-enter flex max-h-[calc(100vh-2rem)] w-[min(42rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-[var(--radius-xl)] border border-slate-200 bg-white shadow-[var(--shadow-modal)] md:max-h-[82vh]"
             {...fadeRiseMotionProps(reduceMotion, 10)}
           >
           <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-5 py-4">
@@ -10844,7 +10844,7 @@ function MemoArtifactOverlay({
       exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
     >
-      <motion.aside className="praxis-enter ml-auto flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl" {...sideSheetMotionProps(reduceMotion)}>
+      <motion.aside className="praxis-enter ml-auto flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-[var(--radius-lg)] border border-slate-200 bg-white shadow-[var(--shadow-modal)]" {...sideSheetMotionProps(reduceMotion)}>
         <header className="border-b border-slate-200 px-4 py-3 sm:px-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
@@ -11489,7 +11489,7 @@ function AgentActionDrawer({
       exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
     >
-      <motion.aside className="praxis-enter ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-2xl" {...sideSheetMotionProps(reduceMotion)}>
+      <motion.aside className="praxis-enter ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-[var(--shadow-modal)]" {...sideSheetMotionProps(reduceMotion)}>
         <div className="border-b border-slate-200 p-5">
           <div className="flex items-start justify-between gap-4">
             <div>

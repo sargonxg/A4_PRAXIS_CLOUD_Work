@@ -153,6 +153,13 @@ export function upgradeV2toV3(capsule: ContextCapsuleV2 | unknown, options: Cont
   return normalizeContextCapsuleV3({
     ...v2,
     ...(isRecord(body.memoryPosture) ? { memoryPosture: body.memoryPosture } : {}),
+    ...(isRecord(body.humanTacitKnowledge) ? { humanTacitKnowledge: body.humanTacitKnowledge } : {}),
+    ...(isRecord(body.temporality) ? { temporality: body.temporality } : {}),
+    ...(isRecord(body.causality) ? { causality: body.causality } : {}),
+    ...(isRecord(body.ontologyBinding) ? { ontologyBinding: body.ontologyBinding } : {}),
+    ...(isRecord(body.embeddedGraph) ? { embeddedGraph: body.embeddedGraph } : {}),
+    ...(isRecord(body.graphLiteProjection) ? { graphLiteProjection: body.graphLiteProjection } : {}),
+    ...(isRecord(body.grounding) ? { grounding: body.grounding } : {}),
   }, options);
 }
 

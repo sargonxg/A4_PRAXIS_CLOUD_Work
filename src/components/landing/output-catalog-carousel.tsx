@@ -132,7 +132,7 @@ export function OutputCatalogCarousel() {
           <button
             type="button"
             onClick={() => scrollBy(-1)}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-rose-gold)]/40 bg-white/70 text-[color:var(--color-ink)] backdrop-blur transition hover:bg-white hover:shadow-capsule"
+            className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-full)] border border-[color:var(--color-rose-gold)]/40 bg-white/70 text-[color:var(--color-ink)] backdrop-blur transition hover:bg-white hover:shadow-[var(--shadow-card)]"
             aria-label="Previous outputs"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -140,7 +140,7 @@ export function OutputCatalogCarousel() {
           <button
             type="button"
             onClick={() => scrollBy(1)}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--color-rose-gold)]/40 bg-white/70 text-[color:var(--color-ink)] backdrop-blur transition hover:bg-white hover:shadow-capsule"
+            className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-full)] border border-[color:var(--color-rose-gold)]/40 bg-white/70 text-[color:var(--color-ink)] backdrop-blur transition hover:bg-white hover:shadow-[var(--shadow-card)]"
             aria-label="Next outputs"
           >
             <ChevronRight className="h-5 w-5" />
@@ -159,7 +159,7 @@ export function OutputCatalogCarousel() {
             <article
               key={s.id}
               role="listitem"
-              className="surface-glass relative flex aspect-[5/7] w-[260px] shrink-0 snap-start flex-col overflow-hidden rounded-3xl border border-[color:var(--color-rose-gold)]/25 p-5 shadow-capsule transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-capsule-lg sm:w-[280px]"
+              className="surface-glass relative flex aspect-[5/7] w-[260px] shrink-0 snap-start flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--color-rose-gold)]/25 p-5 shadow-[var(--shadow-card)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[var(--shadow-float)] sm:w-[280px]"
               style={{
                 transform: `rotate(${tiltDeg}deg)`,
                 background: `linear-gradient(180deg, ${ACCENT_TINT[s.accent]} 0%, rgba(255,255,255,0.55) 60%)`,

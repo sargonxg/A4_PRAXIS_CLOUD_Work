@@ -121,9 +121,41 @@ describe('buildCapsuleWorkbenchViewModel', () => {
 
     expect(model.evidence.sourcePosture).toBe('No source receipts attached yet.');
     expect(model.anatomy.filter((core) => core.status === 'missing').length).toBeGreaterThan(0);
+    expect(model.coreSourceability.find((gate) => gate.kind === 'source')).toMatchObject({
+      sourceCoverageScore: 0,
+      readyBlocked: true,
+      evidenceGapCount: expect.any(Number),
+    });
+    expect(model.coreSourceability.find((gate) => gate.kind === 'output')?.unsupportedClaimCount).toBeGreaterThanOrEqual(0);
     expect(model.graph.nodes.some((node) => node.type === 'gap')).toBe(true);
     expect(model.reviewQueue.some((item) => item.target === 'sourceGap')).toBe(true);
     expect(model.summaryFacts.nextAction).toBe('Attach sources or create a source-gap review card.');
+  });
+
+  it('surfaces per-core sourceability gates for the five editable capsule cores', () => {
+    const model = buildCapsuleWorkbenchViewModel({
+      capsule: {
+        ...capsule,
+        sourceRefs: [{ sourceId: 'src-omb-memo', label: 'OMB memo' }],
+        claimLedger: [
+          { claimId: 'claim-supported', text: 'OMB issued guidance.', support: 'supported', sourceRefIds: ['src-omb-memo'] },
+          { claimId: 'claim-unsupported', text: 'Procurement timing is resolved.', support: 'unsupported', sourceRefIds: [] },
+        ],
+      },
+      repositoryDocuments: [{ id: 'doc-eo-14110', title: 'Executive Order 14110', status: 'indexed' }],
+    });
+
+    expect(model.coreSourceability.map((gate) => gate.kind)).toEqual(['user', 'situation', 'source', 'document', 'output']);
+    expect(model.coreSourceability.find((gate) => gate.kind === 'source')).toMatchObject({
+      sourceCoverageScore: expect.any(Number),
+      unsupportedClaimCount: 1,
+      readyBlocked: true,
+      unsupportedClaims: expect.arrayContaining(['Procurement timing is resolved.']),
+    });
+    expect(model.coreSourceability.find((gate) => gate.kind === 'document')).toMatchObject({
+      evidenceGapCount: 0,
+      sourceCoverageScore: expect.any(Number),
+    });
   });
 
   it('keeps the full living graph model instead of truncating to a preview subset', () => {

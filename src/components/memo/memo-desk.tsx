@@ -66,10 +66,12 @@ import { GapFillerRail } from '@/components/memo/GapFillerRail';
 import { useSituationStore } from '@/stores/situation-store';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
-import type {
-  MemoClaimCheckResult,
-  MemoLanguageCheckResult,
-  MemoLanguageViolation,
+import {
+  deriveMemoExportGate,
+  type MemoClaimCheckResult,
+  type MemoExportGate,
+  type MemoLanguageCheckResult,
+  type MemoLanguageViolation,
 } from '@/lib/memo/memo-checks';
 import type { MemoBlock } from '@/types/memo';
 
@@ -141,6 +143,13 @@ const OUTPUT_CORES = [
   'Legal-risk note',
   'Humanitarian update',
   'Handover note',
+] as const;
+
+const CLASSIFICATION_MARKINGS = [
+  '',
+  'UNCLASSIFIED // POLICY PLANNING',
+  'SENSITIVE BUT UNCLASSIFIED',
+  'INTERNAL USE ONLY',
 ] as const;
 
 const LanguageViolationMark = Mark.create({
@@ -227,6 +236,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   const [mobilePane, setMobilePane] = useState<'library' | 'ask' | null>(null);
   const [memoCheckResults, setMemoCheckResults] = useState<Array<MemoClaimCheckResult | MemoLanguageCheckResult>>([]);
   const [memoCheckPending, setMemoCheckPending] = useState<'claim-check' | 'language-check' | null>(null);
+  const [classificationMarking, setClassificationMarking] = useState('');
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const storageKey = `${STORAGE_PREFIX}${documentId}`;
   const activeCapsule = useMemo(() => {
@@ -277,6 +287,13 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
     ].filter(Boolean);
     return items.join('  ·  ');
   }, [activeCapsule, activeSituation?.name, objectiveCore, outputCore, sources.length, user?.email, user?.name]);
+  const memoExportGate = useMemo(
+    () => deriveMemoExportGate({
+      classification: classificationMarking,
+      checkResults: memoCheckResults,
+    }),
+    [classificationMarking, memoCheckResults],
+  );
 
   const editor = useEditor({
     extensions: [
@@ -719,19 +736,19 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   }
 
   function exportMarkdown() {
-    if (!editor) return;
+    if (!editor || !memoExportGate.ready) return;
     const md = htmlToMarkdown(editor.getHTML());
     downloadBlob(
-      new Blob([`# ${title}\n\n${md}`], { type: 'text/markdown;charset=utf-8' }),
+      new Blob([`# ${title}\n\nClassification: ${classificationMarking}\n\n${md}`], { type: 'text/markdown;charset=utf-8' }),
       `${safeFilename()}.md`,
     );
   }
 
   async function exportDocx() {
-    if (!editor) return;
+    if (!editor || !memoExportGate.ready) return;
     const { Document, Packer, Paragraph, HeadingLevel } = await import('docx');
     const md = htmlToMarkdown(editor.getHTML());
-    const lines = `# ${title}\n\n${md}`.split('\n');
+    const lines = `# ${title}\n\nClassification: ${classificationMarking}\n\n${md}`.split('\n');
     const children = lines.map((line) => {
       if (line.startsWith('# ')) return new Paragraph({ text: line.slice(2), heading: HeadingLevel.HEADING_1 });
       if (line.startsWith('## ')) return new Paragraph({ text: line.slice(3), heading: HeadingLevel.HEADING_2 });
@@ -746,7 +763,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   }
 
   async function exportPdf() {
-    if (!editor) return;
+    if (!editor || !memoExportGate.ready) return;
     const { jsPDF } = await import('jspdf');
     const md = htmlToMarkdown(editor.getHTML());
     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
@@ -759,6 +776,9 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
     doc.text(title, margin, y);
     y += 28;
     doc.setFont('Times', 'normal');
+    doc.setFontSize(10);
+    doc.text(`Classification: ${classificationMarking}`, margin, y);
+    y += 22;
     doc.setFontSize(11);
     const lines = doc.splitTextToSize(md, pageWidth - margin * 2) as string[];
     for (const line of lines) {
@@ -790,6 +810,34 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
         />
         <span className="hidden text-[11px] uppercase tracking-[0.16em] text-slate-400 sm:inline">
           {savedAt ? `saved ${new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'autosave on'}
+        </span>
+        <select
+          aria-label="Classification"
+          value={classificationMarking}
+          onChange={(event) => setClassificationMarking(event.target.value)}
+          className={cn(
+            'hidden max-w-[220px] rounded-md border bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none xl:block',
+            memoExportGate.classificationStatus === 'set'
+              ? 'border-slate-300 focus:border-[#8A5A00]'
+              : 'border-amber-300 bg-amber-50 text-amber-800 focus:border-amber-500',
+          )}
+        >
+          {CLASSIFICATION_MARKINGS.map((marking) => (
+            <option key={marking || 'unset'} value={marking}>
+              {marking || 'Classification'}
+            </option>
+          ))}
+        </select>
+        <span
+          title={memoExportGate.detail}
+          className={cn(
+            'hidden rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] xl:inline-flex',
+            memoExportGate.ready
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              : 'border-amber-200 bg-amber-50 text-amber-800',
+          )}
+        >
+          {memoExportGate.label}
         </span>
         <button
           type="button"
@@ -840,30 +888,66 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
           {exportOpen ? (
             <div
               role="menu"
-              className="absolute right-0 z-20 mt-1 w-40 rounded-md border border-slate-200 bg-white py-1 shadow-lg"
+              className="absolute right-0 z-20 mt-1 w-72 rounded-md border border-slate-200 bg-white py-1 shadow-lg"
               onMouseLeave={() => setExportOpen(false)}
             >
+              <div className="border-b border-slate-100 px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                    {memoExportGate.label}
+                  </span>
+                  <span className={cn(
+                    'rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase',
+                    memoExportGate.ready ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800',
+                  )}>
+                    Gate
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] leading-4 text-slate-600">
+                  {memoExportGate.ready ? memoExportGate.detail : `Export blocked: ${memoExportGate.detail}`}
+                </p>
+                <select
+                  aria-label="Classification"
+                  value={classificationMarking}
+                  onChange={(event) => setClassificationMarking(event.target.value)}
+                  className="mt-2 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 focus:border-[#8A5A00] focus:outline-none"
+                >
+                  {CLASSIFICATION_MARKINGS.map((marking) => (
+                    <option key={`menu-${marking || 'unset'}`} value={marking}>
+                      {marking || 'Classification'}
+                    </option>
+                  ))}
+                </select>
+                <div className="mt-2 grid grid-cols-3 gap-1">
+                  <ExportGateChip label="Sourceability" status={memoExportGate.sourceabilityStatus} />
+                  <ExportGateChip label="Red-line" status={memoExportGate.redlineStatus} />
+                  <ExportGateChip label="Classification" status={memoExportGate.classificationStatus} />
+                </div>
+              </div>
               <button
                 type="button"
                 role="menuitem"
+                disabled={!memoExportGate.ready}
                 onClick={() => { exportMarkdown(); setExportOpen(false); }}
-                className="block w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="block w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-white"
               >
                 Markdown (.md)
               </button>
               <button
                 type="button"
                 role="menuitem"
+                disabled={!memoExportGate.ready}
                 onClick={() => { void exportDocx(); setExportOpen(false); }}
-                className="block w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="block w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-white"
               >
                 Word (.docx)
               </button>
               <button
                 type="button"
                 role="menuitem"
+                disabled={!memoExportGate.ready}
                 onClick={() => { void exportPdf(); setExportOpen(false); }}
-                className="block w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="block w-full px-3 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-white"
               >
                 PDF (.pdf)
               </button>
@@ -971,7 +1055,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
             className={cn(
               'h-full w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white/60 px-3 py-4 lg:block',
               mobilePane === 'library'
-                ? 'fixed inset-y-0 left-0 z-40 w-[85vw] max-w-sm shadow-2xl lg:static lg:w-64 lg:shadow-none'
+                ? 'fixed inset-y-0 left-0 z-40 w-[85vw] max-w-sm shadow-[var(--shadow-modal)] lg:static lg:w-64 lg:shadow-none'
                 : 'hidden',
             )}
           >
@@ -1240,7 +1324,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
             {slashAt && (
               <div
                 role="menu"
-                className="absolute z-40 w-64 overflow-hidden rounded-md border border-slate-200 bg-white shadow-xl"
+                className="absolute z-40 w-64 overflow-hidden rounded-[var(--radius-md)] border border-slate-200 bg-white shadow-[var(--shadow-float)]"
                 style={{ top: slashAt.y + 4, left: Math.min(slashAt.x, 600) }}
               >
                 <div className="border-b border-slate-100 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -1278,7 +1362,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
             className={cn(
               'h-full w-[360px] shrink-0 flex-col overflow-hidden border-l border-slate-200 bg-white md:flex',
               mobilePane === 'ask'
-                ? 'fixed inset-y-0 right-0 z-40 flex w-[90vw] max-w-sm shadow-2xl md:static md:w-[360px] md:shadow-none'
+                ? 'fixed inset-y-0 right-0 z-40 flex w-[90vw] max-w-sm shadow-[var(--shadow-modal)] md:static md:w-[360px] md:shadow-none'
                 : 'hidden',
             )}
           >
@@ -1574,6 +1658,32 @@ function ToolbarButton({
     >
       <Icon className={cn('h-4 w-4', strong ? 'stroke-[3]' : '')} />
     </button>
+  );
+}
+
+function ExportGateChip({
+  label,
+  status,
+}: {
+  label: string;
+  status: MemoExportGate['sourceabilityStatus'] | MemoExportGate['redlineStatus'] | MemoExportGate['classificationStatus'];
+}) {
+  const passed = status === 'passed' || status === 'set';
+  return (
+    <div className={cn(
+      'min-w-0 rounded-md border px-1.5 py-1 text-center',
+      passed ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50',
+    )}>
+      <p className={cn(
+        'truncate text-[9px] font-bold uppercase tracking-[0.08em]',
+        passed ? 'text-emerald-700' : 'text-amber-800',
+      )}>
+        {label}
+      </p>
+      <p className="mt-0.5 truncate font-mono text-[9px] text-slate-500">
+        {status.replace(/_/g, ' ')}
+      </p>
+    </div>
   );
 }
 

@@ -92,7 +92,7 @@ export function CalibrationTransparencyModal() {
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 12, opacity: 0, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 240, damping: 28 }}
-            className="relative z-10 flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-2xl"
+            className="praxis-shell-modal relative z-10 flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden border border-slate-300 bg-white"
           >
             <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
               <div>

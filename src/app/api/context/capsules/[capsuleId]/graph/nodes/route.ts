@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
+import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
 import {
   applyCapsuleReviewCard,
   proposeCapsuleGraphNodeChange,
+  rejectCapsuleReviewCard,
 } from '@/lib/context/capsule-service';
 
 export const dynamic = 'force-dynamic';
@@ -52,13 +54,19 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
     if (parsed.data.operation === 'approve') {
       const result = await applyCapsuleReviewCard(user.uid, capsuleId, parsed.data.reviewCardId, {
         reviewerUid: user.uid,
+        diffHash: graphDiffHash(capsuleId, parsed.data.reviewCardId, parsed.data.confirmationReason),
         confirmationReason: parsed.data.confirmationReason,
       });
       if (!result) return NextResponse.json({ error: 'Review card not found' }, { status: 404 });
       return NextResponse.json(result);
     }
     if (parsed.data.operation === 'reject') {
-      return NextResponse.json({ error: 'Reject keeps the proposal un-applied; review-card rejection is not yet exposed for graph proposals.' }, { status: 501 });
+      const result = await rejectCapsuleReviewCard(user.uid, capsuleId, parsed.data.reviewCardId, {
+        reviewerUid: user.uid,
+        confirmationReason: parsed.data.confirmationReason,
+      });
+      if (!result) return NextResponse.json({ error: 'Review card not found' }, { status: 404 });
+      return NextResponse.json(result);
     }
     if (!parsed.data.node && !parsed.data.nodeId) {
       return NextResponse.json({ error: 'node or nodeId is required' }, { status: 400 });
@@ -72,3 +80,11 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
     return handleRouteError(err, 'context/capsules/graph/nodes');
   }
 });
+
+function graphDiffHash(capsuleId: string, reviewCardId: string, reason: string): string {
+  const digest = createHash('sha256')
+    .update(['capsule-graph-review', capsuleId, reviewCardId, reason].join(':'))
+    .digest('hex')
+    .slice(0, 16);
+  return `diff:graph:${digest}`;
+}

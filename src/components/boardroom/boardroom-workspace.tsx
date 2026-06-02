@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ArrowLeft,
   BrainCircuit,
   FileText,
   Gavel,
@@ -16,7 +15,6 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react';
-import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
 import { ActivePolicyFileStrip } from '@/components/policy-work-file/ActivePolicyFileStrip';
@@ -331,92 +329,50 @@ export function BoardroomWorkspace() {
 
   return (
     <section
-      className="civic-atelier-shell cartographic-grid praxis-checker-constellation od-praxis-surface min-h-screen text-[color:var(--color-deep-ink)]"
+      className="app-light min-h-full text-[color:var(--color-app-text)]"
       data-testid="boardroom-home-surface"
     >
-      <div className="grid min-h-screen lg:grid-cols-[250px_minmax(0,1fr)]">
-        <aside className="dossier-spine od-praxis-sidebar hidden border-r px-4 py-6 lg:flex lg:flex-col" aria-label="Boardroom navigation">
-          <Link href="/app" className="mb-6 flex items-center gap-3 text-lg font-bold">
-            <PraxisBrandChip compact />
-          </Link>
-          <Link href="/app" className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5">
-            <ArrowLeft className="h-5 w-5 text-slate-500" />
-            Home
-          </Link>
-          {showOperatorChrome ? <button
-            type="button"
-            onClick={openBoardroomSearch}
-            className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5"
-          >
-            <Search className="h-5 w-5 text-slate-500" />
-            Search app
-          </button> : null}
-          <Link href="/app/capsules" className="mb-1 flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-medium text-slate-700 hover:bg-black/5">
-            <FileText className="h-5 w-5 text-slate-500" />
-            Capsules
-          </Link>
-          <div className="mt-8">
-            <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Board posture
+      <div className="mx-auto grid w-full max-w-7xl gap-6">
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="praxis-text-caption flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-[color:var(--color-gold-700)]" />
+              Boardroom
             </p>
-            <div className="mt-3 space-y-2">
-              <span className={cn('flex w-full items-center justify-between rounded-md border px-3 py-2 text-xs font-semibold', runStatusClass(run?.status ?? 'draft'))}>
-                <span>Run state</span>
-                <span>{run?.status ?? 'draft'}</span>
-              </span>
-              <span className="flex w-full items-center justify-between rounded-md border border-black/10 bg-white/70 px-3 py-2 text-xs font-semibold text-slate-700">
-                <span>Lenses</span>
-                <span>{BOARDROOM_ROSTER.length}</span>
-              </span>
-              <span className="flex w-full items-center justify-between rounded-md border border-black/10 bg-white/70 px-3 py-2 text-xs font-semibold text-slate-700">
-                <span>Open questions</span>
-                <span>{openQuestions}</span>
-              </span>
-            </div>
+            <h1 className="mt-3 praxis-text-title max-w-4xl">
+              What should the board deliberate?
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[color:var(--color-app-text-secondary)] sm:text-base">
+              Bring a decision, dispute, or policy question. PRAXIS chairs a realistic board discussion across evidence, law, risk, field impact, communications, mediation, and red-team challenge.
+            </p>
           </div>
-          <div className="mt-auto rounded-lg border border-black/10 bg-white/70 p-3 text-xs leading-5 text-slate-600">
-            The boardroom uses the active capsule, your details, and run receipts without silently mutating the capsule.
-          </div>
-        </aside>
-
-        <main className="min-w-0 px-4 py-8 sm:px-6 lg:px-10">
-          <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
-            <Link href="/app" className="flex items-center gap-2 text-lg font-semibold lg:hidden">
-              <PraxisBrandChip compact />
-            </Link>
-            <nav className="ml-auto hidden items-center gap-8 text-sm font-semibold text-slate-500 md:flex" aria-label="Boardroom navigation">
-              <Link href="/app" className="hover:text-slate-900">Home</Link>
-              <Link href="/app/capsules" className="hover:text-slate-900">Capsules</Link>
-              <Link href="/learn" className="hover:text-slate-900">Learn</Link>
-              {showOperatorChrome ? <button type="button" onClick={openBoardroomSearch} className="hover:text-slate-900">Search</button> : null}
-            </nav>
-            <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-              {showOperatorChrome ? <RuntimeHealthSemaphore isAuthenticated={true} /> : null}
-              <button
-                type="button"
-                onClick={() => void refreshRun()}
-                disabled={!activeRunId}
-                className="inline-flex items-center gap-2 rounded-md border border-[color:var(--color-clay)]/20 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-[color:var(--color-archive-paper-strong)] disabled:cursor-not-allowed disabled:text-slate-300"
-              >
-                <RefreshCcw className="h-4 w-4" />
-                Refresh
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+            {showOperatorChrome ? <RuntimeHealthSemaphore isAuthenticated={true} /> : null}
+            {showOperatorChrome ? (
+              <button type="button" onClick={openBoardroomSearch} className="praxis-button-secondary px-3 py-2 text-xs">
+                <Search className="h-4 w-4" />
+                Search
               </button>
-            </div>
-          </header>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => void refreshRun()}
+              disabled={!activeRunId}
+              className="praxis-button-secondary px-3 py-2 text-xs disabled:cursor-not-allowed disabled:text-slate-300"
+            >
+              <RefreshCcw className="h-4 w-4" />
+              Refresh
+            </button>
+          </div>
+        </header>
 
-        <section className="mx-auto mt-8 flex w-full max-w-5xl flex-col items-center text-center sm:mt-12">
-          <p className="receipt-slip flex items-center gap-2 rounded-md px-3 py-1.5 font-mono text-xs font-semibold">
+        <section className="flex w-full flex-col items-center text-center">
+          <p className="receipt-slip flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-1.5 font-mono text-xs font-semibold">
             <Sparkles className="h-4 w-4 text-[color:var(--color-oxide)]" />
             Workspace
           </p>
-          <h1 className="mt-7 max-w-4xl font-serif text-5xl font-semibold tracking-tight text-[color:var(--color-deep-ink)] sm:text-6xl">
-            What should the board deliberate?
-          </h1>
-          <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
-            Bring a decision, dispute, or policy question. PRAXIS chairs a realistic board discussion across evidence, law, risk, field impact, communications, mediation, and red-team challenge.
-          </p>
 
-          <div className="praxis-composer-focus-shell od-praxis-panel mt-7 w-full rounded-xl text-left">
+          <div className="praxis-composer-focus-shell praxis-shell-panel mt-7 w-full text-left">
             <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
               <div className="min-w-0">
                 <div className="mb-4" data-testid="boardroom-context-strip">
@@ -502,7 +458,7 @@ export function BoardroomWorkspace() {
         </section>
 
         <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(23rem,0.85fr)]">
-          <section className="min-w-0 rounded-xl border border-[color:var(--color-clay)]/20 bg-white/90 p-4 shadow-sm shadow-[rgba(164,73,46,0.08)] sm:p-5" data-testid="boardroom-agent-stage">
+          <section className="praxis-shell-card min-w-0 p-4 sm:p-5" data-testid="boardroom-agent-stage">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -603,7 +559,7 @@ export function BoardroomWorkspace() {
             </section>
           </section>
 
-          <aside className="min-w-0 rounded-xl border border-[color:var(--color-clay)]/20 bg-white/90 p-4 shadow-sm shadow-[rgba(164,73,46,0.08)] sm:p-5" data-testid="boardroom-run-panel">
+          <aside className="praxis-shell-card min-w-0 p-4 sm:p-5" data-testid="boardroom-run-panel">
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-[color:var(--color-oxide)]" />
               <h2 className="text-sm font-semibold text-slate-950">Work and proof</h2>
@@ -718,7 +674,6 @@ export function BoardroomWorkspace() {
             </section>
           </aside>
         </div>
-        </main>
       </div>
     </section>
   );

@@ -55,7 +55,7 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 16 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+          className="praxis-shell-modal relative w-full max-w-xl overflow-hidden bg-white"
         >
           <div className="h-1 w-full bg-gradient-to-r from-diplomatic-blue via-gold-500 to-diplomatic-blue" />
 

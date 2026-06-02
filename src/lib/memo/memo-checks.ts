@@ -58,6 +58,25 @@ export interface MemoLanguageCheckResult {
   };
 }
 
+export type MemoExportGateBlocker =
+  | 'classification-required'
+  | 'sourceability-required'
+  | 'sourceability-blocked'
+  | 'redline-required'
+  | 'redline-blocked';
+
+export interface MemoExportGate {
+  ready: boolean;
+  label: string;
+  detail: string;
+  blockers: MemoExportGateBlocker[];
+  sourceabilityStatus: 'not_run' | 'passed' | 'weak' | 'blocked';
+  redlineStatus: 'not_run' | 'passed' | 'blocked';
+  classificationStatus: 'missing' | 'set';
+  latestClaimCheck: MemoClaimCheckResult | null;
+  latestLanguageCheck: MemoLanguageCheckResult | null;
+}
+
 export function buildMemoClaimCheckQuestion(input: {
   claim: string;
   capsuleId?: string | null;
@@ -124,6 +143,40 @@ export function buildMemoClaimCheckResult(input: {
       toolRunId: input.toolRunId,
       generatedAt: input.generatedAt ?? new Date().toISOString(),
     },
+  };
+}
+
+export function deriveMemoExportGate(input: {
+  classification: string | null | undefined;
+  checkResults: Array<MemoClaimCheckResult | MemoLanguageCheckResult>;
+}): MemoExportGate {
+  const latestClaimCheck = latestByGeneratedAt(input.checkResults.filter(isClaimCheck));
+  const latestLanguageCheck = latestByGeneratedAt(input.checkResults.filter(isLanguageCheck));
+  const blockers: MemoExportGateBlocker[] = [];
+  const classificationStatus: MemoExportGate['classificationStatus'] = input.classification?.trim() ? 'set' : 'missing';
+  if (classificationStatus === 'missing') blockers.push('classification-required');
+
+  const sourceabilityStatus = sourceabilityGateStatus(latestClaimCheck);
+  if (sourceabilityStatus === 'not_run') blockers.push('sourceability-required');
+  if (sourceabilityStatus === 'weak' || sourceabilityStatus === 'blocked') blockers.push('sourceability-blocked');
+
+  const redlineStatus = redlineGateStatus(latestLanguageCheck);
+  if (redlineStatus === 'not_run') blockers.push('redline-required');
+  if (redlineStatus === 'blocked') blockers.push('redline-blocked');
+
+  const ready = blockers.length === 0;
+  return {
+    ready,
+    label: ready ? 'Export ready' : 'Export blocked',
+    detail: ready
+      ? 'Sourceability, red-line, and classification gates passed.'
+      : exportGateDetail(blockers),
+    blockers,
+    sourceabilityStatus,
+    redlineStatus,
+    classificationStatus,
+    latestClaimCheck,
+    latestLanguageCheck,
   };
 }
 
@@ -228,6 +281,51 @@ function supportLabelFromDelegateOutput(output: Record<string, unknown>, text: s
   if (/\bcontradict|conflict|refute/i.test(text)) return 'contradicted';
   if (/\bsupport|corroborat|confirm/i.test(text)) return 'supported';
   return 'unsupported';
+}
+
+function sourceabilityGateStatus(claimCheck: MemoClaimCheckResult | null): MemoExportGate['sourceabilityStatus'] {
+  if (!claimCheck) return 'not_run';
+  if (claimCheck.verdict === 'supported') return 'passed';
+  if (claimCheck.verdict === 'weak') return 'weak';
+  return 'blocked';
+}
+
+function redlineGateStatus(languageCheck: MemoLanguageCheckResult | null): MemoExportGate['redlineStatus'] {
+  if (!languageCheck) return 'not_run';
+  return languageCheck.violations.some((violation) => violation.kind === 'red_line' && violation.severity === 'high')
+    ? 'blocked'
+    : 'passed';
+}
+
+function latestByGeneratedAt<T extends { provenance: { generatedAt: string } }>(items: T[]): T | null {
+  if (!items.length) return null;
+  return [...items].sort((a, b) => b.provenance.generatedAt.localeCompare(a.provenance.generatedAt))[0] ?? null;
+}
+
+function isClaimCheck(value: MemoClaimCheckResult | MemoLanguageCheckResult): value is MemoClaimCheckResult {
+  return value.kind === 'claim-check';
+}
+
+function isLanguageCheck(value: MemoClaimCheckResult | MemoLanguageCheckResult): value is MemoLanguageCheckResult {
+  return value.kind === 'language-check';
+}
+
+function exportGateDetail(blockers: MemoExportGateBlocker[]): string {
+  const details = blockers.map((blocker) => {
+    switch (blocker) {
+      case 'classification-required':
+        return 'set a classification';
+      case 'sourceability-required':
+        return 'run a claim/sourceability check';
+      case 'sourceability-blocked':
+        return 'resolve weak, contradicted, or unsupported claim evidence';
+      case 'redline-required':
+        return 'run a language/red-line check';
+      case 'redline-blocked':
+        return 'remove red-line phrases';
+    }
+  });
+  return `Before export: ${Array.from(new Set(details)).join('; ')}.`;
 }
 
 function confidenceForSupportLabel(label: SourceabilitySupportLabel): number {

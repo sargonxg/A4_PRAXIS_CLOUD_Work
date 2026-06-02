@@ -172,7 +172,7 @@ export function LiveContextReadinessCard() {
         initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 240, damping: 28 }}
-        className="fixed right-4 top-20 z-40 hidden flex-col gap-2 rounded-xl border border-slate-300 bg-white/95 px-3 py-2 text-left shadow-lg shadow-navy-950/10 backdrop-blur transition hover:border-diplomatic-blue/40 hover:shadow-xl md:flex"
+        className="fixed right-4 top-20 z-40 hidden flex-col gap-2 rounded-[var(--radius-xl)] border border-slate-300 bg-white/95 px-3 py-2 text-left shadow-[var(--shadow-card)] backdrop-blur transition hover:border-diplomatic-blue/40 hover:shadow-[var(--shadow-float)] md:flex"
         aria-label="Open context readiness drawer"
       >
         <div className="flex items-center gap-2">
@@ -269,7 +269,7 @@ function ReadinessDrawer({
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: 24, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-        className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-slate-300 bg-white p-5 shadow-2xl"
+        className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto border-l border-slate-300 bg-white p-5 shadow-[var(--shadow-modal)]"
       >
         <div className="flex items-start justify-between gap-3">
           <div>

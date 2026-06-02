@@ -1459,6 +1459,53 @@ describe('capsule service', () => {
     expect(db.data.has(`users/u1/capsules/${capsule.capsuleId}/reviewCards/${card.reviewCardId}`)).toBe(true);
   });
 
+  it('applies approved capsule graph proposals into the embedded graph projection', async () => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', {
+      capsuleId: 'cap-graph-apply',
+      label: 'Graph apply capsule',
+      coreRefs: { sourceCoreIds: ['src-1'] },
+    }, deps(db));
+    const card = await proposeCapsuleGraphNodeChange('u1', capsule.capsuleId, {
+      operation: 'create',
+      node: {
+        id: 'actor-ministry',
+        label: 'Ministry',
+        entityType: 'Actor',
+        confidence: 0.74,
+        sourceReceiptIds: ['src-1'],
+      },
+      reason: 'Promote reviewed actor into the capsule embedded graph.',
+    }, deps(db));
+
+    const applied = await applyCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, {
+      reviewerUid: 'reviewer-1',
+      diffHash: 'diff:graph:actor-ministry',
+      confirmationReason: 'Owner approved the actor node as canonical capsule graph context.',
+    }, deps(db));
+
+    expect(applied?.card.state).toBe('applied');
+    expect(applied?.capsule.version).toBe(capsule.version + 1);
+    expect(applied?.capsule.embeddedGraph).toMatchObject({
+      provider: 'graphlite',
+      canonicalStore: 'Firestore ContextCapsules',
+      advisoryOnly: true,
+      nodes: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'actor-ministry',
+          label: 'Ministry',
+          entityType: 'Actor',
+          reviewState: 'reviewed',
+          sourceReceiptIds: ['src-1'],
+        }),
+      ]),
+    });
+    expect(applied?.capsule.v3?.grounding.embeddedGraph.nodes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'actor-ministry', label: 'Ministry', reviewState: 'reviewed' }),
+    ]));
+    expect(applied?.capsule.readinessSummary?.graphLinked).toBe(true);
+  });
+
   it('gates capsule-local ontology extension promotion behind ADMIN_ALLOWLIST and writes a version snapshot', async () => {
     const db = new FakeFirestore();
     const previousAllowlist = process.env.ADMIN_ALLOWLIST;

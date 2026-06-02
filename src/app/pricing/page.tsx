@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { PRICING_TIERS, PLAN_USAGE_BUCKETS, INTERNAL_COST_DISCLOSURE_NOTICE } from '@/lib/constants/pricing';
-import { PraxisGlyphChip } from '@/components/brand/praxis-mark';
 import { PricingCheckoutButton } from '@/components/billing/pricing-checkout-button';
 import { LivingContextRail, PublicPageShell } from '@/components/ui/instrument';
 
@@ -41,7 +40,6 @@ export default function PricingPage() {
 
   return (
     <PublicPageShell>
-        <PublicHeader />
         <section className="py-16">
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--color-gold-700)]">Pricing</p>
           <h1 className="mt-4 max-w-3xl font-serif text-4xl font-semibold leading-tight tracking-normal text-[color:var(--color-diplomatic-blue)] sm:text-5xl">
@@ -107,25 +105,5 @@ export default function PricingPage() {
           </div>
         </section>
     </PublicPageShell>
-  );
-}
-
-function PublicHeader() {
-  return (
-    <header className="flex items-center justify-between gap-4">
-      <Link href="/" className="flex items-center gap-3">
-        <PraxisGlyphChip size={34} />
-        <span className="font-serif text-xl font-semibold text-[color:var(--color-diplomatic-blue)]">PRAXIS</span>
-      </Link>
-      <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm font-semibold text-[color:var(--color-ink)]/65">
-        <Link href="/" className="praxis-link">Home</Link>
-        <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="praxis-link hidden md:inline">Capsules</Link>
-        <Link href="/pricing" className="praxis-link hidden md:inline">Pricing</Link>
-        <Link href="/learn" className="praxis-link hidden md:inline">Learn</Link>
-        <Link href="/guide" className="praxis-link hidden md:inline">Guide</Link>
-        <Link href="/release-notes" className="praxis-link hidden md:inline">Release notes</Link>
-        <Link href="/login" className="rounded-full bg-white px-4 py-2 text-[color:var(--color-ink)]">Sign in</Link>
-      </nav>
-    </header>
   );
 }

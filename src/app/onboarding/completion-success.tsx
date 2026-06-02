@@ -41,7 +41,7 @@ export function CompletionSuccess({
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold-500/10">
+        <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-full)] bg-gold-500/10">
           <Sparkles className="h-5 w-5 text-gold-600" />
         </div>
         <div>
@@ -54,7 +54,7 @@ export function CompletionSuccess({
       </div>
 
       {/* Calibration summary */}
-      <div className="rounded-xl border border-navy-200 bg-navy-50/40 p-5">
+      <div className="praxis-shell-panel p-5">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-500">
           Calibration summary
         </p>
@@ -111,13 +111,13 @@ export function CompletionSuccess({
 
       {/* Recommended tools */}
       {recommendations.length > 0 && (
-        <div className="rounded-xl border border-navy-200 bg-white p-5">
+        <div className="praxis-shell-card p-5">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-500">
             Tools PRAXIS will surface first for you
           </p>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">
             {recommendations.map((rec) => (
-              <li key={rec.toolId} className="rounded-lg border border-navy-100 bg-navy-50/40 px-3 py-2">
+              <li key={rec.toolId} className="rounded-[var(--radius-md)] border border-navy-100 bg-navy-50/40 px-3 py-2">
                 <p className="text-xs font-semibold capitalize text-navy-900">
                   {rec.toolId.replace(/-/g, ' ')}
                 </p>
@@ -136,11 +136,11 @@ export function CompletionSuccess({
       {/* CTAs — primary first */}
       <div className="grid gap-3 sm:grid-cols-2">
         <button onClick={() => onComplete(true)}
-          className="flex items-center justify-center gap-2 rounded-lg bg-gold-500 px-5 py-3 text-sm font-semibold text-white hover:bg-gold-600 shadow-md shadow-gold-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">
+          className="praxis-button-primary flex items-center justify-center gap-2 px-5 py-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500">
           Create your first situation <ArrowRight className="h-4 w-4" />
         </button>
         <button onClick={() => onComplete(false)}
-          className="flex items-center justify-center gap-2 rounded-lg border border-navy-200 bg-white px-5 py-3 text-sm font-medium text-navy-700 hover:bg-navy-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-300">
+          className="praxis-button-secondary flex items-center justify-center gap-2 px-5 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-300">
           Go to dashboard
         </button>
       </div>

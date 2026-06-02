@@ -1383,6 +1383,53 @@ export async function applyCapsuleReviewCard(
   return { capsule: applied.capsule, card: applied.card };
 }
 
+export async function rejectCapsuleReviewCard(
+  uid: string,
+  capsuleId: string,
+  reviewCardId: string,
+  metadata: { reviewerUid: string; confirmationReason: string; rejectedAt?: string },
+  deps?: CapsuleServiceDeps,
+): Promise<{ capsule: PraxisCapsule; card: CapsuleReviewCard } | null> {
+  const db = dbOf(deps);
+  const ref = capsulesCollection(uid, deps).doc(cleanId(capsuleId, DEFAULT_CONTEXT_STACK_ID));
+  const cardRef = ref.collection('reviewCards').doc(cleanId(reviewCardId, 'review-card'));
+  const capsuleSnap = await ref.get();
+  if (!capsuleSnap.exists) return null;
+  const capsule = sanitizeCapsule({ ...capsuleSnap.data(), capsuleId: ref.id });
+  const cardSnap = await cardRef.get();
+  if (!cardSnap.exists) return null;
+  const card = normalizeReviewCard(cardSnap.data(), capsule, cardRef.id);
+  const timestamp = stringOrNull(metadata.rejectedAt) ?? nowIso(deps);
+  const rejectedCard: CapsuleReviewCard = {
+    ...card,
+    state: 'rejected',
+    applyMetadata: null,
+    updatedAt: timestamp,
+  };
+  const updatedCapsule = sanitizeCapsule({
+    ...capsule,
+    latestGateState: 'rejected',
+    readinessSummary: {
+      ...(capsule.readinessSummary ?? {}),
+      reviewRequired: true,
+      updatedAt: timestamp,
+    },
+    updatedAt: timestamp,
+  });
+  const batch = db.batch();
+  batch.set(ref, updatedCapsule, { merge: true });
+  batch.set(cardRef, {
+    ...rejectedCard,
+    rejectionMetadata: {
+      reviewerUid: cleanText(metadata.reviewerUid, 160) || uid,
+      rejectedAt: timestamp,
+      confirmationReason: cleanText(metadata.confirmationReason, 600) || 'Rejected without applying the graph proposal.',
+    },
+  }, { merge: true });
+  await batch.commit();
+  return { capsule: updatedCapsule, card: rejectedCard };
+}
+
 export async function getCapsuleDependents(uid: string, capsuleId: string, deps?: CapsuleServiceDeps): Promise<PraxisCapsule[]> {
   const targetId = cleanId(capsuleId, DEFAULT_CONTEXT_STACK_ID);
   const snap = await capsulesCollection(uid, deps).get();
@@ -3022,12 +3069,21 @@ function buildAppliedReviewCardUpdate(
   applyMetadata: CapsuleReviewApplyMetadata,
 ): { previousSnapshot: PraxisCapsule; capsule: PraxisCapsule; card: CapsuleReviewCard } {
   const patch = card.proposedEnvelopePatch;
+  const graphPatch = buildAppliedGraphProjectionPatch(capsule, card, applyMetadata);
+  const graphCoreRefs = isRecord(graphPatch.coreRefs) ? graphPatch.coreRefs : {};
+  const graphReadiness = isRecord(graphPatch.readinessSummary) ? graphPatch.readinessSummary : {};
   const updated = sanitizeCapsule({
     ...capsule,
     ...patch,
-    coreRefs: patch.coreRefs ? normalizeCoreRefs({ ...capsule.coreRefs, ...patch.coreRefs }) : capsule.coreRefs,
+    ...graphPatch,
+    coreRefs: normalizeCoreRefs({
+      ...capsule.coreRefs,
+      ...(patch.coreRefs ?? {}),
+      ...graphCoreRefs,
+    }),
     readinessSummary: {
       ...(capsule.readinessSummary ?? {}),
+      ...graphReadiness,
       reviewCardCount: Math.max(capsule.readinessSummary?.reviewCardCount ?? 1, 1),
     },
     latestGateState: patch.latestGateState ?? 'applied',
@@ -3045,6 +3101,186 @@ function buildAppliedReviewCardUpdate(
     capsule: updated,
     card: appliedCard,
   };
+}
+
+type AppliedGraphProposal = {
+  proposalId: string;
+  kind: 'node' | 'edge';
+  operation: 'create' | 'edit' | 'delete';
+  payload: Record<string, unknown>;
+};
+
+function buildAppliedGraphProjectionPatch(
+  capsule: PraxisCapsule,
+  card: CapsuleReviewCard,
+  applyMetadata: CapsuleReviewApplyMetadata,
+): Record<string, unknown> {
+  if (card.target !== 'graphProposal') return {};
+  const proposals = graphProposalsFromMemoryPosture(card.proposedEnvelopePatch.memoryPosture);
+  const proposal = proposals.at(-1);
+  if (!proposal) return {};
+
+  const projection = normalizeEmbeddedGraphProjectionForApply(capsule);
+  const nodes = graphProjectionRecords(projection.nodes);
+  const edges = graphProjectionRecords(projection.edges);
+  if (proposal.kind === 'node') {
+    applyGraphNodeProposal(nodes, edges, proposal);
+  } else {
+    applyGraphEdgeProposal(edges, proposal);
+  }
+  const projectionId = cleanText(projection.projectionId, 160)
+    || `capsule-${capsule.capsuleId}-embedded-graph`;
+  const embeddedGraph = {
+    ...projection,
+    projectionId,
+    provider: 'graphlite',
+    status: 'reviewed',
+    advisoryOnly: true,
+    canonicalStore: 'Firestore ContextCapsules',
+    promotionGate: 'Human review-card approval required before canonical graph promotion.',
+    nodeCount: nodes.length,
+    edgeCount: edges.length,
+    nodes,
+    edges,
+    lastAppliedReviewCardId: card.reviewCardId,
+    lastAppliedAt: applyMetadata.appliedAt,
+  };
+  return {
+    embeddedGraph,
+    coreRefs: {
+      graphCoreId: capsule.coreRefs.graphCoreId ?? projectionId,
+    },
+    readinessSummary: {
+      ...(capsule.readinessSummary ?? {}),
+      graphLinked: true,
+      graphProposalCount: Math.max((capsule.readinessSummary?.graphProposalCount ?? 1) - 1, 0),
+      reviewRequired: true,
+      updatedAt: applyMetadata.appliedAt,
+    },
+  };
+}
+
+function graphProposalsFromMemoryPosture(value: unknown): AppliedGraphProposal[] {
+  const posture = isRecord(value) ? value : {};
+  const proposals = Array.isArray(posture.graphProposals)
+    ? posture.graphProposals.filter(isRecord)
+    : [];
+  return proposals.flatMap((proposal): AppliedGraphProposal[] => {
+    const kind = proposal.kind === 'edge' ? 'edge' : proposal.kind === 'node' ? 'node' : null;
+    if (!kind) return [];
+    const operation = normalizeGraphOperation(proposal.operation);
+    const payload = isRecord(proposal.payload) ? proposal.payload : {};
+    return [{
+      proposalId: cleanId(cleanText(proposal.proposalId, 160) || stableId(JSON.stringify(proposal)), 'graph-proposal'),
+      kind,
+      operation,
+      payload,
+    }];
+  });
+}
+
+function normalizeEmbeddedGraphProjectionForApply(capsule: PraxisCapsule): Record<string, unknown> {
+  const v3Graph = capsule.v3?.grounding.embeddedGraph as unknown;
+  const existing = isRecord(capsule.embeddedGraph)
+    ? capsule.embeddedGraph
+    : isRecord(v3Graph)
+      ? v3Graph
+      : {};
+  const projectionId = cleanText(existing.projectionId, 160)
+    || `capsule-${capsule.capsuleId}-embedded-graph`;
+  return {
+    provider: 'graphlite',
+    projectionId,
+    status: cleanText(existing.status, 80) || 'reviewed',
+    namedGraph: cleanText(existing.namedGraph, 160) || `capsule_${capsule.capsuleId.replace(/[^a-z0-9]+/gi, '_').toLowerCase()}`,
+    advisoryOnly: true,
+    canonicalStore: 'Firestore ContextCapsules',
+    promotionGate: cleanText(existing.promotionGate, 240) || 'Human review-card approval required before canonical graph promotion.',
+    nodeCount: nonnegativeInt(existing.nodeCount) ?? 0,
+    edgeCount: nonnegativeInt(existing.edgeCount) ?? 0,
+    nodes: graphProjectionRecords(existing.nodes),
+    edges: graphProjectionRecords(existing.edges),
+  };
+}
+
+function graphProjectionRecords(value: unknown): Record<string, unknown>[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isRecord).map((record) => cloneSerializable(record));
+}
+
+function applyGraphNodeProposal(
+  nodes: Record<string, unknown>[],
+  edges: Record<string, unknown>[],
+  proposal: AppliedGraphProposal,
+) {
+  const payload = proposal.payload;
+  const nodeId = cleanId(cleanText(payload.id, 160) || proposal.proposalId, 'graph-node');
+  if (proposal.operation === 'delete') {
+    removeRecordById(nodes, nodeId);
+    removeEdgesForNode(edges, nodeId);
+    return;
+  }
+  upsertRecordById(nodes, nodeId, {
+    id: nodeId,
+    label: cleanText(payload.label, 160) || nodeId,
+    entityType: cleanText(payload.entityType, 80) || 'Policy',
+    reviewState: 'reviewed',
+    provenance: cleanText(payload.provenance, 240) || 'Capsule Studio graph proposal',
+    confidence: normalizeConfidence(payload.confidence),
+    sourceReceiptIds: cleanStringArray(payload.sourceReceiptIds),
+  });
+}
+
+function applyGraphEdgeProposal(
+  edges: Record<string, unknown>[],
+  proposal: AppliedGraphProposal,
+) {
+  const payload = proposal.payload;
+  const source = cleanText(payload.source, 160);
+  const target = cleanText(payload.target, 160);
+  const relationshipType = cleanText(payload.relationshipType, 80) || cleanText(payload.label, 80) || 'related_to';
+  const edgeId = cleanId(cleanText(payload.id, 160) || `graph-edge-${stableId(`${source}:${target}:${relationshipType}`)}`, 'graph-edge');
+  if (proposal.operation === 'delete') {
+    removeRecordById(edges, edgeId);
+    return;
+  }
+  if (!source || !target) return;
+  upsertRecordById(edges, edgeId, {
+    id: edgeId,
+    source,
+    target,
+    label: cleanText(payload.label, 160) || relationshipType,
+    relationshipType,
+    reviewState: 'reviewed',
+    confidence: normalizeConfidence(payload.confidence),
+    sourceReceiptIds: cleanStringArray(payload.sourceReceiptIds),
+  });
+}
+
+function upsertRecordById(records: Record<string, unknown>[], id: string, next: Record<string, unknown>) {
+  const index = records.findIndex((record) => cleanText(record.id, 160) === id);
+  if (index >= 0) {
+    records[index] = {
+      ...records[index],
+      ...next,
+    };
+  } else {
+    records.push(next);
+  }
+}
+
+function removeRecordById(records: Record<string, unknown>[], id: string) {
+  const index = records.findIndex((record) => cleanText(record.id, 160) === id);
+  if (index >= 0) records.splice(index, 1);
+}
+
+function removeEdgesForNode(edges: Record<string, unknown>[], nodeId: string) {
+  for (let index = edges.length - 1; index >= 0; index -= 1) {
+    const edge = edges[index];
+    if (cleanText(edge?.source, 160) === nodeId || cleanText(edge?.target, 160) === nodeId) {
+      edges.splice(index, 1);
+    }
+  }
 }
 
 async function writeDependencyInvalidationNotes(

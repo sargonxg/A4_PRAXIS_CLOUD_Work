@@ -164,6 +164,20 @@ export interface CapsuleCoreDisplay {
   reviewState: CapsuleWorkbenchReviewState;
 }
 
+export interface CapsuleCoreSourceabilityGate {
+  kind: Extract<CapsuleWorkbenchCoreKind, 'user' | 'situation' | 'source' | 'document' | 'output'>;
+  label: string;
+  sourceCoverageScore: number;
+  threshold: number;
+  evidenceGapCount: number;
+  unsupportedClaimCount: number;
+  unsupportedClaims: string[];
+  gapLabels: string[];
+  ready: boolean;
+  readyBlocked: boolean;
+  provenance: 'capsule-evidence-pack';
+}
+
 export interface CapsuleEvidenceDisplay {
   sourceCount: number;
   sourcePosture: string;
@@ -382,6 +396,7 @@ export interface CapsuleWorkbenchViewModel {
   };
   anatomy: CapsuleCoreDisplay[];
   evidence: CapsuleEvidenceDisplay;
+  coreSourceability: CapsuleCoreSourceabilityGate[];
   graph: CapsuleGraphDisplay;
   ontology: CapsuleOntologyDisplay;
   tacitKnowledge: CapsuleTacitKnowledgeDisplay;
@@ -416,6 +431,9 @@ const CORE_ORDER: Array<{
   { kind: 'memory', label: 'Memory Core', scalarKey: 'memoryCoreId', description: 'Tacit knowledge, caveats, decisions, and handover notes.' },
 ];
 
+const SOURCEABILITY_CORE_ORDER: Array<CapsuleCoreSourceabilityGate['kind']> = ['user', 'situation', 'source', 'document', 'output'];
+const SOURCEABILITY_READY_THRESHOLD = 70;
+
 export function buildCapsuleWorkbenchViewModel(input: CapsuleWorkbenchViewModelInput): CapsuleWorkbenchViewModel {
   const capsule = input.capsule;
   const coreRefs = capsule.coreRefs ?? {};
@@ -426,8 +444,14 @@ export function buildCapsuleWorkbenchViewModel(input: CapsuleWorkbenchViewModelI
   const anatomy = buildAnatomy(coreRefs);
   const claims = buildClaims(capsule.claimLedger);
   const evidence = buildEvidence(capsule, input.repositoryDocuments ?? []);
-  const tacitKnowledge = buildTacitKnowledge(capsule, input.tacitMemories ?? []);
   const outputs = buildOutputs(coreRefs, capsule.outputContracts);
+  const coreSourceability = buildCoreSourceability({
+    anatomy,
+    evidence,
+    claims,
+    outputs,
+  });
+  const tacitKnowledge = buildTacitKnowledge(capsule, input.tacitMemories ?? []);
   const reviewQueue = buildReviewQueue(capsule, input.reviewCards ?? [], evidence);
   const ontology = buildOntology(capsule, coreRefs);
   const agents = buildAgentWorkflow(input.agentRuns ?? [], evidence, reviewQueue);
@@ -478,6 +502,7 @@ export function buildCapsuleWorkbenchViewModel(input: CapsuleWorkbenchViewModelI
     },
     anatomy,
     evidence,
+    coreSourceability,
     graph,
     ontology,
     tacitKnowledge,
@@ -543,6 +568,128 @@ function buildEvidence(capsule: CapsuleWorkbenchCapsuleInput, documents: Capsule
     sourceIds,
     documentIds,
   };
+}
+
+function buildCoreSourceability(input: {
+  anatomy: CapsuleCoreDisplay[];
+  evidence: CapsuleEvidenceDisplay;
+  claims: CapsuleClaimDisplay[];
+  outputs: CapsuleOutputDisplay[];
+}): CapsuleCoreSourceabilityGate[] {
+  const anatomyByKind = new Map(input.anatomy.map((core) => [core.kind, core]));
+  const ledgerUnsupportedClaimTexts = input.claims
+    .filter((claim) => supportSeverity(claim.support) === 'unsupported')
+    .map((claim) => claim.text);
+  const unsupportedClaimTexts = uniqueStrings(
+    ledgerUnsupportedClaimTexts.length ? ledgerUnsupportedClaimTexts : input.evidence.unsupportedClaims,
+  );
+  const totalClaimCount = Math.max(
+    input.claims.length || input.evidence.supportedClaims.length + input.evidence.weakClaims.length + unsupportedClaimTexts.length,
+    0,
+  );
+  const supportedClaimCount = Math.max(
+    input.evidence.supportedClaims.length,
+    input.claims.filter((claim) => supportSeverity(claim.support) === 'supported').length,
+  );
+  const weakClaimCount = Math.max(
+    input.evidence.weakClaims.length,
+    input.claims.filter((claim) => supportSeverity(claim.support) === 'weak').length,
+  );
+  const claimSupportScore = totalClaimCount
+    ? Math.round(((supportedClaimCount + weakClaimCount * 0.55) / totalClaimCount) * 100)
+    : input.evidence.sourceCount > 0 ? 80 : 0;
+
+  return SOURCEABILITY_CORE_ORDER.map((kind) => {
+    const core = anatomyByKind.get(kind);
+    const gaps = sourceabilityGapsForKind(kind, input.evidence, core, input.outputs);
+    const unsupportedClaims = kind === 'source' || kind === 'output' ? unsupportedClaimTexts : [];
+    const sourceCoverageScore = sourceabilityScoreForKind({
+      kind,
+      core,
+      evidence: input.evidence,
+      outputCount: input.outputs.length,
+      claimSupportScore,
+      unsupportedClaimCount: unsupportedClaims.length,
+    });
+    const ready = sourceCoverageScore >= SOURCEABILITY_READY_THRESHOLD
+      && unsupportedClaims.length === 0
+      && gaps.length === 0;
+    return {
+      kind,
+      label: `${core?.label ?? humanizeId(kind)} sourceability`,
+      sourceCoverageScore,
+      threshold: SOURCEABILITY_READY_THRESHOLD,
+      evidenceGapCount: gaps.length,
+      unsupportedClaimCount: unsupportedClaims.length,
+      unsupportedClaims,
+      gapLabels: gaps,
+      ready,
+      readyBlocked: !ready,
+      provenance: 'capsule-evidence-pack',
+    };
+  });
+}
+
+function sourceabilityScoreForKind(input: {
+  kind: CapsuleCoreSourceabilityGate['kind'];
+  core?: CapsuleCoreDisplay;
+  evidence: CapsuleEvidenceDisplay;
+  outputCount: number;
+  claimSupportScore: number;
+  unsupportedClaimCount: number;
+}): number {
+  if (input.kind === 'source') {
+    if (!input.evidence.sourceCount) return 0;
+    return clamp(input.unsupportedClaimCount ? Math.min(input.claimSupportScore, 65) : input.claimSupportScore, 0, 100);
+  }
+  if (input.kind === 'document') {
+    if (input.evidence.documentIds.length) return 100;
+    return input.evidence.sourceIds.length ? 55 : 0;
+  }
+  if (input.kind === 'output') {
+    if (!input.outputCount) return 0;
+    return input.unsupportedClaimCount ? 60 : 90;
+  }
+  if (input.kind === 'situation') {
+    if (input.core?.status !== 'present') return 0;
+    return input.evidence.sourceCount ? 90 : 72;
+  }
+  if (input.kind === 'user') {
+    if (input.core?.status !== 'present') return 0;
+    return 82;
+  }
+  return 0;
+}
+
+function sourceabilityGapsForKind(
+  kind: CapsuleCoreSourceabilityGate['kind'],
+  evidence: CapsuleEvidenceDisplay,
+  core: CapsuleCoreDisplay | undefined,
+  outputs: CapsuleOutputDisplay[],
+): string[] {
+  const explicit = evidence.gaps.filter((gap) => {
+    if (kind === 'source') return /source|evidence|receipt|unsupported|claim/i.test(gap);
+    if (kind === 'document') return /document|library|chunk|paragraph|extract/i.test(gap);
+    if (kind === 'situation') return /situation|jurisdiction|decision|time|fresh|stale|date/i.test(gap);
+    if (kind === 'user') return /user|profile|audience|mandate|red line|voice/i.test(gap);
+    return /output|memo|brief|handover|export|approval/i.test(gap);
+  });
+  const structural = [
+    kind === 'source' && evidence.sourceCount === 0 ? 'No source receipts attached yet.' : '',
+    kind === 'document' && evidence.documentIds.length === 0 && evidence.sourceCount === 0 ? 'No documents or source receipts attached yet.' : '',
+    kind === 'user' && core?.status !== 'present' ? 'No user core attached yet.' : '',
+    kind === 'situation' && core?.status !== 'present' ? 'No situation core attached yet.' : '',
+    kind === 'output' && outputs.length === 0 ? 'No output contract attached yet.' : '',
+  ];
+  return uniqueStrings([...explicit, ...structural.filter(Boolean)]);
+}
+
+function supportSeverity(support: string): 'supported' | 'weak' | 'unsupported' | 'unknown' {
+  const normalized = support.toLowerCase();
+  if (/unsupported|needs_source|missing|contradict|disput|stale/.test(normalized)) return 'unsupported';
+  if (/weak|partial|mixed/.test(normalized)) return 'weak';
+  if (/support|canonical|reviewed|approved/.test(normalized)) return 'supported';
+  return 'unknown';
 }
 
 function buildTacitKnowledge(

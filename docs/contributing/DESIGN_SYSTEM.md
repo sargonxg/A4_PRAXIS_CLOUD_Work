@@ -29,7 +29,7 @@ Use token classes or CSS variables instead of raw hex values.
 | `--color-evidence-ready` | Ready/source-complete evidence state. |
 | `--color-evidence-review` | Review/source-gap evidence state. |
 | `--color-evidence-muted` | Muted evidence labels. |
-| `--color-lab-void` / `--color-lab-ink` / `--color-lab-panel` | Dark lab operating scene surfaces. |
+| `--color-lab-void` / `--color-lab-ink` / `--color-lab-panel` | Dark agent accent panel surfaces only. |
 | `--color-lab-cyan` / `--color-lab-lime` / `--color-lab-plasma` / `--color-lab-warning` | Restrained capsule, source, agent, and review signals. |
 | `--color-lab-line` | Technical map lines, source flow, and capsule borders. |
 
@@ -37,9 +37,9 @@ Gold tokens remain available only for a single primary action, focus rings, and 
 
 ## Civic Atelier Components
 
-### AI Operating Scene
+### Agent Accent Panels
 
-Use `app-first-futurist-shell` for the public root when it renders the PRAXIS workbench preview. Use `futurist-ai-lab` only for high-signal AI operating regions inside the app. The first screen must remain the product loop itself: prompt, active ContextCapsule, source receipts, agent run, and output handoff.
+Use `praxis-public-workbench-shell` only for legacy public workbench previews. Use `praxis-agent-accent-panel` only for high-signal agent operating regions inside the app. Do not use lab styling as a page shell, primary background, or separate product identity. The first screen must remain the product loop itself: prompt, active ContextCapsule, source receipts, agent run, and output handoff.
 
 ### Capsule Chain Nodes
 

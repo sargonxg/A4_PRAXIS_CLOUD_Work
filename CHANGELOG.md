@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+- chore(design): unify shell vocabulary behind shared PRAXIS tokens.
+  Updates the visual contract around `PublicShell`, `AppShell`, route
+  breadcrumbs, and Boardroom's app-token surface, and retires the old futurist
+  public-shell naming in favor of PRAXIS public/workbench and agent-accent
+  classes.
+
+- feat(agentic-core): harden Memo export gating and live canary proof.
+  Adds a computed Memo export-ready gate for sourceability, red-line, and
+  classification requirements, blocks Markdown/DOCX/PDF export until the gate
+  passes, and schedules the authenticated persona-smoke workflow to run the
+  live PRAXIS doctor canary with disposable Firebase credentials.
+
+- feat(capsules): make capsule context sourceable and graph-reviewable.
+  Adds per-core sourceability gates to the capsule workbench, turns graph
+  proposal approval/rejection into real review-card state changes with reviewed
+  GraphLite embedded projections, and carries approved capsule source metadata
+  into Ask source cards for citation traceability.
+
+- feat(home): simplify public and signed-in home around one Ask chat.
+  Extracts the shared `PraxisChat` component, routes public sends to signup
+  with the draft prompt preserved, sends authenticated home turns to the
+  calibrated `/api/ai/chat` path, and removes the old feature-preview home
+  sections and duplicate floating chat rendering.
+
 - feat(capsules): add quality 2.0 evaluation scorecards.
   Extends capsule quality with temporality, causality, ontology binding,
   receipt-depth, and contradiction-rate dimensions, adds deterministic

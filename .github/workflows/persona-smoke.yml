@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - main
+  schedule:
+    - cron: '17 12 * * *'
   workflow_dispatch: {}
 
 permissions:
@@ -15,7 +17,7 @@ permissions:
 jobs:
   personas:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     env:
       TEST_FIREBASE_EMAIL: ${{ secrets.TEST_FIREBASE_EMAIL }}
       TEST_FIREBASE_PASSWORD: ${{ secrets.TEST_FIREBASE_PASSWORD }}
@@ -79,6 +81,15 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
         run: npx playwright test tests/e2e/golden-path.spec.ts
+
+      - name: Run live authenticated agentic canary
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          PRAXIS_DOCTOR_WRITE_CANARY: "1"
+          PRAXIS_CANARY_EMAIL: ${{ secrets.TEST_FIREBASE_EMAIL }}
+          PRAXIS_CANARY_PASSWORD: ${{ secrets.TEST_FIREBASE_PASSWORD }}
+          FIREBASE_WEB_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+        run: npm run doctor:praxis:canary -- --json
 
       - name: Upload server log
         if: always()

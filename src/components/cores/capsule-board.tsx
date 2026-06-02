@@ -318,7 +318,7 @@ export function CapsuleBoard({
   const slotIds = useMemo(() => slots.map((s) => s.slotId), [slots]);
 
   return (
-    <section className={cn('rounded-2xl border border-white/70 bg-white/85 shadow-xl shadow-navy-950/5 backdrop-blur', hideHeader ? 'p-4' : 'p-6')}>
+    <section className={cn('rounded-[var(--radius-xl)] border border-white/70 bg-white/85 shadow-[var(--shadow-card)] backdrop-blur', hideHeader ? 'p-4' : 'p-6')}>
       {hideHeader ? null : (
         <header className="mb-4 flex items-start justify-between gap-3">
           <div>

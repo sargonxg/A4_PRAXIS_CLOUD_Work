@@ -73,7 +73,7 @@ export function AccountProfileButton({ compact = false }: { compact?: boolean })
           />
           <div
             role="menu"
-            className="absolute right-0 z-50 mt-2 w-80 rounded-xl border border-slate-200 bg-white p-3 shadow-xl shadow-navy-950/15"
+            className="absolute right-0 z-50 mt-2 w-80 rounded-[var(--radius-xl)] border border-slate-200 bg-white p-3 shadow-[var(--shadow-float)]"
           >
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
               <div className="flex items-start gap-3">

@@ -1,10 +1,9 @@
 /**
  * audit:no-normal-user-archive
  *
- * The Workspace navigation group (the four-link spine every user
- * always sees: Ask · Cores · Library · Memo) must never point at
- * archive, specialist, admin, or experimental routes. Those belong
- * to the Advanced or Administration groups.
+ * The Workspace navigation group (the short spine every user always sees)
+ * must never point at archive, specialist, admin, or experimental routes.
+ * Those belong to Knowledge, Advanced, or Administration groups.
  *
  * Fail modes:
  *  - A Workspace NAV_GROUPS entry has an href starting with
@@ -35,7 +34,7 @@ function sliceGroup(s: string, groupId: string): string {
   const start = s.indexOf(marker);
   if (start === -1) return '';
   // Find the next group's marker after this one.
-  const nextMarkers = ['workspace', 'advanced', 'administration']
+  const nextMarkers = ['workspace', 'knowledge', 'advanced', 'administration']
     .filter((id) => id !== groupId)
     .map((id) => s.indexOf(`id: '${id}',`, start + marker.length))
     .filter((idx) => idx !== -1);

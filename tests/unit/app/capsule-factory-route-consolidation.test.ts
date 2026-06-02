@@ -24,11 +24,11 @@ describe('Capsules route consolidation', () => {
     expect(navigation.redirect).toHaveBeenCalledWith('/app/capsules?lane=repository');
   });
 
-  it('promotes only Capsules as the primary capsule workspace', async () => {
+  it('promotes Capsules without reviving Repository as a primary workspace', async () => {
     const { NAV_GROUPS, PRIMARY_NAV } = await import('@/lib/navigation/primary-nav');
     const workspaceItems = NAV_GROUPS.find((group) => group.id === 'workspace')?.items ?? [];
 
-    expect(workspaceItems.map((item) => item.id)).toEqual(['home', 'capsules']);
+    expect(workspaceItems.map((item) => item.id)).toEqual(['home', 'capsules', 'boardroom', 'recent-work']);
     expect(PRIMARY_NAV.some((item) => item.id === 'repository')).toBe(false);
     expect(PRIMARY_NAV.find((item) => item.id === 'capsules')).toMatchObject({
       label: 'Capsules',

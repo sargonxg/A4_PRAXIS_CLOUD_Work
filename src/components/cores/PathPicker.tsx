@@ -115,7 +115,7 @@ export function PathPicker({ capsuleId, onSelect, currentPathId }: PathPickerPro
   const preview = hover ?? paths[0] ?? null;
 
   return (
-    <section className="rounded-2xl border border-[#8A5A00]/30 bg-white/95 p-5 shadow-xl shadow-navy-950/5 backdrop-blur">
+    <section className="rounded-[var(--radius-xl)] border border-[#8A5A00]/30 bg-white/95 p-5 shadow-[var(--shadow-card)] backdrop-blur">
       <header className="mb-4 flex items-center gap-2">
         <Compass className="h-4 w-4 text-[#8A5A00]" />
         <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-[#8A5A00]">Pick your operator path</h2>

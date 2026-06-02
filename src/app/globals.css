@@ -101,6 +101,40 @@
   /* Ring defaults */
   --color-ring: var(--color-gold-500);
 
+  /* Unified shape scale. Use these across public, app, and agent panels. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-full: 9999px;
+
+  /* Unified elevation. Cards stay quiet; modal/float are the only lifted layers. */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.045);
+  --shadow-modal: 0 22px 64px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  --shadow-float: 0 14px 42px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.06);
+
+  /* Shared spacing and type scales for route shells. */
+  --spacing-shell-x: clamp(1rem, 2.2vw, 2rem);
+  --spacing-shell-y: clamp(1.25rem, 2.8vw, 2.5rem);
+  --spacing-panel: 1rem;
+  --spacing-card: 1.25rem;
+  --text-display: clamp(2.25rem, 5vw, 4.5rem);
+  --text-title: clamp(1.75rem, 3vw, 3rem);
+  --text-body: 1rem;
+  --text-caption: 0.75rem;
+
+  /* Single PRAXIS accent system. Cream/rose/lab colors are secondary surfaces. */
+  --color-praxis-bg: var(--color-app-bg);
+  --color-praxis-surface: var(--color-app-surface);
+  --color-praxis-surface-soft: var(--color-app-surface-alt);
+  --color-praxis-border: var(--color-app-border);
+  --color-praxis-text: var(--color-app-text);
+  --color-praxis-muted: var(--color-app-text-secondary);
+  --color-praxis-accent: var(--color-diplomatic-blue);
+  --color-praxis-accent-strong: var(--color-navy-950);
+  --color-praxis-action: var(--color-gold-500);
+  --color-praxis-action-strong: var(--color-gold-700);
+
   /* Animation durations */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
@@ -531,16 +565,146 @@ body {
    PRAXIS visual identity — shared by landing + app shell
    ========================================================= */
 
+/* Shared shell primitives. These are intentionally thin: page structure still
+   lives in React, while radius, shadow, type, and accent language resolve here. */
+.praxis-public-shell,
+.praxis-app-surface {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0) 340px),
+    linear-gradient(rgba(15, 23, 42, 0.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.026) 1px, transparent 1px),
+    var(--color-praxis-bg);
+  background-size: auto, 30px 30px, 30px 30px, auto;
+  color: var(--color-praxis-text);
+  color-scheme: light;
+}
+
+.praxis-public-header,
+.praxis-app-header,
+.praxis-public-footer,
+.praxis-shell-card,
+.praxis-shell-panel,
+.praxis-shell-float {
+  border: 1px solid var(--color-praxis-border);
+  background: color-mix(in srgb, white 92%, var(--color-praxis-surface-soft));
+  color: var(--color-praxis-text);
+}
+
+.praxis-public-header,
+.praxis-app-header {
+  border-bottom: 1px solid var(--color-praxis-border);
+  background: color-mix(in srgb, white 86%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.74) inset;
+}
+
+.praxis-public-header {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+.praxis-public-footer,
+.praxis-shell-card,
+.praxis-shell-panel {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+.praxis-shell-float {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-float);
+}
+
+.praxis-shell-modal {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-modal);
+}
+
+.praxis-text-display {
+  font-family: var(--font-heading);
+  font-size: var(--text-display);
+  font-weight: 650;
+  line-height: 0.98;
+  letter-spacing: 0;
+  color: var(--color-praxis-accent);
+}
+
+.praxis-text-title {
+  font-family: var(--font-heading);
+  font-size: var(--text-title);
+  font-weight: 650;
+  line-height: 1.08;
+  letter-spacing: 0;
+  color: var(--color-praxis-accent);
+}
+
+.praxis-text-body {
+  font-size: var(--text-body);
+  line-height: 1.65;
+  color: var(--color-praxis-muted);
+}
+
+.praxis-text-caption {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-praxis-accent) 72%, var(--color-praxis-action));
+}
+
+.praxis-button-primary,
+.praxis-button-secondary,
+.praxis-button-ghost,
+.praxis-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.praxis-button-primary {
+  min-height: 2.75rem;
+  background: var(--color-praxis-accent-strong);
+  color: white;
+  box-shadow: var(--shadow-card);
+}
+
+.praxis-button-primary:hover {
+  background: var(--color-praxis-accent);
+}
+
+.praxis-button-secondary,
+.praxis-button-ghost,
+.praxis-chip {
+  border: 1px solid var(--color-praxis-border);
+  background: white;
+  color: var(--color-praxis-text);
+}
+
+.praxis-button-secondary:hover,
+.praxis-button-ghost:hover,
+.praxis-chip:hover {
+  border-color: color-mix(in srgb, var(--color-praxis-accent) 30%, var(--color-praxis-border));
+  background: var(--color-praxis-surface-soft);
+}
+
+.praxis-chip {
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+}
+
 /* Two-layer stacked elevation — tight inset + soft drop. */
 .shadow-capsule {
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.06),
-    0 24px 64px -32px rgba(27, 58, 92, 0.25);
+  box-shadow: var(--shadow-card);
 }
 .shadow-capsule-lg {
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.08),
-    0 40px 96px -40px rgba(27, 58, 92, 0.35);
+  box-shadow: var(--shadow-float);
 }
 .shadow-gold-halo {
   box-shadow:
@@ -682,21 +846,21 @@ body {
   scroll-margin-top: 7.5rem;
 }
 
-.futurist-ai-lab {
+.praxis-agent-accent-panel {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--color-lab-ink) 94%, black), var(--color-lab-void)),
     var(--color-lab-void);
   color: var(--color-navy-50);
 }
 
-.app-first-futurist-shell {
+.praxis-public-workbench-shell {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--color-archive-paper) 84%, white), var(--color-archive-paper) 46%, color-mix(in srgb, var(--color-lab-ink) 8%, var(--color-archive-paper))),
     var(--color-archive-paper);
 }
 
-.futurist-ai-lab::before,
-.app-first-futurist-shell::before {
+.praxis-agent-accent-panel::before,
+.praxis-public-workbench-shell::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -1511,10 +1675,10 @@ body {
   --motion-base: 180ms;
   --motion-slow: 280ms;
 
-  /* Layered elevation — soft, paper-true depth instead of flat borders. */
-  --elevation-1: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.03);
-  --elevation-2: 0 2px 4px rgba(15, 23, 42, 0.05), 0 4px 12px rgba(15, 23, 42, 0.05);
-  --elevation-3: 0 4px 8px rgba(15, 23, 42, 0.06), 0 12px 32px rgba(15, 23, 42, 0.08);
+  /* Back-compat aliases for older instrument classes. */
+  --elevation-1: var(--shadow-card);
+  --elevation-2: var(--shadow-float);
+  --elevation-3: var(--shadow-modal);
 }
 
 /* --- Typographic refinement (classical, legible, lightweight) --- */
@@ -1715,7 +1879,7 @@ hr {
 /* Light-surface text selection (base ::selection is tuned for dark navy). */
 .landing-light ::selection,
 .od-praxis-surface ::selection,
-.app-first-futurist-shell ::selection {
+.praxis-public-workbench-shell ::selection {
   background-color: color-mix(in srgb, var(--color-civic-blue) 22%, transparent);
   color: var(--color-deep-ink);
 }
