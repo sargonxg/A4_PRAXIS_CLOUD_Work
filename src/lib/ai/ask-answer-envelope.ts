@@ -189,6 +189,24 @@ export interface AskTraceabilitySummary {
   bestNextAction: string;
 }
 
+export type AskContextProvenanceChipKind =
+  | 'capsule'
+  | 'context-package'
+  | 'source'
+  | 'document'
+  | 'output'
+  | 'memory'
+  | 'gap';
+
+export interface AskContextProvenanceChip {
+  id: string;
+  kind: AskContextProvenanceChipKind;
+  label: string;
+  detail: string;
+  href?: string;
+  tone: 'inspired' | 'grounded' | 'review';
+}
+
 export interface AskContextDiagnostics {
   activeCapsule: string;
   sourceLanesUsed: SourcePreviewType[];
@@ -271,6 +289,7 @@ export interface AskAnswerEnvelope {
   generationReceipt?: AskGenerationReceipt;
   continuationActions: AskContinuationAction[];
   contextDiagnostics: AskContextDiagnostics;
+  contextProvenanceChips: AskContextProvenanceChip[];
   answerQualitySummary: AskAnswerQualitySummary;
   agenticDepthRecommendation: AskAgenticDepthRecommendation;
   contextRepairActions: AskContextRepairAction[];
@@ -537,6 +556,13 @@ export function buildAskAnswerEnvelope(input: {
     provenance: input.provenance,
     orchestrationReceipt: input.orchestrationReceipt,
   });
+  const contextProvenanceChips = buildAskContextProvenanceChips({
+    sourceCards: input.sourceCards,
+    sourceAudit,
+    documentPackCandidate: pack,
+    provenance: input.provenance,
+    memoryReceipt,
+  });
 
   return {
     style: {
@@ -558,6 +584,7 @@ export function buildAskAnswerEnvelope(input: {
     generationReceipt: input.generationReceipt,
     continuationActions: continuationActionsFor(input.intent),
     contextDiagnostics,
+    contextProvenanceChips,
     answerQualitySummary,
     agenticDepthRecommendation,
     contextRepairActions,
@@ -638,6 +665,97 @@ function buildAskContextDiagnostics(input: {
     graphProposalStatus: input.memoryReceipt.writebackProposalIds.length > 0 ? 'review_gated' : 'not_proposed',
     outputReadiness: input.documentPackCandidate.answer || input.documentPackCandidate.prompt ? 'artifact_candidate' : 'not_ready',
   };
+}
+
+function buildAskContextProvenanceChips(input: {
+  documentPackCandidate: ConversationDocumentPack;
+  memoryReceipt: CapsuleMemoryReceipt;
+  provenance?: ConversationPackProvenance;
+  sourceAudit: AskSourceAuditSummary;
+  sourceCards: SourcePreviewCard[];
+}): AskContextProvenanceChip[] {
+  const chips: AskContextProvenanceChip[] = [];
+  const capsuleId = input.provenance?.capsuleId ?? null;
+
+  if (capsuleId) {
+    chips.push({
+      id: `capsule:${capsuleId}`,
+      kind: 'capsule',
+      label: 'ContextCapsule',
+      detail: input.provenance?.capsuleVersion ? `v${input.provenance.capsuleVersion}` : capsuleId,
+      href: `/app/capsules?capsuleId=${encodeURIComponent(capsuleId)}`,
+      tone: 'inspired',
+    });
+  }
+
+  if (input.provenance?.contextPackageId) {
+    chips.push({
+      id: `context-package:${input.provenance.contextPackageId}`,
+      kind: 'context-package',
+      label: 'Context package',
+      detail: input.provenance.contextPackageId,
+      href: '/app/capsules',
+      tone: 'inspired',
+    });
+  }
+
+  const sourceReceiptCard = input.sourceCards.find((card) => card.sourceReceiptHref || card.sourceReceiptId);
+  if (sourceReceiptCard) {
+    chips.push({
+      id: `source:${sourceReceiptCard.sourceReceiptId ?? sourceReceiptCard.id}`,
+      kind: 'source',
+      label: `${input.sourceAudit.sourceReceiptCount || 1} source receipt${input.sourceAudit.sourceReceiptCount === 1 ? '' : 's'}`,
+      detail: sourceReceiptCard.title || sourceReceiptCard.label,
+      href: sourceReceiptCard.sourceReceiptHref ?? (sourceReceiptCard.sourceReceiptId ? receiptHref(sourceReceiptCard.sourceReceiptId) : sourceReceiptCard.url),
+      tone: 'grounded',
+    });
+  } else if (input.sourceCards.length) {
+    const firstSource = input.sourceCards[0];
+    chips.push({
+      id: `source:${firstSource.id}`,
+      kind: firstSource.sourceType === 'uploaded-document' || firstSource.sourceType === 'document-digest' ? 'document' : 'source',
+      label: `${input.sourceCards.length} source preview${input.sourceCards.length === 1 ? '' : 's'}`,
+      detail: firstSource.title || firstSource.label,
+      href: firstSource.url,
+      tone: 'grounded',
+    });
+  }
+
+  const outputTarget = input.documentPackCandidate.provenance.outputTarget;
+  if (outputTarget) {
+    chips.push({
+      id: `output:${outputTarget}`,
+      kind: 'output',
+      label: outputTargetLabel(outputTarget),
+      detail: 'Document pack target',
+      href: '/app?panel=memo',
+      tone: 'inspired',
+    });
+  }
+
+  if (input.memoryReceipt.memoryHitCount > 0) {
+    chips.push({
+      id: 'memory:cognee-advisory',
+      kind: 'memory',
+      label: `${input.memoryReceipt.memoryHitCount} memory hit${input.memoryReceipt.memoryHitCount === 1 ? '' : 's'}`,
+      detail: 'Advisory only until promoted by review card',
+      href: '/app/capsules',
+      tone: 'review',
+    });
+  }
+
+  if (input.sourceAudit.gapCount > 0) {
+    chips.push({
+      id: 'gap:sourceability',
+      kind: 'gap',
+      label: `${input.sourceAudit.gapCount} gap${input.sourceAudit.gapCount === 1 ? '' : 's'}`,
+      detail: 'Visible evidence gap',
+      href: '/app/capsules',
+      tone: 'review',
+    });
+  }
+
+  return dedupeContextProvenanceChips(chips).slice(0, 8);
 }
 
 function buildAnswerQualitySummary(input: {
@@ -775,6 +893,15 @@ function buildContextRepairActions(input: {
     priority: input.sourceAudit.sourceCount > 0 ? 'secondary' : 'optional',
   });
   return withSinglePrimaryRepairAction(dedupeRepairActions(actions).slice(0, 4));
+}
+
+function dedupeContextProvenanceChips(chips: AskContextProvenanceChip[]): AskContextProvenanceChip[] {
+  const seen = new Set<string>();
+  return chips.filter((chip) => {
+    if (seen.has(chip.id)) return false;
+    seen.add(chip.id);
+    return true;
+  });
 }
 
 function dedupeRepairActions(actions: AskContextRepairAction[]): AskContextRepairAction[] {

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { MutationConfirmCard, type MutationPatch } from '@/components/assistant/mutation-confirm-card';
 import { ResponseActions } from '@/components/assistant/response-actions';
+import { AnswerContextProvenanceChips } from '@/components/ask/AnswerContextProvenanceChips';
 import { inferResponseActionKinds, type ResponseActionKind } from '@/lib/assistant/response-action-kinds';
 import type { SourceabilityClaimVerdict } from '@/lib/agent-runtime/sourceability-ledger';
 import { DEFAULT_MODEL_PREFERENCE } from '@/lib/ai/model-preferences';
@@ -55,6 +56,7 @@ export interface PraxisChatProps {
   autoSendNonce?: number;
   className?: string;
   compact?: boolean;
+  contextBar?: ReactNode;
   contextLabel?: string;
   contextOpen?: boolean;
   currentPath?: string | null;
@@ -76,6 +78,7 @@ export function PraxisChat({
   autoSendNonce = 0,
   className,
   compact = false,
+  contextBar,
   contextLabel = '+ Context',
   contextOpen = false,
   currentPath,
@@ -464,6 +467,8 @@ export function PraxisChat({
           </div>
         ) : null}
 
+        {contextBar ? <div className="mt-3">{contextBar}</div> : null}
+
         <form onSubmit={submit} className={cn(
           'mt-3 rounded-[var(--radius-lg)] border bg-white p-2 shadow-[var(--shadow-card)]',
           variant === 'floating' ? 'border-slate-700 bg-slate-950 shadow-none' : 'border-[var(--color-app-border)]',
@@ -578,6 +583,7 @@ function ChatBubble({
             </ReactMarkdown>
             {isStreaming ? <span className="inline-block h-3 w-0.5 animate-pulse bg-[color:var(--color-gold-500)]" /> : null}
           </div>
+          <AnswerContextProvenanceChips envelope={message.answerEnvelope} variant={variant === 'floating' ? 'dark' : 'light'} />
           {message.sourceabilityVerdicts?.length ? <VerdictStrip verdicts={message.sourceabilityVerdicts} /> : null}
           {message.answerEnvelope?.sourceCards?.length ? <SourceCards sourceCards={message.answerEnvelope.sourceCards} /> : null}
           {message.proposal ? (

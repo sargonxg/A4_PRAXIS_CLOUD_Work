@@ -8,6 +8,10 @@ const builderSource = readFileSync(
   join(repoRoot, 'src/components/context/one-click-context-builder.tsx'),
   'utf8',
 );
+const quickBuilderSource = readFileSync(
+  join(repoRoot, 'src/lib/context/quick-context-builder-client.ts'),
+  'utf8',
+);
 
 describe('Context Core Lite UI contract', () => {
   it('shows both modes on the same context builder screen', () => {
@@ -32,11 +36,12 @@ describe('Context Core Lite UI contract', () => {
   });
 
   it('keeps the PRAXIS Lite creation path on existing context APIs', () => {
-    expect(builderSource).toContain("fetch('/api/situations'");
-    expect(builderSource).toContain("fetch('/api/context/capsules'");
-    expect(builderSource).toContain("fetch('/api/context/packages'");
-    expect(builderSource).toContain("fetch('/api/context/resolve'");
-    expect(builderSource).toContain('contextPackageId: packagePayload.package.id');
-    expect(builderSource).toContain('capsuleId: capsulePayload.capsule.capsuleId');
+    expect(builderSource).toContain('createQuickContextFromDomain');
+    expect(quickBuilderSource).toContain("'/api/situations'");
+    expect(quickBuilderSource).toContain("'/api/context/capsules'");
+    expect(quickBuilderSource).toContain("'/api/context/packages'");
+    expect(quickBuilderSource).toContain("'/api/context/resolve'");
+    expect(quickBuilderSource).toContain('contextPackageId: contextPackage.id');
+    expect(quickBuilderSource).toContain('capsuleId: capsule.capsuleId');
   });
 });

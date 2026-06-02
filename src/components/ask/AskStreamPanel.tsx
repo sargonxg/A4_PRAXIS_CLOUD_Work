@@ -32,6 +32,7 @@ import {
   X,
 } from 'lucide-react';
 import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
+import { AnswerContextProvenanceChips } from '@/components/ask/AnswerContextProvenanceChips';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
 import { AskQueuedAgentRunPanel } from '@/components/ask/AskQueuedAgentRunPanel';
 import { SourceabilityVerdictBadges } from '@/components/ask/SourceabilityVerdictBadges';
@@ -840,6 +841,7 @@ function AskMessageBubble({
           )}
         </div>
 
+        <AnswerContextProvenanceChips envelope={message.answerEnvelope} />
         <SourceabilityVerdictBadges verdicts={sourceabilityVerdicts} />
 
         {message.streaming ? (

@@ -6,18 +6,16 @@ import { useActiveContextStack } from '@/components/app/use-active-context-stack
 import {
   CONTEXT_CREATION_MODES,
   canCreateWithMode,
-  createLightweightContextCoreLite,
   type ContextCreationMode,
   type LightweightContextCoreLite,
 } from '@/lib/context/context-core-lite';
 import {
   STARTER_CONTEXT_DOMAINS,
   getStarterContextDomain,
-  starterContextNotes,
   type StarterContextDomainId,
 } from '@/lib/context/starter-context-domains';
 import { useSituationStore } from '@/stores/situation-store';
-import type { Situation } from '@/types/situation';
+import { createQuickContextFromDomain } from '@/lib/context/quick-context-builder-client';
 import { cn } from '@/lib/utils/cn';
 
 export function OneClickContextBuilder({ className }: { className?: string }) {
@@ -36,149 +34,15 @@ export function OneClickContextBuilder({ className }: { className?: string }) {
     setBusy(true);
     setNote(`Building ${domain.label} context...`);
     try {
-      const response = await fetch('/api/situations', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          name: `${domain.label} Situation Core`,
-          type: domain.type,
-          description: domain.description,
-          region: domain.defaultRegion,
-          actors: domain.starterActors,
-          userRole: domain.userRole,
-          status: 'active',
-          domain: domain.domainId,
-          domainOverriddenByUser: true,
-          ...(domain.pathId ? { pathId: domain.pathId, pathOverriddenByUser: true } : {}),
-          contextNotes: starterContextNotes(domain),
-          workflowPath: domain.id,
-          workflowPathLabel: `${domain.label} context builder`,
-          tags: [domain.label, ...domain.graphLenses],
-          sourceCategoryOrder: domain.sourceTypes,
-        }),
+      const result = await createQuickContextFromDomain({
+        domain,
+        addSituation,
+        setActiveSituation,
+        saveStack,
+        onProgress: setNote,
       });
-      const payload = (await response.json().catch(() => ({}))) as { situation?: Situation; error?: string };
-      if (!response.ok || !payload.situation) throw new Error(payload.error ?? 'context creation failed');
-      addSituation(payload.situation);
-      setActiveSituation(payload.situation.id);
-      setNote('Creating capsule and Context Package...');
-      const capsuleResponse = await fetch('/api/context/capsules', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create',
-          label: `${domain.label} Capsule`,
-          scope: 'situation',
-          coreRefs: {
-            situationCoreId: payload.situation.id,
-            sourceCoreIds: [],
-            documentCoreIds: [],
-            graphCoreId: `${payload.situation.id}:graph-lite`,
-            outputCoreIds: domain.outputFormats.slice(0, 2).map((format) => `output:${format.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`),
-            objectiveCoreIds: [`objective:${domain.id}`],
-          },
-          retrievalPolicy: {
-            layers: ['sources', 'documents', 'graph', 'tool-output'],
-            limit: 12,
-            checkFreshness: true,
-            freshnessWindowDays: 180,
-          },
-          activeForSituationIds: [payload.situation.id],
-        }),
-      });
-      const capsulePayload = (await capsuleResponse.json().catch(() => ({}))) as {
-        capsule?: { capsuleId: string; version: number; health?: { score?: number; missingCores?: string[]; warnings?: string[] } };
-        error?: string;
-      };
-      if (!capsuleResponse.ok || !capsulePayload.capsule) {
-        throw new Error(capsulePayload.error ?? 'capsule creation failed');
-      }
-
-      const packageResponse = await fetch('/api/context/packages', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          label: `${domain.label} Context Package`,
-          ownerScope: 'situation',
-          coreRefs: {
-            situationCoreId: payload.situation.id,
-            sourceCoreIds: [],
-            documentCoreIds: [],
-            graphCoreId: `${payload.situation.id}:graph-lite`,
-            outputCoreIds: domain.outputFormats.slice(0, 2).map((format) => `output:${format.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`),
-          },
-          retrievalPolicy: {
-            layers: ['sources', 'documents', 'graph', 'tool-output'],
-            limit: 12,
-            checkFreshness: true,
-            freshnessWindowDays: 180,
-          },
-          active: true,
-        }),
-      });
-      const packagePayload = (await packageResponse.json().catch(() => ({}))) as {
-        package?: { id: string; health?: { score?: number; missingCores?: string[]; warnings?: string[] } };
-        error?: string;
-      };
-      if (!packageResponse.ok || !packagePayload.package) {
-        throw new Error(packagePayload.error ?? 'context package creation failed');
-      }
-
-      await saveStack({
-        stackId: capsulePayload.capsule.capsuleId,
-        capsuleId: capsulePayload.capsule.capsuleId,
-        contextPackageId: packagePayload.package.id,
-        situationId: payload.situation.id,
-        sourceIds: [],
-        documentIds: [],
-        outputGoal: domain.outputFormats[0] ?? 'memo',
-      });
-
-      const resolveResponse = await fetch('/api/context/resolve', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          situationId: payload.situation.id,
-          capsuleId: capsulePayload.capsule.capsuleId,
-          contextPackageId: packagePayload.package.id,
-          query: `Prepare ${domain.outputFormats[0] ?? 'memo'} from ${domain.label} context.`,
-        }),
-      });
-      const resolved = resolveResponse.ok;
-      const missingCores = Array.from(new Set([
-        ...(capsulePayload.capsule.health?.missingCores ?? []),
-        ...(packagePayload.package.health?.missingCores ?? []),
-      ])).slice(0, 4);
-      const warnings = [
-        ...(capsulePayload.capsule.health?.warnings ?? []),
-        ...(packagePayload.package.health?.warnings ?? []),
-      ];
-      setCoreLite(createLightweightContextCoreLite({
-        id: packagePayload.package.id,
-        title: `${domain.label} Context Core Lite`,
-        domain: domain.domainId,
-        situationCoreId: payload.situation.id,
-        capsuleId: capsulePayload.capsule.capsuleId,
-        capsuleVersion: capsulePayload.capsule.version,
-        contextPackageId: packagePayload.package.id,
-        sourceRefs: [],
-        documentRefs: [],
-        healthScore: packagePayload.package.health?.score ?? capsulePayload.capsule.health?.score ?? 0,
-        missingCores,
-        assumptions: [
-          `${domain.label} domain defaults are starter assumptions until sources are attached.`,
-          `Time horizon: ${domain.timeHorizon}.`,
-          `Initial actor set: ${domain.starterActors.slice(0, 3).join(', ')}.`,
-        ],
-        gaps: warnings.length > 0 ? warnings.slice(0, 3) : ['Attach source receipts.', 'Upload documents.', 'Review graph candidates.'],
-        status: missingCores.length === 0 ? 'review_ready' : 'draft',
-        askResolvable: resolved,
-      }));
-      setNote(`${domain.label} Context Core Lite created. Ask PRAXIS can ${resolved ? 'resolve' : 'not yet resolve'} this package.`);
+      setCoreLite(result.coreLite);
+      setNote(`${domain.label} Context Core Lite created. Ask PRAXIS can ${result.resolved ? 'resolve' : 'not yet resolve'} this package.`);
     } catch (error) {
       setNote(error instanceof Error ? error.message : 'Could not create context.');
     } finally {

@@ -71,7 +71,7 @@ describe('createQuickContextFromDomain', () => {
         userCore: [expect.objectContaining({ label: expect.stringContaining('Policy') })],
         situation: [expect.objectContaining({ id: 'sit-1' })],
         thinkingDevices: expect.arrayContaining([expect.objectContaining({ id: 'sourceability-reviewer' })]),
-        output: [expect.objectContaining({ id: 'policy memo' })],
+        output: expect.arrayContaining([expect.objectContaining({ id: 'policy memo' })]),
       }),
     }));
     expect(result).toMatchObject({

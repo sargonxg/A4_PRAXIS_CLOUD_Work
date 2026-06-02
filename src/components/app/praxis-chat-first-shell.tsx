@@ -17,6 +17,7 @@ import {
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { PublicShell } from '@/components/app/public-shell';
 import { PraxisChat } from '@/components/app/praxis-chat';
+import { AskContextBar } from '@/components/app/ask-context-bar';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import {
   DEFAULT_CONTEXT_STACK_ID,
@@ -143,6 +144,17 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
             <PraxisChat
               mode={mode}
               activeContextStack={stack}
+              contextBar={(
+                <AskContextBar
+                  mode={mode}
+                  stack={stack}
+                  saveStack={saveStack}
+                  hydrated={hydrated}
+                  persisted={persisted}
+                  variant="home"
+                  onOpenAdvancedContext={() => setContextOpen(true)}
+                />
+              )}
               contextLabel={contextLabel}
               contextOpen={contextOpen}
               currentPath={isPublic ? '/' : '/app'}

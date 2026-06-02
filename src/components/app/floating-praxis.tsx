@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Eye, Sparkles, X } from 'lucide-react';
 import { PraxisChat } from '@/components/app/praxis-chat';
+import { AskContextBar } from '@/components/app/ask-context-bar';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { useAppStore } from '@/stores/app-store';
 import { useSituationStore } from '@/stores/situation-store';
@@ -27,7 +28,7 @@ export function FloatingPraxis({ hideLauncher = false }: { hideLauncher?: boolea
   const pathname = usePathname();
   const activeSituation = useSituationStore((state) => state.activeSituation);
   const demoMode = useAppStore((state) => state.demoMode);
-  const { stack } = useActiveContextStack();
+  const { stack, saveStack, hydrated, persisted } = useActiveContextStack();
   const [isOpen, setIsOpen] = useState(false);
   const [seedPrompt, setSeedPrompt] = useState('');
   const [autoSendNonce, setAutoSendNonce] = useState(0);
@@ -142,6 +143,17 @@ export function FloatingPraxis({ hideLauncher = false }: { hideLauncher?: boolea
                   autoSendNonce={autoSendNonce}
                   className="h-full"
                   compact
+                  contextBar={(
+                    <AskContextBar
+                      mode="authenticated"
+                      stack={stack}
+                      saveStack={saveStack}
+                      hydrated={hydrated}
+                      persisted={persisted}
+                      activeSituation={activeSituation}
+                      variant="floating"
+                    />
+                  )}
                   currentPath={pathname}
                   currentToolId={currentToolId}
                   demoMode={demoMode}

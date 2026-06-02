@@ -68,6 +68,18 @@ describe('Ask source preview panel contract', () => {
     expect(source).toContain('Create output capsule');
   });
 
+  it('renders compact answer provenance chips before detailed receipts', () => {
+    const provenanceSource = readFileSync(join(process.cwd(), 'src/components/ask/AnswerContextProvenanceChips.tsx'), 'utf8');
+
+    expect(source).toContain("import { AnswerContextProvenanceChips }");
+    expect(source).toContain('<AnswerContextProvenanceChips envelope={message.answerEnvelope} />');
+    expect(source.indexOf('<AnswerContextProvenanceChips')).toBeLessThan(source.indexOf('<SourceabilityVerdictBadges'));
+    expect(provenanceSource).toContain('Inspired by');
+    expect(provenanceSource).toContain('Grounded by');
+    expect(provenanceSource).toContain('answer-context-provenance');
+    expect(provenanceSource).toContain('answer-grounded-by-chip');
+  });
+
   it('shows TACITUS routing stages without a normal model picker', () => {
     expect(source).toContain('Reading capsule');
     expect(source).toContain('Checking evidence');
