@@ -196,6 +196,21 @@ describe('ask answer envelope', () => {
     }));
     expect(envelope.followUps).toContain('Check the weakest claim against attached sources.');
     expect(envelope.documentPackCandidate.provenance.capsuleId).toBe('cap-1');
+    expect(envelope.contextProvenanceChips).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'capsule',
+        label: 'ContextCapsule',
+        href: '/app/capsules?capsuleId=cap-1',
+      }),
+      expect.objectContaining({
+        kind: 'source',
+        label: expect.stringContaining('source'),
+        href: '/app/library?receiptId=receipt-1',
+      }),
+      expect.objectContaining({
+        kind: 'output',
+      }),
+    ]));
     expect(envelope.contextDiagnostics).toMatchObject({
       activeCapsule: 'cap-1',
       unsupportedClaimCount: 0,
