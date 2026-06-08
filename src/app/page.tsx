@@ -2,7 +2,6 @@ import { headers } from 'next/headers';
 import { PraxisMarketingHome } from '@/components/marketing/praxis-marketing-home';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
-const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
 const description = 'Ask a policy question, build a ContextCapsule, and produce sourced work with receipts.';
 
 const softwareJsonLd = {
@@ -55,23 +54,6 @@ export default async function Page() {
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
-      {gaMeasurementId ? (
-        <>
-          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} nonce={nonce} suppressHydrationWarning />
-          <script
-            nonce={nonce}
-            suppressHydrationWarning
-            dangerouslySetInnerHTML={{
-              __html: `
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${gaMeasurementId}', { anonymize_ip: true });
-              `,
-            }}
-          />
-        </>
-      ) : null}
       <PraxisMarketingHome />
     </>
   );
