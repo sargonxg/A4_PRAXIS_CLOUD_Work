@@ -5,21 +5,21 @@ import { PraxisGlyphChip } from '@/components/brand/praxis-mark';
 import { LivingContextRail, PublicPageShell } from '@/components/ui/instrument';
 
 export const metadata: Metadata = {
-  title: 'Release Notes | PRAXIS by TACITUS',
+  title: 'Release Notes',
   description: 'Current PRAXIS release notes and build history.',
   alternates: {
     canonical: '/release-notes',
   },
   openGraph: {
     title: 'PRAXIS Release Notes',
-    description: 'Current PRAXIS release notes for the ContextCapsule cockpit, runtime, and governance layer.',
+    description: 'Current PRAXIS release notes for the public workspace, runtime, and governance layer.',
     url: '/release-notes',
     images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'PRAXIS release notes' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'PRAXIS Release Notes',
-    description: 'Current PRAXIS release notes for the ContextCapsule cockpit and runtime.',
+    description: 'Current PRAXIS release notes for the workspace and runtime.',
     images: ['/opengraph-image'],
   },
 };
@@ -28,7 +28,7 @@ export default function ReleaseNotesPage() {
   const releaseRailCells = [
     { id: 'profile', label: 'Profile', value: 'All users', detail: 'Public release record', state: 'ready' as const },
     { id: 'context', label: 'Context', value: CURRENT_PRAXIS_RELEASE.releaseLabel, detail: `Build ${CURRENT_PRAXIS_RELEASE.buildNumber}`, state: 'active' as const },
-    { id: 'source', label: 'Source', value: 'Changelog', detail: 'Product and runtime notes', state: 'ready' as const },
+    { id: 'source', label: 'Source', value: 'Release notes', detail: 'Product and runtime notes', state: 'ready' as const },
     { id: 'output', label: 'Output', value: 'Release notes', detail: 'Reviewable history', state: 'quiet' as const },
     { id: 'readiness', label: 'Readiness', value: 'Current', detail: CURRENT_PRAXIS_RELEASE.buildDate, state: 'active' as const },
   ];
@@ -42,7 +42,6 @@ export default function ReleaseNotesPage() {
           </Link>
           <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm font-semibold text-[color:var(--color-ink)]/65">
             <Link href="/">Home</Link>
-            <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="hidden md:inline">Capsules</Link>
             <Link href="/pricing" className="hidden md:inline">Pricing</Link>
             <Link href="/learn" className="hidden md:inline">Learn</Link>
             <Link href="/guide" className="hidden md:inline">Guide</Link>
@@ -58,7 +57,7 @@ export default function ReleaseNotesPage() {
             Release notes
           </h1>
           <p className="mt-5 text-lg leading-8 text-[color:var(--color-ink)]/70">
-            The public record of what changed in the PRAXIS ContextCapsule cockpit, runtime, and governance layer.
+            The public record of what changed in the PRAXIS workspace, runtime, and governance layer.
           </p>
           <LivingContextRail cells={releaseRailCells} compact className="mt-8" />
         </section>

@@ -18,17 +18,17 @@ interface WelcomeModalProps {
 }
 
 const REAL_FEATURES = [
-  { icon: MessageSquare, label: 'Big prompt', description: 'Describe the policy task from the active ContextCapsule.' },
-  { icon: Users, label: 'Capsule cores', description: 'Keep user, situation, sources, tools, and output visible.' },
-  { icon: Wrench, label: 'AI routing', description: 'PRAXIS chooses memo, review, monitoring, or handover skills from one prompt.' },
-  { icon: Search, label: 'Source receipts', description: 'Keep evidence and gaps attached to the output.' },
-  { icon: FileText, label: 'Work draft', description: 'Open the draft where the run finishes.' },
-  { icon: GitBranch, label: 'Context map', description: 'Inspect actors, claims, and graph proposals when needed.' },
+  { icon: MessageSquare, label: 'Ask first', description: 'Start with the policy question or draft you need.' },
+  { icon: Users, label: 'Saved context', description: 'Keep the role, situation, sources, tools, and output visible.' },
+  { icon: Wrench, label: 'Workflows', description: 'PRAXIS can route deeper work to memo, review, monitoring, or handover skills.' },
+  { icon: Search, label: 'Source receipts', description: 'Keep evidence and gaps attached to the work.' },
+  { icon: FileText, label: 'Drafts', description: 'Open the draft where the run finishes.' },
+  { icon: GitBranch, label: 'Review map', description: 'Inspect actors, claims, and graph proposals when needed.' },
 ];
 
 const WORKFLOW_STEPS = [
-  { title: 'Choose capsule', description: 'Start with the active context: user, situation, sources, and output.' },
-  { title: 'Run agent', description: 'Use one button; PRAXIS routes simple answers and deeper agentic work.' },
+  { title: 'Add context', description: 'Start with the active role, situation, sources, and output.' },
+  { title: 'Ask PRAXIS', description: 'Use one button; PRAXIS routes simple answers and deeper work.' },
   { title: 'Open work', description: 'Review the result in Work, Sources, Proof, or handover.' },
 ] as const;
 
@@ -72,7 +72,7 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
             </p>
 
             <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-navy-600">
-              PRAXIS works like a simple agent cockpit: choose a ContextCapsule, describe the policy task, send once, then review the output and receipt.
+              PRAXIS works like a simple policy cockpit: ask the question, add sources or saved context when needed, send once, then review the output and receipt.
             </p>
             <p className="mt-3 text-xs font-medium text-navy-500">
               Proof and review gates stay available; the main workspace stays simple.

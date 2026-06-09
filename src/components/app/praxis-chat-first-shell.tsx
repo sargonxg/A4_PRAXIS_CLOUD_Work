@@ -35,14 +35,19 @@ const PUBLIC_TOP_LINKS = [
   { label: 'Pricing', href: '/pricing' },
   { label: 'Learn', href: '/learn' },
   { label: 'Guide', href: '/guide' },
-  { label: 'Changelog', href: '/release-notes' },
+  { label: 'Release notes', href: '/release-notes' },
 ] as const;
 
-const HOME_DESTINATIONS = [
+const PUBLIC_HOME_DESTINATIONS = [
   { id: 'ask', label: 'Ask', href: '/app', publicHref: '/login?mode=signup&redirect=%2Fapp', icon: MessageSquareText },
-  { id: 'capsules', label: 'Capsules', href: '/app/capsules', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fcapsules', icon: FolderKanban },
+  { id: 'context', label: 'Saved context', href: '/app/capsules', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fcapsules', icon: FolderKanban },
+] as const;
+
+const AUTH_HOME_DESTINATIONS = [
+  { id: 'ask', label: 'Ask', href: '/app', publicHref: '/login?mode=signup&redirect=%2Fapp', icon: MessageSquareText },
+  { id: 'context', label: 'Saved context', href: '/app/capsules', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fcapsules', icon: FolderKanban },
   { id: 'boardroom', label: 'Boardroom', href: '/app/boardroom', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fboardroom', icon: ShieldCheck },
-  { id: 'memo', label: 'Memo', href: '/app?panel=memo', publicHref: '/login?mode=signup&redirect=%2Fapp%3Fpanel%3Dmemo', icon: FileText },
+  { id: 'drafts', label: 'Drafts', href: '/app?panel=memo', publicHref: '/login?mode=signup&redirect=%2Fapp%3Fpanel%3Dmemo', icon: FileText },
 ] as const;
 
 export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated' }) {
@@ -56,8 +61,8 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
   const selectedCapsuleRefs = stack.capsuleRefs;
   const activeCapsuleId = selectedCapsuleRefs[0]?.capsuleId ?? stack.capsuleId;
   const contextLabel = useMemo(() => {
-    if (!selectedCapsuleRefs.length && !activeCapsuleId) return '+ Context';
-    return `${selectedCapsuleRefs.length || 1} context`;
+    if (!selectedCapsuleRefs.length && !activeCapsuleId) return '+ Saved context';
+    return `${selectedCapsuleRefs.length || 1} saved context`;
   }, [activeCapsuleId, selectedCapsuleRefs.length]);
 
   async function activateCapsule(capsuleId: string) {
@@ -216,11 +221,13 @@ function HomeTopBar({ isPublic }: { isPublic: boolean }) {
 }
 
 function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: string }) {
+  const destinations = isPublic ? PUBLIC_HOME_DESTINATIONS : AUTH_HOME_DESTINATIONS;
+
   return (
     <aside className="praxis-shell-panel h-fit p-3" aria-label="Primary PRAXIS destinations">
-      <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Workspace</p>
+      <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{isPublic ? 'Start here' : 'Workspace'}</p>
       <nav className="mt-3 grid gap-1">
-        {HOME_DESTINATIONS.map((item) => {
+        {destinations.map((item) => {
           const Icon = item.icon;
           const href = isPublic ? item.publicHref : item.href;
           const active = !isPublic && (pathname === item.href || (item.id === 'ask' && pathname === '/app'));
@@ -240,7 +247,7 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
         })}
       </nav>
       <div className="mt-5 rounded-[var(--radius-md)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] p-3 text-xs leading-5 text-slate-600">
-        Ask first. Add capsule context only when sources, institutional memory, or memo handoff matter.
+        Start with the question. Save context when the work needs sources, decisions, or a draft you can reuse.
       </div>
     </aside>
   );
@@ -281,10 +288,10 @@ function ContextDrawer({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-gold-700)]">Context</p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-950">Capsules unlock after sign-in.</h2>
+            <h2 className="mt-1 text-lg font-semibold text-slate-950">Saved context unlocks after sign-in.</h2>
           </div>
           <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="praxis-button-primary min-h-10 px-4 text-sm">
-            Add capsule
+            Save context
           </Link>
         </div>
       </section>
@@ -301,13 +308,13 @@ function ContextDrawer({
           className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-1.5 text-xs font-semibold text-slate-700"
         >
           <Library className="h-3.5 w-3.5 text-[color:var(--color-gold-700)]" />
-          {selectedCapsuleRefs.length ? `${selectedCapsuleRefs.length} capsule${selectedCapsuleRefs.length === 1 ? '' : 's'} attached` : 'No capsule attached'}
+          {selectedCapsuleRefs.length ? `${selectedCapsuleRefs.length} context item${selectedCapsuleRefs.length === 1 ? '' : 's'} attached` : 'No saved context'}
         </button>
         <div className="flex flex-wrap items-center gap-2">
           <CapsuleListPicker activeCapsuleId={activeCapsuleId ?? null} onSelect={onActivateCapsule} />
           <Link href="/app/capsules/builder" className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
             <PlusCircle className="h-3.5 w-3.5" />
-            Build capsule
+            Build context
           </Link>
         </div>
       </div>
@@ -315,14 +322,14 @@ function ContextDrawer({
       <div data-testid="launchpad-capsule-stack" className="mt-3 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Attached capsules</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Saved context</p>
             <p className="mt-1 text-xs leading-5 text-slate-500">
               {hydrated ? (persisted ? 'Saved to your workspace.' : 'Local context is active.') : 'Loading context...'}
               {savingContext ? ' Saving...' : ''}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-600">Attach capsule</span>
+            <span className="text-xs font-semibold text-slate-600">Attach context</span>
             <CapsuleListPicker activeCapsuleId={null} onSelect={onAttachReferenceCapsule} />
           </div>
         </div>
@@ -357,7 +364,7 @@ function ContextDrawer({
             </div>
           )) : (
             <p className="rounded-[var(--radius-md)] border border-dashed border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-2 text-xs leading-5 text-slate-500">
-              No attached capsules. Ask PRAXIS can still answer directly, but serious work should attach context.
+              No saved context yet. Ask PRAXIS can still answer directly, but serious work should attach sources or context.
             </p>
           )}
         </div>

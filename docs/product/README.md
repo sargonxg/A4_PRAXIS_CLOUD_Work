@@ -10,18 +10,23 @@ Status: canonical index for the current app structure
    - Defines the ContextCapsule-native app spine, Google Cloud runtime,
      Firestore/Cloud SQL state boundary, first agents, governance, and build
      waves.
-2. [`TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`](./TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md)
+2. [`PRAXIS_PUBLIC_COPY_CONTRACT_2026-06-09.md`](./PRAXIS_PUBLIC_COPY_CONTRACT_2026-06-09.md)
+   - Current public and pre-login copy contract.
+   - Future agents should keep first-contact UX human-first: ask the question,
+     attach sources or saved context when needed, and leave with reviewable
+     work.
+3. [`TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md`](./TASKLET_STYLE_PRAXIS_AGENT_RUNTIME_PLAN.md)
    - Implementation plan for the Tasklet-style PRAXIS runtime.
    - Explains what to copy from Tasklet's product class and what not to copy.
-3. [`../PRAXIS_CODEX_PLAYBOOK.md`](../PRAXIS_CODEX_PLAYBOOK.md)
+4. [`../PRAXIS_CODEX_PLAYBOOK.md`](../PRAXIS_CODEX_PLAYBOOK.md)
    - Authoritative roadmap + per-surface work packets. Supersedes the removed
      product-rebuild plan; product narrative/UX intent now lives in the canonical
      app structure doc plus this playbook's vision→gap map.
-4. [`PRAXIS_CAPSULE_EXCELLENCE_PLAN.md`](./PRAXIS_CAPSULE_EXCELLENCE_PLAN.md)
+5. [`PRAXIS_CAPSULE_EXCELLENCE_PLAN.md`](./PRAXIS_CAPSULE_EXCELLENCE_PLAN.md)
    - Authoritative capsule design + 7-phase build plan (CAP-1…CAP-7): creation,
      display, content, usage, analysis, learning, embedded graphs, dynamic
      ontologies, semantic layer — organized by Users/Tools/Output/Situation.
-5. [`CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`](./CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md)
+6. [`CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`](./CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md)
    - Canonical guide for building policy/statecraft ContextCapsules.
    - Defines core anatomy, PRAXIS augmented generation, generic versus
      path-bound users, personas, combination rules, tools, connectors,
@@ -29,21 +34,21 @@ Status: canonical index for the current app structure
    - _(The v3 human-gated context-infrastructure doc was removed 2026-06-01 and
      superseded by the Tasklet-style runtime; the live capsule contract is now
      `src/lib/context/capsule-v3.ts` plus the canonical app structure doc.)_
-6. [`TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./TASKLET_RESEARCH_INTAKE_2026-05-15.md)
+7. [`TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./TASKLET_RESEARCH_INTAKE_2026-05-15.md)
    - Intake note for the external Tasklet-class browser-agent research.
    - Records what PRAXIS adopted, deferred, or rejected.
-7. [`PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md)
+8. [`PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md`](./PRAXIS_FOUNDATION_COHERENCE_CHECK_2026-05-15.md)
    - Senior-engineering coherence check across app structure, docs, substrate,
      and build order.
-8. [`PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md`](./PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md)
+9. [`PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md`](./PRAXIS_ADK_GENKIT_INTEGRATION_PLAN.md)
    - Repo-grounded map for using ADK as the long-running worker substrate and
      Genkit as the typed flow/tool/eval substrate while keeping
      ContextCapsules, Firestore app state, and the Cloud SQL run ledger
      PRAXIS-owned.
-9. [`PRAXIS_FUNDING_AND_PITCH_PACK.md`](./PRAXIS_FUNDING_AND_PITCH_PACK.md)
+10. [`PRAXIS_FUNDING_AND_PITCH_PACK.md`](./PRAXIS_FUNDING_AND_PITCH_PACK.md)
    - Funder-facing PRAXIS explanation pack with the 300-character elevator
      pitch, business model, funding needs, and textual pitch deck.
-10. [`../audits/2026-05-30-red-flags-and-improvement-plan.md`](../audits/2026-05-30-red-flags-and-improvement-plan.md)
+11. [`../audits/2026-05-30-red-flags-and-improvement-plan.md`](../audits/2026-05-30-red-flags-and-improvement-plan.md)
     - Current red flags, 10 next improvements, and documentation cleanup
       decision.
 
@@ -62,6 +67,11 @@ for paste-ready Codex and Claude Code prompts.
 ## Current Canonical Direction
 
 PRAXIS is a ContextCapsule-native agent workbench for serious policy work.
+
+The public and pre-login surfaces should explain the human job before the
+internal machinery: ask the question, attach sources or saved context when
+needed, and leave with reviewable work. Keep ContextCapsule language for the
+repository, builder, runtime contracts, and technical Learn content.
 
 The product is not a generic Tasklet clone. It should become a full working app
 with the same class of runtime capability:

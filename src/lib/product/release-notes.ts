@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.06.09.01',
+    version: '6.4.1',
+    date: '2026-06-09',
+    title: 'Public copy becomes clearer and more human',
+    summary: 'PRAXIS now leads with the user task: ask the question, attach sources or saved context when needed, and leave with reviewable work.',
+    category: 'product',
+    items: [
+      'Home, login, metadata, and sharing copy now describe PRAXIS as a sourced policy workspace instead of introducing capsule machinery first.',
+      'Public navigation and calls to action now emphasize Start work, Continue, saved context, and Release notes while keeping the signed-in cockpit simple.',
+      'Learn, Guide, Pricing, Legal, and Release notes now use simpler text before moving into the deeper ContextCapsule and TACITUS ecosystem details.',
+      'Public-surface tests and audits now guard the simpler Ask PRAXIS message, single primary CTA, and updated route copy.',
+    ],
+  },
+  {
     buildNumber: '2026.05.31.03',
     version: '6.4.1',
     date: '2026-05-31',

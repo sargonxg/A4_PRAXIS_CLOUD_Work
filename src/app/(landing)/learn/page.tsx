@@ -5,16 +5,16 @@ import { PraxisThinking } from "@/components/brand/praxis-thinking";
 import { LivingContextRail, PublicPageShell } from "@/components/ui/instrument";
 
 export const metadata: Metadata = {
-  title: "Learn how PRAXIS works | PRAXIS by TACITUS",
+  title: "Learn how PRAXIS works",
   description:
-    "A public explainer for PRAXIS, the TACITUS policy workbench for questions, sources, ContextCapsules, policy tools, memos, and provenance.",
+    "A plain-language guide to how PRAXIS turns policy questions, sources, saved context, and review into useful work.",
   alternates: {
     canonical: "/learn",
   },
   openGraph: {
     title: "How PRAXIS works",
     description:
-      "Learn how PRAXIS lets you compose reasoning and policy products from expert ContextCapsules and upstream TACITUS systems.",
+      "Learn how PRAXIS helps policy teams ask better questions, check sources, save context, and draft reviewable work.",
     url: "/learn",
     images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "How PRAXIS works" }],
   },
@@ -22,44 +22,44 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "How PRAXIS works",
     description:
-      "The public guide to PRAXIS, ContextCapsules, TACITUS, DIALECTICA, AGON, and KAIROS.",
+      "The public guide to asking, sourcing, saving, and reviewing policy work in PRAXIS.",
     images: ["/opengraph-image"],
   },
 };
 
 const flowSteps = [
-  "Prompt or document",
-  "ContextCapsule",
-  "Source, document, graph, and time cores",
-  "Ask PRAXIS, tools, and agents",
-  "Memo, brief, or handover",
+  "Ask the question",
+  "Add sources or saved context",
+  "Check what supports the answer",
+  "Draft the brief",
+  "Save the work",
 ];
 
 const currentCapabilityAnchors = [
   {
     id: "sourceability",
     title: "Sourceability",
-    body: "Use PRAXIS to inspect whether key claims are supported by attached sources, weakly supported, stale, or missing evidence before a memo becomes export-ready.",
+    body: "Use PRAXIS to see which important claims have sources, which look weak, and which still need evidence before a brief is ready to share.",
   },
   {
     id: "claim-source-alignment",
     title: "Claim-source alignment",
-    body: "Capsules and Ask outputs preserve source ids, previews, gaps, and claim posture so a policy team can separate cited facts from model judgment and user assumptions.",
+    body: "PRAXIS keeps source previews, gaps, and claim posture close to the answer so teams can separate cited facts from model judgment or user assumptions.",
   },
   {
     id: "role-capsules",
-    title: "Role capsules",
-    body: "A capsule can carry role, institution, lens, allowed tools, constraints, and output goals so the model answers as a specific policy worker rather than a generic assistant.",
+    title: "Role-aware context",
+    body: "Saved context can carry role, institution, lens, constraints, and output goals so PRAXIS answers for a real policy job instead of a generic chat.",
   },
   {
     id: "output-quality",
     title: "Output quality",
-    body: "Memo, brief, talking-point, source review, and handover workflows keep output contracts, caveats, receipts, and next actions attached to the work product.",
+    body: "Brief, memo, source review, and handover workflows keep caveats, receipts, and next actions attached to the work product.",
   },
   {
     id: "thinking-devices",
     title: "Thinking devices",
-    body: "ACH, timeline, causal, human-friction, red-team, boardroom, and sourceability devices can be represented as capsule context and routed into the right tool or agent lane.",
+    body: "ACH, timeline, causal, human-friction, red-team, boardroom, and sourceability devices can sit behind the simple Ask surface when the work needs them.",
   },
 ];
 
@@ -155,10 +155,10 @@ const contributionPaths = [
 export default function LearnPage() {
   const learnRailCells = [
     { id: "profile", label: "Profile", value: "Policy user", detail: "Role-aware answers", state: "ready" as const },
-    { id: "context", label: "Context", value: "ContextCapsule", detail: "Reusable cores", state: "active" as const },
-    { id: "source", label: "Sources", value: "Receipts", detail: "Documents and provenance", state: "ready" as const },
-    { id: "output", label: "Output", value: "Memo or handover", detail: "Reviewable work", state: "quiet" as const },
-    { id: "readiness", label: "Readiness", value: "Visible gates", detail: "Source, time, graph", state: "active" as const },
+    { id: "context", label: "Context", value: "Saved work", detail: "Reusable when needed", state: "active" as const },
+    { id: "source", label: "Sources", value: "Receipts", detail: "Documents and proof", state: "ready" as const },
+    { id: "output", label: "Output", value: "Brief or handover", detail: "Reviewable work", state: "quiet" as const },
+    { id: "readiness", label: "Readiness", value: "Visible checks", detail: "Sources and gaps", state: "active" as const },
   ];
 
   return (
@@ -173,7 +173,7 @@ export default function LearnPage() {
             How PRAXIS works
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:text-lg">
-            PRAXIS is the visible workbench where users ask questions, attach sources, build ContextCapsules, run policy tools, draft memos, and preserve provenance. The surface stays simple: one place to turn a situation, document, or policy question into reviewable work.
+            PRAXIS is the visible workspace where users ask policy questions, attach sources, save context, draft briefs, and keep the evidence trail visible. The surface stays simple: one place to turn a situation, document, or hard question into reviewable work.
           </p>
           <LivingContextRail cells={learnRailCells} compact className="mt-7" />
           <div className="mt-8 flex flex-wrap gap-3">
@@ -181,7 +181,7 @@ export default function LearnPage() {
               href="/login?mode=signup"
               className="inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-5 text-sm font-semibold text-white"
             >
-              Start a capsule
+              Start work
             </Link>
             <a
               href="https://www.tacitus.me/product/praxis"
@@ -196,7 +196,7 @@ export default function LearnPage() {
 
         <aside className="rounded-[24px] border border-slate-200 bg-white/85 p-5 shadow-[0_22px_70px_rgba(15,23,42,0.10)] sm:p-6">
           <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Context flow</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Work flow</span>
             <PraxisThinking compact size={18} className="text-amber-600" />
           </div>
           <ol className="mt-5 grid gap-3">
@@ -218,10 +218,10 @@ export default function LearnPage() {
         <div className="max-w-3xl">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">The app first</span>
           <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950 sm:text-4xl">
-            From loose question to reusable policy context
+            From loose question to reviewable work
           </h2>
           <p className="mt-4 text-base leading-7 text-slate-700">
-            A user can begin with a prompt, a source packet, a draft question, or a document. PRAXIS wraps the work in a ContextCapsule, routes it through source, document, graph, and time cores, then uses Ask PRAXIS, tools, and agent workflows to produce a memo, brief, source review, or handover that still carries its evidence trail.
+            A user can begin with a prompt, a source packet, a draft question, or a document. PRAXIS keeps the sources, assumptions, gaps, and next actions near the answer, then produces a memo, brief, source review, or handover that still carries its evidence trail.
           </p>
         </div>
       </section>
@@ -231,10 +231,10 @@ export default function LearnPage() {
           <div>
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Use it today</span>
             <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950 sm:text-4xl">
-              Current PRAXIS stays simple: one cockpit, capsule attached, evidence visible.
+              Current PRAXIS stays simple: one cockpit, context attached, evidence visible.
             </h2>
             <p className="mt-4 text-sm leading-6 text-slate-700 sm:text-base sm:leading-7">
-              The current app centers on Home, Capsules, Ask PRAXIS, sources, memos, and receipts. Upstream TACITUS systems and deeper graph or temporal engines are described as integration layers or roadmap lanes when they are not the visible production surface.
+              The current app centers on Home, saved context, Ask PRAXIS, sources, memos, and receipts. Upstream TACITUS systems and deeper graph or temporal engines are described as integration layers or roadmap lanes when they are not the visible production surface.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -250,7 +250,7 @@ export default function LearnPage() {
 
       <section className="mx-auto grid w-full max-w-6xl gap-5 px-5 pb-16 sm:px-8 lg:grid-cols-[0.85fr_1.15fr]">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Human-gated context</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">For technical readers</span>
           <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950 sm:text-4xl">
             A Wikipedia for Agentic Context
           </h2>

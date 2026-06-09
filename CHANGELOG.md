@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- feat(copy): simplify public PRAXIS positioning around Ask, sources, and review.
+  Rewrites the shared home, login, metadata, Learn, Guide, Pricing, legal, and
+  release-note surfaces so users see the practical job first: ask the question,
+  attach sources or saved context when needed, and leave with reviewable work.
+  Adds a public-copy contract doc for future agents and links it from the
+  Codex session brief and product documentation index.
+
 - chore(design): unify shell vocabulary behind shared PRAXIS tokens.
   Updates the visual contract around `PublicShell`, `AppShell`, route
   breadcrumbs, and Boardroom's app-token surface, and retires the old futurist

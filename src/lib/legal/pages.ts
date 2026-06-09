@@ -26,21 +26,21 @@ export const legalPages: LegalPage[] = [
   {
     slug: 'privacy',
     title: 'Privacy Policy',
-    summary: 'How PRAXIS collects, stores, uses, and protects account, workspace, source, document, and product telemetry data.',
+    summary: 'How PRAXIS handles account, workspace, source, document, and product telemetry data.',
     updatedAt: '2026-05-31',
     pendingLegalReview: false,
     sections: [
       {
         heading: 'Data We Collect',
         body: [
-          'PRAXIS stores account identifiers, authentication metadata, analyst profile choices, workspace configuration, ContextCapsules, user documents, source receipts, conversations, generated outputs, and operational telemetry needed to run the service.',
+          'PRAXIS stores account identifiers, authentication metadata, analyst profile choices, workspace configuration, saved context, user documents, source receipts, conversations, generated outputs, and operational telemetry needed to run the service.',
           'Uploaded documents and source material remain user workspace data. PRAXIS stores metadata, short excerpts, retrieval receipts, and generated analysis required to provide the product.',
         ],
       },
       {
         heading: 'How We Use Data',
         body: [
-          'We use workspace data to authenticate users, build context for AI-assisted analysis, persist output capsules, maintain audit trails, debug reliability issues, and protect the service from abuse.',
+          'We use workspace data to authenticate users, build context for AI-assisted analysis, persist outputs, maintain audit trails, debug reliability issues, and protect the service from abuse.',
           'We do not sell user data. External model and infrastructure providers are limited to the sub-processors listed in the public sub-processor page.',
           'The current production posture uses United States infrastructure by default. Enterprise residency commitments require a separate written arrangement before regulated workloads are onboarded.',
         ],
@@ -57,7 +57,7 @@ export const legalPages: LegalPage[] = [
   {
     slug: 'cookies',
     title: 'Cookie Notice',
-    summary: 'How PRAXIS uses essential cookies, authentication storage, analytics settings, and future consent controls.',
+    summary: 'How PRAXIS uses essential cookies, sign-in storage, analytics settings, and consent controls.',
     updatedAt: '2026-05-31',
     pendingLegalReview: false,
     sections: [
@@ -86,7 +86,7 @@ export const legalPages: LegalPage[] = [
   {
     slug: 'gdpr',
     title: 'GDPR and Privacy Rights',
-    summary: 'Current GDPR-style rights posture for access, correction, export, deletion, objection, restriction, and support requests.',
+    summary: 'How access, correction, export, deletion, objection, restriction, and support requests work.',
     updatedAt: '2026-05-31',
     pendingLegalReview: false,
     sections: [
@@ -100,7 +100,7 @@ export const legalPages: LegalPage[] = [
       {
         heading: 'Workspace and Generated Data',
         body: [
-          'ContextCapsules, uploaded documents, source receipts, conversations, generated outputs, and audit trails may contain user-provided or user-derived personal data.',
+          'Saved context, uploaded documents, source receipts, conversations, generated outputs, and audit trails may contain user-provided or user-derived personal data.',
           'Deletion and export workflows are handled at the account or workspace level where supported, subject to legal, security, billing, abuse-prevention, and backup-integrity exceptions.',
         ],
       },
@@ -116,7 +116,7 @@ export const legalPages: LegalPage[] = [
   {
     slug: 'data-processing',
     title: 'Data Processing Addendum',
-    summary: 'Customer-data processing roles, instructions, sub-processors, security controls, retention, deletion, and support channels.',
+    summary: 'Customer-data processing roles, instructions, providers, security controls, retention, deletion, and support channels.',
     updatedAt: '2026-05-31',
     pendingLegalReview: false,
     sections: [
@@ -130,7 +130,7 @@ export const legalPages: LegalPage[] = [
       {
         heading: 'Processing Instructions',
         body: [
-          'PRAXIS processes customer data to provide authenticated workspaces, ContextCapsules, document handling, retrieval, AI-assisted analysis, output generation, receipts, reliability monitoring, and support.',
+          'PRAXIS processes customer data to provide authenticated workspaces, saved context, document handling, retrieval, AI-assisted analysis, output generation, receipts, reliability monitoring, and support.',
           'AI model and infrastructure sub-processors are limited to the public sub-processor list and operational providers needed to run the service.',
         ],
       },
@@ -146,7 +146,7 @@ export const legalPages: LegalPage[] = [
   {
     slug: 'terms',
     title: 'Terms of Service',
-    summary: 'Operational terms for using PRAXIS as a beta policy and statecraft workbench.',
+    summary: 'Operational terms for using PRAXIS as a beta service for sourced policy work.',
     updatedAt: '2026-05-31',
     pendingLegalReview: false,
     sections: [
@@ -177,7 +177,7 @@ export const legalPages: LegalPage[] = [
   {
     slug: 'security',
     title: 'Security',
-    summary: 'Security posture, reporting channel, and launch-readiness baseline for PRAXIS.',
+    summary: 'Security posture, reporting channel, and current launch-readiness baseline for PRAXIS.',
     updatedAt: '2026-05-31',
     pendingLegalReview: false,
     sections: [
@@ -243,7 +243,7 @@ export const legalPages: LegalPage[] = [
       {
         heading: 'Workspace Data',
         body: [
-          'Workspace data is retained while an account or workspace remains active so PRAXIS can provide continuity across ContextCapsules, conversations, source receipts, documents, and outputs.',
+          'Workspace data is retained while an account or workspace remains active so PRAXIS can provide continuity across saved context, conversations, source receipts, documents, and outputs.',
           'Generated artifacts and audit receipts are retained with the workspace unless deleted through supported product or support workflows.',
         ],
       },

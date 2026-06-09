@@ -43,7 +43,7 @@ const dockerfile = read('Dockerfile');
 requireAll('public route', publicPage, [
   'PraxisMarketingHome',
   'SoftwareApplication',
-  'Ask a policy question, build a ContextCapsule',
+  'Turn a hard policy question into sourced work your team can review.',
 ]);
 forbidAll('public route', publicPage, [
   'TaskletPraxisWorkbench',
@@ -62,15 +62,13 @@ requireAll('marketing home', sharedHomeSurface, [
   'marketing-home',
   'data-testid="praxis-chat-first-shell"',
   'data-testid="simple-home-chat"',
-  'Ask a policy question',
+  'Turn any policy question into a sourced, citable brief.',
   'POLICY_MISSION_EXAMPLES',
   'data-testid="marketing-hero-prompt"',
   'data-testid="marketing-primary-cta"',
-  'Sign in to run',
+  'Continue',
   'Ask',
-  'Capsules',
-  'Boardroom',
-  'Memo',
+  'Saved context',
   'Guide',
   'Pricing',
 ]);
@@ -103,7 +101,7 @@ requireAll('signed-in launchpad wrapper', appLaunchpad, [
 ]);
 requireAll('signed-in launchpad', sharedHomeSurface, [
   'app-launchpad',
-  'Ask a policy question',
+  'Turn any policy question into a sourced, citable brief.',
   'POLICY_MISSION_EXAMPLES',
   'Ask PRAXIS',
   'fetch(\'/api/ai/chat\'',
@@ -112,8 +110,8 @@ requireAll('signed-in launchpad', sharedHomeSurface, [
   'data-testid="context-toggle"',
   'data-testid="launchpad-capsule-chip"',
   'data-testid="launchpad-capsule-stack"',
-  'Attach capsule',
-  'Build capsule',
+  'Attach context',
+  'Build context',
   '/app?panel=memo',
   'data-testid="advanced-edit-context"',
 ]);

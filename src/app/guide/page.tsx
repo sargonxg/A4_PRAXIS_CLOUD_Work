@@ -4,21 +4,21 @@ import { PraxisGlyphChip } from '@/components/brand/praxis-mark';
 import { LivingContextRail, PublicPageShell } from '@/components/ui/instrument';
 
 export const metadata: Metadata = {
-  title: 'Guide | PRAXIS by TACITUS',
-  description: 'A practical guide to using PRAXIS, ContextCapsules, Ask PRAXIS, the Guide assistant, sourceability, and policy-team outputs.',
+  title: 'Guide',
+  description: 'A practical guide to asking PRAXIS, adding sources or saved context, checking evidence, and saving reviewable policy work.',
   alternates: {
     canonical: '/guide',
   },
   openGraph: {
     title: 'PRAXIS Guide',
-    description: 'How to use PRAXIS with policy capsules, source receipts, agent runs, memos, and proof.',
+    description: 'How to use PRAXIS for sourced policy questions, reviewable answers, briefs, and handovers.',
     url: '/guide',
     images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'PRAXIS guide' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'PRAXIS Guide',
-    description: 'A practical guide for using PRAXIS with ContextCapsules and sourceable policy outputs.',
+    description: 'A practical guide for using PRAXIS with sources, saved context, and reviewable policy outputs.',
     images: ['/opengraph-image'],
   },
 };
@@ -29,8 +29,8 @@ const steps = [
     body: 'Use the home cockpit or Ask PRAXIS to state the decision, briefing, research, or handover you need.',
   },
   {
-    title: 'Attach a ContextCapsule',
-    body: 'Select a capsule or start from a verified starter. The capsule carries actors, sources, assumptions, tools, output goals, and review gates into generation.',
+    title: 'Add sources or saved context',
+    body: 'Attach sources, a saved context pack, or a verified starter when the answer needs actors, assumptions, output goals, and review gates.',
   },
   {
     title: 'Check sourceability',
@@ -38,25 +38,25 @@ const steps = [
   },
   {
     title: 'Run the right workflow',
-    body: 'Ask PRAXIS can answer directly or route durable work to capsule-bound agents such as research memo, sourceability review, red team, boardroom, formatter, or handover.',
+    body: 'Ask PRAXIS can answer directly or route durable work to research memo, sourceability review, red-team, boardroom, formatter, or handover workflows.',
   },
   {
     title: 'Save the output',
-    body: 'Move useful results into Memo Studio, an output capsule, a source gap, a graph proposal, or a handover package with receipts intact.',
+    body: 'Move useful results into Memo Studio, a saved output, a source gap, a graph proposal, or a handover package with receipts intact.',
   },
 ];
 
 const guideCards = [
   {
     label: 'Guide assistant',
-    body: 'Use this for product help, capsule explanations, where-to-click guidance, and source-gap interpretation. It is separate from the main Ask PRAXIS workflow.',
+    body: 'Use this for product help, where-to-click guidance, context explanations, and source-gap interpretation. It is separate from the main Ask PRAXIS workflow.',
   },
   {
     label: 'Ask PRAXIS',
-    body: 'Use this for actual analysis, generation, agent runs, saved conversations, source operations, memos, and durable runtime receipts.',
+    body: 'Use this for actual analysis, generation, saved conversations, source operations, memos, and durable runtime receipts.',
   },
   {
-    label: 'Capsules',
+    label: 'Saved context',
     body: 'Use this for reusable policy context: source packs, document links, thinking devices, output contracts, review cards, and locked cores.',
   },
   {
@@ -68,7 +68,7 @@ const guideCards = [
 export default function GuidePage() {
   const guideRailCells = [
     { id: 'profile', label: 'Profile', value: 'Policy team', detail: 'Role-aware guidance', state: 'ready' as const },
-    { id: 'context', label: 'Context', value: 'Capsule attached', detail: 'Generation starts here', state: 'active' as const },
+    { id: 'context', label: 'Context', value: 'Saved work attached', detail: 'Generation starts here', state: 'active' as const },
     { id: 'source', label: 'Sources', value: 'Gaps visible', detail: 'Receipts first', state: 'ready' as const },
     { id: 'output', label: 'Output', value: 'Memo or handover', detail: 'Reviewable work', state: 'quiet' as const },
     { id: 'readiness', label: 'Readiness', value: 'Proof rail', detail: 'No hidden claims', state: 'active' as const },
@@ -82,10 +82,10 @@ export default function GuidePage() {
           <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-600">PRAXIS Guide</span>
         </div>
         <h1 className="mt-5 max-w-4xl font-serif text-4xl font-semibold leading-tight text-[color:var(--color-diplomatic-blue)] sm:text-6xl">
-          Use capsules as the context layer for policy AI.
+          Ask the question. Check the evidence. Save the work.
         </h1>
         <p className="mt-5 max-w-3xl text-lg leading-8 text-[color:var(--color-ink)]/70">
-          PRAXIS is simplest when you treat it as one cockpit: attach the right ContextCapsule, ask the question, inspect the evidence, and save the work with receipts.
+          PRAXIS is simplest when you treat it as one cockpit: ask the question, attach sources or saved context when needed, inspect the evidence, and save the work with receipts.
         </p>
         <LivingContextRail cells={guideRailCells} compact className="mt-8" />
         <div className="mt-8 flex flex-wrap gap-3">
@@ -105,7 +105,7 @@ export default function GuidePage() {
             From prompt to policy product
           </h2>
           <p className="mt-4 text-sm leading-6 text-[color:var(--color-ink)]/70">
-            A capsule does not replace judgment. It gives the model the right working memory, source posture, constraints, and output contract so each generation starts from the team&apos;s reviewed context instead of a blank prompt.
+            Saved context does not replace judgment. It gives the model the right working memory, source posture, constraints, and output contract so each generation starts from the team&apos;s reviewed context instead of a blank prompt.
           </p>
         </div>
         <ol className="grid gap-3">
@@ -138,7 +138,7 @@ export default function GuidePage() {
           The Guide assistant explains the app. Ask PRAXIS does the work.
         </h2>
         <p className="mt-3 text-sm leading-6 text-slate-800">
-          The in-app Guide assistant can answer product and capsule-use questions without creating runs or mutating data. For real generation, agent runs, source attachment, memos, and durable artifacts, use Ask PRAXIS with a selected capsule.
+          The in-app Guide assistant can answer product and context-use questions without creating runs or mutating data. For real generation, source attachment, memos, and durable artifacts, use Ask PRAXIS with selected context.
         </p>
       </section>
     </PublicPageShell>

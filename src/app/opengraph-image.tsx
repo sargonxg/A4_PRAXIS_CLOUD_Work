@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'PRAXIS by TACITUS — reasoning and policy products from expert ContextCapsules.';
+export const alt = 'PRAXIS by TACITUS - sourced policy work from hard questions.';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -180,7 +180,7 @@ export default async function Image() {
                 fontWeight: 700,
               }}
             >
-              Expert ContextCapsules for policy work
+              Sourced policy work
             </div>
           </div>
 
@@ -197,8 +197,8 @@ export default async function Image() {
               flexDirection: 'column',
             }}
           >
-            <span>ContextCapsules</span>
-            <span>for <span style={{ color: GOLD_400 }}>policy analysis</span>.</span>
+            <span>Sourced briefs</span>
+            <span>from <span style={{ color: GOLD_400 }}>hard questions</span>.</span>
           </div>
 
           {/* Subhead */}
@@ -213,7 +213,7 @@ export default async function Image() {
               display: 'flex',
             }}
           >
-            Compose reasoning and policy products from reusable blocks that capture how analysts think, frame issues, and structure decisions.
+            Ask the question, attach sources when it matters, and leave with work your team can review.
           </div>
         </div>
 
@@ -227,7 +227,7 @@ export default async function Image() {
             flexWrap: 'wrap',
           }}
         >
-          {['Capsule chain', 'Source receipts', 'Agent timeline', 'Provenance map', 'Memo handoff'].map((s) => (
+          {['Question', 'Sources', 'Saved context', 'Review', 'Brief'].map((s) => (
             <div
               key={s}
               style={{
@@ -262,7 +262,7 @@ export default async function Image() {
           >
             <span style={{ color: DIPLOMATIC }}>praxis.tacitus.me</span>
             <span style={{ color: NAVY_400 }}>·</span>
-            <span>Context · Source · Agent · Handoff</span>
+            <span>Question · Source · Review · Brief</span>
           </div>
         </div>
       </div>

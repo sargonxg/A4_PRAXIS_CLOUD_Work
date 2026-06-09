@@ -5,21 +5,21 @@ import { PricingCheckoutButton } from '@/components/billing/pricing-checkout-but
 import { LivingContextRail, PublicPageShell } from '@/components/ui/instrument';
 
 export const metadata: Metadata = {
-  title: 'Pricing | PRAXIS by TACITUS',
-  description: 'Simple monthly PRAXIS plans built around ContextCapsules, sourceability, and grounded policy work.',
+  title: 'Pricing',
+  description: 'Simple monthly PRAXIS plans for sourced policy work, saved context, and reviewable briefs.',
   alternates: {
     canonical: '/pricing',
   },
   openGraph: {
     title: 'PRAXIS Pricing',
-    description: 'Monthly PRAXIS plans for ContextCapsule workspaces, sources, and grounded policy outputs.',
+    description: 'Monthly PRAXIS plans for sourced policy questions, saved context, and grounded outputs.',
     url: '/pricing',
     images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'PRAXIS pricing' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'PRAXIS Pricing',
-    description: 'Monthly PRAXIS plans for ContextCapsule workspaces and grounded policy outputs.',
+    description: 'Monthly PRAXIS plans for sourced policy questions and grounded outputs.',
     images: ['/opengraph-image'],
   },
 };
@@ -32,10 +32,10 @@ export default function PricingPage() {
       : 'Polar checkout is not configured in this environment; signed-in users see an explicit unavailable state.';
   const pricingRailCells = [
     { id: 'profile', label: 'Profile', value: 'Analyst or team', detail: 'Workspace-owned', state: 'ready' as const },
-    { id: 'context', label: 'Context', value: 'One capsule first', detail: 'Upgrade when work travels', state: 'active' as const },
+    { id: 'context', label: 'Context', value: 'One workspace first', detail: 'Upgrade when work travels', state: 'active' as const },
     { id: 'source', label: 'Sources', value: 'Included', detail: 'Receipts and documents', state: 'ready' as const },
-    { id: 'output', label: 'Output', value: 'Memos and handovers', detail: 'Reviewable products', state: 'quiet' as const },
-    { id: 'readiness', label: 'Readiness', value: 'Monthly plan', detail: 'No tool marketplace', state: 'active' as const },
+    { id: 'output', label: 'Output', value: 'Briefs and memos', detail: 'Reviewable products', state: 'quiet' as const },
+    { id: 'readiness', label: 'Readiness', value: 'Monthly plan', detail: 'Simple plan', state: 'active' as const },
   ];
 
   return (
@@ -43,10 +43,10 @@ export default function PricingPage() {
         <section className="py-16">
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--color-gold-700)]">Pricing</p>
           <h1 className="mt-4 max-w-3xl font-serif text-4xl font-semibold leading-tight tracking-normal text-[color:var(--color-diplomatic-blue)] sm:text-5xl">
-            Monthly plans for one ContextCapsule workspace.
+            Plans for people who need sourced policy work.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-[color:var(--color-ink)]/70">
-            PRAXIS is priced as a workspace, not as a menu of tool charges. Start with one capsule, attach it to Ask PRAXIS, and upgrade when capsules, sources, Guide help, and handovers need to move across people.
+            PRAXIS is priced as a workspace, not as a menu of tool charges. Start by asking PRAXIS, attach sources or saved context when the work needs proof, and upgrade when the work needs to move across people.
           </p>
           <p className="mt-5 max-w-2xl rounded-xl border border-[color:var(--color-rose-gold)]/30 bg-white/65 px-4 py-3 text-sm leading-6 text-[color:var(--color-ink)]/70">
             {billingMode}

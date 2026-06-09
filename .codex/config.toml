@@ -66,12 +66,10 @@ args = ["-y", "@modelcontextprotocol/server-sequential-thinking"]
 
 [mcp_servers.firebase]
 command = "npx"
-args = ["-y", "firebase-tools@latest", "mcp", "--dir", "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work", "--only", "core auth firestore storage"]
+args = ["-y", "firebase-tools@latest", "mcp", "--dir", "C:\\Users\\giuli\\tacitus-products\\praxis", "--only", "core auth firestore storage"]
 
 [mcp_servers.serena]
-command = "uvx"
-args = ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--context", "codex", "--project", "C:\\Users\\giuli\\A4_PRAXIS_CLOUD_Work"]
-
-[mcp_servers.supabase]
-command = "npx"
-args = ["-y", "@supabase/mcp-server-supabase@latest"]
+command = "serena"
+args = ["start-mcp-server", "--project-from-cwd", "--context=codex", "--open-web-dashboard=false"]
+startup_timeout_sec = 60
+tool_timeout_sec = 120

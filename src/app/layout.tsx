@@ -30,14 +30,14 @@ export const viewport: Viewport = {
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
 const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
 
-const PRIMARY_TITLE = "PRAXIS by TACITUS — ContextCapsule Policy Workspace";
-const SHARE_TITLE = "PRAXIS by TACITUS · ContextCapsules for Sourced Policy Work";
+const PRIMARY_TITLE = "PRAXIS by TACITUS - Sourced Policy Work";
+const SHARE_TITLE = "PRAXIS by TACITUS | Sourced Policy Work";
 const SHARE_DESCRIPTION =
-  "PRAXIS turns sanctions, treaty, stakeholder, and crisis questions into inspectable ContextCapsules, source receipts, agent runs, and reviewable memos.";
+  "PRAXIS helps policy teams ask hard questions, attach sources when it matters, and draft work they can review.";
 const SEARCH_DESCRIPTION =
-  "PRAXIS by TACITUS is a ContextCapsule-first workspace for statecraft, policy analysis, conflict intelligence, diplomacy, source trust, and institutional decision work.";
+  "PRAXIS by TACITUS is a policy workspace for sourced analysis, saved context, reviewable briefs, and institutional decision work.";
 const SHARE_IMAGE_ALT =
-  "PRAXIS by TACITUS — capsule chain, source receipts, agent timeline, and memo handoff.";
+  "PRAXIS by TACITUS - question, sources, saved context, and reviewable brief.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

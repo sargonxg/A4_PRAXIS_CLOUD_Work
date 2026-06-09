@@ -33,12 +33,12 @@ const redirectText = readFileSync(resolve(root, 'src/lib/auth/post-login-redirec
 assert(redirectText.includes("return '/app'"), 'Normal login should land on the one-page PRAXIS app');
 
 const loginText = readFileSync(resolve(root, 'src/app/(auth)/login/page.tsx'), 'utf8');
-for (const marker of ['PRAXIS run queued', 'What can PRAXIS do for you?', 'Describe a task or responsibility', 'PENDING_POLICY_AGENT_ID_KEY']) {
+for (const marker of ['PRAXIS run queued', 'Pick up the work where you left it.', 'Ask the question you need answered', 'PENDING_POLICY_AGENT_ID_KEY']) {
   assert(loginText.includes(marker), `Login handoff is missing marker: ${marker}`);
 }
 
 const welcomeText = readFileSync(resolve(root, 'src/components/onboarding/welcome-modal.tsx'), 'utf8');
-for (const marker of ['Open PRAXIS Home', 'Choose capsule', 'Run agent', 'Open output']) {
+for (const marker of ['Open PRAXIS Home', 'Add context', 'Ask PRAXIS', 'Open work']) {
   assert(welcomeText.includes(marker), `Welcome modal is missing Tasklet-style marker: ${marker}`);
 }
 

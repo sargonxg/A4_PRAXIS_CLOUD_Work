@@ -106,8 +106,8 @@ export function PraxisChat({
   const isPublic = mode === 'public';
   const showExamples = variant === 'home' && messages.length === 0;
   const promptPlaceholder = isPublic
-    ? 'Ask a policy question. Your draft will be carried into signup.'
-    : 'Ask PRAXIS about a policy question, capsule, source gap, memo, or boardroom decision.';
+    ? 'Ask the question. Sign in after this to keep going.'
+    : 'Ask PRAXIS about a policy question, source gap, saved context, or draft.';
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -404,10 +404,10 @@ export function PraxisChat({
               Ask PRAXIS
             </p>
             <h1 className="mt-4 font-serif text-4xl font-semibold tracking-normal text-[color:var(--color-app-text)] sm:text-5xl">
-              Ask a policy question
+              Turn any policy question into a sourced, citable brief.
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-[color:var(--color-app-text-secondary)]">
-              {greeting ?? 'Ask normally. Add capsule context only when the work needs sources, institutional memory, or a memo-ready trail.'}
+              {greeting ?? 'Ask normally. Add sources or saved context when the work needs to hold up.'}
             </p>
           </div>
         ) : null}
@@ -423,10 +423,10 @@ export function PraxisChat({
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <p className={cn('mt-3 text-sm font-semibold', variant === 'floating' ? 'text-white' : 'text-slate-950')}>
-                  {isPublic ? 'Sign in to run PRAXIS.' : 'Ready for the next policy question.'}
+                  {isPublic ? 'Start with the question.' : 'Ready for the next serious question.'}
                 </p>
                 <p className={cn('mt-1 text-xs leading-5', variant === 'floating' ? 'text-slate-300' : 'text-slate-500')}>
-                  {isPublic ? 'Draft first; signup carries the question forward.' : 'Answers can carry sources, claim posture, and memo handoff metadata.'}
+                  {isPublic ? 'Sign in after you ask; PRAXIS carries the draft forward.' : 'Answers can show sources, gaps, and draft-ready next steps.'}
                 </p>
               </div>
             </div>
@@ -544,7 +544,7 @@ export function PraxisChat({
                 )}
               >
                 {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
-                {isPublic ? 'Sign in to run' : 'Ask PRAXIS'}
+                {isPublic ? 'Continue' : 'Ask PRAXIS'}
               </button>
             </div>
           </div>
@@ -652,14 +652,14 @@ function stackForAsk(stack: ActiveContextStackState, prompt: string): ActiveCont
   const outputBlock: ActiveContextBlockItem = {
     id: 'direct-ask',
     capsuleId: null,
-    label: 'Direct Ask PRAXIS answer',
+    label: 'Direct PRAXIS answer',
     role: 'output',
     primary: true,
     order: 0,
   };
   return {
     ...stack,
-    outputGoal: 'Direct Ask PRAXIS answer',
+    outputGoal: 'Direct PRAXIS answer',
     evidenceGaps: [
       ...stack.evidenceGaps,
       {
@@ -667,7 +667,7 @@ function stackForAsk(stack: ActiveContextStackState, prompt: string): ActiveCont
         situationId: null,
         subjectId: 'home-direct-ask',
         claimId: 'home-direct-ask',
-        claim: `User asked without an attached capsule: ${prompt.slice(0, 160)}`,
+        claim: `User asked without saved context: ${prompt.slice(0, 160)}`,
         status: 'unsupported' as const,
         sourceHints: [],
         savedAt: new Date().toISOString(),

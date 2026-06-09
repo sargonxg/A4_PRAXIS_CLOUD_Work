@@ -46,8 +46,8 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
     expect(marketingHome).toContain('mode="public"');
     expect(chatShell).toContain('data-testid="praxis-chat-first-shell"');
     expect(chatShell).toContain('PraxisChat');
-    expect(praxisChat).toContain('Ask a policy question');
-    expect(praxisChat).toContain('Sign in to run PRAXIS.');
+    expect(praxisChat).toContain('Turn any policy question into a sourced, citable brief.');
+    expect(praxisChat).toContain('Start with the question.');
     expect(praxisChat).toContain('POLICY_MISSION_EXAMPLES');
     expect(`${landingPage}\n${marketingHome}\n${chatShell}`).not.toContain('TaskletPraxisWorkbench');
     expect(`${landingPage}\n${marketingHome}\n${chatShell}`).not.toContain('data-testid="app-first-root"');
@@ -68,11 +68,12 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
   });
 
   it('keeps the public homepage as a simple chat surface without feature-preview clutter', () => {
-    expect(chatShell).toContain('HOME_DESTINATIONS');
+    expect(chatShell).toContain('PUBLIC_HOME_DESTINATIONS');
+    expect(chatShell).toContain('AUTH_HOME_DESTINATIONS');
     expect(chatShell).toContain("label: 'Ask'");
-    expect(chatShell).toContain("label: 'Capsules'");
+    expect(chatShell).toContain("label: 'Saved context'");
     expect(chatShell).toContain("label: 'Boardroom'");
-    expect(chatShell).toContain("label: 'Memo'");
+    expect(chatShell).toContain("label: 'Drafts'");
     expect(praxisChat).toContain('data-testid="simple-home-chat"');
     expect(praxisChat).toContain('data-testid="marketing-hero-prompt"');
     expect(praxisChat).toContain('data-testid="marketing-primary-cta"');
@@ -82,11 +83,11 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
     expect(chatShell).not.toContain('Load more capsules');
   });
 
-  it('uses stable sitemap timestamps and OG capsule/source/agent language', () => {
+  it('uses stable sitemap timestamps and human-first OG language', () => {
     expect(sitemap).toContain('CONTENT_LAST_MODIFIED');
     expect(sitemap).not.toContain('const lastModified = new Date()');
-    expect(ogImage).toContain('Capsule chain');
-    expect(ogImage).toContain('Source receipts');
-    expect(ogImage).toContain('Agent timeline');
+    expect(ogImage).toContain('Sourced briefs');
+    expect(ogImage).toContain('Saved context');
+    expect(ogImage).toContain('Brief');
   });
 });

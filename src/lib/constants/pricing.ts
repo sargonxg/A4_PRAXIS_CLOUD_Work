@@ -15,16 +15,16 @@ export const PRICING_TIERS: PricingTier[] = [
     id: 'free',
     name: 'Free',
     price: 0,
-    usage: 'Starter ContextCapsule workspace',
+    usage: 'Starter policy workspace',
     maxSituations: 1,
     cta: 'Start Free',
     audience: 'Solo researchers and policy workers evaluating PRAXIS',
     features: [
-      '1 active ContextCapsule',
-      'Ask PRAXIS with active-capsule grounding visible',
-      'Guide assistant for product and capsule-use questions',
+      '1 active saved-context workspace',
+      'Ask PRAXIS with grounding visible',
+      'Guide assistant for product and context-use questions',
       'Starter sourceability and memo workflow',
-      'Context Core Lite creation',
+      'Simple context creation',
       'No credit card, no commitment',
     ],
   },
@@ -38,10 +38,10 @@ export const PRICING_TIERS: PricingTier[] = [
     cta: 'Upgrade',
     audience: 'Individual analysts, policy officers, and researchers',
     features: [
-      'Unlimited draft capsules, 10 active capsules',
+      'Unlimited draft context packs, 10 active workspaces',
       'User Core and Situation Core management',
-      'Capsule-bound Ask PRAXIS, sourceability, grounded research, and memo drafting',
-      'Capsule fork, lock, lineage, and handover',
+      'Ask PRAXIS, sourceability, grounded research, and memo drafting with saved context',
+      'Fork, lock, lineage, and handover for reusable context',
       'Memo Studio exports with provenance',
       'Email support',
     ],
@@ -50,13 +50,13 @@ export const PRICING_TIERS: PricingTier[] = [
     id: 'team',
     name: 'Team',
     price: 199,
-    usage: 'Shared capsule library · per seat',
+    usage: 'Shared context library · per seat',
     maxSituations: 25,
     cta: 'Start Team',
     audience: 'Mediation teams, policy units, and research desks',
     features: [
       'Everything in Practitioner',
-      'Shared ContextCapsule library',
+      'Shared saved-context library',
       'Shared situation workspaces and roles',
       'Review gates, sourceability status, and audit receipts',
       'Scheduled brief and watchlist preparation when configured',
@@ -87,8 +87,8 @@ export const PRICING_TIERS: PricingTier[] = [
 
 export const PLAN_USAGE_BUCKETS = [
   {
-    name: 'Capsule Work',
-    description: 'ContextCapsule creation, User and Situation cores, active stacks, Guide help, and capsule handover.',
+    name: 'Saved Context',
+    description: 'Context creation, User and Situation cores, active stacks, Guide help, and handover.',
   },
   {
     name: 'Sourceability',
@@ -96,7 +96,7 @@ export const PLAN_USAGE_BUCKETS = [
   },
   {
     name: 'Analysis Tools',
-    description: 'Timeline, graph/power map, ACH, scenario review, red-team review, and capsule-aware research agents.',
+    description: 'Timeline, graph/power map, ACH, scenario review, red-team review, and context-aware research workflows.',
   },
   {
     name: 'Memo Studio',

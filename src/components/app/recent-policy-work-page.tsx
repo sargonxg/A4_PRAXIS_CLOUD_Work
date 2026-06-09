@@ -70,10 +70,10 @@ export function RecentPolicyWorkPage() {
           </Link>
           <nav className="flex flex-wrap items-center gap-4 text-sm font-semibold text-slate-500" aria-label="Recent work navigation">
             <Link href="/app" className="hover:text-slate-950">Ask PRAXIS</Link>
-            <Link href="/app/capsules" className="hover:text-slate-950">Your capsules</Link>
+            <Link href="/app/capsules" className="hover:text-slate-950">Saved context</Link>
             <Link href="/app/capsules?lane=marketplace" className="hover:text-slate-950">Marketplace</Link>
             <Link href="/learn" className="hover:text-slate-950">Learn</Link>
-            <Link href="/release-notes" className="hover:text-slate-950">Changelog</Link>
+            <Link href="/release-notes" className="hover:text-slate-950">Release notes</Link>
           </nav>
         </header>
 
@@ -94,7 +94,7 @@ export function RecentPolicyWorkPage() {
             </div>
             <Link href="/app/capsules" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               <Library className="h-4 w-4" />
-              Open capsules
+              Open context
             </Link>
           </div>
 
@@ -122,7 +122,7 @@ export function RecentPolicyWorkPage() {
               {!loading && !items.length ? (
                 <div className="rounded-lg border border-dashed border-slate-200 bg-[color:var(--color-archive-paper-strong)] p-4">
                   <p className="text-sm font-semibold text-slate-950">No saved work yet.</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">Use the PRAXIS samples on the right to start a capsule-aware policy artifact.</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">Use the PRAXIS samples on the right to start a source-aware policy artifact.</p>
                 </div>
               ) : null}
             </section>

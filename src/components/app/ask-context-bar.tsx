@@ -133,7 +133,7 @@ export function AskContextBar({
           <ContextChip dark={dark} icon={LibraryBig} label="Sources" value={`${sourceCount} attached`} detail={sourceCount ? 'Receipts can ground answer' : 'Attach sources before final use'} tone={sourceCount ? 'ready' : 'review'} />
           <ContextChip dark={dark} icon={Wrench} label="Tools" value={toolCount ? `${toolCount} active` : 'Sourceability'} detail={toolCount ? 'Context tools selected' : 'Default review posture'} tone={toolCount ? 'active' : 'quiet'} />
           <ContextChip dark={dark} icon={FileText} label="Output" value={stack.outputGoal ?? 'Set target'} detail={stack.outputGoal ? 'Answer target saved' : 'Memo, brief, or handoff'} tone={stack.outputGoal ? 'ready' : 'quiet'} />
-          <ContextChip dark={dark} icon={Boxes} label="ContextCapsules" value={`${capsuleCount} attached`} detail={activeCapsuleId ?? 'No capsule selected'} tone={capsuleCount ? 'ready' : 'review'} />
+          <ContextChip dark={dark} icon={Boxes} label="Saved context" value={`${capsuleCount} attached`} detail={activeCapsuleId ?? 'No context selected'} tone={capsuleCount ? 'ready' : 'review'} />
           <ContextChip dark={dark} icon={Gauge} label="Readiness" value={readiness.label} detail={readiness.detail} tone={readiness.tone} />
         </div>
 
@@ -143,14 +143,14 @@ export function AskContextBar({
               <button
                 type="button"
                 disabled
-                title="Sign in to attach a ContextCapsule"
+                title="Sign in to attach saved context"
                 className={cn(
                   'inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] border px-2.5 text-xs font-semibold opacity-60',
                   dark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600',
                 )}
               >
                 <Boxes className="h-3.5 w-3.5" />
-                Attach capsule
+                Attach context
               </button>
               <Link
                 href="/login?mode=signup&redirect=%2Fapp"
@@ -161,7 +161,7 @@ export function AskContextBar({
                 )}
               >
                 <LogIn className="h-3.5 w-3.5" />
-                Sign in for context
+                Sign in to save context
               </Link>
             </>
           ) : (
@@ -170,10 +170,10 @@ export function AskContextBar({
                 type="button"
                 onClick={() => setPickerOpen((value) => !value)}
                 className={actionClassName(dark, pickerOpen)}
-                title="Attach capsule"
+                title="Attach context"
               >
                 <Boxes className="h-3.5 w-3.5" />
-                Attach capsule
+                Attach context
               </button>
               <button
                 type="button"
@@ -184,9 +184,9 @@ export function AskContextBar({
                 <Wand2 className="h-3.5 w-3.5" />
                 Build context
               </button>
-              <Link href="/app/capsules" className={actionClassName(dark)} title="Open capsules">
+              <Link href="/app/capsules" className={actionClassName(dark)} title="Open saved context">
                 <LibraryBig className="h-3.5 w-3.5" />
-                Open capsules
+                Open context
               </Link>
               <button
                 type="button"
@@ -205,7 +205,7 @@ export function AskContextBar({
 
       {!isPublic && pickerOpen ? (
         <div className={cn('mt-2 flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border p-2', dark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50')}>
-          <span className={cn('text-xs font-semibold', dark ? 'text-slate-300' : 'text-slate-600')}>Attach capsule</span>
+          <span className={cn('text-xs font-semibold', dark ? 'text-slate-300' : 'text-slate-600')}>Attach context</span>
           <CapsuleListPicker
             activeCapsuleId={activeCapsuleId}
             onCreate={() => setRefreshKey((key) => key + 1)}

@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
  * Lightweight smoke test for the platform's public-surface contracts. Runs
  * unauthenticated to verify:
  *   - Home loads as the light public marketing surface
- *   - Guide, Learn, Pricing, and Changelog routes are reachable
+ *   - Guide, Learn, Pricing, and Release notes routes are reachable
  *   - /api/capabilities is reachable (expects 401 unauth or 200 with matrix)
  *   - /api/settings/api-keys returns 401 unauth
  *
@@ -19,7 +19,7 @@ test.describe('public surface smoke', () => {
     await page.goto(`${BASE}/`);
     await expect(page.locator('[data-testid="marketing-home"]')).toBeVisible({ timeout: 15_000 });
     await expect(page.locator('[data-testid="marketing-primary-cta"]')).toHaveCount(1);
-    await expect(page.getByText(/Ask a policy question\. Build the capsule first\./i).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Turn any policy question into a sourced, citable brief\./i })).toBeVisible();
     await expect(page.locator('[data-testid="tasklet-praxis-workbench"]')).toHaveCount(0);
   });
 
@@ -29,11 +29,11 @@ test.describe('public surface smoke', () => {
     await expect(page.locator('#sourceability')).toBeVisible();
 
     await page.goto(`${BASE}/guide`);
-    await expect(page.getByRole('heading', { name: /Use capsules as the context layer/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Ask the question\. Check the evidence\. Save the work\./i })).toBeVisible();
     await expect(page.getByText(/The Guide assistant explains the app/i)).toBeVisible();
 
     await page.goto(`${BASE}/pricing`);
-    await expect(page.getByRole('heading', { name: /Monthly plans/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Plans for people who need sourced policy work/i })).toBeVisible();
 
     await page.goto(`${BASE}/help`);
     await expect(page).toHaveURL(/\/guide$/);

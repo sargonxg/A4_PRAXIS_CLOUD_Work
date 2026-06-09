@@ -81,7 +81,7 @@ export function PublicShell({
                 Sign in
               </Link>
               <Link href="/login?mode=signup" prefetch={false} className="praxis-button-primary h-9 px-5 text-[14px]">
-                New capsule
+                Start work
               </Link>
             </div>
 
@@ -132,7 +132,7 @@ export function PublicShell({
                 onClick={() => setMobileMenuOpen(false)}
                 className="praxis-button-primary min-h-11 px-6 text-[15px]"
               >
-                New capsule
+                Start work
               </Link>
             </div>
           </div>

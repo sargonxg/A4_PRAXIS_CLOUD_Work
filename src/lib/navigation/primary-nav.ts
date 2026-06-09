@@ -80,7 +80,6 @@ export type PrimaryNavId = PrimaryNavItem['id'];
 
 export const PUBLIC_NAV_ITEMS = [
   { id: 'home', label: 'Home', href: '/' },
-  { id: 'capsules', label: 'Capsules', href: '/login?mode=signup&redirect=%2Fapp%2Fcapsules' },
   { id: 'pricing', label: 'Pricing', href: '/pricing' },
   { id: 'learn', label: 'Learn', href: '/learn' },
   { id: 'guide', label: 'Guide', href: '/guide' },
@@ -114,7 +113,7 @@ export const ROUTE_LABELS: readonly { href: string; label: string }[] = [
 export const APP_LAUNCHPAD_NAV = [
   ...PRIMARY_NAV,
   { id: 'learn', label: 'Learn', icon: 'BookOpen', href: '/learn' },
-  { id: 'release-notes', label: 'Changelog', icon: 'History', href: '/release-notes' },
+  { id: 'release-notes', label: 'Release notes', icon: 'History', href: '/release-notes' },
 ] satisfies readonly PrimaryNavItem[];
 
 export function normalizeRouteHref(href: string): string {

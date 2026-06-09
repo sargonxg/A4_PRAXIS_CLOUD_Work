@@ -2,7 +2,7 @@ import { headers } from 'next/headers';
 import { PraxisMarketingHome } from '@/components/marketing/praxis-marketing-home';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
-const description = 'Ask a policy question, build a ContextCapsule, and produce sourced work with receipts.';
+const description = 'Turn a hard policy question into sourced work your team can review.';
 
 const softwareJsonLd = {
   '@context': 'https://schema.org',
@@ -21,10 +21,10 @@ const softwareJsonLd = {
     url: 'https://tacitus.me',
   },
   featureList: [
-    'Context Capsules for reusable policy context',
-    'Agentic research runs with visible proof',
-    'Capsule marketplace with verified starter files',
-    'Source receipts, claim support, and reviewable drafts',
+    'Ask PRAXIS from one simple workspace',
+    'Attach sources and saved context when the work needs proof',
+    'Draft briefs, memos, and handovers with receipts',
+    'Keep source gaps and review notes visible',
   ],
 };
 

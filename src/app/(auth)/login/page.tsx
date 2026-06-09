@@ -97,10 +97,10 @@ function LoginForm() {
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
   const previewRailCells = [
     { id: 'profile', label: 'Profile', value: mode === 'signup' ? 'New analyst' : 'Returning analyst', detail: 'Private posture', state: 'ready' as const },
-    { id: 'context', label: 'Context', value: capsuleTemplateParam ?? 'Policy capsule', detail: capsulePromptParam ? 'Prompt carried forward' : 'Starter context', state: capsulePromptParam ? 'active' as const : 'quiet' as const },
+    { id: 'context', label: 'Context', value: capsuleTemplateParam ?? 'Saved work', detail: capsulePromptParam ? 'Question carried forward' : 'Ready when needed', state: capsulePromptParam ? 'active' as const : 'quiet' as const },
     { id: 'source', label: 'Sources', value: capsulePathParam ? 'Path attached' : 'Ready to attach', detail: 'Receipts after sign-in', state: capsulePathParam ? 'ready' as const : 'review' as const },
-    { id: 'output', label: 'Output', value: capsuleOutputParam ?? planParam ?? 'Memo', detail: 'Intent preserved', state: capsuleOutputParam || planParam ? 'active' as const : 'quiet' as const },
-    { id: 'readiness', label: 'Readiness', value: 'Secure handoff', detail: 'Redirect preserved', state: 'ready' as const },
+    { id: 'output', label: 'Output', value: capsuleOutputParam ?? planParam ?? 'Brief', detail: 'Intent preserved', state: capsuleOutputParam || planParam ? 'active' as const : 'quiet' as const },
+    { id: 'readiness', label: 'Readiness', value: 'Pickup ready', detail: 'Redirect preserved', state: 'ready' as const },
   ];
 
   useEffect(() => {
@@ -226,21 +226,21 @@ function LoginForm() {
         <section className="relative hidden overflow-hidden border-r border-slate-200/80 lg:block">
           <div className="relative flex min-h-screen flex-col p-8">
             <div className="flex items-center justify-between border-b border-slate-200 pb-5">
-              <PraxisBrandChip subtitle="Private ContextCapsule workspace" />
+              <PraxisBrandChip subtitle="Private policy workspace" />
               <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
                 praxis.tacitus.me/app
               </span>
             </div>
 
             <div className="flex flex-1 flex-col justify-center py-10">
-              <p className="text-center text-sm font-medium text-slate-500">Sign in, calibrate if needed, then open the workspace</p>
+              <p className="text-center text-sm font-medium text-slate-500">Sign in once. PRAXIS keeps the question ready.</p>
               <h1 className="mx-auto mt-6 max-w-3xl text-center font-serif text-5xl font-semibold tracking-tight text-slate-950">
-                What can PRAXIS do for you?
+                Pick up the work where you left it.
               </h1>
               <LivingContextRail cells={previewRailCells} compact className="mx-auto mt-8 max-w-3xl" />
               <div className="mx-auto mt-5 w-full max-w-3xl rounded-[10px] border border-[color:var(--color-rose-gold)]/25 bg-white/90 p-5 shadow-[0_20px_70px_rgba(15,23,42,0.10)]">
                 <span className="sr-only">PRAXIS run queued</span>
-                <p className="px-1 py-2 text-xl text-slate-400">Describe a task or responsibility</p>
+                <p className="px-1 py-2 text-xl text-slate-400">Ask the question you need answered</p>
                 <div className="mt-10 flex items-center justify-between border-t border-slate-100 pt-4">
                   <div className="flex items-center gap-2 text-slate-600">
                     {[Paperclip, Upload, Monitor].map((Icon, index) => (
@@ -287,15 +287,15 @@ function LoginForm() {
             transition={{ delay: 0.15, duration: 0.5 }}
             className="mb-6 text-center"
           >
-            <PraxisBrandChip subtitle="Think Policy" className="mb-4 justify-center" />
+            <PraxisBrandChip subtitle="Sourced policy work" className="mb-4 justify-center" />
             <h1 className="font-serif text-3xl tracking-wide text-slate-950">
               PRAXIS
             </h1>
             <p className="mt-1.5 text-xs font-semibold tracking-[0.24em] text-[color:var(--color-rose-gold)] uppercase">
-              PRAXIS | Think Policy
+              PRAXIS | Ask. Source. Review.
             </p>
             <p className="mt-2 text-sm tracking-widest text-slate-500 uppercase">
-              Open the app workspace
+              Open your workspace
             </p>
           </motion.div>
 
@@ -502,7 +502,7 @@ function LoginForm() {
               ) : (
                 <>
                   <Mail className="h-4 w-4" />
-                  {mode === 'signup' ? 'Create PRAXIS workspace' : mode === 'reset' ? 'Send Reset Link' : 'Open PRAXIS'}
+                  {mode === 'signup' ? 'Create workspace' : mode === 'reset' ? 'Send Reset Link' : 'Open PRAXIS'}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </>
               )}
@@ -554,7 +554,7 @@ function LoginForm() {
             className="mt-5 rounded-lg border border-slate-200 bg-[color:var(--color-app-bg)] px-4 py-3"
           >
             <p className="text-center text-xs text-slate-600">
-              <span className="font-semibold text-slate-900">Free workspace</span> includes capsules, source receipts, policy agents, and memo tools.
+              <span className="font-semibold text-slate-900">Free workspace</span> includes Ask PRAXIS, saved context, source receipts, and draft tools.
             </p>
           </motion.div>
         </div>

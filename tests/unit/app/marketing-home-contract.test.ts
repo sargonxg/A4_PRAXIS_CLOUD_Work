@@ -22,7 +22,7 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     expect(source).toContain('PraxisMarketingHome');
     expect(source).toContain('@/components/marketing/praxis-marketing-home');
     expect(source).toContain('application/ld+json');
-    expect(source).toContain('Ask a policy question, build a ContextCapsule');
+    expect(source).toContain('Turn a hard policy question into sourced work your team can review.');
     expect(source).not.toContain('TaskletPraxisWorkbench');
     expect(source).not.toContain('Phase8WowLanding');
     expect(legacySource).not.toContain('TaskletPraxisWorkbench');
@@ -61,12 +61,13 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
       'data-testid="marketing-hero-prompt"',
       'data-testid="marketing-primary-cta"',
       'data-testid="public-sign-in-affordance"',
+      'Turn any policy question into a sourced, citable brief.',
       'Ask',
-      'Capsules',
+      'Saved context',
       'Boardroom',
-      'Memo',
+      'Drafts',
       'Guide',
-      'Changelog',
+      'Release notes',
     ]) {
       expect(homeSource).toContain(required);
     }
@@ -107,9 +108,9 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     expect(shellSource).toContain('detachCapsuleRef');
     expect(shellSource).toContain('swapCapsuleRef');
     expect(shellSource).toContain('data-testid="launchpad-capsule-stack"');
-    expect(shellSource).toContain('Attach capsule');
+    expect(shellSource).toContain('Attach context');
     expect(shellSource).toContain('Detach');
-    expect(shellSource).toContain('Build capsule');
+    expect(shellSource).toContain('Build context');
     expect(shellSource).toContain('Ask PRAXIS');
     expect(shellSource).not.toContain('PRAXIS sample artifacts');
     expect(launchpadSource).not.toContain('Start research run');

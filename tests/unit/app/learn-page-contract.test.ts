@@ -30,6 +30,6 @@ describe('/learn ContextCapsule v3 contract', () => {
     expect(source).toContain('Use it today');
     expect(source).toContain('Current PRAXIS stays simple');
     expect(source).toContain('roadmap lanes when they are not the visible production surface');
-    expect(source).toContain('Home, Capsules, Ask PRAXIS, sources, memos, and receipts');
+    expect(source).toContain('Home, saved context, Ask PRAXIS, sources, memos, and receipts');
   });
 });

@@ -4,7 +4,7 @@ Use this file at the start of Codex sessions in this checkout.
 
 ## Repository
 
-- Path: `C:\Users\giuli\A4_PRAXIS_CLOUD_Work`
+- Path: `C:\Users\giuli\tacitus-products\praxis`
 - Remote: `https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git`
 - Primary branch: `main`
 - Canonical cloud project: `praxisbytacitus`
@@ -18,17 +18,19 @@ Use this file at the start of Codex sessions in this checkout.
 3. `ARCHITECTURE.md`
 4. `docs/README.md`
 5. `docs/product/README.md`
-6. `docs/audits/2026-05-30-red-flags-and-improvement-plan.md`
-7. `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md`
-8. `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`
-9. `docs/architecture/PRAXIS_ARCHITECTURE.md`
-10. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`
-11. `docs/GCP_OPERATIONS.md`
-12. `graphify-out/GRAPH_REPORT.md`
+6. `docs/product/PRAXIS_PUBLIC_COPY_CONTRACT_2026-06-09.md`
+7. `docs/audits/2026-05-30-red-flags-and-improvement-plan.md`
+8. `docs/product/PRAXIS_CANONICAL_APP_STRUCTURE.md`
+9. `docs/product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`
+10. `docs/architecture/PRAXIS_ARCHITECTURE.md`
+11. `docs/architecture/PRAXIS_ARCHITECTURE_LIVE_APP_ALIGNMENT.md`
+12. `docs/GCP_OPERATIONS.md`
+13. `graphify-out/GRAPH_REPORT.md`
 
 ## Product Boundaries
 
 - Keep the visible product simple: Ask PRAXIS and the existing cockpit/workbench surfaces are the primary user-facing shell.
+- Keep public/pre-login copy human-first: ask the question, attach sources or saved context when needed, and leave with reviewable work.
 - Do not add new top-level app pages or primary navigation unless explicitly requested.
 - Keep Firestore/ContextCapsules canonical. Treat graph/Cognee/Neo4j-style enrichment as optional, reviewable, and non-authoritative unless promoted by a specific plan.
 - Preserve visible runtime proof. Do not fake model, source, or agent status.
@@ -40,7 +42,7 @@ Use this file at the start of Codex sessions in this checkout.
 git fetch origin
 git status --short --branch
 git rev-list --left-right --count origin/main...HEAD
-& "$HOME\.codex\scripts\codex-ready.ps1" -Repo "C:\Users\giuli\A4_PRAXIS_CLOUD_Work" -Mode quick
+& "$HOME\.codex\scripts\codex-ready.ps1" -Repo "C:\Users\giuli\tacitus-products\praxis" -Mode quick
 ```
 
 If ADC fails:
