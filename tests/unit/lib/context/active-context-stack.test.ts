@@ -126,6 +126,9 @@ describe('active context stack block arrays', () => {
     });
 
     expect(model.title).toBe('Capsule Dock');
+    expect(model.stackLabel).toBe('Default stack');
+    expect(model.stackPolicyLabel).toBe('Track latest');
+    expect(model.contextPackageLabel).toBe('Package resolves on send');
     expect(model.persistenceLabel).toBe('Local stack');
     expect(model.counts).toEqual({ primary: 1, reference: 1, comparison: 1, total: 3 });
     expect(model.items.map((item) => [item.capsuleId, item.role, item.roleLabel, item.versionLabel])).toEqual([
@@ -136,12 +139,38 @@ describe('active context stack block arrays', () => {
     expect(model.warnings.map((warning) => warning.id)).toEqual(['missing-output']);
   });
 
+  it('exposes named Stack metadata and package pinning policy for the Dock', () => {
+    const stack = sanitizeActiveContextStack({
+      stackId: 'foreign-policy-briefing-stack',
+      capsuleId: 'cap-primary',
+      capsuleRefs: [
+        { capsuleId: 'cap-primary', label: 'Primary file', role: 'primary', version: 3 },
+      ],
+      contextPackageId: 'ctx-pack-v7',
+      outputGoal: 'options-memo',
+    });
+
+    const model = buildCapsuleDockModel(stack, {
+      hydrated: true,
+      persisted: true,
+    });
+
+    expect(model.stackLabel).toBe('foreign policy briefing stack');
+    expect(model.stackPolicyLabel).toBe('Pinned package');
+    expect(model.contextPackageLabel).toBe('Context package ctx-pack-v7');
+    expect(model.persistenceLabel).toBe('Workspace saved');
+    expect(model.compositionState).toBe('ready');
+    expect(model.warnings).toEqual([]);
+  });
+
   it('marks direct Ask without saved context as allowed but thin', () => {
     const model = buildCapsuleDockModel(defaultActiveContextStack(), {
       hydrated: true,
       persisted: false,
     });
 
+    expect(model.stackLabel).toBe('Default stack');
+    expect(model.stackPolicyLabel).toBe('Track latest');
     expect(model.canAskDirectly).toBe(true);
     expect(model.compositionState).toBe('thin');
     expect(model.warnings.map((warning) => warning.id)).toEqual(['no-saved-context', 'missing-output']);

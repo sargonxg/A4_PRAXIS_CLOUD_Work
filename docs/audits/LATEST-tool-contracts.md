@@ -1,4 +1,4 @@
-# PRAXIS Tool Operating Contract Audit - 2026-06-02
+# PRAXIS Tool Operating Contract Audit - 2026-06-10
 
 Audited 55 registered tools. Passing threshold: 6/7 checks. Current passing: 55/55.
 

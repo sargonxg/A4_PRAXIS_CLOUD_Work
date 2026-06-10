@@ -87,6 +87,9 @@ export interface CapsuleDockModel {
   items: CapsuleDockItem[];
   counts: Record<ActiveCapsuleRole | 'total', number>;
   warnings: CapsuleDockWarning[];
+  stackLabel: string;
+  stackPolicyLabel: 'Track latest' | 'Pinned package';
+  contextPackageLabel: string;
   persistenceLabel: string;
   compositionState: CapsuleDockCompositionState;
   canAskDirectly: boolean;
@@ -255,6 +258,10 @@ export function buildCapsuleDockModel(
     comparison: items.filter((item) => item.role === 'comparison').length,
     total: items.length,
   };
+  const stackPolicyLabel = current.contextPackageId ? 'Pinned package' : 'Track latest';
+  const contextPackageLabel = current.contextPackageId
+    ? `Context package ${shortenCapsuleId(current.contextPackageId)}`
+    : 'Package resolves on send';
   const warnings: CapsuleDockWarning[] = [];
 
   if (!hydrated) {
@@ -315,6 +322,9 @@ export function buildCapsuleDockModel(
     items,
     counts,
     warnings,
+    stackLabel: formatStackLabel(current.stackId),
+    stackPolicyLabel,
+    contextPackageLabel,
     persistenceLabel: hydrated ? (persisted ? 'Workspace saved' : 'Local stack') : 'Loading stack',
     compositionState,
     canAskDirectly: !hasBlockingWarning,
@@ -436,6 +446,19 @@ function roleLabel(role: ActiveCapsuleRole): string {
   if (role === 'primary') return 'Primary';
   if (role === 'comparison') return 'Comparison';
   return 'Reference';
+}
+
+function formatStackLabel(stackId: string): string {
+  if (stackId === DEFAULT_CONTEXT_STACK_ID) return 'Default stack';
+  const label = stackId
+    .replace(/[_:.-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return shortenLabel(label || stackId, 48);
+}
+
+function shortenLabel(value: string, maxLength: number): string {
+  return value.length > maxLength ? `${value.slice(0, maxLength - 11)}...${value.slice(-8)}` : value;
 }
 
 function shortenCapsuleId(value: string): string {

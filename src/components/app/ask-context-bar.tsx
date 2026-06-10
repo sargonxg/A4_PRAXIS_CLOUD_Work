@@ -224,6 +224,13 @@ export function AskContextBar({
             <p className={cn('text-xs font-semibold', dark ? 'text-slate-200' : 'text-slate-700')}>
               {dockModel.counts.total ? `${dockModel.counts.total} attached` : 'Direct Ask'} - {dockModel.persistenceLabel}
             </p>
+            <p
+              data-testid="capsule-dock-stack"
+              title={dockModel.contextPackageLabel}
+              className={cn('max-w-[18rem] truncate text-[11px]', dark ? 'text-slate-400' : 'text-slate-500')}
+            >
+              Stack: {dockModel.stackLabel} - {dockModel.stackPolicyLabel}
+            </p>
           </div>
           {dockModel.items.length ? (
             dockModel.items.map((item) => <CapsuleDockChip key={`${item.role}-${item.capsuleId}`} dark={dark} item={item} />)
