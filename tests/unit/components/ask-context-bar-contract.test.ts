@@ -26,6 +26,10 @@ describe('Ask context bar contract', () => {
 
     for (const required of [
       'data-testid="ask-context-bar"',
+      'data-testid="capsule-dock"',
+      'data-testid="capsule-dock-chip"',
+      'data-testid="capsule-dock-warning"',
+      'Capsule Dock',
       'User',
       'Situation',
       'Sources',
@@ -39,6 +43,7 @@ describe('Ask context bar contract', () => {
       'Clear context',
       'CapsuleListPicker',
       'InlineQuickContextBuilder',
+      'buildCapsuleDockModel',
     ]) {
       expect(barSource).toContain(required);
     }

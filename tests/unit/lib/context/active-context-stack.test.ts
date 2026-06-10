@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   attachCapsuleRef,
+  buildCapsuleDockModel,
   defaultActiveContextStack,
   detachCapsuleRef,
   sanitizeActiveContextStack,
@@ -107,5 +108,42 @@ describe('active context stack block arrays', () => {
 
     const detached = detachCapsuleRef(swapped, 'cap-reference');
     expect(detached.capsuleRefs.map((ref) => ref.capsuleId)).toEqual(['cap-humanitarian', 'cap-legal']);
+  });
+
+  it('builds a Capsule Dock model with role counts, persistence state, and composition warnings', () => {
+    const stack = sanitizeActiveContextStack({
+      capsuleId: 'cap-primary',
+      capsuleRefs: [
+        { capsuleId: 'cap-primary', label: 'Primary file', role: 'primary', version: 3 },
+        { capsuleId: 'cap-reference', label: 'Reference file', role: 'reference', version: 1 },
+        { capsuleId: 'cap-comparison', label: 'Comparison file', role: 'comparison' },
+      ],
+    });
+
+    const model = buildCapsuleDockModel(stack, {
+      hydrated: true,
+      persisted: false,
+    });
+
+    expect(model.title).toBe('Capsule Dock');
+    expect(model.persistenceLabel).toBe('Local stack');
+    expect(model.counts).toEqual({ primary: 1, reference: 1, comparison: 1, total: 3 });
+    expect(model.items.map((item) => [item.capsuleId, item.role, item.roleLabel, item.versionLabel])).toEqual([
+      ['cap-primary', 'primary', 'Primary', 'v3'],
+      ['cap-reference', 'reference', 'Reference', 'v1'],
+      ['cap-comparison', 'comparison', 'Comparison', 'latest'],
+    ]);
+    expect(model.warnings.map((warning) => warning.id)).toEqual(['missing-output']);
+  });
+
+  it('marks direct Ask without saved context as allowed but thin', () => {
+    const model = buildCapsuleDockModel(defaultActiveContextStack(), {
+      hydrated: true,
+      persisted: false,
+    });
+
+    expect(model.canAskDirectly).toBe(true);
+    expect(model.compositionState).toBe('thin');
+    expect(model.warnings.map((warning) => warning.id)).toEqual(['no-saved-context', 'missing-output']);
   });
 });

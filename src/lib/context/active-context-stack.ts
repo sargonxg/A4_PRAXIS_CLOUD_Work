@@ -62,6 +62,36 @@ export interface ActiveEvidenceGap {
   resolvedAt: string | null;
 }
 
+export type CapsuleDockCompositionState = 'loading' | 'ready' | 'review' | 'thin' | 'blocked';
+export type CapsuleDockWarningSeverity = 'info' | 'review' | 'blocking';
+
+export interface CapsuleDockItem {
+  capsuleId: string;
+  label: string;
+  role: ActiveCapsuleRole;
+  roleLabel: string;
+  primary: boolean;
+  order: number;
+  versionLabel: string;
+}
+
+export interface CapsuleDockWarning {
+  id: 'loading' | 'no-saved-context' | 'missing-primary' | 'multiple-primary' | 'missing-output';
+  severity: CapsuleDockWarningSeverity;
+  label: string;
+  detail: string;
+}
+
+export interface CapsuleDockModel {
+  title: 'Capsule Dock';
+  items: CapsuleDockItem[];
+  counts: Record<ActiveCapsuleRole | 'total', number>;
+  warnings: CapsuleDockWarning[];
+  persistenceLabel: string;
+  compositionState: CapsuleDockCompositionState;
+  canAskDirectly: boolean;
+}
+
 export const DEFAULT_CONTEXT_STACK_ID = 'default';
 
 export function defaultActiveContextStack(): ActiveContextStackState {
@@ -203,6 +233,94 @@ export function swapCapsuleRef(
   });
 }
 
+export function buildCapsuleDockModel(
+  stack: ActiveContextStackState,
+  options: { hydrated?: boolean; persisted?: boolean } = {},
+): CapsuleDockModel {
+  const current = sanitizeActiveContextStack(stack);
+  const hydrated = options.hydrated ?? true;
+  const persisted = options.persisted ?? false;
+  const items = current.capsuleRefs.map((ref) => ({
+    capsuleId: ref.capsuleId,
+    label: ref.label ?? shortenCapsuleId(ref.capsuleId),
+    role: ref.role,
+    roleLabel: roleLabel(ref.role),
+    primary: ref.primary,
+    order: ref.order,
+    versionLabel: ref.version ? `v${ref.version}` : 'latest',
+  }));
+  const counts = {
+    primary: items.filter((item) => item.role === 'primary').length,
+    reference: items.filter((item) => item.role === 'reference').length,
+    comparison: items.filter((item) => item.role === 'comparison').length,
+    total: items.length,
+  };
+  const warnings: CapsuleDockWarning[] = [];
+
+  if (!hydrated) {
+    warnings.push({
+      id: 'loading',
+      severity: 'info',
+      label: 'Loading stack',
+      detail: 'PRAXIS is reading the workspace context before finalizing the Dock.',
+    });
+  }
+
+  if (items.length === 0) {
+    warnings.push({
+      id: 'no-saved-context',
+      severity: 'info',
+      label: 'Direct Ask',
+      detail: 'No saved context is attached. Ask can continue, but serious work should attach context first.',
+    });
+  } else if (counts.primary === 0) {
+    warnings.push({
+      id: 'missing-primary',
+      severity: 'blocking',
+      label: 'Choose a primary capsule',
+      detail: 'Saved context is attached, but no primary capsule is selected.',
+    });
+  } else if (counts.primary > 1) {
+    warnings.push({
+      id: 'multiple-primary',
+      severity: 'blocking',
+      label: 'Too many primary capsules',
+      detail: 'Only one primary capsule can govern an Ask turn.',
+    });
+  }
+
+  if (!current.outputGoal) {
+    warnings.push({
+      id: 'missing-output',
+      severity: 'review',
+      label: 'Output not set',
+      detail: 'Set a memo, brief, or handoff target before final export.',
+    });
+  }
+
+  const hasBlockingWarning = warnings.some((warning) => warning.severity === 'blocking');
+  const hasReviewWarning = warnings.some((warning) => warning.severity === 'review');
+  const compositionState: CapsuleDockCompositionState = !hydrated
+    ? 'loading'
+    : hasBlockingWarning
+      ? 'blocked'
+      : items.length === 0
+        ? 'thin'
+        : hasReviewWarning
+          ? 'review'
+          : 'ready';
+
+  return {
+    title: 'Capsule Dock',
+    items,
+    counts,
+    warnings,
+    persistenceLabel: hydrated ? (persisted ? 'Workspace saved' : 'Local stack') : 'Loading stack',
+    compositionState,
+    canAskDirectly: !hasBlockingWarning,
+  };
+}
+
 function emptyContextBlocks(): ActiveContextBlocks {
   return {
     userCore: [],
@@ -312,6 +430,16 @@ function sanitizeCapsuleRefs(value: unknown, legacyCapsuleId: string | null): Ac
 
 function normalizeCapsuleRole(value: unknown): ActiveCapsuleRole {
   return value === 'primary' || value === 'reference' || value === 'comparison' ? value : 'reference';
+}
+
+function roleLabel(role: ActiveCapsuleRole): string {
+  if (role === 'primary') return 'Primary';
+  if (role === 'comparison') return 'Comparison';
+  return 'Reference';
+}
+
+function shortenCapsuleId(value: string): string {
+  return value.length > 28 ? `${value.slice(0, 14)}...${value.slice(-8)}` : value;
 }
 
 function sanitizeBlockItems(value: unknown, fallbackRole: string): ActiveContextBlockItem[] {

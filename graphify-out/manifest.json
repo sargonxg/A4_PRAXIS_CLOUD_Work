@@ -2588,8 +2588,8 @@
     "hash": "0e2539b57475194fdecc0adacd9b2cfb"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\src\\components\\app\\ask-context-bar.tsx": {
-    "mtime": 1780979474.7069664,
-    "hash": "9d2bfa2cda80cdec324c649eb8c91434"
+    "mtime": 1781064850.6210978,
+    "hash": "e42772916845848bba4978c6faf2ad98"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\src\\components\\app\\calibration-transparency-modal.tsx": {
     "mtime": 1780854775.7291276,
@@ -3620,8 +3620,8 @@
     "hash": "7c1b1897edc822769fa3eb84a434c503"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\src\\lib\\context\\active-context-stack.ts": {
-    "mtime": 1780854776.027422,
-    "hash": "599af9e50f53f4c2ce52fd12a76c2087"
+    "mtime": 1781064818.5189862,
+    "hash": "c314cc0f168b25ce6c12568966bd3771"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\src\\lib\\context\\capsule-architect.ts": {
     "mtime": 1780854776.028419,
@@ -5328,8 +5328,8 @@
     "hash": "8978202cbea14b107587595fc540d102"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\tests\\unit\\components\\ask-context-bar-contract.test.ts": {
-    "mtime": 1780979665.3699675,
-    "hash": "3f23bf51526619f6e564b768e7ec7331"
+    "mtime": 1781064771.1686618,
+    "hash": "6f247df243f46535ec7ebd8a71d71441"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\tests\\unit\\components\\ask-source-preview-contract.test.ts": {
     "mtime": 1780854776.4832757,
@@ -5684,8 +5684,8 @@
     "hash": "c6ae90d58a999d0ee1e9a64cc16d53e0"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\tests\\unit\\lib\\context\\active-context-stack.test.ts": {
-    "mtime": 1780854776.5623245,
-    "hash": "1f5b896f562a9a53a1632726db8d427c"
+    "mtime": 1781064764.169041,
+    "hash": "4a33063e27a03550676be1306fe66b68"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\tests\\unit\\lib\\context\\capsule-architect-service.test.ts": {
     "mtime": 1780854776.5643132,

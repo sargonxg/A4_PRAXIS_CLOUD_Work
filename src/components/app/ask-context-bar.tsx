@@ -21,7 +21,10 @@ import { useAuth } from '@/lib/auth/auth-context';
 import {
   DEFAULT_CONTEXT_STACK_ID,
   attachCapsuleRef,
+  buildCapsuleDockModel,
   defaultActiveContextStack,
+  type CapsuleDockItem,
+  type CapsuleDockWarning,
   type ActiveContextStackState,
 } from '@/lib/context/active-context-stack';
 import { useSituationStore } from '@/stores/situation-store';
@@ -74,6 +77,10 @@ export function AskContextBar({
   const userLabel = labelize(analystProfile?.identity.role ?? user?.role ?? (isPublic ? 'Guest' : 'Analyst'));
   const audience = analystProfile?.perspective.audience ? labelize(analystProfile.perspective.audience) : user?.orgName ?? 'Workspace';
   const activeCapsuleId = stack.capsuleRefs[0]?.capsuleId ?? stack.capsuleId ?? null;
+  const dockModel = useMemo(
+    () => buildCapsuleDockModel(stack, { hydrated, persisted }),
+    [hydrated, persisted, stack],
+  );
 
   async function attachCapsule(capsuleId: string) {
     const next = attachCapsuleRef(stack, {
@@ -203,6 +210,40 @@ export function AskContextBar({
         </div>
       </div>
 
+      <div
+        data-testid="capsule-dock"
+        aria-label="Capsule Dock"
+        className={cn(
+          'mt-2 flex flex-col gap-2 rounded-[var(--radius-md)] border px-2.5 py-2 md:flex-row md:items-center md:justify-between',
+          dark ? 'border-slate-800 bg-slate-900/70' : 'border-slate-200 bg-slate-50/80',
+        )}
+      >
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <div className="mr-1 min-w-0">
+            <p className={cn('text-[10px] font-bold uppercase tracking-[0.12em]', dark ? 'text-slate-500' : 'text-slate-500')}>{dockModel.title}</p>
+            <p className={cn('text-xs font-semibold', dark ? 'text-slate-200' : 'text-slate-700')}>
+              {dockModel.counts.total ? `${dockModel.counts.total} attached` : 'Direct Ask'} - {dockModel.persistenceLabel}
+            </p>
+          </div>
+          {dockModel.items.length ? (
+            dockModel.items.map((item) => <CapsuleDockChip key={`${item.role}-${item.capsuleId}`} dark={dark} item={item} />)
+          ) : (
+            <span
+              data-testid="capsule-dock-chip"
+              className={cn(
+                'inline-flex min-h-8 items-center rounded-[var(--radius-md)] border px-2.5 text-xs font-semibold',
+                dark ? 'border-slate-700 bg-slate-950 text-slate-300' : 'border-slate-200 bg-white text-slate-700',
+              )}
+            >
+              No saved context
+            </span>
+          )}
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+          {dockModel.warnings.map((warning) => <CapsuleDockWarningChip key={warning.id} dark={dark} warning={warning} />)}
+        </div>
+      </div>
+
       {!isPublic && pickerOpen ? (
         <div className={cn('mt-2 flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border p-2', dark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50')}>
           <span className={cn('text-xs font-semibold', dark ? 'text-slate-300' : 'text-slate-600')}>Attach context</span>
@@ -236,6 +277,51 @@ export function AskContextBar({
         />
       ) : null}
     </div>
+  );
+}
+
+function CapsuleDockChip({ dark, item }: { dark: boolean; item: CapsuleDockItem }) {
+  return (
+    <span
+      data-testid="capsule-dock-chip"
+      title={`${item.roleLabel}: ${item.label}. ${item.versionLabel}.`}
+      className={cn(
+        'inline-flex min-h-8 max-w-[16rem] items-center gap-2 rounded-[var(--radius-md)] border px-2.5 text-xs',
+        dark ? 'border-slate-700 bg-slate-950 text-slate-200' : 'border-slate-200 bg-white text-slate-700',
+      )}
+    >
+      <span className={cn('shrink-0 font-bold uppercase tracking-[0.1em]', item.primary ? 'text-[color:var(--color-gold-700)]' : dark ? 'text-slate-400' : 'text-slate-500')}>
+        {item.roleLabel}
+      </span>
+      <span className="min-w-0 truncate font-semibold">{item.label}</span>
+      <span className={cn('shrink-0 rounded-[var(--radius-sm)] px-1.5 py-0.5 font-mono text-[10px]', dark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600')}>
+        {item.versionLabel}
+      </span>
+    </span>
+  );
+}
+
+function CapsuleDockWarningChip({ dark, warning }: { dark: boolean; warning: CapsuleDockWarning }) {
+  const tone = warning.severity === 'blocking'
+    ? dark
+      ? 'border-red-400/30 bg-red-400/10 text-red-100'
+      : 'border-red-200 bg-red-50 text-red-800'
+    : warning.severity === 'review'
+      ? dark
+        ? 'border-amber-300/30 bg-amber-300/10 text-amber-100'
+        : 'border-amber-200 bg-amber-50 text-amber-800'
+      : dark
+        ? 'border-slate-700 bg-slate-950 text-slate-300'
+        : 'border-slate-200 bg-white text-slate-600';
+
+  return (
+    <span
+      data-testid="capsule-dock-warning"
+      title={warning.detail}
+      className={cn('inline-flex min-h-7 items-center rounded-[var(--radius-md)] border px-2 text-[11px] font-semibold', tone)}
+    >
+      {warning.label}
+    </span>
   );
 }
 
