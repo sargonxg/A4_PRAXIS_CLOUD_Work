@@ -3499,6 +3499,10 @@
     "mtime": 1780854775.9955275,
     "hash": "a793feb8841480c3e4f0ed8667c147d7"
   },
+  "C:\\Users\\giuli\\tacitus-products\\praxis\\src\\lib\\capsule-client\\index.ts": {
+    "mtime": 1781069601.5139208,
+    "hash": "b278c24e8fc37b4c8b01f7165427a3ee"
+  },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\src\\lib\\capsule-plus\\index.ts": {
     "mtime": 1780854775.996526,
     "hash": "4fea39bf9966462f35da77bfb8309ea6"
@@ -5635,6 +5639,10 @@
     "mtime": 1780854776.5517385,
     "hash": "45435397dbaab7ed6460c44df369e9e9"
   },
+  "C:\\Users\\giuli\\tacitus-products\\praxis\\tests\\unit\\lib\\capsule-client\\capsule-client.test.ts": {
+    "mtime": 1781069633.0182786,
+    "hash": "0092404a9f9c0c1fbbb33eed969a44e0"
+  },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\tests\\unit\\lib\\capsule-plus\\capsule-plus.test.ts": {
     "mtime": 1780854776.55274,
     "hash": "ebbc1320ab736d8c8bbf0a9853a2794a"
@@ -6608,32 +6616,32 @@
     "hash": "90f941447719b1625f6003f7c6dfe243"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\docs\\audits\\LATEST-capsule-backfill-readiness-audit.md": {
-    "mtime": 1780854774.9005446,
-    "hash": "4fbe32d70cf241594c3a51f3052db40a"
+    "mtime": 1781069154.7340431,
+    "hash": "b946df52ca5155e58775e8569e3ee743"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\docs\\audits\\LATEST-capsule-consolidation-audit.md": {
-    "mtime": 1780854774.9035437,
-    "hash": "7eeb110500cb1b7183f4863e2a1616d8"
+    "mtime": 1781069149.3451774,
+    "hash": "c042adc7824479a7c3b3cc133bd4d12f"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\docs\\audits\\LATEST-capsule-depth-audit.md": {
-    "mtime": 1780854774.905547,
-    "hash": "b92de0b66a401ef7f5af7146c31b7db7"
+    "mtime": 1781069148.144698,
+    "hash": "afa6e0d4a40ea176e8d4d60b2fa48d2b"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\docs\\audits\\LATEST-capsule-graphlite-projections-audit.md": {
-    "mtime": 1780854774.9065428,
-    "hash": "79d47d996ef2e48fad1e32cf441c6911"
+    "mtime": 1781069155.8310304,
+    "hash": "89354ecb4513db704ef7400f69bb7b54"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\docs\\audits\\LATEST-capsule-research-dossiers-audit.md": {
-    "mtime": 1780854774.9075563,
-    "hash": "d155648dbf1b5861571f4baa5aae4965"
+    "mtime": 1781069153.969256,
+    "hash": "456f27bb3c810d740c156c34e6afde99"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\docs\\audits\\LATEST-DEEP_PRESHIP_CHECKLIST.md": {
-    "mtime": 1780854774.8975437,
-    "hash": "0dc873017ded91da3f4d2b90fbd5827d"
+    "mtime": 1781069175.1265182,
+    "hash": "d15833751007fdf6b4d0cfac9323da2a"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\docs\\audits\\LATEST-tool-contracts.md": {
-    "mtime": 1780980630.0795848,
-    "hash": "be2780fc7d4b97d124a135fe742bc518"
+    "mtime": 1781069169.402632,
+    "hash": "5ad9d4cd107fa7200ce5492693c93bb7"
   },
   "C:\\Users\\giuli\\tacitus-products\\praxis\\docs\\audits\\README.md": {
     "mtime": 1780854774.9105651,
