@@ -89,11 +89,12 @@ async function installLocalOnboardingSkippedSession(page: Page, baseUrl: string)
   const cookies = await page.context().cookies(baseUrl);
   const session = cookies.find((cookie) => cookie.name === SESSION_COOKIE);
   if (!session?.value) return false;
-  const separator = session.value.lastIndexOf('.');
+  const signedSession = decodeCookieValue(session.value);
+  const separator = signedSession.lastIndexOf('.');
   if (separator < 1) return false;
   let payload: Record<string, unknown>;
   try {
-    payload = JSON.parse(session.value.slice(0, separator)) as Record<string, unknown>;
+    payload = JSON.parse(signedSession.slice(0, separator)) as Record<string, unknown>;
   } catch {
     return false;
   }
@@ -108,7 +109,7 @@ async function installLocalOnboardingSkippedSession(page: Page, baseUrl: string)
   const url = new URL(baseUrl);
   await page.context().addCookies([{
     name: SESSION_COOKIE,
-    value: signTestSessionCookie(value),
+    value: encodeURIComponent(signTestSessionCookie(value)),
     url: url.origin,
     path: '/',
     httpOnly: true,
@@ -117,6 +118,14 @@ async function installLocalOnboardingSkippedSession(page: Page, baseUrl: string)
     expires: Math.floor(Date.now() / 1000) + 60 * 60 * 24,
   }]);
   return true;
+}
+
+function decodeCookieValue(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 function signTestSessionCookie(value: string): string {
