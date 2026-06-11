@@ -23,7 +23,12 @@ const SITUATION_SUBCOLLECTIONS = [
   'risk-assessments', 'conflict-grammar',
 ];
 
-const ACCOUNT_PATCH_FIELDS = new Set(['displayName', 'role', 'orgId', 'orgName', 'marketingConsent']);
+const ACCOUNT_PATCH_FIELDS = new Set(['displayName', 'role', 'orgId', 'orgName', 'marketingConsent', 'photoURL']);
+
+// Avatars are stored as small inline data URLs (client downscales to ~96px
+// JPEG before save) so no Cloud Storage rules or public bucket is involved.
+const MAX_PHOTO_DATA_URL_LENGTH = 160_000;
+const PHOTO_DATA_URL_PATTERN = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
 
 function cleanAccountPatch(input: unknown): Record<string, string | boolean> | null {
   if (!input || typeof input !== 'object') return null;
@@ -32,6 +37,18 @@ function cleanAccountPatch(input: unknown): Record<string, string | boolean> | n
     if (!ACCOUNT_PATCH_FIELDS.has(key)) continue;
     if (key === 'marketingConsent') {
       if (typeof value === 'boolean') patch[key] = value;
+      continue;
+    }
+    if (key === 'photoURL') {
+      if (value === '') {
+        patch[key] = '';
+        continue;
+      }
+      if (typeof value === 'string'
+        && value.length <= MAX_PHOTO_DATA_URL_LENGTH
+        && PHOTO_DATA_URL_PATTERN.test(value)) {
+        patch[key] = value;
+      }
       continue;
     }
     if (typeof value === 'string') patch[key] = value.trim().slice(0, 160);

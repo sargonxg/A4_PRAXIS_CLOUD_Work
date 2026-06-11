@@ -50,7 +50,7 @@ export default function ReleaseNotesPage() {
           </nav>
         </header>
         <section className="py-14">
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--color-gold-700)]">
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-emerald-700">
             {CURRENT_PRAXIS_RELEASE.releaseLabel} · Build {CURRENT_PRAXIS_RELEASE.buildNumber}
           </p>
           <h1 className="mt-4 font-serif text-4xl font-semibold leading-tight tracking-normal text-[color:var(--color-diplomatic-blue)] sm:text-5xl">
@@ -77,7 +77,7 @@ export default function ReleaseNotesPage() {
               <ul className="mt-4 space-y-2 text-sm leading-6 text-[color:var(--color-ink)]/70">
                 {note.items.map((item) => (
                   <li key={item} className="flex gap-2">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--color-gold-500)]" />
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
                     <span>{item}</span>
                   </li>
                 ))}

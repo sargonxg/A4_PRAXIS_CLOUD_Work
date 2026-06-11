@@ -238,7 +238,7 @@ function LoginForm() {
                 Pick up the work where you left it.
               </h1>
               <LivingContextRail cells={previewRailCells} compact className="mx-auto mt-8 max-w-3xl" />
-              <div className="mx-auto mt-5 w-full max-w-3xl rounded-[10px] border border-[color:var(--color-rose-gold)]/25 bg-white/90 p-5 shadow-[0_20px_70px_rgba(15,23,42,0.10)]">
+              <div className="mx-auto mt-5 w-full max-w-3xl rounded-[10px] border border-emerald-500/25 bg-white/90 p-5 shadow-[0_20px_70px_rgba(15,23,42,0.10)]">
                 <span className="sr-only">PRAXIS run queued</span>
                 <p className="px-1 py-2 text-xl text-slate-400">Ask the question you need answered</p>
                 <div className="mt-10 flex items-center justify-between border-t border-slate-100 pt-4">
@@ -261,7 +261,7 @@ function LoginForm() {
                     className={cn(
                       'pb-3',
                       index === 0
-                        ? 'border-b-2 border-[color:var(--color-rose-gold)] text-[color:var(--color-rose-gold)]'
+                        ? 'border-b-2 border-emerald-500/45 text-emerald-700'
                         : '',
                     )}
                   >
@@ -291,7 +291,7 @@ function LoginForm() {
             <h1 className="font-serif text-3xl tracking-wide text-slate-950">
               PRAXIS
             </h1>
-            <p className="mt-1.5 text-xs font-semibold tracking-[0.24em] text-[color:var(--color-rose-gold)] uppercase">
+            <p className="mt-1.5 text-xs font-semibold tracking-[0.24em] text-emerald-700 uppercase">
               PRAXIS | Ask. Source. Review.
             </p>
             <p className="mt-2 text-sm tracking-widest text-slate-500 uppercase">
@@ -379,7 +379,7 @@ function LoginForm() {
                     'w-full rounded-lg border bg-white px-4 py-3 text-sm text-slate-950',
                     'placeholder:text-slate-400',
                     'transition-colors duration-200',
-                    'focus:border-[color:var(--color-rose-gold)] focus:ring-1 focus:ring-[color:var(--color-rose-gold)]/30 focus:outline-none',
+                    'focus:border-emerald-500/45 focus:ring-1 focus:ring-emerald-500/30 focus:outline-none',
                     'disabled:cursor-not-allowed disabled:opacity-50',
                     'border-slate-200 hover:border-slate-300'
                   )}
@@ -405,7 +405,7 @@ function LoginForm() {
                   'w-full rounded-lg border bg-white px-4 py-3 text-sm text-slate-950',
                   'placeholder:text-slate-400',
                   'transition-colors duration-200',
-                  'focus:border-[color:var(--color-rose-gold)] focus:ring-1 focus:ring-[color:var(--color-rose-gold)]/30 focus:outline-none',
+                  'focus:border-emerald-500/45 focus:ring-1 focus:ring-emerald-500/30 focus:outline-none',
                   'disabled:cursor-not-allowed disabled:opacity-50',
                   error ? 'border-crimson/50' : 'border-slate-200 hover:border-slate-300'
                 )}
@@ -425,7 +425,7 @@ function LoginForm() {
                     <button
                       type="button"
                       onClick={() => { setMode('reset'); setError(''); setSuccessMsg(''); }}
-                      className="text-xs text-slate-500 hover:text-[color:var(--color-rose-gold)] hover:underline"
+                      className="text-xs text-slate-500 hover:text-emerald-700 hover:underline"
                     >
                       Forgot password?
                     </button>
@@ -442,7 +442,7 @@ function LoginForm() {
                     'w-full rounded-lg border bg-white px-4 py-3 text-sm text-slate-950',
                     'placeholder:text-slate-400',
                     'transition-colors duration-200',
-                    'focus:border-[color:var(--color-rose-gold)] focus:ring-1 focus:ring-[color:var(--color-rose-gold)]/30 focus:outline-none',
+                    'focus:border-emerald-500/45 focus:ring-1 focus:ring-emerald-500/30 focus:outline-none',
                     'disabled:cursor-not-allowed disabled:opacity-50',
                     error ? 'border-crimson/50' : 'border-slate-200 hover:border-slate-300'
                   )}
@@ -492,7 +492,7 @@ function LoginForm() {
                 'group flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3',
                 'bg-slate-950 text-white font-semibold text-sm',
                 'transition-all duration-200',
-                'hover:bg-slate-800 hover:shadow-lg hover:shadow-slate-300/60',
+                'hover:bg-emerald-700 hover:shadow-lg hover:shadow-slate-300/60',
                 'active:scale-[0.98]',
                 'disabled:cursor-not-allowed disabled:opacity-60'
               )}
@@ -516,7 +516,7 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => { setMode('signup'); setError(''); setSuccessMsg(''); }}
-                    className="font-semibold text-[color:var(--color-rose-gold)] hover:underline"
+                    className="font-semibold text-emerald-700 hover:underline"
                   >
                     Create one
                   </button>
@@ -527,7 +527,7 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => { setMode('signin'); setError(''); setSuccessMsg(''); }}
-                    className="font-semibold text-[color:var(--color-rose-gold)] hover:underline"
+                    className="font-semibold text-emerald-700 hover:underline"
                   >
                     Sign in
                   </button>
@@ -538,7 +538,7 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => { setMode('signin'); setError(''); setSuccessMsg(''); }}
-                    className="font-semibold text-[color:var(--color-rose-gold)] hover:underline"
+                    className="font-semibold text-emerald-700 hover:underline"
                   >
                     Sign in
                   </button>
@@ -579,7 +579,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="civic-atelier-shell cartographic-grid praxis-checker-constellation flex min-h-screen items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[color:var(--color-rose-gold)]" />
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
         </div>
       }
     >

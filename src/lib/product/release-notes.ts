@@ -26,6 +26,22 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.06.10.02',
+    version: '6.5.0',
+    date: '2026-06-10',
+    title: 'Interactive capsule dock, Export to Editor, and one emerald identity everywhere',
+    summary: 'The capsule dock moves to the top of Ask PRAXIS with inline detach/make-primary controls, answers gain agent-activity chips and a one-click Export to Editor, capsule cards show a graph constellation, and every public page plus login and settings now share the emerald verified-context identity.',
+    category: 'product',
+    items: [
+      'The context dock sits above the Ask surface as one compact row: interactive capsule chips with detach and make-primary controls, a readiness dot, and a collapsible provenance detail row.',
+      'Assistant answers show what the runtime is doing: triage mode, the routed policy agent, and a live link into the durable run workspace when an agent run is queued.',
+      'Export to Editor turns any sourced answer into an editable document in the writing desk with citations, sourceability checks, and export formatting.',
+      'Capsule repository cards render a deterministic graph constellation with node/link counts; the full ontology, semantic layers, and tacit knowledge stay one click away in Inspect.',
+      'Pricing, Learn, Guide, Release notes, login, boardroom, and settings now share the PRAXIS emerald accent; settings adds a private profile photo upload.',
+      'Tracked dev logs and ad-hoc output artifacts are removed from the repository and ignored going forward.',
+    ],
+  },
+  {
     buildNumber: '2026.06.10.01',
     version: '6.5.0',
     date: '2026-06-10',

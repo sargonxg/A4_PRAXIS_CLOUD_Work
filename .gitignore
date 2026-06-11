@@ -91,3 +91,9 @@ graphify-out/cache/
 # GraphLite local CLI database/history state is generated; committed seeds live
 # in Capsule+ exports and docs.
 .graphlite/
+
+# Local dev/run logs and ad-hoc output (never commit)
+.next-dev*.log
+.next-start*.log
+artifacts/*.log
+output/

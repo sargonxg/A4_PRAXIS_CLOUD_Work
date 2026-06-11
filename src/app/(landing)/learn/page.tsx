@@ -197,12 +197,12 @@ export default function LearnPage() {
         <aside className="rounded-[24px] border border-slate-200 bg-white/85 p-5 shadow-[0_22px_70px_rgba(15,23,42,0.10)] sm:p-6">
           <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Work flow</span>
-            <PraxisThinking compact size={18} className="text-amber-600" />
+            <PraxisThinking compact size={18} className="text-emerald-600" />
           </div>
           <ol className="mt-5 grid gap-3">
             {flowSteps.map((step, index) => (
               <li key={step} className="grid grid-cols-[2.5rem_1fr] items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-200 bg-amber-50 font-mono text-xs font-semibold text-amber-800">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 font-mono text-xs font-semibold text-emerald-800">
                   {index + 1}
                 </span>
                 <span className="rounded-2xl border border-slate-200 bg-[color:var(--color-cream-50)] px-4 py-3 text-sm font-medium text-slate-800">
@@ -316,7 +316,7 @@ export default function LearnPage() {
       <section className="bg-slate-950 px-5 py-16 text-white sm:px-8">
         <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[0.8fr_1.2fr]">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-200">TACITUS ecosystem</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">TACITUS ecosystem</span>
             <h2 className="mt-3 font-serif text-3xl font-medium sm:text-4xl">
               PRAXIS is the workbench. The deeper systems organize what the workbench can use.
             </h2>

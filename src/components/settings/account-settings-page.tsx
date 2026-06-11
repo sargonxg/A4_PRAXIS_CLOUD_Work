@@ -55,6 +55,7 @@ type AccountRecord = {
   subscriptionProvider?: string;
   polarCustomerId?: string | null;
   marketingConsent?: boolean;
+  photoURL?: string;
   isDemo?: boolean;
 };
 
@@ -347,6 +348,22 @@ export function AccountSettingsPage() {
     setBusyAction(null);
   }
 
+  async function savePhoto(photoURL: string) {
+    setBusyAction('photo');
+    const result = await fetchJson<{ account: AccountRecord }>('/api/account', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ photoURL }),
+    });
+    if (result.ok) {
+      setAccount(result.data.account);
+      setStatus(photoURL ? 'Profile photo updated.' : 'Profile photo removed.');
+    } else {
+      setStatus(result.error);
+    }
+    setBusyAction(null);
+  }
+
   async function savePreferences() {
     setBusyAction('preferences');
     const result = await fetchJson<UserPreferences>('/api/preferences', {
@@ -595,6 +612,9 @@ export function AccountSettingsPage() {
               profile={profile}
               busy={busyAction === 'account'}
               onSave={saveAccount}
+              photoURL={account?.photoURL}
+              displayName={account?.displayName ?? accountDraft.displayName}
+              onSavePhoto={savePhoto}
             />
           ) : null}
 
@@ -658,16 +678,23 @@ function ProfileTab({
   profile,
   busy,
   onSave,
+  photoURL,
+  displayName,
+  onSavePhoto,
 }: {
   accountDraft: { displayName: string; role: string; orgName: string; orgId: string; marketingConsent: boolean };
   setAccountDraft: Dispatch<SetStateAction<{ displayName: string; role: string; orgName: string; orgId: string; marketingConsent: boolean }>>;
   profile: ResolvedProfile | null;
   busy: boolean;
   onSave: () => void;
+  photoURL?: string;
+  displayName?: string;
+  onSavePhoto: (photoURL: string) => Promise<void> | void;
 }) {
   const analyst = profile?.profile;
   return (
     <div className="space-y-5">
+      <AvatarField photoURL={photoURL} displayName={displayName} onSavePhoto={onSavePhoto} />
       <div className="grid gap-4 md:grid-cols-2">
         <TextField label="Display name" value={accountDraft.displayName} onChange={(value) => setAccountDraft((draft) => ({ ...draft, displayName: value }))} />
         <TextField label="Role" value={accountDraft.role} onChange={(value) => setAccountDraft((draft) => ({ ...draft, role: value }))} />
@@ -701,6 +728,93 @@ function ProfileTab({
       </InfoPanel>
     </div>
   );
+}
+
+function AvatarField({
+  photoURL,
+  displayName,
+  onSavePhoto,
+}: {
+  photoURL?: string;
+  displayName?: string;
+  onSavePhoto: (photoURL: string) => Promise<void> | void;
+}) {
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const initials = (displayName ?? 'P A').split(/\s+/).map((part) => part[0] ?? '').join('').slice(0, 2).toUpperCase() || 'PA';
+
+  async function handleFile(file: File) {
+    setWorking(true);
+    setError(null);
+    try {
+      const dataUrl = await downscaleImageToDataUrl(file, 96);
+      await onSavePhoto(dataUrl);
+    } catch {
+      setError('Could not process that image. Use a JPEG, PNG, or WebP under 10MB.');
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4" data-testid="profile-avatar-field">
+      {photoURL ? (
+        // eslint-disable-next-line @next/next/no-img-element -- small inline data URL avatar
+        <img src={photoURL} alt="Profile" className="h-16 w-16 rounded-full border border-emerald-500/30 object-cover" />
+      ) : (
+        <span className="flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-50 font-mono text-lg font-bold text-emerald-700">
+          {initials}
+        </span>
+      )}
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-950">Profile photo</p>
+        <p className="text-xs leading-5 text-slate-500">Shown in the workspace sidebar and shared work. Stored privately with your account.</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-navy-700 hover:bg-slate-50">
+            {working ? 'Uploading...' : photoURL ? 'Change photo' : 'Upload photo'}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              disabled={working}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void handleFile(file);
+                event.target.value = '';
+              }}
+            />
+          </label>
+          {photoURL ? (
+            <button
+              type="button"
+              disabled={working}
+              onClick={() => void onSavePhoto('')}
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-white hover:text-slate-800"
+            >
+              Remove
+            </button>
+          ) : null}
+        </div>
+        {error ? <p className="mt-1 text-xs text-red-700">{error}</p> : null}
+      </div>
+    </div>
+  );
+}
+
+async function downscaleImageToDataUrl(file: File, size: number): Promise<string> {
+  if (file.size > 10 * 1024 * 1024) throw new Error('too large');
+  const bitmap = await createImageBitmap(file);
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('no canvas context');
+  const minSide = Math.min(bitmap.width, bitmap.height);
+  const sx = (bitmap.width - minSide) / 2;
+  const sy = (bitmap.height - minSide) / 2;
+  context.drawImage(bitmap, sx, sy, minSide, minSide, 0, 0, size, size);
+  bitmap.close();
+  return canvas.toDataURL('image/jpeg', 0.85);
 }
 
 function BillingTab({

@@ -2,6 +2,36 @@
 
 ## [Unreleased]
 
+Build 2026.06.10.02 (PRAXIS v6.5.0).
+
+- feat(home): move the capsule dock to the top of Ask PRAXIS and make it
+  interactive. The dock is now one compact row with capsule chips that support
+  inline detach and make-primary, a readiness dot, a collapsible provenance
+  detail row (User/Situation/Sources/Tools/Output/Readiness), and import from
+  the attach popover. A soft emerald/cyan atmosphere is added to the shared
+  shell background.
+
+- feat(ask): surface agent activity and add Export to Editor. Assistant
+  answers now show triage mode, the routed policy agent, and a live
+  `/agents/{runId}` link when a durable run is queued. A new Export to Editor
+  action saves the answer's document pack through `/api/memos/from-ask-pack`
+  and opens the writing desk with citations and sourceability tooling.
+
+- feat(capsules): add a deterministic graph mini-constellation to repository
+  cards with node/link counts, pointing to the full graph, ontology, and
+  tacit-knowledge layers in Inspect.
+
+- feat(settings): add private profile photo upload (client-side downscale to
+  an inline data URL; no storage-rule changes) with change/remove controls.
+
+- chore(design): one emerald identity across public and auth surfaces —
+  pricing, learn, guide, release notes, public shell logo, login, and
+  boardroom accents move from gold/amber/rose-gold to emerald.
+
+- chore(repo): remove tracked dev logs (`.next-dev*.log`, `.next-start*.log`),
+  ad-hoc `artifacts/*.log`, and the `output/` directory from version control;
+  ignore them going forward.
+
 Build 2026.06.10.01 (PRAXIS v6.5.0).
 
 - feat(capsules): add DIALECTICA verified-context package import.

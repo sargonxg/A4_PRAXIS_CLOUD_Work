@@ -6,7 +6,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
+  Bot,
   ExternalLink,
+  FileOutput,
   Loader2,
   Plus,
   RotateCcw,
@@ -387,6 +389,27 @@ export function PraxisChat({
     if (typeof window !== 'undefined') window.localStorage.removeItem(localStorageKey);
   };
 
+  const exportMessageToEditor = useCallback(async (message: ChatMessage): Promise<string | null> => {
+    const pack = message.answerEnvelope?.documentPackCandidate;
+    if (!pack) return null;
+    const response = await fetch('/api/memos/from-ask-pack', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        pack,
+        situationId: activeSituation?.id ?? activeCapsuleId ?? 'ask-praxis',
+        askTurnId: message.id,
+        outputTarget: pack.provenance?.outputTarget && pack.provenance.outputTarget !== 'ask-response'
+          ? pack.provenance.outputTarget
+          : 'policy-memo',
+      }),
+    });
+    if (!response.ok) throw new Error(`Export failed (${response.status})`);
+    const payload = await response.json() as { href?: string; memoId?: string };
+    return payload.href ?? (payload.memoId ? `/app/write?memoId=${encodeURIComponent(payload.memoId)}` : null);
+  }, [activeCapsuleId, activeSituation?.id]);
+
   return (
     <section
       className={cn(
@@ -415,6 +438,8 @@ export function PraxisChat({
           </div>
         ) : null}
 
+        {contextBar ? <div className="mb-3">{contextBar}</div> : null}
+
         <div className={cn(
           'min-h-0 flex-1 overflow-y-auto',
           variant === 'floating' ? 'px-3 py-3' : 'rounded-[var(--radius-lg)] border border-[var(--color-app-border)] bg-white/80 p-3 shadow-[var(--shadow-card)]',
@@ -441,6 +466,7 @@ export function PraxisChat({
                   message={message}
                   activeSituation={activeSituation}
                   isStreaming={isStreaming && message.id === messages[messages.length - 1]?.id}
+                  onExportToEditor={isPublic ? undefined : exportMessageToEditor}
                   variant={variant}
                 />
               ))}
@@ -469,8 +495,6 @@ export function PraxisChat({
             ))}
           </div>
         ) : null}
-
-        {contextBar ? <div className="mt-3">{contextBar}</div> : null}
 
         <form onSubmit={submit} className={cn(
           'mt-3 rounded-[var(--radius-lg)] border bg-white p-2 shadow-[var(--shadow-card)]',
@@ -561,11 +585,13 @@ function ChatBubble({
   activeSituation,
   isStreaming,
   message,
+  onExportToEditor,
   variant,
 }: {
   activeSituation?: Situation | null;
   isStreaming: boolean;
   message: ChatMessage;
+  onExportToEditor?: (message: ChatMessage) => Promise<string | null>;
   variant: 'home' | 'floating';
 }) {
   const isAssistant = message.role === 'assistant';
@@ -580,6 +606,7 @@ function ChatBubble({
     )}>
       {isAssistant ? (
         <>
+          <AnswerAgentActivity envelope={message.answerEnvelope} isStreaming={isStreaming} variant={variant} />
           <div className="prose prose-sm max-w-none prose-p:my-2 prose-ul:my-2 prose-li:my-1">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {message.content || ' '}
@@ -593,7 +620,12 @@ function ChatBubble({
             <MutationConfirmCard summary={message.proposal.summary} patch={message.proposal.patch} />
           ) : null}
           {!isStreaming && message.content.trim() ? (
-            <ResponseActions message={message} situation={activeSituation} question={message.question} />
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <ResponseActions message={message} situation={activeSituation} question={message.question} />
+              {onExportToEditor && message.answerEnvelope?.documentPackCandidate ? (
+                <ExportToEditorButton message={message} onExportToEditor={onExportToEditor} variant={variant} />
+              ) : null}
+            </div>
           ) : null}
         </>
       ) : (
@@ -601,6 +633,132 @@ function ChatBubble({
       )}
     </article>
   );
+}
+
+/**
+ * PRAXIS augmented-generation activity strip: shows the triage decision, the
+ * routed policy agent, and the durable run status so the user can see what is
+ * happening and which agent is doing the work.
+ */
+function AnswerAgentActivity({
+  envelope,
+  isStreaming,
+  variant,
+}: {
+  envelope?: AskAnswerEnvelope;
+  isStreaming: boolean;
+  variant: 'home' | 'floating';
+}) {
+  const receipt = envelope?.orchestrationReceipt;
+  if (!receipt) {
+    if (!isStreaming) return null;
+    return (
+      <p className="mb-2 inline-flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400" data-testid="praxis-chat-agent-activity">
+        <Loader2 className="h-3 w-3 animate-spin text-emerald-600" />
+        Triaging question and reading attached context
+      </p>
+    );
+  }
+  const dark = variant === 'floating';
+  const queuedRun = receipt.supervisor?.queuedRun ?? null;
+  const agentLabel = labelizeAgentId(receipt.supervisor?.policyAgentId ?? receipt.triage?.policyAgentId ?? null);
+  const directAnswer = receipt.supervisor?.action !== 'queue_agent_run';
+  return (
+    <div className="mb-2 flex flex-wrap items-center gap-1.5" data-testid="praxis-chat-agent-activity">
+      <span className={cn(
+        'inline-flex items-center gap-1.5 rounded-[var(--radius-full)] border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em]',
+        dark ? 'border-slate-700 text-slate-300' : 'border-emerald-500/30 bg-emerald-50/60 text-emerald-800',
+      )}>
+        <Bot className="h-3 w-3" />
+        {directAnswer ? 'Direct answer with receipts' : 'Agent run queued'}
+      </span>
+      {agentLabel ? (
+        <span className={cn(
+          'inline-flex items-center rounded-[var(--radius-full)] border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em]',
+          dark ? 'border-slate-700 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600',
+        )}>
+          {agentLabel}
+        </span>
+      ) : null}
+      {queuedRun?.runId ? (
+        <Link
+          href={`/agents/${encodeURIComponent(queuedRun.runId)}`}
+          className={cn(
+            'inline-flex items-center gap-1 rounded-[var(--radius-full)] border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] transition',
+            dark
+              ? 'border-cyan-400/40 text-cyan-200 hover:border-cyan-300'
+              : 'border-cyan-500/40 bg-cyan-50 text-cyan-800 hover:border-cyan-500',
+          )}
+          title="Open the live run workspace: timeline, tool calls, approvals"
+        >
+          {queuedRun.status === 'dispatch_enqueued' || queuedRun.status === 'queued' ? 'Run in progress' : `Run ${queuedRun.status.replace(/_/g, ' ')}`}
+          <ExternalLink className="h-3 w-3" />
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+function ExportToEditorButton({
+  message,
+  onExportToEditor,
+  variant,
+}: {
+  message: ChatMessage;
+  onExportToEditor: (message: ChatMessage) => Promise<string | null>;
+  variant: 'home' | 'floating';
+}) {
+  const [phase, setPhase] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
+  const [href, setHref] = useState<string | null>(null);
+  const dark = variant === 'floating';
+
+  async function run() {
+    setPhase('saving');
+    try {
+      const result = await onExportToEditor(message);
+      setHref(result);
+      setPhase(result ? 'done' : 'error');
+    } catch {
+      setPhase('error');
+    }
+  }
+
+  if (phase === 'done' && href) {
+    return (
+      <Link
+        href={href}
+        data-testid="praxis-chat-open-editor"
+        className="inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] bg-emerald-700 px-2.5 text-xs font-semibold text-white hover:bg-emerald-600"
+      >
+        <FileOutput className="h-3.5 w-3.5" />
+        Open in Editor
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      data-testid="praxis-chat-export-editor"
+      onClick={() => void run()}
+      disabled={phase === 'saving'}
+      title="Save this answer as an editable document with citations, sourceability checks, and export formatting"
+      className={cn(
+        'inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] border px-2.5 text-xs font-semibold transition disabled:opacity-60',
+        dark
+          ? 'border-slate-700 bg-slate-900 text-slate-200 hover:border-emerald-400/50'
+          : 'border-emerald-500/40 bg-white text-emerald-800 hover:bg-emerald-50',
+      )}
+    >
+      {phase === 'saving' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileOutput className="h-3.5 w-3.5" />}
+      {phase === 'error' ? 'Retry export' : 'Export to Editor'}
+    </button>
+  );
+}
+
+function labelizeAgentId(value: string | null): string | null {
+  if (!value) return null;
+  return value.replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function SourceCards({ sourceCards }: { sourceCards: SourcePreviewCard[] }) {
@@ -636,7 +794,7 @@ function VerdictStrip({ verdicts }: { verdicts: SourceabilityClaimVerdict[] }) {
           key={verdict.claimId}
           className={cn(
             'rounded-[var(--radius-full)] border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em]',
-            verdict.verdict === 'supported' ? 'border-[color:var(--color-gold-500)]/35 bg-[color:var(--color-gold-500)]/10 text-[color:var(--color-gold-800)]' : '',
+            verdict.verdict === 'supported' ? 'border-emerald-500/35 bg-emerald-500/10 text-emerald-800' : '',
             verdict.verdict === 'weak' ? 'border-amber-200 bg-amber-50 text-amber-800' : '',
             verdict.verdict === 'contradicted' ? 'border-red-200 bg-red-50 text-red-800' : '',
             verdict.verdict === 'unsupported' ? 'border-slate-200 bg-slate-100 text-slate-600' : '',

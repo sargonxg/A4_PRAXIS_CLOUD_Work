@@ -65,6 +65,7 @@ import {
 import { AccountProfileButton } from '@/components/app/account-profile-button';
 import { CapsuleWorkbenchPanel } from '@/components/capsules/CapsuleWorkbenchPanel';
 import { CapsuleImportButton } from '@/components/capsules/CapsuleImportButton';
+import { CapsuleMiniGraph } from '@/components/capsules/CapsuleMiniGraph';
 import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
 import { AskQueuedAgentRunPanel, queuedAgentRunFromEnvelope } from '@/components/ask/AskQueuedAgentRunPanel';
@@ -8593,6 +8594,7 @@ function CapsuleCard({
   const bestNextAction = richProfile?.nextIdeas[0] ?? capsule.health?.warnings?.[0] ?? 'Inspect source gaps before relying on this capsule.';
   const usefulness = buildCapsuleUsefulnessRating(capsule, mutable);
   const researchArtifacts = starterResearchArtifacts(capsule);
+  const cardGraphSeedCounts = capsuleGraphSeedCounts(capsule);
   const freshnessStatus = capsuleFreshnessStatus(capsule);
   const catalogUpdated = (
     meta.starterDefinition?.researchDossier.catalogVersion === CAPSULE_STARTER_CATALOG_VERSION
@@ -8674,6 +8676,13 @@ function CapsuleCard({
             Research dossier: {researchArtifacts.sourceSpine.length} sources / {researchArtifacts.knownEvidenceGaps.length} evidence gaps
           </span>
         ) : null}
+        <CapsuleMiniGraph
+          className="mt-2"
+          seed={capsule.capsuleId}
+          color={meta.color}
+          nodeCount={cardGraphSeedCounts.graphNodeCount}
+          edgeCount={cardGraphSeedCounts.graphEdgeCount}
+        />
         <span className="mt-3 block line-clamp-2 text-sm leading-6 text-slate-600">{purposeLine}</span>
         <span className="mt-2 block line-clamp-1 rounded-md bg-white px-2 py-1.5 text-[11px] font-semibold text-slate-700">
           Best next action: {bestNextAction}

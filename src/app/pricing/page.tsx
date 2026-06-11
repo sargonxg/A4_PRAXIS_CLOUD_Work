@@ -41,7 +41,7 @@ export default function PricingPage() {
   return (
     <PublicPageShell>
         <section className="py-16">
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--color-gold-700)]">Pricing</p>
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-emerald-700">Pricing</p>
           <h1 className="mt-4 max-w-3xl font-serif text-4xl font-semibold leading-tight tracking-normal text-[color:var(--color-diplomatic-blue)] sm:text-5xl">
             Plans for people who need sourced policy work.
           </h1>
@@ -57,11 +57,11 @@ export default function PricingPage() {
           {PRICING_TIERS.map((tier) => (
             <article
               key={tier.id}
-              className={`rounded-2xl border bg-white/75 p-5 shadow-sm ${tier.highlighted ? 'border-[color:var(--color-gold-500)]' : 'border-[color:var(--color-rose-gold)]/25'}`}
+              className={`rounded-2xl border bg-white/75 p-5 shadow-sm ${tier.highlighted ? 'border-emerald-500' : 'border-[color:var(--color-rose-gold)]/25'}`}
             >
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-serif text-2xl font-semibold text-[color:var(--color-diplomatic-blue)]">{tier.name}</h2>
-                {tier.highlighted ? <span className="rounded-full bg-[color:var(--color-gold-500)]/15 px-2 py-1 text-xs font-semibold text-[color:var(--color-gold-700)]">Most useful</span> : null}
+                {tier.highlighted ? <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-xs font-semibold text-emerald-700">Most useful</span> : null}
               </div>
               <p className="mt-2 text-sm text-[color:var(--color-ink)]/60">{tier.audience}</p>
               <p className="mt-6 font-serif text-3xl font-semibold">
@@ -72,7 +72,7 @@ export default function PricingPage() {
               <ul className="mt-6 space-y-3 text-sm leading-6 text-[color:var(--color-ink)]/75">
                 {tier.features.map((feature) => (
                   <li key={feature} className="flex gap-2">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--color-gold-500)]" />
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
                     <span>{feature}</span>
                   </li>
                 ))}

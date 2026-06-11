@@ -100,7 +100,7 @@ export default function GuidePage() {
 
       <section className="grid gap-4 pb-14 lg:grid-cols-[0.8fr_1.2fr]">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--color-gold-700)]">How work moves</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">How work moves</p>
           <h2 className="mt-3 font-serif text-3xl font-semibold text-[color:var(--color-diplomatic-blue)]">
             From prompt to policy product
           </h2>
@@ -111,7 +111,7 @@ export default function GuidePage() {
         <ol className="grid gap-3">
           {steps.map((step, index) => (
             <li key={step.title} className="grid gap-3 rounded-xl border border-[color:var(--color-rose-gold)]/25 bg-white/75 p-4 sm:grid-cols-[2.75rem_1fr]">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--color-gold-500)]/15 font-mono text-sm font-semibold text-[color:var(--color-gold-700)]">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15 font-mono text-sm font-semibold text-emerald-700">
                 {index + 1}
               </span>
               <span>

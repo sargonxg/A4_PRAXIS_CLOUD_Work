@@ -1,5 +1,31 @@
 # PRAXIS — STATUS
 
+## 2026-06-10 — Interactive Dock, Export to Editor, Emerald Coherence (build 2026.06.10.02)
+
+Current product checkpoint:
+
+- The capsule dock now sits at the top of the Ask surface as one compact,
+  interactive row: capsule chips with inline detach/make-primary, a readiness
+  dot, warnings, and a collapsible provenance detail row. Attach popover also
+  offers DIALECTICA/Capsule+ import.
+- Assistant answers show PRAXIS augmented-generation activity: triage mode
+  (direct answer vs queued agent run), the routed policy agent, and a live
+  link to `/agents/{runId}` for timeline, tool calls, and approvals.
+- Export to Editor saves an answer's document pack via
+  `/api/memos/from-ask-pack` and opens `/app/write?memoId=...` (proxied into
+  the memo desk) for word-processor-style editing with citations and
+  sourceability gates.
+- Capsule repository cards render a deterministic mini graph constellation
+  (seeded by capsule id, domain-colored, node/link counts); full graph,
+  ontology binding, semantic layers, and tacit knowledge remain in Inspect.
+- One emerald identity across pricing, learn, guide, release notes, public
+  shell logo, login (rose-gold fully removed), boardroom accents, and the
+  shared shell background atmosphere.
+- Settings adds a private profile photo (client-side 96px downscale to an
+  inline data URL stored on `users/{uid}.photoURL`; no storage-rules change).
+- Repo hygiene: tracked dev logs, `artifacts/*.log`, and `output/` removed
+  from version control and ignored.
+
 ## 2026-06-10 — Verified-Context Home, DIALECTICA Import, Capsule Card Simplification (v6.5.0)
 
 Current product checkpoint:

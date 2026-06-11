@@ -52,8 +52,8 @@ export function PublicShell({
         >
           <nav className="flex items-center justify-between gap-3 px-4 py-2.5 sm:px-5">
             <Link href="/" className="group flex shrink-0 items-center gap-2 sm:gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-lg)] border border-[color:var(--color-gold-500)]/35 bg-[color:var(--color-gold-500)]/12 transition-transform duration-300 group-hover:rotate-[8deg]">
-                <PraxisMark size={20} className="text-[color:var(--color-gold-700)]" title="PRAXIS" />
+              <span className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-lg)] border border-emerald-500/35 bg-emerald-500/10 transition-transform duration-300 group-hover:rotate-[8deg]">
+                <PraxisMark size={20} className="text-emerald-700" title="PRAXIS" />
               </span>
               <span className="font-serif text-[20px] font-semibold tracking-normal text-[color:var(--color-diplomatic-blue)] sm:text-[22px]">
                 PRAXIS
@@ -147,8 +147,8 @@ export function PublicShell({
         <footer className="relative z-10 mt-16 px-3 pb-6 sm:px-5">
           <div className="praxis-public-footer mx-auto flex max-w-[1180px] flex-col items-center justify-between gap-3 px-6 py-5 sm:flex-row sm:gap-4">
             <Link href="/" className="group flex items-center gap-2.5">
-              <span className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-md)] border border-[color:var(--color-gold-500)]/35 bg-[color:var(--color-gold-500)]/12 transition-transform duration-300 group-hover:rotate-[8deg]">
-                <PraxisMark size={15} className="text-[color:var(--color-gold-700)]" />
+              <span className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-md)] border border-emerald-500/35 bg-emerald-500/10 transition-transform duration-300 group-hover:rotate-[8deg]">
+                <PraxisMark size={15} className="text-emerald-700" />
               </span>
               <span className="font-serif text-base font-semibold tracking-wide text-[color:var(--color-diplomatic-blue)]">
                 PRAXIS

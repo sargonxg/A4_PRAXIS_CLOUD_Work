@@ -336,7 +336,7 @@ export function BoardroomWorkspace() {
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="praxis-text-caption flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-[color:var(--color-gold-700)]" />
+              <Sparkles className="h-4 w-4 text-emerald-700" />
               Boardroom
             </p>
             <h1 className="mt-3 praxis-text-title max-w-4xl">
@@ -401,7 +401,7 @@ export function BoardroomWorkspace() {
                   value={question}
                   onChange={(event) => setQuestion(event.target.value)}
                   rows={4}
-                  className="mt-2 w-full resize-none rounded-lg border border-[color:var(--color-clay)]/25 bg-[color:var(--color-archive-paper-strong)] px-4 py-3 text-base leading-7 text-slate-950 outline-none placeholder:text-slate-400 focus:border-[color:var(--color-oxide)] focus:bg-white"
+                  className="mt-2 w-full resize-none rounded-lg border border-[color:var(--color-clay)]/25 bg-[color:var(--color-archive-paper-strong)] px-4 py-3 text-base leading-7 text-slate-950 outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white"
                   placeholder="Decide what to do next, what evidence is strong enough, or where the team disagrees."
                 />
                 <label className="mt-4 block text-sm font-semibold text-slate-900" htmlFor="boardroom-context">
@@ -413,7 +413,7 @@ export function BoardroomWorkspace() {
                   value={contextNotes}
                   onChange={(event) => setContextNotes(event.target.value)}
                   rows={3}
-                  className="mt-2 w-full resize-none rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-800 outline-none placeholder:text-slate-400 focus:border-[color:var(--color-oxide)]"
+                  className="mt-2 w-full resize-none rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-800 outline-none placeholder:text-slate-400 focus:border-emerald-500"
                   placeholder="Add the relevant facts, stakeholders, constraints, sources, deadline, or desired board posture."
                 />
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
