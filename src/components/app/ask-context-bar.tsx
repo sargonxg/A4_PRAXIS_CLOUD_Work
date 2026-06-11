@@ -12,26 +12,28 @@ import {
   Loader2,
   LogIn,
   MoreHorizontal,
+  Plus,
   RotateCcw,
-  Star,
   Target,
   UserRound,
   Wand2,
   Wrench,
   X,
 } from 'lucide-react';
-import { EmptyState } from '@/components/ui/empty-state';
 import { useAuth } from '@/lib/auth/auth-context';
 import {
   DEFAULT_CONTEXT_STACK_ID,
-  attachCapsuleRef,
+  assignCapsuleToDockSlot,
   buildCapsuleDockModel,
+  buildCapsuleDockSlots,
+  clearCapsuleDockSlot,
   defaultActiveContextStack,
   detachCapsuleRef,
-  swapCapsuleRef,
-  type CapsuleDockItem,
-  type CapsuleDockWarning,
   type ActiveContextStackState,
+  type CapsuleDockItem,
+  type CapsuleDockSlot,
+  type CapsuleDockSlotKind,
+  type CapsuleDockWarning,
 } from '@/lib/context/active-context-stack';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
@@ -57,6 +59,13 @@ const ApprovalInboxButton = dynamic(
   { loading: () => null, ssr: false },
 );
 
+const SLOT_ICONS: Record<CapsuleDockSlotKind, typeof UserRound> = {
+  user: UserRound,
+  situation: Target,
+  tool: Wrench,
+  output: FileText,
+};
+
 export function AskContextBar({
   activeSituation,
   hydrated = true,
@@ -79,7 +88,7 @@ export function AskContextBar({
   const { user, analystProfile } = useAuth();
   const storeSituation = useSituationStore((state) => state.activeSituation);
   const situations = useSituationStore((state) => state.situations);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerSlot, setPickerSlot] = useState<CapsuleDockSlotKind | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -93,7 +102,6 @@ export function AskContextBar({
     ?? null;
   const capsuleCount = stack.capsuleRefs.length || (stack.capsuleId ? 1 : 0);
   const sourceCount = stack.sourceIds.length + stack.documentIds.length;
-  const toolCount = stack.contextBlocks.thinkingDevices.length;
   const readiness = useMemo(() => buildReadiness({
     capsuleCount,
     hydrated,
@@ -102,13 +110,12 @@ export function AskContextBar({
     selectedSituation,
     sourceCount,
   }), [capsuleCount, hydrated, persisted, selectedSituation, sourceCount, stack.outputGoal]);
-  const userLabel = labelize(analystProfile?.identity.role ?? user?.role ?? (isPublic ? 'Guest' : 'Analyst'));
-  const audience = analystProfile?.perspective.audience ? labelize(analystProfile.perspective.audience) : user?.orgName ?? 'Workspace';
   const activeCapsuleId = stack.capsuleRefs[0]?.capsuleId ?? stack.capsuleId ?? null;
   const dockModel = useMemo(
     () => buildCapsuleDockModel(stack, { hydrated, persisted }),
     [hydrated, persisted, stack],
   );
+  const dockSlots = useMemo(() => buildCapsuleDockSlots(stack), [stack]);
 
   async function persistStack(next: ActiveContextStackState) {
     setSaving(true);
@@ -123,31 +130,17 @@ export function AskContextBar({
     }
   }
 
-  async function attachCapsule(capsuleId: string) {
-    const next = attachCapsuleRef(stack, {
-      capsuleId,
-      role: capsuleCount ? 'reference' : 'primary',
-      primary: capsuleCount === 0,
-    });
-    await persistStack(next);
-    setPickerOpen(false);
+  async function attachCapsuleToSlot(kind: CapsuleDockSlotKind, capsuleId: string) {
+    await persistStack(assignCapsuleToDockSlot(stack, kind, { capsuleId }));
+    setPickerSlot(null);
+  }
+
+  async function clearSlot(kind: CapsuleDockSlotKind) {
+    await persistStack(clearCapsuleDockSlot(stack, kind));
   }
 
   async function detachCapsule(capsuleId: string) {
     await persistStack(detachCapsuleRef(stack, capsuleId));
-  }
-
-  async function makePrimaryCapsule(capsuleId: string) {
-    const currentPrimary = stack.capsuleRefs.find((ref) => ref.primary)?.capsuleId ?? stack.capsuleRefs[0]?.capsuleId;
-    if (!currentPrimary || currentPrimary === capsuleId) return;
-    const target = stack.capsuleRefs.find((ref) => ref.capsuleId === capsuleId);
-    await persistStack(swapCapsuleRef(stack, currentPrimary, {
-      capsuleId,
-      label: target?.label,
-      version: target?.version,
-      role: 'primary',
-      primary: true,
-    }));
   }
 
   async function clearContext() {
@@ -172,15 +165,15 @@ export function AskContextBar({
     }
   }
 
-  function togglePicker() {
-    setPickerOpen((value) => !value);
+  function toggleSlotPicker(kind: CapsuleDockSlotKind) {
+    setPickerSlot((value) => (value === kind ? null : kind));
     setBuilderOpen(false);
     setActionsOpen(false);
   }
 
   function toggleBuilder() {
     setBuilderOpen((value) => !value);
-    setPickerOpen(false);
+    setPickerSlot(null);
     setActionsOpen(false);
   }
 
@@ -199,66 +192,29 @@ export function AskContextBar({
           : 'border-[var(--color-app-border)] bg-white/90 text-slate-950',
       )}
     >
-      {/* Capsule Dock — the primary, always-visible context surface */}
+      {/* Capsule Dock — four typed slots: User / Situation / Tool / Output */}
       <div
         data-testid="capsule-dock"
         aria-label="Capsule Dock"
         className="flex flex-col gap-1.5"
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <span
-              title={`${dockModel.contextPackageLabel} — Stack: ${dockModel.stackLabel} - ${dockModel.stackPolicyLabel}`}
-              data-testid="capsule-dock-stack"
-              className={cn(
-                'inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-md)] px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em]',
-                dark ? 'text-slate-400' : 'text-slate-500',
-              )}
-            >
-              <span className={cn('h-1.5 w-1.5 rounded-full', readinessDotClassName(readiness.tone))} aria-hidden />
-              {dockModel.title}
-              <span className="sr-only">Capsule Dock. Stack: {dockModel.stackLabel} - {dockModel.stackPolicyLabel}. {dockModel.persistenceLabel}</span>
-            </span>
-            {dockModel.items.length ? (
-              dockModel.items.map((item) => (
-                <CapsuleDockChip
-                  key={`${item.role}-${item.capsuleId}`}
-                  dark={dark}
-                  item={item}
-                  saving={saving}
-                  onDetach={isPublic ? undefined : () => void detachCapsule(item.capsuleId)}
-                  onMakePrimary={isPublic || item.primary ? undefined : () => void makePrimaryCapsule(item.capsuleId)}
-                />
-              ))
-            ) : (
-              <span
-                data-testid="capsule-dock-chip"
-                className={cn(
-                  'inline-flex min-h-7 items-center rounded-[var(--radius-full)] border border-dashed px-2.5 text-xs font-semibold',
-                  dark ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-500',
-                )}
-              >
-                No saved context — direct ask
-              </span>
+          <span
+            title={`${dockModel.contextPackageLabel} — Stack: ${dockModel.stackLabel} - ${dockModel.stackPolicyLabel}`}
+            data-testid="capsule-dock-stack"
+            className={cn(
+              'inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-md)] px-1 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em]',
+              dark ? 'text-slate-400' : 'text-slate-500',
             )}
-            {dockModel.warnings.map((warning) => <CapsuleDockWarningChip key={warning.id} dark={dark} warning={warning} />)}
-          </div>
+          >
+            <span className={cn('h-1.5 w-1.5 rounded-full', readinessDotClassName(readiness.tone))} aria-hidden />
+            {dockModel.title}
+            <span className="sr-only">Capsule Dock. Stack: {dockModel.stackLabel} - {dockModel.stackPolicyLabel}. {dockModel.persistenceLabel}</span>
+          </span>
 
           <div className="hidden sm:flex shrink-0 flex-wrap items-center gap-1.5">
             {isPublic ? (
               <>
-                <button
-                  type="button"
-                  disabled
-                  title="Sign in to attach saved context"
-                  className={cn(
-                    'inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] border px-2.5 text-xs font-semibold opacity-60',
-                    dark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600',
-                  )}
-                >
-                  <Boxes className="h-3.5 w-3.5" />
-                  Attach context
-                </button>
                 <Link
                   href="/login?mode=signup&redirect=%2Fapp"
                   data-testid="public-context-sign-in-affordance"
@@ -275,7 +231,7 @@ export function AskContextBar({
                   onClick={toggleDetails}
                   aria-expanded={detailsOpen}
                   className={actionClassName(dark, detailsOpen)}
-                  title="Show context details: user, situation, sources, tools, output, readiness"
+                  title="Show context details: sources, saved context, readiness"
                 >
                   <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', detailsOpen && 'rotate-180')} />
                   <span className="sr-only">Context details</span>
@@ -283,15 +239,6 @@ export function AskContextBar({
               </>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={togglePicker}
-                  className={actionClassName(dark, pickerOpen)}
-                  title="Attach context from your capsule library"
-                >
-                  <Boxes className="h-3.5 w-3.5" />
-                  Attach context
-                </button>
                 <button
                   type="button"
                   onClick={toggleBuilder}
@@ -321,7 +268,7 @@ export function AskContextBar({
                   onClick={toggleDetails}
                   aria-expanded={detailsOpen}
                   className={actionClassName(dark, detailsOpen)}
-                  title="Show context details: user, situation, sources, tools, output, readiness"
+                  title="Show context details: sources, saved context, readiness"
                 >
                   <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', detailsOpen && 'rotate-180')} />
                   <span className="sr-only">Context details</span>
@@ -351,44 +298,18 @@ export function AskContextBar({
                 )}
               >
                 {isPublic ? (
-                  <>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      disabled
-                      title="Sign in to attach saved context"
-                      className={cn(actionClassName(dark), 'w-full justify-start opacity-60')}
-                    >
-                      <Boxes className="h-3.5 w-3.5" />
-                      Attach context
-                    </button>
-                    <Link
-                      href="/login?mode=signup&redirect=%2Fapp"
-                      role="menuitem"
-                      data-testid="public-context-sign-in-affordance"
-                      onClick={() => setActionsOpen(false)}
-                      className={cn(actionClassName(dark), 'w-full justify-start', dark ? 'bg-white text-slate-950' : 'bg-emerald-700 text-white hover:bg-emerald-600')}
-                    >
-                      <LogIn className="h-3.5 w-3.5" />
-                      Sign in to save context
-                    </Link>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={toggleDetails}
-                      aria-expanded={detailsOpen}
-                      className={cn(actionClassName(dark, detailsOpen), 'w-full justify-start')}
-                    >
-                      <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', detailsOpen && 'rotate-180')} />
-                      Context details
-                    </button>
-                  </>
+                  <Link
+                    href="/login?mode=signup&redirect=%2Fapp"
+                    role="menuitem"
+                    data-testid="public-context-sign-in-affordance"
+                    onClick={() => setActionsOpen(false)}
+                    className={cn(actionClassName(dark), 'w-full justify-start', dark ? 'bg-white text-slate-950' : 'bg-emerald-700 text-white hover:bg-emerald-600')}
+                  >
+                    <LogIn className="h-3.5 w-3.5" />
+                    Sign in to save context
+                  </Link>
                 ) : (
                   <>
-                    <button type="button" role="menuitem" onClick={togglePicker} className={cn(actionClassName(dark, pickerOpen), 'w-full justify-start')}>
-                      <Boxes className="h-3.5 w-3.5" />
-                      Attach context
-                    </button>
                     <button type="button" role="menuitem" onClick={toggleBuilder} className={cn(actionClassName(dark, builderOpen), 'w-full justify-start')}>
                       <Wand2 className="h-3.5 w-3.5" />
                       Build context
@@ -402,56 +323,100 @@ export function AskContextBar({
                       {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
                       Clear context
                     </button>
-                    <button type="button" role="menuitem" onClick={toggleDetails} aria-expanded={detailsOpen} className={cn(actionClassName(dark, detailsOpen), 'w-full justify-start')}>
-                      <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', detailsOpen && 'rotate-180')} />
-                      Context details
-                    </button>
                   </>
                 )}
+                <button type="button" role="menuitem" onClick={toggleDetails} aria-expanded={detailsOpen} className={cn(actionClassName(dark, detailsOpen), 'w-full justify-start')}>
+                  <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', detailsOpen && 'rotate-180')} />
+                  Context details
+                </button>
               </div>
             ) : null}
           </div>
         </div>
+
+        {/* The four capsule slots */}
+        <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-4" data-testid="capsule-dock-slots">
+          {dockSlots.slots.map((slot) => (
+            <CapsuleDockSlotCard
+              key={slot.kind}
+              dark={dark}
+              disabled={isPublic}
+              active={pickerSlot === slot.kind}
+              saving={saving}
+              slot={slot}
+              onOpenPicker={() => toggleSlotPicker(slot.kind)}
+              onClear={isPublic || !slot.item ? undefined : () => void clearSlot(slot.kind)}
+            />
+          ))}
+        </div>
+
+        {dockSlots.overflow.length ? (
+          <div className="flex flex-wrap items-center gap-1.5" data-testid="capsule-dock-overflow">
+            <span className={cn('text-[10px] font-bold uppercase tracking-[0.12em]', dark ? 'text-slate-500' : 'text-slate-400')}>
+              Also attached
+            </span>
+            {dockSlots.overflow.map((item) => (
+              <span
+                key={item.capsuleId}
+                data-testid="capsule-dock-chip"
+                title={`${item.roleLabel}: ${item.label}. ${item.versionLabel}.`}
+                className={cn(
+                  'inline-flex min-h-6 max-w-[16rem] items-center gap-1.5 rounded-[var(--radius-full)] border py-0.5 pl-2.5 pr-1 text-[11px]',
+                  dark ? 'border-slate-700 bg-slate-950 text-slate-200' : 'border-slate-200 bg-white text-slate-700',
+                )}
+              >
+                <span className="min-w-0 truncate font-semibold">{item.label}</span>
+                {!isPublic ? (
+                  <button
+                    type="button"
+                    onClick={() => void detachCapsule(item.capsuleId)}
+                    disabled={saving}
+                    title={`Detach ${item.label}`}
+                    className={cn('inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition disabled:opacity-50', dark ? 'hover:bg-slate-800 hover:text-red-300' : 'hover:bg-red-50 hover:text-red-700')}
+                  >
+                    <X className="h-3 w-3" />
+                    <span className="sr-only">Detach</span>
+                  </button>
+                ) : null}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        {dockModel.warnings.length ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {dockModel.warnings.map((warning) => <CapsuleDockWarningChip key={warning.id} dark={dark} warning={warning} />)}
+          </div>
+        ) : null}
       </div>
 
-      {/* Collapsible provenance detail row: User / Situation / Sources / Tools / Output / Saved context / Readiness */}
+      {/* Collapsible provenance detail row: Sources / Saved context / Readiness */}
       {detailsOpen ? (
-        <>
-          <div className="mt-2 flex min-w-0 gap-1.5 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible lg:pb-0">
-            <ContextChip dark={dark} icon={UserRound} label="User" value={userLabel} detail={audience} tone="ready" />
-            <ContextChip dark={dark} icon={Target} label="Situation" value={selectedSituation?.name ?? stack.situationId ?? 'Direct ask'} detail={selectedSituation?.region ?? 'No situation core'} tone={selectedSituation || stack.situationId ? 'active' : 'quiet'} />
-            <ContextChip dark={dark} icon={LibraryBig} label="Sources" value={`${sourceCount} attached`} detail={sourceCount ? 'Receipts can ground answer' : 'Attach sources before final use'} tone={sourceCount ? 'ready' : 'review'} />
-            <ContextChip dark={dark} icon={Wrench} label="Tools" value={toolCount ? `${toolCount} active` : 'Sourceability'} detail={toolCount ? 'Context tools selected' : 'Default review posture'} tone={toolCount ? 'active' : 'quiet'} />
-            <ContextChip dark={dark} icon={FileText} label="Output" value={stack.outputGoal ?? 'Set target'} detail={stack.outputGoal ? 'Answer target saved' : 'Memo, brief, or handoff'} tone={stack.outputGoal ? 'ready' : 'quiet'} />
-            <ContextChip dark={dark} icon={Boxes} label="Saved context" value={`${capsuleCount} attached`} detail={activeCapsuleId ?? 'No context selected'} tone={capsuleCount ? 'ready' : 'review'} />
-            <ContextChip dark={dark} icon={Gauge} label="Readiness" value={readiness.label} detail={readiness.detail} tone={readiness.tone} />
-          </div>
-          {!dockModel.items.length ? (
-            <EmptyState
-              icon={Boxes}
-              label="No saved context - direct ask"
-              hint="Attach or build a primary capsule when the answer has to become reusable work."
-              testId="capsule-dock-empty-state"
-              className={cn('mt-2 min-h-20 p-3', dark && 'border-slate-700 bg-slate-900')}
-            />
-          ) : null}
-        </>
+        <div className="mt-2 flex min-w-0 gap-1.5 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible lg:pb-0">
+          <ContextChip dark={dark} icon={LibraryBig} label="Sources" value={`${sourceCount} attached`} detail={sourceCount ? 'Receipts can ground answer' : 'Attach sources before final use'} tone={sourceCount ? 'ready' : 'review'} />
+          <ContextChip dark={dark} icon={Boxes} label="Saved context" value={`${capsuleCount} attached`} detail={activeCapsuleId ?? 'No context selected'} tone={capsuleCount ? 'ready' : 'review'} />
+          <ContextChip dark={dark} icon={UserRound} label="Analyst" value={labelize(analystProfile?.identity.role ?? user?.role ?? (isPublic ? 'Guest' : 'Analyst'))} detail={analystProfile?.perspective.audience ? labelize(analystProfile.perspective.audience) : user?.orgName ?? 'Workspace'} tone="ready" />
+          <ContextChip dark={dark} icon={Gauge} label="Readiness" value={readiness.label} detail={readiness.detail} tone={readiness.tone} />
+        </div>
       ) : null}
 
-      {!isPublic && pickerOpen ? (
+      {!isPublic && pickerSlot ? (
         <div className={cn('mt-2 flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border p-2', dark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50')}>
-          <span className={cn('text-xs font-semibold', dark ? 'text-slate-300' : 'text-slate-600')}>Attach context</span>
+          <span className={cn('text-xs font-semibold', dark ? 'text-slate-300' : 'text-slate-600')}>
+            Attach {dockSlots.slots.find((slot) => slot.kind === pickerSlot)?.label ?? ''} capsule
+          </span>
           <CapsuleListPicker
-            activeCapsuleId={activeCapsuleId}
+            activeCapsuleId={dockSlots.slots.find((slot) => slot.kind === pickerSlot)?.item?.capsuleId ?? null}
+            slotKind={pickerSlot}
             onCreate={() => setRefreshKey((key) => key + 1)}
-            onSelect={(capsuleId) => void attachCapsule(capsuleId)}
+            onSelect={(capsuleId) => void attachCapsuleToSlot(pickerSlot, capsuleId)}
             refreshKey={refreshKey}
           />
           <CapsuleImportButton
             variant={dark ? 'dark' : 'light'}
             onImported={(result) => {
               setRefreshKey((key) => key + 1);
-              void attachCapsule(result.capsuleId);
+              void attachCapsuleToSlot(pickerSlot, result.capsuleId);
             }}
           />
           {onOpenAdvancedContext ? (
@@ -481,65 +446,95 @@ export function AskContextBar({
   );
 }
 
-function CapsuleDockChip({
+function CapsuleDockSlotCard({
+  active,
   dark,
-  item,
-  onDetach,
-  onMakePrimary,
+  disabled,
+  onClear,
+  onOpenPicker,
   saving,
+  slot,
 }: {
+  active: boolean;
   dark: boolean;
-  item: CapsuleDockItem;
-  onDetach?: () => void;
-  onMakePrimary?: () => void;
-  saving?: boolean;
+  disabled: boolean;
+  onClear?: () => void;
+  onOpenPicker: () => void;
+  saving: boolean;
+  slot: CapsuleDockSlot;
 }) {
+  const Icon = SLOT_ICONS[slot.kind];
+  const filled = Boolean(slot.item);
   return (
-    <span
-      data-testid="capsule-dock-chip"
-      title={`${item.roleLabel}: ${item.label}. ${item.versionLabel}.`}
+    <div
+      data-testid={`capsule-dock-slot-${slot.kind}`}
       className={cn(
-        'inline-flex min-h-7 max-w-[18rem] items-center gap-1.5 rounded-[var(--radius-full)] border py-0.5 pl-2.5 text-xs transition',
-        onDetach ? 'pr-1' : 'pr-2.5',
-        item.primary
+        'group relative flex min-h-12 min-w-0 items-center gap-2 rounded-[var(--radius-md)] border px-2 py-1.5 transition',
+        filled
           ? dark
-            ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-100'
-            : 'border-emerald-500/40 bg-emerald-50 text-emerald-900'
+            ? 'border-emerald-400/40 bg-emerald-400/10'
+            : 'border-emerald-500/40 bg-emerald-50/70'
           : dark
-            ? 'border-slate-700 bg-slate-950 text-slate-200'
-            : 'border-slate-200 bg-white text-slate-700',
+            ? 'border-dashed border-slate-700 bg-slate-950'
+            : 'border-dashed border-slate-300 bg-white',
+        active && (dark ? 'ring-1 ring-emerald-400' : 'ring-1 ring-emerald-500'),
       )}
     >
-      {item.primary ? <Star className={cn('h-3 w-3 shrink-0', dark ? 'text-emerald-300' : 'text-emerald-600')} aria-label="Primary capsule" /> : null}
-      <span className="min-w-0 truncate font-semibold">{item.label}</span>
-      <span className={cn('shrink-0 rounded-[var(--radius-sm)] px-1 py-0.5 font-mono text-[10px]', dark ? 'bg-slate-800 text-slate-300' : item.primary ? 'bg-emerald-100/70 text-emerald-800' : 'bg-slate-100 text-slate-600')}>
-        {item.versionLabel}
-      </span>
-      {onMakePrimary ? (
+      <button
+        type="button"
+        onClick={onOpenPicker}
+        disabled={disabled || saving}
+        title={filled
+          ? `${slot.label} capsule: ${slot.item?.label}. ${slot.hint}. Click to swap.`
+          : disabled
+            ? `Sign in to attach a ${slot.label} capsule. ${slot.hint}.`
+            : `Attach a ${slot.label} capsule. ${slot.hint}.`}
+        data-testid="capsule-dock-chip"
+        className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <Icon
+          className={cn(
+            'h-4 w-4 shrink-0',
+            filled
+              ? dark ? 'text-emerald-300' : 'text-emerald-700'
+              : dark ? 'text-slate-500' : 'text-slate-400',
+          )}
+        />
+        <span className="min-w-0">
+          <span className={cn('block text-[9px] font-bold uppercase tracking-[0.14em]', dark ? 'text-slate-500' : 'text-slate-500')}>
+            {slot.label}
+          </span>
+          {filled ? (
+            <span className={cn('flex items-center gap-1 text-xs font-semibold', dark ? 'text-slate-100' : 'text-slate-900')}>
+              <span className="min-w-0 truncate">{slot.item?.label}</span>
+              <span className={cn('shrink-0 rounded-[var(--radius-sm)] px-1 font-mono text-[9px]', dark ? 'bg-slate-800 text-slate-300' : 'bg-emerald-100/70 text-emerald-800')}>
+                {slot.item?.versionLabel}
+              </span>
+            </span>
+          ) : (
+            <span className={cn('flex items-center gap-1 text-xs font-semibold', dark ? 'text-slate-500' : 'text-slate-400')}>
+              <Plus className="h-3 w-3" />
+              Add
+            </span>
+          )}
+        </span>
+      </button>
+      {onClear && filled ? (
         <button
           type="button"
-          onClick={onMakePrimary}
+          onClick={onClear}
           disabled={saving}
-          title={`Make ${item.label} the primary capsule`}
-          className={cn('inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition disabled:opacity-50', dark ? 'hover:bg-slate-800 hover:text-emerald-300' : 'hover:bg-emerald-100 hover:text-emerald-700')}
-        >
-          <Star className="h-3 w-3" />
-          <span className="sr-only">Make primary</span>
-        </button>
-      ) : null}
-      {onDetach ? (
-        <button
-          type="button"
-          onClick={onDetach}
-          disabled={saving}
-          title={`Detach ${item.label}`}
-          className={cn('inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition disabled:opacity-50', dark ? 'hover:bg-slate-800 hover:text-red-300' : 'hover:bg-red-50 hover:text-red-700')}
+          title={`Remove ${slot.item?.label} from the ${slot.label} slot`}
+          className={cn(
+            'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition disabled:opacity-50',
+            dark ? 'hover:bg-slate-800 hover:text-red-300' : 'hover:bg-red-50 hover:text-red-700',
+          )}
         >
           <X className="h-3 w-3" />
-          <span className="sr-only">Detach</span>
+          <span className="sr-only">Remove</span>
         </button>
       ) : null}
-    </span>
+    </div>
   );
 }
 
@@ -560,7 +555,7 @@ function CapsuleDockWarningChip({ dark, warning }: { dark: boolean; warning: Cap
     <span
       data-testid="capsule-dock-warning"
       title={warning.detail}
-      className={cn('inline-flex min-h-7 items-center rounded-[var(--radius-md)] border px-2 text-[11px] font-semibold', tone)}
+      className={cn('inline-flex min-h-6 items-center rounded-[var(--radius-md)] border px-2 text-[11px] font-semibold', tone)}
     >
       {warning.label}
     </span>

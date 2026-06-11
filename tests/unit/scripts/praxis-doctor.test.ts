@@ -23,6 +23,7 @@ describe('praxis doctor helpers', () => {
       jsonOnly: false,
       skipBuild: false,
       skipDeployCheck: false,
+      skipLocalAuthCheck: false,
     });
 
     expect(parseDoctorArgs([
@@ -34,6 +35,7 @@ describe('praxis doctor helpers', () => {
       '--json',
       '--skip-build',
       '--skip-deploy-check',
+      '--skip-local-auth-check',
     ])).toMatchObject({
       baseUrl: 'https://example.test',
       project: 'custom',
@@ -43,6 +45,7 @@ describe('praxis doctor helpers', () => {
       jsonOnly: true,
       skipBuild: true,
       skipDeployCheck: true,
+      skipLocalAuthCheck: true,
     });
   });
 

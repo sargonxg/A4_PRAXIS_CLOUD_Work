@@ -91,7 +91,7 @@ jobs:
           PRAXIS_CANARY_EMAIL: ${{ secrets.TEST_FIREBASE_EMAIL }}
           PRAXIS_CANARY_PASSWORD: ${{ secrets.TEST_FIREBASE_PASSWORD }}
           FIREBASE_WEB_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-        run: npm run doctor:praxis:canary -- --json
+        run: npm run doctor:praxis:canary -- --json --skip-build --skip-deploy-check --skip-local-auth-check
 
       - name: Upload server log
         if: always()

@@ -95,6 +95,38 @@ export interface CapsuleDockModel {
   canAskDirectly: boolean;
 }
 
+export type CapsuleDockSlotKind = 'user' | 'situation' | 'tool' | 'output';
+
+export const CAPSULE_DOCK_SLOT_KINDS: readonly CapsuleDockSlotKind[] = ['user', 'situation', 'tool', 'output'];
+
+export const CAPSULE_DOCK_SLOT_LABELS: Record<CapsuleDockSlotKind, string> = {
+  user: 'User',
+  situation: 'Situation',
+  tool: 'Tool',
+  output: 'Output',
+};
+
+export const CAPSULE_DOCK_SLOT_HINTS: Record<CapsuleDockSlotKind, string> = {
+  user: 'Who is asking — perspective, mandate, and voice',
+  situation: 'The case — actors, claims, sources, and graph context',
+  tool: 'How to think — methods, frameworks, and agent permissions',
+  output: 'What to produce — memo, brief, or handover contract',
+};
+
+export interface CapsuleDockSlot {
+  kind: CapsuleDockSlotKind;
+  label: string;
+  hint: string;
+  item: CapsuleDockItem | null;
+}
+
+export interface CapsuleDockSlotsModel {
+  slots: CapsuleDockSlot[];
+  /** Refs that do not fit the four typed slots (legacy reference/comparison attachments). */
+  overflow: CapsuleDockItem[];
+  filledCount: number;
+}
+
 export const DEFAULT_CONTEXT_STACK_ID = 'default';
 
 export function defaultActiveContextStack(): ActiveContextStackState {
@@ -333,6 +365,114 @@ export function buildCapsuleDockModel(
     compositionState,
     canAskDirectly: !hasBlockingWarning,
   };
+}
+
+/**
+ * Project the active stack onto the four typed dock slots (User / Situation / Tool / Output).
+ * Typed refs claim their own slot; a legacy `primary` ref is treated as the Situation
+ * capsule when that slot is free; everything else lands in `overflow` so nothing is hidden.
+ */
+export function buildCapsuleDockSlots(stack: ActiveContextStackState): CapsuleDockSlotsModel {
+  const model = buildCapsuleDockModel(stack);
+  const slotItems: Partial<Record<CapsuleDockSlotKind, CapsuleDockItem>> = {};
+  const overflow: CapsuleDockItem[] = [];
+
+  for (const item of model.items) {
+    if (isDockSlotKind(item.role) && !slotItems[item.role]) {
+      slotItems[item.role] = item;
+      continue;
+    }
+    if (item.primary && !slotItems.situation) {
+      slotItems.situation = item;
+      continue;
+    }
+    overflow.push(item);
+  }
+
+  const slots = CAPSULE_DOCK_SLOT_KINDS.map((kind) => ({
+    kind,
+    label: CAPSULE_DOCK_SLOT_LABELS[kind],
+    hint: CAPSULE_DOCK_SLOT_HINTS[kind],
+    item: slotItems[kind] ?? null,
+  }));
+
+  return {
+    slots,
+    overflow,
+    filledCount: slots.filter((slot) => slot.item).length,
+  };
+}
+
+/**
+ * Put a capsule into one of the four typed dock slots, replacing the current occupant.
+ * The Situation capsule (falling back to the first filled slot) governs the stack pointer.
+ */
+export function assignCapsuleToDockSlot(
+  stack: ActiveContextStackState,
+  kind: CapsuleDockSlotKind,
+  ref: Omit<ActiveCapsuleRefInput, 'role' | 'primary'>,
+): ActiveContextStackState {
+  const current = sanitizeActiveContextStack(stack);
+  const capsuleId = stringOrNull(ref.capsuleId);
+  if (!capsuleId) return current;
+  const slots = buildCapsuleDockSlots(current);
+  const keptRefs = current.capsuleRefs.filter((existing) => {
+    if (existing.capsuleId === capsuleId) return false;
+    const occupant = slots.slots.find((slot) => slot.kind === kind)?.item;
+    return !occupant || existing.capsuleId !== occupant.capsuleId;
+  });
+  const nextRefs: ActiveCapsuleRefInput[] = [
+    ...keptRefs,
+    { capsuleId, label: ref.label ?? null, role: kind, version: ref.version ?? null },
+  ];
+  return rebuildStackFromDockRefs(current, nextRefs);
+}
+
+/** Empty one of the four typed dock slots. */
+export function clearCapsuleDockSlot(
+  stack: ActiveContextStackState,
+  kind: CapsuleDockSlotKind,
+): ActiveContextStackState {
+  const current = sanitizeActiveContextStack(stack);
+  const occupant = buildCapsuleDockSlots(current).slots.find((slot) => slot.kind === kind)?.item;
+  if (!occupant) return current;
+  return rebuildStackFromDockRefs(
+    current,
+    current.capsuleRefs.filter((existing) => existing.capsuleId !== occupant.capsuleId),
+  );
+}
+
+function rebuildStackFromDockRefs(
+  current: ActiveContextStackState,
+  refs: ActiveCapsuleRefInput[],
+): ActiveContextStackState {
+  const ordered = [...refs].sort(
+    (a, b) => dockSlotPrecedence(a.role) - dockSlotPrecedence(b.role),
+  );
+  const governing = ordered[0]?.capsuleId ?? null;
+  return sanitizeActiveContextStack({
+    ...current,
+    capsuleId: governing,
+    capsuleRefs: ordered.map((ref, index) => ({
+      ...ref,
+      primary: index === 0,
+      order: index,
+    })),
+  });
+}
+
+function dockSlotPrecedence(role: ActiveCapsuleRoleInputValue): number {
+  if (role === 'situation' || role === 'primary') return 0;
+  if (role === 'user') return 1;
+  if (role === 'tool') return 2;
+  if (role === 'output') return 3;
+  return 4;
+}
+
+type ActiveCapsuleRoleInputValue = ActiveCapsuleRefInput['role'];
+
+function isDockSlotKind(value: unknown): value is CapsuleDockSlotKind {
+  return value === 'user' || value === 'situation' || value === 'tool' || value === 'output';
 }
 
 function emptyContextBlocks(): ActiveContextBlocks {

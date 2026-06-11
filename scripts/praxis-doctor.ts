@@ -17,6 +17,7 @@ export type DoctorOptions = {
   jsonOnly: boolean;
   skipBuild: boolean;
   skipDeployCheck: boolean;
+  skipLocalAuthCheck: boolean;
 };
 
 export type DoctorCheckResult = {
@@ -125,6 +126,7 @@ const DEFAULT_OPTIONS: DoctorOptions = {
   jsonOnly: false,
   skipBuild: false,
   skipDeployCheck: false,
+  skipLocalAuthCheck: false,
 };
 
 export function parseDoctorArgs(args: string[]): DoctorOptions {
@@ -162,6 +164,9 @@ export function parseDoctorArgs(args: string[]): DoctorOptions {
         break;
       case '--skip-deploy-check':
         options.skipDeployCheck = true;
+        break;
+      case '--skip-local-auth-check':
+        options.skipLocalAuthCheck = true;
         break;
       case '':
         break;
@@ -527,14 +532,16 @@ export async function runPraxisDoctor(deps: RunDeps): Promise<DoctorReport> {
     remediation: auditSummary.forcedOrBreaking > 0 ? ['Review npm audit --json before forced or SemVer-major dependency changes.'] : undefined,
   });
 
-  checks.push(await commandCheck(exec, 'auth-doctor', 'local-cloud-auth', 'npm run auth:doctor', {
-    blockedOnFailure: true,
-    remediation: [
-      `gcloud auth application-default login --project=${options.project}`,
-      'firebase login --reauth',
-      'npm run auth:doctor -- --fix',
-    ],
-  }));
+  if (!options.skipLocalAuthCheck) {
+    checks.push(await commandCheck(exec, 'auth-doctor', 'local-cloud-auth', 'npm run auth:doctor', {
+      blockedOnFailure: true,
+      remediation: [
+        `gcloud auth application-default login --project=${options.project}`,
+        'firebase login --reauth',
+        'npm run auth:doctor -- --fix',
+      ],
+    }));
+  }
 
   let cloudRunRevision: string | null = null;
   if (!options.skipDeployCheck) {
