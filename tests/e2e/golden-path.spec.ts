@@ -2,9 +2,10 @@ import { test, expect } from '@playwright/test';
 import { authenticateFirebaseCanary, expectAuthenticatedSession, hasFirebaseCanaryCredentials } from './helpers/auth';
 
 /**
- * Golden-path smoke for the simplified PRAXIS MVP surface. Verifies an
- * onboarded canary user can sign in and reach the launchpad, capsules,
- * boardroom, and runtime settings without bouncing back to login.
+ * Golden-path smoke for the simplified PRAXIS MVP surface. Verifies a
+ * disposable Firebase canary user can sign in, use the supported Finish later
+ * onboarding path when needed, and reach the launchpad, capsules, boardroom,
+ * and runtime settings without bouncing back to login.
  *
  * Env requirements:
  *   PLAYWRIGHT_BASE_URL       — defaults to http://localhost:3000
@@ -32,13 +33,14 @@ test.describe('golden path — app usability smoke', () => {
   test.setTimeout(120_000);
 
   test('sign in → launchpad → capsules → boardroom → settings', async ({ page }) => {
-    await authenticateFirebaseCanary(page, BASE, '/app', { expectComposer: false });
+    await authenticateFirebaseCanary(page, BASE, '/app', { expectComposer: false, finishOnboardingLater: true });
     const session = await expectAuthenticatedSession(page);
     expect(session.userEmail).toContain('@');
 
     await expect(page.getByTestId('app-launchpad')).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId('launchpad-capsule-chip')).toBeVisible();
-    await expect(page.getByTestId('launchpad-recent-work')).toBeVisible();
+    await expect(page.getByTestId('ask-context-bar')).toBeVisible();
+    await expect(page.getByTestId('capsule-dock')).toBeVisible();
+    await expect(page.getByTestId('capsule-dock-chip')).toBeVisible();
 
     const routes = [
       { path: '/app/capsules', testId: 'capsule-studio-header', text: /Build capsule|Use in Ask/i },
@@ -149,7 +151,7 @@ test.describe('golden path — app usability smoke', () => {
       });
     });
 
-    await authenticateFirebaseCanary(page, BASE, '/app', { expectComposer: false });
+    await authenticateFirebaseCanary(page, BASE, '/app', { expectComposer: false, finishOnboardingLater: true });
     await page.goto(`${BASE}/app/capsules/builder?capsulePrompt=${encodeURIComponent(mission)}`);
     await expect(page.getByRole('heading', { name: /Build a policy capsule/i })).toBeVisible({ timeout: 30_000 });
     await expect(page.getByLabel(/What should this capsule do/i)).toHaveValue(mission, { timeout: 30_000 });
@@ -158,7 +160,7 @@ test.describe('golden path — app usability smoke', () => {
     const composer = page.getByLabel(/Describe a task or responsibility/i);
     await composer.fill('Build a treaty analysis memo on monitoring obligations with sources.');
     await page.getByRole('button', { name: /Send to PRAXIS/i }).click();
-    await expect(page.getByText(/source receipt \[treaty-source-1\]/i)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('praxis-answer-markdown').getByText(/source receipt \[treaty-source-1\]/i)).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId('ask-agent-run-panel')).toBeVisible({ timeout: 30_000 });
 
     const exportResult = await page.evaluate(async () => {
@@ -202,18 +204,343 @@ function boardroomRun(runId: string, capsuleId: string) {
 }
 
 function goldenEnvelope({ capsuleId, runId, conversationId }: { capsuleId: string; runId: string; conversationId: string }) {
+  const generatedAt = '2026-05-31T12:00:03.000Z';
+  const sourceCard = {
+    id: 'source-card-treaty-1',
+    sourceReceiptId: 'treaty-source-1',
+    label: 'Treaty source',
+    title: 'Treaty source',
+    sourceType: 'source-receipt',
+    quotePreview: 'Monitoring mandate text.',
+    url: 'https://example.test/treaty',
+    locatorLabel: 'Article 4',
+    citationLabel: 'treaty-source-1',
+    sourceReceiptHref: 'https://example.test/treaty',
+    reliabilityTier: 1,
+    stale: false,
+    confidence: 0.92,
+  };
+  const answer = 'Treaty analysis with citations: the draft cites source receipt [treaty-source-1] and flags one open verification gap.';
+
   return {
+    style: {
+      mode: 'claude_like_dialogue',
+      paragraphShape: 'compact_source_backed',
+      sourcePosture: 'always_visible',
+    },
+    sourceCards: [sourceCard],
+    claimGrounding: [{
+      claim: 'The draft cites the monitoring mandate source receipt.',
+      grounding: 'source-backed',
+      supportLabel: 'supported',
+      sourceCardIds: [sourceCard.id],
+    }],
+    sourceabilityVerdicts: [{
+      claimId: 'claim-treaty-source-1',
+      claim: 'The draft cites the monitoring mandate source receipt.',
+      verdict: 'supported',
+      supportLabel: 'supported',
+      sourceIds: ['treaty-source-1'],
+      confidence: 0.92,
+      reviewNote: 'Covered by treaty-source-1.',
+    }],
+    claimLedgerSummary: {
+      totalClaims: 1,
+      supportedClaims: 1,
+      weakClaims: 0,
+      unsupportedClaims: 0,
+      contradictedClaims: 0,
+      modelPriorClaims: 0,
+      assumptionClaims: 0,
+    },
+    sourceAudit: {
+      sourceCount: 1,
+      sourceReceiptCount: 1,
+      sourceTypes: ['source-receipt'],
+      gapCount: 1,
+      supportedClaimCount: 1,
+      weakClaimCount: 0,
+      unsupportedClaimCount: 0,
+      contradictedClaimCount: 0,
+      modelPriorClaimCount: 0,
+      assumptionClaimCount: 0,
+      sourcePosture: 'source_previews_attached',
+      gapPosture: 'gaps_visible',
+    },
+    traceabilitySummary: {
+      detectedIntent: 'research_memo',
+      selectedPolicyContext: capsuleId,
+      activeCapsulesUsed: [capsuleId],
+      sourceCount: 1,
+      sourcePosture: 'Source receipts saved',
+      unsupportedClaimsCount: 0,
+      assumptionsCount: 0,
+      confidencePosture: 'medium',
+      humanReviewRecommendation: 'Review monitoring mandate caveat before export.',
+      bestNextAction: 'Queue boardroom review.',
+    },
+    groundingReceipt: {
+      capsuleId,
+      capsuleVersion: 1,
+      usedCapsuleIntelligenceProfile: false,
+      usedCogneeAdvisoryMemory: false,
+      sourceExcerptCount: 1,
+      cogneeStatus: 'disabled',
+      memoryHitCount: 0,
+      supportedClaims: 1,
+      weakClaims: 0,
+      unsupportedClaims: 0,
+      staleClaims: 0,
+      humanReviewRequired: false,
+      nextRepairActions: ['Resolve the monitoring mandate caveat.'],
+    },
+    claimLedger: [{
+      claimId: 'claim-treaty-source-1',
+      text: 'The draft cites the monitoring mandate source receipt.',
+      status: 'supported',
+      sourceIds: ['treaty-source-1'],
+      memoryIds: [],
+      confidence: 'medium',
+      freshness: 'current',
+      reviewState: 'none',
+    }],
+    sourceRefreshDocket: {
+      capsuleId,
+      capsuleVersion: 1,
+      generatedAt,
+      items: [{
+        sourceId: 'treaty-source-1',
+        title: 'Treaty source',
+        url: 'https://example.test/treaty',
+        status: 'refreshed',
+        lastCheckedAt: generatedAt,
+        excerptCount: 1,
+      }],
+      sourceIds: ['treaty-source-1'],
+      excerptSourceIds: ['treaty-source-1'],
+      staleSourceIds: [],
+      missingEvidenceGaps: ['Confirm who verifies monitors.'],
+      lastRefreshedAt: generatedAt,
+      needsRefresh: false,
+      nextActions: ['Confirm who verifies monitors.'],
+    },
+    memoryReceipt: {
+      cogneeStatus: 'disabled',
+      usedCogneeAdvisoryMemory: false,
+      memoryHitCount: 0,
+      memoryIds: [],
+      ignoredMemoryIds: [],
+      advisoryOnly: true,
+      promotionRequired: 'review-card',
+      warnings: [],
+      writebackProposalIds: [],
+    },
+    reviewCardSuggestions: [],
+    generationReceipt: {
+      selectedModel: 'gemini-2.5-pro',
+      fallbackModel: null,
+      budgetMode: 'standard',
+      maxOutputTokens: 2200,
+      sourceCount: 1,
+      capsuleCount: 1,
+      warningCount: 0,
+    },
+    continuationActions: [],
+    contextDiagnostics: {
+      activeCapsule: capsuleId,
+      sourceLanesUsed: ['source-receipt'],
+      sourceCount: 1,
+      sourceReceiptCount: 1,
+      sourceGapCount: 1,
+      unsupportedClaimCount: 0,
+      modelPriorClaimCount: 0,
+      cogneeStatus: 'disabled',
+      memoryPosture: 'not_used',
+      graphProposalStatus: 'not_proposed',
+      outputReadiness: 'artifact_candidate',
+    },
+    contextProvenanceChips: [{
+      id: 'source:treaty-source-1',
+      kind: 'source',
+      label: 'source receipt',
+      detail: 'Treaty source',
+      href: 'https://example.test/treaty',
+      reliabilityTier: 1,
+      stale: false,
+      tone: 'grounded',
+    }],
+    contextRepairActions: [],
+    capsuleSuggestions: [],
+    researchGraphReceipts: [],
+    followUps: ['Confirm who verifies monitors.'],
+    documentPackCandidate: {
+      title: 'Treaty analysis memo',
+      prompt: 'Build a treaty analysis memo on monitoring obligations with sources.',
+      answer,
+      sourceCards: [sourceCard],
+      gaps: ['Confirm who verifies monitors.'],
+      provenance: {
+        capsuleId,
+        capsuleVersion: 1,
+        conversationId,
+        threadId: conversationId,
+        runId,
+        model: 'gemini-2.5-pro',
+        provider: 'vertex',
+        contextPackageId: 'golden-context',
+        sourceReceiptIds: ['treaty-source-1'],
+        unsupportedClaims: [],
+        outputTarget: 'policy-memo',
+        generatedAt,
+      },
+    },
     orchestrationReceipt: {
+      version: 1,
       traceId: 'golden-path-trace',
-      triage: { intent: 'research_memo', complexity: 'deep', agenticMode: 'agent_run', reasons: ['Needs source-backed memo.'] },
+      triage: {
+        intent: 'research_memo',
+        workIntent: {
+          mode: 'research',
+          outputType: 'policy-memo',
+          confidence: 0.9,
+          reasons: ['Needs source-backed memo.'],
+        },
+        runIntent: 'research',
+        workflowKind: 'current_research_brief',
+        complexity: 'deep',
+        agenticMode: 'queue_agent_run',
+        policyAgentId: 'research-memo',
+        reasons: ['Needs source-backed memo.'],
+        decision: {
+          stepId: 'triage-decision',
+          label: 'Triage decision',
+          workflowKind: 'current_research_brief',
+          agenticMode: 'queue_agent_run',
+          policyAgentId: 'research-memo',
+          sourceCheckLane: 'source-checker',
+          reasons: ['Needs source-backed memo.'],
+        },
+      },
       capsule: { capsuleId, capsuleVersion: 1, contextPackageId: 'golden-context', contextHealth: 'ready', evidenceCount: 1, sourcePreviewCount: 1, activeGapCount: 1, warnings: [] },
       toolRouting: { selectedToolIds: ['grounded-search', 'sourceability-reviewer'], approvalRequiredToolIds: [], blockedToolIds: [] },
-      grounding: { sourcePosture: 'Source receipts saved', groundingPosture: 'Grounded retrieval completed' },
-      supervisor: { action: 'queue_agent_run', status: 'dispatch_enqueued', policyAgentId: 'research-memo', queuedRun: { runId, status: 'queued' } },
+      grounding: {
+        groundingPlan: { mode: 'capsule_sources' },
+        sourcePosture: 'Source receipts saved',
+        groundingPosture: 'Grounded retrieval completed',
+        degradedReason: null,
+      },
+      generationBudget: {
+        mode: 'standard',
+        taskKind: 'balanced',
+        selectedModelId: 'gemini-2.5-pro',
+        maxOutputTokens: 2200,
+        continuationRecommended: true,
+        continuationTargets: ['memo', 'evidence_annex'],
+      },
+      languagePolicyReview: {
+        required: true,
+        posture: 'research_policy_review',
+        checks: ['sourceability', 'unsupported-claims'],
+      },
+      researchModePresets: ['sourceability-review'],
+      turnPlan: {
+        version: 1,
+        outputMode: 'policy_brief',
+        intent: 'policy_research',
+        complexity: 'multi_agent',
+        answerShape: 'research_memo',
+        requiredTools: ['grounded-search', 'sourceability-reviewer'],
+        requiredAgents: ['research-memo'],
+        qualityBar: ['source-count', 'sourceability', 'unsupported-claims'],
+        statusRail: ['Reading capsule', 'Planning workflow', 'Checking evidence', 'Routing agents'],
+        artifactPlan: ['research_memo', 'evidence_annex'],
+        continuationPolicy: 'queue_agent',
+      },
+      capsuleReadReceipt: {
+        receiptId: 'golden-read-receipt',
+        capsuleId,
+        capsuleVersion: 1,
+        contextPackageId: 'golden-context',
+        receiptIds: ['treaty-source-1'],
+        outputTarget: 'memo_studio',
+        groundingPosture: 'Grounded retrieval completed',
+      },
+      workflowPlan: {
+        version: 1,
+        planId: 'golden-current-research-brief',
+        workflowKind: 'current_research_brief',
+        processRail: ['Reading capsule', 'Planning workflow', 'Checking evidence', 'Reviewing claims', 'Saving artifact'],
+        steps: [{
+          id: 'sourceability',
+          label: 'Reviewing claims',
+          status: 'complete',
+          detail: 'Sourceability check attached to the mocked golden path answer.',
+          toolId: 'sourceability-reviewer',
+          agentId: 'source-checker',
+          lane: 'sourceability',
+        }],
+        requiredPolicyAgentIds: ['research-memo'],
+        reviewCardOnlyAgentIds: [],
+        reviewCardTargets: [],
+        canonicalMutationPolicy: 'not-applicable',
+        selectedTools: ['grounded-search', 'sourceability-reviewer'],
+        approvalRequiredToolIds: [],
+        outputTarget: 'memo_studio',
+        requiresCurrentGrounding: true,
+        requiresSourceabilityPass: true,
+        groundingPosture: 'Grounded retrieval completed',
+        planSummary: 'current research brief via Research Memo Agent with sourceability review.',
+      },
+      routingDecision: {
+        version: 1,
+        policyAgentId: 'research-memo',
+        toolRoute: { selectedToolIds: ['grounded-search', 'sourceability-reviewer'], approvalRequiredToolIds: [] },
+        modelTier: 'deep',
+        modelFamily: 'Gemini',
+        selectedModelId: 'gemini-2.5-pro',
+        fallbackChain: [],
+        workerMode: 'research-memo',
+        outputDestination: 'memo_studio',
+        approvalGates: [],
+        reasons: ['Needs source-backed memo.'],
+        userSelectedModelIgnored: false,
+        userSafeLabels: {
+          policyAgent: 'Research Memo Agent',
+          modelTier: 'TACITUS selected deep reasoning',
+          fallbackPosture: 'Primary route only',
+          workerMode: 'Research memo',
+        },
+      },
+      supervisor: {
+        action: 'queue_agent_run',
+        status: 'dispatch_enqueued',
+        policyAgentId: 'research-memo',
+        outputDestination: 'memo_studio',
+        queuedRun: {
+          runId,
+          status: 'queued',
+          outputHref: `/app?agentRunId=${runId}`,
+        },
+      },
       stages: [],
     },
-    answerQualitySummary: { contextReadiness: 'ready', sourceCount: 1, sourceReceiptCount: 1, sourceGapCount: 1, weakClaimCount: 0, unsupportedClaimCount: 0, memoHandoffReady: true },
-    sourceCards: [{ sourceReceiptId: 'treaty-source-1', label: 'Treaty source', title: 'Treaty source', quotePreview: 'Monitoring mandate text.', url: 'https://example.test/treaty' }],
-    provenance: { conversationId },
+    answerQualitySummary: {
+      contextReadiness: 'ready',
+      sourceCount: 1,
+      sourceReceiptCount: 1,
+      sourceGapCount: 1,
+      weakClaimCount: 0,
+      unsupportedClaimCount: 0,
+      confidencePosture: 'medium',
+      queuedDeepRunStatus: 'queued',
+      recommendedNextAction: 'Queue boardroom review.',
+      memoHandoffReady: true,
+    },
+    agenticDepthRecommendation: {
+      mode: 'queued',
+      runId,
+      label: 'Deeper agent queued',
+      reason: 'Durable boardroom proof remains tied to this Ask turn.',
+    },
   };
 }

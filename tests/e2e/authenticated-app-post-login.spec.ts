@@ -13,8 +13,8 @@ const coreRoutes = [
   {
     label: 'Ask cockpit',
     path: '/app',
-    testIds: ['app-launchpad', 'launchpad-capsule-chip', 'launchpad-recent-work'],
-    text: /What do you want to analyze\?/i,
+    testIds: ['app-launchpad', 'ask-context-bar', 'capsule-dock'],
+    text: /Ask PRAXIS/i,
   },
   {
     label: 'Capsules workspace',
@@ -48,7 +48,7 @@ test.describe('authenticated app post-login smoke', () => {
   test.setTimeout(150_000);
 
   test('logs in with the Firebase canary and verifies core protected routes', async ({ page }) => {
-    await authenticateFirebaseCanary(page, BASE, '/app', { expectComposer: false });
+    await authenticateFirebaseCanary(page, BASE, '/app', { expectComposer: false, finishOnboardingLater: true });
     const session = await expectAuthenticatedSession(page);
     expect(session.userEmail, 'signed-in canary email should be present').toContain('@');
 

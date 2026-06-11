@@ -10,6 +10,7 @@ export type FirebaseCanaryCredentials = {
 export type AuthenticateFirebaseCanaryOptions = {
   allowOnboarding?: boolean;
   expectComposer?: boolean;
+  finishOnboardingLater?: boolean;
 };
 
 export function getFirebaseCanaryCredentials(): FirebaseCanaryCredentials {
@@ -50,6 +51,12 @@ export async function authenticateFirebaseCanary(
   await page.fill('input[type=password]', credentials.password);
   await page.getByRole('button', { name: /^(Open PRAXIS|Sign in)$/i }).click();
   await page.waitForURL(APP_OR_ONBOARDING, { timeout: 30_000 });
+
+  if (options.finishOnboardingLater && isOnboardingUrl(page)) {
+    await expect(page.getByRole('heading', { name: /Set up your analyst profile/i })).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('button', { name: /Finish later/i }).click();
+    await page.waitForURL(/\/app/, { timeout: 30_000 });
+  }
 
   if (!options.allowOnboarding) {
     expect(page.url(), 'Firebase canary user must be onboarded before authenticated runtime tests').not.toContain('/onboarding');

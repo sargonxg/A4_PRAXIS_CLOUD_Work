@@ -119,7 +119,7 @@
     "backfill:capsule-research-dossiers": "tsx scripts/backfill-capsule-research-dossiers.ts",
     "backfill:capsule-graph-stats": "tsx scripts/backfill-capsule-graph-stats.ts",
     "verify:neo4j-sync": "tsx scripts/verify-neo4j-sync.ts --all",
-    "smoke:tasklet-app": "playwright test tests/e2e/golden-path.spec.ts tests/e2e/onboarding.spec.ts",
+    "smoke:tasklet-app": "playwright test tests/e2e/onboarding.spec.ts --workers=1 && playwright test tests/e2e/golden-path.spec.ts --workers=1",
     "smoke:personas": "npm run smoke:tasklet-app",
     "smoke:app-usability": "npm run smoke:tasklet-app",
     "smoke:core-flows": "npm run smoke:tasklet-app",
