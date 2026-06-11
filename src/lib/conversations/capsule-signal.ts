@@ -118,6 +118,8 @@ export function buildThinCapsuleFallback(input: ConversationCapsuleSignalInput):
     capsule,
     associatedCapsules: [],
     missingAssociatedCapsuleIds: [],
+    dockCapsules: [],
+    missingDockCapsuleIds: [],
     stack: {
       ...stack,
       stackId: stack.stackId || DEFAULT_CONTEXT_STACK_ID,

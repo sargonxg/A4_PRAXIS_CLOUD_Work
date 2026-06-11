@@ -1,8 +1,11 @@
 import {
+  CAPSULE_DOCK_SLOT_KINDS,
   DEFAULT_CONTEXT_STACK_ID,
+  buildCapsuleDockSlots,
   sanitizeActiveContextStack,
   type ActiveContextBlocks,
   type ActiveContextStackState,
+  type CapsuleDockSlotKind,
 } from '@/lib/context/active-context-stack';
 import {
   capsuleToStack,
@@ -26,12 +29,27 @@ export interface InjectableContext {
   capsule: PraxisCapsule;
   associatedCapsules: PraxisCapsule[];
   missingAssociatedCapsuleIds: string[];
+  /** Capsules resolved from the four typed dock slots (User / Situation / Tool / Output). */
+  dockCapsules: DockCapsuleEntry[];
+  missingDockCapsuleIds: string[];
   stack: ActiveContextStackState;
   injectionKey: string;
   promptBlock: string;
   sharePath: string;
   resolvedAt: string;
 }
+
+export interface DockCapsuleEntry {
+  role: CapsuleDockSlotKind;
+  capsule: PraxisCapsule;
+}
+
+const DOCK_ROLE_CONTRACT: Record<CapsuleDockSlotKind, string> = {
+  user: 'calibrates who is asking: perspective, mandate, audience, and voice. It shapes tone and emphasis, never facts.',
+  situation: 'governs the problem frame: actors, claims, sources, graph context, and constraints. It is the factual backbone of the answer.',
+  tool: 'governs how to think: permitted methods, frameworks, agent tools, and review gates. Do not use methods it forbids.',
+  output: 'governs what to produce: format, structure, citation posture, and the acceptance contract for the artifact.',
+};
 
 export async function resolveInjectableContext(
   input: InjectableContextInput,
@@ -63,10 +81,13 @@ export async function resolveInjectableContext(
     : capsuleToStack(capsule);
   const resolvedAt = new Date().toISOString();
   const associated = await resolveAssociatedCapsules(input.uid, capsule, deps);
+  const dock = await resolveDockCapsules(input.uid, capsule, stack, deps);
   return {
     capsule,
     associatedCapsules: associated.capsules,
     missingAssociatedCapsuleIds: associated.missingIds,
+    dockCapsules: dock.entries,
+    missingDockCapsuleIds: dock.missingIds,
     stack,
     injectionKey: buildCapsuleInjectionKey(capsule),
     promptBlock: buildCapsulePromptBlock(capsule, {
@@ -75,10 +96,42 @@ export async function resolveInjectableContext(
       activeContextStack: stack,
       associatedCapsules: associated.capsules,
       missingAssociatedCapsuleIds: associated.missingIds,
+      dockCapsules: dock.entries,
+      missingDockCapsuleIds: dock.missingIds,
     }),
     sharePath: `/app?capsuleId=${encodeURIComponent(capsule.capsuleId)}`,
     resolvedAt,
   };
+}
+
+/**
+ * Load the capsules docked in the four typed slots so every generation receives
+ * the full User / Situation / Tool / Output context layering, not just the
+ * governing capsule pointer.
+ */
+async function resolveDockCapsules(
+  uid: string,
+  primaryCapsule: PraxisCapsule,
+  stack: ActiveContextStackState,
+  deps?: CapsuleServiceDeps,
+): Promise<{ entries: DockCapsuleEntry[]; missingIds: string[] }> {
+  const { slots } = buildCapsuleDockSlots(stack);
+  const entries: DockCapsuleEntry[] = [];
+  const missingIds: string[] = [];
+  for (const slot of slots) {
+    if (!slot.item) continue;
+    if (slot.item.capsuleId === primaryCapsule.capsuleId) {
+      entries.push({ role: slot.kind, capsule: primaryCapsule });
+      continue;
+    }
+    const loaded = await getCapsule(uid, slot.item.capsuleId, deps);
+    if (!loaded || loaded.archivedAt) {
+      missingIds.push(slot.item.capsuleId);
+      continue;
+    }
+    entries.push({ role: slot.kind, capsule: loaded });
+  }
+  return { entries, missingIds };
 }
 
 export function buildCapsuleInjectionKey(capsule: PraxisCapsule): string {
@@ -100,6 +153,8 @@ export function buildCapsulePromptBlock(
     activeContextStack?: ActiveContextStackState | null;
     associatedCapsules?: PraxisCapsule[];
     missingAssociatedCapsuleIds?: string[];
+    dockCapsules?: DockCapsuleEntry[];
+    missingDockCapsuleIds?: string[];
   } = {},
 ): string {
   const refs = capsule.coreRefs;
@@ -142,6 +197,7 @@ export function buildCapsulePromptBlock(
     `memory_core: ${refs.memoryCoreId ?? 'none'}`,
     '',
     buildCapsuleStarterPromptBlock(capsule.capsuleId, capsule.starterSnapshot),
+    buildCapsuleDockPromptBlock(input.dockCapsules ?? [], input.missingDockCapsuleIds ?? []),
     buildAssociatedCapsulesPromptBlock(input.associatedCapsules ?? [], input.missingAssociatedCapsuleIds ?? []),
     buildContextChainBlocksPromptBlock(input.activeContextStack?.contextBlocks),
     buildGenerationContractPromptBlock(capsule, input.associatedCapsules ?? []),
@@ -177,6 +233,44 @@ export function buildCapsulePromptBlock(
     );
   }
 
+  return lines.join('\n');
+}
+
+/**
+ * Render the four-slot Capsule Dock as a role-layered prompt section.
+ * Read order is fixed — user, situation, tool, output — and each layer carries
+ * a distinct governance contract so the model composes them instead of blending.
+ */
+export function buildCapsuleDockPromptBlock(entries: DockCapsuleEntry[], missingIds: string[] = []): string {
+  if (!entries.length && !missingIds.length) return '';
+  const byRole = new Map(entries.map((entry) => [entry.role, entry.capsule]));
+  const lines = [
+    '[capsule_dock]',
+    'The Capsule Dock holds up to four typed capsules. Compose them as layers in this order; do not blend their responsibilities:',
+  ];
+  for (const role of CAPSULE_DOCK_SLOT_KINDS) {
+    const capsule = byRole.get(role);
+    if (!capsule) {
+      lines.push(`${role}_capsule: empty — treat the missing ${role} layer as an explicit gap, not something to invent.`);
+      continue;
+    }
+    lines.push(
+      `${role}_capsule: ${capsule.capsuleId} (v${capsule.version}, health ${capsule.health.score})`,
+      `  label: ${capsule.label}`,
+    );
+    if (capsule.summary) lines.push(`  summary: ${capsule.summary.slice(0, 400)}`);
+    lines.push(
+      `  contract: This capsule ${DOCK_ROLE_CONTRACT[role]}`,
+      `  core_refs: ${formatReferenceCoreRefs(capsule.coreRefs)}`,
+    );
+  }
+  if (missingIds.length) {
+    lines.push(`unresolved_dock_capsules: ${missingIds.join(', ')} — these slots reference capsules that could not be loaded; surface this as a context gap.`);
+  }
+  lines.push(
+    'precedence: situation governs facts; user governs voice; tool governs method; output governs format. On conflict, follow that order and name the conflict.',
+    '',
+  );
   return lines.join('\n');
 }
 

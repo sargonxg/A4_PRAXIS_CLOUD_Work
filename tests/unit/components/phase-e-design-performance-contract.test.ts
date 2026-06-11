@@ -15,9 +15,9 @@ describe('Phase E design, mobile, onboarding, and performance contract', () => {
     expect(source).toContain('MoreHorizontal');
     expect(source).toContain('data-testid="capsule-dock-mobile-actions"');
     expect(source).toContain('data-testid="capsule-dock-action-menu"');
+    expect(source).toContain('data-testid="capsule-dock-slots"');
     expect(source).toContain('sm:hidden');
     expect(source).toContain('hidden sm:flex');
-    expect(source).toContain('Attach context');
     expect(source).toContain('Build context');
     expect(source).toContain('Open context');
     expect(source).toContain('Clear context');
@@ -62,7 +62,6 @@ describe('Phase E design, mobile, onboarding, and performance contract', () => {
 
     for (const path of [
       'src/components/app/praxis-chat.tsx',
-      'src/components/app/ask-context-bar.tsx',
       'src/components/praxis/tasklet-praxis-workbench.tsx',
       'src/components/capsules/CapsuleWorkbenchPanel.tsx',
       'src/components/memo/memo-desk.tsx',

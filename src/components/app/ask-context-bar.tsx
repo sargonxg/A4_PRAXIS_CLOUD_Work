@@ -30,7 +30,6 @@ import {
   defaultActiveContextStack,
   detachCapsuleRef,
   type ActiveContextStackState,
-  type CapsuleDockItem,
   type CapsuleDockSlot,
   type CapsuleDockSlotKind,
   type CapsuleDockWarning,

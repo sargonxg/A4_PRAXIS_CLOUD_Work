@@ -443,23 +443,15 @@ function PublicAskContextBar({ onOpenAdvancedContext }: { onOpenAdvancedContext:
     >
       <div data-testid="capsule-dock" aria-label="Capsule Dock" className="flex flex-col gap-1.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <span
-              title="Capsule Dock - direct ask"
-              data-testid="capsule-dock-stack"
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-md)] px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-              Context
-              <span className="sr-only">Capsule Dock. Direct ask mode.</span>
-            </span>
-            <span
-              data-testid="capsule-dock-chip"
-              className="inline-flex min-h-7 items-center rounded-[var(--radius-full)] border border-dashed border-slate-300 px-2.5 text-xs font-semibold text-slate-500"
-            >
-              No saved context - direct ask
-            </span>
-          </div>
+          <span
+            title="Capsule Dock - direct ask"
+            data-testid="capsule-dock-stack"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-md)] px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+            Capsule Dock
+            <span className="sr-only">Capsule Dock. Direct ask mode. Sign in to fill the four capsule slots.</span>
+          </span>
 
           <div className="hidden sm:flex shrink-0 flex-wrap items-center gap-1.5">
             <button
@@ -529,6 +521,27 @@ function PublicAskContextBar({ onOpenAdvancedContext }: { onOpenAdvancedContext:
               </div>
             ) : null}
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-4" data-testid="capsule-dock-slots">
+          {([
+            ['User', 'Who is asking — perspective, mandate, and voice'],
+            ['Situation', 'The case — actors, claims, sources, and graph context'],
+            ['Tool', 'How to think — methods, frameworks, and agent permissions'],
+            ['Output', 'What to produce — memo, brief, or handover contract'],
+          ] as const).map(([label, hint]) => (
+            <span
+              key={label}
+              data-testid="capsule-dock-chip"
+              title={`Sign in to attach a ${label} capsule. ${hint}.`}
+              className="flex min-h-12 min-w-0 items-center gap-2 rounded-[var(--radius-md)] border border-dashed border-slate-300 bg-white px-2 py-1.5 opacity-70"
+            >
+              <span className="min-w-0">
+                <span className="block text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">{label}</span>
+                <span className="block text-xs font-semibold text-slate-400">Sign in to add</span>
+              </span>
+            </span>
+          ))}
         </div>
       </div>
     </div>

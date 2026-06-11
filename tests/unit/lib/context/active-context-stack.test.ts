@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assignCapsuleToDockSlot,
   attachCapsuleRef,
   buildCapsuleDockModel,
+  buildCapsuleDockSlots,
+  clearCapsuleDockSlot,
   defaultActiveContextStack,
   detachCapsuleRef,
   sanitizeActiveContextStack,
@@ -212,6 +215,53 @@ describe('active context stack block arrays', () => {
     expect(model.persistenceLabel).toBe('Workspace saved');
     expect(model.compositionState).toBe('ready');
     expect(model.warnings).toEqual([]);
+  });
+
+  it('projects typed refs onto the four dock slots with legacy primary mapped to Situation', () => {
+    const stack = sanitizeActiveContextStack({
+      capsuleId: 'cap-legacy-primary',
+      capsuleRefs: [
+        { capsuleId: 'cap-legacy-primary', label: 'Legacy case file', role: 'primary' },
+        { capsuleId: 'cap-user', label: 'User core', role: 'user' },
+        { capsuleId: 'cap-reference', label: 'Old reference', role: 'reference' },
+      ],
+    });
+
+    const model = buildCapsuleDockSlots(stack);
+    expect(model.slots.map((slot) => [slot.kind, slot.item?.capsuleId ?? null])).toEqual([
+      ['user', 'cap-user'],
+      ['situation', 'cap-legacy-primary'],
+      ['tool', null],
+      ['output', null],
+    ]);
+    expect(model.overflow.map((item) => item.capsuleId)).toEqual(['cap-reference']);
+    expect(model.filledCount).toBe(2);
+  });
+
+  it('assigns capsules to typed slots, replaces occupants, and keeps Situation governing', () => {
+    let stack = defaultActiveContextStack();
+    stack = assignCapsuleToDockSlot(stack, 'user', { capsuleId: 'cap-user', label: 'Analyst posture' });
+    expect(stack.capsuleId).toBe('cap-user');
+
+    stack = assignCapsuleToDockSlot(stack, 'situation', { capsuleId: 'cap-situation', label: 'Border dispute' });
+    expect(stack.capsuleId).toBe('cap-situation');
+    expect(stack.capsuleRefs[0]?.capsuleId).toBe('cap-situation');
+    expect(stack.capsuleRefs[0]?.primary).toBe(true);
+
+    stack = assignCapsuleToDockSlot(stack, 'tool', { capsuleId: 'cap-tool', label: 'ACH matrix' });
+    stack = assignCapsuleToDockSlot(stack, 'output', { capsuleId: 'cap-output', label: 'Principals memo' });
+    expect(buildCapsuleDockSlots(stack).filledCount).toBe(4);
+
+    const replaced = assignCapsuleToDockSlot(stack, 'tool', { capsuleId: 'cap-tool-2', label: 'Scenario tree' });
+    const slots = buildCapsuleDockSlots(replaced);
+    expect(slots.slots.find((slot) => slot.kind === 'tool')?.item?.capsuleId).toBe('cap-tool-2');
+    expect(replaced.capsuleRefs).toHaveLength(4);
+
+    const cleared = clearCapsuleDockSlot(replaced, 'situation');
+    const clearedSlots = buildCapsuleDockSlots(cleared);
+    expect(clearedSlots.slots.find((slot) => slot.kind === 'situation')?.item).toBeNull();
+    expect(cleared.capsuleId).toBe('cap-user');
+    expect(cleared.capsuleRefs).toHaveLength(3);
   });
 
   it('marks direct Ask without saved context as allowed but thin', () => {

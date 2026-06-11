@@ -40,7 +40,7 @@ test.describe('golden path — app usability smoke', () => {
     await expect(page.getByTestId('app-launchpad')).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId('ask-context-bar')).toBeVisible();
     await expect(page.getByTestId('capsule-dock')).toBeVisible();
-    await expect(page.getByTestId('capsule-dock-chip')).toBeVisible();
+    await expect(page.getByTestId('capsule-dock-chip').first()).toBeVisible();
 
     const routes = [
       { path: '/app/capsules', testId: 'capsule-studio-header', text: /Build capsule|Use in Ask/i },
