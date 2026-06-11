@@ -9,7 +9,7 @@ test.describe('Mobile landing - iPhone 13', () => {
     await page.goto(BASE_URL);
     await expect(page.getByTestId('praxis-chat-first-shell')).toBeVisible();
     await expect(page.getByTestId('marketing-home')).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Turn any policy question into a sourced, citable brief\./i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Ask anything\. Leave with a sourced brief\./i })).toBeVisible();
     await expect(page.getByTestId('tasklet-praxis-workbench')).toHaveCount(0);
 
     const overflowX = await page.evaluate(

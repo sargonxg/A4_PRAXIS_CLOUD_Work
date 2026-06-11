@@ -15,7 +15,7 @@ const AGENT_DESTINATIONS: Record<string, { href: string; icon: typeof Bot }> = {
  * Quiet entry row for the live agentic workflows. Complexity stays in the
  * destination surfaces; the home page only offers the door.
  */
-export function PolicyAgentStrip() {
+export function PolicyAgentStrip({ isPublic = false }: { isPublic?: boolean }) {
   const liveAgents = PRAXIS_POLICY_AGENTS.filter(
     (agent) => agent.readiness === 'live' && AGENT_DESTINATIONS[agent.id],
   );
@@ -35,10 +35,13 @@ export function PolicyAgentStrip() {
         {liveAgents.map((agent) => {
           const destination = AGENT_DESTINATIONS[agent.id];
           const Icon = destination.icon;
+          const href = isPublic
+            ? `/login?mode=signup&redirect=${encodeURIComponent(destination.href)}`
+            : destination.href;
           return (
             <Link
               key={agent.id}
-              href={destination.href}
+              href={href}
               data-testid={`policy-agent-chip-${agent.id}`}
               className="group rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2.5 transition hover:-translate-y-0.5 hover:border-emerald-500/50 hover:shadow-[0_4px_14px_rgba(16,185,129,0.12)]"
             >

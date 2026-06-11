@@ -61,7 +61,7 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
       'data-testid="marketing-hero-prompt"',
       'data-testid="marketing-primary-cta"',
       'data-testid="public-sign-in-affordance"',
-      'Turn any policy question into a sourced, citable brief.',
+      'Ask anything. Leave with a sourced brief.',
       'Ask',
       'Saved context',
       'Boardroom',

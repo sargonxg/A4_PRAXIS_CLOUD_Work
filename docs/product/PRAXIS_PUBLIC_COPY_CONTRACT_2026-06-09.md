@@ -29,8 +29,8 @@ Use "saved context" for first-impression and public support copy. Use "ContextCa
 
 ## Current User-Facing Contract
 
-- Home headline: "Turn any policy question into a sourced, citable brief."
-- Home helper: "Ask normally. Add sources or saved context when the work needs to hold up."
+- Home headline: "Ask anything. Leave with a sourced brief."
+- Home helper: "Attach context capsules when the work has to hold up."
 - Public primary CTA: "Continue".
 - Public top nav: Home, Pricing, Learn, Guide, Release notes, Sign in, Start work.
 - Public left rail: Ask and Saved context only. Do not expose Boardroom, Memo/Drafts, or internal tools before login.

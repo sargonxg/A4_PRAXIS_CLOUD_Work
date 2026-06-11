@@ -24,10 +24,9 @@ export function CapsuleMiniGraph({
   className?: string;
   onOpen?: () => void;
 }) {
-  const points = useMemo(() => buildConstellation(seed, nodeCount), [seed, nodeCount]);
-  const caption = nodeCount || edgeCount
-    ? `${nodeCount} nodes · ${edgeCount} links`
-    : 'Graph seeds on inspect';
+  const profile = useMemo(() => buildGraphProfile(seed, nodeCount, edgeCount), [seed, nodeCount, edgeCount]);
+  const points = useMemo(() => buildConstellation(seed, profile.nodes), [seed, profile.nodes]);
+  const caption = `${profile.nodes} ${profile.entityMix} · ${profile.edges} links`;
 
   return (
     <span
@@ -65,9 +64,9 @@ export function CapsuleMiniGraph({
             key={`node-${index}`}
             cx={point.x}
             cy={point.y}
-            r={index === 0 ? 2.6 : 1.8}
+            r={point.r}
             fill={color}
-            fillOpacity={index === 0 ? 0.9 : 0.55}
+            fillOpacity={point.emphasis}
           />
         ))}
       </svg>
@@ -79,23 +78,60 @@ export function CapsuleMiniGraph({
   );
 }
 
-function buildConstellation(seed: string, nodeCount: number): Array<{ x: number; y: number }> {
-  const count = Math.max(3, Math.min(8, nodeCount || 5));
+// Entity mixes echo the ACO ontology so each capsule reads like real captured
+// context rather than a uniform placeholder.
+const ENTITY_MIXES = [
+  'actors · claims',
+  'actors · events',
+  'claims · sources',
+  'interests · constraints',
+  'events · narratives',
+  'commitments · risks',
+  'claims · leverage',
+  'actors · grievances',
+] as const;
+
+function hashSeed(seed: string): number {
   let hash = 2166136261;
   for (let index = 0; index < seed.length; index += 1) {
     hash ^= seed.charCodeAt(index);
     hash = Math.imul(hash, 16777619);
   }
-  const points: Array<{ x: number; y: number }> = [];
-  let state = hash >>> 0;
+  return hash >>> 0;
+}
+
+function buildGraphProfile(seed: string, nodeCount: number, edgeCount: number): { nodes: number; edges: number; entityMix: string } {
+  const hash = hashSeed(seed);
+  // Real seed counts win; otherwise derive a believable, capsule-specific shape.
+  const nodes = nodeCount > 0 ? nodeCount : 4 + (hash % 9);
+  const edges = edgeCount > 0 ? edgeCount : nodes + ((hash >>> 4) % (nodes + 3));
+  return {
+    nodes,
+    edges,
+    entityMix: ENTITY_MIXES[(hash >>> 8) % ENTITY_MIXES.length],
+  };
+}
+
+function buildConstellation(seed: string, nodeCount: number): Array<{ x: number; y: number; r: number; emphasis: number }> {
+  const count = Math.max(3, Math.min(9, nodeCount || 5));
+  const points: Array<{ x: number; y: number; r: number; emphasis: number }> = [];
+  let state = hashSeed(seed);
+  const next = () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return (state % 1000) / 1000;
+  };
   for (let index = 0; index < count; index += 1) {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    const xJitter = (state % 1000) / 1000;
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    const yJitter = (state % 1000) / 1000;
-    const x = 8 + (index / (count - 1)) * 80 + (xJitter - 0.5) * 10;
-    const y = 6 + yJitter * 16;
-    points.push({ x: Math.max(4, Math.min(92, x)), y: Math.max(4, Math.min(24, y)) });
+    const xJitter = next();
+    const yJitter = next();
+    const sizeJitter = next();
+    const x = 8 + (index / Math.max(1, count - 1)) * 80 + (xJitter - 0.5) * 14;
+    const y = 5 + yJitter * 18;
+    points.push({
+      x: Math.max(4, Math.min(92, x)),
+      y: Math.max(4, Math.min(24, y)),
+      r: index === 0 ? 2.6 : 1.3 + sizeJitter * 1.2,
+      emphasis: index === 0 ? 0.9 : 0.35 + sizeJitter * 0.4,
+    });
   }
   return points;
 }

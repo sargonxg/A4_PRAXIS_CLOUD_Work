@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.06.10.03',
+    version: '6.5.0',
+    date: '2026-06-10',
+    title: 'One identical home before and after sign-in, tighter copy, human capsule graphs',
+    summary: 'Public and signed-in home now share the exact same surface — sidebar, agentic workflow row, and collapsed context dock — with shorter hero copy and capsule cards whose graph constellations reflect each capsule’s own captured context.',
+    category: 'product',
+    items: [
+      'The public home now shows the full workspace sidebar (Ask, Saved context, Boardroom, Drafts) and the agentic workflow row; signed-out clicks route through signup with the destination preserved.',
+      'Hero copy is shorter: "Ask anything. Leave with a sourced brief." with mission cards trimmed to one-line outcomes.',
+      'The context dock starts collapsed in both modes with the same details toggle, so the pre- and post-login surfaces match exactly.',
+      'Capsule card graph constellations now vary per capsule in node count, size, and entity mix (actors, claims, events, interests, commitments), reading like real captured context.',
+    ],
+  },
+  {
     buildNumber: '2026.06.10.02',
     version: '6.5.0',
     date: '2026-06-10',

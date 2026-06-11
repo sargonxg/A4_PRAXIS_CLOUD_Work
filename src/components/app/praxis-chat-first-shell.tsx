@@ -40,12 +40,9 @@ const PUBLIC_TOP_LINKS = [
   { label: 'Release notes', href: '/release-notes' },
 ] as const;
 
-const PUBLIC_HOME_DESTINATIONS = [
-  { id: 'ask', label: 'Ask', href: '/app', publicHref: '/login?mode=signup&redirect=%2Fapp', icon: MessageSquareText },
-  { id: 'context', label: 'Saved context', href: '/app/capsules', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fcapsules', icon: FolderKanban },
-] as const;
-
-const AUTH_HOME_DESTINATIONS = [
+// One destination list for both modes keeps / and /app visually identical;
+// public links route through signup with the destination preserved.
+const HOME_DESTINATIONS = [
   { id: 'ask', label: 'Ask', href: '/app', publicHref: '/login?mode=signup&redirect=%2Fapp', icon: MessageSquareText },
   { id: 'context', label: 'Saved context', href: '/app/capsules', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fcapsules', icon: FolderKanban },
   { id: 'boardroom', label: 'Boardroom', href: '/app/boardroom', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fboardroom', icon: ShieldCheck },
@@ -183,7 +180,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
                 onMakePrimaryCapsule={(capsuleId) => void makePrimaryCapsule(capsuleId)}
               />
             ) : null}
-            {!isPublic ? <PolicyAgentStrip /> : null}
+            <PolicyAgentStrip isPublic={isPublic} />
           </section>
         </div>
       </div>
@@ -224,7 +221,7 @@ function HomeTopBar({ isPublic }: { isPublic: boolean }) {
 }
 
 function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: string }) {
-  const destinations = isPublic ? PUBLIC_HOME_DESTINATIONS : AUTH_HOME_DESTINATIONS;
+  const destinations = HOME_DESTINATIONS;
 
   return (
     <aside className="praxis-shell-panel h-fit p-3" aria-label="Primary PRAXIS destinations">

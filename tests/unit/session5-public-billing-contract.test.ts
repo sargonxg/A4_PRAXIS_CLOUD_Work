@@ -11,8 +11,8 @@ function read(rel: string): string {
 
 const REQUIRED_MISSIONS = [
   'Sanctions impact memo',
-  'Treaty analysis with citations',
-  'Stakeholder & ACH for a crisis',
+  'Treaty brief with citations',
+  'Stakeholder map & ACH',
 ] as const;
 
 describe('Session 5 public surface and billing contract', () => {

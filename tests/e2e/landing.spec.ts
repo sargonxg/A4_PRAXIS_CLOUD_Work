@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('landing renders light marketing sections and working anchors', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { name: /Turn any policy question into a sourced, citable brief\./i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Ask anything\. Leave with a sourced brief\./i })).toBeVisible();
   await expect(page.getByTestId('marketing-hero-prompt')).toBeVisible();
   await expect(page.getByTestId('marketing-primary-cta')).toHaveCount(1);
   await expect(page.getByRole('heading', { name: /^Context Capsules$/i })).toBeVisible();

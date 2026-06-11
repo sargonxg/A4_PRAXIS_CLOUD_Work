@@ -427,13 +427,13 @@ export function PraxisChat({
               Ask PRAXIS
             </p>
             <h1 className="mt-4 font-serif text-4xl font-semibold tracking-normal text-[color:var(--color-app-text)] sm:text-5xl">
-              Turn any policy question into a sourced, citable brief.
+              Ask anything. Leave with a sourced brief.
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-[color:var(--color-app-text-secondary)]">
-              {greeting ?? 'Ask normally. Add sources or saved context when the work needs to hold up.'}
+              {greeting ?? 'Attach context capsules when the work has to hold up.'}
             </p>
             <p className="mx-auto mt-2 max-w-2xl font-mono text-[11px] uppercase tracking-[0.18em] text-slate-400">
-              Every claim has a receipt <span aria-hidden className="text-emerald-600">·</span> every judgment has an author
+              Every claim has a receipt<span aria-hidden className="text-emerald-600">.</span>
             </p>
           </div>
         ) : null}

@@ -8,16 +8,16 @@ export const POLICY_MISSION_EXAMPLES: PolicyMissionExample[] = [
   {
     title: 'Sanctions impact memo',
     prompt: 'Build a sanctions impact memo on proposed measures, exposed sectors, humanitarian risks, and evidence gaps.',
-    outcome: 'Policy memo with source receipts, claim posture, and next evidence requests.',
+    outcome: 'Memo with receipts and claim posture.',
   },
   {
-    title: 'Treaty analysis with citations',
+    title: 'Treaty brief with citations',
     prompt: 'Create a treaty analysis with citations, key obligations, interpretive disputes, and implementation risks.',
-    outcome: 'Citable treaty brief with weak or unsupported paragraphs marked before export.',
+    outcome: 'Weak paragraphs flagged before export.',
   },
   {
-    title: 'Stakeholder & ACH for a crisis',
+    title: 'Stakeholder map & ACH',
     prompt: 'Map stakeholders and run ACH for a crisis decision, including competing hypotheses, assumptions, and red-team concerns.',
-    outcome: 'Stakeholder map, ACH notes, and Boardroom-ready questions.',
+    outcome: 'Hypotheses, assumptions, Boardroom questions.',
   },
 ];

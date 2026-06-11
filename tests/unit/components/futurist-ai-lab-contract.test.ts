@@ -46,7 +46,7 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
     expect(marketingHome).toContain('mode="public"');
     expect(chatShell).toContain('data-testid="praxis-chat-first-shell"');
     expect(chatShell).toContain('PraxisChat');
-    expect(praxisChat).toContain('Turn any policy question into a sourced, citable brief.');
+    expect(praxisChat).toContain('Ask anything. Leave with a sourced brief.');
     expect(praxisChat).toContain('Start with the question.');
     expect(praxisChat).toContain('POLICY_MISSION_EXAMPLES');
     expect(`${landingPage}\n${marketingHome}\n${chatShell}`).not.toContain('TaskletPraxisWorkbench');
@@ -68,8 +68,7 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
   });
 
   it('keeps the public homepage as a simple chat surface without feature-preview clutter', () => {
-    expect(chatShell).toContain('PUBLIC_HOME_DESTINATIONS');
-    expect(chatShell).toContain('AUTH_HOME_DESTINATIONS');
+    expect(chatShell).toContain('HOME_DESTINATIONS');
     expect(chatShell).toContain("label: 'Ask'");
     expect(chatShell).toContain("label: 'Saved context'");
     expect(chatShell).toContain("label: 'Boardroom'");

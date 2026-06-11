@@ -232,6 +232,16 @@ export function AskContextBar({
                   <LogIn className="h-3.5 w-3.5" />
                   Sign in to save context
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => setDetailsOpen((value) => !value)}
+                  aria-expanded={detailsOpen}
+                  className={actionClassName(dark, detailsOpen)}
+                  title="Show context details: user, situation, sources, tools, output, readiness"
+                >
+                  <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', detailsOpen && 'rotate-180')} />
+                  <span className="sr-only">Context details</span>
+                </button>
               </>
             ) : (
               <>
@@ -284,8 +294,8 @@ export function AskContextBar({
       </div>
 
       {/* Collapsible provenance detail row: User / Situation / Sources / Tools / Output / Saved context / Readiness */}
-      {detailsOpen || isPublic ? (
-        <div className={cn('mt-2 flex min-w-0 gap-1.5 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible lg:pb-0', isPublic && 'mt-2')}>
+      {detailsOpen ? (
+        <div className="mt-2 flex min-w-0 gap-1.5 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible lg:pb-0">
           <ContextChip dark={dark} icon={UserRound} label="User" value={userLabel} detail={audience} tone="ready" />
           <ContextChip dark={dark} icon={Target} label="Situation" value={selectedSituation?.name ?? stack.situationId ?? 'Direct ask'} detail={selectedSituation?.region ?? 'No situation core'} tone={selectedSituation || stack.situationId ? 'active' : 'quiet'} />
           <ContextChip dark={dark} icon={LibraryBig} label="Sources" value={`${sourceCount} attached`} detail={sourceCount ? 'Receipts can ground answer' : 'Attach sources before final use'} tone={sourceCount ? 'ready' : 'review'} />

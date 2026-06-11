@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+Build 2026.06.10.03 (PRAXIS v6.5.0).
+
+- feat(home): make / and /app exactly the same surface. One shared
+  destination list (Ask, Saved context, Boardroom, Drafts) and the agentic
+  workflow row render in both modes; public clicks route through signup with
+  the destination preserved. The context dock starts collapsed in both modes
+  with the same details toggle.
+
+- feat(copy): shorter hero and mission cards. Headline becomes "Ask anything.
+  Leave with a sourced brief.", helper becomes "Attach context capsules when
+  the work has to hold up.", receipt line tightens, and the three mission
+  cards trim to one-line outcomes. Pinned tests and the public copy contract
+  doc updated together.
+
+- feat(capsules): humanize card graph constellations — per-capsule node
+  count, node sizes, and ACO entity mixes (actors, claims, events, interests,
+  commitments) derived deterministically from the capsule id when real seed
+  counts are absent.
+
 Build 2026.06.10.02 (PRAXIS v6.5.0).
 
 - feat(home): move the capsule dock to the top of Ask PRAXIS and make it
