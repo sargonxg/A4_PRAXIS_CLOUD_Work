@@ -546,6 +546,17 @@ function stackDoc(uid: string, stackId = DEFAULT_CONTEXT_STACK_ID, deps?: Capsul
   return dbOf(deps).collection('users').doc(uid).collection('contextStacks').doc(stackId);
 }
 
+/** Read a stored active context stack (the dock state) without migrating or saving. */
+export async function getStoredContextStack(
+  uid: string,
+  stackId: string = DEFAULT_CONTEXT_STACK_ID,
+  deps?: CapsuleServiceDeps,
+): Promise<ActiveContextStackState | null> {
+  const snap = await stackDoc(uid, cleanId(stackId, DEFAULT_CONTEXT_STACK_ID), deps).get();
+  if (!snap.exists) return null;
+  return sanitizeActiveContextStack(snap.data());
+}
+
 function rawClaimLedgerNeedsReceiptMigration(raw: Record<string, unknown>): boolean {
   const claims = [
     ...rawClaimRows(raw.claimLedger),

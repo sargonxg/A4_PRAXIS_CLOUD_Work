@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+Build 2026.06.11.03 (PRAXIS v6.5.0).
+
+- feat(conversations): derive conversation titles from the first user prompt
+  and add a Recents list to the signed-in home sidebar linking each unique
+  conversation URL (`/app/conversations/{id}`).
+
+- feat(boardroom): ground board deliberations in the Capsule Dock. The runs
+  route compiles the docked User/Situation/Tool/Output capsules into the
+  shared injection layer, the live runner feeds it to every turn and the
+  synthesis, and the workspace sidebar shows the dock state.
+
+- chore(cleanup): remove 22 verifiably dead files (unused stores, hooks,
+  prompt/engine modules, mock auth, capsule-client) plus the orphan test and
+  update the workbench audit script accordingly.
+
+- docs(handover): add `HANDOVER.md` — architect brief, invariants, and the
+  sequenced CODEX prompt queue for capsule depth, repository extensibility,
+  generation transparency, and design coherence.
+
 Build 2026.06.11.02 (PRAXIS v6.5.0).
 
 - feat(dock): replace the capsule chip row with four typed dock slots — User,

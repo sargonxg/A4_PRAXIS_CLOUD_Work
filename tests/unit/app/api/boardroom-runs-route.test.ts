@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   enqueueAgentRunDispatch: vi.fn(),
   getCapsule: vi.fn(),
   getOrMigrateDefaultCapsule: vi.fn(),
+  getStoredContextStack: vi.fn(),
+  resolveInjectableContext: vi.fn(),
 }));
 
 vi.mock('@/lib/api/with-auth', () => ({
@@ -26,6 +28,11 @@ vi.mock('@/lib/agent-runtime/cloud-tasks', () => ({
 vi.mock('@/lib/context/capsule-service', () => ({
   getCapsule: mocks.getCapsule,
   getOrMigrateDefaultCapsule: mocks.getOrMigrateDefaultCapsule,
+  getStoredContextStack: mocks.getStoredContextStack,
+}));
+
+vi.mock('@/lib/context/context-injection', () => ({
+  resolveInjectableContext: mocks.resolveInjectableContext,
 }));
 
 describe('/api/boardroom/runs route', () => {
@@ -65,6 +72,14 @@ describe('/api/boardroom/runs route', () => {
       taskName: 'tasks/boardroom',
       targetUrl: 'https://praxis.tacitus.me/api/agents/runs/run-boardroom-1/execute',
       payload: { runId: 'run-boardroom-1', dispatchId: 'dispatch-1' },
+    });
+    mocks.getStoredContextStack.mockResolvedValue({ stackId: 'default', capsuleRefs: [] });
+    mocks.resolveInjectableContext.mockResolvedValue({
+      promptBlock: '<praxis-context-capsule>\n[capsule_dock]\nsituation_capsule: cap-1 (v1, health 80)\n</praxis-context-capsule>',
+      dockCapsules: [
+        { role: 'situation', capsule: { capsuleId: 'cap-1' } },
+        { role: 'user', capsule: { capsuleId: 'cap-user' } },
+      ],
     });
   });
 
@@ -130,6 +145,8 @@ describe('/api/boardroom/runs route', () => {
         policyAgentId: 'boardroom-discussion',
         outputDestination: 'library',
         sourceReceiptIds: ['receipt-doc-1'],
+        contextInjectionPromptBlock: expect.stringContaining('[capsule_dock]'),
+        dockCapsuleIds: ['cap-1', 'cap-user'],
         selectedSources: [expect.objectContaining({
           documentId: 'doc-1',
           sourceReceiptId: 'receipt-doc-1',

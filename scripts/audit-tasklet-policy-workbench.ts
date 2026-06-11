@@ -9,7 +9,6 @@ import {
 const root = process.cwd();
 const requiredFiles = [
   'src/components/praxis/tasklet-praxis-workbench.tsx',
-  'src/components/dashboard/ask-praxis-home.tsx',
   'src/components/cores/ContextBuilderRoom.tsx',
   'src/components/onboarding/welcome-modal.tsx',
   'src/lib/product/policy-agents.ts',

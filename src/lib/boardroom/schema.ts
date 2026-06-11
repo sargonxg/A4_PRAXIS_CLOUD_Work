@@ -159,6 +159,9 @@ export function buildBoardroomAgentRunInput(input: {
   request: BoardroomRunRequest;
   traceId?: string;
   idempotencyKey?: string;
+  /** Compiled capsule-dock prompt layer (same contract as Ask PRAXIS injection). */
+  contextInjectionPromptBlock?: string | null;
+  dockCapsuleIds?: string[];
 }): CreateAgentRunInput {
   const documentCoreIds = uniqueStrings([
     ...(input.selectedCoreIds?.documentCoreIds ?? []),
@@ -203,6 +206,8 @@ export function buildBoardroomAgentRunInput(input: {
       boardroomSpec: sanitizeBoardroomSpec(input.request),
       selectedSources,
       sourceReceiptIds,
+      contextInjectionPromptBlock: input.contextInjectionPromptBlock ?? null,
+      dockCapsuleIds: uniqueStrings(input.dockCapsuleIds ?? []),
       sourcePosture: sourceReceiptIds.length
         ? `${sourceReceiptIds.length} source receipt(s) attached`
         : documentCoreIds.length

@@ -82,7 +82,10 @@ export async function runLiveBoardroomDiscussion(input: LiveBoardroomRunnerInput
   const participants = spec.participantIds.map((id) => BOARDROOM_PARTICIPANTS[id]);
   const speakingParticipants = participants.filter((participant) => participant.id !== 'synthesis-chair');
   const evidenceRefs = buildEvidenceRefs(input);
-  const evidenceBlock = buildBoardroomEvidenceBlock(input.evidencePack, evidenceRefs);
+  const contextInjectionPromptBlock = typeof input.run.metadata.contextInjectionPromptBlock === 'string'
+    ? input.run.metadata.contextInjectionPromptBlock
+    : null;
+  const evidenceBlock = buildBoardroomEvidenceBlock(input.evidencePack, evidenceRefs, contextInjectionPromptBlock);
   const transcript: BoardroomOutput['transcript'] = [];
 
   for (let round = 1; round <= spec.maxRounds; round += 1) {
@@ -257,12 +260,19 @@ Transcript:
 ${input.transcript.map((turn) => `- R${turn.round} ${turn.participantId} (${turn.confidence}): ${turn.claim}${turn.critique ? ` Critique: ${turn.critique}` : ''}${turn.recommendation ? ` Recommendation: ${turn.recommendation}` : ''}`).join('\n')}`;
 }
 
-function buildBoardroomEvidenceBlock(pack: CapsuleEvidencePack, refs: EvidenceRef[]): string {
+function buildBoardroomEvidenceBlock(
+  pack: CapsuleEvidencePack,
+  refs: EvidenceRef[],
+  contextInjectionPromptBlock?: string | null,
+): string {
   const refLines = refs.length
     ? refs.map((ref) => `- ${ref.id}: ${ref.label}${ref.excerpt ? ` - ${ref.excerpt}` : ''}`).join('\n')
     : '- none';
   return [
     formatEvidencePackPromptBlock(pack),
+    // The compiled capsule-dock layer (same contract Ask PRAXIS injects) so
+    // every board voice deliberates inside the governed docked context.
+    ...(contextInjectionPromptBlock ? ['', contextInjectionPromptBlock] : []),
     '',
     '## Available evidence ids for boardroom turns',
     refLines,

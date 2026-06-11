@@ -1,5 +1,32 @@
 # PRAXIS — STATUS
 
+## 2026-06-11 — Recents, Boardroom Dock Grounding, Cleanup, Handover (build 2026.06.11.03)
+
+Current product checkpoint:
+
+- ChatGPT-style conversation flow is complete: every Ask conversation gets a
+  unique shareable URL on first message, the conversation title is derived
+  from the first user prompt, and the signed-in home sidebar shows a Recents
+  list (`GET /api/conversations`) linking back into each thread.
+- The boardroom is now capsule-grounded end to end: `/api/boardroom/runs`
+  compiles the four-slot Capsule Dock into the same governed prompt layer Ask
+  PRAXIS uses (`metadata.contextInjectionPromptBlock` + `dockCapsuleIds`),
+  the live runner prepends it to every board turn and synthesis, and the
+  boardroom sidebar renders the current dock state with an edit link.
+- Extensive cleanup: 22 verifiably dead files removed (unused stores, hooks,
+  prompts, analytics engines, mock auth, capsule-client) plus the orphan
+  capsule-client test and the duplicate sources/TierBadge component; the
+  tasklet workbench audit no longer pins the deleted dashboard component.
+- `HANDOVER.md` added at repo root: architect brief + sequenced CODEX prompt
+  queue (capsule depth, Inspect WOW, agents-working strip, repository facets,
+  workbench decomposition, boardroom dock picker, design sweep, sharing).
+- Filled dock slots show a gentle pulse signal; design language rules are
+  codified in HANDOVER.md Section 7.
+- Validation: `npx tsc --noEmit`, full `npx vitest run`, `npm run build`,
+  repo-shape / AI-routes / public-surface / release-notes audits pass
+  locally; deployed via `frontend-main-on-push` and verified against
+  `/api/health/runtime`.
+
 ## 2026-06-11 — Four-Slot Capsule Dock + Dock-Aware Generation (build 2026.06.11.02)
 
 Current product checkpoint:

@@ -491,14 +491,25 @@ function CapsuleDockSlotCard({
         data-testid="capsule-dock-chip"
         className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <Icon
-          className={cn(
-            'h-4 w-4 shrink-0',
-            filled
-              ? dark ? 'text-emerald-300' : 'text-emerald-700'
-              : dark ? 'text-slate-500' : 'text-slate-400',
-          )}
-        />
+        <span className="relative inline-flex shrink-0">
+          <Icon
+            className={cn(
+              'h-4 w-4',
+              filled
+                ? dark ? 'text-emerald-300' : 'text-emerald-700'
+                : dark ? 'text-slate-500' : 'text-slate-400',
+            )}
+          />
+          {filled ? (
+            <span
+              aria-hidden
+              className={cn(
+                'absolute -right-0.5 -top-0.5 h-1.5 w-1.5 animate-pulse rounded-full',
+                dark ? 'bg-emerald-300' : 'bg-emerald-500',
+              )}
+            />
+          ) : null}
+        </span>
         <span className="min-w-0">
           <span className={cn('block text-[9px] font-bold uppercase tracking-[0.14em]', dark ? 'text-slate-500' : 'text-slate-500')}>
             {slot.label}

@@ -5,7 +5,8 @@ import { enqueueAgentRunDispatch } from '@/lib/agent-runtime/cloud-tasks';
 import { toAgentRunOutput } from '@/lib/agent-runtime/schema';
 import { normalizePointer } from '@/lib/agent-runtime/state';
 import { buildBoardroomAgentRunInput, BoardroomRunRequestSchema } from '@/lib/boardroom/schema';
-import { getCapsule, getOrMigrateDefaultCapsule } from '@/lib/context/capsule-service';
+import { getCapsule, getOrMigrateDefaultCapsule, getStoredContextStack } from '@/lib/context/capsule-service';
+import { resolveInjectableContext } from '@/lib/context/context-injection';
 import type { SelectedCoreIds } from '@/lib/agent-runtime/types';
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +27,11 @@ export const POST = withAuth(async (request, user) => {
     return NextResponse.json({ error: 'Active capsule not found' }, { status: 404 });
   }
 
+  // Compile the capsule dock (User / Situation / Tool / Output) into the same
+  // governed prompt layer Ask PRAXIS uses, so the board deliberates on the
+  // full docked context, not just the primary capsule pointer.
+  const contextInjection = await resolveBoardroomContextInjection(user.uid, capsule.capsuleId, parsed.data.contextStackId);
+
   try {
     const run = await createAgentRun(buildBoardroomAgentRunInput({
       ownerUid: user.uid,
@@ -34,6 +40,8 @@ export const POST = withAuth(async (request, user) => {
       contextPackageId: `capsule:${capsule.capsuleId}:v${typeof capsule.version === 'number' ? capsule.version : 1}`,
       selectedCoreIds: capsule.coreRefs as Partial<SelectedCoreIds>,
       request: { ...parsed.data, capsuleId: capsule.capsuleId },
+      contextInjectionPromptBlock: contextInjection?.promptBlock ?? null,
+      dockCapsuleIds: contextInjection?.dockCapsuleIds ?? [],
     }));
 
     const runOutput = toAgentRunOutput(run);
@@ -63,6 +71,29 @@ async function resolveCapsule(uid: string, capsuleId?: string) {
   if (capsuleId) return getCapsule(uid, normalizePointer(capsuleId, 'default'));
   const result = await getOrMigrateDefaultCapsule(uid);
   return result.capsule;
+}
+
+async function resolveBoardroomContextInjection(
+  uid: string,
+  capsuleId: string,
+  contextStackId?: string | null,
+): Promise<{ promptBlock: string; dockCapsuleIds: string[] } | null> {
+  try {
+    const storedStack = await getStoredContextStack(uid, contextStackId ?? undefined).catch(() => null)
+      ?? await getStoredContextStack(uid).catch(() => null);
+    const injectable = await resolveInjectableContext({
+      uid,
+      capsuleId,
+      activeContextStack: storedStack ?? undefined,
+    });
+    return {
+      // Bounded copy for the run metadata ledger; the worker prepends it to the evidence block.
+      promptBlock: injectable.promptBlock.slice(0, 12_000),
+      dockCapsuleIds: injectable.dockCapsules.map((entry) => entry.capsule.capsuleId),
+    };
+  } catch {
+    return null;
+  }
 }
 
 function dispatchErrorMessage(err: unknown): string {

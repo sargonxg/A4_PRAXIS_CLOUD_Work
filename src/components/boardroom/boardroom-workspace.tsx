@@ -19,7 +19,7 @@ import { useActiveContextStack } from '@/components/app/use-active-context-stack
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
 import { ActivePolicyFileStrip } from '@/components/policy-work-file/ActivePolicyFileStrip';
 import { EmptyState } from '@/components/ui/empty-state';
-import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
+import { buildCapsuleDockSlots, type ActiveContextStackState } from '@/lib/context/active-context-stack';
 import { buildProofSummaryFromAgentRun, type UiProofSummary } from '@/lib/proof/proof-summary';
 import {
   BOARDROOM_DEFAULT_PARTICIPANT_IDS,
@@ -443,6 +443,27 @@ export function BoardroomWorkspace() {
                   <Metric label="Rounds" value={MAX_ROUNDS} />
                   <Metric label="Sources" value={boardroomContext.selectedSources.length} />
                   <Metric label="Documents" value={boardroomContext.selectedDocumentIds.length} />
+                </div>
+                <div className="mt-3" data-testid="boardroom-capsule-dock">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Capsule Dock</p>
+                  <div className="mt-1.5 grid gap-1">
+                    {buildCapsuleDockSlots(activeContextStack).slots.map((slot) => (
+                      <div
+                        key={slot.kind}
+                        title={slot.item ? `${slot.label}: ${slot.item.label}` : `${slot.label} slot is empty. ${slot.hint}.`}
+                        className={cn(
+                          'flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-[11px]',
+                          slot.item ? 'border-emerald-500/35 bg-emerald-50/70 text-slate-800' : 'border-dashed border-slate-300 bg-white text-slate-400',
+                        )}
+                      >
+                        <span className="font-bold uppercase tracking-[0.1em] text-slate-500">{slot.label}</span>
+                        <span className="min-w-0 truncate font-semibold">{slot.item?.label ?? 'empty'}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Link href="/app" className="mt-1.5 inline-block text-[11px] font-semibold text-emerald-700 hover:text-emerald-600">
+                    Edit dock in Ask
+                  </Link>
                 </div>
                 <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600">
                   <p className="rounded-md border border-slate-200 bg-white px-2 py-1.5">Active capsule context and source receipts when available.</p>

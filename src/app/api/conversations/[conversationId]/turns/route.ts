@@ -113,12 +113,17 @@ export const POST = withAuth<ConversationTurnRouteContext>(async (request, user,
   }
 
   const now = new Date().toISOString();
+  const existingTitle = typeof conversationSnap.data()?.title === 'string' ? conversationSnap.data()?.title : null;
+  const derivedTitle = deriveConversationTitle(parsed.data.messages);
   await conversationRef.set({
     conversationId: cleanConversationId,
     capsuleId: parsed.data.capsuleId,
     appliedCapsules,
     status: existingTurnCount > 0 ? 'active' : 'draft',
     visibility: 'private',
+    ...(derivedTitle && (!existingTitle || existingTitle === 'New PRAXIS conversation')
+      ? { title: derivedTitle }
+      : {}),
     createdAt: conversationSnap.exists && typeof conversationSnap.data()?.createdAt === 'string'
       ? conversationSnap.data()?.createdAt
       : now,
@@ -150,6 +155,19 @@ export const POST = withAuth<ConversationTurnRouteContext>(async (request, user,
 
 function cleanDocId(value: string): string {
   return value.trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 96);
+}
+
+/** First user message, collapsed to one line, becomes the conversation title for recents. */
+function deriveConversationTitle(messages: Array<{ role: string; content?: unknown; text?: unknown }>): string | null {
+  const firstUser = messages.find((message) => message.role === 'user');
+  const value = typeof firstUser?.content === 'string' && firstUser.content.trim()
+    ? firstUser.content
+    : typeof firstUser?.text === 'string'
+      ? firstUser.text
+      : '';
+  const collapsed = value.replace(/\s+/g, ' ').trim();
+  if (!collapsed) return null;
+  return collapsed.length > 80 ? `${collapsed.slice(0, 77)}...` : collapsed;
 }
 
 function requestedAgenticSearchPremium(value: unknown): boolean {

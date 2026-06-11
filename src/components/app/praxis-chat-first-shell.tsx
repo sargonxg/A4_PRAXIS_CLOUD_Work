@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
   CheckCircle2,
@@ -257,8 +257,32 @@ function HomeTopBar({ isPublic }: { isPublic: boolean }) {
   );
 }
 
+interface RecentConversationSummary {
+  conversationId: string;
+  capsuleId?: string;
+  title?: string;
+  updatedAt?: string;
+  turnCount?: number;
+}
+
 function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: string }) {
   const destinations = HOME_DESTINATIONS;
+  const [recents, setRecents] = useState<RecentConversationSummary[]>([]);
+
+  useEffect(() => {
+    if (isPublic) return;
+    let cancelled = false;
+    fetch('/api/conversations', { credentials: 'include' })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
+      .then((body: { conversations?: RecentConversationSummary[] }) => {
+        if (cancelled) return;
+        setRecents((body.conversations ?? []).filter((item) => item.conversationId).slice(0, 8));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [isPublic]);
 
   return (
     <aside className="praxis-shell-panel h-fit p-3" aria-label="Primary PRAXIS destinations">
@@ -283,6 +307,28 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
           );
         })}
       </nav>
+      {!isPublic && recents.length ? (
+        <nav className="mt-5" aria-label="Recent conversations" data-testid="home-recent-conversations">
+          <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Recent</p>
+          <div className="mt-2 grid gap-0.5">
+            {recents.map((item) => (
+              <Link
+                key={item.conversationId}
+                href={`/app/conversations/${encodeURIComponent(item.conversationId)}${item.capsuleId ? `?capsuleId=${encodeURIComponent(item.capsuleId)}` : ''}`}
+                className="group rounded-[var(--radius-md)] px-3 py-1.5 transition hover:bg-white"
+                title={item.title ?? item.conversationId}
+              >
+                <span className="block truncate text-[13px] font-medium text-slate-700 group-hover:text-slate-950">
+                  {item.title ?? 'PRAXIS conversation'}
+                </span>
+                <span className="block font-mono text-[10px] text-slate-400">
+                  {formatRecentTimestamp(item.updatedAt)}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </nav>
+      ) : null}
       <div className="mt-5 rounded-[var(--radius-md)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] p-3 text-xs leading-5 text-slate-600">
         Start with the question. Save context when the work needs sources, decisions, or a draft you can reuse.
       </div>
@@ -431,6 +477,20 @@ function ContextDrawer({
 
 function shortenContextId(value: string): string {
   return value.length > 28 ? `${value.slice(0, 16)}...${value.slice(-8)}` : value;
+}
+
+function formatRecentTimestamp(value: string | undefined): string {
+  if (!value) return 'saved';
+  const time = Date.parse(value);
+  if (Number.isNaN(time)) return 'saved';
+  const minutes = Math.max(0, Math.round((Date.now() - time) / 60_000));
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 14) return `${days}d ago`;
+  return new Date(time).toLocaleDateString();
 }
 
 function PublicAskContextBar({ onOpenAdvancedContext }: { onOpenAdvancedContext: () => void }) {
