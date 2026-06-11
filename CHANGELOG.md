@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+Build 2026.06.11.04 (PRAXIS v6.5.0).
+
+- feat(capsules): add `npm run audit:capsule-quality-ranking`, a P1 ranking
+  gate that scores all 205 starter capsules by source-spine depth, freshness,
+  claim-ledger posture, embedded graph depth, tacit knowledge, and agent
+  operating contract.
+
+- feat(capsules): emit a rolling weakest-20 report at
+  `docs/audits/LATEST-capsule-quality-ranking.{json,md}` with review-gated
+  `CapsuleImprovementProposal` records for source-spine, claim-ledger, and
+  embedded-graph repair before starter definitions are mutated.
+
 Build 2026.06.11.03 (PRAXIS v6.5.0).
 
 - feat(conversations): derive conversation titles from the first user prompt

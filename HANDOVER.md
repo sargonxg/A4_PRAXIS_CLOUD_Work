@@ -186,6 +186,20 @@ like a domain expert wrote it — unique judgment calls, not templates. Ship as
 review-gated proposals plus updated starter definitions. Validate with
 `audit:capsule-contract`, `audit:capsule-v3`, focused vitest."
 
+Checkpoint 2026-06-11:
+
+- `npm run audit:capsule-quality-ranking` now ranks all 205 starter capsules
+  and writes `docs/audits/LATEST-capsule-quality-ranking.{json,md}`.
+- The report picks the weakest 20 by capsule-native evidence signals
+  (source spine, freshness, claim ledger, embedded graph, tacit knowledge,
+  agent contract) even when the pass/fail quality audit is green.
+- The weakest-set report emits review-gated proposal records using the
+  existing `CapsuleImprovementProposal` path; current targets are
+  `researchDossier.sourceSpine`, `claimLedgerSeeds`, and
+  `ontologyOverlay.graphSeed`.
+- Next P1 slice: feed those 20 proposal records through Capsule Architect /
+  review-card acceptance before mutating starter definitions.
+
 **P2 — Capsule Inspect WOW.**
 "In the repository Inspect panel, make the DIALECTICA payload shine: render
 the ontology binding (active ontologies, ACO primitives), the embedded typed

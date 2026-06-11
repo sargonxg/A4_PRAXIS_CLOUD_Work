@@ -1,5 +1,26 @@
 # PRAXIS — STATUS
 
+## 2026-06-11 — P1 Capsule Quality Ranking Gate (build 2026.06.11.04)
+
+Current product checkpoint:
+
+- Added a P1 capsule-quality ranking gate for the starter catalog:
+  `npm run audit:capsule-quality-ranking`.
+- The new audit ranks all 205 starter capsules by capsule-native depth signals
+  (source spine, freshness, claim ledger, embedded graph, tacit knowledge,
+  agent contract) and writes
+  `docs/audits/LATEST-capsule-quality-ranking.{json,md}`.
+- The generated report selects the 20 weakest capsules and emits 60
+  review-gated repair proposals through the existing
+  `CapsuleImprovementProposal` path, targeting source-spine, claim-ledger,
+  and embedded-graph repair before any starter-definition mutation.
+- Validation: focused and full Vitest pass, `npm run typecheck`,
+  `npm run lint`, `npm run build`, `npm run audit:capsule-depth`,
+  `npm run audit:capsule-quality-ranking`, `npm run audit:capsule-contract`,
+  `npm run audit:capsule-v3`, `npm run audit:repo-shape`,
+  `node scripts/audit-ai-routes.mjs`, `npm run audit:public-surface`, and
+  `npm run audit:release-notes` pass locally.
+
 ## 2026-06-11 — Recents, Boardroom Dock Grounding, Cleanup, Handover (build 2026.06.11.03)
 
 Current product checkpoint:

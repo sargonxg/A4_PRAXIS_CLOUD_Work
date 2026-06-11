@@ -1022,6 +1022,10 @@ export interface CapsuleQualityAuditResult {
 export type CapsuleImprovementProposalTarget =
   | 'tags'
   | 'sourcePack'
+  | 'researchDossier.sourceSpine'
+  | 'claimLedgerSeeds'
+  | 'curationProfile.tacitKnowledge'
+  | 'ontologyOverlay.graphSeed'
   | 'richProfile.agentInstructions'
   | 'deviceProfile.failureModes'
   | 'deviceProfile.sourceabilityRequirements'

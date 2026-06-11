@@ -68,6 +68,7 @@
     "audit:next-moves": "tsx scripts/audit-next-moves.ts",
     "audit:context-health": "tsx scripts/audit-context-health.ts",
     "audit:capsule-depth": "tsx scripts/audit-capsule-depth.ts",
+    "audit:capsule-quality-ranking": "tsx scripts/audit-capsule-quality-ranking.ts",
     "audit:capsule-consolidation": "tsx scripts/audit-capsule-consolidation.ts",
     "build:capsule-cognee-seed": "tsx scripts/build-capsule-cognee-seed-pack.ts",
     "audit:capsule-inventory": "tsx scripts/audit-capsule-inventory.ts",
