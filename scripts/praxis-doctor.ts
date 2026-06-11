@@ -1072,33 +1072,93 @@ async function runAuthenticatedCanary(
   let runReadPayload: unknown = runPayload;
   let runReadStatus = extractRunStatus(runPayload) ?? null;
   const pollMs = Math.max(0, Number(env.PRAXIS_CANARY_POLL_MS ?? 1500));
-  const pollAttempts = Math.max(1, Math.min(10, Number(env.PRAXIS_CANARY_POLL_ATTEMPTS ?? 5)));
-  for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
-    if (attempt > 1 && pollMs > 0) await sleep(pollMs);
-    const readResponse = await fetchImpl(`${options.baseUrl}/api/agents/runs/${encodeURIComponent(runId)}`, {
-      method: 'GET',
-      headers: { Cookie: cookieHeader },
-    });
-    runReadPayload = await readResponseJsonOrText(readResponse);
-    runReadStatus = extractRunStatus(runReadPayload) ?? runReadStatus;
-    if (!readResponse.ok) {
+  const pollAttempts = Math.max(1, Math.min(20, Number(env.PRAXIS_CANARY_POLL_ATTEMPTS ?? 10)));
+  const pollAgentRun = async (): Promise<DoctorCheckResult | null> => {
+    for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
+      if (attempt > 1 && pollMs > 0) await sleep(pollMs);
+      const readResponse = await fetchImpl(`${options.baseUrl}/api/agents/runs/${encodeURIComponent(runId)}`, {
+        method: 'GET',
+        headers: { Cookie: cookieHeader },
+      });
+      runReadPayload = await readResponseJsonOrText(readResponse);
+      runReadStatus = extractRunStatus(runReadPayload) ?? runReadStatus;
+      if (!readResponse.ok) {
+        steps.push({
+          step: 'agent-run-read',
+          status: canaryHttpStatus(readResponse.status),
+          httpStatus: readResponse.status,
+          id: runId,
+          detail: 'AgentRun readback failed.',
+        });
+        return canaryResult({
+          status: canaryHttpStatus(readResponse.status),
+          canaryPlan,
+          steps,
+          summary: `AgentRun readback failed with HTTP ${readResponse.status}`,
+          evidence: [runReadPayload],
+          remediation: ['Verify owner-scoped AgentRun read route and Cloud SQL ledger connectivity'],
+        });
+      }
+      if (runReadStatus && ['succeeded', 'failed', 'cancelled', 'expired', 'waiting_approval'].includes(runReadStatus)) break;
+    }
+    return null;
+  };
+  const readError = await pollAgentRun();
+  if (readError) return readError;
+
+  if (runReadStatus === 'waiting_approval') {
+    const approvalId = extractPendingApprovalId(runReadPayload);
+    if (!approvalId) {
       steps.push({
-        step: 'agent-run-read',
-        status: canaryHttpStatus(readResponse.status),
-        httpStatus: readResponse.status,
+        step: 'agent-run-approval',
+        status: 'BLOCKED',
         id: runId,
-        detail: 'AgentRun readback failed.',
+        detail: 'AgentRun entered waiting_approval but no pending approval id was returned.',
       });
       return canaryResult({
-        status: canaryHttpStatus(readResponse.status),
+        status: 'BLOCKED',
         canaryPlan,
         steps,
-        summary: `AgentRun readback failed with HTTP ${readResponse.status}`,
+        summary: `AgentRun ${runId} entered waiting_approval without a pending approval id`,
         evidence: [runReadPayload],
-        remediation: ['Verify owner-scoped AgentRun read route and Cloud SQL ledger connectivity'],
+        remediation: ['Verify /api/agents/runs/{runId} returns pending approvals for owner-scoped approval decisions'],
       });
     }
-    if (runReadStatus && ['succeeded', 'failed', 'cancelled', 'expired'].includes(runReadStatus)) break;
+
+    const approvalResponse = await fetchImpl(`${options.baseUrl}/api/agents/runs/${encodeURIComponent(runId)}/approvals/${encodeURIComponent(approvalId)}`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        decision: 'approved',
+        reason: `Doctor canary ${canaryPlan.tag} approved its disposable AgentRun gate.`,
+      }),
+    });
+    const approvalPayload = await readResponseJsonOrText(approvalResponse);
+    const approvalStatus = canaryHttpStatus(approvalResponse.status);
+    runReadPayload = approvalPayload;
+    runReadStatus = extractRunStatus(approvalPayload) ?? runReadStatus;
+    steps.push({
+      step: 'agent-run-approval',
+      status: approvalResponse.ok ? 'PASS' : approvalStatus,
+      httpStatus: approvalResponse.status,
+      id: approvalId,
+      detail: approvalResponse.ok
+        ? 'Disposable canary AgentRun approval granted and resume dispatch requested.'
+        : 'Disposable canary AgentRun approval failed.',
+    });
+    if (!approvalResponse.ok) {
+      return canaryResult({
+        status: approvalStatus,
+        canaryPlan,
+        steps,
+        summary: `AgentRun ${runId} approval ${approvalId} failed with HTTP ${approvalResponse.status}`,
+        evidence: [approvalPayload],
+        remediation: ['Verify owner-scoped AgentRun approval route and pending approval state'],
+      });
+    }
+
+    const resumedReadError = await pollAgentRun();
+    if (resumedReadError) return resumedReadError;
   }
   const workerStatus: DoctorStatus = runReadStatus === 'succeeded'
     ? 'PASS'
@@ -1347,6 +1407,16 @@ function extractRunStatus(payload: unknown): string | null {
 function extractOutputHref(payload: unknown): string | null {
   const run = extractRunRecord(payload);
   return typeof run?.outputHref === 'string' ? run.outputHref : null;
+}
+
+function extractPendingApprovalId(payload: unknown): string | null {
+  if (!isRecord(payload) || !Array.isArray(payload.approvals)) return null;
+  const pending = payload.approvals.find((approval) =>
+    isRecord(approval)
+      && approval.status === 'pending'
+      && typeof approval.id === 'string'
+  );
+  return isRecord(pending) && typeof pending.id === 'string' ? pending.id : null;
 }
 
 function extractRunRecord(payload: unknown): Record<string, unknown> | null {

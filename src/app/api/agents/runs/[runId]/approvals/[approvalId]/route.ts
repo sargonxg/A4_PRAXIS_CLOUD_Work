@@ -48,6 +48,8 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
       return NextResponse.json({ approval, run: toAgentRunOutput(failed ?? run), resumed: false });
     }
 
+    // The owner-scoped approval path is also what the production canary uses
+    // for its disposable AgentRun before verifying terminal worker output.
     const resumed = run.status === 'waiting_approval'
       ? await updateAgentRunStatus({
           ownerUid: user.uid,

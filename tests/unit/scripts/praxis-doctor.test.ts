@@ -313,6 +313,7 @@ describe('runPraxisDoctor', () => {
       if (command.startsWith('npm run auth:doctor')) return { code: 0, stdout: 'ok', stderr: '' };
       return { code: 0, stdout: 'ok', stderr: '' };
     });
+    let runReadCount = 0;
     const fetch = vi.fn(async (url: string, init?: RequestInit) => {
       if (url.includes('identitytoolkit.googleapis.com')) {
         return jsonResponse(200, { idToken: 'firebase-id-token' });
@@ -351,7 +352,29 @@ describe('runPraxisDoctor', () => {
       if (url.endsWith('/api/agents/runs/run-canary-1/dispatch')) {
         return jsonResponse(200, { taskName: 'agent-runs/run-canary-1' });
       }
+      if (url.endsWith('/api/agents/runs/run-canary-1/approvals/approval-canary-1')) {
+        return jsonResponse(200, {
+          approval: { id: 'approval-canary-1', status: 'approved' },
+          run: { runId: 'run-canary-1', status: 'running' },
+          dispatch: { taskName: 'agent-runs/run-canary-1-resumed' },
+          resumed: true,
+        });
+      }
       if (url.endsWith('/api/agents/runs/run-canary-1')) {
+        runReadCount += 1;
+        if (runReadCount === 1) {
+          return jsonResponse(200, {
+            run: {
+              runId: 'run-canary-1',
+              status: 'waiting_approval',
+              outputDestination: 'memo_studio',
+              outputHref: '/app?panel=memo',
+            },
+            toolCalls: [],
+            approvals: [{ id: 'approval-canary-1', status: 'pending', risk: 'medium' }],
+            persisted: true,
+          });
+        }
         return jsonResponse(200, {
           run: {
             runId: 'run-canary-1',
@@ -419,6 +442,14 @@ describe('runPraxisDoctor', () => {
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ createFirstSituation: false }),
+      }),
+    );
+    expect(JSON.stringify(report)).toContain('agent-run-approval');
+    expect(fetch).toHaveBeenCalledWith(
+      'https://praxis.tacitus.me/api/agents/runs/run-canary-1/approvals/approval-canary-1',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"decision":"approved"'),
       }),
     );
     expect(report.checks).toContainEqual(expect.objectContaining({
