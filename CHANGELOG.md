@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+Build 2026.06.11.02 (PRAXIS v6.5.0).
+
+- feat(dock): replace the capsule chip row with four typed dock slots — User,
+  Situation, Tool, Output — in `AskContextBar` and the public home preview.
+  Slots attach/swap/clear one capsule each via a slot-filtered picker; legacy
+  primary refs map to Situation and other legacy refs stay visible in an
+  overflow row. New stack helpers: `buildCapsuleDockSlots`,
+  `assignCapsuleToDockSlot`, `clearCapsuleDockSlot`.
+
+- feat(generation): make capsule injection dock-aware. The injectable-context
+  resolver now loads every docked capsule by role and prepends a
+  `[capsule_dock]` layer with fixed read order and per-role governance
+  contracts; unresolved dock refs are reported as explicit context gaps.
+
+- docs(learn): add a "PRAXIS-augmented generation" section covering the four
+  capsule types, dock resolution, governed retrieval, agent runtime checks,
+  and the layered-truth review model.
+
+- chore(cleanup): remove the unused duplicate `components/sources/TierBadge`;
+  `components/source/SourceTierBadge` remains canonical.
+
 Build 2026.06.11.01 (PRAXIS v6.5.0).
 
 - feat(capsules): unify the capsule repository with the shared context dock.

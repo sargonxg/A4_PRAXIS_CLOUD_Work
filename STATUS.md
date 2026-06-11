@@ -1,5 +1,37 @@
 # PRAXIS — STATUS
 
+## 2026-06-11 — Four-Slot Capsule Dock + Dock-Aware Generation (build 2026.06.11.02)
+
+Current product checkpoint:
+
+- The Capsule Dock is now exactly four typed slots — User, Situation, Tool,
+  Output — rendered as slot cards above the Ask composer in both the
+  authenticated bar and the public home preview. Each slot attaches, swaps,
+  or clears one capsule of its type; legacy primary refs map to the Situation
+  slot and other legacy refs stay visible in an "Also attached" overflow row.
+- New stack helpers in `src/lib/context/active-context-stack.ts`
+  (`buildCapsuleDockSlots`, `assignCapsuleToDockSlot`, `clearCapsuleDockSlot`)
+  keep the Situation capsule governing the stack pointer with deterministic
+  slot precedence; the capsule picker lists slot-matching capsules first.
+- Generation is now dock-aware end to end: `resolveInjectableContext` loads
+  every docked capsule by role and emits a `[capsule_dock]` prompt layer with
+  a fixed read order and per-role contracts (situation governs facts, user
+  governs voice, tool governs method, output governs format); unresolved dock
+  refs surface as explicit context gaps instead of silently dropping.
+- `/learn` adds a "PRAXIS-augmented generation" section explaining the four
+  capsule types, the dock resolver, governed retrieval, the agent runtime
+  checks (research, extraction, sourceability review, red team, approval
+  gates), and the layered-truth review model.
+- Cleanup: removed the unused duplicate `src/components/sources/TierBadge.tsx`
+  (canonical badge stays at `src/components/source/SourceTierBadge.tsx`).
+- Validation: `npx tsc --noEmit`, `npm run lint`, full `npx vitest run`
+  (317 files, 1345 tests), `npm run build`, `npm run audit:repo-shape`,
+  `node scripts/audit-ai-routes.mjs`, and `npm run audit:public-surface` pass
+  locally. Deployed via `frontend-main-on-push` Cloud Build; production
+  `/api/health/runtime` reports commit `fa2b527d`, revision
+  `praxis-frontend-00990-s8c`, all checks ok, and `/learn` serves the new
+  generation section.
+
 ## 2026-06-11 — One Context Stack for Capsules and Dock (build 2026.06.11.01)
 
 Current product checkpoint:
