@@ -322,6 +322,11 @@ describe('runPraxisDoctor', () => {
       if (url.endsWith('/api/auth/session') && init?.method === 'GET') {
         return jsonResponse(200, { authenticated: true, user: { id: 'uid-1' } });
       }
+      if (url.endsWith('/api/onboarding/skip')) {
+        return jsonResponse(200, { ok: true }, {
+          'set-cookie': 'tacitus-auth-session=refreshed-signed-cookie-value; Path=/; HttpOnly',
+        });
+      }
       if (url.endsWith('/api/context/capsules')) {
         return jsonResponse(201, { capsule: { capsuleId: 'praxis-doctor-canary-20260517T120000000Z' } });
       }
@@ -394,6 +399,7 @@ describe('runPraxisDoctor', () => {
       status: 'PASS',
       summary: expect.stringContaining('AgentRun run-canary-1'),
     }));
+    expect(JSON.stringify(report)).toContain('onboarding-finish-later');
     expect(report.checks).toContainEqual(expect.objectContaining({
       id: 'canary-agent-run-stream',
       status: 'PASS',
@@ -407,6 +413,7 @@ describe('runPraxisDoctor', () => {
     ]));
     expect(JSON.stringify(report)).not.toContain('secret-password');
     expect(JSON.stringify(report)).not.toContain('signed-cookie-value');
+    expect(JSON.stringify(report)).not.toContain('refreshed-signed-cookie-value');
   });
 });
 

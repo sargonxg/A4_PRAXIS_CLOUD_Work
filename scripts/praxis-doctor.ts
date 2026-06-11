@@ -696,7 +696,7 @@ async function runAuthenticatedCanary(
     body: JSON.stringify({ token: authPayload.idToken }),
   });
   const sessionPayload = await readResponse(sessionResponse);
-  const cookieHeader = extractCookieHeader(sessionResponse.headers, 'tacitus-auth-session');
+  let cookieHeader = extractCookieHeader(sessionResponse.headers, 'tacitus-auth-session');
   steps.push({
     step: 'app-session',
     status: sessionResponse.ok && cookieHeader ? 'PASS' : 'FAIL',
@@ -718,7 +718,7 @@ async function runAuthenticatedCanary(
     });
   }
 
-  const authHeaders = {
+  let authHeaders = {
     'Content-Type': 'application/json',
     Cookie: cookieHeader,
     Origin: options.baseUrl,
@@ -743,6 +743,36 @@ async function runAuthenticatedCanary(
       summary: `Authenticated session readback failed with HTTP ${sessionCheckResponse.status}`,
       evidence: [sessionCheckPayload],
       remediation: ['Verify canary user onboarding state and auth middleware cookie parsing'],
+    });
+  }
+
+  const onboardingResponse = await fetchImpl(`${options.baseUrl}/api/onboarding/skip`, {
+    method: 'POST',
+    headers: authHeaders,
+  });
+  const onboardingPayload = await readResponse(onboardingResponse);
+  const refreshedCookieHeader = extractCookieHeader(onboardingResponse.headers, 'tacitus-auth-session');
+  if (refreshedCookieHeader) {
+    cookieHeader = refreshedCookieHeader;
+    authHeaders = { ...authHeaders, Cookie: cookieHeader };
+  }
+  const onboardingStatus = canaryHttpStatus(onboardingResponse.status);
+  steps.push({
+    step: 'onboarding-finish-later',
+    status: onboardingResponse.ok ? 'PASS' : onboardingStatus,
+    httpStatus: onboardingResponse.status,
+    detail: refreshedCookieHeader
+      ? 'Onboarding Finish later path recorded and refreshed the app session cookie.'
+      : 'Onboarding Finish later path recorded for the canary user.',
+  });
+  if (!onboardingResponse.ok) {
+    return canaryResult({
+      status: onboardingStatus,
+      canaryPlan,
+      steps,
+      summary: `Onboarding Finish later canary step failed with HTTP ${onboardingResponse.status}`,
+      evidence: [onboardingPayload],
+      remediation: ['Verify /api/onboarding/skip and analyst profile admin writes for the canary user'],
     });
   }
 
