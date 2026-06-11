@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const workbenchSource = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
+const workbenchHelpersSource = readFileSync(join(process.cwd(), 'src/components/praxis/workbench/helpers.ts'), 'utf8');
 const conversationHelperSource = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-workbench-conversation.ts'), 'utf8');
 const askStreamPanelSource = readFileSync(join(process.cwd(), 'src/components/ask/AskStreamPanel.tsx'), 'utf8');
 const askArtifactPreviewSource = readFileSync(join(process.cwd(), 'src/components/ask/AskArtifactPreview.tsx'), 'utf8');
@@ -11,7 +12,7 @@ const askQueuedAgentRunPanelPath = join(process.cwd(), 'src/components/ask/AskQu
 const askQueuedAgentRunPanelSource = existsSync(askQueuedAgentRunPanelPath)
   ? readFileSync(askQueuedAgentRunPanelPath, 'utf8')
   : '';
-const source = `${workbenchSource}\n${conversationHelperSource}`;
+const source = `${workbenchSource}\n${workbenchHelpersSource}\n${conversationHelperSource}`;
 const instrumentSource = readFileSync(join(process.cwd(), 'src/components/ui/instrument.tsx'), 'utf8');
 const visualSource = `${workbenchSource}\n${instrumentSource}`;
 const sidebarSource = readFileSync(join(process.cwd(), 'src/components/app/app-sidebar.tsx'), 'utf8');
@@ -19,12 +20,12 @@ const primaryNavSource = readFileSync(join(process.cwd(), 'src/lib/navigation/pr
 const repositoryPageSource = readFileSync(join(process.cwd(), 'src/app/app/repository/page.tsx'), 'utf8');
 const routeSource = readFileSync(join(process.cwd(), 'src/app/app/capsules/page.tsx'), 'utf8');
 
-function extractSourceBlock(start: string, end: string): string {
-  const startIndex = workbenchSource.indexOf(start);
-  const endIndex = workbenchSource.indexOf(end, Math.max(startIndex, 0));
+function extractSourceBlock(start: string, end: string, input = workbenchSource): string {
+  const startIndex = input.indexOf(start);
+  const endIndex = input.indexOf(end, Math.max(startIndex, 0));
   expect(startIndex).toBeGreaterThanOrEqual(0);
   expect(endIndex).toBeGreaterThan(startIndex);
-  return workbenchSource.slice(startIndex, endIndex);
+  return input.slice(startIndex, endIndex);
 }
 
 const suggestionWidgetSource = extractSourceBlock('function CapsuleSuggestionWidget', 'function AssistantMarkdown');
@@ -32,10 +33,10 @@ const repositoryGridSource = extractSourceBlock('function CapsuleRepositoryGrid'
 const inspectorSheetSource = extractSourceBlock('function CapsuleInspectorSheet', 'function PraxisGuideChat');
 const contextBarSource = extractSourceBlock('data-testid="capsule-context-bar"', 'data-testid="ask-capsule-workflow-preview"');
 const humanGatedExampleSource = extractSourceBlock('function HumanGatedPolicyFamilyPanel', 'function PublicFullLibraryCta');
-const activeContextStackHelperSource = extractSourceBlock('function buildActiveContextBlocks', 'function selectedCoreIdsFromContextStack');
-const applyCapsuleToStackSource = extractSourceBlock('function applyCapsuleToStack', 'function uniqueCapsuleStack');
+const activeContextStackHelperSource = extractSourceBlock('function buildActiveContextBlocks', 'function selectedCoreIdsFromContextStack', workbenchHelpersSource);
+const applyCapsuleToStackSource = extractSourceBlock('function applyCapsuleToStack', 'function uniqueCapsuleStack', workbenchHelpersSource);
 const contextChainLaneSource = extractSourceBlock('function ContextChainBlockLane', 'function SortableCapsuleBlock');
-const contextChainBlockLanesSource = extractSourceBlock('function buildContextChainBlockLanes', 'function contextBlockIdForRole');
+const contextChainBlockLanesSource = extractSourceBlock('function buildContextChainBlockLanes', 'function contextBlockIdForRole', workbenchHelpersSource);
 
 describe('Tasklet PRAXIS workbench contract', () => {
   it('keeps model routing TACITUS-owned in the main composer', () => {
@@ -209,7 +210,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
   it('surfaces plain context readiness states in the active capsule strip', () => {
     expect(contextBarSource).toContain('plainContextHealthState');
     for (const expected of ['ready', 'thin', 'missing sources', 'stale sources', 'needs review']) {
-      expect(workbenchSource).toContain(expected);
+      expect(source).toContain(expected);
     }
   });
 
@@ -320,6 +321,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
 
   it('keeps one category-native context chain and exposes one canonical taxonomy filter surface', () => {
     expect((source.match(/data-testid="capsule-context-bar"/g) ?? []).length).toBe(1);
+    expect(source).toContain('<AskContextBar');
+    expect(source).toContain('variant="home"');
+    expect(source).toContain('useActiveContextStack()');
     expect((source.match(/data-testid="capsule-taxonomy-filter-bar"/g) ?? []).length).toBe(1);
     expect(source).toContain('function CapsuleTaxonomyFilterBar');
     expect(source).toContain('data-testid="active-capsule-strip"');
@@ -354,9 +358,13 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Policy Teams');
     expect(source).toContain('policyTeamId');
     expect(source).toContain('/app/capsules');
-    expect(source).toContain('onAdd={() => applyCapsuleCard(capsule)}');
-    expect(source).toContain('Add</button>');
+    expect(source).toContain('onAdd={(role) => applyCapsuleCard(capsule, role)}');
+    expect(source).toContain('data-testid="capsule-card-add-split"');
     expect(source).toContain('Review its category before relying on it.');
+    expect(source).toContain('As User core');
+    expect(source).toContain('As Situation');
+    expect(source).toContain('As Tool');
+    expect(source).toContain('As Output');
     expect(source).not.toContain('Use as user</button>');
     expect(source).not.toContain('Use as situation</button>');
     expect(source).not.toContain('Use as output</button>');
@@ -559,7 +567,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('<LivingContextRail');
     expect(source).not.toContain('livingRailCells');
     expect(source).toContain('const activeCapsuleStack = useMemo');
-    expect(source).toContain('ensureDefaultCapsuleStack(activeCapsules');
+    expect(source).toContain('activeCapsulesFromContextStack(activeContextStackState');
     expect(source).toContain("data-testid=\"capsule-context-composer\"");
     expect(source).not.toContain('Profile / user');
     expect(source).not.toContain('Situation / context');
@@ -612,7 +620,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('?? starterCapsuleSummaries[0] ?? null');
     expect(source).toContain("id: 'starter-user-generic-analyst'");
     expect(source).toContain("label: 'Generic analyst'");
-    expect(source).toContain("const [activeCapsules, setActiveCapsules] = useState<ActiveCapsuleChip[]>([STARTER_USER_CAPSULE_CHIP])");
+    expect(source).not.toContain("const [activeCapsules, setActiveCapsules] = useState<ActiveCapsuleChip[]>([STARTER_USER_CAPSULE_CHIP])");
+    expect(source).toContain('persistActiveCapsuleStack');
     expect(source).toContain("action: 'Add context'");
     expect(source).toContain("action: 'Attach sources'");
     expect(source).toContain("action: 'Add checks'");

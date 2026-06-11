@@ -32,7 +32,7 @@ const SOURCE_ASSERTIONS = [
   { name: 'specimen-card', pattern: /specimen-card/ },
   { name: 'receipt-slip', pattern: /receipt-slip/ },
   { name: 'context-chain', pattern: /context-chain/ },
-  { name: 'policy missions', pattern: /Sanctions impact memo[\s\S]*Treaty analysis with citations[\s\S]*Stakeholder & ACH for a crisis/ },
+  { name: 'policy missions', pattern: /Sanctions impact memo[\s\S]*Treaty brief with citations[\s\S]*Stakeholder map & ACH/ },
   { name: 'billing mode honesty', pattern: /sandbox test mode|checkout is not configured/ },
   { name: 'premium web honesty', pattern: /Premium web is not enabled by default/ },
 ];
@@ -40,7 +40,7 @@ const SOURCE_ASSERTIONS = [
 const LIVE_ASSERTIONS = [
   { name: 'PRAXIS brand mark', pattern: /PRAXIS/ },
   { name: 'Civic Atelier shell', pattern: /civic-atelier-shell/ },
-  { name: 'policy mission copy', pattern: /Sanctions impact memo|Treaty analysis with citations|Stakeholder & ACH/ },
+  { name: 'policy mission copy', pattern: /Sanctions impact memo|Treaty brief with citations|Stakeholder map & ACH/ },
 ];
 
 function sourceText() {

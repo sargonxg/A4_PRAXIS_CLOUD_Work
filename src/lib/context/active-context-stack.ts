@@ -1,5 +1,5 @@
 export type ActiveContextBlockId = 'userCore' | 'situation' | 'sources' | 'thinkingDevices' | 'output';
-export type ActiveCapsuleRole = 'primary' | 'reference' | 'comparison';
+export type ActiveCapsuleRole = 'primary' | 'reference' | 'comparison' | 'user' | 'situation' | 'tool' | 'output';
 
 export const CAPSULE_MERGE_PRECEDENCE =
   'primary capsule governs; reference capsules fill gaps in explicit order; comparison capsules remain labeled context; duplicate capsule ids use the first occurrence.';
@@ -253,9 +253,13 @@ export function buildCapsuleDockModel(
     versionLabel: ref.version ? `v${ref.version}` : 'latest',
   }));
   const counts = {
-    primary: items.filter((item) => item.role === 'primary').length,
+    primary: items.filter((item) => item.primary).length,
     reference: items.filter((item) => item.role === 'reference').length,
     comparison: items.filter((item) => item.role === 'comparison').length,
+    user: items.filter((item) => item.role === 'user').length,
+    situation: items.filter((item) => item.role === 'situation').length,
+    tool: items.filter((item) => item.role === 'tool').length,
+    output: items.filter((item) => item.role === 'output').length,
     total: items.length,
   };
   const stackPolicyLabel = current.contextPackageId ? 'Pinned package' : 'Track latest';
@@ -431,7 +435,7 @@ function sanitizeCapsuleRefs(value: unknown, legacyCapsuleId: string | null): Ac
     .map((ref, index) => ({
       capsuleId: ref.capsuleId.slice(0, 160),
       label: ref.label ? ref.label.slice(0, 240) : null,
-      role: index === 0 ? 'primary' : normalizeCapsuleRole(ref.role) === 'primary' ? 'reference' : normalizeCapsuleRole(ref.role),
+      role: normalizeCapsuleRole(ref.role),
       primary: index === 0,
       order: index,
       version: typeof ref.version === 'number' && Number.isFinite(ref.version) ? Math.max(1, Math.floor(ref.version)) : null,
@@ -439,12 +443,24 @@ function sanitizeCapsuleRefs(value: unknown, legacyCapsuleId: string | null): Ac
 }
 
 function normalizeCapsuleRole(value: unknown): ActiveCapsuleRole {
-  return value === 'primary' || value === 'reference' || value === 'comparison' ? value : 'reference';
+  return value === 'primary'
+    || value === 'reference'
+    || value === 'comparison'
+    || value === 'user'
+    || value === 'situation'
+    || value === 'tool'
+    || value === 'output'
+    ? value
+    : 'reference';
 }
 
 function roleLabel(role: ActiveCapsuleRole): string {
   if (role === 'primary') return 'Primary';
   if (role === 'comparison') return 'Comparison';
+  if (role === 'user') return 'User core';
+  if (role === 'situation') return 'Situation';
+  if (role === 'tool') return 'Tool';
+  if (role === 'output') return 'Output';
   return 'Reference';
 }
 

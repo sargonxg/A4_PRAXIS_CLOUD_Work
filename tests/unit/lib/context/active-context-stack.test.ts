@@ -110,6 +110,48 @@ describe('active context stack block arrays', () => {
     expect(detached.capsuleRefs.map((ref) => ref.capsuleId)).toEqual(['cap-humanitarian', 'cap-legal']);
   });
 
+  it('preserves semantic workbench capsule bucket roles while keeping one primary ref', () => {
+    const stack = sanitizeActiveContextStack({
+      capsuleId: 'cap-situation',
+      capsuleRefs: [
+        { capsuleId: 'cap-user', label: 'User core', role: 'user' },
+        { capsuleId: 'cap-situation', label: 'Situation brief', role: 'situation' },
+        { capsuleId: 'cap-tool', label: 'Sourceability matrix', role: 'tool' },
+        { capsuleId: 'cap-output', label: 'Principals memo', role: 'output' },
+      ],
+    });
+
+    expect(stack.capsuleRefs.map((ref) => [ref.capsuleId, ref.role, ref.primary, ref.order])).toEqual([
+      ['cap-situation', 'situation', true, 0],
+      ['cap-user', 'user', false, 1],
+      ['cap-tool', 'tool', false, 2],
+      ['cap-output', 'output', false, 3],
+    ]);
+
+    const model = buildCapsuleDockModel(stack, {
+      hydrated: true,
+      persisted: true,
+    });
+
+    expect(model.counts).toEqual({
+      primary: 1,
+      reference: 0,
+      comparison: 0,
+      user: 1,
+      situation: 1,
+      tool: 1,
+      output: 1,
+      total: 4,
+    });
+    expect(model.items.map((item) => [item.capsuleId, item.roleLabel, item.primary])).toEqual([
+      ['cap-situation', 'Situation', true],
+      ['cap-user', 'User core', false],
+      ['cap-tool', 'Tool', false],
+      ['cap-output', 'Output', false],
+    ]);
+    expect(model.warnings.map((warning) => warning.id)).toEqual(['missing-output']);
+  });
+
   it('builds a Capsule Dock model with role counts, persistence state, and composition warnings', () => {
     const stack = sanitizeActiveContextStack({
       capsuleId: 'cap-primary',
@@ -130,7 +172,16 @@ describe('active context stack block arrays', () => {
     expect(model.stackPolicyLabel).toBe('Track latest');
     expect(model.contextPackageLabel).toBe('Package resolves on send');
     expect(model.persistenceLabel).toBe('Local stack');
-    expect(model.counts).toEqual({ primary: 1, reference: 1, comparison: 1, total: 3 });
+    expect(model.counts).toEqual({
+      primary: 1,
+      reference: 1,
+      comparison: 1,
+      user: 0,
+      situation: 0,
+      tool: 0,
+      output: 0,
+      total: 3,
+    });
     expect(model.items.map((item) => [item.capsuleId, item.role, item.roleLabel, item.versionLabel])).toEqual([
       ['cap-primary', 'primary', 'Primary', 'v3'],
       ['cap-reference', 'reference', 'Reference', 'v1'],

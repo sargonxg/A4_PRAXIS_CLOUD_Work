@@ -1,5 +1,30 @@
 # PRAXIS — STATUS
 
+## 2026-06-11 — One Context Stack for Capsules and Dock (build 2026.06.11.01)
+
+Current product checkpoint:
+
+- The capsule repository now uses the same active context stack as Ask PRAXIS.
+  `/app/capsules` mounts the shared dock and writes capsule changes through the
+  shared stack instead of a local-only active-capsule list.
+- Repository capsule cards keep the default one-click Add flow and add a
+  bucket quick-pick for User core, Situation, Tool, and Output roles.
+- Detaching or reassigning capsules in the shared dock updates the repository
+  workbench selection, while repository adds persist back into the dock.
+- Context normalization now preserves semantic workbench bucket roles through
+  dock counts and prompt-frame refs.
+- Workbench decomposition has started by extracting pure active-context stack
+  helpers into `src/components/praxis/workbench/helpers.ts`; the top-level
+  workbench remains the orchestrator.
+- Validation: `npx tsc --noEmit`, `npm run lint`, focused context/workbench
+  tests, full `npx vitest run` (305 files, 1307 tests), `npm run build`,
+  `npm run audit:release-notes`, `npm run audit:public-surface`,
+  `node scripts/audit-ai-routes.mjs`, `npm run audit:simplification`, and
+  `npm run verify:design` pass locally. `npm run audit:gate` passes through
+  typecheck, build, routes, capsules, agents, architecture, and surface, then
+  stops in `audit:gcp` because this shell cannot refresh `gcloud` credentials
+  non-interactively.
+
 ## 2026-06-10 — Interactive Dock, Export to Editor, Emerald Coherence (build 2026.06.10.02)
 
 Current product checkpoint:

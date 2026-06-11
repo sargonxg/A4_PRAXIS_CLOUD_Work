@@ -57,7 +57,7 @@ export interface CapsuleFrameAgentOperatingContract {
 export interface CapsulePromptFrame {
   capsuleId: string;
   label: string;
-  role: 'primary' | 'reference' | 'comparison';
+  role: 'primary' | 'reference' | 'comparison' | 'user' | 'situation' | 'tool' | 'output';
   version: number | null;
   order: number;
   ontologyBinding: CapsuleFrameOntologyBinding | null;

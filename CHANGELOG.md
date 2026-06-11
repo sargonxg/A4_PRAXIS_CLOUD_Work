@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+Build 2026.06.11.01 (PRAXIS v6.5.0).
+
+- feat(capsules): unify the capsule repository with the shared context dock.
+  `/app/capsules` now reads and writes the same active context stack used by
+  Ask PRAXIS, preserving User/Situation/Tool/Output capsule buckets instead
+  of maintaining a separate local active-capsule list.
+
+- feat(capsules): add bucket quick-pick split buttons to repository capsule
+  cards. The default Add action remains one click, while the menu can attach a
+  capsule as User core, Situation, Tool, or Output and persist that role into
+  the shared dock.
+
+- refactor(workbench): extract the pure active-context stack helpers into
+  `src/components/praxis/workbench/helpers.ts` so the 11k-line workbench starts
+  moving toward leaf modules without behavior changes.
+
+- chore(audits): align the public-surface and design copy guards with the
+  current shorter home headline and renamed mission cards.
+
 Build 2026.06.10.03 (PRAXIS v6.5.0).
 
 - feat(home): make / and /app exactly the same surface. One shared

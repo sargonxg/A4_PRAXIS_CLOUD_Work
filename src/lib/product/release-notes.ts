@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.06.11.01',
+    version: '6.5.0',
+    date: '2026-06-11',
+    title: 'One context stack for capsules and the dock',
+    summary: 'The capsule repository and Ask dock now share the same active context stack, preserving User/Situation/Tool/Output buckets and letting capsule cards attach directly into the chosen bucket.',
+    category: 'product',
+    items: [
+      'The capsule repository mounts the shared context dock, so /app/capsules and Ask PRAXIS read from the same active stack instead of keeping separate local capsule state.',
+      'Capsule card Add controls now include a bucket quick-pick for User core, Situation, Tool, and Output roles while keeping the one-click default add path.',
+      'Detaching or changing capsules through the shared dock updates the repository workbench selection, and repository adds persist back into the shared dock.',
+      'Semantic capsule roles survive prompt-frame and dock normalization instead of being collapsed into legacy primary/reference/comparison roles.',
+    ],
+  },
+  {
     buildNumber: '2026.06.10.03',
     version: '6.5.0',
     date: '2026-06-10',

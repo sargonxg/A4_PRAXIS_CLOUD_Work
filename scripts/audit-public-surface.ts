@@ -62,7 +62,7 @@ requireAll('marketing home', sharedHomeSurface, [
   'marketing-home',
   'data-testid="praxis-chat-first-shell"',
   'data-testid="simple-home-chat"',
-  'Turn any policy question into a sourced, citable brief.',
+  'Ask anything. Leave with a sourced brief.',
   'POLICY_MISSION_EXAMPLES',
   'data-testid="marketing-hero-prompt"',
   'data-testid="marketing-primary-cta"',
@@ -101,7 +101,7 @@ requireAll('signed-in launchpad wrapper', appLaunchpad, [
 ]);
 requireAll('signed-in launchpad', sharedHomeSurface, [
   'app-launchpad',
-  'Turn any policy question into a sourced, citable brief.',
+  'Ask anything. Leave with a sourced brief.',
   'POLICY_MISSION_EXAMPLES',
   'Ask PRAXIS',
   'fetch(\'/api/ai/chat\'',
@@ -117,8 +117,8 @@ requireAll('signed-in launchpad', sharedHomeSurface, [
 ]);
 requireAll('policy missions', policyMissions, [
   'Sanctions impact memo',
-  'Treaty analysis with citations',
-  'Stakeholder & ACH for a crisis',
+  'Treaty brief with citations',
+  'Stakeholder map & ACH',
 ]);
 forbidAll('signed-in launchpad', sharedHomeSurface, [
   'Diagnostics',
