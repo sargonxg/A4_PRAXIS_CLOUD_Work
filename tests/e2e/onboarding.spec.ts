@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import {
   authenticateFirebaseCanary,
   canaryCredentialSkipReason,
+  finishOnboardingLater,
   hasFirebaseCanaryCredentials,
   isOnboardingUrl,
 } from './helpers/auth';
@@ -31,9 +32,7 @@ test.describe('onboarding first-login flow', () => {
     }
 
     await expect(page.locator('h2')).toContainText(/Set up your analyst profile|Review your analyst profile/);
-
-    await page.getByRole('button', { name: /Finish later/i }).click();
-    await page.waitForURL(/\/app/, { timeout: 30_000 });
+    await finishOnboardingLater(page, BASE);
     await expect(page.getByTestId('app-launchpad')).toBeVisible({ timeout: 30_000 });
   });
 });

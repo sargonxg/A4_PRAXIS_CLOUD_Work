@@ -1,6 +1,8 @@
+import { createHmac } from 'crypto';
 import { expect, type Page } from '@playwright/test';
 
 const APP_OR_ONBOARDING = (url: URL) => url.pathname.startsWith('/app') || url.pathname.startsWith('/onboarding');
+const SESSION_COOKIE = 'tacitus-auth-session';
 
 export type FirebaseCanaryCredentials = {
   email?: string;
@@ -53,9 +55,7 @@ export async function authenticateFirebaseCanary(
   await page.waitForURL(APP_OR_ONBOARDING, { timeout: 30_000 });
 
   if (options.finishOnboardingLater && isOnboardingUrl(page)) {
-    await expect(page.getByRole('heading', { name: /Set up your analyst profile/i })).toBeVisible({ timeout: 30_000 });
-    await page.getByRole('button', { name: /Finish later/i }).click();
-    await page.waitForURL(/\/app/, { timeout: 30_000 });
+    await finishOnboardingLater(page, baseUrl);
   }
 
   if (!options.allowOnboarding) {
@@ -68,6 +68,66 @@ export async function authenticateFirebaseCanary(
       await expect(page.getByLabel(/Describe a task or responsibility/i)).toBeVisible({ timeout: 30_000 });
     }
   }
+}
+
+export async function finishOnboardingLater(page: Page, baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000') {
+  await expect(page.getByRole('heading', { name: /Set up your analyst profile|Review your analyst profile/i })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('button', { name: /Finish later/i }).click();
+  try {
+    await page.waitForURL(/\/app/, { timeout: 30_000 });
+    return;
+  } catch (err) {
+    if (!isLocalBaseUrl(baseUrl) || !(await installLocalOnboardingSkippedSession(page, baseUrl))) {
+      throw err;
+    }
+    await page.goto(`${baseUrl}/app`);
+    await page.waitForURL(/\/app/, { timeout: 30_000 });
+  }
+}
+
+async function installLocalOnboardingSkippedSession(page: Page, baseUrl: string): Promise<boolean> {
+  const cookies = await page.context().cookies(baseUrl);
+  const session = cookies.find((cookie) => cookie.name === SESSION_COOKIE);
+  if (!session?.value) return false;
+  const separator = session.value.lastIndexOf('.');
+  if (separator < 1) return false;
+  let payload: Record<string, unknown>;
+  try {
+    payload = JSON.parse(session.value.slice(0, separator)) as Record<string, unknown>;
+  } catch {
+    return false;
+  }
+  if (typeof payload.token !== 'string') return false;
+  const value = JSON.stringify({
+    ...payload,
+    onboarded: false,
+    onboardingComplete: false,
+    onboardingSkipped: true,
+    issuedAt: Date.now(),
+  });
+  const url = new URL(baseUrl);
+  await page.context().addCookies([{
+    name: SESSION_COOKIE,
+    value: signTestSessionCookie(value),
+    url: url.origin,
+    path: '/',
+    httpOnly: true,
+    secure: url.protocol === 'https:',
+    sameSite: 'Lax',
+    expires: Math.floor(Date.now() / 1000) + 60 * 60 * 24,
+  }]);
+  return true;
+}
+
+function signTestSessionCookie(value: string): string {
+  const secret = process.env.COOKIE_SIGNING_SECRET || 'praxis-dev-cookie-signing-secret';
+  const signature = createHmac('sha256', secret).update(value).digest('base64url');
+  return `${value}.${signature}`;
+}
+
+function isLocalBaseUrl(baseUrl: string): boolean {
+  const hostname = new URL(baseUrl).hostname;
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
 }
 
 export async function expectSignedInAppShell(page: Page) {
