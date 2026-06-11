@@ -111,7 +111,6 @@ async function installLocalOnboardingSkippedSession(page: Page, baseUrl: string)
     name: SESSION_COOKIE,
     value: encodeURIComponent(signTestSessionCookie(value)),
     url: url.origin,
-    path: '/',
     httpOnly: true,
     secure: url.protocol === 'https:',
     sameSite: 'Lax',
