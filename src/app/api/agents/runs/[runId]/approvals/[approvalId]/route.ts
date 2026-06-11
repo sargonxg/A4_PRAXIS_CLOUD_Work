@@ -49,7 +49,7 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
     }
 
     // The owner-scoped approval path is also what the production canary uses
-    // for its disposable AgentRun before verifying terminal worker output.
+    // for its disposable AgentRun before waiting for resumed terminal output.
     const resumed = run.status === 'waiting_approval'
       ? await updateAgentRunStatus({
           ownerUid: user.uid,

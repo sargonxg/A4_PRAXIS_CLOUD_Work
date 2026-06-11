@@ -1071,8 +1071,8 @@ async function runAuthenticatedCanary(
 
   let runReadPayload: unknown = runPayload;
   let runReadStatus = extractRunStatus(runPayload) ?? null;
-  const pollMs = Math.max(0, Number(env.PRAXIS_CANARY_POLL_MS ?? 1500));
-  const pollAttempts = Math.max(1, Math.min(20, Number(env.PRAXIS_CANARY_POLL_ATTEMPTS ?? 10)));
+  const pollMs = Math.max(0, Number(env.PRAXIS_CANARY_POLL_MS ?? 2000));
+  const pollAttempts = Math.max(1, Math.min(90, Number(env.PRAXIS_CANARY_POLL_ATTEMPTS ?? 60)));
   const pollAgentRun = async (): Promise<DoctorCheckResult | null> => {
     for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
       if (attempt > 1 && pollMs > 0) await sleep(pollMs);
