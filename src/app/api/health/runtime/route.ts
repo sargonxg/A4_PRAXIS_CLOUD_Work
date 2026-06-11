@@ -3,6 +3,8 @@ import { collectRuntimeHealth, sanitizeRuntimeHealth } from '@/lib/health/runtim
 
 export const runtime = 'nodejs';
 
+// This endpoint is part of frontend deploy proof: Cloud Run stamps the live
+// revision metadata here so release checks can match production to main.
 const RUNTIME_HEALTH_SECURITY_HEADERS = {
   'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
