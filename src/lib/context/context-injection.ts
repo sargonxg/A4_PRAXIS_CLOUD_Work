@@ -239,7 +239,8 @@ export function buildCapsulePromptBlock(
 /**
  * Render the four-slot Capsule Dock as a role-layered prompt section.
  * Read order is fixed — user, situation, tool, output — and each layer carries
- * a distinct governance contract so the model composes them instead of blending.
+ * a distinct governance contract so the model composes them instead of blending
+ * the docked capsules into one undifferentiated context blob.
  */
 export function buildCapsuleDockPromptBlock(entries: DockCapsuleEntry[], missingIds: string[] = []): string {
   if (!entries.length && !missingIds.length) return '';

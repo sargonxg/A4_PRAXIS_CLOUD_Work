@@ -283,6 +283,44 @@ export default function LearnPage() {
         </div>
       </section>
 
+      <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8" id="praxis-augmented-generation">
+        <div className="max-w-3xl">
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">How generation works</span>
+          <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950 sm:text-4xl">
+            PRAXIS-augmented generation: four capsules, one dock, agents that check their work
+          </h2>
+          <p className="mt-4 text-base leading-7 text-slate-700">
+            Every answer starts at the Capsule Dock: four typed slots above the Ask box. A <strong>User</strong> capsule says who is asking, a <strong>Situation</strong> capsule carries the case, a <strong>Tool</strong> capsule sets the allowed methods, and an <strong>Output</strong> capsule defines what the work product must look like. That is the whole user-facing model — fill the slots that matter and ask.
+          </p>
+        </div>
+        <div className="mt-6 grid gap-3 md:grid-cols-2">
+          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
+            <h3 className="font-serif text-xl font-medium text-slate-950">1 · The resolver compiles the dock</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-700">
+              When you send a question, PRAXIS resolves each docked capsule — its sources, claim ledger, graph references, ontology binding, and review state — into one layered context block. The layers stay separate on purpose: the Situation capsule governs facts, the User capsule governs voice, the Tool capsule governs method, and the Output capsule governs format. Conflicts are surfaced, never silently blended.
+            </p>
+          </article>
+          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
+            <h3 className="font-serif text-xl font-medium text-slate-950">2 · Retrieval is governed, not generic</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-700">
+              The capsule decides what the model is allowed to read: uploaded documents, source receipts, the typed knowledge graph of actors, claims, and commitments, vector search over the situation corpus, and grounded web search when the capsule permits it. Outside model knowledge is labeled as supplemental — never presented as capsule fact.
+            </p>
+          </article>
+          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
+            <h3 className="font-serif text-xl font-medium text-slate-950">3 · Agents extract, research, and check</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-700">
+              Deep questions queue a capsule-bound agent run with a durable ledger: a research agent plans searches and gathers receipts, an extraction step proposes graph updates, a sourceability reviewer checks that claims have support, and a red-team pass challenges the draft. Risky steps stop at human approval gates, and every tool call is recorded so you can audit the run afterwards.
+            </p>
+          </article>
+          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
+            <h3 className="font-serif text-xl font-medium text-slate-950">4 · Truth stays layered and reviewable</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-700">
+              The answer separates capsule-grounded facts, retrieved evidence, model judgment, and your assumptions. Anything an agent learned — a new source, a graph claim, a corrected assumption — becomes a review card; only human approval makes it canonical in the capsule. That is why a docked capsule beats a plain LLM chat: delimited context in, receipts out, and the context itself improves with every reviewed run.
+            </p>
+          </article>
+        </div>
+      </section>
+
       <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8">
         <div className="grid gap-4 md:grid-cols-2">
           <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
