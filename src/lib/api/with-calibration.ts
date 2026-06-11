@@ -172,7 +172,9 @@ export function withCalibration(
       } catch { /* non-JSON body OK */ }
       situationId = opts.situationId?.(req, body) ?? situationId;
 
-      // Onboarding gate (non-demo)
+      // Onboarding gate (non-demo). Skipping onboarding opens the app shell,
+      // but calibrated PRAXIS tools require a completed profile so the context
+      // block has a real analyst mandate, region, lens, and audience.
       if (!user.isDemo) {
         const profile = await getAnalystProfile(user.uid).catch(() => null);
         if (!isOnboardingComplete(profile)) {

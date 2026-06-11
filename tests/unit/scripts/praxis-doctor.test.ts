@@ -325,7 +325,10 @@ describe('runPraxisDoctor', () => {
       if (url.endsWith('/api/auth/session') && init?.method === 'GET') {
         return jsonResponse(200, { authenticated: true, user: { id: 'uid-1' } });
       }
-      if (url.endsWith('/api/onboarding/skip')) {
+      if (url.endsWith('/api/onboarding/profile')) {
+        return jsonResponse(200, { ok: true });
+      }
+      if (url.endsWith('/api/onboarding/complete')) {
         return jsonResponse(200, { ok: true }, {
           'set-cookie': 'tacitus-auth-session=refreshed-signed-cookie-value; Path=/; HttpOnly',
         });
@@ -402,7 +405,22 @@ describe('runPraxisDoctor', () => {
       status: 'PASS',
       summary: expect.stringContaining('AgentRun run-canary-1'),
     }));
-    expect(JSON.stringify(report)).toContain('onboarding-finish-later');
+    expect(JSON.stringify(report)).toContain('analyst-profile-upsert');
+    expect(JSON.stringify(report)).toContain('analyst-profile-complete');
+    expect(fetch).toHaveBeenCalledWith(
+      'https://praxis.tacitus.me/api/onboarding/profile',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: expect.stringContaining('PRAXIS production canary'),
+      }),
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      'https://praxis.tacitus.me/api/onboarding/complete',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ createFirstSituation: false }),
+      }),
+    );
     expect(report.checks).toContainEqual(expect.objectContaining({
       id: 'canary-agent-run-stream',
       status: 'PASS',

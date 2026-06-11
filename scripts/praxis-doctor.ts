@@ -106,6 +106,29 @@ type CanaryStepResult = {
   detail?: string;
 };
 
+const CANARY_ANALYST_PROFILE = {
+  identity: {
+    role: 'researcher',
+    seniority: 'senior',
+    org: 'TACITUS',
+    team: 'PRAXIS production canary',
+  },
+  perspective: {
+    mandate: 'Validate authenticated PRAXIS policy workflows with source-aware analysis and review-ready outputs.',
+    lenses: ['diplomatic', 'security'],
+    regions: ['Global'],
+    audience: 'team',
+    primaryDomain: 'diplomacy-negotiation',
+    secondaryDomains: ['armed-conflict-security'],
+  },
+  workingStyle: {
+    sourceCategories: ['foundational', 'diplomatic-official', 'news-media'],
+    language: 'en',
+    redLines: ['Do not claim production evidence without a cited source.'],
+    analyticalStyle: 'rapid_brief',
+  },
+};
+
 type RunDeps = {
   options: DoctorOptions;
   exec?: ExecFn;
@@ -753,9 +776,34 @@ async function runAuthenticatedCanary(
     });
   }
 
-  const onboardingResponse = await fetchImpl(`${options.baseUrl}/api/onboarding/skip`, {
+  const profileResponse = await fetchImpl(`${options.baseUrl}/api/onboarding/profile`, {
+    method: 'PATCH',
+    headers: authHeaders,
+    body: JSON.stringify(CANARY_ANALYST_PROFILE),
+  });
+  const profilePayload = await readResponse(profileResponse);
+  const profileStatus = canaryHttpStatus(profileResponse.status);
+  steps.push({
+    step: 'analyst-profile-upsert',
+    status: profileResponse.ok ? 'PASS' : profileStatus,
+    httpStatus: profileResponse.status,
+    detail: 'Minimal complete analyst profile upserted for the canary user.',
+  });
+  if (!profileResponse.ok) {
+    return canaryResult({
+      status: profileStatus,
+      canaryPlan,
+      steps,
+      summary: `Canary analyst profile upsert failed with HTTP ${profileResponse.status}`,
+      evidence: [profilePayload],
+      remediation: ['Verify /api/onboarding/profile validation and analyst profile admin writes for the canary user'],
+    });
+  }
+
+  const onboardingResponse = await fetchImpl(`${options.baseUrl}/api/onboarding/complete`, {
     method: 'POST',
     headers: authHeaders,
+    body: JSON.stringify({ createFirstSituation: false }),
   });
   const onboardingPayload = await readResponse(onboardingResponse);
   const refreshedCookieHeader = extractCookieHeader(onboardingResponse.headers, 'tacitus-auth-session');
@@ -765,21 +813,21 @@ async function runAuthenticatedCanary(
   }
   const onboardingStatus = canaryHttpStatus(onboardingResponse.status);
   steps.push({
-    step: 'onboarding-finish-later',
+    step: 'analyst-profile-complete',
     status: onboardingResponse.ok ? 'PASS' : onboardingStatus,
     httpStatus: onboardingResponse.status,
     detail: refreshedCookieHeader
-      ? 'Onboarding Finish later path recorded and refreshed the app session cookie.'
-      : 'Onboarding Finish later path recorded for the canary user.',
+      ? 'Analyst profile completed and app session cookie refreshed.'
+      : 'Analyst profile completed for the canary user.',
   });
   if (!onboardingResponse.ok) {
     return canaryResult({
       status: onboardingStatus,
       canaryPlan,
       steps,
-      summary: `Onboarding Finish later canary step failed with HTTP ${onboardingResponse.status}`,
+      summary: `Canary analyst profile completion failed with HTTP ${onboardingResponse.status}`,
       evidence: [onboardingPayload],
-      remediation: ['Verify /api/onboarding/skip and analyst profile admin writes for the canary user'],
+      remediation: ['Verify /api/onboarding/complete profile completeness and cookie refresh for the canary user'],
     });
   }
 
