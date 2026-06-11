@@ -18,6 +18,8 @@ import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { PublicShell } from '@/components/app/public-shell';
 import { PraxisChat } from '@/components/app/praxis-chat';
 import { AskContextBar } from '@/components/app/ask-context-bar';
+import { CapsuleImportButton } from '@/components/capsules/CapsuleImportButton';
+import { PolicyAgentStrip } from '@/components/app/policy-agent-strip';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import {
   DEFAULT_CONTEXT_STACK_ID,
@@ -181,6 +183,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
                 onMakePrimaryCapsule={(capsuleId) => void makePrimaryCapsule(capsuleId)}
               />
             ) : null}
+            {!isPublic ? <PolicyAgentStrip /> : null}
           </section>
         </div>
       </div>
@@ -237,10 +240,10 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
               href={href}
               className={[
                 'flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 text-sm font-semibold transition',
-                active ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-white',
+                active ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-white hover:text-emerald-900',
               ].join(' ')}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className={['h-4 w-4', active ? 'text-emerald-300' : 'text-emerald-700'].join(' ')} />
               {item.label}
             </Link>
           );
@@ -249,6 +252,15 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
       <div className="mt-5 rounded-[var(--radius-md)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] p-3 text-xs leading-5 text-slate-600">
         Start with the question. Save context when the work needs sources, decisions, or a draft you can reuse.
       </div>
+      <a
+        href="https://tacitus.me"
+        target="_blank"
+        rel="noreferrer"
+        className="mt-3 flex items-center gap-1.5 rounded-[var(--radius-md)] px-2 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 transition hover:text-emerald-700"
+        aria-label="TACITUS verified context infrastructure"
+      >
+        TACITUS <span aria-hidden className="text-emerald-600">◳</span> verified context
+      </a>
     </aside>
   );
 }
@@ -287,8 +299,11 @@ function ContextDrawer({
       <section className="praxis-shell-card mt-4 p-4" data-testid="advanced-edit-context">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-gold-700)]">Context</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Context</p>
             <h2 className="mt-1 text-lg font-semibold text-slate-950">Saved context unlocks after sign-in.</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              Attach capsules, import DIALECTICA verified-context packages, and reuse the stack across briefs.
+            </p>
           </div>
           <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="praxis-button-primary min-h-10 px-4 text-sm">
             Save context
@@ -307,11 +322,12 @@ function ContextDrawer({
           onClick={() => activeCapsuleId && onActivateCapsule(activeCapsuleId)}
           className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-1.5 text-xs font-semibold text-slate-700"
         >
-          <Library className="h-3.5 w-3.5 text-[color:var(--color-gold-700)]" />
+          <Library className="h-3.5 w-3.5 text-emerald-700" />
           {selectedCapsuleRefs.length ? `${selectedCapsuleRefs.length} context item${selectedCapsuleRefs.length === 1 ? '' : 's'} attached` : 'No saved context'}
         </button>
         <div className="flex flex-wrap items-center gap-2">
           <CapsuleListPicker activeCapsuleId={activeCapsuleId ?? null} onSelect={onActivateCapsule} />
+          <CapsuleImportButton onImported={(result) => onAttachReferenceCapsule(result.capsuleId)} />
           <Link href="/app/capsules/builder" className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
             <PlusCircle className="h-3.5 w-3.5" />
             Build context
@@ -336,10 +352,16 @@ function ContextDrawer({
 
         <div className="mt-3 grid gap-2">
           {selectedCapsuleRefs.length ? selectedCapsuleRefs.map((ref) => (
-            <div key={ref.capsuleId} className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border border-slate-100 bg-[color:var(--color-archive-paper-strong)] px-3 py-2">
+            <div
+              key={ref.capsuleId}
+              className={[
+                'flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border bg-[color:var(--color-archive-paper-strong)] px-3 py-2 border-l-4',
+                ref.primary ? 'border-slate-100 border-l-emerald-500' : 'border-slate-100 border-l-slate-200',
+              ].join(' ')}
+            >
               <div className="min-w-0">
                 <p className="truncate text-xs font-semibold text-slate-900">{ref.label ?? shortenContextId(ref.capsuleId)}</p>
-                <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{ref.role}{ref.primary ? ' / primary' : ''}</p>
+                <p className={['mt-0.5 text-[10px] font-semibold uppercase tracking-[0.12em]', ref.primary ? 'text-emerald-700' : 'text-slate-500'].join(' ')}>{ref.role}{ref.primary ? ' / primary' : ''}</p>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
                 {!ref.primary ? (

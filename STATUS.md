@@ -1,5 +1,38 @@
 # PRAXIS — STATUS
 
+## 2026-06-10 — Verified-Context Home, DIALECTICA Import, Capsule Card Simplification (v6.5.0)
+
+Current product checkpoint:
+
+- The shared public/signed-in home keeps the one-prompt + capsule-deck
+  contract and now carries the TACITUS verified-context identity: PRAXIS
+  emerald accents, a receipt-first subline ("Every claim has a receipt ·
+  every judgment has an author"), mono kickers, and a quiet TACITUS ◳ link in
+  the sidebar.
+- `POST /api/context/capsules/import/dialectica` imports the published
+  `2026-05-15.prx-dialectica-context.v1` DIALECTICA context contract. Claims
+  map to the capsule claim ledger (fact → supported/needs_source,
+  conflicting_claim → disputed with caveat, evidence_gap → needs_source) and
+  source receipts map to capsule source refs; everything stays review-gated
+  behind an intake review card. No auto-apply.
+- `CapsuleImportButton` accepts DIALECTICA `.json` packages and Capsule+
+  `.zip` bundles from the Capsules header and the home context drawer, and
+  refreshes the library/stack on success.
+- Capsule repository cards are decluttered: duplicate policy-team/domain
+  chips and the seven-tile meta grid are gone; cards lead with type, domain,
+  quality, sources, and unsupported-claim posture. Dossier, graph-seed,
+  GraphLite, and fork diagnostics remain in the Inspect lane.
+- Capsule Studio inspection shows a DIALECTICA lineage badge for imported
+  capsules; the capsule deck and context drawer mark the primary capsule with
+  an emerald rail.
+- The signed-in home adds a quiet four-chip "Agentic workflows" row for the
+  live agents (Capsule AI, Research Memo Agent, Boardroom Discussion, Output
+  Formatter) linking into existing surfaces; planned agents stay out of the
+  home surface.
+- Verification: `npx tsc --noEmit`, `npm run lint`, full `npx vitest run`
+  (305 files, 1306 tests), `npm run audit:release-notes`, and `npm run build`
+  all pass locally at build `2026.06.10.01`.
+
 ## 2026-05-31 — Five-Session PRAXIS Build Track Checkpoint
 
 What shipped across the five-session track:

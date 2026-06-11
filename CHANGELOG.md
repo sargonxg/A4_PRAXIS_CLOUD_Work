@@ -2,6 +2,29 @@
 
 ## [Unreleased]
 
+Build 2026.06.10.01 (PRAXIS v6.5.0).
+
+- feat(capsules): add DIALECTICA verified-context package import.
+  Adds `POST /api/context/capsules/import/dialectica` for the published
+  `2026-05-15.prx-dialectica-context.v1` contract, a shared `CapsuleImportButton`
+  that accepts DIALECTICA `.json` packages and Capsule+ `.zip` bundles from the
+  capsule repository header and the home context drawer, and keeps imported
+  claims and sources review-gated through an intake review card. Capsule Studio
+  inspection now shows a DIALECTICA lineage badge on imported capsules.
+
+- feat(home): align the shared home with the TACITUS verified-context identity.
+  Keeps the one-prompt, one-deck surface while moving home accents to the
+  PRAXIS emerald, adding the receipt-first subline and a quiet TACITUS mark,
+  marking the primary capsule in the deck and drawer with an emerald rail, and
+  adding a four-chip entry row for the live agentic workflows (Capsule AI,
+  Research Memo, Boardroom, Output Formatter).
+
+- refactor(capsules): simplify repository capsule cards.
+  Drops duplicate policy-team/domain chips and the seven-tile operational meta
+  grid from `CapsuleCard`; cards now lead with type, domain, quality, source,
+  and unsupported-claim posture while dossier, graph-seed, GraphLite, and fork
+  diagnostics stay in the Inspect lane.
+
 - feat(copy): simplify public PRAXIS positioning around Ask, sources, and review.
   Rewrites the shared home, login, metadata, Learn, Guide, Pricing, legal, and
   release-note surfaces so users see the practical job first: ask the question,

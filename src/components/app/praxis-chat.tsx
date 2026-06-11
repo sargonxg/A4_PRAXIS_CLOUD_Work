@@ -399,7 +399,7 @@ export function PraxisChat({
       <div className={cn('flex min-h-0 flex-1 flex-col', compact ? 'h-full' : '')}>
         {variant === 'home' ? (
           <div className="mb-6 text-center">
-            <p className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-[color:var(--color-gold-500)]/25 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-gold-700)]">
+            <p className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-emerald-500/25 bg-white px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
               <Sparkles className="h-3.5 w-3.5" />
               Ask PRAXIS
             </p>
@@ -408,6 +408,9 @@ export function PraxisChat({
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-[color:var(--color-app-text-secondary)]">
               {greeting ?? 'Ask normally. Add sources or saved context when the work needs to hold up.'}
+            </p>
+            <p className="mx-auto mt-2 max-w-2xl font-mono text-[11px] uppercase tracking-[0.18em] text-slate-400">
+              Every claim has a receipt <span aria-hidden className="text-emerald-600">·</span> every judgment has an author
             </p>
           </div>
         ) : null}
@@ -419,7 +422,7 @@ export function PraxisChat({
           {messages.length === 0 ? (
             <div className={cn('grid place-items-center text-center', variant === 'floating' ? 'min-h-48 text-white' : 'min-h-40 text-slate-700')}>
               <div>
-                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-[var(--radius-lg)] bg-[color:var(--color-gold-500)]/12 text-[color:var(--color-gold-700)]">
+                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-[var(--radius-lg)] bg-emerald-500/10 text-emerald-700">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <p className={cn('mt-3 text-sm font-semibold', variant === 'floating' ? 'text-white' : 'text-slate-950')}>
@@ -458,7 +461,7 @@ export function PraxisChat({
                     window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, mission.prompt);
                   }
                 }}
-                className="rounded-[var(--radius-md)] border border-[var(--color-app-border)] bg-white px-3 py-3 text-left text-sm transition hover:border-[color:var(--color-gold-500)]/50 hover:bg-[color:var(--color-archive-paper-strong)]"
+                className="rounded-[var(--radius-md)] border border-[var(--color-app-border)] bg-white px-3 py-3 text-left text-sm transition hover:-translate-y-0.5 hover:border-emerald-500/50 hover:bg-[color:var(--color-archive-paper-strong)] hover:shadow-[0_4px_14px_rgba(16,185,129,0.12)]"
               >
                 <span className="block font-semibold text-slate-950">{mission.title}</span>
                 <span className="mt-1 block text-xs leading-5 text-slate-600">{mission.outcome}</span>
@@ -485,7 +488,7 @@ export function PraxisChat({
             onKeyDown={onKeyDown}
             rows={compact ? 2 : 4}
             className={cn(
-              'w-full resize-none rounded-[var(--radius-md)] border px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-slate-400 focus:border-[color:var(--color-gold-500)]',
+              'w-full resize-none rounded-[var(--radius-md)] border px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-slate-400 focus:border-emerald-500',
               variant === 'floating'
                 ? 'border-slate-700 bg-slate-900 text-white'
                 : 'border-transparent bg-[color:var(--color-archive-paper-strong)] text-slate-950',
@@ -502,7 +505,7 @@ export function PraxisChat({
                   className={cn(
                     'inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-md)] border px-3 text-xs font-semibold',
                     contextOpen
-                      ? 'border-[color:var(--color-gold-500)]/45 bg-[color:var(--color-gold-500)]/10 text-[color:var(--color-gold-800)]'
+                      ? 'border-emerald-500/45 bg-emerald-500/10 text-emerald-800'
                       : 'border-[var(--color-app-border)] bg-white text-slate-700 hover:bg-slate-50',
                   )}
                 >
@@ -539,7 +542,7 @@ export function PraxisChat({
                 className={cn(
                   'inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] px-4 text-sm font-semibold transition',
                   input.trim() && !isStreaming
-                    ? 'bg-slate-950 text-white hover:bg-slate-800'
+                    ? 'bg-emerald-700 text-white shadow-[0_4px_14px_rgba(16,185,129,0.25)] hover:bg-emerald-600'
                     : 'bg-slate-200 text-slate-500',
                 )}
               >
@@ -581,7 +584,7 @@ function ChatBubble({
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {message.content || ' '}
             </ReactMarkdown>
-            {isStreaming ? <span className="inline-block h-3 w-0.5 animate-pulse bg-[color:var(--color-gold-500)]" /> : null}
+            {isStreaming ? <span className="inline-block h-3 w-0.5 animate-pulse bg-emerald-500" /> : null}
           </div>
           <AnswerContextProvenanceChips envelope={message.answerEnvelope} variant={variant === 'floating' ? 'dark' : 'light'} />
           {message.sourceabilityVerdicts?.length ? <VerdictStrip verdicts={message.sourceabilityVerdicts} /> : null}

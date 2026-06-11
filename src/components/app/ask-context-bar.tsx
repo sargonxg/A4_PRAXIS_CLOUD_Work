@@ -264,7 +264,7 @@ export function AskContextBar({
             <button
               type="button"
               onClick={onOpenAdvancedContext}
-              className={cn('text-xs font-semibold', dark ? 'text-[color:var(--color-gold-300)]' : 'text-[color:var(--color-gold-700)]')}
+              className={cn('text-xs font-semibold', dark ? 'text-emerald-300' : 'text-emerald-700')}
             >
               Open full stack
             </button>
@@ -297,7 +297,7 @@ function CapsuleDockChip({ dark, item }: { dark: boolean; item: CapsuleDockItem 
         dark ? 'border-slate-700 bg-slate-950 text-slate-200' : 'border-slate-200 bg-white text-slate-700',
       )}
     >
-      <span className={cn('shrink-0 font-bold uppercase tracking-[0.1em]', item.primary ? 'text-[color:var(--color-gold-700)]' : dark ? 'text-slate-400' : 'text-slate-500')}>
+      <span className={cn('shrink-0 font-bold uppercase tracking-[0.1em]', item.primary ? (dark ? 'text-emerald-300' : 'text-emerald-700') : dark ? 'text-slate-400' : 'text-slate-500')}>
         {item.roleLabel}
       </span>
       <span className="min-w-0 truncate font-semibold">{item.label}</span>
@@ -389,8 +389,8 @@ function actionClassName(dark: boolean, active = false): string {
     'inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] border px-2.5 text-xs font-semibold transition disabled:opacity-60',
     active
       ? dark
-        ? 'border-[color:var(--color-gold-400)] bg-[color:var(--color-gold-400)]/15 text-[color:var(--color-gold-100)]'
-        : 'border-[color:var(--color-gold-500)]/45 bg-[color:var(--color-gold-500)]/10 text-[color:var(--color-gold-800)]'
+        ? 'border-emerald-400 bg-emerald-400/15 text-emerald-100'
+        : 'border-emerald-500/45 bg-emerald-500/10 text-emerald-800'
       : dark
         ? 'border-slate-700 bg-slate-900 text-slate-200 hover:border-slate-500'
         : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
@@ -399,7 +399,7 @@ function actionClassName(dark: boolean, active = false): string {
 
 function toneClassName(tone: 'ready' | 'active' | 'review' | 'quiet', dark: boolean): string {
   if (tone === 'ready') return dark ? 'text-emerald-300' : 'text-emerald-700';
-  if (tone === 'active') return dark ? 'text-[color:var(--color-gold-300)]' : 'text-[color:var(--color-gold-700)]';
+  if (tone === 'active') return dark ? 'text-cyan-300' : 'text-cyan-700';
   if (tone === 'review') return dark ? 'text-amber-300' : 'text-amber-700';
   return dark ? 'text-slate-500' : 'text-slate-400';
 }

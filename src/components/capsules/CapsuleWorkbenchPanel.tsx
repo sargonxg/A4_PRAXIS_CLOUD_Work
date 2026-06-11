@@ -135,12 +135,14 @@ export function CapsuleWorkbenchPanel({
 }) {
   const model = buildCapsuleWorkbenchViewModel({ capsule, repositoryDocuments, agentRuns, tacitMemories });
   const sparse = model.evidence.sourceCount === 0;
+  const capsuleTags = (capsule as { community?: { tags?: string[] } }).community?.tags ?? [];
+  const dialecticaLineage = capsuleTags.includes('dialectica');
   return (
     <section
       className={cn('rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-slate-950/[0.03]', compact ? 'space-y-4' : 'space-y-5')}
       data-testid="capsule-workbench-panel"
     >
-      <CapsuleWorkbenchHeader model={model} compact={compact} />
+      <CapsuleWorkbenchHeader model={model} compact={compact} dialecticaLineage={dialecticaLineage} />
       <CapsuleStudioOverview model={model} />
       <CapsuleCoreSourceabilityGates model={model} />
       <CapsulePillarPanel pillars={model.pillars} />
@@ -500,12 +502,17 @@ function StudioRail({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-function CapsuleWorkbenchHeader({ model, compact }: { model: CapsuleWorkbenchViewModel; compact: boolean }) {
+function CapsuleWorkbenchHeader({ model, compact, dialecticaLineage = false }: { model: CapsuleWorkbenchViewModel; compact: boolean; dialecticaLineage?: boolean }) {
   return (
     <div className={cn('flex gap-3', compact ? 'flex-col' : 'flex-col lg:flex-row lg:items-start lg:justify-between')}>
       <div className="min-w-0">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Capsule Studio</p>
         <h3 className="mt-1 text-base font-semibold leading-6 text-slate-950">{model.title}</h3>
+        {dialecticaLineage ? (
+          <p className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-teal-200 bg-teal-50 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-800" data-testid="capsule-dialectica-lineage">
+            DIALECTICA <span aria-hidden>◳</span> verified-context lineage
+          </p>
+        ) : null}
         <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">{model.summary}</p>
       </div>
       <div className="grid min-w-[12rem] grid-cols-3 gap-1.5 text-center">

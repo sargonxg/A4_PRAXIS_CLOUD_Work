@@ -26,6 +26,20 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.06.10.01',
+    version: '6.5.0',
+    date: '2026-06-10',
+    title: 'Verified-context home, DIALECTICA capsule import, and clearer capsule cards',
+    summary: 'PRAXIS aligns the shared public/signed-in home with the TACITUS verified-context identity, lets analysts upload DIALECTICA packages straight into the capsule repository, and simplifies capsule cards so posture is readable at a glance.',
+    category: 'product',
+    items: [
+      'The shared home keeps one prompt and one capsule deck, now with the PRAXIS emerald identity, receipt-first framing, and a quiet TACITUS verified-context mark.',
+      'DIALECTICA verified-context packages (.json) and Capsule+ bundles (.zip) import from the capsule repository and the home context drawer; imported claims and sources stay review-gated until approved.',
+      'Capsule repository cards drop duplicate operational chips and lead with type, domain, quality, sources, and unsupported-claim posture; deep diagnostics stay in Inspect.',
+      'Capsule Studio inspection shows DIALECTICA lineage on imported capsules, and the signed-in home offers a quiet entry row for the four live agentic workflows.',
+    ],
+  },
+  {
     buildNumber: '2026.06.09.01',
     version: '6.4.1',
     date: '2026-06-09',

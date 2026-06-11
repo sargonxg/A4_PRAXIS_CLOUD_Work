@@ -64,6 +64,7 @@ import {
 } from 'lucide-react';
 import { AccountProfileButton } from '@/components/app/account-profile-button';
 import { CapsuleWorkbenchPanel } from '@/components/capsules/CapsuleWorkbenchPanel';
+import { CapsuleImportButton } from '@/components/capsules/CapsuleImportButton';
 import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
 import { AskQueuedAgentRunPanel, queuedAgentRunFromEnvelope } from '@/components/ask/AskQueuedAgentRunPanel';
@@ -4267,6 +4268,9 @@ export function TaskletPraxisWorkbench({
                     <Plus className="h-4 w-4" />
                     {isAuthenticated ? 'New capsule' : 'Sign in to build'}
                   </button>
+                  {isAuthenticated ? (
+                    <CapsuleImportButton onImported={(result) => void refreshCapsules(result.capsuleId)} />
+                  ) : null}
                   <Link
                     href={isAuthenticated ? '/app/capsules?lane=repository' : '/login?mode=signup&redirect=%2Fapp%2Fcapsules%3Flane%3Drepository'}
                     className="inline-flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100"
@@ -8589,9 +8593,6 @@ function CapsuleCard({
   const bestNextAction = richProfile?.nextIdeas[0] ?? capsule.health?.warnings?.[0] ?? 'Inspect source gaps before relying on this capsule.';
   const usefulness = buildCapsuleUsefulnessRating(capsule, mutable);
   const researchArtifacts = starterResearchArtifacts(capsule);
-  const graphSeedCounts = capsuleGraphSeedCounts(capsule);
-  const graphLiteProjection = researchArtifacts.graphLiteProjection;
-  const dossierStatus = capsuleDossierStatus(capsule);
   const freshnessStatus = capsuleFreshnessStatus(capsule);
   const catalogUpdated = (
     meta.starterDefinition?.researchDossier.catalogVersion === CAPSULE_STARTER_CATALOG_VERSION
@@ -8646,9 +8647,7 @@ function CapsuleCard({
         </span>
         <span className="mt-2 flex flex-wrap items-center gap-1.5" aria-label={`${capsule.label} categories`}>
           <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', meta.soft)}>{typeChip}</span>
-          <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', meta.soft)}>{domainChip}</span>
-          <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', domainAccent.soft)}>{domainAccent.label}</span>
-          <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600">{policyTeamChip}</span>
+          <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', domainAccent.soft)}>{domainChip}</span>
           {deviceProfile ? <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">Thinking device</span> : null}
           <CapsuleStateBadge state={state} />
         </span>
@@ -8657,18 +8656,13 @@ function CapsuleCard({
           <span>{policyTeamChip}</span>
           <span>quality {v2Quality.score}/100</span>
           <span>{counts.documents + counts.sources} source ref{counts.documents + counts.sources === 1 ? '' : 's'}</span>
-          <span>{graphSeedCounts.graphNodeCount}/{graphSeedCounts.graphEdgeCount} graph seed</span>
-          <span>{unsupportedClaims} unsupported</span>
+          <span className={unsupportedClaims ? 'text-amber-700' : 'text-emerald-700'}>{unsupportedClaims} unsupported</span>
           {counts.outputs ? <span>{counts.outputs} output{counts.outputs === 1 ? '' : 's'}</span> : null}
         </span>
-        <span className="mt-2 grid grid-cols-2 gap-1.5 text-[11px] font-semibold text-slate-600">
+        <span className="mt-2 grid grid-cols-3 gap-1.5 text-[11px] font-semibold text-slate-600">
           <span className="rounded-md bg-white px-2 py-1">Gate {humanGateStatusLabel(humanGateStatus)}</span>
           <span className="rounded-md bg-white px-2 py-1">{v2Capsule.agentPermissions.canDraft ? 'agent-operable' : 'agent-blocked'}</span>
-          <span className="rounded-md bg-white px-2 py-1">Fork {humanizeIdentifier(v2Capsule.forkability)}</span>
           <span className="rounded-md bg-white px-2 py-1">Freshness {freshnessStatus}</span>
-          <span className="rounded-md bg-white px-2 py-1">Dossier {dossierStatus}</span>
-          <span className="rounded-md bg-white px-2 py-1">Graph seed {graphSeedCounts.graphNodeCount}/{graphSeedCounts.graphEdgeCount}</span>
-          <span className="rounded-md bg-white px-2 py-1">GraphLite {graphLiteProjection?.status ?? 'projection pending'}</span>
         </span>
         {catalogUpdated ? (
           <span className="mt-2 inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-2 py-1 text-[11px] font-semibold text-cyan-800">
