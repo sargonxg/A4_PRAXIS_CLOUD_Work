@@ -56,10 +56,14 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
           runId: run.id,
           toStatus: 'running',
           message: 'Agent run approval granted; resume dispatch requested.',
-          data: { approvalId: approval.id },
+          data: { approvalId: approval.id, resumeAttempt: nextDispatchAttempt(run) },
         })
       : run;
-    const dispatch = await enqueueAgentRunDispatch({ ownerUid: user.uid, runId: resumed?.id ?? run.id });
+    const dispatch = await enqueueAgentRunDispatch({
+      ownerUid: user.uid,
+      runId: resumed?.id ?? run.id,
+      attempt: run.status === 'waiting_approval' ? nextDispatchAttempt(run) : undefined,
+    });
     return NextResponse.json({ approval, run: toAgentRunOutput(resumed ?? run), dispatch, resumed: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -67,3 +71,13 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
     return NextResponse.json({ error: message }, { status });
   }
 });
+
+function nextDispatchAttempt(run: Awaited<ReturnType<typeof getAgentRun>>): number {
+  const raw = run?.metadata.dispatchAttempt;
+  const current = typeof raw === 'number'
+    ? raw
+    : typeof raw === 'string'
+      ? Number(raw)
+      : 1;
+  return Number.isFinite(current) && current >= 1 ? Math.floor(current) + 1 : 2;
+}

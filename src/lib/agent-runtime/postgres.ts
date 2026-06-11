@@ -237,10 +237,20 @@ export async function claimAgentRunDispatch(input: {
       WHERE owner_uid = $3
         AND id = $4
         AND status IN ('queued', 'running')
-        AND COALESCE(metadata->>'dispatchEnqueueStatus', '') NOT IN ('dispatch_claimed', 'dispatch_enqueued')
+        AND (
+          COALESCE(metadata->>'dispatchEnqueueStatus', '') NOT IN ('dispatch_claimed', 'dispatch_enqueued')
+          OR COALESCE(
+            CASE
+              WHEN metadata->>'dispatchAttempt' ~ '^[0-9]+$'
+              THEN (metadata->>'dispatchAttempt')::int
+              ELSE 0
+            END,
+            0
+          ) < $5
+        )
       RETURNING *
     `,
-    [JSON.stringify(claimMetadata), now, input.ownerUid, input.runId],
+    [JSON.stringify(claimMetadata), now, input.ownerUid, input.runId, input.attempt],
   );
   if (result.rows[0]) {
     const run = rowToAgentRun(result.rows[0]);
@@ -259,7 +269,10 @@ export async function claimAgentRunDispatch(input: {
     ? run.metadata.dispatchEnqueueStatus
     : null;
   if (existingStatus === 'dispatch_claimed' || existingStatus === 'dispatch_enqueued') {
-    return { run, claimed: false, existing: readAgentRunDispatchMetadata(run) };
+    const existing = readAgentRunDispatchMetadata(run);
+    if ((existing?.attempt ?? 0) >= input.attempt) {
+      return { run, claimed: false, existing };
+    }
   }
   return { run, claimed: false, existing: null };
 }

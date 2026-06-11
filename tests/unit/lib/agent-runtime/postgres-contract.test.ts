@@ -16,7 +16,9 @@ describe('agent runtime Postgres contract', () => {
   it('claims dispatch atomically before Cloud Tasks enqueue', () => {
     expect(source).toContain('export async function claimAgentRunDispatch');
     expect(source).toContain("dispatchEnqueueStatus: 'dispatch_claimed'");
-    expect(source).toContain("COALESCE(metadata->>'dispatchEnqueueStatus', '') NOT IN ('dispatch_claimed', 'dispatch_enqueued')");
+    expect(source).toContain("(metadata->>'dispatchAttempt')::int");
+    expect(source).toContain('< $5');
+    expect(source).toContain('(existing?.attempt ?? 0) >= input.attempt');
     expect(source).toContain('export async function markAgentRunDispatchEnqueued');
     expect(source).toContain("dispatchEnqueueStatus: 'dispatch_failed'");
   });
