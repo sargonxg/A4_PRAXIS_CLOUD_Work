@@ -61,7 +61,8 @@ test('landing page renders without console errors and every nav anchor resolves'
 
 test('landing does not expose cockpit capsule filters to logged-out visitors', async ({ page, baseURL }) => {
   await page.goto(baseURL ?? '/');
-  await expect(page.getByTestId('marketing-marketplace-teaser')).toBeVisible();
+  await expect(page.getByTestId('marketing-home')).toBeVisible();
+  await expect(page.getByTestId('ask-context-bar')).toBeVisible();
   await expect(page.getByTestId('capsule-taxonomy-filter-bar')).toHaveCount(0);
   await expect(page.getByTestId('tasklet-capsule-cards')).toHaveCount(0);
 });

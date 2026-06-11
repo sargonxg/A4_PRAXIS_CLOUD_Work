@@ -101,6 +101,7 @@ describe('agent run API validation schema', () => {
       outputTargetLabel: null,
       artifactIds: [],
       latestMirroredEvent: null,
+      failureSummary: null,
     });
     expect(AgentRunOutputSchema.safeParse(dto).success).toBe(true);
     expect('internalSpendCents' in dto).toBe(false);
@@ -288,6 +289,66 @@ describe('agent run API validation schema', () => {
     });
     expect(JSON.stringify(dto)).not.toContain('rawProviderPayload');
     expect(JSON.stringify(dto)).not.toContain('secret provider payload');
+  });
+
+  it('exposes sanitized failure forensics without raw stack, URLs, or secrets', () => {
+    const dto = toAgentRunOutput({
+      id: 'run-failed-1',
+      status: 'failed',
+      capsuleId: 'cap-1',
+      createdAt: '2026-06-11T12:00:00.000Z',
+      updatedAt: '2026-06-11T12:01:00.000Z',
+      objective: 'Prepare memo',
+      metadata: {
+        policyAgentId: 'research-memo',
+        failureSummary: {
+          schemaVersion: 1,
+          category: 'evidence_pack_failed',
+          failedPhase: 'evidence-pack',
+          executionMode: 'research-memo',
+          policyAgentId: 'research-memo',
+          errorName: 'Error',
+          sanitizedError: 'Provider failed at https://internal.example/run token=secret',
+          retryGuidance: 'Refresh the capsule context and source attachments, then retry the run.',
+          lastEventBeforeFailure: {
+            eventId: 'event-1',
+            eventType: 'praxis.context_resolved',
+            message: 'Context resolved.',
+            phase: 'context_resolved',
+            createdAt: '2026-06-11T12:00:30.000Z',
+          },
+          failingToolCall: {
+            toolCallId: null,
+            toolId: 'capsule-evidence-pack',
+            status: 'failed',
+            risk: null,
+            error: 'Provider failed at https://internal.example/run token=secret',
+            startedAt: null,
+            completedAt: null,
+          },
+          createdAt: '2026-06-11T12:01:00.000Z',
+        },
+      },
+    } as never);
+
+    expect(dto.failureSummary).toMatchObject({
+      category: 'evidence_pack_failed',
+      failedPhase: 'evidence-pack',
+      executionMode: 'research-memo',
+      sanitizedError: 'Provider failed at [redacted-url] token=[REDACTED]',
+      lastEventBeforeFailure: {
+        eventType: 'praxis.context_resolved',
+        phase: 'context_resolved',
+      },
+      failingToolCall: {
+        toolId: 'capsule-evidence-pack',
+        status: 'failed',
+        error: 'Provider failed at [redacted-url] token=[REDACTED]',
+      },
+    });
+    expect(JSON.stringify(dto)).not.toContain('internal.example');
+    expect(JSON.stringify(dto)).not.toContain('token=secret');
+    expect(AgentRunOutputSchema.safeParse(dto).success).toBe(true);
   });
 
   it('includes compact UI-safe proof metadata for Boardroom artifacts', () => {

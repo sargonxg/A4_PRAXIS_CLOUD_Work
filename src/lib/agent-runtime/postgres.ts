@@ -605,6 +605,7 @@ export async function updateAgentRunStatus(input: {
   toStatus: AgentRunStatus;
   message?: string | null;
   data?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }): Promise<AgentRun | null> {
   await ensureSchema();
   const current = await getAgentRun(input.ownerUid, input.runId);
@@ -613,14 +614,19 @@ export async function updateAgentRunStatus(input: {
   const now = new Date();
   const completedAt = ['succeeded', 'failed', 'cancelled', 'expired'].includes(input.toStatus) ? now : current.completedAt;
   const startedAt = input.toStatus === 'running' && !current.startedAt ? now : current.startedAt;
+  const metadataPatch = input.metadata ?? {};
   const result = await getPool().query(
     `
       UPDATE agent_runs
-      SET status = $1, updated_at = $2, started_at = $3, completed_at = $4
+      SET status = $1,
+          updated_at = $2,
+          started_at = $3,
+          completed_at = $4,
+          metadata = agent_runs.metadata || $7::jsonb
       WHERE owner_uid = $5 AND id = $6
       RETURNING *
     `,
-    [input.toStatus, now, startedAt, completedAt, input.ownerUid, input.runId],
+    [input.toStatus, now, startedAt, completedAt, input.ownerUid, input.runId, JSON.stringify(metadataPatch)],
   );
   const run = result.rows[0] ? rowToAgentRun(result.rows[0]) : null;
   if (run) {

@@ -18,6 +18,7 @@ describe('Capsule workbench UI contract', () => {
       'Timeline scrubber',
       'Causal chain',
       'Quality meter',
+      'History',
       'Fix this',
       'Reliability tier',
     ]) {
@@ -28,6 +29,12 @@ describe('Capsule workbench UI contract', () => {
     expect(componentSource).toContain('data-testid="capsule-causal-chain-view"');
     expect(componentSource).toContain('data-testid="capsule-quality-meter"');
     expect(componentSource).toContain('data-testid="capsule-claim-receipts"');
+    expect(componentSource).toContain('data-testid="capsule-history-section"');
+    expect(componentSource).toContain('data-testid="capsule-version-diff"');
+    expect(componentSource).toContain('/history?limit=8');
+    expect(componentSource).toContain('/diff?from=v');
+    expect(componentSource).toContain('Claim ledger');
+    expect(componentSource).toContain('Source refs');
     expect(componentSource).toContain("dynamic(async () => import('vis-timeline/standalone')");
     expect(componentSource).toContain('CapsulePillarPanel');
     expect(componentSource).toContain('CapsuleTimelineScrubber');

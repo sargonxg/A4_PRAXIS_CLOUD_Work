@@ -12,6 +12,7 @@ import {
   createCapsuleIntakeReviewCards,
   createEmptyCapsuleInventorySummary,
   createCapsule,
+  deriveCapsuleGraphStats,
   detachCapsuleRefs,
   exportCapsuleCorePackage,
   forkCapsule,
@@ -52,6 +53,29 @@ import {
 } from '@/lib/context/capsule-closed-loop-learning';
 
 describe('capsule service', () => {
+  it('derives embedded graph stats from reviewed nodes and edges', () => {
+    const stats = deriveCapsuleGraphStats({
+      embeddedGraph: {
+        nodes: [
+          { id: 'n1', entityType: 'Actor' },
+          { id: 'n2', entityType: 'Claim' },
+          { id: 'n3', type: 'Actor' },
+        ],
+        edges: [
+          { id: 'e1', source: 'n1', target: 'n2' },
+          { id: 'e2', source: 'n3', target: 'n2' },
+        ],
+      },
+    }, '2026-06-11T00:00:00.000Z');
+
+    expect(stats).toEqual({
+      nodeCount: 3,
+      edgeCount: 2,
+      entityTypeCounts: { Actor: 2, Claim: 1 },
+      updatedAt: '2026-06-11T00:00:00.000Z',
+    });
+  });
+
   it('migrates the legacy default context stack into the default capsule', async () => {
     const db = new FakeFirestore();
     const legacyStack: Partial<ActiveContextStackState> = {
@@ -1504,6 +1528,16 @@ describe('capsule service', () => {
       expect.objectContaining({ id: 'actor-ministry', label: 'Ministry', reviewState: 'reviewed' }),
     ]));
     expect(applied?.capsule.readinessSummary?.graphLinked).toBe(true);
+    expect(applied?.capsule.graphStats).toMatchObject({
+      nodeCount: 1,
+      edgeCount: 0,
+      entityTypeCounts: { Actor: 1 },
+      updatedAt: '2026-05-14T00:00:00.000Z',
+    });
+    expect(db.data.get(`users/u1/capsules/${capsule.capsuleId}`)?.graphStats).toMatchObject({
+      nodeCount: 1,
+      entityTypeCounts: { Actor: 1 },
+    });
   });
 
   it('gates capsule-local ontology extension promotion behind ADMIN_ALLOWLIST and writes a version snapshot', async () => {

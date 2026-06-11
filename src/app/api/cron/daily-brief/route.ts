@@ -1,34 +1,34 @@
 /**
  * GET /api/cron/daily-brief
  *
- * Cron-triggered. Cloud Scheduler hits this hourly; the route picks up
- * every active situation whose owner's local timezone is currently 06:00
- * (or 06:00 UTC fallback when no tz on profile) and writes a fresh Daily
- * Brief for them.
- *
- * Auth: cron-secret header (`CRON_SECRET` env var). Returns 401 if absent.
- *
- * Brick #49 in `docs/ROUND_5_PLAN_2026-04-26.md`.
+ * Cron-triggered. Cloud Scheduler hits this hourly; the route enqueues a
+ * durable Daily Brief agent run for opted-in users whose local hour is 05:00.
+ * Output remains a review-gated memo draft; the worker never auto-publishes.
  */
 
+import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { requireCronSecret } from '@/lib/api/cron-auth';
+import { createAgentRun } from '@/lib/agent-runtime/postgres';
+import { enqueueAgentRunDispatch } from '@/lib/agent-runtime/cloud-tasks';
+import { getCapsule, getOrMigrateDefaultCapsule } from '@/lib/context/capsule-service';
+import { normalizePointer } from '@/lib/agent-runtime/state';
 
-export const maxDuration = 300; // up to 5 min — iterates many situations
+export const maxDuration = 300;
 
-const TARGET_HOUR = 6; // 06:00 local — analyst wakes up to a fresh brief
+const TARGET_HOUR = 5;
 
 interface RunResult {
   uid: string;
-  situationId: string;
-  status: 'ok' | 'skipped' | 'failed';
+  capsuleId: string | null;
+  runId?: string;
+  status: 'queued' | 'skipped' | 'failed';
   reason?: string;
 }
 
 function localHourFor(timezone: string | undefined): number {
-  // Compute the local hour for the analyst's timezone. Falls back to UTC.
   const tz = timezone || 'UTC';
   try {
     const fmt = new Intl.DateTimeFormat('en-US', {
@@ -45,31 +45,6 @@ function localHourFor(timezone: string | undefined): number {
   }
 }
 
-async function runDailyBriefForSituation(
-  uid: string,
-  situationId: string,
-  origin: string
-): Promise<RunResult> {
-  try {
-    const url = `${origin}/api/ai/auto-briefing`;
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-cron-secret': process.env.CRON_SECRET ?? '',
-        'x-impersonate-uid': uid,
-      },
-      body: JSON.stringify({ situationId, source: 'cron.daily-brief' }),
-    });
-    if (!r.ok) {
-      return { uid, situationId, status: 'failed', reason: `HTTP ${r.status}` };
-    }
-    return { uid, situationId, status: 'ok' };
-  } catch (err) {
-    return { uid, situationId, status: 'failed', reason: err instanceof Error ? err.message : String(err) };
-  }
-}
-
 export async function GET(request: Request) {
   const unauthorized = requireCronSecret(request);
   if (unauthorized) return unauthorized;
@@ -79,47 +54,126 @@ export async function GET(request: Request) {
   }
 
   try {
-    const origin = new URL(request.url).origin;
-    // Iterate active situations across users. Cardinality cap = 200 per
-    // cron tick; future round migrates to Cloud Tasks fan-out (BIG #18 path).
-    const snap = await adminDb.collectionGroup('situations').limit(200).get();
+    const snap = await adminDb
+      .collectionGroup('preferences')
+      .where('dailyBrief.enabled', '==', true)
+      .limit(200)
+      .get();
     const now = new Date();
     const results: RunResult[] = [];
-    let processed = 0;
 
     for (const doc of snap.docs) {
-      const data = doc.data() as Record<string, unknown>;
-      const status = typeof data.status === 'string' ? data.status : 'active';
-      if (status === 'archived') continue;
-      const owner = doc.ref.parent.parent;
-      if (!owner) continue;
-      const uid = owner.id;
-
-      const tz = typeof data.timezone === 'string' ? data.timezone : 'UTC';
-      const hour = localHourFor(tz);
+      const ownerRef = doc.ref.parent.parent;
+      if (!ownerRef) continue;
+      const uid = ownerRef.id;
+      const pref = doc.data() as Record<string, unknown>;
+      const dailyBrief = isRecord(pref.dailyBrief) ? pref.dailyBrief : {};
+      const requestedCapsuleId = typeof dailyBrief.capsuleId === 'string' && dailyBrief.capsuleId.trim()
+        ? dailyBrief.capsuleId.trim()
+        : null;
+      const ownerSnap = await ownerRef.get().catch(() => null);
+      const ownerData = ownerSnap?.data() as Record<string, unknown> | undefined;
+      const timezone = typeof ownerData?.timezone === 'string'
+        ? ownerData.timezone
+        : typeof ownerData?.timeZone === 'string'
+          ? ownerData.timeZone
+          : 'UTC';
+      const hour = localHourFor(timezone);
       if (hour !== TARGET_HOUR) {
-        results.push({ uid, situationId: doc.id, status: 'skipped', reason: `local hour ${hour}` });
+        results.push({ uid, capsuleId: requestedCapsuleId, status: 'skipped', reason: `local hour ${hour}` });
         continue;
       }
-      processed += 1;
-      const r = await runDailyBriefForSituation(uid, doc.id, origin);
-      results.push(r);
-      if (r.status === 'failed') {
-        console.warn('[daily-brief] failed', { uid, situationId: doc.id, reason: r.reason });
-      }
+
+      const result = await enqueueDailyBriefRun(uid, requestedCapsuleId, now);
+      results.push(result);
     }
 
     return NextResponse.json({
       ranAt: now.toISOString(),
-      processed,
+      processed: results.filter((result) => result.status === 'queued').length,
       total: snap.docs.length,
       summary: {
-        ok: results.filter((r) => r.status === 'ok').length,
-        failed: results.filter((r) => r.status === 'failed').length,
-        skipped: results.filter((r) => r.status === 'skipped').length,
+        queued: results.filter((result) => result.status === 'queued').length,
+        failed: results.filter((result) => result.status === 'failed').length,
+        skipped: results.filter((result) => result.status === 'skipped').length,
       },
+      results,
     });
   } catch (err) {
     return handleRouteError(err, 'cron/daily-brief');
   }
+}
+
+async function enqueueDailyBriefRun(uid: string, requestedCapsuleId: string | null, now: Date): Promise<RunResult> {
+  try {
+    const capsule = requestedCapsuleId
+      ? await getCapsule(uid, normalizePointer(requestedCapsuleId, 'default'))
+      : (await getOrMigrateDefaultCapsule(uid)).capsule;
+    if (!capsule || capsule.archivedAt) {
+      return { uid, capsuleId: requestedCapsuleId, status: 'skipped', reason: 'capsule not found' };
+    }
+
+    const day = now.toISOString().slice(0, 10);
+    const objective = `Prepare the ${day} Daily Brief for capsule ${capsule.capsuleId}. Pull fresh grounded search, capsule deltas, open gaps, and write a review-gated memo draft only.`;
+    const run = await createAgentRun({
+      ownerUid: uid,
+      capsuleId: capsule.capsuleId,
+      contextStackId: capsule.capsuleId,
+      contextPackageId: null,
+      selectedCoreIds: {
+        userCoreId: capsule.coreRefs.userCoreId,
+        teamCoreId: capsule.coreRefs.teamCoreId,
+        situationCoreId: capsule.coreRefs.situationCoreId,
+        pathCoreId: capsule.coreRefs.pathCoreId ?? null,
+        sourceCoreIds: capsule.coreRefs.sourceCoreIds,
+        documentCoreIds: capsule.coreRefs.documentCoreIds,
+        graphCoreId: capsule.coreRefs.graphCoreId,
+        timeCoreId: capsule.coreRefs.timeCoreId ?? null,
+        outputCoreIds: capsule.coreRefs.outputCoreIds,
+        toolCoreIds: capsule.coreRefs.toolCoreIds ?? [],
+        objectiveCoreIds: capsule.coreRefs.objectiveCoreIds ?? [],
+        productCoreIds: capsule.coreRefs.productCoreIds ?? [],
+        memoryCoreId: capsule.coreRefs.memoryCoreId ?? null,
+      },
+      agentSpecId: null,
+      triggerType: 'schedule',
+      objective,
+      traceId: `daily-brief-${day}-${randomUUID()}`,
+      parentRunId: null,
+      idempotencyKey: `daily-brief:${uid}:${capsule.capsuleId}:${day}`,
+      maxStep: 18,
+      maxSessionMinutes: 20,
+      internalEstimatedCostCents: null,
+      metadata: {
+        policyAgentId: 'daily-brief',
+        outputDestination: 'memo_studio',
+        selectedToolIds: ['context-resolve', 'capsule-evidence-pack', 'grounded-search', 'daily-brief', 'policy-memo'],
+        searchPlan: {
+          queries: [
+            `${capsule.label ?? capsule.capsuleId} latest policy developments`,
+            `${capsule.label ?? capsule.capsuleId} official update today`,
+          ],
+          sourceClasses: ['public_web', 'official_sources', 'attached_sources'],
+          freshnessNeed: 'latest',
+          timeframe: '24h',
+        },
+        scheduledFor: now.toISOString(),
+        reviewOnly: true,
+        cronSource: 'cron.daily-brief',
+      },
+    });
+    await enqueueAgentRunDispatch({ ownerUid: uid, runId: run.id });
+    return { uid, capsuleId: capsule.capsuleId, runId: run.id, status: 'queued' };
+  } catch (err) {
+    return {
+      uid,
+      capsuleId: requestedCapsuleId,
+      status: 'failed',
+      reason: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

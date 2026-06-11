@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Boxes, FileText, LibraryBig, Lightbulb, TriangleAlert } from 'lucide-react';
+import { SourceTierBadge } from '@/components/source/SourceTierBadge';
 import type { AskAnswerEnvelope, AskContextProvenanceChip } from '@/lib/ai/ask-answer-envelope';
 import { cn } from '@/lib/utils/cn';
 
@@ -75,6 +76,14 @@ function ProvenanceChip({
     <>
       <ProvenanceIcon kind={chip.kind} />
       <span className="truncate">{chip.label}</span>
+      {chip.kind === 'source' || chip.kind === 'document' ? (
+        <SourceTierBadge
+          tier={chip.reliabilityTier ?? null}
+          date={chip.date ?? null}
+          stale={chip.stale ?? null}
+          size="xs"
+        />
+      ) : null}
     </>
   );
   if (chip.href) {
@@ -136,6 +145,9 @@ function fallbackChips(envelope: AskAnswerEnvelope | undefined): AskContextProve
       label: source.sourceReceiptId ? 'source receipt' : source.label,
       detail: source.title,
       href: source.sourceReceiptHref ?? source.url,
+      reliabilityTier: source.reliabilityTier ?? null,
+      date: source.date ?? null,
+      stale: source.stale ?? null,
       tone: 'grounded',
     });
   }

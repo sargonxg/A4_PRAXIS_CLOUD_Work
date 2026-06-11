@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "catalogVersion": "2026-05-31-graphlite-advisory-projection-v17",
+  "catalogVersion": "2026-06-11-graphlite-advisory-projection-v17-human-gated-depth",
   "total": 205,
   "counts": {
     "situation": 85,
@@ -10,8 +10,8 @@
   },
   "sourceRegistryCount": 27,
   "prompt": {
-    "averageLength": 9441,
-    "maxLength": 11791,
+    "averageLength": 9489,
+    "maxLength": 11827,
     "warnTarget": 12000,
     "hardCap": 16000
   },

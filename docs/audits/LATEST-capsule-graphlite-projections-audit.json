@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "2026-05-31-graphlite-advisory-projection-v17",
+  "catalogVersion": "2026-06-11-graphlite-advisory-projection-v17-human-gated-depth",
   "starterCount": 205,
   "provider": "graphlite",
   "projectionMode": "advisory",

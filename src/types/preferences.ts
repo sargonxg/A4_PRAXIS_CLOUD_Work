@@ -7,6 +7,11 @@ export const REPORT_LENGTHS = ['brief', 'standard', 'deep'] as const;
 export const CONFIDENCE_LABELLING = ['icd-203', 'plain'] as const;
 export const TIME_HORIZONS = ['30d', '90d', '180d', '365d'] as const;
 
+const DailyBriefPreferencesSchema = z.object({
+  enabled: z.boolean().default(false),
+  capsuleId: z.string().min(1).max(240).nullable().default(null),
+});
+
 export const UserPreferencesSchema = z.object({
   citationStyle: z.enum(CITATION_STYLES),
   defaultReportLength: z.enum(REPORT_LENGTHS),
@@ -16,6 +21,7 @@ export const UserPreferencesSchema = z.object({
   preferredAdvisor: z.enum(ADVISOR_IDS).nullable(),
   hiddenToolIds: z.array(z.string().min(1).max(80)).max(80).default([]),
   toolOrder: z.array(z.string().min(1).max(80)).max(120).default([]),
+  dailyBrief: DailyBriefPreferencesSchema.default({ enabled: false, capsuleId: null }),
   updatedAt: z.any().nullable().default(null),
 });
 
@@ -30,5 +36,6 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   preferredAdvisor: null,
   hiddenToolIds: [],
   toolOrder: [],
+  dailyBrief: { enabled: false, capsuleId: null },
   updatedAt: null,
 };

@@ -1,6 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
-import type { AgentApproval, AgentRun, AgentRunEvent, AgentToolCall } from '@/lib/agent-runtime/types';
+import { normalizeAgentRunFailureSummary } from '@/lib/agent-runtime/failure-summary';
+import type { AgentApproval, AgentRun, AgentRunEvent, AgentRunFailureSummary, AgentToolCall } from '@/lib/agent-runtime/types';
 
 export type AgentRunFirestoreStep = {
   id: string;
@@ -51,6 +52,7 @@ export type AgentRunFirestoreSnapshot = {
     latestEventAt: string | null;
     latestMessage: string | null;
   };
+  failureSummary: AgentRunFailureSummary | null;
   createdAt: string;
   updatedAt: string;
   queuedAt: string;
@@ -117,6 +119,7 @@ export function buildAgentRunFirestoreSnapshot(
       latestEventAt: latestEvent?.createdAt ?? null,
       latestMessage: latestEvent?.message ?? null,
     },
+    failureSummary: normalizeAgentRunFailureSummary(metadata.failureSummary),
     createdAt: run.createdAt,
     updatedAt: run.updatedAt,
     queuedAt: run.queuedAt,

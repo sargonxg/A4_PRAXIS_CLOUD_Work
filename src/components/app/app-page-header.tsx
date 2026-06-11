@@ -30,7 +30,7 @@ export function AppPageHeader({
     <header className="rounded-lg border border-white/70 bg-white/90 p-4 shadow-sm shadow-navy-950/5 md:p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 max-w-3xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold-700">{eyebrow}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-praxis-emerald-700)]">{eyebrow}</p>
           <h1 className="mt-2 font-serif text-3xl font-semibold leading-tight text-navy-950 md:text-4xl">
             {title}
           </h1>

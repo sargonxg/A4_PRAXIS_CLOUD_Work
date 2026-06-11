@@ -43,7 +43,7 @@ export async function mirrorWorkerEvent(
   deps: AgentRuntimeMirrorDeps = {},
 ) {
   const appendEvent = deps.appendEvent ?? appendAgentRunEvent;
-  return appendEvent(makeAgentRunEvent({
+  const event = makeAgentRunEvent({
     runId: run.id,
     ownerUid: run.ownerUid,
     capsuleId: run.capsuleId,
@@ -56,7 +56,18 @@ export async function mirrorWorkerEvent(
       ...(input.data ?? {}),
     },
     traceId: run.traceId,
-  }));
+  });
+  run.metadata = {
+    ...run.metadata,
+    latestMirroredEvent: {
+      id: event.id,
+      eventType: event.eventType,
+      message: event.message,
+      phase: input.phase,
+      createdAt: event.createdAt,
+    },
+  };
+  return appendEvent(event);
 }
 
 export async function mirrorGenkitFlowEvent(

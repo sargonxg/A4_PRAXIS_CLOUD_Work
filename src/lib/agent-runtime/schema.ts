@@ -3,6 +3,7 @@ import type { CapsuleReadReceipt } from '@/lib/agent-runtime/capsule-read-receip
 import type { SourceabilityLedgerSummary } from '@/lib/agent-runtime/sourceability-ledger';
 import type { AgentWorkflowPlan } from '@/lib/agent-runtime/workflow-plan';
 import type { AgentRun } from '@/lib/agent-runtime/types';
+import { normalizeAgentRunFailureSummary } from '@/lib/agent-runtime/failure-summary';
 import { buildProofSummaryFromAgentRun } from '@/lib/proof/proof-summary';
 import { destinationHref, getPolicyAgent, type PolicyAgentOutputDestination } from '@/lib/product/policy-agents';
 
@@ -91,6 +92,33 @@ export const AgentRunOutputSchema = z.object({
   latestMirroredEvent: z.object({
     eventType: z.string(),
     message: z.string().nullable(),
+    createdAt: z.string(),
+  }).nullable().optional(),
+  failureSummary: z.object({
+    schemaVersion: z.literal(1),
+    category: z.string(),
+    failedPhase: z.string(),
+    executionMode: z.string(),
+    policyAgentId: z.string().nullable(),
+    errorName: z.string(),
+    sanitizedError: z.string(),
+    retryGuidance: z.string(),
+    lastEventBeforeFailure: z.object({
+      eventId: z.string(),
+      eventType: z.string(),
+      message: z.string().nullable(),
+      phase: z.string().nullable(),
+      createdAt: z.string(),
+    }).nullable(),
+    failingToolCall: z.object({
+      toolCallId: z.string().nullable(),
+      toolId: z.string(),
+      status: z.literal('failed'),
+      risk: z.enum(['low', 'medium', 'high']).nullable(),
+      error: z.string().nullable(),
+      startedAt: z.string().nullable(),
+      completedAt: z.string().nullable(),
+    }).nullable(),
     createdAt: z.string(),
   }).nullable().optional(),
   readiness: z.enum(['live', 'queued', 'planned', 'gated']).nullable().optional(),
@@ -194,6 +222,7 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
   const sourceabilityLedgerSummary = normalizeSourceabilityLedgerSummary(run.metadata?.sourceabilityLedgerSummary);
   const artifactIds = normalizeArtifactIds(run.metadata);
   const latestMirroredEvent = normalizeLatestMirroredEvent(run.metadata?.latestMirroredEvent);
+  const failureSummary = normalizeAgentRunFailureSummary(run.metadata?.failureSummary);
   const memoId = stringValue(run.metadata?.memoId);
   const outputCapsuleId = stringValue(run.metadata?.outputCapsuleId);
   const boardroomOutput = isRecord(run.metadata?.boardroomOutput) ? run.metadata.boardroomOutput : null;
@@ -246,6 +275,7 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
     approvalGateCount,
     artifactIds,
     latestMirroredEvent,
+    failureSummary,
     readiness: policyAgent?.readiness ?? null,
     riskLevel: policyAgent?.riskLevel ?? null,
     contextReceipt,

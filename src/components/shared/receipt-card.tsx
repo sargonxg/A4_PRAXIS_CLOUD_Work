@@ -16,6 +16,7 @@
  */
 
 import type { ReactNode } from 'react';
+import { SourceTierBadge } from '@/components/source/SourceTierBadge';
 import { cn } from '@/lib/utils/cn';
 
 export interface ReceiptCardProps {
@@ -25,6 +26,11 @@ export interface ReceiptCardProps {
   source: string;
   /** Optional page or span stamp. e.g. "p.12" or "§4.3" */
   span?: string;
+  /** Optional PRAXIS source trust tier. Unknown tiers render as unrated. */
+  reliabilityTier?: 1 | 2 | 3 | null;
+  sourceDate?: string | null;
+  stale?: boolean | null;
+  showTierBadge?: boolean;
   /** Optional click target (open the source). */
   href?: string;
   /** Optional kind. "verified" tints the border gold; "gap" tints amber. */
@@ -44,6 +50,10 @@ export function ReceiptCard({
   claim,
   source,
   span,
+  reliabilityTier = null,
+  sourceDate = null,
+  stale = null,
+  showTierBadge = true,
   href,
   kind = 'verified',
   trailing,
@@ -66,7 +76,12 @@ export function ReceiptCard({
           CLAIM
         </p>
         <p className="mt-1 text-sm leading-snug text-[#F4ECD8]">{claim}</p>
-        <p className="mt-1 font-mono text-[11px] text-slate-300">{source}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          <p className="font-mono text-[11px] text-slate-300">{source}</p>
+          {showTierBadge ? (
+            <SourceTierBadge tier={reliabilityTier} date={sourceDate} stale={stale} size="xs" />
+          ) : null}
+        </div>
       </div>
       {span ? (
         <div className="flex shrink-0 items-center border-l border-slate-700/60 px-3">

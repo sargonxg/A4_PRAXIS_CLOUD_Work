@@ -58,7 +58,7 @@ export function PublicShell({
               <span className="font-serif text-[20px] font-semibold tracking-normal text-[color:var(--color-diplomatic-blue)] sm:text-[22px]">
                 PRAXIS
               </span>
-              <span className="hidden rounded-[var(--radius-full)] bg-[color:var(--color-gold-500)]/10 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.16em] text-[color:var(--color-gold-700)] sm:inline-flex">
+              <span className="hidden rounded-[var(--radius-full)] bg-[color:var(--color-praxis-emerald-500)]/10 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.16em] text-[color:var(--color-app-text)] sm:inline-flex">
                 by TACITUS
               </span>
             </Link>

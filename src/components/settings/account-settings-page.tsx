@@ -36,6 +36,7 @@ import {
   type UserPreferences,
 } from '@/types/preferences';
 import { LANGUAGES } from '@/types/analyst-profile';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type SettingsTab = 'profile' | 'billing' | 'usage' | 'security' | 'connectors' | 'workspace' | 'system';
 
@@ -970,7 +971,14 @@ function ConnectorsTab({
   const specs = Object.values(providers.providers);
   return (
     <div className="space-y-4">
-      {specs.length === 0 ? <InfoPanel title="No connector registry loaded">Connector settings are unavailable right now.</InfoPanel> : null}
+      {specs.length === 0 ? (
+        <EmptyState
+          icon={KeyRound}
+          label="No connector registry loaded."
+          hint="Connector settings are unavailable right now."
+          testId="settings-connectors-empty"
+        />
+      ) : null}
       {specs.map((provider) => {
         const status = providers.statuses[provider.id];
         const draft = drafts[provider.id] ?? {};
@@ -1048,6 +1056,41 @@ function WorkspaceTab({
         <SelectField label="Confidence labels" value={preferences.confidenceLabelling ?? 'icd-203'} options={CONFIDENCE_LABELLING} onChange={(value) => setPreferences((prefs) => ({ ...prefs, confidenceLabelling: value as UserPreferences['confidenceLabelling'] }))} />
         <SelectField label="Default horizon" value={preferences.defaultTimeHorizon ?? '90d'} options={TIME_HORIZONS} onChange={(value) => setPreferences((prefs) => ({ ...prefs, defaultTimeHorizon: value as UserPreferences['defaultTimeHorizon'] }))} />
       </div>
+      <section className="rounded-lg border border-slate-200 bg-white p-4" data-testid="daily-brief-settings">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-950">Daily Brief</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">Queue a review-gated memo draft from the selected capsule on the 5am briefing schedule.</p>
+          </div>
+          <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
+            <input
+              type="checkbox"
+              checked={preferences.dailyBrief?.enabled ?? false}
+              onChange={(event) => setPreferences((prefs) => ({
+                ...prefs,
+                dailyBrief: {
+                  enabled: event.target.checked,
+                  capsuleId: prefs.dailyBrief?.capsuleId ?? null,
+                },
+              }))}
+              data-testid="daily-brief-toggle"
+            />
+            Enabled
+          </label>
+        </div>
+        <TextField
+          label="Capsule id"
+          value={preferences.dailyBrief?.capsuleId ?? ''}
+          placeholder="default"
+          onChange={(value) => setPreferences((prefs) => ({
+            ...prefs,
+            dailyBrief: {
+              enabled: prefs.dailyBrief?.enabled ?? false,
+              capsuleId: value.trim() || null,
+            },
+          }))}
+        />
+      </section>
       <ActionButton icon={Save} label={busy ? 'Saving...' : 'Save workspace preferences'} onClick={onSave} disabled={busy} />
     </div>
   );
@@ -1324,9 +1367,12 @@ function SystemTab({
             );
           })}
           {memoryCandidates.length === 0 ? (
-            <p className="rounded-lg border border-slate-200 bg-white p-3 text-sm text-navy-500">
-              No Cognee candidates are waiting for review. Candidate promotion remains gated through the memory review endpoints.
-            </p>
+            <EmptyState
+              icon={ServerCog}
+              label="No Cognee candidates waiting."
+              hint="Candidate promotion remains gated through the memory review endpoints."
+              testId="settings-memory-empty"
+            />
           ) : null}
         </div>
       </section>

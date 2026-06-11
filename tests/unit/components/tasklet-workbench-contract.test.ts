@@ -207,6 +207,18 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(askQueuedAgentRunPanelSource).toContain('data-testid="ask-agent-approval-tray"');
   });
 
+  it('surfaces focused AgentRun failure forensics with the existing retry route affordance', () => {
+    expect(workbenchSource).toContain('import type { AgentRunFailureSummary }');
+    expect(workbenchSource).toContain('function AgentFailureForensicsPanel');
+    expect(workbenchSource).toContain('data-testid="agent-failure-forensics"');
+    expect(workbenchSource).toContain('last event before failure');
+    expect(workbenchSource).toContain('failing tool call');
+    expect(workbenchSource).toContain('sanitized error');
+    expect(workbenchSource).toContain('retry guidance');
+    expect(workbenchSource).toContain('Retry run');
+    expect(workbenchSource).toContain('/api/agents/runs/${encodeURIComponent(focusedRunId)}/${path}');
+  });
+
   it('surfaces plain context readiness states in the active capsule strip', () => {
     expect(contextBarSource).toContain('plainContextHealthState');
     for (const expected of ['ready', 'thin', 'missing sources', 'stale sources', 'needs review']) {

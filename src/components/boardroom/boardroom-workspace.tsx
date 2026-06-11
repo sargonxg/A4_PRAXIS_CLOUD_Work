@@ -18,6 +18,7 @@ import {
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
 import { ActivePolicyFileStrip } from '@/components/policy-work-file/ActivePolicyFileStrip';
+import { EmptyState } from '@/components/ui/empty-state';
 import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
 import { buildProofSummaryFromAgentRun, type UiProofSummary } from '@/lib/proof/proof-summary';
 import {
@@ -329,10 +330,10 @@ export function BoardroomWorkspace() {
 
   return (
     <section
-      className="app-light min-h-full text-[color:var(--color-app-text)]"
+      className="app-light min-h-full overflow-x-hidden text-[color:var(--color-app-text)]"
       data-testid="boardroom-home-surface"
     >
-      <div className="mx-auto grid w-full max-w-7xl gap-6">
+      <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-6">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="praxis-text-caption flex items-center gap-2">
@@ -424,7 +425,7 @@ export function BoardroomWorkspace() {
                     type="button"
                     onClick={() => void startRun()}
                     disabled={!question.trim() || submitting}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[color:var(--color-deep-ink)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[color:var(--color-deep-ink)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-auto"
                   >
                     {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                     Start boardroom
@@ -545,15 +546,13 @@ export function BoardroomWorkspace() {
                   </div>
                 ))}
                 {!transcriptTurns.length ? (
-                  <div className="grid min-h-64 place-items-center rounded-lg border border-dashed border-slate-300 bg-[color:var(--color-archive-paper-strong)] p-6 text-center">
-                    <div>
-                      <Gavel className="mx-auto h-8 w-8 text-[color:var(--color-oxide)]" />
-                      <p className="mt-3 text-sm font-semibold text-slate-950">No boardroom run yet.</p>
-                      <p className="mt-1 max-w-md text-sm leading-6 text-slate-600">
-                        Ask one decision question and PRAXIS will queue the multi-agent discussion here.
-                      </p>
-                    </div>
-                  </div>
+                  <EmptyState
+                    icon={Gavel}
+                    label="No boardroom run yet."
+                    hint="Ask one decision question and PRAXIS will queue the multi-agent discussion here."
+                    testId="boardroom-turn-feed-empty"
+                    className="min-h-64"
+                  />
                 ) : null}
               </div>
             </section>
@@ -612,7 +611,15 @@ export function BoardroomWorkspace() {
                     ) : null}
                   </article>
                 ))}
-                {!history.length ? <p className="rounded-md border border-dashed border-slate-300 bg-white p-2 text-xs text-slate-500">No saved boardroom sessions loaded.</p> : null}
+                {!history.length ? (
+                  <EmptyState
+                    icon={ShieldCheck}
+                    label="No saved Boardroom runs yet."
+                    hint="Completed sessions will appear here after the first run."
+                    testId="boardroom-history-empty"
+                    className="min-h-24 p-3"
+                  />
+                ) : null}
               </div>
             </section>
 
@@ -669,7 +676,15 @@ export function BoardroomWorkspace() {
                     {item.message ? ` - ${item.message}` : ''}
                   </p>
                 ))}
-                {!proofItems.length ? <p className="rounded-md border border-dashed border-slate-300 p-3 text-xs text-slate-500">No AgentRun events loaded.</p> : null}
+                {!proofItems.length ? (
+                  <EmptyState
+                    icon={MessageSquareText}
+                    label="No AgentRun events loaded."
+                    hint="Runtime proof appears as soon as a boardroom run starts."
+                    testId="boardroom-timeline-empty"
+                    className="min-h-24 p-3"
+                  />
+                ) : null}
               </div>
             </section>
           </aside>

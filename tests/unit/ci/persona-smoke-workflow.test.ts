@@ -5,12 +5,14 @@ import { describe, expect, it } from 'vitest';
 describe('persona-smoke GitHub workflow', () => {
   const source = readFileSync(join(process.cwd(), '.github/workflows/persona-smoke.yml'), 'utf8');
   const authDocs = readFileSync(join(process.cwd(), 'docs/testing/AUTHENTICATED_RUNTIME_TEST_LANE.md'), 'utf8');
+  const goldenPathRunbook = readFileSync(join(process.cwd(), 'docs/runbooks/DISPOSABLE_FIREBASE_GOLDEN_PATH_USER.md'), 'utf8');
 
   it('requires disposable Firebase secrets so authenticated E2E actually gates CI', () => {
     expect(source).toContain('cron:');
     expect(source).toContain('Verify Firebase disposable test credentials');
     expect(source).toContain('TEST_FIREBASE_EMAIL');
     expect(source).toContain('TEST_FIREBASE_PASSWORD');
+    expect(source).toContain('REQUIRE_AUTH_GOLDEN_PATH: "1"');
     expect(source).toContain('GitHub Actions secrets TEST_FIREBASE_EMAIL and TEST_FIREBASE_PASSWORD are required');
     expect(source).not.toContain("if: ${{ env.TEST_FIREBASE_EMAIL != '' && env.TEST_FIREBASE_PASSWORD != '' }}");
     expect(source).toContain('npm run smoke:authenticated-app');
@@ -26,5 +28,10 @@ describe('persona-smoke GitHub workflow', () => {
     expect(authDocs).toContain('PRAXIS_DOCTOR_WRITE_CANARY=1');
     expect(authDocs).toContain('doctor:praxis:canary');
     expect(authDocs).toContain('Do not commit');
+    expect(goldenPathRunbook).toContain('praxisbytacitus');
+    expect(goldenPathRunbook).toContain('TEST_FIREBASE_EMAIL');
+    expect(goldenPathRunbook).toContain('TEST_FIREBASE_PASSWORD');
+    expect(goldenPathRunbook).toContain('gh workflow run persona-smoke.yml --ref main');
+    expect(goldenPathRunbook).toContain('REQUIRE_AUTH_GOLDEN_PATH=1');
   });
 });

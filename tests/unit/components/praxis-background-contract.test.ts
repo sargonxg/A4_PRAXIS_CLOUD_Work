@@ -12,7 +12,7 @@ describe('PRAXIS shared ordered-connection background', () => {
     expect(globals).toContain('.praxis-checker-constellation');
     expect(globals).toContain('--praxis-point-rose');
     expect(globals).toContain('--praxis-point-sage');
-    expect(globals).toContain('--praxis-point-gold');
+    expect(globals).toContain('--praxis-point-emerald');
     expect(globals).toContain('--praxis-connection-line');
     expect(globals).toContain('radial-gradient(circle at 11px 19px');
     expect(globals).toContain('linear-gradient(32deg, transparent');

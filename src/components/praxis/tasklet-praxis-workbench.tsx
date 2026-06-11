@@ -77,6 +77,7 @@ import { KnowledgeStructurePanel, knowledgeStructureFromAskEnvelope } from '@/co
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
 import { InstrumentSkeleton, SourcePostureChip, WorkActionMenu } from '@/components/ui/instrument';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   buildCapsuleSearchItem,
   capsuleSearchMatchReason,
@@ -137,6 +138,7 @@ import { deriveContextChainHealth } from '@/lib/context/context-chain-health';
 import { deriveHumanGateBadges, deriveHumanGateStatus } from '@/lib/context/human-gate';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useOrchestratorEvents, type OrchestratorEvent, type OrchestratorEventState } from '@/hooks/useOrchestratorEvents';
+import type { AgentRunFailureSummary } from '@/lib/agent-runtime/types';
 import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-stream';
 import type { AskAnswerEnvelope, AskDocumentPackOutputTarget, ConversationDocumentPack } from '@/lib/ai/ask-answer-envelope';
 import { modelPolicyLabelFor } from '@/lib/proof/proof-summary';
@@ -274,6 +276,7 @@ type AgentRunSummary = {
   sourceCount?: number;
   groundingPosture?: string | null;
   degradedReason?: string | null;
+  failureSummary?: AgentRunFailureSummary | null;
   factoryMetadata?: {
     factoryLane: string | null;
     ontologyStack: string[];
@@ -401,6 +404,12 @@ type PraxisCapsuleSummary = {
     graphProposalCount?: number;
     reviewCardCount?: number;
     reviewRequired?: boolean;
+  } | null;
+  graphStats?: {
+    nodeCount?: number;
+    edgeCount?: number;
+    entityTypeCounts?: Record<string, number>;
+    updatedAt?: string;
   } | null;
   searchMatchReason?: string | null;
   starterSnapshot?: CapsuleStarterSnapshot | null;
@@ -2690,6 +2699,13 @@ export function TaskletPraxisWorkbench({
       setRepositoryOpen(true);
       void refreshRepository();
     }
+    if (panel === 'review') {
+      setActiveTab('capsules');
+      setRepositoryOpen(false);
+      setCapsuleDetailTab('overview');
+      setInspectorOpen(true);
+      setStatus('Imported capsule opened in the review queue. Inspect proposed rows before applying anything.');
+    }
     if (panel === 'memo') setPrompt('Draft a memo from the active capsule.');
     if (panel === 'canvas') setInspectorOpen(true);
     if (panel === 'advanced' || panel === 'ask') setStatus('Proof routing details appear in saved conversation receipts after a PRAXIS turn runs.');
@@ -3667,7 +3683,7 @@ export function TaskletPraxisWorkbench({
                     <span className="mt-0.5 block truncate text-sm font-semibold text-white">{activeCapsuleForStrip?.label ?? 'No capsule opened'}</span>
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1">
-                    <span className="rounded-[var(--radius-md)] border border-white/15 bg-white/10 px-2 py-1 text-[11px] font-semibold text-[color:var(--color-gold-300)]">
+                    <span className="rounded-[var(--radius-md)] border border-[color:var(--color-praxis-emerald-300)]/25 bg-[color:var(--color-praxis-emerald-500)]/12 px-2 py-1 text-[11px] font-semibold text-[color:var(--color-praxis-emerald-300)]">
                       {activeCapsuleReadiness}
                     </span>
                     <span className="text-[11px] font-semibold text-white/80">Open Context Chain</span>
@@ -5510,7 +5526,7 @@ function MobileCapsuleLane({
               <span className="block truncate text-sm font-semibold text-white">{capsule.label}</span>
               <span className="block font-mono text-[10px] font-semibold uppercase text-slate-400">{capsuleRoleLabel(capsule.role)}</span>
             </span>
-            <span className="rounded-[var(--radius-sm)] bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-[color:var(--color-gold-300)]">{capsule.code}</span>
+            <span className="rounded-[var(--radius-sm)] bg-[color:var(--color-praxis-emerald-500)]/12 px-1.5 py-0.5 font-mono text-[10px] text-[color:var(--color-praxis-emerald-300)]">{capsule.code}</span>
           </button>
         )) : (
           <span className="rounded-md border border-dashed border-slate-200 px-3 py-2 text-xs text-slate-500">No capsules in this lane.</span>
@@ -6165,10 +6181,18 @@ function starterResearchArtifacts(capsule: PraxisCapsuleSummary | null) {
 }
 
 function capsuleGraphSeedCounts(capsule: PraxisCapsuleSummary | null) {
+  const stats = capsule?.graphStats;
+  if (stats && ((stats.nodeCount ?? 0) > 0 || (stats.edgeCount ?? 0) > 0)) {
+    return {
+      graphNodeCount: stats.nodeCount ?? 0,
+      graphEdgeCount: stats.edgeCount ?? 0,
+      entityTypeCounts: stats.entityTypeCounts ?? {},
+    };
+  }
   const ontologyOverlay = starterResearchArtifacts(capsule).ontologyOverlay;
   const graphNodeCount = ontologyOverlay?.graphSeed.nodeTemplates.length ?? 0;
   const graphEdgeCount = ontologyOverlay?.graphSeed.edgeTemplates.length ?? 0;
-  return { graphNodeCount, graphEdgeCount };
+  return { graphNodeCount, graphEdgeCount, entityTypeCounts: {} };
 }
 
 function capsuleDossierStatus(capsule: PraxisCapsuleSummary | null): string {
@@ -6990,7 +7014,7 @@ function ContextChainProvenanceMap({
       <ol className={cn('relative grid gap-2', compact ? 'grid-cols-1 sm:grid-cols-5' : 'grid-cols-1 md:grid-cols-5')}>
         {nodes.map((node) => (
           <li key={node.id} className="capsule-chain-node min-w-0 rounded-lg p-3" data-context-chain-state={node.state}>
-            <span className="block font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-gold-300)]">
+            <span className="block font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-praxis-emerald-300)]">
               {node.label}
             </span>
             <span className="mt-1 block truncate text-sm font-semibold text-white" title={node.value}>{node.value}</span>
@@ -7147,12 +7171,12 @@ function CapsuleEmptyState({ label }: { label: string }) {
   if (/^Loading/i.test(label)) return <CapsuleLoadingSkeleton label={label} />;
 
   return (
-    <div className="praxis-workbench-panel col-span-full flex items-start gap-3 rounded-lg border-dashed p-6 text-sm font-semibold text-slate-500">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-400">
-        <CircleHelp className="h-4 w-4" />
-      </span>
-      <span className="min-w-0 pt-1">{label}</span>
-    </div>
+    <EmptyState
+      icon={CircleHelp}
+      label={label}
+      testId="capsule-empty-state"
+      className="col-span-full"
+    />
   );
 }
 
@@ -8584,6 +8608,7 @@ function CapsuleCard({
           color={meta.color}
           nodeCount={cardGraphSeedCounts.graphNodeCount}
           edgeCount={cardGraphSeedCounts.graphEdgeCount}
+          entityTypeCounts={cardGraphSeedCounts.entityTypeCounts}
         />
         <span className="mt-3 block line-clamp-2 text-sm leading-6 text-slate-600">{purposeLine}</span>
         <span className="mt-2 block line-clamp-1 rounded-md bg-white px-2 py-1.5 text-[11px] font-semibold text-slate-700">
@@ -9077,6 +9102,9 @@ function FocusedAgentRunPanel({
           </div>
         </div>
       ) : null}
+      {run.failureSummary ? (
+        <AgentFailureForensicsPanel failureSummary={run.failureSummary} />
+      ) : null}
       <div className="border-t border-[color:var(--color-clay)]/15 bg-white px-3 py-2 text-[11px] font-semibold text-slate-500" data-testid="agent-run-stream-state">
         {stream.isReconnecting ? 'Live receipts reconnecting' : stream.isConnected ? 'Live receipts connected' : 'Live receipts ready'}
         {stream.lastEventAt ? ` · last event ${formatEventTime(stream.lastEventAt)}` : ''}
@@ -9100,7 +9128,7 @@ function FocusedAgentRunPanel({
                 className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:text-slate-300"
               >
                 {action === 'retry' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
-                Retry
+                Retry run
               </button>
             ) : null}
             {canCancel ? (
@@ -9148,6 +9176,34 @@ function FocusedAgentRunPanel({
       ) : null}
       <RunEventTimeline events={latestEvents} />
     </article>
+  );
+}
+
+function AgentFailureForensicsPanel({ failureSummary }: { failureSummary: AgentRunFailureSummary }) {
+  const lastEvent = failureSummary.lastEventBeforeFailure;
+  const failingTool = failureSummary.failingToolCall;
+  return (
+    <section className="grid gap-3 border-t border-rose-100 bg-rose-50/50 p-3 text-[11px]" data-testid="agent-failure-forensics">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-semibold uppercase tracking-[0.16em] text-rose-700">Failure forensics</p>
+          <p className="mt-1 text-xs font-semibold text-rose-950">{failureSummary.category.replaceAll('_', ' ')}</p>
+        </div>
+        <span className="rounded-md border border-rose-200 bg-white px-2 py-1 font-mono text-[10px] font-semibold text-rose-700">
+          {failureSummary.failedPhase}
+        </span>
+      </div>
+      <div className="grid gap-2 md:grid-cols-2">
+        <ProofCell label="last event before failure" value={lastEvent ? `${lastEvent.eventType}${lastEvent.phase ? ` / ${lastEvent.phase}` : ''}` : 'No prior event captured'} />
+        <ProofCell label="failing tool call" value={failingTool ? `${failingTool.toolId} / ${failingTool.status}` : 'No failing tool call captured'} />
+        <ProofCell label="sanitized error" value={failureSummary.sanitizedError} />
+        <ProofCell label="retry guidance" value={failureSummary.retryGuidance} />
+      </div>
+      {lastEvent?.message ? <p className="rounded-md border border-rose-100 bg-white px-2 py-1.5 text-[11px] leading-5 text-rose-950">{lastEvent.message}</p> : null}
+      {failingTool?.error && failingTool.error !== failureSummary.sanitizedError ? (
+        <p className="rounded-md border border-rose-100 bg-white px-2 py-1.5 text-[11px] leading-5 text-rose-950">{failingTool.error}</p>
+      ) : null}
+    </section>
   );
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
 import {
   Boxes,
@@ -10,6 +11,7 @@ import {
   LibraryBig,
   Loader2,
   LogIn,
+  MoreHorizontal,
   RotateCcw,
   Star,
   Target,
@@ -18,9 +20,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import { CapsuleListPicker } from '@/components/cores/CapsuleListPicker';
-import { CapsuleImportButton } from '@/components/capsules/CapsuleImportButton';
-import { InlineQuickContextBuilder } from '@/components/context/inline-quick-context-builder';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useAuth } from '@/lib/auth/auth-context';
 import {
   DEFAULT_CONTEXT_STACK_ID,
@@ -36,6 +36,26 @@ import {
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
 import { cn } from '@/lib/utils/cn';
+
+const CapsuleListPicker = dynamic(
+  () => import('@/components/cores/CapsuleListPicker').then((module) => module.CapsuleListPicker),
+  { loading: () => null, ssr: false },
+);
+
+const CapsuleImportButton = dynamic(
+  () => import('@/components/capsules/CapsuleImportButton').then((module) => module.CapsuleImportButton),
+  { loading: () => null, ssr: false },
+);
+
+const InlineQuickContextBuilder = dynamic(
+  () => import('@/components/context/inline-quick-context-builder').then((module) => module.InlineQuickContextBuilder),
+  { loading: () => null, ssr: false },
+);
+
+const ApprovalInboxButton = dynamic(
+  () => import('@/components/runs/approval-inbox').then((module) => module.ApprovalInboxButton),
+  { loading: () => null, ssr: false },
+);
 
 export function AskContextBar({
   activeSituation,
@@ -62,6 +82,7 @@ export function AskContextBar({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const dark = variant === 'floating';
@@ -151,6 +172,23 @@ export function AskContextBar({
     }
   }
 
+  function togglePicker() {
+    setPickerOpen((value) => !value);
+    setBuilderOpen(false);
+    setActionsOpen(false);
+  }
+
+  function toggleBuilder() {
+    setBuilderOpen((value) => !value);
+    setPickerOpen(false);
+    setActionsOpen(false);
+  }
+
+  function toggleDetails() {
+    setDetailsOpen((value) => !value);
+    setActionsOpen(false);
+  }
+
   return (
     <div
       data-testid="ask-context-bar"
@@ -206,7 +244,7 @@ export function AskContextBar({
             {dockModel.warnings.map((warning) => <CapsuleDockWarningChip key={warning.id} dark={dark} warning={warning} />)}
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+          <div className="hidden sm:flex shrink-0 flex-wrap items-center gap-1.5">
             {isPublic ? (
               <>
                 <button
@@ -234,7 +272,7 @@ export function AskContextBar({
                 </Link>
                 <button
                   type="button"
-                  onClick={() => setDetailsOpen((value) => !value)}
+                  onClick={toggleDetails}
                   aria-expanded={detailsOpen}
                   className={actionClassName(dark, detailsOpen)}
                   title="Show context details: user, situation, sources, tools, output, readiness"
@@ -247,7 +285,7 @@ export function AskContextBar({
               <>
                 <button
                   type="button"
-                  onClick={() => { setPickerOpen((value) => !value); setBuilderOpen(false); }}
+                  onClick={togglePicker}
                   className={actionClassName(dark, pickerOpen)}
                   title="Attach context from your capsule library"
                 >
@@ -256,7 +294,7 @@ export function AskContextBar({
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setBuilderOpen((value) => !value); setPickerOpen(false); }}
+                  onClick={toggleBuilder}
                   className={actionClassName(dark, builderOpen)}
                   title="Build context"
                 >
@@ -267,6 +305,7 @@ export function AskContextBar({
                   <LibraryBig className="h-3.5 w-3.5" />
                   Open context
                 </Link>
+                <ApprovalInboxButton dark={dark} />
                 <button
                   type="button"
                   onClick={() => void clearContext()}
@@ -279,7 +318,7 @@ export function AskContextBar({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setDetailsOpen((value) => !value)}
+                  onClick={toggleDetails}
                   aria-expanded={detailsOpen}
                   className={actionClassName(dark, detailsOpen)}
                   title="Show context details: user, situation, sources, tools, output, readiness"
@@ -290,20 +329,113 @@ export function AskContextBar({
               </>
             )}
           </div>
+
+          <div className="relative shrink-0 sm:hidden" data-testid="capsule-dock-mobile-actions">
+            <button
+              type="button"
+              aria-label="Capsule Dock actions"
+              aria-haspopup="menu"
+              aria-expanded={actionsOpen}
+              onClick={() => setActionsOpen((value) => !value)}
+              className={actionClassName(dark, actionsOpen)}
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+            {actionsOpen ? (
+              <div
+                role="menu"
+                data-testid="capsule-dock-action-menu"
+                className={cn(
+                  'absolute right-0 top-[calc(100%+0.5rem)] z-50 grid w-[min(18rem,calc(100vw-2rem))] gap-1 rounded-[var(--radius-md)] border p-2 shadow-[var(--shadow-float)]',
+                  dark ? 'border-slate-700 bg-slate-950' : 'border-slate-200 bg-white',
+                )}
+              >
+                {isPublic ? (
+                  <>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled
+                      title="Sign in to attach saved context"
+                      className={cn(actionClassName(dark), 'w-full justify-start opacity-60')}
+                    >
+                      <Boxes className="h-3.5 w-3.5" />
+                      Attach context
+                    </button>
+                    <Link
+                      href="/login?mode=signup&redirect=%2Fapp"
+                      role="menuitem"
+                      data-testid="public-context-sign-in-affordance"
+                      onClick={() => setActionsOpen(false)}
+                      className={cn(actionClassName(dark), 'w-full justify-start', dark ? 'bg-white text-slate-950' : 'bg-emerald-700 text-white hover:bg-emerald-600')}
+                    >
+                      <LogIn className="h-3.5 w-3.5" />
+                      Sign in to save context
+                    </Link>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={toggleDetails}
+                      aria-expanded={detailsOpen}
+                      className={cn(actionClassName(dark, detailsOpen), 'w-full justify-start')}
+                    >
+                      <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', detailsOpen && 'rotate-180')} />
+                      Context details
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button type="button" role="menuitem" onClick={togglePicker} className={cn(actionClassName(dark, pickerOpen), 'w-full justify-start')}>
+                      <Boxes className="h-3.5 w-3.5" />
+                      Attach context
+                    </button>
+                    <button type="button" role="menuitem" onClick={toggleBuilder} className={cn(actionClassName(dark, builderOpen), 'w-full justify-start')}>
+                      <Wand2 className="h-3.5 w-3.5" />
+                      Build context
+                    </button>
+                    <Link href="/app/capsules" role="menuitem" onClick={() => setActionsOpen(false)} className={cn(actionClassName(dark), 'w-full justify-start')}>
+                      <LibraryBig className="h-3.5 w-3.5" />
+                      Open context
+                    </Link>
+                    <ApprovalInboxButton dark={dark} />
+                    <button type="button" role="menuitem" onClick={() => { setActionsOpen(false); void clearContext(); }} disabled={saving} className={cn(actionClassName(dark), 'w-full justify-start')}>
+                      {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+                      Clear context
+                    </button>
+                    <button type="button" role="menuitem" onClick={toggleDetails} aria-expanded={detailsOpen} className={cn(actionClassName(dark, detailsOpen), 'w-full justify-start')}>
+                      <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', detailsOpen && 'rotate-180')} />
+                      Context details
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 
       {/* Collapsible provenance detail row: User / Situation / Sources / Tools / Output / Saved context / Readiness */}
       {detailsOpen ? (
-        <div className="mt-2 flex min-w-0 gap-1.5 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible lg:pb-0">
-          <ContextChip dark={dark} icon={UserRound} label="User" value={userLabel} detail={audience} tone="ready" />
-          <ContextChip dark={dark} icon={Target} label="Situation" value={selectedSituation?.name ?? stack.situationId ?? 'Direct ask'} detail={selectedSituation?.region ?? 'No situation core'} tone={selectedSituation || stack.situationId ? 'active' : 'quiet'} />
-          <ContextChip dark={dark} icon={LibraryBig} label="Sources" value={`${sourceCount} attached`} detail={sourceCount ? 'Receipts can ground answer' : 'Attach sources before final use'} tone={sourceCount ? 'ready' : 'review'} />
-          <ContextChip dark={dark} icon={Wrench} label="Tools" value={toolCount ? `${toolCount} active` : 'Sourceability'} detail={toolCount ? 'Context tools selected' : 'Default review posture'} tone={toolCount ? 'active' : 'quiet'} />
-          <ContextChip dark={dark} icon={FileText} label="Output" value={stack.outputGoal ?? 'Set target'} detail={stack.outputGoal ? 'Answer target saved' : 'Memo, brief, or handoff'} tone={stack.outputGoal ? 'ready' : 'quiet'} />
-          <ContextChip dark={dark} icon={Boxes} label="Saved context" value={`${capsuleCount} attached`} detail={activeCapsuleId ?? 'No context selected'} tone={capsuleCount ? 'ready' : 'review'} />
-          <ContextChip dark={dark} icon={Gauge} label="Readiness" value={readiness.label} detail={readiness.detail} tone={readiness.tone} />
-        </div>
+        <>
+          <div className="mt-2 flex min-w-0 gap-1.5 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible lg:pb-0">
+            <ContextChip dark={dark} icon={UserRound} label="User" value={userLabel} detail={audience} tone="ready" />
+            <ContextChip dark={dark} icon={Target} label="Situation" value={selectedSituation?.name ?? stack.situationId ?? 'Direct ask'} detail={selectedSituation?.region ?? 'No situation core'} tone={selectedSituation || stack.situationId ? 'active' : 'quiet'} />
+            <ContextChip dark={dark} icon={LibraryBig} label="Sources" value={`${sourceCount} attached`} detail={sourceCount ? 'Receipts can ground answer' : 'Attach sources before final use'} tone={sourceCount ? 'ready' : 'review'} />
+            <ContextChip dark={dark} icon={Wrench} label="Tools" value={toolCount ? `${toolCount} active` : 'Sourceability'} detail={toolCount ? 'Context tools selected' : 'Default review posture'} tone={toolCount ? 'active' : 'quiet'} />
+            <ContextChip dark={dark} icon={FileText} label="Output" value={stack.outputGoal ?? 'Set target'} detail={stack.outputGoal ? 'Answer target saved' : 'Memo, brief, or handoff'} tone={stack.outputGoal ? 'ready' : 'quiet'} />
+            <ContextChip dark={dark} icon={Boxes} label="Saved context" value={`${capsuleCount} attached`} detail={activeCapsuleId ?? 'No context selected'} tone={capsuleCount ? 'ready' : 'review'} />
+            <ContextChip dark={dark} icon={Gauge} label="Readiness" value={readiness.label} detail={readiness.detail} tone={readiness.tone} />
+          </div>
+          {!dockModel.items.length ? (
+            <EmptyState
+              icon={Boxes}
+              label="No saved context - direct ask"
+              hint="Attach or build a primary capsule when the answer has to become reusable work."
+              testId="capsule-dock-empty-state"
+              className={cn('mt-2 min-h-20 p-3', dark && 'border-slate-700 bg-slate-900')}
+            />
+          ) : null}
+        </>
       ) : null}
 
       {!isPublic && pickerOpen ? (

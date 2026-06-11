@@ -11,15 +11,23 @@ import { authenticateFirebaseCanary, expectAuthenticatedSession, hasFirebaseCana
  *   TEST_FIREBASE_EMAIL       — Firebase Auth email for a seeded test user
  *   TEST_FIREBASE_PASSWORD    — Firebase Auth password
  *
- * The test is SKIPPED when TEST_FIREBASE_EMAIL is absent so CI doesn't fail
- * on a clean clone. Run it locally against a staging deployment:
+ * Local runs without TEST_FIREBASE_EMAIL / TEST_FIREBASE_PASSWORD are skipped
+ * by default. CI and REQUIRE_AUTH_GOLDEN_PATH=1 fail loudly when credentials
+ * are missing or the path breaks. Run it locally against a staging deployment:
  *   PLAYWRIGHT_BASE_URL=https://preview-url npx playwright test tests/e2e/golden-path.spec.ts
  */
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const hasAuthCredentials = hasFirebaseCanaryCredentials();
+const requireAuthGoldenPath = process.env.CI === 'true' || process.env.REQUIRE_AUTH_GOLDEN_PATH === '1';
 
 test.describe('golden path — app usability smoke', () => {
-  test.skip(!hasFirebaseCanaryCredentials(), 'TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set — skipping authenticated golden path');
+  test.beforeEach(() => {
+    if (!hasAuthCredentials && requireAuthGoldenPath) {
+      throw new Error('TEST_FIREBASE_EMAIL and TEST_FIREBASE_PASSWORD are required for the authenticated golden path in CI/strict mode.');
+    }
+    test.skip(!hasAuthCredentials, 'TEST_FIREBASE_EMAIL/TEST_FIREBASE_PASSWORD not set — skipping local authenticated golden path');
+  });
 
   test.setTimeout(120_000);
 

@@ -23,6 +23,16 @@ export interface SourceabilityClaimVerdict {
   reviewNote?: string;
 }
 
+export interface EvidenceCoverageSummary {
+  totalClaims: number;
+  supportedClaims: number;
+  unsupportedClaims: number;
+  weakClaims: number;
+  contradictedClaims: number;
+  coveragePercent: number;
+  unsupportedClaimTexts: string[];
+}
+
 export interface SourceabilityClaimVerdictInput {
   id?: string;
   claim: string;
@@ -131,6 +141,36 @@ export function buildSourceabilityClaimVerdictsFromLedger(ledger: SourceabilityL
     confidence: item.confidence,
     reviewNote: item.reviewNote,
   })));
+}
+
+export function computeEvidenceCoverage(verdicts: SourceabilityClaimVerdict[]): EvidenceCoverageSummary {
+  const totalClaims = verdicts.length;
+  const supportedClaims = verdicts.filter((item) => item.verdict === 'supported').length;
+  const unsupported = verdicts.filter((item) => item.verdict === 'unsupported');
+  const unsupportedClaims = unsupported.length;
+  const weakClaims = verdicts.filter((item) => item.verdict === 'weak').length;
+  const contradictedClaims = verdicts.filter((item) => item.verdict === 'contradicted').length;
+  return {
+    totalClaims,
+    supportedClaims,
+    unsupportedClaims,
+    weakClaims,
+    contradictedClaims,
+    coveragePercent: totalClaims ? Math.round((supportedClaims / totalClaims) * 100) : 0,
+    unsupportedClaimTexts: unsupported.map((item) => item.claim).filter(Boolean),
+  };
+}
+
+export function buildSourceGapScoutObjective(claims: string[], fallback = 'Find sources for unsupported claims.'): string {
+  const cleaned = uniqueStrings(claims)
+    .slice(0, 8)
+    .map((claim) => claim.slice(0, 320));
+  if (!cleaned.length) return fallback.slice(0, 2000);
+  return [
+    'Find current, defensible sources for these unsupported Ask PRAXIS claims.',
+    'Create review-gated source-pack candidates; do not promote claims automatically.',
+    ...cleaned.map((claim) => `- ${claim}`),
+  ].join('\n').slice(0, 2000);
 }
 
 export function buildSourceCheckerTracePayload(

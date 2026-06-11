@@ -50,7 +50,7 @@
      - --color-ink: deeper than navy-950 for AA+ body on cream.
      - --color-vellum: warmer cream variant for inner card surfaces.
      - --color-rose-gold: muted gold for hairlines/dividers; reserves
-       --color-gold-500/600 for CTAs and active state only. */
+       --color-gold-* for archival badges and legacy utilities only. */
   --color-ink: #0A1628;
   --color-vellum: #F8F1E0;
   --color-rose-gold: #C9A961;
@@ -99,7 +99,7 @@
   --color-foreground: var(--color-navy-100);
 
   /* Ring defaults */
-  --color-ring: var(--color-gold-500);
+  --color-ring: var(--color-praxis-emerald-500);
 
   /* Unified shape scale. Use these across public, app, and agent panels. */
   --radius-sm: 6px;
@@ -132,8 +132,15 @@
   --color-praxis-muted: var(--color-app-text-secondary);
   --color-praxis-accent: var(--color-diplomatic-blue);
   --color-praxis-accent-strong: var(--color-navy-950);
-  --color-praxis-action: var(--color-gold-500);
-  --color-praxis-action-strong: var(--color-gold-700);
+  --color-praxis-action: var(--color-praxis-emerald-500);
+  --color-praxis-action-strong: var(--color-praxis-emerald-700);
+  --color-praxis-emerald-50: #ECFDF5;
+  --color-praxis-emerald-100: #D1FAE5;
+  --color-praxis-emerald-300: #6EE7B7;
+  --color-praxis-emerald-500: #10B981;
+  --color-praxis-emerald-600: #059669;
+  --color-praxis-emerald-700: #047857;
+  --color-praxis-emerald-900: #064E3B;
 
   /* Animation durations */
   --animate-accordion-down: accordion-down 0.2s ease-out;
@@ -189,7 +196,7 @@
 
 /* Selection colors */
 ::selection {
-  background-color: color-mix(in srgb, var(--color-gold-500) 30%, transparent);
+  background-color: color-mix(in srgb, var(--color-praxis-emerald-500) 30%, transparent);
   color: var(--color-navy-950);
 }
 
@@ -211,7 +218,7 @@ body {
 
 /* Focus visible styles */
 *:focus-visible {
-  outline: 2px solid var(--color-gold-500);
+  outline: 2px solid var(--color-praxis-emerald-500);
   outline-offset: 2px;
 }
 
@@ -348,7 +355,7 @@ body {
   --tw-prose-bullets: var(--color-navy-400);
   --tw-prose-hr: var(--color-app-border);
   --tw-prose-quotes: var(--color-navy-700);
-  --tw-prose-quote-borders: var(--color-gold-600);
+  --tw-prose-quote-borders: var(--color-praxis-emerald-600);
   --tw-prose-captions: var(--color-navy-500);
   --tw-prose-code: var(--color-diplomatic-blue);
   --tw-prose-pre-code: var(--color-navy-700);
@@ -413,7 +420,7 @@ body {
   color: var(--color-navy-300);
 }
 .floating-praxis-md a {
-  color: var(--color-gold-400);
+  color: var(--color-praxis-emerald-300);
   text-decoration: none;
 }
 .floating-praxis-md a:hover {
@@ -433,7 +440,7 @@ body {
   color: var(--color-navy-500);
 }
 .floating-praxis-md blockquote {
-  border-left: 3px solid var(--color-gold-600);
+  border-left: 3px solid var(--color-praxis-emerald-600);
   padding-left: 0.75em;
   margin-left: 0;
   color: var(--color-navy-300);
@@ -441,7 +448,7 @@ body {
 }
 .floating-praxis-md code {
   background: var(--color-navy-950);
-  color: var(--color-gold-400);
+  color: var(--color-praxis-emerald-300);
   padding: 1px 5px;
   border-radius: 4px;
   font-size: 12px;
@@ -497,7 +504,7 @@ body {
   top: 0;
   left: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--color-gold-600), var(--color-gold-400));
+  background: linear-gradient(90deg, var(--color-praxis-emerald-700), var(--color-praxis-emerald-300));
   z-index: 9999;
   transition: width 0.1s ease-out;
 }
@@ -835,7 +842,7 @@ body {
   background:
     linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-oxide) 22%, transparent), transparent 36%),
     linear-gradient(90deg, transparent 48%, color-mix(in srgb, var(--color-lab-cyan) 18%, transparent), transparent 68%),
-    linear-gradient(90deg, transparent 68%, color-mix(in srgb, var(--color-gold-500) 20%, transparent), transparent);
+    linear-gradient(90deg, transparent 68%, color-mix(in srgb, var(--color-praxis-emerald-500) 20%, transparent), transparent);
   opacity: 0.65;
 }
 
@@ -1023,14 +1030,14 @@ body {
   --praxis-connection-line-faint: rgba(110, 90, 66, 0.075);
   --praxis-point-rose: color-mix(in srgb, var(--color-rose-gold) 78%, transparent);
   --praxis-point-sage: color-mix(in srgb, var(--color-evidence-ready) 62%, transparent);
-  --praxis-point-gold: color-mix(in srgb, var(--color-gold-500) 62%, transparent);
+  --praxis-point-emerald: color-mix(in srgb, var(--color-praxis-emerald-500) 62%, transparent);
   --praxis-point-ink: rgba(21, 38, 45, 0.17);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 340px),
     radial-gradient(circle at 11px 19px, var(--praxis-point-rose) 0 1.35px, transparent 1.75px),
     radial-gradient(circle at 57px 128px, var(--praxis-point-ink) 0 1px, transparent 1.45px),
     radial-gradient(circle at 93px 47px, var(--praxis-point-sage) 0 1.5px, transparent 1.95px),
-    radial-gradient(circle at 138px 112px, var(--praxis-point-gold) 0 1.25px, transparent 1.7px),
+    radial-gradient(circle at 138px 112px, var(--praxis-point-emerald) 0 1.25px, transparent 1.7px),
     radial-gradient(circle at 172px 24px, var(--praxis-point-sage) 0 1.05px, transparent 1.5px),
     radial-gradient(circle at 231px 151px, var(--praxis-point-rose) 0 1.1px, transparent 1.55px),
     linear-gradient(32deg, transparent 0 calc(50% - 0.55px), var(--praxis-connection-line) calc(50% - 0.55px) calc(50% + 0.55px), transparent calc(50% + 0.55px) 100%),
@@ -1047,40 +1054,40 @@ body {
 .praxis-composer-focus-shell {
   position: relative;
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-gold-500) 32%, transparent),
-    0 0 0 6px color-mix(in srgb, var(--color-gold-500) 13%, transparent),
-    0 18px 48px rgba(98, 76, 32, 0.13),
+    0 0 0 1px color-mix(in srgb, var(--color-praxis-emerald-500) 32%, transparent),
+    0 0 0 6px color-mix(in srgb, var(--color-praxis-emerald-500) 13%, transparent),
+    0 18px 48px rgba(4, 120, 87, 0.13),
     0 2px 10px rgba(15, 23, 42, 0.05);
   transition: box-shadow 160ms ease, border-color 160ms ease;
 }
 
 .praxis-composer-focus-shell:focus-within {
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-gold-500) 54%, transparent),
-    0 0 0 8px color-mix(in srgb, var(--color-gold-500) 21%, transparent),
-    0 24px 58px rgba(98, 76, 32, 0.18),
+    0 0 0 1px color-mix(in srgb, var(--color-praxis-emerald-500) 54%, transparent),
+    0 0 0 8px color-mix(in srgb, var(--color-praxis-emerald-500) 21%, transparent),
+    0 24px 58px rgba(4, 120, 87, 0.18),
     0 2px 10px rgba(15, 23, 42, 0.06);
 }
 
 .praxis-composer-input-well {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--color-gold-600) 28%, var(--color-mineral-soft));
+  border: 1px solid color-mix(in srgb, var(--color-praxis-emerald-600) 28%, var(--color-mineral-soft));
   border-radius: 10px;
   background: var(--color-archive-paper-strong);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 0 0 3px color-mix(in srgb, var(--color-gold-500) 10%, transparent),
-    0 12px 32px rgba(98, 76, 32, 0.1);
+    0 0 0 3px color-mix(in srgb, var(--color-praxis-emerald-500) 10%, transparent),
+    0 12px 32px rgba(4, 120, 87, 0.1);
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .praxis-composer-input-well:focus-within {
-  border-color: color-mix(in srgb, var(--color-gold-600) 58%, var(--color-clay));
+  border-color: color-mix(in srgb, var(--color-praxis-emerald-600) 58%, var(--color-clay));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.94),
-    0 0 0 3px color-mix(in srgb, var(--color-gold-500) 24%, transparent),
-    0 14px 34px rgba(98, 76, 32, 0.13);
+    0 0 0 3px color-mix(in srgb, var(--color-praxis-emerald-500) 24%, transparent),
+    0 14px 34px rgba(4, 120, 87, 0.13);
 }
 
 .praxis-composer-input-well textarea::placeholder {
@@ -1188,8 +1195,8 @@ body {
 }
 
 .instrument-button-active {
-  border-color: color-mix(in srgb, var(--color-gold-500) 58%, var(--color-rose-gold));
-  background: color-mix(in srgb, var(--color-gold-300) 20%, white);
+  border-color: color-mix(in srgb, var(--color-praxis-emerald-500) 58%, var(--color-praxis-emerald-100));
+  background: color-mix(in srgb, var(--color-praxis-emerald-100) 46%, white);
   color: var(--color-navy-950);
 }
 
@@ -1269,8 +1276,8 @@ body {
 
 .living-context-pulse-active,
 .source-posture-chip-active {
-  background: var(--color-gold-500);
-  box-shadow: 0 0 0 4px rgba(232, 185, 49, 0.14);
+  background: var(--color-praxis-emerald-500);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-praxis-emerald-500) 14%, transparent);
 }
 
 .living-context-pulse-review,
@@ -1303,8 +1310,8 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--color-gold-500) 34%, transparent);
-  background: color-mix(in srgb, var(--color-gold-300) 18%, white);
+  border: 1px solid color-mix(in srgb, var(--color-praxis-emerald-500) 34%, transparent);
+  background: color-mix(in srgb, var(--color-praxis-emerald-100) 46%, white);
   padding: 0 12px;
   font-size: 12px;
   font-weight: 800;
@@ -1434,8 +1441,8 @@ body {
   background: linear-gradient(
     90deg,
     transparent,
-    var(--color-gold-500) 30%,
-    var(--color-gold-500) 70%,
+    var(--color-praxis-emerald-500) 30%,
+    var(--color-praxis-emerald-500) 70%,
     transparent
   );
   border-radius: 2px;
@@ -1470,7 +1477,7 @@ body {
 }
 
 .praxis-thinking-glyph {
-  color: var(--color-gold-600);
+  color: var(--color-praxis-emerald-600);
 }
 .praxis-thinking-rune {
   display: inline-block;
@@ -1565,7 +1572,7 @@ body {
     0 14px 28px -16px rgba(27, 58, 92, 0.3);
 }
 .praxis-capsule-chip .rune {
-  color: var(--color-gold-600);
+  color: var(--color-praxis-emerald-600);
   font-family: var(--font-serif);
 }
 
@@ -1577,30 +1584,30 @@ body {
   100% { stroke-dashoffset: 0; opacity: 0.4; }
 }
 
-/* Capsule CTA — pill + inner highlight + gold halo, used by primary buttons */
+/* Capsule CTA — pill + inner highlight + emerald halo, used by primary buttons */
 .btn-capsule-primary {
   position: relative;
-  background: linear-gradient(180deg, #F0CA4D 0%, #E8B931 55%, #C8961E 100%);
+  background: linear-gradient(180deg, var(--color-praxis-emerald-300) 0%, var(--color-praxis-emerald-500) 55%, var(--color-praxis-emerald-700) 100%);
   color: var(--color-ink);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -1px 0 rgba(163, 122, 20, 0.35),
-    0 8px 24px -8px rgba(232, 185, 49, 0.55);
+    inset 0 -1px 0 rgba(6, 78, 59, 0.35),
+    0 8px 24px -8px rgba(16, 185, 129, 0.55);
 }
 .btn-capsule-primary:hover {
-  background: linear-gradient(180deg, #F5D978 0%, #F0CA4D 55%, #E8B931 100%);
+  background: linear-gradient(180deg, var(--color-praxis-emerald-100) 0%, var(--color-praxis-emerald-300) 55%, var(--color-praxis-emerald-500) 100%);
   transform: translateY(-1px);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    inset 0 -1px 0 rgba(163, 122, 20, 0.30),
-    0 14px 28px -10px rgba(232, 185, 49, 0.65),
-    0 0 0 6px rgba(232, 185, 49, 0.18);
+    inset 0 -1px 0 rgba(6, 78, 59, 0.30),
+    0 14px 28px -10px rgba(16, 185, 129, 0.65),
+    0 0 0 6px rgba(16, 185, 129, 0.18);
 }
 .btn-capsule-primary:active {
   transform: translateY(0);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 4px 10px -4px rgba(232, 185, 49, 0.45);
+    0 4px 10px -4px rgba(16, 185, 129, 0.45);
 }
 
 .btn-capsule-secondary {
@@ -1627,20 +1634,20 @@ body {
   left: 0; top: 50%;
   width: 6px; height: 6px;
   border-radius: 9999px;
-  background: var(--color-gold-500);
+  background: var(--color-praxis-emerald-500);
   transform: translateY(-50%) scale(1);
   transition: transform 200ms ease, box-shadow 200ms ease;
 }
 .btn-capsule-ghost:hover::before {
   transform: translateY(-50%) scale(1.4);
-  box-shadow: 0 0 0 4px rgba(232, 185, 49, 0.2);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
 }
 .btn-capsule-ghost::after {
   content: "";
   position: absolute;
   left: 1rem; right: 0.5rem; bottom: 0.35rem;
   height: 1px;
-  background: var(--color-gold-500);
+  background: var(--color-praxis-emerald-500);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 240ms ease;
@@ -1717,7 +1724,7 @@ code, kbd, samp, pre,
 
 /* --- Focus: calmer ring, rounded, consistent everywhere --- */
 *:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--color-gold-500) 80%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--color-praxis-emerald-500) 80%, transparent);
   outline-offset: 2px;
   border-radius: inherit;
 }
@@ -1728,7 +1735,7 @@ code, kbd, samp, pre,
   input:focus-visible,
   select:focus-visible,
   textarea:focus-visible {
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-gold-500) 16%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-praxis-emerald-500) 16%, transparent);
   }
 }
 
@@ -1777,7 +1784,7 @@ code, kbd, samp, pre,
   transition-duration: var(--motion-fast);
 }
 .instrument-button-active {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-gold-500) 30%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-praxis-emerald-500) 30%, transparent);
 }
 
 /* Icon nudge inside instrument buttons for a touch of life on hover. */
@@ -1844,7 +1851,7 @@ input[type="radio"] {
   transition: box-shadow var(--motion-fast) var(--ease-standard);
 }
 input[type="range"] {
-  accent-color: var(--color-gold-600);
+  accent-color: var(--color-praxis-emerald-600);
 }
 
 /* Disabled affordance baseline — consistent, never invisible. */
@@ -1895,11 +1902,11 @@ hr {
   position: relative;
   overflow: hidden;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--color-mineral-soft) 60%, var(--color-archive-paper));
+  background: color-mix(in srgb, var(--color-praxis-emerald-100) 64%, white);
   background-image: linear-gradient(
     90deg,
     transparent 0%,
-    color-mix(in srgb, white 55%, transparent) 50%,
+    color-mix(in srgb, var(--color-praxis-emerald-300) 22%, white) 50%,
     transparent 100%
   );
   background-size: 200% 100%;

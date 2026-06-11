@@ -4,12 +4,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { collection, doc, limit as firestoreLimit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { useAuth } from '@/lib/auth/auth-context';
 import { db } from '@/lib/firebase/config';
+import { normalizeAgentRunFailureSummary } from '@/lib/agent-runtime/failure-summary';
+import type { AgentRunFailureSummary } from '@/lib/agent-runtime/types';
 import type { OrchestratorEvent } from '@/hooks/useOrchestratorEvents';
 
 export type AgentRunSnapshotSummary = {
   runId: string;
   status: string;
   outputHref?: string | null;
+  policyAgentId?: string | null;
   policyAgentLabel?: string | null;
   outputTargetLabel?: string | null;
   selectedTools?: string[];
@@ -19,11 +22,31 @@ export type AgentRunSnapshotSummary = {
   sourcePosture?: string | null;
   groundingPosture?: string | null;
   degradedReason?: string | null;
+  failureSummary?: AgentRunFailureSummary | null;
+};
+
+export type AgentRunToolCallSnapshot = {
+  id: string;
+  toolId: string;
+  status: string;
+  risk: string | null;
+};
+
+export type AgentRunApprovalSnapshot = {
+  id: string;
+  runId: string;
+  toolCallId: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'expired' | string;
+  reason: string;
+  risk: string | null;
+  requestedAt: string | null;
 };
 
 export type AgentRunSnapshotState = {
   run: AgentRunSnapshotSummary | null;
   events: OrchestratorEvent[];
+  toolCalls: AgentRunToolCallSnapshot[];
+  approvals: AgentRunApprovalSnapshot[];
   isConnected: boolean;
   error: string | null;
 };
@@ -41,8 +64,12 @@ export function useAgentRunSnapshots(
   const eventLimit = Math.max(1, Math.min(50, Math.floor(options.limit ?? 20)));
   const [run, setRun] = useState<AgentRunSnapshotSummary | null>(null);
   const [events, setEvents] = useState<OrchestratorEvent[]>([]);
+  const [toolCalls, setToolCalls] = useState<AgentRunToolCallSnapshot[]>([]);
+  const [approvals, setApprovals] = useState<AgentRunApprovalSnapshot[]>([]);
   const [runConnected, setRunConnected] = useState(false);
   const [eventsConnected, setEventsConnected] = useState(false);
+  const [toolCallsConnected, setToolCallsConnected] = useState(false);
+  const [approvalsConnected, setApprovalsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -83,16 +110,62 @@ export function useAgentRunSnapshots(
     );
   }, [enabled, eventLimit, runId, uid]);
 
+  useEffect(() => {
+    if (!enabled || !uid || !runId) return;
+    const toolCallsQuery = query(
+      collection(db, 'users', uid, 'runs', runId, 'toolCalls'),
+      orderBy('createdAt', 'asc'),
+      firestoreLimit(eventLimit),
+    );
+    return onSnapshot(
+      toolCallsQuery,
+      (snapshot) => {
+        setToolCallsConnected(true);
+        setError(null);
+        setToolCalls(snapshot.docs.map((toolDoc) => snapshotToToolCall(toolDoc.id, toolDoc.data())));
+      },
+      (err) => {
+        setToolCallsConnected(false);
+        setError(err.message || 'AgentRun Firestore tool-call stream unavailable.');
+      },
+    );
+  }, [enabled, eventLimit, runId, uid]);
+
+  useEffect(() => {
+    if (!enabled || !uid || !runId) return;
+    const approvalsQuery = query(
+      collection(db, 'users', uid, 'runs', runId, 'approvals'),
+      orderBy('requestedAt', 'asc'),
+      firestoreLimit(eventLimit),
+    );
+    return onSnapshot(
+      approvalsQuery,
+      (snapshot) => {
+        setApprovalsConnected(true);
+        setError(null);
+        setApprovals(snapshot.docs.map((approvalDoc) => snapshotToApproval(approvalDoc.id, approvalDoc.data())));
+      },
+      (err) => {
+        setApprovalsConnected(false);
+        setError(err.message || 'AgentRun Firestore approval stream unavailable.');
+      },
+    );
+  }, [enabled, eventLimit, runId, uid]);
+
   return useMemo(() => {
     const activeRun = run?.runId === runId ? run : null;
     const activeEvents = events.filter((event) => event.runId === runId);
+    const activeApprovals = approvals.filter((approval) => approval.runId === runId);
     return {
       run: activeRun,
       events: activeEvents,
-      isConnected: Boolean(activeRun || activeEvents.length) && (runConnected || eventsConnected),
+      toolCalls,
+      approvals: activeApprovals,
+      isConnected: Boolean(activeRun || activeEvents.length || toolCalls.length || activeApprovals.length)
+        && (runConnected || eventsConnected || toolCallsConnected || approvalsConnected),
       error,
     };
-  }, [error, events, eventsConnected, run, runConnected, runId]);
+  }, [approvals, approvalsConnected, error, events, eventsConnected, run, runConnected, runId, toolCalls, toolCallsConnected]);
 }
 
 function snapshotToRunSummary(data: Record<string, unknown>): AgentRunSnapshotSummary | null {
@@ -104,6 +177,7 @@ function snapshotToRunSummary(data: Record<string, unknown>): AgentRunSnapshotSu
     runId,
     status: stringValue(data.status) ?? 'queued',
     outputHref: stringValue(outputs.href),
+    policyAgentId: stringValue(plan.policyAgentId),
     policyAgentLabel: stringValue(plan.policyAgentLabel),
     outputTargetLabel: stringValue(plan.outputTargetLabel),
     selectedTools: stringArray(plan.selectedTools),
@@ -113,6 +187,28 @@ function snapshotToRunSummary(data: Record<string, unknown>): AgentRunSnapshotSu
     sourcePosture: stringValue(data.sourcePosture),
     groundingPosture: stringValue(data.groundingPosture),
     degradedReason: stringValue(data.degradedReason),
+    failureSummary: normalizeAgentRunFailureSummary(data.failureSummary),
+  };
+}
+
+function snapshotToToolCall(id: string, data: Record<string, unknown>): AgentRunToolCallSnapshot {
+  return {
+    id: stringValue(data.id) ?? id,
+    toolId: stringValue(data.toolId) ?? 'unknown-tool',
+    status: stringValue(data.status) ?? 'running',
+    risk: stringValue(data.risk),
+  };
+}
+
+function snapshotToApproval(id: string, data: Record<string, unknown>): AgentRunApprovalSnapshot {
+  return {
+    id: stringValue(data.id) ?? id,
+    runId: stringValue(data.runId) ?? '',
+    toolCallId: stringValue(data.toolCallId),
+    status: stringValue(data.status) ?? 'pending',
+    reason: stringValue(data.reason) ?? 'Approval requested.',
+    risk: stringValue(data.risk),
+    requestedAt: stringValue(data.requestedAt),
   };
 }
 

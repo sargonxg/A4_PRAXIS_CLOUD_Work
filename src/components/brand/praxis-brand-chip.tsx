@@ -26,7 +26,7 @@ export function PraxisBrandChip({
         <span className={cn("block truncate font-semibold text-slate-950", compact ? "text-sm" : "text-sm")}>
           PRAXIS
         </span>
-        <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+        <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
           {subtitle}
         </span>
       </span>

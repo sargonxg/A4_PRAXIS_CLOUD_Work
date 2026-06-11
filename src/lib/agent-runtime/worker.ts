@@ -42,14 +42,16 @@ import {
   mirrorWorkerEvent,
   type AgentRuntimeMirrorDeps,
 } from '@/lib/agent-runtime/mirror';
+import { buildAgentRunFailureSummary } from '@/lib/agent-runtime/failure-summary';
 import { runCapsuleFactoryDraft, type CapsuleFactoryDeps } from '@/lib/agent-runtime/capsule-factory';
-import type { CreateCapsuleReviewCardInput, CapsuleReviewCard } from '@/lib/context/capsule-service';
+import { createCapsuleReviewCard, type CreateCapsuleReviewCardInput, type CapsuleReviewCard } from '@/lib/context/capsule-service';
 import { boardroomParticipantLabel, type BoardroomOutput } from '@/lib/boardroom/schema';
 import {
   BOARDROOM_MODEL_POLICY_ID,
   runLiveBoardroomDiscussion,
   type LiveBoardroomRunnerInput,
 } from '@/lib/boardroom/live-runner';
+import { emitNotification } from '@/lib/events/event-service';
 
 export type ExecuteAgentRunPayload = {
   runId: string;
@@ -65,6 +67,8 @@ export type AgentRunExecutionMode =
   | 'noop'
   | 'capsule-factory'
   | 'research-memo'
+  | 'source-gap-scout'
+  | 'daily-brief'
   | 'multi-agent-supervisor'
   | 'boardroom-discussion'
   | 'output-formatter'
@@ -110,6 +114,7 @@ type WorkerDeps = {
   runGroundedSearch?: AgentGroundedSearchRunner;
   generateText?: AgentTextGenerator;
   createReviewCard?: (uid: string, capsuleId: string, input: CreateCapsuleReviewCardInput) => Promise<CapsuleReviewCard>;
+  emitNotification?: typeof emitNotification;
 } & AgentRuntimeMirrorDeps & CapsuleFactoryDeps;
 
 type AgentTextGenerator = (input: {
@@ -184,6 +189,12 @@ export async function executeAgentRun(
   }
   if (policyAgent?.id === 'research-memo') {
     return executeResearchMemoAgentRun(payload, { ...deps, getRun: async () => run });
+  }
+  if (policyAgent?.id === 'source-gap-scout') {
+    return executeSourceGapScoutAgentRun(payload, { ...deps, getRun: async () => run });
+  }
+  if (policyAgent?.id === 'daily-brief') {
+    return executeDailyBriefAgentRun(payload, { ...deps, getRun: async () => run });
   }
   if (policyAgent?.id === 'boardroom-discussion') {
     return executeBoardroomAgentRun(payload, { ...deps, getRun: async () => run });
@@ -624,6 +635,18 @@ async function executeResearchMemoAgentRun(
       completedAt: new Date().toISOString(),
     }));
 
+    const synthesisGate = await maybePauseForDeepResearchSynthesisGate({
+      running,
+      payload,
+      deps,
+      updateStatus,
+      persistToolCall,
+      persistApproval,
+      sourceabilityLedger,
+      liveSearchEvidence,
+    });
+    if (synthesisGate.state !== 'continue') return synthesisGate.result;
+
     const sourceCount = evidencePack.sourceReceiptIds.length + evidencePack.knowledgeDocuments.length;
     const gapItems = evidencePack.openGaps.length
       ? evidencePack.openGaps
@@ -796,6 +819,460 @@ async function executeResearchMemoAgentRun(
       executionMode: 'research-memo',
       failedPhase: executionStage,
       message: 'Research Memo Agent failed before creating a memo draft.',
+      err,
+    });
+  }
+}
+
+async function executeSourceGapScoutAgentRun(
+  payload: ExecuteAgentRunPayload,
+  deps: WorkerDeps = {},
+): Promise<ExecuteAgentRunResult> {
+  const getRun = deps.getRun ?? getAgentRun;
+  const updateStatus = deps.updateStatus ?? updateAgentRunStatus;
+  const getEvidencePack = deps.buildEvidencePack ?? buildCapsuleEvidencePack;
+  const persistToolCall = deps.appendToolCall ?? appendAgentToolCall;
+  const persistReviewCard = deps.createReviewCard ?? createCapsuleReviewCard;
+  const run = await getRun(payload.ownerUid, payload.runId);
+  if (!run) {
+    throw new AgentWorkerError('Agent run not found', 404);
+  }
+  if (run.traceId !== payload.traceId || run.capsuleId !== payload.capsuleId) {
+    throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
+  }
+  const outputHref = sourceGapScoutOutputHref(run);
+  if (run.status === 'succeeded') {
+    return {
+      runId: run.id,
+      status: run.status,
+      executionMode: 'source-gap-scout',
+      traceId: run.traceId,
+      outputHref,
+      idempotent: true,
+    };
+  }
+  if (run.status !== 'queued' && run.status !== 'running') {
+    throw new AgentWorkerError(`Agent run cannot be executed from ${run.status}`, 409);
+  }
+
+  let running = run;
+  let executionStage = 'starting';
+  try {
+    if (run.status !== 'running') {
+      const next = await updateStatus({
+        ownerUid: run.ownerUid,
+        runId: run.id,
+        toStatus: 'running',
+        message: 'Source-Gap Scout accepted the queued capsule run.',
+        data: {
+          dispatchId: payload.dispatchId,
+          attempt: payload.attempt,
+          requestedAt: payload.requestedAt,
+        },
+      });
+      if (!next) throw new AgentWorkerError('Agent run disappeared before execution', 404);
+      running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
+    }
+
+    executionStage = 'context-build';
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'context_resolved',
+      message: 'Source-Gap Scout resolved the active ContextCapsule.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        workerContext: buildCapsuleWorkerContext(running),
+        executionMode: 'source-gap-scout',
+      },
+    }, deps);
+    const initialWorkflowProof = await emitCapsuleReadAndWorkflowPlan(running, deps);
+
+    executionStage = 'evidence-pack';
+    const evidencePack = await getEvidencePack({
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      objective: running.objective,
+      maxParagraphs: 8,
+    });
+    let sourceabilityLedger = buildSourceabilityLedgerFromEvidencePack(evidencePack, {
+      agentRunId: running.id,
+      outputTarget: 'library',
+    });
+    const scoutItems = buildSourceGapScoutItems(running, evidencePack, sourceabilityLedger);
+    const scoutSearchRun = buildSourceGapScoutSearchRun(running, scoutItems);
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'source_gap_scout.plan_created',
+      message: 'Source-Gap Scout created a grounded retrieval plan for source gaps and unsupported claims.',
+      data: {
+        gapCount: evidencePack.openGaps.length,
+        unsupportedClaimCount: scoutItems.length,
+        querySet: normalizeSearchPlan(scoutSearchRun.metadata.searchPlan, running.objective).queries,
+        selectedTools: selectedSearchToolIds(scoutSearchRun),
+        capsuleReadReceipt: initialWorkflowProof.capsuleReadReceipt,
+        workflowPlan: initialWorkflowProof.workflowPlan,
+      },
+    }, deps);
+
+    executionStage = 'search-evidence';
+    const liveSearchEvidence = await collectSearchEvidenceForRun(scoutSearchRun, {
+      appendToolCall: persistToolCall,
+      appendEvent: deps.appendEvent,
+      runGroundedSearch: deps.runGroundedSearch,
+    });
+    sourceabilityLedger = verifySourceabilityLedgerWithLiveSearch(sourceabilityLedger, liveSearchEvidence);
+    await emitSourceabilityLedger(running, sourceabilityLedger, deps);
+
+    executionStage = 'review-card-persist';
+    const reviewCards: CapsuleReviewCard[] = [];
+    for (const item of scoutItems) {
+      const candidateReceipts = sourceGapScoutReceiptsForItem(item.text, liveSearchEvidence.sourceReceipts);
+      const card = await persistReviewCard(
+        running.ownerUid,
+        running.capsuleId,
+        sourceGapReviewCardInput(running, item, candidateReceipts),
+      );
+      reviewCards.push(card);
+    }
+    await persistToolCall(makeAgentToolCall({
+      runId: running.id,
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      toolId: 'source-gap-scout',
+      risk: getAgentToolDefinition('source-gap-scout').risk,
+      status: 'succeeded',
+      input: {
+        objective: running.objective,
+        gaps: evidencePack.openGaps,
+        unsupportedClaims: scoutItems.map((item) => item.text),
+        sourceReceiptIds: liveSearchEvidence.sourceReceiptIds,
+      },
+      output: {
+        gapCount: evidencePack.openGaps.length,
+        unsupportedClaimCount: scoutItems.length,
+        candidateReceiptCount: liveSearchEvidence.sourceReceiptIds.length,
+        reviewCardCount: reviewCards.length,
+        reviewCardIds: reviewCards.map((card) => card.reviewCardId),
+        candidateReceipts: liveSearchEvidence.sourceReceipts.map(sourceGapCandidateReceiptOutput),
+      },
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    }));
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'source_gap_scout.review_cards_created',
+      message: 'Source-Gap Scout saved candidate sources as review-gated source-pack cards.',
+      data: {
+        reviewCardIds: reviewCards.map((card) => card.reviewCardId),
+        reviewCardCount: reviewCards.length,
+        candidateReceiptCount: liveSearchEvidence.sourceReceiptIds.length,
+        candidateReceipts: liveSearchEvidence.sourceReceipts.map(sourceGapCandidateReceiptOutput),
+        reviewOnly: true,
+      },
+    }, deps);
+
+    executionStage = 'succeeded-transition';
+    const succeeded = await updateStatus({
+      ownerUid: running.ownerUid,
+      runId: running.id,
+      toStatus: 'succeeded',
+      message: 'Source-Gap Scout completed review-gated source-pack candidates.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        executionMode: 'source-gap-scout',
+        outputHref,
+        reviewCardIds: reviewCards.map((card) => card.reviewCardId),
+        candidateReceiptCount: liveSearchEvidence.sourceReceiptIds.length,
+        selectedTools: selectedSearchToolIds(scoutSearchRun),
+      },
+    });
+
+    return {
+      runId: succeeded?.id ?? running.id,
+      status: succeeded?.status ?? 'succeeded',
+      executionMode: 'source-gap-scout',
+      traceId: running.traceId,
+      outputHref,
+    };
+  } catch (err) {
+    if (err instanceof AgentWorkerError) throw err;
+    return failAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'source-gap-scout',
+      failedPhase: executionStage,
+      message: 'Source-Gap Scout failed before creating review-gated source candidates.',
+      err,
+    });
+  }
+}
+
+async function executeDailyBriefAgentRun(
+  payload: ExecuteAgentRunPayload,
+  deps: WorkerDeps = {},
+): Promise<ExecuteAgentRunResult> {
+  const getRun = deps.getRun ?? getAgentRun;
+  const updateStatus = deps.updateStatus ?? updateAgentRunStatus;
+  const persistMemo = deps.saveMemoDraft ?? saveMemoDraft;
+  const persistOutputCapsule = deps.saveOutputCapsule ?? saveOutputCapsule;
+  const getEvidencePack = deps.buildEvidencePack ?? buildCapsuleEvidencePack;
+  const persistToolCall = deps.appendToolCall ?? appendAgentToolCall;
+  const notify = deps.emitNotification ?? emitNotification;
+  const run = await getRun(payload.ownerUid, payload.runId);
+  if (!run) {
+    throw new AgentWorkerError('Agent run not found', 404);
+  }
+  if (run.traceId !== payload.traceId || run.capsuleId !== payload.capsuleId) {
+    throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
+  }
+  if (run.status === 'succeeded') {
+    return {
+      runId: run.id,
+      status: run.status,
+      executionMode: 'daily-brief',
+      traceId: run.traceId,
+      outputHref: outputHrefFromMetadata(run.metadata, '/app?panel=memo'),
+      idempotent: true,
+    };
+  }
+  if (run.status !== 'queued' && run.status !== 'running') {
+    throw new AgentWorkerError(`Agent run cannot be executed from ${run.status}`, 409);
+  }
+
+  let running = run;
+  let executionStage = 'starting';
+  try {
+    if (run.status !== 'running') {
+      const next = await updateStatus({
+        ownerUid: run.ownerUid,
+        runId: run.id,
+        toStatus: 'running',
+        message: 'Daily Brief Agent accepted the scheduled capsule run.',
+        data: {
+          dispatchId: payload.dispatchId,
+          attempt: payload.attempt,
+          requestedAt: payload.requestedAt,
+          executionMode: 'daily-brief',
+        },
+      });
+      if (!next) throw new AgentWorkerError('Agent run disappeared before execution', 404);
+      running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
+    }
+
+    executionStage = 'context-build';
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'context_resolved',
+      message: 'Daily Brief Agent resolved the scheduled ContextCapsule.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        workerContext: buildCapsuleWorkerContext(running),
+        executionMode: 'daily-brief',
+      },
+    }, deps);
+    const initialWorkflowProof = await emitCapsuleReadAndWorkflowPlan(running, deps);
+
+    executionStage = 'evidence-pack';
+    const evidencePack = await getEvidencePack({
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      objective: running.objective,
+      maxParagraphs: 10,
+    });
+    await persistToolCall(makeAgentToolCall({
+      runId: running.id,
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      toolId: 'capsule-evidence-pack',
+      risk: getAgentToolDefinition('capsule-evidence-pack').risk,
+      status: 'succeeded',
+      input: { objective: running.objective, maxParagraphs: 10 },
+      output: {
+        packId: evidencePack.packId,
+        paragraphCount: evidencePack.sourcedParagraphs.length,
+        sourceReceiptCount: evidencePack.sourceReceiptIds.length,
+        outputHistoryCount: evidencePack.outputHistory.length,
+        gapCount: evidencePack.openGaps.length,
+      },
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    }));
+
+    executionStage = 'search-evidence';
+    const liveSearchEvidence = await collectSearchEvidenceForRun(running, {
+      appendToolCall: persistToolCall,
+      appendEvent: deps.appendEvent,
+      runGroundedSearch: deps.runGroundedSearch,
+    });
+
+    executionStage = 'sourceability-ledger';
+    let sourceabilityLedger = buildSourceabilityLedgerFromEvidencePack(evidencePack, {
+      agentRunId: running.id,
+      outputTarget: 'memo_studio',
+    });
+    sourceabilityLedger = verifySourceabilityLedgerWithLiveSearch(sourceabilityLedger, liveSearchEvidence);
+    await emitSourceabilityLedger(running, sourceabilityLedger, deps);
+
+    const since = dailyBriefSinceFromRun(running);
+    const combinedSourceReceiptIds = uniqueStrings([
+      ...evidencePack.sourceReceiptIds,
+      ...evidencePack.sourcedParagraphs.map((paragraph) => paragraph.sourceReceiptId).filter((value): value is string => Boolean(value)),
+      ...liveSearchEvidence.sourceReceiptIds,
+    ]);
+    const claimChecks = sourceabilityLedger.claims.map((claim) => ({
+      id: claim.id,
+      claim: claim.claim,
+      status: claim.supportLabel,
+      confidence: claim.confidence,
+      sourceReceiptIds: claim.sourceReceiptIds,
+      documentParagraphIds: claim.documentParagraphIds,
+      reviewNote: claim.reviewNote,
+    }));
+    const unsupportedClaims = sourceabilityLedger.unsupportedClaims.map((claim) => claim.claim);
+    const title = dailyBriefTitle(running);
+    const caseId = running.selectedCoreIds.situationCoreId ?? running.capsuleId;
+
+    executionStage = 'memo-persist';
+    const memoRecord = await persistMemo(running.ownerUid, {
+      caseId,
+      templateId: 'policy-memo',
+      title,
+      graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:daily-brief`,
+      changeNote: `Created by Daily Brief Agent run ${running.id}.`,
+      capsuleId: running.capsuleId,
+      capsuleVersion: evidencePack.activeCapsule.version ?? null,
+      runId: running.id,
+      outputTarget: 'daily-brief',
+      status: 'draft',
+      sourceReceiptIds: combinedSourceReceiptIds,
+      sourceReceipts: liveSearchEvidence.sourceReceipts,
+      unsupportedClaims,
+      claimChecks,
+      blocks: buildDailyBriefMemoBlocks(running, evidencePack, sourceabilityLedger, liveSearchEvidence, {
+        title,
+        since,
+        combinedSourceReceiptIds,
+      }),
+    });
+
+    executionStage = 'output-capsule-persist';
+    const outputCapsule = await persistOutputCapsule(
+      running.ownerUid,
+      buildDailyBriefOutputCapsuleInput(running, evidencePack, memoRecord.memo.id, sourceabilityLedger, liveSearchEvidence, title),
+    );
+    const outputHref = outputCapsule?.id
+      ? `/app?panel=memo&memoId=${encodeURIComponent(memoRecord.memo.id)}&outputCapsuleId=${encodeURIComponent(outputCapsule.id)}`
+      : `/app?panel=memo&memoId=${encodeURIComponent(memoRecord.memo.id)}`;
+
+    executionStage = 'notification';
+    let notificationId: string | null = null;
+    try {
+      notificationId = await notify({
+        uid: running.ownerUid,
+        kind: 'analysis.completed',
+        semaphore: sourceabilityLedger.summary.unsupportedClaims > 0 ? 'yellow' : 'green',
+        title: 'Daily Brief draft ready',
+        body: `${title} is ready for review with ${combinedSourceReceiptIds.length} source receipt(s).`,
+        situationId: caseId,
+        toolRunId: running.id,
+        actionUrl: outputHref,
+        actions: [{ label: 'Review draft', kind: 'primary', href: outputHref }],
+      });
+    } catch (err) {
+      await mirrorWorkerEvent(running, {
+        substrate: 'praxis',
+        phase: 'daily_brief.notification_degraded',
+        message: 'Daily Brief draft was created, but the user notification could not be written.',
+        data: { reason: err instanceof Error ? err.message : String(err) },
+      }, deps);
+    }
+
+    await persistToolCall(makeAgentToolCall({
+      runId: running.id,
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      toolId: 'daily-brief',
+      risk: getAgentToolDefinition('daily-brief').risk,
+      status: 'succeeded',
+      input: {
+        objective: running.objective,
+        since,
+        capsuleDeltaCount: evidencePack.outputHistory.length + evidencePack.openGaps.length,
+        sourceReceiptIds: combinedSourceReceiptIds,
+      },
+      output: {
+        memoId: memoRecord.memo.id,
+        outputHref,
+        outputCapsuleId: outputCapsule?.id ?? null,
+        sourceReceiptIds: combinedSourceReceiptIds,
+        unsupportedClaimCount: sourceabilityLedger.summary.unsupportedClaims,
+        notificationId,
+        reviewOnly: true,
+      },
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    }));
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'daily_brief.draft_created',
+      message: 'Daily Brief Agent created a review-gated dated memo draft from capsule deltas and grounded receipts.',
+      data: {
+        memoId: memoRecord.memo.id,
+        outputCapsuleId: outputCapsule?.id ?? null,
+        outputHref,
+        notificationId,
+        since,
+        sourceReceiptIds: combinedSourceReceiptIds,
+        capsuleDeltaCount: evidencePack.outputHistory.length + evidencePack.openGaps.length,
+        reviewOnly: true,
+        capsuleReadReceipt: initialWorkflowProof.capsuleReadReceipt,
+        workflowPlan: initialWorkflowProof.workflowPlan,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
+      },
+    }, deps);
+
+    executionStage = 'succeeded-transition';
+    const succeeded = await updateStatus({
+      ownerUid: running.ownerUid,
+      runId: running.id,
+      toStatus: 'succeeded',
+      message: 'Daily Brief Agent completed the review-gated memo draft.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        executionMode: 'daily-brief',
+        memoId: memoRecord.memo.id,
+        outputCapsuleId: outputCapsule?.id ?? null,
+        outputHref,
+        notificationId,
+        selectedTools: selectedWorkflowToolIds(running),
+        sourceReceiptIds: combinedSourceReceiptIds,
+        reviewOnly: true,
+      },
+    });
+
+    return {
+      runId: succeeded?.id ?? running.id,
+      status: succeeded?.status ?? 'succeeded',
+      executionMode: 'daily-brief',
+      traceId: running.traceId,
+      outputHref,
+      memoId: memoRecord.memo.id,
+      outputCapsuleId: outputCapsule?.id,
+    };
+  } catch (err) {
+    if (err instanceof AgentWorkerError) throw err;
+    return failAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'daily-brief',
+      failedPhase: executionStage,
+      message: 'Daily Brief Agent failed before creating a review-gated memo draft.',
       err,
     });
   }
@@ -1993,6 +2470,64 @@ type ApprovalGateOutcome =
   | { state: 'continue' }
   | { state: 'waiting' | 'failed'; result: ExecuteAgentRunResult };
 
+async function maybePauseForDeepResearchSynthesisGate(input: {
+  running: AgentRun;
+  payload: ExecuteAgentRunPayload;
+  deps: WorkerDeps;
+  updateStatus: typeof updateAgentRunStatus;
+  persistToolCall: typeof appendAgentToolCall;
+  persistApproval: typeof appendAgentApproval;
+  sourceabilityLedger: SourceabilityLedger;
+  liveSearchEvidence: LiveSearchEvidence;
+}): Promise<ApprovalGateOutcome> {
+  const minSourcesPerClaim = minSourcesPerClaimFromRun(input.running);
+  if (
+    input.running.metadata.synthesisGate !== 'block_on_unsupported_claims' ||
+    minSourcesPerClaim <= 0 ||
+    input.sourceabilityLedger.summary.unsupportedClaims <= 0
+  ) {
+    return { state: 'continue' };
+  }
+
+  await mirrorWorkerEvent(input.running, {
+    substrate: 'praxis',
+    phase: 'research.synthesis_blocked',
+    message: 'Deep research synthesis paused because unsupported claims remain below the source gate.',
+    data: {
+      minSourcesPerClaim,
+      unsupportedClaimCount: input.sourceabilityLedger.summary.unsupportedClaims,
+      liveSourceReceiptCount: input.liveSearchEvidence.sourceReceiptIds.length,
+      unsupportedClaims: input.sourceabilityLedger.unsupportedClaims.map((claim) => ({
+        id: claim.id,
+        claim: claim.claim,
+        sourceReceiptIds: claim.sourceReceiptIds,
+      })),
+    },
+  }, input.deps);
+
+  return pauseForApprovalGate({
+    running: input.running,
+    payload: input.payload,
+    deps: input.deps,
+    updateStatus: input.updateStatus,
+    persistToolCall: input.persistToolCall,
+    persistApproval: input.persistApproval,
+    executionMode: 'research-memo',
+    key: 'deep-research:min-sources-per-claim',
+    toolId: 'sourceability-reviewer',
+    risk: 'medium',
+    phase: 'research.synthesis_blocked',
+    message: 'Deep research synthesis requires owner review because unsupported claims remain after source verification.',
+    proposedAction: {
+      kind: 'deep_research_synthesis_gate',
+      minSourcesPerClaim,
+      unsupportedClaimCount: input.sourceabilityLedger.summary.unsupportedClaims,
+      sourceReceiptIds: input.liveSearchEvidence.sourceReceiptIds,
+      objective: input.running.objective,
+    },
+  });
+}
+
 async function emitReasoningLoopProofAndMaybePause(input: {
   running: AgentRun;
   payload: ExecuteAgentRunPayload;
@@ -2286,6 +2821,11 @@ async function failAgentRunExecution(input: {
     failedPhase: input.failedPhase,
     err: input.err,
   });
+  const failureSummary = buildAgentRunFailureSummary({
+    diagnostic: failure,
+    lastEventBeforeFailure: input.running.metadata.latestMirroredEvent,
+    createdAt: new Date().toISOString(),
+  });
 
   await input.updateStatus({
     ownerUid: input.running.ownerUid,
@@ -2299,7 +2839,11 @@ async function failAgentRunExecution(input: {
       executionMode: input.executionMode,
       failedPhase: input.failedPhase,
       failure,
+      failureSummary,
       error: failure.errorMessage,
+    },
+    metadata: {
+      failureSummary,
     },
   }).catch(() => null);
 
@@ -2537,6 +3081,370 @@ function redTeamFindingsFromText(text: string): string[] {
   return findings.length ? findings : ['Red-team review found no discrete finding; human review remains required before export.'];
 }
 
+type SourceGapScoutItem = {
+  id: string;
+  text: string;
+  source: 'evidence_gap' | 'unsupported_claim';
+  sourceReceiptIds: string[];
+};
+
+function buildSourceGapScoutItems(
+  running: AgentRun,
+  evidencePack: CapsuleEvidencePack,
+  sourceabilityLedger: SourceabilityLedger,
+): SourceGapScoutItem[] {
+  const seen = new Set<string>();
+  const items: SourceGapScoutItem[] = [];
+  const add = (text: string, source: SourceGapScoutItem['source'], sourceReceiptIds: string[] = []) => {
+    const cleaned = text.trim().replace(/\s+/g, ' ').slice(0, 900);
+    if (!cleaned) return;
+    const key = cleaned.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    items.push({
+      id: `source-gap:${stableShortId(`${running.id}:${source}:${cleaned}`)}`,
+      text: cleaned,
+      source,
+      sourceReceiptIds: uniqueStrings(sourceReceiptIds),
+    });
+  };
+
+  for (const gap of evidencePack.openGaps) add(gap, 'evidence_gap');
+  for (const claim of sourceabilityLedger.unsupportedClaims) add(claim.claim, 'unsupported_claim', claim.sourceReceiptIds);
+  for (const claim of stringArray(running.metadata.unsupportedClaims)) add(claim, 'unsupported_claim');
+  const scoped = isRecord(running.metadata.sourceGapScope) ? running.metadata.sourceGapScope : null;
+  for (const gap of stringArray(scoped?.gaps)) add(gap, 'evidence_gap');
+  for (const claim of stringArray(scoped?.unsupportedClaims)) add(claim, 'unsupported_claim');
+  if (!items.length) {
+    add('No discrete source gap was found; review active capsule source coverage before final use.', 'evidence_gap');
+  }
+  return items.slice(0, 10);
+}
+
+function buildSourceGapScoutSearchRun(running: AgentRun, items: SourceGapScoutItem[]): AgentRun {
+  const existingPlan = normalizeSearchPlan(running.metadata.searchPlan, running.objective);
+  const existingPlanRecord = isRecord(running.metadata.searchPlan) ? running.metadata.searchPlan : {};
+  const hasExplicitQueries = stringArray(existingPlanRecord.queries).length > 0;
+  const queries = hasExplicitQueries
+    ? existingPlan.queries
+    : uniqueStrings([
+        ...items.map((item) => `${item.text} official current source`).slice(0, 5),
+        running.objective,
+      ]).slice(0, 6);
+  return {
+    ...running,
+    metadata: {
+      ...running.metadata,
+      selectedToolIds: uniqueStrings([
+        ...stringArray(running.metadata.selectedToolIds),
+        ...stringArray(running.metadata.selectedTools),
+        'grounded-search',
+      ]),
+      searchPlan: {
+        ...existingPlan,
+        queries,
+        sourceClasses: existingPlan.sourceClasses.length ? existingPlan.sourceClasses : ['public_web'],
+        freshnessNeed: existingPlan.freshnessNeed === 'not_specified' ? 'current' : existingPlan.freshnessNeed,
+      },
+    },
+  };
+}
+
+function sourceGapScoutReceiptsForItem(
+  text: string,
+  receipts: AgentGroundedSearchReceipt[],
+): AgentGroundedSearchReceipt[] {
+  const matching = receipts.filter((receipt) => receiptMatchesClaim(receipt, text));
+  return (matching.length ? matching : receipts).slice(0, 5);
+}
+
+function sourceGapReviewCardInput(
+  running: AgentRun,
+  item: SourceGapScoutItem,
+  candidateReceipts: AgentGroundedSearchReceipt[],
+): CreateCapsuleReviewCardInput {
+  const candidateRefs = candidateReceipts.map((receipt) => ({
+    sourceId: receipt.sourceReceiptId,
+    label: receipt.title,
+    url: receipt.url,
+    snippet: receipt.snippet,
+    date: receipt.publishedDate ?? null,
+    provider: receipt.provider,
+    confidence: receipt.confidence,
+    sourceType: 'agent-search-candidate',
+    reviewState: 'proposed',
+    generatedByRunId: running.id,
+    gap: item.text,
+  }));
+  const receipts = candidateReceipts.map((receipt) => ({
+    sourceId: receipt.sourceReceiptId,
+    url: receipt.url,
+    publisher: receipt.provider,
+    date: receipt.publishedDate ?? null,
+    snippet: receipt.snippet || receipt.title,
+    confidence: receipt.confidence,
+    stance: 'supports' as const,
+  }));
+  return {
+    reviewCardId: `review-card-source-gap-${stableShortId(`${running.id}:${item.id}`)}`,
+    title: sourceGapReviewCardTitle(item.text),
+    sourceType: 'agent',
+    target: 'sourceGap',
+    evidence: candidateReceipts.map((receipt) => ({
+      id: receipt.sourceReceiptId,
+      label: receipt.title || receipt.sourceReceiptId,
+      advisory: true,
+      sourceType: receipt.provider ?? 'grounded-search',
+      url: receipt.url,
+    })),
+    proposedEnvelopePatch: {
+      sourceRefs: candidateRefs,
+      claimLedger: [{
+        claimId: item.id,
+        text: item.text,
+        support: candidateReceipts.length ? 'needs_source' : 'unsupported',
+        sourceRefIds: candidateReceipts.map((receipt) => receipt.sourceReceiptId),
+        caveat: 'Candidate receipts are review-gated source-pack proposals; no canonical source is added until a human approves the card.',
+        receipts,
+      }],
+      sourcePosture: {
+        posture: 'needs_sources',
+        sourceGaps: [item.text],
+        candidateReceiptIds: candidateReceipts.map((receipt) => receipt.sourceReceiptId),
+        generatedByRunId: running.id,
+      },
+      latestGateState: 'proposed',
+    },
+  };
+}
+
+function sourceGapCandidateReceiptOutput(receipt: AgentGroundedSearchReceipt): Record<string, unknown> {
+  return {
+    sourceReceiptId: receipt.sourceReceiptId,
+    title: receipt.title,
+    url: receipt.url,
+    snippet: receipt.snippet,
+    date: receipt.publishedDate ?? null,
+    provider: receipt.provider,
+    confidence: receipt.confidence,
+  };
+}
+
+function sourceGapReviewCardTitle(text: string): string {
+  const cleaned = text.trim().replace(/\s+/g, ' ').slice(0, 96);
+  return cleaned ? `Source gap: ${cleaned}` : 'Source gap review';
+}
+
+function sourceGapScoutOutputHref(run: AgentRun): string {
+  return `/app/capsules?capsuleId=${encodeURIComponent(run.capsuleId)}&review=source-gaps`;
+}
+
+function dailyBriefTitle(run: AgentRun): string {
+  const scheduledFor = typeof run.metadata.scheduledFor === 'string' ? run.metadata.scheduledFor : new Date().toISOString();
+  const day = scheduledFor.slice(0, 10);
+  return `Daily Brief - ${day}`;
+}
+
+function dailyBriefSinceFromRun(run: AgentRun): string | null {
+  const value = run.metadata.lastBriefAt ?? run.metadata.since;
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function buildDailyBriefMemoBlocks(
+  running: AgentRun,
+  evidencePack: CapsuleEvidencePack,
+  sourceabilityLedger: SourceabilityLedger,
+  liveSearchEvidence: LiveSearchEvidence,
+  options: {
+    title: string;
+    since: string | null;
+    combinedSourceReceiptIds: string[];
+  },
+): SaveMemoDraftInput['blocks'] {
+  const citations = options.combinedSourceReceiptIds.length
+    ? [{ nodeIds: [], sourceReceiptIds: options.combinedSourceReceiptIds, surface: 'footnote' as const }]
+    : [];
+  const capsuleDeltas = dailyBriefCapsuleDeltas(evidencePack, options.since);
+  const liveReceipts = liveSearchEvidence.sourceReceipts.map((receipt) => (
+    `${receipt.title}${receipt.url ? ` - ${receipt.url}` : ''}${receipt.publishedDate ? ` (${receipt.publishedDate})` : ''}`
+  ));
+  return [
+    {
+      id: 'daily-brief-title',
+      type: 'heading',
+      title: options.title,
+      content: 'Review-gated Daily Brief draft',
+      citations: [],
+      metadata: {
+        runId: running.id,
+        policyAgentId: 'daily-brief',
+        capsuleId: running.capsuleId,
+        reviewOnly: true,
+      },
+    },
+    {
+      id: 'daily-brief-summary',
+      type: 'paragraph',
+      title: 'Summary',
+      content: [
+        `Task: ${running.objective}`,
+        `Capsule: ${running.capsuleId} v${evidencePack.activeCapsule.version ?? 1}.`,
+        `Since: ${options.since ?? 'last available brief marker not set'}.`,
+        `Grounding: ${liveSearchEvidence.groundingPosture}.`,
+      ].join('\n'),
+      citations,
+      metadata: {
+        sourceReceiptIds: options.combinedSourceReceiptIds,
+        groundingPosture: liveSearchEvidence.groundingPosture,
+        degradedReason: liveSearchEvidence.degradedReason,
+      },
+    },
+    {
+      id: 'daily-brief-fresh-sources',
+      type: 'bullets',
+      title: 'Fresh grounded receipts',
+      content: '',
+      items: liveReceipts.length ? liveReceipts : ['No fresh live search receipts were returned; review source gaps before relying on this draft.'],
+      citations,
+      metadata: {
+        sourceReceiptIds: liveSearchEvidence.sourceReceiptIds,
+        querySet: liveSearchEvidence.querySet,
+        freshnessNeed: liveSearchEvidence.freshnessNeed,
+      },
+    },
+    {
+      id: 'daily-brief-capsule-deltas',
+      type: 'bullets',
+      title: 'Capsule deltas since last brief',
+      content: '',
+      items: capsuleDeltas,
+      citations,
+      metadata: {
+        since: options.since,
+        outputHistoryCount: evidencePack.outputHistory.length,
+        openGapCount: evidencePack.openGaps.length,
+        memoryCount: evidencePack.memories.length,
+      },
+    },
+    {
+      id: 'daily-brief-sourceability',
+      type: 'bullets',
+      title: 'Sourceability and review gate',
+      content: '',
+      items: [
+        `${sourceabilityLedger.summary.totalClaims} material claim(s) reviewed.`,
+        `${sourceabilityLedger.summary.unsupportedClaims} unsupported claim(s) remain visible.`,
+        'This draft is not auto-published; review and export remain human-gated.',
+      ],
+      citations,
+      metadata: {
+        sourceabilityLedgerId: sourceabilityLedger.ledgerId,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
+        unsupportedClaims: sourceabilityLedger.unsupportedClaims.map((claim) => claim.claim),
+        reviewOnly: true,
+      },
+    },
+    {
+      id: 'daily-brief-next-actions',
+      type: 'bullets',
+      title: 'Next review actions',
+      content: '',
+      items: [
+        'Review unsupported claims before sharing externally.',
+        'Approve or reject any source-pack proposals before treating them as canonical.',
+        'Run Sourceability Reviewer if this brief is promoted into a formal memo.',
+      ],
+      citations: [],
+      metadata: { outputTarget: 'daily-brief', reviewOnly: true },
+    },
+  ];
+}
+
+function dailyBriefCapsuleDeltas(evidencePack: CapsuleEvidencePack, since: string | null): string[] {
+  const sinceTime = since ? Date.parse(since) : Number.NaN;
+  const recentOutputs = Number.isFinite(sinceTime)
+    ? evidencePack.outputHistory.filter((output) => Date.parse(output.createdAt) >= sinceTime)
+    : evidencePack.outputHistory.slice(0, 5);
+  const deltas = [
+    ...recentOutputs.map((output) => `Output ${output.outputCapsuleId} (${output.templateId}) is ${output.status}/${output.qualityStatus}.`),
+    ...evidencePack.openGaps.map((gap) => `Open gap: ${gap}`),
+    ...evidencePack.documentDigests.flatMap((digest) => digest.sourceabilityWarnings.slice(0, 2).map((warning) => `Document warning (${digest.title}): ${warning}`)),
+    ...evidencePack.memories.slice(0, 3).map((memory) => `Memory: ${(memory.summary || memory.detail).slice(0, 180)}`),
+  ];
+  return deltas.length ? deltas.slice(0, 12) : ['No capsule deltas were detected; this brief is a watchful no-change draft.'];
+}
+
+function buildDailyBriefOutputCapsuleInput(
+  running: AgentRun,
+  evidencePack: CapsuleEvidencePack,
+  memoId: string,
+  sourceabilityLedger: SourceabilityLedger,
+  liveSearchEvidence: LiveSearchEvidence,
+  title: string,
+): SaveOutputCapsuleInput {
+  const citations = [
+    ...evidencePack.sourcedParagraphs.map((paragraph) => ({
+      id: paragraph.id,
+      title: paragraph.citationLabel,
+      sourceReceiptId: paragraph.sourceReceiptId ?? undefined,
+      confidence: paragraph.confidence,
+    })),
+    ...liveSearchEvidence.sourceReceipts.map((receipt) => ({
+      id: receipt.sourceReceiptId,
+      title: receipt.title,
+      sourceReceiptId: receipt.sourceReceiptId,
+      confidence: receipt.confidence,
+    })),
+  ];
+  const gaps = evidencePack.openGaps.map((gap, index) => ({
+    id: `daily-brief-gap-${index + 1}`,
+    claim: gap,
+    reason: 'Daily Brief sourceability check left this as an unresolved review item.',
+    severity: index === 0 ? 'high' as const : 'medium' as const,
+  }));
+  return {
+    id: `run-${running.id}-daily-brief`,
+    situationId: running.selectedCoreIds.situationCoreId ?? running.capsuleId,
+    contextCapsuleId: running.capsuleId,
+    templateId: 'situation-brief',
+    payload: {
+      title,
+      summary: `Review-gated Daily Brief draft ${memoId} generated from capsule ${running.capsuleId}.`,
+      sections: [
+        { heading: 'Task', body: running.objective, citationIds: citations.slice(0, 3).map((citation) => citation.id) },
+        {
+          heading: 'Fresh receipts',
+          body: liveSearchEvidence.sourceReceipts.length
+            ? liveSearchEvidence.sourceReceipts.map((receipt) => `${receipt.title}: ${receipt.snippet}`).join('\n')
+            : 'No fresh live receipts returned.',
+          citationIds: liveSearchEvidence.sourceReceiptIds,
+        },
+        {
+          heading: 'Capsule deltas',
+          body: dailyBriefCapsuleDeltas(evidencePack, dailyBriefSinceFromRun(running)).join('\n'),
+          citationIds: citations.map((citation) => citation.id).slice(0, 8),
+        },
+        {
+          heading: 'Review gate',
+          body: `${sourceabilityLedger.summary.unsupportedClaims} unsupported claim(s) remain visible. This brief is a draft and was not auto-published.`,
+          citationIds: citations.map((citation) => citation.id),
+        },
+      ],
+      sourceabilityLedgerSummary: sourceabilityLedger.summary,
+      generatedAt: sourceabilityLedger.generatedAt,
+      reviewOnly: true,
+    },
+    citations,
+    gaps,
+    provenance: {
+      createdBy: running.ownerUid,
+      toolIds: ['capsule-evidence-pack', 'grounded-search', 'daily-brief'],
+      agentIds: ['daily-brief', running.id],
+      traceId: running.traceId,
+    },
+  };
+}
+
 function selectedWorkflowToolIds(run: AgentRun): string[] {
   const tools = [
     'context-resolve',
@@ -2568,6 +3476,11 @@ function outputDestinationFromMetadata(metadata: Record<string, unknown>): Polic
   return destination === 'memo_studio' || destination === 'canvas' || destination === 'library' || destination === 'handover'
     ? destination
     : null;
+}
+
+function minSourcesPerClaimFromRun(run: AgentRun): number {
+  const value = run.metadata.minSourcesPerClaim;
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
 }
 
 async function collectSearchEvidenceForRun(

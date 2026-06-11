@@ -7,6 +7,7 @@ describe('UserPreferences', () => {
     expect(parsed.citationStyle).toBe('un-footnote');
     expect(parsed.defaultReportLength).toBe('standard');
     expect(parsed.defaultLanguage).toBe('en');
+    expect(parsed.dailyBrief).toEqual({ enabled: false, capsuleId: null });
   });
 
   it('rejects unknown citation style', () => {
@@ -26,6 +27,14 @@ describe('UserPreferences', () => {
     });
     expect(parsed.hiddenToolIds).toEqual(['game-theory']);
     expect(parsed.toolOrder).toEqual(['dashboard', 'risk-monitor']);
+  });
+
+  it('accepts Daily Brief workspace preferences', () => {
+    const parsed = UserPreferencesSchema.parse({
+      ...DEFAULT_USER_PREFERENCES,
+      dailyBrief: { enabled: true, capsuleId: 'cap-daily' },
+    });
+    expect(parsed.dailyBrief).toEqual({ enabled: true, capsuleId: 'cap-daily' });
   });
 
   it('rejects oversized tool ids', () => {

@@ -5,12 +5,12 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-praxis-emerald-500)] focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer",
   {
     variants: {
       variant: {
         default:
-          "bg-gold-500 text-navy-950 hover:bg-gold-400 active:bg-gold-600 font-semibold",
+          "bg-[color:var(--color-praxis-emerald-600)] text-white hover:bg-[color:var(--color-praxis-emerald-500)] active:bg-[color:var(--color-praxis-emerald-700)] font-semibold",
         secondary:
           "bg-navy-700 text-navy-100 hover:bg-navy-600 active:bg-navy-800 border border-navy-600",
         ghost:
@@ -19,7 +19,7 @@ const buttonVariants = cva(
           "bg-crimson text-navy-50 hover:bg-crimson/90 active:bg-crimson/80",
         outline:
           "border border-navy-600 text-navy-200 hover:bg-navy-800 hover:text-navy-100 active:bg-navy-700",
-        link: "text-gold-400 underline-offset-4 hover:underline hover:text-gold-300",
+        link: "text-[color:var(--color-praxis-emerald-700)] underline-offset-4 hover:underline hover:text-[color:var(--color-praxis-emerald-600)]",
         /* PRAXIS landing capsule variants — pill shape, museum-grade depth.
            Use these for marketing surfaces and the public AskBar. */
         capsule:
@@ -31,7 +31,7 @@ const buttonVariants = cva(
         instrument:
           "instrument-button rounded-lg font-sans font-semibold",
         "instrument-primary":
-          "rounded-lg bg-gold-500 text-navy-950 shadow-gold-halo hover:bg-gold-400 active:bg-gold-600 font-semibold",
+          "rounded-lg bg-[color:var(--color-praxis-emerald-600)] text-white shadow-[0_10px_28px_rgba(16,185,129,0.24)] hover:bg-[color:var(--color-praxis-emerald-500)] active:bg-[color:var(--color-praxis-emerald-700)] font-semibold",
         "instrument-ghost":
           "rounded-lg border border-transparent text-navy-600 hover:border-rose-gold/30 hover:bg-white/75 hover:text-navy-950",
       },

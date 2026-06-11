@@ -5,19 +5,27 @@ const AUTH_EMAIL = process.env.TEST_FIREBASE_EMAIL ?? process.env.PRAXIS_CANARY_
 const AUTH_PASSWORD = process.env.TEST_FIREBASE_PASSWORD ?? process.env.PRAXIS_CANARY_PASSWORD;
 const APP_OR_ONBOARDING = (url: URL) => url.pathname.startsWith('/app') || url.pathname.startsWith('/onboarding');
 
-const widths = [390, 768, 1280] as const;
+const widths = [360, 390, 768] as const;
 
 test.describe('capsule workspace visual diagnostics', () => {
-  test('public root keeps the normal Ask composer outside the capsule studio', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(BASE);
-    if (await page.getByText(/Failed to load chunk/i).isVisible().catch(() => false)) {
-      test.skip(true, 'Existing dev server is serving a stale Next.js chunk.');
+  test('public root keeps the marketing home outside the capsule studio', async ({ page }) => {
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: width === 768 ? 900 : 844 });
+      await page.goto(BASE);
+      if (await page.getByText(/Failed to load chunk/i).isVisible().catch(() => false)) {
+        test.skip(true, 'Existing dev server is serving a stale Next.js chunk.');
+      }
+      await waitForLandingHydration(page);
+      await expect(page.getByTestId('marketing-home')).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByTestId('tasklet-praxis-workbench')).toHaveCount(0);
+      await expect(page.getByTestId('marketing-primary-cta')).toBeVisible();
+      await expect(page.getByTestId('ask-context-bar')).toBeVisible();
+      await expect(page.getByTestId('capsule-studio-header')).toHaveCount(0);
+      await expectNoDocumentOverflow(page, '/', width);
+      if (width < 640) {
+        await expect(page.getByTestId('capsule-dock-mobile-actions')).toBeVisible();
+      }
     }
-    await waitForLandingHydration(page);
-    await expect(page.getByTestId('tasklet-praxis-workbench')).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByTestId('praxis-main-composer')).toBeVisible();
-    await expect(page.getByTestId('capsule-studio-header')).toHaveCount(0);
   });
 
   test('authenticated capsules stay contained and readable', async ({ page }) => {
@@ -46,6 +54,9 @@ test.describe('capsule workspace visual diagnostics', () => {
       await expect(commandBand.getByRole('button', { name: /Build capsule/i })).toBeVisible();
       await expect(commandBand.getByRole('button', { name: /Use in Ask/i })).toBeVisible();
       await expect(commandBand.getByRole('button', { name: /Review improvements/i })).toBeVisible();
+      if (width < 640) {
+        await expect(page.getByTestId('capsule-dock-mobile-actions')).toBeVisible();
+      }
       await expect(page.getByTestId('praxis-main-composer')).toHaveCount(0);
       await expectNoDocumentOverflow(page, '/app/capsules', width);
       await expectNoInternalOverflow(page, '[data-testid="capsule-studio-command-band"]', width);
@@ -84,7 +95,7 @@ test.describe('capsule workspace visual diagnostics', () => {
 
 async function waitForLandingHydration(page: import('@playwright/test').Page) {
   await page.waitForLoadState('domcontentloaded');
-  await page.getByTestId('tasklet-praxis-workbench').waitFor({ state: 'visible', timeout: 20_000 });
+  await page.getByTestId('marketing-home').waitFor({ state: 'visible', timeout: 20_000 });
 }
 
 async function expectNoDocumentOverflow(page: import('@playwright/test').Page, path: string, width: number) {

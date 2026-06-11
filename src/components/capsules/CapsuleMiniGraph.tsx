@@ -14,6 +14,7 @@ export function CapsuleMiniGraph({
   color,
   nodeCount,
   edgeCount,
+  entityTypeCounts,
   className,
   onOpen,
 }: {
@@ -21,10 +22,11 @@ export function CapsuleMiniGraph({
   color: string;
   nodeCount: number;
   edgeCount: number;
+  entityTypeCounts?: Record<string, number>;
   className?: string;
   onOpen?: () => void;
 }) {
-  const profile = useMemo(() => buildGraphProfile(seed, nodeCount, edgeCount), [seed, nodeCount, edgeCount]);
+  const profile = useMemo(() => buildGraphProfile(seed, nodeCount, edgeCount, entityTypeCounts), [seed, nodeCount, edgeCount, entityTypeCounts]);
   const points = useMemo(() => buildConstellation(seed, profile.nodes), [seed, profile.nodes]);
   const caption = `${profile.nodes} ${profile.entityMix} · ${profile.edges} links`;
 
@@ -37,12 +39,12 @@ export function CapsuleMiniGraph({
       onKeyDown={onOpen ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(); } } : undefined}
       title="Open Inspect for the full graph: ontology binding, semantic layers, claims, and tacit knowledge"
       className={cn(
-        'flex items-center gap-2 rounded-md border border-slate-100 bg-white/70 px-2 py-1.5',
+        'flex w-full max-w-full items-center gap-2 rounded-md border border-slate-100 bg-white/70 px-2 py-1.5',
         onOpen && 'cursor-pointer transition hover:border-slate-200 hover:bg-white',
         className,
       )}
     >
-      <svg viewBox="0 0 96 28" className="h-7 w-24 shrink-0" aria-hidden focusable="false">
+      <svg viewBox="0 0 96 28" className="h-7 w-[clamp(4rem,28vw,6rem)] shrink-0" aria-hidden focusable="false">
         {points.map((point, index) => {
           const next = points[(index + 1) % points.length];
           if (points.length < 2) return null;
@@ -70,7 +72,7 @@ export function CapsuleMiniGraph({
           />
         ))}
       </svg>
-      <span className="min-w-0">
+      <span className="min-w-0 flex-1">
         <span className="block font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">Graph · ontology</span>
         <span className="block truncate text-[11px] font-semibold text-slate-600">{caption}</span>
       </span>
@@ -100,7 +102,7 @@ function hashSeed(seed: string): number {
   return hash >>> 0;
 }
 
-function buildGraphProfile(seed: string, nodeCount: number, edgeCount: number): { nodes: number; edges: number; entityMix: string } {
+function buildGraphProfile(seed: string, nodeCount: number, edgeCount: number, entityTypeCounts?: Record<string, number>): { nodes: number; edges: number; entityMix: string } {
   const hash = hashSeed(seed);
   // Real seed counts win; otherwise derive a believable, capsule-specific shape.
   const nodes = nodeCount > 0 ? nodeCount : 4 + (hash % 9);
@@ -108,8 +110,18 @@ function buildGraphProfile(seed: string, nodeCount: number, edgeCount: number): 
   return {
     nodes,
     edges,
-    entityMix: ENTITY_MIXES[(hash >>> 8) % ENTITY_MIXES.length],
+    entityMix: entityMixFromCounts(entityTypeCounts) ?? ENTITY_MIXES[(hash >>> 8) % ENTITY_MIXES.length],
   };
+}
+
+function entityMixFromCounts(entityTypeCounts?: Record<string, number>): string | null {
+  if (!entityTypeCounts) return null;
+  const labels = Object.entries(entityTypeCounts)
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 2)
+    .map(([label]) => label.replace(/[_-]+/g, ' ').toLowerCase());
+  return labels.length ? labels.join(' · ') : null;
 }
 
 function buildConstellation(seed: string, nodeCount: number): Array<{ x: number; y: number; r: number; emphasis: number }> {

@@ -39,7 +39,7 @@ const KIND_LABEL: Record<CoreSpecimenKind, string> = {
 const KIND_DOT_FILLED: Record<CoreSpecimenKind, string> = {
   user: 'bg-[#3A5A7A]',
   situation: 'bg-[#3F7A66]',
-  path: 'bg-[#8A5A00]',
+  path: 'bg-[color:var(--color-praxis-emerald-700)]',
   source: 'bg-[#C9A86A]',
   document: 'bg-[#7A6A3F]',
   graph: 'bg-[#5B6B8C]',
@@ -174,7 +174,7 @@ export function CapsuleStripHeader() {
         <div className="absolute right-0 z-50 mt-2 w-[34rem] max-w-[calc(100vw-2rem)] rounded-[var(--radius-lg)] border border-slate-200 bg-white p-4 text-slate-700 shadow-[var(--shadow-float)]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gold-700">Capsule Manager</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--color-praxis-emerald-700)]">Capsule Manager</p>
               <h2 className="mt-1 truncate font-serif text-xl font-semibold text-navy-950">{activeLabel}</h2>
               <p className="mt-1 text-xs leading-5 text-slate-600">
                 Primary capsule / {readySlotCount} of {CAPSULE_SLOT_DEFINITIONS.length} slots ready / {outputTarget}
@@ -232,7 +232,7 @@ export function CapsuleStripHeader() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gold-700">Add capsule context</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--color-praxis-emerald-700)]">Add capsule context</p>
                   <h3 className="mt-1 font-serif text-lg font-semibold text-navy-950">Associate capsules</h3>
                   <p className="mt-1 text-xs leading-5 text-slate-600">
                     Search your capsule library and select reference capsules to travel with the active context.
@@ -397,11 +397,11 @@ function CapsuleSlotRow({ label, ready, slotId }: { label: string; ready: boolea
         'flex items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-[11px] transition',
         ready
           ? 'border-slate-200 bg-white text-navy-900 hover:border-diplomatic-blue/30'
-          : 'border-gold-200 bg-gold-50 text-gold-950 hover:border-gold-300',
+          : 'border-[color:var(--color-praxis-emerald-300)]/50 bg-[color:var(--color-praxis-emerald-50)] text-[color:var(--color-praxis-emerald-900)] hover:border-[color:var(--color-praxis-emerald-500)]',
       )}
     >
       <span className="truncate font-semibold">{label}</span>
-      <span className={cn('h-2 w-2 shrink-0 rounded-full', ready ? 'bg-emerald-500' : 'bg-gold-500')} />
+      <span className={cn('h-2 w-2 shrink-0 rounded-full', ready ? 'bg-emerald-500' : 'bg-[color:var(--color-praxis-emerald-500)]')} />
     </Link>
   );
 }

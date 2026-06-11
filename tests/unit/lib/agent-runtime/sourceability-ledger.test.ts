@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildSourceGapScoutObjective,
   buildSourceabilityClaimVerdicts,
+  computeEvidenceCoverage,
   sourceabilityVerdictForSupportLabel,
 } from '@/lib/agent-runtime/sourceability-ledger';
 
@@ -54,5 +56,52 @@ describe('sourceability ledger verdicts', () => {
         reviewNote: 'Matched source says the opposite.',
       },
     ]);
+  });
+
+  it('computes answer evidence coverage from Ask-visible verdicts', () => {
+    const verdicts = buildSourceabilityClaimVerdicts([
+      {
+        id: 'claim-1',
+        claim: 'The access cell reported two restrictions.',
+        supportLabel: 'supported',
+        sourceIds: ['source-1'],
+      },
+      {
+        id: 'claim-2',
+        claim: 'The telecom outage is confirmed.',
+        supportLabel: 'unsupported',
+      },
+      {
+        id: 'claim-3',
+        claim: 'The crossing posture is mixed.',
+        supportLabel: 'weak',
+        sourceIds: ['source-2'],
+      },
+      {
+        id: 'claim-4',
+        claim: 'The source says the opposite.',
+        supportLabel: 'contradicted',
+        sourceIds: ['source-3'],
+      },
+    ]);
+
+    expect(computeEvidenceCoverage(verdicts)).toEqual({
+      totalClaims: 4,
+      supportedClaims: 1,
+      unsupportedClaims: 1,
+      weakClaims: 1,
+      contradictedClaims: 1,
+      coveragePercent: 25,
+      unsupportedClaimTexts: ['The telecom outage is confirmed.'],
+    });
+  });
+
+  it('builds a scoped Source-Gap Scout objective from unsupported claims', () => {
+    expect(buildSourceGapScoutObjective([
+      'The telecom outage is confirmed.',
+      'The telecom outage is confirmed.',
+      'A current source is missing for the border opening.',
+    ])).toContain('- The telecom outage is confirmed.');
+    expect(buildSourceGapScoutObjective([])).toBe('Find sources for unsupported claims.');
   });
 });

@@ -225,6 +225,15 @@ describe('boardroom-discussion worker', () => {
       executionMode: 'boardroom-discussion',
       failedPhase: 'boardroom-live-discussion',
     });
+    expect(failed?.data?.failureSummary).toMatchObject({
+      executionMode: 'boardroom-discussion',
+      failedPhase: 'boardroom-live-discussion',
+      sanitizedError: 'live model unavailable api_key=[REDACTED]',
+      failingToolCall: expect.objectContaining({
+        toolId: 'boardroom-deliberation',
+        status: 'failed',
+      }),
+    });
     expect(JSON.stringify(failed?.data)).not.toContain('api_key=secret');
   });
 });

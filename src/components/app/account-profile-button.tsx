@@ -83,7 +83,7 @@ export function AccountProfileButton({ compact = false }: { compact?: boolean })
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-navy-950">{user?.name || 'Analyst'}</p>
                   <p className="truncate text-xs text-navy-500">{user?.email}</p>
-                  <p className="mt-1 inline-flex rounded-md border border-gold-200 bg-gold-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-gold-800">
+                  <p className="mt-1 inline-flex rounded-md border border-[color:var(--color-praxis-emerald-300)]/45 bg-[color:var(--color-praxis-emerald-50)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[color:var(--color-praxis-emerald-700)]">
                     {plan} plan
                   </p>
                 </div>

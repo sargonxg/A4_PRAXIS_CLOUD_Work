@@ -9,6 +9,7 @@ import { buildSituationContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/compat/sample-mode';
 import { withAuth } from '@/lib/api/with-auth';
 import { withCalibration } from '@/lib/api/with-calibration';
+import { checkAndDeductCreditsForUid } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
 import { searchSituationCorpus } from '@/lib/intelligence/corpus-search';
@@ -187,7 +188,17 @@ export const POST = withCalibration('chat', 'ai_chat', {
     }
     const requestSituationId = (situation as Situation | undefined)?.id;
     const prompt = lastUserPrompt(messages);
-    const askIntent = classifyAskIntent(prompt);
+    const deepResearchRequested = turnMetadata?.toggles?.deepResearch === true;
+    const askIntent: AskIntent = deepResearchRequested ? 'research_memo' : classifyAskIntent(prompt);
+    if (deepResearchRequested && !_user.isDemo) {
+      const creditGate = await checkAndDeductCreditsForUid(
+        _user.uid,
+        'ai_deep_search_agent',
+        'Ask PRAXIS Deep research agent run',
+        requestSituationId,
+      );
+      if (!creditGate.allowed) return creditGate.response;
+    }
     let capsuleContext: InjectableContext | null = null;
     let turnCapsule: TurnCapsule | null = null;
     let effectiveSituationId: string | undefined = requestSituationId;
@@ -559,6 +570,7 @@ You have access to the user's active situation data. When answering questions:
         ...(answerEvidencePack?.openGaps ?? []),
       ]).length,
       contextPackageId,
+      selectedPolicyAgentId: deepResearchRequested ? 'research-memo' : turnMetadata?.selectedAgentId ?? null,
       userSelectedModelId: aiSettings?.model ?? null,
       activeCapsules: normalizedAppliedCapsules.map((capsule) => ({
         capsuleId: capsule.id,
@@ -1238,6 +1250,15 @@ async function maybeQueueAskAgentRun(input: {
     const degradedReason = searchSelected && !googleGroundingActive
       ? 'Google Search grounding is not configured.'
       : null;
+    const researchFlow = receipt.supervisor.policyAgentId === 'research-memo' && receipt.toolRouting.selectedToolIds.includes('deep-search-agent')
+      ? {
+        kind: 'agentic_research_flow',
+        phases: ['plan', 'source', 'retrieve', 'verify', 'synthesize'],
+        minSourcesPerClaim: 2,
+        synthesisGate: 'block_on_unsupported_claims',
+        adkBridge: 'src/lib/agent-runtime/adk-bridge.ts',
+      }
+      : null;
     const run = await createAgentRun({
       ownerUid: input.uid,
       capsuleId: input.capsule.capsuleId,
@@ -1281,6 +1302,11 @@ async function maybeQueueAskAgentRun(input: {
         selectedToolIds: receipt.toolRouting.selectedToolIds,
         selectedTools: receipt.toolRouting.selectedToolIds,
         deepSearch: receipt.toolRouting.selectedToolIds.includes('deep-search-agent'),
+        researchFlow,
+        ...(researchFlow ? {
+          minSourcesPerClaim: researchFlow.minSourcesPerClaim,
+          synthesisGate: researchFlow.synthesisGate,
+        } : {}),
         searchPlan,
         sourceReceiptIds,
         sourceCount,

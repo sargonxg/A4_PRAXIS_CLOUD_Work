@@ -81,6 +81,38 @@ export interface AgentRun {
   expiresAt: string | null;
 }
 
+export type AgentRunFailureEventSummary = {
+  eventId: string;
+  eventType: string;
+  message: string | null;
+  phase: string | null;
+  createdAt: string;
+};
+
+export type AgentRunFailureToolCallSummary = {
+  toolCallId: string | null;
+  toolId: string;
+  status: 'failed';
+  risk: AgentToolRisk | null;
+  error: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+};
+
+export type AgentRunFailureSummary = {
+  schemaVersion: 1;
+  category: string;
+  failedPhase: string;
+  executionMode: string;
+  policyAgentId: string | null;
+  errorName: string;
+  sanitizedError: string;
+  retryGuidance: string;
+  lastEventBeforeFailure: AgentRunFailureEventSummary | null;
+  failingToolCall: AgentRunFailureToolCallSummary | null;
+  createdAt: string;
+};
+
 export interface AgentRunEvent {
   id: string;
   runId: string;

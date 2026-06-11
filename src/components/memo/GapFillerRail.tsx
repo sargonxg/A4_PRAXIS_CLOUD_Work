@@ -135,7 +135,7 @@ export function GapFillerRail({
       className={cn('w-72 shrink-0 border-l border-slate-200 bg-white p-3', className)}
     >
       <header className="mb-2 flex items-center gap-2">
-        <Sparkles className="h-3.5 w-3.5 text-[#8A5A00]" />
+        <Sparkles className="h-3.5 w-3.5 text-[color:var(--color-praxis-emerald-700)]" />
         <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-700">
           Memo checks
         </span>
@@ -146,7 +146,7 @@ export function GapFillerRail({
           type="button"
           onClick={onCheckClaim}
           disabled={!onCheckClaim || Boolean(checkingAction)}
-          className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[10px] font-bold uppercase text-slate-700 hover:border-[#8A5A00]/50 hover:text-[#8A5A00] disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[10px] font-bold uppercase text-slate-700 hover:border-[color:var(--color-praxis-emerald-500)]/50 hover:text-[color:var(--color-praxis-emerald-700)] disabled:opacity-50"
         >
           {checkingAction === 'claim-check' ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldCheck className="h-3 w-3" />}
           Claim
@@ -155,7 +155,7 @@ export function GapFillerRail({
           type="button"
           onClick={onLanguageCheck}
           disabled={!onLanguageCheck || Boolean(checkingAction)}
-          className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[10px] font-bold uppercase text-slate-700 hover:border-[#8A5A00]/50 hover:text-[#8A5A00] disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[10px] font-bold uppercase text-slate-700 hover:border-[color:var(--color-praxis-emerald-500)]/50 hover:text-[color:var(--color-praxis-emerald-700)] disabled:opacity-50"
         >
           {checkingAction === 'language-check' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Languages className="h-3 w-3" />}
           Language
@@ -192,7 +192,7 @@ export function GapFillerRail({
                   type="button"
                   onClick={() => void sourceThis(gap)}
                   disabled={working === gap.id}
-                  className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-md bg-[#8A5A00] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white transition hover:brightness-110 disabled:opacity-60"
+                  className="mt-2 inline-flex w-full items-center justify-center gap-1 rounded-md bg-[color:var(--color-praxis-emerald-700)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white transition hover:brightness-110 disabled:opacity-60"
                 >
                   {working === gap.id ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -240,7 +240,7 @@ function ClaimCheckCard({ result }: { result: MemoClaimCheckResult }) {
         <span className={cn(
           'rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase',
           result.verdict === 'supported'
-            ? 'border-[#E8B931]/50 bg-[#0F172A] text-[#F4ECD8]'
+            ? 'border-[color:var(--color-praxis-emerald-500)]/50 bg-[#0F172A] text-[color:var(--color-praxis-emerald-100)]'
             : result.verdict === 'contradicted'
               ? 'border-red-200 bg-red-50 text-red-800'
               : result.verdict === 'weak'
@@ -253,7 +253,7 @@ function ClaimCheckCard({ result }: { result: MemoClaimCheckResult }) {
       <p className="mt-1 line-clamp-3 text-[11px] leading-4 text-slate-700">{result.claim}</p>
       <p className="mt-1 text-[11px] leading-4 text-slate-500">{result.rationale}</p>
       {result.receipt ? (
-        <div className="mt-2 rounded border-l-[3px] border-l-[#E8B931] bg-slate-50 px-2 py-1.5">
+        <div className="mt-2 rounded border-l-[3px] border-l-[color:var(--color-praxis-emerald-500)] bg-slate-50 px-2 py-1.5">
           <p className="truncate text-[10px] font-semibold text-slate-800">{result.receipt.title}</p>
           {result.receipt.quote ? <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-slate-600">{result.receipt.quote}</p> : null}
           <p className="mt-0.5 truncate font-mono text-[10px] text-slate-400">{result.receipt.sourceId}</p>

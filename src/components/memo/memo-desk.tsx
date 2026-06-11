@@ -60,9 +60,11 @@ import {
   Wand2,
 } from 'lucide-react';
 import { ReceiptCard } from '@/components/shared/receipt-card';
+import { SourceTierBadge } from '@/components/source/SourceTierBadge';
 import { ContextCapsulePreview } from '@/components/context/context-capsule-preview';
 import { SourceMentionMenu } from '@/components/memo/source-mention-menu';
 import { GapFillerRail } from '@/components/memo/GapFillerRail';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useSituationStore } from '@/stores/situation-store';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
@@ -73,6 +75,11 @@ import {
   type MemoLanguageCheckResult,
   type MemoLanguageViolation,
 } from '@/lib/memo/memo-checks';
+import {
+  mapRedTeamReviewToAnnotations,
+  memoTextToParagraphs,
+  type RedTeamAnnotation,
+} from '@/lib/memo/red-team-annotations';
 import type { MemoBlock } from '@/types/memo';
 
 interface AskTurn {
@@ -236,6 +243,9 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   const [mobilePane, setMobilePane] = useState<'library' | 'ask' | null>(null);
   const [memoCheckResults, setMemoCheckResults] = useState<Array<MemoClaimCheckResult | MemoLanguageCheckResult>>([]);
   const [memoCheckPending, setMemoCheckPending] = useState<'claim-check' | 'language-check' | null>(null);
+  const [redTeamAnnotations, setRedTeamAnnotations] = useState<RedTeamAnnotation[]>([]);
+  const [redTeamPending, setRedTeamPending] = useState(false);
+  const [redTeamedAt, setRedTeamedAt] = useState<string | null>(null);
   const [classificationMarking, setClassificationMarking] = useState('');
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const storageKey = `${STORAGE_PREFIX}${documentId}`;
@@ -541,6 +551,66 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
     }
   }, [activeCapsule?.capsuleId, activeSituation, editor]);
 
+  const runRedTeamReview = useCallback(async () => {
+    if (!editor || redTeamPending) return;
+    const draftText = editor.getText().slice(0, 20_000).trim();
+    if (!draftText) return;
+    setRedTeamPending(true);
+    try {
+      const paragraphs = memoTextToParagraphs(draftText);
+      const res = await fetch('/api/ai/red-team-review', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          reviewedToolId: 'memo-desk',
+          reviewedOutput: {
+            title,
+            draftText,
+            capsuleId: activeCapsule?.capsuleId ?? null,
+            capsuleVersion: activeCapsule?.version ?? null,
+            sourceUrls: sources,
+            exportGate: {
+              sourceabilityStatus: memoExportGate.sourceabilityStatus,
+              redlineStatus: memoExportGate.redlineStatus,
+              classificationStatus: memoExportGate.classificationStatus,
+            },
+          },
+          situation: activeSituation,
+          originalConfidence: 'unknown',
+        }),
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const review = await res.json();
+      const annotations = mapRedTeamReviewToAnnotations(review, paragraphs);
+      setRedTeamAnnotations(annotations);
+      setRedTeamedAt(new Date().toISOString());
+      setTurns((items) => [
+        ...items,
+        {
+          id: `p-red-team-${Date.now()}`,
+          role: 'praxis',
+          text: annotations.length
+            ? `Red-team pass complete. ${annotations.length} review comment${annotations.length === 1 ? '' : 's'} added in the margin rail.`
+            : 'Red-team pass complete. No blocking challenge annotations were returned; human review is still required before sharing.',
+          ts: Date.now(),
+        },
+      ]);
+    } catch (err) {
+      setTurns((items) => [
+        ...items,
+        {
+          id: `p-red-team-${Date.now()}`,
+          role: 'praxis',
+          text: `Red-team pass failed. ${err instanceof Error ? err.message : 'Unknown error.'}`,
+          ts: Date.now(),
+        },
+      ]);
+    } finally {
+      setRedTeamPending(false);
+    }
+  }, [activeCapsule?.capsuleId, activeCapsule?.version, activeSituation, editor, memoExportGate.classificationStatus, memoExportGate.redlineStatus, memoExportGate.sourceabilityStatus, redTeamPending, sources, title]);
+
   const runSlashCommand = useCallback(
     (id: typeof SLASH_COMMANDS[number]['id']) => {
       if (!editor) return;
@@ -794,13 +864,13 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
 
   return (
     <div
-      className="memo-desk -mx-4 -my-4 flex h-[calc(100vh-3.5rem)] min-h-0 flex-col bg-[#F6F4ED] md:-mx-6 md:-my-6"
+      className="memo-desk -mx-4 -my-4 flex h-[calc(100vh-3.5rem)] min-h-0 overflow-x-hidden flex-col bg-[#F6F4ED] md:-mx-6 md:-my-6"
       data-testid="memo-desk"
       aria-label="Write for Memo Studio as an editable document"
     >
       {/* Top bar */}
-      <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5 shadow-sm md:px-6">
-        <FileText className="h-4 w-4 shrink-0 text-[#8A5A00]" />
+      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-3 py-2.5 shadow-sm md:px-6">
+        <FileText className="h-4 w-4 shrink-0 text-[color:var(--color-praxis-emerald-700)]" />
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -818,7 +888,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
           className={cn(
             'hidden max-w-[220px] rounded-md border bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none xl:block',
             memoExportGate.classificationStatus === 'set'
-              ? 'border-slate-300 focus:border-[#8A5A00]'
+              ? 'border-slate-300 focus:border-[color:var(--color-praxis-emerald-500)]'
               : 'border-amber-300 bg-amber-50 text-amber-800 focus:border-amber-500',
           )}
         >
@@ -910,7 +980,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                   aria-label="Classification"
                   value={classificationMarking}
                   onChange={(event) => setClassificationMarking(event.target.value)}
-                  className="mt-2 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 focus:border-[#8A5A00] focus:outline-none"
+                  className="mt-2 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 focus:border-[color:var(--color-praxis-emerald-500)] focus:outline-none"
                 >
                   {CLASSIFICATION_MARKINGS.map((marking) => (
                     <option key={`menu-${marking || 'unset'}`} value={marking}>
@@ -923,7 +993,28 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                   <ExportGateChip label="Red-line" status={memoExportGate.redlineStatus} />
                   <ExportGateChip label="Classification" status={memoExportGate.classificationStatus} />
                 </div>
+                <div className="mt-2 rounded-md border border-slate-200 bg-white px-2 py-1.5" data-testid="memo-red-team-export-status">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                    {redTeamedAt ? 'red-teamed ✓' : 'red-team optional'}
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
+                    {redTeamedAt
+                      ? `${redTeamAnnotations.length} annotation${redTeamAnnotations.length === 1 ? '' : 's'} available in the margin.`
+                      : 'Run an adversarial pass before export; annotations only, no rewrite.'}
+                  </p>
+                </div>
               </div>
+              <button
+                type="button"
+                role="menuitem"
+                disabled={!editor || redTeamPending}
+                onClick={() => { void runRedTeamReview(); }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-white"
+                data-testid="memo-red-team-action"
+              >
+                {redTeamPending ? <Sparkles className="h-3.5 w-3.5 animate-pulse" /> : <Brain className="h-3.5 w-3.5" />}
+                {redTeamPending ? 'Red-teaming draft...' : 'Red-team this draft'}
+              </button>
               <button
                 type="button"
                 role="menuitem"
@@ -1055,12 +1146,12 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
             className={cn(
               'h-full w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white/60 px-3 py-4 lg:block',
               mobilePane === 'library'
-                ? 'fixed inset-y-0 left-0 z-40 w-[85vw] max-w-sm shadow-[var(--shadow-modal)] lg:static lg:w-64 lg:shadow-none'
+                ? 'fixed inset-x-0 bottom-0 z-40 max-h-[82vh] w-full rounded-t-2xl border-r-0 border-t border-slate-200 bg-white shadow-[var(--shadow-modal)] lg:static lg:h-full lg:w-64 lg:max-h-none lg:rounded-none lg:border-r lg:border-t-0 lg:bg-white/60 lg:shadow-none'
                 : 'hidden',
             )}
           >
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8A5A00]">Sources</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-praxis-emerald-700)]">Sources</p>
               <button
                 type="button"
                 onClick={() => setLibraryOpen(false)}
@@ -1123,7 +1214,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                       className={cn(
                         'rounded-md border px-2 py-1.5 text-left transition',
                         active
-                          ? 'border-[#8A5A00]/40 bg-[#FAF8F2] text-slate-900'
+                          ? 'border-[color:var(--color-praxis-emerald-500)]/40 bg-[color:var(--color-praxis-emerald-50)] text-slate-900'
                           : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300',
                       )}
                     >
@@ -1140,7 +1231,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                 id="memo-objective-core"
                 value={objectiveCore}
                 onChange={(event) => setObjectiveCore(event.target.value as typeof OBJECTIVE_CORES[number])}
-                className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-800 focus:border-[#8A5A00] focus:outline-none"
+                className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-800 focus:border-[color:var(--color-praxis-emerald-500)] focus:outline-none"
               >
                 {OBJECTIVE_CORES.map((objective) => <option key={objective}>{objective}</option>)}
               </select>
@@ -1151,7 +1242,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                 id="memo-output-core"
                 value={outputCore}
                 onChange={(event) => setOutputCore(event.target.value as typeof OUTPUT_CORES[number])}
-                className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-800 focus:border-[#8A5A00] focus:outline-none"
+                className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-800 focus:border-[color:var(--color-praxis-emerald-500)] focus:outline-none"
               >
                 {OUTPUT_CORES.map((output) => <option key={output}>{output}</option>)}
               </select>
@@ -1169,7 +1260,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                       className={cn(
                         'w-full rounded-md border px-2 py-1.5 text-left text-[11px] transition',
                         activeCapsule?.capsuleId === capsule.capsuleId
-                          ? 'border-[#8A5A00]/40 bg-[#FAF8F2] text-slate-900'
+                          ? 'border-[color:var(--color-praxis-emerald-500)]/40 bg-[color:var(--color-praxis-emerald-50)] text-slate-900'
                           : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300',
                       )}
                     >
@@ -1231,9 +1322,13 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Attached sources</p>
               <div className="mt-2 space-y-1.5">
                 {sources.length === 0 ? (
-                  <p className="rounded-md border border-dashed border-slate-200 bg-white p-3 text-[11px] leading-5 text-slate-500">
-                    No sources attached. Add to the Source Core to ground claims here.
-                  </p>
+                  <EmptyState
+                    icon={Library}
+                    label="No sources attached."
+                    hint="Add to the Source Core to ground claims here."
+                    testId="memo-sources-empty"
+                    className="min-h-24 p-3"
+                  />
                 ) : (
                   sources.map((url, i) => (
                     <div
@@ -1248,12 +1343,13 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                           className="min-w-0 flex-1 truncate font-mono text-[10px] text-slate-700"
                           title={url}
                         >
-                          <span className="text-[#8A5A00]">[{i + 1}]</span> {hostnameOf(url)}
+                          <span className="text-[color:var(--color-praxis-emerald-700)]">[{i + 1}]</span> {hostnameOf(url)}
                         </a>
+                        <SourceTierBadge tier={null} size="xs" />
                         <button
                           type="button"
                           onClick={() => insertSourceCitation(url, i)}
-                          className="shrink-0 rounded border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:border-[#8A5A00]/40 hover:text-[#8A5A00]"
+                          className="shrink-0 rounded border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:border-[color:var(--color-praxis-emerald-500)]/40 hover:text-[color:var(--color-praxis-emerald-700)]"
                         >
                           Cite
                         </button>
@@ -1293,10 +1389,10 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
         )}
 
         {/* Editor center */}
-        <main className="flex min-w-0 flex-1 justify-center overflow-y-auto bg-[#F6F4ED] px-4 py-8 md:px-8 md:py-12">
+        <main className="flex min-w-0 flex-1 justify-center overflow-y-auto bg-[#F6F4ED] px-3 py-5 md:px-6 md:py-8 lg:px-8 lg:py-12">
           <div
             ref={editorContainerRef}
-            className="relative w-full max-w-[820px] rounded-[3px] border border-slate-200 bg-white px-[64px] py-[72px] shadow-[0_18px_50px_-16px_rgba(7,12,22,0.35),0_2px_6px_-2px_rgba(7,12,22,0.10)]"
+            className="relative w-full max-w-[820px] rounded-[3px] border border-slate-200 bg-white px-5 py-10 shadow-[0_18px_50px_-16px_rgba(7,12,22,0.35),0_2px_6px_-2px_rgba(7,12,22,0.10)] sm:px-10 sm:py-12 lg:px-[64px] lg:py-[72px]"
           >
             {/* Page corner marks (museum-style) */}
             <span aria-hidden className="pointer-events-none absolute left-3 top-3 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-300">
@@ -1305,9 +1401,9 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
             <span aria-hidden className="pointer-events-none absolute right-3 top-3 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-300">
               A4 · 1/1
             </span>
-            <div className="mb-6 rounded-lg border border-[#E8B931]/30 bg-[#FAF8F2] px-4 py-3">
+            <div className="mb-6 rounded-lg border border-[color:var(--color-praxis-emerald-300)]/35 bg-[color:var(--color-praxis-emerald-50)] px-4 py-3">
               <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                <span className="text-[#8A5A00]">Writing from context</span>
+                <span className="text-[color:var(--color-praxis-emerald-700)]">Writing from context</span>
                 <span aria-hidden className="h-1 w-1 rounded-full bg-slate-300" />
                 <span>{activeSituation?.name ?? 'No situation core'}</span>
                 <span aria-hidden className="h-1 w-1 rounded-full bg-slate-300" />
@@ -1320,6 +1416,37 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
               </div>
             </div>
             <EditorContent editor={editor} />
+            {redTeamAnnotations.length ? (
+              <aside
+                className="absolute left-[calc(100%+16px)] top-24 hidden w-64 space-y-2 xl:block"
+                data-testid="memo-red-team-annotations"
+                aria-label="Red-team review annotations"
+              >
+                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[color:var(--color-praxis-emerald-700)]">Red-team comments</p>
+                {redTeamAnnotations.map((annotation) => (
+                  <article
+                    key={annotation.id}
+                    className="rounded-md border border-rose-200 bg-white px-3 py-2 text-[11px] leading-4 shadow-sm"
+                    data-testid="memo-red-team-annotation"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-rose-700">
+                        P{annotation.affectedParagraph}
+                      </span>
+                      <span className={cn(
+                        'rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase',
+                        annotation.severity === 'critical' || annotation.severity === 'high'
+                          ? 'bg-rose-50 text-rose-700'
+                          : 'bg-amber-50 text-amber-700',
+                      )}>
+                        {annotation.severity}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-slate-700">{annotation.challenge}</p>
+                  </article>
+                ))}
+              </aside>
+            ) : null}
             <SourceMentionMenu editor={editor} situationId={activeSituation?.id ?? null} />
             {slashAt && (
               <div
@@ -1342,7 +1469,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                         onClick={() => runSlashCommand(cmd.id)}
                         className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-slate-50"
                       >
-                        <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#8A5A00]" />
+                        <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[color:var(--color-praxis-emerald-700)]" />
                         <span className="min-w-0">
                           <span className="block text-sm font-medium text-slate-900">{cmd.label}</span>
                           <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">{cmd.hint}</span>
@@ -1360,15 +1487,15 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
         {askOpen && (
           <aside
             className={cn(
-              'h-full w-[360px] shrink-0 flex-col overflow-hidden border-l border-slate-200 bg-white md:flex',
+              'h-full w-[360px] shrink-0 flex-col overflow-hidden border-l border-slate-200 bg-white lg:flex',
               mobilePane === 'ask'
-                ? 'fixed inset-y-0 right-0 z-40 flex w-[90vw] max-w-sm shadow-[var(--shadow-modal)] md:static md:w-[360px] md:shadow-none'
+                ? 'fixed inset-x-0 bottom-0 z-40 flex max-h-[82vh] w-full rounded-t-2xl border-l-0 border-t border-slate-200 bg-white shadow-[var(--shadow-modal)] lg:static lg:h-full lg:w-[360px] lg:max-h-none lg:rounded-none lg:border-l lg:border-t-0 lg:shadow-none'
                 : 'hidden',
             )}
           >
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2.5">
               <span className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#8A5A00]" />
+                <Sparkles className="h-4 w-4 text-[color:var(--color-praxis-emerald-700)]" />
                 <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">Ask PRAXIS</span>
               </span>
               <button
@@ -1380,8 +1507,8 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>
             </div>
-            <div className="border-b border-slate-200 bg-[#FAF8F2] px-4 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8A5A00]">Using</p>
+            <div className="border-b border-slate-200 bg-[color:var(--color-praxis-emerald-50)] px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-praxis-emerald-700)]">Using</p>
               <p className="mt-1 text-[11px] leading-4 text-slate-700">{usingRow}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {[
@@ -1397,7 +1524,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                       void runWriterPrompt({ prompt: action.prompt, mode: action.label === 'Rewrite' ? 'soften' : 'ask', insert: action.insert }).catch(() => undefined);
                     }}
                     disabled={askPending || !editor}
-                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-[#8A5A00]/40 hover:text-[#8A5A00] disabled:opacity-40"
+                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-[color:var(--color-praxis-emerald-500)]/40 hover:text-[color:var(--color-praxis-emerald-700)] disabled:opacity-40"
                   >
                     {action.label}
                   </button>
@@ -1406,9 +1533,13 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
             </div>
             <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
               {turns.length === 0 ? (
-                <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 p-3 text-[12px] leading-5 text-slate-600">
-                  Ask anything about the active capsule. Insert any answer directly into the memo.
-                </div>
+                <EmptyState
+                  icon={MessageSquare}
+                  label="No memo chat yet."
+                  hint="Ask anything about the active capsule. Insert any answer directly into the memo."
+                  testId="memo-ask-empty"
+                  className="min-h-28 p-3"
+                />
               ) : (
                 turns.map((turn) => (
                   <div
@@ -1419,7 +1550,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                     )}
                   >
                     {turn.role === 'praxis' && (
-                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8A5A00]">PRAXIS</p>
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-praxis-emerald-700)]">PRAXIS</p>
                     )}
                     <p className="whitespace-pre-wrap">{turn.text}</p>
                     {turn.role === 'praxis' && (
@@ -1454,7 +1585,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                   onChange={(e) => setAskInput(e.target.value)}
                   rows={2}
                   placeholder="Ask PRAXIS about the active capsule…"
-                  className="min-h-[44px] w-full resize-none rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#8A5A00] focus:outline-none"
+                  className="min-h-[44px] w-full resize-none rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[color:var(--color-praxis-emerald-500)] focus:outline-none"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
@@ -1503,7 +1634,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
       </div>
 
       {/* Mobile floating Sources / Ask toggle (hidden at md+) */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-3 z-50 flex justify-center md:hidden">
+      <div className="pointer-events-none fixed inset-x-0 bottom-3 z-50 flex justify-center lg:hidden">
         <div className="pointer-events-auto inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-1 py-1 shadow-lg">
           <button
             type="button"
@@ -1536,7 +1667,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
           type="button"
           aria-label="Close panel"
           onClick={() => setMobilePane(null)}
-          className="fixed inset-0 z-30 bg-black/30 md:hidden"
+          className="fixed inset-0 z-30 bg-black/30 lg:hidden"
         />
       ) : null}
 
@@ -1584,16 +1715,16 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
           margin: 6px 0;
         }
         .memo-editor blockquote {
-          border-left: 3px solid #E8B931;
+          border-left: 3px solid var(--color-praxis-emerald-500);
           margin: 16px 0;
           padding: 4px 16px;
           color: #334155;
-          background: #FAF8F2;
+          background: var(--color-praxis-emerald-50);
         }
         .memo-editor strong { font-weight: 700; }
         .memo-editor em { font-style: italic; color: #334155; }
-        .memo-editor sup { font-family: 'JetBrains Mono', ui-monospace, monospace; color: #8A5A00; font-size: 0.7em; }
-        .memo-editor a { color: #1B3A5C; text-decoration: underline; text-decoration-color: rgba(232,185,49,0.6); text-underline-offset: 2px; }
+        .memo-editor sup { font-family: 'JetBrains Mono', ui-monospace, monospace; color: var(--color-praxis-emerald-700); font-size: 0.7em; }
+        .memo-editor a { color: #1B3A5C; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--color-praxis-emerald-500) 60%, transparent); text-underline-offset: 2px; }
         .memo-editor .praxis-language-violation {
           background: rgba(251, 191, 36, 0.26);
           border-bottom: 2px solid rgba(180, 83, 9, 0.8);
@@ -1620,7 +1751,7 @@ function LibrarySection({
       href={href}
       className="flex items-start gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-2 text-[12px] hover:border-slate-300"
     >
-      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#8A5A00]" />
+      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[color:var(--color-praxis-emerald-700)]" />
       <span className="min-w-0">
         <span className="block truncate font-semibold text-slate-900">{title}</span>
         <span className="block truncate text-[11px] text-slate-500">{subtitle}</span>
@@ -1652,7 +1783,7 @@ function ToolbarButton({
       className={cn(
         'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border text-slate-600 transition',
         active
-          ? 'border-[#8A5A00]/40 bg-[#FAF8F2] text-[#8A5A00]'
+          ? 'border-[color:var(--color-praxis-emerald-500)]/40 bg-[color:var(--color-praxis-emerald-50)] text-[color:var(--color-praxis-emerald-700)]'
           : 'border-transparent hover:border-slate-200 hover:bg-white hover:text-slate-900',
       )}
     >

@@ -54,6 +54,33 @@ const baseRun: AgentRun = {
         { id: 'verify', label: 'Verify', status: 'pending' },
       ],
     },
+    failureSummary: {
+      schemaVersion: 1,
+      category: 'search_evidence_failed',
+      failedPhase: 'search-evidence',
+      executionMode: 'research-memo',
+      policyAgentId: 'research-memo',
+      errorName: 'Error',
+      sanitizedError: 'Grounding failed at https://internal.example token=secret',
+      retryGuidance: 'Check source/grounding provider configuration, then retry the run.',
+      lastEventBeforeFailure: {
+        eventId: 'event-context',
+        eventType: 'praxis.context_resolved',
+        message: 'Context resolved.',
+        phase: 'context_resolved',
+        createdAt: '2026-05-30T10:00:30.000Z',
+      },
+      failingToolCall: {
+        toolCallId: null,
+        toolId: 'grounded-search',
+        status: 'failed',
+        risk: null,
+        error: 'Grounding failed at https://internal.example token=secret',
+        startedAt: null,
+        completedAt: null,
+      },
+      createdAt: '2026-05-30T10:01:00.000Z',
+    },
   },
   createdAt: '2026-05-30T10:00:00.000Z',
   updatedAt: '2026-05-30T10:00:00.000Z',
@@ -105,9 +132,19 @@ describe('AgentRun Firestore mirror', () => {
         eventCount: 1,
         latestEventType: 'run.dispatched',
       },
+      failureSummary: {
+        category: 'search_evidence_failed',
+        sanitizedError: 'Grounding failed at [redacted-url] token=[REDACTED]',
+        failingToolCall: {
+          toolId: 'grounded-search',
+          error: 'Grounding failed at [redacted-url] token=[REDACTED]',
+        },
+      },
     });
     expect(snapshot.steps).toHaveLength(2);
     expect(snapshot.sourceReceiptIds).toEqual(['src-1']);
+    expect(JSON.stringify(snapshot)).not.toContain('internal.example');
+    expect(JSON.stringify(snapshot)).not.toContain('token=secret');
   });
 
   it('builds event mirrors for onSnapshot timelines without exposing another owner', () => {

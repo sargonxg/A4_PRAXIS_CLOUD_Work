@@ -12,6 +12,7 @@ describe('Ask source preview panel contract', () => {
     expect(source).toContain('sourceReceiptHref');
     expect(source).toContain('extractionFallbackLabel');
     expect(source).toContain('Source receipt');
+    expect(source).toContain('SourceTierBadge');
   });
 
   it('renders follow-up chips as composer actions', () => {
@@ -55,6 +56,10 @@ describe('Ask source preview panel contract', () => {
     expect(answerQualityStripSource).toContain('contextRepairActions');
     expect(answerQualityStripSource).toContain('contextDiagnostics');
     expect(answerQualityStripSource).toContain('How PRAXIS used context');
+    expect(answerQualityStripSource).toContain('evidence-coverage-meter');
+    expect(answerQualityStripSource).toContain('Find sources for gaps');
+    expect(answerQualityStripSource).toContain('onQueueSourceGapScout');
+    expect(source).toContain("policyAgentId: 'source-gap-scout'");
     expect(source.indexOf('AnswerQualityStrip')).toBeLessThan(source.indexOf('OrchestrationReceiptPanel'));
   });
 

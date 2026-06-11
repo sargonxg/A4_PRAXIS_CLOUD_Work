@@ -76,10 +76,10 @@ export function FloatingPraxis({ hideLauncher = false }: { hideLauncher?: boolea
             exit={{ scale: 0.9, opacity: 0, y: 8 }}
             transition={{ type: 'spring', stiffness: 240, damping: 28 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-24 right-4 z-[60] flex min-h-11 items-center gap-2 rounded-[var(--radius-lg)] border border-[color:var(--color-gold-500)]/30 bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-[var(--shadow-float)] ring-1 ring-white/10 transition-transform hover:-translate-y-0.5 md:bottom-6 md:right-6"
+            className="fixed bottom-24 right-4 z-[60] flex min-h-11 items-center gap-2 rounded-[var(--radius-lg)] border border-[color:var(--color-praxis-emerald-500)]/30 bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-[var(--shadow-float)] ring-1 ring-white/10 transition-transform hover:-translate-y-0.5 md:bottom-6 md:right-6"
             aria-label="Ask PRAXIS"
           >
-            <Sparkles className="h-4 w-4 text-[color:var(--color-gold-300)]" />
+            <Sparkles className="h-4 w-4 text-[color:var(--color-praxis-emerald-300)]" />
             <span>Ask PRAXIS</span>
           </motion.button>
         ) : null}
@@ -105,8 +105,8 @@ export function FloatingPraxis({ hideLauncher = false }: { hideLauncher?: boolea
             >
               <header className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] bg-[color:var(--color-gold-500)]/12">
-                    <Sparkles className="h-4 w-4 text-[color:var(--color-gold-300)]" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] bg-[color:var(--color-praxis-emerald-500)]/12">
+                    <Sparkles className="h-4 w-4 text-[color:var(--color-praxis-emerald-300)]" />
                   </div>
                   <div>
                     <h2 className="text-sm font-semibold text-white">Ask PRAXIS</h2>
@@ -119,7 +119,7 @@ export function FloatingPraxis({ hideLauncher = false }: { hideLauncher?: boolea
                   <button
                     type="button"
                     onClick={() => window.dispatchEvent(new CustomEvent('open-calibration-modal'))}
-                    className="rounded-[var(--radius-md)] p-1.5 text-slate-400 hover:bg-slate-900 hover:text-[color:var(--color-gold-300)]"
+                    className="rounded-[var(--radius-md)] p-1.5 text-slate-400 hover:bg-slate-900 hover:text-[color:var(--color-praxis-emerald-300)]"
                     aria-label="Inspect calibration"
                   >
                     <Eye className="h-3.5 w-3.5" />

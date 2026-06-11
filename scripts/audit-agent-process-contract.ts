@@ -33,8 +33,12 @@ requireIncludes('src/lib/agent-runtime/postgres.ts', [
 
 requireIncludes('src/lib/agent-runtime/worker.ts', [
   'executeResearchMemoAgentRun',
+  'executeSourceGapScoutAgentRun',
+  'executeDailyBriefAgentRun',
   'buildCapsuleWorkerContext',
   'mirrorWorkerEvent',
+  "target: 'sourceGap'",
+  "sourceType: 'agent'",
   'saveMemoDraft',
   'outputHrefFromMetadata',
 ]);
@@ -65,6 +69,8 @@ requireIncludes('src/lib/agent-runtime/adk-bridge.ts', [
 
 requireIncludes('src/lib/product/policy-agents.ts', [
   "id: 'research-memo'",
+  "id: 'source-gap-scout'",
+  "id: 'daily-brief'",
   "id: 'sourceability-reviewer'",
   "id: 'red-team-analyst'",
   "id: 'handover-builder'",

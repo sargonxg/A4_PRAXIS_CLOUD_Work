@@ -9,12 +9,15 @@ import {
 
 const LOCAL_STACK_KEY = 'praxis-active-context-stack';
 
-export function useActiveContextStack() {
+export function useActiveContextStack({ remote = true }: { remote?: boolean } = {}) {
   const [stack, setStack] = useState<ActiveContextStackState>(() => readLocalStack() ?? defaultActiveContextStack());
   const [persisted, setPersisted] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  const [hydrated, setHydrated] = useState(!remote);
 
   useEffect(() => {
+    if (!remote) {
+      return undefined;
+    }
     let cancelled = false;
     const localStack = readLocalStack();
     fetch('/api/workspace/context-stack')
@@ -34,12 +37,13 @@ export function useActiveContextStack() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [remote]);
 
   async function saveStack(patch: Partial<ActiveContextStackState>) {
     const next = sanitizeActiveContextStack({ ...stack, ...patch });
     setStack(next);
     writeLocalStack(next);
+    if (!remote) return next;
     const response = await fetch('/api/workspace/context-stack', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },

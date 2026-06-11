@@ -99,7 +99,7 @@ export function CalibrationTransparencyModal() {
                 <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">
                   <span className="font-mono text-slate-500">audit</span>
                   <span aria-hidden className="h-px w-4 bg-slate-400" />
-                  <span className="text-[#8A5A00]">what is about to run</span>
+                  <span className="text-[color:var(--color-praxis-emerald-700)]">what is about to run</span>
                 </p>
                 <h2 className="mt-1 font-serif text-xl text-slate-950">
                   Final merged system prompt

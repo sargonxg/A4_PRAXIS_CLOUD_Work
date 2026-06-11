@@ -102,7 +102,7 @@ export function FixThisFirstPanel({
           <ShieldAlert className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8A5A00]">Thin capsule</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-praxis-emerald-700)]">Thin capsule</p>
           <h3 className="mt-1 font-serif text-xl text-slate-950">{title}</h3>
           {toolHint ? (
             <p className="mt-1 text-sm text-slate-700">{toolHint}</p>
@@ -129,7 +129,7 @@ export function FixThisFirstPanel({
                       {row.status}
                     </span>
                   </span>
-                  <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-[#8A5A00] group-hover:text-amber-900">
+                  <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-[color:var(--color-praxis-emerald-700)] group-hover:text-[color:var(--color-praxis-emerald-900)]">
                     {CORE_REPAIR_CTA[row.kind]}
                     <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
                   </span>

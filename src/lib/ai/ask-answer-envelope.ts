@@ -15,6 +15,7 @@ import {
   type AskPackProvenanceOutputTarget,
 } from '@/lib/policy-work-file/output-targets';
 import type { ResearchGraphReceipt } from '@/lib/research-graph';
+import { resolveSourceTier, sortSourcesByTierThenRecency } from '@/lib/sources/source-trust';
 import type { MemoBlock } from '@/types/memo';
 
 export type SourcePreviewType =
@@ -44,6 +45,10 @@ export interface SourcePreviewCard {
   citationLabel?: string;
   sourceReceiptHref?: string;
   extractionFallbackLabel?: string;
+  publisher?: string;
+  date?: string;
+  reliabilityTier?: 1 | 2 | 3 | null;
+  stale?: boolean;
   confidence: number;
 }
 
@@ -204,6 +209,9 @@ export interface AskContextProvenanceChip {
   label: string;
   detail: string;
   href?: string;
+  reliabilityTier?: 1 | 2 | 3 | null;
+  date?: string | null;
+  stale?: boolean | null;
   tone: 'inspired' | 'grounded' | 'review';
 }
 
@@ -363,8 +371,11 @@ export function buildResearchGraphSourcePreviewCards(receipts: ResearchGraphRece
 
 export function buildSourcePreviewCards(input: BuildSourcePreviewCardsInput): SourcePreviewCard[] {
   const cards: SourcePreviewCard[] = [];
+  const capsuleSourceRefs = sourceRefDetailsFromEvidencePack(input.evidencePack);
+  const sourceById = new Map(capsuleSourceRefs.map((source) => [source.sourceId, source]));
 
   for (const paragraph of input.evidencePack?.sourcedParagraphs ?? []) {
+    const source = paragraph.sourceReceiptId ? sourceById.get(paragraph.sourceReceiptId) : null;
     cards.push({
       id: `${paragraph.documentId}:${paragraph.chunkId}`,
       title: `Uploaded document ${paragraph.documentId}`,
@@ -380,6 +391,10 @@ export function buildSourcePreviewCards(input: BuildSourcePreviewCardsInput): So
       citationLabel: paragraph.citationLabel,
       sourceReceiptHref: paragraph.sourceReceiptId ? receiptHref(paragraph.sourceReceiptId) : undefined,
       extractionFallbackLabel: paragraph.pageRef || paragraph.paragraphRef ? undefined : 'Text extraction only',
+      publisher: source?.publisher ?? undefined,
+      date: source?.date ?? undefined,
+      reliabilityTier: resolveSourceTier(source),
+      stale: source?.stale ?? undefined,
       confidence: clamp01(paragraph.confidence),
     });
   }
@@ -413,14 +428,12 @@ export function buildSourcePreviewCards(input: BuildSourcePreviewCardsInput): So
     });
   }
 
-  const capsuleSourceRefs = sourceRefDetailsFromEvidencePack(input.evidencePack);
   const sourceReceiptIds = uniqueStrings([
     ...(input.evidencePack?.sourceReceiptIds ?? []),
     ...capsuleSourceRefs.map((source) => source.sourceId),
   ]);
-  const capsuleSourceById = new Map(capsuleSourceRefs.map((source) => [source.sourceId, source]));
   for (const sourceReceiptId of sourceReceiptIds) {
-    const source = capsuleSourceById.get(sourceReceiptId);
+    const source = sourceById.get(sourceReceiptId);
     const locatorParts = [
       source?.publisher,
       source?.date,
@@ -437,6 +450,10 @@ export function buildSourcePreviewCards(input: BuildSourcePreviewCardsInput): So
       sourceReceiptHref: receiptHref(sourceReceiptId),
       locatorLabel: locatorParts.length ? locatorParts.join(' / ') : undefined,
       citationLabel: source?.citation ?? undefined,
+      publisher: source?.publisher ?? undefined,
+      date: source?.date ?? undefined,
+      reliabilityTier: resolveSourceTier(source),
+      stale: source?.stale ?? undefined,
       confidence: clamp01(source?.confidence ?? 0.58),
     });
   }
@@ -456,7 +473,7 @@ export function buildSourcePreviewCards(input: BuildSourcePreviewCardsInput): So
     });
   }
 
-  return dedupeCards(cards).slice(0, 12);
+  return sortSourcesByTierThenRecency(dedupeCards(cards)).slice(0, 12);
 }
 
 export function buildAskAnswerEnvelope(input: {
@@ -472,7 +489,8 @@ export function buildAskAnswerEnvelope(input: {
   researchGraphReceipts?: ResearchGraphReceipt[];
   contextEnrichment?: ContextEnrichmentReceipt;
 }): AskAnswerEnvelope {
-  const claimGrounding = groundClaims(input.answer, input.sourceCards);
+  const sourceCards = sortSourcesByTierThenRecency(input.sourceCards);
+  const claimGrounding = groundClaims(input.answer, sourceCards);
   const sourceabilityVerdicts = buildSourceabilityClaimVerdicts(claimGrounding.map((claim, index) => ({
     id: `claim:${stableTinyHash(`${index}:${claim.claim}:${claim.sourceCardIds.join('|')}`)}`,
     claim: claim.claim,
@@ -487,7 +505,7 @@ export function buildAskAnswerEnvelope(input: {
   const sourceRefreshDocket = buildCapsuleSourceRefreshDocket({
     capsuleId: input.provenance?.capsuleId ?? input.orchestrationReceipt?.capsule.capsuleId ?? null,
     capsuleVersion: input.provenance?.capsuleVersion ?? null,
-    sourceCards: input.sourceCards,
+    sourceCards,
     gaps: input.gaps ?? [],
   });
   const groundingReceipt = buildCapsuleGroundingReceipt({
@@ -495,7 +513,7 @@ export function buildAskAnswerEnvelope(input: {
     capsuleVersion: sourceRefreshDocket.capsuleVersion,
     catalogVersion: input.provenance?.catalogVersion ?? undefined,
     provenance: input.provenance,
-    sourceCards: input.sourceCards,
+    sourceCards,
     claimLedger,
     memoryReceipt,
     sourceRefreshDocket,
@@ -506,7 +524,7 @@ export function buildAskAnswerEnvelope(input: {
     memoryReceipt,
   });
   const sourceAudit = buildSourceAudit({
-    sourceCards: input.sourceCards,
+    sourceCards,
     gaps: input.gaps ?? [],
     claimLedgerSummary,
   });
@@ -515,7 +533,7 @@ export function buildAskAnswerEnvelope(input: {
     title: titleForPrompt(input.prompt),
     prompt: input.prompt,
     answer: input.answer,
-    sourceCards: input.sourceCards,
+    sourceCards,
     gaps: input.gaps ?? [],
     unsupportedClaims: claimGrounding
       .filter((claim) => claim.supportLabel === 'unsupported' || claim.supportLabel === 'contradicted')
@@ -557,7 +575,7 @@ export function buildAskAnswerEnvelope(input: {
     orchestrationReceipt: input.orchestrationReceipt,
   });
   const contextProvenanceChips = buildAskContextProvenanceChips({
-    sourceCards: input.sourceCards,
+    sourceCards,
     sourceAudit,
     documentPackCandidate: pack,
     provenance: input.provenance,
@@ -570,7 +588,7 @@ export function buildAskAnswerEnvelope(input: {
       paragraphShape: 'thesis, evidence, caveat, next move',
       sourcePosture: 'always_visible',
     },
-    sourceCards: input.sourceCards,
+    sourceCards,
     claimGrounding,
     sourceabilityVerdicts,
     claimLedgerSummary,
@@ -590,7 +608,7 @@ export function buildAskAnswerEnvelope(input: {
     contextRepairActions,
     capsuleSuggestions: input.capsuleSuggestions ?? [],
     researchGraphReceipts: input.researchGraphReceipts ?? [],
-    followUps: followUpsFor(input.intent, input.sourceCards.length, input.researchGraphReceipts?.length ?? 0),
+    followUps: followUpsFor(input.intent, sourceCards.length, input.researchGraphReceipts?.length ?? 0),
     documentPackCandidate: pack,
     orchestrationReceipt: input.orchestrationReceipt,
   };
@@ -707,6 +725,9 @@ function buildAskContextProvenanceChips(input: {
       label: `${input.sourceAudit.sourceReceiptCount || 1} source receipt${input.sourceAudit.sourceReceiptCount === 1 ? '' : 's'}`,
       detail: sourceReceiptCard.title || sourceReceiptCard.label,
       href: sourceReceiptCard.sourceReceiptHref ?? (sourceReceiptCard.sourceReceiptId ? receiptHref(sourceReceiptCard.sourceReceiptId) : sourceReceiptCard.url),
+      reliabilityTier: sourceReceiptCard.reliabilityTier ?? null,
+      date: sourceReceiptCard.date ?? null,
+      stale: sourceReceiptCard.stale ?? null,
       tone: 'grounded',
     });
   } else if (input.sourceCards.length) {
@@ -717,6 +738,9 @@ function buildAskContextProvenanceChips(input: {
       label: `${input.sourceCards.length} source preview${input.sourceCards.length === 1 ? '' : 's'}`,
       detail: firstSource.title || firstSource.label,
       href: firstSource.url,
+      reliabilityTier: firstSource.reliabilityTier ?? null,
+      date: firstSource.date ?? null,
+      stale: firstSource.stale ?? null,
       tone: 'grounded',
     });
   }
@@ -1417,7 +1441,8 @@ interface CapsuleSourceRefDetail {
   url: string | null;
   publisher: string | null;
   date: string | null;
-  reliabilityTier: string | number | null;
+  reliabilityTier: 1 | 2 | 3 | null;
+  stale: boolean;
   snippet: string | null;
   relevance: string | null;
   citation: string | null;
@@ -1437,6 +1462,7 @@ function sourceRefDetailsFromEvidencePack(pack: CapsuleEvidencePack | null | und
         publisher: null,
         date: null,
         reliabilityTier: null,
+        stale: false,
         snippet: null,
         relevance: null,
         citation: null,
@@ -1460,7 +1486,8 @@ function sourceRefDetailsFromEvidencePack(pack: CapsuleEvidencePack | null | und
       url: stringFromRecord(record, 'url'),
       publisher: stringFromRecord(record, 'publisher'),
       date: stringFromRecord(record, 'date'),
-      reliabilityTier: stringFromRecord(record, 'reliabilityTier') ?? numberFromRecord(record, 'reliabilityTier'),
+      reliabilityTier: resolveSourceTier(record),
+      stale: record.stale === true,
       snippet: stringFromRecord(record, 'snippet') ?? stringFromRecord(record, 'quotePreview'),
       relevance: stringFromRecord(record, 'relevance') ?? stringFromRecord(record, 'sourceNote'),
       citation: stringFromRecord(record, 'citation') ?? stringFromRecord(record, 'citationLabel'),

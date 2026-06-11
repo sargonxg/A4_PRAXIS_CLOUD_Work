@@ -138,7 +138,7 @@ function TrustPostureDrawer({
             <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700">
               <span className="font-mono text-slate-500">posture</span>
               <span aria-hidden className="h-px w-4 bg-slate-400" />
-              <span className="text-[#8A5A00]">trust strata</span>
+              <span className="text-[color:var(--color-praxis-emerald-700)]">trust strata</span>
             </p>
             <h2 className="mt-2 font-serif text-2xl text-slate-950">
               {situationName ?? 'Current capsule'}

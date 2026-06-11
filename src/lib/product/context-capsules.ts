@@ -1040,12 +1040,16 @@ export interface CapsuleImprovementProposal {
 }
 
 export const HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS = [
-  'starter-situation-crisis-strategy-room-human-gated',
-  'starter-situation-un-mandate-renewal-strategy',
-  'starter-situation-humanitarian-access-negotiation',
-  'starter-situation-sourceable-country-risk-judgment',
-  'starter-situation-mediation-process-memory',
-  'starter-situation-narrative-legitimacy-audit',
+  'starter-situation-haiti-gang-mss-access-watch',
+  'starter-situation-sahel-aes-ecowas-transition-watch',
+  'starter-situation-kosovo-serbia-normalization-implementation',
+  'starter-situation-armenia-azerbaijan-peace-connectivity',
+  'starter-situation-yemen-roadmap-ceasefire-economy',
+  'starter-situation-libya-ceasefire-elections-institutions',
+  'starter-situation-baltic-undersea-infrastructure-resilience',
+  'starter-situation-south-china-sea-ayungin-resupply',
+  'starter-situation-moldova-energy-hybrid-resilience',
+  'starter-situation-gerd-nile-water-diplomacy',
 ] as const;
 
 export const HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY = {
@@ -1063,7 +1067,7 @@ export const CAPSULE_WOW_DEMO_STARTER_IDS = [
   'starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026',
 ] as const;
 
-export const CAPSULE_STARTER_CATALOG_VERSION = '2026-05-31-graphlite-advisory-projection-v17';
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-06-11-graphlite-advisory-projection-v17-human-gated-depth';
 export const CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS = 12_000;
 export const CAPSULE_STARTER_PROMPT_MAX_CHARS = 16_000;
 export const CAPSULE_CONTEXT_CAPTURE_FIXTURE_STARTER_IDS = [
@@ -6761,7 +6765,7 @@ const EXPERT_POLICY_CAPSULE_WAVE: CapsuleStarterDefinition[] = [
 ];
 
 interface HumanGatedPolicyJudgmentStarterInput {
-  starterId: (typeof HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS)[number];
+  starterId: string;
   domain: CapsuleStarterDomain;
   label: string;
   summary: string;
@@ -6988,7 +6992,7 @@ const HUMAN_GATED_POLICY_JUDGMENT_CAPSULES: CapsuleStarterDefinition[] = [
   }),
 ];
 
-export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
+const RAW_CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
   ...HUMAN_GATED_POLICY_JUDGMENT_CAPSULES,
   starter('starter-situation-sustainability-transition', 'situation', 'sustainability', 'Sustainability transition capsule', 'A source-backed sustainability situation capsule for CSRD/ESRS-style reporting, transition risk, supply-chain exposure, and assurance gaps.', 'Use this when the work concerns climate-transition planning, sustainability reporting, supplier risk, or board-ready ESG posture. PRAXIS should separate regulatory requirements, company claims, value-chain evidence, and confidence gaps before drafting.', ['sustainability', 'csrd', 'esrs', 'issb', 'supply-chain'], { situationCoreId: 'starter-situation-sustainability-transition', pathCoreId: 'climate-development', sourceCoreIds: ['ifrs-s1-s2', 'eu-esrs'], toolCoreIds: ['grounded-research', 'sourceability'], outputCoreIds: ['country-risk-card'] }, ['grounded-research', 'sourceability', 'memo-drafter'], ['country-risk-card', 'options-memo'], ['starter-user-esg-sustainability-lead', 'starter-tool-source-pack-builder', 'starter-output-sustainability-risk-brief'], {
     readinessStars: 5,
@@ -7905,6 +7909,949 @@ export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
     aiUseGuidance: 'Use this as a monitoring artifact. Verify indicators and dates, show confidence and gaps, and avoid overstating forecasts.',
   }),
 ];
+
+type HumanGatedPolicyJudgmentAcoEntityType =
+  | 'Actor'
+  | 'Claim'
+  | 'Event'
+  | 'Interest'
+  | 'Constraint'
+  | 'Leverage'
+  | 'Commitment'
+  | 'Narrative'
+  | 'Risk';
+
+interface HumanGatedPolicyJudgmentPhaseBRewrite {
+  purpose: string;
+  humanJob: string;
+  researchScenario: string;
+  researchUse: string;
+  evidenceGaps: string[];
+  claimReviewPolicy: string;
+  refreshCadence: string;
+  nextIdeas: string[];
+  tacitKnowledge: CapsuleStarterTacitKnowledge;
+  graph: {
+    nodeCount: number;
+    edgeCount: number;
+    entityTypes: HumanGatedPolicyJudgmentAcoEntityType[];
+    edgeTypes: string[];
+    focus: string;
+    entities: Partial<Record<HumanGatedPolicyJudgmentAcoEntityType, string[]>>;
+  };
+}
+
+const HUMAN_GATED_POLICY_JUDGMENT_PHASE_B_REWRITES: Record<string, HumanGatedPolicyJudgmentPhaseBRewrite> = {
+  'starter-situation-haiti-gang-mss-access-watch': {
+    purpose: 'Use this as a Haiti access-and-protection working file: BINUH 2026 mission posture, 2024 OCHA access vocabulary, MSS mandate boundaries, displacement pressure, and rights allegations stay in separate lanes before any scenario card is drafted.',
+    humanJob: 'Help a Haiti desk officer brief a narrow locality, route, or mandate question without turning public security reports into operational advice or unsupported attribution.',
+    researchScenario: 'A desk officer has 30 minutes to brief whether a Haiti update is about security facts, political transition, humanitarian access, displacement, rights allegations, or MSS support posture, and which lane lacks dated receipts.',
+    researchUse: 'A human reviewer uses this capsule to build a locality-scoped access card, attach BINUH/OCHA receipts, mark allegations that need rights-source review, and decide whether a dashboard indicator is safe to reuse.',
+    evidenceGaps: [
+      'Refresh BINUH or other UN mission material for the exact date and locality before describing security posture.',
+      'Attach an OCHA-style access constraint, affected-population, and mitigation source before making humanitarian access claims.',
+      'Separate rights allegations from confirmed public mission reporting; missing OHCHR or trusted field-source receipts stay as open questions.',
+      'Confirm whether MSS support language is mandate posture, public reporting, or analytic inference.',
+    ],
+    claimReviewPolicy: 'Every Haiti row must carry a locality, source date, actor label, and claim type; security-operation and rights-allegation language remains blocked until a human reviewer applies the sourceability card.',
+    refreshCadence: 'Refresh before any Haiti brief, and again when the locality, route, mandate posture, or displacement figure changes.',
+    nextIdeas: [
+      'Build a 72-hour access route card that separates Port-au-Prince security reporting, displacement evidence, and BINUH political-transition signals.',
+      'Add a review card for each rights allegation that lacks a dated UN, OHCHR, or trusted field-source receipt.',
+      'Compare MSS support posture with humanitarian access constraints before recommending a risk-dashboard indicator.',
+      'Turn unresolved locality names into source-gap rows instead of smoothing them into countrywide claims.',
+    ],
+    tacitKnowledge: {
+      workingAssumptions: [
+        'Haiti analysis changes meaning at the neighborhood, route, and department level; countrywide wording is usually too coarse for operationally sensitive questions.',
+        'Mission posture, humanitarian access, rights reporting, and MSS support can share actors but not evidentiary standards.',
+      ],
+      redLines: [
+        'Do not give route, convoy, police, or armed-actor operational advice.',
+        'Do not name perpetrators, access patterns, or mandate performance as fact without a dated source receipt.',
+        'Do not externalize rights allegations or protection judgments before human review.',
+      ],
+      approvalPolitics: [
+        'UN mission language can be public and cautious while NGO or field access claims may be sensitive, partial, or unsafe to generalize.',
+        'Escalate if the user asks for attribution, deployment performance, or humanitarian negotiations rather than a public-source brief.',
+      ],
+      practicalHeuristics: [
+        'Start every row with place, date, actor, claim type, and source id.',
+        'Use separate columns for security incident, access constraint, protection allegation, displacement signal, and political-transition milestone.',
+        'Treat missing locality or date as a blocker, not a minor caveat.',
+      ],
+      stakeholderSensitivities: [
+        'Affected communities, Haitian authorities, UN mission staff, humanitarian actors, and MSS contributors may read the same claim differently.',
+        'Over-broad wording can turn a sourceable access note into an unsafe security or rights conclusion.',
+      ],
+      caveats: [
+        'Public mission pages and access guidance orient the analysis; they do not prove current field conditions.',
+        'Security, humanitarian, and rights claims require live source review before reliance.',
+        'Advisory graph or memory candidates remain non-canonical until a review card is applied.',
+      ],
+    },
+    graph: {
+      nodeCount: 70,
+      edgeCount: 68,
+      entityTypes: ['Actor', 'Event', 'Claim', 'Risk', 'Constraint', 'Narrative', 'Commitment'],
+      edgeTypes: ['REPORTS', 'CONSTRAINS', 'AFFECTS_ACCESS', 'REQUIRES_REVIEW', 'CONFLICTS_WITH', 'UPDATES'],
+      focus: 'Haiti locality, access, protection, and mandate posture',
+      entities: {
+        Actor: ['BINUH', 'MSS support lane', 'Haitian transition authority', 'humanitarian access negotiator'],
+        Event: ['mission update', 'access restriction', 'displacement movement', 'rights-reporting incident'],
+        Claim: ['security posture claim', 'access feasibility claim', 'mandate performance claim'],
+        Risk: ['over-attribution risk', 'operational-sensitivity risk', 'rights-allegation overclaim'],
+        Constraint: ['missing locality', 'stale route evidence', 'mandate boundary'],
+        Narrative: ['security stabilization frame', 'humanitarian access frame', 'rights accountability frame'],
+        Commitment: ['MSS support commitment', 'humanitarian mitigation action', 'review-card stop condition'],
+      },
+    },
+  },
+  'starter-situation-sahel-aes-ecowas-transition-watch': {
+    purpose: 'Use this as a Sahel regional-transition file that keeps AES, ECOWAS, UNOWAS, coastal spillover, counter-terrorism cooperation, humanitarian pressure, and legitimacy claims analytically separate before a principals memo is drafted.',
+    humanJob: 'Help a regional desk officer brief what changed in the Sahel since the latest UNOWAS lane, which actor incentive is sourced, and which cooperation or transition claim is still inference.',
+    researchScenario: 'A diplomatic team needs a 30-day regional watch note that distinguishes official transition timelines, ECOWAS-AES statements, coastal spillover risks, UN preventive diplomacy, and humanitarian stress.',
+    researchUse: 'A human reviewer uses this capsule to map actors and interests, mark inferred incentives, attach UNOWAS or regional receipts, and decide whether the next output is a principals memo, talking point, or risk card.',
+    evidenceGaps: [
+      'Refresh UNOWAS and regional organization sources before describing ECOWAS-AES cooperation or political-transition posture.',
+      'Attach separate evidence for coastal spillover, counter-terrorism, and humanitarian stress; do not let one indicator carry all three claims.',
+      'Label military cooperation and legitimacy judgments as sourced position, inferred interest, or open question.',
+      'Name the time window, state, and mechanism before drawing regional conclusions.',
+    ],
+    claimReviewPolicy: 'Sahel judgments must show actor, mechanism, date, source, and inference status; transition legitimacy or security-cooperation claims need human review before reuse.',
+    refreshCadence: 'Refresh weekly during transition deadlines, ECOWAS/AES announcements, Security Council briefings, or coastal-state incidents.',
+    nextIdeas: [
+      'Create a 30-day decision clock that separates transition milestones from security incidents and humanitarian indicators.',
+      'Build an actor-interest grid for ECOWAS, AES members, AU, UNOWAS, coastal states, and donor/security partners.',
+      'Add a source-gap card when a coastal spillover claim is supported only by regional mood language.',
+      'Draft two memo paths: preventive diplomacy options and watch-only monitoring, with different evidence thresholds.',
+    ],
+    tacitKnowledge: {
+      workingAssumptions: [
+        'Regional Sahel analysis is usually a map of overlapping mechanisms, not one conflict story.',
+        'Public positions, cooperation channels, legitimacy claims, and security facts age at different speeds.',
+      ],
+      redLines: [
+        'Do not infer private AES, ECOWAS, AU, or coastal-state intent from a single public statement.',
+        'Do not collapse counter-terrorism cooperation, political legitimacy, and humanitarian need into one confidence score.',
+        'Do not recommend operational security measures or diplomatic pressure without human review.',
+      ],
+      approvalPolitics: [
+        'Regional language can affect relations with both transition authorities and coastal partners; caveats matter as much as conclusions.',
+        'Escalate when a memo moves from monitoring to advice about recognition, sanctions, security support, or mediation posture.',
+      ],
+      practicalHeuristics: [
+        'Track each claim by actor, mechanism, source date, and decision window.',
+        'Separate official timeline from inferred willingness to comply.',
+        'Use coastal spillover only when the source names the corridor, incident type, or affected state.',
+      ],
+      stakeholderSensitivities: [
+        'Transition authorities, ECOWAS officials, UNOWAS, coastal governments, humanitarian actors, and security partners have different red lines.',
+        'A phrase that sounds neutral in a monitor can read as recognition, blame, or policy endorsement in a principals memo.',
+      ],
+      caveats: [
+        'UNOWAS and regional-source lanes orient the file; they are not a complete classified or field picture.',
+        'Security and legitimacy claims require current source review and human approval.',
+        'Actor-incentive nodes are advisory until review-card promotion.',
+      ],
+    },
+    graph: {
+      nodeCount: 72,
+      edgeCount: 69,
+      entityTypes: ['Actor', 'Interest', 'Leverage', 'Constraint', 'Risk', 'Event', 'Narrative'],
+      edgeTypes: ['SIGNALS', 'INCENTIVIZES', 'CONSTRAINS', 'SPILLOVER_RISK', 'MEDIATES', 'REQUIRES_SOURCE'],
+      focus: 'Sahel regional transition, incentives, and spillover watch',
+      entities: {
+        Actor: ['ECOWAS', 'AES member authority', 'UNOWAS', 'coastal-state government', 'AU channel'],
+        Interest: ['transition legitimacy', 'regional security cooperation', 'civilian protection', 'preventive diplomacy'],
+        Leverage: ['membership pressure', 'border cooperation', 'donor coordination', 'public communique'],
+        Constraint: ['uncertain timeline', 'fragmented regional mechanism', 'stale security indicator'],
+        Risk: ['coastal spillover', 'legitimacy overclaim', 'humanitarian deterioration'],
+        Event: ['Security Council briefing', 'transition milestone', 'regional statement', 'border incident'],
+        Narrative: ['sovereignty frame', 'regional stability frame', 'counter-terrorism frame'],
+      },
+    },
+  },
+  'starter-situation-kosovo-serbia-normalization-implementation': {
+    purpose: 'Use this as a Kosovo-Serbia implementation ledger anchored in the EEAS 2026 Dialogue lane: agreement language, municipal flashpoints, status-sensitive wording, compliance claims, and escalation signals must be separated before a negotiation prep book is generated.',
+    humanJob: 'Help a Balkan desk officer track which commitment is agreed, disputed, blocked, or not yet implemented without overstating recognition, legal status, or party compliance.',
+    researchScenario: 'A reviewer needs to brief one implementation issue, such as an association question, municipal tension, license-plate dispute, or dialogue step, while preserving exact EEAS wording and local incident caveats.',
+    researchUse: 'A human uses this capsule to build commitment rows, attach EEAS or mediation-process receipts, identify blockers, and decide which talking point needs status-sensitive legal or diplomatic review.',
+    evidenceGaps: [
+      'Tie each implementation claim to a named agreement, article, statement, or meeting record.',
+      'Refresh local incident evidence before linking municipal tension to the Dialogue track.',
+      'Separate recognition language, implementation status, and political intent in different claim rows.',
+      'Add a human review card before saying either party complied, refused, or breached an obligation.',
+    ],
+    claimReviewPolicy: 'Dialogue claims must include exact public wording, party, forum, date, and implementation status; compliance and recognition-sensitive language stays blocked until reviewed.',
+    refreshCadence: 'Refresh before each Dialogue meeting, municipal incident, EU statement, or external-use talking point.',
+    nextIdeas: [
+      'Convert the next Dialogue issue into a commitment ledger with party, obligation, evidence, blocker, and next forum.',
+      'Create a status-language checklist for phrases that could overstate recognition, compliance, or legal effect.',
+      'Map municipal flashpoints separately from the formal implementation sequence.',
+      'Draft two talking-point versions: one for implementation mechanics and one for de-escalation language.',
+    ],
+    tacitKnowledge: {
+      workingAssumptions: [
+        'Implementation analysis is not the same as status analysis; keep the legal and diplomatic layers apart.',
+        'Local incidents may shape the decision window without proving party intent.',
+      ],
+      redLines: [
+        'Do not overstate recognition, sovereignty, compliance, breach, or party intent without exact source language.',
+        'Do not merge municipal events and formal Dialogue commitments unless the source connects them.',
+        'Do not export negotiating language before human review.',
+      ],
+      approvalPolitics: [
+        'A small wording shift can be read as a status position; reviewers need to see the exact formulation.',
+        'Escalate when the output will be used in talking points, external engagement, or legal/mandate analysis.',
+      ],
+      practicalHeuristics: [
+        'Start with the commitment, then add source, party, date, implementation state, blocker, and next forum.',
+        'Use "agreed," "disputed," "not implemented," and "unclear" as separate statuses.',
+        'Write local incident rows separately before linking them to escalation risk.',
+      ],
+      stakeholderSensitivities: [
+        'Kosovo, Serbia, EU facilitators, local communities, and external partners may treat the same term as politically loaded.',
+        'Public-facing language must preserve ambiguity when the source does.',
+      ],
+      caveats: [
+        'EEAS and mediation resources provide public lanes, not a complete negotiation record.',
+        'Compliance judgments require human review and current receipts.',
+        'Graph commitments remain proposed rows until review-card apply metadata exists.',
+      ],
+    },
+    graph: {
+      nodeCount: 68,
+      edgeCount: 72,
+      entityTypes: ['Commitment', 'Actor', 'Constraint', 'Leverage', 'Claim', 'Event', 'Risk'],
+      edgeTypes: ['COMMITS_TO', 'BLOCKED_BY', 'ESCALATES', 'FACILITATED_BY', 'CONTESTS', 'REQUIRES_WORDING_REVIEW'],
+      focus: 'Kosovo-Serbia Dialogue implementation sequencing and status-sensitive language',
+      entities: {
+        Commitment: ['implementation step', 'association-related obligation', 'public statement commitment', 'next forum action'],
+        Actor: ['Kosovo authority', 'Serbia authority', 'EU facilitator', 'municipal actor', 'local community'],
+        Constraint: ['status-sensitive wording', 'municipal tension', 'unclear implementation evidence'],
+        Leverage: ['EU facilitation', 'forum sequencing', 'public statement', 'de-escalation channel'],
+        Claim: ['compliance claim', 'non-implementation claim', 'recognition-sensitive claim'],
+        Event: ['Dialogue meeting', 'local incident', 'statement release', 'implementation deadline'],
+        Risk: ['escalation risk', 'over-recognition risk', 'unsupported compliance risk'],
+      },
+    },
+  },
+  'starter-situation-armenia-azerbaijan-peace-connectivity': {
+    purpose: 'Use this as a South Caucasus peace-and-connectivity implementation file: 2025 treaty initialling language, EUMA border monitoring, ratification steps, demining assumptions, transport links, and sovereignty caveats stay distinct before a principals memo is drafted.',
+    humanJob: 'Help a South Caucasus desk officer brief which peace step is initialled, signed, ratified, monitored, contested, or merely proposed.',
+    researchScenario: 'A team needs to explain whether a treaty, border-monitoring, connectivity, demining, or confidence-building claim is ready for a decision memo and which source lane proves only partial progress.',
+    researchUse: 'A human reviewer uses this capsule to build a treaty-step ledger, separate border and connectivity assumptions, and choose which confidence-building option needs new receipts.',
+    evidenceGaps: [
+      'Attach the exact EEAS treaty or EUMA monitoring source before describing treaty status or border posture.',
+      'Separate initialling, signature, ratification, implementation, and connectivity ambition in different rows.',
+      'Do not state demining, transport, or border-security progress without a current technical or official receipt.',
+      'Mark external-support claims by instrument, actor, and date.',
+    ],
+    claimReviewPolicy: 'Each South Caucasus claim must name the procedural step, source date, actor, and implementation status; treaty and border-security language needs human review.',
+    refreshCadence: 'Refresh before ratification milestones, border incidents, EUMA updates, demining or transport-link announcements, and external circulation.',
+    nextIdeas: [
+      'Create a treaty-step board with initialled, signed, ratified, implemented, contested, and unknown columns.',
+      'Build a separate connectivity assumptions card for transport links, customs, security, and monitoring gaps.',
+      'Add a confidence-building option only after the border-monitoring and demining source lanes are refreshed.',
+      'Draft a principals memo that puts sovereignty, territorial integrity, and implementation caveats in separate paragraphs.',
+    ],
+    tacitKnowledge: {
+      workingAssumptions: [
+        'Peace-process language often signals direction without proving implementation.',
+        'Connectivity, border monitoring, demining, and treaty status require different source types.',
+      ],
+      redLines: [
+        'Do not convert initialling or public support into signature, ratification, or implementation.',
+        'Do not infer border security, demining, or transport readiness without direct evidence.',
+        'Do not externalize sovereignty or territorial-integrity wording without review.',
+      ],
+      approvalPolitics: [
+        'Status language can affect both parties and external guarantors; preserve source wording.',
+        'Escalate when a memo moves from tracking progress to recommending pressure, sequencing, or guarantees.',
+      ],
+      practicalHeuristics: [
+        'Use one row per procedural step: initialling, signature, ratification, implementation, monitoring.',
+        'Keep connectivity and border security in separate ledgers even when the same statement mentions both.',
+        'Treat confidence-building options as proposals until evidence and owner are clear.',
+      ],
+      stakeholderSensitivities: [
+        'Armenia, Azerbaijan, border communities, EU monitors, and external partners can read sequencing language as leverage.',
+        'Connectivity claims may carry security, economic, and sovereignty meanings at once.',
+      ],
+      caveats: [
+        'EEAS and EUMA sources are public orientation lanes, not a complete implementation record.',
+        'Border, demining, and transport claims need fresh receipts before reliance.',
+        'Graph connectivity nodes remain advisory until reviewed.',
+      ],
+    },
+    graph: {
+      nodeCount: 74,
+      edgeCount: 70,
+      entityTypes: ['Event', 'Commitment', 'Constraint', 'Actor', 'Interest', 'Risk', 'Claim'],
+      edgeTypes: ['PRECEDES', 'IMPLEMENTS', 'CONSTRAINED_BY', 'MONITORED_BY', 'SUPPORTS_CONFIDENCE', 'REQUIRES_RATIFICATION'],
+      focus: 'Armenia-Azerbaijan treaty steps, border monitoring, and connectivity implementation',
+      entities: {
+        Event: ['treaty initialling', 'border-monitoring update', 'connectivity announcement', 'ratification milestone'],
+        Commitment: ['normalization commitment', 'border inviolability language', 'connectivity undertaking', 'monitoring support'],
+        Constraint: ['ratification gap', 'border security uncertainty', 'demining evidence gap', 'transport-link ambiguity'],
+        Actor: ['Armenia', 'Azerbaijan', 'EU High Representative', 'EUMA', 'border community'],
+        Interest: ['sovereignty assurance', 'connectivity benefit', 'security guarantee', 'confidence-building'],
+        Risk: ['implementation spoiler', 'misstated status', 'border incident escalation'],
+        Claim: ['treaty status claim', 'monitoring claim', 'connectivity feasibility claim'],
+      },
+    },
+  },
+  'starter-situation-yemen-roadmap-ceasefire-economy': {
+    purpose: 'Use this as a Yemen roadmap file that keeps UN-led process language, ceasefire mechanics, detainee issues, economic confidence measures, humanitarian access, and regional de-escalation in separate review lanes before a negotiation prep book is generated.',
+    humanJob: 'Help a Yemen desk officer brief which roadmap element is public UN process language, party position, monitorable commitment, economic measure, or humanitarian claim.',
+    researchScenario: 'A mediation support team needs to turn a Yemen update into commitment rows without treating process optimism, detainee movement, economic measures, or humanitarian access as the same kind of evidence.',
+    researchUse: 'A human reviewer uses this capsule to convert roadmap language into monitorable commitments, identify missing verification sources, and decide what belongs in negotiation prep versus humanitarian one-pager.',
+    evidenceGaps: [
+      'Refresh OSESGY or other UN-led process sources before describing roadmap status.',
+      'Attach ceasefire guidance or terms before saying a commitment is monitorable.',
+      'Separate detainee, economy, humanitarian access, and regional de-escalation claims into different review rows.',
+      'Add verification-source gaps for any proposed monitoring or guarantee language.',
+    ],
+    claimReviewPolicy: 'Yemen rows must mark process lane, party, source date, monitorability, and verification gap; ceasefire, detainee, and humanitarian-access claims require review.',
+    refreshCadence: 'Refresh before OSESGY updates, detainee announcements, economic-measure claims, humanitarian-access changes, or ceasefire-monitoring language.',
+    nextIdeas: [
+      'Turn the roadmap into a commitment matrix with term, party, monitor, source, gap, and dispute channel.',
+      'Build a detainee and humanitarian-access blocker card separate from the ceasefire mechanics.',
+      'Add an economic confidence-measure ledger before drafting options about salary, ports, banking, or revenue questions.',
+      'Draft negotiation prep with a verification annex rather than burying monitoring gaps in prose.',
+    ],
+    tacitKnowledge: {
+      workingAssumptions: [
+        'Yemen process updates can be useful without proving that parties accepted implementable terms.',
+        'Ceasefire design, detainee issues, economy, and humanitarian access each require their own verification standard.',
+      ],
+      redLines: [
+        'Do not label a party as compliant, violating, or committed without a sourceable term and evidence.',
+        'Do not turn a UN process update into a settlement forecast.',
+        'Do not advise operational humanitarian or security action.',
+      ],
+      approvalPolitics: [
+        'Process language may be deliberately cautious; preserve that caution in external outputs.',
+        'Escalate when a draft names party obligations, violations, detainee movement, or humanitarian access responsibilities.',
+      ],
+      practicalHeuristics: [
+        'Translate every proposed term into observable behavior, monitor, source, and dispute channel.',
+        'Keep detainees and economic measures out of the ceasefire column unless the source links them.',
+        'Use "verification gap" before "implementation failure" when the source is incomplete.',
+      ],
+      stakeholderSensitivities: [
+        'Parties, detainee families, humanitarian actors, regional mediators, and donors may be affected by premature wording.',
+        'Economic-measure language can imply leverage or blame even when framed as technical.',
+      ],
+      caveats: [
+        'UN and ceasefire guidance sources frame the file; they do not prove current party intent.',
+        'Monitoring and compliance claims require human review.',
+        'Commitment graph rows are proposals until review-card approval.',
+      ],
+    },
+    graph: {
+      nodeCount: 69,
+      edgeCount: 73,
+      entityTypes: ['Commitment', 'Actor', 'Interest', 'Constraint', 'Leverage', 'Risk', 'Event'],
+      edgeTypes: ['MONITORED_BY', 'REQUIRES_VERIFICATION', 'SEQUENCED_WITH', 'BLOCKED_BY', 'INCENTIVIZES', 'RISKS_BREAKDOWN'],
+      focus: 'Yemen roadmap commitments, ceasefire mechanics, and economic confidence measures',
+      entities: {
+        Commitment: ['ceasefire term', 'detainee measure', 'economic confidence measure', 'humanitarian access undertaking'],
+        Actor: ['OSESGY', 'party representative', 'regional mediator', 'humanitarian actor'],
+        Interest: ['de-escalation', 'economic stabilization', 'detainee release', 'access protection'],
+        Constraint: ['missing monitor', 'ambiguous guarantee', 'source-date gap', 'party-position uncertainty'],
+        Leverage: ['regional channel', 'economic measure', 'detainee issue', 'verification mechanism'],
+        Risk: ['process overclaim', 'unverifiable term', 'humanitarian-access misstatement'],
+        Event: ['Muscat visit update', 'ceasefire discussion', 'detainee announcement', 'economic measure signal'],
+      },
+    },
+  },
+  'starter-situation-libya-ceasefire-elections-institutions': {
+    purpose: 'Use this as a Libya political-security ledger that separates UNSMIL mandate language, ceasefire maintenance, electoral track claims, unified-institution questions, armed-actor posture, and spoiler risk before a principals memo is drafted.',
+    humanJob: 'Help a Libya desk officer brief which track is political, security, institutional, electoral, or armed-actor inference, and what evidence blocks confident advice.',
+    researchScenario: 'A team needs to explain a Libya update without letting electoral ambition, ceasefire status, institutional unification, mandate renewal, and armed actor incentives collapse into one story.',
+    researchUse: 'A human reviewer uses this capsule to build track-by-track rows, attach UNSMIL and ceasefire sources, label spoiler assumptions, and decide what language needs mandate or armed-actor review.',
+    evidenceGaps: [
+      'Refresh UNSMIL source lanes before describing mission posture, electoral process, or institutional track.',
+      'Attach ceasefire monitoring or guidance evidence before making implementation or violation claims.',
+      'Separate armed-actor posture from inferred militia incentives and election feasibility.',
+      'Name which institution, track, or forum controls each claim.',
+    ],
+    claimReviewPolicy: 'Libya rows must show track, actor, source date, mandate or ceasefire basis, and inference status; armed-actor and electoral feasibility claims need review.',
+    refreshCadence: 'Refresh before UNSMIL updates, mandate changes, electoral announcements, armed-actor incidents, or ceasefire implementation claims.',
+    nextIdeas: [
+      'Build a four-track ledger for political process, ceasefire, elections, and institutions.',
+      'Create a spoiler card only after naming evidence, actor, leverage, and mitigation path.',
+      'Separate mandate-authority language from policy options in the principals memo draft.',
+      'Add a sourceability annex for armed-actor claims before turning them into risk indicators.',
+    ],
+    tacitKnowledge: {
+      workingAssumptions: [
+        'Libya analysis often fails when political, security, institutional, and electoral tracks are merged.',
+        'Armed-actor posture may be observable while motive and spoiler intent are usually inferential.',
+      ],
+      redLines: [
+        'Do not state armed-group intent, election feasibility, or ceasefire violation without a sourceable basis.',
+        'Do not imply UNSMIL authority beyond mandate language.',
+        'Do not export spoiler labels without human review.',
+      ],
+      approvalPolitics: [
+        'Mandate and electoral wording can be read as policy posture; exact source language matters.',
+        'Escalate when a memo recommends pressure, sequencing, recognition, or engagement with armed actors.',
+      ],
+      practicalHeuristics: [
+        'Use track labels first: political, security, electoral, institutional, mandate.',
+        'Write armed-actor rows as posture, incentive, leverage, risk, and evidence.',
+        'Ask whether the claim belongs in a memo, risk card, or talking point before drafting.',
+      ],
+      stakeholderSensitivities: [
+        'Libyan institutions, armed actors, UNSMIL, election bodies, and external partners may treat labels as legitimacy signals.',
+        'Election language can imply feasibility or endorsement if caveats are omitted.',
+      ],
+      caveats: [
+        'UNSMIL and ceasefire guidance are public lanes, not a complete conflict-intelligence picture.',
+        'Electoral, armed-actor, and mandate claims require current review.',
+        'Spoiler and commitment nodes stay advisory until promoted by review card.',
+      ],
+    },
+    graph: {
+      nodeCount: 71,
+      edgeCount: 67,
+      entityTypes: ['Actor', 'Commitment', 'Risk', 'Narrative', 'Constraint', 'Event', 'Claim'],
+      edgeTypes: ['MAINTAINS', 'UNDERMINED_BY', 'USES_NARRATIVE', 'REQUIRES_MANDATE_CHECK', 'CONTESTS', 'AFFECTS_ELECTION_TRACK'],
+      focus: 'Libya ceasefire, elections, institutions, and spoiler-risk tracks',
+      entities: {
+        Actor: ['UNSMIL', 'electoral authority', 'armed actor', 'institutional stakeholder', 'external partner'],
+        Commitment: ['ceasefire maintenance', 'institutional unification step', 'electoral process undertaking'],
+        Risk: ['spoiler risk', 'mandate overclaim', 'electoral feasibility risk'],
+        Narrative: ['unity institutions frame', 'elections legitimacy frame', 'ceasefire stability frame'],
+        Constraint: ['fragmented authority', 'missing monitor', 'uncertain mandate', 'armed-actor ambiguity'],
+        Event: ['UNSMIL update', 'ceasefire incident', 'electoral announcement', 'mandate discussion'],
+        Claim: ['mission posture claim', 'armed-actor posture claim', 'electoral track claim'],
+      },
+    },
+  },
+  'starter-situation-baltic-undersea-infrastructure-resilience': {
+    purpose: 'Use this as a Baltic undersea resilience file that keeps incident facts, attribution claims, NATO Baltic Sentry posture, NIST CSF resilience controls, private-operator assumptions, and escalation risk separate before a risk monitor card is drafted.',
+    humanJob: 'Help a hybrid-threat or infrastructure analyst brief what is confirmed, what is attributed, what is resilience posture, and what should remain a monitoring hypothesis.',
+    researchScenario: 'A team needs to brief an undersea cable or pipeline concern without over-attributing, exposing private operator assumptions, or treating alliance posture as proof of incident cause.',
+    researchUse: 'A human reviewer uses this capsule to build an incident-confidence table, attach NATO/NIST receipts, mark attribution language, and choose the right public-communication caveat.',
+    evidenceGaps: [
+      'Refresh NATO or national-source material before describing Baltic Sentry or allied posture.',
+      'Attach separate evidence for incident fact, attribution, resilience measure, and operator dependency.',
+      'Do not infer cause or intent from surveillance, resilience, or response posture alone.',
+      'Name whether the output is public communication, internal risk card, or escalation advice.',
+    ],
+    claimReviewPolicy: 'Each Baltic infrastructure row must mark fact, attribution, resilience, operator, source date, and confidence; attribution and escalation language require human review.',
+    refreshCadence: 'Refresh at every incident update, attribution statement, operator disclosure, alliance response, or resilience-control change.',
+    nextIdeas: [
+      'Create an incident-confidence table with confirmed fact, attribution claim, resilience measure, and communication caveat columns.',
+      'Add a separate operator-dependency row for private infrastructure assumptions that cannot be publicly asserted.',
+      'Map Baltic Sentry posture to response and monitoring, not cause or legal attribution.',
+      'Draft a risk monitor card that shows what changed without escalating beyond the evidence.',
+    ],
+    tacitKnowledge: {
+      workingAssumptions: [
+        'Resilience posture and attribution are different questions even when they appear in the same incident cycle.',
+        'Private operator data may be absent, confidential, or non-comparable across assets.',
+      ],
+      redLines: [
+        'Do not attribute sabotage, state responsibility, or intent without authoritative source support.',
+        'Do not expose private operator assumptions as public fact.',
+        'Do not recommend escalation or response options without review.',
+      ],
+      approvalPolitics: [
+        'Alliance and operator language can affect deterrence, markets, and diplomacy; understated caveats are not cosmetic.',
+        'Escalate when a user asks for attribution, public messaging, or retaliation framing.',
+      ],
+      practicalHeuristics: [
+        'Separate incident fact, attribution claim, resilience control, response posture, and communication risk.',
+        'Use NIST CSF as vocabulary for resilience, not proof that a specific operator is compliant.',
+        'Use NATO posture to describe monitoring and response, not cause.',
+      ],
+      stakeholderSensitivities: [
+        'Operators, Baltic states, NATO allies, regulators, and publics may be affected by premature attribution.',
+        'Infrastructure language can move quickly from technical risk to political signal.',
+      ],
+      caveats: [
+        'Public NATO and NIST lanes do not supply private asset telemetry.',
+        'Attribution and escalation claims require current source review.',
+        'Incident graph nodes remain advisory until reviewed.',
+      ],
+    },
+    graph: {
+      nodeCount: 66,
+      edgeCount: 74,
+      entityTypes: ['Event', 'Risk', 'Claim', 'Actor', 'Constraint', 'Narrative', 'Leverage'],
+      edgeTypes: ['OBSERVED_AT', 'ATTRIBUTION_CLAIM', 'MITIGATED_BY', 'CONSTRAINED_BY_OPERATOR_DATA', 'SIGNALS_ALLIANCE_POSTURE', 'REQUIRES_PUBLIC_CAVEAT'],
+      focus: 'Baltic undersea infrastructure incident, attribution, and resilience posture',
+      entities: {
+        Event: ['cable incident', 'pipeline disruption', 'Baltic Sentry launch', 'operator update'],
+        Risk: ['over-attribution', 'resilience gap', 'escalation risk', 'operator-data blind spot'],
+        Claim: ['confirmed incident fact', 'attribution claim', 'resilience posture claim'],
+        Actor: ['NATO', 'Baltic state authority', 'private operator', 'regulator', 'public communications lead'],
+        Constraint: ['private telemetry gap', 'stale incident timeline', 'legal attribution threshold'],
+        Narrative: ['hybrid threat frame', 'resilience frame', 'deterrence frame'],
+        Leverage: ['allied surveillance posture', 'public communication', 'infrastructure-hardening measure'],
+      },
+    },
+  },
+  'starter-situation-south-china-sea-ayungin-resupply': {
+    purpose: 'Use this as an Ayungin/Second Thomas Shoal resupply watch that keeps 2025 mission facts, 2023 legal posture, UNCLOS/arbitral framing, alliance signals, misinformation risk, and de-escalation language in separate lanes before talking points are drafted.',
+    humanJob: 'Help a maritime diplomacy analyst brief a specific resupply mission or legal claim without converting official posture into operational advice or escalation rhetoric.',
+    researchScenario: 'A team needs talking points after a resupply update and must distinguish mission fact, legal posture, alliance signal, counterclaim, and misinformation risk.',
+    researchUse: 'A human reviewer uses this capsule to build a timeline, attach PNA/DFA receipts, split legal and incident rows, and choose language that preserves posture while avoiding escalation.',
+    evidenceGaps: [
+      'Refresh the mission-specific report before stating incident status, vessel activity, or routine resupply facts.',
+      'Attach a legal-position source before citing EEZ, UNCLOS, or arbitral-award posture.',
+      'Separate alliance deterrence signals from Philippine official mission and legal claims.',
+      'Add a misinformation or counterclaim row when the source environment is contested.',
+    ],
+    claimReviewPolicy: 'Ayungin rows must show mission date, actor, legal posture, source id, and escalation sensitivity; legal and alliance language requires human review.',
+    refreshCadence: 'Refresh before each mission update, official legal statement, alliance signal, incident report, or external talking point.',
+    nextIdeas: [
+      'Create a mission timeline with fact, legal posture, counterclaim, alliance signal, and caveat columns.',
+      'Draft a de-escalation version of the talking points before drafting the firmer legal-position version.',
+      'Add a misinformation-risk card when incident facts and counterclaims diverge.',
+      'Separate UNCLOS/arbitral language from operational resupply facts in the sourceability annex.',
+    ],
+    tacitKnowledge: {
+      workingAssumptions: [
+        'Mission fact, legal posture, and alliance signal may appear together but should be reviewed separately.',
+        'The safest wording preserves official source terms and avoids operational detail.',
+      ],
+      redLines: [
+        'Do not provide operational maritime advice.',
+        'Do not overstate legal conclusions, alliance commitments, or escalation risk without review.',
+        'Do not present counterclaims as misinformation unless source support is explicit.',
+      ],
+      approvalPolitics: [
+        'Maritime gray-zone language can signal deterrence, legal position, or escalation depending on phrasing.',
+        'Escalate when talking points leave internal analysis and become public or diplomatic language.',
+      ],
+      practicalHeuristics: [
+        'Start with mission date, source, actor, incident status, legal posture, and caveat.',
+        'Use separate paragraphs for incident facts and legal claims.',
+        'Test every sentence for whether it sounds like operational advice.',
+      ],
+      stakeholderSensitivities: [
+        'Philippine officials, counterparts, allies, maritime operators, and publics may infer commitments from small wording changes.',
+        'Legal posture and de-escalation language need to travel together.',
+      ],
+      caveats: [
+        'PNA/DFA lanes are official-source lanes, not full maritime incident intelligence.',
+        'Legal, alliance, and escalation language requires current review.',
+        'Narrative and commitment graph nodes are advisory until approved.',
+      ],
+    },
+    graph: {
+      nodeCount: 73,
+      edgeCount: 71,
+      entityTypes: ['Event', 'Claim', 'Actor', 'Commitment', 'Narrative', 'Risk', 'Leverage'],
+      edgeTypes: ['DOCUMENTS_MISSION', 'ASSERTS_LEGAL_POSTURE', 'COUNTERED_BY', 'SIGNALS_DETERRENCE', 'REQUIRES_DEESCALATION_CHECK', 'AMPLIFIES_NARRATIVE'],
+      focus: 'Ayungin resupply facts, legal posture, and de-escalation language',
+      entities: {
+        Event: ['resupply mission', 'official statement', 'incident report', 'legal posture update'],
+        Claim: ['routine mission claim', 'UNCLOS posture claim', 'arbitral-award claim', 'counterclaim'],
+        Actor: ['Philippine authority', 'DFA', 'maritime counterpart', 'ally signal source'],
+        Commitment: ['resupply continuity', 'legal-position preservation', 'de-escalation posture'],
+        Narrative: ['gray-zone pressure frame', 'lawful resupply frame', 'alliance deterrence frame'],
+        Risk: ['escalatory wording', 'misinformation risk', 'legal overstatement'],
+        Leverage: ['public statement', 'legal posture', 'alliance signal', 'de-escalation channel'],
+      },
+    },
+  },
+  'starter-situation-moldova-energy-hybrid-resilience': {
+    purpose: 'Use this as a Moldova resilience file that keeps energy diversification, Transnistria pressure, EU support instruments, EUPM hybrid-threat work, cybersecurity, FIMI, and crisis-management capacity in separate sourceable tracks before a risk monitor card is produced.',
+    humanJob: 'Help a resilience analyst brief whether the decision is about gas, electricity, Transnistria, cyber/FIMI, EU mission support, or crisis-management capacity.',
+    researchScenario: 'A team needs to explain a Moldova pressure point without letting technical energy supply, political pressure, information operations, and EU support merge into a single hybrid-threat claim.',
+    researchUse: 'A human reviewer uses this capsule to build an energy-hybrid risk matrix, attach European Commission or EEAS receipts, mark attribution caveats, and decide which resilience gap changes the recommendation.',
+    evidenceGaps: [
+      'Refresh European Commission energy-source material before stating diversification, grid, gas, or supply posture.',
+      'Attach EEAS/EUPM or authoritative cyber/FIMI evidence before naming hybrid-threat effects.',
+      'Separate Transnistria pressure, energy supply, cyber vulnerability, and information manipulation in different rows.',
+      'Name the EU support instrument and implementation status before treating it as a mitigation.',
+    ],
+    claimReviewPolicy: 'Moldova rows must show pressure channel, actor, source, support instrument, and attribution status; cyber and FIMI claims require review.',
+    refreshCadence: 'Refresh before energy-supply updates, Transnistria pressure shifts, EUPM mandate changes, cyber/FIMI claims, or crisis-management decisions.',
+    nextIdeas: [
+      'Build an energy-hybrid matrix with channel, actor, source, impact, mitigation, and attribution caveat columns.',
+      'Create separate risk cards for gas/electricity exposure, FIMI, cyber resilience, and crisis-management capacity.',
+      'Add a support-instrument ledger that distinguishes EU commitment, advisory support, and implemented capacity.',
+      'Draft public communication with attribution-neutral wording before any stronger hybrid-threat claim.',
+    ],
+    tacitKnowledge: {
+      workingAssumptions: [
+        'Energy resilience and hybrid threats interact, but they should not share one evidence standard.',
+        'EU support can be a commitment, advisory mission, funding lane, or implemented capacity; the distinction matters.',
+      ],
+      redLines: [
+        'Do not attribute cyber or FIMI activity without source support and review.',
+        'Do not treat EU support announcements as implemented resilience.',
+        'Do not conflate Transnistria pressure, gas supply, and information operations.',
+      ],
+      approvalPolitics: [
+        'Attribution-neutral wording may be essential for public communication and diplomatic posture.',
+        'Escalate when the output names a threat actor, claims capability, or recommends crisis-management action.',
+      ],
+      practicalHeuristics: [
+        'Sort every claim by channel: gas, electricity, Transnistria, cyber, FIMI, EU support, crisis management.',
+        'Use "support instrument" and "implemented mitigation" as separate fields.',
+        'Write attribution caveats before drafting the risk summary.',
+      ],
+      stakeholderSensitivities: [
+        'Moldovan authorities, EU missions, energy operators, publics, and external actors may react differently to attribution language.',
+        'Energy claims can affect markets and public trust when dates are stale.',
+      ],
+      caveats: [
+        'EU and EEAS lanes orient the file; they do not prove current technical system status.',
+        'Cyber/FIMI and attribution claims require current review.',
+        'Hybrid graph candidates remain proposed until approved.',
+      ],
+    },
+    graph: {
+      nodeCount: 67,
+      edgeCount: 70,
+      entityTypes: ['Constraint', 'Risk', 'Actor', 'Event', 'Narrative', 'Leverage', 'Claim'],
+      edgeTypes: ['PRESSURES', 'MITIGATED_BY', 'ATTRIBUTED_WITH_CAUTION', 'CONSTRAINS_RESILIENCE', 'SUPPORTS_CAPACITY', 'REQUIRES_REFRESH'],
+      focus: 'Moldova energy, hybrid pressure, and EU resilience support',
+      entities: {
+        Constraint: ['gas supply constraint', 'grid resilience gap', 'attribution threshold', 'implementation capacity limit'],
+        Risk: ['FIMI risk', 'cyber vulnerability', 'Transnistria pressure', 'public trust risk'],
+        Actor: ['Moldovan authority', 'European Commission', 'EUPM Moldova', 'energy operator', 'public communicator'],
+        Event: ['energy-support update', 'mission mandate update', 'pressure episode', 'cyber/FIMI warning'],
+        Narrative: ['energy security frame', 'hybrid resilience frame', 'EU support frame'],
+        Leverage: ['EU support instrument', 'grid synchronization', 'public communication', 'crisis-management capacity'],
+        Claim: ['energy diversification claim', 'hybrid-threat claim', 'support implementation claim'],
+      },
+    },
+  },
+  'starter-situation-gerd-nile-water-diplomacy': {
+    purpose: 'Use this as a GERD/Nile water diplomacy file that keeps hydrological claims, riparian interests, AU mediation history, legal positions, identity/security narratives, and joint fact-finding options distinct before a negotiation prep or principals memo is drafted.',
+    humanJob: 'Help a water-diplomacy analyst brief which issue is technical hydrology, legal posture, mediator process, riparian interest, trust deficit, or confidence-building option.',
+    researchScenario: 'A team needs to explain GERD without treating filling rules, drought management, data sharing, legal positions, and national identity/security claims as one confidence level.',
+    researchUse: 'A human reviewer uses this capsule to map riparian interests, attach AU/UN mediation sources, mark hydrological source gaps, and design a joint fact-finding or data-sharing option.',
+    evidenceGaps: [
+      'Attach a technical source before making hydrological, filling, drought-rule, or flow-impact claims.',
+      'Separate Ethiopia, Egypt, Sudan, AU, and mediator positions from inferred interests.',
+      'Refresh mediation-history and process-design sources before recommending confidence-building steps.',
+      'Add legal-review gaps for treaty, rights, or obligation language.',
+    ],
+    claimReviewPolicy: 'GERD rows must mark technical, legal, process, interest, narrative, or option status; hydrological and legal claims require current expert review.',
+    refreshCadence: 'Refresh before negotiations, public statements, hydrological-data use, mediator options, or legal-position language.',
+    nextIdeas: [
+      'Build a riparian table with position, interest, BATNA, data need, legal caveat, and confidence-building ask.',
+      'Create a joint fact-finding protocol for filling, drought, data sharing, and early warning claims.',
+      'Separate water-security narratives from technical hydrology before drafting options.',
+      'Add a mediator process card that distinguishes AU history, UN mediation principles, and current consent gaps.',
+    ],
+    tacitKnowledge: {
+      workingAssumptions: [
+        'GERD is simultaneously technical, legal, diplomatic, and identity/security work; one source lane cannot settle all layers.',
+        'Shared data and joint fact-finding may be more decision-relevant than another summary of positions.',
+      ],
+      redLines: [
+        'Do not state hydrological impact, treaty obligation, or legal right without technical or legal review.',
+        'Do not infer riparian intent from public positions alone.',
+        'Do not present mediator options as agreed process design.',
+      ],
+      approvalPolitics: [
+        'Riparian language can signal recognition of rights, blame, or leverage; preserve source wording and caveats.',
+        'Escalate when a draft becomes legal posture, mediator advice, or public statement language.',
+      ],
+      practicalHeuristics: [
+        'Sort every row as hydrology, legal, process, interest, narrative, or option.',
+        'Ask what joint data would reduce the disagreement before writing a recommendation.',
+        'Use confidence-building options only after naming consent and verification gaps.',
+      ],
+      stakeholderSensitivities: [
+        'Ethiopia, Egypt, Sudan, AU-linked mediators, technical experts, and publics attach different meanings to water-security language.',
+        'Identity and security narratives can overwhelm technical uncertainty if not separated.',
+      ],
+      caveats: [
+        'AU and UN mediation sources frame process, not current hydrological truth.',
+        'Hydrological and legal claims require expert review and fresh technical evidence.',
+        'Interest and narrative nodes are advisory until review-card promotion.',
+      ],
+    },
+    graph: {
+      nodeCount: 75,
+      edgeCount: 72,
+      entityTypes: ['Interest', 'Actor', 'Claim', 'Constraint', 'Leverage', 'Commitment', 'Risk', 'Narrative'],
+      edgeTypes: ['ASSERTS_POSITION', 'SEEKS_INTEREST', 'CONSTRAINED_BY_DATA_GAP', 'ENABLES_JOINT_FACT_FINDING', 'RISKS_DISTRUST', 'REQUIRES_MEDIATOR_REVIEW'],
+      focus: 'GERD riparian interests, hydrology, legal posture, and joint fact-finding',
+      entities: {
+        Interest: ['water security', 'energy generation', 'drought assurance', 'data transparency', 'regional trust'],
+        Actor: ['Ethiopia', 'Egypt', 'Sudan', 'African Union channel', 'UN mediation reference'],
+        Claim: ['filling claim', 'drought-rule claim', 'legal-position claim', 'data-sharing claim'],
+        Constraint: ['technical data gap', 'legal-review gap', 'consent gap', 'trust deficit'],
+        Leverage: ['joint fact-finding', 'data sharing', 'confidence-building measure', 'mediator process'],
+        Commitment: ['possible data-sharing undertaking', 'process consent', 'early-warning protocol'],
+        Risk: ['hydrology overclaim', 'legal overstatement', 'identity-security escalation'],
+        Narrative: ['sovereignty frame', 'water security frame', 'development frame', 'cooperation frame'],
+      },
+    },
+  },
+};
+
+function applyHumanGatedPolicyJudgmentPhaseBRewrite(starter: CapsuleStarterDefinition): CapsuleStarterDefinition {
+  const rewrite = HUMAN_GATED_POLICY_JUDGMENT_PHASE_B_REWRITES[starter.starterId];
+  if (!rewrite) return starter;
+
+  const sourceIds = starter.sourcePack.map((source) => source.id);
+  const sourceDateMarkers = starter.sourcePack
+    .slice(0, 2)
+    .map((source) => source.date)
+    .filter(Boolean)
+    .join('/');
+  const primarySources = sourceIds.slice(0, 2).join(' and ');
+  const richProfile: CapsuleStarterRichProfile = {
+    ...starter.richProfile,
+    purpose: `${starter.label}: ${rewrite.purpose}${sourceDateMarkers ? ` Source markers: ${sourceDateMarkers}.` : ''}`,
+    userJob: rewrite.humanJob,
+    evidenceRequirements: uniqueStrings([
+      `Start with ${primarySources || 'the source spine'} and attach source dates before drafting from ${starter.label}.`,
+      ...starter.richProfile.evidenceRequirements,
+      ...rewrite.evidenceGaps.slice(0, 2),
+    ]).slice(0, 7),
+    riskCaveats: uniqueStrings([
+      ...rewrite.tacitKnowledge.caveats,
+      ...starter.richProfile.riskCaveats.slice(0, 2),
+    ]).slice(0, 6),
+    decisionPrompts: uniqueStrings([
+      rewrite.researchScenario,
+      ...starter.richProfile.decisionPrompts,
+    ]).slice(0, 5),
+    nextIdeas: uniqueStrings(rewrite.nextIdeas),
+    agentInstructions: `${starter.label}: use this as a senior analyst working file, not an approved judgment. ${rewrite.researchUse} Inspect ${primarySources || 'the source spine'}, preserve the ${rewrite.graph.focus} graph lanes as advisory proposals, convert source gaps into review cards, and stop before external export or high-stakes reliance.`,
+  };
+  const curationProfile: CapsuleStarterCurationProfile = {
+    ...starter.curationProfile,
+    humanInspectionSummary: `${starter.label}: ${rewrite.researchScenario}`,
+    agentUseSummary: `${rewrite.humanJob} Use the source spine, tacit caveats, graph proposals, and output target only after claim-source review is visible.`,
+    tacitKnowledge: rewrite.tacitKnowledge,
+    compactAgentInstructions: [
+      `Inspect ${primarySources || 'the source spine'} before drafting; mark unsupported rows as source gaps.`,
+      `Keep ${rewrite.graph.focus} Actor/Claim/Event/Interest/Constraint/Leverage/Commitment/Narrative/Risk nodes advisory until review.`,
+      'Stop before external publication, connector writes, graph promotion, Cognee remember(), or high-stakes reliance.',
+    ],
+  };
+  const researchDossier: CapsuleStarterResearchDossier = {
+    ...starter.researchDossier,
+    humanJob: rewrite.humanJob,
+    realWorldScenario: rewrite.researchScenario,
+    howHumanUsesCapsule: rewrite.researchUse,
+    knownEvidenceGaps: rewrite.evidenceGaps,
+    refreshCadence: rewrite.refreshCadence,
+    claimReviewPolicy: rewrite.claimReviewPolicy,
+    nextHumanActions: rewrite.nextIdeas.slice(0, 5),
+    catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+  };
+  const ontologyOverlay = buildHumanGatedPolicyJudgmentPhaseBOntologyOverlay(starter, rewrite);
+  const graphLiteProjection = buildStarterGraphLiteProjection({
+    starterId: starter.starterId,
+    label: starter.label,
+    sourcePack: starter.sourcePack,
+    ontologyOverlay,
+  });
+  return {
+    ...starter,
+    tags: uniqueStrings([
+      ...starter.tags,
+      'flagship',
+      'policy-judgment',
+      'review-gated',
+      'sourceability',
+      'no-invented-approval',
+    ]),
+    suggestedNextActions: uniqueStrings([
+      ...rewrite.nextIdeas.slice(0, 2),
+      `Run sourceability on ${starter.label} before drafting or exporting a policy output.`,
+      ...starter.suggestedNextActions,
+    ]).slice(0, 5),
+    richProfile,
+    curationProfile,
+    researchDossier,
+    ontologyOverlay,
+    graphLiteProjection,
+    inspectionSections: rewriteHumanGatedPolicyJudgmentInspectionSections({
+      starter,
+      richProfile,
+      curationProfile,
+      researchDossier,
+      ontologyOverlay,
+      graphLiteProjection,
+    }),
+  };
+}
+
+function buildHumanGatedPolicyJudgmentPhaseBOntologyOverlay(
+  starter: CapsuleStarterDefinition,
+  rewrite: HumanGatedPolicyJudgmentPhaseBRewrite,
+): CapsuleStarterOntologyOverlay {
+  const baseOverlay = starter.ontologyOverlay ?? buildStarterOntologyOverlay({
+    starterId: starter.starterId,
+    category: starter.category,
+    domain: starter.domain,
+    label: starter.label,
+    tags: starter.tags,
+    sourcePack: starter.sourcePack,
+    recommendedToolIds: starter.recommendedToolIds,
+    outputProductIds: starter.outputProductIds,
+  });
+  const nodeTemplates = buildHumanGatedPolicyJudgmentPhaseBNodeTemplates(starter, rewrite);
+  const edgeTemplates = buildHumanGatedPolicyJudgmentPhaseBEdgeTemplates(starter, rewrite, nodeTemplates);
+  return {
+    ...baseOverlay,
+    graphNodeTypes: rewrite.graph.entityTypes,
+    graphEdgeTypes: rewrite.graph.edgeTypes,
+    ontologyNodeHints: uniqueStrings([
+      ...rewrite.graph.entityTypes,
+      ...baseOverlay.ontologyNodeHints,
+    ]).slice(0, 12),
+    sourceAffinity: starter.sourcePack.map((source) => source.id).slice(0, 8),
+    cognee: {
+      ...baseOverlay.cognee,
+      customPromptHint: `Extract only reviewable ACO candidates for ${starter.label}: ${rewrite.graph.entityTypes.join(', ')}. Keep ${rewrite.graph.focus} advisory until review-card approval.`,
+    },
+    graphSeed: {
+      ...baseOverlay.graphSeed,
+      proposalLabel: `${starter.label} analyst-captured ACO graph`,
+      nodeTemplates,
+      edgeTemplates,
+      evidenceRequired: [
+        `Every ${starter.label} graph row needs a source receipt, source-gap card, or explicit uncertainty note.`,
+        'ACO Actor, Claim, Event, Interest, Constraint, Leverage, Commitment, Narrative, and Risk candidates remain advisory until a human applies the review card.',
+        'Unsupported or stale material stays as Risk, Constraint, or Claim-under-review nodes, not canonical facts.',
+      ],
+      reviewGate: 'Human review required before ACO graph promotion, Cognee remember(), SQL projection apply, external export, or high-stakes reliance.',
+    },
+    promotionRules: uniqueStrings([
+      ...baseOverlay.promotionRules,
+      'Promote Actor, Claim, Event, Interest, Constraint, Leverage, Commitment, Narrative, and Risk rows only after source receipts and review-card approval.',
+    ]),
+  };
+}
+
+function buildHumanGatedPolicyJudgmentPhaseBNodeTemplates(
+  starter: CapsuleStarterDefinition,
+  rewrite: HumanGatedPolicyJudgmentPhaseBRewrite,
+): string[] {
+  const sourceIds = starter.sourcePack.map((source) => source.id);
+  const entries = rewrite.graph.entityTypes.flatMap((entityType) => {
+    const values = rewrite.graph.entities[entityType] ?? [`${starter.label} ${entityType.toLowerCase()}`];
+    return values.map((value) => ({ entityType, value }));
+  });
+  const details = [
+    rewrite.graph.focus,
+    rewrite.researchScenario,
+    rewrite.evidenceGaps[0] ?? rewrite.claimReviewPolicy,
+    rewrite.tacitKnowledge.practicalHeuristics[0] ?? rewrite.claimReviewPolicy,
+  ];
+  const supportTemplates = [
+    shortGraphSeedTemplate(`node-001|RealInfo|source:${sourceIds[0] ?? 'source-review-required'}|${starter.label}; ${rewrite.graph.focus}`),
+    shortGraphSeedTemplate(`node-002|EvidenceNeed|source:${sourceIds[1] ?? sourceIds[0] ?? 'source-review-required'}|${rewrite.evidenceGaps[0] ?? rewrite.claimReviewPolicy}`),
+    shortGraphSeedTemplate(`node-003|ReasoningMove|claim-source split|${rewrite.claimReviewPolicy}`),
+    shortGraphSeedTemplate(`node-004|ToolAction|sourceability|run before drafting ${starter.label}`),
+    shortGraphSeedTemplate(`node-005|AbstractConcept|review-gated ACO graph|${rewrite.graph.entityTypes.join(', ')}`),
+  ];
+  return [
+    ...supportTemplates,
+    ...Array.from({ length: Math.max(0, rewrite.graph.nodeCount - supportTemplates.length) }, (_, offset) => {
+      const index = offset + supportTemplates.length;
+      const entry = entries[index % entries.length] ?? { entityType: 'Claim' as const, value: starter.label };
+      const sourceId = sourceIds[index % Math.max(1, sourceIds.length)] ?? 'source-review-required';
+      const detail = details[index % details.length];
+      return shortGraphSeedTemplate(`node-${graphSeedOrdinal(index + 1)}|${entry.entityType}|${entry.value}|${detail}; source=${sourceId}; lane=${index + 1}`);
+    }),
+  ];
+}
+
+function buildHumanGatedPolicyJudgmentPhaseBEdgeTemplates(
+  starter: CapsuleStarterDefinition,
+  rewrite: HumanGatedPolicyJudgmentPhaseBRewrite,
+  nodeTemplates: string[],
+): string[] {
+  const sourceIds = starter.sourcePack.map((source) => source.id);
+  const narratives = [
+    rewrite.claimReviewPolicy,
+    rewrite.tacitKnowledge.redLines[0] ?? rewrite.claimReviewPolicy,
+    rewrite.evidenceGaps[1] ?? rewrite.claimReviewPolicy,
+    rewrite.tacitKnowledge.approvalPolitics[0] ?? rewrite.claimReviewPolicy,
+  ];
+  const edgeTypes = uniqueStrings([
+    ...rewrite.graph.edgeTypes,
+    'SUPPORTED_BY',
+    'CONSTRAINS',
+    'DEPENDS_ON',
+    'TRIGGERS_REVIEW',
+    'CITED_BY',
+  ]);
+  return Array.from({ length: rewrite.graph.edgeCount }, (_, index) => {
+    const edgeType = edgeTypes[index % edgeTypes.length] ?? 'REQUIRES_REVIEW';
+    const sourceRef = graphSeedNodeRef(nodeTemplates[index % nodeTemplates.length], index);
+    const targetRef = graphSeedNodeRef(nodeTemplates[(index * 5 + 3) % nodeTemplates.length], index + 3);
+    const sourceId = sourceIds[index % Math.max(1, sourceIds.length)] ?? 'source-review-required';
+    const narrative = narratives[index % narratives.length];
+    return shortGraphSeedTemplate(`edge-${graphSeedOrdinal(index + 1)}|${edgeType}|${sourceRef}->${targetRef}|${starter.starterId}|evidence=${sourceId}|${narrative}`);
+  });
+}
+
+function rewriteHumanGatedPolicyJudgmentInspectionSections(input: {
+  starter: CapsuleStarterDefinition;
+  richProfile: CapsuleStarterRichProfile;
+  curationProfile: CapsuleStarterCurationProfile;
+  researchDossier: CapsuleStarterResearchDossier;
+  ontologyOverlay: CapsuleStarterOntologyOverlay;
+  graphLiteProjection: CapsuleStarterGraphLiteProjection;
+}): CapsuleStarterInspectionSection[] {
+  return input.starter.inspectionSections.map((section) => {
+    if (section.label === 'Purpose') return { ...section, detail: input.richProfile.purpose };
+    if (section.label === 'Tacit knowledge') {
+      return {
+        ...section,
+        detail: [
+          ...input.curationProfile.tacitKnowledge.workingAssumptions,
+          ...input.curationProfile.tacitKnowledge.redLines,
+          ...input.curationProfile.tacitKnowledge.approvalPolitics,
+        ].slice(0, 6).join(' '),
+      };
+    }
+    if (section.label === 'Research dossier') {
+      return {
+        ...section,
+        detail: `${input.researchDossier.humanJob} ${input.researchDossier.realWorldScenario} Gaps: ${input.researchDossier.knownEvidenceGaps.slice(0, 2).join(' ')}`,
+      };
+    }
+    if (section.label === 'Improvement Ideas') {
+      return { ...section, detail: input.richProfile.nextIdeas.slice(0, 3).join(' ') };
+    }
+    if (section.label === 'Run Recipe') return { ...section, detail: input.richProfile.agentInstructions };
+    if (section.label === 'Embedded Graph') {
+      return {
+        ...section,
+        detail: `${input.ontologyOverlay.graphSeed.proposalLabel}: ${input.ontologyOverlay.graphSeed.nodeTemplates.length} nodes and ${input.ontologyOverlay.graphSeed.edgeTemplates.length} edges across ${input.ontologyOverlay.graphNodeTypes.join(', ')} ACO lanes; review-gated proposals only.`,
+      };
+    }
+    if (section.label === 'Ontology/graph seed') {
+      return {
+        ...section,
+        detail: `${input.ontologyOverlay.graphSeed.proposalLabel}: node types ${input.ontologyOverlay.graphNodeTypes.join(', ')}; edge types ${input.ontologyOverlay.graphEdgeTypes.join(', ')}; review-card proposals only.`,
+      };
+    }
+    if (section.label === 'GraphLite advisory projection') {
+      return {
+        ...section,
+        detail: `${input.graphLiteProjection.projectionId}: ${input.graphLiteProjection.status}; named graph ${input.graphLiteProjection.namedGraph}; nodes ${input.graphLiteProjection.nodeCount}; edges ${input.graphLiteProjection.edgeCount}; ${input.graphLiteProjection.promotionGate}`,
+      };
+    }
+    return section;
+  });
+}
+
+export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = RAW_CAPSULE_STARTER_DEFINITIONS
+  .map(applyHumanGatedPolicyJudgmentPhaseBRewrite);
 
 export function getCapsuleStarterDefinition(capsuleId: string | null | undefined): CapsuleStarterDefinition | null {
   if (!capsuleId) return null;

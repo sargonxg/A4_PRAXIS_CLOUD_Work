@@ -154,14 +154,14 @@ function ContextCapsulePanel() {
     <div className="border-b border-[var(--color-app-border)] px-3 py-3">
       <PraxisLink
         href="/app"
-        className="block rounded-lg border border-gold-200 bg-gold-50/70 p-3 text-navy-900 transition hover:border-gold-300 hover:bg-gold-50"
+        className="block rounded-lg border border-[color:var(--color-praxis-emerald-300)]/45 bg-[color:var(--color-praxis-emerald-50)]/80 p-3 text-navy-900 transition hover:border-[color:var(--color-praxis-emerald-500)] hover:bg-[color:var(--color-praxis-emerald-50)]"
       >
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-navy-950 text-white">
             <Target className="h-4 w-4" />
           </span>
           <span className="min-w-0">
-            <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-gold-800">
+            <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-praxis-emerald-700)]">
               Active ContextCapsule
             </span>
             <span className="mt-0.5 block truncate text-sm font-semibold text-navy-950">

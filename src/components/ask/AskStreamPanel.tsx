@@ -37,6 +37,7 @@ import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
 import { AskQueuedAgentRunPanel } from '@/components/ask/AskQueuedAgentRunPanel';
 import { SourceabilityVerdictBadges } from '@/components/ask/SourceabilityVerdictBadges';
 import { AskTurnPlanPanel } from '@/components/ask/AskTurnPlanPanel';
+import { SourceTierBadge } from '@/components/source/SourceTierBadge';
 import { ActivePolicyFileStrip } from '@/components/policy-work-file/ActivePolicyFileStrip';
 import { KnowledgeStructurePanel, knowledgeStructureFromAskEnvelope } from '@/components/policy-work-file/KnowledgeStructurePanel';
 import { InterruptCard, type InterruptRequest } from '@/components/ask/InterruptCard';
@@ -47,7 +48,7 @@ import type { ActiveContextStackState } from '@/lib/context/active-context-stack
 import { ASK_ORCHESTRATION_OPTIONS } from '@/lib/ai/ask-runtime-catalog';
 import type { AskAnswerEnvelope, ConversationDocumentPack } from '@/lib/ai/ask-answer-envelope';
 import type { AskOrchestrationStatusEvent } from '@/lib/ai/ask-orchestrator';
-import type { SourceabilityClaimVerdict } from '@/lib/agent-runtime/sourceability-ledger';
+import { buildSourceGapScoutObjective, type SourceabilityClaimVerdict } from '@/lib/agent-runtime/sourceability-ledger';
 import { buildProofSummaryFromAskEnvelope, modelPolicyLabelFor, type UiProofSummary } from '@/lib/proof/proof-summary';
 import { PRAXIS_USAGE_COPY } from '@/lib/billing/usage-policy';
 import { buildAskTimelineMessages, type AskTimelineMessage } from '@/lib/ai/ask-conversation';
@@ -118,6 +119,14 @@ type AskPanelMessage = AskTimelineMessage & {
 type AskThreadHistory = {
   persistence?: string;
   turns?: AskThreadTurn[];
+};
+
+type QueuedAgentRunResponse = {
+  runId?: string;
+  status?: string;
+  outputHref?: string | null;
+  error?: string;
+  detail?: string;
 };
 
 type RuntimeHealthStatus = 'ok' | 'degraded' | 'down' | 'unconfigured';
@@ -464,6 +473,93 @@ export function AskStreamPanel({
     }
   }, [activeSituation?.id, capsuleId]);
 
+  const queueSourceGapScout = useCallback(async (message: AskPanelMessage, unsupportedClaims: string[]) => {
+    const claims = unsupportedClaims.map((claim) => claim.trim()).filter(Boolean).slice(0, 8);
+    if (!claims.length) return;
+    const envelope = message.answerEnvelope;
+    const objective = buildSourceGapScoutObjective(claims);
+    const targetCapsuleId = capsuleId
+      ?? envelope?.documentPackCandidate.provenance.capsuleId
+      ?? envelope?.groundingReceipt.capsuleId
+      ?? undefined;
+    try {
+      const response = await fetch('/api/agents/runs', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          capsuleId: targetCapsuleId,
+          contextStackId: activeContextStack?.stackId ?? 'default',
+          contextPackageId: contextPackageId ?? activeContextStack?.contextPackageId ?? envelope?.documentPackCandidate.provenance.contextPackageId ?? undefined,
+          selectedCoreIds: activeContextStack ? {
+            situationCoreId: activeContextStack.situationId,
+            sourceCoreIds: activeContextStack.sourceIds,
+            documentCoreIds: activeContextStack.documentIds,
+          } : undefined,
+          policyAgentId: 'source-gap-scout',
+          outputDestination: 'library',
+          objective,
+          triggerType: 'manual',
+          idempotencyKey: `ask-source-gap:${message.id}:${Date.now()}`,
+          maxStep: 8,
+          maxSessionMinutes: 20,
+          metadata: {
+            policyAgentId: 'source-gap-scout',
+            policyAgentLabel: 'Source-Gap Scout',
+            outputDestination: 'library',
+            unsupportedClaims: claims,
+            sourceabilityVerdicts: envelope?.sourceabilityVerdicts ?? [],
+            sourceReceiptIds: envelope?.sourceCards.flatMap((card) => card.sourceReceiptId ? [card.sourceReceiptId] : []) ?? [],
+            sourceCount: envelope?.sourceCards.length ?? 0,
+            selectedTools: ['context-resolve', 'capsule-evidence-pack', 'grounded-search', 'sourceability-reviewer', 'source-gap-scout'],
+            source: 'ask-answer-quality-strip',
+          },
+        }),
+      });
+      const run = await response.json().catch(() => ({})) as QueuedAgentRunResponse;
+      if (!response.ok || !run.runId) throw new Error(run.error ?? run.detail ?? 'Source-Gap Scout queue failed');
+      const event: AskOrchestrationStatusEvent = {
+        type: 'orchestrationStatus',
+        id: 'worker',
+        label: 'Source-Gap Scout',
+        status: 'queued',
+        detail: `Queued Source-Gap Scout for ${claims.length} unsupported claim${claims.length === 1 ? '' : 's'}.`,
+        runId: run.runId,
+        outputHref: run.outputHref ?? '/app/capsules?review=source-gaps',
+        canOpen: true,
+        canCancel: true,
+        agentLabel: 'Source-Gap Scout',
+        selectedToolIds: ['grounded-search', 'sourceability-reviewer', 'source-gap-scout'],
+        sourceCount: envelope?.sourceCards.length ?? 0,
+        warningCount: claims.length,
+        approvalGateCount: 0,
+        outputTarget: 'library',
+        groundingPosture: 'Unsupported claims queued for source discovery.',
+        sourcePosture: 'Source gaps visible',
+      };
+      appendOrchestrationEvent(setTimelineMessages, message.id, event);
+      const dispatchResponse = await fetch(`/api/agents/runs/${encodeURIComponent(run.runId)}/dispatch`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ attempt: 1 }),
+      });
+      if (!dispatchResponse.ok) {
+        appendOrchestrationEvent(setTimelineMessages, message.id, {
+          ...event,
+          status: 'warn',
+          detail: 'Source-Gap Scout is queued, but worker dispatch needs retry.',
+          canRetry: true,
+        });
+      }
+    } catch (err) {
+      setPrompt(objective);
+      updateTimelineMessage(setTimelineMessages, message.id, {
+        content: `${message.content}\n\n_Source-Gap Scout could not queue here (${err instanceof Error ? err.message : 'queue failed'}). The scoped source search prompt is loaded in the composer._`,
+      });
+    }
+  }, [activeContextStack, capsuleId, contextPackageId]);
+
   useEffect(() => () => abortRef.current?.abort(), []);
 
   useEffect(() => {
@@ -597,6 +693,7 @@ export function AskStreamPanel({
                   newestActive={idx === timelineMessages.length - 1}
                   onDraftPack={draftDocumentPack}
                   onFollowUp={(followUp) => setPrompt(followUp)}
+                  onQueueSourceGapScout={(unsupportedClaims) => queueSourceGapScout(message, unsupportedClaims)}
                   packSaving={packSavingId === message.id}
                 />
               </motion.div>
@@ -800,6 +897,7 @@ function AskMessageBubble({
   newestActive,
   onDraftPack,
   onFollowUp,
+  onQueueSourceGapScout,
   packSaving,
 }: {
   capsuleId?: string | null;
@@ -807,6 +905,7 @@ function AskMessageBubble({
   newestActive: boolean;
   onDraftPack: (message: AskPanelMessage, selectedPack?: ConversationDocumentPack) => void;
   onFollowUp: (followUp: string) => void;
+  onQueueSourceGapScout: (unsupportedClaims: string[]) => void;
   packSaving: boolean;
 }) {
   if (message.role === 'user') {
@@ -852,7 +951,7 @@ function AskMessageBubble({
         <AskWorkingTimeline events={workingTimeline} />
         <AskTurnPlanPanel turnPlan={message.answerEnvelope?.orchestrationReceipt?.turnPlan} onFollowUp={onFollowUp} />
         <AskQueuedAgentRunPanel queuedRun={message.queuedRun ?? workingTimeline.find((event) => event.id === 'worker' && Boolean(event.runId)) ?? null} newestActive={newestActive} />
-        <AnswerQualityStrip envelope={message.answerEnvelope} onAction={onFollowUp} />
+        <AnswerQualityStrip envelope={message.answerEnvelope} onAction={onFollowUp} onQueueSourceGapScout={onQueueSourceGapScout} />
         {proofSummary ? <ProofSummaryPanel summary={proofSummary} /> : null}
         <OrchestrationReceiptPanel envelope={message.answerEnvelope} />
         <CapsuleGroundingReceiptPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
@@ -1254,9 +1353,12 @@ function AnswerSourcePreviewPanel({ envelope, onFollowUp }: { envelope?: AskAnsw
                       <p className="mt-0.5 truncate text-xs font-semibold text-navy-950">{card.title}</p>
                     )}
                   </div>
-                  <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
-                    {Math.round((card.confidence ?? 0) * 100)}%
-                  </span>
+                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+                    <SourceTierBadge tier={card.reliabilityTier ?? null} date={card.date ?? null} stale={card.stale ?? null} showFreshness size="xs" />
+                    <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
+                      {Math.round((card.confidence ?? 0) * 100)}%
+                    </span>
+                  </div>
                 </div>
                 <blockquote className="mt-2 border-l-2 border-diplomatic-blue/40 pl-2 text-xs leading-5 text-slate-700">
                   {card.quotePreview || 'No quote preview available.'}

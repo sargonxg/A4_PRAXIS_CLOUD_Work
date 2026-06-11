@@ -157,6 +157,31 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     ]));
   });
 
+  it('honors the deep research composer lane by forcing a reviewable research memo run', () => {
+    const receipt = buildAskConversationOrchestrationReceipt({
+      prompt: 'What should I know about this file?',
+      intent: 'research_memo',
+      selectedPolicyAgentId: 'research-memo',
+      contextReceipt: contextReceipt({ health: 'ready', evidenceCount: 4 }),
+      sourcePreviewCount: 2,
+      activeGapCount: 0,
+    });
+
+    expect(receipt.triage.agenticMode).toBe('queue_agent_run');
+    expect(receipt.supervisor).toMatchObject({
+      action: 'queue_agent_run',
+      policyAgentId: 'research-memo',
+      outputDestination: 'memo_studio',
+    });
+    expect(receipt.toolRouting.selectedToolIds).toEqual(expect.arrayContaining([
+      'grounded-search',
+      'deep-search-agent',
+      'sourceability-reviewer',
+      'policy-memo',
+    ]));
+    expect(receipt.workflowPlan.workflowKind).toBe('current_research_brief');
+  });
+
   it('plans table-shaped conflict asks as reviewable artifacts before generation', () => {
     const receipt = buildAskConversationOrchestrationReceipt({
       prompt: 'Create a table comparing conflict actors, current sources, and policy options for this crisis.',

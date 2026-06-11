@@ -60,7 +60,7 @@ function OperationRow({ op }: { op: ActiveOperation }) {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="rounded bg-navy-700 px-1.5 py-0.5 text-[10px] text-gold-400">
+            <span className="rounded bg-navy-700 px-1.5 py-0.5 text-[10px] text-[color:var(--color-praxis-emerald-300)]">
               {op.tool}
             </span>
             <span className="text-navy-300 truncate">{op.label}</span>
@@ -163,7 +163,7 @@ export function ActivityPanel() {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-navy-800 px-3 py-2">
               <div className="flex items-center gap-2">
-                <Activity className="h-3.5 w-3.5 text-gold-500" />
+                <Activity className="h-3.5 w-3.5 text-[color:var(--color-praxis-emerald-500)]" />
                 <span className="text-xs font-semibold text-navy-100">Activity</span>
                 {activeCount > 0 && (
                   <span className="rounded bg-blue-800/60 px-1.5 py-0.5 text-[10px] text-blue-300">
@@ -199,7 +199,7 @@ export function ActivityPanel() {
                   className={cn(
                     'px-3 py-1.5 text-[10px] font-medium capitalize transition-colors',
                     filter === mode
-                      ? 'border-b-2 border-gold-500 text-gold-400'
+                      ? 'border-b-2 border-[color:var(--color-praxis-emerald-500)] text-[color:var(--color-praxis-emerald-300)]'
                       : 'text-navy-500 hover:text-navy-300',
                   )}
                 >

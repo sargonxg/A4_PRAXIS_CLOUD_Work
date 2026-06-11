@@ -181,6 +181,13 @@ export interface CapsuleUsageReceiptSignal {
   staleCoreIds?: string[];
 }
 
+export interface CapsuleGraphStats {
+  nodeCount: number;
+  edgeCount: number;
+  entityTypeCounts: Record<string, number>;
+  updatedAt: string;
+}
+
 export interface CapsuleReviewEvidence {
   id: string;
   label: string;
@@ -355,6 +362,7 @@ export interface PraxisCapsule {
   causality?: unknown;
   ontologyBinding?: unknown;
   embeddedGraph?: unknown;
+  graphStats?: CapsuleGraphStats;
   activeOntologyStackId?: string;
   activeReadContractId?: string;
   readinessSummary?: CapsuleReadinessSummary;
@@ -385,6 +393,8 @@ export interface CreateCapsuleInput {
   activeReadContractId?: string | null;
   readinessSummary?: Partial<CapsuleReadinessSummary>;
   latestGateState?: CapsuleGateState;
+  embeddedGraph?: unknown;
+  graphStats?: Partial<CapsuleGraphStats>;
 }
 
 export interface CapsuleCombineConflict {
@@ -594,6 +604,8 @@ export async function createCapsule(
     activeReadContractId: input.activeReadContractId,
     readinessSummary: input.readinessSummary,
     latestGateState: input.latestGateState,
+    embeddedGraph: input.embeddedGraph,
+    graphStats: input.graphStats,
   });
   await ref.set(capsule, { merge: true });
   return capsule;
@@ -2074,6 +2086,7 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
   const baseHealth = isContextHealth(body.health) ? enrichContextHealth(body.health) : computeCapsuleHealth(coreRefs);
   const readiness = applyCoreHealthToReadiness(deriveReadinessBlock(qualityInput, updatedAt), baseHealth);
   const health = applyReadinessToHealth(baseHealth, readiness);
+  const graphStats = deriveCapsuleGraphStats(body, updatedAt);
   const provenance: CapsuleProvenance = {
     source: provenanceBody.source === 'context-stack-migration' || provenanceBody.source === 'fork' || provenanceBody.source === 'combine' || provenanceBody.source === 'api' || provenanceBody.source === 'created'
       ? provenanceBody.source
@@ -2123,6 +2136,7 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     ...(isRecord(body.causality) ? { causality: cloneSerializable(body.causality) } : {}),
     ...(isRecord(body.ontologyBinding) ? { ontologyBinding: cloneSerializable(body.ontologyBinding) } : {}),
     ...(isRecord(body.embeddedGraph) ? { embeddedGraph: cloneSerializable(body.embeddedGraph) } : {}),
+    graphStats,
   };
   const result: PraxisCapsule = {
     ...capsule,
@@ -2132,6 +2146,60 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     ...result,
     v3: normalizeToLatest(result, { now: updatedAt }),
   };
+}
+
+export function deriveCapsuleGraphStats(input: unknown, updatedAt = new Date().toISOString()): CapsuleGraphStats {
+  const root = isRecord(input) ? input : {};
+  const provided = isRecord(root.graphStats) ? root.graphStats : {};
+  const v3 = isRecord(root.v3) ? root.v3 : {};
+  const grounding = isRecord(root.grounding)
+    ? root.grounding
+    : isRecord(v3.grounding)
+      ? v3.grounding
+      : {};
+  const graph = firstRecord(root.embeddedGraph, grounding.embeddedGraph, root.graphLiteProjection) ?? {};
+  const nodes = graphProjectionRecords(graph.nodes);
+  const edges = graphProjectionRecords(graph.edges);
+  const nodeCount = nodes.length || nonnegativeInt(graph.nodeCount) || nonnegativeInt(provided.nodeCount) || 0;
+  const edgeCount = edges.length || nonnegativeInt(graph.edgeCount) || nonnegativeInt(provided.edgeCount) || 0;
+  const entityTypeCounts = nodes.length
+    ? entityTypeCountsFromNodes(nodes)
+    : normalizeEntityTypeCounts(provided.entityTypeCounts ?? graph.entityTypeCounts);
+
+  return {
+    nodeCount,
+    edgeCount,
+    entityTypeCounts,
+    updatedAt,
+  };
+}
+
+function entityTypeCountsFromNodes(nodes: Record<string, unknown>[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const node of nodes) {
+    const entityType = cleanText(node.entityType, 80)
+      || cleanText(node.type, 80)
+      || cleanText(node.acoType, 80)
+      || cleanText(node.primitive, 80)
+      || 'Unknown';
+    counts[entityType] = (counts[entityType] ?? 0) + 1;
+  }
+  return counts;
+}
+
+function normalizeEntityTypeCounts(value: unknown): Record<string, number> {
+  if (!isRecord(value)) return {};
+  const counts: Record<string, number> = {};
+  for (const [key, count] of Object.entries(value)) {
+    const label = cleanText(key, 80);
+    const total = nonnegativeInt(count);
+    if (label && total) counts[label] = total;
+  }
+  return counts;
+}
+
+function firstRecord(...values: unknown[]): Record<string, unknown> | null {
+  return values.find((value): value is Record<string, unknown> => Boolean(isRecord(value))) ?? null;
 }
 
 export async function validateOntologyStack(
@@ -3145,8 +3213,10 @@ function buildAppliedGraphProjectionPatch(
     lastAppliedReviewCardId: card.reviewCardId,
     lastAppliedAt: applyMetadata.appliedAt,
   };
+  const graphStats = deriveCapsuleGraphStats({ embeddedGraph }, applyMetadata.appliedAt);
   return {
     embeddedGraph,
+    graphStats,
     coreRefs: {
       graphCoreId: capsule.coreRefs.graphCoreId ?? projectionId,
     },

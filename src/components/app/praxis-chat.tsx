@@ -15,10 +15,14 @@ import {
   SendHorizontal,
   ShieldCheck,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { MutationConfirmCard, type MutationPatch } from '@/components/assistant/mutation-confirm-card';
 import { ResponseActions } from '@/components/assistant/response-actions';
 import { AnswerContextProvenanceChips } from '@/components/ask/AnswerContextProvenanceChips';
+import { CompactRunTimeline } from '@/components/runs/compact-run-timeline';
+import { SourceTierBadge } from '@/components/source/SourceTierBadge';
+import { EmptyState } from '@/components/ui/empty-state';
 import { inferResponseActionKinds, type ResponseActionKind } from '@/lib/assistant/response-action-kinds';
 import type { SourceabilityClaimVerdict } from '@/lib/agent-runtime/sourceability-ledger';
 import { DEFAULT_MODEL_PREFERENCE } from '@/lib/ai/model-preferences';
@@ -98,6 +102,7 @@ export function PraxisChat({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deepResearch, setDeepResearch] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef(messages);
@@ -293,11 +298,16 @@ export function PraxisChat({
             aiSettings: {
               provider: 'vertex',
               model: DEFAULT_MODEL_PREFERENCE,
-              analysisDepth: 'standard',
+              analysisDepth: deepResearch ? 'deep' : 'standard',
             },
             turnMetadata: {
+              selectedAgentId: deepResearch ? 'research-memo' : undefined,
               capsuleId: askStack.capsuleId,
               requestedOutputTarget: askStack.outputGoal,
+              analysisDepth: deepResearch ? 'deep' : 'standard',
+              toggles: {
+                deepResearch,
+              },
               activeCapsules: askStack.capsuleRefs.map((ref) => ({
                 id: ref.capsuleId,
                 label: ref.label ?? ref.capsuleId,
@@ -359,6 +369,7 @@ export function PraxisChat({
       currentPath,
       currentToolId,
       demoMode,
+      deepResearch,
       isPublic,
       isStreaming,
       router,
@@ -445,19 +456,13 @@ export function PraxisChat({
           variant === 'floating' ? 'px-3 py-3' : 'rounded-[var(--radius-lg)] border border-[var(--color-app-border)] bg-white/80 p-3 shadow-[var(--shadow-card)]',
         )}>
           {messages.length === 0 ? (
-            <div className={cn('grid place-items-center text-center', variant === 'floating' ? 'min-h-48 text-white' : 'min-h-40 text-slate-700')}>
-              <div>
-                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-[var(--radius-lg)] bg-emerald-500/10 text-emerald-700">
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
-                <p className={cn('mt-3 text-sm font-semibold', variant === 'floating' ? 'text-white' : 'text-slate-950')}>
-                  {isPublic ? 'Start with the question.' : 'Ready for the next serious question.'}
-                </p>
-                <p className={cn('mt-1 text-xs leading-5', variant === 'floating' ? 'text-slate-300' : 'text-slate-500')}>
-                  {isPublic ? 'Sign in after you ask; PRAXIS carries the draft forward.' : 'Answers can show sources, gaps, and draft-ready next steps.'}
-                </p>
-              </div>
-            </div>
+            <EmptyState
+              icon={ShieldCheck}
+              label={isPublic ? 'Start with the question.' : 'Ready for the next serious question.'}
+              hint={isPublic ? 'Sign in after you ask; PRAXIS carries the draft forward.' : 'Answers can show sources, gaps, and draft-ready next steps.'}
+              testId="praxis-chat-empty-state"
+              className={cn('border-emerald-100', variant === 'floating' ? 'min-h-48 bg-slate-900 text-white' : 'min-h-40')}
+            />
           ) : (
             <div className="grid gap-3">
               {messages.map((message) => (
@@ -560,6 +565,22 @@ export function PraxisChat({
                 </Link>
               ) : null}
               <button
+                type="button"
+                data-testid="praxis-chat-deep-research-toggle"
+                aria-pressed={deepResearch}
+                onClick={() => setDeepResearch((value) => !value)}
+                title="Multi-step sourced research — runs as a reviewable agent run"
+                className={cn(
+                  'inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border px-3 text-xs font-semibold transition',
+                  deepResearch
+                    ? 'border-cyan-500 bg-cyan-50 text-cyan-800'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-cyan-400/60',
+                )}
+              >
+                <Sparkles className="h-4 w-4" />
+                Deep research
+              </button>
+              <button
                 type="submit"
                 data-testid="marketing-primary-cta"
                 disabled={!input.trim() || isStreaming}
@@ -650,6 +671,7 @@ function AnswerAgentActivity({
   variant: 'home' | 'floating';
 }) {
   const receipt = envelope?.orchestrationReceipt;
+  const [receiptOpen, setReceiptOpen] = useState(false);
   if (!receipt) {
     if (!isStreaming) return null;
     return (
@@ -664,37 +686,118 @@ function AnswerAgentActivity({
   const agentLabel = labelizeAgentId(receipt.supervisor?.policyAgentId ?? receipt.triage?.policyAgentId ?? null);
   const directAnswer = receipt.supervisor?.action !== 'queue_agent_run';
   return (
-    <div className="mb-2 flex flex-wrap items-center gap-1.5" data-testid="praxis-chat-agent-activity">
-      <span className={cn(
-        'inline-flex items-center gap-1.5 rounded-[var(--radius-full)] border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em]',
-        dark ? 'border-slate-700 text-slate-300' : 'border-emerald-500/30 bg-emerald-50/60 text-emerald-800',
-      )}>
-        <Bot className="h-3 w-3" />
-        {directAnswer ? 'Direct answer with receipts' : 'Agent run queued'}
-      </span>
-      {agentLabel ? (
-        <span className={cn(
-          'inline-flex items-center rounded-[var(--radius-full)] border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em]',
-          dark ? 'border-slate-700 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600',
-        )}>
-          {agentLabel}
-        </span>
-      ) : null}
-      {queuedRun?.runId ? (
-        <Link
-          href={`/agents/${encodeURIComponent(queuedRun.runId)}`}
+    <div className="mb-2" data-testid="praxis-chat-agent-activity">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <button
+          type="button"
+          data-testid="orchestration-receipt-trigger"
+          onClick={() => setReceiptOpen(true)}
           className={cn(
-            'inline-flex items-center gap-1 rounded-[var(--radius-full)] border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] transition',
-            dark
-              ? 'border-cyan-400/40 text-cyan-200 hover:border-cyan-300'
-              : 'border-cyan-500/40 bg-cyan-50 text-cyan-800 hover:border-cyan-500',
+            'inline-flex items-center gap-1.5 rounded-[var(--radius-full)] border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] transition',
+            dark ? 'border-slate-700 text-slate-300 hover:border-emerald-400/50' : 'border-emerald-500/30 bg-emerald-50/60 text-emerald-800 hover:border-emerald-500/70',
           )}
-          title="Open the live run workspace: timeline, tool calls, approvals"
+          title="Open orchestration receipt"
         >
+          <Bot className="h-3 w-3" />
+          {directAnswer ? 'Direct answer with receipts' : 'Agent run queued'}
+        </button>
+        {agentLabel ? (
+          <span className={cn(
+            'inline-flex items-center rounded-[var(--radius-full)] border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em]',
+            dark ? 'border-slate-700 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600',
+          )}>
+            {agentLabel}
+          </span>
+        ) : null}
+        {queuedRun?.runId ? (
+          <Link
+            href={`/agents/${encodeURIComponent(queuedRun.runId)}`}
+            className={cn(
+              'inline-flex items-center gap-1 rounded-[var(--radius-full)] border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] transition',
+              dark
+                ? 'border-cyan-400/40 text-cyan-200 hover:border-cyan-300'
+                : 'border-cyan-500/40 bg-cyan-50 text-cyan-800 hover:border-cyan-500',
+            )}
+            title="Open the live run workspace: timeline, tool calls, approvals"
+          >
           {queuedRun.status === 'dispatch_enqueued' || queuedRun.status === 'queued' ? 'Run in progress' : `Run ${queuedRun.status.replace(/_/g, ' ')}`}
-          <ExternalLink className="h-3 w-3" />
-        </Link>
+            <ExternalLink className="h-3 w-3" />
+          </Link>
+        ) : null}
+      </div>
+      {queuedRun?.runId && queuedRun.runId !== 'unavailable' ? (
+        <CompactRunTimeline runId={queuedRun.runId} />
       ) : null}
+      {receiptOpen ? <OrchestrationReceiptDrawer receipt={receipt} onClose={() => setReceiptOpen(false)} /> : null}
+    </div>
+  );
+}
+
+function OrchestrationReceiptDrawer({
+  onClose,
+  receipt,
+}: {
+  onClose: () => void;
+  receipt: NonNullable<AskAnswerEnvelope['orchestrationReceipt']>;
+}) {
+  const sections = [
+    ['triage', receipt.triage],
+    ['capsule', receipt.capsule],
+    ['tools', receipt.toolRouting],
+    ['grounding', receipt.grounding],
+    ['model', receipt.routingDecision],
+    ['language', receipt.languagePolicyReview],
+    ['supervisor', receipt.supervisor],
+  ] as const;
+  const sectionTestIds = {
+    triage: 'orchestration-receipt-triage',
+    capsule: 'orchestration-receipt-capsule',
+    tools: 'orchestration-receipt-tools',
+    grounding: 'orchestration-receipt-grounding',
+    model: 'orchestration-receipt-model',
+    language: 'orchestration-receipt-language',
+    supervisor: 'orchestration-receipt-supervisor',
+  } as const;
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/30" data-testid="orchestration-receipt-drawer">
+      <button
+        type="button"
+        className="absolute inset-0 cursor-default"
+        aria-label="Close orchestration receipt backdrop"
+        onClick={onClose}
+      />
+      <aside className="relative flex h-full w-[min(520px,100vw)] flex-col border-l border-emerald-500/30 bg-white shadow-[0_20px_80px_rgba(15,23,42,0.24)]">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3">
+          <div>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">PRAXIS augmented generation</p>
+            <h2 className="mt-1 text-sm font-semibold text-slate-950">Orchestration receipt</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] border border-slate-200 text-slate-600 hover:border-emerald-500/50"
+            aria-label="Close orchestration receipt"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
+          {sections.map(([label, value]) => (
+            <section key={label} data-testid={sectionTestIds[label]} className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">{label}</p>
+              <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-[var(--radius-sm)] bg-white p-2 font-mono text-[11px] leading-5 text-slate-700">
+                {JSON.stringify(value, null, 2)}
+              </pre>
+            </section>
+          ))}
+          <section data-testid="orchestration-receipt-full" className="rounded-[var(--radius-md)] border border-emerald-500/30 bg-emerald-50/50 p-3">
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-800">full receipt</p>
+            <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-[var(--radius-sm)] bg-white p-2 font-mono text-[11px] leading-5 text-slate-700">
+              {JSON.stringify(receipt, null, 2)}
+            </pre>
+          </section>
+        </div>
+      </aside>
     </div>
   );
 }
@@ -774,7 +877,10 @@ function SourceCards({ sourceCards }: { sourceCards: SourcePreviewCard[] }) {
         >
           <span className="flex items-center justify-between gap-2 font-semibold text-slate-900">
             <span className="truncate">{source.title || source.label}</span>
-            <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+            <span className="flex shrink-0 items-center gap-1">
+              <SourceTierBadge tier={source.reliabilityTier ?? null} date={source.date ?? null} stale={source.stale ?? null} size="xs" />
+              <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
+            </span>
           </span>
           <span className="mt-1 line-clamp-2 block leading-5">{source.quotePreview}</span>
           <span className="mt-1 block font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">

@@ -54,6 +54,25 @@ describe('ask answer envelope', () => {
               reliabilityTier: 1,
               citation: 'OHCHR, Access Update, 1 June 2026',
             },
+            {
+              sourceId: 'receipt-older-t1',
+              label: 'Older T1 report',
+              title: 'Older T1 report',
+              url: 'https://example.org/older-t1',
+              publisher: 'OCHA',
+              date: '2026-05-01',
+              reliabilityTier: 1,
+              citation: 'OCHA, Older Update, 1 May 2026',
+            },
+            {
+              sourceId: 'receipt-unrated-fresh',
+              label: 'Fresh unrated report',
+              title: 'Fresh unrated report',
+              url: 'https://example.org/unrated',
+              publisher: 'Local outlet',
+              date: '2026-06-10',
+              citation: 'Local outlet, 10 June 2026',
+            },
           ],
         },
       } as CapsuleEvidencePack,
@@ -67,7 +86,19 @@ describe('ask answer envelope', () => {
       citationLabel: 'OHCHR, Access Update, 1 June 2026',
       locatorLabel: 'OHCHR / 2026-06-01 / tier 1',
       sourceReceiptId: 'receipt-1',
+      reliabilityTier: 1,
+      date: '2026-06-01',
+      publisher: 'OHCHR',
     }));
+    expect(cards.map((card) => card.id).slice(0, 3)).toEqual([
+      'doc-1:chunk-1',
+      'receipt:receipt-1',
+      'receipt:receipt-older-t1',
+    ]);
+    expect(cards.find((card) => card.id === 'receipt:receipt-unrated-fresh')).toMatchObject({
+      reliabilityTier: null,
+      date: '2026-06-10',
+    });
   });
 
   it('normalizes corpus documents, source receipts, grounded fetches, and document digests into source cards', () => {

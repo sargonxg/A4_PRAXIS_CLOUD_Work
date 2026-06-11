@@ -1,6 +1,12 @@
 import Link from 'next/link';
+import nextDynamic from 'next/dynamic';
 
-import { CapsuleBuilderWizard } from '@/components/capsules/CapsuleBuilderWizard';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const CapsuleBuilderWizard = nextDynamic(
+  () => import('@/components/capsules/CapsuleBuilderWizard').then((module) => module.CapsuleBuilderWizard),
+  { loading: () => <CapsuleBuilderLoadingSkeleton /> },
+);
 
 export const dynamic = 'force-dynamic';
 
@@ -30,5 +36,18 @@ export default function CapsuleBuilderPage() {
         <CapsuleBuilderWizard />
       </div>
     </main>
+  );
+}
+
+function CapsuleBuilderLoadingSkeleton() {
+  return (
+    <section className="grid gap-4" data-testid="capsule-builder-loading-skeleton">
+      <Skeleton className="h-16 w-full" />
+      <Skeleton className="h-72 w-full" />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
+      </div>
+    </section>
   );
 }

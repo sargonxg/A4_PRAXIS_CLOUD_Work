@@ -1,7 +1,7 @@
 {
-  "catalogVersion": "2026-05-31-graphlite-advisory-projection-v17",
+  "catalogVersion": "2026-06-11-graphlite-advisory-projection-v17-human-gated-depth",
   "starterCount": 205,
-  "averagePromptLength": 9441,
-  "maxPromptLength": 11791,
+  "averagePromptLength": 9489,
+  "maxPromptLength": 11827,
   "findings": []
 }

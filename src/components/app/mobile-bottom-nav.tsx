@@ -38,7 +38,7 @@ export function MobileBottomNav() {
                 key={item.id}
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent('open-praxis-chat'))}
-                className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-md text-xs font-semibold text-gold-700 hover:bg-gold-50"
+                className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-md text-xs font-semibold text-[color:var(--color-praxis-emerald-700)] hover:bg-[color:var(--color-praxis-emerald-50)]"
               >
                 <Icon className="h-5 w-5" />
                 {item.label}

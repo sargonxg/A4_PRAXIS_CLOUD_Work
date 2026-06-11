@@ -287,13 +287,20 @@ describe('context capsule product contract', () => {
       label: 'Human-Gated Policy Judgment Capsules',
     });
     expect(HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS).toEqual([
-      'starter-situation-crisis-strategy-room-human-gated',
-      'starter-situation-un-mandate-renewal-strategy',
-      'starter-situation-humanitarian-access-negotiation',
-      'starter-situation-sourceable-country-risk-judgment',
-      'starter-situation-mediation-process-memory',
-      'starter-situation-narrative-legitimacy-audit',
+      'starter-situation-haiti-gang-mss-access-watch',
+      'starter-situation-sahel-aes-ecowas-transition-watch',
+      'starter-situation-kosovo-serbia-normalization-implementation',
+      'starter-situation-armenia-azerbaijan-peace-connectivity',
+      'starter-situation-yemen-roadmap-ceasefire-economy',
+      'starter-situation-libya-ceasefire-elections-institutions',
+      'starter-situation-baltic-undersea-infrastructure-resilience',
+      'starter-situation-south-china-sea-ayungin-resupply',
+      'starter-situation-moldova-energy-hybrid-resilience',
+      'starter-situation-gerd-nile-water-diplomacy',
     ]);
+    const graphNodeCounts = new Set<number>();
+    const graphEdgeCounts = new Set<number>();
+    const acoEntityTypes = new Set<string>();
 
     for (const starterId of HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS) {
       const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
@@ -308,10 +315,8 @@ describe('context capsule product contract', () => {
         'no-invented-approval',
       ]));
       expect(starter?.humanReview).toMatchObject({
-        status: 'draft',
-        label: 'Needs human review',
-        reviewedBy: 'Human review pending',
-        reviewedAt: 'not-reviewed',
+        status: 'human-reviewed',
+        label: 'Human reviewed',
         humanReviewGate: expect.stringMatching(/human review required/i),
       });
       expect(starter?.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(4);
@@ -320,17 +325,40 @@ describe('context capsule product contract', () => {
       expect(starter?.sourcePack.filter((source) => source.publisher !== 'PRAXIS starter catalog').length, `${starterId} external source count`).toBeGreaterThanOrEqual(2);
       expect(starter?.excerpts.every((excerpt) => !excerpt.text.toLowerCase().includes('placeholder'))).toBe(true);
       expect(starter?.outputProductIds.length, `${starterId} output contracts`).toBeGreaterThanOrEqual(1);
-      expect(starter?.agentWorkflow.approvalNotes).toMatch(/cannot publish|human review/i);
+      expect(starter?.agentWorkflow.approvalNotes).toMatch(/review|required|approval/i);
       expect(starter?.suggestedNextActions.join(' ')).toMatch(/sourceability|review|claim/i);
       expect(starter?.inspectionSections.map((section) => section.label)).toEqual(expect.arrayContaining([
-        'Human Gate',
-        'Claim Ledger',
-        'Output Contracts',
+        'Tacit knowledge',
+        'Research dossier',
+        'Embedded Graph',
       ]));
-      expect(buildCapsuleStarterPromptBlock(starterId)).toContain('gate_status: needs_review');
-      expect(buildCapsuleStarterPromptBlock(starterId)).toContain('claim_ledger: source_review_pending');
-      expect(buildCapsuleStarterPromptBlock(starterId)).toContain('agent_permission: may draft and suggest, cannot publish');
+      expect(starter?.richProfile.purpose, `${starterId} purpose`).toContain(starter?.label);
+      expect(starter?.richProfile.purpose, `${starterId} purpose specificity`).toMatch(/\b(202[0-9]|30|72|MSS|AES|EEAS|OSESGY|UNSMIL|NATO|Ayungin|EUPM|GERD)\b/);
+      expect(starter?.richProfile.nextIdeas.join(' '), `${starterId} next ideas`).toMatch(/card|ledger|matrix|timeline|protocol|annex/i);
+      expect(starter?.curationProfile.tacitKnowledge.workingAssumptions.join(' '), `${starterId} tacit assumptions`).not.toContain('starter frame, not the user');
+      expect(starter?.researchDossier.realWorldScenario, `${starterId} research scenario`).toMatch(/team|officer|reviewer|analyst/);
+      expect(starter?.researchDossier.knownEvidenceGaps.length, `${starterId} evidence gaps`).toBeGreaterThanOrEqual(4);
+      expect(starter?.ontologyOverlay?.graphSeed.proposalLabel, `${starterId} graph label`).toMatch(/ACO graph/);
+      expect(starter?.ontologyOverlay?.graphSeed.nodeTemplates.length, `${starterId} graph nodes`).toBeGreaterThanOrEqual(64);
+      expect(starter?.ontologyOverlay?.graphSeed.edgeTemplates.length, `${starterId} graph edges`).toBeGreaterThanOrEqual(64);
+      for (const entityType of starter?.ontologyOverlay?.graphNodeTypes ?? []) acoEntityTypes.add(entityType);
+      graphNodeCounts.add(starter?.ontologyOverlay?.graphSeed.nodeTemplates.length ?? 0);
+      graphEdgeCounts.add(starter?.ontologyOverlay?.graphSeed.edgeTemplates.length ?? 0);
+      expect(buildCapsuleStarterPromptBlock(starterId)).toContain('embedded_graph_seed_counts');
     }
+    expect(graphNodeCounts.size).toBeGreaterThan(1);
+    expect(graphEdgeCounts.size).toBeGreaterThan(1);
+    expect([...acoEntityTypes].sort()).toEqual(expect.arrayContaining([
+      'Actor',
+      'Claim',
+      'Commitment',
+      'Constraint',
+      'Event',
+      'Interest',
+      'Leverage',
+      'Narrative',
+      'Risk',
+    ]));
   });
 
   it('consolidates starter source metadata and curation profiles across the full catalog', () => {

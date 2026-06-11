@@ -192,6 +192,23 @@ describe('agent runtime no-op worker', () => {
       executionMode: 'research-memo',
       failedPhase: 'evidence-pack',
     });
+    expect(failed?.data?.failureSummary).toMatchObject({
+      category: 'evidence_pack_failed',
+      policyAgentId: 'research-memo',
+      executionMode: 'research-memo',
+      failedPhase: 'evidence-pack',
+      sanitizedError: 'synthetic evidence pack failure with token=[REDACTED]',
+      lastEventBeforeFailure: expect.objectContaining({
+        eventType: expect.any(String),
+        phase: expect.any(String),
+      }),
+      failingToolCall: expect.objectContaining({
+        toolId: 'capsule-evidence-pack',
+        status: 'failed',
+        error: 'synthetic evidence pack failure with token=[REDACTED]',
+      }),
+    });
+    expect(failed?.data?.metadata).toBeUndefined();
     expect(JSON.stringify(failed?.data)).not.toContain('token=secret');
   });
 
@@ -585,6 +602,307 @@ describe('agent runtime no-op worker', () => {
       unsupportedClaimCount: 1,
       liveSourceReceiptCount: 1,
     });
+  });
+
+  it('blocks deep research synthesis behind approval when unsupported claims remain', async () => {
+    const approvals: AgentApproval[] = [];
+    const mirrored: string[] = [];
+    let memoSaved = 0;
+
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', {
+        policyAgentId: 'research-memo',
+        selectedToolIds: ['context-resolve', 'grounded-search', 'deep-search-agent', 'sourceability-reviewer', 'policy-memo'],
+        minSourcesPerClaim: 2,
+        synthesisGate: 'block_on_unsupported_claims',
+      }),
+      updateStatus: async (input) => makeRun(input.toStatus, {
+        policyAgentId: 'research-memo',
+        selectedToolIds: ['context-resolve', 'grounded-search', 'deep-search-agent', 'sourceability-reviewer', 'policy-memo'],
+        minSourcesPerClaim: 2,
+        synthesisGate: 'block_on_unsupported_claims',
+      }),
+      appendEvent: async (event) => {
+        mirrored.push(String(event.data.phase ?? event.eventType));
+        return event;
+      },
+      appendToolCall: async (toolCall) => toolCall,
+      appendApproval: async (approval) => {
+        approvals.push(approval);
+        return approval;
+      },
+      listApprovals: async () => approvals,
+      buildEvidencePack: async () => makeEvidencePack({
+        sourceReceiptIds: [],
+        sourcedParagraphs: [],
+        openGaps: ['Official implementation source is missing.'],
+        receipts: {
+          sourcesUsed: 0,
+          paragraphsUsed: 0,
+          unsupportedGaps: ['Official implementation source is missing.'],
+          outputHistoryCount: 0,
+          memoryCount: 0,
+        },
+      }),
+      runGroundedSearch: async ({ query }) => ({
+        query,
+        sourceReceipts: [],
+        degradedReason: 'No current receipts returned.',
+      }),
+      saveMemoDraft: async () => {
+        memoSaved += 1;
+        return { memo: { id: 'memo-should-not-save' } };
+      },
+      saveOutputCapsule: async () => ({ id: 'output-should-not-save' }),
+    });
+
+    expect(result).toMatchObject({ status: 'waiting_approval', executionMode: 'research-memo' });
+    expect(memoSaved).toBe(0);
+    expect(approvals).toHaveLength(1);
+    expect(approvals[0]).toMatchObject({ status: 'pending', risk: 'medium' });
+    expect(mirrored).toContain('research.synthesis_blocked');
+    expect(mirrored).not.toContain('memo.draft_created');
+  });
+
+  it('routes source-gap scout runs into review-gated source-pack cards', async () => {
+    const reviewCards: Array<{ title: string; target: string; sourceType: string; evidence: unknown[]; patch: Record<string, unknown> | undefined }> = [];
+    const toolCalls: Array<{ toolId: string; status: string; output: Record<string, unknown> | null }> = [];
+    const mirrored: string[] = [];
+
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', {
+        policyAgentId: 'source-gap-scout',
+        selectedToolIds: ['context-resolve', 'grounded-search'],
+        unsupportedClaims: ['The access clause is current but lacks an official receipt.'],
+        searchPlan: {
+          queries: ['official access clause current receipt'],
+          sourceClasses: ['public_web'],
+          freshnessNeed: 'current',
+        },
+      }),
+      updateStatus: async (input) => makeRun(input.toStatus, {
+        policyAgentId: 'source-gap-scout',
+        selectedToolIds: ['context-resolve', 'grounded-search'],
+      }),
+      appendToolCall: async (toolCall) => {
+        toolCalls.push({ toolId: toolCall.toolId, status: toolCall.status, output: toolCall.output });
+        return toolCall;
+      },
+      appendEvent: async (event) => {
+        mirrored.push(String(event.data.phase ?? event.eventType));
+        return event;
+      },
+      buildEvidencePack: async () => makeEvidencePack({
+        sourceReceiptIds: [],
+        sourcedParagraphs: [],
+        openGaps: ['Access clause needs an official current source.'],
+        receipts: {
+          sourcesUsed: 0,
+          paragraphsUsed: 0,
+          unsupportedGaps: ['Access clause needs an official current source.'],
+          outputHistoryCount: 0,
+          memoryCount: 0,
+        },
+      }),
+      runGroundedSearch: async ({ query }) => ({
+        query,
+        sourceReceipts: [{
+          sourceReceiptId: 'web-gap-1',
+          title: 'Official access clause notice',
+          url: 'https://example.test/access-clause',
+          snippet: 'Official access clause current receipt with implementation date.',
+          provider: 'unit-search',
+          publishedDate: '2026-06-01',
+          confidence: 0.84,
+        }],
+        degradedReason: null,
+      }),
+      createReviewCard: async (_uid, _capsuleId, input) => {
+        reviewCards.push({
+          title: input.title,
+          target: input.target,
+          sourceType: input.sourceType,
+          evidence: input.evidence ?? [],
+          patch: input.proposedEnvelopePatch,
+        });
+        return { reviewCardId: `source-gap-card-${reviewCards.length}` } as never;
+      },
+    });
+
+    expect(result).toMatchObject({
+      status: 'succeeded',
+      executionMode: 'source-gap-scout',
+      outputHref: '/app/capsules?capsuleId=cap-1&review=source-gaps',
+    });
+    expect(reviewCards).toHaveLength(2);
+    expect(reviewCards.every((card) => card.target === 'sourceGap' && card.sourceType === 'agent')).toBe(true);
+    expect(reviewCards[0]?.evidence).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'web-gap-1',
+        url: 'https://example.test/access-clause',
+      }),
+    ]));
+    expect(reviewCards[0]?.patch).toMatchObject({
+      sourceRefs: expect.arrayContaining([
+        expect.objectContaining({
+          sourceId: 'web-gap-1',
+          url: 'https://example.test/access-clause',
+          snippet: 'Official access clause current receipt with implementation date.',
+          date: '2026-06-01',
+          reviewState: 'proposed',
+        }),
+      ]),
+      claimLedger: expect.arrayContaining([
+        expect.objectContaining({
+          support: 'needs_source',
+          receipts: expect.arrayContaining([
+            expect.objectContaining({
+              sourceId: 'web-gap-1',
+              snippet: 'Official access clause current receipt with implementation date.',
+              date: '2026-06-01',
+            }),
+          ]),
+        }),
+      ]),
+    });
+    expect(toolCalls).toEqual(expect.arrayContaining([
+      expect.objectContaining({ toolId: 'grounded-search', status: 'succeeded' }),
+      expect.objectContaining({
+        toolId: 'source-gap-scout',
+        status: 'succeeded',
+        output: expect.objectContaining({
+          reviewCardCount: 2,
+          candidateReceiptCount: 1,
+        }),
+      }),
+    ]));
+    expect(mirrored).toEqual(expect.arrayContaining([
+      'source_gap_scout.plan_created',
+      'grounding.live_retrieval_started',
+      'source_gap_scout.review_cards_created',
+    ]));
+  });
+
+  it('routes scheduled daily brief runs into review-gated memo drafts and notifications', async () => {
+    const transitions: AgentRun['status'][] = [];
+    const toolCalls: Array<{ toolId: string; status: string; output: Record<string, unknown> | null }> = [];
+    const mirrored: string[] = [];
+    const notifications: Array<{ title: string; actionUrl?: string }> = [];
+
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', {
+        policyAgentId: 'daily-brief',
+        outputDestination: 'memo_studio',
+        selectedToolIds: ['context-resolve', 'grounded-search', 'daily-brief', 'policy-memo'],
+        scheduledFor: '2026-06-11T09:00:00.000Z',
+        searchPlan: {
+          queries: ['capsule daily brief latest official update'],
+          sourceClasses: ['official_sources'],
+          freshnessNeed: 'latest',
+        },
+      }),
+      updateStatus: async (input) => {
+        transitions.push(input.toStatus);
+        return makeRun(input.toStatus, {
+          policyAgentId: 'daily-brief',
+          outputDestination: 'memo_studio',
+          selectedToolIds: ['context-resolve', 'grounded-search', 'daily-brief', 'policy-memo'],
+          scheduledFor: '2026-06-11T09:00:00.000Z',
+        });
+      },
+      appendToolCall: async (toolCall) => {
+        toolCalls.push({ toolId: toolCall.toolId, status: toolCall.status, output: toolCall.output });
+        return toolCall;
+      },
+      appendEvent: async (event) => {
+        mirrored.push(String(event.data.phase ?? event.eventType));
+        return event;
+      },
+      buildEvidencePack: async () => makeEvidencePack({
+        outputHistory: [{
+          outputCapsuleId: 'output-prev-1',
+          templateId: 'situation-brief',
+          status: 'draft',
+          qualityStatus: 'review',
+          createdAt: '2026-06-11T08:00:00.000Z',
+        }],
+        openGaps: ['Need current official confirmation of the access window.'],
+        receipts: {
+          sourcesUsed: 1,
+          paragraphsUsed: 1,
+          unsupportedGaps: ['Need current official confirmation of the access window.'],
+          outputHistoryCount: 1,
+          memoryCount: 0,
+        },
+      }),
+      runGroundedSearch: async ({ query }) => ({
+        query,
+        sourceReceipts: [{
+          sourceReceiptId: 'web-brief-1',
+          title: 'Official daily update',
+          url: 'https://example.test/daily-update',
+          snippet: 'Official update confirms the access window remains under review.',
+          provider: 'unit-search',
+          publishedDate: '2026-06-11',
+          confidence: 0.86,
+        }],
+        degradedReason: null,
+      }),
+      saveMemoDraft: async (_uid, input) => {
+        expect(input.templateId).toBe('policy-memo');
+        expect(input.outputTarget).toBe('daily-brief');
+        expect(input.status).toBe('draft');
+        expect(input.sourceReceiptIds).toEqual(expect.arrayContaining(['src-1', 'web-brief-1']));
+        expect(input.blocks.map((block) => block.id)).toEqual(expect.arrayContaining([
+          'daily-brief-title',
+          'daily-brief-fresh-sources',
+          'daily-brief-capsule-deltas',
+          'daily-brief-sourceability',
+        ]));
+        return { memo: { id: 'memo-daily-1' } };
+      },
+      saveOutputCapsule: async (_uid, input) => {
+        expect(input.templateId).toBe('situation-brief');
+        expect(input.payload).toMatchObject({ reviewOnly: true });
+        return { id: 'output-daily-1' };
+      },
+      emitNotification: async (input) => {
+        notifications.push({ title: input.title, actionUrl: input.actionUrl });
+        return 'notification-daily-1';
+      },
+    });
+
+    expect(transitions).toEqual(['running', 'succeeded']);
+    expect(result).toMatchObject({
+      status: 'succeeded',
+      executionMode: 'daily-brief',
+      memoId: 'memo-daily-1',
+      outputCapsuleId: 'output-daily-1',
+      outputHref: '/app?panel=memo&memoId=memo-daily-1&outputCapsuleId=output-daily-1',
+    });
+    expect(notifications).toEqual([expect.objectContaining({
+      title: 'Daily Brief draft ready',
+      actionUrl: '/app?panel=memo&memoId=memo-daily-1&outputCapsuleId=output-daily-1',
+    })]);
+    expect(toolCalls).toEqual(expect.arrayContaining([
+      expect.objectContaining({ toolId: 'grounded-search', status: 'succeeded' }),
+      expect.objectContaining({
+        toolId: 'daily-brief',
+        status: 'succeeded',
+        output: expect.objectContaining({
+          memoId: 'memo-daily-1',
+          notificationId: 'notification-daily-1',
+          reviewOnly: true,
+        }),
+      }),
+    ]));
+    expect(mirrored).toEqual(expect.arrayContaining([
+      'context_resolved',
+      'capsule.read_receipt_created',
+      'workflow.plan_created',
+      'sourceability.ledger_created',
+      'daily_brief.draft_created',
+    ]));
   });
 
   it('creates review cards instead of mutating the capsule when capsule factory proposes improvements', async () => {

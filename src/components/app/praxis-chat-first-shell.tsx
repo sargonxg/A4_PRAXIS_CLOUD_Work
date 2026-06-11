@@ -6,20 +6,20 @@ import { useMemo, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
   CheckCircle2,
+  Boxes,
+  ChevronDown,
   FileText,
   FolderKanban,
   Library,
+  LogIn,
   MessageSquareText,
+  MoreHorizontal,
   PlusCircle,
   ShieldCheck,
   X,
 } from 'lucide-react';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { PublicShell } from '@/components/app/public-shell';
-import { PraxisChat } from '@/components/app/praxis-chat';
-import { AskContextBar } from '@/components/app/ask-context-bar';
-import { CapsuleImportButton } from '@/components/capsules/CapsuleImportButton';
-import { PolicyAgentStrip } from '@/components/app/policy-agent-strip';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import {
   DEFAULT_CONTEXT_STACK_ID,
@@ -30,6 +30,31 @@ import {
 
 const CapsuleListPicker = dynamic(
   () => import('@/components/cores/CapsuleListPicker').then((module) => module.CapsuleListPicker),
+  { ssr: false },
+);
+
+const PraxisChat = dynamic(
+  () => import('@/components/app/praxis-chat').then((module) => module.PraxisChat),
+  { loading: () => <PraxisChatLoadingSkeleton />, ssr: false },
+);
+
+const AskContextBar = dynamic(
+  () => import('@/components/app/ask-context-bar').then((module) => module.AskContextBar),
+  { loading: () => <ContextBarLoadingSkeleton />, ssr: false },
+);
+
+const UserCoreOnboardingCard = dynamic(
+  () => import('@/components/app/user-core-onboarding-card').then((module) => module.UserCoreOnboardingCard),
+  { loading: () => null, ssr: false },
+);
+
+const CapsuleImportButton = dynamic(
+  () => import('@/components/capsules/CapsuleImportButton').then((module) => module.CapsuleImportButton),
+  { ssr: false },
+);
+
+const PolicyAgentStrip = dynamic(
+  () => import('@/components/app/policy-agent-strip').then((module) => module.PolicyAgentStrip),
   { ssr: false },
 );
 
@@ -54,11 +79,12 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const initialPrompt = searchParams.get('prompt') ?? searchParams.get('capsulePrompt') ?? '';
-  const { stack, saveStack, persisted, hydrated } = useActiveContextStack();
+  const { stack, saveStack, persisted, hydrated } = useActiveContextStack({ remote: !isPublic });
   const [contextOpen, setContextOpen] = useState(false);
   const [savingContext, setSavingContext] = useState(false);
   const selectedCapsuleRefs = stack.capsuleRefs;
   const activeCapsuleId = selectedCapsuleRefs[0]?.capsuleId ?? stack.capsuleId;
+  const showUserCoreOnboarding = !isPublic && hydrated && !selectedCapsuleRefs.length && !activeCapsuleId;
   const contextLabel = useMemo(() => {
     if (!selectedCapsuleRefs.length && !activeCapsuleId) return '+ Saved context';
     return `${selectedCapsuleRefs.length || 1} saved context`;
@@ -149,15 +175,26 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
               mode={mode}
               activeContextStack={stack}
               contextBar={(
-                <AskContextBar
-                  mode={mode}
-                  stack={stack}
-                  saveStack={saveStack}
-                  hydrated={hydrated}
-                  persisted={persisted}
-                  variant="home"
-                  onOpenAdvancedContext={() => setContextOpen(true)}
-                />
+                <>
+                  {isPublic ? (
+                    <PublicAskContextBar onOpenAdvancedContext={() => setContextOpen(true)} />
+                  ) : (
+                    <AskContextBar
+                      mode={mode}
+                      stack={stack}
+                      saveStack={saveStack}
+                      hydrated={hydrated}
+                      persisted={persisted}
+                      variant="home"
+                      onOpenAdvancedContext={() => setContextOpen(true)}
+                    />
+                  )}
+                  <UserCoreOnboardingCard
+                    saveStack={saveStack}
+                    stack={stack}
+                    visible={showUserCoreOnboarding}
+                  />
+                </>
               )}
               contextLabel={contextLabel}
               contextOpen={contextOpen}
@@ -394,4 +431,125 @@ function ContextDrawer({
 
 function shortenContextId(value: string): string {
   return value.length > 28 ? `${value.slice(0, 16)}...${value.slice(-8)}` : value;
+}
+
+function PublicAskContextBar({ onOpenAdvancedContext }: { onOpenAdvancedContext: () => void }) {
+  const [actionsOpen, setActionsOpen] = useState(false);
+
+  return (
+    <div
+      data-testid="ask-context-bar"
+      className="rounded-[var(--radius-lg)] border border-[var(--color-app-border)] bg-white/90 p-2 text-slate-950 shadow-[var(--shadow-card)]"
+    >
+      <div data-testid="capsule-dock" aria-label="Capsule Dock" className="flex flex-col gap-1.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span
+              title="Capsule Dock - direct ask"
+              data-testid="capsule-dock-stack"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-md)] px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+              Context
+              <span className="sr-only">Capsule Dock. Direct ask mode.</span>
+            </span>
+            <span
+              data-testid="capsule-dock-chip"
+              className="inline-flex min-h-7 items-center rounded-[var(--radius-full)] border border-dashed border-slate-300 px-2.5 text-xs font-semibold text-slate-500"
+            >
+              No saved context - direct ask
+            </span>
+          </div>
+
+          <div className="hidden sm:flex shrink-0 flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              disabled
+              title="Sign in to attach saved context"
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 px-2.5 text-xs font-semibold text-slate-600 opacity-60"
+            >
+              <Boxes className="h-3.5 w-3.5" />
+              Attach context
+            </button>
+            <Link
+              href="/login?mode=signup&redirect=%2Fapp"
+              data-testid="public-context-sign-in-affordance"
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] bg-emerald-700 px-2.5 text-xs font-semibold text-white hover:bg-emerald-600"
+            >
+              <LogIn className="h-3.5 w-3.5" />
+              Sign in to save context
+            </Link>
+            <button
+              type="button"
+              onClick={onOpenAdvancedContext}
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 px-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              title="Show context details"
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+              <span className="sr-only">Context details</span>
+            </button>
+          </div>
+
+          <div className="relative shrink-0 sm:hidden" data-testid="capsule-dock-mobile-actions">
+            <button
+              type="button"
+              aria-label="Capsule Dock actions"
+              aria-haspopup="menu"
+              aria-expanded={actionsOpen}
+              onClick={() => setActionsOpen((value) => !value)}
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 px-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+            {actionsOpen ? (
+              <div
+                role="menu"
+                data-testid="capsule-dock-action-menu"
+                className="absolute right-0 top-[calc(100%+0.5rem)] z-50 grid w-[min(18rem,calc(100vw-2rem))] gap-1 rounded-[var(--radius-md)] border border-slate-200 bg-white p-2 shadow-[var(--shadow-float)]"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled
+                  title="Sign in to attach saved context"
+                  className="inline-flex min-h-8 w-full items-center justify-start gap-1.5 rounded-[var(--radius-md)] border border-slate-200 px-2.5 text-xs font-semibold text-slate-600 opacity-60"
+                >
+                  <Boxes className="h-3.5 w-3.5" />
+                  Attach context
+                </button>
+                <Link
+                  href="/login?mode=signup&redirect=%2Fapp"
+                  role="menuitem"
+                  data-testid="public-context-sign-in-affordance"
+                  className="inline-flex min-h-8 w-full items-center justify-start gap-1.5 rounded-[var(--radius-md)] bg-emerald-700 px-2.5 text-xs font-semibold text-white hover:bg-emerald-600"
+                >
+                  <LogIn className="h-3.5 w-3.5" />
+                  Sign in to save context
+                </Link>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContextBarLoadingSkeleton() {
+  return (
+    <div className="rounded-[var(--radius-lg)] border border-[var(--color-app-border)] bg-white/90 p-2 shadow-[var(--shadow-card)]" data-testid="ask-context-bar-loading-skeleton">
+      <div className="min-h-10 rounded-[var(--radius-md)] bg-emerald-50/60" />
+    </div>
+  );
+}
+
+function PraxisChatLoadingSkeleton() {
+  return (
+    <section className="praxis-shell-card min-h-[28rem] p-4" data-testid="praxis-chat-loading-skeleton">
+      <div className="grid h-full min-h-[24rem] grid-rows-[1fr_auto] gap-4">
+        <div className="rounded-[var(--radius-lg)] border border-emerald-100 bg-emerald-50/45" />
+        <div className="min-h-28 rounded-[var(--radius-lg)] border border-slate-200 bg-white" />
+      </div>
+    </section>
+  );
 }

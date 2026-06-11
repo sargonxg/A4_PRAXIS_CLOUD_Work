@@ -1,16 +1,19 @@
 'use client';
 
 import { AlertTriangle, CheckCircle2, FileText, Search, Sparkles } from 'lucide-react';
+import { buildSourceGapScoutObjective, computeEvidenceCoverage } from '@/lib/agent-runtime/sourceability-ledger';
 import type { AskAnswerEnvelope, AskContextReadinessState, AskQueuedDeepRunStatus } from '@/lib/ai/ask-answer-envelope';
 import { cn } from '@/lib/utils/cn';
 
 export function AnswerQualityStrip({
   envelope,
   onAction,
+  onQueueSourceGapScout,
   className,
 }: {
   envelope?: AskAnswerEnvelope;
   onAction?: (prompt: string) => void;
+  onQueueSourceGapScout?: (claims: string[]) => Promise<void> | void;
   className?: string;
 }) {
   const summary = envelope?.answerQualitySummary;
@@ -22,8 +25,13 @@ export function AnswerQualityStrip({
   const Icon = healthy ? CheckCircle2 : AlertTriangle;
   const supportedClaims = envelope?.sourceAudit.supportedClaimCount ?? 0;
   const assumptionClaims = envelope?.sourceAudit.assumptionClaimCount ?? envelope?.sourceAudit.modelPriorClaimCount ?? 0;
+  const coverage = computeEvidenceCoverage(envelope?.sourceabilityVerdicts ?? []);
   const dateCheckCount = (envelope?.claimLedger ?? []).filter((claim) => claim.freshness !== 'current').length
     + (envelope?.sourceRefreshDocket.staleSourceIds.length ?? 0);
+  const coverageLabel = coverage.totalClaims
+    ? `${coverage.coveragePercent}% supported`
+    : 'No claims checked';
+  const sourceGapPrompt = buildSourceGapScoutObjective(coverage.unsupportedClaimTexts);
 
   return (
     <section
@@ -60,6 +68,34 @@ export function AnswerQualityStrip({
         <QualityPill label="Date checks" value={String(dateCheckCount)} />
         <QualityPill label="Gaps" value={String(summary.sourceGapCount)} />
         <QualityPill label="Deep run" value={formatDeepRun(summary.queuedDeepRunStatus)} />
+      </div>
+      <div className="mt-2 rounded-md border border-slate-200 bg-white p-2" data-testid="evidence-coverage-meter">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Evidence coverage</p>
+            <p className="mt-0.5 font-semibold text-slate-800">
+              {coverageLabel} · {coverage.unsupportedClaims} unsupported
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={!coverage.unsupportedClaims}
+            onClick={() => {
+              if (coverage.unsupportedClaims && onQueueSourceGapScout) {
+                void onQueueSourceGapScout(coverage.unsupportedClaimTexts);
+              } else if (coverage.unsupportedClaims) {
+                onAction?.(sourceGapPrompt);
+              }
+            }}
+            className="inline-flex min-h-7 items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 text-[11px] font-semibold text-amber-900 hover:bg-amber-100 disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
+          >
+            <Search className="h-3 w-3" />
+            {coverage.unsupportedClaims ? 'Find sources for gaps' : 'No source gaps'}
+          </button>
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100" aria-hidden="true">
+          <div className="h-full rounded-full bg-emerald-500" style={{ width: `${coverage.coveragePercent}%` }} />
+        </div>
       </div>
       <p className="mt-2 rounded-md border border-slate-200 bg-white px-2 py-1.5 font-semibold text-slate-700">
         Next: {summary.recommendedNextAction}

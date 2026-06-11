@@ -17,7 +17,7 @@ The interface should feel designed for analysts, policy teams, and operators who
 
 ## Palette
 
-Use PRAXIS tokens first. Gold is a rare action/focus signal, not the brand's main color.
+Use PRAXIS tokens first. Emerald is the primary brand/action signal. Gold is retained only for archival or legacy badges, not for current app actions or focus states.
 
 | Token | Role |
 |---|---|
@@ -28,12 +28,20 @@ Use PRAXIS tokens first. Gold is a rare action/focus signal, not the brand's mai
 | `--color-graphite` | Dense neutral text and low-chrome controls. |
 | `--color-civic-blue` | Selected civic/system signal. |
 | `--color-evidence-ready` / `--color-evidence-review` / `--color-evidence-muted` | Receipts, source posture, readiness states. |
-| `--color-gold-*` | Single primary action, focus ring, or rare active signal only. |
-| `--color-lab-void` / `--color-lab-ink` / `--color-lab-panel` | Legacy dark operating surfaces for proof rails and agent workspaces. |
+| `--color-praxis-emerald-*` | Brand, primary action, focus rings, current app active state, and visible PRAXIS proof/action chrome. |
+| `--color-gold-*` | Archival or legacy badges only. Do not use for new app actions, focus rings, or active states. |
+| `--color-lab-void` / `--color-lab-ink` / `--color-lab-panel` | Dark operating surfaces for `/agents/[runId]`, run receipts, and proof rails only. |
 | `--color-lab-cyan` / `--color-lab-lime` / `--color-lab-plasma` / `--color-lab-warning` | Restrained AI, receipt, agent, and review signals. |
 | `--color-lab-line` | Source-flow lines, capsule borders, and technical map structure. |
 
 Pilot surfaces must not introduce raw `#ca4a25`, default Tailwind `slate-*`, `amber-*`, or `emerald-*` as the core visual language when a PRAXIS token exists. Legacy classes can remain outside the pilot until touched.
+
+### Palette Decision Tree
+
+1. Current brand/action/focus/control state: use `--color-praxis-emerald-*`, usually `500` for active marks and `700` for text.
+2. Source/readiness posture: use `--color-evidence-*` or the matching semantic Tailwind state when the component already uses semantic status classes.
+3. Archival, old compatibility, or legacy badge: `--color-gold-*` can remain, but do not spread it to current app chrome.
+4. Agent-run/proof dark surfaces: use `--color-lab-*` only inside `/agents/[runId]`, run timelines, receipts, and low-level proof rails.
 
 ## Layout Grammar
 

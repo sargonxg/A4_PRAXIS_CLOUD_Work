@@ -74,6 +74,33 @@ const SourceabilityReviewOutputSchema = z.object({
   reviewCardIds: ReceiptListSchema,
 }).strict();
 
+const SourceGapScoutInputSchema = z.object({
+  ...ToolRunShape,
+  gaps: z.array(TextSchema).optional(),
+  unsupportedClaims: z.array(TextSchema).optional(),
+  sourceReceiptIds: z.array(IdSchema).optional(),
+}).strict();
+const SourceGapScoutOutputSchema = z.object({
+  gapCount: z.number().int().nonnegative().optional(),
+  unsupportedClaimCount: z.number().int().nonnegative().optional(),
+  candidateReceiptCount: z.number().int().nonnegative().optional(),
+  reviewCardIds: ReceiptListSchema,
+}).strict();
+
+const DailyBriefInputSchema = z.object({
+  ...ToolRunShape,
+  since: z.string().max(120).nullable().optional(),
+  capsuleDeltaCount: z.number().int().nonnegative().optional(),
+  sourceReceiptIds: z.array(IdSchema).optional(),
+}).strict();
+const DailyBriefOutputSchema = z.object({
+  memoId: IdSchema.optional(),
+  outputHref: z.string().max(500).optional(),
+  sourceReceiptIds: ReceiptListSchema,
+  unsupportedClaimCount: z.number().int().nonnegative().optional(),
+  notificationId: IdSchema.nullable().optional(),
+}).strict();
+
 const DocumentRetrieveInputSchema = z.object({
   ...ToolRunShape,
   query: z.string().max(1000).optional(),
@@ -255,6 +282,28 @@ export const AGENT_TOOL_REGISTRY = {
     risk: 'low',
     requiredCores: ['sourceCoreIds'],
     persistenceTarget: 'run_event',
+    approvalPolicy: 'auto',
+  }),
+  'source-gap-scout': tool({
+    id: 'source-gap-scout',
+    label: 'Scout source gaps',
+    description: 'Finds candidate source receipts for evidence gaps and unsupported claims, then writes review-gated source-pack cards.',
+    inputSchema: SourceGapScoutInputSchema,
+    outputSchema: SourceGapScoutOutputSchema,
+    risk: 'low',
+    requiredCores: ['sourceCoreIds'],
+    persistenceTarget: 'run_event',
+    approvalPolicy: 'auto',
+  }),
+  'daily-brief': tool({
+    id: 'daily-brief',
+    label: 'Daily Brief',
+    description: 'Creates a review-gated dated brief draft from capsule deltas and fresh grounded receipts.',
+    inputSchema: DailyBriefInputSchema,
+    outputSchema: DailyBriefOutputSchema,
+    risk: 'medium',
+    requiredCores: ['situationCoreId'],
+    persistenceTarget: 'memo',
     approvalPolicy: 'auto',
   }),
   'document-retrieve': tool({

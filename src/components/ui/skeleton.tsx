@@ -7,7 +7,7 @@ function Skeleton({
   return (
     <div
       className={cn(
-        "praxis-skeleton rounded-md bg-navy-700/50",
+        "praxis-skeleton rounded-md bg-emerald-700/20",
         className
       )}
       aria-hidden="true"

@@ -24,6 +24,8 @@ export type PolicyAgentRunIntent =
   | 'normal_answer'
   | 'capsule_factory'
   | 'research_memo'
+  | 'source_gap_scout'
+  | 'daily_brief'
   | 'boardroom_discussion'
   | 'sourceability_review'
   | 'format_output'
@@ -109,6 +111,21 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     actionLabel: 'Run memo agent',
   },
   {
+    id: 'source-gap-scout',
+    label: 'Source-Gap Scout',
+    category: 'review',
+    description: 'Finds current candidate sources for active capsule evidence gaps and unsupported claims, then stores them as review-gated source-pack cards.',
+    requiredCores: ['Situation Core', 'Source Core', 'Output Core'],
+    inputTypes: ['capsule gaps', 'unsupported claims', 'sourceability ledger'],
+    outputDestination: 'library',
+    approvalLevel: 'none',
+    readiness: 'live',
+    riskLevel: 'low',
+    allowedTools: ['context-resolve', 'capsule-evidence-pack', 'grounded-search', 'sourceability-reviewer', 'source-gap-scout'],
+    capsuleSlots: ['situation', 'sources', 'documents', 'outputs'],
+    actionLabel: 'Find sources',
+  },
+  {
     id: 'boardroom-discussion',
     label: 'Boardroom Discussion',
     category: 'analysis',
@@ -142,16 +159,16 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     id: 'daily-brief',
     label: 'Daily Brief Agent',
     category: 'monitoring',
-    description: 'Prepares a recurring brief from approved policy feeds, capsule sources, and open questions.',
+    description: 'Prepares a recurring review-gated memo draft from fresh grounded search, capsule deltas, and open questions.',
     requiredCores: ['Situation Core', 'Source Core', 'Time Core'],
-    inputTypes: ['approved feeds', 'watchlist', 'capsule'],
-    outputDestination: 'library',
-    approvalLevel: 'approval_required',
-    readiness: 'planned',
+    inputTypes: ['grounded search', 'watchlist', 'capsule deltas'],
+    outputDestination: 'memo_studio',
+    approvalLevel: 'confirm',
+    readiness: 'live',
     riskLevel: 'medium',
-    allowedTools: ['context-resolve', 'approved-feed-retrieval', 'daily-brief'],
+    allowedTools: ['context-resolve', 'capsule-evidence-pack', 'grounded-search', 'daily-brief', 'policy-memo', 'output-capsule-save'],
     capsuleSlots: ['situation', 'sources', 'memory', 'outputs'],
-    actionLabel: 'Discuss brief',
+    actionLabel: 'Run daily brief',
   },
   {
     id: 'conflict-monitor',
@@ -234,6 +251,10 @@ export function policyAgentRunIntent(agentId: string | null | undefined): Policy
       return 'capsule_factory';
     case 'research-memo':
       return 'research_memo';
+    case 'source-gap-scout':
+      return 'source_gap_scout';
+    case 'daily-brief':
+      return 'daily_brief';
     case 'boardroom-discussion':
       return 'boardroom_discussion';
     case 'sourceability-reviewer':

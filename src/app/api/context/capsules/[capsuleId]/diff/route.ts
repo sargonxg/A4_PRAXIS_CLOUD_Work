@@ -35,6 +35,7 @@ export const GET = withAuth<RouteContext>(async (request, user, context) => {
       removedCoreRefs: [...fromRefs].filter((ref) => !toRefs.has(ref)).sort(),
       changedRetrievalPolicy: JSON.stringify(from.retrievalPolicy) !== JSON.stringify(to.retrievalPolicy),
       healthDelta: (to.health?.score ?? 0) - (from.health?.score ?? 0),
+      fieldDiffs: buildCapsuleFieldDiffs(from, to),
     });
   } catch (err) {
     return handleRouteError(err, 'context/capsules/diff');
@@ -104,6 +105,73 @@ async function loadCapsuleVersion(uid: string, capsuleId: string, version: numbe
     .doc(`v${version}`)
     .get();
   return snap.exists ? (snap.data() as PraxisCapsule) : null;
+}
+
+type DiffRow = {
+  id: string;
+  label: string;
+  state: 'added' | 'removed' | 'changed';
+  before: unknown;
+  after: unknown;
+};
+
+function buildCapsuleFieldDiffs(from: PraxisCapsule, to: PraxisCapsule): Record<'label' | 'summary' | 'claimLedger' | 'sourceRefs', DiffRow[]> {
+  return {
+    label: scalarDiffRows('label', 'Label', from.label, to.label),
+    summary: scalarDiffRows('summary', 'Summary', from.summary ?? '', to.summary ?? ''),
+    claimLedger: listDiffRows(from.claimLedger, to.claimLedger, 'claim'),
+    sourceRefs: listDiffRows(from.sourceRefs, to.sourceRefs, 'source'),
+  };
+}
+
+function scalarDiffRows(id: string, label: string, before: unknown, after: unknown): DiffRow[] {
+  return stableJson(before) === stableJson(after)
+    ? []
+    : [{ id, label, state: 'changed', before, after }];
+}
+
+function listDiffRows(before: unknown, after: unknown, fallbackPrefix: string): DiffRow[] {
+  const beforeRows = rowMap(before, fallbackPrefix);
+  const afterRows = rowMap(after, fallbackPrefix);
+  const ids = unique([...beforeRows.keys(), ...afterRows.keys()]).sort();
+  return ids.flatMap((id): DiffRow[] => {
+    const oldRow = beforeRows.get(id);
+    const newRow = afterRows.get(id);
+    if (!oldRow && newRow) return [{ id, label: newRow.label, state: 'added', before: null, after: newRow.value }];
+    if (oldRow && !newRow) return [{ id, label: oldRow.label, state: 'removed', before: oldRow.value, after: null }];
+    if (oldRow && newRow && stableJson(oldRow.value) !== stableJson(newRow.value)) {
+      return [{ id, label: newRow.label || oldRow.label, state: 'changed', before: oldRow.value, after: newRow.value }];
+    }
+    return [];
+  });
+}
+
+function rowMap(value: unknown, fallbackPrefix: string): Map<string, { label: string; value: unknown }> {
+  const rows = Array.isArray(value) ? value : [];
+  return new Map(rows.map((row, index) => {
+    const record: Record<string, unknown> = isRecord(row) ? row : { value: row };
+    const id = stringField(record.claimId)
+      ?? stringField(record.sourceId)
+      ?? stringField(record.id)
+      ?? `${fallbackPrefix}-${index + 1}`;
+    const label = stringField(record.text)
+      ?? stringField(record.label)
+      ?? stringField(record.title)
+      ?? id;
+    return [id, { label, value: row }];
+  }));
+}
+
+function stableJson(value: unknown): string {
+  return JSON.stringify(value ?? null);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function stringField(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
 function parseVersion(value: string | null): number | null {

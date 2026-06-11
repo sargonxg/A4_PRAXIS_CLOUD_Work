@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { Bot, FileOutput, Landmark, Wand2 } from 'lucide-react';
+import { Bot, FileOutput, Landmark, Search, Wand2 } from 'lucide-react';
 import { PRAXIS_POLICY_AGENTS } from '@/lib/product/policy-agents';
 
 const AGENT_DESTINATIONS: Record<string, { href: string; icon: typeof Bot }> = {
   'capsule-factory': { href: '/app/capsules/builder', icon: Wand2 },
   'research-memo': { href: '/app?panel=memo', icon: Bot },
+  'source-gap-scout': { href: '/app/capsules?review=source-gaps', icon: Search },
   'boardroom-discussion': { href: '/app/boardroom', icon: Landmark },
   'output-formatter': { href: '/app?panel=memo', icon: FileOutput },
 };
