@@ -207,6 +207,12 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(askQueuedAgentRunPanelSource).toContain('run was created but not started');
     expect(askQueuedAgentRunPanelSource).toContain('/approvals/${encodeURIComponent(approvalId)}');
     expect(askQueuedAgentRunPanelSource).toContain('data-testid="ask-agent-approval-tray"');
+    expect(askQueuedAgentRunPanelSource).toContain('data-testid="ask-agent-run-proof-rail"');
+    for (const expected of ['Queued', 'Dispatched', 'Started', 'Sources', 'Approval', 'Output saved', 'Returned to thread', 'Expired']) {
+      expect(askQueuedAgentRunPanelSource).toContain(expected);
+    }
+    expect(askQueuedAgentRunPanelSource).toContain('thread_return_posted');
+    expect(askQueuedAgentRunPanelSource).toContain('thread_return_failed');
     expect(askQueuedAgentRunPanelSource).toContain('onRunTerminal');
     expect(askQueuedAgentRunPanelSource).toContain("status !== 'succeeded' && status !== 'failed'");
     expect(askStreamPanelSource).toContain('onRunTerminal={() => void loadHistory()}');

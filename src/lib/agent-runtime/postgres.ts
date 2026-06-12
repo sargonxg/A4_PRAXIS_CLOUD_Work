@@ -23,6 +23,17 @@ import {
 
 let pool: Pool | null = null;
 let schemaReady: Promise<void> | null = null;
+const AGENT_RUNTIME_SWEEP_LIMIT = 200;
+
+export type AgentRuntimeSweepResult = {
+  swept: number;
+  remaining: boolean;
+  errors: number;
+};
+
+export type AgentRunSweepResult = AgentRuntimeSweepResult & {
+  approvalsSwept: number;
+};
 
 function getDatabaseUrl(): string | null {
   return process.env.AGENT_RUNTIME_DATABASE_URL
@@ -612,6 +623,101 @@ export async function decideAgentApproval(input: {
   return approval;
 }
 
+export async function sweepExpiredAgentRuns(now: Date = new Date()): Promise<AgentRunSweepResult> {
+  await ensureSchema();
+  const result = await getPool().query(
+    `
+      SELECT * FROM agent_runs
+      WHERE status IN ('queued', 'running', 'waiting_approval')
+        AND expires_at IS NOT NULL
+        AND expires_at < $1
+      ORDER BY expires_at ASC, created_at ASC
+      LIMIT $2
+    `,
+    [now, AGENT_RUNTIME_SWEEP_LIMIT + 1],
+  );
+  const rows = result.rows.slice(0, AGENT_RUNTIME_SWEEP_LIMIT);
+  let swept = 0;
+  let approvalsSwept = 0;
+  let errors = 0;
+  let approvalRemaining = false;
+  let approvalBudget = AGENT_RUNTIME_SWEEP_LIMIT;
+
+  for (const row of rows) {
+    const run = rowToAgentRun(row);
+    try {
+      const updated = await updateAgentRunStatus({
+        ownerUid: run.ownerUid,
+        runId: run.id,
+        toStatus: 'expired',
+        message: 'Agent run expired after its runtime window elapsed.',
+        data: {
+          expiredAt: now.toISOString(),
+          previousStatus: run.status,
+        },
+      });
+      if (!updated) continue;
+      swept += 1;
+      if (run.status === 'waiting_approval' && approvalBudget > 0) {
+        const approvalResult = await expirePendingApprovalsForRun(updated, now, approvalBudget);
+        approvalsSwept += approvalResult.swept;
+        errors += approvalResult.errors;
+        approvalBudget = Math.max(0, approvalBudget - approvalResult.swept);
+        approvalRemaining = approvalRemaining || approvalResult.remaining;
+      }
+    } catch (err) {
+      if (isBenignExpiredTransitionSkip(err)) {
+        console.warn('[agent-runtime] expired run sweep skipped concurrent terminal transition:', run.id);
+        continue;
+      }
+      errors += 1;
+      console.warn('[agent-runtime] expired run sweep item failed:', run.id, err);
+    }
+  }
+
+  return {
+    swept,
+    approvalsSwept,
+    remaining: result.rows.length > AGENT_RUNTIME_SWEEP_LIMIT || approvalRemaining || errors > 0,
+    errors,
+  };
+}
+
+export async function sweepExpiredAgentApprovals(now: Date = new Date()): Promise<AgentRuntimeSweepResult> {
+  await ensureSchema();
+  const result = await getPool().query(
+    `
+      SELECT a.*, r.trace_id AS run_trace_id
+      FROM agent_approvals a
+      JOIN agent_runs r ON r.id = a.run_id AND r.owner_uid = a.owner_uid
+      WHERE a.status = 'pending'
+        AND a.expires_at IS NOT NULL
+        AND a.expires_at < $1
+      ORDER BY a.expires_at ASC, a.requested_at ASC
+      LIMIT $2
+    `,
+    [now, AGENT_RUNTIME_SWEEP_LIMIT + 1],
+  );
+  let swept = 0;
+  let errors = 0;
+
+  for (const row of result.rows.slice(0, AGENT_RUNTIME_SWEEP_LIMIT)) {
+    try {
+      const expired = await expireAgentApproval(row, String(row.run_trace_id ?? ''), now);
+      if (expired) swept += 1;
+    } catch (err) {
+      errors += 1;
+      console.warn('[agent-runtime] expired approval sweep item failed:', row.id, err);
+    }
+  }
+
+  return {
+    swept,
+    remaining: result.rows.length > AGENT_RUNTIME_SWEEP_LIMIT || errors > 0,
+    errors,
+  };
+}
+
 export async function updateAgentRunStatus(input: {
   ownerUid: string;
   runId: string;
@@ -707,6 +813,89 @@ export async function updateAgentRunMetadata(input: {
     await mirrorAgentRunToFirestore(run, { preserveAudit: true });
   }
   return run;
+}
+
+async function expirePendingApprovalsForRun(
+  run: AgentRun,
+  now: Date,
+  limit: number,
+): Promise<AgentRuntimeSweepResult> {
+  const boundedLimit = Math.max(0, Math.min(AGENT_RUNTIME_SWEEP_LIMIT, Math.floor(limit)));
+  if (boundedLimit <= 0) return { swept: 0, remaining: true, errors: 0 };
+  const result = await getPool().query(
+    `
+      SELECT *
+      FROM agent_approvals
+      WHERE run_id = $1
+        AND owner_uid = $2
+        AND status = 'pending'
+      ORDER BY requested_at ASC
+      LIMIT $3
+    `,
+    [run.id, run.ownerUid, boundedLimit + 1],
+  );
+  let swept = 0;
+  let errors = 0;
+  for (const row of result.rows.slice(0, boundedLimit)) {
+    try {
+      const expired = await expireAgentApproval(row, run.traceId, now, 'Owning agent run expired before approval was decided.');
+      if (expired) swept += 1;
+    } catch (err) {
+      errors += 1;
+      console.warn('[agent-runtime] expired run approval sweep item failed:', row.id, err);
+    }
+  }
+  return {
+    swept,
+    remaining: result.rows.length > boundedLimit || errors > 0,
+    errors,
+  };
+}
+
+async function expireAgentApproval(
+  row: QueryResultRow,
+  traceId: string,
+  now: Date,
+  message = 'Agent approval expired before a decision was recorded.',
+): Promise<boolean> {
+  const approval = rowToAgentApproval(row);
+  const result = await getPool().query(
+    `
+      UPDATE agent_approvals
+      SET status = $1,
+          decided_at = $2,
+          decided_by_uid = NULL
+      WHERE owner_uid = $3
+        AND run_id = $4
+        AND id = $5
+        AND status = 'pending'
+      RETURNING *
+    `,
+    ['expired', now, approval.ownerUid, approval.runId, approval.id],
+  );
+  const expired = result.rows[0] ? rowToAgentApproval(result.rows[0]) : null;
+  if (!expired) return false;
+  await mirrorAgentApprovalToFirestore(expired);
+  await appendAgentRunEvent(makeAgentRunEvent({
+    runId: expired.runId,
+    ownerUid: expired.ownerUid,
+    capsuleId: expired.capsuleId,
+    eventType: 'approval_expired',
+    message,
+    data: {
+      approvalId: expired.id,
+      toolCallId: expired.toolCallId,
+      risk: expired.risk,
+      expiredAt: now.toISOString(),
+    },
+    traceId: traceId || `${expired.runId}:approval-expired`,
+  }));
+  return true;
+}
+
+function isBenignExpiredTransitionSkip(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return message.includes('Invalid agent run transition:') && message.includes('-> expired');
 }
 
 function publishAgentRunEvent(

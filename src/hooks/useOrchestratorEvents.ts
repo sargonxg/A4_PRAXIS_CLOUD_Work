@@ -68,6 +68,8 @@ export const LEDGER_EVENT_TYPES = [
   'praxis.memo_output_created',
   'praxis.output_created',
   'praxis.artifact.finalized',
+  'thread_return_posted',
+  'thread_return_failed',
   'praxis.supervisor.approval_gate',
   'praxis.supervisor.graph.created',
   'praxis.supervisor.graph.updated',

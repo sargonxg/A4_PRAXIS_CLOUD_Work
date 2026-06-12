@@ -15,6 +15,8 @@ import {
   userSafeAgentRunError,
 } from '@/lib/agent-runtime/status';
 
+const proofRailOrderLabel = 'Queued -> Dispatched -> Started -> Sources -> Approval -> Output saved -> Returned to thread -> Expired';
+
 type RunSummary = {
   runId: string;
   status: string;
@@ -209,12 +211,13 @@ export function AskQueuedAgentRunPanel({
   if (!queuedRun || (!runId && queuedRun.status !== 'failed')) return null;
 
   const dispatchFailed = status === 'dispatch_failed' || queuedRun.fallbackPosture === 'dispatch_failed';
+  const expiredRun = status === 'expired';
   const visibleEvents = snapshotState.events.length ? snapshotState.events : eventState.events;
   const recentEvents = expanded ? visibleEvents.slice(-4).reverse() : [];
   const canCancel = Boolean(runId) && !dispatchFailed && canCancelAgentRunStatus(status);
   const canRetry = Boolean(runId) && (dispatchFailed || canRetryAgentRunStatus(status));
-  const lifecycle = agentRunLifecycleSteps(status);
-  const pendingApprovals = approvals.filter((approval) => approval.status === 'pending');
+  const visibleApprovals = snapshotState.approvals.length ? snapshotState.approvals : approvals;
+  const pendingApprovals = visibleApprovals.filter((approval) => approval.status === 'pending');
   const selectedTools = visibleRun?.selectedTools ?? queuedRun.selectedToolIds ?? [];
   const sourceCount = visibleRun?.sourceCount ?? queuedRun.sourceCount ?? 0;
   const approvalGateCount = visibleRun?.approvalGateCount ?? queuedRun.approvalGateCount ?? 0;
@@ -224,9 +227,25 @@ export function AskQueuedAgentRunPanel({
   const groundingPosture = visibleRun?.groundingPosture ?? queuedRun.groundingPosture ?? sourcePosture;
   const degradedReason = visibleRun?.degradedReason ?? queuedRun.degradedReason ?? null;
   const sourceReceiptCount = visibleRun?.sourceReceiptIds?.length ?? sourceCount;
+  const hasThreadReturnPosted = visibleEvents.some((event) => event.rawType === 'thread_return_posted');
+  const hasThreadReturnFailed = visibleEvents.some((event) => event.rawType === 'thread_return_failed');
+  const proofRailThreadReturnState = hasThreadReturnFailed
+    ? 'Thread return degraded'
+    : hasThreadReturnPosted
+      ? 'Thread return posted'
+      : 'Thread return pending';
+  const lifecycle = agentRunLifecycleSteps(status, {
+    events: visibleEvents,
+    sourceReceiptCount,
+    approvalCount: Math.max(visibleApprovals.length, approvalGateCount),
+    pendingApprovalCount: pendingApprovals.length,
+    outputHref: visibleRun?.outputHref ?? queuedRun.outputHref ?? null,
+  });
   const searchTools = selectedTools.filter((toolId) => toolId === 'grounded-search' || toolId === 'deep-search-agent');
   const stateLabel = dispatchFailed
     ? 'Dispatch failed'
+    : expiredRun
+    ? 'Expired'
     : degradedReason
     ? 'Search degraded'
     : sourceReceiptCount > 0
@@ -236,9 +255,13 @@ export function AskQueuedAgentRunPanel({
         : 'Grounding unavailable';
   const panelClassName = dispatchFailed
     ? 'mt-3 rounded-md border border-red-200 bg-red-50 p-2'
+    : expiredRun
+      ? 'mt-3 rounded-md border border-slate-200 bg-slate-50 p-2'
     : 'mt-3 rounded-md border border-diplomatic-blue/20 bg-blue-50 p-2';
   const headingClassName = dispatchFailed
     ? 'text-[11px] font-bold uppercase tracking-[0.14em] text-red-800'
+    : expiredRun
+      ? 'text-[11px] font-bold uppercase tracking-[0.14em] text-slate-700'
     : 'text-[11px] font-bold uppercase tracking-[0.14em] text-diplomatic-blue';
   const statusLine = dispatchFailed
     ? `Agent dispatch failed - run was created but not started${runId ? ` (${runId})` : ''}.`
@@ -288,9 +311,14 @@ export function AskQueuedAgentRunPanel({
           ) : null}
         </div>
       </div>
-      <ol className="mt-2 grid gap-1 sm:grid-cols-6" data-testid="ask-agent-run-lifecycle">
+      <ol
+        className="mt-2 flex flex-wrap gap-1"
+        data-testid="ask-agent-run-proof-rail"
+        aria-label={`${proofRailOrderLabel}. ${proofRailThreadReturnState}`}
+      >
         {lifecycle.map((step) => (
-          <li key={step.id} className={agentRunLifecycleStepClass(step.state)}>
+          <li key={step.id} className={agentRunLifecycleStepClass(step.state)} title={step.title ?? step.label}>
+            <span className={agentRunLifecycleGlyphClass(step.state)} aria-hidden="true">{agentRunLifecycleGlyph(step.state)}</span>
             <span className="truncate">{step.label}</span>
           </li>
         ))}
@@ -396,10 +424,30 @@ function numberValue(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-function agentRunLifecycleStepClass(state: 'pending' | 'active' | 'complete' | 'failed'): string {
-  const base = 'min-w-0 rounded-md border px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-[0.1em]';
+function agentRunLifecycleStepClass(state: 'pending' | 'active' | 'complete' | 'failed' | 'degraded' | 'expired'): string {
+  const base = 'flex min-w-[5.5rem] max-w-[8rem] flex-1 items-center justify-center gap-1 rounded-md border px-1.5 py-1 text-center text-[9px] font-semibold uppercase leading-3 tracking-[0.1em]';
   if (state === 'complete') return `${base} border-emerald-200 bg-emerald-50 text-emerald-900`;
   if (state === 'active') return `${base} border-blue-200 bg-white text-diplomatic-blue`;
+  if (state === 'degraded') return `${base} border-amber-200 bg-amber-50 text-amber-900`;
   if (state === 'failed') return `${base} border-red-200 bg-red-50 text-red-900`;
+  if (state === 'expired') return `${base} border-slate-200 bg-slate-100 text-slate-600`;
   return `${base} border-slate-200 bg-white/70 text-slate-500`;
+}
+
+function agentRunLifecycleGlyph(state: 'pending' | 'active' | 'complete' | 'failed' | 'degraded' | 'expired'): string {
+  if (state === 'complete') return '✓';
+  if (state === 'failed') return '!';
+  if (state === 'degraded') return '!';
+  if (state === 'expired') return '-';
+  return '•';
+}
+
+function agentRunLifecycleGlyphClass(state: 'pending' | 'active' | 'complete' | 'failed' | 'degraded' | 'expired'): string {
+  const base = 'inline-flex h-3 w-3 shrink-0 items-center justify-center rounded-full text-[8px] leading-none';
+  if (state === 'complete') return `${base} bg-emerald-600 text-white`;
+  if (state === 'active') return `${base} animate-pulse bg-diplomatic-blue text-white`;
+  if (state === 'failed') return `${base} bg-red-600 text-white`;
+  if (state === 'degraded') return `${base} bg-amber-500 text-white`;
+  if (state === 'expired') return `${base} bg-slate-400 text-white`;
+  return `${base} bg-slate-200 text-slate-600`;
 }
