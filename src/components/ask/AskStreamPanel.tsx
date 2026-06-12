@@ -693,6 +693,7 @@ export function AskStreamPanel({
               >
                 <AskMessageBubble
                   capsuleId={capsuleId}
+                  threadId={threadId}
                   message={message}
                   newestActive={idx === timelineMessages.length - 1}
                   onDraftPack={draftDocumentPack}
@@ -898,6 +899,7 @@ function isSourceabilityVerdict(value: unknown): value is SourceabilityClaimVerd
 
 function AskMessageBubble({
   capsuleId,
+  threadId,
   message,
   newestActive,
   onDraftPack,
@@ -907,6 +909,7 @@ function AskMessageBubble({
   packSaving,
 }: {
   capsuleId?: string | null;
+  threadId?: string | null;
   message: AskPanelMessage;
   newestActive: boolean;
   onDraftPack: (message: AskPanelMessage, selectedPack?: ConversationDocumentPack) => void;
@@ -962,7 +965,13 @@ function AskMessageBubble({
         <AnswerQualityStrip envelope={message.answerEnvelope} onAction={onFollowUp} onQueueSourceGapScout={onQueueSourceGapScout} />
         {proofSummary ? <ProofSummaryPanel summary={proofSummary} /> : null}
         <OrchestrationReceiptPanel envelope={message.answerEnvelope} />
-        <CapsuleGroundingReceiptPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
+        <CapsuleGroundingReceiptPanel
+          envelope={message.answerEnvelope}
+          activeCapsuleId={capsuleId ?? message.answerEnvelope?.documentPackCandidate.provenance.capsuleId ?? null}
+          threadId={threadId ?? message.answerEnvelope?.documentPackCandidate.provenance.threadId ?? null}
+          turnId={message.id}
+          onFollowUp={onFollowUp}
+        />
         <AnswerSourcePreviewPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
         <KnowledgeStructurePanel buckets={knowledgeStructureFromAskEnvelope(message.answerEnvelope)} />
         {!message.streaming && message.content && message.answerEnvelope?.documentPackCandidate ? (
@@ -1298,13 +1307,26 @@ function ProofSummaryPanel({ summary }: { summary: UiProofSummary }) {
   );
 }
 
-function CapsuleGroundingReceiptPanel({ envelope, onFollowUp }: { envelope?: AskAnswerEnvelope; onFollowUp: (followUp: string) => void }) {
+function CapsuleGroundingReceiptPanel({
+  envelope,
+  activeCapsuleId,
+  threadId,
+  turnId,
+  onFollowUp,
+}: {
+  envelope?: AskAnswerEnvelope;
+  activeCapsuleId?: string | null;
+  threadId?: string | null;
+  turnId?: string | null;
+  onFollowUp: (followUp: string) => void;
+}) {
   const receipt = envelope?.groundingReceipt;
   if (!receipt) return null;
   const memory = envelope?.memoryReceipt;
   const docket = envelope?.sourceRefreshDocket;
   const claimLedger = envelope?.claimLedger ?? [];
   const suggestions = envelope?.reviewCardSuggestions ?? [];
+  const gaps = docket?.missingEvidenceGaps ?? [];
   return (
     <section className="mt-3 rounded-md border border-slate-200 bg-white p-2" data-testid="capsule-grounding-receipt">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1347,6 +1369,14 @@ function CapsuleGroundingReceiptPanel({ envelope, onFollowUp }: { envelope?: Ask
           {receipt.nextRepairActions.slice(0, 3).map((action) => <li key={action}>Next: {action}</li>)}
         </ul>
       ) : null}
+      {gaps.length ? (
+        <AskSourceGapPromotionList
+          gaps={gaps}
+          activeCapsuleId={activeCapsuleId}
+          threadId={threadId}
+          turnId={turnId}
+        />
+      ) : null}
       {suggestions.length ? (
         <div className="mt-2 flex flex-wrap gap-1.5" aria-label={groundingReviewActionLabels.join(', ')}>
           {suggestions.slice(0, 5).map((suggestion) => (
@@ -1363,6 +1393,136 @@ function CapsuleGroundingReceiptPanel({ envelope, onFollowUp }: { envelope?: Ask
       ) : null}
     </section>
   );
+}
+
+type AskGapPromotionState = {
+  status: 'idle' | 'pending' | 'filed';
+  error?: string | null;
+};
+
+function AskSourceGapPromotionList({
+  gaps,
+  activeCapsuleId,
+  threadId,
+  turnId,
+}: {
+  gaps: string[];
+  activeCapsuleId?: string | null;
+  threadId?: string | null;
+  turnId?: string | null;
+}) {
+  const [states, setStates] = useState<Record<string, AskGapPromotionState>>({});
+  const canPromoteToCapsule = Boolean(activeCapsuleId && threadId && turnId);
+  const reviewHref = activeCapsuleId
+    ? `/app/capsules?capsuleId=${encodeURIComponent(activeCapsuleId)}#capsule-review-queue`
+    : '#capsule-review-queue';
+
+  const promoteGap = async (gap: string, index: number) => {
+    if (!canPromoteToCapsule || !activeCapsuleId || !threadId || !turnId) return;
+    const gapHash = stableAskGapHash(gap);
+    const key = askGapPromotionKey(gap, index);
+    setStates((current) => ({ ...current, [key]: { status: 'pending', error: null } }));
+    try {
+      const response = await fetch(`/api/context/capsules/${encodeURIComponent(activeCapsuleId)}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          action: 'promote-source-gaps',
+          kind: 'sourcing',
+          title: sourceGapPromotionTitle(gap),
+          rationale: 'Ask PRAXIS surfaced this source gap while grounding the answer against the active capsule.',
+          suggestedChange: gap,
+          source: 'ask-gap-promotion',
+          origin: {
+            type: 'ask_gap',
+            threadId,
+            turnId,
+            gapIndex: index,
+            gapHash,
+          },
+        }),
+      });
+      const payload = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? `Source gap promotion failed (${response.status}).`);
+      setStates((current) => ({ ...current, [key]: { status: 'filed', error: null } }));
+    } catch (err) {
+      setStates((current) => ({
+        ...current,
+        [key]: {
+          status: 'idle',
+          error: err instanceof Error ? err.message : 'Source gap promotion failed.',
+        },
+      }));
+    }
+  };
+
+  if (!canPromoteToCapsule) {
+    return (
+      <div className="mt-2 grid gap-1.5" data-testid="ask-source-gap-list">
+        {gaps.slice(0, 6).map((gap, index) => (
+          <p key={askGapPromotionKey(gap, index)} className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] leading-4 text-amber-900">
+            {gap}
+          </p>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2 grid gap-1.5" data-testid="ask-source-gap-list">
+      {gaps.slice(0, 6).map((gap, index) => {
+        const key = askGapPromotionKey(gap, index);
+        const state = states[key] ?? { status: 'idle' as const, error: null };
+        const filed = state.status === 'filed';
+        const pending = state.status === 'pending';
+        return (
+          <div key={key} className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <p className="min-w-0 flex-1 text-[11px] leading-4 text-amber-950">{gap}</p>
+              <button
+                type="button"
+                disabled={pending || filed}
+                onClick={() => void promoteGap(gap, index)}
+                className="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-300 bg-white px-2 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-default disabled:border-emerald-200 disabled:bg-emerald-50 disabled:text-emerald-800"
+              >
+                {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : filed ? <CheckCircle2 className="h-3 w-3" /> : null}
+                {pending ? 'Filing...' : filed ? 'Filed for review ✓' : 'Promote to capsule'}
+              </button>
+            </div>
+            {filed ? (
+              <Link href={reviewHref} className="mt-1 inline-flex text-[11px] font-semibold text-emerald-800 hover:underline">
+                Open review queue
+              </Link>
+            ) : null}
+            {state.error ? (
+              <p role="alert" className="mt-1 rounded-md border border-red-200 bg-white px-2 py-1 text-[11px] leading-4 text-red-800">
+                {state.error}
+              </p>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function askGapPromotionKey(gap: string, index: number): string {
+  return `${index}:${stableAskGapHash(gap)}`;
+}
+
+function stableAskGapHash(value: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function sourceGapPromotionTitle(gap: string): string {
+  const cleaned = gap.trim().replace(/\s+/g, ' ').slice(0, 96);
+  return cleaned ? `Source gap: ${cleaned}` : 'Source gap review';
 }
 
 function AnswerSourcePreviewPanel({ envelope, onFollowUp }: { envelope?: AskAnswerEnvelope; onFollowUp: (followUp: string) => void }) {

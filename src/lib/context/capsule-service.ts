@@ -517,6 +517,7 @@ export interface CapsuleInventorySummaryOptions {
 
 export interface CapsuleSourceGapProposal {
   proposalId: string;
+  reviewCardId: string;
   capsuleId: string;
   target: 'sourcePack';
   reviewStatus: 'proposed';
@@ -525,19 +526,45 @@ export interface CapsuleSourceGapProposal {
   sourceIds: string[];
   runId: string | null;
   generatedBy: string;
+  source: 'ask-gap-promotion' | 'source-gap-promotion';
+  origin?: CapsuleAskGapPromotionOrigin | null;
   createdAt: string;
 }
 
+export interface CapsuleAskGapPromotionOrigin {
+  type: 'ask_gap';
+  threadId: string;
+  turnId: string;
+  gapIndex?: number;
+  gapHash?: string;
+}
+
+export interface CapsuleAskGapPromotionInput {
+  kind: 'sourcing';
+  title: string;
+  rationale: string;
+  suggestedChange: string;
+  origin: CapsuleAskGapPromotionOrigin;
+  source?: 'ask-gap-promotion';
+}
+
 export interface PromoteCapsuleSourceGapsInput {
-  gaps: string[];
+  gaps?: string[];
   sourceIds?: string[];
   runId?: string | null;
   generatedBy?: string;
+  kind?: 'sourcing';
+  title?: string;
+  rationale?: string;
+  suggestedChange?: string;
+  origin?: CapsuleAskGapPromotionOrigin;
+  source?: 'ask-gap-promotion' | 'source-gap-promotion';
 }
 
 export interface PromoteCapsuleSourceGapsResult {
   capsule: PraxisCapsule;
   proposals: CapsuleSourceGapProposal[];
+  reviewCards: CapsuleReviewCard[];
   reviewRequired: true;
 }
 
@@ -559,6 +586,13 @@ export interface CreateCapsuleArchitectReviewCardsResult {
 export interface CapsuleServiceDeps {
   db?: Firestore;
   now?: () => Date;
+}
+
+export class CapsuleReadOnlyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CapsuleReadOnlyError';
+  }
 }
 
 const DEFAULT_RETRIEVAL_POLICY: ContextRetrievalPolicy = {
@@ -1010,8 +1044,14 @@ export async function promoteCapsuleSourceGaps(
 ): Promise<PromoteCapsuleSourceGapsResult | null> {
   const capsule = await getCapsule(uid, capsuleId, deps);
   if (!capsule) return null;
-  const gaps = uniqueStrings(input.gaps.map((gap) => gap.trim().slice(0, 600))).slice(0, 10);
-  if (!gaps.length) return { capsule, proposals: [], reviewRequired: true };
+  if (capsule.archivedAt) {
+    throw new CapsuleReadOnlyError('Archived capsules are read-only; restore or fork the capsule before filing source-gap proposals.');
+  }
+  const askGapPromotion = normalizeAskGapPromotionInput(input);
+  const gaps = askGapPromotion
+    ? [askGapPromotion.suggestedChange]
+    : uniqueStrings((input.gaps ?? []).map((gap) => gap.trim().slice(0, 600))).slice(0, 10);
+  if (!gaps.length) return { capsule, proposals: [], reviewCards: [], reviewRequired: true };
   const timestamp = nowIso(deps);
   const sourceIds = uniqueStrings([
     ...capsule.coreRefs.sourceCoreIds,
@@ -1020,55 +1060,69 @@ export async function promoteCapsuleSourceGaps(
   ]).slice(0, 20);
   const generatedBy = cleanText(input.generatedBy, 80) || 'ask-praxis';
   const runId = stringOrNull(input.runId);
-  const proposals = gaps.map((gap): CapsuleSourceGapProposal => {
-    const proposalId = `source-gap-${stableId(`${uid}:${capsule.capsuleId}:${gap}`)}`;
+  const proposals = gaps.map((gap, index): CapsuleSourceGapProposal => {
+    const origin = askGapPromotion?.origin ?? null;
+    const idSeed = origin
+      ? `${capsule.capsuleId}:${origin.threadId}:${origin.turnId}:${origin.gapIndex ?? index}:${origin.gapHash ?? stableId(gap)}`
+      : `${uid}:${capsule.capsuleId}:${gap}`;
+    const proposalId = `${origin ? 'ask-gap' : 'source-gap'}-${stableId(idSeed)}`;
     return {
       proposalId,
+      reviewCardId: `review-card-${proposalId}`,
       capsuleId: capsule.capsuleId,
       target: 'sourcePack',
       reviewStatus: 'proposed',
-      title: sourceGapTitle(gap),
+      title: askGapPromotion?.title ?? sourceGapTitle(gap),
       gap,
       sourceIds,
       runId,
       generatedBy,
+      source: askGapPromotion ? 'ask-gap-promotion' : 'source-gap-promotion',
+      origin,
       createdAt: timestamp,
     };
   });
-  const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
-  const batch = dbOf(deps).batch();
+  const reviewCards: CapsuleReviewCard[] = [];
   for (const proposal of proposals) {
-    batch.set(ref.collection('notes').doc(proposal.proposalId), {
-      noteId: proposal.proposalId,
-      id: proposal.proposalId,
-      ownerUid: uid,
-      capsuleId: capsule.capsuleId,
-      kind: 'note',
-      type: 'gap',
+    const marker = {
+      source: proposal.source,
+      kind: askGapPromotion?.kind ?? 'sourcing',
       title: proposal.title,
-      body: [
-        proposal.gap,
-        '',
-        'Review posture: proposed source-pack update. Add or reject sources before treating this gap as resolved.',
-      ].join('\n'),
-      tags: ['source-gap', 'source-pack', 'review-required', generatedBy].slice(0, 20),
-      starred: false,
-      pinned: false,
-      links: {
-        sourceIds: proposal.sourceIds,
-        documentIds: [],
-        outputCapsuleId: null,
-        runId: proposal.runId,
+      rationale: askGapPromotion?.rationale ?? 'Ask PRAXIS surfaced this source-pack gap for human review.',
+      suggestedChange: proposal.gap,
+      origin: proposal.origin ?? null,
+      sourceIds: proposal.sourceIds,
+      runId: proposal.runId,
+      generatedBy: proposal.generatedBy,
+      reviewRequired: true,
+    };
+    const card = await createCapsuleReviewCard(uid, capsule.capsuleId, {
+      reviewCardId: proposal.reviewCardId,
+      title: proposal.title,
+      sourceType: 'source-gap',
+      target: 'sourceGap',
+      state: 'proposed',
+      evidence: [{
+        id: proposal.origin
+          ? `ask-gap:${proposal.origin.threadId}:${proposal.origin.turnId}:${proposal.origin.gapHash ?? proposal.proposalId}`
+          : proposal.proposalId,
+        label: proposal.title,
+        advisory: true,
+        sourceType: proposal.source,
+      }],
+      proposedEnvelopePatch: {
+        latestGateState: 'proposed',
+        sourcePosture: buildSourceGapPromotionSourcePosturePatch(capsule, {
+          gap: proposal.gap,
+          sourceIds: proposal.sourceIds,
+          marker,
+        }),
       },
-      target: proposal.target,
-      reviewStatus: proposal.reviewStatus,
-      generatedBy,
-      createdAt: proposal.createdAt,
-      updatedAt: proposal.createdAt,
-      createdBy: uid,
-    }, { merge: true });
+    }, deps);
+    reviewCards.push(card);
   }
-  batch.set(ref, {
+  const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
+  await ref.set({
     updatedAt: timestamp,
     trust: {
       ...capsule.trust,
@@ -1081,13 +1135,92 @@ export async function promoteCapsuleSourceGaps(
       checkedAt: timestamp,
     },
   }, { merge: true });
-  await batch.commit();
   const updated = await getCapsule(uid, capsule.capsuleId, deps);
   return {
     capsule: updated ?? capsule,
     proposals,
+    reviewCards,
     reviewRequired: true,
   };
+}
+
+function normalizeAskGapPromotionInput(input: PromoteCapsuleSourceGapsInput): CapsuleAskGapPromotionInput | null {
+  if (input.kind !== 'sourcing' || input.origin?.type !== 'ask_gap') return null;
+  const suggestedChange = cleanText(input.suggestedChange, 1000);
+  const title = cleanText(input.title, 120) || sourceGapTitle(suggestedChange);
+  const rationale = cleanText(input.rationale, 800);
+  const threadId = cleanId(input.origin.threadId, 'ask-thread');
+  const turnId = cleanId(input.origin.turnId, 'ask-turn');
+  if (!suggestedChange || !rationale || !threadId || !turnId) return null;
+  const gapIndex = typeof input.origin.gapIndex === 'number' && Number.isFinite(input.origin.gapIndex)
+    ? Math.max(0, Math.floor(input.origin.gapIndex))
+    : undefined;
+  const gapHash = cleanText(input.origin.gapHash, 80) || stableId(suggestedChange);
+  return {
+    kind: 'sourcing',
+    title,
+    rationale,
+    suggestedChange,
+    origin: {
+      type: 'ask_gap',
+      threadId,
+      turnId,
+      ...(typeof gapIndex === 'number' ? { gapIndex } : {}),
+      gapHash,
+    },
+    source: 'ask-gap-promotion',
+  };
+}
+
+function buildSourceGapPromotionSourcePosturePatch(
+  capsule: PraxisCapsule,
+  input: {
+    gap: string;
+    sourceIds: string[];
+    marker: Record<string, unknown>;
+  },
+): Record<string, unknown> {
+  const v3SourcePosture = (capsule.v3 as { sourcePosture?: unknown } | undefined)?.sourcePosture;
+  const existing = isRecord(v3SourcePosture)
+    ? v3SourcePosture
+    : isRecord(capsule.sourcePosture)
+      ? capsule.sourcePosture
+      : {};
+  const sourceGaps = uniqueStrings([
+    ...cleanStringArray(existing.sourceGaps),
+    input.gap,
+  ]).slice(0, 50);
+  const existingPromotions = Array.isArray(existing.sourceGapPromotions)
+    ? existing.sourceGapPromotions.filter(isRecord)
+    : [];
+  const markerKey = sourceGapPromotionKey(input.marker);
+  const sourceGapPromotions = [
+    ...existingPromotions.filter((promotion) => sourceGapPromotionKey(promotion) !== markerKey),
+    cloneSerializable(input.marker),
+  ].slice(-50);
+  return {
+    ...cloneSerializable(existing),
+    posture: 'needs_sources',
+    sourceGaps,
+    sourceIds: uniqueStrings([
+      ...cleanStringArray(existing.sourceIds),
+      ...input.sourceIds,
+    ]).slice(0, 50),
+    sourceGapPromotion: cloneSerializable(input.marker),
+    sourceGapPromotions,
+  };
+}
+
+function sourceGapPromotionKey(value: Record<string, unknown>): string {
+  const origin = isRecord(value.origin) ? value.origin : {};
+  const originKey = [
+    cleanText(origin.type, 40),
+    cleanText(origin.threadId, 160),
+    cleanText(origin.turnId, 160),
+    typeof origin.gapIndex === 'number' ? String(origin.gapIndex) : '',
+    cleanText(origin.gapHash, 80),
+  ].join(':');
+  return originKey.replace(/:+$/g, '') || stableId(JSON.stringify(value));
 }
 
 export async function createCapsuleIntakeReviewCards(
@@ -1482,6 +1615,11 @@ export async function createCapsuleReviewCard(
     ? 'moderation_required'
     : normalizeReviewState(input.state ?? 'proposed');
   const reviewCardId = cleanId(input.reviewCardId ?? `review-card-${stableId(`${uid}:${capsule.capsuleId}:${input.title}:${timestamp}`)}`, `review-card-${stableId(timestamp)}`);
+  const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
+  const cardRef = ref.collection('reviewCards').doc(reviewCardId);
+  const existingCardSnap = await cardRef.get().catch(() => null);
+  const existingCardData = existingCardSnap?.exists ? existingCardSnap.data() : null;
+  const existingCreatedAt = existingCardData ? stringOrNull(existingCardData.createdAt) : null;
   let proposedEnvelopePatch: CapsuleEnvelopePatch;
   try {
     proposedEnvelopePatch = normalizeReviewEnvelopePatch(input.proposedEnvelopePatch);
@@ -1500,14 +1638,13 @@ export async function createCapsuleReviewCard(
     evidence: normalizeReviewEvidence(input.evidence ?? []),
     proposedEnvelopePatch,
     applyMetadata: null,
-    createdAt: timestamp,
+    createdAt: existingCreatedAt ?? timestamp,
     updatedAt: timestamp,
   };
-  const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
-  await ref.collection('reviewCards').doc(card.reviewCardId).set(card, { merge: true });
+  await cardRef.set(card, { merge: true });
   const readinessSummary = normalizeReadinessSummary({
     ...(capsule.readinessSummary ?? {}),
-    reviewCardCount: Math.max(capsule.readinessSummary?.reviewCardCount ?? 0, 0) + 1,
+    reviewCardCount: Math.max(capsule.readinessSummary?.reviewCardCount ?? 0, 0) + (existingCardSnap?.exists ? 0 : 1),
     reviewRequired: true,
   }, capsule.coreRefs, state, timestamp);
   await ref.set({

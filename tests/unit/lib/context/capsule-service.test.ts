@@ -970,7 +970,7 @@ describe('capsule service', () => {
     expect(capsule?.version).toBe(5);
   });
 
-  it('promotes Ask source gaps into review-gated capsule repository notes', async () => {
+  it('promotes Ask source gaps into review-gated capsule review cards', async () => {
     const db = new FakeFirestore();
     await seedStarterCapsules('u1', deps(db));
 
@@ -987,18 +987,75 @@ describe('capsule service', () => {
 
     expect(result?.reviewRequired).toBe(true);
     expect(result?.proposals).toHaveLength(2);
+    expect(result?.reviewCards).toHaveLength(2);
     expect(result?.proposals.every((proposal) => proposal.reviewStatus === 'proposed')).toBe(true);
     expect(result?.proposals.every((proposal) => proposal.target === 'sourcePack')).toBe(true);
     const proposal = result!.proposals[0];
-    const notePath = `users/u1/capsules/starter-situation-diplomatic-options/notes/${proposal.proposalId}`;
-    const note = db.data.get(notePath);
-    expect(note?.type).toBe('gap');
-    expect(note?.reviewStatus).toBe('proposed');
-    expect(note?.body).toEqual(expect.stringContaining('proposed source-pack update'));
-    expect((note?.links as { sourceIds: string[]; runId: string }).runId).toBe('run-123');
-    expect((note?.links as { sourceIds: string[] }).sourceIds).toContain('ask-source-1');
+    const cardPath = `users/u1/capsules/starter-situation-diplomatic-options/reviewCards/${proposal.reviewCardId}`;
+    const card = db.data.get(cardPath);
+    expect(card).toMatchObject({
+      state: 'proposed',
+      sourceType: 'source-gap',
+      target: 'sourceGap',
+      title: proposal.title,
+    });
+    expect((card?.proposedEnvelopePatch as { sourcePosture?: { sourceGaps?: string[] } }).sourcePosture?.sourceGaps).toContain(proposal.gap);
+    expect((card?.proposedEnvelopePatch as { sourcePosture?: { sourceGapPromotion?: { generatedBy?: string; runId?: string | null; source?: string } } }).sourcePosture?.sourceGapPromotion).toMatchObject({
+      generatedBy: 'ask-praxis',
+      runId: 'run-123',
+      source: 'source-gap-promotion',
+    });
     expect(result?.capsule.trust.level).toBe('amber');
     expect(result?.capsule.trust.recommendations).toContain('Review proposed source-pack gaps before the next external handoff.');
+  });
+
+  it('upserts Ask gap promotions with deterministic review-card ids and origin metadata', async () => {
+    const db = new FakeFirestore();
+    await seedStarterCapsules('u1', deps(db));
+
+    const input = {
+      kind: 'sourcing' as const,
+      title: 'Source gap: opposition negotiating position',
+      rationale: 'Ask PRAXIS found no current source for the opposition negotiating position.',
+      suggestedChange: 'Attach a current primary source for the opposition negotiating position.',
+      origin: {
+        type: 'ask_gap' as const,
+        threadId: 'ask-thread-1',
+        turnId: 'turn-1',
+        gapIndex: 0,
+        gapHash: 'gap-hash-1',
+      },
+    };
+
+    const first = await promoteCapsuleSourceGaps('u1', 'starter-situation-diplomatic-options', input, deps(db));
+    const second = await promoteCapsuleSourceGaps('u1', 'starter-situation-diplomatic-options', input, deps(db));
+
+    expect(first?.proposals).toHaveLength(1);
+    expect(second?.proposals).toHaveLength(1);
+    expect(second?.proposals[0].proposalId).toBe(first?.proposals[0].proposalId);
+    expect(second?.reviewCards[0].reviewCardId).toBe(first?.reviewCards[0].reviewCardId);
+
+    const reviewCardPaths = Array.from(db.data.keys()).filter((path) =>
+      path.startsWith('users/u1/capsules/starter-situation-diplomatic-options/reviewCards/'),
+    );
+    expect(reviewCardPaths).toHaveLength(1);
+
+    const card = db.data.get(reviewCardPaths[0]);
+    expect(card).toMatchObject({
+      state: 'proposed',
+      sourceType: 'source-gap',
+      target: 'sourceGap',
+    });
+    expect((card?.proposedEnvelopePatch as { sourcePosture?: { sourceGapPromotion?: { source?: string; origin?: Record<string, unknown> } } }).sourcePosture?.sourceGapPromotion).toMatchObject({
+      source: 'ask-gap-promotion',
+      origin: {
+        type: 'ask_gap',
+        threadId: 'ask-thread-1',
+        turnId: 'turn-1',
+        gapIndex: 0,
+        gapHash: 'gap-hash-1',
+      },
+    });
   });
 
   it('turns intake source, table, graph, memory, and artifact candidates into review cards without applying them', async () => {

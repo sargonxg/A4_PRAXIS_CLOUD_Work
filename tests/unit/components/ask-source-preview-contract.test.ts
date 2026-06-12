@@ -79,6 +79,16 @@ describe('Ask source preview panel contract', () => {
     expect(source).toContain('Create output capsule');
   });
 
+  it('lets Ask source gaps be promoted to the active capsule review queue only when a capsule is bound', () => {
+    expect(source).toContain('Promote to capsule');
+    expect(source).toContain('Filed for review');
+    expect(source).toContain('#capsule-review-queue');
+    expect(source).toContain("source: 'ask-gap-promotion'");
+    expect(source).toContain('canPromoteToCapsule');
+    expect(source).toContain('activeCapsuleId');
+    expect(source).toContain('if (!canPromoteToCapsule)');
+  });
+
   it('renders compact answer provenance chips before detailed receipts', () => {
     const provenanceSource = readFileSync(join(process.cwd(), 'src/components/ask/AnswerContextProvenanceChips.tsx'), 'utf8');
 

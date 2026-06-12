@@ -101,10 +101,21 @@ const ActionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('rate'), rating: z.number().min(1).max(5) }),
   z.object({
     action: z.literal('promote-source-gaps'),
-    gaps: z.array(z.string().min(1).max(600)).min(1).max(10),
+    gaps: z.array(z.string().min(1).max(600)).min(1).max(10).optional(),
     sourceIds: z.array(z.string().min(1).max(120)).max(20).optional(),
     runId: z.string().min(1).max(120).nullable().optional(),
     generatedBy: z.string().min(1).max(80).optional(),
+    kind: z.literal('sourcing').optional(),
+    title: z.string().min(3).max(120).optional(),
+    rationale: z.string().min(8).max(800).optional(),
+    suggestedChange: z.string().min(8).max(1000).optional(),
+    origin: z.object({
+      type: z.literal('ask_gap'),
+      threadId: z.string().min(1).max(180),
+      turnId: z.string().min(1).max(180),
+      gapIndex: z.number().int().nonnegative().optional(),
+      gapHash: z.string().min(1).max(80).optional(),
+    }).strict().optional(),
   }),
   z.object({ action: z.literal('propose-cognee-seed') }),
   z.object({
@@ -315,12 +326,35 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
       return NextResponse.json({ capsule });
     }
     if (parsed.data.action === 'promote-source-gaps') {
-      const result = await promoteCapsuleSourceGaps(user.uid, capsuleId, {
-        gaps: parsed.data.gaps,
-        sourceIds: parsed.data.sourceIds,
-        runId: parsed.data.runId,
-        generatedBy: parsed.data.generatedBy,
-      });
+      if (parsed.data.kind === 'sourcing' && (!parsed.data.title || !parsed.data.rationale || !parsed.data.suggestedChange || !parsed.data.origin)) {
+        return NextResponse.json({ error: 'Invalid Ask gap promotion request' }, { status: 400 });
+      }
+      if (parsed.data.kind !== 'sourcing' && !parsed.data.gaps?.length) {
+        return NextResponse.json({ error: 'At least one source gap is required' }, { status: 400 });
+      }
+      let result;
+      try {
+        result = await promoteCapsuleSourceGaps(user.uid, capsuleId, parsed.data.kind === 'sourcing'
+          ? {
+              kind: 'sourcing',
+              title: parsed.data.title ?? '',
+              rationale: parsed.data.rationale ?? '',
+              suggestedChange: parsed.data.suggestedChange ?? '',
+              origin: parsed.data.origin ?? { type: 'ask_gap', threadId: '', turnId: '' },
+              source: 'ask-gap-promotion',
+            }
+          : {
+              gaps: parsed.data.gaps ?? [],
+              sourceIds: parsed.data.sourceIds,
+              runId: parsed.data.runId,
+              generatedBy: parsed.data.generatedBy,
+            });
+      } catch (err) {
+        if (isCapsuleReadOnlyError(err)) {
+          return NextResponse.json({ error: err instanceof Error ? err.message : 'Capsule is read-only' }, { status: 409 });
+        }
+        throw err;
+      }
       if (!result) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
       return NextResponse.json(result, { status: 201 });
     }
@@ -374,3 +408,7 @@ export const DELETE = withAuth<RouteContext>(async (request, user, context) => {
     return handleRouteError(err, 'context/capsules/archive');
   }
 });
+
+function isCapsuleReadOnlyError(err: unknown): boolean {
+  return err instanceof Error && err.name === 'CapsuleReadOnlyError';
+}
