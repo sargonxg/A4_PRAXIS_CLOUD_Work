@@ -66,7 +66,7 @@ export function deriveHumanGateBadges(input: ContextCapsuleV2 | unknown, options
   const badges: HumanGateBadge[] = [];
   const status = deriveHumanGateStatus(capsule, options);
 
-  if (canShowHumanWritten(capsule)) {
+  if (canShowHumanWritten(capsule, options.now)) {
     badges.push({
       id: 'human-written',
       label: 'Human Written',
@@ -74,7 +74,7 @@ export function deriveHumanGateBadges(input: ContextCapsuleV2 | unknown, options
       detail: 'Substantive human-authored body metadata is present.',
     });
   }
-  if (canShowHumanReviewed(capsule)) {
+  if (canShowHumanReviewed(capsule, options.now)) {
     badges.push({
       id: 'human-reviewed',
       label: 'Human Reviewed',
@@ -117,8 +117,8 @@ export function deriveHumanGateBadges(input: ContextCapsuleV2 | unknown, options
   return badges;
 }
 
-export function canShowHumanWritten(input: ContextCapsuleV2 | unknown): boolean {
-  const capsule = normalizeContextCapsuleV2(input);
+export function canShowHumanWritten(input: ContextCapsuleV2 | unknown, now?: string | Date): boolean {
+  const capsule = normalizeContextCapsuleV2(input, now === undefined ? {} : { now });
   return Boolean(
     capsule.provenance.authoredSubstantiveBody &&
     (capsule.provenance.humanAuthorId || capsule.humanGate.authorId) &&
@@ -126,8 +126,8 @@ export function canShowHumanWritten(input: ContextCapsuleV2 | unknown): boolean 
   );
 }
 
-export function canShowHumanReviewed(input: ContextCapsuleV2 | unknown): boolean {
-  const capsule = normalizeContextCapsuleV2(input);
+export function canShowHumanReviewed(input: ContextCapsuleV2 | unknown, now?: string | Date): boolean {
+  const capsule = normalizeContextCapsuleV2(input, now === undefined ? {} : { now });
   if (capsule.humanGate.required) {
     return Boolean(capsule.humanGate.gateStatus === 'approved' && capsule.humanGate.reviewerId && capsule.humanGate.reviewedAt);
   }

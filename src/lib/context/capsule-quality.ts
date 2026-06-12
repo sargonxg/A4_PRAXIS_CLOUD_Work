@@ -163,8 +163,8 @@ function scoreBreakdown(
 
   if (id === 'human_review_provenance') {
     if (capsule.humanGate.required) {
-      const written = canShowHumanWritten(capsule) && Boolean(capsule.humanGate.authorId && capsule.humanGate.authoredAt);
-      const reviewed = canShowHumanReviewed(capsule) && Boolean(capsule.humanGate.reviewerId && capsule.humanGate.reviewedAt);
+      const written = canShowHumanWritten(capsule, options.now) && Boolean(capsule.humanGate.authorId && capsule.humanGate.authoredAt);
+      const reviewed = canShowHumanReviewed(capsule, options.now) && Boolean(capsule.humanGate.reviewerId && capsule.humanGate.reviewedAt);
       const current = deriveHumanGateStatus(capsule, options) === 'human_gated' || deriveHumanGateStatus(capsule, options) === 'expert_pick_human_gated';
       if (!written || !reviewed) diagnostics.push({ code: 'human_gated_missing_author_reviewer', message: 'Human-gated capsule is missing author or reviewer metadata.' });
       ratio = average([written ? 1 : 0, reviewed ? 1 : 0, current ? 1 : 0]);

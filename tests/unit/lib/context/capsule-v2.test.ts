@@ -94,8 +94,8 @@ describe('ContextCapsule v2 contract', () => {
     expect(canShowHumanWritten(draft)).toBe(false);
     expect(canShowHumanReviewed(draft)).toBe(false);
     expect(deriveHumanGateStatus(draft, { now: '2026-05-14T00:00:00.000Z' })).toBe('needs_review');
-    expect(canShowHumanWritten(reviewed)).toBe(true);
-    expect(canShowHumanReviewed(reviewed)).toBe(true);
+    expect(canShowHumanWritten(reviewed, '2026-05-14T00:00:00.000Z')).toBe(true);
+    expect(canShowHumanReviewed(reviewed, '2026-05-14T00:00:00.000Z')).toBe(true);
     expect(deriveHumanGateBadges(reviewed, { now: '2026-05-14T00:00:00.000Z' }).map((badge) => badge.id)).toEqual(expect.arrayContaining([
       'human-written',
       'human-reviewed',
