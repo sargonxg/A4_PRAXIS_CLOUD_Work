@@ -2,6 +2,60 @@
 
 ## [Unreleased]
 
+Build 2026.06.12.01 (PRAXIS v6.5.0).
+
+- refactor(home): simplify home surfaces — removed the PraxisAppLaunchpad
+  wrapper, single home-destination source of truth in `primary-nav.ts`, one
+  button-styled sign-in CTA on public home, PolicyAgentStrip gated to public
+  mode, and deleted dead-route components (`core-context-strip`,
+  `live-context-readiness-card`) mounted only for routes that no longer exist
+  (net −632 lines).
+
+- feat(ask): honest context-health receipts. Every silently-swallowed context
+  failure in an Ask turn (capsule resolution fallback, evidence pack, corpus
+  retrieval, graph snapshot, agent dispatch) is now recorded as a degradation
+  in `orchestrationReceipt.contextHealth`, rendered as an amber "Context
+  degraded" chip, with an explicit dispatch-failed state + retry on the
+  queued-run panel.
+
+- feat(agents): agent run results return to the originating Ask thread.
+  Dispatch payloads and run metadata carry `askThreadRef`; on terminal
+  success/failure the worker upserts a deterministic `agent-result-{runId}`
+  turn via both persistence paths and appends `thread_return_posted` /
+  `thread_return_failed` events; the Ask UI refreshes the thread on terminal
+  state and renders "Agent result" chips.
+
+- feat(agents): lifecycle hygiene — cron-secured
+  `/api/cron/agent-runs-sweep` expires overdue runs and pending approvals
+  through the validated status-update path (200-item caps), and the queued-run
+  panel shows a compact seven-step proof rail ending in "Returned to thread".
+  NOTE: requires a Cloud Scheduler job targeting the new cron route at deploy.
+
+- fix(capsules): thread the injected clock through quality and human-gate
+  derivations; capsule-v2 contract tests are deterministic again.
+
+- refactor(capsules): split the 1,160-line CapsuleWorkbenchPanel into 15
+  memoized workbench sections plus reusable `CapsuleGraphViewer` /
+  `CapsuleTemporalViewer` (lazy-loaded); orchestrator is now 106 lines with
+  byte-identical rendered markup.
+
+- feat(capsules): readiness at a glance — `CapsuleReadinessBadge`
+  (score/tier/top-blocker) on workbench capsule cards and CapsuleListPicker
+  rows, with readiness sorting and tier filter chips in the workbench lane.
+
+- feat(capsules): `capsule-quality-review` policy agent — deterministic
+  quality-deficit analysis plus one Zod-validated LLM pass proposes up to 8
+  review-gated improvements into the existing review queue (nothing
+  auto-applies), triggered from the workbench quality section, with run proof
+  and thread return.
+
+- feat(capsules): hardened DIALECTICA spec-3.0 package import — strict
+  manifest schema with per-field errors, conservative layer mapping with
+  `importNotes`, provenance recorded (`importSource`, original capsule id,
+  package version, `provenance_root_hash`, signature stored verbatim),
+  idempotent re-import keyed on provenance, enriched preview modal, and
+  fixture-backed tests against the canonical DIALECTICA package.
+
 Build 2026.06.11.04 (PRAXIS v6.5.0).
 
 - feat(capsules): add `npm run audit:capsule-quality-ranking`, a P1 ranking

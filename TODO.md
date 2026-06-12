@@ -1,6 +1,26 @@
 # PRAXIS TODO
 
-Last updated: 2026-05-30.
+Last updated: 2026-06-12.
+
+## 2026-06-12 session — shipped and follow-ups
+
+Shipped on main (see CHANGELOG [Unreleased], commits b3509952..920f680c):
+home simplification, Ask context-health receipts, agent-run thread return,
+expiry sweeps + proof rail, capsule workbench split + reusable viewers,
+readiness badges, capsule-quality-review agent, DIALECTICA spec-3.0 import
+hardening. Suite green at 1,382 tests.
+
+Follow-ups required:
+
+- Deploy: create a Cloud Scheduler job for `/api/cron/agent-runs-sweep`
+  (cron-secret auth, suggested every 15 minutes) — without it expired runs
+  and approvals are only swept when the route is called manually.
+- DIALECTICA import: signature/attestation verification is stored verbatim
+  but not yet cryptographically verified (deliberate slice boundary).
+- Authenticated production canary (`doctor:praxis:canary`) should exercise:
+  one Ask turn that queues a run and proves the same-thread return, one
+  capsule-quality-review run approving a proposal, and one DIALECTICA
+  fixture import.
 
 ## Current Build Queue
 
