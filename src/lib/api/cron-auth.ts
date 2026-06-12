@@ -7,8 +7,9 @@ export function getCronSecretFromRequest(request: Request): string {
 }
 
 export function isCronAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET ?? '';
-  return Boolean(secret) && getCronSecretFromRequest(request) === secret;
+  const secret = (process.env.CRON_SECRET ?? '').trim();
+  const requestSecret = getCronSecretFromRequest(request).trim();
+  return Boolean(secret) && requestSecret === secret;
 }
 
 export function requireCronSecret(request: Request, status = 401): NextResponse | null {
